@@ -1,46 +1,41 @@
 {
-  "name": "vue-nodejs",
-  "version": "0.1.0",
+  "name": "leadminer",
+  "version": "0.0.1",
+  "description": "leadminer",
+  "productName": "leadminer",
+  "author": "",
   "private": true,
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "axios": "^0.18.0",
-    "foundation-sites": "^6.7.4",
-    "vue": "^2.5.17",
-    "vue-router": "^3.0.1"
+    "axios": "^0.21.1",
+    "vue-i18n": "^9.0.0-beta.0",
+    "vuedraggable": "^4.0.1",
+    "@quasar/extras": "^1.0.0",
+    "core-js": "^3.6.5",
+    "quasar": "^2.0.0",
+    "vuex": "^4.0.1"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.0.1",
-    "@vue/cli-plugin-eslint": "^3.0.1",
-    "@vue/cli-service": "^3.0.1",
-    "vue-template-compiler": "^2.5.17"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended"
-    ],
-    "rules": {},
-    "parserOptions": {
-      "parser": "babel-eslint"
-    }
-  },
-  "postcss": {
-    "plugins": {
-      "autoprefixer": {}
-    }
+    "@quasar/app": "^3.0.0",
+    "@quasar/quasar-app-extension-qcalendar": "^4.0.0-beta.2",
+    "quasar-app-extension-qhierarchy": "^1.0.0-alpha.1"
   },
   "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not ie <= 8"
-  ]
+    "last 10 Chrome versions",
+    "last 10 Firefox versions",
+    "last 4 Edge versions",
+    "last 7 Safari versions",
+    "last 8 Android versions",
+    "last 8 ChromeAndroid versions",
+    "last 8 FirefoxAndroid versions",
+    "last 10 iOS versions",
+    "last 5 Opera versions"
+  ],
+  "engines": {
+    "node": ">= 10.18.1",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
 }

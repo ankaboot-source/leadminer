@@ -166,19 +166,21 @@ exports.retrieveEmails = (req , res )=>{
   var data = [];
   function openInbox(cb) {
     imap.openBox('INBOX', true, cb);
+    imap.getBoxes("",(err , boxes)=>{
+      console.log(boxes)
+    })
   }
   
   imap.once('ready', function() {
     openInbox(function(err, box) {
       if (err) throw err;
-      var f = imap.seq.fetch('1:3000', {
+      var f = imap.seq.fetch('1:5', {
         bodies: 'HEADER.FIELDS (FROM TO SUBJECT DATE)',
         struct: true
       });
       f.on('message', function(msg, seqno) {
         console.log('Message #%d', seqno);
         var prefix = '(#' + seqno + ') ';
-        console.log(msg)
         msg.on('body', function(stream, info) {
 
           var buffer = '';
@@ -187,15 +189,8 @@ exports.retrieveEmails = (req , res )=>{
           });
           stream.once('end', function() {
             data = [...data , Imap.parseHeader(buffer)];
-            console.log(prefix + 'Parsed header: %s', inspect(Imap.parseHeader(buffer)));
           });
         });
-        // msg.once('attributes', function(attrs) {
-        //   console.log(prefix + 'Attributes: %s', inspect(attrs, false, 8));
-        // });
-        // msg.once('end', function() {
-        //   console.log(prefix + 'Finished');
-        // });
       });
       f.once('error', function(err) {
         console.log('Fetch error: ' + err);
