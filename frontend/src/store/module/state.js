@@ -1,6 +1,7 @@
-import {markRaw} from "vue"
+import { markRaw } from "vue";
 export default function () {
   return {
-    retrievedEmails : markRaw([])
-  }
+    retrievedEmails: [],
+    loadingStatus: false,
+  };
 }

@@ -11,7 +11,7 @@
           aria-label="Menu"
         />
         <q-toolbar-title>
-          Quasar App
+          Leadminer
         </q-toolbar-title>
         <q-space/>
         <div class="q-gutter-sm row items-center no-wrap">
@@ -19,7 +19,7 @@
                  @click="$q.fullscreen.toggle()"
                  v-if="$q.screen.gt.sm">
           </q-btn>
-          <q-btn round dense flat color="white" icon="fab fa-github" type="a" href="https://github.com/pratik227/quasar-admin" target="_blank">
+          <!-- <q-btn round dense flat color="white" icon="fab fa-github" type="a" href="https://github.com/pratik227/quasar-admin" target="_blank">
           </q-btn>
           <q-btn round dense flat icon="fas fa-heart" style="color:#9d4182 !important;" type="a" href="https://github.com/sponsors/pratik227" target="_blank">
           </q-btn>
@@ -42,7 +42,7 @@
             <q-avatar size="26px">
               <img src="https://cdn.quasar.dev/img/boy-avatar.png">
             </q-avatar>
-          </q-btn>
+          </q-btn> -->
         </div>
       </q-toolbar>
     </q-header>
