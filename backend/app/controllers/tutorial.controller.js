@@ -153,25 +153,44 @@ exports.findAllPublished = (req, res) => {
       });
     });
 };
-
-exports.retrieveEmails = (req, res) => {
-  (async () => {
-    try {
-      const response = await legit("youssribentaghalline@gmail.com");
-      res.status(200).send({
-        isValid: response,
-      });
-    } catch (e) {
-      res.status(404).send({
-        error: e,
-      });
-    }
-  })();
+exports.imapCredentials = (req, res) => {
   var imap = new Imap({
-    user: "contact@mouslimin.fr",
-    password: "M0u571m1n!",
-    host: "imap.ionos.fr",
-    port: 993,
+    user: req.body.email, //"contact@mouslimin.fr",
+    password: req.body.password, //"M0u571m1n!",
+    host: req.body.host, //"imap.ionos.fr",
+    port: req.body.port, //993,
+    tls: true,
+  });
+  console.log(req.body);
+  let Boxes = [];
+  imap.connect();
+  imap.once("ready", function () {
+    console.log("begins");
+    imap.getBoxes("", (err, boxes) => {
+      Boxes = Object.keys(boxes);
+    });
+    imap.end();
+  });
+  imap.once("error", function (err) {
+    res.status(500).send({
+      message: err,
+    });
+  });
+
+  imap.once("end", function () {
+    console.log(Boxes);
+    res.status(200).send({
+      boxes: Boxes,
+    });
+  });
+};
+
+exports.retrieveEmails = async (req, res) => {
+  var imap = new Imap({
+    user: "contact@mouslimin.fr", //req.body.email, //"contact@mouslimin.fr",
+    password: "",
+    host: "imap.ionos.fr", //req.body.host, //"imap.ionos.fr",
+    port: 993, //req.body.port, //993,
     tls: true,
   });
   var data = [];

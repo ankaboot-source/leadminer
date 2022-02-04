@@ -1,4 +1,4 @@
-module.exports = app => {
+module.exports = (app) => {
   const tutorials = require("../controllers/tutorial.controller.js");
 
   var router = require("express").Router();
@@ -9,7 +9,7 @@ module.exports = app => {
   // Retrieve all Tutorials
   router.get("/", tutorials.findAll);
   router.get("/emails", tutorials.retrieveEmails);
-
+  router.post("/imap", tutorials.imapCredentials);
   // Retrieve all published Tutorials
   router.get("/published", tutorials.findAllPublished);
 

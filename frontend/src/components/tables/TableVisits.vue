@@ -3,9 +3,57 @@
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
       <q-card class="text-grey-8">
         <q-card-section class="q-pa-none">
-          <div class="row" v-if="renderDialog">
-            <div class="col"></div>
-            <div class="q-mt-md col-6">
+          <div class="row q-pa-sm" v-if="renderDialog">
+            <div class="col-6 q-pa-sm">
+              <q-card>
+                <q-card-section class="bg-teal q-pa-sm text-white">
+                  <div class="text-subtitle2">Fetch prefrences:</div>
+                  <div class="text-caption">
+                    Select box to fetch from, fileds to import
+                  </div>
+                </q-card-section>
+                <div class="row q-pa-sm">
+                  <div class="q-mt-md col-6">
+                    <q-select
+                      rounded
+                      v-model="model"
+                      :options="boxOptions"
+                      label="Box"
+                    >
+                      <template v-slot:prepend>
+                        <q-icon
+                          style="font-size: 0.8em"
+                          name="fas fa-box-open"
+                        />
+                      </template>
+                    </q-select>
+                  </div>
+                  <div class="q-mt-md col-6"></div>
+
+                  <div class="q-mt-md col-6">
+                    <q-option-group
+                      name="accepted_genres"
+                      v-model="accepted"
+                      :options="options1"
+                      type="checkbox"
+                      color="secondary"
+                      inline
+                    />
+                  </div>
+                  <div class="q-mt-md col-6">
+                    <q-option-group
+                      name="accepted_genres"
+                      v-model="accepted"
+                      :options="options2"
+                      type="checkbox"
+                      color="secondary"
+                      inline
+                    />
+                  </div>
+                </div>
+              </q-card>
+            </div>
+            <!-- <div class="q-mt-md col-6">
               <div class="q-gutter-sm">
                 <q-checkbox
                   keep-color
@@ -37,8 +85,8 @@
                   label="subject"
                   color="secondary"
                 />
-              </div>
-            </div>
+              </div></div> -->
+
             <div class="q-mt-md col">
               <q-btn
                 no-caps
@@ -192,8 +240,43 @@ export default defineComponent({
   data() {
     return {
       renderDialog: false,
+      email: "",
+      password: "",
+      host: "",
+      port: "",
+      accepted: ref([]),
+      options1: [
+        {
+          label: "From",
+          value: "rock",
+        },
+        {
+          label: "To",
+          value: "funk",
+        },
+        {
+          label: "Cc",
+          value: "pop",
+        },
+      ],
+      boxOptions: [],
+      options2: [
+        {
+          label: "Bcc",
+          value: "pop",
+        },
+        {
+          label: "Subject",
+          value: "pop",
+        },
+        {
+          label: "Date",
+          value: "pop",
+        },
+      ],
     };
   },
+
   props: {
     emails: Array,
   },
@@ -207,7 +290,7 @@ export default defineComponent({
     Emails() {
       return [...this.retrievedEmails];
     },
-    ...mapState("example", ["retrievedEmails", "loadingStatus"]),
+    ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
   },
   methods: {
     fetchEmails() {
@@ -216,6 +299,7 @@ export default defineComponent({
     },
   },
   mounted() {
+    this.boxOptions = this.$store.getters["example/getBoxes"];
     this.renderDialog = true;
   },
   setup(props) {
@@ -223,21 +307,28 @@ export default defineComponent({
     const filter = ref("");
     const promptt = () => {
       $q.dialog({
-        title: "We need to verify mailbox existance first",
-        message: "Email address",
-        prompt: {
-          model: "",
-          isValid: (val) => val.length > 10 && val.includes("@"), // << here is the magic
-          type: "text", // optional
-        },
-        ok: {
-          push: true,
-          color: "secondary",
-        },
-        cancel: {
-          push: true,
-          color: "negative",
-        },
+        // title: "We need to verify mailbox existance first",
+        // message: "Email address",
+        // model: [],
+        //   // inline: true,
+        //   items: [
+        //     { label: 'Option 1', value: 'opt1', color: 'secondary' },
+        //     { label: 'Option 2', value: 'opt2' },
+        //     { label: 'Option 3', value: 'opt3' }
+        //   ]
+        // prompt: {
+        //   model: "",
+        //   isValid: (val) => val.length > 10 && val.includes("@"), // << here is the magic
+        //   type: "text", // optional
+        // },
+        // ok: {
+        //   push: true,
+        //   color: "secondary",
+        // },
+        // cancel: {
+        //   push: true,
+        //   color: "negative",
+        // },
         persistent: true,
       }).onOk((data) => {
         // console.log('>>>> OK, received', data)

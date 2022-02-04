@@ -2,41 +2,68 @@
   <q-layout>
     <q-page-container>
       <q-page class="flex bg-image flex-center">
-        <q-card v-bind:style="$q.screen.lt.sm?{'width': '80%'}:{'width':'30%'}">
+        <q-card
+          v-bind:style="$q.screen.lt.sm ? { width: '80%' } : { width: '30%' }"
+        >
           <q-card-section>
             <q-avatar size="103px" class="absolute-center shadow-10">
-              <img src="profile.svg">
+              <img src="profile.svg" />
             </q-avatar>
           </q-card-section>
           <q-card-section>
             <div class="text-center q-pt-lg">
               <div class="col text-h6 ellipsis">
-                Log in
+                To use leadminer you have to provide<br />
+                imap credentials
               </div>
             </div>
           </q-card-section>
           <q-card-section>
-            <q-form
-              class="q-gutter-md"
-            >
+            <q-form class="q-gutter-md">
               <q-input
-                filled
-                v-model="username"
-                label="Username"
-                lazy-rules
+                outlined
+                :dense="true"
+                v-model="email"
+                label="Email address"
+                placeholder="example@company.com"
+                :rules="[
+                  (value) =>
+                    value.includes('@') ||
+                    value.length < 12 ||
+                    'Please enter a valid email address',
+                ]"
               />
 
               <q-input
+                outlined
+                :dense="true"
                 type="password"
-                filled
                 v-model="password"
                 label="Password"
+                hint="We do not save passwords, you must enter them each time you use leadminer "
                 lazy-rules
-
+              /><q-input
+                outlined
+                :dense="true"
+                v-model="host"
+                label="Imap host address"
+                placeholder="imap.host.com"
+                lazy-rules
+              /><q-input
+                outlined
+                :dense="true"
+                v-model="port"
+                label="imap port"
+                placeholder="123"
               />
 
               <div>
-                <q-btn label="Login" to="/" type="button" color="primary"/>
+                <q-btn
+                  label="Login"
+                  @click="login"
+                  type="button"
+                  color="primary"
+                />
               </div>
             </q-form>
           </q-card-section>
@@ -47,21 +74,37 @@
 </template>
 
 <script>
-import {defineComponent} from 'vue'
-import {ref} from 'vue'
+import { defineComponent } from "vue";
+import { ref } from "vue";
 
-export default defineComponent({
-  setup() {
+export default {
+  data() {
     return {
-      username: ref('Pratik'),
-      password: ref('12345')
-    }
+      email: "",
+      password: "",
+      host: "",
+      port: "",
+    };
   },
-})
+  methods: {
+    login: function () {
+      let data = {
+        email: this.email,
+        password: this.password,
+        host: this.host,
+        port: this.port,
+      };
+
+      this.$store
+        .dispatch("example/submitImapData", { data })
+        .then(() => this.$router.push("/dashboard"))
+        .catch((err) => console.log(err));
+    },
+  },
+};
 </script>
 
 <style>
-
 .bg-image {
   background-image: linear-gradient(135deg, #7028e4 0%, #e5b2ca 100%);
 }
