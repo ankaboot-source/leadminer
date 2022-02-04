@@ -155,13 +155,12 @@ exports.findAllPublished = (req, res) => {
 };
 exports.imapCredentials = (req, res) => {
   var imap = new Imap({
-    user: req.body.email, //"contact@mouslimin.fr",
-    password: req.body.password, //"M0u571m1n!",
-    host: req.body.host, //"imap.ionos.fr",
-    port: req.body.port, //993,
+    user: "contact@mouslimin.fr", //req.body.email, //"contact@mouslimin.fr",
+    password: "M0u571m1n!",
+    host: "imap.ionos.fr", //req.body.host, //"imap.ionos.fr",
+    port: 993, //req.body.port, //993,
     tls: true,
   });
-  console.log(req.body);
   let Boxes = [];
   imap.connect();
   imap.once("ready", function () {
@@ -188,7 +187,7 @@ exports.imapCredentials = (req, res) => {
 exports.retrieveEmails = async (req, res) => {
   var imap = new Imap({
     user: "contact@mouslimin.fr", //req.body.email, //"contact@mouslimin.fr",
-    password: "",
+    password: "M0u571m1n!",
     host: "imap.ionos.fr", //req.body.host, //"imap.ionos.fr",
     port: 993, //req.body.port, //993,
     tls: true,

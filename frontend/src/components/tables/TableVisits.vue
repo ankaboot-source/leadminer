@@ -16,8 +16,8 @@
                   <div class="q-mt-md col-6">
                     <q-select
                       rounded
-                      v-model="model"
-                      :options="boxOptions"
+                      v-model="selectedBox"
+                      :options="boxes"
                       label="Box"
                     >
                       <template v-slot:prepend>
@@ -48,6 +48,14 @@
                       type="checkbox"
                       color="secondary"
                       inline
+                    />
+                  </div>
+                  <div class="q-mt-md col-6">
+                    <q-btn
+                      no-caps
+                      @click="fetchEmails"
+                      color="secondary"
+                      label="Get emails"
                     />
                   </div>
                 </div>
@@ -88,12 +96,14 @@
               </div></div> -->
 
             <div class="q-mt-md col">
-              <q-btn
-                no-caps
-                @click="fetchEmails"
-                color="secondary"
-                label="Get emails"
-              />
+              <div class="row q-pa-sm">
+                <div class="q-mt-md col-12">
+                  <card-social
+                    icon_position="left"
+                    :collectedEmails="retrievedEmails.length"
+                  />
+                </div>
+              </div>
             </div>
           </div>
           <q-dialog
@@ -111,7 +121,10 @@
             </div>
           </q-dialog>
           <q-table
-            title="Treats"
+            card-class="bg-white text-teal-10"
+            table-class="text-teal-10"
+            table-header-class="text-teal"
+            title="Emails"
             dense
             :rows="Emails"
             :columns="columns"
@@ -162,10 +175,10 @@
 </template>
 
 <script>
-import { defineComponent, onMounted } from "vue";
+import { defineComponent, defineAsyncComponent, onMounted } from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
-import { mapState } from "vuex";
+import { mapGetters, mapState } from "vuex";
 
 function wrapCsvValue(val, formatFn) {
   let formatted = formatFn !== void 0 ? formatFn(val) : val;
@@ -237,6 +250,9 @@ const rows = [
 ];
 
 export default defineComponent({
+  components: {
+    CardSocial: defineAsyncComponent(() => import("../cards/CardSocial.vue")),
+  },
   data() {
     return {
       renderDialog: false,
@@ -245,33 +261,34 @@ export default defineComponent({
       host: "",
       port: "",
       accepted: ref([]),
+      selectedBox: "",
       options1: [
         {
           label: "From",
-          value: "rock",
+          value: "from",
         },
         {
           label: "To",
-          value: "funk",
+          value: "to",
         },
         {
           label: "Cc",
-          value: "pop",
+          value: "cc",
         },
       ],
       boxOptions: [],
       options2: [
         {
           label: "Bcc",
-          value: "pop",
+          value: "bcc",
         },
         {
           label: "Subject",
-          value: "pop",
+          value: "subject",
         },
         {
           label: "Date",
-          value: "pop",
+          value: "date",
         },
       ],
     };
@@ -299,7 +316,8 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.boxOptions = this.$store.getters["example/getBoxes"];
+    console.log(this.$store.state.boxes);
+    this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
   },
   setup(props) {
@@ -335,7 +353,7 @@ export default defineComponent({
       });
     };
     onMounted(() => {
-      promptt($q);
+      //promptt($q);
     });
     return {
       filter,
@@ -384,3 +402,11 @@ export default defineComponent({
   },
 });
 </script>
+<style scoped>
+.text-brand {
+  color: #a2aa33 !important;
+}
+.bg-brand {
+  background: #a2aa33 !important;
+}
+</style>
