@@ -7,17 +7,17 @@
           :key="index"
           class="col-md-6 col-sm-12 col-xs-12"
         >
-          <q-item :style="`background-color: ${item.color1}`" class="q-pa-none">
+          <q-item  :style="`background-color: ${item.color1}`" class="q-pa-none border">
             <q-item-section
               v-if="icon_position === 'left'"
               side
               :style="`background-color: ${item.color2}`"
-              class="q-pa-lg q-mr-none text-white"
+              class="q-pa-md border q-ma-sm text-teal"
             >
               <q-icon :name="item.icon" color="white" size="24px"></q-icon>
             </q-item-section>
-            <q-item-section class="q-pa-md q-ml-none text-white">
-              <q-item-label class="text-white text-h6 text-weight-bolder">{{
+            <q-item-section class="q-pa-md q-ml-none text-teal">
+              <q-item-label class="text-teal text-h6 text-weight-bolder">{{
                 item.value
               }}</q-item-label>
               <q-item-label>{{ item.title }}</q-item-label>
@@ -56,14 +56,14 @@ export default defineComponent({
               title: "Collected emails",
               icon: "email",
               value: this.collectedEmails,
-              color1: "#ffb380",
-              color2: "#fc9958",
+              color1: "#f8f9fa",
+              color2: "#03c8a8",
             },
             {
               title: "Exported email",
               icon: "archive",
               value: "0",
-              color1: "#12d5a6",
+              color1: "#f8f9fa",
               color2: "#3ca88e",
             },
             // {
@@ -122,3 +122,8 @@ export default defineComponent({
   },
 });
 </script>
+<style >
+.border{
+  border-radius: 10px;
+}
+</style>

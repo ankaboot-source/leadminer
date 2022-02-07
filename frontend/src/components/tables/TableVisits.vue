@@ -1,67 +1,70 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <q-card class="text-grey-8">
-        <q-card-section class="q-pa-none">
-          <div class="row q-pa-sm" v-if="renderDialog">
-            <div class="col-6 q-pa-sm">
-              <q-card>
-                <q-card-section class="bg-teal q-pa-sm text-white">
-                  <div class="text-subtitle2">Fetch prefrences:</div>
-                  <div class="text-caption">
-                    Select box to fetch from, fileds to import
-                  </div>
-                </q-card-section>
-                <div class="row q-pa-sm">
-                  <div class="q-mt-md col-6">
-                    <q-select
-                      rounded
-                      v-model="selectedBox"
-                      :options="boxes"
-                      label="Box"
-                    >
-                      <template v-slot:prepend>
-                        <q-icon
-                          style="font-size: 0.8em"
-                          name="fas fa-box-open"
-                        />
-                      </template>
-                    </q-select>
-                  </div>
-                  <div class="q-mt-md col-6"></div>
-
-                  <div class="q-mt-md col-6">
-                    <q-option-group
-                      name="accepted_genres"
-                      v-model="accepted"
-                      :options="options1"
-                      type="checkbox"
-                      color="secondary"
-                      inline
-                    />
-                  </div>
-                  <div class="q-mt-md col-6">
-                    <q-option-group
-                      name="accepted_genres"
-                      v-model="accepted"
-                      :options="options2"
-                      type="checkbox"
-                      color="secondary"
-                      inline
-                    />
-                  </div>
-                  <div class="q-mt-md col-6">
-                    <q-btn
-                      no-caps
-                      @click="fetchEmails"
-                      color="secondary"
-                      label="Get emails"
-                    />
-                  </div>
+      <q-card-section class="q-pa-none">
+        <div class="row q-pa-sm" v-if="renderDialog">
+          <div class="bg-stransparent q-mr-sm col-6 q-pa-sm">
+            <q-card>
+              <q-card-section class="bg-tealgradient q-pa-sm text-white">
+                <div class="text-h5 text-bold">Prefrences</div>
+                <div class="text-caption">
+                  Select box to fetch from, fileds to import
                 </div>
-              </q-card>
-            </div>
-            <!-- <div class="q-mt-md col-6">
+              </q-card-section>
+              <div class="text-custom row q-pa-sm">
+                <div class="bg-grey-1 border q-pa-md col-5">
+                  <div class="text-subtitle2 text-bold">Select a mailbox</div>
+                  <q-select
+                    rounded
+                    v-model="selectedBox"
+                    :options="boxes"
+                    label="Box"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon
+                        style="font-size: 0.8em"
+                        class="text-teal"
+                        name="fas fa-box-open"
+                      />
+                    </template>
+                  </q-select>
+                </div>
+                <div class="col"></div>
+
+                <div class="bg-grey-1 border q-pa-md q-ml-sm col-6">
+                  <div class="text-subtitle2 text-bold">Select fields</div>
+                  <q-option-group
+                    class="text-cyan-10"
+                    name="accepted_genres"
+                    v-model="accepted"
+                    :options="options1"
+                    type="checkbox"
+                    color="secondary"
+                    inline
+                  />
+                  <q-option-group
+                    class="text-cyan-10"
+                    name="accepted_genres"
+                    v-model="accepted"
+                    :options="options2"
+                    type="checkbox"
+                    color="secondary"
+                    inline
+                  />
+                </div>
+
+                <div class="q-mt-md col-6">
+                  <q-btn
+                    no-caps
+                    @click="fetchEmails"
+                    class="bg-buttons text-white"
+                    label="Get emails"
+                  />
+                </div>
+              </div>
+            </q-card>
+          </div>
+          <!-- <div class="q-mt-md col-6">
               <div class="q-gutter-sm">
                 <q-checkbox
                   keep-color
@@ -95,37 +98,35 @@
                 />
               </div></div> -->
 
-            <div class="q-mt-md col">
-              <div class="row q-pa-sm">
-                <div class="q-mt-md col-12">
-                  <card-social
-                    icon_position="left"
-                    :collectedEmails="retrievedEmails.length"
-                  />
-                </div>
+          <div class="bg-transparent q-md col">
+            <div class="row q-pa-sm">
+              <div class="q-md col-12">
+                <card-social
+                  icon_position="left"
+                  :collectedEmails="retrievedEmails.length"
+                />
               </div>
             </div>
           </div>
-          <q-dialog
-            v-show="loadingStatus"
-            v-model="loadingStatus"
-            persistent
-            transition-show="scale"
-            transition-hide="scale"
-          >
-            <div
-              class="z-max bg-transparent text-cyan-2 text-h4 q-ma-md q-pa-lg"
-            >
-              Fetching data...
-              <q-spinner-gears color="cyan-2" size="5.5em" />
-            </div>
-          </q-dialog>
+        </div>
+        <q-dialog
+          v-show="loadingStatus"
+          v-model="loadingStatus"
+          persistent
+          transition-show="scale"
+          transition-hide="scale"
+        >
+          <div class="z-max bg-transparent text-cyan-2 text-h4 q-ma-md q-pa-lg">
+            Fetching data...
+            <q-spinner-gears color="cyan-2" size="5.5em" />
+          </div>
+        </q-dialog>
+        <div class="bg-transparent q-ma-sm col-12 q-pa-sm">
           <q-table
             card-class="bg-white text-teal-10"
             table-class="text-teal-10"
             table-header-class="text-teal"
             title="Emails"
-            dense
             :rows="Emails"
             :columns="columns"
             row-key="name"
@@ -160,16 +161,52 @@
               </q-btn>
 
               <q-btn
-                color="secondary"
+                class="bg-buttons text-white"
                 icon-right="archive"
                 label="Export to csv"
                 no-caps
                 @click="exportTable(Emails)"
               />
             </template>
+            <template v-slot:body-cell-from="props">
+              <q-td :props="props">
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>{{ props.row.from[0] }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-to="props">
+              <q-td :props="props">
+                <q-item>
+                  <q-item-section>
+                    <q-item-label>{{ props.row.to[0] }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-subject="props">
+              <q-td :props="props" class="text-left">
+                <q-chip
+                  class="text-white text-capitalize"
+                  :label="props.row.subject[0]"
+                  color="secondary"
+                ></q-chip>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-date="props">
+              <q-td :props="props" class="text-left">
+                <q-chip
+                  class="text-white text-capitalize"
+                  :label="props.row.date[0]"
+                  color="secondary"
+                ></q-chip>
+              </q-td>
+            </template>
           </q-table>
-        </q-card-section>
-      </q-card>
+        </div>
+      </q-card-section>
     </div>
   </div>
 </template>
@@ -201,7 +238,7 @@ const columns = [
   { name: "to", align: "left", label: "To", field: "to", sortable: true },
   { name: "from", align: "left", label: "From", field: "from", sortable: true },
   {
-    name: "desc",
+    name: "subject",
     required: true,
     label: "Subject",
     align: "left",
@@ -402,11 +439,19 @@ export default defineComponent({
   },
 });
 </script>
-<style scoped>
-.text-brand {
-  color: #a2aa33 !important;
+<style>
+.text-Corange {
+  color: #fc9958 !important;
 }
-.bg-brand {
-  background: #a2aa33 !important;
+.bg-tealgradient {
+  background-color: #89d8d3;
+  background-image: linear-gradient(315deg, #89d8d3 0%, #03c8a8 74%);
+}
+.text-tealgradient {
+  color: #89d8d3;
+}
+.bg-buttons {
+  background-color: #89d8d3;
+  background-image: linear-gradient(315deg, #89d8d3 0%, #03c8a8 74%);
 }
 </style>
