@@ -1,4 +1,6 @@
-export function someGetter (state) {
-    console.log(state)
-        return state.retrievedEmails
+export function someGetter(state) {
+  return state.retrievedEmails;
+}
+export function getBoxes(state) {
+  return state.boxes;
 }

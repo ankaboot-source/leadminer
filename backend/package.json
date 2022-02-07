@@ -19,6 +19,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "legit": "^1.0.9",
     "node-imap": "^0.9.6",
     "pg": "^8.6.0",
     "pg-hstore": "^2.3.4",
