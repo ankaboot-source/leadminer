@@ -1,5 +1,4 @@
 const express = require("express");
-// const bodyParser = require("body-parser"); /* deprecated */
 const cors = require("cors");
 const app = express();
 
@@ -26,10 +25,10 @@ db.sequelize.sync();
 
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "Welcome to bezkoder application." });
+  res.json({ message: "Welcome to leadminer application." });
 });
 
-require("./app/routes/turorial.routes")(app);
+require("./app/routes/imap.routes")(app);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8081;
