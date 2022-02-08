@@ -12,3 +12,6 @@ export function SET_IMAP(state, newImap) {
 export function SET_BOXES(state, newBoxes) {
   state.boxes = newBoxes;
 }
+export function SET_ERROR(state, newError) {
+  state.error = newError;
+}

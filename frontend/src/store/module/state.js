@@ -9,5 +9,6 @@ export default function () {
       port: "",
     },
     boxes: [],
+    error: "",
   };
 }
