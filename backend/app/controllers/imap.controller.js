@@ -1,12 +1,32 @@
 const db = require("../models");
 var Imap = require("node-imap");
+const { imapInfo } = require("../models");
 inspect = require("util").inspect;
-const ImapInfo = db.ImapInfo;
+const ImapInfo = db.imapInfo;
 const Op = db.Sequelize.Op;
+
+// Find imap account by id
+const findImap = async (id) => {
+  const imap = await ImapInfo.findByPk(id);
+  if (imap == null) {
+    return null;
+  } else {
+    return imap;
+  }
+};
+
+// Find imap account by email.
+const findOneByEmail = async (query) => {
+  const imap = await ImapInfo.findOne({ where: { email: query } });
+  if (imap === null) {
+    return null;
+  } else {
+    return imap;
+  }
+};
 
 // Create and Save a new Tutorial
 exports.createImapInfo = (req, res) => {
-  // Validate request
   if (!req.body.email || !req.body.host || !req.body.port) {
     res.status(400).send({
       error: "Content can not be empty!",
@@ -16,24 +36,32 @@ exports.createImapInfo = (req, res) => {
 
   // Create a imapInfo
   const imapInfo = {
-    user: req.body.email, //"contact@mouslimin.fr",
+    email: req.body.email, //"contact@mouslimin.fr",
     host: req.body.host, //"imap.ionos.fr", //req.body.host, //"imap.ionos.fr",
     port: req.body.port, // 993, //req.body.port, //993,
     tls: req.body.tls ? req.body.tls : true,
   };
-
-  // Save ImapInfo in the database
-  ImapInfo.create(imapInfo)
-    .then((data) => {
-      res.send(data);
-    })
-    .catch((err) => {
-      res.status(500).send({
-        error:
-          err.message ||
-          "Some error occurred while creating your account imap info.",
+  findOneByEmail(imapInfo.email).then((imap) => {
+    if (imap == null) {
+      // Save ImapInfo in the database
+      ImapInfo.create(imapInfo)
+        .then((data) => {
+          res.send(data);
+        })
+        .catch((err) => {
+          res.status(500).send({
+            error:
+              err.message ||
+              "Some error occurred while creating your account imap info.",
+          });
+        });
+    } else {
+      res.status(200).send({
+        message: "Your account already exists !",
+        imap: imap,
       });
-    });
+    }
+  });
 };
 
 // Retrieve all Tutorials from the database.
@@ -54,25 +82,24 @@ exports.createImapInfo = (req, res) => {
 // };
 
 // // Find a single Tutorial with an id
-// exports.findOne = (req, res) => {
-//   const id = req.params.id;
-
-//   Tutorial.findByPk(id)
-//     .then((data) => {
-//       if (data) {
-//         res.send(data);
-//       } else {
-//         res.status(404).send({
-//           message: `Cannot find Tutorial with id=${id}.`,
-//         });
-//       }
-//     })
-//     .catch((err) => {
-//       res.status(500).send({
-//         message: "Error retrieving Tutorial with id=" + id,
-//       });
-//     });
-// };
+exports.findOne = (req, res) => {
+  const id = req.params.id;
+  ImapInfo.findByPk(id)
+    .then((data) => {
+      if (data) {
+        res.send(data);
+      } else {
+        res.status(404).send({
+          message: `Cannot find imap infos with id=${id}.`,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: "Error retrieving imap account infos with id=" + id,
+      });
+    });
+};
 
 // // Update a Tutorial by the id in the request
 // exports.update = (req, res) => {
@@ -154,99 +181,103 @@ exports.createImapInfo = (req, res) => {
 //       });
 //     });
 // };
-exports.getImapBoxes = (req, res) => {
-  var imap = new Imap({
-    user: req.body.email, //"contact@mouslimin.fr",
-    password: req.body.password, //"M0u571m1n!",
-    host: req.body.host, //"imap.ionos.fr", //req.body.host, //"imap.ionos.fr",
-    port: req.body.port, // 993, //req.body.port, //993,
-    tls: true,
-  });
-  let Boxes = [];
-  imap.connect();
-  imap.once("ready", function () {
-    console.log("begins");
-    imap.getBoxes("", (err, boxes) => {
-      Boxes = Object.keys(boxes);
-    });
-    imap.end();
-  });
-  imap.once("error", function (err) {
-    res.status(500).send({
-      error: err,
-    });
-  });
 
-  imap.once("end", function () {
-    console.log(Boxes);
-    if (Boxes.length > 0) {
-      res.status(200).send({
-        boxes: Boxes,
+exports.getImapBoxes = (req, res) => {
+  findImap(req.params.id).then((imapInfo) => {
+    console.log(imapInfo);
+    var imap = new Imap({
+      user: imapInfo.email, //"contact@mouslimin.fr", //imapInfo.email, //"contact@mouslimin.fr",
+      password: "M0u571m1n!",
+      host: imapInfo.host, //"imap.ionos.fr", //imapInfo.host, //"imap.ionos.fr",
+      port: imapInfo.port, //993, //imapInfo.port, //993,
+      tls: true,
+    });
+    let Boxes = [];
+    imap.connect();
+    imap.once("ready", function () {
+      console.log("begins");
+      imap.getBoxes("", (err, boxes) => {
+        Boxes = Object.keys(boxes);
       });
-    } else {
-      res.status(204).send({
-        error: "No boxes found!",
+      imap.end();
+    });
+    imap.once("error", function (err) {
+      res.status(500).send({
+        error: err,
       });
-    }
+    });
+
+    imap.once("end", function () {
+      console.log(Boxes);
+      if (Boxes.length > 0) {
+        res.status(200).send({
+          boxes: Boxes,
+        });
+      } else {
+        res.status(204).send({
+          error: "No boxes found!",
+        });
+      }
+    });
   });
 };
 
 exports.getEmails = async (req, res) => {
-  var imap = new Imap({
-    user: "contact@mouslimin.fr", //req.body.email, //"contact@mouslimin.fr",
-    password: "M0u571m1n!",
-    host: "imap.ionos.fr", //req.body.host, //"imap.ionos.fr",
-    port: 993, //req.body.port, //993,
-    tls: true,
-  });
-  var data = [];
-  function openInbox(cb) {
-    imap.openBox("INBOX", true, cb);
-    imap.getBoxes("", (err, boxes) => {
-      console.log(boxes);
+  console.log(req.params);
+  findImap(req.params.id).then((imapInfo) => {
+    var imap = new Imap({
+      user: imapInfo.email, //"contact@mouslimin.fr", //imapInfo.email, //"contact@mouslimin.fr",
+      password: "M0u571m1n!",
+      host: imapInfo.host, //"imap.ionos.fr", //imapInfo.host, //"imap.ionos.fr",
+      port: imapInfo.port, //993, //imapInfo.port, //993,
+      tls: true,
     });
-  }
+    var data = [];
+    function openInbox(cb) {
+      imap.openBox(req.params.box, true, cb);
+    }
 
-  imap.once("ready", function () {
-    openInbox(function (err, box) {
-      if (err) throw err;
-      var f = imap.seq.fetch("1:20", {
-        bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
-        struct: true,
-      });
-      f.on("message", function (msg, seqno) {
-        console.log("Message #%d", seqno);
-        var prefix = "(#" + seqno + ") ";
-        msg.on("body", function (stream, info) {
-          var buffer = "";
-          stream.on("data", function (chunk) {
-            buffer += chunk.toString("utf8");
-          });
-          stream.once("end", function () {
-            data = [...data, Imap.parseHeader(buffer)];
+    imap.once("ready", function () {
+      openInbox(function (err, box) {
+        if (err) throw err;
+        var f = imap.seq.fetch("1:20", {
+          bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
+          struct: true,
+        });
+        f.on("message", function (msg, seqno) {
+          console.log("Message #%d", seqno);
+          var prefix = "(#" + seqno + ") ";
+          msg.on("body", function (stream, info) {
+            var buffer = "";
+            stream.on("data", function (chunk) {
+              buffer += chunk.toString("utf8");
+            });
+            stream.once("end", function () {
+              data = [...data, Imap.parseHeader(buffer)];
+            });
           });
         });
-      });
-      f.once("error", function (err) {
-        console.log("Fetch error: " + err);
-      });
-      f.once("end", function () {
-        res.status(200).send({
-          data: data,
+        f.once("error", function (err) {
+          console.log("Fetch error: " + err);
         });
-        console.log("Done fetching all messages!");
-        imap.end();
+        f.once("end", function () {
+          res.status(200).send({
+            data: data,
+          });
+          console.log("Done fetching all messages!");
+          imap.end();
+        });
       });
     });
-  });
 
-  imap.once("error", function (err) {
-    console.log(err);
-  });
+    imap.once("error", function (err) {
+      console.log(err);
+    });
 
-  imap.once("end", function () {
-    console.log("Connection ended");
-  });
+    imap.once("end", function () {
+      console.log("Connection ended");
+    });
 
-  imap.connect();
+    imap.connect();
+  });
 };

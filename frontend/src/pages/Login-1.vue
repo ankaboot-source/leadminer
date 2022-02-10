@@ -19,7 +19,7 @@
             </div>
           </q-card-section>
           <q-card-section>
-            <q-form class="q-gutter-md">
+            <q-form @submit="login" class="q-gutter-md">
               <q-input
                 outlined
                 :dense="true"
@@ -29,7 +29,7 @@
                 :rules="[
                   (value) =>
                     value.includes('@') ||
-                    value.length < 12 ||
+                    value.length > 12 ||
                     'Please enter a valid email address',
                 ]"
               />
@@ -49,6 +49,7 @@
                 label="Imap host address"
                 placeholder="imap.host.com"
                 lazy-rules
+                required
               /><q-input
                 outlined
                 :dense="true"
@@ -59,10 +60,11 @@
 
               <div>
                 <q-btn
-                  label="Login"
-                  @click="login"
-                  type="button"
-                  color="primary"
+                  class="text-capitalize"
+                  :disable="valid"
+                  label="Submit"
+                  type="submit"
+                  color="teal"
                 />
               </div>
             </q-form>
@@ -76,6 +78,7 @@
 <script>
 import { defineComponent } from "vue";
 import { ref } from "vue";
+import { mapState } from "vuex";
 
 export default {
   data() {
@@ -84,20 +87,24 @@ export default {
       password: "",
       host: "",
       port: "",
+      valid: false,
     };
   },
   methods: {
-    login: function () {
+    ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
+
+    login() {
       let data = {
         email: this.email,
         password: this.password,
         host: this.host,
         port: this.port,
       };
-
       this.$store
         .dispatch("example/submitImapData", { data })
-        .then(() => this.$router.push("/dashboard"))
+        .then(() => {
+          this.$router.push("/dashboard");
+        })
         .catch((err) => console.log(err));
     },
   },

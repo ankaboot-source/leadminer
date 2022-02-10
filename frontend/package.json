@@ -6,7 +6,9 @@
   "author": "",
   "private": true,
   "scripts": {
-    "test": "echo \"No test specified\" && exit 0"
+    "test": "echo \"No test specified\" && exit 0",
+    "start": "quasar dev",
+    "build": "quasar build"
   },
   "dependencies": {
     "axios": "^0.21.1",

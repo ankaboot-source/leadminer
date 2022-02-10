@@ -4,7 +4,8 @@
   "description": "Node.js Rest Apis with Express, Sequelize & PostgreSQL",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node server.js"
   },
   "keywords": [
     "nodejs",
@@ -21,6 +22,7 @@
     "express": "^4.17.1",
     "legit": "^1.0.9",
     "node-imap": "^0.9.6",
+    "nodemon": "^2.0.15",
     "pg": "^8.6.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^5.21.3"

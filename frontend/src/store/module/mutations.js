@@ -5,6 +5,7 @@ export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;
 }
 export function SET_IMAP(state, newImap) {
+  state.imap.id = newImap.id;
   state.imap.email = newImap.email;
   state.imap.host = newImap.host;
   state.imap.port = newImap.port;
