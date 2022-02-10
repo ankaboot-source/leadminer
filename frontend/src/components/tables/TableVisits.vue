@@ -27,6 +27,16 @@
                         name="fas fa-box-open"
                       />
                     </template>
+                    <template v-slot:append>
+                      <q-avatar>
+                        <q-spinner-pie
+                          v-if="this.loadingStatus"
+                          color="primary"
+                          size="2em"
+                        />
+                      </q-avatar>
+                      <q-btn round dense flat icon="add" @click="getBoxes" />
+                    </template>
                   </q-select>
                 </div>
                 <div class="col"></div>
@@ -340,6 +350,7 @@ export default defineComponent({
   // mounted(){
   //   console.log(emails)
   // },
+  ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
   computed: {
     Emails() {
       return [...this.retrievedEmails];
@@ -347,13 +358,16 @@ export default defineComponent({
     ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
   },
   methods: {
-    fetchEmails() {
-      this.persistent = true;
-      this.$store.dispatch("example/getEmails");
+    fetchEmails: function () {
+      const box = this.selectedBox;
+      console.log(box);
+      this.$store.dispatch("example/getEmails", { box });
+    },
+    getBoxes() {
+      this.$store.dispatch("example/getBoxes").then(() => {});
     },
   },
   mounted() {
-    console.log(this.$store.state.boxes);
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
   },

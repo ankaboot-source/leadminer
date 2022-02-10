@@ -4,7 +4,9 @@ export default function () {
     retrievedEmails: [],
     loadingStatus: false,
     imap: {
+      id: "",
       email: "",
+      password: "",
       host: "",
       port: "",
     },
