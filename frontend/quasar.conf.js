@@ -42,8 +42,8 @@ module.exports = configure(function (/* ctx */) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT:"http://46.101.205.87:8081",
-      }
+        ENDPOINT: "http://46.101.205.87:8081",
+      },
       // transpile: false,
 
       // Add dependencies for transpiling with Babel (Array of string/regex)
