@@ -5,9 +5,9 @@
     <ul v-for="email in retrievedEmails" :key="email.id">
       <li>{{ retrievedEmails.length }}</li>
     </ul>
-    <card-social icon_position="left" />
+    <!-- <card-social icon_position="left" /> -->
 
-    <card-charts />
+    <!-- <card-charts />
 
     <div class="row q-col-gutter-sm q-py-sm">
       <tab-social />
@@ -18,7 +18,7 @@
       <todo-list />
 
       <card-time-line />
-    </div>
+    </div> -->
   </q-page>
 </template>
 

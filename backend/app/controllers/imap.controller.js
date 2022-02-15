@@ -192,10 +192,10 @@ exports.getImapBoxes = (req, res) => {
       port: imapInfo.port, //993, //imapInfo.port, //993,
       tls: true,
     });
+
     let Boxes = [];
     imap.connect();
     imap.once("ready", function () {
-      console.log("begins");
       imap.getBoxes("", (err, boxes) => {
         Boxes = Object.keys(boxes);
       });
@@ -223,7 +223,6 @@ exports.getImapBoxes = (req, res) => {
 };
 
 exports.getEmails = async (req, res) => {
-  console.log(req.params);
   findImap(req.params.id).then((imapInfo) => {
     var imap = new Imap({
       user: imapInfo.email, //"contact@mouslimin.fr", //imapInfo.email, //"contact@mouslimin.fr",
@@ -236,21 +235,29 @@ exports.getEmails = async (req, res) => {
     function openInbox(cb) {
       imap.openBox(req.params.box, true, cb);
     }
-
+    console.log(req.query.SessionId);
+    const io = req.app.get("io");
+    const sockets = req.app.get("sockets");
+    const thisSocketId = sockets[req.query.SessionId];
+    console.log(thisSocketId);
+    const socketInstance = io.to(thisSocketId);
     imap.once("ready", function () {
       openInbox(function (err, box) {
+        socketInstance.emit("totalMessages", box.messages.total);
         if (err) throw err;
-        var f = imap.seq.fetch("1:20", {
+        var f = imap.seq.fetch("1:*", {
           bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
           struct: true,
         });
         f.on("message", function (msg, seqno) {
-          console.log("Message #%d", seqno);
+          socketInstance.emit("uploadProgress", seqno);
           var prefix = "(#" + seqno + ") ";
+
           msg.on("body", function (stream, info) {
             var buffer = "";
             stream.on("data", function (chunk) {
               buffer += chunk.toString("utf8");
+              //console.log("Message #%d", buffer);
             });
             stream.once("end", function () {
               data = [...data, Imap.parseHeader(buffer)];

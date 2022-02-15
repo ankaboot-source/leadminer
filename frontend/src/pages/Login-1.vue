@@ -34,7 +34,7 @@
                 ]"
               />
 
-              <q-input
+              <!-- <q-input
                 outlined
                 :dense="true"
                 type="password"
@@ -42,7 +42,23 @@
                 label="Password"
                 hint="We do not save passwords, you must enter them each time you use leadminer "
                 lazy-rules
-              /><q-input
+              />  -->
+              <q-input
+                outlined
+                :dense="true"
+                v-model="password"
+                filled
+                :type="isPwd ? 'password' : 'text'"
+                hint="We do not save passwords, you must enter them each time you use leadminer"
+              >
+                <template v-slot:append>
+                  <q-icon
+                    :name="isPwd ? 'visibility_off' : 'visibility'"
+                    class="cursor-pointer"
+                    @click="isPwd = !isPwd"
+                  />
+                </template> </q-input
+              ><q-input
                 outlined
                 :dense="true"
                 v-model="host"
@@ -50,13 +66,14 @@
                 placeholder="imap.host.com"
                 lazy-rules
                 required
-              /><q-input
+              />
+              <!-- <q-input
                 outlined
                 :dense="true"
                 v-model="port"
                 label="imap port"
                 placeholder="123"
-              />
+              /> -->
 
               <div>
                 <q-btn
@@ -87,6 +104,7 @@ export default {
       password: "",
       host: "",
       port: "",
+      isPwd: ref(true),
       valid: false,
     };
   },
@@ -98,7 +116,7 @@ export default {
         email: this.email,
         password: this.password,
         host: this.host,
-        port: this.port,
+        port: 993,
       };
       this.$store
         .dispatch("example/submitImapData", { data })
@@ -107,6 +125,14 @@ export default {
         })
         .catch((err) => console.log(err));
     },
+  },
+  mounted() {
+    const SessionId = Math.random().toString(36).substr(2, 9);
+    this.$socket.emit("connectInit", SessionId);
+    this.$store.commit("example/SET_SESSIONID", SessionId);
+    this.$socket.on("connect", () => {
+      console.log(this.$socket.connected);
+    });
   },
 };
 </script>

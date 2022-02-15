@@ -30,7 +30,7 @@
                     <template v-slot:append>
                       <q-avatar>
                         <q-spinner-pie
-                          v-if="this.loadingStatus"
+                          v-if="this.loadingStatusbox"
                           color="primary"
                           size="2em"
                         />
@@ -128,7 +128,15 @@
         >
           <div class="z-max bg-transparent text-cyan-2 text-h4 q-ma-md q-pa-lg">
             Fetching data...
-            <q-spinner-gears color="cyan-2" size="5.5em" />
+            <q-linear-progress size="32px" :value="progress" color="teal">
+              <div class="absolute-full flex flex-center">
+                <q-badge
+                  color="teal"
+                  text-color="white"
+                  :label="progressLabel"
+                />
+              </div>
+            </q-linear-progress>
           </div>
         </q-dialog>
         <div class="bg-transparent q-ma-sm col-12 q-pa-sm">
@@ -222,7 +230,13 @@
 </template>
 
 <script>
-import { defineComponent, defineAsyncComponent, onMounted } from "vue";
+import {
+  watchEffect,
+  defineComponent,
+  defineAsyncComponent,
+  onMounted,
+  getCurrentInstance,
+} from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapGetters, mapState } from "vuex";
@@ -303,6 +317,9 @@ export default defineComponent({
   data() {
     return {
       renderDialog: false,
+      progress: 0,
+      total: 0,
+      progressLabel: "",
       email: "",
       password: "",
       host: "",
@@ -330,12 +347,8 @@ export default defineComponent({
           value: "bcc",
         },
         {
-          label: "Subject",
-          value: "subject",
-        },
-        {
-          label: "Date",
-          value: "date",
+          label: "Body",
+          value: "body",
         },
       ],
     };
@@ -350,30 +363,69 @@ export default defineComponent({
   // mounted(){
   //   console.log(emails)
   // },
-  ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
+  ...mapState("example", [
+    "retrievedEmails",
+    "loadingStatus",
+    "loadingStatusbox",
+    "boxes",
+  ]),
   computed: {
     Emails() {
       return [...this.retrievedEmails];
     },
-    ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
+    ...mapState("example", [
+      "retrievedEmails",
+      "loadingStatus",
+      "loadingStatusbox",
+      "boxes",
+    ]),
   },
+
   methods: {
     fetchEmails: function () {
-      const box = this.selectedBox;
-      console.log(box);
-      this.$store.dispatch("example/getEmails", { box });
+      const box = { boxe: this.selectedBox };
+      console.log(this.$store.state);
+      let data = {
+        box: this.selectedBox,
+        SessionId: this.$store.state.socketId,
+      };
+      this.$store.dispatch("example/getEmails", { data }).then(() => {});
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {});
     },
   },
+  // watch:{
+  //   '$store.state.progress': {
+  //     handler() {
+  //       console.log(data)
+  //     },
+  //     immediate: true
+  //   }
+
+  // },
   mounted() {
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
+    // this.$socket.on("uploadProgress", (data) => {
+    //   console.log(data);
+    // });
   },
-  setup(props) {
+  created() {
+    this.$socket.on("totalMessages", (data) => {
+      this.total = data;
+    });
+    this.$socket.on("uploadProgress", (data) => {
+      this.progress = Math.round((((data / this.total) * 100) / 100) * 10) / 10;
+      console.log(this.progress);
+      this.progressLabel = data + "email fetched from total: " + this.total;
+    });
+  },
+  setup() {
     const $q = useQuasar();
     const filter = ref("");
+    const progress = ref("");
+
     const promptt = () => {
       $q.dialog({
         // title: "We need to verify mailbox existance first",

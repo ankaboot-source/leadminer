@@ -1,14 +1,19 @@
 export function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
-  let box = data;
-  console.log(box, data);
+
+  console.log(data);
   this.commit("example/SET_LOADING", true);
   this.$axios
     .get(
       this.$api +
-        `/imap/${JSON.parse(
-          JSON.stringify(currentState.imap.id)
-        )}/${JSON.stringify(box)}/emails`
+        `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/${
+          data.box
+        }/emails`,
+      {
+        params: {
+          SessionId: JSON.parse(JSON.stringify(currentState.socketId)),
+        },
+      }
     )
     .then((response) => {
       this.commit("example/SET_LOADING", false);
@@ -37,7 +42,7 @@ export function submitImapData({ context, state }, { data }) {
     });
 }
 export function getBoxes({ context, getters }) {
-  this.commit("example/SET_LOADING", true);
+  this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
   console.log(currentState.imap.id);
   this.$axios
@@ -46,7 +51,7 @@ export function getBoxes({ context, getters }) {
         `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/boxes`
     )
     .then((response) => {
-      this.commit("example/SET_LOADING", false);
+      this.commit("example/SET_LOADINGBOX", false);
       this.commit("example/SET_BOXES", response.data.boxes);
     })
     .catch((error) => {
