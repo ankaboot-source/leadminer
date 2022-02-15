@@ -10,41 +10,61 @@
           icon="menu"
           aria-label="Menu"
         />
-        <q-toolbar-title > Leadminer </q-toolbar-title>
+        <q-toolbar-title> Leadminer </q-toolbar-title>
         <q-space />
         <div class="q-gutter-sm row items-center no-wrap">
           <q-btn
             round
             dense
             flat
-            color="white"
+            color="teal"
             :icon="$q.fullscreen.isActive ? 'fullscreen_exit' : 'fullscreen'"
             @click="$q.fullscreen.toggle()"
             v-if="$q.screen.gt.sm"
           >
           </q-btn>
-          <!-- <q-btn round dense flat color="white" icon="fab fa-github" type="a" href="https://github.com/pratik227/quasar-admin" target="_blank">
+          <!-- <q-btn
+            round
+            dense
+            flat
+            color="white"
+            icon="fab fa-github"
+            type="a"
+            href="https://github.com/pratik227/quasar-admin"
+            target="_blank"
+          >
           </q-btn>
-          <q-btn round dense flat icon="fas fa-heart" style="color:#9d4182 !important;" type="a" href="https://github.com/sponsors/pratik227" target="_blank">
+          <q-btn
+            round
+            dense
+            flat
+            icon="fas fa-heart"
+            style="color: #9d4182 !important"
+            type="a"
+            href="https://github.com/sponsors/pratik227"
+            target="_blank"
+          >
           </q-btn>
           <q-btn round dense flat color="white" icon="notifications">
-            <q-badge color="red" text-color="white" floating>
-              5
-            </q-badge>
-            <q-menu
-            >
+            <q-badge color="red" text-color="white" floating> 5 </q-badge>
+            <q-menu>
               <q-list style="min-width: 100px">
                 <messages></messages>
                 <q-card class="text-center no-shadow no-border">
-                  <q-btn label="View All" style="max-width: 120px !important;" flat dense
-                         class="text-indigo-8"></q-btn>
+                  <q-btn
+                    label="View All"
+                    style="max-width: 120px !important"
+                    flat
+                    dense
+                    class="text-indigo-8"
+                  ></q-btn>
                 </q-card>
               </q-list>
             </q-menu>
           </q-btn>
           <q-btn round flat>
             <q-avatar size="26px">
-              <img src="https://cdn.quasar.dev/img/boy-avatar.png">
+              <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
             </q-avatar>
           </q-btn> -->
         </div>
@@ -59,10 +79,10 @@
               <q-icon name="dashboard" />
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-h6 ">Dashboard</q-item-label>
+              <q-item-label class="text-h6">Dashboard</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item to="/Dashboard2" active-class="q-item-no-link-highlighting">
+          <!-- <q-item to="/Dashboard2" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="dashboard" />
             </q-item-section>
@@ -246,7 +266,7 @@
             </q-item-section>
           </q-item>
 
-          <!--        not completed-->
+                 not completed
           <q-item to="/Calendar" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
               <q-icon name="date_range" />
@@ -256,15 +276,15 @@
             </q-item-section>
           </q-item>
 
-          <!--        not completed-->
-          <!--        <q-item to="/Taskboard" active-class="q-item-no-link-highlighting">-->
-          <!--          <q-item-section avatar>-->
-          <!--            <q-icon name="done"/>-->
-          <!--          </q-item-section>-->
-          <!--          <q-item-section>-->
-          <!--            <q-item-label class="text-h6">Taskboard</q-item-label>-->
-          <!--          </q-item-section>-->
-          <!--        </q-item>-->
+                 not completed
+                 <q-item to="/Taskboard" active-class="q-item-no-link-highlighting">
+                   <q-item-section avatar>
+                     <q-icon name="done"/>
+                   </q-item-section>
+                   <q-item-section>
+                     <q-item-label class="text-h6">Taskboard</q-item-label>
+                   </q-item-section>
+                 </q-item>
 
           <q-item to="/Pagination" active-class="q-item-no-link-highlighting">
             <q-item-section avatar>
@@ -317,7 +337,7 @@
                 </q-item>
               </q-expansion-item>
             </q-expansion-item>
-          </q-expansion-item>
+          </q-expansion-item>  -->
         </q-list>
       </div>
     </q-drawer>
@@ -353,11 +373,11 @@ export default defineComponent({
   },
 });
 </script>
-<style >
+<style>
 .bg-maincolor {
   background-color: #f8f9fa;
 }
 .text-custom {
-  color:#03C8A8;
+  color: #03c8a8;
 }
 </style>

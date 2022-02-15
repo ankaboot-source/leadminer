@@ -4,6 +4,9 @@ export function SET_EMAILS(state, emails) {
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;
 }
+export function SET_LOADINGBOX(state, newLoadingStatusbox) {
+  state.loadingStatusbox = newLoadingStatusbox;
+}
 export function SET_IMAP(state, newImap) {
   state.imap.id = newImap.id;
   state.imap.email = newImap.email;
@@ -15,4 +18,7 @@ export function SET_BOXES(state, newBoxes) {
 }
 export function SET_ERROR(state, newError) {
   state.error = newError;
+}
+export function SET_SESSIONID(state, newSocket) {
+  state.socketId = newSocket;
 }

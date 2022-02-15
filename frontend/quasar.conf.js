@@ -19,7 +19,7 @@ module.exports = configure(function (/* ctx */) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://quasar.dev/quasar-cli/boot-files
-    boot: ["i18n", "axios"],
+    boot: ["i18n", "axios", "socket"],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
     css: ["app.css"],
@@ -42,7 +42,7 @@ module.exports = configure(function (/* ctx */) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: "http://46.101.205.87:8081",
+        ENDPOINT: "http://46.101.205.87:8081/api",
       },
       // transpile: false,
 

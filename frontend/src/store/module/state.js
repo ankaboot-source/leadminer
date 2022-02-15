@@ -3,6 +3,7 @@ export default function () {
   return {
     retrievedEmails: [],
     loadingStatus: false,
+    loadingStatusbox: false,
     imap: {
       id: "",
       email: "",
@@ -12,5 +13,6 @@ export default function () {
     },
     boxes: [],
     error: "",
+    socketId: "",
   };
 }
