@@ -169,7 +169,7 @@ app.get("/", (req, res) => {
 });
 var io = require("socket.io")(server, {
   cors: {
-    origin: "http://46.101.205.87:81",
+    origin: "*",
     methods: ["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
   },
 });
