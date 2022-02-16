@@ -42,7 +42,7 @@ module.exports = configure(function (/* ctx */) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: "http://46.101.205.87:8081/api",
+        ENDPOINT: "http://46.101.205.87:81",
       },
       // transpile: false,
 

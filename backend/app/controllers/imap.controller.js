@@ -1,6 +1,7 @@
 const db = require("../models");
 var Imap = require("node-imap");
 const { imapInfo } = require("../models");
+const { Console } = require("console");
 inspect = require("util").inspect;
 const ImapInfo = db.imapInfo;
 const Op = db.Sequelize.Op;
@@ -223,6 +224,7 @@ exports.getImapBoxes = (req, res) => {
 };
 
 exports.getEmails = async (req, res) => {
+  //fetch imap from database then getemails
   findImap(req.params.id).then((imapInfo) => {
     var imap = new Imap({
       user: imapInfo.email, //"contact@mouslimin.fr", //imapInfo.email, //"contact@mouslimin.fr",
@@ -231,46 +233,90 @@ exports.getEmails = async (req, res) => {
       port: imapInfo.port, //993, //imapInfo.port, //993,
       tls: true,
     });
+    // data to be delivred to the client
     var data = [];
+    // bodiesTofetch is the query that user sends
+    let bodiesTofetch;
+    if (req.query.fields) {
+      bodiesTofetch = req.query.fields;
+    } else {
+      bodiesTofetch = ["HEADER.FIELDS (TO FROM BCC CC)", "TEXT"];
+    }
     function openInbox(cb) {
       imap.openBox(req.params.box, true, cb);
     }
-    console.log(req.query.SessionId);
-    const io = req.app.get("io");
-    const sockets = req.app.get("sockets");
-    const thisSocketId = sockets[req.query.SessionId];
-    console.log(thisSocketId);
-    const socketInstance = io.to(thisSocketId);
+    // get the socket instance
+    if (req.query.SessionId) {
+      const io = req.app.get("io");
+      const sockets = req.app.get("sockets");
+      const thisSocketId = sockets[req.query.SessionId];
+      var socketInstance = io.to(thisSocketId);
+    }
+    // open the mailbox and fetch fields
     imap.once("ready", function () {
       openInbox(function (err, box) {
-        socketInstance.emit("totalMessages", box.messages.total);
+        if (socketInstance) {
+          // emit total messages usefull for progress bar
+          socketInstance.emit("totalMessages", box.messages.total);
+        }
         if (err) throw err;
         var f = imap.seq.fetch("1:*", {
-          bodies: "HEADER.FIELDS (FROM TO SUBJECT DATE)",
+          bodies: bodiesTofetch,
           struct: true,
         });
         f.on("message", function (msg, seqno) {
-          socketInstance.emit("uploadProgress", seqno);
-          var prefix = "(#" + seqno + ") ";
+          if (socketInstance) {
+            // emit fetched emails
+            socketInstance.emit("uploadProgress", seqno);
+          }
 
           msg.on("body", function (stream, info) {
             var buffer = "";
             stream.on("data", function (chunk) {
               buffer += chunk.toString("utf8");
-              //console.log("Message #%d", buffer);
             });
             stream.once("end", function () {
-              data = [...data, Imap.parseHeader(buffer)];
+              //Object.values(object1)
+              //console.log(buffer);
+              //[].concat.apply([], arrays)
+              //socketInstance.emit("Working on data", true);
+
+              data = [
+                ...data,
+                [].concat.apply([], Object.values(Imap.parseHeader(buffer))),
+              ];
+
+              data = [...new Set([].concat.apply([], data))].filter((item) =>
+                item.includes("@")
+              );
             });
           });
         });
         f.once("error", function (err) {
+          res.status(500).send({
+            error: err,
+          });
           console.log("Fetch error: " + err);
         });
         f.once("end", function () {
-          res.status(200).send({
-            data: data,
-          });
+          setTimeout(() => {
+            if (socketInstance) {
+              // emit fetched emails
+              socketInstance.emit("cleaningData", true);
+            }
+          }, 1000);
+          setTimeout(() => {
+            if (socketInstance) {
+              // emit fetched emails
+              socketInstance.emit("duplicates", true);
+            }
+          }, 2000);
+          setTimeout(() => {
+            res.status(200).send({
+              data: data,
+            });
+          }, 3000);
+
           console.log("Done fetching all messages!");
           imap.end();
         });
@@ -278,7 +324,9 @@ exports.getEmails = async (req, res) => {
     });
 
     imap.once("error", function (err) {
-      console.log(err);
+      res.status(500).send({
+        error: err,
+      });
     });
 
     imap.once("end", function () {
