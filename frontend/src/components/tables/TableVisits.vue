@@ -15,10 +15,11 @@
                 <div class="bg-grey-1 border q-pa-md col-5">
                   <div class="text-subtitle2 text-bold">Select a mailbox</div>
                   <q-select
+                    ref="boxesOpen"
                     rounded
                     v-model="selectedBox"
                     :options="boxes"
-                    label="Box"
+                    label="Mailbox"
                   >
                     <template v-slot:prepend>
                       <q-icon
@@ -35,7 +36,17 @@
                           size="2em"
                         />
                       </q-avatar>
-                      <q-btn round dense flat icon="add" @click="getBoxes" />
+                      <q-btn round dense flat icon="add" @click="getBoxes"
+                        ><q-tooltip
+                          v-if="showing"
+                          v-model="showing"
+                          :offset="[20, 29]"
+                          anchor="top middle"
+                          class="bg-orange-9 text-body2"
+                        >
+                          Select a Mailbox
+                        </q-tooltip></q-btn
+                      >
                     </template>
                   </q-select>
                 </div>
@@ -74,40 +85,6 @@
               </div>
             </q-card>
           </div>
-          <!-- <div class="q-mt-md col-6">
-              <div class="q-gutter-sm">
-                <q-checkbox
-                  keep-color
-                  v-model="from"
-                  label="From"
-                  color="secondary"
-                />
-                <q-checkbox
-                  keep-color
-                  v-model="to"
-                  label="To"
-                  color="secondary"
-                />
-                <q-checkbox
-                  keep-color
-                  v-model="Cc"
-                  label="Cc"
-                  color="secondary"
-                />
-                <q-checkbox
-                  keep-color
-                  v-model="Bcc"
-                  label="Bcc"
-                  color="secondary"
-                />
-                <q-checkbox
-                  keep-color
-                  v-model="subject"
-                  label="subject"
-                  color="secondary"
-                />
-              </div></div> -->
-
           <div class="bg-transparent q-md col">
             <div class="row q-pa-sm">
               <div class="q-md col-12">
@@ -119,26 +96,7 @@
             </div>
           </div>
         </div>
-        <q-dialog
-          v-show="loadingStatus"
-          v-model="loadingStatus"
-          persistent
-          transition-show="scale"
-          transition-hide="scale"
-        >
-          <div class="z-max bg-transparent text-cyan-2 text-h4 q-ma-md q-pa-lg">
-            Fetching data...
-            <q-linear-progress size="32px" :value="progress" color="teal">
-              <div class="absolute-full flex flex-center">
-                <q-badge
-                  color="teal"
-                  text-color="white"
-                  :label="progressLabel"
-                />
-              </div>
-            </q-linear-progress>
-          </div>
-        </q-dialog>
+
         <div class="bg-transparent q-ma-sm col-12 q-pa-sm">
           <q-table
             card-class="bg-white text-teal-10"
@@ -186,45 +144,47 @@
                 @click="exportTable(Emails)"
               />
             </template>
-            <template v-slot:body-cell-from="props">
-              <q-td :props="props">
-                <q-item>
-                  <q-item-section>
-                    <q-item-label>{{ props.row.from[0] }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-td>
-            </template>
-            <template v-slot:body-cell-to="props">
-              <q-td :props="props">
-                <q-item>
-                  <q-item-section>
-                    <q-item-label>{{ props.row.to[0] }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-td>
-            </template>
-            <template v-slot:body-cell-subject="props">
-              <q-td :props="props" class="text-left">
-                <q-chip
-                  class="text-white text-capitalize"
-                  :label="props.row.subject[0]"
-                  color="secondary"
-                ></q-chip>
-              </q-td>
-            </template>
-            <template v-slot:body-cell-date="props">
-              <q-td :props="props" class="text-left">
-                <q-chip
-                  class="text-white text-capitalize"
-                  :label="props.row.date[0]"
-                  color="secondary"
-                ></q-chip>
-              </q-td>
+            <template v-slot:body="props">
+              <q-tr :props="props">
+                <q-td key="Emails" :props="props">
+                  {{ splitEmails(props.row) }}
+                </q-td>
+                <q-td key="Aliases" :props="props">
+                  <q-badge color="orange-10">
+                    {{ splitAliases(props.row) }}
+                  </q-badge>
+                </q-td>
+                <q-td key="verification" :props="props">
+                  <q-badge color="green"> Verification </q-badge>
+                </q-td></q-tr
+              >
             </template>
           </q-table>
         </div>
       </q-card-section>
+      <q-dialog
+        v-show="loadingStatus"
+        v-model="loadingStatus"
+        persistent
+        transition-show="scale"
+        transition-hide="scale"
+      >
+        <q-card class="bg-white q-pa-lg" style="width: 80vw">
+          <div
+            class="z-max bg-transparent text-teal text-h5 text-bold q-ma-md text-center"
+          >
+            Fetching data...<br />
+            {{ dataCleaning }}
+          </div>
+          <q-linear-progress size="32px" :value="progress" color="teal-10">
+            <div
+              class="absolute-full bg-transparent text-teal text-h5 flex flex-center"
+            >
+              {{ progressLabel }}
+            </div>
+          </q-linear-progress></q-card
+        >
+      </q-dialog>
     </div>
   </div>
 </template>
@@ -259,54 +219,26 @@ function wrapCsvValue(val, formatFn) {
 }
 
 const columns = [
-  { name: "to", align: "left", label: "To", field: "to", sortable: true },
-  { name: "from", align: "left", label: "From", field: "from", sortable: true },
   {
-    name: "subject",
-    required: true,
-    label: "Subject",
+    name: "Emails",
     align: "left",
-    field: (row) => row.subject,
+    label: "Emails",
+    field: "Emails",
     sortable: true,
   },
   {
-    name: "date",
+    name: "Aliases",
     align: "left",
-    label: "Date",
-    field: "date",
+    label: "Aliases",
+    field: "Aliases",
     sortable: true,
   },
-];
-const rows = [
   {
-    id: "U0001",
-    name: "/login",
-    date: "12-10-2019",
-    user_name: "Pratik Patel",
-  },
-  {
-    id: "U0002",
-    name: "/Dashboard",
-    date: "11-02-2019",
-    user_name: "Razvan Stoenescu",
-  },
-  {
-    id: "U0003",
-    name: "/Map",
-    date: "03-25-2019",
-    user_name: "Pratik Patel",
-  },
-  {
-    id: "U0004",
-    name: "/Mail",
-    date: "03-18-2019",
-    user_name: "Jeff Galbraith",
-  },
-  {
-    id: "U0005",
-    name: "/Profile",
-    date: "04-09-2019",
-    user_name: "Pratik Patel",
+    name: "verification",
+    align: "left",
+    label: "Verification",
+    field: "verification",
+    sortable: true,
   },
 ];
 
@@ -319,8 +251,11 @@ export default defineComponent({
       renderDialog: false,
       progress: 0,
       total: 0,
+      showing: false,
       progressLabel: "",
       email: "",
+      dataCleaning: "",
+      emails: [],
       password: "",
       host: "",
       port: "",
@@ -329,26 +264,26 @@ export default defineComponent({
       options1: [
         {
           label: "From",
-          value: "from",
+          value: "FROM",
         },
         {
           label: "To",
-          value: "to",
+          value: "TO",
         },
         {
           label: "Cc",
-          value: "cc",
+          value: "CC",
         },
       ],
       boxOptions: [],
       options2: [
         {
           label: "Bcc",
-          value: "bcc",
+          value: "BCC",
         },
         {
           label: "Body",
-          value: "body",
+          value: "TEXT",
         },
       ],
     };
@@ -371,6 +306,7 @@ export default defineComponent({
   ]),
   computed: {
     Emails() {
+      this.emails = [...this.retrievedEmails];
       return [...this.retrievedEmails];
     },
     ...mapState("example", [
@@ -380,10 +316,24 @@ export default defineComponent({
       "boxes",
     ]),
   },
-
+  watch: {
+    boxes: function () {
+      this.$refs.boxesOpen.showPopup();
+    },
+  },
   methods: {
+    splitEmails(data) {
+      if (!data.split("<")[1]) {
+        return data;
+      }
+      return data.split("<")[1];
+    },
+    splitAliases(data) {
+      return data.split("<")[0];
+    },
     fetchEmails: function () {
       const box = { boxe: this.selectedBox };
+      console.log(this.options1);
       console.log(this.$store.state);
       let data = {
         box: this.selectedBox,
@@ -392,7 +342,9 @@ export default defineComponent({
       this.$store.dispatch("example/getEmails", { data }).then(() => {});
     },
     getBoxes() {
-      this.$store.dispatch("example/getBoxes").then(() => {});
+      this.$store.dispatch("example/getBoxes").then(() => {
+        this.$refs.boxesOpen.showPopup();
+      });
     },
   },
   // watch:{
@@ -407,6 +359,13 @@ export default defineComponent({
   mounted() {
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
+
+    setTimeout(() => {
+      this.showing = true;
+    }, 1000);
+    setTimeout(() => {
+      this.showing = false;
+    }, 3000);
     // this.$socket.on("uploadProgress", (data) => {
     //   console.log(data);
     // });
@@ -415,10 +374,16 @@ export default defineComponent({
     this.$socket.on("totalMessages", (data) => {
       this.total = data;
     });
+    this.$socket.on("dataCleaning", (data) => {
+      this.dataCleaning = "Cleaning data";
+    });
+    this.$socket.on("duplicates", (data) => {
+      this.dataCleaning = "Removing duplicates";
+    });
     this.$socket.on("uploadProgress", (data) => {
       this.progress = Math.round((((data / this.total) * 100) / 100) * 10) / 10;
       console.log(this.progress);
-      this.progressLabel = data + "email fetched from total: " + this.total;
+      this.progressLabel = data + " email fetched from total: " + this.total;
     });
   },
   setup() {
@@ -426,38 +391,6 @@ export default defineComponent({
     const filter = ref("");
     const progress = ref("");
 
-    const promptt = () => {
-      $q.dialog({
-        // title: "We need to verify mailbox existance first",
-        // message: "Email address",
-        // model: [],
-        //   // inline: true,
-        //   items: [
-        //     { label: 'Option 1', value: 'opt1', color: 'secondary' },
-        //     { label: 'Option 2', value: 'opt2' },
-        //     { label: 'Option 3', value: 'opt3' }
-        //   ]
-        // prompt: {
-        //   model: "",
-        //   isValid: (val) => val.length > 10 && val.includes("@"), // << here is the magic
-        //   type: "text", // optional
-        // },
-        // ok: {
-        //   push: true,
-        //   color: "secondary",
-        // },
-        // cancel: {
-        //   push: true,
-        //   color: "negative",
-        // },
-        persistent: true,
-      }).onOk((data) => {
-        // console.log('>>>> OK, received', data)
-      });
-    };
-    onMounted(() => {
-      //promptt($q);
-    });
     return {
       filter,
       mode: "list",
@@ -475,20 +408,7 @@ export default defineComponent({
       exportTable(Emails) {
         // naive encoding to csv format
         const content = [columns.map((col) => wrapCsvValue(col.label))]
-          .concat(
-            Emails.map((row) =>
-              columns
-                .map((col) =>
-                  wrapCsvValue(
-                    typeof col.field === "function"
-                      ? col.field(row)
-                      : row[col.field === void 0 ? col.name : col.field],
-                    col.format
-                  )
-                )
-                .join(",")
-            )
-          )
+          .concat(Emails.map((row) => row))
           .join("\r\n");
 
         const status = exportFile("table-export.csv", content, "text/csv");
@@ -519,5 +439,9 @@ export default defineComponent({
 .bg-buttons {
   background-color: #89d8d3;
   background-image: linear-gradient(315deg, #89d8d3 0%, #03c8a8 74%);
+}
+.bg-fetch {
+  background-color: #deebdd;
+  background-image: linear-gradient(315deg, #deebdd 0%, #bbdbbe 74%);
 }
 </style>

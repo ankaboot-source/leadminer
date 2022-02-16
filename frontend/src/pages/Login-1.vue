@@ -7,7 +7,6 @@
         >
           <q-card-section>
             <q-avatar size="103px" class="absolute-center shadow-10">
-              
             </q-avatar>
           </q-card-section>
           <q-card-section>

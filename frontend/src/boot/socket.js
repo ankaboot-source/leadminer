@@ -2,7 +2,8 @@ import { boot } from "quasar/wrappers";
 
 import { io } from "socket.io-client";
 
-const socket = io("http://46.101.205.87:81");
+const socket = io(process.env.ENDPOINT);
+
 
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
