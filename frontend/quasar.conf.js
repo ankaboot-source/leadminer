@@ -42,7 +42,7 @@ module.exports = configure(function (/* ctx */) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: "http://46.101.205.87:8081",
+        ENDPOINT: "wss://api.leadminer.io:8081",
       },
       // transpile: false,
 
@@ -89,7 +89,7 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: ["AppFullscreen", "Dialog"],
+      plugins: ["AppFullscreen", "Dialog", "Notify"],
     },
 
     // animations: 'all', // --- includes all animations

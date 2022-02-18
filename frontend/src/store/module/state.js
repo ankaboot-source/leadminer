@@ -12,7 +12,7 @@ export default function () {
       port: "",
     },
     boxes: [],
-    error: "",
+    errorMessage: "",
     socketId: "",
   };
 }
