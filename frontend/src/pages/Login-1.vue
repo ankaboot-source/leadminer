@@ -6,10 +6,6 @@
           v-bind:style="$q.screen.lt.sm ? { width: '80%' } : { width: '30%' }"
         >
           <q-card-section>
-            <q-avatar size="103px" class="absolute-center shadow-10">
-            </q-avatar>
-          </q-card-section>
-          <q-card-section>
             <div class="text-center q-pt-lg">
               <div class="col text-h6 ellipsis">
                 To use leadminer you have to provide<br />
@@ -32,16 +28,6 @@
                     'Please enter a valid email address',
                 ]"
               />
-
-              <!-- <q-input
-                outlined
-                :dense="true"
-                type="password"
-                v-model="password"
-                label="Password"
-                hint="We do not save passwords, you must enter them each time you use leadminer "
-                lazy-rules
-              />  -->
               <q-input
                 outlined
                 :dense="true"
@@ -66,14 +52,6 @@
                 lazy-rules
                 required
               />
-              <!-- <q-input
-                outlined
-                :dense="true"
-                v-model="port"
-                label="imap port"
-                placeholder="123"
-              /> -->
-
               <div>
                 <q-btn
                   class="text-capitalize"
@@ -92,7 +70,7 @@
 </template>
 
 <script>
-import { defineComponent } from "vue";
+import { useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapState } from "vuex";
 
@@ -105,11 +83,28 @@ export default {
       port: "",
       isPwd: ref(true),
       valid: false,
+      quasar: useQuasar(),
     };
   },
   methods: {
-    ...mapState("example", ["retrievedEmails", "loadingStatus", "boxes"]),
-
+    ...mapState("example", [
+      "retrievedEmails",
+      "loadingStatus",
+      "boxes",
+      "errorMessage",
+    ]),
+    showNotif(errormsg) {
+      this.quasar.notify({
+        message: errormsg,
+        color: "red",
+        actions: [
+          {
+            label: "Dismiss",
+            color: "white",
+          },
+        ],
+      });
+    },
     login() {
       let data = {
         email: this.email,
@@ -119,19 +114,19 @@ export default {
       };
       this.$store
         .dispatch("example/submitImapData", { data })
-        .then(() => {
+        .then((res) => {
+          console.log(res);
           this.$router.push("/dashboard");
         })
-        .catch((err) => console.log(err));
+        .catch((error) => {
+          this.showNotif(this.$store.getters["example/getStates"].errorMessage);
+        });
     },
   },
   mounted() {
     const SessionId = Math.random().toString(36).substr(2, 9);
     this.$socket.emit("connectInit", SessionId);
     this.$store.commit("example/SET_SESSIONID", SessionId);
-    this.$socket.on("connect", () => {
-      console.log(this.$socket.connected);
-    });
   },
 };
 </script>

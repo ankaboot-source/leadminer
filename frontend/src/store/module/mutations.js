@@ -17,7 +17,7 @@ export function SET_BOXES(state, newBoxes) {
   state.boxes = newBoxes;
 }
 export function SET_ERROR(state, newError) {
-  state.error = newError;
+  state.errorMessage = newError;
 }
 export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
