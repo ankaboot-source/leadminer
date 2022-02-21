@@ -1,31 +1,34 @@
-export function getEmails({ context, getters }, { data }) {
-  const currentState = getters.getStates;
-
-  console.log(data);
-  this.commit("example/SET_LOADING", true);
-  this.$axios
-    .get(
-      this.$api +
-        `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/${
-          data.box
-        }/emails`,
-      {
-        params: {
-          SessionId: JSON.parse(JSON.stringify(currentState.socketId)),
-        },
-      }
-    )
-    .then((response) => {
-      this.commit("example/SET_LOADING", false);
-      this.commit(
-        "example/SET_EMAILS",
-        JSON.parse(JSON.stringify(response.data.data))
-      );
-      console.log(response.data.data);
-    })
-    .catch((error) => {
-      this.commit("example/SET_ERROR", JSON.parse(JSON.stringify(error)));
-    });
+export async function getEmails({ context, getters }, { data }) {
+  return new Promise((resolve, reject) => {
+    const currentState = getters.getStates;
+    this.commit("example/SET_LOADING", true);
+    this.$axios
+      .get(
+        this.$api +
+          `/imap/${JSON.parse(
+            JSON.stringify(currentState.imap.id)
+          )}/collectEmails`,
+        {
+          params: {
+            SessionId: JSON.parse(JSON.stringify(currentState.socketId)),
+            fields: data.fields.split(","),
+            boxes: data.boxes.join(","),
+          },
+        }
+      )
+      .then((response) => {
+        this.commit("example/SET_LOADING", false);
+        this.commit(
+          "example/SET_EMAILS",
+          JSON.parse(JSON.stringify(response.data.data))
+        );
+        resolve(response);
+      })
+      .catch((error) => {
+        this.commit("example/SET_ERROR", JSON.parse(JSON.stringify(error)));
+        reject(error);
+      });
+  });
 }
 
 export async function submitImapData({ context, state }, { data }) {
