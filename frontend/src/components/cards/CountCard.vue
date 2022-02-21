@@ -5,7 +5,7 @@
         <div
           v-for="(item, index) in items"
           :key="index"
-          class="col-md-6 col-sm-12 col-xs-12"
+          class="col-md-12 col-sm-12 col-xs-12"
         >
           <q-item
             :style="`background-color: ${item.color1}`"
@@ -60,13 +60,6 @@ export default defineComponent({
           value: this.collectedEmails,
           color1: "#f8f9fa",
           color2: "#03c8a8",
-        },
-        {
-          title: "Exported email",
-          icon: "archive",
-          value: "0",
-          color1: "#f8f9fa",
-          color2: "#3ca88e",
         },
       ];
     },

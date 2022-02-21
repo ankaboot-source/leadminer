@@ -3,84 +3,103 @@
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
       <q-card-section class="q-pa-none">
         <div class="row q-pa-sm" v-if="renderDialog">
-          <div class="bg-stransparent q-mr-sm col-6 q-pa-sm">
+          <div class="bg-stransparent q-mr-sm col-7 q-pa-sm">
             <q-card>
               <q-card-section class="bg-tealgradient q-pa-sm text-white">
-                <div class="text-h5 text-bold">Prefrences</div>
-                <div class="text-caption">
-                  Select box to fetch from, fileds to import
-                </div>
+                <div class="text-h5 text-bold">Preferences</div>
+                <div class="text-caption"></div>
               </q-card-section>
               <div class="text-custom row q-pa-sm">
-                <div class="bg-grey-1 border q-pa-md col-5">
-                  <div class="text-subtitle2 text-bold">Select a mailbox</div>
+                <div class="bg-grey-1 border q-pa-md col-6">
+                  <div class="text-h6 text-bold">Select a mailbox</div>
+
                   <q-select
-                    ref="boxesOpen"
-                    rounded
-                    v-model="selectedBox"
+                    ref="select"
+                    filled
+                    v-model="selectedBoxes"
+                    multiple
                     :options="boxes"
-                    label="Mailbox"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon
-                        style="font-size: 0.8em"
-                        class="text-teal"
-                        name="fas fa-box-open"
+                    use-chips
+                    editable="true"
+                    stack-label
+                    @input="$refs.select.hidePopup()"
+                    label="Mailbox files"
+                    ><template #before-options>
+                      <q-item>
+                        <q-item-section>
+                          <q-item-label>All mailbox files</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                          <q-checkbox
+                            color="secondary"
+                            v-model="all"
+                            @click="checkAll(boxes)"
+                          ></q-checkbox>
+                        </q-item-section>
+                      </q-item> </template
+                    ><q-tooltip
+                      v-if="showing"
+                      v-model="showing"
+                      :offset="[10, 10]"
+                      anchor="bottom middle"
+                      class="bg-orange-9 text-body2"
+                    >
+                      Select a Mailbox
+                    </q-tooltip>
+                    <q-avatar>
+                      <q-spinner-orbit
+                        v-if="this.loadingStatusbox"
+                        color="teal"
+                        size="1.5em"
                       />
-                    </template>
-                    <template v-slot:append>
-                      <q-avatar>
-                        <q-spinner-pie
-                          v-if="this.loadingStatusbox"
-                          color="primary"
-                          size="2em"
-                        />
-                      </q-avatar>
-                      <q-btn round dense flat icon="add" @click="getBoxes"
-                        ><q-tooltip
-                          v-if="showing"
-                          v-model="showing"
-                          :offset="[20, 29]"
-                          anchor="top middle"
-                          class="bg-orange-9 text-body2"
-                        >
-                          Select a Mailbox
-                        </q-tooltip></q-btn
-                      >
-                    </template>
+                    </q-avatar>
                   </q-select>
                 </div>
                 <div class="col"></div>
 
-                <div class="bg-grey-1 border q-pa-md q-ml-sm col-6">
-                  <div class="text-subtitle2 text-bold">Select fields</div>
-                  <q-option-group
-                    class="text-cyan-10"
-                    name="accepted_genres"
-                    v-model="accepted"
-                    :options="options1"
-                    type="checkbox"
-                    color="secondary"
-                    inline
-                  />
-                  <q-option-group
-                    class="text-cyan-10"
-                    name="accepted_genres"
-                    v-model="accepted"
-                    :options="options2"
-                    type="checkbox"
-                    color="secondary"
-                    inline
-                  />
-                </div>
+                <div class="bg-grey-1 border q-pa-md q-ml-sm col-5">
+                  <div class="text-h6 text-bold">Select fields</div>
+                  <div
+                    class="text-subtitle2 shadow-2 bborder q-pa-sm text-orange-8"
+                  >
+                    Header
 
-                <div class="q-mt-md col-6">
-                  <q-btn
-                    no-caps
-                    @click="fetchEmails"
-                    class="bg-buttons text-white"
-                    label="Get emails"
-                  />
+                    <q-option-group
+                      class="text-cyan-10"
+                      name="accepted_genres"
+                      v-model="acceptedHeaders"
+                      :options="optionsHeaderFields"
+                      type="checkbox"
+                      color="secondary"
+                      inline
+                    />
+                  </div>
+                  <div
+                    class="text-subtitle2 q-pa-sm q-mt-sm shadow-2 bborder text-orange-8"
+                  >
+                    Body
+
+                    <q-option-group
+                      class="text-cyan-10"
+                      name="accepted_genres"
+                      v-model="acceptedBody"
+                      :options="optionsBody"
+                      type="checkbox"
+                      color="secondary"
+                      inline
+                    />
+                  </div>
+                </div>
+                <div class="column col-12">
+                  <div class="col-6"></div>
+                  <div class="q-mt-md q-ml-lg col-12">
+                    <q-btn
+                      no-caps
+                      @click="fetchEmails"
+                      class="bg-buttons text-white"
+                      label="Collect emails adresses"
+                    />
+                  </div>
                 </div>
               </div>
             </q-card>
@@ -243,13 +262,15 @@ export default defineComponent({
       progressLabel: "",
       email: "",
       dataCleaning: "",
+      all: false,
       emails: [],
       password: "",
       host: "",
       port: "",
-      accepted: ref([]),
-      selectedBox: "",
-      options1: [
+      acceptedHeaders: ref([]),
+      acceptedBody: ref([]),
+      selectedBoxes: [],
+      optionsHeaderFields: [
         {
           label: "From",
           value: "FROM",
@@ -262,23 +283,19 @@ export default defineComponent({
           label: "Cc",
           value: "CC",
         },
-      ],
-      boxOptions: [],
-      options2: [
         {
           label: "Bcc",
           value: "BCC",
         },
+      ],
+      boxOptions: [],
+      optionsBody: [
         {
           label: "Body",
           value: "TEXT",
         },
       ],
     };
-  },
-
-  props: {
-    emails: Array,
   },
   name: "TableVisits",
 
@@ -304,12 +321,16 @@ export default defineComponent({
       "boxes",
     ]),
   },
-  watch: {
-    boxes: function () {
-      this.$refs.boxesOpen.showPopup();
-    },
-  },
+
   methods: {
+    checkAll(allboxes) {
+      if (this.selectedBoxes.length != allboxes.length) {
+        this.selectedBoxes = allboxes;
+      } else {
+        this.selectedBoxes = [];
+      }
+      this.$refs.select.hidePopup();
+    },
     splitEmails(data) {
       if (!data.split("<")[1]) {
         return data;
@@ -319,19 +340,35 @@ export default defineComponent({
     splitAliases(data) {
       return data.split("<")[0];
     },
-    fetchEmails: function () {
-      const box = { boxe: this.selectedBox };
-      console.log(this.options1);
-      console.log(this.$store.state);
+    fetchEmails() {
+      var fields = [];
+      //  default if nothing is selected
+      if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
+        fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
+      } else {
+        this.acceptedBody.length == 0
+          ? (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")})`)
+          : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")}),${
+              this.acceptedBody[0]
+            }`);
+      }
       let data = {
-        box: this.selectedBox,
+        boxes: this.selectedBoxes,
         SessionId: this.$store.state.socketId,
+        fields: fields,
       };
-      this.$store.dispatch("example/getEmails", { data }).then(() => {});
+      console.log(fields);
+
+      this.$store.dispatch("example/getEmails", { data }).then(() => {
+        this.total = 0;
+        this.dataCleaning = "";
+        this.progress = 0;
+        this.progressLabel = "";
+      });
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
-        this.$refs.boxesOpen.showPopup();
+        this.$refs.select.showPopup();
       });
     },
   },
@@ -345,6 +382,7 @@ export default defineComponent({
 
   // },
   mounted() {
+    this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
 
@@ -354,9 +392,6 @@ export default defineComponent({
     setTimeout(() => {
       this.showing = false;
     }, 3000);
-    // this.$socket.on("uploadProgress", (data) => {
-    //   console.log(data);
-    // });
   },
   created() {
     this.$socket.on("totalMessages", (data) => {
@@ -370,7 +405,6 @@ export default defineComponent({
     });
     this.$socket.on("uploadProgress", (data) => {
       this.progress = Math.round((((data / this.total) * 100) / 100) * 10) / 10;
-      console.log(this.progress);
       this.progressLabel = data + " email fetched from total: " + this.total;
     });
   },
@@ -386,11 +420,6 @@ export default defineComponent({
       pagination: {
         rowsPerPage: 10,
       },
-      to: ref(false),
-      from: ref(false),
-      Bcc: ref(false),
-      Cc: ref(false),
-      subject: ref(false),
       persistent: ref(false),
 
       exportTable(Emails) {
@@ -414,6 +443,10 @@ export default defineComponent({
 });
 </script>
 <style>
+.bborder {
+  border: 1px solid transparent;
+  border-radius: 12px;
+}
 .text-Corange {
   color: #fc9958 !important;
 }

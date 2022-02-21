@@ -115,7 +115,6 @@ export default {
       this.$store
         .dispatch("example/submitImapData", { data })
         .then((res) => {
-          console.log(res);
           this.$router.push("/dashboard");
         })
         .catch((error) => {

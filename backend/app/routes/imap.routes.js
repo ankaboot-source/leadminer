@@ -10,7 +10,7 @@ module.exports = (app) => {
   router.get("/:id/boxes", imap.getImapBoxes);
 
   // Retrieve emails based on user prefrences for a given imap account
-  router.get("/:id/:box/emails", imap.getEmails);
+  router.get("/:id/collectEmails", imap.getEmails);
 
   app.use("/api/imap", router);
 };
