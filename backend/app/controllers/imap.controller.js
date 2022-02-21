@@ -117,10 +117,10 @@ exports.getEmails = async (req, res) => {
   //fetch imap from database then getemails
   ImapInfo.findByPk(req.params.id).then((imapInfo) => {
     var imap = new Imap({
-      user: "contact@mouslimin.fr",
-      password: "M0u571m1n!",
-      host: "imap.ionos.fr",
-      port: 993,
+      user: imapInfo.email,
+      password: req.params.password,
+      host: imapInfo.host,
+      port: imapInfo.port,
       tls: true,
     });
     // data to be delivred to the client
