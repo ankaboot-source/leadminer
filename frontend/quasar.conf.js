@@ -42,7 +42,7 @@ module.exports = configure(function (/* ctx */) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: "http://localhost:8081",
+        ENDPOINT: "wss://api.leadminer.io:8081", //ENDPOINT: "http://localhost:8081", //,
       },
       // transpile: false,
 
@@ -94,7 +94,7 @@ module.exports = configure(function (/* ctx */) {
 
     // animations: 'all', // --- includes all animations
     // https://quasar.dev/options/animations
-    animations: [],
+    animations: "all",
 
     // https://quasar.dev/quasar-cli/developing-ssr/configuring-ssr
     ssr: {

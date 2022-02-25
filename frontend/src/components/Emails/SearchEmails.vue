@@ -124,12 +124,15 @@
             title="Emails"
             :rows="Emails"
             :columns="columns"
+            :filter="filter"
             row-key="name"
           >
             <template v-slot:top-right="props">
               <q-input
-                borderless
+                rounded
                 dense
+                standout
+                bg-color="teal-4"
                 debounce="300"
                 v-model="filter"
                 placeholder="Search"
@@ -165,15 +168,16 @@
             </template>
             <template v-slot:body="props">
               <q-tr :props="props">
-                <q-td key="Emails" :props="props">
-                  {{ splitEmails(props.row) }}
+                <q-td style="width: 30%" key="Emails" :props="props">
+                  {{ props.row.address }}
                 </q-td>
-                <q-td key="Aliases" :props="props">
-                  <q-badge color="orange-10">
-                    {{ splitAliases(props.row) }}
+                <q-td style="width: 30%" key="Names" :props="props">
+                  <q-badge v-if="props.row.name" color="orange-10">
+                    {{ props.row.name }}
                   </q-badge>
+                  <q-badge v-else color="deep-orange-4"> NO NAME </q-badge>
                 </q-td>
-                <q-td key="verification" :props="props">
+                <q-td style="width: 30%" key="verification" :props="props">
                   <q-badge color="green"> Verification </q-badge>
                 </q-td></q-tr
               >
@@ -193,9 +197,15 @@
             class="z-max bg-transparent text-teal text-h5 text-bold q-ma-md text-center"
           >
             Fetching data...<br />
+            {{ "Analysing mailfile : " + currentBox }}
             {{ dataCleaning }}
           </div>
-          <q-linear-progress size="32px" :value="progress" color="teal-10">
+          <q-linear-progress
+            v-if="render"
+            size="32px"
+            :value="progress"
+            color="teal-10"
+          >
             <div
               class="absolute-full bg-transparent text-teal text-h5 flex flex-center"
             >
@@ -230,14 +240,14 @@ const columns = [
     name: "Emails",
     align: "left",
     label: "Emails",
-    field: "Emails",
+    field: "address",
     sortable: true,
   },
   {
-    name: "Aliases",
+    name: "Names",
     align: "left",
-    label: "Aliases",
-    field: "Aliases",
+    label: "Names",
+    field: "name",
     sortable: true,
   },
   {
@@ -261,7 +271,9 @@ export default defineComponent({
       showing: false,
       progressLabel: "",
       email: "",
+      render: false,
       dataCleaning: "",
+      currentBox: "",
       all: false,
       emails: [],
       password: "",
@@ -331,15 +343,7 @@ export default defineComponent({
       }
       this.$refs.select.hidePopup();
     },
-    splitEmails(data) {
-      if (!data.split("<")[1]) {
-        return data;
-      }
-      return data.split("<")[1];
-    },
-    splitAliases(data) {
-      return data.split("<")[0];
-    },
+
     fetchEmails() {
       var fields = [];
       //  default if nothing is selected
@@ -398,20 +402,34 @@ export default defineComponent({
       this.total = data;
     });
     this.$socket.on("dataCleaning", (data) => {
+      this.render = !this.render;
+      this.currentBox = "";
       this.dataCleaning = "Cleaning data";
     });
     this.$socket.on("duplicates", (data) => {
+      this.render = !this.render;
+      this.currentBox = "";
       this.dataCleaning = "Removing duplicates";
+    });
+    this.$socket.on("switching", (data) => {
+      this.render = !this.render;
+      this.currentBox = "";
+      this.progress = 0;
+      this.progressLabel = "";
     });
     this.$socket.on("uploadProgress", (data) => {
       this.progress = Math.round((((data / this.total) * 100) / 100) * 10) / 10;
-      this.progressLabel = data + " email fetched from total: " + this.total;
+
+      this.progressLabel =
+        data + " : message analysed from total " + this.total;
+    });
+    this.$socket.on("boxName", (data) => {
+      this.currentBox = data;
     });
   },
   setup() {
     const $q = useQuasar();
     const filter = ref("");
-    const progress = ref("");
 
     return {
       filter,
@@ -423,12 +441,13 @@ export default defineComponent({
       persistent: ref(false),
 
       exportTable(Emails) {
-        // naive encoding to csv format
-        const content = [columns.map((col) => wrapCsvValue(col.label))]
-          .concat(Emails.map((row) => row))
-          .join("\r\n");
+        let csv = '"""Names""","""Emails"""\n';
+        Emails.forEach((row) => {
+          csv += Object.values(row).join(",");
+          csv += "\n";
+        });
 
-        const status = exportFile("table-export.csv", content, "text/csv");
+        const status = exportFile("table-export.csv", csv, "text/csv");
 
         if (status !== true) {
           $q.notify({

@@ -1,12 +1,8 @@
 const db = require("../models");
 var Imap = require("node-imap");
-const { Console } = require("console");
-const { nextTick } = require("process");
-const { resolve } = require("path");
 inspect = require("util").inspect;
 const ImapInfo = db.imapInfo;
-const Op = db.Sequelize.Op;
-
+var utils = require("../utils/regexp");
 /**
  *  Create imap info account
  * @param  {} req
@@ -67,6 +63,45 @@ exports.createImapInfo = (req, res) => {
   });
 };
 
+exports.loginToAccount = (req, res) => {
+  if (!req.body.email) {
+    res.status(400).send({
+      error: "Content can not be empty!",
+    });
+    return;
+  }
+  // // imapInfo object
+  // const imapInfo = {
+  //   email: req.body.email,
+  //   host: req.body.host,
+  //   port: req.body.port,
+  //   tls: req.body.tls ? req.body.tls : true,
+  // };
+  // var imap = new Imap({
+  //   user: imapInfo.email,
+  //   password: req.body.password,
+  //   host: imapInfo.host,
+  //   port: imapInfo.port,
+  //   tls: true,
+  // });
+  // // Ensures that the account exists
+  // imap.connect();
+  // imap.end();
+  ImapInfo.findOne({ where: { email: req.body.email } }).then((imap) => {
+    if (imap == null) {
+      // Save ImapInfo in the database
+      res.status(500).send({
+        error: "Your account does not exist ! try to sign up.",
+      });
+    } else {
+      res.status(200).send({
+        message: "Welcome back !",
+        imap: imap,
+      });
+    }
+  });
+};
+
 /**
  * Retrieve mailbox files
  * @param  {} req
@@ -118,35 +153,15 @@ exports.getEmails = async (req, res) => {
   ImapInfo.findByPk(req.params.id).then((imapInfo) => {
     var imap = new Imap({
       user: imapInfo.email,
-      password: req.params.password,
+      password: "M0u571m1n!",
       host: imapInfo.host,
       port: imapInfo.port,
       tls: true,
     });
-    // data to be delivred to the client
+    // data will include all of the data that will be mined from the mailbox.
     var data = [];
     // bodiesTofetch is the query that user sends
     let bodiesTofetch = req.query.fields;
-
-    // open boxes selected by the user
-    // async function openInbox(cb) {
-    //   let boxes = req.query.boxes.split(",");
-
-    //   await new Promise((resolve) => {
-    //     boxes.forEach((box) => {
-    //       try {
-    //         imap.openBox(box, true, cb);
-    //       } catch (e) {
-    //         console.log(e);
-    //       } finally {
-    //         console.log(box);
-    //         if (box == boxes[boxes.length]) {
-    //           resolve();
-    //         }
-    //       }
-    //     });
-    //   });
-    // }
 
     // get the socket instance
     if (req.query.SessionId) {
@@ -156,62 +171,59 @@ exports.getEmails = async (req, res) => {
       var socketInstance = io.to(thisSocketId);
     }
     imap.connect();
+    // globalData will be the final mined data(after the "end event")
     var globalData = [];
+    // result is the filtred, and ready to send data
+    var result = [];
+    // selected boxes from the user
     var boxes = req.query.boxes.split(",");
 
-    // open the mailbox and fetch fields
+    // initial values for the loopfunction (in case we have more than one mailfile to collect data from).
     var box = boxes[0];
     var i = 0;
     imap.once("ready", function () {
       for (let j in boxes) {
         loopfunc = (box) => {
+          if (socketInstance) {
+            // emit switching to another box to initialise progress labels
+            socketInstance.emit("switching", true);
+          }
+          // open the mailbox and fetch fields
           imap.openBox(box, true, function (err, box) {
             if (socketInstance) {
               // emit total messages usefull for progress bar
+
               socketInstance.emit("totalMessages", box.messages.total);
+
+              // emit the current file name
               socketInstance.emit("boxName", box.name);
             }
-
             if (err) throw err;
-            var f = imap.seq.fetch("1:90", {
+            var f = imap.seq.fetch("1:300", {
               bodies: bodiesTofetch,
               struct: true,
             });
+            // callback for "message" emitted event
             f.on("message", function (msg, seqno) {
               if (socketInstance) {
-                // emit fetched emails
+                // emit how many email messages have been scanned
                 socketInstance.emit("uploadProgress", seqno);
               }
-
+              // callback for "body" emitted event
               msg.on("body", function (stream, info) {
                 var buffer = "";
+                // callback for "data" emitted event
                 stream.on("data", function (chunk) {
                   buffer += chunk.toString("utf8");
-                  data = [
-                    ...data,
-                    [].concat.apply(
-                      [],
-                      Object.values(Imap.parseHeader(buffer))
-                    ),
-                  ];
-                  data = [...new Set([].concat.apply([], data))].filter(
-                    (item) => item.includes("@")
-                  );
-                  // define the limite here, if we collect 100 email no need to continue
-                  if (data.length == 100) {
-                    imap.end();
-                  }
-                  // append data to globalData
-                  globalData.push(...data);
-                  globalData = [
-                    ...new Set([].concat.apply([], globalData)),
-                  ].filter((item) => item.includes("@"));
+                  // append to data the parsed buffer
+                  data.push(...Object.values(Imap.parseHeader(buffer)));
+                  // define limite
                 });
-                if (socketInstance) {
-                  // emit fetched emails
-                  socketInstance.emit("uploadProgress", globalData.length);
-                }
-                stream.once("end", function () {});
+                // callback for "end" emitted event, here all messaged are parsed, data is the source of data
+                stream.once("end", function () {
+                  globalData = [...data.flat()];
+                  result = utils.matchRegexp(globalData);
+                });
               });
             });
             f.once("error", function (err) {
@@ -260,7 +272,7 @@ exports.getEmails = async (req, res) => {
       }, 2000);
       setTimeout(() => {
         res.status(200).send({
-          data: globalData.slice(0, 100),
+          data: result.slice(0, 100),
         });
       }, 3000);
     });
