@@ -208,6 +208,7 @@ exports.getEmails = async (req, res) => {
               if (socketInstance) {
                 // emit how many email messages have been scanned
                 socketInstance.emit("uploadProgress", seqno);
+                console.log(seqno);
               }
               // callback for "body" emitted event
               msg.on("body", function (stream, info) {
@@ -220,9 +221,13 @@ exports.getEmails = async (req, res) => {
                   // define limite
                 });
                 // callback for "end" emitted event, here all messaged are parsed, data is the source of data
-                stream.once("end", function () {
+                stream.once("end", async function () {
                   globalData = [...data.flat()];
-                  result = utils.matchRegexp(globalData);
+
+                  emailsAfterRegex = await utils.matchRegexp(globalData);
+                  emailsAfterCheckDomain = await utils.checkDomainType(
+                    emailsAfterRegex
+                  );
                 });
               });
             });
@@ -271,8 +276,12 @@ exports.getEmails = async (req, res) => {
         }
       }, 2000);
       setTimeout(() => {
+        if (socketInstance) {
+          // emit how many email messages have been scanned
+          socketInstance.emit("end", true);
+        }
         res.status(200).send({
-          data: result.slice(0, 100),
+          data: emailsAfterCheckDomain.slice(0, 100),
         });
       }, 3000);
     });

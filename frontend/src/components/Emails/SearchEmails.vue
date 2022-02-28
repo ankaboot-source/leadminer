@@ -177,8 +177,11 @@
                   </q-badge>
                   <q-badge v-else color="deep-orange-4"> NO NAME </q-badge>
                 </q-td>
-                <q-td style="width: 30%" key="verification" :props="props">
-                  <q-badge color="green"> Verification </q-badge>
+                <q-td style="width: 30%" key="Type" :props="props">
+                  <q-badge v-if="props.row.type == 'Personal'" color="green">
+                    Personal
+                  </q-badge>
+                  <q-badge v-else color="blue"> Business </q-badge>
                 </q-td></q-tr
               >
             </template>
@@ -251,10 +254,10 @@ const columns = [
     sortable: true,
   },
   {
-    name: "verification",
+    name: "Type",
     align: "left",
-    label: "Verification",
-    field: "verification",
+    label: "Type",
+    field: "type",
     sortable: true,
   },
 ];
@@ -376,15 +379,7 @@ export default defineComponent({
       });
     },
   },
-  // watch:{
-  //   '$store.state.progress': {
-  //     handler() {
-  //       console.log(data)
-  //     },
-  //     immediate: true
-  //   }
 
-  // },
   mounted() {
     this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
@@ -396,6 +391,9 @@ export default defineComponent({
     setTimeout(() => {
       this.showing = false;
     }, 3000);
+  },
+  beforeUpdate() {
+    console.log("helooooooo");
   },
   created() {
     this.$socket.on("totalMessages", (data) => {
@@ -418,13 +416,21 @@ export default defineComponent({
       this.progressLabel = "";
     });
     this.$socket.on("uploadProgress", (data) => {
-      this.progress = Math.round((((data / this.total) * 100) / 100) * 10) / 10;
+      if (this.currentBox == "INBOX") {
+        this.progress = Math.round((((data / 300) * 100) / 100) * 10) / 10;
+      } else {
+        this.progress =
+          Math.round((((data / this.total) * 100) / 100) * 10) / 10;
+      }
 
       this.progressLabel =
         data + " : message analysed from total " + this.total;
     });
     this.$socket.on("boxName", (data) => {
-      this.currentBox = data;
+      this.currentBox = data + "(" + this.total + ") messages";
+    });
+    this.$socket.on("end", (data) => {
+      this.$socket.close();
     });
   },
   setup() {

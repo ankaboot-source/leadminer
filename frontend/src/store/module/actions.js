@@ -43,7 +43,9 @@ export async function signUp({ context, state }, { data }) {
         resolve(response);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", error.response.data.message);
+        console.log(JSON.stringify(error));
+
+        //this.commit("example/SET_ERROR", error.response.data.message);
         reject(error);
       });
   });
@@ -60,7 +62,8 @@ export async function signIn({ context, state }, { data }) {
         resolve(response);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", error.response.data.message);
+        console.log(JSON.stringify(error));
+        this.commit("example/SET_ERROR", JSON.stringify(error));
         reject(error);
       });
   });
