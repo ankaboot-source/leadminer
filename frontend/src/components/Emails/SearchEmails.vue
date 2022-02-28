@@ -447,13 +447,22 @@ export default defineComponent({
       persistent: ref(false),
 
       exportTable(Emails) {
-        let csv = '"""Names""","""Emails"""\n';
-        Emails.forEach((row) => {
+        let csv = '"""Name""","""Email""","""Type"""\n';
+        let emailsCsv = Emails;
+        let obj = { name: "" };
+        let emailstoExport = emailsCsv.map((element) => {
+          if (!("name" in element)) {
+            element = { ...obj, ...element };
+            return element;
+          }
+          return element;
+        });
+        emailstoExport.forEach((row) => {
           csv += Object.values(row).join(",");
           csv += "\n";
         });
 
-        const status = exportFile("table-export.csv", csv, "text/csv");
+        const status = exportFile("Emails.csv", csv, "text/csv");
 
         if (status !== true) {
           $q.notify({
