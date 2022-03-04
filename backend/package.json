@@ -15,11 +15,12 @@
     "api",
     "postgresql"
   ],
-  "author": "bezkoder",
+  "author": "ankaboot",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "flat": "^5.0.2",
     "legit": "^1.0.9",
     "node-imap": "^0.9.6",
     "nodemon": "^2.0.15",

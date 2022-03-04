@@ -11,49 +11,26 @@
               </q-card-section>
               <div class="text-custom row q-pa-sm">
                 <div class="bg-grey-1 border q-pa-md col-6">
-                  <div class="text-h6 text-bold">Select a mailbox</div>
-
-                  <q-select
-                    ref="select"
-                    filled
-                    v-model="selectedBoxes"
-                    multiple
-                    :options="boxes"
-                    use-chips
-                    editable="true"
-                    stack-label
-                    @input="$refs.select.hidePopup()"
-                    label="Mailbox files"
-                    ><template #before-options>
-                      <q-item>
-                        <q-item-section>
-                          <q-item-label>All mailbox files</q-item-label>
-                        </q-item-section>
-                        <q-item-section side>
-                          <q-checkbox
-                            color="secondary"
-                            v-model="all"
-                            @click="checkAll(boxes)"
-                          ></q-checkbox>
-                        </q-item-section>
-                      </q-item> </template
-                    ><q-tooltip
-                      v-if="showing"
-                      v-model="showing"
-                      :offset="[10, 10]"
-                      anchor="bottom middle"
-                      class="bg-orange-9 text-body2"
-                    >
-                      Select a Mailbox
-                    </q-tooltip>
-                    <q-avatar>
-                      <q-spinner-orbit
-                        v-if="this.loadingStatusbox"
-                        color="teal"
-                        size="1.5em"
-                      />
-                    </q-avatar>
-                  </q-select>
+                  <div class="text-h6 text-bold">Select mailbox folders</div>
+                  <q-checkbox
+                    color="orange-10"
+                    class="text-subtitle2 text-orange-8"
+                    v-model="all"
+                    label="Select all "
+                    @click="checkAll(boxes)"
+                  ></q-checkbox>
+                  <q-tree
+                    ref="tree"
+                    class="col-12 col-sm-6"
+                    :nodes="boxes"
+                    node-key="label"
+                    color="teal"
+                    tick-strategy="strict"
+                    v-model:ticked="selectedBoxes"
+                    v-model:selected="selected"
+                    v-model:expanded="expanded"
+                  >
+                  </q-tree>
                 </div>
                 <div class="col"></div>
 
@@ -125,7 +102,8 @@
             :rows="Emails"
             :columns="columns"
             :filter="filter"
-            row-key="name"
+            :filter-method="filterMethod"
+            row-key="email"
           >
             <template v-slot:top-right="props">
               <q-input
@@ -172,11 +150,9 @@
                   {{ props.row.address }}
                 </q-td>
                 <q-td style="width: 30%" key="Names" :props="props">
-                  <q-badge v-if="props.row.name" color="orange-10">
-                    {{ props.row.name }}
-                  </q-badge>
-                  <q-badge v-else color="deep-orange-4"> NO NAME </q-badge>
+                  {{ props.row.name ? props.row.name : "" }}
                 </q-td>
+
                 <q-td style="width: 30%" key="Type" :props="props">
                   <q-badge v-if="props.row.type == 'Personal'" color="green">
                     Personal
@@ -200,15 +176,13 @@
             class="z-max bg-transparent text-teal text-h5 text-bold q-ma-md text-center"
           >
             Fetching data...<br />
-            {{ "Analysing mailfile : " + currentBox }}
+
+            <q-badge class="text-h6" color="teal-3">
+              Analysing mailfolder: {{ currentBox }} </q-badge
+            ><br />
             {{ dataCleaning }}
           </div>
-          <q-linear-progress
-            v-if="render"
-            size="32px"
-            :value="progress"
-            color="teal-10"
-          >
+          <q-linear-progress size="32px" :value="progress" color="teal-10">
             <div
               class="absolute-full bg-transparent text-teal text-h5 flex flex-center"
             >
@@ -274,6 +248,7 @@ export default defineComponent({
       showing: false,
       progressLabel: "",
       email: "",
+      boxess: [],
       render: false,
       dataCleaning: "",
       currentBox: "",
@@ -281,6 +256,9 @@ export default defineComponent({
       emails: [],
       password: "",
       host: "",
+      selected: ref(["INBOX"]),
+      ticked: ref([]),
+      expanded: ref([]),
       port: "",
       acceptedHeaders: ref([]),
       acceptedBody: ref([]),
@@ -301,6 +279,10 @@ export default defineComponent({
         {
           label: "Bcc",
           value: "BCC",
+        },
+        {
+          label: "Reply-to",
+          value: "REPLY-TO",
         },
       ],
       boxOptions: [],
@@ -329,6 +311,10 @@ export default defineComponent({
       this.emails = [...this.retrievedEmails];
       return [...this.retrievedEmails];
     },
+    boxes() {
+      this.boxess = this.boxes;
+      return [...this.boxes];
+    },
     ...mapState("example", [
       "retrievedEmails",
       "loadingStatus",
@@ -338,17 +324,43 @@ export default defineComponent({
   },
 
   methods: {
+    filterMethod(rows, term, cols) {
+      if (rows.filter((e) => e.type.includes(term)).length > 0) {
+        return this.emails;
+      } else {
+        console.log(rows);
+        return rows.filter((e) => {
+          return e.address.includes(term) || e.name.includes(term);
+        });
+      }
+    },
     checkAll(allboxes) {
-      if (this.selectedBoxes.length != allboxes.length) {
-        this.selectedBoxes = allboxes;
+      let arr = [];
+      function deepObject(obj) {
+        for (let ele in obj) {
+          if (obj[ele].label) {
+            console.log(obj[ele].label);
+            arr.push(obj[ele].label);
+          }
+          if (obj[ele].children) {
+            obj[ele].children.map((v) => {
+              deepObject([v]);
+            });
+          }
+        }
+        return arr;
+      }
+      if (this.selectedBoxes.length == 0) {
+        this.selectedBoxes = deepObject([...allboxes]);
+        console.log(this.selectedBoxes);
       } else {
         this.selectedBoxes = [];
       }
-      this.$refs.select.hidePopup();
     },
 
     fetchEmails() {
       var fields = [];
+      var bot = this.boxess;
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
         fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
@@ -361,10 +373,9 @@ export default defineComponent({
       }
       let data = {
         boxes: this.selectedBoxes,
-        SessionId: this.$store.state.socketId,
         fields: fields,
+        folders: bot,
       };
-      console.log(fields);
 
       this.$store.dispatch("example/getEmails", { data }).then(() => {
         this.total = 0;
@@ -374,13 +385,13 @@ export default defineComponent({
       });
     },
     getBoxes() {
-      this.$store.dispatch("example/getBoxes").then(() => {
-        this.$refs.select.showPopup();
-      });
+      this.$store.dispatch("example/getBoxes").then(() => {});
     },
   },
 
   mounted() {
+    //const SessionId = Math.random().toString(36).substr(2, 9);
+
     this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
@@ -392,47 +403,77 @@ export default defineComponent({
       this.showing = false;
     }, 3000);
   },
-  beforeUpdate() {
-    console.log("helooooooo");
+  beforeUnmount() {
+    this.$socket.close();
+  },
+  unmounted() {
+    this.$socket.close();
   },
   created() {
     this.$socket.on("totalMessages", (data) => {
       this.total = data;
     });
+    this.$socket.on("connect_error", (data) => {
+      console.log(data);
+    });
     this.$socket.on("dataCleaning", (data) => {
-      this.render = !this.render;
-      this.currentBox = "";
       this.dataCleaning = "Cleaning data";
     });
     this.$socket.on("duplicates", (data) => {
-      this.render = !this.render;
-      this.currentBox = "";
       this.dataCleaning = "Removing duplicates";
     });
+    this.$socket.on("uploadProgress", (data) => {
+      let percentage = Math.round((data * 100) / this.total);
+      this.progress = Math.round((data * 100) / this.total) / 100;
+      this.progressLabel = percentage + "%";
+    });
+    // this.$socket.on("totalMessages", (data) => {
+    //   this.total = data;
+    // });
+    // this.$socket.on("connect_error", (err) => {
+    //   console.log(err);
+    // });
+    // this.$socket.on("dataCleaning", (data) => {
+    //   this.render = !this.render;
+    //   this.currentBox = "";
+    //   this.dataCleaning = "Cleaning data";
+    // });
+    // this.$socket.on("duplicates", (data) => {
+    //   this.render = !this.render;
+    //   this.currentBox = "";
+    //   this.dataCleaning = "Removing duplicates";
+    // });
     this.$socket.on("switching", (data) => {
-      this.render = !this.render;
+      // this.render = !this.render;
       this.currentBox = "";
       this.progress = 0;
       this.progressLabel = "";
     });
-    this.$socket.on("uploadProgress", (data) => {
-      if (this.currentBox == "INBOX") {
-        this.progress = Math.round((((data / 300) * 100) / 100) * 10) / 10;
-      } else {
-        this.progress =
-          Math.round((((data / this.total) * 100) / 100) * 10) / 10;
-      }
+    // this.$socket.on("uploadProgress", (data) => {
+    //   this.$socket.emit("hello", true);
+    //   console.log(data, this.$socket);
+    //   if (this.currentBox == "INBOX") {
+    //     this.progress = Math.round((((data / 300) * 100) / 100) * 10) / 10;
+    //   } else {
+    //     this.progress =
+    //       Math.round((((data / this.total) * 100) / 100) * 10) / 10;
+    //   }
 
-      this.progressLabel =
-        data + " : message analysed from total " + this.total;
-    });
+    //   this.progressLabel =
+    //     data + " : message analysed from total " + this.total;
+    // });
     this.$socket.on("boxName", (data) => {
-      this.currentBox = data + "(" + this.total + ") messages";
+      this.currentBox = data;
     });
-    this.$socket.on("end", (data) => {
-      this.$socket.close();
-    });
+    // this.$socket.on("end", (data) => {
+    //   this.$socket.disconnect(0);
+    // });
   },
+  beforeUnmount() {
+    this.$socket.close();
+    console.log("closed");
+  },
+
   setup() {
     const $q = useQuasar();
     const filter = ref("");
@@ -445,6 +486,9 @@ export default defineComponent({
         rowsPerPage: 10,
       },
       persistent: ref(false),
+      selected: ref([]),
+      ticked: ref([]),
+      expanded: ref([]),
 
       exportTable(Emails) {
         let csv = '"""Name""","""Email""","""Type"""\n';
