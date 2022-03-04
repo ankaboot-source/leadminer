@@ -1,6 +1,7 @@
 export async function getEmails({ context, getters }, { data }) {
   return new Promise((resolve, reject) => {
     const currentState = getters.getStates;
+    console.log(currentState);
     this.commit("example/SET_LOADING", true);
     this.$axios
       .get(
@@ -13,6 +14,7 @@ export async function getEmails({ context, getters }, { data }) {
             SessionId: JSON.parse(JSON.stringify(currentState.socketId)),
             fields: data.fields.split(","),
             boxes: data.boxes.join(","),
+            folders: currentState.boxes,
           },
         }
       )

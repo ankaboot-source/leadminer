@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const http = require("http");
-const server = http.createServer(app);
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -39,7 +38,10 @@ db.sequelize.sync();
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to leadminer application." });
 });
+const server = http.createServer(app);
 var io = require("socket.io")(server, {
+  pingTimeout: 290000,
+  pingInterval: 45000,
   cors: {
     origin: "*",
     methods: ["GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"],
@@ -56,14 +58,6 @@ io.on("connection", (socket) => {
     console.log(sockets);
   });
   socket.broadcast.emit("user-connected", socket.id);
-
-  socket.on("disconnect", () => {
-    socket.broadcast.emit("user-disconnected", socket.id);
-  });
-
-  socket.on("nudge-client", (data) => {
-    socket.broadcast.to(data.to).emit("client-nudged", data);
-  });
 });
 
 // The io instance is set in Express so it can be grabbed in a route

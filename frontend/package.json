@@ -11,18 +11,17 @@
     "build": "quasar build"
   },
   "dependencies": {
-    "@quasar/extras": "^1.0.0",
+    "@quasar/extras": "^1.12.5",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
-    "quasar": "^2.0.0",
+    "quasar": "^2.5.5",
     "socket.io-client": "^4.4.1",
     "vue-i18n": "^9.0.0-beta.0",
-    "vue-socket.io": "^3.0.10",
     "vuedraggable": "^4.0.1",
     "vuex": "^4.0.1"
   },
   "devDependencies": {
-    "@quasar/app": "^3.0.0"
+    "@quasar/app": "^3.3.3"
   },
   "browserslist": [
     "last 10 Chrome versions",

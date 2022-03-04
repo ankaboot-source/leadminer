@@ -42,7 +42,8 @@ module.exports = configure(function (/* ctx */) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: "https://api.leadminer.io", //ENDPOINT: "http://localhost:8081", //ENDPOINT: "http://localhost:8081", //
+        //ENDPOINT: "http://localhost:8081",
+        ENDPOINT: "https://api.leadminer.io", ////ENDPOINT: "http://localhost:8081", //
       },
       // transpile: false,
 

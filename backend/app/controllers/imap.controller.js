@@ -1,8 +1,10 @@
 const db = require("../models");
+const url = require("url");
 var Imap = require("node-imap");
 inspect = require("util").inspect;
 const ImapInfo = db.imapInfo;
 var utils = require("../utils/regexp");
+const { Console } = require("console");
 /**
  *  Create imap info account
  * @param  {} req
@@ -119,10 +121,12 @@ exports.getImapBoxes = async (req, res) => {
       tls: true,
     });
     let Boxes = [];
+    let result = [];
     imap.connect();
     imap.once("ready", function () {
-      imap.getBoxes("", (err, boxes) => {
-        Boxes = Object.keys(boxes);
+      imap.getBoxes("", async (err, boxes) => {
+        console.log(boxes["INBOX"].children["Administratif"]);
+        Boxes = utils.getBoxesAll(boxes);
       });
       imap.end();
     });
@@ -165,7 +169,7 @@ exports.getEmails = async (req, res) => {
 
     // get the socket instance
     if (req.query.SessionId) {
-      const io = req.app.get("io");
+      var io = req.app.get("io");
       const sockets = req.app.get("sockets");
       const thisSocketId = sockets[req.query.SessionId];
       var socketInstance = io.to(thisSocketId);
@@ -176,7 +180,16 @@ exports.getEmails = async (req, res) => {
     // result is the filtred, and ready to send data
     var result = [];
     // selected boxes from the user
-    var boxes = req.query.boxes.split(",");
+    var boxess = req.query.boxes.split(",");
+    var folders = [];
+    var boxes;
+    folders = req.query.folders.map((element) => {
+      return JSON.parse(element);
+    });
+    boxes = boxess.map((element) => {
+      let path = utils.getPath({ ...folders }, element);
+      return path.substring(1);
+    });
 
     // initial values for the loopfunction (in case we have more than one mailfile to collect data from).
     var box = boxes[0];
@@ -189,7 +202,7 @@ exports.getEmails = async (req, res) => {
             socketInstance.emit("switching", true);
           }
           // open the mailbox and fetch fields
-          imap.openBox(box, true, function (err, box) {
+          imap.openBox(box, true, async function (err, box) {
             if (socketInstance) {
               // emit total messages usefull for progress bar
 
@@ -199,36 +212,34 @@ exports.getEmails = async (req, res) => {
               socketInstance.emit("boxName", box.name);
             }
             if (err) throw err;
-            var f = imap.seq.fetch("1:300", {
+            var f = imap.seq.fetch("1:*", {
               bodies: bodiesTofetch,
               struct: true,
             });
+
             // callback for "message" emitted event
-            f.on("message", function (msg, seqno) {
+            await f.on("message", async function (msg, seqno) {
               if (socketInstance) {
+                io.on("connect_error", (err) => {
+                  console.log(`connect_error due to ${err.message}`);
+                });
                 // emit how many email messages have been scanned
+
                 socketInstance.emit("uploadProgress", seqno);
-                console.log(seqno);
               }
+
               // callback for "body" emitted event
-              msg.on("body", function (stream, info) {
+              await msg.on("body", async function (stream, info) {
                 var buffer = "";
                 // callback for "data" emitted event
-                stream.on("data", function (chunk) {
+                await stream.on("data", function (chunk) {
                   buffer += chunk.toString("utf8");
                   // append to data the parsed buffer
                   data.push(...Object.values(Imap.parseHeader(buffer)));
+                  //console.log(Object.values(Imap.parseHeader(buffer)));
                   // define limite
                 });
                 // callback for "end" emitted event, here all messaged are parsed, data is the source of data
-                stream.once("end", async function () {
-                  globalData = [...data.flat()];
-
-                  emailsAfterRegex = await utils.matchRegexp(globalData);
-                  emailsAfterCheckDomain = await utils.checkDomainType(
-                    emailsAfterRegex
-                  );
-                });
               });
             });
             f.once("error", function (err) {
@@ -261,20 +272,23 @@ exports.getEmails = async (req, res) => {
       });
     });
 
-    imap.once("end", function () {
+    imap.once("end", async function () {
+      globalData = [...data.flat()];
+      emailsAfterRegex = await utils.matchRegexp(globalData);
+      emailsAfterCheckDomain = await utils.checkDomainType(emailsAfterRegex);
       console.log("Connection ended");
       setTimeout(() => {
         if (socketInstance) {
           // emit fetched emails
           socketInstance.emit("cleaningData", true);
         }
-      }, 1000);
+      }, 200);
       setTimeout(() => {
         if (socketInstance) {
           // emit fetched emails
           socketInstance.emit("duplicates", true);
         }
-      }, 2000);
+      }, 400);
       setTimeout(() => {
         if (socketInstance) {
           // emit how many email messages have been scanned
@@ -283,7 +297,7 @@ exports.getEmails = async (req, res) => {
         res.status(200).send({
           data: emailsAfterCheckDomain.slice(0, 100),
         });
-      }, 3000);
+      }, 1900);
     });
   });
 };

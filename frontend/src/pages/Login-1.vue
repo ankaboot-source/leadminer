@@ -226,7 +226,7 @@ export default {
       }
     },
   },
-  mounted() {
+  created() {
     const SessionId = Math.random().toString(36).substr(2, 9);
     this.$socket.emit("connectInit", SessionId);
     this.$store.commit("example/SET_SESSIONID", SessionId);
