@@ -20,10 +20,10 @@ jobs:
             source ~/.nvm/nvm.sh
             pm2 kill
             cd frontend && npm install
-            cd frontend && quasar build
-            cp dist /var/www/html
+            quasar build
+            cp -r dist /var/www/html
             cd ..
             cd backend && npm install
-            cd backend && pm2 start server.js
+            pm2 start server.js
             
     
