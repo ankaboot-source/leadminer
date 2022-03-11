@@ -15,6 +15,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }} # User of the server
      
           script: |
+            mkdir helo 
             cd leadminer
             git pull
             pm2 kill
