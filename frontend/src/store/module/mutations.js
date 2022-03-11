@@ -13,6 +13,10 @@ export function SET_IMAP(state, newImap) {
   state.imap.host = newImap.host;
   state.imap.port = newImap.port;
 }
+export function SET_PASSWORD(state, newPassword) {
+  console.log(newPassword);
+  state.imap.password = newPassword;
+}
 export function SET_BOXES(state, newBoxes) {
   state.boxes = [...newBoxes];
 }
