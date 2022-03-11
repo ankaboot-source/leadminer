@@ -2,37 +2,36 @@
   <div class="row q-col-gutter-sm">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
       <q-card-section class="q-pa-none">
-        <div class="row q-pa-sm" v-if="renderDialog">
+        <div v-if="renderDialog" class="row q-pa-sm">
           <div class="bg-stransparent q-mr-sm col-7 q-pa-sm">
             <q-card>
               <q-card-section class="bg-tealgradient q-pa-sm text-white">
                 <div class="text-h5 text-bold">Preferences</div>
-                <div class="text-caption"></div>
+                <div class="text-caption" />
               </q-card-section>
               <div class="text-custom row q-pa-sm">
                 <div class="bg-grey-1 border q-pa-md col-6">
                   <div class="text-h6 text-bold">Select mailbox folders</div>
                   <q-checkbox
+                    v-model="all"
                     color="orange-10"
                     class="text-subtitle2 text-orange-8"
-                    v-model="all"
                     label="Select all "
                     @click="checkAll(boxes)"
-                  ></q-checkbox>
+                  />
                   <q-tree
                     ref="tree"
+                    v-model:ticked="selectedBoxes"
+                    v-model:selected="selected"
+                    v-model:expanded="expanded"
                     class="col-12 col-sm-6"
                     :nodes="boxes"
                     node-key="label"
                     color="teal"
                     tick-strategy="strict"
-                    v-model:ticked="selectedBoxes"
-                    v-model:selected="selected"
-                    v-model:expanded="expanded"
-                  >
-                  </q-tree>
+                  />
                 </div>
-                <div class="col"></div>
+                <div class="col" />
 
                 <div class="bg-grey-1 border q-pa-md q-ml-sm col-5">
                   <div class="text-h6 text-bold">Select fields</div>
@@ -42,9 +41,9 @@
                     Header
 
                     <q-option-group
+                      v-model="acceptedHeaders"
                       class="text-cyan-10"
                       name="accepted_genres"
-                      v-model="acceptedHeaders"
                       :options="optionsHeaderFields"
                       type="checkbox"
                       color="secondary"
@@ -57,9 +56,9 @@
                     Body
 
                     <q-option-group
+                      v-model="acceptedBody"
                       class="text-cyan-10"
                       name="accepted_genres"
-                      v-model="acceptedBody"
                       :options="optionsBody"
                       type="checkbox"
                       color="secondary"
@@ -68,13 +67,13 @@
                   </div>
                 </div>
                 <div class="column col-12">
-                  <div class="col-6"></div>
+                  <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-12">
                     <q-btn
                       no-caps
-                      @click="fetchEmails"
                       class="bg-buttons text-white"
                       label="Collect emails adresses"
+                      @click="fetchEmails"
                     />
                   </div>
                 </div>
@@ -86,7 +85,7 @@
               <div class="q-md col-12">
                 <count-card
                   icon_position="left"
-                  :collectedEmails="retrievedEmails.length"
+                  :collected-emails="retrievedEmails.length"
                 />
               </div>
             </div>
@@ -105,32 +104,32 @@
             :filter-method="filterMethod"
             row-key="email"
           >
-            <template v-slot:top-right="props">
+            <template #top-right="props">
               <q-input
+                v-model="filter"
                 rounded
                 dense
                 standout
                 bg-color="teal-4"
                 debounce="300"
-                v-model="filter"
                 placeholder="Search"
               >
-                <template v-slot:append>
+                <template #append>
                   <q-icon name="search" />
                 </template>
               </q-input>
 
               <q-btn
+                v-if="mode === 'list'"
                 flat
                 round
                 dense
                 :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                @click="props.toggleFullscreen"
-                v-if="mode === 'list'"
                 class="q-px-sm"
+                @click="props.toggleFullscreen"
               >
-                <q-tooltip :disable="$q.platform.is.mobile" v-close-popup
-                  >{{
+                <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
+                  {{
                     props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen"
                   }}
                 </q-tooltip>
@@ -144,22 +143,22 @@
                 @click="exportTable(Emails)"
               />
             </template>
-            <template v-slot:body="props">
+            <template #body="props">
               <q-tr :props="props">
-                <q-td style="width: 30%" key="Emails" :props="props">
+                <q-td key="Emails" style="width: 30%" :props="props">
                   {{ props.row.address }}
                 </q-td>
-                <q-td style="width: 30%" key="Names" :props="props">
+                <q-td key="Names" style="width: 30%" :props="props">
                   {{ props.row.name ? props.row.name : "" }}
                 </q-td>
 
-                <q-td style="width: 30%" key="Type" :props="props">
-                  <q-badge v-if="props.row.type == 'Personal'" color="green">
-                    Personal
+                <q-td key="Domain" style="width: 30%" :props="props">
+                  <q-badge v-if="props.row.domain == 'Valid'" color="green">
+                    Valid
                   </q-badge>
-                  <q-badge v-else color="blue"> Business </q-badge>
-                </q-td></q-tr
-              >
+                  <q-badge v-else color="red"> Invalid </q-badge>
+                </q-td>
+              </q-tr>
             </template>
           </q-table>
         </div>
@@ -188,8 +187,8 @@
             >
               {{ progressLabel }}
             </div>
-          </q-linear-progress></q-card
-        >
+          </q-linear-progress>
+        </q-card>
       </q-dialog>
     </div>
   </div>
@@ -200,17 +199,6 @@ import { defineComponent, defineAsyncComponent } from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapState } from "vuex";
-
-function wrapCsvValue(val, formatFn) {
-  let formatted = formatFn !== void 0 ? formatFn(val) : val;
-
-  formatted =
-    formatted === void 0 || formatted === null ? "" : String(formatted);
-
-  formatted = formatted.split('"').join('""');
-
-  return `"${formatted}"`;
-}
 
 const columns = [
   {
@@ -228,17 +216,63 @@ const columns = [
     sortable: true,
   },
   {
-    name: "Type",
+    name: "Domain",
     align: "left",
-    label: "Type",
-    field: "type",
+    label: "Domain",
+    field: "domain",
     sortable: true,
   },
 ];
 
 export default defineComponent({
+  name: "TableVisits",
   components: {
     CountCard: defineAsyncComponent(() => import("../cards/CountCard.vue")),
+  },
+
+  setup() {
+    const $q = useQuasar();
+    const filter = ref("");
+
+    return {
+      filter,
+      mode: "list",
+      columns,
+      pagination: {
+        rowsPerPage: 10,
+      },
+      persistent: ref(false),
+      selected: ref([]),
+      ticked: ref([]),
+      expanded: ref([]),
+
+      exportTable(Emails) {
+        let csv = '"""Name""","""Email""","""Type"""\n';
+        let emailsCsv = Emails;
+        let obj = { name: "" };
+        let emailstoExport = emailsCsv.map((element) => {
+          if (!("name" in element)) {
+            element = { ...obj, ...element };
+            return element;
+          }
+          return element;
+        });
+        emailstoExport.forEach((row) => {
+          csv += Object.values(row).join(",");
+          csv += "\n";
+        });
+
+        const status = exportFile("Emails.csv", csv, "text/csv");
+
+        if (status !== true) {
+          $q.notify({
+            message: "Browser denied file download...",
+            color: "negative",
+            icon: "warning",
+          });
+        }
+      },
+    };
   },
   data() {
     return {
@@ -249,6 +283,7 @@ export default defineComponent({
       progressLabel: "",
       email: "",
       boxess: [],
+      queue: [],
       render: false,
       dataCleaning: "",
       currentBox: "",
@@ -256,9 +291,6 @@ export default defineComponent({
       emails: [],
       password: "",
       host: "",
-      selected: ref(["INBOX"]),
-      ticked: ref([]),
-      expanded: ref([]),
       port: "",
       acceptedHeaders: ref([]),
       acceptedBody: ref([]),
@@ -294,12 +326,7 @@ export default defineComponent({
       ],
     };
   },
-  name: "TableVisits",
 
-  // props : ['emails'],
-  // mounted(){
-  //   console.log(emails)
-  // },
   ...mapState("example", [
     "retrievedEmails",
     "loadingStatus",
@@ -308,11 +335,9 @@ export default defineComponent({
   ]),
   computed: {
     Emails() {
-      this.emails = [...this.retrievedEmails];
       return [...this.retrievedEmails];
     },
     boxes() {
-      this.boxess = this.boxes;
       return [...this.boxes];
     },
     ...mapState("example", [
@@ -323,14 +348,71 @@ export default defineComponent({
     ]),
   },
 
+  mounted() {
+    //const SessionId = Math.random().toString(36).substr(2, 9);
+
+    this.getBoxes();
+    this.boxOptions = this.$store.state.boxes;
+    this.renderDialog = true;
+
+    setTimeout(() => {
+      this.showing = true;
+    }, 1000);
+    setTimeout(() => {
+      this.showing = false;
+    }, 3000);
+  },
+
+  unmounted() {
+    this.$socket.close();
+  },
+  created() {
+    this.$socket.on("totalMessages", (data) => {
+      this.total = data.total;
+      this.progress = 0;
+    });
+    this.$socket.on("connect_error", (data) => {
+      console.log(data);
+    });
+    this.$socket.on("dataCleaning", () => {
+      this.dataCleaning = "Cleaning data";
+    });
+    this.$socket.on("duplicates", () => {
+      this.dataCleaning = "Removing duplicates";
+    });
+    this.$socket.on("progress", (data) => {
+      let percentage = Math.round((data * 100) / this.total);
+      this.progress = Math.round((data * 100) / this.total) / 100;
+      this.progressLabel = this.progress + "%";
+    });
+
+    this.$socket.on("switching", (data) => {
+      this.queue.push(data);
+      this.progress = 0;
+      this.progressLabel = "";
+    });
+
+    this.$socket.on("boxName", (data) => {
+      this.currentBox = data;
+    });
+  },
+  beforeUnmount() {
+    this.$socket.close();
+    console.log("closed");
+  },
+
   methods: {
-    filterMethod(rows, term, cols) {
-      if (rows.filter((e) => e.type.includes(term)).length > 0) {
-        return this.emails;
+    filterMethod(rows, term) {
+      if (rows.filter((e) => e.domain.includes(term)).length > 0) {
+        console.log(term);
+        return this.Emails;
       } else {
-        console.log(rows);
         return rows.filter((e) => {
-          return e.address.includes(term) || e.name.includes(term);
+          if (typeof e.name == "undefined") {
+            return e.address.includes(term);
+          } else {
+            return e.address.includes(term) || e.name.includes(term);
+          }
         });
       }
     },
@@ -387,136 +469,6 @@ export default defineComponent({
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {});
     },
-  },
-
-  mounted() {
-    //const SessionId = Math.random().toString(36).substr(2, 9);
-
-    this.getBoxes();
-    this.boxOptions = this.$store.state.boxes;
-    this.renderDialog = true;
-
-    setTimeout(() => {
-      this.showing = true;
-    }, 1000);
-    setTimeout(() => {
-      this.showing = false;
-    }, 3000);
-  },
-  beforeUnmount() {
-    this.$socket.close();
-  },
-  unmounted() {
-    this.$socket.close();
-  },
-  created() {
-    this.$socket.on("totalMessages", (data) => {
-      this.total = data;
-    });
-    this.$socket.on("connect_error", (data) => {
-      console.log(data);
-    });
-    this.$socket.on("dataCleaning", (data) => {
-      this.dataCleaning = "Cleaning data";
-    });
-    this.$socket.on("duplicates", (data) => {
-      this.dataCleaning = "Removing duplicates";
-    });
-    this.$socket.on("uploadProgress", (data) => {
-      let percentage = Math.round((data * 100) / this.total);
-      this.progress = Math.round((data * 100) / this.total) / 100;
-      this.progressLabel = percentage + "%";
-    });
-    // this.$socket.on("totalMessages", (data) => {
-    //   this.total = data;
-    // });
-    // this.$socket.on("connect_error", (err) => {
-    //   console.log(err);
-    // });
-    // this.$socket.on("dataCleaning", (data) => {
-    //   this.render = !this.render;
-    //   this.currentBox = "";
-    //   this.dataCleaning = "Cleaning data";
-    // });
-    // this.$socket.on("duplicates", (data) => {
-    //   this.render = !this.render;
-    //   this.currentBox = "";
-    //   this.dataCleaning = "Removing duplicates";
-    // });
-    this.$socket.on("switching", (data) => {
-      // this.render = !this.render;
-      this.currentBox = "";
-      this.progress = 0;
-      this.progressLabel = "";
-    });
-    // this.$socket.on("uploadProgress", (data) => {
-    //   this.$socket.emit("hello", true);
-    //   console.log(data, this.$socket);
-    //   if (this.currentBox == "INBOX") {
-    //     this.progress = Math.round((((data / 300) * 100) / 100) * 10) / 10;
-    //   } else {
-    //     this.progress =
-    //       Math.round((((data / this.total) * 100) / 100) * 10) / 10;
-    //   }
-
-    //   this.progressLabel =
-    //     data + " : message analysed from total " + this.total;
-    // });
-    this.$socket.on("boxName", (data) => {
-      this.currentBox = data;
-    });
-    // this.$socket.on("end", (data) => {
-    //   this.$socket.disconnect(0);
-    // });
-  },
-  beforeUnmount() {
-    this.$socket.close();
-    console.log("closed");
-  },
-
-  setup() {
-    const $q = useQuasar();
-    const filter = ref("");
-
-    return {
-      filter,
-      mode: "list",
-      columns,
-      pagination: {
-        rowsPerPage: 10,
-      },
-      persistent: ref(false),
-      selected: ref([]),
-      ticked: ref([]),
-      expanded: ref([]),
-
-      exportTable(Emails) {
-        let csv = '"""Name""","""Email""","""Type"""\n';
-        let emailsCsv = Emails;
-        let obj = { name: "" };
-        let emailstoExport = emailsCsv.map((element) => {
-          if (!("name" in element)) {
-            element = { ...obj, ...element };
-            return element;
-          }
-          return element;
-        });
-        emailstoExport.forEach((row) => {
-          csv += Object.values(row).join(",");
-          csv += "\n";
-        });
-
-        const status = exportFile("Emails.csv", csv, "text/csv");
-
-        if (status !== true) {
-          $q.notify({
-            message: "Browser denied file download...",
-            color: "negative",
-            icon: "warning",
-          });
-        }
-      },
-    };
   },
 });
 </script>

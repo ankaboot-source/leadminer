@@ -1,14 +1,15 @@
 {
-  "name": "leadminer",
+  "name": "leadminer.io",
   "version": "0.0.1",
-  "description": "leadminer",
-  "productName": "leadminer",
-  "author": "",
   "private": true,
+  "description": "leadminer.io app",
+  "author": "ankaboot",
   "scripts": {
-    "test": "echo \"No test specified\" && exit 0",
+    "build": "quasar build",
+    "test:unit": "vue-cli-service test:unit",
+    "lint": "eslint --ext .vue --ext .js src/",
     "start": "quasar dev",
-    "build": "quasar build"
+    "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
     "@quasar/extras": "^1.12.5",
@@ -16,12 +17,18 @@
     "core-js": "^3.6.5",
     "quasar": "^2.5.5",
     "socket.io-client": "^4.4.1",
+    "vue": "^3.2.31",
     "vue-i18n": "^9.0.0-beta.0",
+    "vue-router": "^4.0.13",
     "vuedraggable": "^4.0.1",
     "vuex": "^4.0.1"
   },
   "devDependencies": {
-    "@quasar/app": "^3.3.3"
+    "@quasar/app": "^3.3.3",
+    "@vue/cli-plugin-unit-mocha": "^5.0.1",
+    "chai": "^4.1.2",
+    "eslint": "^8.10.0",
+    "eslint-plugin-vue": "^8.5.0"
   },
   "browserslist": [
     "last 10 Chrome versions",
@@ -38,5 +45,6 @@
     "node": ">= 10.18.1",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
-  }
+  },
+  "productName": "leadminer.io"
 }

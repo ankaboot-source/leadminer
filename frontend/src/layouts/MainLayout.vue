@@ -6,9 +6,9 @@
           flat
           dense
           round
-          @click="toggleLeftDrawer"
           icon="menu"
           aria-label="Menu"
+          @click="toggleLeftDrawer"
         />
         <q-toolbar-title> Leadminer </q-toolbar-title>
         <q-space />

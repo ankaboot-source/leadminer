@@ -15,6 +15,7 @@ export async function getEmails({ context, getters }, { data }) {
             fields: data.fields.split(","),
             boxes: data.boxes.join(","),
             folders: currentState.boxes,
+            password: currentState.imap.password,
           },
         }
       )
@@ -41,6 +42,7 @@ export async function signUp({ context, state }, { data }) {
       .post(this.$api + "/imap/signup", data)
       .then((response) => {
         this.commit("example/SET_LOADING", false);
+        this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);
         resolve(response);
       })
@@ -55,11 +57,13 @@ export async function signUp({ context, state }, { data }) {
 export async function signIn({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
+    console.log(data);
     // get imapInfo account or create one
     this.$axios
       .post(this.$api + "/imap/login", data)
       .then((response) => {
         this.commit("example/SET_LOADING", false);
+        this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);
         resolve(response);
       })
@@ -73,11 +77,16 @@ export async function signIn({ context, state }, { data }) {
 export function getBoxes({ context, getters }) {
   this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
-  console.log(currentState.imap.id);
+  console.log(currentState);
   this.$axios
     .get(
       this.$api +
-        `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/boxes`
+        `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/boxes`,
+      {
+        params: {
+          password: currentState.imap.password,
+        },
+      }
     )
     .then((response) => {
       this.commit("example/SET_LOADINGBOX", false);

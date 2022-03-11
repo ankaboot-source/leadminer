@@ -17,12 +17,16 @@
               :style="`background-color: ${item.color2}`"
               class="q-pa-md border q-ma-sm text-teal"
             >
-              <q-icon :name="item.icon" color="white" size="24px"></q-icon>
+              <q-icon
+                :name="item.icon"
+                color="white"
+                size="24px"
+              />
             </q-item-section>
             <q-item-section class="q-pa-md q-ml-none text-teal">
-              <q-item-label class="text-teal text-h6 text-weight-bolder">{{
-                item.value
-              }}</q-item-label>
+              <q-item-label class="text-teal text-h6 text-weight-bolder">
+                {{ item.value }}
+              </q-item-label>
               <q-item-label>{{ item.title }}</q-item-label>
             </q-item-section>
             <q-item-section
@@ -30,7 +34,11 @@
               side
               class="q-mr-md text-white"
             >
-              <q-icon :name="item.icon" color="white" size="44px"></q-icon>
+              <q-icon
+                :name="item.icon"
+                color="white"
+                size="44px"
+              />
             </q-item-section>
           </q-item>
         </div>
@@ -49,7 +57,7 @@ export default defineComponent({
       required: false,
       default: "left",
     },
-    collectedEmails: 0,
+    collectedEmails: Number(0),
   },
   computed: {
     items: function () {

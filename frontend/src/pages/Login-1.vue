@@ -17,11 +17,13 @@
         >
           <q-card
             v-show="show"
-            v-bind:style="$q.screen.lt.sm ? { width: '80%' } : { width: '30%' }"
-            ><q-card-section class="q-mt-md"
-              ><q-avatar size="80px" class="absolute-center q-mt-lg">
-                <img src="icons/favicon-128x128.png" /> </q-avatar
-            ></q-card-section>
+            :style="$q.screen.lt.sm ? { width: '80%' } : { width: '30%' }"
+          >
+            <q-card-section class="q-mt-md">
+              <q-avatar size="80px" class="absolute-center q-mt-lg">
+                <img src="icons/favicon-128x128.png" />
+              </q-avatar>
+            </q-card-section>
 
             <q-card-section>
               <div class="text-center text-teal q-pt-lg">
@@ -35,11 +37,11 @@
               </div>
             </q-card-section>
             <q-card-section>
-              <q-form @submit="login" class="q-gutter-md">
+              <q-form class="q-gutter-md" @submit="login">
                 <q-input
+                  v-model="email"
                   outlined
                   :dense="true"
-                  v-model="email"
                   label="Email address"
                   placeholder="example@company.com"
                   :rules="[
@@ -48,38 +50,45 @@
                       value.length > 12 ||
                       'Please enter a valid email address',
                   ]"
-                  ><template v-slot:prepend> <q-icon name="mail" /> </template
-                ></q-input>
+                >
+                  <template #prepend>
+                    <q-icon name="mail" />
+                  </template>
+                </q-input>
                 <q-input
+                  v-model="password"
                   outlined
                   :dense="true"
-                  v-model="password"
                   filled
                   :type="isPwd ? 'password' : 'text'"
                   hint="We do not store passwords, you must enter them each time you use leadminer"
                 >
-                  <template v-slot:append>
+                  <template #append>
                     <q-icon
                       :name="isPwd ? 'visibility_off' : 'visibility'"
                       class="cursor-pointer"
                       @click="isPwd = !isPwd"
                     />
                   </template>
-                  <template v-slot:prepend>
-                    <q-icon name="key" /> </template></q-input
+                  <template #prepend>
+                    <q-icon name="key" />
+                  </template> </q-input
                 ><q-input
                   v-if="!Login"
+                  v-model="host"
                   outlined
                   :dense="true"
-                  v-model="host"
                   label="Imap host address"
                   placeholder="imap.host.com"
                   lazy-rules
                   required
-                  ><template v-slot:prepend> <q-icon name="dns" /> </template
-                ></q-input>
-                <q-input outlined v-model="port" label-slot clearable>
-                  <template v-slot:label>
+                >
+                  <template #prepend>
+                    <q-icon name="dns" />
+                  </template>
+                </q-input>
+                <q-input v-model="port" outlined label-slot clearable>
+                  <template #label>
                     You can change the default port value :
                     <span
                       class="q-px-sm bg-orange-10 text-white rounded-borders"
@@ -89,7 +98,7 @@
                 </q-input>
                 <div class="row">
                   <div class="column col-12">
-                    <div class="col-6"></div>
+                    <div class="col-6" />
                     <div class="q-mt-md q-ml-lg col-12">
                       <q-btn
                         class="text-capitalize"
@@ -115,14 +124,14 @@
                     </div>
                   </div> -->
                   <div class="column col-12">
-                    <div class="col-6"></div>
+                    <div class="col-6" />
                     <div class="q-mt-lg q-ml-lg col-12">
                       <q-chip
-                        v-on:click="switchSlide"
                         color="orange-10"
                         clickable
                         class="cursor-pointer"
                         text-color="white"
+                        @click="switchSlide"
                       >
                         {{
                           !Login
@@ -155,7 +164,6 @@ export default {
       host: "",
       port: null,
       signIn: "sign in",
-
       signUp: "sign up",
       show: true,
       Login: false,
@@ -163,6 +171,11 @@ export default {
       valid: false,
       quasar: useQuasar(),
     };
+  },
+  created() {
+    const SessionId = Math.random().toString(36).substr(2, 9);
+    this.$socket.emit("connectInit", SessionId);
+    this.$store.commit("example/SET_SESSIONID", SessionId);
   },
   methods: {
     ...mapState("example", [
@@ -198,12 +211,13 @@ export default {
           host: this.host,
           port: this.port != null ? this.port : 993,
         };
+
         this.$store
           .dispatch("example/signUp", { data })
-          .then((res) => {
+          .then(() => {
             this.$router.push("/dashboard");
           })
-          .catch((error) => {
+          .catch(() => {
             this.showNotif(
               this.$store.getters["example/getStates"].errorMessage
             );
@@ -215,21 +229,16 @@ export default {
         };
         this.$store
           .dispatch("example/signIn", { data })
-          .then((res) => {
+          .then(() => {
             this.$router.push("/dashboard");
           })
-          .catch((error) => {
+          .catch(() => {
             this.showNotif(
               this.$store.getters["example/getStates"].errorMessage
             );
           });
       }
     },
-  },
-  created() {
-    const SessionId = Math.random().toString(36).substr(2, 9);
-    this.$socket.emit("connectInit", SessionId);
-    this.$store.commit("example/SET_SESSIONID", SessionId);
   },
 };
 </script>
