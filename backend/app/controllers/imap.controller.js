@@ -1,13 +1,9 @@
 const Imap = require("node-imap");
 const db = require("../models");
 const ImapInfo = db.imapInfo;
-<<<<<<< HEAD
-const utils = require("../utils/regexp");
-=======
 const logger = require("../utils/logger")(module);
 const utils = require("../utils/regexp");
 
->>>>>>> main
 /**
  *  Create imap info account
  * @param  {} req
@@ -65,12 +61,9 @@ exports.createImapInfo = (req, res) => {
   });
   // The imap account does not exists or connexion denied
   imap.once("error", () => {
-<<<<<<< HEAD
-=======
     logger.error(
       `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}`
     );
->>>>>>> main
     res.status(500).send({
       message: "We can't connect to your imap account",
     });
@@ -123,37 +116,28 @@ exports.getImapBoxes = async (req, res) => {
       let Boxes = [];
       imap.connect();
       imap.once("ready", () => {
-<<<<<<< HEAD
-=======
         logger.info(
           `Begin fetching folders names from imap account with email : ${imapInfo.email}`
         );
->>>>>>> main
         imap.getBoxes("", async (err, boxes) => {
           Boxes = utils.getBoxesAll(boxes);
         });
         imap.end();
       });
       imap.once("error", (err) => {
-<<<<<<< HEAD
-=======
         logger.error(
           `error occured when trying to connect to imap account with email : ${imapInfo.email}`
         );
 
->>>>>>> main
         res.status(500).send({
           error: err,
         });
       });
 
       imap.once("end", () => {
-<<<<<<< HEAD
-=======
         logger.info(
           `End fetching folders names from imap account with email : ${imapInfo.email}`
         );
->>>>>>> main
         if (Boxes.length > 0) {
           res.status(200).send({
             boxes: Boxes,
