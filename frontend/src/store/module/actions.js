@@ -1,8 +1,20 @@
 export async function getEmails({ context, getters }, { data }) {
+  const currentState = getters.getStates;
+  const source = new EventSource(`${this.$api}/stream`);
+  source.addEventListener("box", (message) => {
+    console.log("Got box", message.data);
+    this.commit("example/SET_PERCENTAGE", 0);
+    this.commit("example/SET_CURRENT", message.data);
+  });
+  source.addEventListener("percentage", (message) => {
+    console.log("Got percentage", message.data);
+    this.commit("example/SET_PERCENTAGE", message.data);
+  });
+
   return new Promise((resolve, reject) => {
-    const currentState = getters.getStates;
     console.log(currentState);
     this.commit("example/SET_LOADING", true);
+    console.log(currentState, data);
     this.$axios
       .get(
         this.$api +
@@ -11,9 +23,8 @@ export async function getEmails({ context, getters }, { data }) {
           )}/collectEmails`,
         {
           params: {
-            SessionId: JSON.parse(JSON.stringify(currentState.socketId)),
             fields: data.fields.split(","),
-            boxes: data.boxes.join(","),
+            boxes: data.boxes,
             folders: currentState.boxes,
             password: currentState.imap.password,
           },
@@ -25,6 +36,9 @@ export async function getEmails({ context, getters }, { data }) {
           "example/SET_EMAILS",
           JSON.parse(JSON.stringify(response.data.data))
         );
+        this.commit("example/SET_PERCENTAGE", 0);
+        this.commit("example/SET_CURRENT", "");
+
         resolve(response);
       })
       .catch((error) => {

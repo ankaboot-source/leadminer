@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-  const ImapInfo = sequelize.define('imap_info', {
+  const ImapInfo = sequelize.define("imap_info", {
     email: {
       type: Sequelize.STRING,
     },

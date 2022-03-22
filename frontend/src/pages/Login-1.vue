@@ -172,18 +172,9 @@ export default {
       quasar: useQuasar(),
     };
   },
-  created() {
-    const SessionId = Math.random().toString(36).substr(2, 9);
-    this.$socket.emit("connectInit", SessionId);
-    this.$store.commit("example/SET_SESSIONID", SessionId);
-  },
+
   methods: {
-    ...mapState("example", [
-      "retrievedEmails",
-      "loadingStatus",
-      "boxes",
-      "errorMessage",
-    ]),
+    ...mapState("example", ["loadingStatus", "errorMessage"]),
     showNotif(errormsg) {
       this.quasar.notify({
         message: errormsg,

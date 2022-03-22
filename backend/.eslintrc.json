@@ -10,6 +10,7 @@
     "ecmaVersion": "latest"
   },
   "rules": {
+    "complexity": ["error", 2],
     "no-console": "warn", //* Avoid Bugs
     "no-undef": "error",
     "semi": "error",
@@ -28,7 +29,7 @@
     "space-in-parens": "error",
     "space-infix-ops": "error",
     "space-unary-ops": "error",
-    "quotes": ["error", "single"],
+    "quotes": ["warn", "single"],
     //
     "max-len": ["error", { "code": 200 }],
     "max-lines": ["error", { "max": 500 }],

@@ -26,3 +26,9 @@ export function SET_ERROR(state, newError) {
 export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
+export function SET_PERCENTAGE(state, newPercentage) {
+  state.progress.percentage = newPercentage;
+}
+export function SET_CURRENT(state, newBoxName) {
+  state.progress.currentBox = newBoxName;
+}

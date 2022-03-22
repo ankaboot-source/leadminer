@@ -1,12 +1,6 @@
 <template>
   <q-page class="q-pa-sm">
     <find-emails />
-    <ul
-      v-for="email in retrievedEmails"
-      :key="email.id"
-    >
-      <li>{{ retrievedEmails.length }}</li>
-    </ul>
   </q-page>
 </template>
 
