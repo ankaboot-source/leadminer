@@ -12,6 +12,9 @@ export default function () {
     },
     boxes: [],
     errorMessage: "",
-    socketId: "",
+    progress: {
+      percentage: 0,
+      currentBox: "",
+    },
   };
 }

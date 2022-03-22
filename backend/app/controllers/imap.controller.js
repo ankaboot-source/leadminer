@@ -1,7 +1,13 @@
 const Imap = require("node-imap");
 const db = require("../models");
 const ImapInfo = db.imapInfo;
+<<<<<<< HEAD
 const utils = require("../utils/regexp");
+=======
+const logger = require("../utils/logger")(module);
+const utils = require("../utils/regexp");
+
+>>>>>>> main
 /**
  *  Create imap info account
  * @param  {} req
@@ -39,12 +45,16 @@ exports.createImapInfo = (req, res) => {
             res.status(200).send({ imapdata: data });
           })
           .catch(() => {
+            logger.error(`can't create account with email ${req.body.email}`);
             res.status(500).send({
               error:
                 "Some error occurred while creating your account imap info.",
             });
           });
       } else {
+        logger.info(
+          `On signup : Account with email ${req.body.email} already exist`
+        );
         res.status(200).send({
           message: "Your account already exists !",
           imapdata,
@@ -55,6 +65,12 @@ exports.createImapInfo = (req, res) => {
   });
   // The imap account does not exists or connexion denied
   imap.once("error", () => {
+<<<<<<< HEAD
+=======
+    logger.error(
+      `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}`
+    );
+>>>>>>> main
     res.status(500).send({
       message: "We can't connect to your imap account",
     });
@@ -70,11 +86,16 @@ exports.loginToAccount = (req, res) => {
   }
   ImapInfo.findOne({ where: { email: req.body.email } }).then((imap) => {
     if (imap === null) {
+      logger.error(
+        `On login : Account with email ${req.body.email} does not exist`
+      );
+
       // Save ImapInfo in the database
       res.status(500).send({
         error: "Your account does not exist ! try to sign up.",
       });
     } else {
+      logger.info(`Account with email ${req.body.email} succesfully logged in`);
       res.status(200).send({
         message: "Welcome back !",
         imap,
@@ -102,18 +123,37 @@ exports.getImapBoxes = async (req, res) => {
       let Boxes = [];
       imap.connect();
       imap.once("ready", () => {
+<<<<<<< HEAD
+=======
+        logger.info(
+          `Begin fetching folders names from imap account with email : ${imapInfo.email}`
+        );
+>>>>>>> main
         imap.getBoxes("", async (err, boxes) => {
           Boxes = utils.getBoxesAll(boxes);
         });
         imap.end();
       });
       imap.once("error", (err) => {
+<<<<<<< HEAD
+=======
+        logger.error(
+          `error occured when trying to connect to imap account with email : ${imapInfo.email}`
+        );
+
+>>>>>>> main
         res.status(500).send({
           error: err,
         });
       });
 
       imap.once("end", () => {
+<<<<<<< HEAD
+=======
+        logger.info(
+          `End fetching folders names from imap account with email : ${imapInfo.email}`
+        );
+>>>>>>> main
         if (Boxes.length > 0) {
           res.status(200).send({
             boxes: Boxes,
@@ -126,158 +166,141 @@ exports.getImapBoxes = async (req, res) => {
       });
     })
     .catch(() => {
+      logger.error(`No account with email : ${req.params.id} found`);
       res.status(404).send({
         error: `No account with id : ${req.params.id} found`,
       });
     });
 };
 
-exports.getEmails = async (req, res) => {
-  let socketInstance;
-  let io;
-  //fetch imap from database then getemails
-  ImapInfo.findByPk(req.params.id).then((imapInfo) => {
-    const imap = new Imap({
-      user: imapInfo.email,
-      password: "M0u571m1n!",
-      host: imapInfo.host,
-      port: imapInfo.port,
-      tls: true,
-    });
-    // data will include all of the data that will be mined from the mailbox.
-    const data = [];
-    // bodiesTofetch is the query that user sends
-    const bodiesTofetch = req.query.fields;
-
-    // get the socket instance
-    if (req.query.SessionId) {
-      io = req.app.get("io");
-      const sockets = req.app.get("sockets");
-      const thisSocketId = sockets[req.query.SessionId];
-      socketInstance = io.to(thisSocketId);
-    }
-    imap.connect();
-    // globalData will be the final mined data(after the "end event")
-    let globalData = [];
-    // selected boxes from the user
-    const boxess = req.query.boxes.split(",");
-    let folders = [];
-    let boxes = [];
-    folders = req.query.folders.map((element) => {
-      return JSON.parse(element);
-    });
-    boxes = boxess.map((element) => {
-      const path = utils.getPath({ ...folders }, element);
-      return path.substring(1);
-    });
-
-    // initial values for the loopfunction (in case we have more than one mailfile to collect data from).
-    const box = boxes[0];
-    let i = 0;
-    imap.once("ready", function () {
-      for (let j in boxes) {
-        const loopfunc = (box) => {
-          if (socketInstance) {
-            // emit switching to another box to initialise progress labels
-            socketInstance.emit("switching", true);
-          }
-          // open the mailbox and fetch fields
-          imap.openBox(box, true, async function (err, currentbox) {
-            if (socketInstance) {
-              // emit total messages usefull for progress bar
-
-              socketInstance.emit("totalMessages", currentbox.messages.total);
-
-              // emit the current file name
-              socketInstance.emit("boxName", currentbox.name);
-            }
-            if (err) throw err;
-            const f = imap.seq.fetch("1:*", {
-              bodies: bodiesTofetch,
-              struct: true,
-            });
-
-            // callback for "message" emitted event
-            await f.on("message", async function (msg, seqno) {
-              if (socketInstance) {
-                // emit how many email messages have been scanned
-                socketInstance.emit("uploadProgress", seqno);
-              }
-              // callback for "body" emitted event
-              await msg.on("body", async function (stream) {
-                let buffer = "";
-                // callback for "data" emitted event
-                await stream.on("data", function (chunk) {
-                  buffer += chunk.toString("utf8");
-                  // append to data the parsed buffer
-                  data.push(...Object.values(Imap.parseHeader(buffer)));
-                  //console.log(Object.values(Imap.parseHeader(buffer)));
-                  // define limite
-                });
-                // callback for "end" emitted event, here all messaged are parsed, data is the source of data
-              });
-            });
-            f.once("error", function (err) {
-              res.status(500).send({
-                error: err,
-              });
-            });
-
-            f.once("end", function () {
-              console.log("Done fetching all messages!");
-              if (j == boxes.length - 1) {
-                console.log(i, j);
-                imap.end();
-              } else {
-                i++;
-                j++;
-                loopfunc(boxes[i]);
-              }
-            });
-          });
-        };
-        if (j == 0) {
-          loopfunc(box);
-        }
-      }
-    });
-
-    imap.once("error", function (err) {
-      res.status(500).send({
-        error: err,
+exports.getEmails = (req, res, sse) => {
+  if (req.query.password) {
+    //fetch imap from database then getemails
+    ImapInfo.findByPk(req.params.id).then((imapInfo) => {
+      const imap = new Imap({
+        user: imapInfo.email,
+        password: req.query.password,
+        host: imapInfo.host,
+        port: imapInfo.port,
+        tls: true,
       });
-    });
+      // data will include all of the data that will be mined from the mailbox.
+      const data = [];
+      let globalData = [];
+      let database = [];
+      // selected boxes from the user
+      const boxess = req.query.boxes;
+      let folders = [];
+      let boxes = [];
+      // bodiesTofetch is the query that user sends
+      const bodiesTofetch = req.query.fields;
+      // get the socket instance
 
-    imap.once("end", async function () {
-      globalData = [...data.flat()];
-      const emailsAfterRegex = await utils.matchRegexp(globalData);
-      await utils.checkDomainType(emailsAfterRegex).then((data) => {
-        res.status(200).send({
-          data: data,
+      imap.connect();
+      folders = req.query.folders.map((element) => {
+        return JSON.parse(element);
+      });
+      boxes = boxess.map((element) => {
+        const path = utils.getPath({ ...folders }, element);
+        return path.substring(1);
+      });
+      console.log(folders, boxess);
+      // initial values for the loopfunction (in case we have more than one mailfile to collect data from).
+      const box = boxes[0];
+      let i = 0;
+      imap.once("ready", function () {
+        logger.info(
+          `Begin collecting emails from imap account with email : ${imapInfo.email}`
+        );
+        boxes.forEach(async (box) => {
+          // open the mailbox and fetch fields
+          await imap.openBox(box, true, async function (err, currentbox) {
+            if (typeof currentbox != "undefined") {
+              var sends = await utils.EqualPartsForSocket(
+                currentbox.messages.total
+              );
+
+              const f = imap.seq.fetch("1:*", {
+                bodies: bodiesTofetch,
+                struct: true,
+              });
+              // callback for "message" emitted event
+              await f.on("message", async function (msg, seqno) {
+                if (sends.includes(seqno)) {
+                  sse.send(box, "box");
+                  sse.send(
+                    Math.round((seqno * 100) / currentbox.messages.total) / 100,
+                    "percentage"
+                  );
+                }
+
+                // callback for "body" emitted event
+                await msg.on("body", async function (stream) {
+                  let buffer = "";
+                  // callback for "data" emitted event
+                  await stream.on("data", function (chunk) {
+                    buffer += chunk.toString("utf8");
+                    // append to data the parsed buffer
+                    data.push(...Object.values(Imap.parseHeader(buffer)));
+                    //console.log(Object.values(Imap.parseHeader(buffer)));
+                    // define limite
+                    let dataTobeStored = Imap.parseHeader(buffer);
+                    let msg = Object.keys(dataTobeStored).map((element) => {
+                      return {
+                        email: dataTobeStored[element],
+                        field: element,
+                        folder: currentbox.name,
+                        msgId: seqno,
+                      };
+                    });
+                    database.push(...msg);
+                  });
+                  // callback for "end" emitted event, here all messaged are parsed, data is the source of data
+                });
+              });
+              f.once("error", function (err) {
+                logger.error(
+                  `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
+                );
+                res.status(500).send({
+                  error: err,
+                });
+              });
+              f.once("end", function () {
+                sse.send(1, "percentage");
+                if (box == boxes[boxes.length - 1]) {
+                  imap.end();
+                }
+              });
+            }
+          });
         });
       });
-      console.log("Connection ended");
-      // setTimeout(() => {
-      //   if (socketInstance) {
-      //     // emit fetched emails
-      //     socketInstance.emit("cleaningData", true);
-      //   }
-      // }, 200);
-      // setTimeout(() => {
-      //   if (socketInstance) {
-      //     // emit fetched emails
-      //     socketInstance.emit("duplicates", true);
-      //   }
-      // }, 400);
-      // setTimeout(() => {
-      //   if (socketInstance) {
-      //     // emit how many email messages have been scanned
-      //     socketInstance.emit("end", true);
-      //   }
-      //   res.status(200).send({
-      //     data: emailsAfterCheckDomain,
-      //   });
-      // }, 1900);
+
+      imap.once("error", function (err) {
+        logger.error(
+          `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
+        );
+        res.status(500).send({
+          error: err,
+        });
+      });
+      imap.once("end", async function () {
+        logger.info(
+          `End collecting emails from imap account with email : ${imapInfo.email}`
+        );
+        globalData = [...data.flat()];
+        //const emailsAfterRegex = await utils.matchRegexp(globalData);
+        await utils.databaseQualification(database).then((data) => {
+          res.status(200).send({
+            data: data,
+          });
+          utils.addDomainsToValidAndInvalid(data);
+        });
+        // await utils.checkDomainType(emailsAfterRegex).then((data) => {
+        //
+        // });
+      });
     });
-  });
+  }
 };

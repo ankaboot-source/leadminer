@@ -1,12 +1,12 @@
 {
-  "name": "nodejs-express-sequelize-postgresql",
+  "name": "leadminer.io",
   "version": "1.0.0",
-  "description": "Node.js Rest Apis with Express, Sequelize & PostgreSQL",
+  "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
-    "test": "mocha  --config .mocharc.js --exit",
+    "test": "nyc mocha  --config .mocharc.js --exit",
     "dev": "node server.js",
-    "lint:fix": "eslint app/**"
+    "lint:fix": "eslint  app/**"
   },
   "keywords": [
     "nodejs",
@@ -23,6 +23,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.17.1",
+    "express-sse": "github:omgimalexis/express-sse",
     "flat": "^5.0.2",
     "legit": "^1.0.9",
     "mocha": "^9.2.1",
@@ -32,14 +33,17 @@
     "pg-hstore": "^2.3.4",
     "sequelize": "^5.21.3",
     "socket.io": "^4.4.1",
-    "supertest": "^6.2.2"
+    "supertest": "^6.2.2",
+    "winston": "^3.6.0"
   },
   "devDependencies": {
+    "c8": "^7.11.0",
     "eslint": "^8.10.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-vue": "^8.5.0"
+    "eslint-plugin-vue": "^8.5.0",
+    "nyc": "^15.1.0"
   },
   "engines": {
     "node": ">=15.0.0"

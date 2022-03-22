@@ -1,0 +1,28 @@
+name: Build & Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Leadminer
+        uses: appleboy/ssh-action@v0.1.2
+        with:
+          host: ${{secrets.SSH_HOST}} # IP address of the server
+          key: ${{secrets.SSH_KEY}} # Private or public key of the server
+          username: ${{ secrets.SSH_USERNAME }} # User of the server
+     
+          script: |
+            cd leadminer
+            git pull
+            export NVM_DIR=~/.nvm
+            source ~/.nvm/nvm.sh
+            pm2 kill
+            cd frontend && quasar build
+            cp dist /var/www/html
+            cd ..
+            cd backend && pm2 start server.js
+            
+    

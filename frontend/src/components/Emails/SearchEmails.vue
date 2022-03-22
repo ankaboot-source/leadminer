@@ -85,7 +85,7 @@
               <div class="q-md col-12">
                 <count-card
                   icon_position="left"
-                  :collected-emails="retrievedEmails.length"
+                  :collected-emails="Emails.length"
                 />
               </div>
             </div>
@@ -145,18 +145,56 @@
             </template>
             <template #body="props">
               <q-tr :props="props">
-                <q-td key="Emails" style="width: 30%" :props="props">
-                  {{ props.row.address }}
-                </q-td>
-                <q-td key="Names" style="width: 30%" :props="props">
-                  {{ props.row.name ? props.row.name : "" }}
-                </q-td>
+                <q-td
+                  v-if="
+                    (props.row.email.address &&
+                      props.row.field.includes('from')) ||
+                    props.row.field.includes('reply-to')
+                  "
+                  key="Sender"
+                  style="width: 30%"
+                  :props="props"
+                >
+                  {{ props.row.email.address }}
 
-                <q-td key="Domain" style="width: 30%" :props="props">
-                  <q-badge v-if="props.row.domain == 'Valid'" color="green">
-                    Valid
-                  </q-badge>
-                  <q-badge v-else color="red"> Invalid </q-badge>
+                  <q-td key="Names" style="width: 30%" :props="props">
+                    {{ props.row.email.name ? props.row.email.name : "" }}
+                  </q-td>
+                  <q-td key="Domain" style="width: 30%" :props="props">
+                    <q-badge
+                      v-if="props.row.dnsValidity == 'Valid'"
+                      color="green"
+                    >
+                      Valid
+                    </q-badge>
+                    <q-badge v-else color="red"> Invalid </q-badge>
+                  </q-td>
+                  <q-td key="Count" style="width: 30%" :props="props">
+                    <q-badge color="blue">
+                      {{ props.row.msgId.length }}
+                    </q-badge>
+                  </q-td>
+                </q-td>
+                <q-td key="Recipient" style="width: 30%" :props="props">
+                  {{ props.row.email.address }}
+
+                  <q-td key="Names" style="width: 30%" :props="props">
+                    {{ props.row.email.name ? props.row.email.name : "" }}
+                  </q-td>
+                  <q-td key="Domain" style="width: 30%" :props="props">
+                    <q-badge
+                      v-if="props.row.dnsValidity == 'Valid'"
+                      color="green"
+                    >
+                      Valid
+                    </q-badge>
+                    <q-badge v-else color="red"> Invalid </q-badge>
+                  </q-td>
+                  <q-td key="Count" style="width: 30%" :props="props">
+                    <q-badge color="blue">
+                      {{ props.row.msgId.length }}
+                    </q-badge>
+                  </q-td>
                 </q-td>
               </q-tr>
             </template>
@@ -177,15 +215,19 @@
             Fetching data...<br />
 
             <q-badge class="text-h6" color="teal-3">
-              Analysing mailfolder: {{ currentBox }} </q-badge
+              Analysing mailfolder: {{ CurrentBox }} </q-badge
             ><br />
-            {{ dataCleaning }}
           </div>
-          <q-linear-progress size="32px" :value="progress" color="teal-10">
+          <q-linear-progress
+            size="32px"
+            animation-speed="30"
+            :value="parseFloat(percentage)"
+            color="teal-10"
+          >
             <div
               class="absolute-full bg-transparent text-teal text-h5 flex flex-center"
             >
-              {{ progressLabel }}
+              {{ percentage * 100 + "%" }}
             </div>
           </q-linear-progress>
         </q-card>
@@ -202,16 +244,30 @@ import { mapState } from "vuex";
 
 const columns = [
   {
-    name: "Emails",
+    name: "Sender",
     align: "left",
-    label: "Emails",
+    label: "Sender",
     field: "address",
+    sortable: true,
+  },
+  {
+    name: "Recipient",
+    align: "left",
+    label: "Recipient",
+    field: "field",
     sortable: true,
   },
   {
     name: "Names",
     align: "left",
     label: "Names",
+    field: "name",
+    sortable: true,
+  },
+  {
+    name: "Count",
+    align: "left",
+    label: "Count",
     field: "name",
     sortable: true,
   },
@@ -277,10 +333,8 @@ export default defineComponent({
   data() {
     return {
       renderDialog: false,
-      progress: 0,
       total: 0,
       showing: false,
-      progressLabel: "",
       email: "",
       boxess: [],
       queue: [],
@@ -327,12 +381,6 @@ export default defineComponent({
     };
   },
 
-  ...mapState("example", [
-    "retrievedEmails",
-    "loadingStatus",
-    "loadingStatusbox",
-    "boxes",
-  ]),
   computed: {
     Emails() {
       return [...this.retrievedEmails];
@@ -340,11 +388,22 @@ export default defineComponent({
     boxes() {
       return [...this.boxes];
     },
+
+    percentage() {
+      return this.progress.percentage;
+    },
+    CurrentBox() {
+      return this.progress.currentBox;
+    },
+    ProgressLabel() {
+      return this.progress.ProgressLabel;
+    },
     ...mapState("example", [
       "retrievedEmails",
       "loadingStatus",
       "loadingStatusbox",
       "boxes",
+      "progress",
     ]),
   },
 
@@ -361,44 +420,6 @@ export default defineComponent({
     setTimeout(() => {
       this.showing = false;
     }, 3000);
-  },
-
-  unmounted() {
-    this.$socket.close();
-  },
-  created() {
-    this.$socket.on("totalMessages", (data) => {
-      this.total = data.total;
-      this.progress = 0;
-    });
-    this.$socket.on("connect_error", (data) => {
-      console.log(data);
-    });
-    this.$socket.on("dataCleaning", () => {
-      this.dataCleaning = "Cleaning data";
-    });
-    this.$socket.on("duplicates", () => {
-      this.dataCleaning = "Removing duplicates";
-    });
-    this.$socket.on("progress", (data) => {
-      let percentage = Math.round((data * 100) / this.total);
-      this.progress = Math.round((data * 100) / this.total) / 100;
-      this.progressLabel = this.progress + "%";
-    });
-
-    this.$socket.on("switching", (data) => {
-      this.queue.push(data);
-      this.progress = 0;
-      this.progressLabel = "";
-    });
-
-    this.$socket.on("boxName", (data) => {
-      this.currentBox = data;
-    });
-  },
-  beforeUnmount() {
-    this.$socket.close();
-    console.log("closed");
   },
 
   methods: {
@@ -442,7 +463,8 @@ export default defineComponent({
 
     fetchEmails() {
       var fields = [];
-      var bot = this.boxess;
+      var bot = this.boxes;
+      console.log(bot);
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
         fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
@@ -459,12 +481,7 @@ export default defineComponent({
         folders: bot,
       };
 
-      this.$store.dispatch("example/getEmails", { data }).then(() => {
-        this.total = 0;
-        this.dataCleaning = "";
-        this.progress = 0;
-        this.progressLabel = "";
-      });
+      this.$store.dispatch("example/getEmails", { data }).then(() => {});
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {});
