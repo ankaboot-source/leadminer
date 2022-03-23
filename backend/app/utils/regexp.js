@@ -15,12 +15,12 @@ const { Op } = require("sequelize");
 const ValidDomainsSet = require("./ValidDomains.json");
 const InvalidDomainsSet = require("./InvalidDomains.json");
 const dns = require("dns");
-
+const dnsPromises = dns.promises;
 /**
  * After validating/invalidating dns in CheckDOmainType() we can store valid domains for a next use.
  * @param  {} emails Clean emails
  */
-function addDomainsToValidAndInvalid(emails) {
+async function addDomainsToValidAndInvalid(emails) {
   emails.forEach((email) => {
     if (typeof email.email.address != "undefined") {
       let domain = email.email.address.split("@")[1];
@@ -32,7 +32,7 @@ function addDomainsToValidAndInvalid(emails) {
         ValidDomainsSet.domains.push(domain);
       } else if (
         !InvalidDomainsSet.domains.includes(domain) &&
-        email.domain == "Invalid"
+        email.dnsValidity == "Invalid"
       ) {
         InvalidDomainsSet.domains.push(domain);
       }
@@ -108,43 +108,73 @@ async function matchRegexp(ImapData) {
  * @param  {} collectedEmails
  */
 async function checkDomainType(data) {
-  let done = false;
-  const allPromises = data.map((email) => {
-    if (email.email == null && typeof email.email.address == "undefined") {
-      console.log(email);
-    }
+  let promises = data.map(async (email) => {
     if (email.email != null && typeof email.email.address != "undefined") {
-      console.log(email.email.address);
       let domain = email.email.address.split("@")[1];
-      if (ValidDomainsSet.domains.includes(domain)) {
-        email.dnsValidity = "Valid";
-        return;
-      } else if (InvalidDomainsSet.domains.includes(domain)) {
-        email.dnsValidity = "Invalid";
-        return;
-      } else {
-        return new Promise((resolve, reject) => {
-          dns.resolveMx(domain, async function (err, addresses) {
-            if (err) {
-              email.dnsValidity = "Invalid";
-              resolve((email.dnsValidity = "Invalid"));
-            } else if (addresses) {
-              email.dnsValidity = "Valid";
-              resolve((email.dnsValidity = "Valid"));
+      return new Promise((resolve, reject) => {
+        if (ValidDomainsSet.domains.includes(domain)) {
+          email.dnsValidity = "Valid";
+          console.log("helo");
+
+          resolve(email);
+        } else if (InvalidDomainsSet.domains.includes(domain)) {
+          email.dnsValidity = "Invalid";
+          resolve(email);
+        } else {
+          // return new Promise((resolve, reject) => {
+          //   console.log(domain);
+          //   dns.resolveMx(domain, function (err, addresses) {
+          //     if (err) {
+          //       email["dnsValidity"] = "Invalid";
+          //       resolve(email);
+          //     } else if (addresses) {
+          //       email["dnsValidity"] = "Valid";
+          //       resolve(email);
+          //     }
+          //   });
+          // });
+          dns.resolveMx(domain, (error, addresses) => {
+            if (error) {
+              console.log("helo error");
+
+              email["dnsValidity"] = "Invalid";
+              resolve(email);
+            }
+            if (addresses) {
+              email["dnsValidity"] = "Valid";
+              console.log("helo val");
+
+              resolve(email);
+            } else {
+              console.log("helo inval");
+              email["dnsValidity"] = "Invalid";
+              resolve(email);
             }
           });
-        });
-      }
+
+          // dnsPromises
+          //   .resolveMx(domain)
+          //   .then((data) => {
+          //     if (data) {
+          //       email["dnsValidity"] = "Valid";
+          //       resolve(email);
+          //     } else {
+          //       email["dnsValidity"] = "Invalid";
+          //       resolve(email);
+          //     }
+          //   })
+          //   .catch((err) => {
+          //     email["dnsValidity"] = "Invalid";
+          //     resolve(email);
+          //   });
+        }
+      });
     } else {
-      return;
+      return email;
     }
   });
-  await Promise.all(allPromises).then(() => {
-    done = true;
-  });
-  if (done) {
-    return data;
-  }
+  console.log("endddddddddd");
+  return Promise.all(promises);
 }
 
 /**
@@ -222,103 +252,26 @@ function getBoxesAll(folders) {
   return finalFolders;
 }
 
-function detectRegEx(data) {
+async function detectRegEx(data) {
   // let matchedData = data.match(regexmatch);
   // matchedData = [...matchedData.flat()];
   // dataAfterRegEx = matchedData.map((data) => {
-  const email = regex.exec(data);
-  if (email == null || email.groups == null) {
-    return null;
-  }
-  return email.groups;
-}
-async function databaseQualification(data) {
   let dataAfterRegEx = data.map((email) => {
+    let regEmail = regex.exec(email.email[0]);
     email.email =
-      detectRegEx(email.email) != null
-        ? JSON.parse(JSON.stringify(detectRegEx(email.email)))
-        : email.email;
+      regEmail != null
+        ? JSON.parse(JSON.stringify(regEmail.groups))
+        : email.email[0];
     return email;
   });
-  //console.log(dataAfterRegEx);
-  let dataAfterCheckDomain = await checkDomainType(dataAfterRegEx);
-  console.log(dataAfterCheckDomain);
-  let promises = [];
-  //var allEmails = [];
-  const allEmails = await emailsInfos.findAll();
-  console.log(JSON.parse(JSON.stringify(allEmails)));
-
-  dataAfterCheckDomain.forEach(async (data) => {
-    await emailsInfos
-      .findOne({
-        where: {
-          "email.address": {
-            [Op.eq]: data.email.address,
-          },
-        },
-      })
-      .then(async (message) => {
-        //console.log(message);
-        if (message != null) {
-          //console.log(message);
-          if (!message.msgId.includes(data.msgId)) {
-            message.msgId.push(data.msgId);
-            console.log(message.msgId);
-          } else if (!message.field.includes(data.field)) {
-            message.field.push(data.field);
-            console.log(message.field);
-          } else if (!message.folder.includes(data.folder)) {
-            message.folder.push(data.folder);
-          }
-          //console.log(message);
-
-          promises.push(
-            emailsInfos.update(
-              {
-                msgId: message.msgId,
-                folder: message.folder,
-                field: message.field,
-              },
-              {
-                where: {
-                  "email.address": {
-                    [Op.eq]: data.email.address,
-                  },
-                },
-              }
-            )
-          );
-        } else {
-          //console.log(regemail);
-
-          let EmailReadyTobeStored = {
-            email: data.email,
-            field: [data.field],
-            msgId: [data.msgId],
-            folder: [data.folder],
-            type: "email header",
-            dnsValidity: data.domain,
-          };
-
-          await emailsInfos
-            .create(EmailReadyTobeStored)
-            .then(() => {
-              console.log("done");
-            })
-            .catch((err) => {
-              logger.error(`can't store data ${err}`);
-            });
-        }
-      });
-  });
-  await Promise.all(promises);
-  const alldata = await emailsInfos.findAll();
-  return JSON.parse(JSON.stringify(alldata));
+  console.group(dataAfterRegEx);
+  return dataAfterRegEx;
 }
+
 exports.matchRegexp = matchRegexp;
 exports.checkDomainType = checkDomainType;
 exports.EqualPartsForSocket = EqualPartsForSocket;
 exports.getBoxesAll = getBoxesAll;
 exports.getPath = getPath;
 exports.addDomainsToValidAndInvalid = addDomainsToValidAndInvalid;
-exports.databaseQualification = databaseQualification;
+exports.detectRegEx = detectRegEx;

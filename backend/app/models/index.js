@@ -5,10 +5,10 @@ const sequelize = new Sequelize(dbConfig.db, "postgres", dbConfig.password, {
   host: "localhost",
   dialect: "postgres",
   pool: {
-    max: 10,
+    max: 15,
     min: 0,
-    acquire: 60000,
-    idle: 10000,
+    acquire: 90000,
+    idle: 30000,
   },
   retry: {
     match: [/Deadlock/i],

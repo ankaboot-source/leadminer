@@ -103,6 +103,7 @@
             :filter="filter"
             :filter-method="filterMethod"
             row-key="email"
+            :pagination.sync="pagination"
           >
             <template #top-right="props">
               <q-input
@@ -145,56 +146,30 @@
             </template>
             <template #body="props">
               <q-tr :props="props">
-                <q-td
-                  v-if="
-                    (props.row.email.address &&
-                      props.row.field.includes('from')) ||
-                    props.row.field.includes('reply-to')
-                  "
-                  key="Sender"
-                  style="width: 30%"
-                  :props="props"
+                <q-td key="Email" style="width: 30%" :props="props">
+                  {{
+                    props.row.email.address
+                      ? props.row.email.address
+                      : props.row.email[0]
+                  }}</q-td
                 >
-                  {{ props.row.email.address }}
 
-                  <q-td key="Names" style="width: 30%" :props="props">
-                    {{ props.row.email.name ? props.row.email.name : "" }}
-                  </q-td>
-                  <q-td key="Domain" style="width: 30%" :props="props">
-                    <q-badge
-                      v-if="props.row.dnsValidity == 'Valid'"
-                      color="green"
-                    >
-                      Valid
-                    </q-badge>
-                    <q-badge v-else color="red"> Invalid </q-badge>
-                  </q-td>
-                  <q-td key="Count" style="width: 30%" :props="props">
-                    <q-badge color="blue">
-                      {{ props.row.msgId.length }}
-                    </q-badge>
-                  </q-td>
+                <q-td key="Names" style="width: 30%" :props="props">
+                  {{ props.row.email.name ? props.row.email.name : "" }}
                 </q-td>
-                <q-td key="Recipient" style="width: 30%" :props="props">
-                  {{ props.row.email.address }}
-
-                  <q-td key="Names" style="width: 30%" :props="props">
-                    {{ props.row.email.name ? props.row.email.name : "" }}
-                  </q-td>
-                  <q-td key="Domain" style="width: 30%" :props="props">
-                    <q-badge
-                      v-if="props.row.dnsValidity == 'Valid'"
-                      color="green"
-                    >
-                      Valid
-                    </q-badge>
-                    <q-badge v-else color="red"> Invalid </q-badge>
-                  </q-td>
-                  <q-td key="Count" style="width: 30%" :props="props">
-                    <q-badge color="blue">
-                      {{ props.row.msgId.length }}
-                    </q-badge>
-                  </q-td>
+                <q-td key="Domain" style="width: 30%" :props="props">
+                  <q-badge
+                    v-if="props.row.dnsValidity == 'Valid'"
+                    color="green"
+                  >
+                    Valid
+                  </q-badge>
+                  <q-badge v-else color="red"> Invalid </q-badge>
+                </q-td>
+                <q-td key="Count" style="width: 30%" :props="props">
+                  <q-badge color="blue">
+                    {{ props.row.total }}
+                  </q-badge>
                 </q-td>
               </q-tr>
             </template>
@@ -244,38 +219,29 @@ import { mapState } from "vuex";
 
 const columns = [
   {
-    name: "Sender",
+    name: "Email",
     align: "left",
-    label: "Sender",
+    label: "Email",
     field: "address",
-    sortable: true,
   },
-  {
-    name: "Recipient",
-    align: "left",
-    label: "Recipient",
-    field: "field",
-    sortable: true,
-  },
+
   {
     name: "Names",
     align: "left",
     label: "Names",
     field: "name",
-    sortable: true,
-  },
-  {
-    name: "Count",
-    align: "left",
-    label: "Count",
-    field: "name",
-    sortable: true,
   },
   {
     name: "Domain",
     align: "left",
     label: "Domain",
     field: "domain",
+  },
+  {
+    name: "Count",
+    align: "left",
+    label: "Count",
+    field: "total",
     sortable: true,
   },
 ];
@@ -295,7 +261,7 @@ export default defineComponent({
       mode: "list",
       columns,
       pagination: {
-        rowsPerPage: 10,
+        rowsPerPage: 50000,
       },
       persistent: ref(false),
       selected: ref([]),

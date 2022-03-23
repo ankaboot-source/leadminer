@@ -15,7 +15,7 @@ module.exports = (sequelize, Sequelize) => {
     folder: {
       type: Sequelize.ARRAY(Sequelize.STRING),
     },
-    dnsValididty: {
+    dnsValidity: {
       type: Sequelize.STRING,
     },
     // dnsDateCheck: {
@@ -24,6 +24,9 @@ module.exports = (sequelize, Sequelize) => {
     // smtpCode: {
     //   type: Sequelize.STRING,
     // },
+    total: {
+      type: Sequelize.INTEGER,
+    },
     type: {
       type: Sequelize.ENUM("email header", "email body"),
     },

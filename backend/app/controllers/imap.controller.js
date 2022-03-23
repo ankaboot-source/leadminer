@@ -2,8 +2,8 @@ const Imap = require("node-imap");
 const db = require("../models");
 const ImapInfo = db.imapInfo;
 const logger = require("../utils/logger")(module);
-const utils = require("../utils/regexp");
-
+var utils = require("../utils/regexp");
+var qualificationServices = require("../services/dataQualificationService");
 /**
  *  Create imap info account
  * @param  {} req
@@ -275,12 +275,16 @@ exports.getEmails = (req, res, sse) => {
         );
         globalData = [...data.flat()];
         //const emailsAfterRegex = await utils.matchRegexp(globalData);
-        await utils.databaseQualification(database).then((data) => {
-          res.status(200).send({
-            data: data,
+        await qualificationServices
+          .databaseQualification(database, boxes)
+          .then(async (data) => {
+            // await utils.addDomainsToValidAndInvalid(data).then((data) => {
+            res.status(200).send({
+              data: data,
+            });
+            //await utils.addDomainsToValidAndInvalid(data);
+            // });
           });
-          utils.addDomainsToValidAndInvalid(data);
-        });
         // await utils.checkDomainType(emailsAfterRegex).then((data) => {
         //
         // });
