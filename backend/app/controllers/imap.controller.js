@@ -274,6 +274,7 @@ exports.getEmails = (req, res, sse) => {
           `End collecting emails from imap account with email : ${imapInfo.email}`
         );
         globalData = [...data.flat()];
+
         //const emailsAfterRegex = await utils.matchRegexp(globalData);
         await qualificationServices
           .databaseQualification(database, boxes)

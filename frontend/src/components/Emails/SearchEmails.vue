@@ -150,7 +150,7 @@
                   {{
                     props.row.email.address
                       ? props.row.email.address
-                      : props.row.email[0]
+                      : props.row.email
                   }}</q-td
                 >
 

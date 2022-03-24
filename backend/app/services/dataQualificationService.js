@@ -5,12 +5,13 @@ const { Op } = require("sequelize");
 async function databaseQualification(data, currentFolders) {
   // detect regEx in data
   let dataAfterRegEx = await utils.detectRegEx(data);
-  console.log(dataAfterRegEx);
+  //console.log(dataAfterRegEx);
 
   // Check domain type (using dns module resolveMx)
   let dataAfterCheckDomain = await utils.checkDomainType(dataAfterRegEx);
   //console.log(datadomain);
-  console.log(dataAfterCheckDomain);
+  let dataAfterCheckDomain1 = dataAfterCheckDomain;
+  // console.log(dataAfterCheckDomain);
   // count all occurences if each message
   // dataAfterCheckDomain.forEach((email) => {
   //   // get count occurences for each email in the list
@@ -21,12 +22,33 @@ async function databaseQualification(data, currentFolders) {
   // });
   const promises = [];
   let dataToBe = [];
+  function removeDuplicates(originalArray, prop) {
+    var newArray = [];
+    var lookupObject = {};
+
+    for (var i in originalArray) {
+      lookupObject[originalArray[i][prop].address] = originalArray[i];
+    }
+
+    for (i in lookupObject) {
+      newArray.push(lookupObject[i]);
+    }
+    return newArray;
+  }
+
+  var uniqueArray = removeDuplicates(dataAfterCheckDomain, "email");
+  console.log("uniqueArray is: " + JSON.stringify(uniqueArray));
+  dataAfterCheckDomain = uniqueArray;
   // loop through collected data and update database with new changes
   dataAfterCheckDomain.forEach(async (data) => {
-    let count = dataAfterCheckDomain.filter(
-      (obj) => obj.email.address === data.email.address
+    let count = dataAfterCheckDomain1.filter(
+      (obj) =>
+        typeof obj.email != "undefined" &&
+        obj.email.address === data.email.address
     ).length;
     data["total"] = count;
+
+    //console.log(dataAfterCheckDomain);
     // find one record thet matches the current email object(data)
     emailsInfos
       .findOne({
@@ -37,7 +59,7 @@ async function databaseQualification(data, currentFolders) {
         },
       })
       .then(async (message) => {
-        console.log(message);
+        //console.log(message);
         if (message != null) {
           //console.log(message);
           if (!message.msgId.includes(data.msgId)) {
@@ -89,7 +111,7 @@ async function databaseQualification(data, currentFolders) {
 
   await Promise.all(promises);
   let alldata = await emailsInfos.findAll();
-  console.log(JSON.parse(JSON.stringify(alldata)));
+  //console.log(JSON.parse(JSON.stringify(alldata)));
   //console.log(JSON.parse(JSON.stringify(alldata)));
   return dataAfterCheckDomain;
 }
