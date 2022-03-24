@@ -4,5 +4,8 @@ package-lock.json
 # Quasar core related directories
 .quasar
 /dist
+/.vscode
 .vscode
 .editorconfig
+**/.ncy_output/
+**/.vscode/

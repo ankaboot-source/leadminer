@@ -6,3 +6,5 @@ logs
 .ncy_output
 coverage
 logs
+**/.vscode/
+**/.ncy_output/

@@ -4,6 +4,8 @@
 
 # production
 /build
-
+.vscode
+**/.ncy_output/
 # misc
 .env
+**/.vscode/
