@@ -89,6 +89,23 @@
                 />
               </div>
             </div>
+            <div class="row q-pa-lg">
+              <div class="row">
+                <div
+                  class="bg-grey-1 border col-5 q-ma-sm"
+                  v-for="(item, n) in infos"
+                  :key="`xl-${n}`"
+                >
+                  <div class="row bg-grey-1 text-teal-6 border">
+                    <div class="col-1">
+                      <q-badge class="q-pa-sm" rounded :color="item.color">
+                      </q-badge>
+                    </div>
+                    <div class="col-10">{{ " " + item.text }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -153,11 +170,16 @@
                       : props.row.email
                   }}</q-td
                 >
+                <q-td key="Field" style="width: 10%" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.field }}
+                  </q-badge>
+                </q-td>
 
-                <q-td key="Names" style="width: 30%" :props="props">
+                <q-td key="Names" style="width: 20%" :props="props">
                   {{ props.row.email.name ? props.row.email.name : "" }}
                 </q-td>
-                <q-td key="Domain" style="width: 30%" :props="props">
+                <q-td key="Domain" style="width: 15%" :props="props">
                   <q-badge
                     v-if="props.row.dnsValidity == 'Valid'"
                     color="green"
@@ -166,9 +188,14 @@
                   </q-badge>
                   <q-badge v-else color="red"> Invalid </q-badge>
                 </q-td>
-                <q-td key="Count" style="width: 30%" :props="props">
+                <q-td key="Count" style="width: 15%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.total }}
+                  </q-badge>
+                </q-td>
+                <q-td key="Count" style="width: 30%" :props="props">
+                  <q-badge rounded color="green">
+                    {{ " " }}
                   </q-badge>
                 </q-td>
               </q-tr>
@@ -216,13 +243,44 @@ import { defineComponent, defineAsyncComponent } from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapState } from "vuex";
-
+const infos = [
+  {
+    text: "The mailbox is valid and could receive our emails",
+    color: "green",
+  },
+  {
+    text: "The mailbox is valid but could not receive your emails",
+    color: "yellow-4",
+  },
+  {
+    text: "The mailbox is not valid",
+    color: "yellow-10",
+  },
+  {
+    text: "No answer from the server",
+    color: "amber-2",
+  },
+  {
+    text: "Not-understable answer from the server ",
+    color: "yellow-12",
+  },
+  {
+    text: "Verification timeout",
+    color: "grey-5",
+  },
+];
 const columns = [
   {
     name: "Email",
     align: "left",
     label: "Email",
     field: "address",
+  },
+  {
+    name: "Field",
+    align: "left",
+    label: "Field",
+    field: "field",
   },
 
   {
@@ -244,6 +302,13 @@ const columns = [
     field: "total",
     sortable: true,
   },
+  {
+    name: "Status",
+    align: "left",
+    label: "Status",
+    field: "status",
+    sortable: true,
+  },
 ];
 
 export default defineComponent({
@@ -260,6 +325,7 @@ export default defineComponent({
       filter,
       mode: "list",
       columns,
+      infos,
       pagination: {
         rowsPerPage: 50000,
       },
@@ -456,6 +522,9 @@ export default defineComponent({
 });
 </script>
 <style>
+.border {
+  border-radius: 10px;
+}
 .bborder {
   border: 1px solid transparent;
   border-radius: 12px;
