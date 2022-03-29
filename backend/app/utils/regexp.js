@@ -90,12 +90,7 @@ async function matchRegexp(ImapData) {
       return email.groups;
     });
     // remove null values then return data
-    dataAfterRegEx = dataAfterRegEx.filter((item) => Boolean(item));
-    // remove duplicates
-    dataAfterRegEx = dataAfterRegEx.filter(
-      (el, index, array) =>
-        array.findIndex((t) => t.address == el.address) == index
-    );
+
     resolve(dataAfterRegEx);
   });
   const result = await promise;
@@ -109,66 +104,72 @@ async function matchRegexp(ImapData) {
  */
 async function checkDomainType(data) {
   let promises = data.map(async (email) => {
+    console.log("helo");
     if (email.email != null && typeof email.email.address != "undefined") {
       let domain = email.email.address.split("@")[1];
-      return new Promise((resolve, reject) => {
-        if (ValidDomainsSet.domains.includes(domain)) {
-          email.dnsValidity = "Valid";
-          console.log("helo");
+      if (typeof domain == "undefined") {
+        console.log(email);
+      } else {
+        return new Promise((resolve, reject) => {
+          if (ValidDomainsSet.domains.includes(domain)) {
+            email.dnsValidity = "Valid";
+            //console.log("helo");
 
-          resolve(email);
-        } else if (InvalidDomainsSet.domains.includes(domain)) {
-          email.dnsValidity = "Invalid";
-          resolve(email);
-        } else {
-          // return new Promise((resolve, reject) => {
-          //   console.log(domain);
-          //   dns.resolveMx(domain, function (err, addresses) {
-          //     if (err) {
-          //       email["dnsValidity"] = "Invalid";
-          //       resolve(email);
-          //     } else if (addresses) {
-          //       email["dnsValidity"] = "Valid";
-          //       resolve(email);
-          //     }
-          //   });
-          // });
-          dns.resolveMx(domain, (error, addresses) => {
-            if (error) {
-              console.log("helo error");
+            resolve(email);
+          } else if (InvalidDomainsSet.domains.includes(domain)) {
+            email.dnsValidity = "Invalid";
+            resolve(email);
+          } else {
+            // return new Promise((resolve, reject) => {
+            //   console.log(domain);
+            //   dns.resolveMx(domain, function (err, addresses) {
+            //     if (err) {
+            //       email["dnsValidity"] = "Invalid";
+            //       resolve(email);
+            //     } else if (addresses) {
+            //       email["dnsValidity"] = "Valid";
+            //       resolve(email);
+            //     }
+            //   });
+            // });
 
-              email["dnsValidity"] = "Invalid";
-              resolve(email);
-            }
-            if (addresses) {
-              email["dnsValidity"] = "Valid";
-              console.log("helo val");
+            dns.resolveMx(domain, (error, addresses) => {
+              if (error) {
+                //console.log("helo error");
 
-              resolve(email);
-            } else {
-              console.log("helo inval");
-              email["dnsValidity"] = "Invalid";
-              resolve(email);
-            }
-          });
+                email["dnsValidity"] = "Invalid";
+                resolve(email);
+              }
+              if (addresses) {
+                email["dnsValidity"] = "Valid";
+                //console.log("helo val");
 
-          // dnsPromises
-          //   .resolveMx(domain)
-          //   .then((data) => {
-          //     if (data) {
-          //       email["dnsValidity"] = "Valid";
-          //       resolve(email);
-          //     } else {
-          //       email["dnsValidity"] = "Invalid";
-          //       resolve(email);
-          //     }
-          //   })
-          //   .catch((err) => {
-          //     email["dnsValidity"] = "Invalid";
-          //     resolve(email);
-          //   });
-        }
-      });
+                resolve(email);
+              } else {
+                //console.log("helo inval");
+                email["dnsValidity"] = "Invalid";
+                resolve(email);
+              }
+            });
+
+            // dnsPromises
+            //   .resolveMx(domain)
+            //   .then((data) => {
+            //     if (data) {
+            //       email["dnsValidity"] = "Valid";
+            //       resolve(email);
+            //     } else {
+            //       email["dnsValidity"] = "Invalid";
+            //       resolve(email);
+            //     }
+            //   })
+            //   .catch((err) => {
+            //     email["dnsValidity"] = "Invalid";
+            //     resolve(email);
+            //   });
+          }
+        });
+      }
     } else {
       return email;
     }

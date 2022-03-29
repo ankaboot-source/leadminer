@@ -40,7 +40,8 @@ exports.createImapInfo = (req, res) => {
           .then((data) => {
             res.status(200).send({ imapdata: data });
           })
-          .catch(() => {
+          .catch((err) => {
+            console.log(err);
             logger.error(`can't create account with email ${req.body.email}`);
             res.status(500).send({
               error:
@@ -196,71 +197,79 @@ exports.getEmails = (req, res, sse) => {
         logger.info(
           `Begin collecting emails from imap account with email : ${imapInfo.email}`
         );
-        boxes.forEach(async (box) => {
-          // open the mailbox and fetch fields
-          await imap.openBox(box, true, async function (err, currentbox) {
-            if (typeof currentbox != "undefined") {
-              var sends = await utils.EqualPartsForSocket(
-                currentbox.messages.total
-              );
-
-              const f = imap.seq.fetch("1:*", {
-                bodies: bodiesTofetch,
-                struct: true,
-              });
-              // callback for "message" emitted event
-              await f.on("message", async function (msg, seqno) {
-                if (sends.includes(seqno)) {
-                  sse.send(box, "box");
-                  sse.send(
-                    Math.round((seqno * 100) / currentbox.messages.total) / 100,
-                    "percentage"
-                  );
-                }
-
-                // callback for "body" emitted event
-                await msg.on("body", async function (stream) {
-                  let buffer = "";
-                  // callback for "data" emitted event
-                  await stream.on("data", function (chunk) {
-                    buffer += chunk.toString("utf8");
-                    // append to data the parsed buffer
-                    data.push(...Object.values(Imap.parseHeader(buffer)));
-                    //console.log(Object.values(Imap.parseHeader(buffer)));
-                    // define limite
-                    let dataTobeStored = Imap.parseHeader(buffer);
-                    let msg = Object.keys(dataTobeStored).map((element) => {
-                      return {
-                        email: dataTobeStored[element],
-                        field: element,
-                        folder: currentbox.name,
-                        msgId: seqno,
-                      };
-                    });
-                    database.push(...msg);
-                  });
-                  // callback for "end" emitted event, here all messaged are parsed, data is the source of data
-                });
-              });
-              f.once("error", function (err) {
-                logger.error(
-                  `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
+        for (let j in boxes) {
+          const loopfunc = (box) => {
+            imap.openBox(box, true, async function (err, currentbox) {
+              if (typeof currentbox != "undefined") {
+                var sends = await utils.EqualPartsForSocket(
+                  currentbox.messages.total
                 );
-                res.status(500).send({
-                  error: err,
-                });
-              });
-              f.once("end", function () {
-                sse.send(1, "percentage");
-                if (box == boxes[boxes.length - 1]) {
-                  imap.end();
-                }
-              });
-            }
-          });
-        });
-      });
 
+                const f = imap.seq.fetch("1:*", {
+                  bodies: bodiesTofetch,
+                  struct: true,
+                });
+                // callback for "message" emitted event
+                await f.on("message", async function (msg, seqno) {
+                  console.log(seqno);
+                  if (sends.includes(seqno)) {
+                    sse.send(box, "box");
+                    sse.send(
+                      Math.round((seqno * 100) / currentbox.messages.total) /
+                        100,
+                      "percentage"
+                    );
+                  }
+
+                  // callback for "body" emitted event
+                  await msg.on("body", async function (stream) {
+                    let buffer = "";
+                    // callback for "data" emitted event
+                    await stream.on("data", function (chunk) {
+                      buffer += chunk.toString("utf8");
+                      // append to data the parsed buffer
+                      data.push(...Object.values(Imap.parseHeader(buffer)));
+                      //console.log(Object.values(Imap.parseHeader(buffer)));
+                      // define limite
+                      let dataTobeStored = Imap.parseHeader(buffer);
+                      let msg = Object.keys(dataTobeStored).map((element) => {
+                        return {
+                          email: dataTobeStored[element],
+                          field: element,
+                          folder: currentbox.name,
+                          msgId: seqno,
+                        };
+                      });
+                      database.push(...msg);
+                    });
+                    // callback for "end" emitted event, here all messaged are parsed, data is the source of data
+                  });
+                });
+                f.once("error", function (err) {
+                  logger.error(
+                    `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
+                  );
+                  res.status(500).send({
+                    error: err,
+                  });
+                });
+                f.once("end", function () {
+                  sse.send(1, "percentage");
+                  if (box == boxes[boxes.length - 1]) {
+                    imap.end();
+                  } else {
+                    i++;
+                    loopfunc(boxes[i]);
+                  }
+                });
+              }
+            });
+          };
+          if (j == 0) {
+            loopfunc(box);
+          }
+        }
+      });
       imap.once("error", function (err) {
         logger.error(
           `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
@@ -277,7 +286,7 @@ exports.getEmails = (req, res, sse) => {
 
         //const emailsAfterRegex = await utils.matchRegexp(globalData);
         await qualificationServices
-          .databaseQualification(database, boxes)
+          .databaseQualification(database, req.params.id)
           .then(async (data) => {
             // await utils.addDomainsToValidAndInvalid(data).then((data) => {
             res.status(200).send({

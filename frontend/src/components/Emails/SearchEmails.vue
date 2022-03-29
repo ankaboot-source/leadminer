@@ -170,11 +170,6 @@
                       : props.row.email
                   }}</q-td
                 >
-                <q-td key="Field" style="width: 10%" :props="props">
-                  <q-badge outline color="orange" transparent>
-                    {{ props.row.field }}
-                  </q-badge>
-                </q-td>
 
                 <q-td key="Names" style="width: 20%" :props="props">
                   {{ props.row.email.name ? props.row.email.name : "" }}
@@ -186,14 +181,34 @@
                   >
                     Valid
                   </q-badge>
-                  <q-badge v-else color="red"> Invalid </q-badge>
+                  <q-badge v-else color="red"> Invalid </q-badge> </q-td
+                ><q-td key="Sender" style="width: 10%" :props="props">
+                  <q-badge
+                    v-if="returnSender(props.row.field) != null"
+                    outline
+                    v-bind:key="item"
+                    color="orange"
+                    transparent
+                  >
+                    {{ returnSender(props.row.field) }}
+                  </q-badge> </q-td
+                ><q-td key="Recipient" style="width: 10%" :props="props">
+                  <q-badge
+                    v-if="returnRecipient(props.row.field) != null"
+                    outline
+                    v-bind:key="item"
+                    color="orange"
+                    transparent
+                  >
+                    {{ returnRecipient(props.row.field) }}
+                  </q-badge>
                 </q-td>
-                <q-td key="Count" style="width: 15%" :props="props">
+                <q-td key="Total" style="width: 10%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.total }}
                   </q-badge>
                 </q-td>
-                <q-td key="Count" style="width: 30%" :props="props">
+                <q-td key="Status" style="width: 30%" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
                   </q-badge>
@@ -222,7 +237,7 @@
           </div>
           <q-linear-progress
             size="32px"
-            animation-speed="30"
+            animation-speed="15"
             :value="parseFloat(percentage)"
             color="teal-10"
           >
@@ -276,12 +291,6 @@ const columns = [
     label: "Email",
     field: "address",
   },
-  {
-    name: "Field",
-    align: "left",
-    label: "Field",
-    field: "field",
-  },
 
   {
     name: "Names",
@@ -296,9 +305,21 @@ const columns = [
     field: "domain",
   },
   {
-    name: "Count",
+    name: "Sender",
     align: "left",
-    label: "Count",
+    label: "Sender",
+    field: "field",
+  },
+  {
+    name: "Recipient",
+    align: "left",
+    label: "Recipient",
+    field: "field",
+  },
+  {
+    name: "Total",
+    align: "left",
+    label: "Total",
     field: "total",
     sortable: true,
   },
@@ -335,15 +356,30 @@ export default defineComponent({
       expanded: ref([]),
 
       exportTable(Emails) {
-        let csv = '"""Name""","""Email""","""Type"""\n';
+        let csv =
+          '"""Aliase""","""Email""","""Domain""","""Fields""","""Total""","""Status"""\n';
         let emailsCsv = Emails;
         let obj = { name: "" };
         let emailstoExport = emailsCsv.map((element) => {
-          if (!("name" in element)) {
-            element = { ...obj, ...element };
-            return element;
+          let field = "";
+          if (Array.isArray(element.field[0])) {
+            for (let i of element.field) {
+              let temp = i[0] + ":" + i[1];
+              field = field.concat("   ", temp);
+            }
+          } else {
+            field = element.field[0] + ":" + element.field[1];
           }
-          return element;
+          let obj = {
+            Aliase: element.email.name,
+            Email: element.email.address,
+            Domain: element.dnsValidity,
+            Fields: field,
+            Total: element.total,
+            Status: "Valid",
+          };
+
+          return obj;
         });
         emailstoExport.forEach((row) => {
           csv += Object.values(row).join(",");
@@ -455,6 +491,38 @@ export default defineComponent({
   },
 
   methods: {
+    returnSender(field) {
+      if (Array.isArray(field[0])) {
+        let count = 0;
+        for (const i of field) {
+          if (i.includes("from") || i.includes("reply-to")) {
+            count += i[1];
+          }
+        }
+        return count != 0 ? count : null;
+      } else if (field.includes("from") || field.includes("reply-to")) {
+        return field[1];
+      }
+      return null;
+    },
+    returnRecipient(field) {
+      if (Array.isArray(field[0])) {
+        let count = 0;
+        for (const i of field) {
+          if (i.includes("to") || i.includes("cc") || i.includes("bcc")) {
+            count += i[1];
+          }
+        }
+        return count != 0 ? count : null;
+      } else if (
+        field.includes("to") ||
+        field.includes("cc") ||
+        field.includes("bcc")
+      ) {
+        return field[1];
+      }
+      return null;
+    },
     filterMethod(rows, term) {
       if (rows.filter((e) => e.domain.includes(term)).length > 0) {
         console.log(term);

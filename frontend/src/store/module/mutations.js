@@ -8,6 +8,7 @@ export function SET_LOADINGBOX(state, newLoadingStatusbox) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
 export function SET_IMAP(state, newImap) {
+  console.log(newImap);
   state.imap.id = newImap.id;
   state.imap.email = newImap.email;
   state.imap.host = newImap.host;

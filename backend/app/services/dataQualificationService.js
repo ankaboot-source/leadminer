@@ -8,7 +8,7 @@ async function databaseQualification(data, currentFolders) {
   //console.log(dataAfterRegEx);
 
   // Check domain type (using dns module resolveMx)
-  let dataAfterCheckDomain = await utils.checkDomainType(dataAfterRegEx);
+  let dataAfterCheckDomain = dataAfterRegEx; //await utils.checkDomainType(dataAfterRegEx);
   //console.log(datadomain);
   let dataAfterCheckDomain1 = dataAfterCheckDomain;
   // console.log(dataAfterCheckDomain);
@@ -27,7 +27,7 @@ async function databaseQualification(data, currentFolders) {
     var lookupObject = {};
 
     for (var i in originalArray) {
-      lookupObject[originalArray[i][prop].address] = originalArray[i];
+      lookupObject[originalArray[i][prop]] = originalArray[i];
     }
 
     for (i in lookupObject) {
@@ -35,10 +35,27 @@ async function databaseQualification(data, currentFolders) {
     }
     return newArray;
   }
+  dataAfterCheckDomain.map((val) => {
+    dataAfterCheckDomain.forEach((emo) => {
+      console.log("hello");
+      if (val.email.address == emo.email.address && val.field == emo.field) {
+        let count = dataAfterCheckDomain1.filter(
+          (obj) =>
+            typeof obj.email != "undefined" &&
+            obj.email.address === val.email.address &&
+            obj.field == val.field
+        ).length;
+        if (Array.isArray(val.field)) {
+          val.field.push([val.field, count]);
+        } else {
+          val.field = [val.field, count];
+        }
+      }
+    });
+  });
 
-  var uniqueArray = removeDuplicates(dataAfterCheckDomain, "email");
-  console.log("uniqueArray is: " + JSON.stringify(uniqueArray));
-  dataAfterCheckDomain = uniqueArray;
+  //console.log("uniqueArray is: " + JSON.stringify(uniqueArray));
+  //dataAfterCheckDomain = uniqueArray;
   // loop through collected data and update database with new changes
   dataAfterCheckDomain.forEach(async (data) => {
     let count = dataAfterCheckDomain1.filter(
@@ -47,6 +64,13 @@ async function databaseQualification(data, currentFolders) {
         obj.email.address === data.email.address
     ).length;
     data["total"] = count;
+    let countd = dataAfterCheckDomain1.filter(
+      (obj) =>
+        typeof obj.email != "undefined" &&
+        obj.email.address === data.email.address &&
+        obj.field[0] === data.field[0]
+    ).length;
+    data.field[1] = countd;
 
     //console.log(dataAfterCheckDomain);
     // find one record thet matches the current email object(data)
@@ -109,11 +133,39 @@ async function databaseQualification(data, currentFolders) {
   });
   //console.log(currentFolders);
 
-  await Promise.all(promises);
+  //await Promise.all(promises);
   let alldata = await emailsInfos.findAll();
   //console.log(JSON.parse(JSON.stringify(alldata)));
   //console.log(JSON.parse(JSON.stringify(alldata)));
-  return dataAfterCheckDomain;
+  let arra = [];
+
+  let ele1 = dataAfterCheckDomain.filter(
+    (value, index, self) =>
+      index ===
+      self.findIndex(
+        (t) =>
+          t.email.address === value.email.address &&
+          t.field[0] === value.field[0]
+      )
+  );
+  let ar = [];
+  ele1.map((value) => {
+    ele1.map((data) => {
+      if (
+        data.email.address == value.email.address &&
+        !data.field.every((el) => value.field.includes(el))
+      ) {
+        value.field = [data.field, value.field];
+      }
+    });
+  });
+  ar = ele1.filter(
+    (value, index, self) =>
+      index === self.findIndex((t) => t.email.address === value.email.address)
+  );
+  let dataAfterCheckDomain3 = await utils.checkDomainType(ar);
+
+  return dataAfterCheckDomain3;
 }
 
 exports.databaseQualification = databaseQualification;

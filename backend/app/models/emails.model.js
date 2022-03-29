@@ -1,5 +1,10 @@
 module.exports = (sequelize, Sequelize) => {
   const EmailsInfos = sequelize.define("emails_info", {
+    userId: {
+      allowNull: false,
+      type: Sequelize.UUID,
+      foriegnKey: true,
+    },
     email: {
       type: Sequelize.JSONB,
       unique: {
@@ -31,6 +36,10 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.ENUM("email header", "email body"),
     },
   });
-
+  EmailsInfos.associate = (models) => {
+    EmailsInfos.belongsTo(models.imap_infos, {
+      foreignKey: "userId",
+    });
+  };
   return EmailsInfos;
 };
