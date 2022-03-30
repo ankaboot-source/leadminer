@@ -174,15 +174,7 @@
                 <q-td key="Names" style="width: 20%" :props="props">
                   {{ props.row.email.name ? props.row.email.name : "" }}
                 </q-td>
-                <q-td key="Domain" style="width: 15%" :props="props">
-                  <q-badge
-                    v-if="props.row.dnsValidity == 'Valid'"
-                    color="green"
-                  >
-                    Valid
-                  </q-badge>
-                  <q-badge v-else color="red"> Invalid </q-badge> </q-td
-                ><q-td key="Sender" style="width: 10%" :props="props">
+                <q-td key="Sender" style="width: 10%" :props="props">
                   <q-badge
                     v-if="returnSender(props.row.field) != null"
                     outline
@@ -205,7 +197,10 @@
                 </q-td>
                 <q-td key="Total" style="width: 10%" :props="props">
                   <q-badge color="blue">
-                    {{ props.row.total }}
+                    {{
+                      returnRecipient(props.row.field) +
+                      returnSender(props.row.field)
+                    }}
                   </q-badge>
                 </q-td>
                 <q-td key="Status" style="width: 30%" :props="props">
@@ -304,17 +299,13 @@ const columns = [
     label: "Names",
     field: "name",
   },
-  {
-    name: "Domain",
-    align: "left",
-    label: "Domain",
-    field: "domain",
-  },
+
   {
     name: "Sender",
     align: "left",
     label: "Sender",
     field: "field",
+    sortable: true,
   },
   {
     name: "Recipient",
@@ -362,8 +353,16 @@ export default defineComponent({
       expanded: ref([]),
 
       exportTable(Emails) {
+        function sumDigitsFromString(str) {
+          var sum = 0;
+          var numbers = str.match(/\d+/g).map(Number);
+          for (var i = 0; i < numbers.length; i++) {
+            sum += numbers[i];
+          }
+          return sum;
+        }
         let csv =
-          '"""Aliase""","""Email""","""Domain""","""Fields""","""Total""","""Status"""\n';
+          '"""Aliase""","""Email""","""Fields""","""Total""","""Status"""\n';
         let emailsCsv = Emails;
         let obj = { name: "" };
         let emailstoExport = emailsCsv.map((element) => {
@@ -379,9 +378,8 @@ export default defineComponent({
           let obj = {
             Aliase: element.email.name,
             Email: element.email.address,
-            Domain: element.dnsValidity,
             Fields: field,
-            Total: element.total,
+            Total: sumDigitsFromString(field),
             Status: "Valid",
           };
 
@@ -533,18 +531,14 @@ export default defineComponent({
       return null;
     },
     filterMethod(rows, term) {
-      if (rows.filter((e) => e.domain.includes(term)).length > 0) {
-        console.log(term);
-        return this.Emails;
-      } else {
-        return rows.filter((e) => {
-          if (typeof e.name == "undefined") {
-            return e.address.includes(term);
-          } else {
-            return e.address.includes(term) || e.name.includes(term);
-          }
-        });
-      }
+      console.log(rows);
+      return rows.filter((e) => {
+        if (typeof e.email.name == "undefined") {
+          return e.email.address.includes(term);
+        } else {
+          return e.email.address.includes(term) || e.email.name.includes(term);
+        }
+      });
     },
     checkAll(allboxes) {
       let arr = [];

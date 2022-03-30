@@ -73,28 +73,55 @@ async function addDomainsToValidAndInvalid(emails) {
  * Using regEx extract clean mail address and a user name if available
  * @param  {object} ImapData
  */
-async function matchRegexp(ImapData) {
-  const promise = new Promise((resolve, reject) => {
-    let dataAfterRegEx;
-    let matchedData = [];
-    const imapData = [...new Set(ImapData)];
-    imapData.map((data) => {
-      matchedData.push(data.match(regexmatch));
+function extractNameAndEmail(data) {
+  const getRegExp = (email, emailAfterRegEx) => {
+    if (emailAfterRegEx != null) {
+      return emailAfterRegEx.groups;
+    } else {
+      console.log(email);
+      return {
+        name: email[0].substring(0, email.indexOf("<")),
+        address: email[0]
+          .substring(email[0].indexOf("<"), email[0].length)
+          .replace("<", "")
+          .replace(">", ""),
+      };
+    }
+  };
+  let email = data[0].split(",");
+  if (email[1]) {
+    let dataWithManyEmails = email.map((emails) => {
+      let emailAfterRegEx = regex.exec(emails);
+      let result = getRegExp(emails, emailAfterRegEx);
+      return result;
     });
-    matchedData = [...matchedData.flat()];
-    dataAfterRegEx = matchedData.map((data) => {
-      const email = regex.exec(data);
-      if (email == null || email.groups == null) {
-        return null;
-      }
-      return email.groups;
-    });
-    // remove null values then return data
+    return dataWithManyEmails;
+  } else {
+    let emailAfterRegEx = regex.exec(email);
+    let result = getRegExp(email, emailAfterRegEx);
+    return [result];
+  }
+  // const promise = new Promise((resolve, reject) => {
+  //   let dataAfterRegEx;
+  //   let matchedData = [];
+  //   const imapData = [...new Set(ImapData)];
+  //   imapData.map((data) => {
+  //     matchedData.push(data.match(regexmatch));
+  //   });
+  //   matchedData = [...matchedData.flat()];
+  //   dataAfterRegEx = matchedData.map((data) => {
+  //     const email = regex.exec(data);
+  //     if (email == null || email.groups == null) {
+  //       return null;
+  //     }
+  //     return email.groups;
+  //   });
+  //   // remove null values then return data
 
-    resolve(dataAfterRegEx);
-  });
-  const result = await promise;
-  return result;
+  //   resolve(dataAfterRegEx);
+  // });
+  // const result = await promise;
+  // return result;
 }
 
 /**
@@ -104,11 +131,9 @@ async function matchRegexp(ImapData) {
  */
 async function checkDomainType(data) {
   let promises = data.map(async (email) => {
-    console.log("helo");
     if (email.email != null && typeof email.email.address != "undefined") {
       let domain = email.email.address.split("@")[1];
       if (typeof domain == "undefined") {
-        console.log(email);
       } else {
         return new Promise((resolve, reject) => {
           if (ValidDomainsSet.domains.includes(domain)) {
@@ -269,7 +294,7 @@ async function detectRegEx(data) {
   return dataAfterRegEx;
 }
 
-exports.matchRegexp = matchRegexp;
+exports.extractNameAndEmail = extractNameAndEmail;
 exports.checkDomainType = checkDomainType;
 exports.EqualPartsForSocket = EqualPartsForSocket;
 exports.getBoxesAll = getBoxesAll;

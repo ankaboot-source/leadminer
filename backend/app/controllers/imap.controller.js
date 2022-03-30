@@ -2,7 +2,8 @@ const Imap = require("node-imap");
 const db = require("../models");
 const ImapInfo = db.imapInfo;
 const logger = require("../utils/logger")(module);
-var utils = require("../utils/regexp");
+var utilsForRegEx = require("../utils/regexp");
+var utilsForDataManipulation = require("../utils/extractors");
 var qualificationServices = require("../services/dataQualificationService");
 /**
  *  Create imap info account
@@ -121,7 +122,7 @@ exports.getImapBoxes = async (req, res) => {
           `Begin fetching folders names from imap account with email : ${imapInfo.email}`
         );
         imap.getBoxes("", async (err, boxes) => {
-          Boxes = utils.getBoxesAll(boxes);
+          Boxes = utilsForRegEx.getBoxesAll(boxes);
         });
         imap.end();
       });
@@ -186,7 +187,7 @@ exports.getEmails = (req, res, sse) => {
         return JSON.parse(element);
       });
       boxes = boxess.map((element) => {
-        const path = utils.getPath({ ...folders }, element);
+        const path = utilsForRegEx.getPath({ ...folders }, element);
         return path.substring(1);
       });
       console.log(folders, boxess);
@@ -201,7 +202,7 @@ exports.getEmails = (req, res, sse) => {
           const loopfunc = (box) => {
             imap.openBox(box, true, async function (err, currentbox) {
               if (typeof currentbox != "undefined") {
-                var sends = await utils.EqualPartsForSocket(
+                var sends = await utilsForRegEx.EqualPartsForSocket(
                   currentbox.messages.total
                 );
 
@@ -232,15 +233,41 @@ exports.getEmails = (req, res, sse) => {
                       //console.log(Object.values(Imap.parseHeader(buffer)));
                       // define limite
                       let dataTobeStored = Imap.parseHeader(buffer);
-                      let msg = Object.keys(dataTobeStored).map((element) => {
-                        return {
-                          email: dataTobeStored[element],
-                          field: element,
-                          folder: currentbox.name,
-                          msgId: seqno,
-                        };
+                      Object.keys(dataTobeStored).map((element) => {
+                        // regexp
+                        if (dataTobeStored[element][0].includes("@")) {
+                          let email = utilsForRegEx.extractNameAndEmail(
+                            dataTobeStored[element]
+                          );
+                          // check existence in database or data array
+                          email.map(async (oneEmail) => {
+                            if (!oneEmail.address.includes(imapInfo.email)) {
+                              let isExist =
+                                utilsForDataManipulation.checkExistence(
+                                  database,
+                                  oneEmail
+                                );
+                              let emailInfo = {
+                                email: oneEmail,
+                                field: [[element, 1]],
+                                folder: [currentbox.name],
+                                msgId: seqno,
+                              };
+                              if (!isExist) {
+                                utilsForDataManipulation.addEmailToDatabase(
+                                  database,
+                                  emailInfo
+                                );
+                              } else {
+                                utilsForDataManipulation.addFieldsAndFolder(
+                                  database,
+                                  emailInfo
+                                );
+                              }
+                            }
+                          });
+                        }
                       });
-                      database.push(...msg);
                     });
                     // callback for "end" emitted event, here all messaged are parsed, data is the source of data
                   });
@@ -284,18 +311,18 @@ exports.getEmails = (req, res, sse) => {
         );
         globalData = [...data.flat()];
 
-        //const emailsAfterRegex = await utils.matchRegexp(globalData);
-        await qualificationServices
-          .databaseQualification(database, sse)
-          .then(async (data) => {
-            // await utils.addDomainsToValidAndInvalid(data).then((data) => {
-            res.status(200).send({
-              data: data,
-            });
-            //await utils.addDomainsToValidAndInvalid(data);
-            // });
-          });
-        // await utils.checkDomainType(emailsAfterRegex).then((data) => {
+        //const emailsAfterRegex = await utilsForRegEx.matchRegexp(globalData);
+        // await qualificationServices
+        //   .databaseQualification(database, sse)
+        //   .then(async (data) => {
+        // await utilsForRegEx.addDomainsToValidAndInvalid(data).then((data) => {
+        res.status(200).send({
+          data: database,
+        });
+        //await utilsForRegEx.addDomainsToValidAndInvalid(data);
+        // });
+        //});
+        // await utilsForRegEx.checkDomainType(emailsAfterRegex).then((data) => {
         //
         // });
       });
