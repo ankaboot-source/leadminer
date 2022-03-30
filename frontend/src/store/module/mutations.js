@@ -33,3 +33,6 @@ export function SET_PERCENTAGE(state, newPercentage) {
 export function SET_CURRENT(state, newBoxName) {
   state.progress.currentBox = newBoxName;
 }
+export function SET_STATUS(state, newStatus) {
+  state.progress.status = newStatus;
+}

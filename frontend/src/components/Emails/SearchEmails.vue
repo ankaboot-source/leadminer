@@ -247,6 +247,12 @@
               {{ percentage * 100 + "%" }}
             </div>
           </q-linear-progress>
+          <div
+            class="z-max bg-transparent text-teal text-h5 text-bold q-ma-md text-center"
+          >
+            <q-badge class="text-h6" color="teal-3"> {{ Status }} </q-badge
+            ><br />
+          </div>
         </q-card>
       </q-dialog>
     </div>
@@ -459,6 +465,9 @@ export default defineComponent({
 
     percentage() {
       return this.progress.percentage;
+    },
+    Status() {
+      return this.progress.status;
     },
     CurrentBox() {
       return this.progress.currentBox;

@@ -15,6 +15,7 @@ export default function () {
     progress: {
       percentage: 0,
       currentBox: "",
+      status: "",
     },
   };
 }

@@ -10,6 +10,11 @@ export async function getEmails({ context, getters }, { data }) {
     console.log("Got percentage", message.data);
     this.commit("example/SET_PERCENTAGE", message.data);
   });
+  source.addEventListener("status", (message) => {
+    this.commit("example/SET_PERCENTAGE", 0);
+    this.commit("example/SET_CURRENT", "");
+    this.commit("example/SET_STATUS", message.data);
+  });
 
   return new Promise((resolve, reject) => {
     console.log(currentState);
@@ -38,6 +43,7 @@ export async function getEmails({ context, getters }, { data }) {
         );
         this.commit("example/SET_PERCENTAGE", 0);
         this.commit("example/SET_CURRENT", "");
+        this.commit("example/SET_STATUS", "");
 
         resolve(response);
       })

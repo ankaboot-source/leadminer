@@ -1,14 +1,14 @@
 module.exports = (sequelize, Sequelize) => {
   const EmailsInfos = sequelize.define("emails_info", {
-    userId: {
-      allowNull: false,
-      type: Sequelize.UUID,
-      foriegnKey: true,
-    },
+    // userId: {
+    //   allowNull: false,
+    //   type: Sequelize.UUID,
+    //   foriegnKey: true,
+    // },
     email: {
       type: Sequelize.JSONB,
       unique: {
-        msg: "your-message-here",
+        msg: "already exist",
       },
     },
     field: {

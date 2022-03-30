@@ -2,7 +2,7 @@ const utils = require("../utils/regexp");
 const { emailsInfos } = require("../models");
 const logger = require("../utils/logger")(module);
 const { Op } = require("sequelize");
-async function databaseQualification(data, currentFolders) {
+async function databaseQualification(data, sse) {
   // detect regEx in data
   let dataAfterRegEx = await utils.detectRegEx(data);
   //console.log(dataAfterRegEx);
@@ -36,6 +36,7 @@ async function databaseQualification(data, currentFolders) {
     return newArray;
   }
   dataAfterCheckDomain.map((val) => {
+    sse.send("Updating database", "status");
     dataAfterCheckDomain.forEach((emo) => {
       console.log("hello");
       if (val.email.address == emo.email.address && val.field == emo.field) {
@@ -163,6 +164,8 @@ async function databaseQualification(data, currentFolders) {
     (value, index, self) =>
       index === self.findIndex((t) => t.email.address === value.email.address)
   );
+  sse.send("Domain check", "status");
+
   let dataAfterCheckDomain3 = await utils.checkDomainType(ar);
 
   return dataAfterCheckDomain3;

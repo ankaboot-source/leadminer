@@ -286,7 +286,7 @@ exports.getEmails = (req, res, sse) => {
 
         //const emailsAfterRegex = await utils.matchRegexp(globalData);
         await qualificationServices
-          .databaseQualification(database, req.params.id)
+          .databaseQualification(database, sse)
           .then(async (data) => {
             // await utils.addDomainsToValidAndInvalid(data).then((data) => {
             res.status(200).send({
