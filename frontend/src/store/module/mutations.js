@@ -4,6 +4,9 @@ export function SET_EMAILS(state, emails) {
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;
 }
+export function SET_LOADING_DNS(state, newLoadingStatusDns) {
+  state.loadingStatusDns = newLoadingStatusDns;
+}
 export function SET_LOADINGBOX(state, newLoadingStatusbox) {
   state.loadingStatusbox = newLoadingStatusbox;
 }

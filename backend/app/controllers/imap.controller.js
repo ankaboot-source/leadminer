@@ -1,5 +1,7 @@
 const Imap = require("node-imap");
 const db = require("../models");
+const dns = require("dns");
+
 const ImapInfo = db.imapInfo;
 const logger = require("../utils/logger")(module);
 var utilsForRegEx = require("../utils/regexp");
@@ -169,6 +171,8 @@ exports.getEmails = (req, res, sse) => {
         host: imapInfo.host,
         port: imapInfo.port,
         tls: true,
+        connTimeout: 20000,
+        authTimeout: 7000,
       });
       // data will include all of the data that will be mined from the mailbox.
       const data = [];
@@ -212,7 +216,7 @@ exports.getEmails = (req, res, sse) => {
                 });
                 // callback for "message" emitted event
                 await f.on("message", async function (msg, seqno) {
-                  console.log(seqno);
+                  //console.log(seqno);
                   if (sends.includes(seqno)) {
                     sse.send(box, "box");
                     sse.send(
@@ -221,7 +225,6 @@ exports.getEmails = (req, res, sse) => {
                       "percentage"
                     );
                   }
-
                   // callback for "body" emitted event
                   await msg.on("body", async function (stream) {
                     let buffer = "";
@@ -236,35 +239,83 @@ exports.getEmails = (req, res, sse) => {
                       Object.keys(dataTobeStored).map((element) => {
                         // regexp
                         if (dataTobeStored[element][0].includes("@")) {
+                          //console.log(dataTobeStored);
                           let email = utilsForRegEx.extractNameAndEmail(
                             dataTobeStored[element]
                           );
                           // check existence in database or data array
                           email.map(async (oneEmail) => {
-                            if (!oneEmail.address.includes(imapInfo.email)) {
-                              let isExist =
-                                utilsForDataManipulation.checkExistence(
-                                  database,
-                                  oneEmail
-                                );
-                              let emailInfo = {
-                                email: oneEmail,
-                                field: [[element, 1]],
-                                folder: [currentbox.name],
-                                msgId: seqno,
-                              };
-                              if (!isExist) {
-                                utilsForDataManipulation.addEmailToDatabase(
-                                  database,
-                                  emailInfo
-                                );
-                              } else {
-                                utilsForDataManipulation.addFieldsAndFolder(
-                                  database,
-                                  emailInfo
-                                );
-                              }
-                            }
+                            let domain = oneEmail.address.split("@")[1];
+                            //console.log(domain, oneEmail.address);
+
+                            const promise = new Promise((resolve, reject) => {
+                              //console.log(typeof domain);
+                              dns.resolveMx(domain, (error, addresses) => {
+                                if (error) {
+                                  //console.log("helo error");
+
+                                  resolve(false);
+                                }
+                                if (addresses) {
+                                  if (
+                                    !oneEmail.address.includes(
+                                      imapInfo.email
+                                    ) &&
+                                    !oneEmail.address.includes("noreply") &&
+                                    !oneEmail.address.includes("no-reply") &&
+                                    !oneEmail.address.includes(
+                                      "notifications-noreply"
+                                    ) &&
+                                    !oneEmail.address.includes(
+                                      "accusereception"
+                                    ) &&
+                                    !oneEmail.address.includes("support") &&
+                                    !oneEmail.address.includes("maildaemon") &&
+                                    !oneEmail.address.includes("notifications")
+                                  ) {
+                                    let isExist =
+                                      utilsForDataManipulation.checkExistence(
+                                        database,
+                                        oneEmail
+                                      );
+                                    let emailInfo = {
+                                      email: oneEmail,
+                                      field: [[element, 1]],
+                                      folder: [currentbox.name],
+                                      msgId: seqno,
+                                    };
+                                    if (!isExist) {
+                                      utilsForDataManipulation.addEmailToDatabase(
+                                        database,
+                                        emailInfo
+                                      );
+                                    } else {
+                                      utilsForDataManipulation.addFieldsAndFolder(
+                                        database,
+                                        emailInfo
+                                      );
+                                    }
+                                  }
+                                  if (sends.includes(seqno)) {
+                                    sse.send(database, "data");
+                                  }
+                                  if (
+                                    currentbox.name ==
+                                      boxes[boxes.length - 1] &&
+                                    seqno + 10 > currentbox.messages.total
+                                  ) {
+                                    console.log("yes");
+                                    sse.send(false, "dns");
+                                  }
+
+                                  //console.log("helo val");
+                                } else {
+                                  //console.log("helo inval");
+                                  resolve(false);
+                                }
+                              });
+                            });
+                            await promise;
                           });
                         }
                       });
@@ -285,6 +336,7 @@ exports.getEmails = (req, res, sse) => {
                   if (box == boxes[boxes.length - 1]) {
                     imap.end();
                   } else {
+                    //sse.send(0, "percentage");
                     i++;
                     loopfunc(boxes[i]);
                   }
@@ -301,6 +353,7 @@ exports.getEmails = (req, res, sse) => {
         logger.error(
           `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
         );
+        console.log(err);
         res.status(500).send({
           error: err,
         });

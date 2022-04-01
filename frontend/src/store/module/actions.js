@@ -7,19 +7,29 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_CURRENT", message.data);
   });
   source.addEventListener("percentage", (message) => {
-    console.log("Got percentage", message.data);
     this.commit("example/SET_PERCENTAGE", message.data);
   });
-  source.addEventListener("status", (message) => {
-    this.commit("example/SET_PERCENTAGE", 0);
-    this.commit("example/SET_CURRENT", "");
-    this.commit("example/SET_STATUS", message.data);
+  // source.addEventListener("status", (message) => {
+  //   this.commit("example/SET_PERCENTAGE", 0);
+  //   this.commit("example/SET_CURRENT", "");
+  //   this.commit("example/SET_STATUS", message.data);
+  // });
+  source.addEventListener("data", (message) => {
+    this.commit("example/SET_EMAILS", JSON.parse(message.data));
+  });
+  source.addEventListener("dns", (message) => {
+    this.commit("example/SET_LOADING_DNS", JSON.parse(message.data));
+    console.log(message.data);
   });
 
   return new Promise((resolve, reject) => {
     console.log(currentState);
     this.commit("example/SET_LOADING", true);
     console.log(currentState, data);
+    this.commit("example/SET_LOADING_DNS", true);
+    this.commit("example/SET_PERCENTAGE", 0);
+    this.commit("example/SET_EMAILS", []);
+
     this.$axios
       .get(
         this.$api +
@@ -41,14 +51,17 @@ export async function getEmails({ context, getters }, { data }) {
           "example/SET_EMAILS",
           JSON.parse(JSON.stringify(response.data.data))
         );
-        this.commit("example/SET_PERCENTAGE", 0);
+
         this.commit("example/SET_CURRENT", "");
         this.commit("example/SET_STATUS", "");
 
         resolve(response);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", JSON.parse(JSON.stringify(error)));
+        this.commit(
+          "example/SET_ERROR",
+          JSON.parse(JSON.stringify(error.error))
+        );
         reject(error);
       });
   });
@@ -89,7 +102,7 @@ export async function signIn({ context, state }, { data }) {
       })
       .catch((error) => {
         console.log(JSON.stringify(error));
-        this.commit("example/SET_ERROR", JSON.stringify(error));
+        this.commit("example/SET_ERROR", JSON.stringify(error.error));
         reject(error);
       });
   });

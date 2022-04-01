@@ -1,6 +1,6 @@
 /* eslint-disable */
 const regex = new RegExp(
-  /((?<name>[\p{L}\p{M}.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
+  /((?<name>[\p{L}\p{M}',.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
 );
 /* eslint-disable */
 /* eslint-disable */
@@ -74,11 +74,12 @@ async function addDomainsToValidAndInvalid(emails) {
  * @param  {object} ImapData
  */
 function extractNameAndEmail(data) {
+  //console.log(data);
   const getRegExp = (email, emailAfterRegEx) => {
     if (emailAfterRegEx != null) {
       return emailAfterRegEx.groups;
     } else {
-      console.log(email);
+      // console.log(email);
       return {
         name: email[0].substring(0, email.indexOf("<")),
         address: email[0]
@@ -88,7 +89,7 @@ function extractNameAndEmail(data) {
       };
     }
   };
-  let email = data[0].split(",");
+  let email = data[0].split('>"');
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
       let emailAfterRegEx = regex.exec(emails);

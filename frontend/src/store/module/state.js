@@ -2,6 +2,7 @@ export default function () {
   return {
     retrievedEmails: [],
     loadingStatus: false,
+    loadingStatusDns: false,
     loadingStatusbox: false,
     imap: {
       id: "",

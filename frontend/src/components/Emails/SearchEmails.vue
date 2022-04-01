@@ -70,6 +70,7 @@
                   <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-12">
                     <q-btn
+                      :disable="loadingStatusDns"
                       no-caps
                       class="bg-buttons text-white"
                       label="Collect emails adresses"
@@ -88,23 +89,92 @@
                   :collected-emails="Emails.length"
                 />
               </div>
-            </div>
-            <div class="row q-pa-lg">
-              <div class="row">
-                <div
-                  class="bg-grey-1 border col-5 q-ma-sm"
-                  v-for="(item, n) in infos"
-                  :key="`xl-${n}`"
-                >
-                  <div class="row bg-grey-1 text-teal-6 border">
-                    <div class="col-1">
-                      <q-badge class="q-pa-sm" rounded :color="item.color">
-                      </q-badge>
+              <div class="row q-pa-sm">
+                <q-card flat class="bg-transparent q-ml-lg" style="width: 50vw">
+                  <q-circular-progress
+                    show-value
+                    class="text-white q-ma-md"
+                    :value="parseFloat(percentage) * 100"
+                    size="120px"
+                    :thickness="0.2"
+                    :animation-speed="15"
+                    color="orange"
+                    center-color="grey-8"
+                    track-color="transparent"
+                    ><div>
+                      <small class="text-white text-subtitle">
+                        {{ parseFloat(percentage) * 100 }}% {{ "    " }}</small
+                      >
                     </div>
-                    <div class="col-10">{{ " " + item.text }}</div>
-                  </div>
-                </div>
+                    <br />
+                    <div></div>
+                    <div>
+                      <q-badge
+                        v-show="CurrentBox != ''"
+                        outline
+                        color="orange"
+                        :label="
+                          CurrentBox.includes('/')
+                            ? CurrentBox.substring(
+                                CurrentBox.indexOf('/') + 1,
+                                CurrentBox.length - 1
+                              )
+                            : CurrentBox
+                        "
+                      />
+                    </div>
+                  </q-circular-progress>
+
+                  <q-circular-progress
+                    :min="0"
+                    :max="Emails.length"
+                    :value="Emails.length"
+                    show-value
+                    size="120px"
+                    font-size="14px"
+                    :thickness="0.1"
+                    color="teal"
+                    track-color="grey-3"
+                    angle="-90"
+                    class="q-ma-md"
+                  >
+                    <div class="text-center">
+                      <div class="text-green text-h5">
+                        {{ Emails.length }}
+                      </div>
+                      <div>
+                        <small class="text-green text-caption">
+                          Valid email</small
+                        ><br />
+                        <q-circular-progress
+                          indeterminate
+                          v-show="loadingStatusDns"
+                          size="30px"
+                          :thickness="0.22"
+                          color="lime"
+                          track-color="grey-3"
+                          class="q-ma-md float-center"
+                        />
+                      </div>
+                    </div> </q-circular-progress
+                ></q-card>
               </div>
+              <!-- <q-card flat class="bg-transparent q-ml-lg" style="width: 50vw">
+                <q-badge class="float-left q-ma-sm text-h6" color="green">
+                  Validating emails : {{ Emails.length }} Valid email
+                </q-badge>
+                 </div> 
+                <div
+                  class="float-right q-ml-lg bg-transparent text-teal text-h5 flex flex-center"
+                >
+                  <q-spinner
+                    class="float-right"
+                    color="green"
+                    size="3em"
+                    :thickness="2"
+                  />
+                </div>
+              </q-card> -->
             </div>
           </div>
         </div>
@@ -121,11 +191,28 @@
             :filter-method="filterMethod"
             row-key="email"
             :pagination.sync="pagination"
-          >
+            ><template #top-left>
+              <div class="row">
+                <div
+                  class="border col-4 q-ma-sm"
+                  v-for="(item, n) in infos"
+                  :key="`xl-${n}`"
+                >
+                  <div class="row text-teal-6 border">
+                    <div class="col-1">
+                      <q-badge class="q-pa-sm" rounded :color="item.color">
+                      </q-badge>
+                    </div>
+                    <div class="col-10">{{ " " + item.text }}</div>
+                  </div>
+                </div>
+              </div></template
+            >
             <template #top-right="props">
               <q-input
                 v-model="filter"
                 rounded
+                :disable="loadingStatusDns"
                 dense
                 standout
                 bg-color="teal-4"
@@ -159,6 +246,7 @@
                 label="Export to csv"
                 no-caps
                 @click="exportTable(Emails)"
+                :disable="loadingStatusDns"
               />
             </template>
             <template #body="props">
@@ -178,7 +266,6 @@
                   <q-badge
                     v-if="returnSender(props.row.field) != null"
                     outline
-                    v-bind:key="item"
                     color="orange"
                     transparent
                   >
@@ -188,7 +275,6 @@
                   <q-badge
                     v-if="returnRecipient(props.row.field) != null"
                     outline
-                    v-bind:key="item"
                     color="orange"
                     transparent
                   >
@@ -203,7 +289,7 @@
                     }}
                   </q-badge>
                 </q-td>
-                <q-td key="Status" style="width: 30%" :props="props">
+                <q-td key="Status" style="width: 10%" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
                   </q-badge>
@@ -213,7 +299,7 @@
           </q-table>
         </div>
       </q-card-section>
-      <q-dialog
+      <!-- <q-dialog
         v-show="loadingStatus"
         v-model="loadingStatus"
         persistent
@@ -249,7 +335,7 @@
             ><br />
           </div>
         </q-card>
-      </q-dialog>
+      </q-dialog> -->
     </div>
   </div>
 </template>
@@ -261,28 +347,19 @@ import { ref } from "vue";
 import { mapState } from "vuex";
 const infos = [
   {
-    text: "The mailbox is valid and could receive our emails",
+    text: "Valid mailbox",
     color: "green",
+    icon: "check",
   },
   {
     text: "The mailbox is valid but could not receive your emails",
-    color: "yellow-4",
+    color: "yellow-8",
+    icon: "warning",
   },
   {
     text: "The mailbox is not valid",
-    color: "yellow-10",
-  },
-  {
-    text: "No answer from the server",
-    color: "amber-2",
-  },
-  {
-    text: "Not-understable answer from the server ",
-    color: "yellow-12",
-  },
-  {
-    text: "Verification timeout",
-    color: "grey-5",
+    color: "red",
+    icon: "fa-solid fa-circle-x",
   },
 ];
 const columns = [
@@ -476,6 +553,7 @@ export default defineComponent({
     ...mapState("example", [
       "retrievedEmails",
       "loadingStatus",
+      "loadingStatusDns",
       "loadingStatusbox",
       "boxes",
       "progress",
