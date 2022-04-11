@@ -246,12 +246,13 @@ exports.getEmails = (req, res, sse, client) => {
                           skipImageLinks: true,
                           skipTextToHtml: true,
                         });
-                        //console.log(parsed);
-                        if (parsed && typeof parsed.text != "undefined") {
+                        //console.log(parsed.text);
+                        if (parsed && parsed.text) {
                           let body = utilsForRegEx.extractEmailsFromBody(
                             parsed.text
                           );
-                          if (body != null) {
+                          //console.log(body);
+                          if (body) {
                             dataTobeStored["body"] = body;
                           }
                         }

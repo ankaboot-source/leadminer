@@ -5,7 +5,7 @@ const regex = new RegExp(
 /* eslint-disable */
 /* eslint-disable */
 const regexForBody = new RegExp(
-  /((?<name>[\p{L}\p{M}\d\s\(\)-\/.\[\p{L}\p{M}\d\s\(\)-\/\]]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+  /(:(?<name>[\p{L}\p{M}*',.\p{L}\p{M}\d\s\(\)-]{1,}))*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 var fs = require("fs");
 /* eslint-disable */
@@ -66,7 +66,6 @@ async function addDomainsToValidAndInvalid(emails) {
   });
 }
 function extractEmailsFromBody(data) {
-  //console.log(data);
   let reg = data.match(regexForBody);
   //console.log(reg, "heheheh");
   if (reg != null) {
@@ -116,7 +115,7 @@ function extractNameAndEmailForBody(data) {
   //console.log(data);
   const getRegExp = (email, emailAfterRegEx) => {
     //console.log(emailAfterRegEx, email);
-    if (emailAfterRegEx != null) {
+    if (emailAfterRegEx) {
       return emailAfterRegEx.groups;
     }
   };
