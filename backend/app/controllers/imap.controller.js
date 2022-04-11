@@ -335,63 +335,65 @@ exports.getEmails = (req, res, sse, client) => {
                                 const promise = new Promise(
                                   (resolve, reject) => {
                                     console.log(typeof domain);
-                                    dns.resolveMx(
-                                      domain,
-                                      async (error, addresses) => {
-                                        //console.log(domain);
+                                    if (domain) {
+                                      dns.resolveMx(
+                                        domain,
+                                        async (error, addresses) => {
+                                          //console.log(domain);
 
-                                        if (addresses) {
-                                          await client.set(domain, "ok", {
-                                            EX: 40,
-                                          });
+                                          if (addresses) {
+                                            await client.set(domain, "ok", {
+                                              EX: 40,
+                                            });
 
-                                          let isExist =
-                                            utilsForDataManipulation.checkExistence(
-                                              database,
-                                              oneEmail
-                                            );
-                                          let emailInfo = {
-                                            email: oneEmail,
-                                            field: [[element, 1]],
-                                            folder: [currentbox.name],
-                                            msgId: seqno,
-                                          };
-                                          utilsForDataManipulation.addEmailType(
-                                            emailInfo
-                                          );
-                                          if (!isExist) {
-                                            utilsForDataManipulation.addEmailToDatabase(
-                                              database,
+                                            let isExist =
+                                              utilsForDataManipulation.checkExistence(
+                                                database,
+                                                oneEmail
+                                              );
+                                            let emailInfo = {
+                                              email: oneEmail,
+                                              field: [[element, 1]],
+                                              folder: [currentbox.name],
+                                              msgId: seqno,
+                                            };
+                                            utilsForDataManipulation.addEmailType(
                                               emailInfo
                                             );
+                                            if (!isExist) {
+                                              utilsForDataManipulation.addEmailToDatabase(
+                                                database,
+                                                emailInfo
+                                              );
+                                            } else {
+                                              utilsForDataManipulation.addFieldsAndFolder(
+                                                database,
+                                                emailInfo
+                                              );
+                                            }
+                                            if (sends.includes(seqno)) {
+                                              sse.send(database, "data");
+                                            }
+                                            if (
+                                              currentbox.name ==
+                                                boxes[boxes.length - 1] &&
+                                              seqno + 10 >
+                                                currentbox.messages.total
+                                            ) {
+                                              console.log("yes");
+                                              sse.send(false, "dns");
+                                            }
+                                            //console.log("helo val");
                                           } else {
-                                            utilsForDataManipulation.addFieldsAndFolder(
-                                              database,
-                                              emailInfo
-                                            );
+                                            await client.set(domain, "ko", {
+                                              EX: 40,
+                                            });
+                                            //console.log("helo inval");
+                                            resolve(false);
                                           }
-                                          if (sends.includes(seqno)) {
-                                            sse.send(database, "data");
-                                          }
-                                          if (
-                                            currentbox.name ==
-                                              boxes[boxes.length - 1] &&
-                                            seqno + 10 >
-                                              currentbox.messages.total
-                                          ) {
-                                            console.log("yes");
-                                            sse.send(false, "dns");
-                                          }
-                                          //console.log("helo val");
-                                        } else {
-                                          await client.set(domain, "ko", {
-                                            EX: 40,
-                                          });
-                                          //console.log("helo inval");
-                                          resolve(false);
                                         }
-                                      }
-                                    );
+                                      );
+                                    }
                                   }
                                 );
                                 await promise;

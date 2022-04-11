@@ -83,10 +83,9 @@ function extractEmailsFromBody(data) {
 function extractNameAndEmail(data) {
   //console.log(data);
   const getRegExp = (email, emailAfterRegEx) => {
-    if (emailAfterRegEx != null) {
+    if (emailAfterRegEx) {
       return emailAfterRegEx.groups;
-    } else {
-      // console.log(email);
+    } else if (email) {
       return {
         name: email[0].substring(0, email.indexOf("<")),
         address: email[0]
