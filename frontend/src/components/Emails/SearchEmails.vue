@@ -501,7 +501,7 @@ export default defineComponent({
             }
           }
           let obj = {
-            Aliase: element.email.name,
+            Aliase: element.email.name.trim(),
             Email: element.email.address,
             From: From,
             To: To,
