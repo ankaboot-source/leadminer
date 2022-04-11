@@ -1,21 +1,18 @@
 /* eslint-disable */
 const regex = new RegExp(
-  /((?<name>[\p{L}\p{M}',.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
+  /((?<name>[\p{L}\p{M}',.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 /* eslint-disable */
 /* eslint-disable */
-const regexmatch = new RegExp(
-  /((?<name>[\p{L}\p{M}.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+const regexForBody = new RegExp(
+  /((?<name>[\p{L}\p{M}\d\s\(\)-\/.\[\p{L}\p{M}\d\s\(\)-\/\]]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 var fs = require("fs");
 /* eslint-disable */
-const { emailsInfos } = require("../models");
 const logger = require("./logger")(module);
-const { Op } = require("sequelize");
 const ValidDomainsSet = require("./ValidDomains.json");
 const InvalidDomainsSet = require("./InvalidDomains.json");
 const dns = require("dns");
-const dnsPromises = dns.promises;
 /**
  * After validating/invalidating dns in CheckDOmainType() we can store valid domains for a next use.
  * @param  {} emails Clean emails
@@ -68,6 +65,16 @@ async function addDomainsToValidAndInvalid(emails) {
     }
   });
 }
+function extractEmailsFromBody(data) {
+  //console.log(data);
+  let reg = data.match(regexForBody);
+  //console.log(reg, "heheheh");
+  if (reg != null) {
+    return [reg.join(",")];
+  } else {
+    return reg;
+  }
+}
 
 /**
  * Using regEx extract clean mail address and a user name if available
@@ -89,40 +96,49 @@ function extractNameAndEmail(data) {
       };
     }
   };
-  let email = data[0].split('>"');
+  let email = data[0].split(">");
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
-      let emailAfterRegEx = regex.exec(emails);
+      let Emails = emails.trim();
+      let emailAfterRegEx = regex.exec(Emails);
       let result = getRegExp(emails, emailAfterRegEx);
       return result;
     });
+    //console.log(dataWithManyEmails);
     return dataWithManyEmails;
   } else {
     let emailAfterRegEx = regex.exec(email);
     let result = getRegExp(email, emailAfterRegEx);
     return [result];
   }
-  // const promise = new Promise((resolve, reject) => {
-  //   let dataAfterRegEx;
-  //   let matchedData = [];
-  //   const imapData = [...new Set(ImapData)];
-  //   imapData.map((data) => {
-  //     matchedData.push(data.match(regexmatch));
-  //   });
-  //   matchedData = [...matchedData.flat()];
-  //   dataAfterRegEx = matchedData.map((data) => {
-  //     const email = regex.exec(data);
-  //     if (email == null || email.groups == null) {
-  //       return null;
-  //     }
-  //     return email.groups;
-  //   });
-  //   // remove null values then return data
+}
 
-  //   resolve(dataAfterRegEx);
-  // });
-  // const result = await promise;
-  // return result;
+function extractNameAndEmailForBody(data) {
+  //console.log(data);
+  const getRegExp = (email, emailAfterRegEx) => {
+    //console.log(emailAfterRegEx, email);
+    if (emailAfterRegEx != null) {
+      return emailAfterRegEx.groups;
+    }
+  };
+  let email = data[0].split(",");
+  if (email[1]) {
+    let dataWithManyEmails = email.map((emails) => {
+      let Emails = emails.trim();
+      //console.log(Emails);
+
+      let emailAfterRegEx = regex.exec(Emails);
+      //console.log(emailAfterRegEx);
+      let result = getRegExp(emails, emailAfterRegEx);
+      return result;
+    });
+    //console.log(dataWithManyEmails);
+    return dataWithManyEmails;
+  } else {
+    let emailAfterRegEx = regex.exec(email);
+    let result = getRegExp(email, emailAfterRegEx);
+    return [result];
+  }
 }
 
 /**
@@ -302,3 +318,5 @@ exports.getBoxesAll = getBoxesAll;
 exports.getPath = getPath;
 exports.addDomainsToValidAndInvalid = addDomainsToValidAndInvalid;
 exports.detectRegEx = detectRegEx;
+exports.extractEmailsFromBody = extractEmailsFromBody;
+exports.extractNameAndEmailForBody = extractNameAndEmailForBody;

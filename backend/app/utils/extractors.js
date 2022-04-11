@@ -12,6 +12,8 @@ var fs = require("fs");
 const { emailsInfos } = require("../models");
 const logger = require("./logger")(module);
 const { Op } = require("sequelize");
+const disposable = require("./Disposable.json");
+const freeProviders = require("./FreeProviders.json");
 const ValidDomainsSet = require("./ValidDomains.json");
 const InvalidDomainsSet = require("./InvalidDomains.json");
 const dns = require("dns");
@@ -25,6 +27,22 @@ function checkExistence(database, email) {
   return database.some((element) => {
     return element.email.address === email.address;
   });
+}
+function checkForNoReply(oneEmail, imapEmail) {
+  if (
+    !oneEmail.address.includes(imapEmail) &&
+    !oneEmail.address.includes("noreply") &&
+    !oneEmail.address.includes("no-reply") &&
+    !oneEmail.address.includes("notifications-noreply") &&
+    !oneEmail.address.includes("accusereception") &&
+    !oneEmail.address.includes("support") &&
+    !oneEmail.address.includes("maildaemon") &&
+    !oneEmail.address.includes("notifications")
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 function addEmailToDatabase(database, email) {
   database.push(email);
@@ -47,6 +65,19 @@ function addFieldsAndFolder(database, email) {
     }
   });
 }
+function addEmailType(EmailInfo) {
+  console.log(EmailInfo);
+  let domain = EmailInfo.email.address.split("@")[1];
+  if (disposable.includes(domain)) {
+    EmailInfo["type"] = "Disposable";
+  } else if (freeProviders.includes(domain)) {
+    EmailInfo["type"] = "Free domain";
+  } else {
+    EmailInfo["type"] = "Private domain";
+  }
+}
 exports.checkExistence = checkExistence;
 exports.addEmailToDatabase = addEmailToDatabase;
 exports.addFieldsAndFolder = addFieldsAndFolder;
+exports.checkForNoReply = checkForNoReply;
+exports.addEmailType = addEmailType;

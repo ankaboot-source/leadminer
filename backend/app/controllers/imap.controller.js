@@ -1,12 +1,14 @@
 const Imap = require("node-imap");
 const db = require("../models");
 const dns = require("dns");
-
+const { simpleParser } = require("mailparser");
 const ImapInfo = db.imapInfo;
+var inspect = require("util").inspect;
 const logger = require("../utils/logger")(module);
 var utilsForRegEx = require("../utils/regexp");
 var utilsForDataManipulation = require("../utils/extractors");
 var qualificationServices = require("../services/dataQualificationService");
+const { utils } = require("mocha");
 /**
  *  Create imap info account
  * @param  {} req
@@ -161,7 +163,7 @@ exports.getImapBoxes = async (req, res) => {
     });
 };
 
-exports.getEmails = (req, res, sse) => {
+exports.getEmails = (req, res, sse, client) => {
   if (req.query.password) {
     //fetch imap from database then getemails
     ImapInfo.findByPk(req.params.id).then((imapInfo) => {
@@ -209,7 +211,7 @@ exports.getEmails = (req, res, sse) => {
                 var sends = await utilsForRegEx.EqualPartsForSocket(
                   currentbox.messages.total
                 );
-
+                console.log(bodiesTofetch);
                 const f = imap.seq.fetch("1:*", {
                   bodies: bodiesTofetch,
                   struct: true,
@@ -225,103 +227,186 @@ exports.getEmails = (req, res, sse) => {
                       "percentage"
                     );
                   }
+
                   // callback for "body" emitted event
-                  await msg.on("body", async function (stream) {
+                  let dataTobeStored = {};
+                  await msg.on("body", async function (stream, info) {
                     let buffer = "";
-                    // callback for "data" emitted event
-                    await stream.on("data", function (chunk) {
+
+                    stream.on("data", async function (chunk) {
                       buffer += chunk.toString("utf8");
-                      // append to data the parsed buffer
-                      data.push(...Object.values(Imap.parseHeader(buffer)));
-                      //console.log(Object.values(Imap.parseHeader(buffer)));
-                      // define limite
-                      let dataTobeStored = Imap.parseHeader(buffer);
+
+                      Object.assign(dataTobeStored, Imap.parseHeader(buffer));
+
+                      if (
+                        bodiesTofetch.includes("TEXT") &&
+                        info.which == "TEXT"
+                      ) {
+                        let parsed = await simpleParser(buffer, {
+                          skipImageLinks: true,
+                          skipTextToHtml: true,
+                        });
+                        //console.log(parsed);
+                        if (parsed && typeof parsed.text != "undefined") {
+                          let body = utilsForRegEx.extractEmailsFromBody(
+                            parsed.text
+                          );
+                          if (body != null) {
+                            dataTobeStored["body"] = body;
+                          }
+                        }
+                      }
                       Object.keys(dataTobeStored).map((element) => {
+                        //console.log(dataTobeStored[element]);
                         // regexp
                         if (dataTobeStored[element][0].includes("@")) {
                           //console.log(dataTobeStored);
-                          let email = utilsForRegEx.extractNameAndEmail(
-                            dataTobeStored[element]
-                          );
+                          let email =
+                            element != "body"
+                              ? utilsForRegEx.extractNameAndEmail(
+                                  dataTobeStored[element]
+                                )
+                              : utilsForRegEx.extractNameAndEmailForBody(
+                                  dataTobeStored[element]
+                                );
+                          //console.log(email);
                           // check existence in database or data array
                           email.map(async (oneEmail) => {
-                            let domain = oneEmail.address.split("@")[1];
-                            //console.log(domain, oneEmail.address);
-
-                            const promise = new Promise((resolve, reject) => {
-                              //console.log(typeof domain);
-                              dns.resolveMx(domain, (error, addresses) => {
-                                if (error) {
-                                  //console.log("helo error");
-
-                                  resolve(false);
-                                }
-                                if (addresses) {
-                                  if (
-                                    !oneEmail.address.includes(
-                                      imapInfo.email
-                                    ) &&
-                                    !oneEmail.address.includes("noreply") &&
-                                    !oneEmail.address.includes("no-reply") &&
-                                    !oneEmail.address.includes(
-                                      "notifications-noreply"
-                                    ) &&
-                                    !oneEmail.address.includes(
-                                      "accusereception"
-                                    ) &&
-                                    !oneEmail.address.includes("support") &&
-                                    !oneEmail.address.includes("maildaemon") &&
-                                    !oneEmail.address.includes("notifications")
-                                  ) {
-                                    let isExist =
-                                      utilsForDataManipulation.checkExistence(
-                                        database,
-                                        oneEmail
-                                      );
-                                    let emailInfo = {
-                                      email: oneEmail,
-                                      field: [[element, 1]],
-                                      folder: [currentbox.name],
-                                      msgId: seqno,
-                                    };
-                                    if (!isExist) {
-                                      utilsForDataManipulation.addEmailToDatabase(
-                                        database,
-                                        emailInfo
-                                      );
-                                    } else {
-                                      utilsForDataManipulation.addFieldsAndFolder(
-                                        database,
-                                        emailInfo
-                                      );
-                                    }
-                                  }
-                                  if (sends.includes(seqno)) {
-                                    sse.send(database, "data");
-                                  }
-                                  if (
-                                    currentbox.name ==
-                                      boxes[boxes.length - 1] &&
-                                    seqno + 10 > currentbox.messages.total
-                                  ) {
-                                    console.log("yes");
-                                    sse.send(false, "dns");
-                                  }
-
-                                  //console.log("helo val");
+                            //console.log(oneEmail);
+                            if (oneEmail) {
+                              let domain = oneEmail.address.split("@")[1];
+                              //console.log(domain, oneEmail.address);
+                              let domainRedis = await client.get(domain);
+                              //console.log(domainRedis);
+                              if (!domainRedis) {
+                                await client.set(domain, domain, {
+                                  EX: 60,
+                                });
+                              }
+                              if (
+                                domainRedis &&
+                                utilsForDataManipulation.checkForNoReply(
+                                  oneEmail,
+                                  imapInfo.email
+                                )
+                              ) {
+                                let isExist =
+                                  utilsForDataManipulation.checkExistence(
+                                    database,
+                                    oneEmail
+                                  );
+                                let emailInfo = {
+                                  email: oneEmail,
+                                  field: [[element, 1]],
+                                  folder: [currentbox.name],
+                                  msgId: seqno,
+                                };
+                                utilsForDataManipulation.addEmailType(
+                                  emailInfo
+                                );
+                                if (!isExist) {
+                                  utilsForDataManipulation.addEmailToDatabase(
+                                    database,
+                                    emailInfo
+                                  );
                                 } else {
-                                  //console.log("helo inval");
-                                  resolve(false);
+                                  utilsForDataManipulation.addFieldsAndFolder(
+                                    database,
+                                    emailInfo
+                                  );
                                 }
-                              });
-                            });
-                            await promise;
+                                if (sends.includes(seqno)) {
+                                  sse.send(database, "data");
+                                }
+                                if (
+                                  currentbox.name == boxes[boxes.length - 1] &&
+                                  seqno + 10 > currentbox.messages.total
+                                ) {
+                                  console.log("yes");
+                                  sse.send(false, "dns");
+                                }
+                              } else if (
+                                utilsForDataManipulation.checkForNoReply(
+                                  oneEmail,
+                                  imapInfo.email
+                                ) &&
+                                !domainRedis
+                              ) {
+                                const promise = new Promise(
+                                  (resolve, reject) => {
+                                    console.log(typeof domain);
+                                    dns.resolveMx(
+                                      domain,
+                                      async (error, addresses) => {
+                                        //console.log(domain);
+
+                                        if (addresses) {
+                                          await client.set(domain, "ok", {
+                                            EX: 40,
+                                          });
+
+                                          let isExist =
+                                            utilsForDataManipulation.checkExistence(
+                                              database,
+                                              oneEmail
+                                            );
+                                          let emailInfo = {
+                                            email: oneEmail,
+                                            field: [[element, 1]],
+                                            folder: [currentbox.name],
+                                            msgId: seqno,
+                                          };
+                                          utilsForDataManipulation.addEmailType(
+                                            emailInfo
+                                          );
+                                          if (!isExist) {
+                                            utilsForDataManipulation.addEmailToDatabase(
+                                              database,
+                                              emailInfo
+                                            );
+                                          } else {
+                                            utilsForDataManipulation.addFieldsAndFolder(
+                                              database,
+                                              emailInfo
+                                            );
+                                          }
+                                          if (sends.includes(seqno)) {
+                                            sse.send(database, "data");
+                                          }
+                                          if (
+                                            currentbox.name ==
+                                              boxes[boxes.length - 1] &&
+                                            seqno + 10 >
+                                              currentbox.messages.total
+                                          ) {
+                                            console.log("yes");
+                                            sse.send(false, "dns");
+                                          }
+                                          //console.log("helo val");
+                                        } else {
+                                          await client.set(domain, "ko", {
+                                            EX: 40,
+                                          });
+                                          //console.log("helo inval");
+                                          resolve(false);
+                                        }
+                                      }
+                                    );
+                                  }
+                                );
+                                await promise;
+                              } else {
+                                console.log("helo");
+                              }
+                            }
                           });
                         }
                       });
                     });
+
                     // callback for "end" emitted event, here all messaged are parsed, data is the source of data
                   });
+                  await msg.on("end", async function () {});
                 });
                 f.once("error", function (err) {
                   logger.error(
@@ -369,9 +454,9 @@ exports.getEmails = (req, res, sse) => {
         //   .databaseQualification(database, sse)
         //   .then(async (data) => {
         // await utilsForRegEx.addDomainsToValidAndInvalid(data).then((data) => {
-        res.status(200).send({
-          data: database,
-        });
+        // res.status(200).send({
+        //   data: database,
+        // });
         //await utilsForRegEx.addDomainsToValidAndInvalid(data);
         // });
         //});

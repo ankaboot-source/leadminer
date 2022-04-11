@@ -135,7 +135,7 @@
                     :thickness="0.1"
                     color="teal"
                     track-color="grey-3"
-                    angle="-90"
+                    :angle="-90"
                     class="q-ma-md"
                   >
                     <div class="text-center">
@@ -186,10 +186,12 @@
             table-header-class="text-teal"
             title="Emails"
             :rows="Emails"
+            :binary-state-sort="true"
             :columns="columns"
             :filter="filter"
             :filter-method="filterMethod"
             row-key="email"
+            column-sort-order="ad"
             :pagination.sync="pagination"
             ><template #top-left>
               <div class="row">
@@ -203,7 +205,7 @@
                       <q-badge class="q-pa-sm" rounded :color="item.color">
                       </q-badge>
                     </div>
-                    <div class="col-10">{{ " " + item.text }}</div>
+                    <div class="col-10">{{ "  " + item.text }}</div>
                   </div>
                 </div>
               </div></template
@@ -263,30 +265,22 @@
                   {{ props.row.email.name ? props.row.email.name : "" }}
                 </q-td>
                 <q-td key="Sender" style="width: 10%" :props="props">
-                  <q-badge
-                    v-if="returnSender(props.row.field) != null"
-                    outline
-                    color="orange"
-                    transparent
-                  >
-                    {{ returnSender(props.row.field) }}
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.field.sender }}
                   </q-badge> </q-td
                 ><q-td key="Recipient" style="width: 10%" :props="props">
-                  <q-badge
-                    v-if="returnRecipient(props.row.field) != null"
-                    outline
-                    color="orange"
-                    transparent
-                  >
-                    {{ returnRecipient(props.row.field) }}
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
                 <q-td key="Total" style="width: 10%" :props="props">
                   <q-badge color="blue">
-                    {{
-                      returnRecipient(props.row.field) +
-                      returnSender(props.row.field)
-                    }}
+                    {{ props.row.field.total }}
+                  </q-badge>
+                </q-td>
+                <q-td key="Type" style="width: 10%" :props="props">
+                  <q-badge rounded color="green">
+                    {{ props.row.type }}
                   </q-badge>
                 </q-td>
                 <q-td key="Status" style="width: 10%" :props="props">
@@ -344,6 +338,7 @@
 import { defineComponent, defineAsyncComponent } from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
+
 import { mapState } from "vuex";
 const infos = [
   {
@@ -367,42 +362,66 @@ const columns = [
     name: "Email",
     align: "left",
     label: "Email",
-    field: "address",
+    field: (row) => row.email.address,
+
+    sortable: true,
+    sort: (a, b) => {
+      const domainA = a.split("@")[1];
+      const domainB = b.split("@")[1];
+      return domainA.localeCompare(domainB);
+    },
   },
 
   {
     name: "Names",
     align: "left",
-    label: "Names",
-    field: "name",
+    label: "Name",
+    field: (row) => row.email.name,
+    sortable: true,
+    sort: (a, b) => {
+      return a.localeCompare(b);
+    },
+    sortOrder: "ad",
   },
 
   {
     name: "Sender",
     align: "left",
     label: "Sender",
-    field: "field",
+    type: "number",
+    field: (row) => row.field.sender,
     sortable: true,
+    sortOrder: "ad",
   },
   {
     name: "Recipient",
     align: "left",
     label: "Recipient",
-    field: "field",
+    type: "number",
+    field: (row) => row.field.recipient,
+    sortable: true,
+    sortOrder: "ad",
   },
   {
     name: "Total",
     align: "left",
     label: "Total",
-    field: "total",
+    type: "number",
+    field: (row) => row.field.total,
     sortable: true,
+    sortOrder: "ad",
+  },
+  {
+    name: "Type",
+    align: "left",
+    label: "Type",
+    field: "type",
   },
   {
     name: "Status",
     align: "left",
     label: "Status",
     field: "status",
-    sortable: true,
   },
 ];
 
@@ -439,31 +458,66 @@ export default defineComponent({
           return sum;
         }
         let csv =
-          '"""Aliase""","""Email""","""Fields""","""Total""","""Status"""\n';
+          "Aliase\tEmail\tFrom\tTo\tCC\tBCC\tReply-To\tBody\tTotal\tType\tStatus\n";
         let emailsCsv = Emails;
         let obj = { name: "" };
         let emailstoExport = emailsCsv.map((element) => {
           let field = "";
+          let From = 0;
+          let To = 0;
+          let Cc = 0;
+          let Bcc = 0;
+          let Reply = 0;
+          let Body = 0;
           if (Array.isArray(element.field[0])) {
             for (let i of element.field) {
               let temp = i[0] + ":" + i[1];
               field = field.concat("   ", temp);
+              if (i[0] == "from") {
+                From = i[1];
+              } else if (i[0] == "to") {
+                To = i[1];
+              } else if (i[0] == "cc") {
+                Cc = i[1];
+              } else if (i[0] == "bcc") {
+                Bcc = i[1];
+              } else if (i[0] == "reply-to") {
+                Reply = i[1];
+              }
             }
           } else {
             field = element.field[0] + ":" + element.field[1];
+
+            if (element.field[0] == "from") {
+              From = element.field[1];
+            } else if (element.field[0] == "to") {
+              To = element.field[1];
+            } else if (element.field[0] == "cc") {
+              Cc = element.field[1];
+            } else if (element.field[0] == "bcc") {
+              Bcc = element.field[1];
+            } else if (element.field[0] == "reply-to") {
+              Reply = element.field[1];
+            }
           }
           let obj = {
             Aliase: element.email.name,
             Email: element.email.address,
-            Fields: field,
+            From: From,
+            To: To,
+            Cc: Cc,
+            Bcc: Bcc,
+            Reply: Reply,
+            Body: Body,
             Total: sumDigitsFromString(field),
+            Type: element.type,
             Status: "Valid",
           };
 
           return obj;
         });
         emailstoExport.forEach((row) => {
-          csv += Object.values(row).join(",");
+          csv += Object.values(row).join("\t");
           csv += "\n";
         });
 
@@ -532,7 +586,77 @@ export default defineComponent({
 
   computed: {
     Emails() {
-      return [...this.retrievedEmails];
+      let data = this.retrievedEmails.map((row) => {
+        if (!row.email.hasOwnProperty("name")) {
+          row.email["name"] = "";
+        } else {
+          row.email.name.replace(/'/g, ``);
+        }
+        row.field["total"] = 0;
+        if (Array.isArray(row.field[0])) {
+          let count = 0;
+          for (const i of row.field) {
+            if (i.includes("from") || i.includes("reply-to")) {
+              count += i[1];
+            }
+          }
+
+          row.field["sender"] = count;
+
+          row.field["total"] += count;
+        } else if (
+          row.field.includes("from") ||
+          row.field.includes("reply-to")
+        ) {
+          row.field["sender"] = row.field[1];
+          row.field["total"] += row.field[1];
+        }
+        if (Array.isArray(row.field[0])) {
+          let count = 0;
+          for (const i of row.field) {
+            if (i.includes("to") || i.includes("cc") || i.includes("bcc")) {
+              count += i[1];
+            }
+          }
+          row.field["recipient"] = count;
+          row.field["total"] += count;
+        } else if (
+          field.includes("to") ||
+          field.includes("cc") ||
+          field.includes("bcc")
+        ) {
+          row.field["recipient"] = row.field[1];
+          row.field["total"] += row.field[1];
+        }
+        return row;
+      });
+      var wordArr = [];
+      var numArr = [];
+      var emptyArr = [];
+      data.forEach((el) => {
+        // console.log(Number(el.email.name.charAt(0)), el.email.name);
+        if (Number(el.email.name.charAt(0))) {
+          numArr.push(el);
+        } else if (el.email.name != "") {
+          wordArr.push(el);
+        } else {
+          emptyArr.push(el);
+        }
+      });
+      wordArr.sort((a, b) => {
+        return (
+          !a.email.name - !b.email.name ||
+          a.email.name.localeCompare(b.email.name)
+        );
+      });
+      wordArr.sort((a, b) => b.field.total - a.field.total);
+      numArr.sort((a, b) => a - b);
+      console.log(numArr, wordArr, emptyArr);
+      let dataend = wordArr.concat(numArr);
+      let sorted = dataend.concat(emptyArr);
+      //data.sort((a, b) => b.field.total - a.field.total);
+      console.log(data, sorted);
+      return [...sorted];
     },
     boxes() {
       return [...this.boxes];
@@ -576,20 +700,23 @@ export default defineComponent({
   },
 
   methods: {
-    returnSender(field) {
-      if (Array.isArray(field[0])) {
-        let count = 0;
-        for (const i of field) {
-          if (i.includes("from") || i.includes("reply-to")) {
-            count += i[1];
-          }
-        }
-        return count != 0 ? count : null;
-      } else if (field.includes("from") || field.includes("reply-to")) {
-        return field[1];
-      }
-      return null;
+    returnTotal(sender, reciever) {
+      return sender + reciever;
     },
+    // returnSender(field) {
+    //   if (Array.isArray(field[0])) {
+    //     let count = 0;
+    //     for (const i of field) {
+    //       if (i.includes("from") || i.includes("reply-to")) {
+    //         count += i[1];
+    //       }
+    //     }
+    //     return count != 0 ? count : null;
+    //   } else if (field.includes("from") || field.includes("reply-to")) {
+    //     return field[1];
+    //   }
+    //   return null;
+    // },
     returnRecipient(field) {
       if (Array.isArray(field[0])) {
         let count = 0;
@@ -645,16 +772,19 @@ export default defineComponent({
     fetchEmails() {
       var fields = [];
       var bot = this.boxes;
-      console.log(bot);
+
+      //console.log(bot);
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
         fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
-      } else {
+      } else if (this.acceptedHeaders.length != 0) {
         this.acceptedBody.length == 0
           ? (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")})`)
           : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")}),${
               this.acceptedBody[0]
             }`);
+      } else if (this.acceptedHeaders.length == 0) {
+        fields = `${this.acceptedBody[0]}`;
       }
       let data = {
         boxes: this.selectedBoxes,
