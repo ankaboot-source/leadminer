@@ -1,6 +1,12 @@
 /* eslint-disable */
+// const regex = new RegExp(
+//   /((?<name>[\p{L}\p{M}',.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+// );
 const regex = new RegExp(
-  /((?<name>[\p{L}\p{M}',.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+  /((?<name>[\p{L}\p{M}'.\p{L}\p{M}\d\s\(\)A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+);
+const regexForbody = new RegExp(
+  /(:(?<name>[\p{L}\p{M}'.\p{L}\p{M}\d\s\(\)A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 /* eslint-disable */
 /* eslint-disable */
@@ -67,7 +73,7 @@ async function addDomainsToValidAndInvalid(emails) {
 }
 function extractEmailsFromBody(data) {
   let reg = data.match(regexForBody);
-  //console.log(reg, "heheheh");
+  // console.log(reg, "heheheh");
   if (reg != null) {
     return [reg.join(",")];
   } else {

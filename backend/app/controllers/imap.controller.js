@@ -238,18 +238,11 @@ exports.getEmails = (req, res, sse, client) => {
 
                       Object.assign(dataTobeStored, Imap.parseHeader(buffer));
 
-                      if (
-                        bodiesTofetch.includes("TEXT") &&
-                        info.which == "TEXT"
-                      ) {
-                        let parsed = await simpleParser(buffer, {
-                          skipImageLinks: true,
-                          skipTextToHtml: true,
-                        });
+                      if (bodiesTofetch.includes("1") && info.which == "1") {
                         //console.log(parsed.text);
-                        if (parsed && parsed.text) {
+                        if (buffer) {
                           let body = utilsForRegEx.extractEmailsFromBody(
-                            parsed.text
+                            buffer.toString()
                           );
                           //console.log(body);
                           if (body) {

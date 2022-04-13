@@ -9,6 +9,15 @@ export async function getEmails({ context, getters }, { data }) {
   source.addEventListener("percentage", (message) => {
     this.commit("example/SET_PERCENTAGE", message.data);
   });
+
+  function myGreeting() {
+    this.commit("example/SET_LOADING_DNS", false);
+  }
+
+  function myStopFunction() {
+    clearTimeout(myTimeout);
+  }
+  var myTimeout;
   // source.addEventListener("status", (message) => {
   //   this.commit("example/SET_PERCENTAGE", 0);
   //   this.commit("example/SET_CURRENT", "");
@@ -16,16 +25,23 @@ export async function getEmails({ context, getters }, { data }) {
   // });
   source.addEventListener("data", (message) => {
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
+    myTimeout = setTimeout(
+      this.commit("example/SET_LOADING_DNS", false),
+      10000
+    );
+    console.log("from data");
   });
   source.addEventListener("dns", (message) => {
-    this.commit("example/SET_LOADING_DNS", JSON.parse(message.data));
-    console.log(message.data);
+    console.log("from dns");
+    clearTimeout(myTimeout);
+    //this.commit("example/SET_LOADING_DNS", JSON.parse(message.data));
+    //console.log(message.data);
   });
 
   return new Promise((resolve, reject) => {
-    console.log(currentState);
+    //console.log(currentState);
     this.commit("example/SET_LOADING", true);
-    console.log(currentState, data);
+    //console.log(currentState, data);
     this.commit("example/SET_LOADING_DNS", true);
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_EMAILS", []);

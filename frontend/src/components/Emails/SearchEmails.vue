@@ -273,6 +273,11 @@
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
+                <q-td key="Body" style="width: 10%" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.field.body }}
+                  </q-badge>
+                </q-td>
                 <q-td key="Total" style="width: 10%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.field.total }}
@@ -403,6 +408,15 @@ const columns = [
     sortOrder: "ad",
   },
   {
+    name: "Body",
+    align: "left",
+    label: "Body",
+    type: "number",
+    field: (row) => row.field.body,
+    sortable: true,
+    sortOrder: "ad",
+  },
+  {
     name: "Total",
     align: "left",
     label: "Total",
@@ -483,6 +497,8 @@ export default defineComponent({
                 Bcc = i[1];
               } else if (i[0] == "reply-to") {
                 Reply = i[1];
+              } else if (i[0] == "body") {
+                Body = i[1];
               }
             }
           } else {
@@ -498,6 +514,8 @@ export default defineComponent({
               Bcc = element.field[1];
             } else if (element.field[0] == "reply-to") {
               Reply = element.field[1];
+            } else if (element.field[0] == "body") {
+              Body = element.field[1];
             }
           }
           let obj = {
@@ -578,7 +596,7 @@ export default defineComponent({
       optionsBody: [
         {
           label: "Body",
-          value: "TEXT",
+          value: "1",
         },
       ],
     };
@@ -595,39 +613,59 @@ export default defineComponent({
         row.field["total"] = 0;
         if (Array.isArray(row.field[0])) {
           let count = 0;
+          let countbody = 0;
+          let countrecipient = 0;
           for (const i of row.field) {
             if (i.includes("from") || i.includes("reply-to")) {
               count += i[1];
+            } else if (i.includes("body")) {
+              countbody = i[1];
+              console.log("hhhhhhhhhhhh");
+              row.field["total"] += i[1];
+            } else if (
+              i.includes("to") ||
+              i.includes("cc") ||
+              i.includes("bcc")
+            ) {
+              countrecipient += i[1];
             }
           }
-
+          row.field["recipient"] = countrecipient;
+          //row.field["total"] += count;
+          //}
+          row.field["body"] = countbody;
           row.field["sender"] = count;
 
-          row.field["total"] += count;
-        } else if (
-          row.field.includes("from") ||
-          row.field.includes("reply-to")
-        ) {
-          row.field["sender"] = row.field[1];
-          row.field["total"] += row.field[1];
+          row.field["total"] += count + countbody + countrecipient;
         }
-        if (Array.isArray(row.field[0])) {
-          let count = 0;
-          for (const i of row.field) {
-            if (i.includes("to") || i.includes("cc") || i.includes("bcc")) {
-              count += i[1];
-            }
-          }
-          row.field["recipient"] = count;
-          row.field["total"] += count;
-        } else if (
-          field.includes("to") ||
-          field.includes("cc") ||
-          field.includes("bcc")
-        ) {
-          row.field["recipient"] = row.field[1];
-          row.field["total"] += row.field[1];
-        }
+        // } else if (
+        //   row.field.includes("from") ||
+        //   row.field.includes("reply-to")
+        // ) {
+        //   row.field["sender"] = row.field[1];
+        //   row.field["total"] += row.field[1];
+        // } else {
+        //   row.field["body"] = row.field[1];
+        //   console.log("hhhhhhhhhhhh");
+        //   row.field["total"] += row.field[1];
+        // }
+        // if (Array.isArray(row.field[0])) {
+        //   let count = 0;
+        //   for (const i of row.field) {
+        //     if (i.includes("to") || i.includes("cc") || i.includes("bcc")) {
+        //       count += i[1];
+        //     }
+        //   }
+        //   row.field["recipient"] = count;
+        //   row.field["total"] += count;
+        // } else if (
+        //   field.includes("to") ||
+        //   field.includes("cc") ||
+        //   field.includes("bcc")
+        // ) {
+        //   row.field["recipient"] = row.field[1];
+        //   row.field["total"] += row.field[1];
+        // }
         return row;
       });
       var wordArr = [];
