@@ -6,7 +6,7 @@ const InvalidDomainsSet = require("./InvalidDomains.json");
 const dns = require("dns");
 /* eslint-disable */
 const regex = new RegExp(
-  /((?<name>[\p{L}\p{M}'.\p{L}\p{M}\d\s\(\)A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+  /((?<name>[\p{L}\p{M}'.\p{L}\p{M}\d\s A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+=?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 /* eslint-disable */
 const regexForBody = new RegExp(
@@ -67,14 +67,17 @@ function extractNameAndEmailForBody(data) {
     }
   };
   let email = data[0].split(",");
+  console.log(email);
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
       let Emails = emails.trim();
 
       let emailAfterRegEx = regex.exec(Emails);
+      console.log("aloalaaaaaa", emails, emailAfterRegEx);
       let result = getRegExp(emails, emailAfterRegEx);
       return result;
     });
+
     return dataWithManyEmails;
   } else {
     let emailAfterRegEx = regex.exec(email);

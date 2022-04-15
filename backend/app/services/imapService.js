@@ -67,13 +67,17 @@ async function OpenedBoxCallback(
       let minedEmails = {};
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
-          minedEmails = ScanFolders(chunk, bodiesTofetch, streamInfo);
-          //console.log(minedEmails);
+          minedEmails = {
+            ...minedEmails,
+            ...ScanFolders(chunk, bodiesTofetch, streamInfo),
+          };
+          //console.log(minedEmails, "mineeeeeeeeeeeeeeeeee/**/***");
         });
         // when fetching stream ends we process data
         stream.once("end", () => {
           if (minedEmails) {
             utilsForDataManipulation.treatParsedEmails(
+              sse,
               minedEmails,
               database,
               RedisClient
@@ -95,10 +99,14 @@ async function OpenedBoxCallback(
     f.once("end", () => {
       console.log("h");
       sse.send(1, "percentage");
-      sse.send(database, "data");
+      setTimeout(() => {
+        sse.send(database, "data");
+      }, 3500);
       if (currentbox.name == boxes[boxes.length - 1]) {
         imap.end();
-        sse.send(true, "dns");
+        setTimeout(() => {
+          sse.send(true, "dns");
+        }, 3500);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         //console.log(store);

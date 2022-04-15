@@ -21,7 +21,7 @@ export async function getEmails({ context, getters }, { data }) {
   // });
   source.addEventListener("data", (message) => {
     const emails = () => {
-      let data = JSON.parse(message.data).map((row) => {
+      let data = currentState.retrievedEmails.map((row) => {
         if (!row.email.hasOwnProperty("name")) {
           row.email["name"] = "";
         } else {
@@ -50,10 +50,10 @@ export async function getEmails({ context, getters }, { data }) {
           row.field["recipient"] = countrecipient;
           //row.field["total"] += count;
           //}
-          row.field["body"] = countbody;
+          row.field["body"] = countbody; //> 1 ? countbody % 2 : countbody;
           row.field["sender"] = count;
 
-          row.field["total"] += count + countbody + countrecipient;
+          row.field["total"] = count + countbody + countrecipient;
         }
         return row;
       });
@@ -78,14 +78,16 @@ export async function getEmails({ context, getters }, { data }) {
       });
       wordArr.sort((a, b) => b.field.total - a.field.total);
       numArr.sort((a, b) => a - b);
-      console.log(numArr, wordArr, emptyArr);
+      emptyArr.sort((a, b) => b.field.total - a.field.total);
+
+      //console.log(numArr, wordArr, emptyArr);
       let dataend = wordArr.concat(numArr);
       let sorted = dataend.concat(emptyArr);
       //data.sort((a, b) => b.field.total - a.field.total);
-      console.log(data, sorted);
+      //console.log(data, sorted);
       return [...sorted];
     };
-    //this.commit("example/SET_EMAILS", JSON.parse(message.data));
+    this.commit("example/SET_EMAILS", JSON.parse(message.data));
     this.commit("example/SET_EMAILS", emails());
 
     // myTimeout = setTimeout(

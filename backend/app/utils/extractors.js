@@ -135,6 +135,7 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
           EX: 40,
         });
         // append data when domain is valid
+        console.log(database);
         return manipulateData(element, oneEmail, database);
 
         // if (
@@ -160,7 +161,8 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
  * @param  {Array} database
  * @param  {redis client} client
  */
-function treatParsedEmails(dataTobeStored, database, client) {
+function treatParsedEmails(sse, dataTobeStored, database, client) {
+  console.log(dataTobeStored, "hhhhhoooooooooooooooooooooooooo");
   Object.keys(dataTobeStored).map((element) => {
     if (dataTobeStored[element][0].includes("@")) {
       let email =
@@ -169,7 +171,7 @@ function treatParsedEmails(dataTobeStored, database, client) {
           : utilsForRegEx.extractNameAndEmailForBody(dataTobeStored[element]);
       // check existence in database or data array
       email.map(async (oneEmail) => {
-        if (oneEmail) {
+        if (oneEmail && !checkForNoReply(oneEmail)) {
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
