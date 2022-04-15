@@ -2,7 +2,7 @@ export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
   const source = new EventSource(`${this.$api}/stream`);
   source.addEventListener("box", (message) => {
-    console.log("Got box", message.data);
+    //console.log("Got box", message.data);
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_CURRENT", message.data);
   });
@@ -14,26 +14,90 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_LOADING_DNS", false);
   }
 
-  function myStopFunction() {
-    clearTimeout(myTimeout);
-  }
-  var myTimeout;
   // source.addEventListener("status", (message) => {
   //   this.commit("example/SET_PERCENTAGE", 0);
   //   this.commit("example/SET_CURRENT", "");
   //   this.commit("example/SET_STATUS", message.data);
   // });
   source.addEventListener("data", (message) => {
-    this.commit("example/SET_EMAILS", JSON.parse(message.data));
-    myTimeout = setTimeout(
-      this.commit("example/SET_LOADING_DNS", false),
-      10000
-    );
+    const emails = () => {
+      let data = JSON.parse(message.data).map((row) => {
+        if (!row.email.hasOwnProperty("name")) {
+          row.email["name"] = "";
+        } else {
+          row.email.name.replace(/'/g, ``);
+        }
+        row.field["total"] = 0;
+        if (Array.isArray(row.field[0])) {
+          let count = 0;
+          let countbody = 0;
+          let countrecipient = 0;
+          for (const i of row.field) {
+            if (i.includes("from") || i.includes("reply-to")) {
+              count += i[1];
+            } else if (i.includes("body")) {
+              countbody = i[1];
+              console.log("hhhhhhhhhhhh");
+              row.field["total"] += i[1];
+            } else if (
+              i.includes("to") ||
+              i.includes("cc") ||
+              i.includes("bcc")
+            ) {
+              countrecipient += i[1];
+            }
+          }
+          row.field["recipient"] = countrecipient;
+          //row.field["total"] += count;
+          //}
+          row.field["body"] = countbody;
+          row.field["sender"] = count;
+
+          row.field["total"] += count + countbody + countrecipient;
+        }
+        return row;
+      });
+      var wordArr = [];
+      var numArr = [];
+      var emptyArr = [];
+      data.forEach((el) => {
+        // console.log(Number(el.email.name.charAt(0)), el.email.name);
+        if (Number(el.email.name.charAt(0))) {
+          numArr.push(el);
+        } else if (el.email.name != "") {
+          wordArr.push(el);
+        } else {
+          emptyArr.push(el);
+        }
+      });
+      wordArr.sort((a, b) => {
+        return (
+          !a.email.name - !b.email.name ||
+          a.email.name.localeCompare(b.email.name)
+        );
+      });
+      wordArr.sort((a, b) => b.field.total - a.field.total);
+      numArr.sort((a, b) => a - b);
+      console.log(numArr, wordArr, emptyArr);
+      let dataend = wordArr.concat(numArr);
+      let sorted = dataend.concat(emptyArr);
+      //data.sort((a, b) => b.field.total - a.field.total);
+      console.log(data, sorted);
+      return [...sorted];
+    };
+    //this.commit("example/SET_EMAILS", JSON.parse(message.data));
+    this.commit("example/SET_EMAILS", emails());
+
+    // myTimeout = setTimeout(
+    //   this.commit("example/SET_LOADING_DNS", false),
+    //   10000
+    // );
     console.log("from data");
   });
   source.addEventListener("dns", (message) => {
     console.log("from dns");
-    clearTimeout(myTimeout);
+    this.commit("example/SET_LOADING_DNS", false);
+    //clearTimeout(myTimeout);
     //this.commit("example/SET_LOADING_DNS", JSON.parse(message.data));
     //console.log(message.data);
   });

@@ -96,15 +96,15 @@
                     class="text-white q-ma-md"
                     :value="parseFloat(percentage) * 100"
                     size="120px"
-                    :thickness="0.2"
-                    :animation-speed="15"
+                    :thickness="0.19"
+                    :animation-speed="10"
                     color="orange"
                     center-color="grey-8"
                     track-color="transparent"
                     ><div>
                       <small class="text-white text-subtitle">
-                        {{ parseFloat(percentage) * 100 }}% {{ "    " }}</small
-                      >
+                        {{ parseFloat(percentage) * 100 }}%
+                      </small>
                     </div>
                     <br />
                     <div></div>
@@ -118,8 +118,8 @@
                             ? CurrentBox.substring(
                                 CurrentBox.indexOf('/') + 1,
                                 CurrentBox.length - 1
-                              )
-                            : CurrentBox
+                              ).slice(1, -1)
+                            : CurrentBox.slice(1, -1)
                         "
                       />
                     </div>
@@ -132,9 +132,9 @@
                     show-value
                     size="120px"
                     font-size="14px"
-                    :thickness="0.1"
+                    :thickness="0.2"
                     color="teal"
-                    track-color="grey-3"
+                    track-color="grey"
                     :angle="-90"
                     class="q-ma-md"
                   >
@@ -604,97 +604,69 @@ export default defineComponent({
 
   computed: {
     Emails() {
-      let data = this.retrievedEmails.map((row) => {
-        if (!row.email.hasOwnProperty("name")) {
-          row.email["name"] = "";
-        } else {
-          row.email.name.replace(/'/g, ``);
-        }
-        row.field["total"] = 0;
-        if (Array.isArray(row.field[0])) {
-          let count = 0;
-          let countbody = 0;
-          let countrecipient = 0;
-          for (const i of row.field) {
-            if (i.includes("from") || i.includes("reply-to")) {
-              count += i[1];
-            } else if (i.includes("body")) {
-              countbody = i[1];
-              console.log("hhhhhhhhhhhh");
-              row.field["total"] += i[1];
-            } else if (
-              i.includes("to") ||
-              i.includes("cc") ||
-              i.includes("bcc")
-            ) {
-              countrecipient += i[1];
-            }
-          }
-          row.field["recipient"] = countrecipient;
-          //row.field["total"] += count;
-          //}
-          row.field["body"] = countbody;
-          row.field["sender"] = count;
-
-          row.field["total"] += count + countbody + countrecipient;
-        }
-        // } else if (
-        //   row.field.includes("from") ||
-        //   row.field.includes("reply-to")
-        // ) {
-        //   row.field["sender"] = row.field[1];
-        //   row.field["total"] += row.field[1];
-        // } else {
-        //   row.field["body"] = row.field[1];
-        //   console.log("hhhhhhhhhhhh");
-        //   row.field["total"] += row.field[1];
-        // }
-        // if (Array.isArray(row.field[0])) {
-        //   let count = 0;
-        //   for (const i of row.field) {
-        //     if (i.includes("to") || i.includes("cc") || i.includes("bcc")) {
-        //       count += i[1];
-        //     }
-        //   }
-        //   row.field["recipient"] = count;
-        //   row.field["total"] += count;
-        // } else if (
-        //   field.includes("to") ||
-        //   field.includes("cc") ||
-        //   field.includes("bcc")
-        // ) {
-        //   row.field["recipient"] = row.field[1];
-        //   row.field["total"] += row.field[1];
-        // }
-        return row;
-      });
-      var wordArr = [];
-      var numArr = [];
-      var emptyArr = [];
-      data.forEach((el) => {
-        // console.log(Number(el.email.name.charAt(0)), el.email.name);
-        if (Number(el.email.name.charAt(0))) {
-          numArr.push(el);
-        } else if (el.email.name != "") {
-          wordArr.push(el);
-        } else {
-          emptyArr.push(el);
-        }
-      });
-      wordArr.sort((a, b) => {
-        return (
-          !a.email.name - !b.email.name ||
-          a.email.name.localeCompare(b.email.name)
-        );
-      });
-      wordArr.sort((a, b) => b.field.total - a.field.total);
-      numArr.sort((a, b) => a - b);
-      console.log(numArr, wordArr, emptyArr);
-      let dataend = wordArr.concat(numArr);
-      let sorted = dataend.concat(emptyArr);
-      //data.sort((a, b) => b.field.total - a.field.total);
-      console.log(data, sorted);
-      return [...sorted];
+      return this.retrievedEmails;
+      //map((row) => {
+      //   if (!row.email.hasOwnProperty("name")) {
+      //     row.email["name"] = "";
+      //   } else {
+      //     row.email.name.replace(/'/g, ``);
+      //   }
+      //   row.field["total"] = 0;
+      //   if (Array.isArray(row.field[0])) {
+      //     let count = 0;
+      //     let countbody = 0;
+      //     let countrecipient = 0;
+      //     for (const i of row.field) {
+      //       if (i.includes("from") || i.includes("reply-to")) {
+      //         count += i[1];
+      //       } else if (i.includes("body")) {
+      //         countbody = i[1];
+      //         console.log("hhhhhhhhhhhh");
+      //         row.field["total"] += i[1];
+      //       } else if (
+      //         i.includes("to") ||
+      //         i.includes("cc") ||
+      //         i.includes("bcc")
+      //       ) {
+      //         countrecipient += i[1];
+      //       }
+      //     }
+      //     row.field["recipient"] = countrecipient;
+      //     //row.field["total"] += count;
+      //     //}
+      //     row.field["body"] = countbody;
+      //     row.field["sender"] = count;
+      //     row.field["total"] += count + countbody + countrecipient;
+      //   }
+      //   return row;
+      // });
+      // var wordArr = [];
+      // var numArr = [];
+      // var emptyArr = [];
+      // data.forEach((el) => {
+      //   // console.log(Number(el.email.name.charAt(0)), el.email.name);
+      //   if (Number(el.email.name.charAt(0))) {
+      //     numArr.push(el);
+      //   } else if (el.email.name != "") {
+      //     wordArr.push(el);
+      //   } else {
+      //     emptyArr.push(el);
+      //   }
+      // });
+      // wordArr.sort((a, b) => {
+      //   return (
+      //     !a.email.name - !b.email.name ||
+      //     a.email.name.localeCompare(b.email.name)
+      //   );
+      // });
+      // wordArr.sort((a, b) => b.field.total - a.field.total);
+      // numArr.sort((a, b) => a - b);
+      // console.log(numArr, wordArr, emptyArr);
+      // let dataend = wordArr.concat(numArr);
+      // let sorted = dataend.concat(emptyArr);
+      // //data.sort((a, b) => b.field.total - a.field.total);
+      // console.log(data, sorted);
+      // return [...sorted];
     },
     boxes() {
       return [...this.boxes];
