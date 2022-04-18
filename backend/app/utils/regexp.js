@@ -1,8 +1,3 @@
-var fs = require("fs");
-/* eslint-disable */
-const logger = require("./logger")(module);
-const ValidDomainsSet = require("./ValidDomains.json");
-const InvalidDomainsSet = require("./InvalidDomains.json");
 const dns = require("dns");
 /* eslint-disable */
 const regex = new RegExp(
@@ -64,10 +59,16 @@ function extractNameAndEmailForBody(data) {
   const getRegExp = (email, emailAfterRegEx) => {
     if (emailAfterRegEx) {
       return emailAfterRegEx.groups;
+    } else {
+      let regMail = email.match(regexForBody);
+      console.log(regMail);
+      return {
+        name: "",
+        address: regMail ? regMail[0].replace(/[^\w.@_ ]/g, "") : email,
+      };
     }
   };
   let email = data[0].split(",");
-  console.log(email);
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
       let Emails = emails.trim();

@@ -177,9 +177,7 @@ exports.getEmails = (req, res, sse, RedisClient) => {
     // fetch imap from database then mine Emails
     ImapInfo.findByPk(req.params.id).then((imapInfo) => {
       // data will include all of the data that will be mined from the mailbox.
-      let database = [],
-        i = 0,
-        boxes = UtilsForData.getBoxesAndFolders(req.query);
+      (i = 0), (boxes = UtilsForData.getBoxesAndFolders(req.query));
       // bodiesTofetch is the query that user sends
       const bodiesTofetch = req.query.fields;
 

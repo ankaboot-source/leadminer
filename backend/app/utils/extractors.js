@@ -30,7 +30,6 @@ function checkExistence(database, email) {
  */
 function checkForNoReply(oneEmail, imapEmail) {
   const NOREPLY = [
-    imapEmail,
     "noreply",
     "no-reply",
     "notifications-noreply",
@@ -40,7 +39,7 @@ function checkForNoReply(oneEmail, imapEmail) {
     "notifications",
   ];
   let noReply = NOREPLY.filter((word) => oneEmail.address.includes(word));
-  if (noReply.length) {
+  if (noReply.length || oneEmail.address == imapEmail) {
     return true;
   } else {
     return false;
@@ -134,18 +133,9 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
         await client.set(domain, "ok", {
           EX: 40,
         });
+        console.log(domain);
         // append data when domain is valid
-        console.log(database);
         return manipulateData(element, oneEmail, database);
-
-        // if (
-        //   currentbox.name == boxes[boxes.length - 1] &&
-        //   seqno + 10 > currentbox.messages.total
-        // ) {
-        //   console.log("yes");
-        //sse.send(false, "dns");
-        // }
-        //console.log("helo val");
       } else {
         await client.set(domain, "ko", {
           EX: 40,
@@ -161,8 +151,7 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
  * @param  {Array} database
  * @param  {redis client} client
  */
-function treatParsedEmails(sse, dataTobeStored, database, client) {
-  console.log(dataTobeStored, "hhhhhoooooooooooooooooooooooooo");
+function treatParsedEmails(sse, dataTobeStored, database, client, imapEmail) {
   Object.keys(dataTobeStored).map((element) => {
     if (dataTobeStored[element][0].includes("@")) {
       let email =
@@ -171,7 +160,7 @@ function treatParsedEmails(sse, dataTobeStored, database, client) {
           : utilsForRegEx.extractNameAndEmailForBody(dataTobeStored[element]);
       // check existence in database or data array
       email.map(async (oneEmail) => {
-        if (oneEmail && !checkForNoReply(oneEmail)) {
+        if (oneEmail && !checkForNoReply(oneEmail, imapEmail)) {
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)

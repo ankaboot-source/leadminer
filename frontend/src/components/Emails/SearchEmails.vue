@@ -253,7 +253,7 @@
             </template>
             <template #body="props">
               <q-tr :props="props">
-                <q-td key="Email" style="width: 30%" :props="props">
+                <q-td key="Email" style="width: 25%" :props="props">
                   {{
                     props.row.email.address
                       ? props.row.email.address
@@ -261,7 +261,7 @@
                   }}</q-td
                 >
 
-                <q-td key="Names" style="width: 20%" :props="props">
+                <q-td key="Names" style="width: 15%" :props="props">
                   {{ props.row.email.name ? props.row.email.name : "" }}
                 </q-td>
                 <q-td key="Sender" style="width: 10%" :props="props">

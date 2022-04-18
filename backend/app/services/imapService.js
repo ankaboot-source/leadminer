@@ -2,7 +2,6 @@ const utilsForRegEx = require("../utils/regexp");
 const utilsForDataManipulation = require("../utils/extractors");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
-const { Console } = require("winston/lib/winston/transports");
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource) {
   // ensure that body scan is included (selected on RedisClient side)
@@ -10,7 +9,6 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource) {
   // the current chunk is extracted from body
   //console.log(chunk);
   let minedEmails = {};
-  //console.log(chunkSource);
   if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
     let body = utilsForRegEx.extractEmailsFromBody(chunk.toString());
     if (body) {
@@ -80,7 +78,8 @@ async function OpenedBoxCallback(
               sse,
               minedEmails,
               database,
-              RedisClient
+              RedisClient,
+              imapInfoEmail
             );
           }
         });
@@ -97,16 +96,24 @@ async function OpenedBoxCallback(
       ErrorOnFetch(err, imapInfoEmail);
     });
     f.once("end", () => {
-      console.log("h");
       sse.send(1, "percentage");
       setTimeout(() => {
         sse.send(database, "data");
-      }, 3500);
+      }, 1000);
       if (currentbox.name == boxes[boxes.length - 1]) {
         imap.end();
         setTimeout(() => {
+          sse.send(database, "data");
+        }, 10);
+        setTimeout(() => {
+          sse.send(database, "data");
+        }, 2000);
+        setTimeout(() => {
+          sse.send(database, "data");
+        }, 6000);
+        setTimeout(() => {
           sse.send(true, "dns");
-        }, 3500);
+        }, 6000);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         //console.log(store);
@@ -138,8 +145,8 @@ function imapService(bodiesTofetch, boxes, imapInfo, RedisClient, sse, query) {
   logger.info(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`
   );
-  let database = [],
-    currentBox;
+
+  let database = [];
 
   imap.once("ready", async () => {
     const loopfunc = (box) => {
