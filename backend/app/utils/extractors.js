@@ -1,12 +1,4 @@
 /* eslint-disable */
-
-/* eslint-disable */
-/* eslint-disable */
-const regexmatch = new RegExp(
-  /((?<name>[\p{L}\p{M}.\p{L}\p{M}\d\s\(\)-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
-);
-var fs = require("fs");
-/* eslint-disable */
 const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
@@ -131,14 +123,14 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
       if (addresses) {
         //set domain in redis
         await client.set(domain, "ok", {
-          EX: 40,
+          EX: 400,
         });
         console.log(domain);
         // append data when domain is valid
         return manipulateData(element, oneEmail, database);
       } else {
         await client.set(domain, "ko", {
-          EX: 40,
+          EX: 400,
         });
       }
     });

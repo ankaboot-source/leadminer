@@ -74,7 +74,6 @@ function extractNameAndEmailForBody(data) {
       let Emails = emails.trim();
 
       let emailAfterRegEx = regex.exec(Emails);
-      console.log("aloalaaaaaa", emails, emailAfterRegEx);
       let result = getRegExp(emails, emailAfterRegEx);
       return result;
     });

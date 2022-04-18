@@ -472,7 +472,7 @@ export default defineComponent({
           return sum;
         }
         let csv =
-          "Aliase\tEmail\tFrom\tTo\tCC\tBCC\tReply-To\tBody\tTotal\tType\tStatus\n";
+          "Email\tAliase\tStatus\tTo\tFrom\tCC\tBCC\tReply-To\tBody\tTotal\tType\n";
         let emailsCsv = Emails;
         let obj = { name: "" };
         let emailstoExport = emailsCsv.map((element) => {
@@ -519,17 +519,18 @@ export default defineComponent({
             }
           }
           let obj = {
-            Aliase: element.email.name.trim(),
             Email: element.email.address,
-            From: From,
+            Aliase: element.email.name.trim(),
+            Status: "Valid",
             To: To,
+            From: From,
+
             Cc: Cc,
             Bcc: Bcc,
             Reply: Reply,
             Body: Body,
             Total: sumDigitsFromString(field),
             Type: element.type,
-            Status: "Valid",
           };
 
           return obj;
@@ -605,68 +606,6 @@ export default defineComponent({
   computed: {
     Emails() {
       return this.retrievedEmails;
-      //map((row) => {
-      //   if (!row.email.hasOwnProperty("name")) {
-      //     row.email["name"] = "";
-      //   } else {
-      //     row.email.name.replace(/'/g, ``);
-      //   }
-      //   row.field["total"] = 0;
-      //   if (Array.isArray(row.field[0])) {
-      //     let count = 0;
-      //     let countbody = 0;
-      //     let countrecipient = 0;
-      //     for (const i of row.field) {
-      //       if (i.includes("from") || i.includes("reply-to")) {
-      //         count += i[1];
-      //       } else if (i.includes("body")) {
-      //         countbody = i[1];
-      //         console.log("hhhhhhhhhhhh");
-      //         row.field["total"] += i[1];
-      //       } else if (
-      //         i.includes("to") ||
-      //         i.includes("cc") ||
-      //         i.includes("bcc")
-      //       ) {
-      //         countrecipient += i[1];
-      //       }
-      //     }
-      //     row.field["recipient"] = countrecipient;
-      //     //row.field["total"] += count;
-      //     //}
-      //     row.field["body"] = countbody;
-      //     row.field["sender"] = count;
-      //     row.field["total"] += count + countbody + countrecipient;
-      //   }
-      //   return row;
-      // });
-      // var wordArr = [];
-      // var numArr = [];
-      // var emptyArr = [];
-      // data.forEach((el) => {
-      //   // console.log(Number(el.email.name.charAt(0)), el.email.name);
-      //   if (Number(el.email.name.charAt(0))) {
-      //     numArr.push(el);
-      //   } else if (el.email.name != "") {
-      //     wordArr.push(el);
-      //   } else {
-      //     emptyArr.push(el);
-      //   }
-      // });
-      // wordArr.sort((a, b) => {
-      //   return (
-      //     !a.email.name - !b.email.name ||
-      //     a.email.name.localeCompare(b.email.name)
-      //   );
-      // });
-      // wordArr.sort((a, b) => b.field.total - a.field.total);
-      // numArr.sort((a, b) => a - b);
-      // console.log(numArr, wordArr, emptyArr);
-      // let dataend = wordArr.concat(numArr);
-      // let sorted = dataend.concat(emptyArr);
-      // //data.sort((a, b) => b.field.total - a.field.total);
-      // console.log(data, sorted);
-      // return [...sorted];
     },
     boxes() {
       return [...this.boxes];
@@ -713,20 +652,6 @@ export default defineComponent({
     returnTotal(sender, reciever) {
       return sender + reciever;
     },
-    // returnSender(field) {
-    //   if (Array.isArray(field[0])) {
-    //     let count = 0;
-    //     for (const i of field) {
-    //       if (i.includes("from") || i.includes("reply-to")) {
-    //         count += i[1];
-    //       }
-    //     }
-    //     return count != 0 ? count : null;
-    //   } else if (field.includes("from") || field.includes("reply-to")) {
-    //     return field[1];
-    //   }
-    //   return null;
-    // },
     returnRecipient(field) {
       if (Array.isArray(field[0])) {
         let count = 0;

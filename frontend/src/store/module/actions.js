@@ -2,7 +2,6 @@ export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
   const source = new EventSource(`${this.$api}/stream`);
   source.addEventListener("box", (message) => {
-    //console.log("Got box", message.data);
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_CURRENT", message.data);
   });
@@ -10,15 +9,6 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_PERCENTAGE", message.data);
   });
 
-  function myGreeting() {
-    this.commit("example/SET_LOADING_DNS", false);
-  }
-
-  // source.addEventListener("status", (message) => {
-  //   this.commit("example/SET_PERCENTAGE", 0);
-  //   this.commit("example/SET_CURRENT", "");
-  //   this.commit("example/SET_STATUS", message.data);
-  // });
   source.addEventListener("data", (message) => {
     const emails = () => {
       let data = currentState.retrievedEmails.map((row) => {
@@ -48,9 +38,8 @@ export async function getEmails({ context, getters }, { data }) {
             }
           }
           row.field["recipient"] = countrecipient;
-          //row.field["total"] += count;
-          //}
-          row.field["body"] = countbody; //> 1 ? countbody % 2 : countbody;
+
+          row.field["body"] = countbody;
           row.field["sender"] = count;
 
           row.field["total"] = count + countbody + countrecipient;
@@ -61,7 +50,6 @@ export async function getEmails({ context, getters }, { data }) {
       var numArr = [];
       var emptyArr = [];
       data.forEach((el) => {
-        // console.log(Number(el.email.name.charAt(0)), el.email.name);
         if (Number(el.email.name.charAt(0))) {
           numArr.push(el);
         } else if (el.email.name != "") {
@@ -79,35 +67,20 @@ export async function getEmails({ context, getters }, { data }) {
       wordArr.sort((a, b) => b.field.total - a.field.total);
       numArr.sort((a, b) => a - b);
       emptyArr.sort((a, b) => b.field.total - a.field.total);
-
-      //console.log(numArr, wordArr, emptyArr);
       let dataend = wordArr.concat(numArr);
       let sorted = dataend.concat(emptyArr);
-      //data.sort((a, b) => b.field.total - a.field.total);
-      //console.log(data, sorted);
+
       return [...sorted];
     };
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
     this.commit("example/SET_EMAILS", emails());
-
-    // myTimeout = setTimeout(
-    //   this.commit("example/SET_LOADING_DNS", false),
-    //   10000
-    // );
-    console.log("from data");
   });
   source.addEventListener("dns", (message) => {
-    console.log("from dns");
     this.commit("example/SET_LOADING_DNS", false);
-    //clearTimeout(myTimeout);
-    //this.commit("example/SET_LOADING_DNS", JSON.parse(message.data));
-    //console.log(message.data);
   });
 
   return new Promise((resolve, reject) => {
-    //console.log(currentState);
     this.commit("example/SET_LOADING", true);
-    //console.log(currentState, data);
     this.commit("example/SET_LOADING_DNS", true);
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_EMAILS", []);
@@ -172,7 +145,6 @@ export async function signUp({ context, state }, { data }) {
 export async function signIn({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
-    console.log(data);
     // get imapInfo account or create one
     this.$axios
       .post(this.$api + "/imap/login", data)
@@ -192,7 +164,6 @@ export async function signIn({ context, state }, { data }) {
 export function getBoxes({ context, getters }) {
   this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
-  console.log(currentState);
   this.$axios
     .get(
       this.$api +
@@ -209,6 +180,5 @@ export function getBoxes({ context, getters }) {
     })
     .catch((error) => {
       this.commit("example/SET_ERROR", JSON.parse(JSON.stringify(error)));
-      console.log(error);
     });
 }
