@@ -30,8 +30,8 @@ function checkForNoReply(oneEmail, imapEmail) {
     "maildaemon",
     "notifications",
   ];
-  let noReply = NOREPLY.filter((word) => oneEmail.address.includes(word));
-  if (noReply.length || oneEmail.address == imapEmail) {
+  let noReply = NOREPLY.filter((word) => oneEmail.includes(word));
+  if (noReply.length || oneEmail.includes(imapEmail)) {
     return true;
   } else {
     return false;
@@ -117,22 +117,30 @@ function manipulateData(element, oneEmail, database) {
  * @param  {} database
  * @param  {} client
  */
-function manipulateDataWithDns(element, domain, oneEmail, database, client) {
+function manipulateDataWithDns(
+  element,
+  domain,
+  oneEmail,
+  database,
+  client,
+  timer
+) {
   if (domain) {
     dns.resolveMx(domain, async (error, addresses) => {
+      //console.log(domain);
+      timer.time += 50;
       if (addresses) {
         //set domain in redis
         await client.set(domain, "ok", {
           EX: 400,
         });
-        console.log(domain);
         // append data when domain is valid
         return manipulateData(element, oneEmail, database);
-      } else {
-        await client.set(domain, "ko", {
-          EX: 400,
-        });
-      }
+      } //else {
+      //   await client.set(domain, "ko", {
+      //     EX: 400,
+      //   });
+      // }
     });
   }
 }
@@ -143,21 +151,35 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
  * @param  {Array} database
  * @param  {redis client} client
  */
-function treatParsedEmails(sse, dataTobeStored, database, client, imapEmail) {
+function treatParsedEmails(
+  sse,
+  dataTobeStored,
+  database,
+  client,
+  imapEmail,
+  timer
+) {
   Object.keys(dataTobeStored).map((element) => {
     if (dataTobeStored[element][0].includes("@")) {
       let email =
         element != "body"
-          ? utilsForRegEx.extractNameAndEmail(dataTobeStored[element])
-          : utilsForRegEx.extractNameAndEmailForBody(dataTobeStored[element]);
+          ? utilsForRegEx.extractNameAndEmail(
+              dataTobeStored[element],
+              imapEmail
+            )
+          : utilsForRegEx.extractNameAndEmailForBody(
+              dataTobeStored[element],
+              imapEmail
+            );
       // check existence in database or data array
       email.map(async (oneEmail) => {
-        if (oneEmail && !checkForNoReply(oneEmail, imapEmail)) {
+        if (oneEmail) {
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
           // if domain already stored in cache
+          console.log(domainRedis);
           if (domainRedis) {
             return manipulateData(element, oneEmail, database);
           } else {
@@ -166,7 +188,8 @@ function treatParsedEmails(sse, dataTobeStored, database, client, imapEmail) {
               domain,
               oneEmail,
               database,
-              client
+              client,
+              timer
             );
           }
         }

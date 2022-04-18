@@ -1,11 +1,12 @@
 const dns = require("dns");
+const utilsForDataManipulation = require("./extractors");
 /* eslint-disable */
 const regex = new RegExp(
-  /((?<name>[\p{L}\p{M}'.\p{L}\p{M}\d\s A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+=?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+  /((?<name>[\p{L}\p{M}'.\p{L}\p{M}\d\s A-Za-z0-9&'*`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+=?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 /* eslint-disable */
 const regexForBody = new RegExp(
-  /(:(?<name>[\p{L}\p{M}*',.\p{L}\p{M}\d\s\(\)-]{1,}))*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+\/=?^_`\{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
+  /(:(?<name>[\p{L}\p{M}*'.\p{L}\p{M}\d\s A-Za-z0-9&'*`\{|\}~-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&'+=?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/gimu
 );
 
 /**
@@ -23,11 +24,20 @@ function extractEmailsFromBody(data) {
  * Using regEx extract email address and user name if available.
  * @param  {object} ImapData
  */
-function extractNameAndEmail(data) {
+function extractNameAndEmail(data, imapEmail) {
   const getRegExp = (email, emailAfterRegEx) => {
-    if (emailAfterRegEx) {
+    if (
+      emailAfterRegEx &&
+      !utilsForDataManipulation.checkForNoReply(
+        emailAfterRegEx.groups.address,
+        imapEmail
+      )
+    ) {
       return emailAfterRegEx.groups;
-    } else if (email) {
+    } else if (
+      email &&
+      !utilsForDataManipulation.checkForNoReply(email, imapEmail)
+    ) {
       return {
         name: email[0].substring(0, email.indexOf("<")),
         address: email[0]
@@ -55,16 +65,30 @@ function extractNameAndEmail(data) {
 /**
  * @param  {string} data An appar
  */
-function extractNameAndEmailForBody(data) {
+function extractNameAndEmailForBody(data, imapEmail) {
   const getRegExp = (email, emailAfterRegEx) => {
-    if (emailAfterRegEx) {
+    console.log(email, emailAfterRegEx);
+    if (
+      emailAfterRegEx &&
+      !utilsForDataManipulation.checkForNoReply(
+        emailAfterRegEx.groups.address,
+        imapEmail
+      )
+    ) {
       return emailAfterRegEx.groups;
     } else {
-      if (email) {
-        let regMail = email[0].match(regexForBody);
+      if (
+        email &&
+        !utilsForDataManipulation.checkForNoReply(email, imapEmail)
+      ) {
+        // if (email.includes("mouslimin")) {
+        //   console.log(email);
+        // }
+        //console.log(email);
+
         return {
           name: "",
-          address: regMail ? regMail[0].replace(/[^\w.@_ ]/g, "") : email,
+          address: email.replace(/[^\w.@_ ]/g, ""),
         };
       }
     }
@@ -72,17 +96,18 @@ function extractNameAndEmailForBody(data) {
   let email = data[0].split(",");
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
-      let Emails = emails.trim();
+      let Emails = emails.replace(/[^\w.@_ -]/g, "").trim();
 
-      let emailAfterRegEx = regex.exec(Emails);
+      let emailAfterRegEx = regexForBody.exec(Emails);
       let result = getRegExp(emails, emailAfterRegEx);
       return result;
     });
 
     return dataWithManyEmails;
   } else {
-    let emailAfterRegEx = regex.exec(email);
-    let result = getRegExp(email, emailAfterRegEx);
+    let Emails = email[0].replace(/[^\w.@_ -]/g, "").trim();
+    let emailAfterRegEx = regexForBody.exec(Emails);
+    let result = getRegExp(email[0], emailAfterRegEx);
     return [result];
   }
 }
