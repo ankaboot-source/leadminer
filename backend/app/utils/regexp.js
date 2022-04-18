@@ -60,12 +60,13 @@ function extractNameAndEmailForBody(data) {
     if (emailAfterRegEx) {
       return emailAfterRegEx.groups;
     } else {
-      let regMail = email.match(regexForBody);
-      console.log(regMail);
-      return {
-        name: "",
-        address: regMail ? regMail[0].replace(/[^\w.@_ ]/g, "") : email,
-      };
+      if (email) {
+        let regMail = email[0].match(regexForBody);
+        return {
+          name: "",
+          address: regMail ? regMail[0].replace(/[^\w.@_ ]/g, "") : email,
+        };
+      }
     }
   };
   let email = data[0].split(",");
