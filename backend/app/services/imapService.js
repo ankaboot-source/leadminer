@@ -85,21 +85,19 @@ async function OpenedBoxCallback(
       sse.send(1, "percentage");
       setTimeout(() => {
         sse.send(database, "data");
-      }, 500);
+      }, 200);
       if (currentbox.name == boxes[boxes.length - 1]) {
-        imap.end();
         sse.send(database, "data");
         setTimeout(() => {
           sse.send(database, "data");
-        }, timer.time);
-        setTimeout(function () {
           sse.send(true, "dns");
           database = null;
+          imap.end();
         }, timer.time);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
+        sse.send(database, "data");
         sse.send(0, "percentage");
-        return true;
       }
     });
   }
@@ -123,7 +121,6 @@ function imapService(bodiesTofetch, boxes, imapInfo, RedisClient, sse, query) {
   logger.info(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`
   );
-
   var database = [];
 
   const ProxyChange = {
@@ -133,6 +130,7 @@ function imapService(bodiesTofetch, boxes, imapInfo, RedisClient, sse, query) {
     },
   };
   const timer = new Proxy({ time: 10000 }, ProxyChange);
+
   imap.once("ready", async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
@@ -163,6 +161,23 @@ function imapService(bodiesTofetch, boxes, imapInfo, RedisClient, sse, query) {
     } else {
       loopfunc(boxes[0]);
     }
+  });
+  imap.once("error", function (err) {
+    logger.info(
+      `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
+    );
+    res.status(500).send({
+      error: "Error when fetching emails.",
+    });
+  });
+
+  imap.once("end", function () {
+    logger.info(
+      `End collecting emails from imap account with email : ${imapInfo.email}`
+    );
+    res.status(200).send({
+      message: "Done fetching emails !",
+    });
   });
 }
 exports.imapService = imapService;

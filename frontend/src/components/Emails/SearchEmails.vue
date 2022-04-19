@@ -101,27 +101,26 @@
                     color="orange"
                     center-color="grey-8"
                     track-color="transparent"
-                    ><div>
+                    ><div></div>
+
+                    <div class="text-center q-pt-sm">
                       <small class="text-white text-subtitle">
                         {{ parseFloat(percentage) * 100 }}%
                       </small>
-                    </div>
-                    <br />
-                    <div></div>
-                    <div>
-                      <q-badge
-                        v-show="CurrentBox != ''"
-                        outline
-                        color="orange"
-                        :label="
-                          CurrentBox.includes('/')
-                            ? CurrentBox.substring(
-                                CurrentBox.indexOf('/') + 1,
-                                CurrentBox.length - 1
-                              ).slice(1, -1)
-                            : CurrentBox.slice(1, -1)
-                        "
-                      />
+                      <div>
+                        <q-badge
+                          v-show="CurrentBox != ''"
+                          color="orange"
+                          :label="
+                            CurrentBox.includes('/')
+                              ? CurrentBox.substring(
+                                  CurrentBox.indexOf('/') + 1,
+                                  CurrentBox.length - 1
+                                )
+                              : CurrentBox.slice(1, -1)
+                          "
+                        />
+                      </div>
                     </div>
                   </q-circular-progress>
 
@@ -132,13 +131,13 @@
                     show-value
                     size="120px"
                     font-size="14px"
-                    :thickness="0.2"
+                    :thickness="0.1"
                     color="teal"
                     track-color="grey"
                     :angle="-90"
                     class="q-ma-md"
                   >
-                    <div class="text-center">
+                    <div class="text-center q-pt-sm">
                       <div class="text-green text-h5">
                         {{ Emails.length }}
                       </div>
@@ -149,32 +148,16 @@
                         <q-circular-progress
                           indeterminate
                           v-show="loadingStatusDns"
-                          size="30px"
+                          size="25px"
                           :thickness="0.22"
                           color="lime"
-                          track-color="grey-3"
+                          track-color="grey-8"
                           class="q-ma-md float-center"
                         />
                       </div>
                     </div> </q-circular-progress
                 ></q-card>
               </div>
-              <!-- <q-card flat class="bg-transparent q-ml-lg" style="width: 50vw">
-                <q-badge class="float-left q-ma-sm text-h6" color="green">
-                  Validating emails : {{ Emails.length }} Valid email
-                </q-badge>
-                 </div> 
-                <div
-                  class="float-right q-ml-lg bg-transparent text-teal text-h5 flex flex-center"
-                >
-                  <q-spinner
-                    class="float-right"
-                    color="green"
-                    size="3em"
-                    :thickness="2"
-                  />
-                </div>
-              </q-card> -->
             </div>
           </div>
         </div>
@@ -298,43 +281,6 @@
           </q-table>
         </div>
       </q-card-section>
-      <!-- <q-dialog
-        v-show="loadingStatus"
-        v-model="loadingStatus"
-        persistent
-        transition-show="scale"
-        transition-hide="scale"
-      >
-        <q-card class="bg-white q-pa-lg" style="width: 80vw">
-          <div
-            class="z-max bg-transparent text-teal text-h5 text-bold q-ma-md text-center"
-          >
-            Fetching data...<br />
-
-            <q-badge class="text-h6" color="teal-3">
-              Analysing mailfolder: {{ CurrentBox }} </q-badge
-            ><br />
-          </div>
-          <q-linear-progress
-            size="32px"
-            animation-speed="15"
-            :value="parseFloat(percentage)"
-            color="teal-10"
-          >
-            <div
-              class="absolute-full bg-transparent text-teal text-h5 flex flex-center"
-            >
-              {{ percentage * 100 + "%" }}
-            </div>
-          </q-linear-progress>
-          <div
-            class="z-max bg-transparent text-teal text-h5 text-bold q-ma-md text-center"
-          >
-            <q-badge class="text-h6" color="teal-3"> {{ Status }} </q-badge
-            ><br />
-          </div>
-        </q-card>
-      </q-dialog> -->
     </div>
   </div>
 </template>

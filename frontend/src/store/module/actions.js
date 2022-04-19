@@ -10,6 +10,9 @@ export async function getEmails({ context, getters }, { data }) {
   });
 
   source.addEventListener("data", (message) => {
+    this.commit("example/SET_EMAILS", JSON.parse(message.data));
+  });
+  source.addEventListener("dns", (message) => {
     const emails = () => {
       let data = currentState.retrievedEmails.map((row) => {
         if (!row.email.hasOwnProperty("name")) {
@@ -72,11 +75,8 @@ export async function getEmails({ context, getters }, { data }) {
 
       return [...sorted];
     };
-    this.commit("example/SET_EMAILS", JSON.parse(message.data));
-    this.commit("example/SET_EMAILS", emails());
-  });
-  source.addEventListener("dns", (message) => {
     this.commit("example/SET_LOADING_DNS", false);
+    this.commit("example/SET_EMAILS", emails());
   });
 
   return new Promise((resolve, reject) => {
