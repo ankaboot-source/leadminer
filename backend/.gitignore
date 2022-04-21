@@ -5,7 +5,5 @@ logs
 .vscode
 .ncy_output
 coverage
-logs
 **/.vscode/
 **/.ncy_output/
-.nyc_output
