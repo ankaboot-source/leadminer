@@ -421,76 +421,35 @@ export default defineComponent({
       expanded: ref([]),
 
       exportTable(Emails) {
-        function sumDigitsFromString(str) {
-          var sum = 0;
-          var numbers = str.match(/\d+/g).map(Number);
-          for (var i = 0; i < numbers.length; i++) {
-            sum += numbers[i];
-          }
-          return sum;
-        }
         let csv =
-          "Email\tAliase\tStatus\tTo\tFrom\tCC\tBCC\tReply-To\tBody\tTotal\tType\n";
+          "Email\tAlias\tStatus\tTo\tFrom\tCC\tBCC\tReply-To\tBody\tTotal\tType\n";
         let emailsCsv = Emails;
-        let obj = { name: "" };
         let emailstoExport = emailsCsv.map((element) => {
-          let field = "";
-          let From = 0;
-          let To = 0;
-          let Cc = 0;
-          let Bcc = 0;
-          let Reply = 0;
-          let Body = 0;
-          if (Array.isArray(element.field[0])) {
-            for (let i of element.field) {
-              let temp = i[0] + ":" + i[1];
-              field = field.concat("   ", temp);
-              if (i[0] == "from") {
-                From = i[1];
-              } else if (i[0] == "to") {
-                To = i[1];
-              } else if (i[0] == "cc") {
-                Cc = i[1];
-              } else if (i[0] == "bcc") {
-                Bcc = i[1];
-              } else if (i[0] == "reply-to") {
-                Reply = i[1];
-              } else if (i[0] == "body") {
-                Body = i[1];
-              }
-            }
-          } else {
-            field = element.field[0] + ":" + element.field[1];
-
-            if (element.field[0] == "from") {
-              From = element.field[1];
-            } else if (element.field[0] == "to") {
-              To = element.field[1];
-            } else if (element.field[0] == "cc") {
-              Cc = element.field[1];
-            } else if (element.field[0] == "bcc") {
-              Bcc = element.field[1];
-            } else if (element.field[0] == "reply-to") {
-              Reply = element.field[1];
-            } else if (element.field[0] == "body") {
-              Body = element.field[1];
-            }
-          }
           let obj = {
             Email: element.email.address,
             Aliase: element.email.name.trim(),
             Status: "Valid",
-            To: To,
-            From: From,
-
-            Cc: Cc,
-            Bcc: Bcc,
-            Reply: Reply,
-            Body: Body,
-            Total: sumDigitsFromString(field),
+            To: Object.keys(element.field).includes("to")
+              ? element.field["to"]
+              : 0,
+            From: Object.keys(element.field).includes("from")
+              ? element.field["from"]
+              : 0,
+            Cc: Object.keys(element.field).includes("cc")
+              ? element.field["cc"]
+              : 0,
+            Bcc: Object.keys(element.field).includes("bcc")
+              ? element.field["bcc"]
+              : 0,
+            Reply: Object.keys(element.field).includes("reply-to")
+              ? element.field["reply-to"]
+              : 0,
+            Body: Object.keys(element.field).includes("body")
+              ? element.field["body"]
+              : 0,
+            Total: element.field.total,
             Type: element.type,
           };
-
           return obj;
         });
         emailstoExport.forEach((row) => {
@@ -509,8 +468,8 @@ export default defineComponent({
         } else {
           $q.notify({
             message: "CSV downloaded",
-            color: "teal-10",
-            icon: "tick",
+            color: "teal-7",
+            icon: "check",
           });
         }
       },
@@ -677,7 +636,6 @@ export default defineComponent({
       return null;
     },
     filterMethod(rows, term) {
-      console.log(rows);
       return rows.filter((e) => {
         if (typeof e.email.name == "undefined") {
           return e.email.address.includes(term);
@@ -691,7 +649,6 @@ export default defineComponent({
       function deepObject(obj) {
         for (let ele in obj) {
           if (obj[ele].label) {
-            console.log(obj[ele].label);
             arr.push(obj[ele].label);
           }
           if (obj[ele].children) {
@@ -704,7 +661,6 @@ export default defineComponent({
       }
       if (this.selectedBoxes.length == 0) {
         this.selectedBoxes = deepObject([...allboxes]);
-        console.log(this.selectedBoxes);
       } else {
         this.selectedBoxes = [];
       }
@@ -733,13 +689,17 @@ export default defineComponent({
         folders: bot,
       };
 
-      this.$store.dispatch("example/getEmails", { data }).then(() => {
-        this.showNotif(
-          this.$store.getters["example/getStates"].infoMessage,
-          "teal-5",
-          "check"
-        );
-      });
+      if (this.selectedBoxes.length > 0) {
+        this.$store.dispatch("example/getEmails", { data }).then(() => {
+          this.showNotif(
+            this.$store.getters["example/getStates"].infoMessage,
+            "teal-5",
+            "check"
+          );
+        });
+      } else {
+        this.showNotif("Select at least one folder", "orange-5", "warning");
+      }
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
