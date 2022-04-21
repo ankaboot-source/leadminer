@@ -1,4 +1,4 @@
-const utils = require("../utils/regexp");
+const utils = require("../utils/regexpUtils");
 const { emailsInfos } = require("../models");
 const logger = require("../utils/logger")(module);
 const { Op } = require("sequelize");

@@ -96,5 +96,21 @@ function getBoxesAndFolders(userQuery) {
   return boxes;
 }
 
+function EqualPartsForSocket(total) {
+  let boxCount = total;
+  const values = [];
+  let n = boxCount > 1000 ? 10 : 6;
+  while (boxCount > 0 && n > 0) {
+    const a = Math.floor(boxCount / n);
+    boxCount -= a;
+    n--;
+    values.push(a);
+  }
+  const Parts = [];
+  values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+  return Parts;
+}
 exports.getBoxesAndFolders = getBoxesAndFolders;
 exports.getBoxesAll = getBoxesAll;
+exports.EqualPartsForSocket = EqualPartsForSocket;
+exports.getPath = getPath;

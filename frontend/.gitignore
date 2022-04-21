@@ -9,3 +9,4 @@ package-lock.json
 .editorconfig
 **/.ncy_output/
 **/.vscode/
+coverage

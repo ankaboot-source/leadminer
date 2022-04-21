@@ -89,8 +89,8 @@
                   :collected-emails="Emails.length"
                 />
               </div>
-              <div class="row q-pa-sm">
-                <q-card flat class="bg-transparent q-ml-lg" style="width: 50vw">
+              <div class="row q-md col-12 text-center">
+                <q-card flat class="bg-transparent q-ml-lg" style="width: 100%">
                   <q-circular-progress
                     show-value
                     class="text-white q-ma-md"
@@ -194,6 +194,18 @@
               </div></template
             >
             <template #top-right="props">
+              <q-btn
+                class="q-ma-lg"
+                outline
+                round
+                color="teal-4"
+                icon="restart_alt"
+                @click="resetSort(Emails)"
+                ><q-tooltip class="bg-orange-10 text-caption">
+                  Rest sort state
+                </q-tooltip>
+              </q-btn>
+
               <q-input
                 v-model="filter"
                 rounded
@@ -494,6 +506,12 @@ export default defineComponent({
             color: "negative",
             icon: "warning",
           });
+        } else {
+          $q.notify({
+            message: "CSV downloaded",
+            color: "teal-10",
+            icon: "tick",
+          });
         }
       },
     };
@@ -517,6 +535,7 @@ export default defineComponent({
       acceptedHeaders: ref([]),
       acceptedBody: ref([]),
       selectedBoxes: [],
+      quasar: useQuasar(),
       optionsHeaderFields: [
         {
           label: "From",
@@ -595,6 +614,47 @@ export default defineComponent({
   },
 
   methods: {
+    resetSort(data) {
+      var wordArr = [];
+      var numArr = [];
+      var emptyArr = [];
+      data.forEach((el) => {
+        if (Number(el.email.name.charAt(0))) {
+          numArr.push(el);
+        } else if (el.email.name != "") {
+          wordArr.push(el);
+        } else {
+          emptyArr.push(el);
+        }
+      });
+      wordArr.sort((a, b) => {
+        return (
+          !a.email.name - !b.email.name ||
+          a.email.name.localeCompare(b.email.name)
+        );
+      });
+      wordArr.sort((a, b) => b.field.total - a.field.total);
+      numArr.sort((a, b) => a - b);
+      emptyArr.sort((a, b) => b.field.total - a.field.total);
+      let dataend = wordArr.concat(numArr);
+      let sorted = dataend.concat(emptyArr);
+      this.Emails = sorted;
+    },
+    showNotif(msg, color, icon) {
+      if (msg && typeof msg != "undefined") {
+        this.quasar.notify({
+          message: msg,
+          color: color,
+          icon: icon,
+          actions: [
+            {
+              label: "ok",
+              color: "white",
+            },
+          ],
+        });
+      }
+    },
     returnTotal(sender, reciever) {
       return sender + reciever;
     },
@@ -673,10 +733,25 @@ export default defineComponent({
         folders: bot,
       };
 
-      this.$store.dispatch("example/getEmails", { data }).then(() => {});
+      this.$store.dispatch("example/getEmails", { data }).then(() => {
+        this.showNotif(
+          this.$store.getters["example/getStates"].infoMessage,
+          "teal-5",
+          "check"
+        );
+      });
     },
     getBoxes() {
-      this.$store.dispatch("example/getBoxes").then(() => {});
+      this.$store.dispatch("example/getBoxes").then(() => {
+        //console.log(this.$store.getters["example/getStates"].infoMessage);
+        setTimeout(() => {
+          this.showNotif(
+            this.$store.getters["example/getStates"].infoMessage,
+            "teal-5",
+            "check"
+          );
+        }, 1000);
+      });
     },
   },
 });

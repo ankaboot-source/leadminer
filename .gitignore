@@ -9,3 +9,8 @@
 # misc
 .env
 **/.vscode/
+backend/.nyc_output
+backend/coverage
+backend/test
+backend/test/data/testData.json
+frontend/quasar.extensions.json

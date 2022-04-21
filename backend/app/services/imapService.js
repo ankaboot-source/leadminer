@@ -1,23 +1,29 @@
-const utilsForRegEx = require("../utils/regexp");
+const utilsForRegEx = require("../utils/regexpUtils");
 const utilsForDataManipulation = require("../utils/extractors");
+const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
 
-function ScanFolders(chunk, bodiesTofetch, chunkSource) {
+function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
   // &&
   // the current chunk is extracted from body
-  let minedEmails = {};
+
   if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
     let body = utilsForRegEx.extractEmailsFromBody(chunk.toString());
+
     if (body) {
-      minedEmails["body"] = body;
+      minedEmails.hasOwnProperty("body")
+        ? minedEmails["body"].push(...body)
+        : (minedEmails["body"] = body);
     }
   } else {
     // extract header attributes
-    minedEmails = Imap.parseHeader(chunk.toString("utf8"));
+    let header = Imap.parseHeader(chunk.toString("utf8"));
+    Object.keys(header).map((field) => {
+      minedEmails[field] = header[field];
+    });
   }
-  return minedEmails;
 }
 function ErrorOnFetch(err, imapInfoEmail) {
   logger.error(
@@ -38,7 +44,7 @@ async function OpenedBoxCallback(
 ) {
   if (currentbox) {
     console.log("sse");
-    var sends = utilsForRegEx.EqualPartsForSocket(currentbox.messages.total);
+    var sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
       struct: true,
@@ -56,26 +62,29 @@ async function OpenedBoxCallback(
       }
       // callback for "body" emitted event
       let minedEmails = {};
+      let bodyData = [];
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
-          minedEmails = {
-            ...minedEmails,
-            ...ScanFolders(chunk, bodiesTofetch, streamInfo),
-          };
+          bodyData.push(
+            ScanFolders(chunk, bodiesTofetch, streamInfo, minedEmails)
+          );
         });
         // when fetching stream ends we process data
         stream.once("end", () => {
-          if (minedEmails) {
-            utilsForDataManipulation.treatParsedEmails(
-              sse,
-              minedEmails,
-              database,
-              RedisClient,
-              imapInfoEmail,
-              timer
-            );
-          }
+          minedEmails["body"] = [...new Set(minedEmails["body"])];
         });
+      });
+      msg.once("end", function () {
+        if (minedEmails) {
+          utilsForDataManipulation.treatParsedEmails(
+            sse,
+            minedEmails,
+            database,
+            RedisClient,
+            imapInfoEmail,
+            timer
+          );
+        }
       });
     });
     f.once("error", (err) => {
@@ -83,6 +92,7 @@ async function OpenedBoxCallback(
     });
     f.once("end", () => {
       sse.send(1, "percentage");
+
       setTimeout(() => {
         sse.send(database, "data");
       }, 200);
@@ -90,11 +100,14 @@ async function OpenedBoxCallback(
         sse.send(database, "data");
         setTimeout(() => {
           sse.send(database, "data");
-          sse.send(true, "dns");
           database = null;
           imap.end();
         }, timer.time);
+        setTimeout(() => {
+          sse.send(true, "dns");
+        }, timer.time + 1000);
       } else {
+        console.log(database);
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         sse.send(database, "data");
         sse.send(0, "percentage");
@@ -102,7 +115,16 @@ async function OpenedBoxCallback(
     });
   }
 }
-function imapService(bodiesTofetch, boxes, imapInfo, RedisClient, sse, query) {
+
+function imapService(
+  bodiesTofetch,
+  boxes,
+  imapInfo,
+  RedisClient,
+  sse,
+  query,
+  res
+) {
   const imap = new Imap({
     user: imapInfo.email,
     password: query.password,
@@ -125,11 +147,10 @@ function imapService(bodiesTofetch, boxes, imapInfo, RedisClient, sse, query) {
 
   const ProxyChange = {
     set: function (target, key, value) {
-      console.log(value, target);
       return Reflect.set(...arguments);
     },
   };
-  const timer = new Proxy({ time: 10000 }, ProxyChange);
+  const timer = new Proxy({ time: 9000 }, ProxyChange);
 
   imap.once("ready", async () => {
     const loopfunc = (box) => {

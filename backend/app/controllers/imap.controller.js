@@ -30,7 +30,14 @@ exports.createImapInfo = (req, res) => {
     password: req.body.password,
     host: imapInfo.host,
     port: imapInfo.port,
-    tls: imapInfo.tls,
+    tls: true,
+    connTimeout: 20000,
+    authTimeout: 7000,
+    tlsOptions: {
+      port: 993,
+      host: imapInfo.host,
+      servername: imapInfo.host,
+    },
   });
   // Ensures that the account exists
   imap.connect();
@@ -63,12 +70,13 @@ exports.createImapInfo = (req, res) => {
     });
   });
   // The imap account does not exists or connexion denied
-  imap.once("error", () => {
+  imap.once("error", (err) => {
+    console.log(err);
     logger.error(
       `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}`
     );
     res.status(500).send({
-      message: "We can't connect to your imap account.",
+      error: "We can't connect to your imap account.",
     });
   });
 };
@@ -78,6 +86,7 @@ exports.createImapInfo = (req, res) => {
  * @param  {} res
  */
 exports.loginToAccount = (req, res) => {
+  console.log(req.body);
   if (!req.body.email) {
     res.status(400).send({
       error: "Content can not be empty!",
@@ -93,10 +102,40 @@ exports.loginToAccount = (req, res) => {
         error: "Your account does not exist ! try to sign up.",
       });
     } else {
-      logger.info(`Account with email ${req.body.email} succesfully logged in`);
-      res.status(200).send({
-        message: "Welcome back !",
-        imap,
+      const imapConnection = new Imap({
+        user: imap.email,
+        password: req.body.password,
+        host: imap.host,
+        port: imap.port,
+        tls: true,
+        connTimeout: 20000,
+        authTimeout: 7000,
+        tlsOptions: {
+          port: 993,
+          host: imap.host,
+          servername: imap.host,
+        },
+      });
+      imapConnection.connect();
+      imapConnection.once("ready", () => {
+        if (imap) {
+          logger.info(
+            `Account with email ${req.body.email} succesfully logged in`
+          );
+          res.status(200).send({
+            imap,
+          });
+          imapConnection.end();
+        }
+      });
+      imapConnection.on("error", (err) => {
+        console.log(err);
+        logger.error(
+          `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}`
+        );
+        res.status(500).send({
+          error: "We can't connect to your imap account, Check credentials.",
+        });
       });
     }
   });
@@ -135,12 +174,11 @@ exports.getImapBoxes = async (req, res) => {
         imap.end();
       });
       imap.once("error", (err) => {
-        console.log(err);
         logger.error(
           `error occured when trying to connect to imap account with email : ${imapInfo.email}`
         );
         res.status(500).send({
-          error: err,
+          error: "Can't connect to imap server, try to reconnect!",
         });
       });
       imap.once("end", () => {
@@ -150,6 +188,7 @@ exports.getImapBoxes = async (req, res) => {
         if (Boxes.length > 0) {
           res.status(200).send({
             boxes: Boxes,
+            message: "End fetching boxes!",
           });
         } else {
           res.status(204).send({
@@ -187,7 +226,8 @@ exports.getEmails = (req, res, sse, RedisClient) => {
         imapInfo,
         RedisClient,
         sse,
-        req.query
+        req.query,
+        res
       );
     });
   }

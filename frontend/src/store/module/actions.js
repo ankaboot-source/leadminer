@@ -21,32 +21,28 @@ export async function getEmails({ context, getters }, { data }) {
           row.email.name.replace(/'/g, ``);
         }
         row.field["total"] = 0;
-        if (Array.isArray(row.field[0])) {
-          let count = 0;
-          let countbody = 0;
-          let countrecipient = 0;
-          for (const i of row.field) {
-            if (i.includes("from") || i.includes("reply-to")) {
-              count += i[1];
-            } else if (i.includes("body")) {
-              countbody = i[1];
-              console.log("hhhhhhhhhhhh");
-              row.field["total"] += i[1];
-            } else if (
-              i.includes("to") ||
-              i.includes("cc") ||
-              i.includes("bcc")
-            ) {
-              countrecipient += i[1];
-            }
+        let countSender = 0;
+        let countbody = 0;
+        let countrecipient = 0;
+        Object.keys(row.field).map((field) => {
+          console.log(field);
+          if (field.includes("from") || field.includes("reply-to")) {
+            countSender += row.field[field];
+            console.log(countSender, row.field[field]);
+          } else if (
+            field.includes("cc") ||
+            field.includes("to") ||
+            field.includes("bcc")
+          ) {
+            countrecipient += row.field[field];
+          } else {
+            countbody += row.field[field];
           }
-          row.field["recipient"] = countrecipient;
-
-          row.field["body"] = countbody;
-          row.field["sender"] = count;
-
-          row.field["total"] = count + countbody + countrecipient;
-        }
+        });
+        row.field["recipient"] = countrecipient;
+        row.field["body"] = countbody;
+        row.field["sender"] = countSender;
+        row.field["total"] = countSender + countbody + countrecipient;
         return row;
       });
       var wordArr = [];
@@ -75,8 +71,9 @@ export async function getEmails({ context, getters }, { data }) {
 
       return [...sorted];
     };
-    this.commit("example/SET_LOADING_DNS", false);
+
     this.commit("example/SET_EMAILS", emails());
+    this.commit("example/SET_LOADING_DNS", false);
   });
 
   return new Promise((resolve, reject) => {
@@ -102,14 +99,9 @@ export async function getEmails({ context, getters }, { data }) {
       )
       .then((response) => {
         this.commit("example/SET_LOADING", false);
-        this.commit(
-          "example/SET_EMAILS",
-          JSON.parse(JSON.stringify(response.data.data))
-        );
-
         this.commit("example/SET_CURRENT", "");
         this.commit("example/SET_STATUS", "");
-
+        this.commit("example/SET_INFO_MESSAGE", response.data.message);
         resolve(response);
       })
       .catch((error) => {
@@ -132,13 +124,14 @@ export async function signUp({ context, state }, { data }) {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);
+        this.commit("example/SET_INFO_MESSAGE", response.data.message);
+
         resolve(response);
       })
       .catch((error) => {
-        console.log(JSON.stringify(error));
-
-        //this.commit("example/SET_ERROR", error.response.data.message);
+        this.commit("example/SET_ERROR", error.response.data.error);
         reject(error);
+        //this.commit("example/SET_ERROR", error.response.data.message);
       });
   });
 }
@@ -152,11 +145,12 @@ export async function signIn({ context, state }, { data }) {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);
+        this.commit("example/SET_INFO_MESSAGE", response.data.message);
+
         resolve(response);
       })
       .catch((error) => {
-        console.log(JSON.stringify(error));
-        this.commit("example/SET_ERROR", JSON.stringify(error.error));
+        this.commit("example/SET_ERROR", error.response.data.error);
         reject(error);
       });
   });
@@ -177,8 +171,9 @@ export function getBoxes({ context, getters }) {
     .then((response) => {
       this.commit("example/SET_LOADINGBOX", false);
       this.commit("example/SET_BOXES", response.data.boxes);
+      this.commit("example/SET_INFO_MESSAGE", response.data.message);
     })
     .catch((error) => {
-      this.commit("example/SET_ERROR", JSON.parse(JSON.stringify(error)));
+      this.commit("example/SET_ERROR", error.response.data.error);
     });
 }

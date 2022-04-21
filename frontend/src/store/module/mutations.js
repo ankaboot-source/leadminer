@@ -11,14 +11,12 @@ export function SET_LOADINGBOX(state, newLoadingStatusbox) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
 export function SET_IMAP(state, newImap) {
-  console.log(newImap);
   state.imap.id = newImap.id;
   state.imap.email = newImap.email;
   state.imap.host = newImap.host;
   state.imap.port = newImap.port;
 }
 export function SET_PASSWORD(state, newPassword) {
-  console.log(newPassword);
   state.imap.password = newPassword;
 }
 export function SET_BOXES(state, newBoxes) {
@@ -26,6 +24,9 @@ export function SET_BOXES(state, newBoxes) {
 }
 export function SET_ERROR(state, newError) {
   state.errorMessage = newError;
+}
+export function SET_INFO_MESSAGE(state, newMessage) {
+  state.infoMessage = newMessage;
 }
 export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;

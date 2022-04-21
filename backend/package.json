@@ -4,7 +4,7 @@
   "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
-    "test": "nyc mocha  --config .mocharc.js --exit",
+    "test": "nyc --reporter=html --reporter=text mocha  --config .mocharc.js --exit",
     "dev": "node server.js",
     "lint:fix": "eslint  app/**"
   },
@@ -25,7 +25,6 @@
     "express": "^4.17.1",
     "express-sse": "github:omgimalexis/express-sse",
     "imap": "^0.8.19",
-    "legit": "^1.0.9",
     "mocha": "^9.2.1",
     "nodemon": "^2.0.15",
     "pg": "^8.6.0",

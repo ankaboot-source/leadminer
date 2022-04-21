@@ -13,6 +13,7 @@ export default function () {
     },
     boxes: [],
     errorMessage: "",
+    infoMessage: "",
     progress: {
       percentage: 0,
       currentBox: "",

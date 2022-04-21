@@ -2,7 +2,21 @@
 const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
-const utilsForRegEx = require("./regexp");
+const utilsForRegEx = require("./regexpUtils");
+const NOREPLY = [
+  "noreply",
+  "no-reply",
+  "notifications-noreply",
+  "accusereception",
+  "support",
+  "maildaemon",
+  "notifications",
+  "send-as-noreply",
+  "systemalert",
+  "MAILER-DAEMON",
+  "alerts",
+  "auto-confirm",
+];
 /**
  * Check if a given email address is already mined or no.
  * @param  {object} email One email address
@@ -20,21 +34,12 @@ function checkExistence(database, email) {
  * @param  {object} oneEmail A email address
  * @param  {string} imapEmail Email address associated to connected imap account
  */
-function checkForNoReply(oneEmail, imapEmail) {
-  const NOREPLY = [
-    "noreply",
-    "no-reply",
-    "notifications-noreply",
-    "accusereception",
-    "support",
-    "maildaemon",
-    "notifications",
-  ];
+function IsNotNoReply(oneEmail, imapEmail) {
   let noReply = NOREPLY.filter((word) => oneEmail.includes(word));
-  if (noReply.length || oneEmail.includes(imapEmail)) {
-    return true;
-  } else {
+  if (noReply.length > 0 || oneEmail.includes(imapEmail)) {
     return false;
+  } else {
+    return true;
   }
 }
 
@@ -53,19 +58,12 @@ function addEmailToDatabase(database, email) {
  * @param  {object} email
  */
 function addFieldsAndFolder(database, email) {
-  let done = false;
   database.map((element) => {
     if (email.email.address == element.email.address) {
-      for (var i = 0; i < element.field.length; i++) {
-        if (element.field[i][0] == email.field[0][0]) {
-          element.field[i][1] += 1;
-          done = true;
-          break;
-        }
-      }
-      if (!done) {
-        element.field.push(email.field[0]);
-      }
+      //element.field.push(...email.field);
+      Object.keys(element.field).includes(Object.keys(email.field)[0])
+        ? (element.field[Object.keys(email.field)[0]] += 1)
+        : (element.field[Object.keys(email.field)[0]] = 1);
     }
   });
   return database;
@@ -77,11 +75,11 @@ function addFieldsAndFolder(database, email) {
 function addEmailType(EmailInfo) {
   let domain = EmailInfo.email.address.split("@")[1];
   if (disposable.includes(domain)) {
-    EmailInfo["type"] = "Disposable";
+    EmailInfo["type"] = "Disposable email";
   } else if (freeProviders.includes(domain)) {
-    EmailInfo["type"] = "Free domain";
+    EmailInfo["type"] = "Email provider";
   } else {
-    EmailInfo["type"] = "Private domain";
+    EmailInfo["type"] = " Custom domain";
   }
   return EmailInfo;
 }
@@ -95,7 +93,7 @@ function manipulateData(element, oneEmail, database) {
   let isExist = checkExistence(database, oneEmail);
   let emailInfo = {
     email: oneEmail,
-    field: [[element, 1]],
+    field: { [element]: 1 },
     folder: ["pending"],
     msgId: 0,
   };
@@ -136,11 +134,7 @@ function manipulateDataWithDns(
         });
         // append data when domain is valid
         return manipulateData(element, oneEmail, database);
-      } //else {
-      //   await client.set(domain, "ko", {
-      //     EX: 400,
-      //   });
-      // }
+      }
     });
   }
 }
@@ -160,26 +154,22 @@ function treatParsedEmails(
   timer
 ) {
   Object.keys(dataTobeStored).map((element) => {
-    if (dataTobeStored[element][0].includes("@")) {
+    if (true) {
       let email =
         element != "body"
           ? utilsForRegEx.extractNameAndEmail(
               dataTobeStored[element],
               imapEmail
             )
-          : utilsForRegEx.extractNameAndEmailForBody(
-              dataTobeStored[element],
-              imapEmail
-            );
+          : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
       // check existence in database or data array
       email.map(async (oneEmail) => {
-        if (oneEmail) {
+        if (oneEmail && IsNotNoReply(oneEmail.address, imapEmail)) {
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
           // if domain already stored in cache
-          console.log(domainRedis);
           if (domainRedis) {
             return manipulateData(element, oneEmail, database);
           } else {
@@ -197,9 +187,10 @@ function treatParsedEmails(
     }
   });
 }
+
 exports.checkExistence = checkExistence;
 exports.addEmailToDatabase = addEmailToDatabase;
 exports.addFieldsAndFolder = addFieldsAndFolder;
-exports.checkForNoReply = checkForNoReply;
+exports.IsNotNoReply = IsNotNoReply;
 exports.addEmailType = addEmailType;
 exports.treatParsedEmails = treatParsedEmails;
