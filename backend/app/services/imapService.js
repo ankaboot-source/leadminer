@@ -3,14 +3,14 @@ const utilsForDataManipulation = require("../utils/extractors");
 const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
+const simpleParser = require("mailparser").simpleParser;
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
   // &&
   // the current chunk is extracted from body
-
   if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
-    let body = utilsForRegEx.extractEmailsFromBody(chunk.toString());
+    let body = utilsForRegEx.extractEmailsFromBody(chunk.toString("utf8"));
 
     if (body) {
       minedEmails.hasOwnProperty("body")
@@ -107,7 +107,6 @@ async function OpenedBoxCallback(
           sse.send(true, "dns");
         }, timer.time + 1000);
       } else {
-        console.log(database);
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         sse.send(database, "data");
         sse.send(0, "percentage");
@@ -188,7 +187,7 @@ function imapService(
       `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
     );
     res.status(500).send({
-      error: "Error when fetching emails.",
+      message: "Error when fetching emails.",
     });
   });
 

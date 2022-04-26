@@ -1,3 +1,4 @@
+<!-- id="q-app" -->
 <template>
   <router-view />
 </template>

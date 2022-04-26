@@ -12,6 +12,9 @@ module.exports = (app, sse, client) => {
   router.get("/:id/collectEmails", (req, res) => {
     imap.getEmails(req, res, sse, client);
   });
+  router.get("/getEmails", (req, res) => {
+    imap.getEmailsToken(req, res);
+  });
 
   app.use("/api/imap", router);
 };

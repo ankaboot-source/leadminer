@@ -4,6 +4,7 @@ export default function () {
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,
+    token: "",
     imap: {
       id: "",
       email: "",

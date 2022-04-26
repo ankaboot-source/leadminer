@@ -110,19 +110,13 @@
                     </div>
                   </div>
 
-                  <!-- <div class="column col-12">
+                  <div class="column col-12">
                     <div class="col-6"></div>
+
                     <div class="q-mt-md q-ml-lg col-6">
-                      <q-btn
-                        class="text-capitalize"
-                        color="teal"
-                        v-on:click="switchSlide"
-                        ><template v-slot:default>{{
-                          Login ? "Sign in" : "login"
-                        }}</template></q-btn
-                      >
+                      <GoogleButton></GoogleButton>
                     </div>
-                  </div> -->
+                  </div>
                   <div class="column col-12">
                     <div class="col-6" />
                     <div class="q-mt-lg q-ml-lg col-12">
@@ -155,10 +149,24 @@
 import { useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapState } from "vuex";
+import GoogleButton from "../components/LoginButtons/GoogleLogin";
 
 export default {
+  components: {
+    GoogleButton: GoogleButton,
+  },
   data() {
     return {
+      params: {
+        client_id:
+          "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
+      },
+      // only needed if you want to render the button with the google ui
+      renderParams: {
+        width: 250,
+        height: 50,
+        longtitle: true,
+      },
       email: "",
       password: "",
       host: "",

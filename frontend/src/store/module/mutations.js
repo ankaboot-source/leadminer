@@ -40,3 +40,6 @@ export function SET_CURRENT(state, newBoxName) {
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;
 }
+export function SET_TOKEN(state, newToken) {
+  state.token = newToken;
+}

@@ -251,29 +251,37 @@
                 <q-td key="Email" style="width: 25%" :props="props">
                   {{
                     props.row.email.address
-                      ? props.row.email.address
-                      : props.row.email
+                      ? props.row.email.address.length > 45
+                        ? props.row.email.address.substring(0, 44).concat("...")
+                        : props.row.email.address
+                      : ""
                   }}</q-td
                 >
 
-                <q-td key="Names" style="width: 15%" :props="props">
-                  {{ props.row.email.name ? props.row.email.name : "" }}
+                <q-td key="Names" style="width: 20%" :props="props">
+                  {{
+                    props.row.email.name
+                      ? props.row.email.name.length > 30
+                        ? props.row.email.name.substring(0, 38).concat("...")
+                        : props.row.email.name
+                      : ""
+                  }}
                 </q-td>
-                <q-td key="Sender" style="width: 10%" :props="props">
+                <q-td key="Sender" style="width: 8%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.sender }}
                   </q-badge> </q-td
-                ><q-td key="Recipient" style="width: 10%" :props="props">
+                ><q-td key="Recipient" style="width: 8%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
-                <q-td key="Body" style="width: 10%" :props="props">
+                <q-td key="Body" style="width: 8%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.body }}
                   </q-badge>
                 </q-td>
-                <q-td key="Total" style="width: 10%" :props="props">
+                <q-td key="Total" style="width: 8%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.field.total }}
                   </q-badge>
@@ -339,12 +347,14 @@ const columns = [
     name: "Names",
     align: "left",
     label: "Name",
-    field: (row) => row.email.name,
+    field: (row) => row.email.name.substring(0, 10).concat("..."),
     sortable: true,
     sort: (a, b) => {
       return a.localeCompare(b);
     },
     sortOrder: "ad",
+    style: "max-width: 50px",
+    headerStyle: "max-width: 50px",
   },
 
   {

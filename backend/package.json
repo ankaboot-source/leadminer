@@ -25,15 +25,18 @@
     "express": "^4.17.1",
     "express-sse": "github:omgimalexis/express-sse",
     "imap": "^0.8.19",
+    "mailparser": "^3.4.0",
     "mocha": "^9.2.1",
     "nodemon": "^2.0.15",
     "pg": "^8.6.0",
     "pg-hstore": "^2.3.4",
+    "quoted-printable": "^1.0.1",
     "redis": "^4.0.6",
     "sequelize": "^5.21.3",
     "supertest": "^6.2.2",
     "uuid": "^8.3.2",
-    "winston": "^3.6.0"
+    "winston": "^3.6.0",
+    "xoauth2": "^1.2.0"
   },
   "devDependencies": {
     "c8": "^7.11.0",

@@ -16,6 +16,15 @@ const NOREPLY = [
   "MAILER-DAEMON",
   "alerts",
   "auto-confirm",
+  "ne-pas-repondre",
+  "do-not-reply",
+  "FeedbackForm",
+  "mailermasters",
+  "wordpress",
+  "notify",
+  "password",
+  "reply",
+  "no_reply",
 ];
 /**
  * Check if a given email address is already mined or no.
@@ -125,8 +134,7 @@ function manipulateDataWithDns(
 ) {
   if (domain) {
     dns.resolveMx(domain, async (error, addresses) => {
-      //console.log(domain);
-      timer.time += 50;
+      timer.time += 120;
       if (addresses) {
         //set domain in redis
         await client.set(domain, "ok", {

@@ -3,9 +3,9 @@ module.exports = (sequelize, Sequelize) => {
   const ImapInfo = sequelize.define("imap_info", {
     id: {
       allowNull: false,
-      type: Sequelize.UUIDV4,
       primaryKey: true,
-      defaultValue: uuid.v4(),
+      type: Sequelize.DataTypes.UUID,
+      defaultValue: Sequelize.DataTypes.UUIDV4,
     },
     email: {
       type: Sequelize.STRING,

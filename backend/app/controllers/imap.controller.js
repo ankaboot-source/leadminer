@@ -5,6 +5,8 @@ const logger = require("../utils/logger")(module);
 var qualificationServices = require("../services/dataQualificationService");
 const UtilsForData = require("../utils/inputHelpers");
 const imapService = require("../services/imapService");
+const { Console } = require("winston/lib/winston/transports");
+const xoauth2 = require("xoauth2");
 /**
  *  Create imap info account.
  * @param  {} req
@@ -204,6 +206,52 @@ exports.getImapBoxes = async (req, res) => {
       });
     });
 };
+// exports.getEmailsToken = (req, res) => {
+//   let validToken = "";
+//   xoauth2gen = xoauth2.createXOAuth2Generator({
+//     user: "youssribentaghalline@gmail.com",
+//     clientId:
+// ,    clientSecret: ,
+//     accessToken:  });
+
+//   var authData = [
+//     "user=" + ("youssribentaghalline@gmail.com" || ""),
+//     "auth=Bearer " +
+//     "",
+//     "",
+//   ];
+//   var xoauth2_token = new Buffer.from(authData.join("\x01"), "utf-8").toString(
+//     "base64"
+//   );
+
+//   var imap = new Imap({
+//     user: "youssribentaghalline@gmail.com",
+//     xoauth2: xoauth2_token,
+//     host: "imap.gmail.com",
+//     port: 993,
+//     tls: true,
+//     tlsOptions: {
+//       port: 993,
+//       host: "imap.gmail.com",
+//       servername: "imap.gmail.com",
+//     },
+//     debug: console.log,
+//   });
+//   imap.on("ready", function () {
+//     imap.openBox("INBOX", true, function () {
+//       var f = imap.seq.fetch(1);
+//       f.on("message", function (m) {
+//         m.once("attributes", function (attrs) {
+//           console.log(attrs);
+//         });
+//       });
+//       f.on("end", function () {
+//         imap.end();
+//       });
+//     });
+//   });
+//   imap.connect();
+// };
 /**
  * Get Emails from imap server.
  * @param  {} req
