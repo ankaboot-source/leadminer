@@ -183,17 +183,20 @@ export default {
 
   methods: {
     ...mapState("example", ["loadingStatus", "errorMessage"]),
-    showNotif(errormsg) {
-      this.quasar.notify({
-        message: errormsg,
-        color: "red",
-        actions: [
-          {
-            label: "Dismiss",
-            color: "white",
-          },
-        ],
-      });
+    showNotif(msg, color, icon) {
+      if (msg && typeof msg != "undefined") {
+        this.quasar.notify({
+          message: msg,
+          color: color,
+          icon: icon,
+          actions: [
+            {
+              label: "ok",
+              color: "white",
+            },
+          ],
+        });
+      }
     },
     switchSlide() {
       this.show = !this.show;
@@ -214,11 +217,20 @@ export default {
         this.$store
           .dispatch("example/signUp", { data })
           .then(() => {
+            console.log("heheheh");
+            // console.log(this.$store.getters["example/getStates"].infoMessage);
+            // this.showNotif(
+            //   this.$store.getters["example/getStates"].infoMessage,
+            //   "red",
+            //   "warning"
+            // );
             this.$router.push("/dashboard");
           })
           .catch(() => {
             this.showNotif(
-              this.$store.getters["example/getStates"].errorMessage
+              this.$store.getters["example/getStates"].errorMessage,
+              "red",
+              "warning"
             );
           });
       } else {

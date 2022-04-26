@@ -36,7 +36,7 @@ exports.createImapInfo = (req, res) => {
     connTimeout: 20000,
     authTimeout: 7000,
     tlsOptions: {
-      port: 993,
+      port: imapInfo.port,
       host: imapInfo.host,
       servername: imapInfo.host,
     },
@@ -65,6 +65,7 @@ exports.createImapInfo = (req, res) => {
         );
         res.status(200).send({
           message: "Your account already exists !",
+          switch: true,
           imapdata,
         });
       }
@@ -113,7 +114,7 @@ exports.loginToAccount = (req, res) => {
         connTimeout: 20000,
         authTimeout: 7000,
         tlsOptions: {
-          port: 993,
+          port: imap.port,
           host: imap.host,
           servername: imap.host,
         },
@@ -159,7 +160,7 @@ exports.getImapBoxes = async (req, res) => {
         port: imapInfo.port,
         tls: true,
         tlsOptions: {
-          port: 993,
+          port: imapInfo.port,
           host: imapInfo.host,
           servername: imapInfo.host,
         },

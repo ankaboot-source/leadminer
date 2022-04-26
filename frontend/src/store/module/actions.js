@@ -123,9 +123,8 @@ export async function signUp({ context, state }, { data }) {
       .then((response) => {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_PASSWORD", data.password);
-        this.commit("example/SET_IMAP", response.data.imap);
+        this.commit("example/SET_IMAP", response.data.imapdata);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
-
         resolve(response);
       })
       .catch((error) => {
