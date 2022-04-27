@@ -4,6 +4,7 @@ const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
 const simpleParser = require("mailparser").simpleParser;
+const xoauth2 = require("xoauth2");
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
@@ -124,20 +125,53 @@ function imapService(
   query,
   res
 ) {
-  const imap = new Imap({
-    user: imapInfo.email,
-    password: query.password,
-    host: imapInfo.host,
-    port: imapInfo.port,
-    tls: true,
-    connTimeout: 20000,
-    authTimeout: 7000,
-    tlsOptions: {
-      port: 993,
+  console.log(query);
+  let imap;
+  if (query.token == "") {
+    imap = new Imap({
+      user: imapInfo.email,
+      password: query.password,
       host: imapInfo.host,
-      servername: imapInfo.host,
-    },
-  });
+      port: imapInfo.port,
+      tls: true,
+      connTimeout: 20000,
+      authTimeout: 7000,
+      tlsOptions: {
+        port: 993,
+        host: imapInfo.host,
+        servername: imapInfo.host,
+      },
+    });
+  } else {
+    xoauth2gen = xoauth2.createXOAuth2Generator({
+      user: query.userEmail,
+      clientId:
+        "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
+      clientSecret: "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",
+      accessToken: query.token,
+    });
+
+    var authData =
+      "user=" +
+      query.userEmail +
+      "\001auth=Bearer " +
+      xoauth2gen.accessToken +
+      "\001\001";
+    var xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
+    imap = new Imap({
+      user: query.userEmail,
+      xoauth2: xoauth2_token,
+      host: "imap.gmail.com",
+      port: 993,
+      tls: true,
+      tlsOptions: {
+        port: 993,
+        host: "imap.gmail.com",
+        servername: "imap.gmail.com",
+      },
+      debug: console.log,
+    });
+  }
   imap.connect();
   logger.info(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`

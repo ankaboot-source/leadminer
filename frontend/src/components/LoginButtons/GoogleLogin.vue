@@ -6,26 +6,27 @@
       color="teal"
       icon="gg"
       label="Sign in with google"
-    /><button
+    />
+    <!-- <button
       @click="handleClickSignIn"
       :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
     >
       sign in
-    </button>
-    <button @click="handleClickGetAuthCode" :disabled="!Vue3GoogleOauth.isInit">
+    </button> -->
+    <!-- <button @click="handleClickGetAuthCode" :disabled="!Vue3GoogleOauth.isInit">
       get authCode
     </button>
-    <button
-      @click="handleClickSignOut"
-      :disabled="!Vue3GoogleOauth.isAuthorized"
-    >
-      sign out
-    </button>
+    
     <button
       @click="handleClickDisconnect"
       :disabled="!Vue3GoogleOauth.isAuthorized"
     >
       disconnect
+    </button> --><button
+      @click="handleClickSignOut"
+      :disabled="!Vue3GoogleOauth.isAuthorized"
+    >
+      sign out
     </button>
   </div>
 </template>
@@ -62,7 +63,15 @@ export default {
         );
         let token = this.$gAuth.instance.currentUser.get().getAuthResponse();
         this.$store.commit("example/SET_TOKEN", token.access_token);
-        console.log(this.$store.state);
+        let imap = {
+          id: "",
+          email: this.user,
+          host: "",
+          port: "",
+        };
+        this.$store.commit("example/SET_IMAP", imap);
+        this.$router.push("/dashboard");
+
         // try {
         //   const authCode = await this.$gAuth.getAuthCode();
         //   console.log("authCode", authCode);

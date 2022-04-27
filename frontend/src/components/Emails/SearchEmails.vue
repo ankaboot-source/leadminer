@@ -99,7 +99,7 @@
                     :thickness="0.19"
                     :animation-speed="10"
                     color="orange"
-                    center-color="grey-8"
+                    center-color="grey-7"
                     track-color="transparent"
                     ><div></div>
 

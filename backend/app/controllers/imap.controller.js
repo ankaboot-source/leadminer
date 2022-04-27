@@ -150,109 +150,157 @@ exports.loginToAccount = (req, res) => {
  * @param  {} res
  */
 exports.getImapBoxes = async (req, res) => {
-  // retrive imap connection infos from database
-  ImapInfo.findByPk(req.params.id)
-    .then((imapInfo) => {
-      const imap = new Imap({
-        user: imapInfo.email,
-        password: req.query.password,
-        host: imapInfo.host,
-        port: imapInfo.port,
-        tls: true,
-        tlsOptions: {
-          port: imapInfo.port,
-          host: imapInfo.host,
-          servername: imapInfo.host,
-        },
+  var imap;
+  console.log(req);
+  if (req.query.token != "") {
+    xoauth2gen = xoauth2.createXOAuth2Generator({
+      user: req.query.userEmail,
+      clientId:
+        "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
+      clientSecret: "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",
+      accessToken: req.query.token,
+    });
+
+    var authData =
+      "user=" +
+      req.query.userEmail +
+      "\001auth=Bearer " +
+      xoauth2gen.accessToken +
+      "\001\001";
+    var xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
+    imap = new Imap({
+      user: req.query.userEmail,
+      xoauth2: xoauth2_token,
+      host: "imap.gmail.com",
+      port: 993,
+      tls: true,
+      tlsOptions: {
+        port: 993,
+        host: "imap.gmail.com",
+        servername: "imap.gmail.com",
+      },
+      debug: console.log,
+    });
+
+    let Boxes = [];
+    imap.connect();
+    imap.once("ready", () => {
+      logger.info(
+        `Begin fetching folders names from imap account with email : ${req.query.userEmail}`
+      );
+      imap.getBoxes("", (err, boxes) => {
+        Boxes = UtilsForData.getBoxesAll(boxes);
       });
-      let Boxes = [];
-      imap.connect();
-      imap.once("ready", () => {
-        logger.info(
-          `Begin fetching folders names from imap account with email : ${imapInfo.email}`
-        );
-        imap.getBoxes("", (err, boxes) => {
-          Boxes = UtilsForData.getBoxesAll(boxes);
+      imap.end();
+    });
+    imap.once("error", (err) => {
+      logger.error(
+        `error occured when trying to connect to imap account with email : ${req.query.userEmail}`
+      );
+      // res.status(500).send({
+      //   error: "Can't connect to imap server, try to reconnect!",
+      // });
+    });
+    imap.once("end", () => {
+      logger.info(
+        `End fetching folders names from imap account with email : ${req.query.userEmail}`
+      );
+      if (Boxes.length > 0) {
+        res.status(200).send({
+          boxes: Boxes,
+          message: "End fetching boxes!",
         });
+      } else {
+        res.status(204).send({
+          error: "No boxes found!",
+        });
+      }
+    });
+    // })
+    // .catch(() => {
+    //   logger.error(`No account with email : ${req.params.id} found`);
+    //   res.status(404).send({
+    //     error: `No account with id : ${req.params.id} found`,
+    //   });
+    // });
+  } else {
+    imap = new Imap({
+      user: imapInfo.email,
+      password: req.query.password,
+      host: imapInfo.host,
+      port: imapInfo.port,
+      tls: true,
+      tlsOptions: {
+        port: imapInfo.port,
+        host: imapInfo.host,
+        servername: imapInfo.host,
+      },
+    });
+    ImapInfo.findByPk(req.params.id)
+      .then((imapInfo) => {
+        let Boxes = [];
+        imap.connect();
+        imap.once("ready", () => {
+          logger.info(
+            `Begin fetching folders names from imap account with email : ${imapInfo.email}`
+          );
+          imap.getBoxes("", (err, boxes) => {
+            Boxes = UtilsForData.getBoxesAll(boxes);
+          });
+          imap.end();
+        });
+        imap.once("error", (err) => {
+          logger.error(
+            `error occured when trying to connect to imap account with email : ${imapInfo.email}`
+          );
+          res.status(500).send({
+            error: "Can't connect to imap server, try to reconnect!",
+          });
+        });
+        imap.once("end", () => {
+          logger.info(
+            `End fetching folders names from imap account with email : ${imapInfo.email}`
+          );
+          if (Boxes.length > 0) {
+            res.status(200).send({
+              boxes: Boxes,
+              message: "End fetching boxes!",
+            });
+          } else {
+            res.status(204).send({
+              error: "No boxes found!",
+            });
+          }
+        });
+      })
+      .catch(() => {
+        logger.error(`No account with email : ${req.params.id} found`);
+        res.status(404).send({
+          error: `No account with id : ${req.params.id} found`,
+        });
+      });
+  }
+
+  // retrive imap connection infos from database
+};
+exports.getEmailsToken = (req, res) => {
+  let validToken = "";
+
+  imap.on("ready", function () {
+    imap.openBox("INBOX", true, function () {
+      var f = imap.seq.fetch(1);
+      f.on("message", function (m) {
+        m.once("attributes", function (attrs) {
+          console.log(attrs);
+        });
+      });
+      f.on("end", function () {
         imap.end();
       });
-      imap.once("error", (err) => {
-        logger.error(
-          `error occured when trying to connect to imap account with email : ${imapInfo.email}`
-        );
-        res.status(500).send({
-          error: "Can't connect to imap server, try to reconnect!",
-        });
-      });
-      imap.once("end", () => {
-        logger.info(
-          `End fetching folders names from imap account with email : ${imapInfo.email}`
-        );
-        if (Boxes.length > 0) {
-          res.status(200).send({
-            boxes: Boxes,
-            message: "End fetching boxes!",
-          });
-        } else {
-          res.status(204).send({
-            error: "No boxes found!",
-          });
-        }
-      });
-    })
-    .catch(() => {
-      logger.error(`No account with email : ${req.params.id} found`);
-      res.status(404).send({
-        error: `No account with id : ${req.params.id} found`,
-      });
     });
+  });
+  imap.connect();
 };
-// exports.getEmailsToken = (req, res) => {
-//   let validToken = "";
-//   xoauth2gen = xoauth2.createXOAuth2Generator({
-//     user: "youssribentaghalline@gmail.com",
-//     clientId:
-// ,    clientSecret: ,
-//     accessToken:  });
-
-//   var authData = [
-//     "user=" + ("youssribentaghalline@gmail.com" || ""),
-//     "auth=Bearer " +
-//     "",
-//     "",
-//   ];
-//   var xoauth2_token = new Buffer.from(authData.join("\x01"), "utf-8").toString(
-//     "base64"
-//   );
-
-//   var imap = new Imap({
-//     user: "youssribentaghalline@gmail.com",
-//     xoauth2: xoauth2_token,
-//     host: "imap.gmail.com",
-//     port: 993,
-//     tls: true,
-//     tlsOptions: {
-//       port: 993,
-//       host: "imap.gmail.com",
-//       servername: "imap.gmail.com",
-//     },
-//     debug: console.log,
-//   });
-//   imap.on("ready", function () {
-//     imap.openBox("INBOX", true, function () {
-//       var f = imap.seq.fetch(1);
-//       f.on("message", function (m) {
-//         m.once("attributes", function (attrs) {
-//           console.log(attrs);
-//         });
-//       });
-//       f.on("end", function () {
-//         imap.end();
-//       });
-//     });
-//   });
-//   imap.connect();
-// };
 /**
  * Get Emails from imap server.
  * @param  {} req
@@ -261,11 +309,11 @@ exports.getImapBoxes = async (req, res) => {
  * @param  {} RedisClient redis RedisClient
  */
 exports.getEmails = (req, res, sse, RedisClient) => {
-  if (req.query.password) {
+  if (req.query.password != "") {
     // fetch imap from database then mine Emails
     ImapInfo.findByPk(req.params.id).then((imapInfo) => {
       // data will include all of the data that will be mined from the mailbox.
-      (i = 0), (boxes = UtilsForData.getBoxesAndFolders(req.query));
+      let boxes = UtilsForData.getBoxesAndFolders(req.query);
       // bodiesTofetch is the query that user sends
       const bodiesTofetch = req.query.fields;
 
@@ -279,5 +327,19 @@ exports.getEmails = (req, res, sse, RedisClient) => {
         res
       );
     });
+  } else {
+    let boxes = UtilsForData.getBoxesAndFolders(req.query);
+    // bodiesTofetch is the query that user sends
+    const bodiesTofetch = req.query.fields;
+
+    imapService.imapService(
+      bodiesTofetch,
+      boxes,
+      req.query.userEmail,
+      RedisClient,
+      sse,
+      req.query,
+      res
+    );
   }
 };

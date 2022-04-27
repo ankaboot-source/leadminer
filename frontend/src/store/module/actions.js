@@ -82,35 +82,65 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_EMAILS", []);
 
-    this.$axios
-      .get(
-        this.$api +
-          `/imap/${JSON.parse(
-            JSON.stringify(currentState.imap.id)
-          )}/collectEmails`,
-        {
+    if (currentState.token) {
+      this.$axios
+        .get(this.$api + `/imap/1/collectEmails`, {
           params: {
             fields: data.fields.split(","),
             boxes: data.boxes,
             folders: currentState.boxes,
             password: currentState.imap.password,
+            userEmail: currentState.imap.email,
+            token: currentState.token,
           },
-        }
-      )
-      .then((response) => {
-        this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_CURRENT", "");
-        this.commit("example/SET_STATUS", "");
-        this.commit("example/SET_INFO_MESSAGE", response.data.message);
-        resolve(response);
-      })
-      .catch((error) => {
-        this.commit(
-          "example/SET_ERROR",
-          JSON.parse(JSON.stringify(error.error))
-        );
-        reject(error);
-      });
+        })
+        .then((response) => {
+          this.commit("example/SET_LOADING", false);
+          this.commit("example/SET_CURRENT", "");
+          this.commit("example/SET_STATUS", "");
+          this.commit("example/SET_INFO_MESSAGE", response.data.message);
+          resolve(response);
+        })
+        .catch((error) => {
+          this.commit(
+            "example/SET_ERROR",
+            JSON.parse(JSON.stringify(error.error))
+          );
+          reject(error);
+        });
+    } else {
+      this.$axios
+        .get(
+          this.$api +
+            `/imap/${JSON.parse(
+              JSON.stringify(currentState.imap.id)
+            )}/collectEmails`,
+          {
+            params: {
+              fields: data.fields.split(","),
+              boxes: data.boxes,
+              folders: currentState.boxes,
+              password: currentState.imap.password,
+              userEmail: currentState.imap.email,
+              token: currentState.token,
+            },
+          }
+        )
+        .then((response) => {
+          this.commit("example/SET_LOADING", false);
+          this.commit("example/SET_CURRENT", "");
+          this.commit("example/SET_STATUS", "");
+          this.commit("example/SET_INFO_MESSAGE", response.data.message);
+          resolve(response);
+        })
+        .catch((error) => {
+          this.commit(
+            "example/SET_ERROR",
+            JSON.parse(JSON.stringify(error.error))
+          );
+          reject(error);
+        });
+    }
   });
 }
 
@@ -157,22 +187,44 @@ export async function signIn({ context, state }, { data }) {
 export function getBoxes({ context, getters }) {
   this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
-  this.$axios
-    .get(
-      this.$api +
-        `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/boxes`,
-      {
+
+  if (!currentState.token) {
+    this.$axios
+      .get(
+        this.$api +
+          `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/boxes`,
+        {
+          params: {
+            password: currentState.imap.password,
+            token: currentState.token,
+            imapEmail: currentState.imap.email,
+          },
+        }
+      )
+      .then((response) => {
+        this.commit("example/SET_LOADINGBOX", false);
+        this.commit("example/SET_BOXES", response.data.boxes);
+        this.commit("example/SET_INFO_MESSAGE", response.data.message);
+      })
+      .catch((error) => {
+        this.commit("example/SET_ERROR", error.response.data.error);
+      });
+  } else {
+    this.$axios
+      .get(this.$api + `/imap/1/boxes`, {
         params: {
           password: currentState.imap.password,
+          token: currentState.token,
+          userEmail: currentState.imap.email,
         },
-      }
-    )
-    .then((response) => {
-      this.commit("example/SET_LOADINGBOX", false);
-      this.commit("example/SET_BOXES", response.data.boxes);
-      this.commit("example/SET_INFO_MESSAGE", response.data.message);
-    })
-    .catch((error) => {
-      this.commit("example/SET_ERROR", error.response.data.error);
-    });
+      })
+      .then((response) => {
+        this.commit("example/SET_LOADINGBOX", false);
+        this.commit("example/SET_BOXES", response.data.boxes);
+        this.commit("example/SET_INFO_MESSAGE", response.data.message);
+      })
+      .catch((error) => {
+        this.commit("example/SET_ERROR", error.response.data.error);
+      });
+  }
 }

@@ -217,13 +217,11 @@ export default {
         this.$store
           .dispatch("example/signUp", { data })
           .then(() => {
-            console.log("heheheh");
-            // console.log(this.$store.getters["example/getStates"].infoMessage);
-            // this.showNotif(
-            //   this.$store.getters["example/getStates"].infoMessage,
-            //   "red",
-            //   "warning"
-            // );
+            this.showNotif(
+              this.$store.getters["example/getStates"].infoMessage,
+              "red",
+              "warning"
+            );
             this.$router.push("/dashboard");
           })
           .catch(() => {
