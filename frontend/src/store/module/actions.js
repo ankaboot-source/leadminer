@@ -8,7 +8,11 @@ export async function getEmails({ context, getters }, { data }) {
   source.addEventListener("percentage", (message) => {
     this.commit("example/SET_PERCENTAGE", message.data);
   });
+  window.addEventListener("beforeunload", () => {
+    console.log("heheh");
 
+    source.close();
+  });
   source.addEventListener("data", (message) => {
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
   });
@@ -25,10 +29,8 @@ export async function getEmails({ context, getters }, { data }) {
         let countbody = 0;
         let countrecipient = 0;
         Object.keys(row.field).map((field) => {
-          console.log(field);
           if (field.includes("from") || field.includes("reply-to")) {
             countSender += row.field[field];
-            console.log(countSender, row.field[field]);
           } else if (
             field.includes("cc") ||
             field.includes("to") ||
@@ -102,10 +104,7 @@ export async function getEmails({ context, getters }, { data }) {
           resolve(response);
         })
         .catch((error) => {
-          this.commit(
-            "example/SET_ERROR",
-            JSON.parse(JSON.stringify(error.error))
-          );
+          this.commit("example/SET_ERROR", error.response.data.error);
           reject(error);
         });
     } else {
@@ -134,10 +133,7 @@ export async function getEmails({ context, getters }, { data }) {
           resolve(response);
         })
         .catch((error) => {
-          this.commit(
-            "example/SET_ERROR",
-            JSON.parse(JSON.stringify(error.error))
-          );
+          this.commit("example/SET_ERROR", error.response.data.error);
           reject(error);
         });
     }

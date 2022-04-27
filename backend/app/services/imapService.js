@@ -3,7 +3,6 @@ const utilsForDataManipulation = require("../utils/extractors");
 const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
-const simpleParser = require("mailparser").simpleParser;
 const xoauth2 = require("xoauth2");
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
@@ -36,6 +35,7 @@ async function OpenedBoxCallback(
   database,
   imap,
   currentbox,
+  box,
   bodiesTofetch,
   imapInfoEmail,
   RedisClient,
@@ -44,7 +44,6 @@ async function OpenedBoxCallback(
   timer
 ) {
   if (currentbox) {
-    console.log("sse");
     var sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
@@ -113,6 +112,13 @@ async function OpenedBoxCallback(
         sse.send(0, "percentage");
       }
     });
+  } else {
+    if (boxes[boxes.indexOf(box) + 1]) {
+      store.box = boxes[boxes.indexOf(box) + 1];
+    } else {
+      sse.send(true, "dns");
+      imap.end();
+    }
   }
 }
 
@@ -125,7 +131,6 @@ function imapService(
   query,
   res
 ) {
-  console.log(query);
   let imap;
   if (query.token == "") {
     imap = new Imap({
@@ -194,6 +199,7 @@ function imapService(
           database,
           imap,
           currentbox,
+          box,
           bodiesTofetch,
           imapInfo.email,
           RedisClient,
@@ -230,7 +236,7 @@ function imapService(
       `End collecting emails from imap account with email : ${imapInfo.email}`
     );
     res.status(200).send({
-      message: "Done fetching emails !",
+      message: "Done mining emails !",
     });
   });
 }

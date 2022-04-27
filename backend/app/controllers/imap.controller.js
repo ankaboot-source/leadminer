@@ -283,24 +283,6 @@ exports.getImapBoxes = async (req, res) => {
 
   // retrive imap connection infos from database
 };
-exports.getEmailsToken = (req, res) => {
-  let validToken = "";
-
-  imap.on("ready", function () {
-    imap.openBox("INBOX", true, function () {
-      var f = imap.seq.fetch(1);
-      f.on("message", function (m) {
-        m.once("attributes", function (attrs) {
-          console.log(attrs);
-        });
-      });
-      f.on("end", function () {
-        imap.end();
-      });
-    });
-  });
-  imap.connect();
-};
 /**
  * Get Emails from imap server.
  * @param  {} req

@@ -7,7 +7,7 @@ async function EqualPartsForSocket(total) {
   const promise = new Promise((resolve, reject) => {
     let boxCount = total;
     const values = [];
-    let n = boxCount > 1000 ? 10 : 6;
+    let n = boxCount > 1000 ? 10 : 5;
     while (boxCount > 0 && n > 0) {
       const a = Math.floor(boxCount / n);
       boxCount -= a;
