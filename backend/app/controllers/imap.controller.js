@@ -224,20 +224,20 @@ exports.getImapBoxes = async (req, res) => {
     //   });
     // });
   } else {
-    imap = new Imap({
-      user: imapInfo.email,
-      password: req.query.password,
-      host: imapInfo.host,
-      port: imapInfo.port,
-      tls: true,
-      tlsOptions: {
-        port: imapInfo.port,
-        host: imapInfo.host,
-        servername: imapInfo.host,
-      },
-    });
     ImapInfo.findByPk(req.params.id)
       .then((imapInfo) => {
+        imap = new Imap({
+          user: imapInfo.email,
+          password: req.query.password,
+          host: imapInfo.host,
+          port: imapInfo.port,
+          tls: true,
+          tlsOptions: {
+            port: imapInfo.port,
+            host: imapInfo.host,
+            servername: imapInfo.host,
+          },
+        });
         let Boxes = [];
         imap.connect();
         imap.once("ready", () => {
