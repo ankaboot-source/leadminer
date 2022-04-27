@@ -70,12 +70,12 @@
                   <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-12">
                     <q-btn
-                      :disable="loadingStatusDns"
+                      v-bind:disable="loadingStatusDns"
                       no-caps
-                      class="bg-buttons text-white"
-                      label="Collect emails adresses"
-                      @click="fetchEmails"
-                    />
+                      color="teal-5"
+                      label="Collect emails addresses"
+                      @click="fetchEmails()"
+                    ></q-btn>
                   </div>
                 </div>
               </div>
@@ -197,6 +197,7 @@
               <q-btn
                 class="q-ma-lg"
                 outline
+                :disable="loadingStatusDns"
                 round
                 color="teal-4"
                 icon="restart_alt"
@@ -238,7 +239,7 @@
               </q-btn>
 
               <q-btn
-                class="bg-buttons text-white"
+                color="teal-5"
                 icon-right="archive"
                 label="Export to csv"
                 no-caps
@@ -745,8 +746,7 @@ export default defineComponent({
   color: #89d8d3;
 }
 .bg-buttons {
-  background-color: #89d8d3;
-  background-image: linear-gradient(315deg, #89d8d3 0%, #03c8a8 74%);
+  background-image: linear-gradient(315deg, #000000 0%, #03c8a8 74%);
 }
 .bg-fetch {
   background-color: #deebdd;

@@ -116,6 +116,7 @@ async function OpenedBoxCallback(
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
+      sse.send(database, "data");
       sse.send(true, "dns");
       imap.end();
     }
@@ -131,6 +132,7 @@ function imapService(
   query,
   res
 ) {
+  let imapInfoEmail;
   let imap;
   if (query.token == "") {
     imap = new Imap({
@@ -147,7 +149,9 @@ function imapService(
         servername: imapInfo.host,
       },
     });
+    imapInfoEmail = imapInfo.email;
   } else {
+    imapInfoEmail = query.userEmail;
     xoauth2gen = xoauth2.createXOAuth2Generator({
       user: query.userEmail,
       clientId:
@@ -201,7 +205,7 @@ function imapService(
           currentbox,
           box,
           bodiesTofetch,
-          imapInfo.email,
+          imapInfoEmail,
           RedisClient,
           sse,
           boxes,
