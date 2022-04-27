@@ -151,7 +151,7 @@ exports.loginToAccount = (req, res) => {
  */
 exports.getImapBoxes = async (req, res) => {
   var imap;
-  console.log(req);
+  console.log(req.query);
   if (req.query.token != "") {
     xoauth2gen = xoauth2.createXOAuth2Generator({
       user: req.query.userEmail,

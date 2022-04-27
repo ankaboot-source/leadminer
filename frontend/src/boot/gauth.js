@@ -6,7 +6,8 @@ let gauthClientId =
 export default boot(({ app, store }) => {
   app.use(gAuthPlugin, {
     clientId: gauthClientId,
-    scope: "https://mail.google.com/",
+    scope:
+      "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
     prompt: "consent",
     fetch_basic_profile: false,
   });
