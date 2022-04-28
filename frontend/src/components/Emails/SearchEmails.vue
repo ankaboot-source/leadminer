@@ -163,12 +163,12 @@
         </div>
 
         <div
-          class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
-          ref="scrollComponent"
+          class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll"
         >
           <q-table
+            class="sticky"
             card-class="bg-white  text-teal-10"
-            table-class="text-teal-10 sticky"
+            table-class="text-teal-10 "
             table-header-class="text-teal"
             title="Emails"
             :rows="emailsinfinit"
@@ -547,7 +547,7 @@ export default defineComponent({
   computed: {
     Emails() {
       if (this.loadingStatusDns) {
-        this.emailsinfinit = this.retrievedEmails.slice(0, 10);
+        this.emailsinfinit = this.retrievedEmails.slice(0, 20);
       }
       return this.retrievedEmails;
     },
@@ -585,17 +585,23 @@ export default defineComponent({
   },
 
   methods: {
+    isScrolledIntoView(el) {
+      let rect = el.getBoundingClientRect();
+      let elemTop = rect.top;
+      let elemBottom = rect.bottom;
+
+      let isVisible = elemTop < window.innerHeight && elemBottom >= 0;
+      return isVisible;
+    },
     scroll() {
       window.onscroll = () => {
-        let bottomOfWindow =
-          window.innerHeight + window.scrollY >= document.body.offsetHeight;
-
-        if (bottomOfWindow) {
+        let scrolledTo = document.querySelector(".scroll");
+        if (scrolledTo && this.isScrolledIntoView(scrolledTo)) {
           this.emailsinfinit = [
             ...this.emailsinfinit,
             ...this.retrievedEmails.slice(
               this.emailsinfinit.length,
-              this.emailsinfinit.length + 10
+              this.emailsinfinit.length + 1
             ),
           ];
         }
@@ -770,12 +776,8 @@ export default defineComponent({
   background-color: #deebdd;
   background-image: linear-gradient(315deg, #deebdd 0%, #bbdbbe 74%);
 }
-
 .sticky thead tr:first-child th {
   position: sticky;
-  background-color: #fff;
   top: 0;
-  opacity: 1;
-  z-index: 1;
 }
 </style>
