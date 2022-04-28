@@ -11,7 +11,6 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // the current chunk is extracted from body
   if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
     let body = utilsForRegEx.extractEmailsFromBody(chunk.toString("utf8"));
-
     if (body) {
       minedEmails.hasOwnProperty("body")
         ? minedEmails["body"].push(...body)
@@ -94,12 +93,12 @@ async function OpenedBoxCallback(
       sse.send(1, "percentage");
 
       setTimeout(() => {
-        sse.send(database, "data");
+        sse.send(helpers.sortDatabase(database), "data");
       }, 200);
       if (currentbox.name == boxes[boxes.length - 1]) {
-        sse.send(database, "data");
+        sse.send(helpers.sortDatabase(database), "data");
         setTimeout(() => {
-          sse.send(database, "data");
+          sse.send(helpers.sortDatabase(database), "data");
           database = null;
           imap.end();
         }, timer.time);
@@ -108,7 +107,7 @@ async function OpenedBoxCallback(
         }, timer.time + 1000);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
-        sse.send(database, "data");
+        sse.send(helpers.sortDatabase(database), "data");
         sse.send(0, "percentage");
       }
     });
@@ -178,7 +177,6 @@ function imapService(
         host: "imap.gmail.com",
         servername: "imap.gmail.com",
       },
-      debug: console.log,
     });
   }
   imap.connect();

@@ -74,7 +74,6 @@ exports.createImapInfo = (req, res) => {
   });
   // The imap account does not exists or connexion denied
   imap.once("error", (err) => {
-    console.log(err);
     logger.error(
       `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}`
     );
@@ -89,7 +88,6 @@ exports.createImapInfo = (req, res) => {
  * @param  {} res
  */
 exports.loginToAccount = (req, res) => {
-  console.log(req.body);
   if (!req.body.email) {
     res.status(400).send({
       error: "Content can not be empty!",
@@ -132,7 +130,6 @@ exports.loginToAccount = (req, res) => {
         }
       });
       imapConnection.on("error", (err) => {
-        console.log(err);
         logger.error(
           `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}`
         );
@@ -151,7 +148,6 @@ exports.loginToAccount = (req, res) => {
  */
 exports.getImapBoxes = async (req, res) => {
   var imap;
-  console.log(req.query);
   if (req.query.token != "") {
     xoauth2gen = xoauth2.createXOAuth2Generator({
       user: req.query.userEmail,
@@ -179,7 +175,6 @@ exports.getImapBoxes = async (req, res) => {
         host: "imap.gmail.com",
         servername: "imap.gmail.com",
       },
-      debug: console.log,
     });
 
     let Boxes = [];

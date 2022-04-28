@@ -17,64 +17,6 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
   });
   source.addEventListener("dns", (message) => {
-    const emails = () => {
-      let data = currentState.retrievedEmails.map((row) => {
-        if (!row.email.hasOwnProperty("name")) {
-          row.email["name"] = "";
-        } else {
-          row.email.name.replace(/'/g, ``);
-        }
-        row.field["total"] = 0;
-        let countSender = 0;
-        let countbody = 0;
-        let countrecipient = 0;
-        Object.keys(row.field).map((field) => {
-          if (field.includes("from") || field.includes("reply-to")) {
-            countSender += row.field[field];
-          } else if (
-            field.includes("cc") ||
-            field.includes("to") ||
-            field.includes("bcc")
-          ) {
-            countrecipient += row.field[field];
-          } else {
-            countbody += row.field[field];
-          }
-        });
-        row.field["recipient"] = countrecipient;
-        row.field["body"] = countbody;
-        row.field["sender"] = countSender;
-        row.field["total"] = countSender + countbody + countrecipient;
-        return row;
-      });
-      var wordArr = [];
-      var numArr = [];
-      var emptyArr = [];
-      data.forEach((el) => {
-        if (Number(el.email.name.charAt(0))) {
-          numArr.push(el);
-        } else if (el.email.name != "") {
-          wordArr.push(el);
-        } else {
-          emptyArr.push(el);
-        }
-      });
-      wordArr.sort((a, b) => {
-        return (
-          !a.email.name - !b.email.name ||
-          a.email.name.localeCompare(b.email.name)
-        );
-      });
-      wordArr.sort((a, b) => b.field.total - a.field.total);
-      numArr.sort((a, b) => a - b);
-      emptyArr.sort((a, b) => b.field.total - a.field.total);
-      let dataend = wordArr.concat(numArr);
-      let sorted = dataend.concat(emptyArr);
-
-      return [...sorted];
-    };
-
-    this.commit("example/SET_EMAILS", emails());
     this.commit("example/SET_LOADING_DNS", false);
   });
 

@@ -30,7 +30,6 @@ function extractEmailsFromBody(data) {
 function extractNameAndEmail(data) {
   const getRegExp = (email, emailAfterRegEx) => {
     if (emailAfterRegEx && emailAfterRegEx.groups.address.includes("@")) {
-      //console.log(emailAfterRegEx);
       return emailAfterRegEx.groups;
     }
   };

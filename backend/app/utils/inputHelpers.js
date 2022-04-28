@@ -110,6 +110,64 @@ function EqualPartsForSocket(total) {
   values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
   return Parts;
 }
+
+function sortDatabase(database) {
+  let data = database.map((row) => {
+    if (!Object.hasOwnProperty.bind(row.email)("name")) {
+      row.email["name"] = "";
+    } else if (!row.email.name) {
+      row.email["name"] = "";
+    }
+    row.email.name.replace(/'/g, ``);
+    row.field["total"] = 0;
+    let countSender = 0;
+    let countbody = 0;
+    let countrecipient = 0;
+    Object.keys(row.field).map((field) => {
+      if (field.includes("from") || field.includes("reply-to")) {
+        countSender += row.field[field];
+      } else if (
+        field.includes("cc") ||
+        field.includes("to") ||
+        field.includes("bcc")
+      ) {
+        countrecipient += row.field[field];
+      } else {
+        countbody += row.field[field];
+      }
+    });
+    row.field["recipient"] = countrecipient;
+    row.field["body"] = countbody;
+    row.field["sender"] = countSender;
+    row.field["total"] = countSender + countbody + countrecipient;
+    return row;
+  });
+  var wordArr = [];
+  var numArr = [];
+  var emptyArr = [];
+  data.forEach((el) => {
+    if (Number(el.email.name.charAt(0))) {
+      numArr.push(el);
+    } else if (el.email.name != "") {
+      wordArr.push(el);
+    } else {
+      emptyArr.push(el);
+    }
+  });
+  wordArr.sort((a, b) => {
+    return (
+      !a.email.name - !b.email.name || a.email.name.localeCompare(b.email.name)
+    );
+  });
+  wordArr.sort((a, b) => b.field.total - a.field.total);
+  numArr.sort((a, b) => a - b);
+  emptyArr.sort((a, b) => b.field.total - a.field.total);
+  let dataend = wordArr.concat(numArr);
+  let sorted = dataend.concat(emptyArr);
+
+  return [...sorted];
+}
+exports.sortDatabase = sortDatabase;
 exports.getBoxesAndFolders = getBoxesAndFolders;
 exports.getBoxesAll = getBoxesAll;
 exports.EqualPartsForSocket = EqualPartsForSocket;

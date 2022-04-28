@@ -69,7 +69,6 @@ function addEmailToDatabase(database, email) {
 function addFieldsAndFolder(database, email) {
   database.map((element) => {
     if (email.email.address == element.email.address) {
-      //element.field.push(...email.field);
       Object.keys(element.field).includes(Object.keys(email.field)[0])
         ? (element.field[Object.keys(email.field)[0]] += 1)
         : (element.field[Object.keys(email.field)[0]] = 1);
@@ -134,7 +133,7 @@ function manipulateDataWithDns(
 ) {
   if (domain) {
     dns.resolveMx(domain, async (error, addresses) => {
-      timer.time += 120;
+      timer.time += 100;
       if (addresses) {
         //set domain in redis
         await client.set(domain, "ok", {
@@ -177,6 +176,7 @@ function treatParsedEmails(
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
+
           // if domain already stored in cache
           if (domainRedis) {
             return manipulateData(element, oneEmail, database);

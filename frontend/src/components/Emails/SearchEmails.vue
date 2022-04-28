@@ -162,13 +162,16 @@
           </div>
         </div>
 
-        <div class="bg-transparent q-ma-sm col-12 q-pa-sm">
+        <div
+          class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
+          ref="scrollComponent"
+        >
           <q-table
-            card-class="bg-white text-teal-10"
-            table-class="text-teal-10"
+            card-class="bg-white  text-teal-10"
+            table-class="text-teal-10 sticky"
             table-header-class="text-teal"
             title="Emails"
-            :rows="Emails"
+            :rows="emailsinfinit"
             :binary-state-sort="true"
             :columns="columns"
             :filter="filter"
@@ -310,8 +313,8 @@
 import { defineComponent, defineAsyncComponent } from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
-
-import { mapState } from "vuex";
+import { mapState, useStore } from "vuex";
+const scrollComponent = ref(null);
 const infos = [
   {
     text: "Valid mailbox",
@@ -338,8 +341,9 @@ const columns = [
 
     sortable: true,
     sort: (a, b) => {
-      const domainA = a.split("@")[1];
-      const domainB = b.split("@")[1];
+      const domainA = a.split("@")[0];
+      const domainB = b.split("@")[0];
+
       return domainA.localeCompare(domainB);
     },
   },
@@ -351,7 +355,7 @@ const columns = [
     field: (row) => row.email.name.substring(0, 10).concat("..."),
     sortable: true,
     sort: (a, b) => {
-      return a.localeCompare(b);
+      return b.localeCompare(a);
     },
     sortOrder: "ad",
     style: "max-width: 50px",
@@ -417,6 +421,7 @@ export default defineComponent({
   setup() {
     const $q = useQuasar();
     const filter = ref("");
+    const store = useStore();
 
     return {
       filter,
@@ -424,13 +429,12 @@ export default defineComponent({
       columns,
       infos,
       pagination: {
-        rowsPerPage: 50000,
+        rowsPerPage: 1000,
       },
       persistent: ref(false),
       selected: ref([]),
       ticked: ref([]),
       expanded: ref([]),
-
       exportTable(Emails) {
         let csv =
           "Email\tAlias\tStatus\tTo\tFrom\tCC\tBCC\tReply-To\tBody\tTotal\tType\n";
@@ -498,9 +502,11 @@ export default defineComponent({
       dataCleaning: "",
       currentBox: "",
       all: false,
+      emailsinfinit: [],
       emails: [],
       password: "",
       host: "",
+      scrolledToBottom: false,
       port: "",
       acceptedHeaders: ref([]),
       acceptedBody: ref([]),
@@ -540,6 +546,9 @@ export default defineComponent({
 
   computed: {
     Emails() {
+      if (this.loadingStatusDns) {
+        this.emailsinfinit = this.retrievedEmails.slice(0, 10);
+      }
       return this.retrievedEmails;
     },
     boxes() {
@@ -569,21 +578,29 @@ export default defineComponent({
   },
 
   mounted() {
-    //const SessionId = Math.random().toString(36).substr(2, 9);
-
+    this.scroll();
     this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
-
-    setTimeout(() => {
-      this.showing = true;
-    }, 1000);
-    setTimeout(() => {
-      this.showing = false;
-    }, 3000);
   },
 
   methods: {
+    scroll() {
+      window.onscroll = () => {
+        let bottomOfWindow =
+          window.innerHeight + window.scrollY >= document.body.offsetHeight;
+
+        if (bottomOfWindow) {
+          this.emailsinfinit = [
+            ...this.emailsinfinit,
+            ...this.retrievedEmails.slice(
+              this.emailsinfinit.length,
+              this.emailsinfinit.length + 10
+            ),
+          ];
+        }
+      };
+    },
     resetSort(data) {
       var wordArr = [];
       var numArr = [];
@@ -647,6 +664,7 @@ export default defineComponent({
       return null;
     },
     filterMethod(rows, term) {
+      console.log("hello");
       return rows.filter((e) => {
         if (typeof e.email.name == "undefined") {
           return e.email.address.includes(term);
@@ -714,7 +732,7 @@ export default defineComponent({
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
-        //console.log(this.$store.getters["example/getStates"].infoMessage);
+        //console.log(this.$store.gettersccc["example/getStates"].infoMessage);
         setTimeout(() => {
           this.showNotif(
             this.$store.getters["example/getStates"].infoMessage,
@@ -751,5 +769,13 @@ export default defineComponent({
 .bg-fetch {
   background-color: #deebdd;
   background-image: linear-gradient(315deg, #deebdd 0%, #bbdbbe 74%);
+}
+
+.sticky thead tr:first-child th {
+  position: sticky;
+  background-color: #fff;
+  top: 0;
+  opacity: 1;
+  z-index: 1;
 }
 </style>
