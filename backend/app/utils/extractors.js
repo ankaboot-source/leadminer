@@ -11,9 +11,12 @@ const NOREPLY = [
   "support",
   "maildaemon",
   "notifications",
+  "notification",
   "send-as-noreply",
   "systemalert",
-  "MAILER-DAEMON",
+  "mailer-daemon",
+  "mail daemon",
+  "mailer daemon",
   "alerts",
   "auto-confirm",
   "ne-pas-repondre",
@@ -44,7 +47,9 @@ function checkExistence(database, email) {
  * @param  {string} imapEmail Email address associated to connected imap account
  */
 function IsNotNoReply(oneEmail, imapEmail) {
-  let noReply = NOREPLY.filter((word) => oneEmail.includes(word));
+  let noReply = NOREPLY.filter((word) =>
+    oneEmail.toLowerCase().includes(word.toLowerCase())
+  );
   if (noReply.length > 0 || oneEmail.includes(imapEmail)) {
     return false;
   } else {
@@ -129,16 +134,21 @@ function manipulateDataWithDns(
   oneEmail,
   database,
   client,
-  timer
+  timer,
+  tempValidDomain
 ) {
-  if (domain) {
+  if (domain && !tempValidDomain.includes(domain)) {
+    timer.time += 50;
     dns.resolveMx(domain, async (error, addresses) => {
-      timer.time += 100;
       if (addresses) {
-        //set domain in redis
-        await client.set(domain, "ok", {
-          EX: 400,
-        });
+        timer.dnsCount += 1;
+        if (!tempValidDomain.includes(domain)) {
+          tempValidDomain.push(domain);
+          //set domain in redis
+          await client.set(domain, "ok", {
+            EX: 864000,
+          });
+        }
         // append data when domain is valid
         return manipulateData(element, oneEmail, database);
       }
@@ -158,7 +168,8 @@ function treatParsedEmails(
   database,
   client,
   imapEmail,
-  timer
+  timer,
+  tempValidDomain
 ) {
   Object.keys(dataTobeStored).map((element) => {
     if (true) {
@@ -176,9 +187,8 @@ function treatParsedEmails(
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
-
           // if domain already stored in cache
-          if (domainRedis) {
+          if (domainRedis || tempValidDomain.includes(domain)) {
             return manipulateData(element, oneEmail, database);
           } else {
             return manipulateDataWithDns(
@@ -187,7 +197,8 @@ function treatParsedEmails(
               oneEmail,
               database,
               client,
-              timer
+              timer,
+              tempValidDomain
             );
           }
         }

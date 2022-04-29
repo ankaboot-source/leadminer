@@ -118,7 +118,7 @@ function sortDatabase(database) {
     } else if (!row.email.name) {
       row.email["name"] = "";
     }
-    row.email.name.replace(/'/g, ``);
+    row.email.name = row.email.name.replace(/"/g, ``);
     row.field["total"] = 0;
     let countSender = 0;
     let countbody = 0;

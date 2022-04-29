@@ -429,7 +429,7 @@ export default defineComponent({
       columns,
       infos,
       pagination: {
-        rowsPerPage: 1000,
+        rowsPerPage: 55000,
       },
       persistent: ref(false),
       selected: ref([]),

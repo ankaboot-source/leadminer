@@ -2,8 +2,9 @@ node_modules
 package-lock.json
 logs
 .env
-.vscode
-.ncy_output
+.nyc_output
 coverage
-**/.vscode/
-**/.ncy_output/
+.nyc_output/3a415e5a-2744-4246-9149-c2f52624abdc.json
+.nyc_output/f97a4137-8e10-4e43-9872-0ea07f2a872f.json
+.nyc_output/processinfo
+.vscode
