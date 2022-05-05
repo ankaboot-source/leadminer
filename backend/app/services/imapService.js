@@ -106,11 +106,8 @@ async function OpenedBoxCallback(
         }, timer.time);
         setTimeout(() => {
           sse.send(true, "dns");
-          console.log(timer.time, timer.dnsCount);
         }, timer.time + 1000);
       } else {
-        console.log(timer.time, timer.dnsCount);
-
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         sse.send(helpers.sortDatabase(database), "data");
         sse.send(0, "percentage");

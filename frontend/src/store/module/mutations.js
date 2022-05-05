@@ -12,6 +12,7 @@ export function SET_LOADINGBOX(state, newLoadingStatusbox) {
 }
 export function SET_IMAP(state, newImap) {
   state.imap.id = newImap.id;
+  state.imap.password = newImap.password;
   state.imap.email = newImap.email;
   state.imap.host = newImap.host;
   state.imap.port = newImap.port;

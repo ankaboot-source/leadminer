@@ -9,8 +9,6 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_PERCENTAGE", message.data);
   });
   window.addEventListener("beforeunload", () => {
-    console.log("heheh");
-
     source.close();
   });
   source.addEventListener("data", (message) => {
@@ -125,7 +123,6 @@ export async function signIn({ context, state }, { data }) {
 export function getBoxes({ context, getters }) {
   this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
-
   if (!currentState.token) {
     this.$axios
       .get(

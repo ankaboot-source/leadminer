@@ -12,23 +12,24 @@
               <div class="text-custom row q-pa-sm">
                 <div class="bg-grey-1 border q-pa-md col-6">
                   <div class="text-h6 text-bold">Select mailbox folders</div>
-                  <q-checkbox
+                  <!-- <q-checkbox
                     v-model="all"
                     color="orange-10"
                     class="text-subtitle2 text-orange-8"
                     label="Select all "
                     @click="checkAll(boxes)"
-                  />
+                  /> -->
                   <q-tree
                     ref="tree"
                     v-model:ticked="selectedBoxes"
                     v-model:selected="selected"
                     v-model:expanded="expanded"
                     class="col-12 col-sm-6"
-                    :nodes="boxes"
+                    :nodes="Boxes"
+                    :default-expand-all="true"
                     node-key="label"
                     color="teal"
-                    tick-strategy="strict"
+                    tick-strategy="leaf"
                   />
                 </div>
                 <div class="col" />
@@ -94,7 +95,7 @@
                   <q-circular-progress
                     show-value
                     class="text-white q-ma-md"
-                    :value="parseFloat(percentage) * 100"
+                    :value="parseFloat(Percentage) * 100"
                     size="120px"
                     :thickness="0.19"
                     :animation-speed="10"
@@ -105,7 +106,7 @@
 
                     <div class="text-center q-pt-sm">
                       <small class="text-white text-subtitle">
-                        {{ parseFloat(percentage) * 100 }}%
+                        {{ parseFloat(Percentage) * 100 }}%
                       </small>
                       <div>
                         <q-badge
@@ -332,6 +333,7 @@ const infos = [
     icon: "fa-solid fa-circle-x",
   },
 ];
+const excludedFolders = ["spam", "brouillons", "draft", "trashed", "trash"];
 const columns = [
   {
     name: "Email",
@@ -500,6 +502,7 @@ export default defineComponent({
       queue: [],
       render: false,
       dataCleaning: "",
+      alreadyExculudes: false,
       currentBox: "",
       all: false,
       emailsinfinit: [],
@@ -510,7 +513,7 @@ export default defineComponent({
       port: "",
       acceptedHeaders: ref([]),
       acceptedBody: ref([]),
-      selectedBoxes: [],
+      selectedBoxes: ref([]),
       quasar: useQuasar(),
       optionsHeaderFields: [
         {
@@ -551,11 +554,27 @@ export default defineComponent({
       }
       return this.retrievedEmails;
     },
-    boxes() {
-      return [...this.boxes];
+    Boxes() {
+      function printValues(obj, dataThis) {
+        dataThis.alreadyExculudes = true;
+        for (var key in obj) {
+          if (typeof obj[key] === "object") {
+            printValues(obj[key], dataThis);
+          } else {
+            if (!excludedFolders.includes(obj[key].toLowerCase())) {
+              dataThis.selectedBoxes.push(obj[key]);
+            }
+          }
+        }
+      }
+      if (!this.alreadyExculudes) {
+        printValues(this.boxes, this);
+      }
+      let WithCheckAll = [{ label: "Check all", children: [...this.boxes] }];
+      return [...WithCheckAll];
     },
 
-    percentage() {
+    Percentage() {
       return this.progress.percentage;
     },
     Status() {
@@ -579,6 +598,26 @@ export default defineComponent({
 
   mounted() {
     this.scroll();
+
+    const googleUser = this.quasar.sessionStorage.getItem("googleUser");
+    let imapUser;
+    if (!googleUser) {
+      imapUser = this.quasar.sessionStorage.getItem("ImapUser");
+    }
+    if (googleUser) {
+      this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
+      let imap = {
+        id: "",
+        email: googleUser.user,
+        host: "",
+        port: "",
+      };
+      this.$store.commit("example/SET_IMAP", imap);
+    } else {
+      //this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
+
+      this.$store.commit("example/SET_IMAP", imapUser);
+    }
     this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
@@ -670,7 +709,6 @@ export default defineComponent({
       return null;
     },
     filterMethod(rows, term) {
-      console.log("hello");
       return rows.filter((e) => {
         if (typeof e.email.name == "undefined") {
           return e.email.address.includes(term);
@@ -679,33 +717,12 @@ export default defineComponent({
         }
       });
     },
-    checkAll(allboxes) {
-      let arr = [];
-      function deepObject(obj) {
-        for (let ele in obj) {
-          if (obj[ele].label) {
-            arr.push(obj[ele].label);
-          }
-          if (obj[ele].children) {
-            obj[ele].children.map((v) => {
-              deepObject([v]);
-            });
-          }
-        }
-        return arr;
-      }
-      if (this.selectedBoxes.length == 0) {
-        this.selectedBoxes = deepObject([...allboxes]);
-      } else {
-        this.selectedBoxes = [];
-      }
-    },
+    checkAll(allboxes) {},
 
     fetchEmails() {
       var fields = [];
       var bot = this.boxes;
 
-      //console.log(bot);
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
         fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
@@ -738,7 +755,6 @@ export default defineComponent({
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
-        //console.log(this.$store.gettersccc["example/getStates"].infoMessage);
         setTimeout(() => {
           this.showNotif(
             this.$store.getters["example/getStates"].infoMessage,

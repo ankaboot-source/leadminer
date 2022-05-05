@@ -25,7 +25,6 @@ const onGapiLoadPromise = (params) => {
       window.gapi.load("auth2", () => {
         try {
           auth2 = window.gapi.auth2.init(Object.assign({}, params));
-          console.log(auth2);
         } catch (err) {
           reject({
             err: "client_id missing or is incorrect, or if you added extra params maybe they are written incorrectly, did you add it to the component or plugin?",
@@ -39,8 +38,6 @@ const onGapiLoadPromise = (params) => {
 
 const loadingAuth2 = (params) => {
   if (auth2) {
-    console.log(auth2);
-
     return Promise.resolve(auth2);
   } else {
     if (!loadingPromise) loadingPromise = onGapiLoadPromise(params);

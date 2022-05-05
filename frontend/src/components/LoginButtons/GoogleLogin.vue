@@ -2,15 +2,15 @@
   <div>
     <q-btn
       @click="handleClickSignIn"
-      :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
+      class="text-capitalize text-weight-regular"
+      label="Start mining"
       color="teal"
-      icon="gg"
-      label="Sign in with google"
     />
     <!-- <button
       @click="handleClickSignIn"
       :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
-    >
+    >      :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
+
       sign in
     </button> -->
     <!-- <button @click="handleClickGetAuthCode" :disabled="!Vue3GoogleOauth.isInit">
@@ -22,17 +22,18 @@
       :disabled="!Vue3GoogleOauth.isAuthorized"
     >
       disconnect
-    </button> --><button
+    </button> <button
       @click="handleClickSignOut"
       :disabled="!Vue3GoogleOauth.isAuthorized"
     >
       sign out
-    </button>
+    </button>-->
   </div>
 </template>
 
 <script>
 import { inject, toRefs } from "vue";
+import { useQuasar } from "quasar";
 export default {
   name: "HelloWorld",
   props: {
@@ -42,6 +43,7 @@ export default {
   data() {
     return {
       user: "",
+      quasar: useQuasar(),
     };
   },
 
@@ -52,29 +54,26 @@ export default {
         if (!googleUser) {
           return null;
         }
-        console.log("googleUser", googleUser);
         this.user = googleUser.getBasicProfile().getEmail();
-        console.log("getId", this.user);
-        console.log("getBasicProfile", googleUser.getBasicProfile());
-        console.log("getAuthResponse", googleUser.getAuthResponse());
-        console.log(
-          "getAuthResponse",
-          this.$gAuth.instance.currentUser.get().getAuthResponse()
-        );
+
         let token = this.$gAuth.instance.currentUser.get().getAuthResponse();
-        this.$store.commit("example/SET_TOKEN", token.access_token);
+        this.quasar.sessionStorage.set("googleUser", {
+          token: token,
+          user: this.user,
+        });
         let imap = {
           id: "",
           email: this.user,
           host: "",
           port: "",
         };
+        this.$store.commit("example/SET_TOKEN", token.access_token);
+
         this.$store.commit("example/SET_IMAP", imap);
         this.$router.push("/dashboard");
 
         // try {
         //   const authCode = await this.$gAuth.getAuthCode();
-        //   console.log("authCode", authCode);
         // } catch (error) {
         //   //on fail do something
         //   console.error(error);
@@ -90,7 +89,6 @@ export default {
     async handleClickGetAuthCode() {
       try {
         const authCode = await this.$gAuth.getAuthCode();
-        console.log("authCode", authCode);
       } catch (error) {
         //on fail do something
         console.error(error);
@@ -101,7 +99,6 @@ export default {
     async handleClickSignOut() {
       try {
         await this.$gAuth.signOut();
-        console.log("isAuthorized", this.Vue3GoogleOauth.isAuthorized);
         this.user = "";
       } catch (error) {
         console.error(error);

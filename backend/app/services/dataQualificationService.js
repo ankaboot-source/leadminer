@@ -5,21 +5,9 @@ const { Op } = require("sequelize");
 async function databaseQualification(data, sse) {
   // detect regEx in data
   let dataAfterRegEx = await utils.detectRegEx(data);
-  //console.log(dataAfterRegEx);
-
   // Check domain type (using dns module resolveMx)
-  let dataAfterCheckDomain = dataAfterRegEx; //await utils.checkDomainType(dataAfterRegEx);
-  //console.log(datadomain);
+  let dataAfterCheckDomain = dataAfterRegEx;
   let dataAfterCheckDomain1 = dataAfterCheckDomain;
-  // console.log(dataAfterCheckDomain);
-  // count all occurences if each message
-  // dataAfterCheckDomain.forEach((email) => {
-  //   // get count occurences for each email in the list
-  //   let count = dataAfterCheckDomain.filter(
-  //     (obj) => obj.email.address === email.email.address
-  //   ).length;
-  //   email["total"] = count;
-  // });
   const promises = [];
   let dataToBe = [];
   function removeDuplicates(originalArray, prop) {
@@ -38,7 +26,6 @@ async function databaseQualification(data, sse) {
   dataAfterCheckDomain.map((val) => {
     sse.send("Updating database", "status");
     dataAfterCheckDomain.forEach((emo) => {
-      console.log("hello");
       if (val.email.address == emo.email.address && val.field == emo.field) {
         let count = dataAfterCheckDomain1.filter(
           (obj) =>
@@ -55,8 +42,6 @@ async function databaseQualification(data, sse) {
     });
   });
 
-  //console.log("uniqueArray is: " + JSON.stringify(uniqueArray));
-  //dataAfterCheckDomain = uniqueArray;
   // loop through collected data and update database with new changes
   dataAfterCheckDomain.forEach(async (data) => {
     let count = dataAfterCheckDomain1.filter(
@@ -73,7 +58,6 @@ async function databaseQualification(data, sse) {
     ).length;
     data.field[1] = countd;
 
-    //console.log(dataAfterCheckDomain);
     // find one record thet matches the current email object(data)
     emailsInfos
       .findOne({
@@ -84,20 +68,14 @@ async function databaseQualification(data, sse) {
         },
       })
       .then(async (message) => {
-        //console.log(message);
         if (message != null) {
-          //console.log(message);
           if (!message.msgId.includes(data.msgId)) {
             message.msgId.push(data.msgId);
-            console.log(message.msgId);
           } else if (!message.field.includes(data.field)) {
             message.field.push(data.field);
-            console.log(message.field);
           } else if (!message.folder.includes(data.folder)) {
             message.folder.push(data.folder);
           }
-          //console.log(message);
-
           promises.push(
             emailsInfos.update(
               {
@@ -132,12 +110,7 @@ async function databaseQualification(data, sse) {
       });
     logger.info("done fetching and updating data");
   });
-  //console.log(currentFolders);
-
-  //await Promise.all(promises);
   let alldata = await emailsInfos.findAll();
-  //console.log(JSON.parse(JSON.stringify(alldata)));
-  //console.log(JSON.parse(JSON.stringify(alldata)));
   let arra = [];
 
   let ele1 = dataAfterCheckDomain.filter(

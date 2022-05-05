@@ -27,12 +27,8 @@
 
             <q-card-section>
               <div class="text-center text-teal q-pt-lg">
-                <div class="col text-subtitle1 text-weight-bold ellipsis">
-                  {{
-                    Login
-                      ? "Login to your leadminer account !"
-                      : `Create account with the imap email credentials`
-                  }}
+                <div class="col text-h6 text-weight-regular ellipsis">
+                  Mine and qualify true leads from my email
                 </div>
               </div>
             </q-card-section>
@@ -42,20 +38,20 @@
                   v-model="email"
                   outlined
                   :dense="true"
+                  :rules="[
+                    (val) => !!val || 'Email is not valid',
+                    isValidEmail,
+                  ]"
                   label="Email address"
                   placeholder="example@company.com"
-                  :rules="[
-                    (value) =>
-                      value.includes('@') ||
-                      value.length > 12 ||
-                      'Please enter a valid email address',
-                  ]"
+                  @update:model-value="(val) => textSearch(val)"
                 >
                   <template #prepend>
                     <q-icon name="mail" />
                   </template>
                 </q-input>
                 <q-input
+                  v-if="showImap"
                   v-model="password"
                   outlined
                   :dense="true"
@@ -74,7 +70,7 @@
                     <q-icon name="key" />
                   </template> </q-input
                 ><q-input
-                  v-if="!Login"
+                  v-if="showImap"
                   v-model="host"
                   outlined
                   :dense="true"
@@ -87,7 +83,13 @@
                     <q-icon name="dns" />
                   </template>
                 </q-input>
-                <q-input v-model="port" outlined label-slot clearable>
+                <q-input
+                  v-if="showImap"
+                  v-model="port"
+                  outlined
+                  label-slot
+                  clearable
+                >
                   <template #label>
                     You can change the default port value :
                     <span
@@ -96,28 +98,28 @@
                     >
                   </template>
                 </q-input>
-                <div class="row">
+                <div>
                   <div class="column col-12">
                     <div class="col-6" />
-                    <div class="q-mt-md q-ml-lg col-12">
+                    <div class="q-mt-md q-ml-lg col-12 text-center">
                       <q-btn
-                        class="text-capitalize"
+                        v-if="showImap"
+                        class="text-capitalize text-weight-regular"
                         :disable="valid"
-                        :label="Login ? signIn : signUp"
+                        label="Start mining"
                         type="submit"
                         color="teal"
                       />
+                      <GoogleButton v-else></GoogleButton>
                     </div>
                   </div>
 
                   <div class="column col-12">
                     <div class="col-6"></div>
 
-                    <div class="q-mt-md q-ml-lg col-6">
-                      <GoogleButton></GoogleButton>
-                    </div>
+                    <div class="q-mt-md q-ml-lg col-6"></div>
                   </div>
-                  <div class="column col-12">
+                  <!-- <div class="column col-12">
                     <div class="col-6" />
                     <div class="q-mt-lg q-ml-lg col-12">
                       <q-chip
@@ -134,7 +136,7 @@
                         }}
                       </q-chip>
                     </div>
-                  </div>
+                  </div> -->
                 </div>
               </q-form>
             </q-card-section>
@@ -171,6 +173,8 @@ export default {
       password: "",
       host: "",
       port: null,
+      timer: null,
+      showImap: false,
       signIn: "sign in",
       signUp: "sign up",
       show: true,
@@ -180,8 +184,42 @@ export default {
       quasar: useQuasar(),
     };
   },
-
+  mounted() {
+    const googleUser = this.quasar.sessionStorage.getItem("googleUser");
+    let imapUser = this.quasar.sessionStorage.getItem("ImapUser");
+    if (googleUser) {
+      this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
+      let imap = {
+        id: "",
+        email: googleUser.user,
+        host: "",
+        port: "",
+      };
+      this.$store.commit("example/SET_IMAP", imap);
+      this.$router.push("/dashboard");
+    } else {
+      this.$store.commit("example/SET_IMAP", imapUser);
+      this.$router.push("/dashboard");
+    }
+  },
   methods: {
+    textSearch(e) {
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        if (this.isValidEmail(e)) {
+          if (e.includes("gmail") || e == "") {
+            this.showImap = false;
+          } else {
+            this.showImap = true;
+          }
+        }
+      }, 1500);
+    },
+    isValidEmail(val) {
+      const emailPattern =
+        /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/;
+      return emailPattern.test(val);
+    },
     ...mapState("example", ["loadingStatus", "errorMessage"]),
     showNotif(msg, color, icon) {
       if (msg && typeof msg != "undefined") {
@@ -215,30 +253,12 @@ export default {
         };
 
         this.$store
-          .dispatch("example/signUp", { data })
-          .then(() => {
-            this.showNotif(
-              this.$store.getters["example/getStates"].infoMessage,
-              "red",
-              "warning"
-            );
-            this.$router.push("/dashboard");
-          })
-          .catch(() => {
-            this.showNotif(
-              this.$store.getters["example/getStates"].errorMessage,
-              "red",
-              "warning"
-            );
-          });
-      } else {
-        let data = {
-          email: this.email,
-          password: this.password,
-        };
-        this.$store
           .dispatch("example/signIn", { data })
           .then(() => {
+            this.quasar.sessionStorage.set(
+              "ImapUser",
+              this.$store.getters["example/getStates"].imap
+            );
             this.$router.push("/dashboard");
           })
           .catch(() => {
