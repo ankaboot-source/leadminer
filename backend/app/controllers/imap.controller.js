@@ -286,7 +286,7 @@ exports.getImapBoxes = async (req, res) => {
  * @param  {} RedisClient redis RedisClient
  */
 exports.getEmails = (req, res, sse, RedisClient) => {
-  if (req.query.password != "") {
+  if (req.query.password) {
     // fetch imap from database then mine Emails
     ImapInfo.findByPk(req.params.id).then((imapInfo) => {
       // data will include all of the data that will be mined from the mailbox.

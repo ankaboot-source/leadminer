@@ -148,7 +148,6 @@ export function getBoxes({ context, getters }) {
     this.$axios
       .get(this.$api + `/imap/1/boxes`, {
         params: {
-          password: currentState.imap.password,
           token: currentState.token,
           userEmail: currentState.imap.email,
         },
