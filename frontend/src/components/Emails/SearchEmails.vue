@@ -19,7 +19,6 @@
                     v-model:expanded="expanded"
                     class="col-12 col-sm-6"
                     :nodes="Boxes"
-                    :default-expand-all="true"
                     node-key="label"
                     color="teal"
                     tick-strategy="leaf"
@@ -295,7 +294,6 @@ import { defineComponent, defineAsyncComponent } from "vue";
 import { exportFile, useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapState, useStore } from "vuex";
-const scrollComponent = ref(null);
 const infos = [
   {
     text: "Valid mailbox",
@@ -535,6 +533,7 @@ export default defineComponent({
       return this.retrievedEmails;
     },
     Boxes() {
+      const selectedB = ref([]);
       function printValues(obj, dataThis) {
         dataThis.alreadyExculudes = true;
         for (var key in obj) {
@@ -542,7 +541,7 @@ export default defineComponent({
             printValues(obj[key], dataThis);
           } else {
             if (!excludedFolders.includes(obj[key].toLowerCase())) {
-              dataThis.selectedBoxes.push(obj[key]);
+              selectedB.value.push(obj[key]);
             }
           }
         }
@@ -551,6 +550,11 @@ export default defineComponent({
         printValues(this.boxes, this);
       }
       let WithCheckAll = [{ label: "Check all", children: [...this.boxes] }];
+
+      if (selectedB.value.length > 0) {
+        this.selectedBoxes = selectedB.value;
+      }
+      console.log(this.selectedBoxes, selectedB);
       return [...WithCheckAll];
     },
 
