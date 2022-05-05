@@ -17,6 +17,7 @@
                     v-model:ticked="selectedBoxes"
                     v-model:selected="selected"
                     v-model:expanded="expanded"
+                    :default-expand-all="true"
                     class="col-12 col-sm-6"
                     :nodes="Boxes"
                     node-key="label"
@@ -535,7 +536,6 @@ export default defineComponent({
     Boxes() {
       const selectedB = ref([]);
       function printValues(obj, dataThis) {
-        dataThis.alreadyExculudes = true;
         for (var key in obj) {
           if (typeof obj[key] === "object") {
             printValues(obj[key], dataThis);
@@ -546,15 +546,17 @@ export default defineComponent({
           }
         }
       }
-      if (!this.alreadyExculudes) {
-        printValues(this.boxes, this);
-      }
+
+      printValues(this.boxes, this);
+
       let WithCheckAll = [{ label: "Check all", children: [...this.boxes] }];
 
       if (selectedB.value.length > 0) {
         this.selectedBoxes = selectedB.value;
       }
-      console.log(this.selectedBoxes, selectedB);
+      setTimeout(() => {
+        console.log(this.selectedBoxes, selectedB);
+      }, 1000);
       return [...WithCheckAll];
     },
 
@@ -693,6 +695,7 @@ export default defineComponent({
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
         setTimeout(() => {
+          this.$refs.tree.expandAll();
           this.showNotif(
             this.$store.getters["example/getStates"].infoMessage,
             "teal-5",
