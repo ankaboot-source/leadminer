@@ -197,7 +197,7 @@ export default {
       };
       this.$store.commit("example/SET_IMAP", imap);
       this.$router.push("/dashboard");
-    } else {
+    } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
       this.$router.push("/dashboard");
     }

@@ -8,3 +8,4 @@ coverage
 .nyc_output/f97a4137-8e10-4e43-9872-0ea07f2a872f.json
 .nyc_output/processinfo
 .vscode
+**/.ncy_output/
