@@ -1,22 +1,22 @@
-name: linting
+name: Linting
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2
-      - name: Set up node 
+      - name: Set up node
         uses: actions/setup-node@v1
       - name: Install backend dependencies
         run: cd backend && npm install
-      - name: Run linting for backend 
+      - name: Run linting for backend
         run: cd backend && npm run lint:fix
       - name: Go to root
         run: cd ..
       - name: Install frontend dependencies
         run: cd frontend && npm install
-      - name: Run linting for frontend 
+      - name: Run linting for frontend
         run: cd frontend && npm run lint
