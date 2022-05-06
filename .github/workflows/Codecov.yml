@@ -10,4 +10,4 @@ jobs:
       - name: Code Coverage Report
         uses: romeovs/lcov-reporter-action@v0.2.11
         with:
-          lcov-file: ./backend/coverage/lcov.info
+          lcov-file: /home/runner/work/leadminer/leadminer/backend/coverage/lcov.info
