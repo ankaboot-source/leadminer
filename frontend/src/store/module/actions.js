@@ -107,6 +107,7 @@ export async function signIn({ context, state }, { data }) {
     this.$axios
       .post(this.$api + "/imap/login", data)
       .then((response) => {
+        console.log(response.data);
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);
@@ -123,6 +124,7 @@ export async function signIn({ context, state }, { data }) {
 export function getBoxes({ context, getters }) {
   this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
+  console.log(currentState);
   if (!currentState.token) {
     this.$axios
       .get(
@@ -131,7 +133,6 @@ export function getBoxes({ context, getters }) {
         {
           params: {
             password: currentState.imap.password,
-            token: currentState.token,
             imapEmail: currentState.imap.email,
           },
         }

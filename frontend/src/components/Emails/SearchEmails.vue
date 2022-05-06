@@ -700,6 +700,7 @@ export default defineComponent({
       }
     },
     getBoxes() {
+      ////
       this.$store.dispatch("example/getBoxes").then(() => {
         setTimeout(() => {
           this.$refs.tree.expandAll();

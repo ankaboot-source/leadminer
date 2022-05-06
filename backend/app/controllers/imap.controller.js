@@ -148,7 +148,7 @@ exports.loginToAccount = (req, res) => {
  */
 exports.getImapBoxes = async (req, res) => {
   var imap;
-  if (req.query.token != "") {
+  if (req.query.token) {
     xoauth2gen = xoauth2.createXOAuth2Generator({
       user: req.query.userEmail,
       clientId:
@@ -179,6 +179,7 @@ exports.getImapBoxes = async (req, res) => {
 
     let Boxes = [];
     imap.connect();
+
     imap.once("ready", () => {
       logger.info(
         `Begin fetching folders names from imap account with email : ${req.query.userEmail}`
@@ -192,9 +193,6 @@ exports.getImapBoxes = async (req, res) => {
       logger.error(
         `error occured when trying to connect to imap account with email : ${req.query.userEmail}`
       );
-      // res.status(500).send({
-      //   error: "Can't connect to imap server, try to reconnect!",
-      // });
     });
     imap.once("end", () => {
       logger.info(

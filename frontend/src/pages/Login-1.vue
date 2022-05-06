@@ -251,6 +251,7 @@ export default {
           host: this.host,
           port: this.port != null ? this.port : 993,
         };
+        this.$store.commit("example/SET_PASSWORD", data.password);
 
         this.$store
           .dispatch("example/signIn", { data })
