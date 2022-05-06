@@ -8,6 +8,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: check
+        run: pwd
       - name: Code Coverage Report
         uses: romeovs/lcov-reporter-action@v0.2.11
         with:
