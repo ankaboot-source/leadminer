@@ -402,7 +402,6 @@ export default defineComponent({
   setup() {
     const $q = useQuasar();
     const filter = ref("");
-    const store = useStore();
 
     return {
       filter,
@@ -417,8 +416,19 @@ export default defineComponent({
       ticked: ref([]),
       expanded: ref([]),
       exportTable(Emails) {
-        let csv =
-          "Email\tAlias\tStatus\tTo\tFrom\tCC\tBCC\tReply-To\tBody\tTotal\tType\n";
+        function getListSeparator() {
+          var list = ["a", "b"],
+            str;
+          if (list.toLocaleString) {
+            str = list.toLocaleString();
+            if (str.indexOf(";") > 0 && str.indexOf(",") == -1) {
+              return ";";
+            }
+          }
+          return ",";
+        }
+        let seperator = getListSeparator();
+        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Body;Total;Type\n`;
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
           let obj = {
@@ -449,7 +459,7 @@ export default defineComponent({
           return obj;
         });
         emailstoExport.forEach((row) => {
-          csv += Object.values(row).join("\t");
+          csv += Object.values(row).join(";");
           csv += "\n";
         });
 
@@ -490,8 +500,8 @@ export default defineComponent({
       host: "",
       scrolledToBottom: false,
       port: "",
-      acceptedHeaders: ref([]),
-      acceptedBody: ref([]),
+      acceptedHeaders: ref(["FROM", "TO", "CC", "BCC", "REPLY-TO"]),
+      acceptedBody: ref(["1"]),
       selectedBoxes: ref([]),
       quasar: useQuasar(),
       optionsHeaderFields: [
@@ -554,9 +564,7 @@ export default defineComponent({
       if (selectedB.value.length > 0) {
         this.selectedBoxes = selectedB.value;
       }
-      setTimeout(() => {
-        console.log(this.selectedBoxes, selectedB);
-      }, 1000);
+
       return [...WithCheckAll];
     },
 
@@ -600,8 +608,6 @@ export default defineComponent({
       };
       this.$store.commit("example/SET_IMAP", imap);
     } else {
-      //this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
-
       this.$store.commit("example/SET_IMAP", imapUser);
     }
     this.getBoxes();
@@ -661,6 +667,7 @@ export default defineComponent({
     fetchEmails() {
       var fields = [];
       var bot = this.boxes;
+      console.log(this.acceptedHeaders, this.acceptedBody);
 
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {

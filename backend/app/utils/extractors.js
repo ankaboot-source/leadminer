@@ -26,7 +26,7 @@ const NOREPLY = [
   "wordpress",
   "notify",
   "password",
-  "reply",
+  "reply-",
   "no_reply",
 ];
 /**
