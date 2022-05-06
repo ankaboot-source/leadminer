@@ -10,5 +10,4 @@
 .env
 **/.vscode/
 backend/.nyc_output
-backend/coverage
 frontend/coverage
