@@ -1,9 +1,9 @@
 module.exports = (sequelize, Sequelize) => {
-  const EmailsInfos = sequelize.define("emails_info", {
+  const EmailsInfos = sequelize.define('emails_info', {
     email: {
       type: Sequelize.JSONB,
       unique: {
-        msg: "already exist",
+        msg: 'already exist',
       },
     },
     field: {
@@ -22,12 +22,12 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.INTEGER,
     },
     type: {
-      type: Sequelize.ENUM("email header", "email body"),
+      type: Sequelize.ENUM('email header', 'email body'),
     },
   });
   EmailsInfos.associate = (models) => {
     EmailsInfos.belongsTo(models.imap_infos, {
-      foreignKey: "userId",
+      foreignKey: 'userId',
     });
   };
   return EmailsInfos;

@@ -9,8 +9,9 @@
   "parserOptions": {
     "ecmaVersion": "latest"
   },
+  "ignorePatterns": ["*.test.js"],
   "rules": {
-    "complexity": ["error", 2],
+    "complexity": ["error", 6],
     "no-console": "warn", //* Avoid Bugs
     "no-undef": "error",
     "semi": "error",

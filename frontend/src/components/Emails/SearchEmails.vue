@@ -99,7 +99,7 @@
 
                     <div class="text-center q-pt-sm">
                       <small class="text-white text-subtitle">
-                        {{ parseFloat(Percentage) * 100 }}%
+                        {{ parseInt(parseFloat(Percentage) * 100) }}%
                       </small>
                       <div>
                         <q-badge
@@ -572,6 +572,7 @@ export default defineComponent({
     },
 
     Percentage() {
+      console.log(parseInt(parseFloat(this.progress.percentage) * 100));
       return this.progress.percentage;
     },
     Status() {
@@ -611,7 +612,9 @@ export default defineComponent({
       };
       this.$store.commit("example/SET_IMAP", imap);
     } else if (imapUser) {
+      console.log(imapUser);
       this.$store.commit("example/SET_IMAP", imapUser);
+      this.$store.commit("example/SET_PASSWORD", imapUser.password);
     } else {
       this.$router.push("/");
     }

@@ -1,6 +1,6 @@
-const uuid = require("uuid");
+//const uuid = require('uuid');
 module.exports = (sequelize, Sequelize) => {
-  const ImapInfo = sequelize.define("imap_info", {
+  const ImapInfo = sequelize.define('imap_info', {
     id: {
       allowNull: false,
       primaryKey: true,

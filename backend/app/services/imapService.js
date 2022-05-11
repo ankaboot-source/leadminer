@@ -1,24 +1,22 @@
-const utilsForRegEx = require("../utils/regexpUtils");
-const utilsForDataManipulation = require("../utils/extractors");
-const helpers = require("../utils/inputHelpers");
-const logger = require("../utils/logger")(module);
-const Imap = require("imap");
-const xoauth2 = require("xoauth2");
+const utilsForRegEx = require('../utils/regexpUtils');
+const utilsForDataManipulation = require('../utils/extractors');
+const helpers = require('../utils/inputHelpers');
+const logger = require('../utils/logger')(module);
+const Imap = require('imap');
+const xoauth2 = require('xoauth2');
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
   // &&
   // the current chunk is extracted from body
-  if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
-    let body = utilsForRegEx.extractEmailsFromBody(chunk.toString("utf8"));
+  if (bodiesTofetch.includes('1') && chunkSource.which == '1') {
+    const body = utilsForRegEx.extractEmailsFromBody(chunk.toString('utf8'));
     if (body) {
-      minedEmails.hasOwnProperty("body")
-        ? minedEmails["body"].push(...body)
-        : (minedEmails["body"] = body);
+      Object.prototype.hasOwnProperty.call(minedEmails, 'body') ? minedEmails['body'].push(...body) : (minedEmails['body'] = body);
     }
   } else {
     // extract header attributes
-    let header = Imap.parseHeader(chunk.toString("utf8"));
+    const header = Imap.parseHeader(chunk.toString('utf8'));
     Object.keys(header).map((field) => {
       minedEmails[field] = header[field];
     });
@@ -44,37 +42,39 @@ async function OpenedBoxCallback(
   tempValidDomain
 ) {
   if (currentbox) {
-    var sends = helpers.EqualPartsForSocket(currentbox.messages.total);
-    const f = imap.seq.fetch("1:*", {
+    const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
+    const f = imap.seq.fetch('1:*', {
       bodies: bodiesTofetch,
       struct: true,
     });
     // callback for "message" emitted event
-    f.on("message", (msg, seqno) => {
-      if (sends.includes(seqno)) {
+    f.on('message', (msg, seqno) => {
+      if (sends.includes(seqno) && currentbox.messages.total > 0) {
         sse.send(
           Math.round((seqno * 100) / currentbox.messages.total) / 100,
-          "percentage"
+          'percentage'
         );
       }
       if (seqno == currentbox.messages.total) {
-        sse.send(1, "percentage");
+        sse.send(1, 'percentage');
       }
       // callback for "body" emitted event
-      let minedEmails = {};
-      let bodyData = [];
-      msg.on("body", async function (stream, streamInfo) {
-        stream.on("data", (chunk) => {
-          bodyData.push(
-            ScanFolders(chunk, bodiesTofetch, streamInfo, minedEmails)
-          );
+      const minedEmails = {};
+      const bodyData = [];
+      let buff = '';
+      msg.on('body', async function (stream, streamInfo) {
+        stream.on('data', (chunk) => {
+          buff += chunk.toString('utf8');
         });
         // when fetching stream ends we process data
-        stream.once("end", () => {
-          minedEmails["body"] = [...new Set(minedEmails["body"])];
+        stream.once('end', () => {
+          bodyData.push(
+            ScanFolders(buff, bodiesTofetch, streamInfo, minedEmails)
+          );
+          minedEmails['body'] = [...new Set(minedEmails['body'])];
         });
       });
-      msg.once("end", function () {
+      msg.once('end', function () {
         if (minedEmails) {
           utilsForDataManipulation.treatParsedEmails(
             minedEmails,
@@ -87,37 +87,37 @@ async function OpenedBoxCallback(
         }
       });
     });
-    f.once("error", (err) => {
+    f.once('error', (err) => {
       ErrorOnFetch(err, imapInfoEmail);
     });
-    f.once("end", () => {
-      sse.send(1, "percentage");
+    f.once('end', () => {
+      sse.send(1, 'percentage');
 
       setTimeout(() => {
-        sse.send(helpers.sortDatabase(database), "data");
+        sse.send(helpers.sortDatabase(database), 'data');
       }, 200);
       if (currentbox.name == boxes[boxes.length - 1]) {
-        sse.send(helpers.sortDatabase(database), "data");
+        sse.send(helpers.sortDatabase(database), 'data');
         setTimeout(() => {
-          sse.send(helpers.sortDatabase(database), "data");
+          sse.send(helpers.sortDatabase(database), 'data');
           database = null;
           imap.end();
         }, timer.time);
         setTimeout(() => {
-          sse.send(true, "dns");
+          sse.send(true, 'dns');
         }, timer.time + 1000);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
-        sse.send(helpers.sortDatabase(database), "data");
-        sse.send(0, "percentage");
+        sse.send(helpers.sortDatabase(database), 'data');
+        sse.send(0, 'percentage');
       }
     });
   } else {
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(database, "data");
-      sse.send(true, "dns");
+      sse.send(database, 'data');
+      sse.send(true, 'dns');
       imap.end();
     }
   }
@@ -134,7 +134,7 @@ function imapService(
 ) {
   let imapInfoEmail;
   let imap;
-  if (query.token == "") {
+  if (query.token == '') {
     imap = new Imap({
       user: imapInfo.email,
       password: query.password,
@@ -152,30 +152,25 @@ function imapService(
     imapInfoEmail = imapInfo.email;
   } else {
     imapInfoEmail = query.userEmail;
-    xoauth2gen = xoauth2.createXOAuth2Generator({
+    const xoauth2gen = xoauth2.createXOAuth2Generator({
       user: query.userEmail,
       clientId: process.env.GG_CLIENT_ID,
       clientSecret: process.env.GG_CLIENT_SECRET,
       accessToken: query.token,
     });
 
-    var authData =
-      "user=" +
-      query.userEmail +
-      "\001auth=Bearer " +
-      xoauth2gen.accessToken +
-      "\001\001";
-    var xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
+    const authData = `user=${query.userEmail}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`;
+    const xoauth2_token = new Buffer.from(authData, 'utf-8').toString('base64');
     imap = new Imap({
       user: query.userEmail,
       xoauth2: xoauth2_token,
-      host: "imap.gmail.com",
+      host: 'imap.gmail.com',
       port: 993,
       tls: true,
       tlsOptions: {
         port: 993,
-        host: "imap.gmail.com",
-        servername: "imap.gmail.com",
+        host: 'imap.gmail.com',
+        servername: 'imap.gmail.com',
       },
     });
   }
@@ -183,19 +178,20 @@ function imapService(
   logger.info(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`
   );
-  var database = [];
-
+  const database = [];
+  // eslint-disable-line
   const ProxyChange = {
+    // eslint-disable-line
     set: function (target, key, value) {
       return Reflect.set(...arguments);
     },
   };
   const timer = new Proxy({ time: 9000, dnsCount: 0 }, ProxyChange);
-  var tempValidDomain = [];
-  imap.once("ready", async () => {
+  const tempValidDomain = [];
+  imap.once('ready', async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
-        sse.send(box, "box");
+        sse.send(box, 'box');
         OpenedBoxCallback(
           store,
           database,
@@ -212,34 +208,34 @@ function imapService(
         );
       });
     };
-    let validator = {
+    const validator = {
       set: function (target, key, value) {
         loopfunc(value);
         return true;
       },
     };
-    let store = new Proxy({}, validator);
+    const store = new Proxy({}, validator);
     if (store.box) {
       loopfunc(store.box);
     } else {
       loopfunc(boxes[0]);
     }
   });
-  imap.once("error", function (err) {
+  imap.once('error', function (err) {
     logger.info(
       `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
     );
     res.status(500).send({
-      message: "Error when fetching emails.",
+      message: 'Error when fetching emails.',
     });
   });
 
-  imap.once("end", function () {
+  imap.once('end', function () {
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}`
     );
     res.status(200).send({
-      message: "Done mining emails !",
+      message: 'Done mining emails !',
     });
   });
 }
