@@ -18,7 +18,7 @@ jobs:
           output_dir: ./out
           recurse: true
           template: minami
-          front_page: README1.md
+          front_page: README.md
       - name: Pushes to Repository
         uses: tech-thinker/push-to-repo@main
         env:
