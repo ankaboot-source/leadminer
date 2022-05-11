@@ -8,3 +8,4 @@ logs
 .nyc_output/processinfo
 .vscode
 **/.ncy_output/
+app/utils/out

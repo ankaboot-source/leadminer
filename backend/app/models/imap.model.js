@@ -20,6 +20,5 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.BOOLEAN,
     },
   });
-  //ImapInfo.beforeCreate((user) => (user.id = uuid.v4()));
   return ImapInfo;
 };

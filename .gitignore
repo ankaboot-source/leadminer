@@ -11,3 +11,4 @@
 **/.vscode/
 backend/.nyc_output
 frontend/coverage
+logs

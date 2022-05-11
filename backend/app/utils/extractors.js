@@ -30,8 +30,9 @@ const NOREPLY = [
   "no_reply",
 ];
 /**
- * Check if a given email address is already mined or no.
+ * Check if a given email address is already mined.
  * @param  {object} email One email address
+ * @returns {boolean}
  */
 
 function checkExistence(database, email) {
@@ -43,8 +44,9 @@ function checkExistence(database, email) {
 /**
  * Check if a given email address includes noreply strings pattern.
  * Or it's the imapEmail address.
- * @param  {object} oneEmail A email address
+ * @param  {object} oneEmail A email object
  * @param  {string} imapEmail Email address associated to connected imap account
+ * @returns {boolean}
  */
 function IsNotNoReply(oneEmail, imapEmail) {
   let noReply = NOREPLY.filter((word) =>
@@ -58,9 +60,10 @@ function IsNotNoReply(oneEmail, imapEmail) {
 }
 
 /**
- * Add a given Email to data.
- * @param  {Array} database
- * @param  {object} email
+ * Add a given Email to mineddata.
+ * @param  {Array} database An array that represents a virtual database
+ * @param  {object} email A email object
+ * @returns {Array}
  */
 function addEmailToDatabase(database, email) {
   database.push(email);
@@ -68,8 +71,9 @@ function addEmailToDatabase(database, email) {
 }
 /**
  * Add fields and folder to a given email .
- * @param  {Array} database
- * @param  {object} email
+ * @param  {Array} database An array that represents a virtual database
+ * @param  {object} email A email object
+ * @returns {Array}
  */
 function addFieldsAndFolder(database, email) {
   database.map((element) => {
@@ -84,6 +88,7 @@ function addFieldsAndFolder(database, email) {
 /**
  * Adds Email type to EmailInfo by checking against domain type database.
  * @param  {object} EmailInfo Email infos (address, name, folder, msgID..)
+ * @returns {object} The input with a new appended field called "type"
  */
 function addEmailType(EmailInfo) {
   let domain = EmailInfo.email.address.split("@")[1];
@@ -98,9 +103,9 @@ function addEmailType(EmailInfo) {
 }
 /**
  * Manipulate data(emails) without checking the dns.
- * @param  {string} element field (from, cc, bcc..)
- * @param  {object} oneEmail email address and name
- * @param  {Array} database global data
+ * @param  {string} element Field (from, cc, bcc..)
+ * @param  {object} oneEmail Email address and name
+ * @param  {Array} database An array that represents a virtual database
  */
 function manipulateData(element, oneEmail, database) {
   let isExist = checkExistence(database, oneEmail);
@@ -119,14 +124,15 @@ function manipulateData(element, oneEmail, database) {
 }
 
 /**
- * Check DNS Mx record then append email to database.
- *
+ * Check DNS Mx record then append email to database
  * In case of error or no Mx record it sets domain as KO fo further scans
- * @param  {} element
- * @param  {} domain
- * @param  {} oneEmail
- * @param  {} database
- * @param  {} client
+ * @param  {string} element Field (from, cc, bcc..)
+ * @param  {String} domain extracted domain name
+ * @param  {object} oneEmail Email address and name
+ * @param  {Array} database An array that represents a virtual database
+ * @param  {RedisClientType} client Redis client
+ * @param  {timer} timer Timer to wait Dns calls
+ * @param  {Array} tempValidDomain Temporary array for valid domain(only alive for one scan) to prevent redis query
  */
 function manipulateDataWithDns(
   element,
@@ -138,6 +144,7 @@ function manipulateDataWithDns(
   tempValidDomain
 ) {
   if (domain && !tempValidDomain.includes(domain)) {
+    // add to timer if will check dns
     timer.time += 50;
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
@@ -157,13 +164,12 @@ function manipulateDataWithDns(
 }
 
 /**
- * Treat parsed Emails.
+ * Treat parsed Emails, checks against redis and decide
  * @param  {object} dataTobeStored
- * @param  {Array} database
- * @param  {redis client} client
+ * @param  {Array} database An array that represents a virtual database
+ * @param  {RedisClientType} client Redis client
  */
 function treatParsedEmails(
-  sse,
   dataTobeStored,
   database,
   client,

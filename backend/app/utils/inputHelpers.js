@@ -1,27 +1,32 @@
-/**
- * Returns an array of integers used in sending progress status.
- * @param  {integer} total box total messages
- *
- */
-async function EqualPartsForSocket(total) {
-  const promise = new Promise((resolve, reject) => {
-    let boxCount = total;
-    const values = [];
-    let n = boxCount > 1000 ? 10 : 5;
-    while (boxCount > 0 && n > 0) {
-      const a = Math.floor(boxCount / n);
-      boxCount -= a;
-      n--;
-      values.push(a);
-    }
-    const Parts = [];
-    values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
-    resolve(Parts);
-  });
-  let result = await promise;
-  return result;
-}
-
+// async function EqualPartsForSocket(total) {
+//   const promise = new Promise((resolve, reject) => {
+//     let boxCount = total;
+//     const values = [];
+//     let n = boxCount > 1000 ? 10 : 5;
+//     while (boxCount > 0 && n > 0) {
+//       const a = Math.floor(boxCount / n);
+//       boxCount -= a;
+//       n--;
+//       values.push(a);
+//     }
+//     const Parts = [];
+//     values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+//     resolve(Parts);
+//   });
+//   let result = await promise;
+//   return result;
+// }
+const casesObject = [
+  [1, 0, 10],
+  [2, 11, 50],
+  [5, 51, 99],
+  [8, 100, 499],
+  [10, 500, 999],
+  [20, 1000, 7999],
+  [30, 8000, 19999],
+  [42, 20000, 60000],
+  [50, 60000, 10000],
+];
 /**
  * Returns the path to a box(folder), usefull for nested folders.
  * @param  {object} obj A folders tree as it is in imap
@@ -46,11 +51,13 @@ function getPath(obj, val, path) {
  * Extract folders names and prepare the associated tree.
  * @param  {object} Object Represents the folders names
  * @example
+ * // returns
  * label : INBOX
  * children:
  *         lable: Work
  *         labled: Friends
  *         labeld: Newsletters
+ * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren"})
  */
 function getBoxesAll(folders) {
   let finalFolders = [];
@@ -83,7 +90,7 @@ function getBoxesAll(folders) {
  *         labled: Friends
  *         labeld: Newsletters
  * }
- * boxes = [INBOX, INBOX/Work, INBOX/Friends, INBOX/Newsletters]
+ * // retruns boxes = [INBOX, INBOX/Work, INBOX/Friends, INBOX/Newsletters]
  */
 function getBoxesAndFolders(userQuery) {
   let folders = userQuery.folders.map((element) => {
@@ -96,10 +103,32 @@ function getBoxesAndFolders(userQuery) {
   return boxes;
 }
 
+/**
+ * Returns an array of integers used in sending progress status.
+ * @param  {integer} total box total messages
+ * @returns {Array}
+ *
+ */
 function EqualPartsForSocket(total) {
+  console.log(total);
+  function inRange(n, nStart, nEnd) {
+    if (n >= nStart && n <= nEnd) return true;
+    else return false;
+  }
   let boxCount = total;
   const values = [];
-  let n = boxCount > 1000 ? 10 : 6;
+  let n;
+  for (let i of casesObject) {
+    if (inRange(boxCount, i[1], i[2])) {
+      n = i[0];
+      break;
+    } else if (i == casesObject[casesObject.length - 1]) {
+      break;
+    } else {
+      continue;
+    }
+  }
+
   while (boxCount > 0 && n > 0) {
     const a = Math.floor(boxCount / n);
     boxCount -= a;
@@ -108,9 +137,13 @@ function EqualPartsForSocket(total) {
   }
   const Parts = [];
   values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+  console.log(Parts);
   return Parts;
 }
-
+/**
+ * Sorts the virtual database array based on total interactions, alphabetics, and groups fields
+ * @param  {Array} database
+ */
 function sortDatabase(database) {
   let data = database.map((row) => {
     if (!Object.hasOwnProperty.bind(row.email)("name")) {

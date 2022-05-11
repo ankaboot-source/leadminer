@@ -1,10 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
   const EmailsInfos = sequelize.define("emails_info", {
-    // userId: {
-    //   allowNull: false,
-    //   type: Sequelize.UUID,
-    //   foriegnKey: true,
-    // },
     email: {
       type: Sequelize.JSONB,
       unique: {
@@ -23,12 +18,6 @@ module.exports = (sequelize, Sequelize) => {
     dnsValidity: {
       type: Sequelize.STRING,
     },
-    // dnsDateCheck: {
-    //   type: Sequelize.DATE,
-    // },
-    // smtpCode: {
-    //   type: Sequelize.STRING,
-    // },
     total: {
       type: Sequelize.INTEGER,
     },

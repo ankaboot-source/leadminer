@@ -1,33 +1,34 @@
 <template>
   <div>
     <q-btn
+      :disable="!policy"
       @click="handleClickSignIn"
       class="text-capitalize text-weight-regular"
       label="Start mining"
       color="teal"
     />
-    <!-- <button
+    <button
       @click="handleClickSignIn"
       :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
-    >      :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
-
-      sign in
-    </button> -->
-    <!-- <button @click="handleClickGetAuthCode" :disabled="!Vue3GoogleOauth.isInit">
+    >
+      signin
+    </button>
+    <button @click="handleClickGetAuthCode" :disabled="!Vue3GoogleOauth.isInit">
       get authCode
     </button>
-    
+
     <button
       @click="handleClickDisconnect"
       :disabled="!Vue3GoogleOauth.isAuthorized"
     >
       disconnect
-    </button> <button
+    </button>
+    <button
       @click="handleClickSignOut"
       :disabled="!Vue3GoogleOauth.isAuthorized"
     >
       sign out
-    </button>-->
+    </button>
   </div>
 </template>
 
@@ -38,6 +39,13 @@ export default {
   name: "HelloWorld",
   props: {
     msg: String,
+    policyChecked: Boolean,
+  },
+
+  computed: {
+    policy: function () {
+      return this.policyChecked;
+    },
   },
 
   data() {
@@ -89,6 +97,7 @@ export default {
     async handleClickGetAuthCode() {
       try {
         const authCode = await this.$gAuth.getAuthCode();
+        console.log(authCode);
       } catch (error) {
         //on fail do something
         console.error(error);

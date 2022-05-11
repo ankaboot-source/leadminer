@@ -77,7 +77,6 @@ async function OpenedBoxCallback(
       msg.once("end", function () {
         if (minedEmails) {
           utilsForDataManipulation.treatParsedEmails(
-            sse,
             minedEmails,
             database,
             RedisClient,
@@ -155,9 +154,8 @@ function imapService(
     imapInfoEmail = query.userEmail;
     xoauth2gen = xoauth2.createXOAuth2Generator({
       user: query.userEmail,
-      clientId:
-        "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
-      clientSecret: "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",
+      clientId: process.env.GG_CLIENT_ID,
+      clientSecret: process.env.GG_CLIENT_SECRET,
       accessToken: query.token,
     });
 

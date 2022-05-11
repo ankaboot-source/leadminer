@@ -17,6 +17,12 @@
     { "name": "русский язык", "address": "leadminer-team@leadminer.io" },
     { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
   ],
+  "minedDataExample": [
+    { "email": { "name": "", "address": "leadminer-team@leadminer.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer2.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer3.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer4.io" } }
+  ],
   "expectedForBodyExtraction": [
     "badredine.ladjemi@gmail.com",
     "youssri@flyweight.tech",
