@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">88.46% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>24/27</span>
+                <span class='fraction'>23/26</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">88.46% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>24/27</span>
+                <span class='fraction'>23/26</span>
             </div>
         
             
@@ -126,9 +126,7 @@
 <a name='L61'></a><a href='#L61'>61</a>
 <a name='L62'></a><a href='#L62'>62</a>
 <a name='L63'></a><a href='#L63'>63</a>
-<a name='L64'></a><a href='#L64'>64</a>
-<a name='L65'></a><a href='#L65'>65</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L64'></a><a href='#L64'>64</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -139,8 +137,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -181,6 +177,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">5x</span>
@@ -191,9 +189,8 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const utilsForDataManipulation = require("./extractors");
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const quotedPrintable = require('quoted-printable');
 /* eslint-disable */
-&nbsp;
 const regex = new RegExp(
   /((?&lt;name&gt;[\p{L}\p{M}.\p{L}\p{M}\w\W]{1,})\s)*(&lt;|\[)*(?&lt;address&gt;[A-Za-z0-9!#$%&amp;+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&amp;'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(&gt;|\])*/imu
 );
@@ -201,13 +198,11 @@ const regex = new RegExp(
 const regexForBody = new RegExp(
   /([A-Za-z0-9!#$%&amp;'+=?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&amp;'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/gimu
 );
-// const regexForBody = new RegExp(
-//   /((?&lt;name&gt;[\p{L}\p{M}.\p{L}\p{M}\d\s{|\/:,}~()-]{1,})"*\s)*(&lt;|\[)*(?&lt;address&gt;[A-Za-z0-9!#$%&amp;+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&amp;'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(&gt;|\])*/imu
-// );
-const quotedPrintable = require("quoted-printable");
+&nbsp;
 /**
  * Extract Emails from body.
  * @param  {string} data A string that represents the mail body
+ * @returns {Array} array of strings
  */
 function extractEmailsFromBody(data) {
   let reg = quotedPrintable.decode(data).match(regexForBody);
@@ -217,11 +212,11 @@ function extractEmailsFromBody(data) {
 }
 &nbsp;
 /**
- * Using regEx extract email address and user name if available.
- * @param  {object} ImapData
+ * Using regEx extract emails addresses and users names if available.
+ * @param  {object} data
  */
 function extractNameAndEmail(data) {
-  const getRegExp = (email, emailAfterRegEx) =&gt; {
+  const getRegExp = (emailAfterRegEx) =&gt; {
     if (emailAfterRegEx &amp;&amp; emailAfterRegEx.groups.address.includes("@")) {
       return emailAfterRegEx.groups;
     }
@@ -231,18 +226,20 @@ function extractNameAndEmail(data) {
     let dataWithManyEmails = email.map((emails) =&gt; {
       let Emails = emails.trim();
       let emailAfterRegEx = regex.exec(Emails);
-      let result = getRegExp(emails, emailAfterRegEx);
+      let result = getRegExp(emailAfterRegEx);
       return result;
     });
     return dataWithManyEmails;
   } else {
     let emailAfterRegEx = <span class="cstat-no" title="statement not covered" >regex.exec(email);</span>
-    let result = <span class="cstat-no" title="statement not covered" >getRegExp(email[0], emailAfterRegEx);</span>
+    let result = <span class="cstat-no" title="statement not covered" >getRegExp(emailAfterRegEx);</span>
 <span class="cstat-no" title="statement not covered" >    return [result];</span>
   }
 }
 /**
- * @param  {string} data change extracted body email into {name,address} format (related to frontend data)
+ * Change extracted body email into {name,address} format
+ * @param  {Array} data array of emails objects
+ * @returns {Array} formated array of object
  */
 function FormatBodyEmail(data) {
   <span class="missing-if-branch" title="else path not taken" >E</span>if (data) {
@@ -262,7 +259,7 @@ exports.FormatBodyEmail = FormatBodyEmail;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at Fri May 06 2022 17:09:14 GMT+0100 (Central European Standard Time)
+                at Wed May 11 2022 19:23:45 GMT+0100 (Central European Standard Time)
             </div>
         <script src="../../../prettify.js"></script>
         <script>

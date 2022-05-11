@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 // async function EqualPartsForSocket(total) {
 //   const promise = new Promise((resolve, reject) => {
 //     let boxCount = total;
@@ -35,17 +36,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || '';
-  let fullpath = '';
+  path = path || "";
+  let fullpath = "";
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === 'object') {
+    if (typeof obj[b] === "object") {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace('/undefined', '');
+  return fullpath.replace("/undefined", "");
 }
 
 /**
@@ -65,7 +66,7 @@ function getBoxesAll(folders) {
   let folder = {};
   const keys = Object.keys(folders);
   keys.forEach((key) => {
-    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
+    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -145,33 +146,33 @@ function EqualPartsForSocket(total) {
  */
 function sortDatabase(database) {
   const data = database.map((row) => {
-    if (!Object.hasOwnProperty.bind(row.email)('name')) {
-      row.email['name'] = '';
+    if (!Object.hasOwnProperty.bind(row.email)("name")) {
+      row.email["name"] = "";
     } else if (!row.email.name) {
-      row.email['name'] = '';
+      row.email["name"] = "";
     }
-    row.email.name = row.email.name.replace(/"/g, '');
-    row.field['total'] = 0;
+    row.email.name = row.email.name.replace(/"/g, "");
+    row.field["total"] = 0;
     let countSender = 0;
     let countbody = 0;
     let countrecipient = 0;
     Object.keys(row.field).map((field) => {
-      if (field.includes('from') || field.includes('reply-to')) {
+      if (field.includes("from") || field.includes("reply-to")) {
         countSender += row.field[field];
       } else if (
-        field.includes('cc') ||
-        field.includes('to') ||
-        field.includes('bcc')
+        field.includes("cc") ||
+        field.includes("to") ||
+        field.includes("bcc")
       ) {
         countrecipient += row.field[field];
       } else {
         countbody += row.field[field];
       }
     });
-    row.field['recipient'] = countrecipient;
-    row.field['body'] = countbody;
-    row.field['sender'] = countSender;
-    row.field['total'] = countSender + countbody + countrecipient;
+    row.field["recipient"] = countrecipient;
+    row.field["body"] = countbody;
+    row.field["sender"] = countSender;
+    row.field["total"] = countSender + countbody + countrecipient;
     return row;
   });
   const wordArr = [];
@@ -180,7 +181,7 @@ function sortDatabase(database) {
   data.forEach((el) => {
     if (Number(el.email.name.charAt(0))) {
       numArr.push(el);
-    } else if (el.email.name != '') {
+    } else if (el.email.name != "") {
       wordArr.push(el);
     } else {
       emptyArr.push(el);

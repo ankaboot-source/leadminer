@@ -20,12 +20,10 @@ jobs:
           template: minami
           front_page: README.md
       - name: Pushes to Repository
-        uses: tech-thinker/push-to-repo@main
+        uses: cpina/github-action-push-to-another-repository@devel
         env:
           API_TOKEN_GITHUB: ${{ secrets.GIT_PAT_TOKEN }}
         with:
-          user-name: "you1996 "
-          user-email: youssri@flyweight.tech
           source-directory: "./out"
           destination-github-username: "ankaboot-source"
           destination-repository-name: "leadminer_documentation"
