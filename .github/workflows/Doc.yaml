@@ -28,7 +28,7 @@ jobs:
           user-email: youssri@flyweight.tech
           source-directory: "./out"
           destination-github-username: "ankaboot-source"
-          destination-repository-name: "LeadminerDoc"
+          destination-repository-name: "leadminer_documentation"
           target-branch: main
       # - name: Deploy
       #   uses: peaceiris/actions-gh-pages@v3
