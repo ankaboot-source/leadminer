@@ -44,7 +44,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to leadminer application." });
 });
 // attach sse to api/stream endpoint
-app.get("/api/stream/:id", sse.init);
+app.get("/api/stream/", sse.init);
 
 // The io instance is set in Express so it can be grabbed in a route
 require("./app/routes/imap.routes")(app, sse, client);

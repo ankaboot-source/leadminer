@@ -79,7 +79,6 @@ export default defineComponent({
   },
   computed: {
     Percentage: function () {
-      console.log(this.percentage);
       return this.percentage;
     },
     CurrentBox: function () {

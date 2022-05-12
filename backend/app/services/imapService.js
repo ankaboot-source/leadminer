@@ -42,24 +42,32 @@ async function OpenedBoxCallback(
   sse,
   boxes,
   timer,
-  tempValidDomain
+  tempValidDomain,
+  query
 ) {
   if (currentbox) {
     const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
+    const sendsForData = helpers.EqualPartsForSocket(
+      currentbox.messages.total % 3
+    );
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
       struct: true,
     });
     // callback for "message" emitted event
     f.on("message", (msg, seqno) => {
-      if (sends.includes(seqno) && currentbox.messages.total > 0) {
+      if (
+        (sends.includes(seqno) || sendsForData.includes(seqno)) &&
+        currentbox.messages.total > 0
+      ) {
         sse.send(
           Math.round((seqno * 100) / currentbox.messages.total) / 100,
-          "percentage"
+          `percentage${query.userId}`
         );
+        sse.send(helpers.sortDatabase(database), "data" + query.userId);
       }
       if (seqno == currentbox.messages.total) {
-        sse.send(1, "percentage");
+        sse.send(1, `percentage${query.userId}`);
       }
       // callback for "body" emitted event
       const minedEmails = {};
@@ -94,33 +102,34 @@ async function OpenedBoxCallback(
       ErrorOnFetch(err, imapInfoEmail);
     });
     f.once("end", () => {
-      sse.send(1, "percentage");
+      sse.send(1, "percentage" + query.userId);
 
       setTimeout(() => {
-        sse.send(helpers.sortDatabase(database), "data");
+        sse.send(helpers.sortDatabase(database), "data" + query.userId);
       }, 200);
       if (currentbox.name == boxes[boxes.length - 1]) {
-        sse.send(helpers.sortDatabase(database), "data");
+        sse.send(helpers.sortDatabase(database), "data" + query.userId);
         setTimeout(() => {
-          sse.send(helpers.sortDatabase(database), "data");
+          sse.send(helpers.sortDatabase(database), "data" + query.userId);
           database = null;
           imap.end();
         }, timer.time);
+        console.log(timer.time);
         setTimeout(() => {
-          sse.send(true, "dns");
+          sse.send(true, "dns" + query.userId);
         }, timer.time + 1000);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
-        sse.send(helpers.sortDatabase(database), "data");
-        sse.send(0, "percentage");
+        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(0, "percentage" + query.userId);
       }
     });
   } else {
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(database, "data");
-      sse.send(true, "dns");
+      sse.send(database, "data" + query.userId);
+      sse.send(true, "dns" + query.userId);
       imap.end();
     }
   }
@@ -194,7 +203,7 @@ function imapService(
   imap.once("ready", async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
-        sse.send(box, "box");
+        sse.send(box, `box${query.userId}`);
         OpenedBoxCallback(
           store,
           database,
@@ -207,7 +216,8 @@ function imapService(
           sse,
           boxes,
           timer,
-          tempValidDomain
+          tempValidDomain,
+          query
         );
       });
     };
