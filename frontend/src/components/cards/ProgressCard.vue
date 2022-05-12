@@ -1,42 +1,69 @@
 <template>
-  <q-card class="bg-transparent no-shadow no-border">
-    <q-card-section class="q-pa-none">
-      <div class="row q-col-gutter-sm">
-        <div
-          v-for="(item, index) in items"
-          :key="index"
-          class="col-md-12 col-sm-12 col-xs-12"
-        >
-          <q-item
-            :style="`background-color: ${item.color1}`"
-            class="q-pa-none border"
-          >
-            <q-item-section
-              v-if="icon_position === 'left'"
-              side
-              :style="`background-color: ${item.color2}`"
-              class="q-pa-md border q-ma-sm text-teal"
-            >
-              <q-icon :name="item.icon" color="white" size="24px" />
-            </q-item-section>
-            <q-item-section class="q-pa-md q-ml-none text-teal">
-              <q-item-label class="text-teal text-h6 text-weight-bolder">
-                {{ item.value }}
-              </q-item-label>
-              <q-item-label>{{ item.title }}</q-item-label>
-            </q-item-section>
-            <q-item-section
-              v-if="icon_position === 'right'"
-              side
-              class="q-mr-md text-white"
-            >
-              <q-icon :name="item.icon" color="white" size="44px" />
-            </q-item-section>
-          </q-item>
+  <q-card flat class="bg-transparent q-ml-lg" style="width: 100%">
+    <q-circular-progress
+      show-value
+      class="text-white q-ma-md"
+      :value="parseFloat(Percentage) * 100"
+      size="120px"
+      :thickness="0.19"
+      :animation-speed="10"
+      color="orange"
+      center-color="grey-7"
+      track-color="transparent"
+      ><div></div>
+
+      <div class="text-center q-pt-sm">
+        <small class="text-white text-subtitle">
+          {{ parseInt(parseFloat(Percentage) * 100) }}%
+        </small>
+        <div>
+          <q-badge
+            v-show="CurrentBox != ''"
+            color="orange"
+            :label="
+              CurrentBox.includes('/')
+                ? CurrentBox.substring(
+                    CurrentBox.indexOf('/') + 1,
+                    CurrentBox.length - 1
+                  )
+                : CurrentBox.slice(1, -1)
+            "
+          />
         </div>
       </div>
-    </q-card-section>
-  </q-card>
+    </q-circular-progress>
+
+    <q-circular-progress
+      :min="0"
+      :max="Emails.length"
+      :value="Emails.length"
+      show-value
+      size="120px"
+      font-size="14px"
+      :thickness="0.1"
+      color="teal"
+      track-color="grey"
+      :angle="-90"
+      class="q-ma-md"
+    >
+      <div class="text-center q-pt-sm">
+        <div class="text-green text-h5">
+          {{ Emails.length }}
+        </div>
+        <div>
+          <small class="text-green text-caption"> Valid email</small><br />
+          <q-circular-progress
+            indeterminate
+            v-show="loadingStatusDns"
+            size="25px"
+            :thickness="0.22"
+            color="lime"
+            track-color="grey-8"
+            class="q-ma-md float-center"
+          />
+        </div>
+      </div> </q-circular-progress
+  ></q-card>
 </template>
 
 <script>
@@ -45,23 +72,24 @@ import { defineComponent } from "vue";
 export default defineComponent({
   name: "ProgressStatus",
   props: {
-    icon_position: {
-      required: false,
-      default: "left",
-    },
     collectedEmails: Number(0),
+    loadingStatusDns: Boolean(false),
+    currentBox: "",
+    percentage: Number(0),
   },
   computed: {
-    items: function () {
-      return [
-        {
-          title: "Collected emails",
-          icon: "email",
-          value: this.collectedEmails,
-          color1: "#f8f9fa",
-          color2: "#03c8a8",
-        },
-      ];
+    Percentage: function () {
+      console.log(this.percentage);
+      return this.percentage;
+    },
+    CurrentBox: function () {
+      return this.currentBox;
+    },
+    Emails: function () {
+      return this.collectedEmails;
+    },
+    loadingStatusDns: function () {
+      return this.loadingStatusDns;
     },
   },
 });

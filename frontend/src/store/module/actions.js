@@ -1,6 +1,6 @@
 export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
-  const source = new EventSource(`${this.$api}/stream`);
+  const source = new EventSource(`${this.$api}/stream/${currentState.imap.id}`);
   source.addEventListener("box", (message) => {
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_CURRENT", message.data);
@@ -133,7 +133,7 @@ export function getBoxes({ context, getters }) {
         {
           params: {
             password: currentState.imap.password,
-            imapEmail: currentState.imap.email,
+            userEmail: currentState.imap.email, //
           },
         }
       )
