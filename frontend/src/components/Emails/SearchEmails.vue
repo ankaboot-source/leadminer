@@ -84,73 +84,12 @@
                 />
               </div>
               <div class="row q-md col-12 text-center">
-                <q-card flat class="bg-transparent q-ml-lg" style="width: 100%">
-                  <q-circular-progress
-                    show-value
-                    class="text-white q-ma-md"
-                    :value="parseFloat(Percentage) * 100"
-                    size="120px"
-                    :thickness="0.19"
-                    :animation-speed="10"
-                    color="orange"
-                    center-color="grey-7"
-                    track-color="transparent"
-                    ><div></div>
-
-                    <div class="text-center q-pt-sm">
-                      <small class="text-white text-subtitle">
-                        {{ parseInt(parseFloat(Percentage) * 100) }}%
-                      </small>
-                      <div>
-                        <q-badge
-                          v-show="CurrentBox != ''"
-                          color="orange"
-                          :label="
-                            CurrentBox.includes('/')
-                              ? CurrentBox.substring(
-                                  CurrentBox.indexOf('/') + 1,
-                                  CurrentBox.length - 1
-                                )
-                              : CurrentBox.slice(1, -1)
-                          "
-                        />
-                      </div>
-                    </div>
-                  </q-circular-progress>
-
-                  <q-circular-progress
-                    :min="0"
-                    :max="Emails.length"
-                    :value="Emails.length"
-                    show-value
-                    size="120px"
-                    font-size="14px"
-                    :thickness="0.1"
-                    color="teal"
-                    track-color="grey"
-                    :angle="-90"
-                    class="q-ma-md"
-                  >
-                    <div class="text-center q-pt-sm">
-                      <div class="text-green text-h5">
-                        {{ Emails.length }}
-                      </div>
-                      <div>
-                        <small class="text-green text-caption">
-                          Valid email</small
-                        ><br />
-                        <q-circular-progress
-                          indeterminate
-                          v-show="loadingStatusDns"
-                          size="25px"
-                          :thickness="0.22"
-                          color="lime"
-                          track-color="grey-8"
-                          class="q-ma-md float-center"
-                        />
-                      </div>
-                    </div> </q-circular-progress
-                ></q-card>
+                <progress-card
+                  :collectedEmails="Emails"
+                  :loadingStatusDns="loadingStatusDns"
+                  :percentage="Percentage"
+                  :currentBox="CurrentBox"
+                />
               </div>
             </div>
           </div>
@@ -397,7 +336,7 @@ export default defineComponent({
   name: "TableVisits",
   components: {
     CountCard: defineAsyncComponent(() => import("../cards/CountCard.vue")),
-    ProgressStatus: defineAsyncComponent(() =>
+    ProgressCard: defineAsyncComponent(() =>
       import("../cards/ProgressCard.vue")
     ),
   },
@@ -605,14 +544,13 @@ export default defineComponent({
     if (googleUser) {
       this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
       let imap = {
-        id: "",
+        id: Math.random().toString(36).substr(2),
         email: googleUser.user,
         host: "",
         port: "",
       };
       this.$store.commit("example/SET_IMAP", imap);
     } else if (imapUser) {
-      console.log(imapUser);
       this.$store.commit("example/SET_IMAP", imapUser);
       this.$store.commit("example/SET_PASSWORD", imapUser.password);
     } else {
@@ -707,14 +645,12 @@ export default defineComponent({
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
-        setTimeout(() => {
-          this.$refs.tree.expandAll();
-          this.showNotif(
-            this.$store.getters["example/getStates"].infoMessage,
-            "teal-5",
-            "check"
-          );
-        }, 1000);
+        this.$refs.tree.expandAll();
+        this.showNotif(
+          this.$store.getters["example/getStates"].infoMessage,
+          "teal-5",
+          "check"
+        );
       });
     },
   },

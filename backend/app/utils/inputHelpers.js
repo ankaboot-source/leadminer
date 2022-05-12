@@ -137,7 +137,6 @@ function EqualPartsForSocket(total) {
   }
   const Parts = [];
   values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
-  console.log(Parts);
   return Parts;
 }
 /**

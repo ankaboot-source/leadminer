@@ -1,3 +1,5 @@
+[![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml/badge.svg?branch=main)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml)
+
 # Leadminer
 
 Leadminer is a NodeJS app to extract and qualify email addresses from your own mailboxes.
