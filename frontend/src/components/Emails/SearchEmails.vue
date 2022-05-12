@@ -511,7 +511,6 @@ export default defineComponent({
     },
 
     Percentage() {
-      console.log(parseInt(parseFloat(this.progress.percentage) * 100));
       return this.progress.percentage;
     },
     Status() {

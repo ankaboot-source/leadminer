@@ -1,20 +1,21 @@
 export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
-  const source = new EventSource(`${this.$api}/stream/${currentState.imap.id}`);
-  source.addEventListener("box", (message) => {
+  const source = new EventSource(`${this.$api}/stream/`);
+  console.log(currentState.imap.id);
+  source.addEventListener("box" + currentState.imap.id, (message) => {
     this.commit("example/SET_PERCENTAGE", 0);
     this.commit("example/SET_CURRENT", message.data);
   });
-  source.addEventListener("percentage", (message) => {
+  source.addEventListener("percentage" + currentState.imap.id, (message) => {
     this.commit("example/SET_PERCENTAGE", message.data);
   });
-  window.addEventListener("beforeunload", () => {
+  window.addEventListener("beforeunload" + currentState.imap.id, () => {
     source.close();
   });
-  source.addEventListener("data", (message) => {
+  source.addEventListener("data" + currentState.imap.id, (message) => {
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
   });
-  source.addEventListener("dns", (message) => {
+  source.addEventListener("dns" + currentState.imap.id, (message) => {
     this.commit("example/SET_LOADING_DNS", false);
   });
 
@@ -33,6 +34,7 @@ export async function getEmails({ context, getters }, { data }) {
             folders: currentState.boxes,
             password: currentState.imap.password,
             userEmail: currentState.imap.email,
+            userId: currentState.imap.id,
             token: currentState.token,
           },
         })
@@ -61,6 +63,7 @@ export async function getEmails({ context, getters }, { data }) {
               folders: currentState.boxes,
               password: currentState.imap.password,
               userEmail: currentState.imap.email,
+              userId: currentState.imap.id,
               token: currentState.token,
             },
           }
