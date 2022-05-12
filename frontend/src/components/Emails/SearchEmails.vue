@@ -99,7 +99,7 @@
 
                     <div class="text-center q-pt-sm">
                       <small class="text-white text-subtitle">
-                        {{ parseFloat(Percentage) * 100 }}%
+                        {{ parseInt(parseFloat(Percentage) * 100) }}%
                       </small>
                       <div>
                         <q-badge
@@ -397,6 +397,9 @@ export default defineComponent({
   name: "TableVisits",
   components: {
     CountCard: defineAsyncComponent(() => import("../cards/CountCard.vue")),
+    ProgressStatus: defineAsyncComponent(() =>
+      import("../cards/ProgressCard.vue")
+    ),
   },
 
   setup() {
@@ -569,6 +572,7 @@ export default defineComponent({
     },
 
     Percentage() {
+      console.log(parseInt(parseFloat(this.progress.percentage) * 100));
       return this.progress.percentage;
     },
     Status() {
@@ -607,8 +611,12 @@ export default defineComponent({
         port: "",
       };
       this.$store.commit("example/SET_IMAP", imap);
-    } else {
+    } else if (imapUser) {
+      console.log(imapUser);
       this.$store.commit("example/SET_IMAP", imapUser);
+      this.$store.commit("example/SET_PASSWORD", imapUser.password);
+    } else {
+      this.$router.push("/");
     }
     this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
@@ -667,8 +675,6 @@ export default defineComponent({
     fetchEmails() {
       var fields = [];
       var bot = this.boxes;
-      console.log(this.acceptedHeaders, this.acceptedBody);
-
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
         fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
@@ -700,7 +706,6 @@ export default defineComponent({
       }
     },
     getBoxes() {
-      ////
       this.$store.dispatch("example/getBoxes").then(() => {
         setTimeout(() => {
           this.$refs.tree.expandAll();

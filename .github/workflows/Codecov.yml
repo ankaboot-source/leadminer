@@ -1,0 +1,15 @@
+name: Coverage
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Code Coverage Report
+        uses: romeovs/lcov-reporter-action@v0.2.11
+        with:
+          lcov-file: backend/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}

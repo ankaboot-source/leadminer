@@ -100,17 +100,37 @@
                 </q-input>
                 <div>
                   <div class="column col-12">
+                    <q-item tag="label" v-ripple>
+                      <q-item-section avatar>
+                        <q-checkbox v-model="policyChecked" color="teal" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label caption
+                          ><a
+                            href="https://github.com/ankaboot-source/leadminer/issues/url"
+                            target="_blank"
+                            >I read and accept Leadminer.io Terms of Service.
+                            <br />I also agree to receive information and offers
+                            relevant to our services via email.</a
+                          >
+                        </q-item-label>
+                      </q-item-section>
+                    </q-item>
+
                     <div class="col-6" />
                     <div class="q-mt-md q-ml-lg col-12 text-center">
                       <q-btn
                         v-if="showImap"
                         class="text-capitalize text-weight-regular"
-                        :disable="valid"
+                        :disable="!policyChecked"
                         label="Start mining"
                         type="submit"
                         color="teal"
                       />
-                      <GoogleButton v-else></GoogleButton>
+                      <GoogleButton
+                        v-else
+                        :policyChecked="policyChecked"
+                      ></GoogleButton>
                     </div>
                   </div>
 
@@ -119,24 +139,6 @@
 
                     <div class="q-mt-md q-ml-lg col-6"></div>
                   </div>
-                  <!-- <div class="column col-12">
-                    <div class="col-6" />
-                    <div class="q-mt-lg q-ml-lg col-12">
-                      <q-chip
-                        color="orange-10"
-                        clickable
-                        class="cursor-pointer"
-                        text-color="white"
-                        @click="switchSlide"
-                      >
-                        {{
-                          !Login
-                            ? "You have already an account ?"
-                            : "You don't have an account ?"
-                        }}
-                      </q-chip>
-                    </div>
-                  </div> -->
                 </div>
               </q-form>
             </q-card-section>
@@ -177,6 +179,7 @@ export default {
       showImap: false,
       signIn: "sign in",
       signUp: "sign up",
+      policyChecked: ref(false),
       show: true,
       Login: false,
       isPwd: ref(true),

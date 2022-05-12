@@ -1,6 +1,5 @@
-const utilsForDataManipulation = require("./extractors");
+const quotedPrintable = require('quoted-printable');
 /* eslint-disable */
-
 const regex = new RegExp(
   /((?<name>[\p{L}\p{M}.\p{L}\p{M}\w\W]{1,})\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
 );
@@ -8,13 +7,11 @@ const regex = new RegExp(
 const regexForBody = new RegExp(
   /([A-Za-z0-9!#$%&'+=?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/gimu
 );
-// const regexForBody = new RegExp(
-//   /((?<name>[\p{L}\p{M}.\p{L}\p{M}\d\s{|\/:,}~()-]{1,})"*\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
-// );
-const quotedPrintable = require("quoted-printable");
+
 /**
  * Extract Emails from body.
  * @param  {string} data A string that represents the mail body
+ * @returns {Array} array of strings
  */
 function extractEmailsFromBody(data) {
   let reg = quotedPrintable.decode(data).match(regexForBody);
@@ -24,11 +21,11 @@ function extractEmailsFromBody(data) {
 }
 
 /**
- * Using regEx extract email address and user name if available.
- * @param  {object} ImapData
+ * Using regEx extract emails addresses and users names if available.
+ * @param  {object} data
  */
 function extractNameAndEmail(data) {
-  const getRegExp = (email, emailAfterRegEx) => {
+  const getRegExp = (emailAfterRegEx) => {
     if (emailAfterRegEx && emailAfterRegEx.groups.address.includes("@")) {
       return emailAfterRegEx.groups;
     }
@@ -38,18 +35,20 @@ function extractNameAndEmail(data) {
     let dataWithManyEmails = email.map((emails) => {
       let Emails = emails.trim();
       let emailAfterRegEx = regex.exec(Emails);
-      let result = getRegExp(emails, emailAfterRegEx);
+      let result = getRegExp(emailAfterRegEx);
       return result;
     });
     return dataWithManyEmails;
   } else {
     let emailAfterRegEx = regex.exec(email);
-    let result = getRegExp(email[0], emailAfterRegEx);
+    let result = getRegExp(emailAfterRegEx);
     return [result];
   }
 }
 /**
- * @param  {string} data change extracted body email into {name,address} format (related to frontend data)
+ * Change extracted body email into {name,address} format
+ * @param  {Array} data array of emails objects
+ * @returns {Array} formated array of object
  */
 function FormatBodyEmail(data) {
   if (data) {

@@ -1,0 +1,35 @@
+name: Deploy Documentation
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build doc
+        uses: andstor/jsdoc-action@v1
+        with:
+          source_dir: backend
+          output_dir: ./out
+          recurse: true
+          template: minami
+          front_page: README.md
+      - name: Pushes to Repository
+        uses: cpina/github-action-push-to-another-repository@devel
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.GIT_PAT_TOKEN }}
+        with:
+          source-directory: "./out"
+          destination-github-username: "ankaboot-source"
+          destination-repository-name: "leadminer_documentation"
+          target-branch: main
+      # - name: Deploy
+      #   uses: peaceiris/actions-gh-pages@v3
+      #   with:
+      #     deploy_key: ${{ secrets.GITHUB_TOKEN  }}
+      #     publish_dir: ./out

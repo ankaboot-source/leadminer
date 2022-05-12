@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 const utilsForRegEx = require("../utils/regexpUtils");
 const utilsForDataManipulation = require("../utils/extractors");
 const helpers = require("../utils/inputHelpers");
@@ -10,15 +11,15 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // &&
   // the current chunk is extracted from body
   if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
-    let body = utilsForRegEx.extractEmailsFromBody(chunk.toString("utf8"));
+    const body = utilsForRegEx.extractEmailsFromBody(chunk.toString("utf8"));
     if (body) {
-      minedEmails.hasOwnProperty("body")
+      Object.prototype.hasOwnProperty.call(minedEmails, "body")
         ? minedEmails["body"].push(...body)
         : (minedEmails["body"] = body);
     }
   } else {
     // extract header attributes
-    let header = Imap.parseHeader(chunk.toString("utf8"));
+    const header = Imap.parseHeader(chunk.toString("utf8"));
     Object.keys(header).map((field) => {
       minedEmails[field] = header[field];
     });
@@ -44,14 +45,14 @@ async function OpenedBoxCallback(
   tempValidDomain
 ) {
   if (currentbox) {
-    var sends = helpers.EqualPartsForSocket(currentbox.messages.total);
+    const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
       struct: true,
     });
     // callback for "message" emitted event
     f.on("message", (msg, seqno) => {
-      if (sends.includes(seqno)) {
+      if (sends.includes(seqno) && currentbox.messages.total > 0) {
         sse.send(
           Math.round((seqno * 100) / currentbox.messages.total) / 100,
           "percentage"
@@ -61,23 +62,24 @@ async function OpenedBoxCallback(
         sse.send(1, "percentage");
       }
       // callback for "body" emitted event
-      let minedEmails = {};
-      let bodyData = [];
+      const minedEmails = {};
+      const bodyData = [];
+      let buff = "";
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
-          bodyData.push(
-            ScanFolders(chunk, bodiesTofetch, streamInfo, minedEmails)
-          );
+          buff += chunk.toString("utf8");
         });
         // when fetching stream ends we process data
         stream.once("end", () => {
+          bodyData.push(
+            ScanFolders(buff, bodiesTofetch, streamInfo, minedEmails)
+          );
           minedEmails["body"] = [...new Set(minedEmails["body"])];
         });
       });
       msg.once("end", function () {
         if (minedEmails) {
           utilsForDataManipulation.treatParsedEmails(
-            sse,
             minedEmails,
             database,
             RedisClient,
@@ -153,21 +155,15 @@ function imapService(
     imapInfoEmail = imapInfo.email;
   } else {
     imapInfoEmail = query.userEmail;
-    xoauth2gen = xoauth2.createXOAuth2Generator({
+    const xoauth2gen = xoauth2.createXOAuth2Generator({
       user: query.userEmail,
-      clientId:
-        "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
-      clientSecret: "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",
+      clientId: process.env.GG_CLIENT_ID,
+      clientSecret: process.env.GG_CLIENT_SECRET,
       accessToken: query.token,
     });
 
-    var authData =
-      "user=" +
-      query.userEmail +
-      "\001auth=Bearer " +
-      xoauth2gen.accessToken +
-      "\001\001";
-    var xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
+    const authData = `user=${query.userEmail}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`;
+    const xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
     imap = new Imap({
       user: query.userEmail,
       xoauth2: xoauth2_token,
@@ -185,15 +181,16 @@ function imapService(
   logger.info(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`
   );
-  var database = [];
-
+  const database = [];
+  // eslint-disable-line
   const ProxyChange = {
+    // eslint-disable-line
     set: function (target, key, value) {
       return Reflect.set(...arguments);
     },
   };
   const timer = new Proxy({ time: 9000, dnsCount: 0 }, ProxyChange);
-  var tempValidDomain = [];
+  const tempValidDomain = [];
   imap.once("ready", async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
@@ -214,13 +211,13 @@ function imapService(
         );
       });
     };
-    let validator = {
+    const validator = {
       set: function (target, key, value) {
         loopfunc(value);
         return true;
       },
     };
-    let store = new Proxy({}, validator);
+    const store = new Proxy({}, validator);
     if (store.box) {
       loopfunc(store.box);
     } else {

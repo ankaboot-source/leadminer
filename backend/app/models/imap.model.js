@@ -1,6 +1,6 @@
-const uuid = require("uuid");
+//const uuid = require('uuid');
 module.exports = (sequelize, Sequelize) => {
-  const ImapInfo = sequelize.define("imap_info", {
+  const ImapInfo = sequelize.define('imap_info', {
     id: {
       allowNull: false,
       primaryKey: true,
@@ -20,6 +20,5 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.BOOLEAN,
     },
   });
-  //ImapInfo.beforeCreate((user) => (user.id = uuid.v4()));
   return ImapInfo;
 };

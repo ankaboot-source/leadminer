@@ -1,35 +1,35 @@
-const utils = require("../utils/regexpUtils");
-const { emailsInfos } = require("../models");
-const logger = require("../utils/logger")(module);
-const { Op } = require("sequelize");
+const utils = require('../utils/regexpUtils');
+const { emailsInfos } = require('../models');
+const logger = require('../utils/logger')(module);
+const { Op } = require('sequelize');
 async function databaseQualification(data, sse) {
   // detect regEx in data
-  let dataAfterRegEx = await utils.detectRegEx(data);
+  const dataAfterRegEx = await utils.detectRegEx(data);
   // Check domain type (using dns module resolveMx)
-  let dataAfterCheckDomain = dataAfterRegEx;
-  let dataAfterCheckDomain1 = dataAfterCheckDomain;
+  const dataAfterCheckDomain = dataAfterRegEx;
+  const dataAfterCheckDomain1 = dataAfterCheckDomain;
   const promises = [];
-  let dataToBe = [];
+  const dataToBe = [];
   function removeDuplicates(originalArray, prop) {
-    var newArray = [];
-    var lookupObject = {};
+    const newArray = [];
+    const lookupObject = {};
 
-    for (var i in originalArray) {
+    for (const i in originalArray) {
       lookupObject[originalArray[i][prop]] = originalArray[i];
     }
 
-    for (i in lookupObject) {
+    for (const i in lookupObject) {
       newArray.push(lookupObject[i]);
     }
     return newArray;
   }
   dataAfterCheckDomain.map((val) => {
-    sse.send("Updating database", "status");
+    sse.send('Updating database', 'status');
     dataAfterCheckDomain.forEach((emo) => {
       if (val.email.address == emo.email.address && val.field == emo.field) {
-        let count = dataAfterCheckDomain1.filter(
+        const count = dataAfterCheckDomain1.filter(
           (obj) =>
-            typeof obj.email != "undefined" &&
+            typeof obj.email !== 'undefined' &&
             obj.email.address === val.email.address &&
             obj.field == val.field
         ).length;
@@ -44,15 +44,15 @@ async function databaseQualification(data, sse) {
 
   // loop through collected data and update database with new changes
   dataAfterCheckDomain.forEach(async (data) => {
-    let count = dataAfterCheckDomain1.filter(
+    const count = dataAfterCheckDomain1.filter(
       (obj) =>
-        typeof obj.email != "undefined" &&
+        typeof obj.email !== 'undefined' &&
         obj.email.address === data.email.address
     ).length;
-    data["total"] = count;
-    let countd = dataAfterCheckDomain1.filter(
+    data['total'] = count;
+    const countd = dataAfterCheckDomain1.filter(
       (obj) =>
-        typeof obj.email != "undefined" &&
+        typeof obj.email !== 'undefined' &&
         obj.email.address === data.email.address &&
         obj.field[0] === data.field[0]
     ).length;
@@ -62,7 +62,7 @@ async function databaseQualification(data, sse) {
     emailsInfos
       .findOne({
         where: {
-          "email.address": {
+          'email.address': {
             [Op.eq]: data.email.address,
           },
         },
@@ -87,7 +87,7 @@ async function databaseQualification(data, sse) {
               },
               {
                 where: {
-                  "email.address": {
+                  'email.address': {
                     [Op.eq]: data.email.address,
                   },
                 },
@@ -95,12 +95,12 @@ async function databaseQualification(data, sse) {
             )
           );
         } else {
-          let EmailReadyTobeStored = {
+          const EmailReadyTobeStored = {
             email: data.email,
             field: [data.field],
             msgId: [data.msgId],
             folder: [data.folder],
-            type: "email header",
+            type: 'email header',
             dnsValidity: data.dnsValidity,
             total: data.total,
           };
@@ -108,12 +108,12 @@ async function databaseQualification(data, sse) {
           await emailsInfos.create(EmailReadyTobeStored);
         }
       });
-    logger.info("done fetching and updating data");
+    logger.info('done fetching and updating data');
   });
-  let alldata = await emailsInfos.findAll();
-  let arra = [];
+  const alldata = await emailsInfos.findAll();
+  const arra = [];
 
-  let ele1 = dataAfterCheckDomain.filter(
+  const ele1 = dataAfterCheckDomain.filter(
     (value, index, self) =>
       index ===
       self.findIndex(
@@ -137,9 +137,9 @@ async function databaseQualification(data, sse) {
     (value, index, self) =>
       index === self.findIndex((t) => t.email.address === value.email.address)
   );
-  sse.send("Domain check", "status");
+  sse.send('Domain check', 'status');
 
-  let dataAfterCheckDomain3 = await utils.checkDomainType(ar);
+  const dataAfterCheckDomain3 = await utils.checkDomainType(ar);
 
   return dataAfterCheckDomain3;
 }

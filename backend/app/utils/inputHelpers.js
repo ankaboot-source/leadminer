@@ -1,27 +1,34 @@
-/**
- * Returns an array of integers used in sending progress status.
- * @param  {integer} total box total messages
- *
- */
-async function EqualPartsForSocket(total) {
-  const promise = new Promise((resolve, reject) => {
-    let boxCount = total;
-    const values = [];
-    let n = boxCount > 1000 ? 10 : 5;
-    while (boxCount > 0 && n > 0) {
-      const a = Math.floor(boxCount / n);
-      boxCount -= a;
-      n--;
-      values.push(a);
-    }
-    const Parts = [];
-    values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
-    resolve(Parts);
-  });
-  let result = await promise;
-  return result;
-}
-
+/* istanbul ignore file */
+// async function EqualPartsForSocket(total) {
+//   const promise = new Promise((resolve, reject) => {
+//     let boxCount = total;
+//     const values = [];
+//     let n = boxCount > 1000 ? 10 : 5;
+//     while (boxCount > 0 && n > 0) {
+//       const a = Math.floor(boxCount / n);
+//       boxCount -= a;
+//       n--;
+//       values.push(a);
+//     }
+//     const Parts = [];
+//     values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+//     resolve(Parts);
+//   });
+//   let result = await promise;
+//   return result;
+// }
+const casesObject = [
+  [1, 0, 10],
+  [2, 11, 50],
+  [5, 51, 99],
+  [8, 100, 499],
+  [10, 500, 999],
+  [50, 1000, 7999],
+  [70, 8000, 19999],
+  [80, 20000, 60000],
+  [100, 60001, 100000],
+  [200, 100001, 500001],
+];
 /**
  * Returns the path to a box(folder), usefull for nested folders.
  * @param  {object} obj A folders tree as it is in imap
@@ -31,7 +38,7 @@ async function EqualPartsForSocket(total) {
 function getPath(obj, val, path) {
   path = path || "";
   let fullpath = "";
-  for (let b in obj) {
+  for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
@@ -46,16 +53,18 @@ function getPath(obj, val, path) {
  * Extract folders names and prepare the associated tree.
  * @param  {object} Object Represents the folders names
  * @example
+ * // returns
  * label : INBOX
  * children:
  *         lable: Work
  *         labled: Friends
  *         labeld: Newsletters
+ * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren"})
  */
 function getBoxesAll(folders) {
-  let finalFolders = [];
+  const finalFolders = [];
   let folder = {};
-  let keys = Object.keys(folders);
+  const keys = Object.keys(folders);
   keys.forEach((key) => {
     if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
@@ -83,23 +92,43 @@ function getBoxesAll(folders) {
  *         labled: Friends
  *         labeld: Newsletters
  * }
- * boxes = [INBOX, INBOX/Work, INBOX/Friends, INBOX/Newsletters]
+ * // retruns boxes = [INBOX, INBOX/Work, INBOX/Friends, INBOX/Newsletters]
  */
 function getBoxesAndFolders(userQuery) {
-  let folders = userQuery.folders.map((element) => {
+  const folders = userQuery.folders.map((element) => {
     return JSON.parse(element);
   });
-  let boxes = userQuery.boxes.map((element) => {
+  const boxes = userQuery.boxes.map((element) => {
     const path = getPath({ ...folders }, element);
     return path.substring(1);
   });
   return boxes;
 }
 
+/**
+ * Returns an array of integers used in sending progress status.
+ * @param  {integer} total box total messages
+ * @returns {Array}
+ *
+ */
 function EqualPartsForSocket(total) {
+  function inRange(n, nStart, nEnd) {
+    if (n >= nStart && n <= nEnd) return true;
+    else return false;
+  }
   let boxCount = total;
   const values = [];
-  let n = boxCount > 1000 ? 10 : 6;
+  let n = 350;
+  for (const i of casesObject) {
+    if (inRange(boxCount, i[1], i[2])) {
+      n = i[0];
+      break;
+    } else if (i == casesObject[casesObject.length - 1]) {
+      break;
+    } else {
+      continue;
+    }
+  }
   while (boxCount > 0 && n > 0) {
     const a = Math.floor(boxCount / n);
     boxCount -= a;
@@ -108,17 +137,21 @@ function EqualPartsForSocket(total) {
   }
   const Parts = [];
   values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+  console.log(Parts);
   return Parts;
 }
-
+/**
+ * Sorts the virtual database array based on total interactions, alphabetics, and groups fields
+ * @param  {Array} database
+ */
 function sortDatabase(database) {
-  let data = database.map((row) => {
+  const data = database.map((row) => {
     if (!Object.hasOwnProperty.bind(row.email)("name")) {
       row.email["name"] = "";
     } else if (!row.email.name) {
       row.email["name"] = "";
     }
-    row.email.name = row.email.name.replace(/"/g, ``);
+    row.email.name = row.email.name.replace(/"/g, "");
     row.field["total"] = 0;
     let countSender = 0;
     let countbody = 0;
@@ -142,9 +175,9 @@ function sortDatabase(database) {
     row.field["total"] = countSender + countbody + countrecipient;
     return row;
   });
-  var wordArr = [];
-  var numArr = [];
-  var emptyArr = [];
+  const wordArr = [];
+  const numArr = [];
+  const emptyArr = [];
   data.forEach((el) => {
     if (Number(el.email.name.charAt(0))) {
       numArr.push(el);
@@ -162,8 +195,8 @@ function sortDatabase(database) {
   wordArr.sort((a, b) => b.field.total - a.field.total);
   numArr.sort((a, b) => a - b);
   emptyArr.sort((a, b) => b.field.total - a.field.total);
-  let dataend = wordArr.concat(numArr);
-  let sorted = dataend.concat(emptyArr);
+  const dataend = wordArr.concat(numArr);
+  const sorted = dataend.concat(emptyArr);
 
   return [...sorted];
 }
