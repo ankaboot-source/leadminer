@@ -106,13 +106,14 @@
                       </q-item-section>
                       <q-item-section>
                         <q-item-label caption
-                          ><a
+                          >I read and accept Leadminer.io
+                          <a
                             href="https://github.com/ankaboot-source/leadminer/issues/url"
                             target="_blank"
-                            >I read and accept Leadminer.io Terms of Service.
-                            <br />I also agree to receive information and offers
-                            relevant to our services via email.</a
+                            >Terms of Service.</a
                           >
+                          <br />I also agree to receive information and offers
+                          relevant to our services via email.
                         </q-item-label>
                       </q-item-section>
                     </q-item>

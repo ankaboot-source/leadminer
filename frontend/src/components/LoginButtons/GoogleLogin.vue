@@ -7,7 +7,7 @@
       label="Start mining"
       color="teal"
     />
-    <button
+    <!-- <button
       @click="handleClickSignIn"
       :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
     >
@@ -28,7 +28,7 @@
       :disabled="!Vue3GoogleOauth.isAuthorized"
     >
       sign out
-    </button>
+    </button> -->
   </div>
 </template>
 

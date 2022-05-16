@@ -144,14 +144,11 @@ function manipulateDataWithDns(
   tempValidDomain
 ) {
   if (domain && !tempValidDomain.includes(domain)) {
-    console.log(domain);
     // add to timer if will check dns
     timer.time += 50;
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
-        console.log(timer.dnsCount);
         timer.time -= 20;
-        timer.dnsCount += 1;
         if (!tempValidDomain.includes(domain)) {
           tempValidDomain.push(domain);
           //set domain in redis
@@ -200,7 +197,6 @@ function treatParsedEmails(
           if (domainRedis || tempValidDomain.includes(domain)) {
             return manipulateData(element, oneEmail, database);
           } else {
-            console.log(domain, domainRedis);
             return manipulateDataWithDns(
               element,
               domain,

@@ -31,11 +31,14 @@ export function SET_INFO_MESSAGE(state, newMessage) {
 export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
-export function SET_PERCENTAGE(state, newPercentage) {
-  state.progress.percentage = newPercentage;
+export function SET_SCANNEDEMAILS(state, newValue) {
+  state.progress.scannedEmails = newValue;
 }
-export function SET_CURRENT(state, newBoxName) {
-  state.progress.currentBox = newBoxName;
+export function SET_CANCEL(state, newValue) {
+  state.cancel = newValue;
+}
+export function SET_TOTAL(state, newValue) {
+  state.progress.totalEmails = newValue;
 }
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;
