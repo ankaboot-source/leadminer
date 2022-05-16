@@ -16,9 +16,10 @@ export default function () {
     errorMessage: "",
     infoMessage: "",
     progress: {
-      percentage: 0,
-      currentBox: "",
+      scannedEmails: 0,
+      totalEmails: 0,
       status: "",
     },
+    cancel: null,
   };
 }

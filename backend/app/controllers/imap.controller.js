@@ -148,8 +148,7 @@ exports.loginToAccount = (req, res) => {
  * @param  {} res
  */
 exports.getImapBoxes = async (req, res) => {
-  let imap;
-  console.log(req.query);
+  var imap;
   /* eslint-disable */
   var specialChar = `\x01\x01`;
   /* eslint-disable */
@@ -186,7 +185,7 @@ exports.getImapBoxes = async (req, res) => {
   //case: password based authentication
   else {
     try {
-      let imapInfo = await ImapInfo.findByPk(req.params.id);
+      let imapInfo = await ImapInfo.findByPk(req.query.userId);
       imap = new Imap({
         user: imapInfo.email,
         password: req.query.password,
@@ -247,6 +246,10 @@ exports.getImapBoxes = async (req, res) => {
  * @param  {} RedisClient redis client
  */
 exports.getEmails = (req, res, sse, RedisClient) => {
+  req.on("close", () => {
+    console.log("endd");
+    //imap.end();
+  });
   // case : password authentication
   if (req.query.password) {
     // fetch imap from database then mine Emails
@@ -262,7 +265,8 @@ exports.getEmails = (req, res, sse, RedisClient) => {
         RedisClient,
         sse,
         req.query,
-        res
+        res,
+        req
       );
     });
   } // case : token based authentication
@@ -277,7 +281,8 @@ exports.getEmails = (req, res, sse, RedisClient) => {
       RedisClient,
       sse,
       req.query,
-      res
+      res,
+      req
     );
   }
 };

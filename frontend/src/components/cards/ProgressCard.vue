@@ -1,6 +1,13 @@
 <template>
-  <q-card flat class="bg-transparent q-ml-lg" style="width: 100%">
-    <q-circular-progress
+  <q-card flat class="bg-transparent" style="width: 100%">
+    <div class="text-h3 text-teal">
+      <q-badge class="text-caption" color="teal" outline
+        >{{ Emails.length }} collected emails => {{ Emails.length }} valid email
+        addresses over {{ ScannedEmails }} raw email mined over
+        {{ totalEmails }} emails</q-badge
+      >
+    </div>
+    <!-- <q-circular-progress
       show-value
       class="text-white q-ma-md"
       :value="parseFloat(Percentage) * 100"
@@ -63,7 +70,8 @@
           />
         </div>
       </div> </q-circular-progress
-  ></q-card>
+  >--></q-card
+  >
 </template>
 
 <script>
@@ -74,15 +82,15 @@ export default defineComponent({
   props: {
     collectedEmails: Number(0),
     loadingStatusDns: Boolean(false),
-    currentBox: "",
-    percentage: Number(0),
+    scannedEmails: Number(0),
+    totalEmails: Number(0),
   },
   computed: {
-    Percentage: function () {
-      return this.percentage;
+    TotalEmails: function () {
+      return this.totalEmails;
     },
-    CurrentBox: function () {
-      return this.currentBox;
+    ScannedEmails: function () {
+      return this.scannedEmails;
     },
     Emails: function () {
       return this.collectedEmails;

@@ -62,7 +62,7 @@
                 </div>
                 <div class="column col-12">
                   <div class="col-6" />
-                  <div class="q-mt-md q-ml-lg col-12">
+                  <div class="q-mt-md q-ml-lg col-6">
                     <q-btn
                       v-bind:disable="loadingStatusDns"
                       no-caps
@@ -70,25 +70,32 @@
                       label="Collect emails addresses"
                       @click="fetchEmails()"
                     ></q-btn>
+                    <q-btn
+                      class="q-ma-md"
+                      no-caps
+                      color="red-5"
+                      label="Cancel mining"
+                      @click="cancelFetchEmails()"
+                    ></q-btn>
                   </div>
                 </div>
               </div>
             </q-card>
           </div>
           <div class="bg-transparent q-md col">
-            <div class="row q-pa-sm">
+            <div class="row">
               <div class="q-md col-12">
                 <count-card
                   icon_position="left"
                   :collected-emails="Emails.length"
                 />
               </div>
-              <div class="row q-md col-12 text-center">
+              <div class="row q-md col-12">
                 <progress-card
                   :collectedEmails="Emails"
                   :loadingStatusDns="loadingStatusDns"
-                  :percentage="Percentage"
-                  :currentBox="CurrentBox"
+                  :scannedEmails="ScannedEmails"
+                  :totalEmails="TotalEmails"
                 />
               </div>
             </div>
@@ -434,7 +441,7 @@ export default defineComponent({
       render: false,
       dataCleaning: "",
       alreadyExculudes: false,
-      currentBox: "",
+      totalEmails: "",
       all: false,
       emailsinfinit: [],
       emails: [],
@@ -510,14 +517,14 @@ export default defineComponent({
       return [...WithCheckAll];
     },
 
-    Percentage() {
-      return this.progress.percentage;
+    ScannedEmails() {
+      return this.progress.scannedEmails;
     },
     Status() {
       return this.progress.status;
     },
-    CurrentBox() {
-      return this.progress.currentBox;
+    TotalEmails() {
+      return this.progress.totalEmails;
     },
     ProgressLabel() {
       return this.progress.ProgressLabel;
@@ -608,6 +615,12 @@ export default defineComponent({
           return e.email.address.includes(term) || e.email.name.includes(term);
         }
       });
+    },
+    cancelFetchEmails() {
+      let cancelAction = this.$store.getters["example/getStates"].cancel;
+      // console.log(cancelAction.cancel);
+      cancelAction.cancelRequest = true;
+      //console.log(typeof cancelAction.target.cancel());
     },
     fetchEmails() {
       var fields = [];

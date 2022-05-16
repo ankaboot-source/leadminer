@@ -1,13 +1,27 @@
 export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
+  const CancelToken = this.$axios.CancelToken;
+  let sources;
   const source = new EventSource(`${this.$api}/stream/`);
-  console.log(currentState.imap.id);
-  source.addEventListener("box" + currentState.imap.id, (message) => {
-    this.commit("example/SET_PERCENTAGE", 0);
-    this.commit("example/SET_CURRENT", message.data);
+  const ProxyChange = {
+    // eslint-disable-line
+    set: function (target, key, value) {
+      if (value == true) {
+        sources.cancel();
+      }
+      return Reflect.set(...arguments);
+    },
+  };
+
+  source.addEventListener("scanned" + currentState.imap.id, (message) => {
+    //timer.time = true;
+    //
+    //this.commit("example/SET_PERCENTAGE", 0);
+    this.commit("example/SET_SCANNEDEMAILS", message.data);
   });
-  source.addEventListener("percentage" + currentState.imap.id, (message) => {
-    this.commit("example/SET_PERCENTAGE", message.data);
+  source.addEventListener("total" + currentState.imap.id, (message) => {
+    //sources.cancel();
+    this.commit("example/SET_TOTAL", message.data);
   });
   window.addEventListener("beforeunload" + currentState.imap.id, () => {
     source.close();
@@ -20,27 +34,36 @@ export async function getEmails({ context, getters }, { data }) {
   });
 
   return new Promise((resolve, reject) => {
+    sources = CancelToken.source();
+    const timer = new Proxy({ cancelRequest: false }, ProxyChange);
+    this.commit("example/SET_CANCEL", timer);
     this.commit("example/SET_LOADING", true);
     this.commit("example/SET_LOADING_DNS", true);
-    this.commit("example/SET_PERCENTAGE", 0);
+    this.commit("example/SET_SCANNEDEMAILS", 0);
+    this.commit("example/SET_TOTAL", 0);
     this.commit("example/SET_EMAILS", []);
 
     if (currentState.token) {
       this.$axios
-        .get(this.$api + `/imap/1/collectEmails`, {
-          params: {
-            fields: data.fields.split(","),
-            boxes: data.boxes,
-            folders: currentState.boxes,
-            password: currentState.imap.password,
-            userEmail: currentState.imap.email,
-            userId: currentState.imap.id,
-            token: currentState.token,
-          },
-        })
+        .get(
+          this.$api + `/imap/1/collectEmails`,
+
+          {
+            cancelToken: sources.token,
+            params: {
+              fields: data.fields.split(","),
+              boxes: data.boxes,
+              folders: currentState.boxes,
+              password: currentState.imap.password,
+              userEmail: currentState.imap.email,
+              userId: currentState.imap.id,
+              token: currentState.token,
+            },
+          }
+        )
         .then((response) => {
           this.commit("example/SET_LOADING", false);
-          this.commit("example/SET_CURRENT", "");
+          //this.commit("example/SET_CURRENT", "");
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
@@ -57,6 +80,7 @@ export async function getEmails({ context, getters }, { data }) {
               JSON.stringify(currentState.imap.id)
             )}/collectEmails`,
           {
+            cancelToken: sources.token,
             params: {
               fields: data.fields.split(","),
               boxes: data.boxes,
@@ -64,13 +88,13 @@ export async function getEmails({ context, getters }, { data }) {
               password: currentState.imap.password,
               userEmail: currentState.imap.email,
               userId: currentState.imap.id,
-              token: currentState.token,
+              token: "",
             },
           }
         )
         .then((response) => {
           this.commit("example/SET_LOADING", false);
-          this.commit("example/SET_CURRENT", "");
+          //this.commit("example/SET_CURRENT", "");
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
@@ -137,6 +161,7 @@ export function getBoxes({ context, getters }) {
           params: {
             password: currentState.imap.password,
             userEmail: currentState.imap.email, //
+            userId: currentState.imap.id,
           },
         }
       )

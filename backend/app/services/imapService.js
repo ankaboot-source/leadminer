@@ -43,9 +43,13 @@ async function OpenedBoxCallback(
   boxes,
   timer,
   tempValidDomain,
-  query
+  query,
+  req
 ) {
   if (currentbox) {
+    req.on("close", () => {
+      return;
+    });
     const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const sendsForData = helpers.EqualPartsForSocket(
       currentbox.messages.total % 3
@@ -54,27 +58,34 @@ async function OpenedBoxCallback(
       bodies: bodiesTofetch,
       struct: true,
     });
+
+    timer.totalEmails += currentbox.messages.total;
+
     // callback for "message" emitted event
     f.on("message", (msg, seqno) => {
+      timer.scannedEmails += 1;
+
       if (
         (sends.includes(seqno) || sendsForData.includes(seqno)) &&
         currentbox.messages.total > 0
       ) {
-        sse.send(
-          Math.round((seqno * 100) / currentbox.messages.total) / 100,
-          `percentage${query.userId}`
-        );
+        sse.send(timer.scannedEmails, `scanned${query.userId}`);
+        sse.send(timer.totalEmails, `total${query.userId}`);
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
       }
-      if (seqno == currentbox.messages.total) {
-        sse.send(1, `percentage${query.userId}`);
-      }
+      // if (seqno == currentbox.messages.total) {
+      //   sse.send(1, `percentage${query.userId}`);
+      // }
       // callback for "body" emitted event
       const minedEmails = {};
       const bodyData = [];
       let buff = "";
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
+          // req.on("close", () => {
+          //   console.log("endd");
+          //   imap.end();
+          // });
           buff += chunk.toString("utf8");
         });
         // when fetching stream ends we process data
@@ -93,7 +104,8 @@ async function OpenedBoxCallback(
             RedisClient,
             imapInfoEmail,
             timer,
-            tempValidDomain
+            tempValidDomain,
+            req
           );
         }
       });
@@ -102,26 +114,29 @@ async function OpenedBoxCallback(
       ErrorOnFetch(err, imapInfoEmail);
     });
     f.once("end", () => {
-      sse.send(1, "percentage" + query.userId);
+      //sse.send(1, "percentage" + query.userId);
+      sse.send(timer.scannedEmails, `scanned${query.userId}`);
+
+      sse.send(timer.totalEmails, `total${query.userId}`);
 
       setTimeout(() => {
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
       }, 200);
       if (currentbox.name == boxes[boxes.length - 1]) {
+        sse.send(timer.totalEmails, `total${query.userId}`);
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
         setTimeout(() => {
           sse.send(helpers.sortDatabase(database), "data" + query.userId);
           database = null;
           imap.end();
         }, timer.time);
-        console.log(timer.time);
         setTimeout(() => {
           sse.send(true, "dns" + query.userId);
         }, timer.time + 1000);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
-        sse.send(0, "percentage" + query.userId);
+        //sse.send(0, "percentage" + query.userId);
       }
     });
   } else {
@@ -142,11 +157,14 @@ function imapService(
   RedisClient,
   sse,
   query,
-  res
+  res,
+  req
 ) {
   let imapInfoEmail;
   let imap;
+  //console.log(query);
   if (query.token == "") {
+    console.log(query);
     imap = new Imap({
       user: imapInfo.email,
       password: query.password,
@@ -184,6 +202,8 @@ function imapService(
         host: "imap.gmail.com",
         servername: "imap.gmail.com",
       },
+      keepalive: false,
+      debug: console.log,
     });
   }
   imap.connect();
@@ -198,9 +218,20 @@ function imapService(
       return Reflect.set(...arguments);
     },
   };
-  const timer = new Proxy({ time: 9000, dnsCount: 0 }, ProxyChange);
+  const timer = new Proxy(
+    { time: 9000, totalEmails: 0, scannedEmails: 0 },
+    ProxyChange
+  );
   const tempValidDomain = [];
   imap.once("ready", async () => {
+    let forceEnd = false;
+    if (forceEnd == true) {
+      console.log("ended");
+      imap.connect();
+    }
+    req.on("close", () => {
+      forceEnd = true;
+    });
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
         sse.send(box, `box${query.userId}`);
@@ -217,7 +248,8 @@ function imapService(
           boxes,
           timer,
           tempValidDomain,
-          query
+          query,
+          req
         );
       });
     };
@@ -234,9 +266,10 @@ function imapService(
       loopfunc(boxes[0]);
     }
   });
+
   imap.once("error", function (err) {
-    logger.info(
-      `Error occured when collecting emails from imap account with email : ${imapInfo.email}`
+    logger.error(
+      `Error occured when collecting emails from imap account with email : ${err} ${imapInfo.email}`
     );
     res.status(500).send({
       message: "Error when fetching emails.",
@@ -244,6 +277,8 @@ function imapService(
   });
 
   imap.once("end", function () {
+    sse.send(database, "data" + query.userId);
+    sse.send(true, "dns" + query.userId);
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}`
     );
