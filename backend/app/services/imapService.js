@@ -47,9 +47,6 @@ async function OpenedBoxCallback(
   req
 ) {
   if (currentbox) {
-    req.on("close", () => {
-      return;
-    });
     const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const sendsForData = helpers.EqualPartsForSocket(
       currentbox.messages.total % 3
@@ -203,7 +200,6 @@ function imapService(
         servername: "imap.gmail.com",
       },
       keepalive: false,
-      debug: console.log,
     });
   }
   imap.connect();
