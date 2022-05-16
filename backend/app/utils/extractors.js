@@ -37,7 +37,7 @@ const NOREPLY = [
 
 function checkExistence(database, email) {
   return database.some((element) => {
-    return element.email.address === email.address;
+    return element.email.address.toLowerCase() === email.address.toLowerCase();
   });
 }
 
@@ -148,16 +148,18 @@ function manipulateDataWithDns(
     timer.time += 50;
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
-        timer.time -= 20;
-        if (!tempValidDomain.includes(domain)) {
-          tempValidDomain.push(domain);
-          //set domain in redis
-          await client.set(domain, "ok", {
-            EX: 864000,
-          });
+        if (addresses.length > 0) {
+          timer.time -= 20;
+          if (!tempValidDomain.includes(domain)) {
+            tempValidDomain.push(domain);
+            //set domain in redis
+            await client.set(domain, "ok", {
+              EX: 864000,
+            });
+          }
+          // append data when domain is valid
+          return manipulateData(element, oneEmail, database);
         }
-        // append data when domain is valid
-        return manipulateData(element, oneEmail, database);
       }
     });
   }

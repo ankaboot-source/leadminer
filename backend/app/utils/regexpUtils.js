@@ -5,7 +5,7 @@ const regex = new RegExp(
 );
 /* eslint-disable */
 const regexForBody = new RegExp(
-  /([A-Za-z0-9&'^_`{|\}~-]+(?:\.[A-Za-z0-9&'_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/gimu
+  /((?:[A-Za-z])[A-Za-z&^_`{|\}~-]+(?:\.[A-Za-z0-9&_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/gimu
 );
 
 /**
