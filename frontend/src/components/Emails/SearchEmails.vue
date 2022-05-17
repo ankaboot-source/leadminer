@@ -179,6 +179,15 @@
             </template>
             <template #body="props">
               <q-tr :props="props">
+                <q-td key="#" style="width: 3%" :props="props"
+                  ><q-btn
+                    flat
+                    round
+                    size="sm"
+                    color="teal"
+                    icon="content_copy"
+                    @click="CopyToClipboard(props.row.email.address)"
+                /></q-td>
                 <q-td key="Email" style="width: 25%" :props="props">
                   {{
                     props.row.email.address
@@ -238,7 +247,7 @@
 
 <script>
 import { defineComponent, defineAsyncComponent } from "vue";
-import { exportFile, useQuasar } from "quasar";
+import { exportFile, useQuasar, copyToClipboard } from "quasar";
 import { ref } from "vue";
 import { mapState, useStore } from "vuex";
 const infos = [
@@ -258,8 +267,20 @@ const infos = [
     icon: "fa-solid fa-circle-x",
   },
 ];
-const excludedFolders = ["spam", "brouillons", "draft", "trashed", "trash"];
+const excludedFolders = [
+  "spam",
+  "brouillons",
+  "draft",
+  "trashed",
+  "trash",
+  "drafts",
+];
 const columns = [
+  {
+    name: "#",
+    label: "",
+    field: " ",
+  },
   {
     name: "Email",
     align: "left",
@@ -547,15 +568,22 @@ export default defineComponent({
     if (!googleUser) {
       imapUser = this.quasar.sessionStorage.getItem("ImapUser");
     }
+
     if (googleUser) {
-      this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
-      let imap = {
-        id: Math.random().toString(36).substr(2),
-        email: googleUser.user,
-        host: "",
-        port: "",
-      };
-      this.$store.commit("example/SET_IMAP", imap);
+      console.log(googleUser.token.expires_at, Date.now());
+      if (googleUser.token.expires_at > Date.now()) {
+        this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
+        let imap = {
+          id: Math.random().toString(36).substr(2),
+          email: googleUser.user,
+          host: "",
+          port: "",
+        };
+        this.$store.commit("example/SET_IMAP", imap);
+      } else {
+        this.quasar.sessionStorage.remove("ImapUser");
+        this.$router.push("/");
+      } //
     } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
       this.$store.commit("example/SET_PASSWORD", imapUser.password);
@@ -568,6 +596,15 @@ export default defineComponent({
   },
 
   methods: {
+    CopyToClipboard(address) {
+      copyToClipboard(address)
+        .then(() => {
+          // success!
+        })
+        .catch(() => {
+          // fail
+        });
+    },
     isScrolledIntoView(el) {
       let rect = el.getBoundingClientRect();
       let elemTop = rect.top;

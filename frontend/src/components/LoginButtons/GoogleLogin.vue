@@ -65,6 +65,7 @@ export default {
         this.user = googleUser.getBasicProfile().getEmail();
 
         let token = this.$gAuth.instance.currentUser.get().getAuthResponse();
+
         this.quasar.sessionStorage.set("googleUser", {
           token: token,
           user: this.user,
@@ -75,6 +76,7 @@ export default {
           host: "",
           port: "",
         };
+
         this.$store.commit("example/SET_TOKEN", token.access_token);
 
         this.$store.commit("example/SET_IMAP", imap);

@@ -246,10 +246,6 @@ exports.getImapBoxes = async (req, res) => {
  * @param  {} RedisClient redis client
  */
 exports.getEmails = (req, res, sse, RedisClient) => {
-  req.on("close", () => {
-    console.log("endd");
-    //imap.end();
-  });
   // case : password authentication
   if (req.query.password) {
     // fetch imap from database then mine Emails

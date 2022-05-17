@@ -107,7 +107,7 @@ function addEmailType(EmailInfo) {
  * @param  {object} oneEmail Email address and name
  * @param  {Array} database An array that represents a virtual database
  */
-function manipulateData(element, oneEmail, database) {
+function manipulateData(element, oneEmail, database, isScanned) {
   let isExist = checkExistence(database, oneEmail);
   let emailInfo = {
     email: oneEmail,
@@ -118,7 +118,8 @@ function manipulateData(element, oneEmail, database) {
   let EmailAfterType = addEmailType(emailInfo);
   if (!isExist) {
     return addEmailToDatabase(database, EmailAfterType);
-  } else {
+  }
+  if (isScanned) {
     return addFieldsAndFolder(database, EmailAfterType);
   }
 }
@@ -145,11 +146,11 @@ function manipulateDataWithDns(
 ) {
   if (domain && !tempValidDomain.includes(domain)) {
     // add to timer if will check dns
-    timer.time += 50;
+    timer.time += 20;
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
         if (addresses.length > 0) {
-          timer.time -= 20;
+          timer.time -= 10;
           if (!tempValidDomain.includes(domain)) {
             tempValidDomain.push(domain);
             //set domain in redis
@@ -190,14 +191,19 @@ function treatParsedEmails(
           : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
       // check existence in database or data array
       email.map(async (oneEmail) => {
-        if (oneEmail && IsNotNoReply(oneEmail.address, imapEmail)) {
+        if (
+          oneEmail &&
+          IsNotNoReply(oneEmail.address, imapEmail) &&
+          !tempValidDomain.includes(oneEmail.address)
+        ) {
+          tempValidDomain.push(oneEmail.address);
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
           // if domain already stored in cache
           if (domainRedis || tempValidDomain.includes(domain)) {
-            return manipulateData(element, oneEmail, database);
+            return manipulateData(element, oneEmail, database, false);
           } else {
             return manipulateDataWithDns(
               element,
@@ -209,6 +215,13 @@ function treatParsedEmails(
               tempValidDomain
             );
           }
+        }
+        if (
+          oneEmail &&
+          IsNotNoReply(oneEmail.address, imapEmail) &&
+          tempValidDomain.includes(oneEmail.address)
+        ) {
+          return manipulateData(element, oneEmail, database, true);
         }
       });
     }
