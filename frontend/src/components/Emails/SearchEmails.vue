@@ -570,8 +570,8 @@ export default defineComponent({
     }
 
     if (googleUser) {
-      console.log(googleUser.token.expires_at, Date.now());
-      if (googleUser.token.expires_at > Date.now()) {
+      let timeNow = Date.now();
+      if (googleUser.token.expires_at > timeNow) {
         this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
         let imap = {
           id: Math.random().toString(36).substr(2),
