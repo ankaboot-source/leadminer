@@ -568,15 +568,22 @@ export default defineComponent({
     if (!googleUser) {
       imapUser = this.quasar.sessionStorage.getItem("ImapUser");
     }
+
     if (googleUser) {
-      this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
-      let imap = {
-        id: Math.random().toString(36).substr(2),
-        email: googleUser.user,
-        host: "",
-        port: "",
-      };
-      this.$store.commit("example/SET_IMAP", imap);
+      console.log(googleUser.token.expires_at, Date.now());
+      if (googleUser.token.expires_at > Date.now()) {
+        this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
+        let imap = {
+          id: Math.random().toString(36).substr(2),
+          email: googleUser.user,
+          host: "",
+          port: "",
+        };
+        this.$store.commit("example/SET_IMAP", imap);
+      } else {
+        this.quasar.sessionStorage.remove("ImapUser");
+        this.$router.push("/");
+      } //
     } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
       this.$store.commit("example/SET_PASSWORD", imapUser.password);
