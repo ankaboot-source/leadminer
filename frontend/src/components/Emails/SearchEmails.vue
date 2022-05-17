@@ -581,7 +581,7 @@ export default defineComponent({
         };
         this.$store.commit("example/SET_IMAP", imap);
       } else {
-        this.quasar.sessionStorage.remove("ImapUser");
+        this.quasar.sessionStorage.remove("googleUser");
         this.$router.push("/");
       } //
     } else if (imapUser) {
