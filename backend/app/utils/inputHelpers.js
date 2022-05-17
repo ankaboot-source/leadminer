@@ -18,16 +18,16 @@
 //   return result;
 // }
 const casesObject = [
-  [1, 0, 10],
-  [2, 11, 50],
-  [5, 51, 99],
-  [8, 100, 499],
-  [10, 500, 999],
-  [50, 1000, 7999],
-  [70, 8000, 19999],
-  [80, 20000, 60000],
-  [100, 60001, 100000],
-  [200, 100001, 500001],
+  [2, 0, 10],
+  [5, 11, 50],
+  [8, 51, 99],
+  [10, 100, 499],
+  [20, 500, 999],
+  [70, 1000, 7999],
+  [90, 8000, 19999],
+  [150, 20000, 60000],
+  [250, 60001, 100000],
+  [350, 100001, 500001],
 ];
 /**
  * Returns the path to a box(folder), usefull for nested folders.
@@ -194,7 +194,6 @@ function sortDatabase(database) {
   wordArr.sort((a, b) => b.field.total - a.field.total);
   numArr.sort((a, b) => a - b);
   emptyArr.sort((a, b) => b.field.total - a.field.total);
-
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);
 
