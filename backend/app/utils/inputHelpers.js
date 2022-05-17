@@ -194,6 +194,7 @@ function sortDatabase(database) {
   wordArr.sort((a, b) => b.field.total - a.field.total);
   numArr.sort((a, b) => a - b);
   emptyArr.sort((a, b) => b.field.total - a.field.total);
+
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);
 
