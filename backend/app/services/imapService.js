@@ -131,7 +131,7 @@ async function OpenedBoxCallback(
         }, timer.time + 100);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        //        sse.send(helpers.sortDatabase(database), "data" + query.userId);
         //sse.send(0, "percentage" + query.userId);
       }
     });
@@ -139,7 +139,7 @@ async function OpenedBoxCallback(
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(helpers.sortDatabase(database), "data" + query.userId);
+      //sse.send(helpers.sortDatabase(database), "data" + query.userId);
       sse.send(true, "dns" + query.userId);
       imap.end();
     }
