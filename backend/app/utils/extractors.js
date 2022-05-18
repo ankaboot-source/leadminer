@@ -1,4 +1,3 @@
-/* eslint-disable */
 const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
@@ -37,7 +36,7 @@ const NOREPLY = [
 
 function checkExistence(database, email) {
   return database.some((element) => {
-    return element.email.address.toLowerCase() === email.address.toLowerCase();
+    return element.email.address === email.address;
   });
 }
 
@@ -107,7 +106,7 @@ function addEmailType(EmailInfo) {
  * @param  {object} oneEmail Email address and name
  * @param  {Array} database An array that represents a virtual database
  */
-function manipulateData(element, oneEmail, database, isScanned) {
+function manipulateData(element, oneEmail, database) {
   let isExist = checkExistence(database, oneEmail);
   let emailInfo = {
     email: oneEmail,
@@ -118,8 +117,7 @@ function manipulateData(element, oneEmail, database, isScanned) {
   let EmailAfterType = addEmailType(emailInfo);
   if (!isExist) {
     return addEmailToDatabase(database, EmailAfterType);
-  }
-  if (isScanned) {
+  } else {
     return addFieldsAndFolder(database, EmailAfterType);
   }
 }
@@ -146,21 +144,19 @@ function manipulateDataWithDns(
 ) {
   if (domain && !tempValidDomain.includes(domain)) {
     // add to timer if will check dns
-    timer.time += 20;
+    timer.time += 50;
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
-        if (addresses.length > 0) {
-          timer.time -= 10;
-          if (!tempValidDomain.includes(domain)) {
-            tempValidDomain.push(domain);
-            //set domain in redis
-            await client.set(domain, "ok", {
-              EX: 864000,
-            });
-          }
-          // append data when domain is valid
-          return manipulateData(element, oneEmail, database);
+        timer.time -= 20;
+        if (!tempValidDomain.includes(domain)) {
+          tempValidDomain.push(domain);
+          //set domain in redis
+          await client.set(domain, "ok", {
+            EX: 864000,
+          });
         }
+        // append data when domain is valid
+        return manipulateData(element, oneEmail, database);
       }
     });
   }
@@ -191,19 +187,14 @@ function treatParsedEmails(
           : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
       // check existence in database or data array
       email.map(async (oneEmail) => {
-        if (
-          oneEmail &&
-          IsNotNoReply(oneEmail.address, imapEmail) &&
-          !tempValidDomain.includes(oneEmail.address)
-        ) {
-          tempValidDomain.push(oneEmail.address);
+        if (oneEmail && IsNotNoReply(oneEmail.address, imapEmail)) {
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
           // if domain already stored in cache
           if (domainRedis || tempValidDomain.includes(domain)) {
-            return manipulateData(element, oneEmail, database, false);
+            return manipulateData(element, oneEmail, database);
           } else {
             return manipulateDataWithDns(
               element,
@@ -215,13 +206,6 @@ function treatParsedEmails(
               tempValidDomain
             );
           }
-        }
-        if (
-          oneEmail &&
-          IsNotNoReply(oneEmail.address, imapEmail) &&
-          tempValidDomain.includes(oneEmail.address)
-        ) {
-          return manipulateData(element, oneEmail, database, true);
         }
       });
     }
