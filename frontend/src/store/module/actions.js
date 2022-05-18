@@ -1,13 +1,14 @@
 export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
   const CancelToken = this.$axios.CancelToken;
-  let sources;
+  const sources = CancelToken.source();
   const source = new EventSource(`${this.$api}/stream/`);
   const ProxyChange = {
     // eslint-disable-line
     set: function (target, key, value) {
       if (value == true) {
         sources.cancel();
+        console.log("cancel");
       }
       return Reflect.set(...arguments);
     },
@@ -34,7 +35,6 @@ export async function getEmails({ context, getters }, { data }) {
   });
 
   return new Promise((resolve, reject) => {
-    sources = CancelToken.source();
     const timer = new Proxy({ cancelRequest: false }, ProxyChange);
     this.commit("example/SET_CANCEL", timer);
     this.commit("example/SET_LOADING", true);
@@ -100,7 +100,9 @@ export async function getEmails({ context, getters }, { data }) {
           resolve(response);
         })
         .catch((error) => {
-          this.commit("example/SET_ERROR", error.response.data.error);
+          if (error) {
+            this.commit("example/SET_ERROR", error.response.data.error);
+          }
           reject(error);
         });
     }
@@ -121,7 +123,9 @@ export async function signUp({ context, state }, { data }) {
         resolve(response);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", error.response.data.error);
+        if (error) {
+          this.commit("example/SET_ERROR", error.response.data.error);
+        }
         reject(error);
         //this.commit("example/SET_ERROR", error.response.data.message);
       });
@@ -143,7 +147,9 @@ export async function signIn({ context, state }, { data }) {
         resolve(response);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", error.response.data.error);
+        if (error) {
+          this.commit("example/SET_ERROR", error.response.data.error);
+        }
         reject(error);
       });
   });

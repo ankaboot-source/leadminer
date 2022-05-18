@@ -21,13 +21,13 @@ const casesObject = [
   [2, 0, 10],
   [5, 11, 50],
   [8, 51, 99],
-  [20, 100, 499],
-  [70, 500, 999],
-  [90, 1000, 7999],
-  [150, 8000, 19999],
+  [10, 100, 499],
+  [20, 500, 999],
+  [50, 1000, 7999],
+  [100, 8000, 19999],
   [200, 20000, 60000],
-  [350, 60001, 100000],
-  [450, 100001, 500001],
+  [300, 60001, 100000],
+  [400, 100001, 500001],
 ];
 /**
  * Returns the path to a box(folder), usefull for nested folders.
@@ -178,7 +178,6 @@ function sortDatabase(database) {
   const numArr = [];
   const emptyArr = [];
   data.forEach((el) => {
-    console.log(el);
     if (Number(el.email.name.charAt(0))) {
       numArr.push(el);
     } else if (el.email.name != "") {
