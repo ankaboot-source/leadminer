@@ -433,7 +433,7 @@ export default defineComponent({
           csv += "\n";
         });
 
-        const status = exportFile("Emails.csv", csv, "text/csv");
+        const status = exportFile("Emails.csv", "\ufeff" + csv, "text/csv");
 
         if (status !== true) {
           $q.notify({
