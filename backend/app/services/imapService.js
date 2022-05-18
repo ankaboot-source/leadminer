@@ -47,10 +47,7 @@ async function OpenedBoxCallback(
   req
 ) {
   if (currentbox) {
-    const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
-    const sendsForData = helpers.EqualPartsForSocket(
-      currentbox.messages.total % 3
-    );
+    let sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
       struct: true,
@@ -62,30 +59,19 @@ async function OpenedBoxCallback(
     f.on("message", (msg, seqno) => {
       timer.scannedEmails += 1;
 
-      if (
-        (sends.includes(seqno) || sendsForData.includes(seqno)) &&
-        currentbox.messages.total > 0
-      ) {
+      if (sends.includes(seqno) && currentbox.messages.total > 0) {
         sse.send(timer.scannedEmails, `scanned${query.userId}`);
         sse.send(timer.totalEmails, `total${query.userId}`);
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
       }
-      // if (seqno == currentbox.messages.total) {
-      //   sse.send(1, `percentage${query.userId}`);
-      // }
+
       // callback for "body" emitted event
       const minedEmails = {};
       const bodyData = [];
       let buff = "";
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
-          // req.on("close", () => {
-          //   console.log("endd");
-          //   imap.end();
-          // });
           buff += chunk.toString("utf8");
-          const used = process.memoryUsage().heapUsed / 1024 / 1024;
-          console.log(`The script uses approximately chunk ${used} MB`);
         });
         // when fetching stream ends we process data
         stream.once("end", () => {
@@ -121,9 +107,8 @@ async function OpenedBoxCallback(
       if (currentbox.name == boxes[boxes.length - 1]) {
         sse.send(timer.totalEmails, `total${query.userId}`);
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
-        setTimeout(() => {
-          sse.send(true, "dns" + query.userId);
-        }, timer.time + 1000);
+        sse.send(true, "dns" + query.userId);
+        imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
         //sse.send(0, "percentage" + query.userId);
@@ -133,7 +118,7 @@ async function OpenedBoxCallback(
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(database, "data" + query.userId);
+      sse.send(helpers.sortDatabase(database), "data" + query.userId);
       sse.send(true, "dns" + query.userId);
       imap.end();
     }
@@ -150,8 +135,6 @@ function imapService(
   res,
   req
 ) {
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  console.log(`The script uses approximately iamaservice ${used} MB`);
   let imapInfoEmail;
   let imap;
   //console.log(query);
@@ -214,14 +197,6 @@ function imapService(
   );
   const tempValidDomain = [];
   imap.once("ready", async () => {
-    let forceEnd = false;
-    if (forceEnd == true) {
-      console.log("ended");
-      imap.connect();
-    }
-    req.on("close", () => {
-      forceEnd = true;
-    });
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
         sse.send(box, `box${query.userId}`);
@@ -267,7 +242,7 @@ function imapService(
   });
 
   imap.once("end", function () {
-    sse.send(database, "data" + query.userId);
+    sse.send(helpers.sortDatabase(database), "data" + query.userId);
     sse.send(true, "dns" + query.userId);
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}`

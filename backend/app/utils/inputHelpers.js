@@ -178,6 +178,7 @@ function sortDatabase(database) {
   const numArr = [];
   const emptyArr = [];
   data.forEach((el) => {
+    console.log(el);
     if (Number(el.email.name.charAt(0))) {
       numArr.push(el);
     } else if (el.email.name != "") {
