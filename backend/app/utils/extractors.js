@@ -140,9 +140,10 @@ function manipulateDataWithDns(
   timer,
   tempValidDomain
 ) {
-  if (domain) {
+  if (domain && !tempValidDomain.includes(domain)) {
     // add to timer if will check dns
     timer.time += 50;
+    tempValidDomain.push(domain);
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
         timer.time -= 20;
@@ -156,6 +157,9 @@ function manipulateDataWithDns(
         return manipulateData(element, oneEmail, database);
       }
     });
+  }
+  if (tempValidDomain.includes(domain)) {
+    return manipulateData(element, oneEmail, database);
   }
 }
 
@@ -190,7 +194,7 @@ function treatParsedEmails(
           // check if already stored in cache (used to speed up domain validation)
           let domainRedis = await client.get(domain);
           // if domain already stored in cache
-          if (domainRedis || tempValidDomain.includes(domain)) {
+          if (domainRedis) {
             return manipulateData(element, oneEmail, database);
           } else {
             return manipulateDataWithDns(

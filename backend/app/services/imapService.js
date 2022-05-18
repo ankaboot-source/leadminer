@@ -69,8 +69,10 @@ async function OpenedBoxCallback(
       const minedEmails = {};
       const bodyData = [];
       let buff = "";
+
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
+          console.log(typeof stream, typeof msg, typeof f);
           buff += chunk.toString("utf8");
         });
         // when fetching stream ends we process data
@@ -81,6 +83,7 @@ async function OpenedBoxCallback(
           minedEmails["body"] = [...new Set(minedEmails["body"])];
         });
       });
+
       msg.once("end", function () {
         if (minedEmails) {
           utilsForDataManipulation.treatParsedEmails(
@@ -95,26 +98,21 @@ async function OpenedBoxCallback(
         }
       });
     });
+
     f.once("error", (err) => {
       ErrorOnFetch(err, imapInfoEmail);
+    });
+    f.on("close", () => {
+      console.log("closeddd");
     });
     f.once("end", () => {
       if (currentbox.name == boxes[boxes.length - 1]) {
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
-        sse.send(true, "dns" + query.userId);
         imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
       }
     });
-  } else {
-    if (boxes[boxes.indexOf(box) + 1]) {
-      store.box = boxes[boxes.indexOf(box) + 1];
-    } else {
-      sse.send(helpers.sortDatabase(database), "data" + query.userId);
-      sse.send(true, "dns" + query.userId);
-      imap.end();
-    }
   }
 }
 
@@ -139,6 +137,7 @@ function imapService(
       port: imapInfo.port,
       tls: true,
       connTimeout: 20000,
+      keepalive: false,
       authTimeout: 7000,
       tlsOptions: {
         port: 993,
@@ -223,6 +222,19 @@ function imapService(
     } else {
       loopfunc(boxes[0]);
     }
+  });
+  req.on("close", () => {
+    console.log("end");
+    imap.destroy();
+    imap.end();
+    sse.send(helpers.sortDatabase(database), "data" + query.userId);
+    sse.send(true, "dns" + query.userId);
+    logger.info(
+      `End collecting emails from imap account with email : ${imapInfo.email}`
+    );
+    res.status(200).send({
+      message: "Done mining emails !",
+    });
   });
 
   imap.once("error", function (err) {

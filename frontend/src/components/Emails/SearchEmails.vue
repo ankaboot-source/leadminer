@@ -657,7 +657,7 @@ export default defineComponent({
       let cancelAction = this.$store.getters["example/getStates"].cancel;
       // console.log(cancelAction.cancel);
       cancelAction.cancelRequest = true;
-      //console.log(typeof cancelAction.target.cancel());
+      console.log(cancelAction);
     },
     fetchEmails() {
       var fields = [];
