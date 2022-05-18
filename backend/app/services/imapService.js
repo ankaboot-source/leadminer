@@ -99,19 +99,12 @@ async function OpenedBoxCallback(
       ErrorOnFetch(err, imapInfoEmail);
     });
     f.once("end", () => {
-      //sse.send(1, "percentage" + query.userId);
-      sse.send(timer.scannedEmails, `scanned${query.userId}`);
-
-      sse.send(timer.totalEmails, `total${query.userId}`);
-
       if (currentbox.name == boxes[boxes.length - 1]) {
-        sse.send(timer.totalEmails, `total${query.userId}`);
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
         sse.send(true, "dns" + query.userId);
         imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
-        //sse.send(0, "percentage" + query.userId);
       }
     });
   } else {

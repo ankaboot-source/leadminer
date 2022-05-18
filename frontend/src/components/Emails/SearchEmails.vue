@@ -74,7 +74,7 @@
                       class="q-ma-md"
                       no-caps
                       color="red-5"
-                      label="Cancel mining"
+                      label="Stop mining"
                       @click="cancelFetchEmails()"
                     ></q-btn>
                   </div>
