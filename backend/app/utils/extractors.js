@@ -111,8 +111,6 @@ function manipulateData(element, oneEmail, database) {
   let emailInfo = {
     email: oneEmail,
     field: { [element]: 1 },
-    folder: ["pending"],
-    msgId: 0,
   };
   let EmailAfterType = addEmailType(emailInfo);
   if (!isExist) {
@@ -142,19 +140,18 @@ function manipulateDataWithDns(
   timer,
   tempValidDomain
 ) {
-  if (domain && !tempValidDomain.includes(domain)) {
+  if (domain) {
     // add to timer if will check dns
     timer.time += 50;
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
         timer.time -= 20;
-        if (!tempValidDomain.includes(domain)) {
-          tempValidDomain.push(domain);
-          //set domain in redis
-          await client.set(domain, "ok", {
-            EX: 864000,
-          });
-        }
+
+        //set domain in redis
+        await client.set(domain, "ok", {
+          EX: 864000,
+        });
+
         // append data when domain is valid
         return manipulateData(element, oneEmail, database);
       }
