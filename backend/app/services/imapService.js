@@ -47,6 +47,9 @@ async function OpenedBoxCallback(
   req
 ) {
   if (currentbox) {
+    logger.info(
+      `Begin mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail} , box length : ${currentbox.messages.total}`
+    );
     let sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
@@ -72,7 +75,6 @@ async function OpenedBoxCallback(
 
       msg.on("body", async function (stream, streamInfo) {
         stream.on("data", (chunk) => {
-          console.log(typeof stream, typeof msg, typeof f);
           buff += chunk.toString("utf8");
         });
         // when fetching stream ends we process data
@@ -106,6 +108,9 @@ async function OpenedBoxCallback(
       console.log("closeddd");
     });
     f.once("end", () => {
+      logger.info(
+        `End mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail}`
+      );
       if (currentbox.name == boxes[boxes.length - 1]) {
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
         imap.end();
@@ -224,17 +229,11 @@ function imapService(
     }
   });
   req.on("close", () => {
-    console.log("end");
     imap.destroy();
     imap.end();
     sse.send(helpers.sortDatabase(database), "data" + query.userId);
     sse.send(true, "dns" + query.userId);
-    logger.info(
-      `End collecting emails from imap account with email : ${imapInfo.email}`
-    );
-    res.status(200).send({
-      message: "Done mining emails !",
-    });
+    logger.info(`Connection Closed (maybe by the user) : ${imapInfo.email}`);
   });
 
   imap.once("error", function (err) {
@@ -250,7 +249,7 @@ function imapService(
     sse.send(helpers.sortDatabase(database), "data" + query.userId);
     sse.send(true, "dns" + query.userId);
     logger.info(
-      `End collecting emails from imap account with email : ${imapInfo.email}`
+      `End collecting emails from imap account with email : ${imapInfo.email}, mined : ${database.length} email addresses`
     );
     res.status(200).send({
       message: "Done mining emails !",
