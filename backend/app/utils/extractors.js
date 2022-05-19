@@ -90,6 +90,10 @@ function addFieldsAndFolder(database, email) {
  * @returns {object} The input with a new appended field called "type"
  */
 function addEmailType(EmailInfo) {
+  const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  console.log(
+    `The script uses approximately ${Math.round(used * 100) / 100} MB`
+  );
   let domain = EmailInfo.email.address.split("@")[1];
   if (disposable.includes(domain)) {
     EmailInfo["type"] = "Disposable email";

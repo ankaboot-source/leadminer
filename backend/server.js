@@ -64,5 +64,4 @@ const PORT = process.env.PORT || 8081;
 server.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}.`);
 });
-
 module.exports = server;

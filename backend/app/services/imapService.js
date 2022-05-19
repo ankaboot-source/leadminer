@@ -60,6 +60,10 @@ async function OpenedBoxCallback(
 
     // callback for "message" emitted event
     f.on("message", (msg, seqno) => {
+      const used = process.memoryUsage().heapUsed / 1024 / 1024;
+      console.log(
+        `The script uses approximately ${Math.round(used * 100) / 100} MB`
+      );
       timer.scannedEmails += 1;
 
       if (sends.includes(seqno) && currentbox.messages.total > 0) {
