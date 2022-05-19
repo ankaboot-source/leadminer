@@ -22,7 +22,7 @@ const casesObject = [
   [5, 11, 50],
   [8, 51, 99],
   [10, 100, 499],
-  [20, 500, 999],
+  [22, 500, 999],
   [50, 1000, 7999],
   [100, 8000, 19999],
   [200, 20000, 60000],
@@ -64,8 +64,8 @@ function getPath(obj, val, path) {
 function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
-  const keys = Object.keys(folders);
-  keys.forEach((key) => {
+  //const keys = Object.keys(folders);
+  Object.keys(folders).forEach((key) => {
     if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
@@ -117,7 +117,7 @@ function EqualPartsForSocket(total) {
     else return false;
   }
   let boxCount = total;
-  const values = [];
+  let values = [];
   let n = 350;
   for (const i of casesObject) {
     if (inRange(boxCount, i[1], i[2])) {

@@ -66,7 +66,7 @@ function IsNotNoReply(oneEmail, imapEmail) {
  */
 function addEmailToDatabase(database, email) {
   database.push(email);
-  return database;
+  //return database;
 }
 /**
  * Add fields and folder to a given email .
@@ -75,14 +75,14 @@ function addEmailToDatabase(database, email) {
  * @returns {Array}
  */
 function addFieldsAndFolder(database, email) {
-  database.map((element) => {
-    if (email.email.address == element.email.address) {
-      Object.keys(element.field).includes(Object.keys(email.field)[0])
-        ? (element.field[Object.keys(email.field)[0]] += 1)
-        : (element.field[Object.keys(email.field)[0]] = 1);
+  for (let i in database) {
+    if (email.email.address == database[i].email.address) {
+      Object.keys(database[i].field).includes(Object.keys(email.field)[0])
+        ? (database[i].field[Object.keys(email.field)[0]] += 1)
+        : (database[i].field[Object.keys(email.field)[0]] = 1);
     }
-  });
-  return database;
+  }
+  //return database;
 }
 /**
  * Adds Email type to EmailInfo by checking against domain type database.
@@ -102,6 +102,7 @@ function addEmailType(EmailInfo) {
   } else {
     EmailInfo["type"] = " Custom domain";
   }
+  delete domain;
   return EmailInfo;
 }
 /**
@@ -116,11 +117,13 @@ function manipulateData(element, oneEmail, database) {
     email: oneEmail,
     field: { [element]: 1 },
   };
-  let EmailAfterType = addEmailType(emailInfo);
+  //let EmailAfterType = addEmailType(emailInfo);
   if (!isExist) {
-    return addEmailToDatabase(database, EmailAfterType);
+    delete isExist;
+    return addEmailToDatabase(database, addEmailType(emailInfo));
   } else {
-    return addFieldsAndFolder(database, EmailAfterType);
+    delete isExist;
+    return addFieldsAndFolder(database, addEmailType(emailInfo));
   }
 }
 
@@ -181,7 +184,7 @@ function treatParsedEmails(
   timer,
   tempValidDomain
 ) {
-  Object.keys(dataTobeStored).map((element) => {
+  Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
       let email =
         element != "body"
@@ -191,7 +194,7 @@ function treatParsedEmails(
             )
           : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
       // check existence in database or data array
-      email.map(async (oneEmail) => {
+      email.forEach(async (oneEmail) => {
         if (oneEmail && IsNotNoReply(oneEmail.address, imapEmail)) {
           // domain to be used for DNS MXrecord check
           let domain = oneEmail.address.split("@")[1];
