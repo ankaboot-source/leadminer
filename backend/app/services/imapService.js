@@ -41,8 +41,6 @@ async function OpenedBoxCallback(
   RedisClient,
   sse,
   boxes,
-  timer,
-  tempValidDomain,
   query,
   req
 ) {
@@ -50,78 +48,81 @@ async function OpenedBoxCallback(
     logger.info(
       `Begin mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail} , box length : ${currentbox.messages.total}`
     );
+    sse.send(currentbox.messages.total, `total${query.userId}`);
     let sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
       struct: true,
     });
 
-    timer.totalEmails += currentbox.messages.total;
-
     // callback for "message" emitted event
     f.on("message", (msg, seqno) => {
       const used = process.memoryUsage().heapUsed / 1024 / 1024;
-      console.log(
-        `The script uses approximately ${Math.round(used * 100) / 100} MB`
-      );
-      timer.scannedEmails += 1;
 
       if (sends.includes(seqno) && currentbox.messages.total > 0) {
-        sse.send(timer.scannedEmails, `scanned${query.userId}`);
-        sse.send(timer.totalEmails, `total${query.userId}`);
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(
+          {
+            data: helpers.sortDatabase(database),
+            scanned:
+              seqno -
+              (sends[sends.indexOf(seqno) - 1]
+                ? sends[sends.indexOf(seqno) - 1]
+                : 0),
+          },
+          "minedEmailsAndScannedEmails" + query.userId
+        );
       }
-
       // callback for "body" emitted event
       const minedEmails = {};
-      const bodyData = [];
-      let buff = "";
 
       msg.on("body", async function (stream, streamInfo) {
+        let buff = "";
         stream.on("data", (chunk) => {
           buff += chunk.toString("utf8");
         });
         // when fetching stream ends we process data
         stream.once("end", () => {
-          bodyData.push(
-            ScanFolders(buff, bodiesTofetch, streamInfo, minedEmails)
-          );
+          ScanFolders(buff, bodiesTofetch, streamInfo, minedEmails);
           minedEmails["body"] = [...new Set(minedEmails["body"])];
         });
       });
 
       msg.once("end", function () {
-        if (minedEmails) {
+        if (Object.keys(minedEmails).length > 0) {
           utilsForDataManipulation.treatParsedEmails(
             minedEmails,
             database,
             RedisClient,
-            imapInfoEmail,
-            timer,
-            tempValidDomain,
-            req
+            imapInfoEmail
           );
         }
       });
     });
 
-    f.once("error", (err) => {
-      ErrorOnFetch(err, imapInfoEmail);
-    });
-    f.on("close", () => {
-      console.log("closeddd");
-    });
     f.once("end", () => {
       logger.info(
         `End mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail}`
       );
+      sse.send(currentbox.name, `scannedBoxes${query.userId}`);
+      // all folders are mined
       if (currentbox.name == boxes[boxes.length - 1]) {
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(true, "dns" + query.userId);
+
         imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
       }
     });
+  } // A parent folder but undefined eg: [Gmail]
+  else {
+    if (boxes[boxes.indexOf(box) + 1]) {
+      store.box = boxes[boxes.indexOf(box) + 1];
+    } else {
+      sse.send(true, "dns" + query.userId);
+
+      imap.end();
+    }
   }
 }
 
@@ -137,7 +138,7 @@ function imapService(
 ) {
   let imapInfoEmail;
   let imap;
-  //console.log(query);
+
   if (query.token == "") {
     imap = new Imap({
       user: imapInfo.email,
@@ -185,22 +186,10 @@ function imapService(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`
   );
   const database = [];
-  // eslint-disable-line
-  const ProxyChange = {
-    // eslint-disable-line
-    set: function (target, key, value) {
-      return Reflect.set(...arguments);
-    },
-  };
-  const timer = new Proxy(
-    { time: 9000, totalEmails: 0, scannedEmails: 0 },
-    ProxyChange
-  );
   const tempValidDomain = [];
   imap.once("ready", async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
-        sse.send(box, `box${query.userId}`);
         OpenedBoxCallback(
           store,
           database,
@@ -212,8 +201,6 @@ function imapService(
           RedisClient,
           sse,
           boxes,
-          timer,
-          tempValidDomain,
           query,
           req
         );
@@ -226,17 +213,20 @@ function imapService(
       },
     };
     const store = new Proxy({}, validator);
+
     if (store.box) {
       loopfunc(store.box);
     } else {
       loopfunc(boxes[0]);
     }
   });
+  //connextion xlosed (end or by user)
   req.on("close", () => {
     imap.destroy();
     imap.end();
     sse.send(helpers.sortDatabase(database), "data" + query.userId);
     sse.send(true, "dns" + query.userId);
+
     logger.info(`Connection Closed (maybe by the user) : ${imapInfo.email}`);
   });
 
@@ -255,6 +245,7 @@ function imapService(
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}, mined : ${database.length} email addresses`
     );
+
     res.status(200).send({
       message: "Done mining emails !",
     });

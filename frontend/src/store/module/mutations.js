@@ -32,13 +32,37 @@ export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
 export function SET_SCANNEDEMAILS(state, newValue) {
-  state.progress.scannedEmails = newValue;
+  if (newValue == "f") {
+    state.progress.scannedEmails = 0;
+  } else {
+    state.progress.scannedEmails += parseInt(newValue);
+  }
+}
+export function SET_SCANNEDBOXES(state, newValue) {
+  if (newValue.length == 0) {
+    state.progress.scannedBoxes = newValue;
+  } else {
+    let boxesArray = [
+      newValue
+        .replace('\\"', '"')
+        .replaceAll('"', "")
+        .substring(newValue.indexOf("/"), newValue.length),
+    ];
+
+    boxesArray.push(...state.progress.scannedBoxes);
+    state.progress.scannedBoxes = [...new Set(boxesArray)];
+    console.log(state.progress.scannedBoxes);
+  }
 }
 export function SET_CANCEL(state, newValue) {
   state.cancel = newValue;
 }
 export function SET_TOTAL(state, newValue) {
-  state.progress.totalEmails = newValue;
+  if (newValue == "f") {
+    state.progress.totalEmails = 0;
+  } else {
+    state.progress.totalEmails += parseInt(newValue);
+  }
 }
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;

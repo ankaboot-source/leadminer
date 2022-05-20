@@ -19,6 +19,7 @@ export default function () {
       scannedEmails: 0,
       totalEmails: 0,
       status: "",
+      scannedBoxes: [],
     },
     cancel: null,
   };

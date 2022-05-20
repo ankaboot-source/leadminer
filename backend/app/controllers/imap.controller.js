@@ -2,7 +2,6 @@ const Imap = require("imap");
 const db = require("../models");
 const ImapInfo = db.imapInfo;
 const logger = require("../utils/logger")(module);
-//const qualificationServices = require('../services/dataQualificationService');
 const UtilsForData = require("../utils/inputHelpers");
 const imapService = require("../services/imapService");
 const xoauth2 = require("xoauth2");

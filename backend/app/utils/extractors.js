@@ -19,6 +19,7 @@ const NOREPLY = [
   "alerts",
   "auto-confirm",
   "ne-pas-repondre",
+  "nepasrepondre",
   "do-not-reply",
   "FeedbackForm",
   "mailermasters",
@@ -90,10 +91,6 @@ function addFieldsAndFolder(database, email) {
  * @returns {object} The input with a new appended field called "type"
  */
 function addEmailType(EmailInfo) {
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  console.log(
-    `The script uses approximately ${Math.round(used * 100) / 100} MB`
-  );
   let domain = EmailInfo.email.address.split("@")[1];
   if (disposable.includes(domain)) {
     EmailInfo["type"] = "Disposable email";
@@ -138,23 +135,11 @@ function manipulateData(element, oneEmail, database) {
  * @param  {timer} timer Timer to wait Dns calls
  * @param  {Array} tempValidDomain Temporary array for valid domain(only alive for one scan) to prevent redis query
  */
-function manipulateDataWithDns(
-  element,
-  domain,
-  oneEmail,
-  database,
-  client,
-  timer,
-  tempValidDomain
-) {
-  if (domain && !tempValidDomain.includes(domain)) {
+function manipulateDataWithDns(element, domain, oneEmail, database, client) {
+  if (domain) {
     // add to timer if will check dns
-    timer.time += 50;
-    tempValidDomain.push(domain);
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
-        timer.time -= 20;
-
         //set domain in redis
         await client.set(domain, "ok", {
           EX: 864000,
@@ -165,9 +150,9 @@ function manipulateDataWithDns(
       }
     });
   }
-  if (tempValidDomain.includes(domain)) {
-    return manipulateData(element, oneEmail, database);
-  }
+  // if (tempValidDomain.includes(domain)) {
+  //   return manipulateData(element, oneEmail, database);
+  // }
 }
 
 /**
@@ -176,14 +161,7 @@ function manipulateDataWithDns(
  * @param  {Array} database An array that represents a virtual database
  * @param  {RedisClientType} client Redis client
  */
-function treatParsedEmails(
-  dataTobeStored,
-  database,
-  client,
-  imapEmail,
-  timer,
-  tempValidDomain
-) {
+function treatParsedEmails(dataTobeStored, database, client, imapEmail) {
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
       let email =
@@ -209,9 +187,7 @@ function treatParsedEmails(
               domain,
               oneEmail,
               database,
-              client,
-              timer,
-              tempValidDomain
+              client
             );
           }
         }

@@ -33,15 +33,12 @@ function extractNameAndEmail(data) {
   let email = data[0].split(",");
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
-      let Emails = emails.trim();
-      let emailAfterRegEx = regex.exec(Emails);
-      let result = getRegExp(emailAfterRegEx);
+      let result = getRegExp(regex.exec(emails.trim()));
       return result;
     });
     return dataWithManyEmails;
   } else {
-    let emailAfterRegEx = regex.exec(email);
-    let result = getRegExp(emailAfterRegEx);
+    let result = getRegExp(regex.exec(email));
     return [result];
   }
 }

@@ -22,8 +22,23 @@
                     :nodes="Boxes"
                     node-key="label"
                     color="teal"
-                    tick-strategy="leaf"
-                  />
+                    tick-strategy="strict"
+                    ><template v-slot:header-generic="prop">
+                      <div class="row items-center">
+                        <q-icon
+                          :name="
+                            Scanned.includes(prop.node.label) ? 'check' : ''
+                          "
+                          color="orange"
+                          size="28px"
+                          class="q-mr-sm"
+                        />
+                        <div class="text-weight-bold text-primary">
+                          {{ prop.node.label }}
+                        </div>
+                      </div>
+                    </template></q-tree
+                  >
                 </div>
                 <div class="col" />
 
@@ -286,16 +301,13 @@ const columns = [
     align: "left",
     label: "Email",
     field: (row) => row.email.address,
-
     sortable: true,
     sort: (a, b) => {
       const domainA = a.split("@")[0];
       const domainB = b.split("@")[0];
-
       return domainA.localeCompare(domainB);
     },
   },
-
   {
     name: "Names",
     align: "left",
@@ -309,7 +321,6 @@ const columns = [
     style: "max-width: 50px",
     headerStyle: "max-width: 50px",
   },
-
   {
     name: "Sender",
     align: "left",
@@ -359,7 +370,6 @@ const columns = [
     field: "status",
   },
 ];
-
 export default defineComponent({
   name: "TableVisits",
   components: {
@@ -368,11 +378,9 @@ export default defineComponent({
       import("../cards/ProgressCard.vue")
     ),
   },
-
   setup() {
     const $q = useQuasar();
     const filter = ref("");
-
     return {
       filter,
       mode: "list",
@@ -432,9 +440,7 @@ export default defineComponent({
           csv += Object.values(row).join(";");
           csv += "\n";
         });
-
         const status = exportFile("Emails.csv", "\ufeff" + csv, "text/csv");
-
         if (status !== true) {
           $q.notify({
             message: "Browser denied file download...",
@@ -505,8 +511,13 @@ export default defineComponent({
       ],
     };
   },
-
   computed: {
+    TickChildren(e) {
+      console.log(e);
+    },
+    Scanned() {
+      return this.progress.scannedBoxes;
+    },
     Emails() {
       if (this.loadingStatusDns) {
         this.emailsinfinit = this.retrievedEmails.slice(0, 20);
@@ -518,6 +529,7 @@ export default defineComponent({
       function printValues(obj, dataThis) {
         for (var key in obj) {
           if (typeof obj[key] === "object") {
+            obj[key]["header"] = "generic";
             printValues(obj[key], dataThis);
           } else {
             if (!excludedFolders.includes(obj[key].toLowerCase())) {
@@ -526,18 +538,16 @@ export default defineComponent({
           }
         }
       }
-
       printValues(this.boxes, this);
 
-      let WithCheckAll = [{ label: "Check all", children: [...this.boxes] }];
-
+      let WithCheckAll = [
+        { label: "Check all", header: "generic", children: [...this.boxes] },
+      ];
       if (selectedB.value.length > 0) {
         this.selectedBoxes = selectedB.value;
       }
-
       return [...WithCheckAll];
     },
-
     ScannedEmails() {
       return this.progress.scannedEmails;
     },
@@ -559,16 +569,13 @@ export default defineComponent({
       "progress",
     ]),
   },
-
   mounted() {
     this.scroll();
-
     const googleUser = this.quasar.sessionStorage.getItem("googleUser");
     let imapUser;
     if (!googleUser) {
       imapUser = this.quasar.sessionStorage.getItem("ImapUser");
     }
-
     if (googleUser) {
       let timeNow = Date.now();
       if (googleUser.token.expires_at > timeNow) {
@@ -594,7 +601,6 @@ export default defineComponent({
     this.boxOptions = this.$store.state.boxes;
     this.renderDialog = true;
   },
-
   methods: {
     CopyToClipboard(address) {
       copyToClipboard(address)
@@ -609,7 +615,6 @@ export default defineComponent({
       let rect = el.getBoundingClientRect();
       let elemTop = rect.top;
       let elemBottom = rect.bottom;
-
       let isVisible = elemTop < window.innerHeight && elemBottom >= 0;
       return isVisible;
     },
@@ -627,7 +632,6 @@ export default defineComponent({
         }
       };
     },
-
     showNotif(msg, color, icon) {
       if (msg && typeof msg != "undefined") {
         this.quasar.notify({
@@ -643,7 +647,6 @@ export default defineComponent({
         });
       }
     },
-
     filterMethod(rows, term) {
       return rows.filter((e) => {
         if (typeof e.email.name == "undefined") {
@@ -675,12 +678,12 @@ export default defineComponent({
         fields = `${this.acceptedBody[0]}`;
       }
       let data = {
-        boxes: this.selectedBoxes,
+        boxes: this.selectedBoxes.filter((e) => e !== "generic"),
         fields: fields,
         folders: bot,
       };
-
       if (this.selectedBoxes.length > 0) {
+        console.log(data.boxes);
         this.$store.dispatch("example/getEmails", { data }).then(() => {
           this.showNotif(
             this.$store.getters["example/getStates"].infoMessage,

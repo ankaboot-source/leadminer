@@ -1,26 +1,8 @@
 /* istanbul ignore file */
-// async function EqualPartsForSocket(total) {
-//   const promise = new Promise((resolve, reject) => {
-//     let boxCount = total;
-//     const values = [];
-//     let n = boxCount > 1000 ? 10 : 5;
-//     while (boxCount > 0 && n > 0) {
-//       const a = Math.floor(boxCount / n);
-//       boxCount -= a;
-//       n--;
-//       values.push(a);
-//     }
-//     const Parts = [];
-//     values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
-//     resolve(Parts);
-//   });
-//   let result = await promise;
-//   return result;
-// }
 const casesObject = [
-  [2, 0, 10],
-  [5, 11, 50],
-  [8, 51, 99],
+  [1, 0, 10],
+  [3, 11, 50],
+  [5, 51, 99],
   [10, 100, 499],
   [22, 500, 999],
   [50, 1000, 7999],

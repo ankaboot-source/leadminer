@@ -8,17 +8,27 @@ export async function getEmails({ context, getters }, { data }) {
     set: function (target, key, value) {
       if (value == true) {
         sources.cancel();
-        console.log("cancel");
       }
       return Reflect.set(...arguments);
     },
   };
 
-  source.addEventListener("scanned" + currentState.imap.id, (message) => {
+  source.addEventListener(
+    "minedEmailsAndScannedEmails" + currentState.imap.id,
+    (message) => {
+      //timer.time = true;
+      let data = JSON.parse(message.data);
+
+      //this.commit("example/SET_PERCENTAGE", 0);
+      this.commit("example/SET_SCANNEDEMAILS", data.scanned);
+      this.commit("example/SET_EMAILS", data.data);
+    }
+  );
+  source.addEventListener("scannedBoxes" + currentState.imap.id, (message) => {
     //timer.time = true;
-    //
+
     //this.commit("example/SET_PERCENTAGE", 0);
-    this.commit("example/SET_SCANNEDEMAILS", message.data);
+    this.commit("example/SET_SCANNEDBOXES", message.data);
   });
   source.addEventListener("total" + currentState.imap.id, (message) => {
     //sources.cancel();
@@ -31,7 +41,11 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
   });
   source.addEventListener("dns" + currentState.imap.id, (message) => {
+    console.log(message.data);
     this.commit("example/SET_LOADING_DNS", false);
+    setTimeout(() => {
+      source.close();
+    }, 100);
   });
 
   return new Promise((resolve, reject) => {
@@ -39,10 +53,10 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_CANCEL", timer);
     this.commit("example/SET_LOADING", true);
     this.commit("example/SET_LOADING_DNS", true);
-    this.commit("example/SET_SCANNEDEMAILS", 0);
-    this.commit("example/SET_TOTAL", 0);
+    this.commit("example/SET_SCANNEDEMAILS", "f");
+    this.commit("example/SET_TOTAL", "f");
     this.commit("example/SET_EMAILS", []);
-
+    this.commit("example/SET_SCANNEDBOXES", []);
     if (currentState.token) {
       this.$axios
         .get(
@@ -62,8 +76,10 @@ export async function getEmails({ context, getters }, { data }) {
           }
         )
         .then((response) => {
+          source.close();
           this.commit("example/SET_LOADING", false);
           //this.commit("example/SET_CURRENT", "");
+          this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
@@ -94,6 +110,7 @@ export async function getEmails({ context, getters }, { data }) {
         )
         .then((response) => {
           this.commit("example/SET_LOADING", false);
+          this.commit("example/SET_LOADING_DNS", false);
           //this.commit("example/SET_CURRENT", "");
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
