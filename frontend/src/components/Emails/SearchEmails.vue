@@ -93,14 +93,15 @@
                     <q-btn
                       v-bind:disable="loadingStatusDns"
                       no-caps
-                      color="teal-5"
+                      :color="loadingStatusDns ? 'grey-2' : 'teal-5'"
                       label="Collect emails addresses"
                       @click="fetchEmails()"
                     ></q-btn>
                     <q-btn
+                      v-bind:disable="!loadingStatusDns"
                       class="q-ma-md"
                       no-caps
-                      color="red-5"
+                      :color="loadingStatusDns ? 'red' : 'grey-6'"
                       label="Stop mining"
                       @click="cancelFetchEmails()"
                     ></q-btn>
