@@ -10,7 +10,7 @@
                 <div class="text-caption" />
               </q-card-section>
               <div class="text-custom row q-pa-sm">
-                <div class="bg-grey-1 border q-pa-md col-6">
+                <div class="bg-grey-2 border q-pa-md col-6">
                   <div class="text-h6 text-bold">Select mailbox folders</div>
                   <q-tree
                     ref="tree"
@@ -22,23 +22,35 @@
                     :nodes="Boxes"
                     node-key="label"
                     color="teal"
-                    tick-strategy="strict"
-                    ><template v-slot:header-generic="prop">
-                      <div class="row items-center">
-                        <q-icon
-                          :name="
-                            Scanned.includes(prop.node.label) ? 'check' : ''
-                          "
-                          color="orange"
-                          size="28px"
-                          class="q-mr-sm"
-                        />
-                        <div class="text-weight-bold text-primary">
-                          {{ prop.node.label }}
+                    tick-strategy="leaf"
+                    ><template class="row" v-slot:header-generic="prop">
+                      <div
+                        class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
+                      >
+                        <div class="col-10 text-weight-bold text-primary">
+                          {{ prop.node.label
+                          }}<q-badge
+                            color="orange"
+                            class="q-ml-lg"
+                            rounded
+                            floating
+                            transparent
+                            >{{ prop.node.total }}</q-badge
+                          >
                         </div>
-                      </div>
-                    </template></q-tree
-                  >
+
+                        <div class="col-2">
+                          <q-icon
+                            :name="
+                              Scanned.includes(prop.node.label) ? 'check' : ''
+                            "
+                            color="orange"
+                            size="28px"
+                            class="q-mr-sm"
+                          />
+                        </div>
+                      </div> </template
+                  ></q-tree>
                 </div>
                 <div class="col" />
 
@@ -100,17 +112,18 @@
           <div class="bg-transparent q-md col">
             <div class="row">
               <div class="q-md col-12">
-                <count-card
+                <!-- <count-card
                   icon_position="left"
                   :collected-emails="Emails.length"
-                />
+                /> -->
               </div>
               <div class="row q-md col-12">
                 <progress-card
-                  :collectedEmails="Emails"
+                  :collectedEmails="Emails.length"
                   :loadingStatusDns="loadingStatusDns"
                   :scannedEmails="ScannedEmails"
                   :totalEmails="TotalEmails"
+                  :scannedAddresses="ScannedAddresses"
                 />
               </div>
             </div>
@@ -205,21 +218,17 @@
                 /></q-td>
                 <q-td key="Email" style="width: 25%" :props="props">
                   {{
-                    props.row.email.address
-                      ? props.row.email.address.length > 45
-                        ? props.row.email.address.substring(0, 44).concat("...")
-                        : props.row.email.address
-                      : ""
+                    props.row.email.address.length > 38
+                      ? props.row.email.address.substring(0, 38).concat("...")
+                      : props.row.email.address
                   }}</q-td
                 >
 
                 <q-td key="Names" style="width: 20%" :props="props">
                   {{
-                    props.row.email.name
-                      ? props.row.email.name.length > 30
-                        ? props.row.email.name.substring(0, 38).concat("...")
-                        : props.row.email.name
-                      : ""
+                    props.row.email.name.length > 38
+                      ? props.row.email.name.substring(0, 38).concat("...")
+                      : props.row.email.name
                   }}
                 </q-td>
                 <q-td key="Sender" style="width: 8%" :props="props">
@@ -231,14 +240,15 @@
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
-                <q-td key="Body" style="width: 8%" :props="props">
-                  <q-badge outline color="orange" transparent>
-                    {{ props.row.field.body }}
-                  </q-badge>
-                </q-td>
+
                 <q-td key="Total" style="width: 8%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.field.total }}
+                  </q-badge>
+                </q-td>
+                <q-td key="Body" style="width: 8%" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.field.body }}
                   </q-badge>
                 </q-td>
                 <q-td key="Type" style="width: 10%" :props="props">
@@ -327,7 +337,6 @@ const columns = [
     label: "Sender",
     type: "number",
     field: (row) => row.field.sender,
-    sortable: true,
     sortOrder: "ad",
   },
   {
@@ -336,7 +345,15 @@ const columns = [
     label: "Recipient",
     type: "number",
     field: (row) => row.field.recipient,
-    sortable: true,
+    sortOrder: "ad",
+  },
+
+  {
+    name: "Total",
+    align: "left",
+    label: "Total",
+    type: "number",
+    field: (row) => row.field.total,
     sortOrder: "ad",
   },
   {
@@ -345,16 +362,6 @@ const columns = [
     label: "Body",
     type: "number",
     field: (row) => row.field.body,
-    sortable: true,
-    sortOrder: "ad",
-  },
-  {
-    name: "Total",
-    align: "left",
-    label: "Total",
-    type: "number",
-    field: (row) => row.field.total,
-    sortable: true,
     sortOrder: "ad",
   },
   {
@@ -512,9 +519,6 @@ export default defineComponent({
     };
   },
   computed: {
-    TickChildren(e) {
-      console.log(e);
-    },
     Scanned() {
       return this.progress.scannedBoxes;
     },
@@ -531,7 +535,8 @@ export default defineComponent({
           if (typeof obj[key] === "object") {
             obj[key]["header"] = "generic";
             printValues(obj[key], dataThis);
-          } else {
+          } else if (typeof obj[key] === "string") {
+            console.log(obj[key]);
             if (!excludedFolders.includes(obj[key].toLowerCase())) {
               selectedB.value.push(obj[key]);
             }
@@ -540,16 +545,18 @@ export default defineComponent({
       }
       printValues(this.boxes, this);
 
-      let WithCheckAll = [
-        { label: "Check all", header: "generic", children: [...this.boxes] },
-      ];
+      let WithCheckAll = [{ label: "Check all", children: [...this.boxes] }];
       if (selectedB.value.length > 0) {
         this.selectedBoxes = selectedB.value;
       }
+
       return [...WithCheckAll];
     },
     ScannedEmails() {
       return this.progress.scannedEmails;
+    },
+    ScannedAddresses() {
+      return this.progress.invalidAddresses;
     },
     Status() {
       return this.progress.status;
@@ -677,13 +684,19 @@ export default defineComponent({
       } else if (this.acceptedHeaders.length == 0) {
         fields = `${this.acceptedBody[0]}`;
       }
+      console.log(this.$refs.tree.getTickedNodes());
+      let tickedFolder = this.$refs.tree
+        .getTickedNodes()
+        .filter((e) => e !== undefined);
+      console.log(tickedFolder);
       let data = {
-        boxes: this.selectedBoxes.filter((e) => e !== "generic"),
+        boxes: tickedFolder.map((ele) => {
+          return ele.label;
+        }),
         fields: fields,
-        folders: bot,
+        folders: bot, //
       };
       if (this.selectedBoxes.length > 0) {
-        console.log(data.boxes);
         this.$store.dispatch("example/getEmails", { data }).then(() => {
           this.showNotif(
             this.$store.getters["example/getStates"].infoMessage,
@@ -697,7 +710,11 @@ export default defineComponent({
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
-        this.$refs.tree.expandAll();
+        setTimeout(() => {
+          this.$refs.tree.expandAll();
+          console.log("Ticked Nodes: ", this.$refs.tree.getTickedNodes());
+        }, 1500);
+
         this.showNotif(
           this.$store.getters["example/getStates"].infoMessage,
           "teal-5",
@@ -715,6 +732,12 @@ export default defineComponent({
 .bborder {
   border: 1px solid transparent;
   border-radius: 12px;
+}
+.borderForBoxes {
+  border: 0.2px solid transparent;
+  background-color: #ffffff;
+  border-radius: 5px;
+  padding-left: 5px;
 }
 .text-Corange {
   color: #fc9958 !important;

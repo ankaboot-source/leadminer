@@ -28,6 +28,7 @@ const NOREPLY = [
   "password",
   "reply-",
   "no_reply",
+  "unsubscribe",
 ];
 /**
  * Check if a given email address is already mined.
@@ -66,8 +67,9 @@ function IsNotNoReply(oneEmail, imapEmail) {
  * @returns {Array}
  */
 function addEmailToDatabase(database, email) {
-  database.push(email);
-  //return database;
+  if (!checkExistence(database, email.email)) {
+    database.push(email);
+  }
 }
 /**
  * Add fields and folder to a given email .
@@ -83,7 +85,6 @@ function addFieldsAndFolder(database, email) {
         : (database[i].field[Object.keys(email.field)[0]] = 1);
     }
   }
-  //return database;
 }
 /**
  * Adds Email type to EmailInfo by checking against domain type database.
@@ -109,18 +110,15 @@ function addEmailType(EmailInfo) {
  * @param  {Array} database An array that represents a virtual database
  */
 function manipulateData(element, oneEmail, database) {
-  let isExist = checkExistence(database, oneEmail);
   let emailInfo = {
     email: oneEmail,
     field: { [element]: 1 },
   };
-  //let EmailAfterType = addEmailType(emailInfo);
-  if (!isExist) {
-    delete isExist;
-    return addEmailToDatabase(database, addEmailType(emailInfo));
+
+  if (!checkExistence(database, oneEmail)) {
+    addEmailToDatabase(database, addEmailType(emailInfo));
   } else {
-    delete isExist;
-    return addFieldsAndFolder(database, addEmailType(emailInfo));
+    addFieldsAndFolder(database, addEmailType(emailInfo));
   }
 }
 
@@ -135,18 +133,40 @@ function manipulateData(element, oneEmail, database) {
  * @param  {timer} timer Timer to wait Dns calls
  * @param  {Array} tempValidDomain Temporary array for valid domain(only alive for one scan) to prevent redis query
  */
-function manipulateDataWithDns(element, domain, oneEmail, database, client) {
-  if (domain) {
+function manipulateDataWithDns(
+  element,
+  domain,
+  oneEmail,
+  database,
+  client,
+  counter,
+  tempArrayValid,
+  tempArrayInValid,
+  isScanned
+) {
+  if (
+    domain &&
+    !tempArrayInValid.includes(domain) &&
+    !tempArrayValid.includes(domain) &&
+    !isScanned.includes(domain)
+  ) {
+    isScanned.push(domain);
     // add to timer if will check dns
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
-        //set domain in redis
-        await client.set(domain, "ok", {
-          EX: 864000,
-        });
+        if (addresses.length > 0) {
+          tempArrayValid.push(domain);
+          //set domain in redis
+          await client.set(domain, "ok", {
+            EX: 864000,
+          });
 
-        // append data when domain is valid
-        return manipulateData(element, oneEmail, database);
+          // append data when domain is valid
+          manipulateData(element, oneEmail, database);
+        }
+      } else {
+        tempArrayInValid.push(domain);
+        counter.invalidAddresses += 1;
       }
     });
   }
@@ -161,7 +181,16 @@ function manipulateDataWithDns(element, domain, oneEmail, database, client) {
  * @param  {Array} database An array that represents a virtual database
  * @param  {RedisClientType} client Redis client
  */
-function treatParsedEmails(dataTobeStored, database, client, imapEmail) {
+function treatParsedEmails(
+  dataTobeStored,
+  database,
+  client,
+  imapEmail,
+  counter,
+  tempArrayValid,
+  tempArrayInValid,
+  isScanned
+) {
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
       let email =
@@ -173,22 +202,32 @@ function treatParsedEmails(dataTobeStored, database, client, imapEmail) {
           : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
       // check existence in database or data array
       email.forEach(async (oneEmail) => {
-        if (oneEmail && IsNotNoReply(oneEmail.address, imapEmail)) {
-          // domain to be used for DNS MXrecord check
+        if (oneEmail) {
           let domain = oneEmail.address.split("@")[1];
-          // check if already stored in cache (used to speed up domain validation)
-          let domainRedis = await client.get(domain);
-          // if domain already stored in cache
-          if (domainRedis) {
-            return manipulateData(element, oneEmail, database);
-          } else {
-            return manipulateDataWithDns(
-              element,
-              domain,
-              oneEmail,
-              database,
-              client
-            );
+          if (
+            IsNotNoReply(oneEmail.address, imapEmail) &&
+            !tempArrayInValid.includes(domain)
+          ) {
+            // check if already stored in cache (used to speed up domain validation)
+            let domainRedis = await client.get(domain);
+            // if domain already stored in cache
+
+            if (domainRedis || tempArrayValid.includes(domain)) {
+              manipulateData(element, oneEmail, database);
+            }
+            if (!tempArrayInValid.includes(domain)) {
+              manipulateDataWithDns(
+                element,
+                domain,
+                oneEmail,
+                database,
+                client,
+                counter,
+                tempArrayValid,
+                tempArrayInValid,
+                isScanned
+              );
+            }
           }
         }
       });

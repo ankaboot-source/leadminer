@@ -42,7 +42,11 @@ async function OpenedBoxCallback(
   sse,
   boxes,
   query,
-  req
+  req,
+  counter,
+  tempArrayValid,
+  tempArrayInValid,
+  isScanned
 ) {
   if (currentbox) {
     logger.info(
@@ -58,7 +62,9 @@ async function OpenedBoxCallback(
     // callback for "message" emitted event
     f.on("message", (msg, seqno) => {
       const used = process.memoryUsage().heapUsed / 1024 / 1024;
-
+      console.log(
+        `The script uses approximately ${Math.round(used * 100) / 100} MB`
+      );
       if (sends.includes(seqno) && currentbox.messages.total > 0) {
         sse.send(
           {
@@ -68,6 +74,7 @@ async function OpenedBoxCallback(
               (sends[sends.indexOf(seqno) - 1]
                 ? sends[sends.indexOf(seqno) - 1]
                 : 0),
+            invalid: counter.invalidAddresses,
           },
           "minedEmailsAndScannedEmails" + query.userId
         );
@@ -93,7 +100,11 @@ async function OpenedBoxCallback(
             minedEmails,
             database,
             RedisClient,
-            imapInfoEmail
+            imapInfoEmail,
+            counter,
+            tempArrayValid,
+            tempArrayInValid,
+            isScanned
           );
         }
       });
@@ -138,7 +149,9 @@ function imapService(
 ) {
   let imapInfoEmail;
   let imap;
-
+  let tempArrayValid = [];
+  let tempArrayInValid = [];
+  let isScanned = [];
   if (query.token == "") {
     imap = new Imap({
       user: imapInfo.email,
@@ -202,10 +215,21 @@ function imapService(
           sse,
           boxes,
           query,
-          req
+          req,
+          counter,
+          tempArrayValid,
+          tempArrayInValid,
+          isScanned
         );
       });
     };
+    const ProxyChange = {
+      // eslint-disable-line
+      set: function (target, key, value) {
+        return Reflect.set(...arguments);
+      },
+    };
+    const counter = new Proxy({ invalidAddresses: 0 }, ProxyChange);
     const validator = {
       set: function (target, key, value) {
         loopfunc(value);
@@ -224,7 +248,7 @@ function imapService(
   req.on("close", () => {
     imap.destroy();
     imap.end();
-    sse.send(helpers.sortDatabase(database), "data" + query.userId);
+    //sse.send(helpers.sortDatabase(database), "data" + query.userId);
     sse.send(true, "dns" + query.userId);
 
     logger.info(`Connection Closed (maybe by the user) : ${imapInfo.email}`);
@@ -240,7 +264,8 @@ function imapService(
   });
 
   imap.once("end", function () {
-    sse.send(helpers.sortDatabase(database), "data" + query.userId);
+    let data = helpers.sortDatabase(database);
+    sse.send(data, "data" + query.userId);
     sse.send(true, "dns" + query.userId);
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}, mined : ${database.length} email addresses`

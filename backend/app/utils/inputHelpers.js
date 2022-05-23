@@ -153,7 +153,7 @@ function sortDatabase(database) {
     row.field["recipient"] = countrecipient;
     row.field["body"] = countbody;
     row.field["sender"] = countSender;
-    row.field["total"] = countSender + countbody + countrecipient;
+    row.field["total"] = countSender + countrecipient;
     return row;
   });
   const wordArr = [];

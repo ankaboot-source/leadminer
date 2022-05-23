@@ -213,8 +213,36 @@ exports.getImapBoxes = async (req, res) => {
     );
     imap.getBoxes("", (err, boxes) => {
       Boxes = UtilsForData.getBoxesAll(boxes);
+      function iterate(obj) {
+        obj.map((key) => {
+          //console.log(obj[key]);
+          if (key.hasOwnProperty("children")) {
+            let name = UtilsForData.getPath({ ...Boxes }, key.label);
+            imap.openBox(name.substring(1), true, (err, box) => {
+              if (box) {
+                key["total"] = box.messages.total;
+              }
+              if (key == obj[obj.length - 1]) {
+                imap.end();
+              }
+            });
+            iterate(key.children);
+          } else {
+            let name = UtilsForData.getPath({ ...Boxes }, key.label);
+            imap.openBox(name.substring(1), true, (err, box) => {
+              if (box) {
+                key["total"] = box.messages.total;
+              }
+              console.log(key == obj[obj.length - 1]);
+              if (key == obj[obj.length - 1]) {
+                imap.end();
+              }
+            });
+          }
+        });
+      }
+      iterate(Boxes);
     });
-    imap.end();
   });
   imap.once("error", (err) => {
     logger.error(

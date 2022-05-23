@@ -16,10 +16,11 @@ export default function () {
     errorMessage: "",
     infoMessage: "",
     progress: {
-      scannedEmails: 0,
-      totalEmails: 0,
+      scannedEmails: Number(0),
+      totalEmails: Number(0),
       status: "",
       scannedBoxes: [],
+      invalidAddresses: Number(0),
     },
     cancel: null,
   };

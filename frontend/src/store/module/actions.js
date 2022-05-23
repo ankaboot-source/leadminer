@@ -18,10 +18,11 @@ export async function getEmails({ context, getters }, { data }) {
     (message) => {
       //timer.time = true;
       let data = JSON.parse(message.data);
-
+      console.log(data);
       //this.commit("example/SET_PERCENTAGE", 0);
       this.commit("example/SET_SCANNEDEMAILS", data.scanned);
       this.commit("example/SET_EMAILS", data.data);
+      this.commit("example/SET_INVALIDADDRESSES", data.invalid);
     }
   );
   source.addEventListener("scannedBoxes" + currentState.imap.id, (message) => {
@@ -55,6 +56,7 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_LOADING_DNS", true);
     this.commit("example/SET_SCANNEDEMAILS", "f");
     this.commit("example/SET_TOTAL", "f");
+    this.commit("example/SET_INVALIDADDRESSES", "f");
     this.commit("example/SET_EMAILS", []);
     this.commit("example/SET_SCANNEDBOXES", []);
     if (currentState.token) {

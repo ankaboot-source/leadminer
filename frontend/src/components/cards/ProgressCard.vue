@@ -2,9 +2,12 @@
   <q-card flat class="bg-transparent" style="width: 100%">
     <div class="text-h3 text-teal">
       <q-badge class="text-caption" color="teal" outline
-        >{{ Emails.length }} collected emails => {{ Emails.length }} valid email
-        addresses over {{ ScannedEmails }} raw email mined over
-        {{ totalEmails }} emails</q-badge
+        >{{ Emails }} legit email address over
+        {{ ScannedAddresses + Emails }} email address mined </q-badge
+      ><br />
+      <q-badge class="text-caption" color="teal-5" outline
+        >{{ ScannedEmails }} emails messages mined so far over
+        {{ TotalEmails - ScannedEmails }} emails to mine</q-badge
       >
     </div>
     <!-- <q-circular-progress
@@ -84,6 +87,7 @@ export default defineComponent({
     loadingStatusDns: Boolean(false),
     scannedEmails: Number(0),
     totalEmails: Number(0),
+    scannedAddresses: Number(0),
   },
   computed: {
     TotalEmails: function () {
@@ -91,6 +95,9 @@ export default defineComponent({
     },
     ScannedEmails: function () {
       return this.scannedEmails;
+    },
+    ScannedAddresses: function () {
+      return this.scannedAddresses;
     },
     Emails: function () {
       return this.collectedEmails;
