@@ -69,7 +69,7 @@ export async function getEmails({ context, getters }, { data }) {
             params: {
               fields: data.fields.split(","),
               boxes: data.boxes,
-              folders: currentState.boxes,
+              folders: data.folders,
               password: currentState.imap.password,
               userEmail: currentState.imap.email,
               userId: currentState.imap.id,
@@ -102,7 +102,7 @@ export async function getEmails({ context, getters }, { data }) {
             params: {
               fields: data.fields.split(","),
               boxes: data.boxes,
-              folders: currentState.boxes,
+              folders: data.folders,
               password: currentState.imap.password,
               userEmail: currentState.imap.email,
               userId: currentState.imap.id,

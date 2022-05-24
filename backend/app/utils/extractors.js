@@ -2,6 +2,7 @@ const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
 const utilsForRegEx = require("./regexpUtils");
+const logger = require("../utils/logger")(module);
 const NOREPLY = [
   "noreply",
   "no-reply",
@@ -13,6 +14,7 @@ const NOREPLY = [
   "notification",
   "send-as-noreply",
   "systemalert",
+  "pasdereponse",
   "mailer-daemon",
   "mail daemon",
   "mailer daemon",
@@ -109,12 +111,16 @@ function addEmailType(EmailInfo) {
  * @param  {object} oneEmail Email address and name
  * @param  {Array} database An array that represents a virtual database
  */
-function manipulateData(element, oneEmail, database) {
+function manipulateData(element, oneEmail, database, folder) {
   let emailInfo = {
     email: oneEmail,
     field: { [element]: 1 },
   };
-
+  if (oneEmail.address.includes("dredine.ladjemi@gmail.com")) {
+    logger.error(
+      `email dredine.ladjemi@gmail.com is under : ${folder.box} ${folder.seqno}`
+    );
+  }
   if (!checkExistence(database, oneEmail)) {
     addEmailToDatabase(database, addEmailType(emailInfo));
   } else {
@@ -142,7 +148,8 @@ function manipulateDataWithDns(
   counter,
   tempArrayValid,
   tempArrayInValid,
-  isScanned
+  isScanned,
+  folder
 ) {
   if (
     domain &&
@@ -162,7 +169,7 @@ function manipulateDataWithDns(
           });
 
           // append data when domain is valid
-          manipulateData(element, oneEmail, database);
+          manipulateData(element, oneEmail, database, folder);
         }
       } else {
         tempArrayInValid.push(domain);
@@ -189,7 +196,8 @@ function treatParsedEmails(
   counter,
   tempArrayValid,
   tempArrayInValid,
-  isScanned
+  isScanned,
+  folder
 ) {
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
@@ -213,7 +221,7 @@ function treatParsedEmails(
             // if domain already stored in cache
 
             if (domainRedis || tempArrayValid.includes(domain)) {
-              manipulateData(element, oneEmail, database);
+              manipulateData(element, oneEmail, database, folder);
             }
             if (!tempArrayInValid.includes(domain)) {
               manipulateDataWithDns(
@@ -225,7 +233,8 @@ function treatParsedEmails(
                 counter,
                 tempArrayValid,
                 tempArrayInValid,
-                isScanned
+                isScanned,
+                folder
               );
             }
           }

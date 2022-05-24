@@ -12,7 +12,9 @@
               <div class="text-custom row q-pa-sm">
                 <div class="bg-grey-2 border q-pa-md col-6">
                   <div class="text-h6 text-bold">Select mailbox folders</div>
+
                   <q-tree
+                    v-if="Boxes.length > 0"
                     ref="tree"
                     v-model:ticked="selectedBoxes"
                     v-model:selected="selected"
@@ -20,10 +22,11 @@
                     :default-expand-all="true"
                     class="col-12 col-sm-6"
                     :nodes="Boxes"
+                    @update:ticked="Ticked"
                     node-key="label"
                     color="teal"
                     tick-strategy="leaf"
-                    ><template class="row" v-slot:header-generic="prop">
+                    ><template class="row" v-slot:default-header="prop">
                       <div
                         class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
                       >
@@ -49,8 +52,8 @@
                             class="q-mr-sm"
                           />
                         </div>
-                      </div> </template
-                  ></q-tree>
+                      </div> </template></q-tree
+                  ><q-spinner-tail v-else color="teal" size="4em" />
                 </div>
                 <div class="col" />
 
@@ -93,7 +96,7 @@
                     <q-btn
                       v-bind:disable="loadingStatusDns"
                       no-caps
-                      :color="loadingStatusDns ? 'grey-2' : 'teal-5'"
+                      :color="loadingStatusDns ? 'grey-6' : 'teal-5'"
                       label="Collect emails addresses"
                       @click="fetchEmails()"
                     ></q-btn>
@@ -276,6 +279,7 @@ import { defineComponent, defineAsyncComponent } from "vue";
 import { exportFile, useQuasar, copyToClipboard } from "quasar";
 import { ref } from "vue";
 import { mapState, useStore } from "vuex";
+import objectScan from "object-scan";
 const infos = [
   {
     text: "Valid mailbox",
@@ -534,19 +538,18 @@ export default defineComponent({
       function printValues(obj, dataThis) {
         for (var key in obj) {
           if (typeof obj[key] === "object") {
-            obj[key]["header"] = "generic";
             printValues(obj[key], dataThis);
           } else if (typeof obj[key] === "string") {
-            console.log(obj[key]);
             if (!excludedFolders.includes(obj[key].toLowerCase())) {
               selectedB.value.push(obj[key]);
             }
           }
         }
       }
+
       printValues(this.boxes, this);
 
-      let WithCheckAll = [{ label: "Check all", children: [...this.boxes] }];
+      let WithCheckAll = [...this.boxes];
       if (selectedB.value.length > 0) {
         this.selectedBoxes = selectedB.value;
       }
@@ -610,6 +613,30 @@ export default defineComponent({
     this.renderDialog = true;
   },
   methods: {
+    Ticked(e) {
+      setTimeout(() => {
+        console.log(
+          objectScan(["**.label"], {
+            joined: true,
+            filterFn: ({ parent, gparent, property, value, context }) => {
+              if (
+                (value, this.$refs.tree.isTicked(value) && value != "Check All")
+              ) {
+                this.selectedBoxes.push(value);
+                console.log(this.selectedBoxes);
+              }
+            },
+          })(this.boxes, { sum: 0 })
+        );
+      }, 250);
+    },
+    isExpanded(value) {
+      if (this.$refs.tree.isExpanded(value)) {
+        return false;
+      } else {
+        return true;
+      }
+    },
     CopyToClipboard(address) {
       copyToClipboard(address)
         .then(() => {
@@ -634,7 +661,7 @@ export default defineComponent({
             ...this.emailsinfinit,
             ...this.retrievedEmails.slice(
               this.emailsinfinit.length,
-              this.emailsinfinit.length + 1
+              this.emailsinfinit.length + 15
             ),
           ];
         }
@@ -671,11 +698,12 @@ export default defineComponent({
       console.log(cancelAction);
     },
     fetchEmails() {
+      console.log(this.selectedBoxes);
       var fields = [];
       var bot = this.boxes;
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
-        fields = "HEADER.FIELDS (FROM TO CC BCC),TEXT";
+        fields = "HEADER,TEXT";
       } else if (this.acceptedHeaders.length != 0) {
         this.acceptedBody.length == 0
           ? (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")})`)
@@ -689,13 +717,11 @@ export default defineComponent({
       let tickedFolder = this.$refs.tree
         .getTickedNodes()
         .filter((e) => e !== undefined);
-      console.log(tickedFolder);
+      console.log(tickedFolder, this.boxes[0].children);
       let data = {
-        boxes: tickedFolder.map((ele) => {
-          return ele.label;
-        }),
+        boxes: this.selectedBoxes.filter((e) => e !== "generic"),
         fields: fields,
-        folders: bot, //
+        folders: this.boxes[0].children, //
       };
       if (this.selectedBoxes.length > 0) {
         this.$store.dispatch("example/getEmails", { data }).then(() => {
@@ -714,7 +740,7 @@ export default defineComponent({
         setTimeout(() => {
           this.$refs.tree.expandAll();
           console.log("Ticked Nodes: ", this.$refs.tree.getTickedNodes());
-        }, 1500);
+        }, 1200);
 
         this.showNotif(
           this.$store.getters["example/getStates"].infoMessage,

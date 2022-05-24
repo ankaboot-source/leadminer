@@ -1,11 +1,11 @@
 <template>
   <q-card flat class="bg-transparent" style="width: 100%">
     <div class="text-h3 text-teal">
-      <q-badge class="text-caption" color="teal" outline
+      <q-badge class="text-h6" color="teal" outline
         >{{ Emails }} legit email address over
         {{ ScannedAddresses + Emails }} email address mined </q-badge
       ><br />
-      <q-badge class="text-caption" color="teal-5" outline
+      <q-badge class="text-h6" color="teal-5" outline
         >{{ ScannedEmails }} emails messages mined so far over
         {{ TotalEmails - ScannedEmails }} emails to mine</q-badge
       >

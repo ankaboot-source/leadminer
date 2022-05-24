@@ -5,6 +5,8 @@ const logger = require("../utils/logger")(module);
 const UtilsForData = require("../utils/inputHelpers");
 const imapService = require("../services/imapService");
 const xoauth2 = require("xoauth2");
+const objectScan = require("object-scan");
+
 /**
  *  Create imap info account.
  * @param  {} req
@@ -213,6 +215,16 @@ exports.getImapBoxes = async (req, res) => {
     );
     imap.getBoxes("", (err, boxes) => {
       Boxes = UtilsForData.getBoxesAll(boxes);
+      // function calculateValues(o) {
+      //   (o.children || []).reduce(function (r, a) {
+      //     console.log(o.total, a);
+      //     o.total += a.total;
+      //     calculateValues(a);
+
+      //     return r + a.total;
+      //   }, o.total);
+      // }
+
       function iterate(obj) {
         obj.map((key) => {
           //console.log(obj[key]);
@@ -221,6 +233,8 @@ exports.getImapBoxes = async (req, res) => {
             imap.openBox(name.substring(1), true, (err, box) => {
               if (box) {
                 key["total"] = box.messages.total;
+              } else {
+                key["total"] = 0;
               }
               if (key == obj[obj.length - 1]) {
                 imap.end();
@@ -232,8 +246,9 @@ exports.getImapBoxes = async (req, res) => {
             imap.openBox(name.substring(1), true, (err, box) => {
               if (box) {
                 key["total"] = box.messages.total;
+              } else {
+                key["total"] = 0;
               }
-              console.log(key == obj[obj.length - 1]);
               if (key == obj[obj.length - 1]) {
                 imap.end();
               }
@@ -254,6 +269,23 @@ exports.getImapBoxes = async (req, res) => {
       `End fetching folders names from imap account with email : ${req.query.userEmail}`
     );
     if (Boxes.length > 0) {
+      console.log(Boxes);
+      let total = objectScan(["**.{total,children}"], {
+        joined: true,
+        filterFn: ({ parent, gparent, property, value, context }) => {
+          if (property == "children") {
+            if (parent) {
+              value.map((element) => {
+                parent.total += element.total;
+              });
+            }
+          }
+          if (property == "total") {
+            context.sum += value;
+          }
+        },
+      })(Boxes, { sum: 0 });
+      Boxes = [{ label: "Check all", children: [...Boxes], total: total.sum }];
       res.status(200).send({
         boxes: Boxes,
         message: "End fetching boxes!",
