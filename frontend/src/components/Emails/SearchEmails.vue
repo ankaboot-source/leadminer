@@ -245,7 +245,7 @@
                   </q-badge>
                 </q-td>
 
-                <q-td key="Total" style="width: 8%" :props="props">
+                <q-td key="Total" style="width: 5%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.field.total }}
                   </q-badge>
@@ -338,7 +338,7 @@ const columns = [
   },
   {
     name: "Sender",
-    align: "left",
+    align: "center",
     label: "Sender",
     type: "number",
     field: (row) => row.field.sender,
@@ -346,7 +346,7 @@ const columns = [
   },
   {
     name: "Recipient",
-    align: "left",
+    align: "center",
     label: "Recipient",
     type: "number",
     field: (row) => row.field.recipient,
@@ -355,15 +355,15 @@ const columns = [
 
   {
     name: "Total",
-    align: "left",
-    label: "Total",
+    align: "center",
+    label: "Total of interactions",
     type: "number",
     field: (row) => row.field.total,
     sortOrder: "ad",
   },
   {
     name: "Body",
-    align: "left",
+    align: "center",
     label: "Body",
     type: "number",
     field: (row) => row.field.body,
@@ -371,13 +371,13 @@ const columns = [
   },
   {
     name: "Type",
-    align: "left",
+    align: "center",
     label: "Type",
     field: "type",
   },
   {
     name: "Status",
-    align: "left",
+    align: "center",
     label: "Status",
     field: "status",
   },
@@ -418,7 +418,7 @@ export default defineComponent({
           return ",";
         }
         let seperator = getListSeparator();
-        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Body;Total;Type\n`;
+        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Body;Type\n`;
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
           let obj = {
@@ -440,10 +440,11 @@ export default defineComponent({
             Reply: Object.keys(element.field).includes("reply-to")
               ? element.field["reply-to"]
               : 0,
+            Total: element.field.total,
             Body: Object.keys(element.field).includes("body")
               ? element.field["body"]
               : 0,
-            Total: element.field.total,
+
             Type: element.type,
           };
           return obj;
