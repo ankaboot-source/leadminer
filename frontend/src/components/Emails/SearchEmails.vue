@@ -492,6 +492,7 @@ export default defineComponent({
       dataCleaning: "",
       alreadyExculudes: false,
       totalEmails: "",
+      cancel: false,
       all: false,
       emailsinfinit: [],
       emails: [],
@@ -717,6 +718,7 @@ export default defineComponent({
       });
     },
     cancelFetchEmails() {
+      this.cancel = true;
       let cancelAction = this.$store.getters["example/getStates"].cancel;
       // console.log(cancelAction.cancel);
       cancelAction.cancelRequest = true;

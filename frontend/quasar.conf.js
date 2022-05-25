@@ -8,8 +8,8 @@
 
 const { configure } = require("quasar/wrappers");
 const { withCtx } = require("vue");
-
 module.exports = configure(function (ctx) {
+  console.log(process.env);
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
     supportTS: false,

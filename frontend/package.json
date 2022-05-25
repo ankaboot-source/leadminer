@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.12.5",
+    "assert": "^2.0.0",
     "axios": "^0.21.4",
     "core-js": "^3.6.5",
     "csv-stringify": "^6.0.5",
@@ -27,7 +28,6 @@
   },
   "devDependencies": {
     "@quasar/app": "^3.3.3",
-    "@vue/cli-plugin-unit-mocha": "^5.0.1",
     "chai": "^4.1.2",
     "eslint": "^8.10.0",
     "eslint-plugin-vue": "^8.5.0"
