@@ -32,7 +32,6 @@ export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
 export function SET_SCANNEDEMAILS(state, newValue) {
-  console.log(state.progress.scannedEmails, newValue);
   if (newValue == "f") {
     state.progress.scannedEmails = 0;
   } else {
