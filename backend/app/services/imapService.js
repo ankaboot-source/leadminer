@@ -64,7 +64,11 @@ async function OpenedBoxCallback(
         sse.send(
           {
             data: helpers.sortDatabase(database),
-            scanned: seqno,
+            scanned:
+              seqno -
+              (sends[sends.indexOf(seqno) - 1]
+                ? sends[sends.indexOf(seqno) - 1]
+                : 0),
             invalid: counter.invalidAddresses,
           },
           "minedEmailsAndScannedEmails" + query.userId
