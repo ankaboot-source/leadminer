@@ -33,12 +33,21 @@
                         <div class="col-10 text-weight-bold text-primary">
                           {{ prop.node.label
                           }}<q-badge
+                            v-if="isExpanded(prop.node.label)"
                             color="orange"
                             class="q-ml-lg"
                             rounded
                             floating
                             transparent
                             >{{ prop.node.total }}</q-badge
+                          ><q-badge
+                            v-else
+                            color="orange"
+                            class="q-ml-lg"
+                            rounded
+                            floating
+                            transparent
+                            >{{ prop.node.totalIndiv }}</q-badge
                           >
                         </div>
 
@@ -123,6 +132,7 @@
               </div>
               <div class="row q-md col-12">
                 <progress-card
+                  v-if="Boxes"
                   :collectedEmails="Emails.length"
                   :loadingStatusDns="loadingStatusDns"
                   :scannedEmails="ScannedEmails"
@@ -567,7 +577,19 @@ export default defineComponent({
       return this.progress.status;
     },
     TotalEmails() {
-      return this.progress.totalEmails;
+      if (this.boxes[0]) {
+        return objectScan(["**.{totalIndiv}"], {
+          joined: true,
+          filterFn: ({ parent, gparent, property, value, context }) => {
+            if (
+              property == "totalIndiv" &&
+              this.selectedBoxes.includes(parent.label)
+            ) {
+              context.sum += value;
+            }
+          },
+        })(this.boxes, { sum: 0 }).sum;
+      }
     },
     ProgressLabel() {
       return this.progress.ProgressLabel;
@@ -616,26 +638,28 @@ export default defineComponent({
   methods: {
     Ticked(e) {
       setTimeout(() => {
-        console.log(
-          objectScan(["**.label"], {
-            joined: true,
-            filterFn: ({ parent, gparent, property, value, context }) => {
-              if (
-                (value, this.$refs.tree.isTicked(value) && value != "Check All")
-              ) {
-                this.selectedBoxes.push(value);
-                console.log(this.selectedBoxes);
-              }
-            },
-          })(this.boxes, { sum: 0 })
-        );
-      }, 250);
+        objectScan(["**.label"], {
+          joined: true,
+          filterFn: ({ parent, gparent, property, value, context }) => {
+            if (
+              (value,
+              this.$refs.tree.isTicked(value) &&
+                value != "Check All" &&
+                !this.selectedBoxes.includes(value))
+            ) {
+              this.selectedBoxes.push(value);
+            }
+          },
+        })(this.boxes, { sum: 0 });
+      }, 150);
     },
     isExpanded(value) {
-      if (this.$refs.tree.isExpanded(value)) {
-        return false;
-      } else {
-        return true;
+      if (this.$refs.tree) {
+        if (this.$refs.tree.isExpanded(value)) {
+          return false;
+        } else {
+          return true;
+        }
       }
     },
     CopyToClipboard(address) {
@@ -696,10 +720,8 @@ export default defineComponent({
       let cancelAction = this.$store.getters["example/getStates"].cancel;
       // console.log(cancelAction.cancel);
       cancelAction.cancelRequest = true;
-      console.log(cancelAction);
     },
     fetchEmails() {
-      console.log(this.selectedBoxes);
       var fields = [];
       var bot = this.boxes;
       //  default if nothing is selected
@@ -714,15 +736,13 @@ export default defineComponent({
       } else if (this.acceptedHeaders.length == 0) {
         fields = `${this.acceptedBody[0]}`;
       }
-      console.log(this.$refs.tree.getTickedNodes());
-      let tickedFolder = this.$refs.tree
-        .getTickedNodes()
-        .filter((e) => e !== undefined);
-      console.log(tickedFolder, this.boxes[0].children);
+
       let data = {
-        boxes: this.selectedBoxes.filter((e) => e !== "generic"),
+        boxes: this.selectedBoxes.filter(
+          (e) => e !== "generic" && e != "Check all"
+        ),
         fields: fields,
-        folders: this.boxes[0].children, //
+        folders: this.boxes[0].children,
       };
       if (this.selectedBoxes.length > 0) {
         this.$store.dispatch("example/getEmails", { data }).then(() => {
@@ -739,9 +759,10 @@ export default defineComponent({
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
         setTimeout(() => {
-          this.$refs.tree.expandAll();
-          console.log("Ticked Nodes: ", this.$refs.tree.getTickedNodes());
-        }, 1200);
+          if (this.$refs.tree) {
+            this.$refs.tree.expandAll();
+          }
+        }, 2000);
 
         this.showNotif(
           this.$store.getters["example/getStates"].infoMessage,

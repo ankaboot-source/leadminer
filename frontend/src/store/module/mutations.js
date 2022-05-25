@@ -32,6 +32,7 @@ export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
 export function SET_SCANNEDEMAILS(state, newValue) {
+  console.log(state.progress.scannedEmails, newValue);
   if (newValue == "f") {
     state.progress.scannedEmails = 0;
   } else {
@@ -58,19 +59,12 @@ export function SET_SCANNEDBOXES(state, newValue) {
 
     boxesArray.push(...state.progress.scannedBoxes);
     state.progress.scannedBoxes = [...new Set(boxesArray)];
-    console.log(state.progress.scannedBoxes);
   }
 }
 export function SET_CANCEL(state, newValue) {
   state.cancel = newValue;
 }
-export function SET_TOTAL(state, newValue) {
-  if (newValue == "f") {
-    state.progress.totalEmails = 0;
-  } else {
-    state.progress.totalEmails += parseInt(newValue);
-  }
-}
+
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;
 }

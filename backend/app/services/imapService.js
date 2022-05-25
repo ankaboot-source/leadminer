@@ -52,7 +52,6 @@ async function OpenedBoxCallback(
     logger.info(
       `Begin mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail} , box length : ${currentbox.messages.total}`
     );
-    sse.send(currentbox.messages.total, `total${query.userId}`);
     let sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
@@ -65,11 +64,7 @@ async function OpenedBoxCallback(
         sse.send(
           {
             data: helpers.sortDatabase(database),
-            scanned:
-              seqno -
-              (sends[sends.indexOf(seqno) - 1]
-                ? sends[sends.indexOf(seqno) - 1]
-                : 0),
+            scanned: seqno,
             invalid: counter.invalidAddresses,
           },
           "minedEmailsAndScannedEmails" + query.userId
@@ -128,7 +123,6 @@ async function OpenedBoxCallback(
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
       sse.send(true, "dns" + query.userId);
-
       imap.end();
     }
   }

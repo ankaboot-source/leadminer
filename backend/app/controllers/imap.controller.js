@@ -273,6 +273,9 @@ exports.getImapBoxes = async (req, res) => {
       let total = objectScan(["**.{total,children}"], {
         joined: true,
         filterFn: ({ parent, gparent, property, value, context }) => {
+          if (property == "total") {
+            parent["totalIndiv"] = parent.total;
+          }
           if (property == "children") {
             if (parent) {
               value.map((element) => {

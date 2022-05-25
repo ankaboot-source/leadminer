@@ -7,7 +7,7 @@
       ><br />
       <q-badge class="text-h6" color="teal-5" outline
         >{{ ScannedEmails }} emails messages mined so far over
-        {{ TotalEmails - ScannedEmails }} emails to mine</q-badge
+        {{ TotalEmails }} emails to mine</q-badge
       >
     </div>
     <!-- <q-circular-progress
