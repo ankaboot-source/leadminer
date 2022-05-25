@@ -215,15 +215,6 @@ exports.getImapBoxes = async (req, res) => {
     );
     imap.getBoxes("", (err, boxes) => {
       Boxes = UtilsForData.getBoxesAll(boxes);
-      // function calculateValues(o) {
-      //   (o.children || []).reduce(function (r, a) {
-      //     console.log(o.total, a);
-      //     o.total += a.total;
-      //     calculateValues(a);
-
-      //     return r + a.total;
-      //   }, o.total);
-      // }
 
       function iterate(obj) {
         obj.map((key) => {

@@ -9,7 +9,6 @@
 const { configure } = require("quasar/wrappers");
 const { withCtx } = require("vue");
 module.exports = configure(function (ctx) {
-  console.log(process.env);
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
     supportTS: false,
@@ -66,8 +65,9 @@ module.exports = configure(function (ctx) {
 
       // https://quasar.dev/quasar-cli/handling-webpack
       // "chain" is a webpack-chain object https://github.com/neutrinojs/webpack-chain
-      chainWebpack(/* chain */) {
-        //
+      chainWebpack(chain) {
+        const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+        chain.plugin("node-polyfill").use(new NodePolyfillPlugin());
       },
     },
 
