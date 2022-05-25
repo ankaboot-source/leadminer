@@ -33,7 +33,6 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_EMAILS", JSON.parse(message.data));
   });
   source.addEventListener("dns" + currentState.imap.id, (message) => {
-    console.log(message.data);
     this.commit("example/SET_LOADING_DNS", false);
     setTimeout(() => {
       source.close();
@@ -144,7 +143,6 @@ export async function signIn({ context, state }, { data }) {
     this.$axios
       .post(this.$api + "/imap/login", data)
       .then((response) => {
-        console.log(response.data);
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);

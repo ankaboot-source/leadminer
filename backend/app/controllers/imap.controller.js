@@ -218,7 +218,6 @@ exports.getImapBoxes = async (req, res) => {
 
       function iterate(obj) {
         obj.map((key) => {
-          //console.log(obj[key]);
           if (key.hasOwnProperty("children")) {
             let name = UtilsForData.getPath({ ...Boxes }, key.label);
             imap.openBox(name.substring(1), true, (err, box) => {
@@ -260,7 +259,6 @@ exports.getImapBoxes = async (req, res) => {
       `End fetching folders names from imap account with email : ${req.query.userEmail}`
     );
     if (Boxes.length > 0) {
-      console.log(Boxes);
       let total = objectScan(["**.{total,children}"], {
         joined: true,
         filterFn: ({ parent, gparent, property, value, context }) => {

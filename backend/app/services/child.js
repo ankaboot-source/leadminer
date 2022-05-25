@@ -20,7 +20,6 @@ const OpenedBoxCallback = async (
     const sendsForData = helpers.EqualPartsForSocket(
       currentbox.messages.total % 3
     );
-    console.log(sends, sendsForData);
 
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
@@ -93,9 +92,7 @@ const OpenedBoxCallback = async (
 
         setTimeout(() => {
           sse.send(helpers.sortDatabase(database), "data" + query.userId);
-          console.log(helpers.sortDatabase(database));
           database = null;
-
           imap.end();
         }, timer.time);
         setTimeout(() => {
