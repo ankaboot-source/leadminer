@@ -259,16 +259,17 @@ function imapService(
   });
 
   imap.once("end", function () {
-    let data = helpers.sortDatabase(database);
-    sse.send(data, "data" + query.userId);
-    sse.send(true, "dns" + query.userId);
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}, mined : ${database.length} email addresses`
     );
-
-    res.status(200).send({
-      message: "Done mining emails !",
-    });
+    let data = helpers.sortDatabase(database);
+    sse.send(data, "data" + query.userId);
+    sse.send(true, "dns" + query.userId);
+    setTimeout(() => {
+      res.status(200).send({
+        message: "Done mining emails !",
+      });
+    }, 1200);
   });
 }
 exports.imapService = imapService;

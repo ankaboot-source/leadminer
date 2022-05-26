@@ -116,7 +116,7 @@ function manipulateData(element, oneEmail, database, folder) {
     email: oneEmail,
     field: { [element]: 1 },
   };
-  if (oneEmail.address.includes("dredine.ladjemi@gmail.com")) {
+  if (oneEmail.address == "dredine.ladjemi@gmail.com") {
     logger.error(
       `email dredine.ladjemi@gmail.com is under : ${folder.box} ${folder.seqno}`
     );

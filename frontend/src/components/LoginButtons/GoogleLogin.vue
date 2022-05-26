@@ -99,7 +99,6 @@ export default {
     async handleClickGetAuthCode() {
       try {
         const authCode = await this.$gAuth.getAuthCode();
-        console.log(authCode);
       } catch (error) {
         //on fail do something
         console.error(error);
