@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>29/29</span>
+                <span class='fraction'>30/35</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>2/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">60% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>3/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>29/29</span>
+                <span class='fraction'>30/35</span>
             </div>
         
             
@@ -121,7 +121,16 @@
 <a name='L56'></a><a href='#L56'>56</a>
 <a name='L57'></a><a href='#L57'>57</a>
 <a name='L58'></a><a href='#L58'>58</a>
-<a name='L59'></a><a href='#L59'>59</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -168,6 +177,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -177,35 +196,34 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = require('express');
-require('dotenv').config();
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const express = require("express");
+require("dotenv").config();
 const app = express();
-const http = require('http');
-const logger = require('./app/utils/logger')(module);
-const SSE = require('express-sse').SSE;
-const redis = require('redis');
+const http = require("http");
+const logger = require("./app/utils/logger")(module);
+const SSE = require("express-sse").SSE;
+const redis = require("redis");
 // initialise sse (server sent events)
 const sse = new SSE();
 const client = redis.createClient(6379);
 app.use((req, res, next) =&gt; {
   // Website you wish to allow to connect
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader("Access-Control-Allow-Origin", "*");
 &nbsp;
   // Request methods you wish to allow
   res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, OPTIONS, PUT, PATCH, DELETE'
+    "Access-Control-Allow-Methods",
+    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
   );
   // Request headers you wish to allow
   res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-Requested-With,content-type'
+    "Access-Control-Allow-Headers",
+    "X-Requested-With,content-type"
   );
   // Set to true if you need the website to include cookies in the requests sent
   // to the API (e.g. in case you use sessions)
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader("Access-Control-Allow-Credentials", true);
   // Pass to next layer of middleware
   next();
 });
@@ -216,26 +234,35 @@ app.use(express.json());
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
-const db = require('./app/models');
+const db = require("./app/models");
 &nbsp;
 db.sequelize.sync();
 client.connect();
 // simple route when calling api.leadminer.io
-app.get('/', (req, res) =&gt; {
-  res.json({ message: 'Welcome to leadminer application.' });
+app.get("/", (req, res) =&gt; {
+  res.json({ message: "Welcome to leadminer application." });
 });
 // attach sse to api/stream endpoint
-app.get('/api/stream', sse.init);
+app.get("/api/stream/", sse.init);
+app.get("/logs", <span class="fstat-no" title="function not covered" >fu</span>nction (req, res, next) {
+  var filePath = <span class="cstat-no" title="statement not covered" >__dirname + "/logs/server.log";</span>
 &nbsp;
+<span class="cstat-no" title="statement not covered" >  res.sendFile(filePath, <span class="fstat-no" title="function not covered" >fu</span>nction (err) {</span>
+<span class="cstat-no" title="statement not covered" >    if (err) {</span>
+<span class="cstat-no" title="statement not covered" >      next(err);</span>
+    } else {
+<span class="cstat-no" title="statement not covered" >      console.log("Sent the logs..");</span>
+    }
+  });
+});
 // The io instance is set in Express so it can be grabbed in a route
-require('./app/routes/imap.routes')(app, sse, client);
+require("./app/routes/imap.routes")(app, sse, client);
 &nbsp;
 // set port, listen for requests
 const PORT = process.env.PORT || 8081;
 server.listen(PORT, () =&gt; {
   logger.info(`Server is running on port ${PORT}.`);
 });
-&nbsp;
 module.exports = server;
 &nbsp;</pre></td></tr></table></pre>
 
@@ -244,7 +271,7 @@ module.exports = server;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at Wed May 11 2022 19:23:45 GMT+0100 (Central European Standard Time)
+                at Fri May 27 2022 17:00:46 GMT+0100 (Central European Standard Time)
             </div>
         <script src="../prettify.js"></script>
         <script>

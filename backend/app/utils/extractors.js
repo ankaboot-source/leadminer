@@ -74,6 +74,35 @@ function addEmailToDatabase(database, email) {
   }
 }
 /**
+ * Format and check if valid time zone of a given date
+ * @param  {object} date Date to be formatted
+ * @example
+ * input : Wed, 11 May 2022 16:54:37 +0100
+ * output : Wednesday, May 11th, 2022 at 14:54:37 PM (in utc time)
+ * @returns {object} Formated date
+ */
+function parseDate(date) {
+  let timezoneOffset = date.split(" ").pop();
+  if (timezoneOffset == "CEST") {
+    date.replace("CEST", "+0200");
+  }
+  const dateFromString = new Date(date);
+  let ISODate = dateFromString.toISOString();
+  return ISODate.substring(0, 10) + " " + ISODate.substring(11, 19);
+}
+
+/**
+ * Compare two dates
+ * @param  {object} date1 First date
+ * @param  {object} date2 Second date
+ * @returns {object} true if date1 is greater than date2, else false
+ */
+function compareDates(date1, date2) {
+  let d1 = Date.parse(date1);
+  let d2 = Date.parse(date2);
+  return d1 > d2;
+}
+/**
  * Add fields and folder to a given email .
  * @param  {Array} database An array that represents a virtual database
  * @param  {object} email A email object
@@ -85,6 +114,9 @@ function addFieldsAndFolder(database, email) {
       Object.keys(database[i].field).includes(Object.keys(email.field)[0])
         ? (database[i].field[Object.keys(email.field)[0]] += 1)
         : (database[i].field[Object.keys(email.field)[0]] = 1);
+      if (compareDates(email.date, database[i].date)) {
+        database[i].date = email.date;
+      }
     }
   }
 }
@@ -100,31 +132,33 @@ function addEmailType(EmailInfo) {
   } else if (freeProviders.includes(domain)) {
     EmailInfo["type"] = "Email provider";
   } else {
-    EmailInfo["type"] = " Custom domain";
+    EmailInfo["type"] = "Custom domain";
   }
   delete domain;
   return EmailInfo;
 }
+
 /**
  * Manipulate data(emails) without checking the dns.
  * @param  {string} element Field (from, cc, bcc..)
  * @param  {object} oneEmail Email address and name
  * @param  {Array} database An array that represents a virtual database
  */
-function manipulateData(element, oneEmail, database, folder) {
+function manipulateData(element, oneEmail, database, folder, messageDate) {
   let emailInfo = {
     email: oneEmail,
     field: { [element]: 1 },
+    date: parseDate(messageDate),
   };
   if (oneEmail.address == "dredine.ladjemi@gmail.com") {
     logger.error(
-      `email dredine.ladjemi@gmail.com is under : ${folder.box} ${folder.seqno}`
+      `email dredine.ladjemi@gmail.com is under : ${folder.box} date :${messageDate}`
     );
   }
   if (!checkExistence(database, oneEmail)) {
     addEmailToDatabase(database, addEmailType(emailInfo));
   } else {
-    addFieldsAndFolder(database, addEmailType(emailInfo));
+    addFieldsAndFolder(database, emailInfo);
   }
 }
 
@@ -149,7 +183,8 @@ function manipulateDataWithDns(
   tempArrayValid,
   tempArrayInValid,
   isScanned,
-  folder
+  folder,
+  messageDate
 ) {
   if (
     domain &&
@@ -169,7 +204,7 @@ function manipulateDataWithDns(
           });
 
           // append data when domain is valid
-          manipulateData(element, oneEmail, database, folder);
+          manipulateData(element, oneEmail, database, folder, messageDate);
         }
       } else {
         tempArrayInValid.push(domain);
@@ -199,6 +234,12 @@ function treatParsedEmails(
   isScanned,
   folder
 ) {
+  let messageDate = "";
+  if (dataTobeStored.date) {
+    messageDate = dataTobeStored.date[0];
+    delete dataTobeStored.date;
+  }
+
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
       let email =
@@ -221,7 +262,7 @@ function treatParsedEmails(
             // if domain already stored in cache
 
             if (domainRedis || tempArrayValid.includes(domain)) {
-              manipulateData(element, oneEmail, database, folder);
+              manipulateData(element, oneEmail, database, folder, messageDate);
             }
             if (!tempArrayInValid.includes(domain)) {
               manipulateDataWithDns(
@@ -234,7 +275,8 @@ function treatParsedEmails(
                 tempArrayValid,
                 tempArrayInValid,
                 isScanned,
-                folder
+                folder,
+                messageDate
               );
             }
           }

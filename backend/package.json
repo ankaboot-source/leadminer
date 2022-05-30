@@ -4,7 +4,7 @@
   "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
-    "test": "nyc --reporter=html --reporter=lcov --reporter=text mocha  --config .mocharc.js --exit",
+    "test": "nyc --reporter=html --reporter=lcov --reporter=text mocha test/**/*.test.js --config .mocharc.js --exit",
     "dev": "node server.js",
     "lint:fix": "eslint --fix --ext app/**"
   },

@@ -13,9 +13,7 @@
     >
       signin
     </button>
-    <button @click="handleClickGetAuthCode" :disabled="!Vue3GoogleOauth.isInit">
-      get authCode
-    </button>
+
 
     <button
       @click="handleClickDisconnect"

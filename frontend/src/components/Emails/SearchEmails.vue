@@ -260,6 +260,11 @@
                     {{ props.row.field.total }}
                   </q-badge>
                 </q-td>
+                <q-td key="Date" style="width: 5%" :props="props">
+                  <q-badge outline color="blue" transparent>
+                    {{ props.row.date.split(" ").join(" at ") }}
+                  </q-badge>
+                </q-td>
                 <q-td key="Body" style="width: 8%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.body }}
@@ -372,6 +377,13 @@ const columns = [
     sortOrder: "ad",
   },
   {
+    name: "Date",
+    align: "center",
+    label: "Date of last interaction",
+    type: "date",
+    field: (row) => row.field.date,
+  },
+  {
     name: "Body",
     align: "center",
     label: "Body",
@@ -416,19 +428,19 @@ export default defineComponent({
       ticked: ref([]),
       expanded: ref([]),
       exportTable(Emails) {
-        function getListSeparator() {
-          var list = ["a", "b"],
-            str;
-          if (list.toLocaleString) {
-            str = list.toLocaleString();
-            if (str.indexOf(";") > 0 && str.indexOf(",") == -1) {
-              return ";";
-            }
-          }
-          return ",";
-        }
-        let seperator = getListSeparator();
-        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Body;Type\n`;
+        // function getListSeparator() {
+        //   var list = ["a", "b"],
+        //     str;
+        //   if (list.toLocaleString) {
+        //     str = list.toLocaleString();
+        //     if (str.indexOf(";") > 0 && str.indexOf(",") == -1) {
+        //       return ";";
+        //     }
+        //   }
+        //   return ",";
+        // }
+        // let seperator = getListSeparator();
+        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Date of last interaction;Body;Type\n`;
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
           let obj = {
@@ -451,6 +463,7 @@ export default defineComponent({
               ? element.field["reply-to"]
               : 0,
             Total: element.field.total,
+            Date: element.date,
             Body: Object.keys(element.field).includes("body")
               ? element.field["body"]
               : 0,
@@ -728,15 +741,15 @@ export default defineComponent({
       var bot = this.boxes;
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
-        fields = "HEADER,TEXT";
+        fields = "HEADER.FIELDS (FROM TO CC BCC REPLY-TO DATE),TEXT";
       } else if (this.acceptedHeaders.length != 0) {
         this.acceptedBody.length == 0
-          ? (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")})`)
-          : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")}),${
+          ? (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")} DATE)`)
+          : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")} DATE),${
               this.acceptedBody[0]
             }`);
       } else if (this.acceptedHeaders.length == 0) {
-        fields = `${this.acceptedBody[0]}`;
+        fields = `HEADER.FIELDS (DATE),${this.acceptedBody[0]}`;
       }
 
       let data = {

@@ -12,7 +12,7 @@ module.exports = {
   exit: false,
   package: "./package.json",
   parallel: false,
-  recursive: false,
+  recursive: true,
   timeout: "100000", // same as "timeout: '2s'"
   // timeout: false, // same as "timeout: 0"
   "trace-warnings": true, // node flags ok

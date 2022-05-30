@@ -1,6 +1,5 @@
 const chai = require("chai"),
-  expect = chai.expect,
-  should = chai.should();
+  expect = chai.expect;
 const extractors = require("../app/utils/extractors");
 const inputHelpers = require("../app/utils/inputHelpers");
 const testData = require("./data/testData.json");
@@ -41,18 +40,80 @@ describe("extractors.IsNotNoReply(oneEmail, imapEmail)", function () {
 });
 describe("extractors.addEmailToDatabase(databaseArray, email)", function () {
   it("should append email object to DatabaseArray", function () {
-    const email = {
-      name: "leadminer-team",
-      address: "leadminer-team@leadminer.io",
+    let email = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@leadminer.io",
+      },
     };
-    const expectedOutput = testData.expectedEmailNameAddress.push({
-      name: "leadminer-team",
+    const expectedOutput = testData.ReadyData;
+    expectedOutput.push({
+      name: "leadminer-teams",
       address: "leadminer-team@leadminer.io",
     });
-    const output = extractors.addEmailToDatabase(
-      testData.expectedEmailNameAddress,
-      email
-    );
-    expect(output).to.have.deep.members(expectedOutput);
+    let Output = testData.ReadyData;
+    extractors.addEmailToDatabase(Output, email);
+
+    expect(expectedOutput).to.have.deep.members(Output);
+  });
+});
+
+describe("extractors.addEmailType(emailInfo)", function () {
+  it("should add 'Email provider' to emailInfo as type ", function () {
+    let email = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@gmail.com",
+      },
+    };
+    const expectedOutput = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@gmail.com",
+      },
+      type: "Email provider",
+    };
+
+    let Output = extractors.addEmailType(email);
+
+    expect([expectedOutput]).to.have.deep.members([Output]);
+  });
+  it("should add 'Disposable email' to emailInfo as type ", function () {
+    let email = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@spamwc.cf",
+      },
+    };
+    const expectedOutput = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@spamwc.cf",
+      },
+      type: "Disposable email",
+    };
+
+    let Output = extractors.addEmailType(email);
+
+    expect([expectedOutput]).to.have.deep.members([Output]);
+  });
+  it("should add 'Custom domain' to emailInfo as type ", function () {
+    let email = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@leadminer.io",
+      },
+    };
+    const expectedOutput = {
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-team@leadminer.io",
+      },
+      type: "Custom domain",
+    };
+
+    let Output = extractors.addEmailType(email);
+
+    expect([expectedOutput]).to.have.deep.members([Output]);
   });
 });

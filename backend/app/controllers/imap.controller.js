@@ -277,7 +277,9 @@ exports.getImapBoxes = async (req, res) => {
           }
         },
       })(Boxes, { sum: 0 });
-      Boxes = [{ label: "Check all", children: [...Boxes], total: total.sum }];
+      Boxes = [
+        { label: req.query.userEmail, children: [...Boxes], total: total.sum },
+      ];
       res.status(200).send({
         boxes: Boxes,
         message: "End fetching boxes!",

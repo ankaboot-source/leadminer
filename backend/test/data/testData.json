@@ -66,5 +66,36 @@
     "maildaemon@leadminer.io",
     "notifications@leadminer.io"
   ],
-  "ReadyData": [{}, {}, {}]
+  "ReadyData": [
+    { "email": { "name": "", "address": "leadminer-te*am@leadm*iner.io" } },
+
+    {
+      "email": {
+        "name": "leadminer team",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+    {
+      "email": {
+        "name": "لغة عربية jhjhd",
+        "address": "azertyuiop!azertyuiop@leadminer.io"
+      }
+    },
+    {
+      "email": {
+        "name": "لغة english عربية",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+
+    {
+      "email": {
+        "name": "русский язык",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+    {
+      "email": { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
+    }
+  ]
 }

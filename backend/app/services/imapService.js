@@ -115,7 +115,6 @@ async function OpenedBoxCallback(
       if (currentbox.name == boxes[boxes.length - 1]) {
         sse.send(helpers.sortDatabase(database), "data" + query.userId);
         sse.send(true, "dns" + query.userId);
-
         imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
@@ -194,7 +193,6 @@ function imapService(
     `Begin collecting emails from imap account with email : ${imapInfo.email}`
   );
   const database = [];
-  const tempValidDomain = [];
   imap.once("ready", async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
