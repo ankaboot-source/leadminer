@@ -219,6 +219,16 @@
                 :disable="loadingStatusDns"
               />
             </template>
+            <template v-slot:header-cell-Date="props">
+              <q-th :props="props">
+                <q-tooltip
+                  class="bg-teal-4 text-caption text-"
+                  anchor="top middle"
+                  self="center middle"
+                  >Date of last interaction with this person</q-tooltip
+                >{{ props.col.label }}
+              </q-th>
+            </template>
             <template #body="props">
               <q-tr :props="props">
                 <q-td key="#" style="width: 3%" :props="props"
@@ -262,7 +272,7 @@
                 </q-td>
                 <q-td key="Date" style="width: 5%" :props="props">
                   <q-badge outline color="blue" transparent>
-                    {{ props.row.date.split(" ").join(" at ") }}
+                    {{ props.row.date }}
                   </q-badge>
                 </q-td>
                 <q-td key="Body" style="width: 8%" :props="props">
@@ -379,7 +389,7 @@ const columns = [
   {
     name: "Date",
     align: "center",
-    label: "Date of last interaction",
+    label: "Recency",
     sortable: true,
     sort: (date1, date2) => {
       var d1 = Date.parse(date1);

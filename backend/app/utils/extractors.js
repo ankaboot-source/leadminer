@@ -2,6 +2,7 @@ const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
 const utilsForRegEx = require("./regexpUtils");
+const { time } = require("console");
 const logger = require("../utils/logger")(module);
 const NOREPLY = [
   "noreply",
@@ -82,13 +83,11 @@ function addEmailToDatabase(database, email) {
  * @returns {object} Formated date
  */
 function parseDate(date) {
-  let timezoneOffset = date.split(" ").pop();
-  if (timezoneOffset == "CEST") {
-    date.replace("CEST", "+0200");
-  }
-  const dateFromString = new Date(date);
+  //let timezoneOffset = date.split(" ").pop();
+  let tempDate = date.replaceAll(/ CEST/g, "+0200").replace(/ UTC-(.*)/i, "");
+  const dateFromString = new Date(tempDate);
   let ISODate = dateFromString.toISOString();
-  return ISODate.substring(0, 10) + " " + ISODate.substring(11, 19);
+  return `${ISODate.substring(0, 10)} \xa0\xa0  ${ISODate.substring(11, 16)}`;
 }
 
 /**
