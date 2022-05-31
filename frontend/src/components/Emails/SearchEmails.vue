@@ -380,8 +380,18 @@ const columns = [
     name: "Date",
     align: "center",
     label: "Date of last interaction",
-    type: "date",
-    field: (row) => row.field.date,
+    sortable: true,
+    sort: (date1, date2) => {
+      var d1 = Date.parse(date1);
+      var d2 = Date.parse(date2);
+      if (d1 < d2) {
+        return 1;
+      } else {
+        return -1;
+      }
+    },
+    field: (row) => row.date,
+    sortOrder: "ad",
   },
   {
     name: "Body",
