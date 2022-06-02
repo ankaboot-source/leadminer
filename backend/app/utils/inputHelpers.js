@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 const casesObject = [
   [1, 0, 10],
   [3, 11, 50],
@@ -99,7 +98,7 @@ function EqualPartsForSocket(total) {
     else return false;
   }
   let boxCount = total;
-  let values = [];
+  const values = [];
   let n = 350;
   for (const i of casesObject) {
     if (inRange(boxCount, i[1], i[2])) {
@@ -127,34 +126,17 @@ function EqualPartsForSocket(total) {
  */
 function sortDatabase(database) {
   const data = database.map((row) => {
-    if (!Object.hasOwnProperty.bind(row.email)("name")) {
-      row.email["name"] = "";
-    } else if (!row.email.name) {
+    if (!row.email?.name) {
       row.email["name"] = "";
     }
-    row.email.name = row.email.name.replace(/"/g, "");
-    row.field["total"] = 0;
-    let countSender = 0;
-    let countbody = 0;
-    let countrecipient = 0;
-    Object.keys(row.field).map((field) => {
-      if (field.includes("from") || field.includes("reply-to")) {
-        countSender += row.field[field];
-      } else if (
-        field.includes("cc") ||
-        field.includes("to") ||
-        field.includes("bcc")
-      ) {
-        countrecipient += row.field[field];
-      } else {
-        countbody += row.field[field];
-      }
-    });
-    row.field["recipient"] = countrecipient;
-    row.field["body"] = countbody;
-    row.field["sender"] = countSender;
-    row.field["total"] = countSender + countrecipient;
-
+    row.field["recipient"] =
+      (row.field?.["cc"] ?? 0) +
+      (row.field?.["bcc"] ?? 0) +
+      (row.field?.["to"] ?? 0);
+    row.field["sender"] =
+      (row.field?.from ?? 0) + (row.field?.["reply-to"] ?? 0);
+    row.field["body"] = row.field?.body ?? 0;
+    row.field["total"] = row.field["sender"] + row.field["recipient"];
     return row;
   });
   const wordArr = [];
@@ -179,7 +161,6 @@ function sortDatabase(database) {
   emptyArr.sort((a, b) => b.field.total - a.field.total);
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);
-
   return [...sorted];
 }
 exports.sortDatabase = sortDatabase;

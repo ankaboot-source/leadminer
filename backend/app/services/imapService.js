@@ -11,7 +11,7 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // &&
   // the current chunk is extracted from body
   if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
-    const body = utilsForRegEx.extractEmailsFromBody(chunk.toString("utf8"));
+    const body = utilsForRegEx.extractEmailsFromBody(chunk);
     if (body) {
       Object.prototype.hasOwnProperty.call(minedEmails, "body")
         ? minedEmails["body"].push(...body)
@@ -20,6 +20,7 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   } else {
     // extract header attributes
     const header = Imap.parseHeader(chunk.toString("utf8"));
+    console.log(header);
     Object.keys(header).map((field) => {
       minedEmails[field] = header[field];
     });
@@ -52,7 +53,7 @@ async function OpenedBoxCallback(
     logger.info(
       `Begin mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail} , box length : ${currentbox.messages.total}`
     );
-    let sends = helpers.EqualPartsForSocket(currentbox.messages.total);
+    const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
     const f = imap.seq.fetch("1:*", {
       bodies: bodiesTofetch,
       struct: true,
@@ -71,7 +72,7 @@ async function OpenedBoxCallback(
                 : 0),
             invalid: counter.invalidAddresses,
           },
-          "minedEmailsAndScannedEmails" + query.userId
+          `minedEmailsAndScannedEmails${query.userId}`
         );
       }
       // callback for "body" emitted event
@@ -80,7 +81,7 @@ async function OpenedBoxCallback(
       msg.on("body", async function (stream, streamInfo) {
         let buff = "";
         stream.on("data", (chunk) => {
-          buff += chunk.toString("utf8");
+          buff += chunk;
         });
         // when fetching stream ends we process data
         stream.once("end", () => {
@@ -113,8 +114,8 @@ async function OpenedBoxCallback(
       sse.send(currentbox.name, `scannedBoxes${query.userId}`);
       // all folders are mined
       if (currentbox.name == boxes[boxes.length - 1]) {
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
-        sse.send(true, "dns" + query.userId);
+        //sse.send(helpers.sortDatabase(database), `data${query.userId}`);
+        sse.send(true, `dns${query.userId}`);
         imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
@@ -125,7 +126,7 @@ async function OpenedBoxCallback(
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(true, "dns" + query.userId);
+      sse.send(true, `dns${query.userId}`);
       imap.end();
     }
   }
@@ -143,9 +144,9 @@ function imapService(
 ) {
   let imapInfoEmail;
   let imap;
-  let tempArrayValid = [];
-  let tempArrayInValid = [];
-  let isScanned = [];
+  const tempArrayValid = [];
+  const tempArrayInValid = [];
+  const isScanned = [];
   if (query.token == "") {
     imap = new Imap({
       user: imapInfo.email,
@@ -242,7 +243,7 @@ function imapService(
     imap.destroy();
     imap.end();
     //sse.send(helpers.sortDatabase(database), "data" + query.userId);
-    sse.send(true, "dns" + query.userId);
+    sse.send(true, `dns${query.userId}`);
 
     logger.info(`Connection Closed (maybe by the user) : ${imapInfo.email}`);
   });
@@ -260,9 +261,10 @@ function imapService(
     logger.info(
       `End collecting emails from imap account with email : ${imapInfo.email}, mined : ${database.length} email addresses`
     );
-    let data = helpers.sortDatabase(database);
-    sse.send(data, "data" + query.userId);
-    sse.send(true, "dns" + query.userId);
+    const data = helpers.sortDatabase(database);
+
+    sse.send(data, `data${query.userId}`);
+    sse.send(true, `dns${query.userId}`);
     setTimeout(() => {
       res.status(200).send({
         message: "Done mining emails !",

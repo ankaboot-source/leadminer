@@ -1,8 +1,6 @@
 const chai = require("chai"),
-  expect = chai.expect,
-  should = chai.should();
+  expect = chai.expect;
 const utilsForRegEx = require("../app/utils/regexpUtils");
-const inputHelpers = require("../app/utils/inputHelpers");
 const testData = require("./data/testData.json");
 
 describe("utilsForRegEx.extractEmailsFromBody(text)", async function () {
@@ -26,21 +24,5 @@ describe("utilsForRegEx.FormatBodyEmail(data)", function () {
     let emails = utilsForRegEx.extractEmailsFromBody(testData.emailBody);
     let output = utilsForRegEx.FormatBodyEmail(emails);
     expect(output).to.have.deep.members(testData.dataForFormat);
-  });
-});
-describe("utils.getPath(folders , folder)", async function () {
-  it("should return path if given a valid folders object", async function () {
-    let output = await inputHelpers.getPath(testData.testPath, "Spam");
-    expect(output.substring(1)).eq("Spam");
-    let output2 = await inputHelpers.getPath(testData.testPath, "test2");
-    expect(output2.substring(1)).eq("INBOX/test/test2");
-  });
-});
-describe("utils.getPath(folders , folder)", async function () {
-  it("should return path if given a valid folders object", async function () {
-    let output = await inputHelpers.getPath(testData.testPath, "Spam");
-    expect(output.substring(1)).eq("Spam");
-    let output2 = await inputHelpers.getPath(testData.testPath, "test2");
-    expect(output2.substring(1)).eq("INBOX/test/test2");
   });
 });

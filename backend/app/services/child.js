@@ -1,4 +1,4 @@
-const helpers = require("../utils/inputHelpers");
+const helpers = require('../utils/inputHelpers');
 const OpenedBoxCallback = async (
   store,
   database,
@@ -21,7 +21,7 @@ const OpenedBoxCallback = async (
       currentbox.messages.total % 3
     );
 
-    const f = imap.seq.fetch("1:*", {
+    const f = imap.seq.fetch('1:*', {
       bodies: bodiesTofetch,
       struct: true,
     });
@@ -29,7 +29,7 @@ const OpenedBoxCallback = async (
     timer.totalEmails += currentbox.messages.total;
 
     // callback for "message" emitted event
-    f.on("message", (msg, seqno) => {
+    f.on('message', (msg, seqno) => {
       timer.scannedEmails += 1;
 
       if (
@@ -38,29 +38,29 @@ const OpenedBoxCallback = async (
       ) {
         sse.send(timer.scannedEmails, `scanned${query.userId}`);
         sse.send(timer.totalEmails, `total${query.userId}`);
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(helpers.sortDatabase(database), `data${  query.userId}`);
       }
 
       const minedEmails = {};
       const bodyData = [];
-      let buff = "";
-      msg.on("body", async function (stream, streamInfo) {
-        stream.on("data", (chunk) => {
+      let buff = '';
+      msg.on('body', async function (stream, streamInfo) {
+        stream.on('data', (chunk) => {
           // req.on("close", () => {
           //   console.log("endd");
           //   imap.end();
           // });
-          buff += chunk.toString("utf8");
+          buff += chunk.toString('utf8');
         });
         // when fetching stream ends we process data
-        stream.once("end", () => {
+        stream.once('end', () => {
           bodyData.push(
             ScanFolders(buff, bodiesTofetch, streamInfo, minedEmails)
           );
-          minedEmails["body"] = [...new Set(minedEmails["body"])];
+          minedEmails['body'] = [...new Set(minedEmails['body'])];
         });
       });
-      msg.once("end", function () {
+      msg.once('end', function () {
         if (minedEmails) {
           utilsForDataManipulation.treatParsedEmails(
             minedEmails,
@@ -74,33 +74,33 @@ const OpenedBoxCallback = async (
         }
       });
     });
-    f.once("error", (err) => {
+    f.once('error', (err) => {
       ErrorOnFetch(err, imapInfoEmail);
     });
-    f.once("end", () => {
+    f.once('end', () => {
       //sse.send(1, "percentage" + query.userId);
       sse.send(timer.scannedEmails, `scanned${query.userId}`);
 
       sse.send(timer.totalEmails, `total${query.userId}`);
 
       setTimeout(() => {
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(helpers.sortDatabase(database), `data${  query.userId}`);
       }, 200);
       if (currentbox.name == boxes[boxes.length - 1]) {
         sse.send(timer.totalEmails, `total${query.userId}`);
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(helpers.sortDatabase(database), `data${  query.userId}`);
 
         setTimeout(() => {
-          sse.send(helpers.sortDatabase(database), "data" + query.userId);
+          sse.send(helpers.sortDatabase(database), `data${  query.userId}`);
           database = null;
           imap.end();
         }, timer.time);
         setTimeout(() => {
-          sse.send(true, "dns" + query.userId);
+          sse.send(true, `dns${  query.userId}`);
         }, timer.time + 100);
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
-        sse.send(helpers.sortDatabase(database), "data" + query.userId);
+        sse.send(helpers.sortDatabase(database), `data${  query.userId}`);
         //sse.send(0, "percentage" + query.userId);
       }
     });
@@ -108,28 +108,28 @@ const OpenedBoxCallback = async (
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(helpers.sortDatabase(database), "data" + query.userId);
-      sse.send(true, "dns" + query.userId);
+      sse.send(helpers.sortDatabase(database), `data${  query.userId}`);
+      sse.send(true, `dns${  query.userId}`);
       imap.end();
     }
   }
 };
 
-process.on("message", (message) => {
-  let store = message.store;
-  let database = message.database;
-  let imap = message.imap;
-  let currentbox = message.currentbox;
-  let box = message.box;
-  let bodiesTofetch = message.bodiesTofetch;
-  let imapInfoEmail = message.imapInfoEmail;
-  let RedisClient = message.RedisClient;
-  let sse = message.sse;
-  let boxes = message.boxes;
-  let timer = message.timer;
-  let tempValidDomain = message.tempValidDomain;
-  let query = message.query;
-  let req = message.req;
+process.on('message', (message) => {
+  const store = message.store;
+  const database = message.database;
+  const imap = message.imap;
+  const currentbox = message.currentbox;
+  const box = message.box;
+  const bodiesTofetch = message.bodiesTofetch;
+  const imapInfoEmail = message.imapInfoEmail;
+  const RedisClient = message.RedisClient;
+  const sse = message.sse;
+  const boxes = message.boxes;
+  const timer = message.timer;
+  const tempValidDomain = message.tempValidDomain;
+  const query = message.query;
+  const req = message.req;
   OpenedBoxCallback(
     store,
     database,

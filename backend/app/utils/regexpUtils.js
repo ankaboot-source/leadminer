@@ -15,7 +15,11 @@ const regexForBody = new RegExp(
  */
 function extractEmailsFromBody(data) {
   let reg = quotedPrintable.decode(data).match(regexForBody);
+
   if (reg) {
+    if (reg.includes("dredine.ladjemi@gmail.com")) {
+      console.log(quotedPrintable.decode(data));
+    }
     return reg;
   }
 }
@@ -27,6 +31,9 @@ function extractEmailsFromBody(data) {
 function extractNameAndEmail(data) {
   const getRegExp = (emailAfterRegEx) => {
     if (emailAfterRegEx && emailAfterRegEx.groups.address.includes("@")) {
+      if (!emailAfterRegEx.groups.name) {
+        emailAfterRegEx.groups.name = "";
+      }
       return emailAfterRegEx.groups;
     }
   };

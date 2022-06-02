@@ -149,7 +149,7 @@ exports.loginToAccount = (req, res) => {
  * @param  {} res
  */
 exports.getImapBoxes = async (req, res) => {
-  var imap;
+  let imap;
   /* eslint-disable */
   var specialChar = `\x01\x01`;
   /* eslint-disable */
@@ -214,7 +214,9 @@ exports.getImapBoxes = async (req, res) => {
       `Begin fetching folders names from imap account with email : ${req.query.userEmail}`
     );
     imap.getBoxes("", (err, boxes) => {
+      console.log(boxes);
       Boxes = UtilsForData.getBoxesAll(boxes);
+      console.log(Boxes);
 
       function iterate(obj) {
         obj.map((key) => {
@@ -305,6 +307,7 @@ exports.getEmails = (req, res, sse, RedisClient) => {
     ImapInfo.findByPk(req.params.id).then((imapInfo) => {
       // data will include all of the data that will be mined from the mailbox.
       let boxes = UtilsForData.getBoxesAndFolders(req.query);
+      console.log(req.query.folders);
       // bodiesTofetch is the query that user sends
       const bodiesTofetch = req.query.fields;
       imapService.imapService(

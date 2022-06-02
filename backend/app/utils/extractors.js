@@ -1,8 +1,8 @@
+/* istanbul ignore else */
 const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
 const utilsForRegEx = require("./regexpUtils");
-const { time } = require("console");
 const logger = require("../utils/logger")(module);
 const NOREPLY = [
   "noreply",
@@ -53,7 +53,7 @@ function checkExistence(database, email) {
  * @returns {boolean}
  */
 function IsNotNoReply(oneEmail, imapEmail) {
-  let noReply = NOREPLY.filter((word) =>
+  const noReply = NOREPLY.filter((word) =>
     oneEmail.toLowerCase().includes(word.toLowerCase())
   );
   if (noReply.length > 0 || oneEmail.includes(imapEmail)) {
@@ -84,10 +84,14 @@ function addEmailToDatabase(database, email) {
  */
 function parseDate(date) {
   //let timezoneOffset = date.split(" ").pop();
-  let tempDate = date.replaceAll(/ CEST/g, "+0200").replace(/ UTC-(.*)/i, "");
+  const tempDate = date
+    .replaceAll(/ CEST-(.*)| CEST/g, "+0200")
+    .replace(/ UTC-(.*)/i, "");
   const dateFromString = new Date(tempDate);
-  let ISODate = dateFromString.toISOString();
-  return `${ISODate.substring(0, 10)} \xa0\xa0  ${ISODate.substring(11, 16)}`;
+  if (isNaN(Date.parse(dateFromString)) == false) {
+    const ISODate = dateFromString.toISOString();
+    return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
+  }
 }
 
 /**
@@ -97,8 +101,9 @@ function parseDate(date) {
  * @returns {object} true if date1 is greater than date2, else false
  */
 function compareDates(date1, date2) {
-  let d1 = Date.parse(date1);
-  let d2 = Date.parse(date2);
+  const d1 = Date.parse(date1);
+  const d2 = Date.parse(date2);
+
   return d1 > d2;
 }
 /**
@@ -108,7 +113,7 @@ function compareDates(date1, date2) {
  * @returns {Array}
  */
 function addFieldsAndFolder(database, email) {
-  for (let i in database) {
+  for (const i in database) {
     if (email.email.address == database[i].email.address) {
       Object.keys(database[i].field).includes(Object.keys(email.field)[0])
         ? (database[i].field[Object.keys(email.field)[0]] += 1)
@@ -125,7 +130,7 @@ function addFieldsAndFolder(database, email) {
  * @returns {object} The input with a new appended field called "type"
  */
 function addEmailType(EmailInfo) {
-  let domain = EmailInfo.email.address.split("@")[1];
+  const domain = EmailInfo.email.address.split("@")[1];
   if (disposable.includes(domain)) {
     EmailInfo["type"] = "Disposable email";
   } else if (freeProviders.includes(domain)) {
@@ -133,7 +138,7 @@ function addEmailType(EmailInfo) {
   } else {
     EmailInfo["type"] = "Custom domain";
   }
-  delete domain;
+
   return EmailInfo;
 }
 
@@ -144,16 +149,11 @@ function addEmailType(EmailInfo) {
  * @param  {Array} database An array that represents a virtual database
  */
 function manipulateData(element, oneEmail, database, folder, messageDate) {
-  let emailInfo = {
+  const emailInfo = {
     email: oneEmail,
     field: { [element]: 1 },
     date: parseDate(messageDate),
   };
-  if (oneEmail.address == "dredine.ladjemi@gmail.com") {
-    logger.error(
-      `email dredine.ladjemi@gmail.com is under : ${folder.box} date :${messageDate}`
-    );
-  }
   if (!checkExistence(database, oneEmail)) {
     addEmailToDatabase(database, addEmailType(emailInfo));
   } else {
@@ -185,6 +185,7 @@ function manipulateDataWithDns(
   folder,
   messageDate
 ) {
+  /* istanbul ignore if */
   if (
     domain &&
     !tempArrayInValid.includes(domain) &&
@@ -241,7 +242,7 @@ function treatParsedEmails(
 
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
-      let email =
+      const email =
         element != "body"
           ? utilsForRegEx.extractNameAndEmail(
               dataTobeStored[element],
@@ -251,19 +252,18 @@ function treatParsedEmails(
       // check existence in database or data array
       email.forEach(async (oneEmail) => {
         if (oneEmail) {
-          let domain = oneEmail.address.split("@")[1];
+          const domain = oneEmail.address.split("@")[1];
           if (
             IsNotNoReply(oneEmail.address, imapEmail) &&
             !tempArrayInValid.includes(domain)
           ) {
             // check if already stored in cache (used to speed up domain validation)
-            let domainRedis = await client.get(domain);
+            const domainRedis = await client.get(domain);
             // if domain already stored in cache
 
             if (domainRedis || tempArrayValid.includes(domain)) {
               manipulateData(element, oneEmail, database, folder, messageDate);
-            }
-            if (!tempArrayInValid.includes(domain)) {
+            } else if (!tempArrayInValid.includes(domain)) {
               manipulateDataWithDns(
                 element,
                 domain,
@@ -290,4 +290,8 @@ exports.addEmailToDatabase = addEmailToDatabase;
 exports.addFieldsAndFolder = addFieldsAndFolder;
 exports.IsNotNoReply = IsNotNoReply;
 exports.addEmailType = addEmailType;
+exports.parseDate = parseDate;
+exports.compareDates = compareDates;
+exports.manipulateData = manipulateData;
+exports.manipulateDataWithDns = manipulateDataWithDns;
 exports.treatParsedEmails = treatParsedEmails;

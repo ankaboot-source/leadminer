@@ -1,7 +1,6 @@
 const chai = require("chai"),
   expect = chai.expect;
 const extractors = require("../app/utils/extractors");
-const inputHelpers = require("../app/utils/inputHelpers");
 const testData = require("./data/testData.json");
 
 describe("extractors.checkExistence(databaseArray , email)", async function () {
@@ -43,18 +42,21 @@ describe("extractors.addEmailToDatabase(databaseArray, email)", function () {
     let email = {
       email: {
         name: "leadminer-teams",
-        address: "leadminer-team@leadminer.io",
+        address: "leadminer-teams@leadminer.io",
       },
     };
-    const expectedOutput = testData.ReadyData;
+    let Output = [...testData.ReadyData];
+    let expectedOutput = [...testData.ReadyData];
     expectedOutput.push({
-      name: "leadminer-teams",
-      address: "leadminer-team@leadminer.io",
+      email: {
+        name: "leadminer-teams",
+        address: "leadminer-teams@leadminer.io",
+      },
     });
-    let Output = testData.ReadyData;
+
     extractors.addEmailToDatabase(Output, email);
 
-    expect(expectedOutput).to.have.deep.members(Output);
+    expect(Output).to.have.deep.members(expectedOutput);
   });
 });
 
@@ -115,5 +117,121 @@ describe("extractors.addEmailType(emailInfo)", function () {
     let Output = extractors.addEmailType(email);
 
     expect([expectedOutput]).to.have.deep.members([Output]);
+  });
+});
+
+describe("extractors.parseDate(date)", function () {
+  it("should replace CEST by +0200 and return readable date", function () {
+    let date = "Fri, 28 Feb 2014 18:03:09 CEST";
+    let expectedOuput = "2014-02-28 16:03";
+    let output = extractors.parseDate(date);
+    expect(output).to.eql(expectedOuput);
+  });
+  it("should replace UTC-IP-ADDRESS(UTC-xxx-xxx-xx-xx) by '' and return readable date", function () {
+    let date = "Fri, 28 Feb 2014 18:03:09 UTC-0.0.0.0";
+    let expectedOuput = "2014-02-28 17:03";
+    let output = extractors.parseDate(date);
+    expect(output).to.eql(expectedOuput);
+  });
+});
+describe("extractors.compareDates(date1,date2)", function () {
+  it("should return true (date1 is greater than date2)", function () {
+    let output = extractors.compareDates(
+      "2014-02-28 16:03",
+      "2014-02-28 16:01"
+    );
+    expect(output).to.eql(true);
+  });
+  it("should return false (date2 is greater)", function () {
+    let output = extractors.compareDates(
+      "2014-02-28 16:03",
+      "2014-02-30 20:50"
+    );
+    expect(output).to.eql(false);
+  });
+});
+
+describe("extractors.manipulateData(element, oneEmail, database, folder, messageDate)", function () {
+  let expectedOutput = {
+    email: {
+      name: "leadminer-teams",
+      address: "leadminer-team@leadminer.io",
+    },
+    field: { ["from"]: 1 },
+    date: "2014-02-28 17:03",
+    type: "Custom domain",
+  };
+  let expectedOutput1 = {
+    email: {
+      name: "leadminer-teams",
+      address: "leadminer-team@leadminer.io",
+    },
+    field: { ["from"]: 2 },
+    date: "2014-02-28 17:03",
+    type: "Custom domain",
+  };
+
+  let expectedOutput2 = {
+    email: {
+      name: "leadminer-teams",
+      address: "leadminer-team@leadminer.io",
+    },
+    field: { ["from"]: 3 },
+    date: "2014-02-28 17:15",
+    type: "Custom domain",
+  };
+  let expectedOutput3 = {
+    email: {
+      name: "leadminer-teams",
+      address: "leadminer-team@leadminer.io",
+    },
+    field: { ["from"]: 3, ["body"]: 1 },
+    date: "2014-02-28 17:15",
+    type: "Custom domain",
+  };
+  let email = {
+    name: "leadminer-teams",
+    address: "leadminer-team@leadminer.io",
+  };
+  let databaseArray = [];
+  it("should add data to database array", function () {
+    extractors.manipulateData(
+      "from",
+      email,
+      databaseArray,
+      "INBOX",
+      "Fri, 28 Feb 2014 18:03:09 UTC-0.0.0.0"
+    );
+    expect(databaseArray).to.have.deep.members([expectedOutput]);
+  });
+  it("should add mail to database and update field", function () {
+    extractors.manipulateData(
+      "from",
+      email,
+      databaseArray,
+      "INBOX",
+      "Fri, 28 Feb 2014 18:03:09 UTC-0.0.0.0"
+    );
+    expect(databaseArray).to.have.deep.members([expectedOutput1]);
+  });
+  it("should add mail to database and update date", function () {
+    extractors.manipulateData(
+      "from",
+      email,
+      databaseArray,
+      "INBOX",
+      "Fri, 28 Feb 2014 18:15:09 UTC-0.0.0.0"
+    );
+    expect(databaseArray).to.have.deep.members([expectedOutput2]);
+  });
+  it("should add mail to database and add a new field", function () {
+    extractors.manipulateData(
+      "body",
+      email,
+      databaseArray,
+      "INBOX",
+      "Fri, 28 Feb 2014 18:15:09 UTC-0.0.0.0"
+    );
+    expect(databaseArray).to.have.deep.members([expectedOutput3]);
   });
 });

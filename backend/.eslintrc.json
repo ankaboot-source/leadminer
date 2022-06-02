@@ -11,7 +11,7 @@
   },
   "ignorePatterns": ["*.test.js"],
   "rules": {
-    "complexity": ["error", 6],
+    "complexity": ["error", 7],
     "no-console": "warn", //* Avoid Bugs
     "no-undef": "error",
     "semi": "error",

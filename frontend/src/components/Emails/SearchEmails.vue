@@ -465,7 +465,7 @@ export default defineComponent({
         let emailstoExport = emailsCsv.map((element) => {
           let obj = {
             Email: element.email.address,
-            Aliase: element.email.name.trim(),
+            Aliase: `"${element.email.name.trim()}"`,
             Status: "Valid",
             To: Object.keys(element.field).includes("to")
               ? element.field["to"]
@@ -764,7 +764,7 @@ export default defineComponent({
         fields = "HEADER.FIELDS (FROM TO CC BCC REPLY-TO DATE),TEXT";
       } else if (this.acceptedHeaders.length != 0) {
         this.acceptedBody.length == 0
-          ? (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")} DATE)`)
+          ? (fields = `HEADER`)
           : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")} DATE),${
               this.acceptedBody[0]
             }`);

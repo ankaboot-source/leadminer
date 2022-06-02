@@ -6,7 +6,7 @@
   "scripts": {
     "test": "nyc --reporter=html --reporter=lcov --reporter=text mocha test/**/*.test.js --config .mocharc.js --exit",
     "dev": "node server.js",
-    "lint:fix": "eslint --fix --ext app/**"
+    "lint:fix": "eslint --fix app/**"
   },
   "keywords": [
     "nodejs",

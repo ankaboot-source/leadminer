@@ -1,11 +1,11 @@
 {
   "emailBody": "\n    -------- Forwarded Message --------\n    Subject: \tFwd: Fiches de paie\n    Date: \tTue, 5 Apr 2022 16:46:20 +0200\n    From: \tBadreddine Ladjemi <badredine.ladjemi@gmail.com>\n    To: \tyoussri <youssri@flyweight.tech>\n    \n    \n    \n    \n    ---------- Forwarded message ---------\n    From: Wafa BELAIDI <wapakaaca.idea@lmmmmaaaac.com.tn>\n    Date: Tue, Apr 5, 2022 at 4:43 PM\n    Subject: Fiches de paie\n    To: Badreddine Ladjemi <badredine.ladjemi@gmail.com>\n    \n    \n    Bonne réception\n    \n    \n    \n    -- \n    Badreddine LADJEMI\n    \n    tel/signal: +33 6 24 33 44 42\n    tel/whatsapp: +216 98 793 002\n    matrix: baderdean@matrix.org",
   "EmailNameTest": [
-    "<leadminer-te*am@leadm*iner.io>, leadminer team <leadminer-team@leadminer.io>, لغة عربية jhjhd azertyuiop!azertyuiop@leadminer.io, لغة english عربية leadminer-team@leadminer.io, русский язык <leadminer-team@leadminer.io>,لغة عربية <leadminer-team@leadminer.io>"
+    "<leadminerTeam@ankaboot.fr>, leadminer team <leadminer-team@leadminer.io>, لغة عربية jhjhd azertyuiop!azertyuiop@leadminer.io, لغة english عربية leadminer-team@leadminer.io, русский язык <leadminer-team@leadminer.io>,لغة عربية <leadminer-team@leadminer.io>"
   ],
-  "OneEmailNameTest": ["<leadminer-te*am@leadm*iner.io>"],
+  "OneEmailNameTest": ["<leadminerTeam@ankaboot.fr>"],
   "expectedEmailNameAddress": [
-    { "name": "", "address": "leadminer-te*am@leadm*iner.io" },
+    { "name": "", "address": "leadminerTeam@ankaboot.fr" },
 
     { "name": "leadminer team", "address": "leadminer-team@leadminer.io" },
     {
@@ -67,7 +67,7 @@
     "notifications@leadminer.io"
   ],
   "ReadyData": [
-    { "email": { "name": "", "address": "leadminer-te*am@leadm*iner.io" } },
+    { "email": { "name": "", "address": "leadminerTeam@ankaboot.fr" } },
 
     {
       "email": {
