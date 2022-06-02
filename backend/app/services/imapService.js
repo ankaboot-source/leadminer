@@ -20,7 +20,7 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   } else {
     // extract header attributes
     const header = Imap.parseHeader(chunk.toString("utf8"));
-    console.log(header);
+
     Object.keys(header).map((field) => {
       minedEmails[field] = header[field];
     });
@@ -114,7 +114,7 @@ async function OpenedBoxCallback(
       sse.send(currentbox.name, `scannedBoxes${query.userId}`);
       // all folders are mined
       if (currentbox.name == boxes[boxes.length - 1]) {
-        //sse.send(helpers.sortDatabase(database), `data${query.userId}`);
+        sse.send(helpers.sortDatabase(database), `data${query.userId}`);
         sse.send(true, `dns${query.userId}`);
         imap.end();
       } else {
@@ -242,7 +242,7 @@ function imapService(
   req.on("close", () => {
     imap.destroy();
     imap.end();
-    //sse.send(helpers.sortDatabase(database), "data" + query.userId);
+    sse.send(helpers.sortDatabase(database), "data" + query.userId);
     sse.send(true, `dns${query.userId}`);
 
     logger.info(`Connection Closed (maybe by the user) : ${imapInfo.email}`);

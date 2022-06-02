@@ -9,3 +9,4 @@ logs
 .vscode
 **/.ncy_output/
 app/utils/out
+app/out
