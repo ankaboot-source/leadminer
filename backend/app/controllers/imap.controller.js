@@ -320,7 +320,6 @@ exports.getEmails = (req, res, sse, RedisClient) => {
         res,
         req
       );
-      delete req, res;
     });
   } // case : token based authentication
   else {

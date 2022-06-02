@@ -370,6 +370,7 @@ const columns = [
     type: "number",
     field: (row) => row.field.sender,
     sortOrder: "ad",
+    sortable: true,
   },
   {
     name: "Recipient",
@@ -378,6 +379,7 @@ const columns = [
     type: "number",
     field: (row) => row.field.recipient,
     sortOrder: "ad",
+    sortable: true,
   },
 
   {
@@ -387,6 +389,7 @@ const columns = [
     type: "number",
     field: (row) => row.field.total,
     sortOrder: "ad",
+    sortable: true,
   },
   {
     name: "Date",
@@ -412,12 +415,18 @@ const columns = [
     type: "number",
     field: (row) => row.field.body,
     sortOrder: "ad",
+    sortable: true,
   },
   {
     name: "Type",
     align: "center",
     label: "Type",
+    sortable: true,
     field: "type",
+    sortOrder: "ad",
+    sort: (s1, s2) => {
+      return s1.localeCompare(s2);
+    },
   },
   {
     name: "Status",

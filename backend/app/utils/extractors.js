@@ -22,12 +22,15 @@ const NOREPLY = [
   "alerts",
   "auto-confirm",
   "ne-pas-repondre",
+  "no.reply",
   "nepasrepondre",
   "do-not-reply",
   "FeedbackForm",
   "mailermasters",
   "wordpress",
+  "donotreply",
   "notify",
+  "do-notreply",
   "password",
   "reply-",
   "no_reply",
@@ -35,7 +38,7 @@ const NOREPLY = [
 ];
 /**
  * Check if a given email address is already mined.
- * @param  {object} email One email address
+ * @param  {object} email email address
  * @returns {boolean}
  */
 
@@ -46,9 +49,9 @@ function checkExistence(database, email) {
 }
 
 /**
- * Check if a given email address includes noreply strings pattern.
+ * Check if a given email address includes noreply strings pattern
  * Or it's the imapEmail address.
- * @param  {object} oneEmail A email object
+ * @param  {object} oneEmail email object
  * @param  {string} imapEmail Email address associated to connected imap account
  * @returns {boolean}
  */
@@ -64,9 +67,9 @@ function IsNotNoReply(oneEmail, imapEmail) {
 }
 
 /**
- * Add a given Email to mineddata.
+ * Add a given Email to data array.
  * @param  {Array} database An array that represents a virtual database
- * @param  {object} email A email object
+ * @param  {object} email email object
  * @returns {Array}
  */
 function addEmailToDatabase(database, email) {
@@ -75,7 +78,7 @@ function addEmailToDatabase(database, email) {
   }
 }
 /**
- * Format and check if valid time zone of a given date
+ * Parse then format date.
  * @param  {object} date Date to be formatted
  * @example
  * input : Wed, 11 May 2022 16:54:37 +0100
@@ -95,7 +98,7 @@ function parseDate(date) {
 }
 
 /**
- * Compare two dates
+ * Compare two dates.
  * @param  {object} date1 First date
  * @param  {object} date2 Second date
  * @returns {object} true if date1 is greater than date2, else false
@@ -107,9 +110,9 @@ function compareDates(date1, date2) {
   return d1 > d2;
 }
 /**
- * Add fields and folder to a given email .
+ * Add fields and folder to a given email.
  * @param  {Array} database An array that represents a virtual database
- * @param  {object} email A email object
+ * @param  {object} email email object
  * @returns {Array}
  */
 function addFieldsAndFolder(database, email) {
@@ -143,7 +146,9 @@ function addEmailType(EmailInfo) {
 }
 
 /**
- * Manipulate data(emails) without checking the dns.
+ * Uses checkExistence function to check if the current email exists
+ * if already mined then update header fields
+ * else it calls a function to add mined data to database array.
  * @param  {string} element Field (from, cc, bcc..)
  * @param  {object} oneEmail Email address and name
  * @param  {Array} database An array that represents a virtual database
@@ -218,7 +223,8 @@ function manipulateDataWithDns(
 }
 
 /**
- * Treat parsed Emails, checks against redis and decide
+ * Check redis database for stored domains, if the domain exists then add to database array
+ * else check for DNS MX record
  * @param  {object} dataTobeStored
  * @param  {Array} database An array that represents a virtual database
  * @param  {RedisClientType} client Redis client
