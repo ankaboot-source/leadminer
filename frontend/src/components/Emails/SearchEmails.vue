@@ -149,16 +149,18 @@
         >
           <q-table
             class="sticky"
+            style="height: 90vh"
             card-class="bg-white  text-teal-10"
             table-class="text-teal-10 "
             table-header-class="text-teal"
             title="Emails"
-            :rows="emailsinfinit"
+            :rows="Emails"
             :binary-state-sort="true"
             :columns="columns"
             :filter="filter"
             :filter-method="filterMethod"
             row-key="email"
+            virtual-scroll
             column-sort-order="ad"
             :pagination.sync="pagination"
             ><template #top-left>
@@ -255,27 +257,27 @@
                       : props.row.email.name
                   }}
                 </q-td>
-                <q-td key="Sender" style="width: 8%" :props="props">
+                <q-td key="Sender" style="width: 5%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.sender }}
                   </q-badge> </q-td
-                ><q-td key="Recipient" style="width: 8%" :props="props">
+                ><q-td key="Recipient" style="width: 5%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
 
-                <q-td key="Total" style="width: 5%" :props="props">
+                <q-td key="Total" style="width: 3%" :props="props">
                   <q-badge color="blue">
                     {{ props.row.field.total }}
                   </q-badge>
                 </q-td>
-                <q-td key="Date" style="width: 5%" :props="props">
+                <q-td key="Date" style="width: 3%" :props="props">
                   <q-badge outline color="blue" transparent>
                     {{ props.row.date }}
                   </q-badge>
                 </q-td>
-                <q-td key="Body" style="width: 8%" :props="props">
+                <q-td key="Body" style="width: 5%" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.body }}
                   </q-badge>
@@ -573,9 +575,9 @@ export default defineComponent({
       return this.progress.scannedBoxes;
     },
     Emails() {
-      if (this.loadingStatusDns) {
-        this.emailsinfinit = this.retrievedEmails.slice(0, 20);
-      }
+      // if (this.loadingStatusDns) {
+      //   this.Emails = this.retrievedEmails.slice(0, 20);
+      // }
       return this.retrievedEmails;
     },
     Boxes() {
@@ -638,7 +640,7 @@ export default defineComponent({
     ]),
   },
   mounted() {
-    this.scroll();
+    //this.scroll();
     const googleUser = this.quasar.sessionStorage.getItem("googleUser");
     let imapUser;
     if (!googleUser) {
@@ -705,27 +707,27 @@ export default defineComponent({
           // fail
         });
     },
-    isScrolledIntoView(el) {
-      let rect = el.getBoundingClientRect();
-      let elemTop = rect.top;
-      let elemBottom = rect.bottom;
-      let isVisible = elemTop < window.innerHeight && elemBottom >= 0;
-      return isVisible;
-    },
-    scroll() {
-      window.onscroll = () => {
-        let scrolledTo = document.querySelector(".scroll");
-        if (scrolledTo && this.isScrolledIntoView(scrolledTo)) {
-          this.emailsinfinit = [
-            ...this.emailsinfinit,
-            ...this.retrievedEmails.slice(
-              this.emailsinfinit.length,
-              this.emailsinfinit.length + 15
-            ),
-          ];
-        }
-      };
-    },
+    // isScrolledIntoView(el) {
+    //   let rect = el.getBoundingClientRect();
+    //   let elemTop = rect.top;
+    //   let elemBottom = rect.bottom;
+    //   let isVisible = elemTop < window.innerHeight && elemBottom >= 0;
+    //   return isVisible;
+    // },
+    // scroll() {
+    //   window.onscroll = () => {
+    //     let scrolledTo = document.querySelector(".scroll");
+    //     if (scrolledTo && this.isScrolledIntoView(scrolledTo)) {
+    //       this.Emails = [
+    //         ...this.Emails,
+    //         ...this.retrievedEmails.slice(
+    //           this.Emails.length,
+    //           this.Emails.length + 15
+    //         ),
+    //       ];
+    //     }
+    //   };
+    // },
     showNotif(msg, color, icon) {
       if (msg && typeof msg != "undefined") {
         this.quasar.notify({
@@ -842,6 +844,8 @@ export default defineComponent({
 }
 .sticky thead tr:first-child th {
   position: sticky;
+  background-color: #ffffff;
   top: 0;
+  z-index: 1;
 }
 </style>
