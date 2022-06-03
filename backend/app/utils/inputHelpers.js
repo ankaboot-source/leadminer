@@ -129,6 +129,7 @@ function sortDatabase(database) {
     if (!row.email?.name) {
       row.email["name"] = "";
     }
+    row.email["name"] = row.email["name"].replaceAll('"', "");
     row.field["recipient"] =
       (row.field?.["cc"] ?? 0) +
       (row.field?.["bcc"] ?? 0) +

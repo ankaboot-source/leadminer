@@ -4,13 +4,17 @@ export default function () {
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,
-    token: "",
-    imap: {
+    imapUser: {
       id: "",
       email: "",
       password: "",
       host: "",
       port: "",
+    },
+    googleUser: {
+      email: "",
+      access_token: "",
+      id: "",
     },
     boxes: [],
     errorMessage: "",

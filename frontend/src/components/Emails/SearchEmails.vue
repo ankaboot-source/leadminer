@@ -164,22 +164,20 @@
             column-sort-order="ad"
             :pagination.sync="pagination"
             ><template #top-left>
-              <div class="row">
-                <div
-                  class="border col-4 q-ma-sm"
-                  v-for="(item, n) in infos"
-                  :key="`xl-${n}`"
-                >
-                  <div class="row text-teal-6 border">
-                    <div class="col-1">
-                      <q-badge class="q-pa-sm" rounded :color="item.color">
-                      </q-badge>
-                    </div>
-                    <div class="col-10">{{ "  " + item.text }}</div>
+              <div
+                class="border col-12 q-ma-sm"
+                v-for="(item, n) in infos"
+                :key="`xl-${n}`"
+              >
+                <div class="row text-teal-6 border text-no-wrap">
+                  <div class="col-1">
+                    <q-badge class="q-pa-sm" rounded :color="item.color">
+                    </q-badge>
                   </div>
+                  <div class="col-11">{{ "  " + item.text }}</div>
                 </div>
-              </div></template
-            >
+              </div>
+            </template>
             <template #top-right="props">
               <q-input
                 v-model="filter"
@@ -224,7 +222,7 @@
             <template v-slot:header-cell-Date="props">
               <q-th :props="props">
                 <q-tooltip
-                  class="bg-teal-4 text-caption text-"
+                  class="bg-teal-4 text-caption"
                   anchor="top middle"
                   self="center middle"
                   >Date of last interaction with this person</q-tooltip
@@ -233,7 +231,7 @@
             </template>
             <template #body="props">
               <q-tr :props="props">
-                <q-td key="#" style="width: 3%" :props="props"
+                <q-td key="#" style="width: 3vw" :props="props"
                   ><q-btn
                     flat
                     round
@@ -242,7 +240,7 @@
                     icon="content_copy"
                     @click="CopyToClipboard(props.row.email.address)"
                 /></q-td>
-                <q-td key="Email" style="width: 25%" :props="props">
+                <q-td key="Email" style="width: 25vw" :props="props">
                   {{
                     props.row.email.address.length > 38
                       ? props.row.email.address.substring(0, 38).concat("...")
@@ -250,44 +248,49 @@
                   }}</q-td
                 >
 
-                <q-td key="Names" style="width: 20%" :props="props">
+                <q-td key="Names" style="width: 25vw" :props="props">
                   {{
                     props.row.email.name.length > 38
                       ? props.row.email.name.substring(0, 38).concat("...")
                       : props.row.email.name
                   }}
                 </q-td>
-                <q-td key="Sender" style="width: 5%" :props="props">
+                <q-td key="Sender" style="width: 5vw" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.sender }}
                   </q-badge> </q-td
-                ><q-td key="Recipient" style="width: 5%" :props="props">
+                ><q-td key="Recipient" style="width: 5vw" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
 
-                <q-td key="Total" style="width: 3%" :props="props">
+                <q-td
+                  v-show="false"
+                  key="Total"
+                  style="width: 3vw"
+                  :props="props"
+                >
                   <q-badge color="blue">
                     {{ props.row.field.total }}
-                  </q-badge>
-                </q-td>
-                <q-td key="Date" style="width: 3%" :props="props">
-                  <q-badge outline color="blue" transparent>
-                    {{ props.row.date }}
-                  </q-badge>
-                </q-td>
-                <q-td key="Body" style="width: 5%" :props="props">
+                  </q-badge> </q-td
+                ><q-td key="Body" style="width: 5vw" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.body }}
                   </q-badge>
                 </q-td>
-                <q-td key="Type" style="width: 10%" :props="props">
+                <q-td key="Date" style="width: 5vw" :props="props">
+                  <q-badge outline color="blue" transparent>
+                    {{ props.row.date }}
+                  </q-badge>
+                </q-td>
+
+                <q-td key="Type" style="width: 5vw" :props="props">
                   <q-badge rounded color="green">
                     {{ props.row.type }}
                   </q-badge>
                 </q-td>
-                <q-td key="Status" style="width: 10%" :props="props">
+                <q-td key="Status" style="width: 5vw" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
                   </q-badge>
@@ -314,7 +317,7 @@ const infos = [
     icon: "check",
   },
   {
-    text: "The mailbox is valid but could not receive your emails",
+    text: "The mailbox could not receive your emails",
     color: "yellow-8",
     icon: "warning",
   },
@@ -360,8 +363,6 @@ const columns = [
       return b.localeCompare(a);
     },
     sortOrder: "ad",
-    style: "max-width: 50px",
-    headerStyle: "max-width: 50px",
   },
   {
     name: "Sender",
@@ -382,12 +383,21 @@ const columns = [
     sortable: true,
   },
 
+  // {
+  //   name: "Total",
+  //   align: "center",
+  //   label: "Total of interactions",
+  //   type: "number",
+  //   field: (row) => row.field.total,
+  //   sortOrder: "ad",
+  //   sortable: true,
+  // },
   {
-    name: "Total",
+    name: "Body",
     align: "center",
-    label: "Total of interactions",
+    label: "Body",
     type: "number",
-    field: (row) => row.field.total,
+    field: (row) => row.field.body,
     sortOrder: "ad",
     sortable: true,
   },
@@ -408,15 +418,7 @@ const columns = [
     field: (row) => row.date,
     sortOrder: "ad",
   },
-  {
-    name: "Body",
-    align: "center",
-    label: "Body",
-    type: "number",
-    field: (row) => row.field.body,
-    sortOrder: "ad",
-    sortable: true,
-  },
+
   {
     name: "Type",
     align: "center",
@@ -474,9 +476,12 @@ export default defineComponent({
         let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Date of last interaction;Body;Type\n`;
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
+          console.log(element.email.name);
           let obj = {
             Email: element.email.address,
-            Aliase: `"${element.email.name.trim()}"`,
+            Aliase: element.email.name.includes(";")
+              ? `"${element.email.name}"`
+              : element.email.name,
             Status: "Valid",
             To: Object.keys(element.field).includes("to")
               ? element.field["to"]
