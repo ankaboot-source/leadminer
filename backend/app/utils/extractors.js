@@ -82,7 +82,7 @@ function addEmailToDatabase(database, email) {
  * @param  {object} date Date to be formatted
  * @example
  * input : Wed, 11 May 2022 16:54:37 +0100
- * output : Wednesday, May 11th, 2022 at 14:54:37 PM (in utc time)
+ * output : 2022/05/11 14:54:37 (in utc time)
  * @returns {object} Formated date
  */
 function parseDate(date) {
