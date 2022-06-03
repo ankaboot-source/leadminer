@@ -70,7 +70,3 @@ export function SET_STATUS(state, newStatus) {
 export function SET_TOKEN(state, newToken) {
   state.token = newToken;
 }
-
-export function SET_GOOGLE_USER(state, user) {
-  state.googleUser = user;
-}

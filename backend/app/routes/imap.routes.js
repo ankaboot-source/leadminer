@@ -1,12 +1,9 @@
 module.exports = (app, sse, client) => {
   const imap = require("../controllers/imap.controller");
-  const googleApiController = require("../controllers/google.controller.js");
   const router = require("express").Router();
 
   // Create a new imap account
   router.post("/signup", imap.createImapInfo);
-  // signUp with google account route
-  router.post("/signUpGoogle", googleApiController.SignUpWithGoogle);
   // login into account
   router.post("/login", imap.loginToAccount);
   // Retrieve emails based on user prefrences for a given imap account

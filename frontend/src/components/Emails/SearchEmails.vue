@@ -256,11 +256,11 @@
                   }}
                 </q-td>
                 <q-td key="Sender" style="width: 5vw" :props="props">
-                  <q-badge outline color="orange" transparent>
+                  <q-badge class="q-mr-md" outline color="orange" transparent>
                     {{ props.row.field.sender }}
                   </q-badge> </q-td
                 ><q-td key="Recipient" style="width: 5vw" :props="props">
-                  <q-badge outline color="orange" transparent>
+                  <q-badge class="q-mr-md" outline color="orange" transparent>
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
@@ -275,7 +275,7 @@
                     {{ props.row.field.total }}
                   </q-badge> </q-td
                 ><q-td key="Body" style="width: 5vw" :props="props">
-                  <q-badge outline color="orange" transparent>
+                  <q-badge class="q-mr-md" outline color="orange" transparent>
                     {{ props.row.field.body }}
                   </q-badge>
                 </q-td>

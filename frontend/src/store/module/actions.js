@@ -136,25 +136,6 @@ export async function signUp({ context, state }, { data }) {
       });
   });
 }
-export async function signUpGoogle({ context, state }, { data }) {
-  return new Promise((resolve, reject) => {
-    this.commit("example/SET_LOADING", true);
-
-    this.$axios
-      .post(this.$api + "/imap/signUpGoogle", data)
-      .then((response) => {
-        this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_GOOGLE_USER", response.data.user);
-        resolve(response);
-      })
-      .catch((error) => {
-        if (error) {
-          this.commit("example/SET_ERROR", error.response.data.error);
-        }
-        reject(error);
-      });
-  });
-}
 export async function signIn({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
