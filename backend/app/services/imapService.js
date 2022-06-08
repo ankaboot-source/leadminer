@@ -5,7 +5,6 @@ const utilsForToken = require("../utils/tokenHelpers");
 const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
-const { Console } = require("winston/lib/winston/transports");
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
@@ -68,7 +67,7 @@ async function OpenedBoxCallback(
                 : 0),
             invalid: counter.invalidAddresses,
           },
-          `minedEmailsAndScannedEmails${query.userId}`
+          `minedEmailsAndScannedEmails${query.user.id}`
         );
       }
       // callback for "body" emitted event
@@ -107,11 +106,11 @@ async function OpenedBoxCallback(
       logger.info(
         `End mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail}`
       );
-      sse.send(currentbox.name, `scannedBoxes${query.userId}`);
+      sse.send(currentbox.name, `scannedBoxes${query.user.id}`);
       // all folders are mined
       if (currentbox.name == boxes[boxes.length - 1]) {
-        sse.send(helpers.sortDatabase(database), `data${query.userId}`);
-        sse.send(true, `dns${query.userId}`);
+        sse.send(helpers.sortDatabase(database), `data${query.user.id}`);
+        sse.send(true, `dns${query.user.id}`);
         imap.end();
       } else {
         store.box = boxes[boxes.indexOf(currentbox.name) + 1];
@@ -122,7 +121,7 @@ async function OpenedBoxCallback(
     if (boxes[boxes.indexOf(box) + 1]) {
       store.box = boxes[boxes.indexOf(box) + 1];
     } else {
-      sse.send(true, `dns${query.userId}`);
+      sse.send(true, `dns${query.user.id}`);
       imap.end();
     }
   }
@@ -187,6 +186,8 @@ async function imapService(
   }
   imap.connect();
   logger.info(`Begin collecting emails from imap account with id : ${user.id}`);
+  query.user = JSON.parse(query.user);
+
   const database = [];
   imap.once("ready", async () => {
     const loopfunc = (box) => {

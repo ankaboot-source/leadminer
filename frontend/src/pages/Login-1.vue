@@ -190,8 +190,9 @@ export default {
   },
   mounted() {
     let googleUser = this.quasar.localStorage.getItem("googleUser");
+    console.log(googleUser);
     let imapUser = this.quasar.localStorage.getItem("imapUser");
-    if (googleUser) {
+    if (googleUser != null) {
       this.$store.commit("example/SET_GOOGLE_USER", googleUser);
       this.$router.push("/dashboard");
     } else if (imapUser) {

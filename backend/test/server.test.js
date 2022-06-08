@@ -120,7 +120,6 @@ describe("Get logs file", function () {
   describe("GET /logs", function () {
     it("should send logs file", async function () {
       const response = await request(app).get("/logs");
-
       expect(response.header["content-type"]).to.have.string("text/plain");
     });
   });

@@ -153,7 +153,7 @@ exports.loginToAccount = (req, res) => {
 exports.getImapBoxes = async (req, res) => {
   let imap;
   let tokens;
-  let user = JSON.parse(JSON.parse(JSON.stringify(req.query.user)));
+  let user = JSON.parse(req.query.user);
   if (user.access_token) {
     try {
       let dbUser = await googleUser.findByPk(user.id);

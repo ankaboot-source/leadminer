@@ -23,7 +23,6 @@ exports.SignUpWithGoogle = async (req, res) => {
   let oauth2Client = getOAuthClient();
   // the query param authorization code
   let code = "";
-
   if (req.body.authCode) {
     code = req.body.authCode;
   } else {
@@ -34,7 +33,6 @@ exports.SignUpWithGoogle = async (req, res) => {
   }
   // use authCode to retrieve tokens
   oauth2Client.getToken(code, async function (err, tokens) {
-    console.log(tokens);
     if (tokens) {
       let googleUser = {};
       // oauthclient to use the access_token

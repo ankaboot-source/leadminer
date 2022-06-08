@@ -155,6 +155,7 @@ export async function signUp({ context, state }, { data }) {
   });
 }
 export async function signUpGoogle({ context, state }, { data }) {
+  console.log("user");
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     this.$axios
@@ -228,7 +229,6 @@ export function getBoxes({ context, getters }) {
         this.commit("example/SET_LOADINGBOX", false);
         this.commit("example/SET_BOXES", response.data.boxes);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
-        console.log(response.data);
         this.commit("example/SET_UPDATE_TOKEN", response.data.token);
       })
       .catch((error) => {

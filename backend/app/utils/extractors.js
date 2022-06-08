@@ -272,12 +272,10 @@ function treatParsedEmails(
     delete dataTobeStored.date;
   }
   if (dataTobeStored["list-unsubscribe"]) {
-    console.log(dataTobeStored);
     delete dataTobeStored["list-unsubscribe"];
     isNewsletter = true;
   }
   if (dataTobeStored["references"]) {
-    console.log(dataTobeStored.references);
     delete dataTobeStored.references;
     isConversation = true;
   }

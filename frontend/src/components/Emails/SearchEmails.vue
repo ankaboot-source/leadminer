@@ -790,17 +790,15 @@ export default defineComponent({
   mounted() {
     //this.scroll();
     const googleUser = this.quasar.localStorage.getItem("googleUser");
-    let imapUser;
-    if (!googleUser) {
-      imapUser = this.quasar.localStorage.getItem("imapUser");
+    const imapUser = this.quasar.localStorage.getItem("imapUser");
+    if (!googleUser && !imapUser) {
+      this.$router.push("/");
     }
     if (googleUser) {
       this.$store.commit("example/SET_GOOGLE_USER", googleUser);
     } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
       this.$store.commit("example/SET_PASSWORD", imapUser.password);
-    } else {
-      this.$router.push("/");
     }
     this.getBoxes();
     this.boxOptions = this.$store.state.boxes;
@@ -915,13 +913,13 @@ export default defineComponent({
           if (this.$refs.tree) {
             this.$refs.tree.expandAll();
           }
-          this.quasar.localStorage.clear(),
+          this.quasar.localStorage.clear();
+          if (this.$store.state.example.googleUser.access_token != "") {
             this.quasar.localStorage.set(
               "googleUser",
               this.$store.state.example.googleUser
             );
-          console.dir(this.quasar.localStorage.getItem("googleUser"));
-          console.dir(this.$store.state.example.googleUser);
+          }
         }, 2000);
         this.showNotif(
           this.$store.getters["example/getStates"].infoMessage,

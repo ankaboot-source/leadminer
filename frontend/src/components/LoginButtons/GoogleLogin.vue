@@ -51,29 +51,23 @@ export default {
   methods: {
     async handleClickSignIn() {
       let googleUser = this.quasar.localStorage.getItem("googleUser");
+      console.log(googleUser);
       if (googleUser) {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
         this.$router.push("/dashboard");
       } else {
-        try {
-          const authCode = await this.$gAuth.getAuthCode();
-
-          if (authCode) {
-            let data = authCode;
-            this.$store.dispatch("example/signUpGoogle", { data }).then(() => {
-              this.quasar.localStorage.set(
-                "googleUser",
-                this.$store.state.example.googleUser
-              );
-              if (this.$store.state.example.googleUser) {
-                this.$router.push("/dashboard");
-              }
-            });
-          }
-        } catch (error) {
-          //on fail do something
-          console.error(error);
-          return null;
+        const authCode = await this.$gAuth.getAuthCode();
+        if (authCode) {
+          let data = authCode;
+          this.$store.dispatch("example/signUpGoogle", { data }).then(() => {
+            this.quasar.localStorage.set(
+              "googleUser",
+              this.$store.state.example.googleUser
+            );
+            if (this.$store.state.example.googleUser) {
+              this.$router.push("/dashboard");
+            }
+          });
         }
       }
     },
