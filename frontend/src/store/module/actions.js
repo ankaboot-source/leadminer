@@ -154,6 +154,7 @@ export async function signUp({ context, state }, { data }) {
       });
   });
 }
+
 export async function signUpGoogle({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
@@ -172,6 +173,7 @@ export async function signUpGoogle({ context, state }, { data }) {
       });
   });
 }
+
 export async function signIn({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);

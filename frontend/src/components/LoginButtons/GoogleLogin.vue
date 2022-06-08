@@ -21,7 +21,12 @@
     >
       disconnect
     </button>
-     -->
+    <button
+      @click="handleClickSignOut"
+      :disabled="!Vue3GoogleOauth.isAuthorized"
+    >
+      sign out
+    </button> -->
   </div>
 </template>
 
@@ -50,6 +55,7 @@ export default {
 
   methods: {
     async handleClickSignIn() {
+
       let googleUser = this.quasar.localStorage.getItem("googleUser");
       if (googleUser) {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
@@ -75,6 +81,37 @@ export default {
           console.error(error);
           return null;
         }
+        this.user = googleUser.getBasicProfile().getEmail();
+
+        let token = this.$gAuth.instance.currentUser.get().getAuthResponse();
+
+        this.quasar.sessionStorage.set("googleUser", {
+          token: token,
+          user: this.user,
+        });
+        let imap = {
+          id: "",
+          email: this.user,
+          host: "",
+          port: "",
+        };
+
+        this.$store.commit("example/SET_TOKEN", token.access_token);
+
+        this.$store.commit("example/SET_IMAP", imap);
+        this.$router.push("/dashboard");
+
+        // try {
+        //   const authCode = await this.$gAuth.getAuthCode();
+        // } catch (error) {
+        //   //on fail do something
+        //   console.error(error);
+        //   return null;
+        // }
+      } catch (error) {
+        //on fail do something
+        console.error(error);
+        return null;
       }
     },
 
