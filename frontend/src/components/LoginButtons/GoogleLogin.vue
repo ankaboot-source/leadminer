@@ -51,7 +51,7 @@ export default {
   methods: {
     async handleClickSignIn() {
       let googleUser = this.quasar.localStorage.getItem("googleUser");
-      console.log(googleUser);
+
       if (googleUser) {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
         this.$router.push("/dashboard");
@@ -72,24 +72,24 @@ export default {
       }
     },
 
-    async handleClickGetAuthCode() {
-      try {
-        const authCode = await this.$gAuth.getAuthCode();
-      } catch (error) {
-        //on fail do something
-        console.error(error);
-        return null;
-      }
-    },
+    // async handleClickGetAuthCode() {
+    //   try {
+    //     const authCode = await this.$gAuth.getAuthCode();
+    //   } catch (error) {
+    //     //on fail do something
+    //     console.error(error);
+    //     return null;
+    //   }
+    // },
 
-    async handleClickSignOut() {
-      try {
-        await this.$gAuth.signOut();
-        this.user = "";
-      } catch (error) {
-        console.error(error);
-      }
-    },
+    // async handleClickSignOut() {
+    //   try {
+    //     await this.$gAuth.signOut();
+    //     this.user = "";
+    //   } catch (error) {
+    //     console.error(error);
+    //   }
+    // },
 
     handleClickDisconnect() {
       window.location.href = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${window.location.href}`;
