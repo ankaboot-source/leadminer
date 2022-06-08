@@ -72,25 +72,6 @@ export default {
       }
     },
 
-    // async handleClickGetAuthCode() {
-    //   try {
-    //     const authCode = await this.$gAuth.getAuthCode();
-    //   } catch (error) {
-    //     //on fail do something
-    //     console.error(error);
-    //     return null;
-    //   }
-    // },
-
-    // async handleClickSignOut() {
-    //   try {
-    //     await this.$gAuth.signOut();
-    //     this.user = "";
-    //   } catch (error) {
-    //     console.error(error);
-    //   }
-    // },
-
     handleClickDisconnect() {
       window.location.href = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${window.location.href}`;
     },
