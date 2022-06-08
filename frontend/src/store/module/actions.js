@@ -14,7 +14,9 @@ export async function getEmails({ context, getters }, { data }) {
   };
 
   source.addEventListener(
-    "minedEmailsAndScannedEmails" + currentState.imap.id,
+    "minedEmailsAndScannedEmails" +
+      currentState.imapUser.id +
+      currentState.googleUser.id,
     (message) => {
       let data = JSON.parse(message.data);
       this.commit("example/SET_SCANNEDEMAILS", data.scanned);
@@ -22,22 +24,41 @@ export async function getEmails({ context, getters }, { data }) {
       this.commit("example/SET_INVALIDADDRESSES", data.invalid);
     }
   );
-  source.addEventListener("scannedBoxes" + currentState.imap.id, (message) => {
-    this.commit("example/SET_SCANNEDBOXES", message.data);
-  });
+  console.log(currentState.imapUser.id + currentState.googleUser.id);
+  source.addEventListener(
+    "scannedBoxes" + currentState.imapUser.id + currentState.googleUser.id,
+    (message) => {
+      this.commit("example/SET_SCANNEDBOXES", message.data);
+    }
+  );
+  source.addEventListener(
+    "token" + currentState.imapUser.id + currentState.googleUser.id,
+    (message) => {
+      this.commit("example/UPDATE_TOKEN", message.data);
+    }
+  );
 
-  window.addEventListener("beforeunload" + currentState.imap.id, () => {
-    source.close();
-  });
-  source.addEventListener("data" + currentState.imap.id, (message) => {
-    this.commit("example/SET_EMAILS", JSON.parse(message.data));
-  });
-  source.addEventListener("dns" + currentState.imap.id, (message) => {
-    this.commit("example/SET_LOADING_DNS", false);
-    setTimeout(() => {
+  window.addEventListener(
+    "beforeunload" + currentState.imapUser.id + currentState.googleUser.id,
+    () => {
       source.close();
-    }, 100);
-  });
+    }
+  );
+  source.addEventListener(
+    "data" + currentState.imapUser.id + currentState.googleUser.id,
+    (message) => {
+      this.commit("example/SET_EMAILS", JSON.parse(message.data));
+    }
+  );
+  source.addEventListener(
+    "dns" + currentState.imapUser.id + currentState.googleUser.id,
+    (message) => {
+      this.commit("example/SET_LOADING_DNS", false);
+      setTimeout(() => {
+        source.close();
+      }, 100);
+    }
+  );
 
   return new Promise((resolve, reject) => {
     const timer = new Proxy({ cancelRequest: false }, ProxyChange);
@@ -48,7 +69,7 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_INVALIDADDRESSES", "f");
     this.commit("example/SET_EMAILS", []);
     this.commit("example/SET_SCANNEDBOXES", []);
-    if (currentState.token) {
+    if (currentState.googleUser.access_token != "") {
       this.$axios
         .get(
           this.$api + `/imap/1/collectEmails`,
@@ -59,10 +80,7 @@ export async function getEmails({ context, getters }, { data }) {
               fields: data.fields.split(","),
               boxes: data.boxes,
               folders: data.folders,
-              password: currentState.imap.password,
-              userEmail: currentState.imap.email,
-              userId: currentState.imap.id,
-              token: currentState.token,
+              user: currentState.googleUser,
             },
           }
         )
@@ -83,7 +101,7 @@ export async function getEmails({ context, getters }, { data }) {
         .get(
           this.$api +
             `/imap/${JSON.parse(
-              JSON.stringify(currentState.imap.id)
+              JSON.stringify(currentState.imapUser.id)
             )}/collectEmails`,
           {
             cancelToken: sources.token,
@@ -91,9 +109,9 @@ export async function getEmails({ context, getters }, { data }) {
               fields: data.fields.split(","),
               boxes: data.boxes,
               folders: data.folders,
-              password: currentState.imap.password,
-              userEmail: currentState.imap.email,
-              userId: currentState.imap.id,
+              password: currentState.imapUser.password,
+              userEmail: currentState.imapUser.email,
+              userId: currentState.imapUser.id,
               token: "",
             },
           }
@@ -139,12 +157,11 @@ export async function signUp({ context, state }, { data }) {
 export async function signUpGoogle({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
-
     this.$axios
-      .post(this.$api + "/imap/signUpGoogle", data)
+      .post(this.$api + "/imap/signUpGoogle", { authCode: data })
       .then((response) => {
         this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_GOOGLE_USER", response.data.user);
+        this.commit("example/SET_GOOGLE_USER", response.data.googleUser);
         resolve(response);
       })
       .catch((error) => {
@@ -179,16 +196,16 @@ export async function signIn({ context, state }, { data }) {
 export function getBoxes({ context, getters }) {
   this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
-  if (!currentState.token) {
+  if (currentState.googleUser.access_token == "") {
     this.$axios
       .get(
         this.$api +
-          `/imap/${JSON.parse(JSON.stringify(currentState.imap.id))}/boxes`,
+          `/imap/${JSON.parse(JSON.stringify(currentState.imapUser.id))}/boxes`,
         {
           params: {
-            password: currentState.imap.password,
-            userEmail: currentState.imap.email, //
-            userId: currentState.imap.id,
+            password: currentState.imapUser.password,
+            userEmail: currentState.imapUser.email,
+            userId: currentState.imapUser.id,
           },
         }
       )
@@ -202,19 +219,20 @@ export function getBoxes({ context, getters }) {
       });
   } else {
     this.$axios
-      .get(this.$api + `/imap/1/boxes`, {
+      .get(this.$api + `/imap/${currentState.googleUser.id}/boxes`, {
         params: {
-          token: currentState.token,
-          userEmail: currentState.imap.email,
+          user: currentState.googleUser,
         },
       })
       .then((response) => {
         this.commit("example/SET_LOADINGBOX", false);
         this.commit("example/SET_BOXES", response.data.boxes);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
+        console.log(response.data);
+        this.commit("example/SET_UPDATE_TOKEN", response.data.token);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", error.response.data.error);
+        this.commit("example/SET_ERROR", error);
       });
   }
 }

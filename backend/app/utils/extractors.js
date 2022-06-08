@@ -1,9 +1,7 @@
-/* istanbul ignore else */
 const disposable = require("./Disposable.json");
 const freeProviders = require("./FreeProviders.json");
 const dns = require("dns");
 const utilsForRegEx = require("./regexpUtils");
-const logger = require("../utils/logger")(module);
 const NOREPLY = [
   "noreply",
   "no-reply",
@@ -73,6 +71,7 @@ function IsNotNoReply(oneEmail, imapEmail) {
  * @returns {Array}
  */
 function addEmailToDatabase(database, email) {
+  /* istanbul ignore else */
   if (!checkExistence(database, email.email)) {
     database.push(email);
   }
@@ -91,6 +90,7 @@ function parseDate(date) {
     .replaceAll(/ CEST-(.*)| CEST/g, "+0200")
     .replace(/ UTC-(.*)/i, "");
   const dateFromString = new Date(tempDate);
+  /* istanbul ignore else */
   if (isNaN(Date.parse(dateFromString)) == false) {
     const ISODate = dateFromString.toISOString();
     return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
@@ -115,14 +115,18 @@ function compareDates(date1, date2) {
  * @param  {object} email email object
  * @returns {Array}
  */
-function addFieldsAndFolder(database, email) {
+function addFieldsAndFolder(database, email, isConversation) {
   for (const i in database) {
+    /* istanbul ignore else */
     if (email.email.address == database[i].email.address) {
       Object.keys(database[i].field).includes(Object.keys(email.field)[0])
         ? (database[i].field[Object.keys(email.field)[0]] += 1)
         : (database[i].field[Object.keys(email.field)[0]] = 1);
       if (compareDates(email.date, database[i].date)) {
         database[i].date = email.date;
+      }
+      if (isConversation) {
+        database[i].engagement += 1;
       }
     }
   }
@@ -132,14 +136,18 @@ function addFieldsAndFolder(database, email) {
  * @param  {object} EmailInfo Email infos (address, name, folder, msgID..)
  * @returns {object} The input with a new appended field called "type"
  */
-function addEmailType(EmailInfo) {
-  const domain = EmailInfo.email.address.split("@")[1];
-  if (disposable.includes(domain)) {
-    EmailInfo["type"] = "Disposable email";
-  } else if (freeProviders.includes(domain)) {
-    EmailInfo["type"] = "Email provider";
+function addEmailType(EmailInfo, isNewsletter) {
+  if (isNewsletter) {
+    EmailInfo["type"] = "Newsletter";
   } else {
-    EmailInfo["type"] = "Custom domain";
+    const domain = EmailInfo.email.address.split("@")[1];
+    if (disposable.includes(domain)) {
+      EmailInfo["type"] = "Disposable email";
+    } else if (freeProviders.includes(domain)) {
+      EmailInfo["type"] = "Email provider";
+    } else {
+      EmailInfo["type"] = "Custom domain";
+    }
   }
 
   return EmailInfo;
@@ -153,16 +161,25 @@ function addEmailType(EmailInfo) {
  * @param  {object} oneEmail Email address and name
  * @param  {Array} database An array that represents a virtual database
  */
-function manipulateData(element, oneEmail, database, folder, messageDate) {
+function manipulateData(
+  element,
+  oneEmail,
+  database,
+  folder,
+  messageDate,
+  isNewsletter,
+  isConversation
+) {
   const emailInfo = {
     email: oneEmail,
-    field: { [element]: 1 },
+    field: { [element]: 1, ["engagement"]: isConversation ? 1 : 0 },
     date: parseDate(messageDate),
   };
+
   if (!checkExistence(database, oneEmail)) {
-    addEmailToDatabase(database, addEmailType(emailInfo));
+    addEmailToDatabase(database, addEmailType(emailInfo, isNewsletter));
   } else {
-    addFieldsAndFolder(database, emailInfo);
+    addFieldsAndFolder(database, emailInfo, isNewsletter, isConversation);
   }
 }
 
@@ -188,7 +205,9 @@ function manipulateDataWithDns(
   tempArrayInValid,
   isScanned,
   folder,
-  messageDate
+  messageDate,
+  isNewsletter,
+  isConversation
 ) {
   /* istanbul ignore if */
   if (
@@ -209,7 +228,15 @@ function manipulateDataWithDns(
           });
 
           // append data when domain is valid
-          manipulateData(element, oneEmail, database, folder, messageDate);
+          manipulateData(
+            element,
+            oneEmail,
+            database,
+            folder,
+            messageDate,
+            isNewsletter,
+            isConversation
+          );
         }
       } else {
         tempArrayInValid.push(domain);
@@ -217,9 +244,6 @@ function manipulateDataWithDns(
       }
     });
   }
-  // if (tempValidDomain.includes(domain)) {
-  //   return manipulateData(element, oneEmail, database);
-  // }
 }
 
 /**
@@ -241,11 +265,22 @@ function treatParsedEmails(
   folder
 ) {
   let messageDate = "";
+  let isNewsletter = false;
+  let isConversation = false;
   if (dataTobeStored.date) {
     messageDate = dataTobeStored.date[0];
     delete dataTobeStored.date;
   }
-
+  if (dataTobeStored["list-unsubscribe"]) {
+    console.log(dataTobeStored);
+    delete dataTobeStored["list-unsubscribe"];
+    isNewsletter = true;
+  }
+  if (dataTobeStored["references"]) {
+    console.log(dataTobeStored.references);
+    delete dataTobeStored.references;
+    isConversation = true;
+  }
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
       const email =
@@ -268,7 +303,15 @@ function treatParsedEmails(
             // if domain already stored in cache
 
             if (domainRedis || tempArrayValid.includes(domain)) {
-              manipulateData(element, oneEmail, database, folder, messageDate);
+              manipulateData(
+                element,
+                oneEmail,
+                database,
+                folder,
+                messageDate,
+                isNewsletter,
+                isConversation
+              );
             } else if (!tempArrayInValid.includes(domain)) {
               manipulateDataWithDns(
                 element,
@@ -281,7 +324,9 @@ function treatParsedEmails(
                 tempArrayInValid,
                 isScanned,
                 folder,
-                messageDate
+                messageDate,
+                isNewsletter,
+                isConversation
               );
             }
           }

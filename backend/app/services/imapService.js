@@ -1,10 +1,11 @@
 /* istanbul ignore file */
 const utilsForRegEx = require("../utils/regexpUtils");
 const utilsForDataManipulation = require("../utils/extractors");
+const utilsForToken = require("../utils/tokenHelpers");
 const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
-const xoauth2 = require("xoauth2");
+const { Console } = require("winston/lib/winston/transports");
 
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
@@ -20,17 +21,12 @@ function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   } else {
     // extract header attributes
     const header = Imap.parseHeader(chunk.toString("utf8"));
-
     Object.keys(header).map((field) => {
       minedEmails[field] = header[field];
     });
   }
 }
-function ErrorOnFetch(err, imapInfoEmail) {
-  logger.error(
-    `Error occured when collecting emails from imap account with email : ${imapInfoEmail}`
-  );
-}
+
 async function OpenedBoxCallback(
   store,
   database,
@@ -132,10 +128,10 @@ async function OpenedBoxCallback(
   }
 }
 
-function imapService(
+async function imapService(
   bodiesTofetch,
   boxes,
-  imapInfo,
+  user,
   RedisClient,
   sse,
   query,
@@ -144,40 +140,40 @@ function imapService(
 ) {
   let imapInfoEmail;
   let imap;
+  let tokens;
   const tempArrayValid = [];
   const tempArrayInValid = [];
   const isScanned = [];
-  if (query.token == "") {
+
+  if (!user.access_token) {
     imap = new Imap({
-      user: imapInfo.email,
+      user: user.email,
       password: query.password,
-      host: imapInfo.host,
-      port: imapInfo.port,
+      host: user.host,
+      port: user.port,
       tls: true,
       connTimeout: 20000,
       keepalive: false,
       authTimeout: 7000,
       tlsOptions: {
         port: 993,
-        host: imapInfo.host,
-        servername: imapInfo.host,
+        host: user.host,
+        servername: user.host,
       },
     });
-    imapInfoEmail = imapInfo.email;
+    imapInfoEmail = user.email;
   } else {
-    imapInfoEmail = query.userEmail;
-    const xoauth2gen = xoauth2.createXOAuth2Generator({
-      user: query.userEmail,
-      clientId: process.env.GG_CLIENT_ID,
-      clientSecret: process.env.GG_CLIENT_SECRET,
-      accessToken: query.token,
-    });
+    imapInfoEmail = user.email;
 
-    const authData = `user=${query.userEmail}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`;
-    const xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
+    tokens = await utilsForToken.generateXOauthToken(
+      user.access_token,
+      user,
+      user.refreshToken
+    );
+    sse.send(tokens.newToken, "token" + query.user.id);
     imap = new Imap({
-      user: query.userEmail,
-      xoauth2: xoauth2_token,
+      user: user.email,
+      xoauth2: tokens.xoauth2Token,
       host: "imap.gmail.com",
       port: 993,
       tls: true,
@@ -190,9 +186,7 @@ function imapService(
     });
   }
   imap.connect();
-  logger.info(
-    `Begin collecting emails from imap account with email : ${imapInfo.email}`
-  );
+  logger.info(`Begin collecting emails from imap account with id : ${user.id}`);
   const database = [];
   imap.once("ready", async () => {
     const loopfunc = (box) => {
@@ -242,29 +236,26 @@ function imapService(
   req.on("close", () => {
     imap.destroy();
     imap.end();
-    sse.send(helpers.sortDatabase(database), "data" + query.userId);
-    sse.send(true, `dns${query.userId}`);
+    sse.send(helpers.sortDatabase(database), "data" + user.id);
+    sse.send(true, `dns${user.id}`);
 
-    logger.info(`Connection Closed (maybe by the user) : ${imapInfo.email}`);
+    logger.info(`Connection Closed (maybe by the user) : ${user.id}`);
   });
 
   imap.once("error", function (err) {
     logger.error(
-      `Error occured when collecting emails from imap account with email : ${err} ${imapInfo.email}`
+      `Error occured when collecting emails fro account with id : ${err} ${user.id}`
     );
-    res.status(500).send({
-      message: "Error when fetching emails.",
-    });
   });
 
   imap.once("end", function () {
     logger.info(
-      `End collecting emails from imap account with email : ${imapInfo.email}, mined : ${database.length} email addresses`
+      `End collecting emails for account with id : ${user.id}, mined : ${database.length} email addresses`
     );
     const data = helpers.sortDatabase(database);
 
-    sse.send(data, `data${query.userId}`);
-    sse.send(true, `dns${query.userId}`);
+    sse.send(data, `data${user.id}`);
+    sse.send(true, `dns${user.id}`);
     setTimeout(() => {
       res.status(200).send({
         message: "Done mining emails !",

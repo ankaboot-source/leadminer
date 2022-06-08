@@ -110,20 +110,146 @@ describe("inputHelpers.sortDatabase(databaseArray", function () {
   let data = [
     {
       email: {
-        name: '"MailerLite.fr"',
-        address: "info@mailerlite.fr",
+        name: "miner",
+        address: "info@minerlead.io",
       },
       field: { from: 1, "reply-to": 1 },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "leadminer",
+        address: "info@leadminer.io",
+      },
+      field: { from: 1, "reply-to": 1 },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "",
+        address: "info@mailerlite.fr",
+      },
+      field: { "reply-to": 1 },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "",
+        address: "info@mailerlite.fr",
+      },
+      field: { "reply-to": 4 },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "8",
+        address: "info@mailerlite.fr",
+      },
+      field: { from: 1 },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "4",
+        address: "info@mailerlite.fr",
+      },
+      field: { from: 1 },
       date: "2014-02-25 17:31",
       type: "Custom domain",
     },
   ];
   let expectedOutput = [
     {
-      email: { name: "MailerLite.fr", address: "info@mailerlite.fr" },
+      email: {
+        name: "miner",
+        address: "info@minerlead.io",
+      },
       field: {
         from: 1,
         "reply-to": 1,
+        total: 2,
+        recipient: 0,
+        body: 0,
+        sender: 2,
+      },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "leadminer",
+        address: "info@leadminer.io",
+      },
+      field: {
+        from: 1,
+        "reply-to": 1,
+        total: 2,
+        recipient: 0,
+        body: 0,
+        sender: 2,
+      },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "",
+        address: "info@mailerlite.fr",
+      },
+      field: {
+        "reply-to": 1,
+        total: 2,
+        recipient: 0,
+        body: 0,
+        sender: 2,
+      },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "",
+        address: "info@mailerlite.fr",
+      },
+      field: {
+        "reply-to": 1,
+        total: 4,
+        recipient: 0,
+        body: 0,
+        sender: 2,
+      },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "8",
+        address: "info@mailerlite.fr",
+      },
+      field: {
+        from: 1,
+
+        total: 2,
+        recipient: 0,
+        body: 0,
+        sender: 2,
+      },
+      date: "2014-02-25 17:31",
+      type: "Custom domain",
+    },
+    {
+      email: {
+        name: "4",
+        address: "info@mailerlite.fr",
+      },
+      field: {
+        from: 1,
+
         total: 2,
         recipient: 0,
         body: 0,

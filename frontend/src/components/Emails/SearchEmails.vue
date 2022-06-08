@@ -21,6 +21,7 @@
                     v-model:expanded="expanded"
                     :default-expand-all="true"
                     class="col-12 col-sm-6"
+                    icon="arrow_forward_ios"
                     :nodes="Boxes"
                     @update:ticked="Ticked"
                     node-key="label"
@@ -71,32 +72,123 @@
                   <div
                     class="text-subtitle2 shadow-2 bborder q-pa-sm text-orange-8"
                   >
-                    Header
+                    <q-tree
+                      class="col-12 col-sm-6 text-cyan-10"
+                      :nodes="optionsSenderFields"
+                      node-key="value"
+                      icon="arrow_forward_ios"
+                      tick-strategy="leaf"
+                      color="teal"
+                      expanded="Sender"
+                      v-model:ticked="acceptedHeaders"
+                      ><template class="row" v-slot:header-root="prop">
+                        <div
+                          class="col-5 text-weight-bold text-primary text-orange-8"
+                        >
+                          {{ prop.node.label }}
+                        </div> </template
+                      ><template class="row" v-slot:default-header="prop"
+                        ><div
+                          class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
+                        >
+                          <div class="col-5 text-weight-bold text-teal-5">
+                            {{ prop.node.label
+                            }}<q-badge
+                              v-if="prop.node.label == 'Reply-to'"
+                              color="transparent"
+                              class="text-bold q-ml-lg"
+                              rounded
+                              floating
+                              align="middle"
+                              outlined
+                              transparent
+                              ><q-icon
+                                name="o_info"
+                                color="orange"
+                                size="22px"
+                              /><q-tooltip
+                                anchor="bottom middle"
+                                class="bg-orange-6 text-white text-caption"
+                                self="top middle"
+                              >
+                                Emails address you'll answer to
+                              </q-tooltip></q-badge
+                            >
+                          </div>
+                        </div></template
+                      ></q-tree
+                    >
 
-                    <q-option-group
-                      v-model="acceptedHeaders"
-                      class="text-cyan-10"
-                      name="accepted_genres"
-                      :options="optionsHeaderFields"
-                      type="checkbox"
-                      color="secondary"
-                      inline
-                    />
-                  </div>
-                  <div
-                    class="text-subtitle2 q-pa-sm q-mt-sm shadow-2 bborder text-orange-8"
-                  >
-                    Body
+                    <q-tree
+                      class="col-12 col-sm-6 text-cyan-10"
+                      :nodes="optionsRecipientFields"
+                      node-key="value"
+                      tick-strategy="leaf"
+                      icon="arrow_forward_ios"
+                      color="teal"
+                      expanded="Recipient"
+                      v-model:ticked="acceptedHeaders"
+                      ><template class="row" v-slot:header-root="prop">
+                        <div class="col-5 text-weight-bold text-orange-8">
+                          {{ prop.node.label }}
+                        </div> </template
+                      ><template
+                        class="row paddingzero"
+                        v-slot:default-header="prop"
+                        ><div
+                          class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
+                        >
+                          <div class="col-5 text-weight-bold text-teal-5">
+                            {{ prop.node.label }}
+                          </div>
+                        </div></template
+                      ></q-tree
+                    >
+                    <div class="text-subtitle2 q-pa-sm text-orange-8">
+                      <q-tree
+                        class="col-12 col-sm-6 text-cyan-10"
+                        :nodes="optionsBody"
+                        node-key="value"
+                        tick-strategy="leaf"
+                        icon="arrow_forward_ios"
+                        color="teal"
+                        v-model:ticked="acceptedBody"
+                        ><template class="row" v-slot:header-root="prop"
+                          ><div
+                            class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
+                          >
+                            <div
+                              class="col-5 text-weight-bold text-primary text-orange-8"
+                            >
+                              {{ prop.node.label }}
+                            </div>
 
-                    <q-option-group
-                      v-model="acceptedBody"
-                      class="text-cyan-10"
-                      name="accepted_genres"
-                      :options="optionsBody"
-                      type="checkbox"
-                      color="secondary"
-                      inline
-                    />
+                            <div class="col-5 text-weight-bold text-primary">
+                              <q-badge
+                                color="transparent"
+                                class="text-bold q-ml-lg"
+                                rounded
+                                floating
+                                align="middle"
+                                outlined
+                                transparent
+                                ><q-icon
+                                  name="o_info"
+                                  color="orange"
+                                  size="22px"
+                                /><q-tooltip
+                                  anchor="bottom middle"
+                                  self="top middle"
+                                  class="bg-orange-6 text-white text-caption"
+                                >
+                                  Emails addressed found inside the email
+                                </q-tooltip></q-badge
+                              >
+                            </div>
+                          </div></template
+                        ></q-tree
+                      >
+                    </div>
                   </div>
                 </div>
                 <div class="column col-12">
@@ -229,6 +321,16 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
+            <template v-slot:header-cell-Engagement="props">
+              <q-th :props="props">
+                <q-tooltip
+                  class="bg-teal-4 text-caption"
+                  anchor="top middle"
+                  self="center middle"
+                  >Count of conversations this email address was in</q-tooltip
+                >{{ props.col.label }}
+              </q-th>
+            </template>
             <template #body="props">
               <q-tr :props="props">
                 <q-td key="#" style="width: 3vw" :props="props"
@@ -262,6 +364,11 @@
                 ><q-td key="Recipient" style="width: 5vw" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.recipient }}
+                  </q-badge>
+                </q-td>
+                <q-td key="Engagement" style="width: 5vw" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.field.engagement }}
                   </q-badge>
                 </q-td>
 
@@ -379,6 +486,15 @@ const columns = [
     label: "Recipient",
     type: "number",
     field: (row) => row.field.recipient,
+    sortOrder: "ad",
+    sortable: true,
+  },
+  {
+    name: "Engagement",
+    align: "center",
+    label: "Engagement",
+    type: "number",
+    field: (row) => row.field.engagement,
     sortOrder: "ad",
     sortable: true,
   },
@@ -553,26 +669,43 @@ export default defineComponent({
       acceptedBody: ref(["1"]),
       selectedBoxes: ref([]),
       quasar: useQuasar(),
-      optionsHeaderFields: [
+      optionsSenderFields: [
         {
-          label: "From",
-          value: "FROM",
+          label: "Sender",
+          value: "Sender",
+          header: "root",
+          children: [
+            {
+              label: "From",
+              value: "FROM",
+            },
+            {
+              label: "Reply-to",
+              value: "REPLY-TO",
+            },
+          ],
         },
+      ],
+      optionsRecipientFields: [
         {
-          label: "To",
-          value: "TO",
-        },
-        {
-          label: "Cc",
-          value: "CC",
-        },
-        {
-          label: "Bcc",
-          value: "BCC",
-        },
-        {
-          label: "Reply-to",
-          value: "REPLY-TO",
+          label: "Recipient",
+          value: "Recipient",
+          header: "root",
+
+          children: [
+            {
+              label: "To",
+              value: "TO",
+            },
+            {
+              label: "Cc",
+              value: "CC",
+            },
+            {
+              label: "Bcc",
+              value: "BCC",
+            },
+          ],
         },
       ],
       boxOptions: [],
@@ -580,6 +713,7 @@ export default defineComponent({
         {
           label: "Body",
           value: "1",
+          header: "root",
         },
       ],
     };
@@ -655,26 +789,13 @@ export default defineComponent({
   },
   mounted() {
     //this.scroll();
-    const googleUser = this.quasar.sessionStorage.getItem("googleUser");
+    const googleUser = this.quasar.localStorage.getItem("googleUser");
     let imapUser;
     if (!googleUser) {
-      imapUser = this.quasar.sessionStorage.getItem("ImapUser");
+      imapUser = this.quasar.localStorage.getItem("imapUser");
     }
     if (googleUser) {
-      let timeNow = Date.now();
-      if (googleUser.token.expires_at > timeNow) {
-        this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
-        let imap = {
-          id: Math.random().toString(36).substr(2),
-          email: googleUser.user,
-          host: "",
-          port: "",
-        };
-        this.$store.commit("example/SET_IMAP", imap);
-      } else {
-        this.quasar.sessionStorage.remove("googleUser");
-        this.$router.push("/");
-      } //
+      this.$store.commit("example/SET_GOOGLE_USER", googleUser);
     } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
       this.$store.commit("example/SET_PASSWORD", imapUser.password);
@@ -721,27 +842,7 @@ export default defineComponent({
           // fail
         });
     },
-    // isScrolledIntoView(el) {
-    //   let rect = el.getBoundingClientRect();
-    //   let elemTop = rect.top;
-    //   let elemBottom = rect.bottom;
-    //   let isVisible = elemTop < window.innerHeight && elemBottom >= 0;
-    //   return isVisible;
-    // },
-    // scroll() {
-    //   window.onscroll = () => {
-    //     let scrolledTo = document.querySelector(".scroll");
-    //     if (scrolledTo && this.isScrolledIntoView(scrolledTo)) {
-    //       this.Emails = [
-    //         ...this.Emails,
-    //         ...this.retrievedEmails.slice(
-    //           this.Emails.length,
-    //           this.Emails.length + 15
-    //         ),
-    //       ];
-    //     }
-    //   };
-    // },
+
     showNotif(msg, color, icon) {
       if (msg && typeof msg != "undefined") {
         this.quasar.notify({
@@ -777,15 +878,16 @@ export default defineComponent({
       var bot = this.boxes;
       //  default if nothing is selected
       if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
-        fields = "HEADER.FIELDS (FROM TO CC BCC REPLY-TO DATE),TEXT";
+        fields =
+          "HEADER.FIELDS (FROM TO CC BCC REPLY-TO DATE LIST-UNSUBSCRIBE REFERENCES),TEXT";
       } else if (this.acceptedHeaders.length != 0) {
         this.acceptedBody.length == 0
           ? (fields = `HEADER`)
-          : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(" ")} DATE),${
-              this.acceptedBody[0]
-            }`);
+          : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(
+              " "
+            )} DATE LIST-UNSUBSCRIBE REFERENCES),${this.acceptedBody[0]}`);
       } else if (this.acceptedHeaders.length == 0) {
-        fields = `HEADER.FIELDS (DATE),${this.acceptedBody[0]}`;
+        fields = `HEADER.FIELDS (DATE LIST-UNSUBSCRIBE REFERENCES),${this.acceptedBody[0]}`;
       }
 
       let data = {
@@ -813,8 +915,14 @@ export default defineComponent({
           if (this.$refs.tree) {
             this.$refs.tree.expandAll();
           }
+          this.quasar.localStorage.clear(),
+            this.quasar.localStorage.set(
+              "googleUser",
+              this.$store.state.example.googleUser
+            );
+          console.dir(this.quasar.localStorage.getItem("googleUser"));
+          console.dir(this.$store.state.example.googleUser);
         }, 2000);
-
         this.showNotif(
           this.$store.getters["example/getStates"].infoMessage,
           "teal-5",
@@ -832,6 +940,9 @@ export default defineComponent({
 .bborder {
   border: 1px solid transparent;
   border-radius: 12px;
+}
+.q-tree > .q-tree__node--child > .q-tree__node-header {
+  padding: 5px;
 }
 .borderForBoxes {
   border: 0.2px solid transparent;

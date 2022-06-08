@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/app/utils/extractors.js</title>
+    <title>Code coverage report for backend/app/controllers/imap.controller.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../prettify.css" />
     <link rel="stylesheet" href="../../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">backend/app/utils</a> extractors.js</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">backend/app/controllers</a> imap.controller.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.84% </span>
+                <span class="strong">35.04% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>48/65</span>
+                <span class='fraction'>41/117</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">42.5% </span>
+                <span class="strong">26.82% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>17/40</span>
+                <span class='fraction'>11/41</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">71.42% </span>
+                <span class="strong">26.92% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>10/14</span>
+                <span class='fraction'>7/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">73.84% </span>
+                <span class="strong">35.04% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>48/65</span>
+                <span class='fraction'>41/117</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -367,7 +367,64 @@
 <a name='L302'></a><a href='#L302'>302</a>
 <a name='L303'></a><a href='#L303'>303</a>
 <a name='L304'></a><a href='#L304'>304</a>
-<a name='L305'></a><a href='#L305'>305</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L305'></a><a href='#L305'>305</a>
+<a name='L306'></a><a href='#L306'>306</a>
+<a name='L307'></a><a href='#L307'>307</a>
+<a name='L308'></a><a href='#L308'>308</a>
+<a name='L309'></a><a href='#L309'>309</a>
+<a name='L310'></a><a href='#L310'>310</a>
+<a name='L311'></a><a href='#L311'>311</a>
+<a name='L312'></a><a href='#L312'>312</a>
+<a name='L313'></a><a href='#L313'>313</a>
+<a name='L314'></a><a href='#L314'>314</a>
+<a name='L315'></a><a href='#L315'>315</a>
+<a name='L316'></a><a href='#L316'>316</a>
+<a name='L317'></a><a href='#L317'>317</a>
+<a name='L318'></a><a href='#L318'>318</a>
+<a name='L319'></a><a href='#L319'>319</a>
+<a name='L320'></a><a href='#L320'>320</a>
+<a name='L321'></a><a href='#L321'>321</a>
+<a name='L322'></a><a href='#L322'>322</a>
+<a name='L323'></a><a href='#L323'>323</a>
+<a name='L324'></a><a href='#L324'>324</a>
+<a name='L325'></a><a href='#L325'>325</a>
+<a name='L326'></a><a href='#L326'>326</a>
+<a name='L327'></a><a href='#L327'>327</a>
+<a name='L328'></a><a href='#L328'>328</a>
+<a name='L329'></a><a href='#L329'>329</a>
+<a name='L330'></a><a href='#L330'>330</a>
+<a name='L331'></a><a href='#L331'>331</a>
+<a name='L332'></a><a href='#L332'>332</a>
+<a name='L333'></a><a href='#L333'>333</a>
+<a name='L334'></a><a href='#L334'>334</a>
+<a name='L335'></a><a href='#L335'>335</a>
+<a name='L336'></a><a href='#L336'>336</a>
+<a name='L337'></a><a href='#L337'>337</a>
+<a name='L338'></a><a href='#L338'>338</a>
+<a name='L339'></a><a href='#L339'>339</a>
+<a name='L340'></a><a href='#L340'>340</a>
+<a name='L341'></a><a href='#L341'>341</a>
+<a name='L342'></a><a href='#L342'>342</a>
+<a name='L343'></a><a href='#L343'>343</a>
+<a name='L344'></a><a href='#L344'>344</a>
+<a name='L345'></a><a href='#L345'>345</a>
+<a name='L346'></a><a href='#L346'>346</a>
+<a name='L347'></a><a href='#L347'>347</a>
+<a name='L348'></a><a href='#L348'>348</a>
+<a name='L349'></a><a href='#L349'>349</a>
+<a name='L350'></a><a href='#L350'>350</a>
+<a name='L351'></a><a href='#L351'>351</a>
+<a name='L352'></a><a href='#L352'>352</a>
+<a name='L353'></a><a href='#L353'>353</a>
+<a name='L354'></a><a href='#L354'>354</a>
+<a name='L355'></a><a href='#L355'>355</a>
+<a name='L356'></a><a href='#L356'>356</a>
+<a name='L357'></a><a href='#L357'>357</a>
+<a name='L358'></a><a href='#L358'>358</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -378,40 +435,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -424,11 +466,42 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">60x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -439,215 +512,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -663,318 +544,596 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const disposable = require("./Disposable.json");
-const freeProviders = require("./FreeProviders.json");
-const dns = require("dns");
-const utilsForRegEx = require("./regexpUtils");
-const NOREPLY = [
-  "noreply",
-  "no-reply",
-  "notifications-noreply",
-  "accusereception",
-  "support",
-  "maildaemon",
-  "notifications",
-  "notification",
-  "send-as-noreply",
-  "systemalert",
-  "pasdereponse",
-  "mailer-daemon",
-  "mail daemon",
-  "mailer daemon",
-  "alerts",
-  "auto-confirm",
-  "ne-pas-repondre",
-  "no.reply",
-  "nepasrepondre",
-  "do-not-reply",
-  "FeedbackForm",
-  "mailermasters",
-  "wordpress",
-  "donotreply",
-  "notify",
-  "do-notreply",
-  "password",
-  "reply-",
-  "no_reply",
-  "unsubscribe",
-];
-/**
- * Check if a given email address is already mined.
- * @param  {object} email email address
- * @returns {boolean}
- */
-&nbsp;
-function checkExistence(database, email) {
-  return database.some((element) =&gt; {
-    return element.email.address === email.address;
-  });
-}
-&nbsp;
-/**
- * Check if a given email address includes noreply strings pattern
- * Or it's the imapEmail address.
- * @param  {object} oneEmail email object
- * @param  {string} imapEmail Email address associated to connected imap account
- * @returns {boolean}
- */
-function IsNotNoReply(oneEmail, imapEmail) {
-  const noReply = NOREPLY.filter((word) =&gt;
-    oneEmail.toLowerCase().includes(word.toLowerCase())
-  );
-  if (noReply.length &gt; 0 || oneEmail.includes(imapEmail)) {
-    return false;
-  } else {
-    return true;
-  }
-}
-&nbsp;
-/**
- * Add a given Email to data array.
- * @param  {Array} database An array that represents a virtual database
- * @param  {object} email email object
- * @returns {Array}
- */
-function addEmailToDatabase(database, email) {
-  /* istanbul ignore else */
-  if (!checkExistence(database, email.email)) {
-    database.push(email);
-  }
-}
-/**
- * Parse then format date.
- * @param  {object} date Date to be formatted
- * @example
- * input : Wed, 11 May 2022 16:54:37 +0100
- * output : 2022/05/11 14:54:37 (in utc time)
- * @returns {object} Formated date
- */
-function parseDate(date) {
-  //let timezoneOffset = date.split(" ").pop();
-  const tempDate = date
-    .replaceAll(/ CEST-(.*)| CEST/g, "+0200")
-    .replace(/ UTC-(.*)/i, "");
-  const dateFromString = new Date(tempDate);
-  /* istanbul ignore else */
-  if (isNaN(Date.parse(dateFromString)) == false) {
-    const ISODate = dateFromString.toISOString();
-    return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
-  }
-}
-&nbsp;
-/**
- * Compare two dates.
- * @param  {object} date1 First date
- * @param  {object} date2 Second date
- * @returns {object} true if date1 is greater than date2, else false
- */
-function compareDates(date1, date2) {
-  const d1 = Date.parse(date1);
-  const d2 = Date.parse(date2);
-&nbsp;
-  return d1 &gt; d2;
-}
-/**
- * Add fields and folder to a given email.
- * @param  {Array} database An array that represents a virtual database
- * @param  {object} email email object
- * @returns {Array}
- */
-function addFieldsAndFolder(database, email) {
-  for (const i in database) {
-    /* istanbul ignore else */
-    if (email.email.address == database[i].email.address) {
-      Object.keys(database[i].field).includes(Object.keys(email.field)[0])
-        ? (database[i].field[Object.keys(email.field)[0]] += 1)
-        : (database[i].field[Object.keys(email.field)[0]] = 1);
-      if (compareDates(email.date, database[i].date)) {
-        database[i].date = email.date;
-      }
-    }
-  }
-}
-/**
- * Adds Email type to EmailInfo by checking against domain type database.
- * @param  {object} EmailInfo Email infos (address, name, folder, msgID..)
- * @returns {object} The input with a new appended field called "type"
- */
-function addEmailType(EmailInfo) {
-  const domain = EmailInfo.email.address.split("@")[1];
-  if (disposable.includes(domain)) {
-    EmailInfo["type"] = "Disposable email";
-  } else if (freeProviders.includes(domain)) {
-    EmailInfo["type"] = "Email provider";
-  } else {
-    EmailInfo["type"] = "Custom domain";
-  }
-&nbsp;
-  return EmailInfo;
-}
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const Imap = require("imap");
+const db = require("../models");
+const ImapInfo = db.imapInfo;
+const googleUser = db.googleUsers;
+const logger = require("../utils/logger")(module);
+const UtilsForData = require("../utils/inputHelpers");
+const utilsForToken = require("../utils/tokenHelpers");
+const imapService = require("../services/imapService");
+const objectScan = require("object-scan");
 &nbsp;
 /**
- * Uses checkExistence function to check if the current email exists
- * if already mined then update header fields
- * else it calls a function to add mined data to database array.
- * @param  {string} element Field (from, cc, bcc..)
- * @param  {object} oneEmail Email address and name
- * @param  {Array} database An array that represents a virtual database
+ *  Create imap info account.
+ * @param  {} req
+ * @param  {} res
  */
-function manipulateData(element, oneEmail, database, folder, messageDate) {
-  const emailInfo = {
-    email: oneEmail,
-    field: { [element]: 1 },
-    date: parseDate(messageDate),
-  };
-  if (!checkExistence(database, oneEmail)) {
-    addEmailToDatabase(database, addEmailType(emailInfo));
-  } else {
-    addFieldsAndFolder(database, emailInfo);
-  }
-}
-&nbsp;
-/**
- * Check DNS Mx record then append email to database
- * In case of error or no Mx record it sets domain as KO fo further scans
- * @param  {string} element Field (from, cc, bcc..)
- * @param  {String} domain extracted domain name
- * @param  {object} oneEmail Email address and name
- * @param  {Array} database An array that represents a virtual database
- * @param  {RedisClientType} client Redis client
- * @param  {timer} timer Timer to wait Dns calls
- * @param  {Array} tempValidDomain Temporary array for valid domain(only alive for one scan) to prevent redis query
- */
-function <span class="fstat-no" title="function not covered" >manipulateDataWithDns(</span>
-  element,
-  domain,
-  oneEmail,
-  database,
-  client,
-  counter,
-  tempArrayValid,
-  tempArrayInValid,
-  isScanned,
-  folder,
-  messageDate
-) {
-  /* istanbul ignore if */
-<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (</span>
-    domain &amp;&amp;
-    !tempArrayInValid.includes(domain) &amp;&amp;
-    !tempArrayValid.includes(domain) &amp;&amp;
-    !isScanned.includes(domain)
-  ) {
-    isScanned.push(domain);
-    // add to timer if will check dns
-    dns.resolveMx(domain, async (error, addresses) =&gt; {
-      if (addresses) {
-        if (addresses.length &gt; 0) {
-          tempArrayValid.push(domain);
-          //set domain in redis
-          await client.set(domain, "ok", {
-            EX: 864000,
-          });
-&nbsp;
-          // append data when domain is valid
-          manipulateData(element, oneEmail, database, folder, messageDate);
-        }
-      } else {
-        tempArrayInValid.push(domain);
-        counter.invalidAddresses += 1;
-      }
+exports.createImapInfo = (req, res) =&gt; {
+  if (!req.body.email || !req.body.host || !req.body.port) {
+    res.status(400).send({
+      error: "Content can not be empty!",
     });
+    return;
   }
-  // if (tempValidDomain.includes(domain)) {
-  //   return manipulateData(element, oneEmail, database);
-  // }
-}
-&nbsp;
+  // imapInfo object
+  const imapInfo = {
+    email: req.body.email,
+    host: req.body.host,
+    port: req.body.port,
+    tls: req.body.tls ? req.body.tls : <span class="branch-1 cbranch-no" title="branch not covered" >true,</span>
+  };
+  // initiate imap client
+  const imap = new Imap({
+    user: imapInfo.email,
+    password: req.body.password,
+    host: imapInfo.host,
+    port: imapInfo.port,
+    tls: true,
+    connTimeout: 20000,
+    authTimeout: 7000,
+    tlsOptions: {
+      port: imapInfo.port,
+      host: imapInfo.host,
+      servername: imapInfo.host,
+    },
+  });
+  // Ensures that the account exists
+  imap.connect();
+  // if we can connect to the imap account
+  imap.once("ready", () =&gt; {
+    ImapInfo.findOne({ where: { email: imapInfo.email } }).then((imapdata) =&gt; {
+      <span class="missing-if-branch" title="if path not taken" >I</span>if (imapdata === null) {
+        // Save ImapInfo in the database
+<span class="cstat-no" title="statement not covered" >        ImapInfo.create(imapInfo)</span>
+          .then(<span class="fstat-no" title="function not covered" >(d</span>ata) =&gt; {
+<span class="cstat-no" title="statement not covered" >            res.status(200).send({ imapdata: data });</span>
+          })
+          .catch(<span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {
+<span class="cstat-no" title="statement not covered" >            logger.error(</span>
+              `can't create account with email ${req.body.email} : ${err}`
+            );
+<span class="cstat-no" title="statement not covered" >            res.status(500).send({</span>
+              error:
+                "Some error occurred while creating your account imap info.",
+            });
+          });
+      } else {
+        logger.info(
+          `On signup : Account with email ${req.body.email} already exist`
+        );
+        res.status(200).send({
+          message: "Your account already exists !",
+          switch: true,
+          imapdata,
+        });
+      }
+      imap.end();
+    });
+  });
+  // The imap account does not exists or connexion denied
+  imap.once("error", (err) =&gt; {
+    logger.error(
+      `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}  : **Error** ${err}`
+    );
+    res.status(500).send({
+      error: "We can't connect to your imap account.",
+    });
+  });
+};
 /**
- * Check redis database for stored domains, if the domain exists then add to database array
- * else check for DNS MX record
- * @param  {object} dataTobeStored
- * @param  {Array} database An array that represents a virtual database
- * @param  {RedisClientType} client Redis client
+ * Login to account
+ * @param  {} req
+ * @param  {} res
  */
-function <span class="fstat-no" title="function not covered" >treatParsedEmails(</span>
-  dataTobeStored,
-  database,
-  client,
-  imapEmail,
-  counter,
-  tempArrayValid,
-  tempArrayInValid,
-  isScanned,
-  folder
-) {
-  let messageDate = <span class="cstat-no" title="statement not covered" >"";</span>
-<span class="cstat-no" title="statement not covered" >  if (dataTobeStored.date) {</span>
-<span class="cstat-no" title="statement not covered" >    messageDate = dataTobeStored.date[0];</span>
-<span class="cstat-no" title="statement not covered" >    delete dataTobeStored.date;</span>
+exports.loginToAccount = (req, res) =&gt; {
+  if (!req.body.email) {
+    res.status(400).send({
+      error: "Content can not be empty!",
+    });
+    return;
   }
-&nbsp;
-<span class="cstat-no" title="statement not covered" >  Object.keys(dataTobeStored).forEach(<span class="fstat-no" title="function not covered" >(e</span>lement) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (true) {</span>
-      const email =
-<span class="cstat-no" title="statement not covered" >        element != "body"</span>
-          ? utilsForRegEx.extractNameAndEmail(
-              dataTobeStored[element],
-              imapEmail
-            )
-          : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
-      // check existence in database or data array
-<span class="cstat-no" title="statement not covered" >      email.forEach(<span class="fstat-no" title="function not covered" >as</span>ync (oneEmail) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        if (oneEmail) {</span>
-          const domain = <span class="cstat-no" title="statement not covered" >oneEmail.address.split("@")[1];</span>
-<span class="cstat-no" title="statement not covered" >          if (</span>
-            IsNotNoReply(oneEmail.address, imapEmail) &amp;&amp;
-            !tempArrayInValid.includes(domain)
-          ) {
-            // check if already stored in cache (used to speed up domain validation)
-            const domainRedis = <span class="cstat-no" title="statement not covered" >await client.get(domain);</span>
-            // if domain already stored in cache
-&nbsp;
-<span class="cstat-no" title="statement not covered" >            if (domainRedis || tempArrayValid.includes(domain)) {</span>
-<span class="cstat-no" title="statement not covered" >              manipulateData(element, oneEmail, database, folder, messageDate);</span>
-            } else <span class="cstat-no" title="statement not covered" >if (!tempArrayInValid.includes(domain)) {</span>
-<span class="cstat-no" title="statement not covered" >              manipulateDataWithDns(</span>
-                element,
-                domain,
-                oneEmail,
-                database,
-                client,
-                counter,
-                tempArrayValid,
-                tempArrayInValid,
-                isScanned,
-                folder,
-                messageDate
-              );
-            }
-          }
+  ImapInfo.findOne({ where: { email: req.body.email } }).then((imap) =&gt; {
+    if (imap === null) {
+      logger.error(
+        `On login : Account with email ${req.body.email} does not exist`
+      );
+      res.status(500).send({
+        error: "Your account does not exist ! try to sign up.",
+      });
+    } else {
+      const imapConnection = new Imap({
+        user: imap.email,
+        password: req.body.password,
+        host: imap.host,
+        port: imap.port,
+        tls: true,
+        connTimeout: 20000,
+        authTimeout: 7000,
+        tlsOptions: {
+          port: imap.port,
+          host: imap.host,
+          servername: imap.host,
+        },
+      });
+      imapConnection.connect();
+      imapConnection.once("ready", <span class="fstat-no" title="function not covered" >()</span> =&gt; {
+<span class="cstat-no" title="statement not covered" >        if (imap) {</span>
+<span class="cstat-no" title="statement not covered" >          logger.info(</span>
+            `Account with email ${req.body.email} succesfully logged in`
+          );
+<span class="cstat-no" title="statement not covered" >          res.status(200).send({</span>
+            imap,
+          });
+<span class="cstat-no" title="statement not covered" >          imapConnection.end();</span>
         }
+      });
+      imapConnection.on("error", (err) =&gt; {
+        logger.error(
+          `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
+        );
+        res.status(500).send({
+          error: "We can't connect to your imap account, Check credentials.",
+        });
       });
     }
   });
-}
+};
 &nbsp;
-exports.checkExistence = checkExistence;
-exports.addEmailToDatabase = addEmailToDatabase;
-exports.addFieldsAndFolder = addFieldsAndFolder;
-exports.IsNotNoReply = IsNotNoReply;
-exports.addEmailType = addEmailType;
-exports.parseDate = parseDate;
-exports.compareDates = compareDates;
-exports.manipulateData = manipulateData;
-exports.manipulateDataWithDns = manipulateDataWithDns;
-exports.treatParsedEmails = treatParsedEmails;
+/**
+ * Retrieve mailbox files.
+ * @param  {} req
+ * @param  {} res
+ */
+exports.getImapBoxes = <span class="fstat-no" title="function not covered" >as</span>ync (req, res) =&gt; {
+  let imap;
+  let tokens;
+  let user = <span class="cstat-no" title="statement not covered" >JSON.parse(JSON.parse(JSON.stringify(req.query.user)));</span>
+<span class="cstat-no" title="statement not covered" >  if (user.access_token) {</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+      let dbUser = <span class="cstat-no" title="statement not covered" >await googleUser.findByPk(user.id);</span>
+<span class="cstat-no" title="statement not covered" >      tokens = await utilsForToken.generateXOauthToken(</span>
+        user.access_token,
+        user,
+        dbUser.refreshToken
+      );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >      imap = new Imap({</span>
+        user: user.email,
+        xoauth2: tokens.xoauth2Token,
+        host: "imap.gmail.com",
+        port: 993,
+        tls: true,
+        tlsOptions: {
+          port: 993,
+          host: "imap.gmail.com",
+          servername: "imap.gmail.com",
+        },
+      });
+    } catch {
+<span class="cstat-no" title="statement not covered" >      logger.error(`No account with id : ${req.params.id} found`);</span>
+<span class="cstat-no" title="statement not covered" >      res.status(404).send({</span>
+        error: `No account with id : ${req.params.id} found`,
+      });
+    }
+  }
+&nbsp;
+  //case: password based authentication
+  else {
+<span class="cstat-no" title="statement not covered" >    try {</span>
+      let imapInfo = <span class="cstat-no" title="statement not covered" >await ImapInfo.findByPk(req.query.userId);</span>
+<span class="cstat-no" title="statement not covered" >      imap = new Imap({</span>
+        user: imapInfo.email,
+        password: req.query.password,
+        host: imapInfo.host,
+        port: imapInfo.port,
+        tls: true,
+        tlsOptions: {
+          port: imapInfo.port,
+          host: imapInfo.host,
+          servername: imapInfo.host,
+        },
+      });
+    } catch {
+<span class="cstat-no" title="statement not covered" >      logger.error(`No account with email : ${req.params.id} found`);</span>
+<span class="cstat-no" title="statement not covered" >      res.status(404).send({</span>
+        error: `No account with id : ${req.params.id} found`,
+      });
+    }
+  }
+  let Boxes = <span class="cstat-no" title="statement not covered" >[];</span>
+  // try connection to imap server
+<span class="cstat-no" title="statement not covered" >  imap.connect();</span>
+<span class="cstat-no" title="statement not covered" >  imap.once("ready", <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    logger.info(</span>
+      `Begin fetching folders names from imap account with id : ${user.id}`
+    );
+<span class="cstat-no" title="statement not covered" >    imap.getBoxes("", <span class="fstat-no" title="function not covered" >(e</span>rr, boxes) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      Boxes = UtilsForData.getBoxesAll(boxes);</span>
+&nbsp;
+      function <span class="fstat-no" title="function not covered" >iterate(</span>obj) {
+<span class="cstat-no" title="statement not covered" >        obj.map(<span class="fstat-no" title="function not covered" >(k</span>ey) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >          if (key.hasOwnProperty("children")) {</span>
+            let name = <span class="cstat-no" title="statement not covered" >UtilsForData.getPath({ ...Boxes }, key.label);</span>
+<span class="cstat-no" title="statement not covered" >            imap.openBox(name.substring(1), true, <span class="fstat-no" title="function not covered" >(e</span>rr, box) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >              if (box) {</span>
+<span class="cstat-no" title="statement not covered" >                key["total"] = box.messages.total;</span>
+              } else {
+<span class="cstat-no" title="statement not covered" >                key["total"] = 0;</span>
+              }
+<span class="cstat-no" title="statement not covered" >              if (key == obj[obj.length - 1]) {</span>
+<span class="cstat-no" title="statement not covered" >                imap.end();</span>
+              }
+            });
+<span class="cstat-no" title="statement not covered" >            iterate(key.children);</span>
+          } else {
+            let name = <span class="cstat-no" title="statement not covered" >UtilsForData.getPath({ ...Boxes }, key.label);</span>
+<span class="cstat-no" title="statement not covered" >            imap.openBox(name.substring(1), true, <span class="fstat-no" title="function not covered" >(e</span>rr, box) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >              if (box) {</span>
+<span class="cstat-no" title="statement not covered" >                key["total"] = box.messages.total;</span>
+              } else {
+<span class="cstat-no" title="statement not covered" >                key["total"] = 0;</span>
+              }
+<span class="cstat-no" title="statement not covered" >              if (key == obj[obj.length - 1]) {</span>
+<span class="cstat-no" title="statement not covered" >                imap.end();</span>
+              }
+            });
+          }
+        });
+      }
+<span class="cstat-no" title="statement not covered" >      iterate(Boxes);</span>
+    });
+  });
+<span class="cstat-no" title="statement not covered" >  imap.once("error", <span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    logger.error(</span>
+      `error occured when trying to connect to imap account with email : ${user.id} : **Error** ${err}`
+    );
+  });
+<span class="cstat-no" title="statement not covered" >  imap.once("end", <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    logger.info(</span>
+      `End fetching folders names from imap account with id : ${user.id}`
+    );
+<span class="cstat-no" title="statement not covered" >    if (Boxes.length &gt; 0) {</span>
+      let total = <span class="cstat-no" title="statement not covered" >objectScan(["**.{total,children}"], {</span>
+        joined: true,
+        filterFn: <span class="fstat-no" title="function not covered" >({</span> parent, gparent, property, value, context }) =&gt; {
+<span class="cstat-no" title="statement not covered" >          if (property == "total") {</span>
+<span class="cstat-no" title="statement not covered" >            parent["totalIndiv"] = parent.total;</span>
+          }
+<span class="cstat-no" title="statement not covered" >          if (property == "children") {</span>
+<span class="cstat-no" title="statement not covered" >            if (parent) {</span>
+<span class="cstat-no" title="statement not covered" >              value.map(<span class="fstat-no" title="function not covered" >(e</span>lement) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >                parent.total += element.total;</span>
+              });
+            }
+          }
+<span class="cstat-no" title="statement not covered" >          if (property == "total") {</span>
+<span class="cstat-no" title="statement not covered" >            context.sum += value;</span>
+          }
+        },
+      })(Boxes, { sum: 0 });
+<span class="cstat-no" title="statement not covered" >      Boxes = [{ label: user.email, children: [...Boxes], total: total.sum }];</span>
+<span class="cstat-no" title="statement not covered" >      res.status(200).send({</span>
+        boxes: Boxes,
+        message: "End fetching boxes!",
+        token: tokens.newToken,
+      });
+    } else {
+<span class="cstat-no" title="statement not covered" >      res.status(204).send({</span>
+        error: "No boxes found!",
+      });
+    }
+  });
+};
+/**
+ * Get Emails from imap server.
+ * @param  {} req
+ * @param  {} res
+ * @param  {} sse server sent event instance
+ * @param  {} RedisClient redis client
+ */
+exports.getEmails = <span class="fstat-no" title="function not covered" >(r</span>eq, res, sse, RedisClient) =&gt; {
+  // case : password authentication
+<span class="cstat-no" title="statement not covered" >  if (req.query.password) {</span>
+    // fetch imap from database then mine Emails
+<span class="cstat-no" title="statement not covered" >    ImapInfo.findByPk(req.params.id)</span>
+      .then(<span class="fstat-no" title="function not covered" >(i</span>mapUser) =&gt; {
+        // data will include all of the data that will be mined from the mailbox.
+        let boxes = <span class="cstat-no" title="statement not covered" >UtilsForData.getBoxesAndFolders(req.query);</span>
+        // bodiesTofetch is the query that user sends
+        const bodiesTofetch = <span class="cstat-no" title="statement not covered" >req.query.fields;</span>
+<span class="cstat-no" title="statement not covered" >        imapService.imapService(</span>
+          bodiesTofetch,
+          boxes,
+          imapUser,
+          RedisClient,
+          sse,
+          req.query,
+          res,
+          req
+        );
+      })
+      .catch(<span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {
+<span class="cstat-no" title="statement not covered" >        res.status(404).send({</span>
+          error: `No account with id : ${req.params.id} found`,
+        });
+      });
+  } // case : token based authentication
+  else {
+    let boxes = <span class="cstat-no" title="statement not covered" >UtilsForData.getBoxesAndFolders(req.query);</span>
+    // bodiesTofetch is the query that user sends
+    const bodiesTofetch = <span class="cstat-no" title="statement not covered" >req.query.fields;</span>
+    let user = <span class="cstat-no" title="statement not covered" >JSON.parse(JSON.parse(JSON.stringify(req.query.user)));</span>
+<span class="cstat-no" title="statement not covered" >    googleUser</span>
+      .findByPk(user.id)
+      .then(<span class="fstat-no" title="function not covered" >(g</span>oogleUser) =&gt; {
+<span class="cstat-no" title="statement not covered" >        if (googleUser) {</span>
+<span class="cstat-no" title="statement not covered" >          imapService.imapService(</span>
+            bodiesTofetch,
+            boxes,
+            user,
+            RedisClient,
+            sse,
+            req.query,
+            res,
+            req
+          );
+        } else {
+<span class="cstat-no" title="statement not covered" >          res.status(404).send({</span>
+            error: `No account with id : ${user.id} found`,
+          });
+        }
+      })
+      .catch(<span class="fstat-no" title="function not covered" >()</span> =&gt; {
+<span class="cstat-no" title="statement not covered" >        res.status(404).send({</span>
+          error: `No account with id : ${user.id} found`,
+        });
+      });
+  }
+};
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -982,7 +1141,7 @@ exports.treatParsedEmails = treatParsedEmails;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at Wed Jun 08 2022 10:52:01 GMT+0100 (Central European Standard Time)
+                at Wed Jun 08 2022 10:47:37 GMT+0100 (Central European Standard Time)
             </div>
         <script src="../../../prettify.js"></script>
         <script>

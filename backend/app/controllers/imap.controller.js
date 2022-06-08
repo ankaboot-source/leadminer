@@ -1,10 +1,12 @@
+/* istanbul ignore file */
 const Imap = require("imap");
 const db = require("../models");
 const ImapInfo = db.imapInfo;
+const googleUser = db.googleUsers;
 const logger = require("../utils/logger")(module);
 const UtilsForData = require("../utils/inputHelpers");
+const utilsForToken = require("../utils/tokenHelpers");
 const imapService = require("../services/imapService");
-const xoauth2 = require("xoauth2");
 const objectScan = require("object-scan");
 
 /**
@@ -150,39 +152,37 @@ exports.loginToAccount = (req, res) => {
  */
 exports.getImapBoxes = async (req, res) => {
   let imap;
-  /* eslint-disable */
-  var specialChar = `\x01\x01`;
-  /* eslint-disable */
-  var bearerString = `\x01auth=Bearer `;
-  //case: token based authentication
-  if (req.query.token) {
-    xoauth2gen = xoauth2.createXOAuth2Generator({
-      user: req.query.userEmail,
-      clientId: process.env.GG_CLIENT_ID,
-      clientSecret: process.env.GG_CLIENT_SECRET,
-      accessToken: req.query.token,
-    });
+  let tokens;
+  let user = JSON.parse(JSON.parse(JSON.stringify(req.query.user)));
+  if (user.access_token) {
+    try {
+      let dbUser = await googleUser.findByPk(user.id);
+      tokens = await utilsForToken.generateXOauthToken(
+        user.access_token,
+        user,
+        dbUser.refreshToken
+      );
 
-    var authData =
-      "user=" +
-      req.query.userEmail +
-      bearerString +
-      xoauth2gen.accessToken +
-      specialChar;
-    var xoauth2_token = new Buffer.from(authData, "utf-8").toString("base64");
-    imap = new Imap({
-      user: req.query.userEmail,
-      xoauth2: xoauth2_token,
-      host: "imap.gmail.com",
-      port: 993,
-      tls: true,
-      tlsOptions: {
-        port: 993,
+      imap = new Imap({
+        user: user.email,
+        xoauth2: tokens.xoauth2Token,
         host: "imap.gmail.com",
-        servername: "imap.gmail.com",
-      },
-    });
+        port: 993,
+        tls: true,
+        tlsOptions: {
+          port: 993,
+          host: "imap.gmail.com",
+          servername: "imap.gmail.com",
+        },
+      });
+    } catch {
+      logger.error(`No account with id : ${req.params.id} found`);
+      res.status(404).send({
+        error: `No account with id : ${req.params.id} found`,
+      });
+    }
   }
+
   //case: password based authentication
   else {
     try {
@@ -211,12 +211,10 @@ exports.getImapBoxes = async (req, res) => {
   imap.connect();
   imap.once("ready", () => {
     logger.info(
-      `Begin fetching folders names from imap account with email : ${req.query.userEmail}`
+      `Begin fetching folders names from imap account with id : ${user.id}`
     );
     imap.getBoxes("", (err, boxes) => {
-      console.log(boxes);
       Boxes = UtilsForData.getBoxesAll(boxes);
-      console.log(Boxes);
 
       function iterate(obj) {
         obj.map((key) => {
@@ -253,12 +251,12 @@ exports.getImapBoxes = async (req, res) => {
   });
   imap.once("error", (err) => {
     logger.error(
-      `error occured when trying to connect to imap account with email : ${req.query.userEmail} : **Error** ${err}`
+      `error occured when trying to connect to imap account with email : ${user.id} : **Error** ${err}`
     );
   });
   imap.once("end", () => {
     logger.info(
-      `End fetching folders names from imap account with email : ${req.query.userEmail}`
+      `End fetching folders names from imap account with id : ${user.id}`
     );
     if (Boxes.length > 0) {
       let total = objectScan(["**.{total,children}"], {
@@ -279,12 +277,11 @@ exports.getImapBoxes = async (req, res) => {
           }
         },
       })(Boxes, { sum: 0 });
-      Boxes = [
-        { label: req.query.userEmail, children: [...Boxes], total: total.sum },
-      ];
+      Boxes = [{ label: user.email, children: [...Boxes], total: total.sum }];
       res.status(200).send({
         boxes: Boxes,
         message: "End fetching boxes!",
+        token: tokens.newToken,
       });
     } else {
       res.status(204).send({
@@ -304,37 +301,58 @@ exports.getEmails = (req, res, sse, RedisClient) => {
   // case : password authentication
   if (req.query.password) {
     // fetch imap from database then mine Emails
-    ImapInfo.findByPk(req.params.id).then((imapInfo) => {
-      // data will include all of the data that will be mined from the mailbox.
-      let boxes = UtilsForData.getBoxesAndFolders(req.query);
-      console.log(req.query.folders);
-      // bodiesTofetch is the query that user sends
-      const bodiesTofetch = req.query.fields;
-      imapService.imapService(
-        bodiesTofetch,
-        boxes,
-        imapInfo,
-        RedisClient,
-        sse,
-        req.query,
-        res,
-        req
-      );
-    });
+    ImapInfo.findByPk(req.params.id)
+      .then((imapUser) => {
+        // data will include all of the data that will be mined from the mailbox.
+        let boxes = UtilsForData.getBoxesAndFolders(req.query);
+        // bodiesTofetch is the query that user sends
+        const bodiesTofetch = req.query.fields;
+        imapService.imapService(
+          bodiesTofetch,
+          boxes,
+          imapUser,
+          RedisClient,
+          sse,
+          req.query,
+          res,
+          req
+        );
+      })
+      .catch((err) => {
+        res.status(404).send({
+          error: `No account with id : ${req.params.id} found`,
+        });
+      });
   } // case : token based authentication
   else {
     let boxes = UtilsForData.getBoxesAndFolders(req.query);
     // bodiesTofetch is the query that user sends
     const bodiesTofetch = req.query.fields;
-    imapService.imapService(
-      bodiesTofetch,
-      boxes,
-      req.query.userEmail,
-      RedisClient,
-      sse,
-      req.query,
-      res,
-      req
-    );
+    let user = JSON.parse(JSON.parse(JSON.stringify(req.query.user)));
+    googleUser
+      .findByPk(user.id)
+      .then((googleUser) => {
+        if (googleUser) {
+          imapService.imapService(
+            bodiesTofetch,
+            boxes,
+            user,
+            RedisClient,
+            sse,
+            req.query,
+            res,
+            req
+          );
+        } else {
+          res.status(404).send({
+            error: `No account with id : ${user.id} found`,
+          });
+        }
+      })
+      .catch(() => {
+        res.status(404).send({
+          error: `No account with id : ${user.id} found`,
+        });
+      });
   }
 };

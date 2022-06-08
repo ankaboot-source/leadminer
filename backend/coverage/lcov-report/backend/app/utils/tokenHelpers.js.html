@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for backend/app/models/index.js</title>
+    <title>Code coverage report for backend/app/utils/tokenHelpers.js</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../prettify.css" />
     <link rel="stylesheet" href="../../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">backend/app/models</a> index.js</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">backend/app/utils</a> tokenHelpers.js</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>10/10</span>
+                <span class='fraction'>3/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>10/10</span>
+                <span class='fraction'>3/12</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -90,14 +90,12 @@
 <a name='L25'></a><a href='#L25'>25</a>
 <a name='L26'></a><a href='#L26'>26</a>
 <a name='L27'></a><a href='#L27'>27</a>
-<a name='L28'></a><a href='#L28'>28</a>
-<a name='L29'></a><a href='#L29'>29</a>
-<a name='L30'></a><a href='#L30'>30</a>
-<a name='L31'></a><a href='#L31'>31</a>
-<a name='L32'></a><a href='#L32'>32</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L28'></a><a href='#L28'>28</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -105,57 +103,47 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const Sequelize = require("sequelize");
-const dbConfig = require("../config/db.config");
-&nbsp;
-const sequelize = new Sequelize(dbConfig.db, "postgres", dbConfig.password, {
-  host: "localhost",
-  dialect: "postgres",
-  pool: {
-    max: 15,
-    min: 0,
-    acquire: 90000,
-    idle: 30000,
-  },
-  retry: {
-    match: [/Deadlock/i],
-    max: 3, // Maximum rety 3 times
-    backoffBase: 1000, // Initial backoff duration in ms. Default: 100,
-    backoffExponent: 1.5, // Exponent to increase backoff each try. Default: 1.1
-  },
-  logging: false,
-});
-&nbsp;
-const db = {};
-&nbsp;
-db.Sequelize = Sequelize;
-db.sequelize = sequelize;
-&nbsp;
-db.imapInfo = require("./imap.model")(sequelize, Sequelize);
-db.emailsInfos = require("./emails.model")(sequelize, Sequelize);
-db.googleUsers = require("./googleUser.model")(sequelize, Sequelize);
-&nbsp;
-module.exports = db;
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const xoauth2 = require("xoauth2");
+const googleController = require("../controllers/google.controller");
+async function <span class="fstat-no" title="function not covered" >generateXOauthToken(</span>token, userInfo, userRefreshToken) {
+  let access_Token = <span class="cstat-no" title="statement not covered" >token;</span>
+  let now = <span class="cstat-no" title="statement not covered" >new Date();</span>
+  let utc_timestamp = <span class="cstat-no" title="statement not covered" >Date.UTC(</span>
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    now.getUTCHours(),
+    now.getUTCMinutes(),
+    now.getUTCSeconds()
+  );
+<span class="cstat-no" title="statement not covered" >  if (Number(token.experation) + 8 &lt; Math.floor(utc_timestamp / 1000)) {</span>
+<span class="cstat-no" title="statement not covered" >    access_Token = await googleController.refreshAccessToken(userRefreshToken);</span>
+  }
+  const xoauth2gen = <span class="cstat-no" title="statement not covered" >xoauth2.createXOAuth2Generator({</span>
+    user: userInfo.email,
+    clientId: process.env.GG_CLIENT_ID,
+    clientSecret: process.env.GG_CLIENT_SECRET,
+    accessToken: access_Token.access_token,
+  });
+  const authData = <span class="cstat-no" title="statement not covered" >`user=${userInfo.email}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`;</span>
+  const xoauth2_token = <span class="cstat-no" title="statement not covered" >new Buffer.from(authData, "utf-8").toString("base64");</span>
+<span class="cstat-no" title="statement not covered" >  return { xoauth2Token: xoauth2_token, newToken: access_Token };</span>
+}
+exports.generateXOauthToken = generateXOauthToken;
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->

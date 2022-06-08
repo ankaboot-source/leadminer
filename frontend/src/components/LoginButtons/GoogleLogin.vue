@@ -57,39 +57,19 @@ export default {
       } else {
         try {
           const authCode = await this.$gAuth.getAuthCode();
+
           if (authCode) {
-            this.$store
-              .dispatch("example/signUpGoogle", { authCode })
-              .then(() => {
-                this.quasar.localStorage.set("googleUser", {
-                  user: this.$store.state.googleUser,
-                });
+            let data = authCode;
+            this.$store.dispatch("example/signUpGoogle", { data }).then(() => {
+              this.quasar.localStorage.set(
+                "googleUser",
+                this.$store.state.example.googleUser
+              );
+              if (this.$store.state.example.googleUser) {
                 this.$router.push("/dashboard");
-              });
+              }
+            });
           }
-          // const googleUser = await this.$gAuth.signIn();
-          // if (!googleUser) {
-          //   return null;
-          // }
-          // this.user = googleUser.getBasicProfile().getEmail();
-
-          // let token = this.$gAuth.instance.currentUser.get().getAuthResponse();
-
-          // this.quasar.sessionStorage.set("googleUser", {
-          //   token: token,
-          //   user: this.user,
-          // });
-          // let imap = {
-          //   id: "",
-          //   email: this.user,
-          //   host: "",
-          //   port: "",
-          // };
-
-          // this.$store.commit("example/SET_TOKEN", token.access_token);
-
-          // this.$store.commit("example/SET_IMAP", imap);
-          // this.$router.push("/dashboard");
         } catch (error) {
           //on fail do something
           console.error(error);

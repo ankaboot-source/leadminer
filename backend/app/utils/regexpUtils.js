@@ -15,11 +15,8 @@ const regexForBody = new RegExp(
  */
 function extractEmailsFromBody(data) {
   let reg = quotedPrintable.decode(data).match(regexForBody);
-
+  /* istanbul ignore else */
   if (reg) {
-    if (reg.includes("dredine.ladjemi@gmail.com")) {
-      console.log(quotedPrintable.decode(data));
-    }
     return reg;
   }
 }
@@ -30,6 +27,7 @@ function extractEmailsFromBody(data) {
  */
 function extractNameAndEmail(data) {
   const getRegExp = (emailAfterRegEx) => {
+    /* istanbul ignore else */
     if (emailAfterRegEx && emailAfterRegEx.groups.address.includes("@")) {
       if (!emailAfterRegEx.groups.name) {
         emailAfterRegEx.groups.name = "";
@@ -55,6 +53,7 @@ function extractNameAndEmail(data) {
  * @returns {Array} formated array of object
  */
 function FormatBodyEmail(data) {
+  /* istanbul ignore else */
   if (data) {
     return data.map((oneEmail) => {
       return { name: "", address: oneEmail };

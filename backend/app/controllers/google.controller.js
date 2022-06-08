@@ -1,83 +1,140 @@
+/* istanbul ignore file */
 var { google } = require("googleapis");
 var OAuth2 = google.auth.OAuth2;
+const db = require("../models");
+const googleUsers = db.googleUsers;
+const logger = require("../utils/logger")(module);
+
 const ClientId = process.env.GG_CLIENT_ID;
 const ClientSecret = process.env.GG_CLIENT_SECRET;
 const RedirectionUrl = "postmessage";
-const Imap = require("imap");
-const db = require("../models");
-const ImapInfo = db.imapInfo;
-const logger = require("../utils/logger")(module);
-const UtilsForData = require("../utils/inputHelpers");
-const imapService = require("../services/imapService");
-const xoauth2 = require("xoauth2");
-const objectScan = require("object-scan");
 
+// returns Oauth client
 function getOAuthClient() {
   return new OAuth2(ClientId, ClientSecret, RedirectionUrl);
 }
+/**
+ * Uses the authorization code to retrieve tokens
+ * then create a record in the database if valid user infos
+ * @param  {} req
+ * @param  {} res
+ */
+exports.SignUpWithGoogle = async (req, res) => {
+  let oauth2Client = getOAuthClient();
+  // the query param authorization code
+  let code = "";
 
-var oauth2Client = getOAuthClient();
-oauth2Client.setCredentials({
-  access_token:
-    "ya29.a0ARrdaM9CFjUbFjfbEqP0-DJQ0RGS4TE6_uLR6UaoiDrvaIP3_gvfLFy4GzSS6i1YBMWXpHhIgW_n9QseHvfax_6lwnuPTI9tIYPWJE1XR8m1lJ7j2j6V2iRFe-6bneum0pT2PKloL9oxPQRdead6kfTkT2gM",
-});
-var oauth2 = google.oauth2({
-  auth: oauth2Client,
-  version: "v2",
-});
-oauth2.userinfo.get(function (err, res) {
-  if (err) {
-    console.log(err);
+  if (req.body.authCode) {
+    code = req.body.authCode;
   } else {
-    console.log(res);
-  }
-});
-var code =
-  "4/0AX4XfWivi1cRUtmnHssS3mtpcK7uXVtm8sZoMlyJX6-wcu1bXZ9DGXea-Cblu1537M6ovw"; // the query param code
-oauth2Client.getToken(code, function (err, tokens) {
-  // Now tokens contains an access_token and an optional refresh_token. Save them.
-  console.log(err, tokens);
-});
-
-// const axios = require("axios");
-// const google_access_token_endpoint = "https://oauth2.googleapis.com/token";
-
-// const get_access_token = async (auth_code) => {
-//   const access_token_params = {
-//     client_secret: "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",
-//     code: "4/0AX4XfWilzcW6Cqb-hWb14LIAhtCBocAGeCwqJRTSro6IbHBBKAYddgzeb6fq7efgyWfSsw",
-//     grant_type: "authorization_code",
-//   };
-//   return await axios({
-//     method: "post",
-//     url: `${google_access_token_endpoint}?${access_token_params}`,
-//   });
-// };
-
-// module.exports = { request_get_auth_code_url, get_access_token };
-ImapInfo.findOne({ where: { email: imapInfo.email } }).then((imapdata) => {
-  if (imapdata === null) {
-    // Save ImapInfo in the database
-    ImapInfo.create(imapInfo)
-      .then((data) => {
-        res.status(200).send({ imapdata: data });
-      })
-      .catch((err) => {
-        logger.error(
-          `can't create account with email ${req.body.email} : ${err}`
-        );
-        res.status(500).send({
-          error:
-            "Some error occurred while creating your account imap info.",
-        });
-      });
-  } else {
-    logger.info(
-      `On signup : Account with email ${req.body.email} already exist`
-    );
-    res.status(200).send({
-      message: "Your account already exists !",
-      switch: true,
-      imapdata,
+    res.status(400).send({
+      error: "No valid authorization code !",
     });
+    return;
   }
+  // use authCode to retrieve tokens
+  oauth2Client.getToken(code, async function (err, tokens) {
+    console.log(tokens);
+    if (tokens) {
+      let googleUser = {};
+      // oauthclient to use the access_token
+      oauth2Client.setCredentials({
+        access_token: tokens.access_token,
+      });
+      var oauth2 = google.oauth2({
+        auth: oauth2Client,
+        version: "v2",
+      });
+      // get user infos( email, id, photo...)
+      let response = await oauth2.userinfo.get({});
+      let tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
+      googleUser.email = response.data.email;
+      googleUser.id = response.data.id;
+      googleUser.refreshToken = tokens.refresh_token;
+
+      if (googleUser.id) {
+        googleUsers
+          .findOne({ where: { id: googleUser.id } })
+          .then((google_user) => {
+            if (google_user === null) {
+              // Save googleUsers in the database
+              googleUsers
+                .create(googleUser)
+                .then((data) => {
+                  res.status(200).send({
+                    googleUser: {
+                      email: googleUser.email,
+                      id: googleUser.id,
+                      access_token: {
+                        access_token: tokens.access_token,
+                        experation: tokenInfo.exp,
+                      },
+                    },
+                  });
+                })
+                .catch((err) => {
+                  logger.error(
+                    `can't create account with for user Error : ${err}`
+                  );
+                  res.status(500).send({
+                    error:
+                      "Some error occurred while creating your account your account.",
+                  });
+                });
+            } else {
+              logger.info(
+                `On signUp With Google : Account with id: ${googleUser.id} already exist`
+              );
+              // case when user id exists
+              res.status(200).send({
+                message: "Your account already exists !",
+                googleUser: {
+                  email: google_user.email,
+                  id: google_user.id,
+                  access_token: {
+                    access_token: tokens.access_token,
+                    experation: tokenInfo.exp,
+                  },
+                },
+              });
+            }
+          });
+      }
+    } else {
+      // erro with authorization code
+      res.status(400).send({
+        error: `Can't authenticate using google account, reason : ${err}`,
+      });
+      return;
+    }
+  });
+};
+/**
+ * Uses the refresh_token to refresh the expired access_token
+ * @param  {} refresh_token stored token
+ */
+async function refreshAccessToken(refresh_token) {
+  return new Promise((resolve, reject) => {
+    let tokenInfo = {};
+    let access_token;
+    // return OAuth2 client
+    function getOAuthClient() {
+      return new OAuth2(ClientId, ClientSecret, RedirectionUrl);
+    }
+    let oauth2Client = getOAuthClient();
+    oauth2Client.setCredentials({
+      refresh_token: refresh_token,
+    });
+    return oauth2Client.getAccessToken(async (err, token) => {
+      tokenInfo = await oauth2Client.getTokenInfo(token);
+
+      access_token = {
+        access_token: token,
+        experation: Math.floor(tokenInfo.expiry_date / 1000),
+      };
+      resolve(access_token);
+    });
+  });
+}
+
+exports.refreshAccessToken = refreshAccessToken;

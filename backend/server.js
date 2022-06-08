@@ -49,6 +49,7 @@ app.get("/logs", function (req, res, next) {
   var filePath = __dirname + "/logs/server.log";
 
   res.sendFile(filePath, function (err) {
+    /* istanbul ignore if */
     if (err) {
       next(err);
     } else {

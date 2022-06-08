@@ -67,10 +67,20 @@ export function SET_CANCEL(state, newValue) {
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;
 }
-export function SET_TOKEN(state, newToken) {
-  state.token = newToken;
+export function SET_UPDATE_TOKEN(state, newToken) {
+  console.log(
+    newToken,
+    state.googleUser.access_token.access_token != newToken.access_token,
+    state.googleUser.access_token.access_token,
+    newToken.access_token
+  );
+  if (state.googleUser.access_token.access_token != newToken.access_token) {
+    state.googleUser.access_token = newToken;
+  }
 }
 
 export function SET_GOOGLE_USER(state, user) {
-  state.googleUser = user;
+  state.googleUser.email = user.email;
+  state.googleUser.id = user.id;
+  state.googleUser.access_token = user.access_token;
 }

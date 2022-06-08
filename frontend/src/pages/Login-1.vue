@@ -189,17 +189,10 @@ export default {
     };
   },
   mounted() {
-    const googleUser = this.quasar.sessionStorage.getItem("googleUser");
-    let imapUser = this.quasar.sessionStorage.getItem("ImapUser");
+    let googleUser = this.quasar.localStorage.getItem("googleUser");
+    let imapUser = this.quasar.localStorage.getItem("imapUser");
     if (googleUser) {
-      this.$store.commit("example/SET_TOKEN", googleUser.token.access_token);
-      let imap = {
-        id: "",
-        email: googleUser.user,
-        host: "",
-        port: "",
-      };
-      this.$store.commit("example/SET_IMAP", imap);
+      this.$store.commit("example/SET_GOOGLE_USER", googleUser);
       this.$router.push("/dashboard");
     } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
