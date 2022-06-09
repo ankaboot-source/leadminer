@@ -27,7 +27,7 @@
 
 <script>
 import { inject, toRefs } from "vue";
-import { useQuasar } from "quasar";
+import { useQuasar, LocalStorage } from "quasar";
 export default {
   name: "HelloWorld",
   props: {
@@ -50,7 +50,7 @@ export default {
 
   methods: {
     async handleClickSignIn() {
-      let googleUser = this.quasar.localStorage.getItem("googleUser");
+      let googleUser = LocalStorage.getItem("googleUser");
 
       if (googleUser) {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
@@ -60,7 +60,7 @@ export default {
         if (authCode) {
           let data = authCode;
           this.$store.dispatch("example/signUpGoogle", { data }).then(() => {
-            this.quasar.localStorage.set(
+            LocalStorage.set(
               "googleUser",
               this.$store.state.example.googleUser
             );

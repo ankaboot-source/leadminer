@@ -24,7 +24,6 @@ export async function getEmails({ context, getters }, { data }) {
       this.commit("example/SET_INVALIDADDRESSES", data.invalid);
     }
   );
-  console.log(currentState.imapUser.id + currentState.googleUser.id);
   source.addEventListener(
     "scannedBoxes" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
@@ -93,6 +92,7 @@ export async function getEmails({ context, getters }, { data }) {
           resolve(response);
         })
         .catch((error) => {
+          console.log(error);
           this.commit("example/SET_ERROR", error.response.data.error);
           reject(error);
         });
@@ -155,7 +155,6 @@ export async function signUp({ context, state }, { data }) {
   });
 }
 export async function signUpGoogle({ context, state }, { data }) {
-  console.log("user");
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     this.$axios

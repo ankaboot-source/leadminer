@@ -151,7 +151,7 @@
 </template>
 
 <script>
-import { useQuasar } from "quasar";
+import { useQuasar, LocalStorage } from "quasar";
 import { ref } from "vue";
 import { mapState } from "vuex";
 import GoogleButton from "../components/LoginButtons/GoogleLogin";
@@ -189,9 +189,9 @@ export default {
     };
   },
   mounted() {
-    let googleUser = this.quasar.localStorage.getItem("googleUser");
+    let googleUser = LocalStorage.getItem("googleUser");
     console.log(googleUser);
-    let imapUser = this.quasar.localStorage.getItem("imapUser");
+    let imapUser = LocalStorage.getItem("imapUser");
     if (googleUser != null) {
       this.$store.commit("example/SET_GOOGLE_USER", googleUser);
       this.$router.push("/dashboard");

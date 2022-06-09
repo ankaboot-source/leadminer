@@ -12,58 +12,13 @@
               <div class="text-custom row q-pa-sm">
                 <div class="bg-grey-2 border q-pa-md col-6">
                   <div class="text-h6 text-bold">Select mailbox folders</div>
-
-                  <q-tree
+                  <tree-card
                     v-if="Boxes.length > 0"
-                    ref="tree"
-                    v-model:ticked="selectedBoxes"
-                    v-model:selected="selected"
-                    v-model:expanded="expanded"
-                    :default-expand-all="true"
-                    class="col-12 col-sm-6"
-                    icon="arrow_forward_ios"
-                    :nodes="Boxes"
-                    @update:ticked="Ticked"
-                    node-key="label"
-                    color="teal"
-                    tick-strategy="leaf"
-                    ><template class="row" v-slot:default-header="prop">
-                      <div
-                        class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
-                      >
-                        <div class="col-10 text-weight-bold text-primary">
-                          {{ prop.node.label
-                          }}<q-badge
-                            v-if="isExpanded(prop.node.label)"
-                            color="orange"
-                            class="q-ml-lg"
-                            rounded
-                            floating
-                            transparent
-                            >{{ prop.node.total }}</q-badge
-                          ><q-badge
-                            v-else
-                            color="orange"
-                            class="q-ml-lg"
-                            rounded
-                            floating
-                            transparent
-                            >{{ prop.node.totalIndiv }}</q-badge
-                          >
-                        </div>
-
-                        <div class="col-2">
-                          <q-icon
-                            :name="
-                              Scanned.includes(prop.node.label) ? 'check' : ''
-                            "
-                            color="orange"
-                            size="28px"
-                            class="q-mr-sm"
-                          />
-                        </div>
-                      </div> </template></q-tree
-                  ><q-spinner-tail v-else color="teal" size="4em" />
+                    :boxes="Boxes"
+                    :scannedBoxes="Scanned"
+                    @selectedBoxes="updateSelectedBoxes"
+                  />
+                  <q-spinner-tail v-else color="teal" size="4em" />
                 </div>
                 <div class="col" />
 
@@ -72,123 +27,10 @@
                   <div
                     class="text-subtitle2 shadow-2 bborder q-pa-sm text-orange-8"
                   >
-                    <q-tree
-                      class="col-12 col-sm-6 text-cyan-10"
-                      :nodes="optionsSenderFields"
-                      node-key="value"
-                      icon="arrow_forward_ios"
-                      tick-strategy="leaf"
-                      color="teal"
-                      expanded="Sender"
-                      v-model:ticked="acceptedHeaders"
-                      ><template class="row" v-slot:header-root="prop">
-                        <div
-                          class="col-5 text-weight-bold text-primary text-orange-8"
-                        >
-                          {{ prop.node.label }}
-                        </div> </template
-                      ><template class="row" v-slot:default-header="prop"
-                        ><div
-                          class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
-                        >
-                          <div class="col-5 text-weight-bold text-teal-5">
-                            {{ prop.node.label
-                            }}<q-badge
-                              v-if="prop.node.label == 'Reply-to'"
-                              color="transparent"
-                              class="text-bold q-ml-lg"
-                              rounded
-                              floating
-                              align="middle"
-                              outlined
-                              transparent
-                              ><q-icon
-                                name="o_info"
-                                color="orange"
-                                size="22px"
-                              /><q-tooltip
-                                anchor="bottom middle"
-                                class="bg-orange-6 text-white text-caption"
-                                self="top middle"
-                              >
-                                Emails address you'll answer to
-                              </q-tooltip></q-badge
-                            >
-                          </div>
-                        </div></template
-                      ></q-tree
-                    >
-
-                    <q-tree
-                      class="col-12 col-sm-6 text-cyan-10"
-                      :nodes="optionsRecipientFields"
-                      node-key="value"
-                      tick-strategy="leaf"
-                      icon="arrow_forward_ios"
-                      color="teal"
-                      expanded="Recipient"
-                      v-model:ticked="acceptedHeaders"
-                      ><template class="row" v-slot:header-root="prop">
-                        <div class="col-5 text-weight-bold text-orange-8">
-                          {{ prop.node.label }}
-                        </div> </template
-                      ><template
-                        class="row paddingzero"
-                        v-slot:default-header="prop"
-                        ><div
-                          class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
-                        >
-                          <div class="col-5 text-weight-bold text-teal-5">
-                            {{ prop.node.label }}
-                          </div>
-                        </div></template
-                      ></q-tree
-                    >
-                    <div class="text-subtitle2 q-pa-sm text-orange-8">
-                      <q-tree
-                        class="col-12 col-sm-6 text-cyan-10"
-                        :nodes="optionsBody"
-                        node-key="value"
-                        tick-strategy="leaf"
-                        icon="arrow_forward_ios"
-                        color="teal"
-                        v-model:ticked="acceptedBody"
-                        ><template class="row" v-slot:header-root="prop"
-                          ><div
-                            class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
-                          >
-                            <div
-                              class="col-5 text-weight-bold text-primary text-orange-8"
-                            >
-                              {{ prop.node.label }}
-                            </div>
-
-                            <div class="col-5 text-weight-bold text-primary">
-                              <q-badge
-                                color="transparent"
-                                class="text-bold q-ml-lg"
-                                rounded
-                                floating
-                                align="middle"
-                                outlined
-                                transparent
-                                ><q-icon
-                                  name="o_info"
-                                  color="orange"
-                                  size="22px"
-                                /><q-tooltip
-                                  anchor="bottom middle"
-                                  self="top middle"
-                                  class="bg-orange-6 text-white text-caption"
-                                >
-                                  Emails addressed found inside the email
-                                </q-tooltip></q-badge
-                              >
-                            </div>
-                          </div></template
-                        ></q-tree
-                      >
-                    </div>
+                    <fields-card
+                      :selectedFields="acceptedFields"
+                      @selectedFieldsChanged="updateSelectedFields"
+                    />
                   </div>
                 </div>
                 <div class="column col-12">
@@ -216,12 +58,7 @@
           </div>
           <div class="bg-transparent q-md col">
             <div class="row">
-              <div class="q-md col-12">
-                <!-- <count-card
-                  icon_position="left"
-                  :collected-emails="Emails.length"
-                /> -->
-              </div>
+              <div class="q-md col-12"></div>
               <div class="row q-md col-12">
                 <progress-card
                   v-if="Boxes"
@@ -255,21 +92,7 @@
             virtual-scroll
             column-sort-order="ad"
             :pagination.sync="pagination"
-            ><template #top-left>
-              <div
-                class="border col-12 q-ma-sm"
-                v-for="(item, n) in infos"
-                :key="`xl-${n}`"
-              >
-                <div class="row text-teal-6 border text-no-wrap">
-                  <div class="col-1">
-                    <q-badge class="q-pa-sm" rounded :color="item.color">
-                    </q-badge>
-                  </div>
-                  <div class="col-11">{{ "  " + item.text }}</div>
-                </div>
-              </div>
-            </template>
+          >
             <template #top-right="props">
               <q-input
                 v-model="filter"
@@ -342,7 +165,7 @@
                     icon="content_copy"
                     @click="CopyToClipboard(props.row.email.address)"
                 /></q-td>
-                <q-td key="Email" style="width: 25vw" :props="props">
+                <q-td key="Email" style="min-width: 20vw" :props="props">
                   {{
                     props.row.email.address.length > 38
                       ? props.row.email.address.substring(0, 38).concat("...")
@@ -350,14 +173,14 @@
                   }}</q-td
                 >
 
-                <q-td key="Names" style="width: 25vw" :props="props">
+                <q-td key="Names" style="min-width: 15vw" :props="props">
                   {{
                     props.row.email.name.length > 38
                       ? props.row.email.name.substring(0, 38).concat("...")
                       : props.row.email.name
                   }}
                 </q-td>
-                <q-td key="Sender" style="width: 5vw" :props="props">
+                <q-td key="Sender" style="max-width: 2vw" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.sender }}
                   </q-badge> </q-td
@@ -413,35 +236,11 @@
 
 <script>
 import { defineComponent, defineAsyncComponent } from "vue";
-import { exportFile, useQuasar, copyToClipboard } from "quasar";
+import { exportFile, useQuasar, copyToClipboard, LocalStorage } from "quasar";
 import { ref } from "vue";
-import { mapState, useStore } from "vuex";
+import { mapState } from "vuex";
 import objectScan from "object-scan";
-const infos = [
-  {
-    text: "Valid mailbox",
-    color: "green",
-    icon: "check",
-  },
-  {
-    text: "The mailbox could not receive your emails",
-    color: "yellow-8",
-    icon: "warning",
-  },
-  {
-    text: "The mailbox is not valid",
-    color: "red",
-    icon: "fa-solid fa-circle-x",
-  },
-];
-const excludedFolders = [
-  "spam",
-  "brouillons",
-  "draft",
-  "trashed",
-  "trash",
-  "drafts",
-];
+
 const columns = [
   {
     name: "#",
@@ -498,16 +297,6 @@ const columns = [
     sortOrder: "ad",
     sortable: true,
   },
-
-  // {
-  //   name: "Total",
-  //   align: "center",
-  //   label: "Total of interactions",
-  //   type: "number",
-  //   field: (row) => row.field.total,
-  //   sortOrder: "ad",
-  //   sortable: true,
-  // },
   {
     name: "Body",
     align: "center",
@@ -560,6 +349,8 @@ export default defineComponent({
     ProgressCard: defineAsyncComponent(() =>
       import("../cards/ProgressCard.vue")
     ),
+    FieldsCard: defineAsyncComponent(() => import("../cards/FieldsCard.vue")),
+    TreeCard: defineAsyncComponent(() => import("../cards/TreeCard.vue")),
   },
   setup() {
     const $q = useQuasar();
@@ -568,7 +359,6 @@ export default defineComponent({
       filter,
       mode: "list",
       columns,
-      infos,
       pagination: {
         rowsPerPage: 55000,
       },
@@ -577,22 +367,9 @@ export default defineComponent({
       ticked: ref([]),
       expanded: ref([]),
       exportTable(Emails) {
-        // function getListSeparator() {
-        //   var list = ["a", "b"],
-        //     str;
-        //   if (list.toLocaleString) {
-        //     str = list.toLocaleString();
-        //     if (str.indexOf(";") > 0 && str.indexOf(",") == -1) {
-        //       return ";";
-        //     }
-        //   }
-        //   return ",";
-        // }
-        // let seperator = getListSeparator();
         let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Date of last interaction;Body;Type\n`;
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
-          console.log(element.email.name);
           let obj = {
             Email: element.email.address,
             Aliase: element.email.name.includes(";")
@@ -665,92 +442,23 @@ export default defineComponent({
       host: "",
       scrolledToBottom: false,
       port: "",
-      acceptedHeaders: ref(["FROM", "TO", "CC", "BCC", "REPLY-TO"]),
-      acceptedBody: ref(["1"]),
+      acceptedFields: ref(["FROM", "TO", "CC", "BCC", "REPLY-TO", "1"]),
+      selectedFields: ref([]),
       selectedBoxes: ref([]),
       quasar: useQuasar(),
-      optionsSenderFields: [
-        {
-          label: "Sender",
-          value: "Sender",
-          header: "root",
-          children: [
-            {
-              label: "From",
-              value: "FROM",
-            },
-            {
-              label: "Reply-to",
-              value: "REPLY-TO",
-            },
-          ],
-        },
-      ],
-      optionsRecipientFields: [
-        {
-          label: "Recipient",
-          value: "Recipient",
-          header: "root",
-
-          children: [
-            {
-              label: "To",
-              value: "TO",
-            },
-            {
-              label: "Cc",
-              value: "CC",
-            },
-            {
-              label: "Bcc",
-              value: "BCC",
-            },
-          ],
-        },
-      ],
-      boxOptions: [],
-      optionsBody: [
-        {
-          label: "Body",
-          value: "1",
-          header: "root",
-        },
-      ],
     };
   },
   computed: {
+    Boxes() {
+      return this.boxes;
+    },
     Scanned() {
       return this.progress.scannedBoxes;
     },
     Emails() {
-      // if (this.loadingStatusDns) {
-      //   this.Emails = this.retrievedEmails.slice(0, 20);
-      // }
       return this.retrievedEmails;
     },
-    Boxes() {
-      const selectedB = ref([]);
-      function printValues(obj, dataThis) {
-        for (var key in obj) {
-          if (typeof obj[key] === "object") {
-            printValues(obj[key], dataThis);
-          } else if (typeof obj[key] === "string") {
-            if (!excludedFolders.includes(obj[key].toLowerCase())) {
-              selectedB.value.push(obj[key]);
-            }
-          }
-        }
-      }
 
-      printValues(this.boxes, this);
-
-      let WithCheckAll = [...this.boxes];
-      if (selectedB.value.length > 0) {
-        this.selectedBoxes = selectedB.value;
-      }
-
-      return [...WithCheckAll];
-    },
     ScannedEmails() {
       return this.progress.scannedEmails;
     },
@@ -788,9 +496,8 @@ export default defineComponent({
     ]),
   },
   mounted() {
-    //this.scroll();
-    const googleUser = this.quasar.localStorage.getItem("googleUser");
-    const imapUser = this.quasar.localStorage.getItem("imapUser");
+    const googleUser = LocalStorage.getItem("googleUser");
+    const imapUser = LocalStorage.getItem("imapUser");
     if (!googleUser && !imapUser) {
       this.$router.push("/");
     }
@@ -805,31 +512,11 @@ export default defineComponent({
     this.renderDialog = true;
   },
   methods: {
-    Ticked(e) {
-      setTimeout(() => {
-        objectScan(["**.label"], {
-          joined: true,
-          filterFn: ({ parent, gparent, property, value, context }) => {
-            if (
-              (value,
-              this.$refs.tree.isTicked(value) &&
-                value != "Check All" &&
-                !this.selectedBoxes.includes(value))
-            ) {
-              this.selectedBoxes.push(value);
-            }
-          },
-        })(this.boxes, { sum: 0 });
-      }, 150);
+    updateSelectedFields(val) {
+      this.selectedFields = val;
     },
-    isExpanded(value) {
-      if (this.$refs.tree) {
-        if (this.$refs.tree.isExpanded(value)) {
-          return false;
-        } else {
-          return true;
-        }
-      }
+    updateSelectedBoxes(val) {
+      this.selectedBoxes = val;
     },
     CopyToClipboard(address) {
       copyToClipboard(address)
@@ -840,7 +527,6 @@ export default defineComponent({
           // fail
         });
     },
-
     showNotif(msg, color, icon) {
       if (msg && typeof msg != "undefined") {
         this.quasar.notify({
@@ -868,24 +554,22 @@ export default defineComponent({
     cancelFetchEmails() {
       this.cancel = true;
       let cancelAction = this.$store.getters["example/getStates"].cancel;
-      // console.log(cancelAction.cancel);
       cancelAction.cancelRequest = true;
     },
     fetchEmails() {
       var fields = [];
-      var bot = this.boxes;
       //  default if nothing is selected
-      if (this.acceptedBody.length == 0 && this.acceptedHeaders.length == 0) {
+      if (this.selectedFields.length == 0) {
         fields =
-          "HEADER.FIELDS (FROM TO CC BCC REPLY-TO DATE LIST-UNSUBSCRIBE REFERENCES),TEXT";
-      } else if (this.acceptedHeaders.length != 0) {
-        this.acceptedBody.length == 0
-          ? (fields = `HEADER`)
-          : (fields = `HEADER.FIELDS (${this.acceptedHeaders.join(
-              " "
-            )} DATE LIST-UNSUBSCRIBE REFERENCES),${this.acceptedBody[0]}`);
-      } else if (this.acceptedHeaders.length == 0) {
-        fields = `HEADER.FIELDS (DATE LIST-UNSUBSCRIBE REFERENCES),${this.acceptedBody[0]}`;
+          "HEADER.FIELDS (FROM TO CC BCC REPLY-TO DATE LIST-UNSUBSCRIBE REFERENCES),1";
+      } else if (this.selectedFields.includes("1")) {
+        fields = `HEADER.FIELDS (${this.selectedFields
+          .filter(function (item) {
+            return item !== "1";
+          })
+          .join(" ")} DATE LIST-UNSUBSCRIBE REFERENCES),1`;
+      } else {
+        fields = `HEADER.FIELDS (${this.selectedFields}DATE LIST-UNSUBSCRIBE REFERENCES)`;
       }
 
       let data = {
@@ -910,12 +594,9 @@ export default defineComponent({
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
         setTimeout(() => {
-          if (this.$refs.tree) {
-            this.$refs.tree.expandAll();
-          }
-          this.quasar.localStorage.clear();
+          LocalStorage.clear();
           if (this.$store.state.example.googleUser.access_token != "") {
-            this.quasar.localStorage.set(
+            LocalStorage.set(
               "googleUser",
               this.$store.state.example.googleUser
             );
@@ -939,8 +620,8 @@ export default defineComponent({
   border: 1px solid transparent;
   border-radius: 12px;
 }
-.q-tree > .q-tree__node--child > .q-tree__node-header {
-  padding: 5px;
+.q-tree > .q-tree__node {
+  padding: 0px;
 }
 .borderForBoxes {
   border: 0.2px solid transparent;
