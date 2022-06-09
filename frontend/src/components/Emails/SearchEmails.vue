@@ -156,7 +156,7 @@
             </template>
             <template #body="props">
               <q-tr :props="props">
-                <q-td key="#" style="width: 3vw" :props="props"
+                <q-td key="#" :props="props"
                   ><q-btn
                     flat
                     round
@@ -165,7 +165,7 @@
                     icon="content_copy"
                     @click="CopyToClipboard(props.row.email.address)"
                 /></q-td>
-                <q-td key="Email" style="min-width: 20vw" :props="props">
+                <q-td key="Email" :props="props">
                   {{
                     props.row.email.address.length > 38
                       ? props.row.email.address.substring(0, 38).concat("...")
@@ -173,54 +173,49 @@
                   }}</q-td
                 >
 
-                <q-td key="Names" style="min-width: 15vw" :props="props">
+                <q-td key="Names" :props="props">
                   {{
                     props.row.email.name.length > 38
                       ? props.row.email.name.substring(0, 38).concat("...")
                       : props.row.email.name
                   }}
                 </q-td>
-                <q-td key="Sender" style="max-width: 2vw" :props="props">
+                <q-td key="Sender" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.sender }}
                   </q-badge> </q-td
-                ><q-td key="Recipient" style="width: 5vw" :props="props">
+                ><q-td key="Recipient" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.recipient }}
                   </q-badge>
                 </q-td>
-                <q-td key="Engagement" style="width: 5vw" :props="props">
+                <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.engagement }}
                   </q-badge>
                 </q-td>
 
-                <q-td
-                  v-show="false"
-                  key="Total"
-                  style="width: 3vw"
-                  :props="props"
-                >
+                <q-td v-show="false" key="Total" :props="props">
                   <q-badge color="blue">
                     {{ props.row.field.total }}
                   </q-badge> </q-td
-                ><q-td key="Body" style="width: 5vw" :props="props">
+                ><q-td key="Body" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.field.body }}
                   </q-badge>
                 </q-td>
-                <q-td key="Date" style="width: 5vw" :props="props">
+                <q-td key="Date" :props="props">
                   <q-badge outline color="blue" transparent>
                     {{ props.row.date }}
                   </q-badge>
                 </q-td>
 
-                <q-td key="Type" style="width: 5vw" :props="props">
+                <q-td key="Type" :props="props">
                   <q-badge rounded color="green">
                     {{ props.row.type }}
                   </q-badge>
                 </q-td>
-                <q-td key="Status" style="width: 5vw" :props="props">
+                <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
                   </q-badge>
@@ -246,6 +241,8 @@ const columns = [
     name: "#",
     label: "",
     field: " ",
+    style: "width: 20px",
+    headerStyle: "width: 20px",
   },
   {
     name: "Email",
@@ -258,6 +255,8 @@ const columns = [
       const domainB = b.split("@")[0];
       return domainA.localeCompare(domainB);
     },
+    style: "max-width:445px;min-width: 445px !important",
+    headerStyle: "width: 450px !important",
   },
   {
     name: "Names",
@@ -269,6 +268,8 @@ const columns = [
       return b.localeCompare(a);
     },
     sortOrder: "ad",
+    style: "max-width:190px;min-width: 190px !important",
+    headerStyle: "width: 190px !important",
   },
   {
     name: "Sender",
@@ -277,6 +278,8 @@ const columns = [
     type: "number",
     field: (row) => row.field.sender,
     sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
     sortable: true,
   },
   {
@@ -286,6 +289,8 @@ const columns = [
     type: "number",
     field: (row) => row.field.recipient,
     sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
     sortable: true,
   },
   {
@@ -295,6 +300,8 @@ const columns = [
     type: "number",
     field: (row) => row.field.engagement,
     sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
     sortable: true,
   },
   {
@@ -304,6 +311,8 @@ const columns = [
     type: "number",
     field: (row) => row.field.body,
     sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
     sortable: true,
   },
   {
@@ -322,6 +331,8 @@ const columns = [
     },
     field: (row) => row.date,
     sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
   },
 
   {
@@ -334,12 +345,16 @@ const columns = [
     sort: (s1, s2) => {
       return s1.localeCompare(s2);
     },
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
   },
   {
     name: "Status",
     align: "center",
     label: "Status",
     field: "status",
+    style: "width: 50px",
+    headerStyle: "width: 50px",
   },
 ];
 export default defineComponent({
@@ -640,12 +655,21 @@ export default defineComponent({
 .text-tealgradient {
   color: #89d8d3;
 }
+
 .bg-buttons {
   background-image: linear-gradient(315deg, #000000 0%, #03c8a8 74%);
 }
 .bg-fetch {
   background-color: #deebdd;
   background-image: linear-gradient(315deg, #deebdd 0%, #bbdbbe 74%);
+}
+thead tr th {
+  position: sticky;
+  z-index: 1;
+}
+.q-td text-left {
+  max-width: inherit;
+  min-width: inherit;
 }
 .sticky thead tr:first-child th {
   position: sticky;
