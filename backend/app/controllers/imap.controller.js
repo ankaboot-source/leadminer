@@ -332,6 +332,7 @@ exports.getEmails = (req, res, sse, RedisClient) => {
     googleUser
       .findByPk(user.id)
       .then((googleUser) => {
+        user["refreshToken"] = googleUser.dataValues.refreshToken;
         if (googleUser) {
           imapService.imapService(
             bodiesTofetch,

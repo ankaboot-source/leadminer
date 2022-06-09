@@ -367,7 +367,7 @@ export default defineComponent({
       ticked: ref([]),
       expanded: ref([]),
       exportTable(Emails) {
-        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Date of last interaction;Body;Type\n`;
+        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Engagement;Date of last interaction;Body;Type\n`;
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
           let obj = {
@@ -392,6 +392,7 @@ export default defineComponent({
               ? element.field["reply-to"]
               : 0,
             Total: element.field.total,
+            Engagement: element.field.engagement,
             Date: element.date,
             Body: Object.keys(element.field).includes("body")
               ? element.field["body"]
