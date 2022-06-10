@@ -68,6 +68,12 @@ async function OpenedBoxCallback(
           },
           `minedEmailsAndScannedEmails${query.user.id}`
         );
+        console.log(
+          seqno -
+            (sends[sends.indexOf(seqno) - 1]
+              ? sends[sends.indexOf(seqno) - 1]
+              : 0)
+        );
       }
       // callback for "body" emitted event
       const minedEmails = {};
