@@ -12,9 +12,11 @@ module.exports = (app, sse, client) => {
   // login into account
   router.post("/login", imap.loginToAccount);
   // Retrieve emails based on user prefrences for a given imap account
-  router.get("/:id/boxes", imap.getImapBoxes);
+  router.get("/:id/getImapTree", imap.getImapBoxes);
   // Retrieve emails based on user prefrences for a given imap account
   router.get("/:id/collectEmails", (req, res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+
     imap.getEmails(req, res, sse, client);
   });
   router.get("/getEmails", (req, res) => {

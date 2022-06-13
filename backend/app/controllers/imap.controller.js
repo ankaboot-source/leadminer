@@ -8,9 +8,11 @@ const UtilsForData = require("../utils/inputHelpers");
 const utilsForToken = require("../utils/tokenHelpers");
 const imapService = require("../services/imapService");
 const objectScan = require("object-scan");
-
+const ImapUser = require("../services/imapUser");
+const EmailServer = require("../services/EmailServer");
+const EmailAccountMiner = require("../services/EmailAccountMiner");
 /**
- *  Create imap info account.
+ *  Create imap account infos
  * @param  {} req
  * @param  {} res
  */
@@ -146,150 +148,182 @@ exports.loginToAccount = (req, res) => {
 };
 
 /**
- * Retrieve mailbox files.
+ * Retrieve mailbox folders.
  * @param  {} req
  * @param  {} res
  */
 exports.getImapBoxes = async (req, res) => {
-  let imap;
-  let tokens;
-  let user = JSON.parse(req.query.user);
-  if (user.access_token) {
-    try {
-      let dbUser = await googleUser.findByPk(user.id);
-      tokens = await utilsForToken.generateXOauthToken(
-        user.access_token,
-        user,
-        dbUser.refreshToken
-      );
-
-      imap = new Imap({
-        user: user.email,
-        xoauth2: tokens.xoauth2Token,
-        host: "imap.gmail.com",
-        port: 993,
-        tls: true,
-        tlsOptions: {
-          port: 993,
-          host: "imap.gmail.com",
-          servername: "imap.gmail.com",
-        },
-      });
-    } catch {
-      logger.error(`No account with id : ${req.params.id} found`);
-      res.status(404).send({
-        error: `No account with id : ${req.params.id} found`,
-      });
-    }
-  }
-
-  //case: password based authentication
-  else {
-    try {
-      let imapInfo = await ImapInfo.findByPk(req.query.userId);
-      imap = new Imap({
-        user: imapInfo.email,
-        password: req.query.password,
-        host: imapInfo.host,
-        port: imapInfo.port,
-        tls: true,
-        tlsOptions: {
-          port: imapInfo.port,
-          host: imapInfo.host,
-          servername: imapInfo.host,
-        },
-      });
-    } catch {
-      logger.error(`No account with email : ${req.params.id} found`);
-      res.status(404).send({
-        error: `No account with id : ${req.params.id} found`,
-      });
-    }
-  }
-  let Boxes = [];
-  // try connection to imap server
-  imap.connect();
-  imap.once("ready", () => {
-    logger.info(
-      `Begin fetching folders names from imap account with id : ${user.id}`
-    );
-    imap.getBoxes("", (err, boxes) => {
-      Boxes = UtilsForData.getBoxesAll(boxes);
-
-      function iterate(obj) {
-        obj.map((key) => {
-          if (key.hasOwnProperty("children")) {
-            let name = UtilsForData.getPath({ ...Boxes }, key.label);
-            imap.openBox(name.substring(1), true, (err, box) => {
-              if (box) {
-                key["total"] = box.messages.total;
-              } else {
-                key["total"] = 0;
-              }
-              if (key == obj[obj.length - 1]) {
-                imap.end();
-              }
-            });
-            iterate(key.children);
-          } else {
-            let name = UtilsForData.getPath({ ...Boxes }, key.label);
-            imap.openBox(name.substring(1), true, (err, box) => {
-              if (box) {
-                key["total"] = box.messages.total;
-              } else {
-                key["total"] = 0;
-              }
-              if (key == obj[obj.length - 1]) {
-                imap.end();
-              }
-            });
-          }
-        });
-      }
-      iterate(Boxes);
-    });
-  });
-  imap.once("error", (err) => {
+  // define user object from user request query
+  let user = new ImapUser(req.query).getUserConnetionDataFromQuery();
+  // initialise imap server connection
+  let imapConnection = new EmailServer(user).getConnection();
+  // initialise EmailAccountMiner to mine imap tree
+  let miner = new EmailAccountMiner(imapConnection, "", "", "");
+  // get tree
+  let [tree, error] = await miner.getTree();
+  if (error) {
     logger.error(
-      `error occured when trying to connect to imap account with email : ${user.id} : **Error** ${err}`
+      `Mining imap tree failed for user with email ${hashHelper.hash(
+        user.email
+      )} reason : ${error}`
     );
-  });
-  imap.once("end", () => {
-    logger.info(
-      `End fetching folders names from imap account with id : ${user.id}`
+    res.status(400).send({
+      message: "Can't fetch imap folders",
+      error: error,
+    });
+  }
+  if (tree) {
+    logger.error(
+      `Mining imap tree succeded for user with email ${hashHelper.hash(
+        user.email
+      )}`
     );
-    if (Boxes.length > 0) {
-      let total = objectScan(["**.{total,children}"], {
-        joined: true,
-        filterFn: ({ parent, gparent, property, value, context }) => {
-          if (property == "total") {
-            parent["totalIndiv"] = parent.total;
-          }
-          if (property == "children") {
-            if (parent) {
-              value.map((element) => {
-                parent.total += element.total;
-              });
-            }
-          }
-          if (property == "total") {
-            context.sum += value;
-          }
-        },
-      })(Boxes, { sum: 0 });
-      Boxes = [{ label: user.email, children: [...Boxes], total: total.sum }];
-      res.status(200).send({
-        boxes: Boxes,
-        message: "End fetching boxes!",
-        token: tokens.newToken,
-      });
-    } else {
-      res.status(204).send({
-        error: "No boxes found!",
-      });
-    }
-  });
+
+    res.status(200).send({
+      message: "Imap folders fetched with success",
+      imapFoldersTree: tree,
+    });
+  }
 };
+// let imap;
+// let tokens;
+// let user = JSON.parse(req.query.user);
+// if (user.access_token) {
+//   try {
+//     let dbUser = await googleUser.findByPk(user.id);
+//     tokens = await utilsForToken.generateXOauthToken(
+//       user.access_token,
+//       user,
+//       dbUser.refreshToken
+//     );
+
+//     imap = new Imap({
+//       user: user.email,
+//       xoauth2: tokens.xoauth2Token,
+//       host: "imap.gmail.com",
+//       port: 993,
+//       tls: true,
+//       tlsOptions: {
+//         port: 993,
+//         host: "imap.gmail.com",
+//         servername: "imap.gmail.com",
+//       },
+//     });
+//   } catch {
+//     logger.error(`No account with id : ${req.params.id} found`);
+//     res.status(404).send({
+//       error: `No account with id : ${req.params.id} found`,
+//     });
+//   }
+// }
+
+// //case: password based authentication
+// else {
+//   try {
+//     let imapInfo = await ImapInfo.findByPk(req.query.userId);
+//     imap = new Imap({
+//       user: imapInfo.email,
+//       password: req.query.password,
+//       host: imapInfo.host,
+//       port: imapInfo.port,
+//       tls: true,
+//       tlsOptions: {
+//         port: imapInfo.port,
+//         host: imapInfo.host,
+//         servername: imapInfo.host,
+//       },
+//     });
+//   } catch {
+//     logger.error(`No account with email : ${req.params.id} found`);
+//     res.status(404).send({
+//       error: `No account with id : ${req.params.id} found`,
+//     });
+//   }
+// }
+//   let Boxes = [];
+//   // try connection to imap server
+//   imap.connect();
+//   imap.once("ready", () => {
+//     logger.info(
+//       `Begin fetching folders names from imap account with id : ${user.id}`
+//     );
+//     imap.getBoxes("", (err, boxes) => {
+//       Boxes = UtilsForData.getBoxesAll(boxes);
+
+//       function iterate(obj) {
+//         obj.map((key) => {
+//           if (key.hasOwnProperty("children")) {
+//             let name = UtilsForData.getPath({ ...Boxes }, key.label);
+//             imap.openBox(name.substring(1), true, (err, box) => {
+//               if (box) {
+//                 key["total"] = box.messages.total;
+//               } else {
+//                 key["total"] = 0;
+//               }
+//               if (key == obj[obj.length - 1]) {
+//                 imap.end();
+//               }
+//             });
+//             iterate(key.children);
+//           } else {
+//             let name = UtilsForData.getPath({ ...Boxes }, key.label);
+//             imap.openBox(name.substring(1), true, (err, box) => {
+//               if (box) {
+//                 key["total"] = box.messages.total;
+//               } else {
+//                 key["total"] = 0;
+//               }
+//               if (key == obj[obj.length - 1]) {
+//                 imap.end();
+//               }
+//             });
+//           }
+//         });
+//       }
+//       iterate(Boxes);
+//     });
+//   });
+//   imap.once("error", (err) => {
+//     logger.error(
+//       `error occured when trying to connect to imap account with email : ${user.id} : **Error** ${err}`
+//     );
+//   });
+//   imap.once("end", () => {
+//     logger.info(
+//       `End fetching folders names from imap account with id : ${user.id}`
+//     );
+//     if (Boxes.length > 0) {
+//       let total = objectScan(["**.{total,children}"], {
+//         joined: true,
+//         filterFn: ({ parent, gparent, property, value, context }) => {
+//           if (property == "total") {
+//             parent["totalIndiv"] = parent.total;
+//           }
+//           if (property == "children") {
+//             if (parent) {
+//               value.map((element) => {
+//                 parent.total += element.total;
+//               });
+//             }
+//           }
+//           if (property == "total") {
+//             context.sum += value;
+//           }
+//         },
+//       })(Boxes, { sum: 0 });
+//       Boxes = [{ label: user.email, children: [...Boxes], total: total.sum }];
+//       res.status(200).send({
+//         boxes: Boxes,
+//         message: "End fetching boxes!",
+//         token: tokens.newToken,
+//       });
+//     } else {
+//       res.status(204).send({
+//         error: "No boxes found!",
+//       });
+//     }
+//   });
+// };
 /**
  * Get Emails from imap server.
  * @param  {} req

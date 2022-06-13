@@ -5,6 +5,8 @@ const utilsForToken = require("../utils/tokenHelpers");
 const helpers = require("../utils/inputHelpers");
 const logger = require("../utils/logger")(module);
 const Imap = require("imap");
+const GOOGLE_IMAP_HOST = process.env.GOOGLE_IMAP_HOST;
+
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
   // &&
@@ -178,13 +180,13 @@ async function imapService(
     imap = new Imap({
       user: user.email,
       xoauth2: tokens.xoauth2Token,
-      host: "imap.gmail.com",
+      host: GOOGLE_IMAP_HOST,
       port: 993,
       tls: true,
       tlsOptions: {
         port: 993,
-        host: "imap.gmail.com",
-        servername: "imap.gmail.com",
+        host: GOOGLE_IMAP_HOST,
+        servername: GOOGLE_IMAP_HOST,
       },
       keepalive: false,
     });
