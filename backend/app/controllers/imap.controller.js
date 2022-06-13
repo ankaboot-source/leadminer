@@ -178,7 +178,6 @@ exports.getImapBoxes = async (req, res) => {
         user.email
       )}`
     );
-
     res.status(200).send({
       message: "Imap folders fetched with success",
       imapFoldersTree: tree,
@@ -186,6 +185,7 @@ exports.getImapBoxes = async (req, res) => {
   }
 };
 // let imap;
+//
 // let tokens;
 // let user = JSON.parse(req.query.user);
 // if (user.access_token) {
