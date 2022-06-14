@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-const utilsForRegEx = require("../utils/regexpUtils");
+//const utilsForRegEx = require("../utils/regExHelpers");
 const utilsForDataManipulation = require("../utils/extractors");
 const utilsForToken = require("../utils/tokenHelpers");
 const helpers = require("../utils/inputHelpers");

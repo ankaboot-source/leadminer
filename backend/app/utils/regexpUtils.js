@@ -13,7 +13,7 @@ const regexForBody = new RegExp(
  * @param  {string} data A string that represents the mail body
  * @returns {Array} array of strings
  */
-function extractEmailsFromBody(data) {
+function extractNameAndEmailFromBody(data) {
   let reg = quotedPrintable.decode(data).match(regexForBody);
   /* istanbul ignore else */
   if (reg) {
@@ -35,7 +35,7 @@ function extractNameAndEmail(data) {
       return emailAfterRegEx.groups;
     }
   };
-  let email = data[0].split(",");
+  let email = data.split(",");
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
       let result = getRegExp(regex.exec(emails.trim()));
@@ -62,5 +62,5 @@ function FormatBodyEmail(data) {
 }
 
 exports.extractNameAndEmail = extractNameAndEmail;
-exports.extractEmailsFromBody = extractEmailsFromBody;
+exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;
 exports.FormatBodyEmail = FormatBodyEmail;

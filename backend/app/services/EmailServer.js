@@ -5,6 +5,7 @@ class EmailServer {
     this.user = user;
   }
   getConnection() {
+    console.log(this.user);
     let imap;
     if (this.user.connectionMethod.method == "api") {
       new Imap({
