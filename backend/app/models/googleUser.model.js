@@ -1,3 +1,4 @@
+/* This is creating a table in the database. */
 module.exports = (sequelize, Sequelize) => {
   const googleUsers = sequelize.define("google_users", {
     id: {

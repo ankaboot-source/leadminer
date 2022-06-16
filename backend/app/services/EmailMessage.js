@@ -35,24 +35,34 @@ class EmailMessage {
     return metaDataProps;
   }
   getMessageId() {
-    return this.header["message-id"][0];
+    if (this.header["message-id"]) {
+      return this.header["message-id"][0];
+    } else {
+      console.log(this.header);
+    }
   }
   getSize() {}
   getEmailsObjectsFromHeader(messagingFields, metaDataProps) {
     let emailsObjects = [];
     Object.keys(messagingFields).map((key) => {
       let emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
-      emails.map((email) => {
-        let emailObject = {};
-        emailObject["messageId"] = this.getMessageId();
-        emailObject["address"] = email.address;
-        emailObject["name"] = email.name;
-        emailObject["fields"] = {};
-        emailObject["fields"][key] = 1;
-        emailObject["date"] = this.getDate(metaDataProps);
-        emailObject["type"] = "this.getEmailType()";
-        emailsObjects.push(emailObject);
-      });
+      if (emails) {
+        emails.map((email) => {
+          if (email) {
+            if (email.address) {
+              let emailObject = {};
+              emailObject["messageId"] = [this.getMessageId()];
+              emailObject["address"] = email.address;
+              emailObject["name"] = email.name;
+              emailObject["fields"] = {};
+              emailObject["fields"][key] = 1;
+              emailObject["date"] = this.getDate(metaDataProps);
+              emailObject["type"] = "this.getEmailType()";
+              emailsObjects.push(emailObject);
+            }
+          }
+        });
+      }
     });
     return emailsObjects;
   }
@@ -60,16 +70,20 @@ class EmailMessage {
     let emailsObjects = [];
     let emailObject = {};
     let emails = regExHelpers.extractNameAndEmailFromBody(this.body);
-    emails.map((email) => {
-      emailObject["message-id"] = this.getMessageId();
-      emailObject["address"] = email.address;
-      emailObject["name"] = "";
-      emailObject["fields"][body] = 1;
-      emailObject["date"] = this.getDate(metaDataProps);
-      emailObject["type"] = this.getEmailType();
-      emailsObjects.push(emailObject);
-    });
-
+    if (emails) {
+      emails.map((email) => {
+        if (email) {
+          emailObject["messageId"] = [this.getMessageId()];
+          emailObject["address"] = email;
+          emailObject["name"] = "";
+          emailObject["fields"] = {};
+          emailObject["fields"]["body"] = 1;
+          emailObject["date"] = this.getDate(this.header);
+          emailObject["type"] = "this.getEmailType()";
+          emailsObjects.push(emailObject);
+        }
+      });
+    }
     return emailsObjects;
   }
   extractEmailObjectsFromHeader() {

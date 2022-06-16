@@ -1,5 +1,5 @@
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
-const persistentEmails = require("../models/emails.model");
+const { emailsInfos } = require("../models");
 const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
@@ -7,17 +7,18 @@ const Imap = require("imap");
 class EmailAccountMiner {
   //public field
   tree = [];
-  temporaryEmailsMessagesArray = [];
+  EmailsMessagesBatch = [];
+  currentTotal = 0;
   /**
-   * Create EmailAccountMiner object
-   * @param  {object} connection - Imap connection
-   * @param  {object} user - current imap user
-   * @param  {object} redisClient - client for redis
-   * @param  {object} sse - server sent event instance
-   * @param  {array} fields - fields to be mined (TO,From,cc...)
-   * @param  {array} folders - full paths to folders to be mined (INBOX, spam, sent, trash...)
-   * @param  {object} cursor - position in imap mining
-   * @param  {number} batch_size - batsh size value
+   * This function is a constructor for the class `EmailAccountMiner`
+   * @param {object} connection - The connection to the imapserver.
+   * @param {object} user - The user object that is currently associated with the connection.
+   * @param {object} redisClient - The redis client.
+   * @param {object} sse - The SSE object that will be used to send the data to the client.
+   * @param {array} fields - An array of fields to be used in the fetch.
+   * @param {array} folders - An array of folder paths to fetch from.
+   * @param {object} cursor - The cursor is the current fetch position.
+   * @param {number} batch_size - The number of records to dtore in each batch.
    */
   constructor(
     connection,
@@ -38,10 +39,13 @@ class EmailAccountMiner {
     this.cursor = cursor;
     this.batch_size = batch_size || MAX_BATCH_SIZE;
   }
+
   /**
-   * Uses the connection to connect to imap server then fetch the imap tree.
+   * It connects to the IMAP server, gets the tree of folders, adds the total number of emails per
+   * folder, and then adds the total number of emails per parent folder
    * @async
-   * @returns {Promise<object>} The imap tree
+   * @returns a promise that resolves to an array of two elements. The first element is the tree object,
+   * the second element is an error object.
    */
   async getTree() {
     return new Promise((resolve, reject) => {
@@ -72,10 +76,12 @@ class EmailAccountMiner {
       });
     });
   }
+
   /**
-   * for each folder it calculates the total field.
-   * @param  {} treeimap - imap tree.
-   * @returns {Promise<object>} imap tree with total field per folder.
+   * It takes an imapTree, and for each folder in the tree, it opens the folder, and if it exists, it
+   * adds the total number of messages in the folder to the folder object
+   * @param {object} imapTree - The tree of folders that you want to get the total number of messages for.
+   * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
     return new Promise((resolve, reject) => {
@@ -110,6 +116,10 @@ class EmailAccountMiner {
       });
     });
   }
+  /**
+   * It connects to the IMAP server, opens the folder, and returns the folder's tree
+   * @param {string} folderName - the name of the folder you want to get the tree from.
+   */
   getTreeByFolder(folderName) {
     // TODO : foldersNames : could be an array so we can get many folders trees at once at once
     let tree = {};
@@ -128,8 +138,10 @@ class EmailAccountMiner {
       return tree;
     });
   }
+
   /**
-   * Connects to imap and calls a generator method on each folder
+   * It connects to the IMAP server, and then calls the mineFolder() function on the first folder in the
+   * folders array
    */
   mine() {
     // implements a for loop to go through all folders
@@ -141,27 +153,30 @@ class EmailAccountMiner {
     });
   }
   /**
-   * For a given folder name, mine messages
-   * @param  {string} folder - folder name to be mined
+   * It opens a folder, and when it's done, it mines the messages in that folder
+   * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
     yield this.connection.openBox(folder, true, async (err, openedFolder) => {
       this.mineMessages(openedFolder);
     });
   }
+
   /**
-   * For a given folder name mineMessage fetch a message and
-   * parse the header and the body of the message
-   * @param  {string} folder - folder name to be mined
+   * It takes a folder name as an argument, and if it's not null, it fetches all the messages in that
+   * folder, and for each message, it parses the header and body, and then calls the mineBatch function
+   * @param {object} folder - The folder to mine.
    */
   mineMessages(folder) {
     let self = this;
     if (folder) {
+      this.currentTotal = folder.messages.total;
       const f = this.connection.seq.fetch("1:*", {
-        bodies: this.fields,
+        bodies: self.fields,
         struct: true,
       });
       f.on("message", (msg, seqNumber) => {
+        this.cursor = seqNumber;
         let bufferHeader = "";
         let bufferBody = "";
         msg.on("body", async function (stream, streamInfo) {
@@ -173,7 +188,6 @@ class EmailAccountMiner {
             }
           });
         });
-
         msg.once("end", function () {
           self.mineBatch(
             seqNumber,
@@ -183,56 +197,103 @@ class EmailAccountMiner {
         });
       });
       f.once("end", () => {
-        self.mineFolder(self.folders[folders.indexOf(folder) + 1]).next();
+        console.log("end");
+
+        if (
+          self.folders.indexOf(folder) -
+          self.folders.indexOf(self.folders[self.folders.length - 1] <= 0)
+        ) {
+          self
+            .mineFolder(self.folders[self.folders.indexOf(folder) + 1])
+            .next();
+        } else {
+          this.connection.end();
+        }
       });
     } else {
       this.mineFolder(this.folders[folders.indexOf(folder) + 1]).next();
     }
   }
   /**
-   * MineBatch will parse emails objects then call storeBatch()
-   * @param  {} seqNumber - sequencial number of the mined message
-   * @param  {} header - Message header
-   * @param  {} body - message body
+   * The function takes in a sequence number, header, and body of an email message, creates an
+   * EmailMessage object, extracts email objects from the header and body, merges the two arrays of
+   * email objects, and then updates the batch array
+   * @param seqNumber - The sequence number of the email message.
+   * @param header - the header of the email message
+   * @param body - the body of the email message
    */
   mineBatch(seqNumber, header, body) {
-    let message = new EmailMessage(seqNumber, header, body);
+    // create EmailMessage object
+    let message = new EmailMessage(seqNumber, header, body, this.redisClient);
     let emailsObjectsFromHeader = message.extractEmailObjectsFromHeader();
     let emailsObjectsFromBody = message.extractEmailObjectsFromBody();
-    let mergedEmailsObjectsFromHeaderAndBody =
-      dataStructureHelpers.mergeEmailsObjectsFromHeaderAndBody(
-        emailsObjectsFromHeader,
-        emailsObjectsFromBody
+    let emailsObjectsFromHeaderAndBody = [
+      ...emailsObjectsFromHeader,
+      ...emailsObjectsFromBody,
+    ];
+
+    // update batch array
+    this.EmailsMessagesBatch =
+      dataStructureHelpers.mergeEmailsObjectsFromHeaderAndBodyToBatch(
+        emailsObjectsFromHeaderAndBody,
+        this.EmailsMessagesBatch
       );
-    this.temporaryEmailsMessagesArray.push(
-      mergedEmailsObjectsFromHeaderAndBody
-    );
-    if (this.temporaryEmailsMessagesArray.length > this.batch_size) {
-      this.storeBatch();
+
+    if (this.cursor == this.currentTotal) {
+      let arraybatch =
+        dataStructureHelpers.mergeEmailsObjectsFromHeaderAndBodyToBatch(
+          [],
+          this.EmailsMessagesBatch
+        );
+
+      this.EmailsMessagesBatch = [];
+      this.storeBatch(arraybatch);
     }
   }
+
   /**
-   * storeBatch will update the database with the given batch array
+   * It takes an array of objects, checks if the object exists in the database, if it does, it updates
+   * the object, if it doesn't, it creates a new object
+   * @param array - The array of objects that you want to store in the database.
    */
-  storeBatch() {
+  storeBatch(array) {
     let bulkArray = [];
-    this.temporaryEmailsMessagesArray.forEach((emailObject) => {
+    let promises = [];
+    array.forEach(async (emailObject) => {
       emailObject["user"] = this.user.email;
-      persistentEmails
-        .findOne({
-          where: { user: emailObject.user, address: emailObject.address },
-        })
-        .then((email) => {
-          if (email) {
-            let updatedEmailObject = this.updateEmailObject(emailObject, email);
-            bulkArray.push(updatedEmailObject);
-          } else {
-            bulkArray.push(emailObject);
-          }
-        });
+      if (emailObject.address) {
+        promises.push(
+          new Promise((res, rej) => {
+            emailsInfos
+              .findOne({
+                where: { address: emailObject.address },
+              })
+              .then((email) => {
+                if (email) {
+                  let emailObj = email.dataValues;
+                  if (emailObj.messageId.includes(emailObject.messageId)) {
+                    res("exists");
+                  } else {
+                    let updatedEmailObject = this.updateEmailObject(
+                      emailObject,
+                      emailObj
+                    );
+                    bulkArray.push(updatedEmailObject);
+                    res();
+                  }
+                } else {
+                  bulkArray.push(emailObject);
+                  res();
+                }
+              });
+          })
+        );
+      }
     });
-    persistentEmails.bulkCreate(bulkArray, {
-      updateOnDuplicate: ["user", "email"],
+    Promise.all(promises).then((result) => {
+      emailsInfos.bulkCreate(bulkArray, {
+        updateOnDuplicate: ["fields", "name"],
+      });
     });
   }
   /**
@@ -240,11 +301,18 @@ class EmailAccountMiner {
    * @param  {} emailObject - mined email object
    * @param  {} emailObjectInStore - email object that will be updated with new data
    */
+  /**
+   * It takes two objects, one with the new data and one with the stored object, and merges the new data into
+   * the stored object.
+   * @param emailObject - The email object that is being added to the store.
+   * @param emailObjectInStore - The email object that is already in the store.
+   * @returns the emailObjectInStore.
+   */
   updateEmailObject(emailObject, emailObjectInStore) {
     Object.keys(emailObject).map((key) => {
       if (key == "name" && emailObject[key] != emailObjectInStore[key]) {
-        emailobjectInStore[key] =
-          emailObjectInStore + " || " + emailObject[key];
+        emailObjectInStore[key] =
+          emailObjectInStore[key] + " || " + emailObject[key];
       }
       if (key == "fields") {
         Object.keys(emailObject[key]).map((fieldName) => {

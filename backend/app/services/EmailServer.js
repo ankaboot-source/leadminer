@@ -1,9 +1,17 @@
 const Imap = require("imap");
 
 class EmailServer {
+  /**
+   * The constructor function is a special function that is called when a new object is created
+   * @param user - The user object that was passed to the constructor.
+   */
   constructor(user) {
     this.user = user;
   }
+  /**
+   * It returns an IMAP object that is used to connect to the user's email account
+   * @returns An Imap object
+   */
   getConnection() {
     console.log(this.user);
     let imap;
@@ -40,10 +48,18 @@ class EmailServer {
     }
     return imap;
   }
+  /**
+   * It kills the connection to the IMAP server
+   * @param imapConnetion - The connection object returned by the imap.connect() function.
+   */
   killConnection(imapConnetion) {
     imapConnetion.destroy();
   }
 
+  /**
+   * It generates a new XOauth token for the user
+   * @returns A promise.
+   */
   refreshConnection() {
     let tokens = tokenHelpers.generateXOauthToken(this.user);
     return tokens;
