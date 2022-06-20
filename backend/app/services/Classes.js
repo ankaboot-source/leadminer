@@ -5,7 +5,7 @@ class EmailServer {
     disconnect(){}
     refresh(){}
 }
-class EmailAccount {
+class EmailAccountMiner {
     constructor(connection, fields, cursor, batch_size){
         this.connection = connection;
         this.fields = fields;
@@ -26,7 +26,7 @@ class EmailAccount {
 
     }
     set treeToMine(treeToMine){
-
+        // return total to mine
     }
     refreshTree(){
         // refresh tree from imap
@@ -37,19 +37,62 @@ class EmailAccount {
     }
     mineFolder(folder){
         // for a given folder name, mine messages
+        //calls mineBatch
     }
     mineBatch(){
-        
+        // recieves two params cursor and EmailMessage object
+        // after using emails = EmailMessage.extractEmailAddressesFromHeader()
+        // calls helpers like isNoReply(), isNewsletter(), isInConversation() on each element in emails
+        // then push to emailsArray . if emailsArray.length > batch_size then store new emails and 
+        // update old ones(we will use redis to check if already mined address) in database, else
+        // update emailsArray if alreadyMined(emailAddress) == true (this address already mined and we need only an update) 
     }
+
 }  
 
 
 class EmailMessage {
-    constructor(id,header , body) {
-      this.id = id;
-      this.header = header || "";
-      this.body = body || ""
+    constructor(sequentialId, header, body) {
+      this.sequentialId = sequentialId;
+      this.header = header || {};
+      this.body = body || {};
     }
-    get id(){
+    isNewsletter(){
+
     }
+    isTransactional(){
+
+    }
+    isInConversation(){
+
+    }
+    isInvitation(){
+
+    }
+    hasAttachement(){
+
+    }
+    getSenderIp(){
+
+    }
+    getDate(){
+
+    }
+    getMessageId(){
+
+    }
+    getSize(){
+        
+    }
+    extractEmailAddressesFromHeader(){
+        // uses regex helpers to extract emails addresses from header
+    }
+    extractEmailAddressesFromBody(){
+        // uses regex helpers to extract emails addresses from body
+    }
+    extractPhoneContact(){
+
+    }
+
+    
 }

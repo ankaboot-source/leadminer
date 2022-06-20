@@ -190,7 +190,7 @@ export default {
   },
   mounted() {
     let googleUser = LocalStorage.getItem("googleUser");
-    console.log(googleUser);
+
     let imapUser = LocalStorage.getItem("imapUser");
     if (googleUser != null) {
       this.$store.commit("example/SET_GOOGLE_USER", googleUser);

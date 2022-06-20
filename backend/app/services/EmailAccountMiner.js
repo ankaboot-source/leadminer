@@ -1,14 +1,17 @@
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
+const hashHelpers = require("../utils/hashHelpers");
 const { emailsInfos } = require("../models");
 const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
+const logger = require("../utils/logger")(module);
 
 class EmailAccountMiner {
   //public field
   tree = [];
   EmailsMessagesBatch = [];
   currentTotal = 0;
+
   /**
    * This function is a constructor for the class `EmailAccountMiner`
    * @param {object} connection - The connection to the imapserver.
@@ -28,7 +31,8 @@ class EmailAccountMiner {
     fields,
     folders,
     cursor,
-    batch_size
+    batch_size,
+    eventEmiter
   ) {
     this.connection = connection;
     this.user = user;
@@ -38,6 +42,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.cursor = cursor;
     this.batch_size = batch_size || MAX_BATCH_SIZE;
+    this.emitter = eventEmiter;
+    this.mailHash = hashHelpers.hashEmail(user.email);
   }
 
   /**
@@ -48,10 +54,11 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   async getTree() {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       let result = [];
-      this.connection.connect();
+      this.connection = await this.connection.connecte();
       this.connection.once("ready", () => {
+        logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
         this.connection.getBoxes("", async (err, boxes) => {
           let treeObjectWithChildrens =
             dataStructureHelpers.createReadableTreeObjectFromImapTree(boxes);
@@ -67,10 +74,14 @@ class EmailAccountMiner {
         });
       });
       this.connection.once("end", () => {
+        logger.info(`End mining folders tree for user : ${this.mailHash}`);
         result = [this.tree, null];
         resolve(result);
       });
       this.connection.once("error", (error) => {
+        logger.error(
+          `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
+        );
         result = [this.tree, error];
         resolve(result);
       });
@@ -121,9 +132,8 @@ class EmailAccountMiner {
    * @param {string} folderName - the name of the folder you want to get the tree from.
    */
   getTreeByFolder(folderName) {
-    // TODO : foldersNames : could be an array so we can get many folders trees at once at once
     let tree = {};
-    let folderPath = dataStructureHelper.getFolderPathFromTreeObject(
+    let folderPath = dataStructureHelpers.getFolderPathFromTreeObject(
       tree,
       folderName
     );
@@ -144,11 +154,12 @@ class EmailAccountMiner {
    * folders array
    */
   mine() {
-    // implements a for loop to go through all folders
-    // it calls this.mineFolder()
     this.mineFolder(this.fields, this.folders);
-    this.connection.connect();
+    console.log(this.connection);
+    this.connection.getConnection();
+    this.connection.connecte();
     this.connection.once("ready", async () => {
+      logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
       this.mineFolder(this.folders[0]).next();
     });
   }
@@ -157,6 +168,9 @@ class EmailAccountMiner {
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
+    logger.info(
+      `Begin mining email messages from folder:${folder} for user: ${this.mailHash}`
+    );
     yield this.connection.openBox(folder, true, async (err, openedFolder) => {
       this.mineMessages(openedFolder);
     });
@@ -176,10 +190,11 @@ class EmailAccountMiner {
         struct: true,
       });
       f.on("message", (msg, seqNumber) => {
-        this.cursor = seqNumber;
         let bufferHeader = "";
         let bufferBody = "";
+        let size = 0;
         msg.on("body", async function (stream, streamInfo) {
+          size = streamInfo.size;
           stream.on("data", (chunk) => {
             if (streamInfo.which.includes("HEADER")) {
               bufferHeader += chunk;
@@ -191,23 +206,22 @@ class EmailAccountMiner {
         msg.once("end", function () {
           self.mineBatch(
             seqNumber,
+            size,
             Imap.parseHeader(bufferHeader.toString("utf8")),
             bufferBody
           );
         });
       });
       f.once("end", () => {
-        console.log("end");
-
-        if (
-          self.folders.indexOf(folder) -
-          self.folders.indexOf(self.folders[self.folders.length - 1] <= 0)
-        ) {
-          self
-            .mineFolder(self.folders[self.folders.indexOf(folder) + 1])
-            .next();
-        } else {
+        logger.info(
+          `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
+        );
+        if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
           this.connection.end();
+        } else {
+          self
+            .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
+            .next();
         }
       });
     } else {
@@ -222,44 +236,46 @@ class EmailAccountMiner {
    * @param header - the header of the email message
    * @param body - the body of the email message
    */
-  mineBatch(seqNumber, header, body) {
+  mineBatch(size, seqNumber, header, body) {
     // create EmailMessage object
-    let message = new EmailMessage(seqNumber, header, body, this.redisClient);
+    let message = new EmailMessage(
+      seqNumber,
+      size,
+      header,
+      body,
+      this.redisClient
+    );
+    // extract the header
     let emailsObjectsFromHeader = message.extractEmailObjectsFromHeader();
+    // extract the body
     let emailsObjectsFromBody = message.extractEmailObjectsFromBody();
     let emailsObjectsFromHeaderAndBody = [
       ...emailsObjectsFromHeader,
       ...emailsObjectsFromBody,
     ];
-
     // update batch array
-    this.EmailsMessagesBatch =
-      dataStructureHelpers.mergeEmailsObjectsFromHeaderAndBodyToBatch(
-        emailsObjectsFromHeaderAndBody,
-        this.EmailsMessagesBatch
-      );
-
-    if (this.cursor == this.currentTotal) {
-      let arraybatch =
+    this.EmailsMessagesBatch.push(...emailsObjectsFromHeaderAndBody);
+    if (this.EmailsMessagesBatch.length > 5) {
+      let batchTobeStored =
         dataStructureHelpers.mergeEmailsObjectsFromHeaderAndBodyToBatch(
-          [],
           this.EmailsMessagesBatch
         );
-
       this.EmailsMessagesBatch = [];
-      this.storeBatch(arraybatch);
+
+      this.storeBatch(batchTobeStored);
     }
   }
 
   /**
    * It takes an array of objects, checks if the object exists in the database, if it does, it updates
    * the object, if it doesn't, it creates a new object
-   * @param array - The array of objects that you want to store in the database.
+   * @param batch - The array of objects that you want to store in the database.
    */
-  storeBatch(array) {
-    let bulkArray = [];
+  storeBatch(batch) {
+    logger.info(`Saving/updating data for user: ${this.mailHash}`);
+    let batchArray = [];
     let promises = [];
-    array.forEach(async (emailObject) => {
+    batch.forEach(async (emailObject) => {
       emailObject["user"] = this.user.email;
       if (emailObject.address) {
         promises.push(
@@ -271,18 +287,23 @@ class EmailAccountMiner {
               .then((email) => {
                 if (email) {
                   let emailObj = email.dataValues;
-                  if (emailObj.messageId.includes(emailObject.messageId)) {
-                    res("exists");
-                  } else {
+                  if (
+                    emailObject.messageId.every((element) => {
+                      return emailObj.messageId.includes(element);
+                    }) == false
+                  ) {
                     let updatedEmailObject = this.updateEmailObject(
                       emailObject,
                       emailObj
                     );
-                    bulkArray.push(updatedEmailObject);
+
+                    batchArray.push(updatedEmailObject);
                     res();
+                  } else {
+                    res("exists");
                   }
                 } else {
-                  bulkArray.push(emailObject);
+                  batchArray.push(emailObject);
                   res();
                 }
               });
@@ -291,16 +312,14 @@ class EmailAccountMiner {
       }
     });
     Promise.all(promises).then((result) => {
-      emailsInfos.bulkCreate(bulkArray, {
-        updateOnDuplicate: ["fields", "name"],
-      });
+      if (batchArray.length > 0) {
+        emailsInfos.bulkCreate(batchArray, {
+          updateOnDuplicate: ["fields", "name", "messageId"],
+        });
+      }
     });
   }
-  /**
-   * updateEmailObject will update emailObjectInStore with new parsed emailObject fields
-   * @param  {} emailObject - mined email object
-   * @param  {} emailObjectInStore - email object that will be updated with new data
-   */
+
   /**
    * It takes two objects, one with the new data and one with the stored object, and merges the new data into
    * the stored object.
@@ -309,20 +328,31 @@ class EmailAccountMiner {
    * @returns the emailObjectInStore.
    */
   updateEmailObject(emailObject, emailObjectInStore) {
+    // push the new message ids
+    emailObjectInStore["messageId"].push(...emailObject.messageId);
     Object.keys(emailObject).map((key) => {
-      if (key == "name" && emailObject[key] != emailObjectInStore[key]) {
+      if (key == "name" && emailObject.name != emailObjectInStore.name) {
         emailObjectInStore[key] =
           emailObjectInStore[key] + " || " + emailObject[key];
       }
       if (key == "fields") {
-        Object.keys(emailObject[key]).map((fieldName) => {
-          if (emailObjectInStore[key][fieldName]) {
-            emailObjectInStore[key][fieldName] =
-              emailObjectInStore[key][fieldName] + emailObject[key][fieldName];
+        Object.keys(emailObject.fields).map((fieldName) => {
+          if (!Object.keys(emailObjectInStore.fields).includes(fieldName)) {
+            emailObjectInStore.fields[fieldName] =
+              emailObject.fields[fieldName];
           } else {
-            emailObjectInStore[key][fieldName] = emailObject[key][fieldName];
+            emailObjectInStore.fields[fieldName] =
+              emailObjectInStore.fields[fieldName] +
+              emailObject.fields[fieldName];
           }
         });
+      }
+      if (key == "type") {
+        emailObjectInStore.type.push(...emailObject.type);
+        emailObjectInStore.type = [...new Set(emailObjectInStore.type)];
+      }
+      if (key == "engagement") {
+        emailObjectInStore.engagement += emailObject.engagement;
       }
     });
     return emailObjectInStore;

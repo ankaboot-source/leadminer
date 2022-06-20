@@ -225,8 +225,9 @@ export function getBoxes({ context, getters }) {
         },
       })
       .then((response) => {
+        console.log(response);
         this.commit("example/SET_LOADINGBOX", false);
-        this.commit("example/SET_BOXES", response.data.boxes);
+        this.commit("example/SET_BOXES", response.data.imapFoldersTree);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
         this.commit("example/SET_UPDATE_TOKEN", response.data.token);
       })

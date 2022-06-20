@@ -79,22 +79,32 @@ exports.SignUpWithGoogle = async (req, res) => {
                       "Some error occurred while creating your account your account.",
                   });
                 });
-            } else {
-              logger.info(
-                `On signUp With Google : Account with id: ${googleUser.id} already exist`
-              );
-              // case when user id exists
-              res.status(200).send({
-                message: "Your account already exists !",
-                googleUser: {
-                  email: google_user.email,
-                  id: google_user.id,
-                  access_token: {
-                    access_token: tokens.access_token,
-                    experation: tokenInfo.exp,
-                  },
-                },
-              });
+            } else if (
+              google_user &&
+              google_user.refreshToken != googleUser.refreshToken
+            ) {
+              googleUsers
+                .update(
+                  { refreshToken: googleUser.refreshToken },
+                  { where: { id: googleUser.id } }
+                )
+                .then(() => {
+                  logger.info(
+                    `On signUp With Google : Account with id: ${googleUser.id} already exist`
+                  );
+                  // case when user id exists
+                  res.status(200).send({
+                    message: "Your account already exists !",
+                    googleUser: {
+                      email: google_user.email,
+                      id: google_user.id,
+                      access_token: {
+                        access_token: tokens.access_token,
+                        experation: tokenInfo.exp,
+                      },
+                    },
+                  });
+                });
             }
           });
       }
@@ -112,6 +122,7 @@ exports.SignUpWithGoogle = async (req, res) => {
  * @param  {} refresh_token stored token
  */
 async function refreshAccessToken(refresh_token) {
+  console.log(refresh_token);
   return new Promise((resolve, reject) => {
     let tokenInfo = {};
     let access_token;
@@ -125,7 +136,6 @@ async function refreshAccessToken(refresh_token) {
     });
     return oauth2Client.getAccessToken(async (err, token) => {
       tokenInfo = await oauth2Client.getTokenInfo(token);
-
       access_token = {
         access_token: token,
         experation: Math.floor(tokenInfo.expiry_date / 1000),

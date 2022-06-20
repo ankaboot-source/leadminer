@@ -8,6 +8,7 @@ const UtilsForData = require("../utils/inputHelpers");
 const utilsForToken = require("../utils/tokenHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const imapService = require("../services/imapService");
+const EventEmitter = require("node:events");
 const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
 const EmailAccountMiner = require("../services/EmailAccountMiner");
@@ -153,37 +154,45 @@ exports.loginToAccount = (req, res) => {
  * @param  {object} res - http response to be sent
  */
 /* A function that is called when a user wants to get his imap folders tree. */
-exports.getImapBoxes = async (req, res) => {
-  // define user object from user request query
-  let user = new ImapUser(req.query).getUserConnetionDataFromQuery();
-  // initialise imap server connection
-  let imapConnection = new EmailServer(user).getConnection();
-  // initialise EmailAccountMiner to mine imap tree
-  let miner = new EmailAccountMiner(imapConnection, user, {}, {}, "", "", "");
-  // get tree
-  let [tree, error] = await miner.getTree();
-  if (error) {
-    logger.error(
-      `Mining imap tree failed for user with email ${hashHelpers.hashEmail(
-        user.email
-      )} reason : ${error}`
-    );
-    res.status(400).send({
-      message: "Can't fetch imap folders",
-      error: error,
-    });
-  }
-  if (tree) {
-    logger.info(
-      `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
-        user.email
-      )}`
-    );
-    res.status(200).send({
-      message: "Imap folders fetched with success !",
-      imapFoldersTree: tree,
-    });
-  }
+exports.getImapBoxes = async (req, res, sse) => {
+  let query = JSON.parse(req.query.user);
+  googleUser.findOne({ where: { id: query.id } }).then(async (google_user) => {
+    if (google_user) {
+      query["refresh_token"] = google_user.dataValues.refreshToken;
+    }
+    console.log(query);
+    // define user object from user request query
+    let user = new ImapUser(query).getUserConnetionDataFromQuery();
+    // initialise imap server connection
+    let server = new EmailServer(user);
+    // initialise EmailAccountMiner to mine imap tree
+    let miner = new EmailAccountMiner(server, user, {}, {}, "", "", "");
+    // get tree
+    let [tree, error] = await miner.getTree();
+    if (error) {
+      logger.error(
+        `Mining imap tree failed for user with email ${hashHelpers.hashEmail(
+          user.email
+        )} reason : ${error}`
+      );
+      res.status(400).send({
+        message: "Can't fetch imap folders",
+        error: error,
+      });
+    }
+    if (tree) {
+      console.log(tree);
+      logger.info(
+        `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
+          user.email
+        )}`
+      );
+      res.status(200).send({
+        message: "Imap folders fetched with success !",
+        imapFoldersTree: tree,
+      });
+    }
+  });
 };
 
 /**
@@ -206,17 +215,20 @@ exports.getEmails = (req, res, sse, RedisClient) => {
   // define user object from user request query
   let user = new ImapUser(req.query).getUserConnetionDataFromQuery();
   // initialise imap server connection
-  let imapConnection = new EmailServer(user).getConnection();
+  let server = new EmailServer(user, sse);
   // initialise EmailAccountMiner to mine imap tree
+  class MyEmitter extends EventEmitter {}
+  const myEmitter = new MyEmitter();
   let miner = new EmailAccountMiner(
-    imapConnection,
+    server,
     user,
     RedisClient,
     sse,
     ["HEADER", "1"],
-    ["INBOX"],
+    ["Brouillons", "Spam"],
     "",
-    100
+    100,
+    myEmitter
   );
   miner.mine();
 };

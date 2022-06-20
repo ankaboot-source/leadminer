@@ -37,14 +37,17 @@ class ImapUser {
 
   getUserConnetionDataFromQuery() {
     let user = {};
-    if (this.query.authCode) {
+    if (this.query.access_token) {
       user["email"] = this.query.email;
-      user["token"] = this.query.token; //tokenHelpers.getAccessToken(this.query.authCode);
+      user["id"] = this.query.id;
+      user["token"] = this.query.access_token; //tokenHelpers.getAccessToken(this.query.authCode);
+      user["refreshToken"] = this.query.refresh_token;
       user["connectionMethod"] = { method: "api" };
-      user.connectionMethod.host = null;
-      user.connectionMethod.port = null;
+      user.connectionMethod.host = this.query.host;
+      user.connectionMethod.port = this.query.port;
     } else if (this.query.password) {
       user["email"] = this.query.email;
+      user["id"] = this.query.id;
       user["password"] = this.query.password;
       user["connectionMethod"] = { method: "imap" };
       user.connectionMethod.host = this.query.host;
