@@ -1,7 +1,13 @@
 const crypto = require("crypto");
-const secret = "abcdefg";
+const secret = process.env.HASH_SECRET;
 
+/**
+ * It takes an email address, runs it through a cryptographic hash function, and returns the result
+ * @param emailAddress - The email address to hash.
+ * @returns A hash of the email address.
+ */
 function hashEmail(emailAddress) {
+  console.log(emailAddress);
   return crypto.createHmac("sha256", secret).update(emailAddress).digest("hex");
 }
 

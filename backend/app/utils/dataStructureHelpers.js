@@ -145,23 +145,46 @@ function updateTemporaryBatch(temporaryEmailsObjects, emailObject) {
     /* istanbul ignore else */
     if (
       emailObject.address == temporaryEmailsObjects[i].address &&
-      !temporaryEmailsObjects[i].messageId.includes(emailObject.messageId[0])
+      !emailObject.messageId.every((element) => {
+        return temporaryEmailsObjects[i].messageId.includes(element);
+      })
     ) {
       temporaryEmailsObjects[i].messageId.push(...emailObject.messageId);
+      temporaryEmailsObjects[i].engagement += 1;
 
-      Object.keys(temporaryEmailsObjects[i].fields).includes(
-        Object.keys(emailObject.fields)[0]
-      )
-        ? (temporaryEmailsObjects[i].fields[
-            Object.keys(emailObject.fields)[0]
-          ] += emailObject.fields[Object.keys(emailObject.fields)[0]])
-        : (temporaryEmailsObjects[i].fields[
-            Object.keys(emailObject.fields)[0]
-          ] = emailObject.fields[Object.keys(emailObject.fields)[0]]);
+      // Object.keys(temporaryEmailsObjects[i].fields).includes(
+      //   Object.keys(emailObject.fields)[0]
+      // )
+      //   ? (temporaryEmailsObjects[i].fields[
+      //       Object.keys(emailObject.fields)[0]
+      //     ] += emailObject.fields[Object.keys(emailObject.fields)[0]])
+      //   : (temporaryEmailsObjects[i].fields[
+      //       Object.keys(emailObject.fields)[0]
+      //     ] = emailObject.fields[Object.keys(emailObject.fields)[0]]);
+      checkFieldExistenceInFieldsObject(
+        temporaryEmailsObjects[i].fields,
+        emailObject.fields
+      );
     } else {
       continue;
     }
   }
+  return temporaryEmailsObjects;
+}
+function checkFieldExistenceInFieldsObject(
+  fieldsObjectToUpdate,
+  emailObjectField
+) {
+  Object.keys(emailObjectField).map((fieldName) => {
+    let field = fieldName;
+    if (Object.keys(fieldsObjectToUpdate).includes(fieldName)) {
+      fieldsObjectToUpdate[field] =
+        fieldsObjectToUpdate[field] + emailObjectField[field];
+    } else {
+      fieldsObjectToUpdate[field] = emailObjectField[field];
+    }
+  });
+  return fieldsObjectToUpdate;
 }
 
 /**
@@ -172,14 +195,13 @@ function updateTemporaryBatch(temporaryEmailsObjects, emailObject) {
  * email.
  * @returns An array of objects.
  */
-function mergeEmailsObjectsFromHeaderAndBodyToBatch(
-  EmailsMessagesBatch,
-  emailsObjects
-) {
-  let temporaryEmailsObjects = EmailsMessagesBatch;
+function mergeEmailsObjectsFromHeaderAndBodyToBatch(emailsObjects) {
+  let temporaryEmailsObjects = [];
   emailsObjects.map((emailObject) => {
     if (checkEmailObjectExistenceInBatch(temporaryEmailsObjects, emailObject)) {
-      updateTemporaryBatch(temporaryEmailsObjects, emailObject);
+      temporaryEmailsObjects.push(
+        updateTemporaryBatch(temporaryEmailsObjects, emailObject)
+      );
     } else {
       temporaryEmailsObjects.push(emailObject);
     }

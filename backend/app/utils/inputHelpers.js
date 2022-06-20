@@ -45,7 +45,6 @@ function getPath(obj, val, path) {
 function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
-
   Object.keys(folders).forEach((key) => {
     if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);

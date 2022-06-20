@@ -8,7 +8,6 @@ module.exports = (sequelize, Sequelize) => {
   const EmailsInfos = sequelize.define("emails_info", {
     messageId: {
       allowNull: false,
-
       type: Sequelize.ARRAY(Sequelize.STRING),
     },
     address: {
@@ -21,46 +20,50 @@ module.exports = (sequelize, Sequelize) => {
     fields: {
       type: Sequelize.JSONB,
     },
-    // msgId: {
-    //   type: Sequelize.ARRAY(Sequelize.INTEGER),
-    // },
-    // folder: {
-    //   type: Sequelize.ARRAY(Sequelize.STRING),
-    // },
+    engagement: {
+      type: Sequelize.SMALLINT,
+    },
     date: {
       type: Sequelize.STRING,
     },
     validity: {
       type: Sequelize.STRING,
     },
-    // total: {
-    //   type: Sequelize.INTEGER,
-    // },
     type: {
-      type: Sequelize.STRING,
+      type: Sequelize.ARRAY(Sequelize.STRING),
     },
   });
-  // EmailsInfos.associate = (models) => {
-  //   EmailsInfos.belongsTo(models.imap_infos, {
-  //     foreignKey: "userId",
-  //   });
-  // };
+  // beforeBulkCreate will store records after dns check
   EmailsInfos.beforeBulkCreate(async (emails, options) => {
+    let emailsBeStored = [];
+    let promises = [];
     emails.map(async (email) => {
-      const domain = email.address.split("@")[1];
-      console.log(domain);
-      let dnsAddressCheckRedis = await client.get(domain);
-      if (dnsAddressCheckRedis) {
-        email.validity = dnsAddressCheckRedis;
-      } else {
-        let dnsAddressCheckDns = await dnsHelpers.checkDNS(domain, client);
-        console.log(dnsAddressCheckDns);
-        if (dnsAddressCheckDns) {
-          email.validity = dnsAddressCheckDns;
-        }
-      }
+      promises.push(
+        new Promise(async (resolve, reject) => {
+          email["validity"] = "";
+          const domain = email.address.split("@")[1];
+          let dnsAddressCheckRedis = await client.get(domain);
+          if (dnsAddressCheckRedis) {
+            email.validity = "ok";
+            emailsBeStored.push(email);
+            resolve();
+          } else {
+            let dnsAddressCheckDns = await dnsHelpers.checkDNS(domain, client);
+            if (dnsAddressCheckDns) {
+              email.validity = dnsAddressCheckDns;
+              emailsBeStored.push(email);
+              resolve();
+            } else {
+              resolve();
+            }
+          }
+        })
+      );
     });
-    options.updateOnDuplicate.push("validity");
+    Promise.all(promises).then(() => {
+      emails = emailsBeStored;
+      options.updateOnDuplicate.push("validity");
+    });
   });
   return EmailsInfos;
 };

@@ -47,20 +47,7 @@ function extractNameAndEmail(data) {
     return [result];
   }
 }
-/**
- * Change extracted body email into {name,address} format
- * @param  {Array} data array of emails objects
- * @returns {Array} formated array of object
- */
-function FormatBodyEmail(data) {
-  /* istanbul ignore else */
-  if (data) {
-    return data.map((oneEmail) => {
-      return { name: "", address: oneEmail };
-    });
-  }
-}
+
 
 exports.extractNameAndEmail = extractNameAndEmail;
 exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;
-exports.FormatBodyEmail = FormatBodyEmail;
