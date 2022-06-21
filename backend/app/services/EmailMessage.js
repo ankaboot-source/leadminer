@@ -1,9 +1,9 @@
-const regExHelpers = require("../utils/regexpUtils");
-const dateHelpers = require("../utils/dateHelpers");
+const regExHelpers = require('../utils/regexpUtils');
+const dateHelpers = require('../utils/dateHelpers');
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
 const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
-const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
+const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {
   /**
@@ -12,11 +12,12 @@ class EmailMessage {
    * @param header - This is a JSON object that contains the header information for the message.
    * @param body - The body of the message.
    */
-  constructor(sequentialId, size, header, body) {
+  constructor(sequentialId, size, header, body, user) {
     this.sequentialId = sequentialId;
     this.size = size;
     this.header = header || {};
     this.body = body || {};
+    this.user = user;
   }
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
@@ -42,19 +43,19 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes("references")) {
+    if (Object.keys(this.header).includes('references')) {
       return 1;
     } else {
       return 0;
     }
   }
   getEmailType() {
-    let type = [];
+    const type = [];
     if (this.isNewsletter()) {
-      type.push("Newsletter");
+      type.push('Newsletter');
     }
     if (this.isTransactional()) {
-      type.push("Transactional");
+      type.push('Transactional');
     }
     return type;
     //if(this.is)
@@ -69,14 +70,14 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    return dateHelpers.parseDate(this.header?.date?.[0] ?? "");
+    return dateHelpers.parseDate(this.header?.date?.[0] ?? '');
   }
   /**
    * It returns an object with only the messaging fields from the header
    * @returns An object with only the messaging fields from the header.
    */
   getMessagingFieldsOnly() {
-    let messagingProps = {};
+    const messagingProps = {};
     Object.keys(this.header).map((key) => {
       if (FIELDS.includes(key)) {
         messagingProps[key] = this.header[key][0];
@@ -90,7 +91,7 @@ class EmailMessage {
    * @returns An object with all the metadata fields that are not in the FIELDS array.
    */
   getOtherMetaDataFields() {
-    let metaDataProps = {};
+    const metaDataProps = {};
     Object.keys(this.header).map((key) => {
       if (!FIELDS.includes(key)) {
         metaDataProps[key] = this.header[key][0];
@@ -103,8 +104,8 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header["message-id"]) {
-      return this.header["message-id"][0];
+    if (this.header['message-id']) {
+      return this.header['message-id'][0];
     }
   }
 
@@ -117,22 +118,23 @@ class EmailMessage {
    * @returns An array of objects.
    */
   getEmailsObjectsFromHeader(messagingFields, metaDataProps) {
-    let emailsObjects = [];
+    const emailsObjects = [];
     Object.keys(messagingFields).map((key) => {
-      let emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
+      const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails) {
         emails.map((email) => {
           if (email) {
             if (email.address) {
-              let emailObject = {};
-              emailObject["messageId"] = [this.getMessageId()];
-              emailObject["address"] = email.address;
-              emailObject["name"] = email.name;
-              emailObject["fields"] = {};
-              emailObject["fields"][key] = 1;
-              emailObject["date"] = this.getDate();
-              emailObject["type"] = this.getEmailType();
-              emailObject["engagement"] = this.isInConversation();
+              const emailObject = {};
+              emailObject['userID'] = this.user.id;
+              emailObject['messageId'] = [this.getMessageId()];
+              emailObject['address'] = email.address;
+              emailObject['name'] = email.name;
+              emailObject['fields'] = {};
+              emailObject['fields'][key] = 1;
+              emailObject['date'] = this.getDate();
+              emailObject['type'] = this.getEmailType();
+              emailObject['engagement'] = this.isInConversation();
               emailsObjects.push(emailObject);
             }
           }
@@ -147,20 +149,21 @@ class EmailMessage {
    * @returns An array of objects.
    */
   getEmailsObjectsFromBody() {
-    let emailsObjects = [];
-    let emailObject = {};
-    let emails = regExHelpers.extractNameAndEmailFromBody(this.body);
+    const emailsObjects = [];
+    const emailObject = {};
+    const emails = regExHelpers.extractNameAndEmailFromBody(this.body);
     if (emails) {
       emails.map((email) => {
         if (email) {
-          emailObject["messageId"] = [this.getMessageId()];
-          emailObject["address"] = email;
-          emailObject["name"] = "";
-          emailObject["fields"] = {};
-          emailObject["fields"]["body"] = 1;
-          emailObject["date"] = this.getDate();
-          emailObject["type"] = this.getEmailType();
-          emailObject["engagement"] = this.isInConversation();
+          emailObject['userID'] = this.user.id;
+          emailObject['messageId'] = [this.getMessageId()];
+          emailObject['address'] = email;
+          emailObject['name'] = '';
+          emailObject['fields'] = {};
+          emailObject['fields']['body'] = 1;
+          emailObject['date'] = this.getDate();
+          emailObject['type'] = this.getEmailType();
+          emailObject['engagement'] = this.isInConversation();
           emailsObjects.push(emailObject);
         }
       });
@@ -173,9 +176,9 @@ class EmailMessage {
    * @returns An array of objects.
    */
   extractEmailObjectsFromHeader() {
-    let messagingFields = this.getMessagingFieldsOnly();
-    let metaDataProps = this.getOtherMetaDataFields();
-    let emailsObjects = this.getEmailsObjectsFromHeader(
+    const messagingFields = this.getMessagingFieldsOnly();
+    const metaDataProps = this.getOtherMetaDataFields();
+    const emailsObjects = this.getEmailsObjectsFromHeader(
       messagingFields,
       metaDataProps
     );
@@ -188,8 +191,8 @@ class EmailMessage {
    */
   extractEmailObjectsFromBody() {
     if (Object.keys(this.body).length > 0) {
-      let emailsObjects = this.getEmailsObjectsFromBody(
-        this.body.toString("utf8")
+      const emailsObjects = this.getEmailsObjectsFromBody(
+        this.body.toString('utf8')
       );
       return emailsObjects;
     } else {

@@ -247,24 +247,13 @@ export default {
           email: this.email,
           password: this.password,
           host: this.host,
-          port: this.port != null ? this.port : 993,
+          port: this.port || 993,
         };
-        this.$store.commit("example/SET_PASSWORD", data.password);
-
-        this.$store
-          .dispatch("example/signIn", { data })
-          .then(() => {
-            this.quasar.sessionStorage.set(
-              "ImapUser",
-              this.$store.getters["example/getStates"].imap
-            );
+        this.$store.dispatch("example/signIn", { data }).then(() => {
+          setTimeout(() => {
             this.$router.push("/dashboard");
-          })
-          .catch(() => {
-            this.showNotif(
-              this.$store.getters["example/getStates"].errorMessage
-            );
-          });
+          }, 1500);
+        });
       }
     },
   },

@@ -1,9 +1,9 @@
-const Sequelize = require("sequelize");
-const dbConfig = require("../config/db.config");
+const Sequelize = require('sequelize');
+const dbConfig = require('../config/db.config');
 
-const sequelize = new Sequelize(dbConfig.db, "postgres", dbConfig.password, {
-  host: "localhost",
-  dialect: "postgres",
+const sequelize = new Sequelize(dbConfig.db, 'postgres', dbConfig.password, {
+  host: 'localhost',
+  dialect: 'postgres',
   pool: {
     max: 15,
     min: 0,
@@ -24,8 +24,8 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.imapInfo = require("./imap.model")(sequelize, Sequelize);
-db.emailsInfos = require("./emails.model")(sequelize, Sequelize);
-db.googleUsers = require("./googleUser.model")(sequelize, Sequelize);
+db.imapInfo = require('./imap.model')(sequelize, Sequelize);
+db.emailsInfos = require('./emails.model')(sequelize, Sequelize);
+db.googleUsers = require('./googleUser.model')(sequelize, Sequelize);
 
 module.exports = db;

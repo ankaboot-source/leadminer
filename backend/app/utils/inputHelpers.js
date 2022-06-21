@@ -17,17 +17,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || "";
-  let fullpath = "";
+  path = path || '';
+  let fullpath = '';
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === "object") {
+    if (typeof obj[b] === 'object') {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace("/undefined", "");
+  return fullpath.replace('/undefined', '');
 }
 
 /**
@@ -46,7 +46,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
+    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -126,17 +126,17 @@ function EqualPartsForSocket(total) {
 function sortDatabase(database) {
   const data = database.map((row) => {
     if (!row.email?.name) {
-      row.email["name"] = "";
+      row.email['name'] = '';
     }
-    row.email["name"] = row.email["name"].replaceAll('"', "");
-    row.field["recipient"] =
-      (row.field?.["cc"] ?? 0) +
-      (row.field?.["bcc"] ?? 0) +
-      (row.field?.["to"] ?? 0);
-    row.field["sender"] =
-      (row.field?.from ?? 0) + (row.field?.["reply-to"] ?? 0);
-    row.field["body"] = row.field?.body ?? 0;
-    row.field["total"] = row.field["sender"] + row.field["recipient"];
+    row.email['name'] = row.email['name'].replaceAll('"', '');
+    row.field['recipient'] =
+      (row.field?.['cc'] ?? 0) +
+      (row.field?.['bcc'] ?? 0) +
+      (row.field?.['to'] ?? 0);
+    row.field['sender'] =
+      (row.field?.from ?? 0) + (row.field?.['reply-to'] ?? 0);
+    row.field['body'] = row.field?.body ?? 0;
+    row.field['total'] = row.field['sender'] + row.field['recipient'];
     return row;
   });
   const wordArr = [];
@@ -145,7 +145,7 @@ function sortDatabase(database) {
   data.forEach((el) => {
     if (Number(el.email.name.charAt(0))) {
       numArr.push(el);
-    } else if (el.email.name != "") {
+    } else if (el.email.name != '') {
       wordArr.push(el);
     } else {
       emptyArr.push(el);

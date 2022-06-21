@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controllers/imap.controller.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controllers/imap.controller.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/* istanbul ignore file */
+const Imap = require('imap');
+const db = require('../models');
+const ImapInfo = db.imapInfo;
+const googleUser = db.googleUsers;
+const emailsInfos = db.emailsInfos;
+const logger = require('../utils/logger')(module);
+
+const hashHelpers = require('../utils/hashHelpers');
+const EventEmitter = require('node:events');
+const ImapUser = require('../services/imapUser');
+const EmailServer = require('../services/EmailServer');
+const EmailAccountMiner = require('../services/EmailAccountMiner');
+const { imapInfo } = require('../models');
+const { Sequelize, Op } = require('sequelize');
+/**
+ *  Create imap account infos
+ * @param  {} req
+ * @param  {} res
+ */
+exports.createImapInfo = (req, res) => {
+  if (!req.body.email || !req.body.host || !req.body.port) {
+    res.status(400).send({
+      error: 'Content can not be empty!',
+    });
+    return;
+  }
+  // imapInfo object
+  const imapInfo = {
+    email: req.body.email,
+    host: req.body.host,
+    port: req.body.port,
+    tls: req.body.tls ? req.body.tls : true,
+  };
+  // initiate imap client
+  const imap = new Imap({
+    user: imapInfo.email,
+    password: req.body.password,
+    host: imapInfo.host,
+    port: imapInfo.port,
+    tls: true,
+    connTimeout: 20000,
+    authTimeout: 7000,
+    tlsOptions: {
+      port: imapInfo.port,
+      host: imapInfo.host,
+      servername: imapInfo.host,
+    },
+  });
+  // Ensures that the account exists
+  imap.connect();
+  // if we can connect to the imap account
+  imap.once('ready', () => {
+    ImapInfo.findOne({ where: { email: imapInfo.email } }).then((imapdata) => {
+      if (imapdata === null) {
+        // Save ImapInfo in the database
+        ImapInfo.create(imapInfo)
+          .then((data) => {
+            res.status(200).send({ imapdata: data });
+          })
+          .catch((err) => {
+            logger.error(
+              `can't create account with email ${req.body.email} : ${err}`
+            );
+            res.status(500).send({
+              error:
+                'Some error occurred while creating your account imap info.',
+            });
+          });
+      } else {
+        logger.info(
+          `On signup : Account with email ${req.body.email} already exist`
+        );
+        res.status(200).send({
+          message: 'Your account already exists !',
+          switch: true,
+          imapdata,
+        });
+      }
+      imap.end();
+    });
+  });
+  // The imap account does not exists or connexion denied
+  imap.once('error', (err) => {
+    logger.error(
+      `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}  : **Error** ${err}`
+    );
+    res.status(500).send({
+      error: 'We can\'t connect to your imap account.',
+    });
+  });
+};
+/**
+ * Login to account
+ * @param  {} req
+ * @param  {} res
+ */
+exports.loginToAccount = (req, res) => {
+  if (!req.body.email) {
+    res.status(400).send({
+      error: 'Content can not be empty!',
+    });
+    return;
+  }
+  ImapInfo.findOne({ where: { email: req.body.email } }).then((imap) => {
+    if (imap === null) {
+      logger.error(
+        `On login : Account with email ${req.body.email} does not exist`
+      );
+      res.status(500).send({
+        error: 'Your account does not exist ! try to sign up.',
+      });
+    } else {
+      const imapConnection = new Imap({
+        user: imap.email,
+        password: req.body.password,
+        host: imap.host,
+        port: imap.port,
+        tls: true,
+        connTimeout: 20000,
+        authTimeout: 7000,
+        tlsOptions: {
+          port: imap.port,
+          host: imap.host,
+          servername: imap.host,
+        },
+      });
+      imapConnection.connect();
+      imapConnection.once('ready', () => {
+        if (imap) {
+          logger.info(
+            `Account with email ${req.body.email} succesfully logged in`
+          );
+          res.status(200).send({
+            imap,
+          });
+          imapConnection.end();
+        }
+      });
+      imapConnection.on('error', (err) => {
+        logger.error(
+          `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
+        );
+        res.status(500).send({
+          error: 'We can\'t connect to your imap account, Check credentials.',
+        });
+      });
+    }
+  });
+};
+
+/**
+ * Retrieve mailbox folders.
+ * @param  {object} req - user request
+ * @param  {object} res - http response to be sent
+ */
+/* A function that is called when a user wants to get his imap folders tree. */
+exports.getImapBoxes = async (req, res, sse) => {
+  console.log(req.query);
+  const query = JSON.parse(req.query.user);
+  if (query.access_token) {
+    const google_user = await googleUser.findOne({
+      where: { email: query.email },
+    });
+    if (google_user) {
+      query['refresh_token'] = google_user.dataValues.refreshToken;
+    }
+  } else {
+    const imap_user = await imapInfo.findOne({ where: { id: query.id } });
+    if (imap_user) {
+      query['host'] = imap_user.host;
+      query['port'] = imap_user.port;
+    }
+  }
+  console.log(query);
+
+  // define user object from user request query
+  const user = new ImapUser(query).getUserConnetionDataFromQuery();
+  // initialise imap server connection
+  const server = new EmailServer(user);
+  // initialise EmailAccountMiner to mine imap tree
+  const miner = new EmailAccountMiner(server, user, {}, {}, '', '', '');
+  // get tree
+  const [tree, error] = await miner.getTree();
+  if (error) {
+    logger.error(
+      `Mining imap tree failed for user with email ${hashHelpers.hashEmail(
+        user.email
+      )} reason : ${error}`
+    );
+    res.status(400).send({
+      message: 'Can\'t fetch imap folders',
+      error: error,
+    });
+  }
+  if (tree) {
+    console.log(tree);
+    logger.info(
+      `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
+        user.email
+      )}`
+    );
+    res.status(200).send({
+      message: 'Imap folders fetched with success !',
+      imapFoldersTree: tree,
+    });
+  }
+};
+
+/**
+ * Get Emails from imap server.
+ * @param  {object} req - user request
+ * @param  {object} res - http response to be sent
+ * @param  {object} sse - server sent event instance
+ * @param  {object} RedisClient - redis client
+ */
+exports.getEmails = async (req, res, sse, RedisClient) => {
+  if (!req.query) {
+    logger.error(
+      'No user query param ! request can\'t be handled without a user'
+    );
+    return res.status(404).send({
+      message: 'Bad request',
+      error: 'Bad request! check query',
+    });
+  }
+  const query = JSON.parse(req.query.user);
+  if (query.access_token) {
+    const google_user = await googleUser.findOne({
+      where: { email: query.email },
+    });
+    if (google_user) {
+      query['refresh_token'] = google_user.dataValues.refreshToken;
+    }
+  } else {
+    const imap_user = await imapInfo.findOne({ where: { id: query.id } });
+    if (imap_user) {
+      query['host'] = imap_user.host;
+      query['port'] = imap_user.port;
+    }
+  }
+  // define user object from user request query
+  const user = new ImapUser(query).getUserConnetionDataFromQuery();
+  // initialise imap server connection
+  const server = new EmailServer(user);
+  console.log(req.query);
+  // initialise EmailAccountMiner to mine imap tree
+  class MyEmitter extends EventEmitter {}
+  const eventEmitter = new MyEmitter();
+  const miner = new EmailAccountMiner(
+    server,
+    user,
+    RedisClient,
+    sse,
+    ['HEADER', '1'],
+    ['Fiche'],
+    '',
+    100,
+    eventEmitter
+  );
+  miner.mine();
+  req.on('close', () => {
+    eventEmitter.emit('endByUser', true);
+  });
+  eventEmitter.on('end', async () => {
+    // Find all emails
+    emailsInfos.findAll({ where: { userID: user.id } }).then((data) => {
+      res.send({
+        message: 'Done mining emails !',
+        data: data,
+      });
+    });
+  });
+
+  eventEmitter.removeListener('end', () => {});
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="EmailAccountMiner.html">EmailAccountMiner</a></li><li><a href="EmailMessage.html">EmailMessage</a></li><li><a href="EmailServer.html">EmailServer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addChildrenTotalForParentFiles">addChildrenTotalForParentFiles</a></li><li><a href="global.html#addEmailToDatabase">addEmailToDatabase</a></li><li><a href="global.html#addEmailType">addEmailType</a></li><li><a href="global.html#addFieldsAndFolder">addFieldsAndFolder</a></li><li><a href="global.html#addPathPerFolder">addPathPerFolder</a></li><li><a href="global.html#checkDNS">checkDNS</a></li><li><a href="global.html#checkEmailObjectExistenceInBatch">checkEmailObjectExistenceInBatch</a></li><li><a href="global.html#checkExistence">checkExistence</a></li><li><a href="global.html#compareDates">compareDates</a></li><li><a href="global.html#createImapInfo">createImapInfo</a></li><li><a href="global.html#createReadableTreeObjectFromImapTree">createReadableTreeObjectFromImapTree</a></li><li><a href="global.html#EqualPartsForSocket">EqualPartsForSocket</a></li><li><a href="global.html#extractNameAndEmail">extractNameAndEmail</a></li><li><a href="global.html#extractNameAndEmailFromBody">extractNameAndEmailFromBody</a></li><li><a href="global.html#generateXOauthToken">generateXOauthToken</a></li><li><a href="global.html#getBoxesAll">getBoxesAll</a></li><li><a href="global.html#getBoxesAndFolders">getBoxesAndFolders</a></li><li><a href="global.html#getEmails">getEmails</a></li><li><a href="global.html#getPath">getPath</a></li><li><a href="global.html#hashEmail">hashEmail</a></li><li><a href="global.html#IsNotNoReply">IsNotNoReply</a></li><li><a href="global.html#loginToAccount">loginToAccount</a></li><li><a href="global.html#manipulateData">manipulateData</a></li><li><a href="global.html#manipulateDataWithDns">manipulateDataWithDns</a></li><li><a href="global.html#mergeEmailsObjectsFromHeaderAndBodyToBatch">mergeEmailsObjectsFromHeaderAndBodyToBatch</a></li><li><a href="global.html#parseDate">parseDate</a></li><li><a href="global.html#refreshAccessToken">refreshAccessToken</a></li><li><a href="global.html#SignUpWithGoogle">SignUpWithGoogle</a></li><li><a href="global.html#sortDatabase">sortDatabase</a></li><li><a href="global.html#treatParsedEmails">treatParsedEmails</a></li><li><a href="global.html#updateTemporaryBatch">updateTemporaryBatch</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Tue Jun 21 2022 20:07:49 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

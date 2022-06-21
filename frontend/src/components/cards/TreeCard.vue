@@ -6,7 +6,7 @@
     icon="arrow_forward_ios"
     :nodes="Boxes"
     @update:ticked="Ticked"
-    node-key="label"
+    node-key="path"
     color="teal"
     tick-strategy="leaf"
     ><template class="row" v-slot:default-header="prop">
@@ -73,21 +73,22 @@ export default defineComponent({
 
   computed: {
     Boxes() {
-      const selectedB = ref([]);
-      function printValues(obj, dataThis) {
-        for (var key in obj) {
-          if (typeof obj[key] === "object") {
-            printValues(obj[key], dataThis);
-          } else if (typeof obj[key] === "string") {
-            if (!excludedFolders.includes(obj[key].toLowerCase())) {
-              selectedB.value.push(obj[key]);
-            }
+      const selectedB = [];
+      objectScan(["**.path"], {
+        joined: true,
+        filterFn: ({ parent, gparent, property, value, context }) => {
+          if (
+            !excludedFolders.includes(
+              value.slice(value.lastIndexOf("/") + 1).toLowerCase()
+            )
+          ) {
+            selectedB.push(value);
           }
-        }
-      }
-      printValues(this.boxes, this);
-      if (selectedB.value.length > 0) {
-        this.selected = selectedB.value;
+        },
+      })(this.boxes);
+
+      if (selectedB.length > 0) {
+        this.selected = selectedB;
       }
       return [...this.boxes];
     },
@@ -102,21 +103,17 @@ export default defineComponent({
   },
   methods: {
     Ticked(e) {
-      setTimeout(() => {
-        objectScan(["**.label"], {
-          joined: true,
-          filterFn: ({ parent, gparent, property, value, context }) => {
-            if (
-              (value,
-              this.$refs.tree.isTicked(value) &&
-                value != "Check All" &&
-                !this.selected.includes(value))
-            ) {
-              this.selected.push(value);
-            }
-          },
-        })(this.boxes, { sum: 0 });
-      }, 150);
+      objectScan(["**.path"], {
+        joined: true,
+        filterFn: ({ parent, gparent, property, value, context }) => {
+          if (
+            this.$refs.tree.isTicked(value) &&
+            !this.selected.includes(value)
+          ) {
+            this.selected.push(value);
+          }
+        },
+      })(this.boxes, { sum: 0 });
     },
   },
 });

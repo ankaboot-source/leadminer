@@ -1,38 +1,38 @@
-const disposable = require("./Disposable.json");
-const freeProviders = require("./FreeProviders.json");
-const dns = require("dns");
-const utilsForRegEx = require("./regexpUtils");
+const disposable = require('./Disposable.json');
+const freeProviders = require('./FreeProviders.json');
+const dns = require('dns');
+const utilsForRegEx = require('./regexpUtils');
 const NOREPLY = [
-  "noreply",
-  "no-reply",
-  "notifications-noreply",
-  "accusereception",
-  "support",
-  "maildaemon",
-  "notifications",
-  "notification",
-  "send-as-noreply",
-  "systemalert",
-  "pasdereponse",
-  "mailer-daemon",
-  "mail daemon",
-  "mailer daemon",
-  "alerts",
-  "auto-confirm",
-  "ne-pas-repondre",
-  "no.reply",
-  "nepasrepondre",
-  "do-not-reply",
-  "FeedbackForm",
-  "mailermasters",
-  "wordpress",
-  "donotreply",
-  "notify",
-  "do-notreply",
-  "password",
-  "reply-",
-  "no_reply",
-  "unsubscribe",
+  'noreply',
+  'no-reply',
+  'notifications-noreply',
+  'accusereception',
+  'support',
+  'maildaemon',
+  'notifications',
+  'notification',
+  'send-as-noreply',
+  'systemalert',
+  'pasdereponse',
+  'mailer-daemon',
+  'mail daemon',
+  'mailer daemon',
+  'alerts',
+  'auto-confirm',
+  'ne-pas-repondre',
+  'no.reply',
+  'nepasrepondre',
+  'do-not-reply',
+  'FeedbackForm',
+  'mailermasters',
+  'wordpress',
+  'donotreply',
+  'notify',
+  'do-notreply',
+  'password',
+  'reply-',
+  'no_reply',
+  'unsubscribe',
 ];
 /**
  * Check if a given email address is already mined.
@@ -87,8 +87,8 @@ function addEmailToDatabase(database, email) {
 function parseDate(date) {
   //let timezoneOffset = date.split(" ").pop();
   const tempDate = date
-    .replaceAll(/ CEST-(.*)| CEST/g, "+0200")
-    .replace(/ UTC-(.*)/i, "");
+    .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
+    .replace(/ UTC-(.*)/i, '');
   const dateFromString = new Date(tempDate);
   /* istanbul ignore else */
   if (isNaN(Date.parse(dateFromString)) == false) {
@@ -119,9 +119,7 @@ function addFieldsAndFolder(database, email, isConversation) {
   for (const i in database) {
     /* istanbul ignore else */
     if (email.email.address == database[i].email.address) {
-      Object.keys(database[i].field).includes(Object.keys(email.field)[0])
-        ? (database[i].field[Object.keys(email.field)[0]] += 1)
-        : (database[i].field[Object.keys(email.field)[0]] = 1);
+      Object.keys(database[i].field).includes(Object.keys(email.field)[0]) ? (database[i].field[Object.keys(email.field)[0]] += 1) : (database[i].field[Object.keys(email.field)[0]] = 1);
       if (compareDates(email.date, database[i].date)) {
         database[i].date = email.date;
       }
@@ -138,15 +136,15 @@ function addFieldsAndFolder(database, email, isConversation) {
  */
 function addEmailType(EmailInfo, isNewsletter) {
   if (isNewsletter) {
-    EmailInfo["type"] = "Newsletter";
+    EmailInfo['type'] = 'Newsletter';
   } else {
-    const domain = EmailInfo.email.address.split("@")[1];
+    const domain = EmailInfo.email.address.split('@')[1];
     if (disposable.includes(domain)) {
-      EmailInfo["type"] = "Disposable email";
+      EmailInfo['type'] = 'Disposable email';
     } else if (freeProviders.includes(domain)) {
-      EmailInfo["type"] = "Email provider";
+      EmailInfo['type'] = 'Email provider';
     } else {
-      EmailInfo["type"] = "Custom domain";
+      EmailInfo['type'] = 'Custom domain';
     }
   }
 
@@ -172,7 +170,7 @@ function manipulateData(
 ) {
   const emailInfo = {
     email: oneEmail,
-    field: { [element]: 1, ["engagement"]: isConversation ? 1 : 0 },
+    field: { [element]: 1, ['engagement']: isConversation ? 1 : 0 },
     date: parseDate(messageDate),
   };
 
@@ -223,7 +221,7 @@ function manipulateDataWithDns(
         if (addresses.length > 0) {
           tempArrayValid.push(domain);
           //set domain in redis
-          await client.set(domain, "ok", {
+          await client.set(domain, 'ok', {
             EX: 864000,
           });
 
@@ -264,34 +262,32 @@ function treatParsedEmails(
   isScanned,
   folder
 ) {
-  let messageDate = "";
+  let messageDate = '';
   let isNewsletter = false;
   let isConversation = false;
   if (dataTobeStored.date) {
     messageDate = dataTobeStored.date[0];
     delete dataTobeStored.date;
   }
-  if (dataTobeStored["list-unsubscribe"]) {
-    delete dataTobeStored["list-unsubscribe"];
+  if (dataTobeStored['list-unsubscribe']) {
+    delete dataTobeStored['list-unsubscribe'];
     isNewsletter = true;
   }
-  if (dataTobeStored["references"]) {
+  if (dataTobeStored['references']) {
     delete dataTobeStored.references;
     isConversation = true;
   }
   Object.keys(dataTobeStored).forEach((element) => {
     if (true) {
       const email =
-        element != "body"
-          ? utilsForRegEx.extractNameAndEmail(
-              dataTobeStored[element],
-              imapEmail
-            )
-          : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
+        element != 'body' ? utilsForRegEx.extractNameAndEmail(
+          dataTobeStored[element],
+          imapEmail
+        ) : utilsForRegEx.FormatBodyEmail(dataTobeStored[element], imapEmail);
       // check existence in database or data array
       email.forEach(async (oneEmail) => {
         if (oneEmail) {
-          const domain = oneEmail.address.split("@")[1];
+          const domain = oneEmail.address.split('@')[1];
           if (
             IsNotNoReply(oneEmail.address, imapEmail) &&
             !tempArrayInValid.includes(domain)

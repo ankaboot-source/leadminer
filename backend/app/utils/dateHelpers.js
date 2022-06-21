@@ -6,8 +6,8 @@
  */
 function parseDate(date) {
   const tempDate = date
-    .replaceAll(/ CEST-(.*)| CEST/g, "+0200")
-    .replace(/ UTC-(.*)/i, "");
+    .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
+    .replace(/ UTC-(.*)/i, '');
   const dateFromString = new Date(tempDate);
   /* istanbul ignore else */
   if (isNaN(Date.parse(dateFromString)) == false) {

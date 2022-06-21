@@ -1,4 +1,4 @@
-const crypto = require("crypto");
+const crypto = require('crypto');
 const secret = process.env.HASH_SECRET;
 
 /**
@@ -7,8 +7,7 @@ const secret = process.env.HASH_SECRET;
  * @returns A hash of the email address.
  */
 function hashEmail(emailAddress) {
-  console.log(emailAddress);
-  return crypto.createHmac("sha256", secret).update(emailAddress).digest("hex");
+  return crypto.createHmac('sha256', secret).update(emailAddress).digest('hex');
 }
 
 module.exports = {

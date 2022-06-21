@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: services/EmailServer.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: services/EmailServer.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const Imap = require("imap");
+const logger = require("../utils/logger")(module);
+const hashHelpers = require("../utils/hashHelpers");
+const tokenHelpers = require("../utils/tokenHelpers");
+const GOOGLE_IMAP_HOST = process.env.GOOGLE_IMAP_HOST;
+
+class EmailServer {
+  #connection;
+  /**
+   * The constructor function is a special function that is called when a new object is created
+   * @param user - The user object that was passed to the constructor.
+   */
+  constructor(user) {
+    this.user = user;
+    this.mailHash = hashHelpers.hashEmail(user.email);
+  }
+  /**
+   * It returns an IMAP object that is used to connect to the user's email account
+   * @returns An Imap object
+   */
+  initConnection() {
+    logger.info(`Preparing imap connection for user : ${this.mailHash}`);
+
+    if (this.user.token) {
+      // the user is connected using api
+      this.#connection = new Imap({
+        user: this.user.email,
+        xoauth2: "",
+        host: GOOGLE_IMAP_HOST,
+        port: this.user.port || 993,
+        tls: true,
+        tlsOptions: {
+          port: this.user.port || 993,
+          host: GOOGLE_IMAP_HOST,
+          servername: GOOGLE_IMAP_HOST,
+        },
+        keepalive: false,
+      });
+      logger.info(
+        `API connection to imap server initiated for user: ${this.mailHash}`
+      );
+    }
+    if (this.user.password) {
+      // the user is connected using password
+      this.#connection = new Imap({
+        user: this.user.email,
+        password: this.user.password,
+        host: this.user.host,
+        port: this.user.port || 993,
+        tls: true,
+        connTimeout: process.env.CONNECTION_TIMEOUT,
+        keepalive: false,
+        authTimeout: process.env.AUTHENTICATION_TIMEOUT,
+        tlsOptions: {
+          port: this.user.port || 993,
+          host: this.user.host,
+          servername: this.user.host,
+        },
+      });
+      logger.info(
+        `IMAP connection to imap server initiated for user: ${this.mailHash}`
+      );
+    }
+  }
+  /**
+   * It kills the connection to the IMAP server
+   * @param imapConnetion - The connection object returned by the imap.connect() function.
+   */
+  killConnection() {
+    this.connection.destroy();
+    logger.info(
+      `Connection to imap server destroyed by user: ${this.mailHash}`
+    );
+  }
+  /**
+   * If the user has a token, return true, otherwise return false
+   * @returns A boolean value.
+   */
+  isApiConnection() {
+    if (this.user.token) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  /**
+   * It connects to the IMAP server
+   * @returns A promise that resolves to the connection object.
+   */
+  async connecte() {
+    return new Promise(async (res, reject) => {
+      this.initConnection();
+      if (this.isApiConnection()) {
+        const tokens = await tokenHelpers.generateXOauthToken(this.user);
+        this.#connection._config.xoauth2 = tokens.xoauth2Token;
+        this.#connection.connect();
+        res(this.#connection);
+      } else {
+        this.#connection.connect();
+        res(this.#connection);
+      }
+    });
+  }
+}
+
+module.exports = EmailServer;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="EmailAccountMiner.html">EmailAccountMiner</a></li><li><a href="EmailMessage.html">EmailMessage</a></li><li><a href="EmailServer.html">EmailServer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addChildrenTotalForParentFiles">addChildrenTotalForParentFiles</a></li><li><a href="global.html#addEmailToDatabase">addEmailToDatabase</a></li><li><a href="global.html#addEmailType">addEmailType</a></li><li><a href="global.html#addFieldsAndFolder">addFieldsAndFolder</a></li><li><a href="global.html#addPathPerFolder">addPathPerFolder</a></li><li><a href="global.html#checkDNS">checkDNS</a></li><li><a href="global.html#checkEmailObjectExistenceInBatch">checkEmailObjectExistenceInBatch</a></li><li><a href="global.html#checkExistence">checkExistence</a></li><li><a href="global.html#compareDates">compareDates</a></li><li><a href="global.html#createImapInfo">createImapInfo</a></li><li><a href="global.html#createReadableTreeObjectFromImapTree">createReadableTreeObjectFromImapTree</a></li><li><a href="global.html#EqualPartsForSocket">EqualPartsForSocket</a></li><li><a href="global.html#extractNameAndEmail">extractNameAndEmail</a></li><li><a href="global.html#extractNameAndEmailFromBody">extractNameAndEmailFromBody</a></li><li><a href="global.html#generateXOauthToken">generateXOauthToken</a></li><li><a href="global.html#getBoxesAll">getBoxesAll</a></li><li><a href="global.html#getBoxesAndFolders">getBoxesAndFolders</a></li><li><a href="global.html#getEmails">getEmails</a></li><li><a href="global.html#getPath">getPath</a></li><li><a href="global.html#hashEmail">hashEmail</a></li><li><a href="global.html#IsNotNoReply">IsNotNoReply</a></li><li><a href="global.html#loginToAccount">loginToAccount</a></li><li><a href="global.html#manipulateData">manipulateData</a></li><li><a href="global.html#manipulateDataWithDns">manipulateDataWithDns</a></li><li><a href="global.html#mergeEmailsObjectsFromHeaderAndBodyToBatch">mergeEmailsObjectsFromHeaderAndBodyToBatch</a></li><li><a href="global.html#parseDate">parseDate</a></li><li><a href="global.html#refreshAccessToken">refreshAccessToken</a></li><li><a href="global.html#SignUpWithGoogle">SignUpWithGoogle</a></li><li><a href="global.html#sortDatabase">sortDatabase</a></li><li><a href="global.html#treatParsedEmails">treatParsedEmails</a></li><li><a href="global.html#updateTemporaryBatch">updateTemporaryBatch</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Tue Jun 21 2022 20:07:49 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

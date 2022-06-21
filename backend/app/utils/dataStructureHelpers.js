@@ -1,4 +1,4 @@
-const objectScan = require("object-scan");
+const objectScan = require('object-scan');
 /**
  * Create readable tree object
  * @param  {object} imapTree - native imap tree
@@ -16,7 +16,7 @@ function createReadableTreeObjectFromImapTree(imapTree) {
   const readableTree = [];
   let folder = {};
   Object.keys(imapTree).forEach((key) => {
-    if (imapTree[key].attribs.indexOf("\\HasChildren") > -1) {
+    if (imapTree[key].attribs.indexOf('\\HasChildren') > -1) {
       const children = createReadableTreeObjectFromImapTree(
         imapTree[key].children
       );
@@ -47,14 +47,14 @@ function addPathPerFolder(imapTree, originalTree) {
       imapTree[key].path = findPathPerFolder(
         originalTree,
         imapTree[key].label,
-        ""
+        ''
       ).substring(1);
       addPathPerFolder(imapTree[key].children, originalTree);
     } else {
       imapTree[key].path = findPathPerFolder(
         originalTree,
         imapTree[key].label,
-        ""
+        ''
       ).substring(1);
     }
   });
@@ -67,14 +67,14 @@ function addPathPerFolder(imapTree, originalTree) {
    * @returns The full path of the folder name.
    */
   function findPathPerFolder(imapTree, folderName, path) {
-    path = path || "";
-    let fullpath = "";
+    path = path || '';
+    let fullpath = '';
     for (const folder in imapTree) {
       /* istanbul ignore else */
       if (imapTree[folder] === folderName) {
         return path;
       }
-      if (typeof imapTree[folder] === "object") {
+      if (typeof imapTree[folder] === 'object') {
         fullpath =
           findPathPerFolder(
             imapTree[folder],
@@ -85,7 +85,7 @@ function addPathPerFolder(imapTree, originalTree) {
         continue;
       }
     }
-    return fullpath.replace("/undefined", "");
+    return fullpath.replace('/undefined', '');
   }
   return imapTree;
 }
@@ -101,20 +101,20 @@ function addPathPerFolder(imapTree, originalTree) {
  * object also has a total property with the value of the total.sum property.
  */
 function addChildrenTotalForParentFiles(imapTree, userEmail) {
-  let total = objectScan(["**.{total,children}"], {
+  const total = objectScan(['**.{total,children}'], {
     joined: true,
     filterFn: ({ parent, gparent, property, value, context }) => {
-      if (property == "total") {
-        parent["totalIndiv"] = parent.total;
+      if (property == 'total') {
+        parent['totalIndiv'] = parent.total;
       }
-      if (property == "children") {
+      if (property == 'children') {
         if (parent) {
           value.map((element) => {
             parent.total += element.total;
           });
         }
       }
-      if (property == "total") {
+      if (property == 'total') {
         context.sum += value;
       }
     },
@@ -124,7 +124,7 @@ function addChildrenTotalForParentFiles(imapTree, userEmail) {
 
 /**
  * It checks if an email object exists in an array of email objects
- * @param  {array{object}} EmailsMessagesBatch - emails objects batch
+ * @param  {array} EmailsMessagesBatch - emails objects batch
  * @param  {object} emailObject - email object to check existence in EmailsMessagesBatch
  * @returns A boolean value.
  */
@@ -137,7 +137,7 @@ function checkEmailObjectExistenceInBatch(EmailsMessagesBatch, emailObject) {
 /**
  * It takes an array of objects and an object as arguments and updates the array of objects with the
  * object
- * @param  {array{object}} EmailsMessagesBatch - emails objects batch
+ * @param  {array} EmailsMessagesBatch - emails objects batch
  * @param  {object} emailObject - email object
  */
 function updateTemporaryBatch(temporaryEmailsObjects, emailObject) {
@@ -176,7 +176,7 @@ function checkFieldExistenceInFieldsObject(
   emailObjectField
 ) {
   Object.keys(emailObjectField).map((fieldName) => {
-    let field = fieldName;
+    const field = fieldName;
     if (Object.keys(fieldsObjectToUpdate).includes(fieldName)) {
       fieldsObjectToUpdate[field] =
         fieldsObjectToUpdate[field] + emailObjectField[field];
@@ -189,14 +189,14 @@ function checkFieldExistenceInFieldsObject(
 
 /**
  * It takes two arrays of objects, and merges them into one array of objects
- * @param {array{object}} EmailsMessagesBatch - This is the batch of emails that we are going to merge with the new
+ * @param {array} EmailsMessagesBatch - This is the batch of emails that we are going to merge with the new
  * batch of emails.
  * @param {object} emailsObjects - an array of objects that contain the email information from the body of the
  * email.
  * @returns An array of objects.
  */
 function mergeEmailsObjectsFromHeaderAndBodyToBatch(emailsObjects) {
-  let temporaryEmailsObjects = [];
+  const temporaryEmailsObjects = [];
   emailsObjects.map((emailObject) => {
     if (checkEmailObjectExistenceInBatch(temporaryEmailsObjects, emailObject)) {
       temporaryEmailsObjects.push(

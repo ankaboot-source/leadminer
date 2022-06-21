@@ -516,16 +516,17 @@ export default defineComponent({
     const imapUser = LocalStorage.getItem("imapUser");
     if (!googleUser && !imapUser) {
       this.$router.push("/");
-    }
-    if (googleUser) {
+    } else if (googleUser) {
       this.$store.commit("example/SET_GOOGLE_USER", googleUser);
+      this.getBoxes();
+      this.boxOptions = this.$store.state.boxes;
+      this.renderDialog = true;
     } else if (imapUser) {
       this.$store.commit("example/SET_IMAP", imapUser);
-      this.$store.commit("example/SET_PASSWORD", imapUser.password);
+      this.getBoxes();
+      this.boxOptions = this.$store.state.boxes;
+      this.renderDialog = true;
     }
-    this.getBoxes();
-    this.boxOptions = this.$store.state.boxes;
-    this.renderDialog = true;
   },
   methods: {
     updateSelectedFields(val) {
@@ -589,12 +590,10 @@ export default defineComponent({
       }
 
       let data = {
-        boxes: this.selectedBoxes.filter(
-          (e) => e !== "generic" && e != "Check all"
-        ),
+        boxes: this.selectedBoxes,
         fields: fields,
-        folders: this.boxes[0].children,
       };
+      console.log(data);
       if (this.selectedBoxes.length > 0) {
         this.$store.dispatch("example/getEmails", { data }).then(() => {
           this.showNotif(
@@ -609,15 +608,6 @@ export default defineComponent({
     },
     getBoxes() {
       this.$store.dispatch("example/getBoxes").then(() => {
-        setTimeout(() => {
-          LocalStorage.clear();
-          if (this.$store.state.example.googleUser.access_token != "") {
-            LocalStorage.set(
-              "googleUser",
-              this.$store.state.example.googleUser
-            );
-          }
-        }, 2000);
         this.showNotif(
           this.$store.getters["example/getStates"].infoMessage,
           "teal-5",
