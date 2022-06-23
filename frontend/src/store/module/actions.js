@@ -90,6 +90,8 @@ export async function getEmails({ context, getters }, { data }) {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
+          this.commit("example/SET_EMAILS", response.data.data);
+
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
         })
@@ -121,6 +123,7 @@ export async function getEmails({ context, getters }, { data }) {
         .then((response) => {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
+          this.commit("example/SET_EMAILS", response.data.data);
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);

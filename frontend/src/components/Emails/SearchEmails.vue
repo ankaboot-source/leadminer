@@ -163,45 +163,56 @@
                     size="sm"
                     color="teal"
                     icon="content_copy"
-                    @click="CopyToClipboard(props.row.email.address)"
+                    @click="CopyToClipboard(props.row.address)"
                 /></q-td>
                 <q-td key="Email" :props="props">
                   {{
-                    props.row.email.address.length > 38
-                      ? props.row.email.address.substring(0, 38).concat("...")
-                      : props.row.email.address
+                    props.row.address.length > 38
+                      ? props.row.address.substring(0, 38).concat("...")
+                      : props.row.address
                   }}</q-td
                 >
 
                 <q-td key="Names" :props="props">
-                  {{
-                    props.row.email.name.length > 38
-                      ? props.row.email.name.substring(0, 38).concat("...")
-                      : props.row.email.name
-                  }}
+                  <div
+                    v-for="name in props.row.name
+                      .split('||')
+                      .filter((element) => {
+                        return element != ' ';
+                      })"
+                    :bind="name.index"
+                  >
+                    <q-badge outline color="orange" transparent
+                      >{{
+                        props.row.name.length > 20
+                          ? props.row.name.substring(0, 15).concat("...")
+                          : props.row.name
+                      }} </q-badge
+                    ><br />
+                  </div>
                 </q-td>
                 <q-td key="Sender" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.field.sender }}
+                    {{ props.row.fields.sender }}
                   </q-badge> </q-td
                 ><q-td key="Recipient" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.field.recipient }}
+                    {{ props.row.fields.recipient }}
                   </q-badge>
                 </q-td>
                 <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.field.engagement }}
+                    {{ props.row.engagement }}
                   </q-badge>
                 </q-td>
 
                 <q-td v-show="false" key="Total" :props="props">
                   <q-badge color="blue">
-                    {{ props.row.field.total }}
+                    {{ props.row.fields.total }}
                   </q-badge> </q-td
                 ><q-td key="Body" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.field.body }}
+                    {{ props.row.fields.body }}
                   </q-badge>
                 </q-td>
                 <q-td key="Date" :props="props">
@@ -248,7 +259,7 @@ const columns = [
     name: "Email",
     align: "left",
     label: "Email",
-    field: (row) => row.email.address,
+    field: (row) => row.address,
     sortable: true,
     sort: (a, b) => {
       const domainA = a.split("@")[0];
@@ -262,7 +273,7 @@ const columns = [
     name: "Names",
     align: "left",
     label: "Name",
-    field: (row) => row.email.name.substring(0, 10).concat("..."),
+    field: (row) => row.name.substring(0, 10).concat("..."),
     sortable: true,
     sort: (a, b) => {
       return b.localeCompare(a);
@@ -276,7 +287,7 @@ const columns = [
     align: "center",
     label: "Sender",
     type: "number",
-    field: (row) => row.field.sender,
+    field: (row) => row.fields.sender,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -287,7 +298,7 @@ const columns = [
     align: "center",
     label: "Recipient",
     type: "number",
-    field: (row) => row.field.recipient,
+    field: (row) => row.fields.recipient,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -298,7 +309,7 @@ const columns = [
     align: "center",
     label: "Engagement",
     type: "number",
-    field: (row) => row.field.engagement,
+    field: (row) => row.engagement,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -309,7 +320,7 @@ const columns = [
     align: "center",
     label: "Body",
     type: "number",
-    field: (row) => row.field.body,
+    field: (row) => row.fields.body,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -386,10 +397,10 @@ export default defineComponent({
         let emailsCsv = Emails;
         let emailstoExport = emailsCsv.map((element) => {
           let obj = {
-            Email: element.email.address,
-            Aliase: element.email.name.includes(";")
-              ? `"${element.email.name}"`
-              : element.email.name,
+            Email: element.address,
+            Aliase: element.name.includes(";")
+              ? `"${element.name}"`
+              : element.name,
             Status: "Valid",
             To: Object.keys(element.field).includes("to")
               ? element.field["to"]
@@ -561,10 +572,10 @@ export default defineComponent({
     },
     filterMethod(rows, term) {
       return rows.filter((e) => {
-        if (typeof e.email.name == "undefined") {
-          return e.email.address.includes(term);
+        if (typeof e.name == "undefined") {
+          return e.address.includes(term);
         } else {
-          return e.email.address.includes(term) || e.email.name.includes(term);
+          return e.address.includes(term) || e.name.includes(term);
         }
       });
     },

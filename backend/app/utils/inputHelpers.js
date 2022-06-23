@@ -17,17 +17,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || '';
-  let fullpath = '';
+  path = path || "";
+  let fullpath = "";
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === 'object') {
+    if (typeof obj[b] === "object") {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace('/undefined', '');
+  return fullpath.replace("/undefined", "");
 }
 
 /**
@@ -46,7 +46,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
+    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -120,45 +120,40 @@ function EqualPartsForSocket(total) {
   return Parts;
 }
 /**
- * Sorts the virtual database array based on total interactions, alphabetics, and groups fields
+ * Sorts the virtual database array based on total interactions, alphabetics, and groups fieldss
  * @param  {Array} database
  */
 function sortDatabase(database) {
   const data = database.map((row) => {
-    if (!row.email?.name) {
-      row.email['name'] = '';
-    }
-    row.email['name'] = row.email['name'].replaceAll('"', '');
-    row.field['recipient'] =
-      (row.field?.['cc'] ?? 0) +
-      (row.field?.['bcc'] ?? 0) +
-      (row.field?.['to'] ?? 0);
-    row.field['sender'] =
-      (row.field?.from ?? 0) + (row.field?.['reply-to'] ?? 0);
-    row.field['body'] = row.field?.body ?? 0;
-    row.field['total'] = row.field['sender'] + row.field['recipient'];
+    row["name"] = row["name"].replaceAll('"', "");
+    row.fields["recipient"] =
+      (row.fields?.["cc"] ?? 0) +
+      (row.fields?.["bcc"] ?? 0) +
+      (row.fields?.["to"] ?? 0);
+    row.fields["sender"] =
+      (row.fields?.from ?? 0) + (row.fields?.["reply-to"] ?? 0);
+    row.fields["body"] = row.fields?.body ?? 0;
+    row.fields["total"] = row.fields["sender"] + row.fields["recipient"];
     return row;
   });
   const wordArr = [];
   const numArr = [];
   const emptyArr = [];
   data.forEach((el) => {
-    if (Number(el.email.name.charAt(0))) {
+    if (Number(el.name.charAt(0))) {
       numArr.push(el);
-    } else if (el.email.name != '') {
+    } else if (el.name != "") {
       wordArr.push(el);
     } else {
       emptyArr.push(el);
     }
   });
   wordArr.sort((a, b) => {
-    return (
-      !a.email.name - !b.email.name || a.email.name.localeCompare(b.email.name)
-    );
+    return !a.name - !b.name || a.name.localeCompare(b.name);
   });
-  wordArr.sort((a, b) => b.field.total - a.field.total);
+  wordArr.sort((a, b) => b.fields.total - a.fields.total);
   numArr.sort((a, b) => a - b);
-  emptyArr.sort((a, b) => b.field.total - a.field.total);
+  emptyArr.sort((a, b) => b.fields.total - a.fields.total);
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);
   return [...sorted];

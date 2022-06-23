@@ -97,5 +97,42 @@
     {
       "email": { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
     }
-  ]
+  ],
+  "imapTreeExample": {
+    "Brouillons": {
+      "attribs": ["\\Drafts", "\\HasNoChildren"],
+      "delimiter": "/",
+      "children": null,
+      "parent": null,
+      "special_use_attrib": "\\Drafts"
+    },
+    "INBOX": {
+      "attribs": ["\\HasChildren"],
+      "delimiter": "/",
+      "children": {
+        "mars": {
+          "attribs": ["\\Junk", "\\HasNoChildren"],
+          "delimiter": "/",
+          "children": null,
+          "parent": null,
+          "special_use_attrib": "\\Junk"
+        },
+        "Administratif": {
+          "attribs": ["\\Junk", "\\HasNoChildren"],
+          "delimiter": "/",
+          "children": null,
+          "parent": null,
+          "special_use_attrib": "\\Junk"
+        }
+      },
+      "parent": null
+    },
+    "Spam": {
+      "attribs": ["\\Junk", "\\HasNoChildren"],
+      "delimiter": "/",
+      "children": null,
+      "parent": null,
+      "special_use_attrib": "\\Junk"
+    }
+  }
 }
