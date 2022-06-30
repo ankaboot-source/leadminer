@@ -1,18 +1,16 @@
 /* istanbul ignore file */
-const Imap = require("imap");
-const db = require("../models");
+const Imap = require('imap');
+const db = require('../models');
 const ImapInfo = db.imapInfo;
 const googleUser = db.googleUsers;
-const emailsInfos = db.emailsInfos;
-const logger = require("../utils/logger")(module);
-const inputHelpers = require("../utils/inputHelpers");
-const hashHelpers = require("../utils/hashHelpers");
-const EventEmitter = require("node:events");
-const ImapUser = require("../services/imapUser");
-const EmailServer = require("../services/EmailServer");
-const EmailAccountMiner = require("../services/EmailAccountMiner");
-const { imapInfo } = require("../models");
-const { Sequelize, Op } = require("sequelize");
+const logger = require('../utils/logger')(module);
+const hashHelpers = require('../utils/hashHelpers');
+const databaseHelpers = require('../utils/databaseHelpers');
+const EventEmitter = require('node:events');
+const ImapUser = require('../services/imapUser');
+const EmailServer = require('../services/EmailServer');
+const EmailAccountMiner = require('../services/EmailAccountMiner');
+const { imapInfo, emailsRaw } = require('../models');
 /**
  *  Create imap account infos
  * @param  {} req
@@ -21,7 +19,7 @@ const { Sequelize, Op } = require("sequelize");
 exports.createImapInfo = (req, res) => {
   if (!req.body.email || !req.body.host || !req.body.port) {
     res.status(400).send({
-      error: "Content can not be empty!",
+      error: 'Content can not be empty!',
     });
     return;
   }
@@ -50,7 +48,7 @@ exports.createImapInfo = (req, res) => {
   // Ensures that the account exists
   imap.connect();
   // if we can connect to the imap account
-  imap.once("ready", () => {
+  imap.once('ready', () => {
     ImapInfo.findOne({ where: { email: imapInfo.email } }).then((imapdata) => {
       if (imapdata === null) {
         // Save ImapInfo in the database
@@ -64,7 +62,7 @@ exports.createImapInfo = (req, res) => {
             );
             res.status(500).send({
               error:
-                "Some error occurred while creating your account imap info.",
+                'Some error occurred while creating your account imap info.',
             });
           });
       } else {
@@ -72,7 +70,7 @@ exports.createImapInfo = (req, res) => {
           `On signup : Account with email ${req.body.email} already exist`
         );
         res.status(200).send({
-          message: "Your account already exists !",
+          message: 'Your account already exists !',
           switch: true,
           imapdata,
         });
@@ -81,12 +79,12 @@ exports.createImapInfo = (req, res) => {
     });
   });
   // The imap account does not exists or connexion denied
-  imap.once("error", (err) => {
+  imap.once('error', (err) => {
     logger.error(
       `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}  : **Error** ${err}`
     );
     res.status(500).send({
-      error: "We can't connect to your imap account.",
+      error: 'We can\'t connect to your imap account.',
     });
   });
 };
@@ -98,7 +96,7 @@ exports.createImapInfo = (req, res) => {
 exports.loginToAccount = (req, res) => {
   if (!req.body.email) {
     res.status(400).send({
-      error: "Content can not be empty!",
+      error: 'Content can not be empty!',
     });
     return;
   }
@@ -108,7 +106,7 @@ exports.loginToAccount = (req, res) => {
         `On login : Account with email ${req.body.email} does not exist`
       );
       res.status(500).send({
-        error: "Your account does not exist ! try to sign up.",
+        error: 'Your account does not exist ! try to sign up.',
       });
     } else {
       const imapConnection = new Imap({
@@ -126,7 +124,7 @@ exports.loginToAccount = (req, res) => {
         },
       });
       imapConnection.connect();
-      imapConnection.once("ready", () => {
+      imapConnection.once('ready', () => {
         if (imap) {
           logger.info(
             `Account with email ${req.body.email} succesfully logged in`
@@ -137,12 +135,12 @@ exports.loginToAccount = (req, res) => {
           imapConnection.end();
         }
       });
-      imapConnection.on("error", (err) => {
+      imapConnection.on('error', (err) => {
         logger.error(
           `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
         );
         res.status(500).send({
-          error: "We can't connect to your imap account, Check credentials.",
+          error: 'We can\'t connect to your imap account, Check credentials.',
         });
       });
     }
@@ -163,23 +161,22 @@ exports.getImapBoxes = async (req, res, sse) => {
       where: { email: query.email },
     });
     if (google_user) {
-      query["refresh_token"] = google_user.dataValues.refreshToken;
+      query['refresh_token'] = google_user.dataValues.refreshToken;
     }
   } else {
     const imap_user = await imapInfo.findOne({ where: { id: query.id } });
     if (imap_user) {
-      query["host"] = imap_user.host;
-      query["port"] = imap_user.port;
+      query['host'] = imap_user.host;
+      query['port'] = imap_user.port;
     }
   }
-  console.log(query);
 
   // define user object from user request query
   const user = new ImapUser(query).getUserConnetionDataFromQuery();
   // initialise imap server connection
   const server = new EmailServer(user);
   // initialise EmailAccountMiner to mine imap tree
-  const miner = new EmailAccountMiner(server, user, {}, {}, "", "", "");
+  const miner = new EmailAccountMiner(server, user, {}, {}, '', '', '');
   // get tree
   const [tree, error] = await miner.getTree();
   if (error) {
@@ -189,7 +186,7 @@ exports.getImapBoxes = async (req, res, sse) => {
       )} reason : ${error}`
     );
     res.status(400).send({
-      message: "Can't fetch imap folders",
+      message: 'Can\'t fetch imap folders',
       error: error,
     });
   }
@@ -201,7 +198,7 @@ exports.getImapBoxes = async (req, res, sse) => {
       )}`
     );
     res.status(200).send({
-      message: "Imap folders fetched with success !",
+      message: 'Imap folders fetched with success !',
       imapFoldersTree: tree,
     });
   }
@@ -217,11 +214,11 @@ exports.getImapBoxes = async (req, res, sse) => {
 exports.getEmails = async (req, res, sse, RedisClient) => {
   if (!req.query) {
     logger.error(
-      "No user query param ! request can't be handled without a user"
+      'No user query param ! request can\'t be handled without a user'
     );
     return res.status(404).send({
-      message: "Bad request",
-      error: "Bad request! check query",
+      message: 'Bad request',
+      error: 'Bad request! check query',
     });
   }
   const query = JSON.parse(req.query.user);
@@ -230,13 +227,13 @@ exports.getEmails = async (req, res, sse, RedisClient) => {
       where: { email: query.email },
     });
     if (google_user) {
-      query["refresh_token"] = google_user.dataValues.refreshToken;
+      query['refresh_token'] = google_user.dataValues.refreshToken;
     }
   } else {
     const imap_user = await imapInfo.findOne({ where: { id: query.id } });
     if (imap_user) {
-      query["host"] = imap_user.host;
-      query["port"] = imap_user.port;
+      query['host'] = imap_user.host;
+      query['port'] = imap_user.port;
     }
   }
   // define user object from user request query
@@ -252,25 +249,24 @@ exports.getEmails = async (req, res, sse, RedisClient) => {
     user,
     RedisClient,
     sse,
-    ["HEADER", "1"],
-    ["[Gmail]/Messages envoyés"],
-    "",
+    ['HEADER', '1'],
+    ['INBOX'],
+    '',
     100,
     eventEmitter
   );
   miner.mine();
-  req.on("close", () => {
-    eventEmitter.emit("endByUser", true);
+  req.on('close', () => {
+    eventEmitter.emit('endByUser', true);
   });
-  eventEmitter.on("end", async () => {
+  eventEmitter.on('end', async () => {
     // Find all emails
-    emailsInfos.findAll({ where: { userID: user.id } }).then((data) => {
-      res.send({
-        message: "Done mining emails !",
-        data: inputHelpers.sortDatabase(data),
-      });
+    const data = await databaseHelpers.getEmails();
+    res.send({
+      message: 'Done mining emails !',
+      data: data, //inputHelpers.sortDatabase(data),
     });
   });
 
-  eventEmitter.removeListener("end", () => {});
+  eventEmitter.removeListener('end', () => {});
 };

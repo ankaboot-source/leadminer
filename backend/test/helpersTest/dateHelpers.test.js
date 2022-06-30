@@ -1,6 +1,6 @@
 const chai = require("chai"),
   expect = chai.expect;
-const dateHelpers = require("../app/utils/dateHelpers");
+const dateHelpers = require("../../app/utils/dateHelpers");
 describe("dateHelpers.parseDate(date)", function () {
   it("should replace CEST by +0200 and return readable date", function () {
     let date = "Fri, 28 Feb 2014 18:03:09 CEST";

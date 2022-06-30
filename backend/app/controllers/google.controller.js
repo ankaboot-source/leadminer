@@ -112,7 +112,6 @@ exports.SignUpWithGoogle = async (req, res) => {
       res.status(400).send({
         error: `Can't authenticate using google account, reason : ${err}`,
       });
-      
     }
   });
 };

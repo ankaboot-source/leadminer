@@ -134,5 +134,9 @@
       "parent": null,
       "special_use_attrib": "\\Junk"
     }
-  }
+  },
+  "emailsHash": [
+    "leadminer@leadminer.io",
+    "51df9c677a3d413938dfbd1d36c806eaadc4ecec9265a926abbd615f5f57a722"
+  ]
 }

@@ -1,7 +1,7 @@
 const chai = require("chai"),
   expect = chai.expect;
-const inputHelpers = require("../app/utils/inputHelpers");
-const testData = require("./data/testData.json");
+const inputHelpers = require("../../app/utils/inputHelpers");
+const testData = require("../testData.json");
 
 describe("inputHelpers.getPath(folders , folder)", function () {
   it("should return path if given a valid folders object", function () {

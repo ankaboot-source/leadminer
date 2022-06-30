@@ -1,5 +1,8 @@
 const regExHelpers = require('../utils/regexpUtils');
 const dateHelpers = require('../utils/dateHelpers');
+const dataStructureHelpers = require('../utils/dataStructureHelpers');
+const models = require('../models');
+const { emailsRaw } = require('../models');
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
 const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
@@ -19,6 +22,16 @@ class EmailMessage {
     this.body = body || {};
     this.user = user;
   }
+
+  async createMessage() {
+    await models.Messages.create({
+      message_id: this.getMessageId(),
+      isNewsletter: this.isNewsletter(),
+      isTransactional: this.isTransactional(),
+      isInConversation: this.isInConversation(),
+    });
+  }
+
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
@@ -58,11 +71,12 @@ class EmailMessage {
       type.push('Transactional');
     }
     return type;
-    //if(this.is)
   }
+
   isInvitation() {}
   hasAttachement() {}
   getSenderIp() {}
+  extractPhoneContact() {}
   /**
    * It takes a metaDataProps object as an argument, and returns the value of the "date" property of that
    * object
@@ -117,68 +131,80 @@ class EmailMessage {
    * @param metaDataProps - This is the metadata object that is passed to the function.
    * @returns An array of objects.
    */
-  getEmailsObjectsFromHeader(messagingFields, metaDataProps) {
-    const emailsObjects = [];
-    Object.keys(messagingFields).map((key) => {
+  async getEmailsObjectsFromHeader(messagingFields) {
+    Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails) {
-        emails.map((email) => {
+        emails.map(async (email) => {
           if (email) {
-            if (email.address) {
-              const emailObject = {};
-              emailObject['userID'] = this.user.id;
-              emailObject['messageId'] = [this.getMessageId()];
-              emailObject['address'] = email.address;
-              emailObject['name'] = email.name;
-              emailObject['fields'] = {};
-              emailObject['fields'][key] = 1;
-              emailObject['date'] = this.getDate();
-              emailObject['type'] = this.getEmailType();
-              emailObject['engagement'] = this.isInConversation();
-              emailsObjects.push(emailObject);
+            if (
+              email.address &&
+              this.user.email != email.address &&
+              dataStructureHelpers.IsNotNoReply(email.address)
+            ) {
+              await emailsRaw.create({
+                message_id: this.getMessageId(),
+                from: key == 'from' ? true : false,
+                reply_to: key == 'reply-to' ? true : false,
+                to: key == 'to' ? true : false,
+                cc: key == 'cc' ? true : false,
+                bcc: key == 'bcc' ? true : false,
+                date: this.getDate(),
+                name: email?.name ?? '',
+                address: email.address,
+                newsletter: this.isNewsletter(),
+                transactional: this.isTransactional(),
+                conversation: this.isInConversation() == true ? 1 : 0,
+              });
             }
           }
         });
       }
     });
-    return emailsObjects;
   }
   /**
    * It takes the body of an email, extracts the email addresses from it, and returns an array of objects
    * that contain the email addresses and other information about the email
    * @returns An array of objects.
    */
-  getEmailsObjectsFromBody() {
-    const emailsObjects = [];
-    const emailObject = {};
-    const emails = regExHelpers.extractNameAndEmailFromBody(this.body);
+  async getEmailsObjectsFromBody() {
+    const emails = regExHelpers.extractNameAndEmailFromBody(
+      this.body.toString('utf8')
+    );
     if (emails) {
-      emails.map((email) => {
-        if (email) {
-          emailObject['userID'] = this.user.id;
-          emailObject['messageId'] = [this.getMessageId()];
-          emailObject['address'] = email;
-          emailObject['name'] = '';
-          emailObject['fields'] = {};
-          emailObject['fields']['body'] = 1;
-          emailObject['date'] = this.getDate();
-          emailObject['type'] = this.getEmailType();
-          emailObject['engagement'] = this.isInConversation();
-          emailsObjects.push(emailObject);
+      emails.map(async (email) => {
+        if (
+          email &&
+          this.user.email != email &&
+          dataStructureHelpers.IsNotNoReply(email)
+        ) {
+          await emailsRaw.create({
+            message_id: this.getMessageId(),
+            from: false,
+            reply_to: false,
+            to: false,
+            cc: false,
+            bcc: false,
+            body: true,
+            date: this.getDate(),
+            address: email,
+            newsletter: this.isNewsletter(),
+            transactional: this.isTransactional(),
+            conversation: this.isInConversation() == true ? 1 : 0,
+          });
         }
       });
     }
-    return emailsObjects;
   }
   /**
    * It takes the header, extracts the messaging fields, extracts the other metadata fields, and then
    * returns an array of objects that contain the email addresses and the metadata fields
    * @returns An array of objects.
    */
-  extractEmailObjectsFromHeader() {
+  async extractEmailObjectsFromHeader() {
     const messagingFields = this.getMessagingFieldsOnly();
     const metaDataProps = this.getOtherMetaDataFields();
-    const emailsObjects = this.getEmailsObjectsFromHeader(
+    const emailsObjects = await this.getEmailsObjectsFromHeader(
       messagingFields,
       metaDataProps
     );
@@ -189,16 +215,10 @@ class EmailMessage {
    * extract all the email addresses from the body
    * @returns An array of objects.
    */
-  extractEmailObjectsFromBody() {
+  async extractEmailObjectsFromBody() {
     if (Object.keys(this.body).length > 0) {
-      const emailsObjects = this.getEmailsObjectsFromBody(
-        this.body.toString('utf8')
-      );
-      return emailsObjects;
-    } else {
-      return [];
+      await this.getEmailsObjectsFromBody();
     }
   }
-  extractPhoneContact() {}
 }
 module.exports = EmailMessage;

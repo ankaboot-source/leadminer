@@ -1,8 +1,8 @@
 const casesObject = [
-  [1, 0, 10],
-  [3, 11, 50],
-  [5, 51, 99],
-  [10, 100, 499],
+  [1, 0, 100],
+  [2, 101, 399],
+  [3, 400, 799],
+  [5, 800, 14],
   [22, 500, 999],
   [50, 1000, 7999],
   [100, 8000, 19999],
@@ -17,17 +17,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || "";
-  let fullpath = "";
+  path = path || '';
+  let fullpath = '';
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === "object") {
+    if (typeof obj[b] === 'object') {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace("/undefined", "");
+  return fullpath.replace('/undefined', '');
 }
 
 /**
@@ -46,7 +46,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
+    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -125,15 +125,15 @@ function EqualPartsForSocket(total) {
  */
 function sortDatabase(database) {
   const data = database.map((row) => {
-    row["name"] = row["name"].replaceAll('"', "");
-    row.fields["recipient"] =
-      (row.fields?.["cc"] ?? 0) +
-      (row.fields?.["bcc"] ?? 0) +
-      (row.fields?.["to"] ?? 0);
-    row.fields["sender"] =
-      (row.fields?.from ?? 0) + (row.fields?.["reply-to"] ?? 0);
-    row.fields["body"] = row.fields?.body ?? 0;
-    row.fields["total"] = row.fields["sender"] + row.fields["recipient"];
+    row['name'] = row['name'].replaceAll('"', '');
+    row.fields['recipient'] =
+      (row.fields?.['cc'] ?? 0) +
+      (row.fields?.['bcc'] ?? 0) +
+      (row.fields?.['to'] ?? 0);
+    row.fields['sender'] =
+      (row.fields?.from ?? 0) + (row.fields?.['reply-to'] ?? 0);
+    row.fields['body'] = row.fields?.body ?? 0;
+    row.fields['total'] = row.fields['sender'] + row.fields['recipient'];
     return row;
   });
   const wordArr = [];
@@ -142,7 +142,7 @@ function sortDatabase(database) {
   data.forEach((el) => {
     if (Number(el.name.charAt(0))) {
       numArr.push(el);
-    } else if (el.name != "") {
+    } else if (el.name != '') {
       wordArr.push(el);
     } else {
       emptyArr.push(el);

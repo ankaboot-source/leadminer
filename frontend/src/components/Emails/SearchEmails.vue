@@ -174,35 +174,85 @@
                 >
 
                 <q-td key="Names" :props="props">
-                  <div
-                    v-for="name in props.row.name
-                      .split('||')
-                      .filter((element) => {
+                  <q-expansion-item
+                    v-if="props.row.name != null && props.row.name.length > 1"
+                    dense
+                    dense-toggle
+                    expand-icon-class="text-orange"
+                  >
+                    <template v-slot:header>
+                      <q-item-section>
+                        {{
+                          props.row.name[0].length > 17
+                            ? props.row.name[0]
+                                .substring(0, 18)
+                                .concat("...")
+                                .replaceAll('"', "")
+                            : props.row.name[0].replaceAll('"', "")
+                        }}
+                      </q-item-section>
+                      <q-item-section v-if="props.row.name.length - 1 > 0" side>
+                        <div class="row items-center">
+                          <q-badge
+                            class="text-little"
+                            rounded
+                            color="orange"
+                            transparent
+                            >+{{ props.row.name.length - 1 }}</q-badge
+                          >
+                        </div>
+                      </q-item-section>
+                    </template>
+                    <div
+                      v-for="name in props.row.name.filter((element) => {
                         return element != ' ';
                       })"
-                    :bind="name.index"
-                  >
-                    <q-badge outline color="orange" transparent
-                      >{{
-                        props.row.name.length > 20
-                          ? props.row.name.substring(0, 15).concat("...")
-                          : props.row.name
-                      }} </q-badge
-                    ><br />
-                  </div>
+                      :bind="name.index"
+                    >
+                      <q-badge outline color="orange" transparent
+                        >{{
+                          name.length > 35
+                            ? name
+                                .substring(0, 30)
+                                .concat("...")
+                                .replaceAll('"', "")
+                            : name.replaceAll('"', "")
+                        }} </q-badge
+                      ><br /></div
+                  ></q-expansion-item>
+                  <q-badge
+                    v-if="props.row.name != null && props.row.name.length == 1"
+                    outline
+                    color="orange"
+                    transparent
+                    >{{
+                      props.row.name[0].length > 30
+                        ? props.row.name[0]
+                            .substring(0, 25)
+                            .concat("...")
+                            .replaceAll('"', "")
+                        : props.row.name[0].replaceAll('"', "")
+                    }}
+                  </q-badge>
                 </q-td>
                 <q-td key="Sender" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.fields.sender }}
+                    {{
+                      parseInt(props.row.from) + parseInt(props.row.reply_to)
+                    }}
                   </q-badge> </q-td
                 ><q-td key="Recipient" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.fields.recipient }}
+                    {{
+                      parseInt(props.row.cc) +
+                      parseInt(props.row.bcc) +
+                      parseInt(props.row.to)
+                    }}
                   </q-badge>
                 </q-td>
                 <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.engagement }}
+                    {{ props.row.conversation }}
                   </q-badge>
                 </q-td>
 
@@ -212,7 +262,7 @@
                   </q-badge> </q-td
                 ><q-td key="Body" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.fields.body }}
+                    {{ props.row.body }}
                   </q-badge>
                 </q-td>
                 <q-td key="Date" :props="props">
@@ -266,8 +316,8 @@ const columns = [
       const domainB = b.split("@")[0];
       return domainA.localeCompare(domainB);
     },
-    style: "max-width:445px;min-width: 445px !important",
-    headerStyle: "width: 450px !important",
+    style: "max-width:380px;min-width: 380px !important",
+    headerStyle: "width: 380px !important",
   },
   {
     name: "Names",
@@ -280,7 +330,7 @@ const columns = [
     },
     sortOrder: "ad",
     style: "max-width:190px;min-width: 190px !important",
-    headerStyle: "width: 190px !important",
+    headerStyle: "width: 250px !important",
   },
   {
     name: "Sender",
@@ -677,5 +727,8 @@ thead tr th {
   background-color: #ffffff;
   top: 0;
   z-index: 1;
+}
+.text-little {
+  font-size: 10px;
 }
 </style>
