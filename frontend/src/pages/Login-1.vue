@@ -20,8 +20,8 @@
             :style="$q.screen.lt.sm ? { width: '80%' } : { width: '30%' }"
           >
             <q-card-section class="q-mt-md">
-              <q-avatar size="80px" class="absolute-center q-mt-lg">
-                <img src="icons/favicon-128x128.png" />
+              <q-avatar size="70px" class="absolute-center q-mt-lg">
+                <img class="logo" src="icons/favicon-128x128.png" />
               </q-avatar>
             </q-card-section>
 
