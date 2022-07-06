@@ -6,8 +6,9 @@ const db = require("../models");
  * @returns An array of objects with the following properties:
  * address, name, transactional, newsletter, conversation, from, to, cc, bcc, reply_to, body, date
  */
-async function getEmails() {
+async function getEmails(userId) {
   const data = await db.emailsRaw.findAll({
+    where: { user_id: userId },
     attributes: [
       "address",
       [

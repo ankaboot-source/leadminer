@@ -1,6 +1,6 @@
 //const uuid = require('uuid');
 module.exports = (sequelize, Sequelize) => {
-  const EmailsRaw = sequelize.define('emails_raw', {
+  const EmailsRaw = sequelize.define("emails_raw", {
     email_id: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
@@ -10,9 +10,13 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: true,
       type: Sequelize.STRING,
       references: {
-        model: 'messages',
-        key: 'message_id',
+        model: "messages",
+        key: "message_id",
       },
+    },
+    user_id: {
+      allowNull: false,
+      type: Sequelize.STRING,
     },
     from: { type: Sequelize.BOOLEAN },
     reply_to: { type: Sequelize.BOOLEAN },
@@ -25,7 +29,7 @@ module.exports = (sequelize, Sequelize) => {
 
     body: { type: Sequelize.BOOLEAN },
 
-    name: { type: Sequelize.STRING, defaultValue: '' },
+    name: { type: Sequelize.STRING, defaultValue: "" },
     address: { type: Sequelize.STRING },
     date: { type: Sequelize.STRING },
     transactional: { type: Sequelize.BOOLEAN },
@@ -34,10 +38,10 @@ module.exports = (sequelize, Sequelize) => {
   });
   EmailsRaw.associate = (models) => {
     EmailsRaw.belongsTo(models.Messages, {
-      onDelete: 'SET NULL',
-      onUpdate: 'CASCADE',
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
       foreignKey: {
-        name: 'message_id',
+        name: "message_id",
         allowNull: false,
       },
     });

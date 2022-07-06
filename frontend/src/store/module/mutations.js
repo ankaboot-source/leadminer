@@ -38,6 +38,7 @@ export function SET_SCANNEDEMAILS(state, newValue) {
   } else {
     state.progress.scannedEmails += parseInt(newValue);
   }
+  console.log(newValue, state.progress.scannedEmails);
 }
 export function SET_INVALIDADDRESSES(state, newValue) {
   if (newValue == "f") {

@@ -91,13 +91,12 @@ export async function getEmails({ context, getters }, { data }) {
           this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_EMAILS", response.data.data);
-
+          console.log(response.data.data);
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
         })
         .catch((error) => {
-          console.log(error);
-          this.commit("example/SET_ERROR", error.response.data.error);
+          this.commit("example/SET_ERROR", error);
           reject(error);
         });
     } else {
@@ -113,16 +112,14 @@ export async function getEmails({ context, getters }, { data }) {
               fields: data.fields.split(","),
               boxes: data.boxes,
               folders: data.folders,
-              password: currentState.imapUser.password,
-              userEmail: currentState.imapUser.email,
-              userId: currentState.imapUser.id,
-              token: "",
+              user: currentState.imapUser,
             },
           }
         )
         .then((response) => {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
+          console.log(response.data.data);
           this.commit("example/SET_EMAILS", response.data.data);
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
@@ -130,7 +127,7 @@ export async function getEmails({ context, getters }, { data }) {
         })
         .catch((error) => {
           if (error) {
-            this.commit("example/SET_ERROR", error.response.data.error);
+            this.commit("example/SET_ERROR", error);
           }
           reject(error);
         });

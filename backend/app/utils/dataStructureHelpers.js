@@ -1,35 +1,37 @@
-const objectScan = require('object-scan');
+const objectScan = require("object-scan");
+const freeProviders = require("./FreeProviders.json");
+const disposable = require("./Disposable.json");
 const NOREPLY = [
-  'noreply',
-  'no-reply',
-  'notifications-noreply',
-  'accusereception',
-  'support',
-  'maildaemon',
-  'notifications',
-  'notification',
-  'send-as-noreply',
-  'systemalert',
-  'pasdereponse',
-  'mailer-daemon',
-  'mail daemon',
-  'mailer daemon',
-  'alerts',
-  'auto-confirm',
-  'ne-pas-repondre',
-  'no.reply',
-  'nepasrepondre',
-  'do-not-reply',
-  'FeedbackForm',
-  'mailermasters',
-  'wordpress',
-  'donotreply',
-  'notify',
-  'do-notreply',
-  'password',
-  'reply-',
-  'no_reply',
-  'unsubscribe',
+  "noreply",
+  "no-reply",
+  "notifications-noreply",
+  "accusereception",
+  "support",
+  "maildaemon",
+  "notifications",
+  "notification",
+  "send-as-noreply",
+  "systemalert",
+  "pasdereponse",
+  "mailer-daemon",
+  "mail daemon",
+  "mailer daemon",
+  "alerts",
+  "auto-confirm",
+  "ne-pas-repondre",
+  "no.reply",
+  "nepasrepondre",
+  "do-not-reply",
+  "FeedbackForm",
+  "mailermasters",
+  "wordpress",
+  "donotreply",
+  "notify",
+  "do-notreply",
+  "password",
+  "reply-",
+  "no_reply",
+  "unsubscribe",
 ];
 /**
  * Create readable tree object
@@ -48,7 +50,7 @@ function createReadableTreeObjectFromImapTree(imapTree) {
   const readableTree = [];
   let folder = {};
   Object.keys(imapTree).forEach((key) => {
-    if (imapTree[key].attribs.indexOf('\\HasChildren') > -1) {
+    if (imapTree[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = createReadableTreeObjectFromImapTree(
         imapTree[key].children
       );
@@ -79,14 +81,14 @@ function addPathPerFolder(imapTree, originalTree) {
       imapTree[key].path = findPathPerFolder(
         originalTree,
         imapTree[key].label,
-        ''
+        ""
       ).substring(1);
       addPathPerFolder(imapTree[key].children, originalTree);
     } else {
       imapTree[key].path = findPathPerFolder(
         originalTree,
         imapTree[key].label,
-        ''
+        ""
       ).substring(1);
     }
   });
@@ -99,14 +101,14 @@ function addPathPerFolder(imapTree, originalTree) {
    * @returns The full path of the folder name.
    */
   function findPathPerFolder(imapTree, folderName, path) {
-    path = path || '';
-    let fullpath = '';
+    path = path || "";
+    let fullpath = "";
     for (const folder in imapTree) {
       /* istanbul ignore else */
       if (imapTree[folder] === folderName) {
         return path;
       }
-      if (typeof imapTree[folder] === 'object') {
+      if (typeof imapTree[folder] === "object") {
         fullpath =
           findPathPerFolder(
             imapTree[folder],
@@ -117,7 +119,7 @@ function addPathPerFolder(imapTree, originalTree) {
         continue;
       }
     }
-    return fullpath.replace('/undefined', '');
+    return fullpath.replace("/undefined", "");
   }
   return imapTree;
 }
@@ -133,20 +135,20 @@ function addPathPerFolder(imapTree, originalTree) {
  * object also has a total property with the value of the total.sum property.
  */
 function addChildrenTotalForParentFiles(imapTree, userEmail) {
-  const total = objectScan(['**.{total,children}'], {
+  const total = objectScan(["**.{total,children}"], {
     joined: true,
     filterFn: ({ parent, gparent, property, value, context }) => {
-      if (property == 'total') {
-        parent['totalIndiv'] = parent.total;
+      if (property == "total") {
+        parent["totalIndiv"] = parent.total;
       }
-      if (property == 'children') {
+      if (property == "children") {
         if (parent) {
           value.map((element) => {
             parent.total += element.total;
           });
         }
       }
-      if (property == 'total') {
+      if (property == "total") {
         context.sum += value;
       }
     },
@@ -171,9 +173,27 @@ function IsNotNoReply(address) {
   }
 }
 
+/**
+ * If the domain is in the freeProviders array, return true. If the domain is in the disposable array,
+ * return false. If the domain is not in either array, return false
+ * @param address - The email address to check it domain.
+ * @returns A boolean value.
+ */
+function checkDomainIsOk(address) {
+  const domain = address.split("@")[1];
+  if (freeProviders.includes(domain)) {
+    return true;
+  } else if (disposable.includes(domain)) {
+    return false;
+  } else {
+    // TODO : check mx
+    return false;
+  }
+}
 module.exports = {
   createReadableTreeObjectFromImapTree,
   addPathPerFolder,
   addChildrenTotalForParentFiles,
   IsNotNoReply,
+  checkDomainIsOk,
 };

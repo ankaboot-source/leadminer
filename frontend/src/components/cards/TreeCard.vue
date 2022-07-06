@@ -103,17 +103,29 @@ export default defineComponent({
   },
   methods: {
     Ticked(e) {
-      objectScan(["**.path"], {
-        joined: true,
-        filterFn: ({ parent, gparent, property, value, context }) => {
-          if (
-            this.$refs.tree.isTicked(value) &&
-            !this.selected.includes(value)
-          ) {
-            this.selected.push(value);
-          }
-        },
-      })(this.boxes, { sum: 0 });
+      setTimeout(() => {
+        objectScan(["**.path"], {
+          joined: true,
+          filterFn: ({ parent, gparent, property, value, context }) => {
+            if (
+              this.$refs.tree.isTicked(value) &&
+              !this.selected.includes(value)
+            ) {
+              this.selected.push(value);
+            }
+            if (
+              !this.$refs.tree.isTicked(value) &&
+              this.selected.includes(value)
+            ) {
+              let index = this.selected.indexOf(value);
+              if (index !== -1) {
+                this.selected.splice(index, 1);
+              }
+            }
+          },
+        })(this.boxes, { sum: 0 });
+        console.log(this.selected);
+      }, 200);
     },
   },
 });

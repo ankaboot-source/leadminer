@@ -1,12 +1,12 @@
-const regExHelpers = require('../utils/regexpUtils');
-const dateHelpers = require('../utils/dateHelpers');
-const dataStructureHelpers = require('../utils/dataStructureHelpers');
-const models = require('../models');
-const { emailsRaw } = require('../models');
+const regExHelpers = require("../utils/regexpUtils");
+const dateHelpers = require("../utils/dateHelpers");
+const dataStructureHelpers = require("../utils/dataStructureHelpers");
+const models = require("../models");
+const { emailsRaw } = require("../models");
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
 const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
-const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {
   /**
@@ -15,12 +15,13 @@ class EmailMessage {
    * @param header - This is a JSON object that contains the header information for the message.
    * @param body - The body of the message.
    */
-  constructor(sequentialId, size, header, body, user) {
+  constructor(sequentialId, size, header, body, user, redisClient) {
     this.sequentialId = sequentialId;
     this.size = size;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
+    this.redisClient = redisClient;
   }
 
   async createMessage() {
@@ -30,6 +31,7 @@ class EmailMessage {
       isTransactional: this.isTransactional(),
       isInConversation: this.isInConversation(),
     });
+    await this.redisClient.sAdd("messages", this.getMessageId());
   }
 
   /**
@@ -38,7 +40,7 @@ class EmailMessage {
    */
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
-      NEWSLETTER_HEADER_FIELDS.includes(headerField.toLowerCase());
+      return NEWSLETTER_HEADER_FIELDS.includes(headerField.toLowerCase());
     });
   }
   isEmailConnection() {}
@@ -48,7 +50,7 @@ class EmailMessage {
    */
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
-      TRANSACTIONAL_HEADER_FIELDS.includes(headerField.toLowerCase());
+      return TRANSACTIONAL_HEADER_FIELDS.includes(headerField.toLowerCase());
     });
   }
   /**
@@ -56,7 +58,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
+    if (Object.keys(this.header).includes("references")) {
       return 1;
     } else {
       return 0;
@@ -65,10 +67,10 @@ class EmailMessage {
   getEmailType() {
     const type = [];
     if (this.isNewsletter()) {
-      type.push('Newsletter');
+      type.push("Newsletter");
     }
     if (this.isTransactional()) {
-      type.push('Transactional');
+      type.push("Transactional");
     }
     return type;
   }
@@ -84,7 +86,7 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    return dateHelpers.parseDate(this.header?.date?.[0] ?? '');
+    return dateHelpers.parseDate(this.header?.date?.[0] ?? "");
   }
   /**
    * It returns an object with only the messaging fields from the header
@@ -118,8 +120,8 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header['message-id']) {
-      return this.header['message-id'][0];
+    if (this.header["message-id"]) {
+      return this.header["message-id"][0];
     }
   }
 
@@ -132,28 +134,32 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async getEmailsObjectsFromHeader(messagingFields) {
+    let self = this;
     Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
+      let message_id = this.getMessageId();
       if (emails) {
         emails.map(async (email) => {
           if (email) {
             if (
               email.address &&
               this.user.email != email.address &&
-              dataStructureHelpers.IsNotNoReply(email.address)
+              dataStructureHelpers.IsNotNoReply(email.address) &&
+              dataStructureHelpers.checkDomainIsOk(email.address)
             ) {
-              await emailsRaw.create({
-                message_id: this.getMessageId(),
-                from: key == 'from' ? true : false,
-                reply_to: key == 'reply-to' ? true : false,
-                to: key == 'to' ? true : false,
-                cc: key == 'cc' ? true : false,
-                bcc: key == 'bcc' ? true : false,
+              emailsRaw.create({
+                user_id: this.user.id,
+                message_id: message_id,
+                from: key == "from" ? true : false,
+                reply_to: key == "reply-to" ? true : false,
+                to: key == "to" ? true : false,
+                cc: key == "cc" ? true : false,
+                bcc: key == "bcc" ? true : false,
                 date: this.getDate(),
-                name: email?.name ?? '',
+                name: email?.name ?? "",
                 address: email.address,
-                newsletter: this.isNewsletter(),
-                transactional: this.isTransactional(),
+                newsletter: this.isNewsletter() ? true : false,
+                transactional: this.isTransactional() ? true : false,
                 conversation: this.isInConversation() == true ? 1 : 0,
               });
             }
@@ -169,16 +175,19 @@ class EmailMessage {
    */
   async getEmailsObjectsFromBody() {
     const emails = regExHelpers.extractNameAndEmailFromBody(
-      this.body.toString('utf8')
+      this.body.toString("utf8")
     );
+    let message_id = this.getMessageId();
     if (emails) {
       emails.map(async (email) => {
         if (
           email &&
           this.user.email != email &&
-          dataStructureHelpers.IsNotNoReply(email)
+          dataStructureHelpers.IsNotNoReply(email) &&
+          dataStructureHelpers.checkDomainIsOk(email)
         ) {
-          await emailsRaw.create({
+          emailsRaw.create({
+            user_id: this.user.id,
             message_id: this.getMessageId(),
             from: false,
             reply_to: false,
@@ -188,8 +197,8 @@ class EmailMessage {
             body: true,
             date: this.getDate(),
             address: email,
-            newsletter: this.isNewsletter(),
-            transactional: this.isTransactional(),
+            newsletter: this.isNewsletter() ? true : false,
+            transactional: this.isTransactional() ? true : false,
             conversation: this.isInConversation() == true ? 1 : 0,
           });
         }

@@ -1,3 +1,5 @@
+const { GeoReplyWith } = require("redis");
+
 const casesObject = [
   [1, 0, 100],
   [2, 101, 399],
@@ -17,17 +19,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || '';
-  let fullpath = '';
+  path = path || "";
+  let fullpath = "";
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === 'object') {
+    if (typeof obj[b] === "object") {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace('/undefined', '');
+  return fullpath.replace("/undefined", "");
 }
 
 /**
@@ -46,7 +48,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
+    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -120,40 +122,56 @@ function EqualPartsForSocket(total) {
   return Parts;
 }
 /**
- * Sorts the virtual database array based on total interactions, alphabetics, and groups fieldss
- * @param  {Array} database
+ * Sorts the virtual data array based on total interactions, alphabetics, and groups fieldss
+ * @param  {Array} dataFromDatabse
  */
-function sortDatabase(database) {
-  const data = database.map((row) => {
-    row['name'] = row['name'].replaceAll('"', '');
-    row.fields['recipient'] =
-      (row.fields?.['cc'] ?? 0) +
-      (row.fields?.['bcc'] ?? 0) +
-      (row.fields?.['to'] ?? 0);
-    row.fields['sender'] =
-      (row.fields?.from ?? 0) + (row.fields?.['reply-to'] ?? 0);
-    row.fields['body'] = row.fields?.body ?? 0;
-    row.fields['total'] = row.fields['sender'] + row.fields['recipient'];
-    return row;
+function sortDatabase(dataFromDatabse) {
+  let data = dataFromDatabse.map((row) => {
+    if (row.dataValues.name == null) {
+      row.dataValues["name"] = [""];
+    } else {
+      row.dataValues["name"] = row.dataValues["name"].map((name) => {
+        name.replaceAll('"', "");
+        return name;
+      });
+    }
+    row.dataValues["recipient"] =
+      (parseInt(row.dataValues?.["cc"]) ?? 0) +
+      (parseInt(row.dataValues?.["bcc"]) ?? 0) +
+      (parseInt(row.dataValues?.["to"]) ?? 0);
+    row.dataValues["sender"] =
+      (parseInt(row.dataValues?.from) ?? 0) +
+      (parseInt(row.dataValues?.["reply_to"]) ?? 0);
+    row.dataValues["body"] = parseInt(row.dataValues?.body) ?? 0;
+    row.dataValues["total"] =
+      row.dataValues["sender"] + row.dataValues["recipient"];
+    row.dataValues["type"] = [];
+    if (row.dataValues.newsletter != 0) {
+      row.dataValues["type"].push("Newsletter");
+    }
+    if (row.dataValues.transactional != 0) {
+      row.dataValues["type"].push("Transactional");
+    }
+    return row.dataValues;
   });
   const wordArr = [];
   const numArr = [];
   const emptyArr = [];
   data.forEach((el) => {
-    if (Number(el.name.charAt(0))) {
+    if (Number(el.name[0].charAt(0))) {
       numArr.push(el);
-    } else if (el.name != '') {
+    } else if (el.name[0] != "") {
       wordArr.push(el);
     } else {
       emptyArr.push(el);
     }
   });
   wordArr.sort((a, b) => {
-    return !a.name - !b.name || a.name.localeCompare(b.name);
+    return !a.name[0] - !b.name[0] || a.name[0].localeCompare(b.name[0]);
   });
-  wordArr.sort((a, b) => b.fields.total - a.fields.total);
-  numArr.sort((a, b) => a - b);
-  emptyArr.sort((a, b) => b.fields.total - a.fields.total);
+  wordArr.sort((a, b) => b.total - a.total);
+  //numArr.sort((a, b) => a - b);
+  emptyArr.sort((a, b) => b.total - a.total);
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);
   return [...sorted];

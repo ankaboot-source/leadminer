@@ -181,15 +181,17 @@
                     expand-icon-class="text-orange"
                   >
                     <template v-slot:header>
-                      <q-item-section>
-                        {{
-                          props.row.name[0].length > 17
-                            ? props.row.name[0]
-                                .substring(0, 18)
-                                .concat("...")
-                                .replaceAll('"', "")
-                            : props.row.name[0].replaceAll('"', "")
-                        }}
+                      <q-item-section
+                        v-if="props.row.name.length > 0"
+                        class="padding-zero"
+                      >
+                        <q-badge outline color="orange" transparent
+                          >{{
+                            props.row.name[0].length > 25
+                              ? props.row.name[0].substring(0, 22).concat("...")
+                              : props.row.name[0]
+                          }}
+                        </q-badge>
                       </q-item-section>
                       <q-item-section v-if="props.row.name.length - 1 > 0" side>
                         <div class="row items-center">
@@ -209,60 +211,56 @@
                       })"
                       :bind="name.index"
                     >
-                      <q-badge outline color="orange" transparent
+                      <q-badge
+                        v-if="name.length > 0"
+                        outline
+                        color="orange"
+                        transparent
                         >{{
                           name.length > 35
-                            ? name
-                                .substring(0, 30)
-                                .concat("...")
-                                .replaceAll('"', "")
-                            : name.replaceAll('"', "")
+                            ? name.substring(0, 30).concat("...")
+                            : name
                         }} </q-badge
                       ><br /></div
                   ></q-expansion-item>
                   <q-badge
-                    v-if="props.row.name != null && props.row.name.length == 1"
+                    v-if="
+                      props.row.name != null &&
+                      props.row.name.length == 1 &&
+                      props.row.name[0].length > 0
+                    "
                     outline
                     color="orange"
                     transparent
+                    class="padding-zero"
                     >{{
                       props.row.name[0].length > 30
-                        ? props.row.name[0]
-                            .substring(0, 25)
-                            .concat("...")
-                            .replaceAll('"', "")
-                        : props.row.name[0].replaceAll('"', "")
+                        ? props.row.name[0].substring(0, 25).concat("...")
+                        : props.row.name[0]
                     }}
                   </q-badge>
                 </q-td>
                 <q-td key="Sender" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{
-                      parseInt(props.row.from) + parseInt(props.row.reply_to)
-                    }}
+                    {{ props.row.sender }}
                   </q-badge> </q-td
                 ><q-td key="Recipient" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{
-                      parseInt(props.row.cc) +
-                      parseInt(props.row.bcc) +
-                      parseInt(props.row.to)
-                    }}
-                  </q-badge>
-                </q-td>
-                <q-td key="Engagement" :props="props">
-                  <q-badge outline color="orange" transparent>
-                    {{ props.row.conversation }}
+                    {{ props.row.recipient }}
                   </q-badge>
                 </q-td>
 
                 <q-td v-show="false" key="Total" :props="props">
                   <q-badge color="blue">
-                    {{ props.row.fields.total }}
+                    {{ props.row.total }}
                   </q-badge> </q-td
                 ><q-td key="Body" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.body }}
+                  </q-badge> </q-td
+                ><q-td key="Engagement" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ props.row.conversation }}
                   </q-badge>
                 </q-td>
                 <q-td key="Date" :props="props">
@@ -271,11 +269,17 @@
                   </q-badge>
                 </q-td>
 
-                <q-td key="Type" :props="props">
-                  <q-badge rounded color="green">
-                    {{ props.row.type }}
-                  </q-badge>
-                </q-td>
+                <q-td key="Type" :props="props"
+                  ><div
+                    v-for="type in props.row.type.filter((element) => {
+                      return element != '';
+                    })"
+                    :bind="type.index"
+                  >
+                    <q-badge class="text-little" rounded color="green">
+                      {{ type }} </q-badge
+                    ><br /></div
+                ></q-td>
                 <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
@@ -323,8 +327,8 @@ const columns = [
     name: "Names",
     align: "left",
     label: "Name",
-    field: (row) => row.name.substring(0, 10).concat("..."),
-    sortable: true,
+    //field: (row) => row.name.substring(0, 10).concat("..."),
+    sortable: false,
     sort: (a, b) => {
       return b.localeCompare(a);
     },
@@ -337,7 +341,7 @@ const columns = [
     align: "center",
     label: "Sender",
     type: "number",
-    field: (row) => row.fields.sender,
+    field: (row) => row.sender,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -348,18 +352,7 @@ const columns = [
     align: "center",
     label: "Recipient",
     type: "number",
-    field: (row) => row.fields.recipient,
-    sortOrder: "ad",
-    style: "width: 50px !important",
-    headerStyle: "width: 50px !important",
-    sortable: true,
-  },
-  {
-    name: "Engagement",
-    align: "center",
-    label: "Engagement",
-    type: "number",
-    field: (row) => row.engagement,
+    field: (row) => row.recipient,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -370,12 +363,24 @@ const columns = [
     align: "center",
     label: "Body",
     type: "number",
-    field: (row) => row.fields.body,
+    field: (row) => row.body,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
     sortable: true,
   },
+  {
+    name: "Engagement",
+    align: "center",
+    label: "Engagement",
+    type: "number",
+    field: (row) => row.conversation,
+    sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
+    sortable: true,
+  },
+
   {
     name: "Date",
     align: "center",
@@ -452,28 +457,15 @@ export default defineComponent({
               ? `"${element.name}"`
               : element.name,
             Status: "Valid",
-            To: Object.keys(element.field).includes("to")
-              ? element.field["to"]
-              : 0,
-            From: Object.keys(element.field).includes("from")
-              ? element.field["from"]
-              : 0,
-            Cc: Object.keys(element.field).includes("cc")
-              ? element.field["cc"]
-              : 0,
-            Bcc: Object.keys(element.field).includes("bcc")
-              ? element.field["bcc"]
-              : 0,
-            Reply: Object.keys(element.field).includes("reply-to")
-              ? element.field["reply-to"]
-              : 0,
-            Total: element.field.total,
-            Engagement: element.field.engagement,
+            To: element.to,
+            From: element.from,
+            Cc: element.cc,
+            Bcc: element.bcc,
+            Reply: element.reply_to,
+            Total: element.total,
+            Engagement: element.conversation,
             Date: element.date,
-            Body: Object.keys(element.field).includes("body")
-              ? element.field["body"]
-              : 0,
-
+            Body: element.body,
             Type: element.type,
           };
           return obj;
@@ -552,7 +544,7 @@ export default defineComponent({
           filterFn: ({ parent, gparent, property, value, context }) => {
             if (
               property == "totalIndiv" &&
-              this.selectedBoxes.includes(parent.label)
+              this.selectedBoxes.includes(parent.path)
             ) {
               context.sum += value;
             }
@@ -622,10 +614,13 @@ export default defineComponent({
     },
     filterMethod(rows, term) {
       return rows.filter((e) => {
-        if (typeof e.name == "undefined") {
-          return e.address.includes(term);
+        if (typeof e.name[0] == "") {
+          return e.address.toUpperCase().includes(term.toUpperCase());
         } else {
-          return e.address.includes(term) || e.name.includes(term);
+          return (
+            e.address.toUpperCase().includes(term) ||
+            e.name[0].toUpperCase().includes(term.toUpperCase())
+          );
         }
       });
     },
@@ -654,7 +649,7 @@ export default defineComponent({
         boxes: this.selectedBoxes,
         fields: fields,
       };
-      console.log(data);
+      console.log(this.selectedBoxes);
       if (this.selectedBoxes.length > 0) {
         this.$store.dispatch("example/getEmails", { data }).then(() => {
           this.showNotif(
@@ -730,5 +725,9 @@ thead tr th {
 }
 .text-little {
   font-size: 10px;
+}
+.q-list--dense > .q-item,
+.q-item--dense {
+  padding: 0px;
 }
 </style>

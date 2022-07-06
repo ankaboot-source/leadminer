@@ -1,11 +1,11 @@
-const dataStructureHelpers = require('../utils/dataStructureHelpers');
-const hashHelpers = require('../utils/hashHelpers');
-const databaseHelpers = require('../utils/databaseHelpers');
-const inputHelpers = require('../utils/inputHelpers');
+const dataStructureHelpers = require("../utils/dataStructureHelpers");
+const hashHelpers = require("../utils/hashHelpers");
+const databaseHelpers = require("../utils/databaseHelpers");
+const inputHelpers = require("../utils/inputHelpers");
 const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
-const EmailMessage = require('./EmailMessage');
-const Imap = require('imap');
-const logger = require('../utils/logger')(module);
+const EmailMessage = require("./EmailMessage");
+const Imap = require("imap");
+const logger = require("../utils/logger")(module);
 
 class EmailAccountMiner {
   //public field
@@ -59,9 +59,9 @@ class EmailAccountMiner {
     return new Promise(async (resolve, reject) => {
       let result = [];
       this.connection = await this.connection.connecte();
-      this.connection.once('ready', () => {
+      this.connection.once("ready", () => {
         logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
-        this.connection.getBoxes('', async (err, boxes) => {
+        this.connection.getBoxes("", async (err, boxes) => {
           // extract only folder name
           const treeObjectWithChildrens =
             dataStructureHelpers.createReadableTreeObjectFromImapTree(boxes);
@@ -79,12 +79,12 @@ class EmailAccountMiner {
           );
         });
       });
-      this.connection.once('end', () => {
+      this.connection.once("end", () => {
         logger.info(`End mining folders tree for user : ${this.mailHash}`);
         result = [this.tree, null];
         resolve(result);
       });
-      this.connection.once('error', (error) => {
+      this.connection.once("error", (error) => {
         logger.error(
           `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
         );
@@ -104,12 +104,12 @@ class EmailAccountMiner {
     return new Promise((resolve, reject) => {
       imapTree.map((folder) => {
         // the folder has childrens
-        if (folder.hasOwnProperty('children')) {
+        if (folder.hasOwnProperty("children")) {
           this.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
-              folder['total'] = box.messages.total;
+              folder["total"] = box.messages.total;
             } else {
-              folder['total'] = 0;
+              folder["total"] = 0;
             }
 
             if (folder == imapTree[imapTree.length - 1]) {
@@ -123,9 +123,9 @@ class EmailAccountMiner {
           // has no childrens
           this.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
-              folder['total'] = box.messages.total;
+              folder["total"] = box.messages.total;
             } else {
-              folder['total'] = 0;
+              folder["total"] = 0;
             }
             if (folder == imapTree[imapTree.length - 1]) {
               resolve();
@@ -147,13 +147,13 @@ class EmailAccountMiner {
       folderName
     );
     this.connection.connect();
-    this.connection.once('ready', () => {
+    this.connection.once("ready", () => {
       this.connection.openBox(folderPath, true, (err, box) => {
         tree = box;
         this.connection.end();
       });
     });
-    this.connection.once('end', () => {
+    this.connection.once("end", () => {
       return tree;
     });
   }
@@ -167,21 +167,25 @@ class EmailAccountMiner {
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
-    this.connection.once('ready', async () => {
+    this.connection.once("ready", async () => {
       logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
       this.mineFolder(this.folders[0]).next();
     });
-    const self = this;
+
     // cacelation using req.close evnt from user(frontend button)
-    this.eventEmitter.on('endByUser', () => {
-      self.connection.end();
+    this.eventEmitter.on("endByUser", () => {
+      this.connection.destroy();
+      logger.info(
+        `Connection to imap server destroyed by user: ${this.mailHash}`
+      );
+      //this.eventEmitter.emit("end", true);
     });
-    this.connection.once('end', function () {
-      logger.info(`End collecting emails for user: ${self.mailHash}`);
+    this.connection.once("end", () => {
+      logger.info(`End collecting emails for user: ${this.mailHash}`);
       // sse here to send data based on end event
-      self.sse.send(true, 'data');
-      self.sse.send(true, 'dns');
-      self.eventEmitter.emit('end', true);
+      this.sse.send(true, "data");
+      this.sse.send(true, "dns");
+      this.eventEmitter.emit("end", true);
     });
   }
   /**
@@ -209,26 +213,26 @@ class EmailAccountMiner {
       this.currentTotal = folder.messages.total;
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
       // fetch function : pass fileds to fetch
-      const f = this.connection.seq.fetch('1:*', {
+      const f = this.connection.seq.fetch("1:*", {
         bodies: self.fields,
         struct: true,
       });
-      f.on('message', (msg, seqNumber) => {
-        let bufferHeader = '';
-        let bufferBody = '';
+      f.on("message", (msg, seqNumber) => {
+        let bufferHeader = "";
+        let bufferBody = "";
         let size = 0;
-        msg.on('body', async function (stream, streamInfo) {
+        msg.on("body", async function (stream, streamInfo) {
           // parse the chunks of the message
           size = streamInfo.size;
-          stream.on('data', (chunk) => {
-            if (streamInfo.which.includes('HEADER')) {
+          stream.on("data", (chunk) => {
+            if (streamInfo.which.includes("HEADER")) {
               bufferHeader += chunk;
             } else {
               bufferBody += chunk;
             }
           });
         });
-        msg.once('end', function () {
+        msg.once("end", function () {
           if (self.sends.includes(seqNumber)) {
             self.sendBatch(seqNumber);
           }
@@ -236,15 +240,16 @@ class EmailAccountMiner {
           self.mineBatch(
             seqNumber,
             size,
-            Imap.parseHeader(bufferHeader.toString('utf8')),
+            Imap.parseHeader(bufferHeader.toString("utf8")),
             bufferBody
           );
         });
       });
-      f.once('end', () => {
+      f.once("end", () => {
         logger.info(
           `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
         );
+        this.sse.send(folderName, `scannedBoxes${this.user.id}`);
         if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
           // we are at the end of the folder array==>> end imap connection
           this.connection.end();
@@ -272,12 +277,28 @@ class EmailAccountMiner {
    */
   async mineBatch(size, seqNumber, header, body) {
     // create EmailMessage object
-    const message = new EmailMessage(seqNumber, size, header, body, this.user);
-    await message.createMessage();
-    // extract the header
-    await message.extractEmailObjectsFromHeader();
-    // extract the body
-    await message.extractEmailObjectsFromBody();
+    const message = new EmailMessage(
+      seqNumber,
+      size,
+      header,
+      body,
+      this.user,
+      this.redisClient
+    );
+    let message_id = message.getMessageId();
+    if (message_id) {
+      let alreadyMined = await this.redisClient.sIsMember(
+        "messages",
+        message_id
+      );
+      if (!alreadyMined) {
+        await message.createMessage();
+        // extract the header
+        await message.extractEmailObjectsFromHeader();
+        // extract the body
+        await message.extractEmailObjectsFromBody();
+      }
+    }
   }
 
   /**
@@ -286,13 +307,15 @@ class EmailAccountMiner {
    * @param batch - The array of objects that you want to store in the database.
    */
   async sendBatch(seqNumber) {
-    const minedEmails = await databaseHelpers.getEmails();
+    let progress = seqNumber;
+    if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
+      progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
+    }
+    const minedEmails = await databaseHelpers.getEmails(this.user.id);
     this.sse.send(
       {
-        data: minedEmails,
-        scanned:
-          seqNumber -
-          (this.sends[this.sends.indexOf(seqNumber) - 1] ? this.sends[this.sends.indexOf(seqNumber) - 1] : 0),
+        data: inputHelpers.sortDatabase(minedEmails),
+        scanned: progress,
       },
       `minedEmailsAndScannedEmails${this.user.id}`
     );

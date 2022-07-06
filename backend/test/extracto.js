@@ -1,7 +1,7 @@
 const chai = require("chai"),
   expect = chai.expect;
 const extractors = require("../../app/utils/extractors");
-const testData = require("../testData.json");
+const testData = require("./testData.json");
 
 describe("extractors.checkExistence(databaseArray , email)", async function () {
   it("should return true for leadminer-team@leadminer.io", async function () {

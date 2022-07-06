@@ -1,7 +1,7 @@
-const Imap = require('imap');
-const logger = require('../utils/logger')(module);
-const hashHelpers = require('../utils/hashHelpers');
-const tokenHelpers = require('../utils/tokenHelpers');
+const Imap = require("imap");
+const logger = require("../utils/logger")(module);
+const hashHelpers = require("../utils/hashHelpers");
+const tokenHelpers = require("../utils/tokenHelpers");
 const GOOGLE_IMAP_HOST = process.env.GOOGLE_IMAP_HOST;
 
 class EmailServer {
@@ -25,7 +25,7 @@ class EmailServer {
       // the user is connected using api
       this.#connection = new Imap({
         user: this.user.email,
-        xoauth2: '',
+        xoauth2: "",
         host: GOOGLE_IMAP_HOST,
         port: this.user.port || 993,
         tls: true,
@@ -61,16 +61,6 @@ class EmailServer {
         `IMAP connection to imap server initiated for user: ${this.mailHash}`
       );
     }
-  }
-  /**
-   * It kills the connection to the IMAP server
-   * @param imapConnetion - The connection object returned by the imap.connect() function.
-   */
-  killConnection() {
-    this.connection.destroy();
-    logger.info(
-      `Connection to imap server destroyed by user: ${this.mailHash}`
-    );
   }
   /**
    * If the user has a token, return true, otherwise return false
