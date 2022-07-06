@@ -106,9 +106,8 @@ exports.loginToAccount = (req, res) => {
       logger.error(
         `On login : Account with email ${req.body.email} does not exist`
       );
-      res.status(500).send({
-        error: "Your account does not exist ! try to sign up.",
-      });
+
+      this.createImapInfo(req, res);
     } else {
       const imapConnection = new Imap({
         user: imap.email,
@@ -155,7 +154,6 @@ exports.loginToAccount = (req, res) => {
  */
 /* A function that is called when a user wants to get his imap folders tree. */
 exports.getImapBoxes = async (req, res, sse) => {
-  console.log(req.query);
   const query = JSON.parse(req.query.user);
   if (query.access_token) {
     const google_user = await googleUser.findOne({
