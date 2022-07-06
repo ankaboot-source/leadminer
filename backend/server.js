@@ -39,8 +39,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const server = http.createServer(app);
 const db = require("./app/models");
-
-db.sequelize.sync();
+db.sequelize
+  .sync()
+  .then(() => {
+    console.log("done");
+  })
+  .catch((error) => {
+    console.log(error);
+  });
 client.connect();
 // simple route when calling api.leadminer.io
 app.get("/", (req, res) => {

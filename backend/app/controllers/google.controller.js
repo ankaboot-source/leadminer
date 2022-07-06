@@ -1,13 +1,12 @@
 /* istanbul ignore file */
-var { google } = require("googleapis");
-var OAuth2 = google.auth.OAuth2;
-const db = require("../models");
+const { google } = require('googleapis');
+const OAuth2 = google.auth.OAuth2;
+const db = require('../models');
 const googleUsers = db.googleUsers;
-const logger = require("../utils/logger")(module);
-
+const logger = require('../utils/logger')(module);
 const ClientId = process.env.GG_CLIENT_ID;
 const ClientSecret = process.env.GG_CLIENT_SECRET;
-const RedirectionUrl = "postmessage";
+const RedirectionUrl = 'postmessage';
 
 // returns Oauth client
 function getOAuthClient() {
@@ -20,32 +19,32 @@ function getOAuthClient() {
  * @param  {} res
  */
 exports.SignUpWithGoogle = async (req, res) => {
-  let oauth2Client = getOAuthClient();
+  const oauth2Client = getOAuthClient();
   // the query param authorization code
-  let code = "";
+  let code = '';
   if (req.body.authCode) {
     code = req.body.authCode;
   } else {
     res.status(400).send({
-      error: "No valid authorization code !",
+      error: 'No valid authorization code !',
     });
     return;
   }
   // use authCode to retrieve tokens
   oauth2Client.getToken(code, async function (err, tokens) {
     if (tokens) {
-      let googleUser = {};
+      const googleUser = {};
       // oauthclient to use the access_token
       oauth2Client.setCredentials({
         access_token: tokens.access_token,
       });
-      var oauth2 = google.oauth2({
+      const oauth2 = google.oauth2({
         auth: oauth2Client,
-        version: "v2",
+        version: 'v2',
       });
       // get user infos( email, id, photo...)
-      let response = await oauth2.userinfo.get({});
-      let tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
+      const response = await oauth2.userinfo.get({});
+      const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
       googleUser.email = response.data.email;
       googleUser.id = response.data.id;
       googleUser.refreshToken = tokens.refresh_token;
@@ -76,25 +75,35 @@ exports.SignUpWithGoogle = async (req, res) => {
                   );
                   res.status(500).send({
                     error:
-                      "Some error occurred while creating your account your account.",
+                      'Some error occurred while creating your account your account.',
                   });
                 });
-            } else {
-              logger.info(
-                `On signUp With Google : Account with id: ${googleUser.id} already exist`
-              );
-              // case when user id exists
-              res.status(200).send({
-                message: "Your account already exists !",
-                googleUser: {
-                  email: google_user.email,
-                  id: google_user.id,
-                  access_token: {
-                    access_token: tokens.access_token,
-                    experation: tokenInfo.exp,
-                  },
-                },
-              });
+            } else if (
+              google_user &&
+              google_user.refreshToken != googleUser.refreshToken
+            ) {
+              googleUsers
+                .update(
+                  { refreshToken: googleUser.refreshToken },
+                  { where: { id: googleUser.id } }
+                )
+                .then(() => {
+                  logger.info(
+                    `On signUp With Google : Account with id: ${googleUser.id} already exist`
+                  );
+                  // case when user id exists
+                  res.status(200).send({
+                    message: 'Your account already exists !',
+                    googleUser: {
+                      email: google_user.email,
+                      id: google_user.id,
+                      access_token: {
+                        access_token: tokens.access_token,
+                        experation: tokenInfo.exp,
+                      },
+                    },
+                  });
+                });
             }
           });
       }
@@ -103,7 +112,6 @@ exports.SignUpWithGoogle = async (req, res) => {
       res.status(400).send({
         error: `Can't authenticate using google account, reason : ${err}`,
       });
-      return;
     }
   });
 };
@@ -112,6 +120,7 @@ exports.SignUpWithGoogle = async (req, res) => {
  * @param  {} refresh_token stored token
  */
 async function refreshAccessToken(refresh_token) {
+  console.log(refresh_token);
   return new Promise((resolve, reject) => {
     let tokenInfo = {};
     let access_token;
@@ -119,13 +128,12 @@ async function refreshAccessToken(refresh_token) {
     function getOAuthClient() {
       return new OAuth2(ClientId, ClientSecret, RedirectionUrl);
     }
-    let oauth2Client = getOAuthClient();
+    const oauth2Client = getOAuthClient();
     oauth2Client.setCredentials({
       refresh_token: refresh_token,
     });
     return oauth2Client.getAccessToken(async (err, token) => {
       tokenInfo = await oauth2Client.getTokenInfo(token);
-
       access_token = {
         access_token: token,
         experation: Math.floor(tokenInfo.expiry_date / 1000),

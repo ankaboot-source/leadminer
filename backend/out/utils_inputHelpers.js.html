@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utils/inputHelpers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utils/inputHelpers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const casesObject = [
+  [1, 0, 10],
+  [3, 11, 50],
+  [5, 51, 99],
+  [10, 100, 499],
+  [22, 500, 999],
+  [50, 1000, 7999],
+  [100, 8000, 19999],
+  [200, 20000, 60000],
+  [300, 60001, 100000],
+  [400, 100001, 500001],
+];
+/**
+ * Returns the path to a box(folder), usefull for nested folders.
+ * @param  {object} obj A folders tree as it is in imap
+ * @param  {string} val A folder name (eg:trash,spam...)
+ * @param  {string} [path=""] The initial path
+ */
+function getPath(obj, val, path) {
+  path = path || '';
+  let fullpath = '';
+  for (const b in obj) {
+    if (obj[b] === val) {
+      return path;
+    }
+    if (typeof obj[b] === 'object') {
+      fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
+    }
+  }
+  return fullpath.replace('/undefined', '');
+}
+
+/**
+ * Extract folders names and prepare the associated tree.
+ * @param  {object} Object Represents the folders names
+ * @example
+ * // returns
+ * label : INBOX
+ * children:
+ *         lable: Work
+ *         labled: Friends
+ *         labeld: Newsletters
+ * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren"})
+ */
+function getBoxesAll(folders) {
+  const finalFolders = [];
+  let folder = {};
+  Object.keys(folders).forEach((key) => {
+    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
+      const children = getBoxesAll(folders[key].children);
+      folder = {
+        label: key,
+        children,
+      };
+    } else {
+      folder = {
+        label: key,
+      };
+    }
+    finalFolders.push(folder);
+  });
+  return finalFolders;
+}
+/**
+ * Extract boxes from folders tree.
+ * @param  {} req.query Selected boxes and folder tree from client.
+ * @example
+ * folders = {
+ *     label : INBOX
+ *       children:
+ *         lable: Work
+ *         labled: Friends
+ *         labeld: Newsletters
+ * }
+ * // retruns boxes = [INBOX, INBOX/Work, INBOX/Friends, INBOX/Newsletters]
+ */
+function getBoxesAndFolders(userQuery) {
+  const folders = userQuery.folders.map((element) => {
+    return JSON.parse(element);
+  });
+  const boxes = userQuery.boxes.map((element) => {
+    const path = getPath({ ...folders }, element);
+    return path.substring(1);
+  });
+  return boxes;
+}
+
+/**
+ * Returns an array of integers used in sending progress status.
+ * @param  {integer} total box total messages
+ * @returns {Array}
+ *
+ */
+function EqualPartsForSocket(total) {
+  function inRange(n, nStart, nEnd) {
+    if (n >= nStart &amp;&amp; n &lt;= nEnd) return true;
+    else return false;
+  }
+  let boxCount = total;
+  const values = [];
+  let n = 350;
+  for (const i of casesObject) {
+    if (inRange(boxCount, i[1], i[2])) {
+      n = i[0];
+      break;
+    } else if (i == casesObject[casesObject.length - 1]) {
+      break;
+    } else {
+      continue;
+    }
+  }
+  while (boxCount > 0 &amp;&amp; n > 0) {
+    const a = Math.floor(boxCount / n);
+    boxCount -= a;
+    n--;
+    values.push(a);
+  }
+  const Parts = [];
+  values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+  return Parts;
+}
+/**
+ * Sorts the virtual database array based on total interactions, alphabetics, and groups fields
+ * @param  {Array} database
+ */
+function sortDatabase(database) {
+  const data = database.map((row) => {
+    if (!row.email?.name) {
+      row.email['name'] = '';
+    }
+    row.email['name'] = row.email['name'].replaceAll('"', '');
+    row.field['recipient'] =
+      (row.field?.['cc'] ?? 0) +
+      (row.field?.['bcc'] ?? 0) +
+      (row.field?.['to'] ?? 0);
+    row.field['sender'] =
+      (row.field?.from ?? 0) + (row.field?.['reply-to'] ?? 0);
+    row.field['body'] = row.field?.body ?? 0;
+    row.field['total'] = row.field['sender'] + row.field['recipient'];
+    return row;
+  });
+  const wordArr = [];
+  const numArr = [];
+  const emptyArr = [];
+  data.forEach((el) => {
+    if (Number(el.email.name.charAt(0))) {
+      numArr.push(el);
+    } else if (el.email.name != '') {
+      wordArr.push(el);
+    } else {
+      emptyArr.push(el);
+    }
+  });
+  wordArr.sort((a, b) => {
+    return (
+      !a.email.name - !b.email.name || a.email.name.localeCompare(b.email.name)
+    );
+  });
+  wordArr.sort((a, b) => b.field.total - a.field.total);
+  numArr.sort((a, b) => a - b);
+  emptyArr.sort((a, b) => b.field.total - a.field.total);
+  const dataend = wordArr.concat(numArr);
+  const sorted = dataend.concat(emptyArr);
+  return [...sorted];
+}
+exports.sortDatabase = sortDatabase;
+exports.getBoxesAndFolders = getBoxesAndFolders;
+exports.getBoxesAll = getBoxesAll;
+exports.EqualPartsForSocket = EqualPartsForSocket;
+exports.getPath = getPath;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="EmailAccountMiner.html">EmailAccountMiner</a></li><li><a href="EmailMessage.html">EmailMessage</a></li><li><a href="EmailServer.html">EmailServer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addChildrenTotalForParentFiles">addChildrenTotalForParentFiles</a></li><li><a href="global.html#addEmailToDatabase">addEmailToDatabase</a></li><li><a href="global.html#addEmailType">addEmailType</a></li><li><a href="global.html#addFieldsAndFolder">addFieldsAndFolder</a></li><li><a href="global.html#addPathPerFolder">addPathPerFolder</a></li><li><a href="global.html#checkDNS">checkDNS</a></li><li><a href="global.html#checkEmailObjectExistenceInBatch">checkEmailObjectExistenceInBatch</a></li><li><a href="global.html#checkExistence">checkExistence</a></li><li><a href="global.html#compareDates">compareDates</a></li><li><a href="global.html#createImapInfo">createImapInfo</a></li><li><a href="global.html#createReadableTreeObjectFromImapTree">createReadableTreeObjectFromImapTree</a></li><li><a href="global.html#EqualPartsForSocket">EqualPartsForSocket</a></li><li><a href="global.html#extractNameAndEmail">extractNameAndEmail</a></li><li><a href="global.html#extractNameAndEmailFromBody">extractNameAndEmailFromBody</a></li><li><a href="global.html#generateXOauthToken">generateXOauthToken</a></li><li><a href="global.html#getBoxesAll">getBoxesAll</a></li><li><a href="global.html#getBoxesAndFolders">getBoxesAndFolders</a></li><li><a href="global.html#getEmails">getEmails</a></li><li><a href="global.html#getPath">getPath</a></li><li><a href="global.html#hashEmail">hashEmail</a></li><li><a href="global.html#IsNotNoReply">IsNotNoReply</a></li><li><a href="global.html#loginToAccount">loginToAccount</a></li><li><a href="global.html#manipulateData">manipulateData</a></li><li><a href="global.html#manipulateDataWithDns">manipulateDataWithDns</a></li><li><a href="global.html#mergeEmailsObjectsFromHeaderAndBodyToBatch">mergeEmailsObjectsFromHeaderAndBodyToBatch</a></li><li><a href="global.html#parseDate">parseDate</a></li><li><a href="global.html#refreshAccessToken">refreshAccessToken</a></li><li><a href="global.html#SignUpWithGoogle">SignUpWithGoogle</a></li><li><a href="global.html#sortDatabase">sortDatabase</a></li><li><a href="global.html#treatParsedEmails">treatParsedEmails</a></li><li><a href="global.html#updateTemporaryBatch">updateTemporaryBatch</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Tue Jun 21 2022 20:07:49 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

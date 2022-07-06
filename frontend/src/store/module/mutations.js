@@ -11,13 +11,14 @@ export function SET_LOADINGBOX(state, newLoadingStatusbox) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
 export function SET_IMAP(state, newImap) {
-  state.imap.id = newImap.id;
-  state.imap.email = newImap.email;
-  state.imap.host = newImap.host;
-  state.imap.port = newImap.port;
+  state.imapUser.id = newImap.id;
+  state.imapUser.email = newImap.email;
+  state.imapUser.password = newImap.password;
+  state.imapUser.host = newImap.host;
+  state.imapUser.port = newImap.port;
 }
 export function SET_PASSWORD(state, newPassword) {
-  state.imap.password = newPassword;
+  state.imapUser.password = newPassword;
 }
 export function SET_BOXES(state, newBoxes) {
   state.boxes = [...newBoxes];
@@ -37,6 +38,7 @@ export function SET_SCANNEDEMAILS(state, newValue) {
   } else {
     state.progress.scannedEmails += parseInt(newValue);
   }
+  console.log(newValue, state.progress.scannedEmails);
 }
 export function SET_INVALIDADDRESSES(state, newValue) {
   if (newValue == "f") {

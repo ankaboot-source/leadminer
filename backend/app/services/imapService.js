@@ -1,24 +1,24 @@
 /* istanbul ignore file */
-const utilsForRegEx = require("../utils/regexpUtils");
-const utilsForDataManipulation = require("../utils/extractors");
-const utilsForToken = require("../utils/tokenHelpers");
-const helpers = require("../utils/inputHelpers");
-const logger = require("../utils/logger")(module);
-const Imap = require("imap");
+//const utilsForRegEx = require("../utils/regExHelpers");
+const utilsForDataManipulation = require('../utils/extractors');
+const utilsForToken = require('../utils/tokenHelpers');
+const helpers = require('../utils/inputHelpers');
+const logger = require('../utils/logger')(module);
+const Imap = require('imap');
+const GOOGLE_IMAP_HOST = process.env.GOOGLE_IMAP_HOST;
+
 function ScanFolders(chunk, bodiesTofetch, chunkSource, minedEmails) {
   // ensure that body scan is included (selected on RedisClient side)
   // &&
   // the current chunk is extracted from body
-  if (bodiesTofetch.includes("1") && chunkSource.which == "1") {
+  if (bodiesTofetch.includes('1') && chunkSource.which == '1') {
     const body = utilsForRegEx.extractEmailsFromBody(chunk);
     if (body) {
-      Object.prototype.hasOwnProperty.call(minedEmails, "body")
-        ? minedEmails["body"].push(...body)
-        : (minedEmails["body"] = body);
+      Object.prototype.hasOwnProperty.call(minedEmails, 'body') ? minedEmails['body'].push(...body) : (minedEmails['body'] = body);
     }
   } else {
     // extract header attributes
-    const header = Imap.parseHeader(chunk.toString("utf8"));
+    const header = Imap.parseHeader(chunk.toString('utf8'));
     Object.keys(header).map((field) => {
       minedEmails[field] = header[field];
     });
@@ -48,49 +48,45 @@ async function OpenedBoxCallback(
       `Begin mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail} , box length : ${currentbox.messages.total}`
     );
     const sends = helpers.EqualPartsForSocket(currentbox.messages.total);
-    const f = imap.seq.fetch("1:*", {
+    const f = imap.seq.fetch('1:*', {
       bodies: bodiesTofetch,
       struct: true,
     });
 
     // callback for "message" emitted event
-    f.on("message", (msg, seqno) => {
+    f.on('message', (msg, seqno) => {
       if (sends.includes(seqno) && currentbox.messages.total > 0) {
         sse.send(
           {
             data: helpers.sortDatabase(database),
             scanned:
               seqno -
-              (sends[sends.indexOf(seqno) - 1]
-                ? sends[sends.indexOf(seqno) - 1]
-                : 0),
+              (sends[sends.indexOf(seqno) - 1] ? sends[sends.indexOf(seqno) - 1] : 0),
             invalid: counter.invalidAddresses,
           },
           `minedEmailsAndScannedEmails${query.user.id}`
         );
         console.log(
           seqno -
-            (sends[sends.indexOf(seqno) - 1]
-              ? sends[sends.indexOf(seqno) - 1]
-              : 0)
+            (sends[sends.indexOf(seqno) - 1] ? sends[sends.indexOf(seqno) - 1] : 0)
         );
       }
       // callback for "body" emitted event
       const minedEmails = {};
 
-      msg.on("body", async function (stream, streamInfo) {
-        let buff = "";
-        stream.on("data", (chunk) => {
+      msg.on('body', async function (stream, streamInfo) {
+        let buff = '';
+        stream.on('data', (chunk) => {
           buff += chunk;
         });
         // when fetching stream ends we process data
-        stream.once("end", () => {
+        stream.once('end', () => {
           ScanFolders(buff, bodiesTofetch, streamInfo, minedEmails);
-          minedEmails["body"] = [...new Set(minedEmails["body"])];
+          minedEmails['body'] = [...new Set(minedEmails['body'])];
         });
       });
 
-      msg.once("end", function () {
+      msg.once('end', function () {
         if (Object.keys(minedEmails).length > 0) {
           utilsForDataManipulation.treatParsedEmails(
             minedEmails,
@@ -107,7 +103,7 @@ async function OpenedBoxCallback(
       });
     });
 
-    f.once("end", () => {
+    f.once('end', () => {
       logger.info(
         `End mining emails from folder: ${currentbox.name} , User : ${imapInfoEmail}`
       );
@@ -174,17 +170,17 @@ async function imapService(
       user,
       user.refreshToken
     );
-    sse.send(tokens.newToken, "token" + query.user.id);
+    sse.send(tokens.newToken, `token${  query.user.id}`);
     imap = new Imap({
       user: user.email,
       xoauth2: tokens.xoauth2Token,
-      host: "imap.gmail.com",
+      host: GOOGLE_IMAP_HOST,
       port: 993,
       tls: true,
       tlsOptions: {
         port: 993,
-        host: "imap.gmail.com",
-        servername: "imap.gmail.com",
+        host: GOOGLE_IMAP_HOST,
+        servername: GOOGLE_IMAP_HOST,
       },
       keepalive: false,
     });
@@ -194,7 +190,7 @@ async function imapService(
   query.user = JSON.parse(query.user);
 
   const database = [];
-  imap.once("ready", async () => {
+  imap.once('ready', async () => {
     const loopfunc = (box) => {
       imap.openBox(box, true, async (err, currentbox) => {
         OpenedBoxCallback(
@@ -239,22 +235,22 @@ async function imapService(
     }
   });
   //connextion xlosed (end or by user)
-  req.on("close", () => {
+  req.on('close', () => {
     imap.destroy();
     imap.end();
-    sse.send(helpers.sortDatabase(database), "data" + user.id);
+    sse.send(helpers.sortDatabase(database), `data${  user.id}`);
     sse.send(true, `dns${user.id}`);
 
     logger.info(`Connection Closed (maybe by the user) : ${user.id}`);
   });
 
-  imap.once("error", function (err) {
+  imap.once('error', function (err) {
     logger.error(
       `Error occured when collecting emails fro account with id : ${err} ${user.id}`
     );
   });
 
-  imap.once("end", function () {
+  imap.once('end', function () {
     logger.info(
       `End collecting emails for account with id : ${user.id}, mined : ${database.length} email addresses`
     );
@@ -264,7 +260,7 @@ async function imapService(
     sse.send(true, `dns${user.id}`);
     setTimeout(() => {
       res.status(200).send({
-        message: "Done mining emails !",
+        message: 'Done mining emails !',
       });
     }, 1200);
   });

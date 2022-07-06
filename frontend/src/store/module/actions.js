@@ -1,3 +1,5 @@
+import { LocalStorage } from "quasar";
+
 export async function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
   const CancelToken = this.$axios.CancelToken;
@@ -88,12 +90,13 @@ export async function getEmails({ context, getters }, { data }) {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
+          this.commit("example/SET_EMAILS", response.data.data);
+          console.log(response.data.data);
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
         })
         .catch((error) => {
-          console.log(error);
-          this.commit("example/SET_ERROR", error.response.data.error);
+          this.commit("example/SET_ERROR", error);
           reject(error);
         });
     } else {
@@ -109,23 +112,22 @@ export async function getEmails({ context, getters }, { data }) {
               fields: data.fields.split(","),
               boxes: data.boxes,
               folders: data.folders,
-              password: currentState.imapUser.password,
-              userEmail: currentState.imapUser.email,
-              userId: currentState.imapUser.id,
-              token: "",
+              user: currentState.imapUser,
             },
           }
         )
         .then((response) => {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
+          console.log(response.data.data);
+          this.commit("example/SET_EMAILS", response.data.data);
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
         })
         .catch((error) => {
           if (error) {
-            this.commit("example/SET_ERROR", error.response.data.error);
+            this.commit("example/SET_ERROR", error);
           }
           reject(error);
         });
@@ -141,8 +143,6 @@ export async function signUp({ context, state }, { data }) {
       .post(this.$api + "/imap/signup", data)
       .then((response) => {
         this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_PASSWORD", data.password);
-        this.commit("example/SET_IMAP", response.data.imapdata);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
         resolve(response);
       })
@@ -180,14 +180,16 @@ export async function signIn({ context, state }, { data }) {
       .post(this.$api + "/imap/login", data)
       .then((response) => {
         this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_PASSWORD", data.password);
         this.commit("example/SET_IMAP", response.data.imap);
-        this.commit("example/SET_INFO_MESSAGE", response.data.message);
-        resolve(response);
+        let imapUser = this.state.example.imapUser;
+        imapUser["password"] = data.password;
+        console.log(imapUser);
+        LocalStorage.set("imapUser", imapUser);
+        resolve(response.data);
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error.response.data.error);
+          this.commit("example/SET_ERROR", "can't login");
         }
         reject(error);
       });
@@ -203,19 +205,17 @@ export function getBoxes({ context, getters }) {
           `/imap/${JSON.parse(JSON.stringify(currentState.imapUser.id))}/boxes`,
         {
           params: {
-            password: currentState.imapUser.password,
-            userEmail: currentState.imapUser.email,
-            userId: currentState.imapUser.id,
+            user: currentState.imapUser,
           },
         }
       )
       .then((response) => {
         this.commit("example/SET_LOADINGBOX", false);
-        this.commit("example/SET_BOXES", response.data.boxes);
+        this.commit("example/SET_BOXES", response.data.imapFoldersTree);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
       })
       .catch((error) => {
-        this.commit("example/SET_ERROR", error.response.data.error);
+        this.commit("example/SET_ERROR", error);
       });
   } else {
     this.$axios
@@ -225,8 +225,9 @@ export function getBoxes({ context, getters }) {
         },
       })
       .then((response) => {
+        console.log(response);
         this.commit("example/SET_LOADINGBOX", false);
-        this.commit("example/SET_BOXES", response.data.boxes);
+        this.commit("example/SET_BOXES", response.data.imapFoldersTree);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
         this.commit("example/SET_UPDATE_TOKEN", response.data.token);
       })

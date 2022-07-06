@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utils/dataStructureHelpers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utils/dataStructureHelpers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const objectScan = require('object-scan');
+/**
+ * Create readable tree object
+ * @param  {object} imapTree - native imap tree
+ * @return {object} readable tree object
+ * @example
+ * // returns
+ * label : INBOX
+ * children:
+ *         lable: Work
+ *         labled: Friends
+ *         labeld: Newsletters
+ * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren"})
+ */
+function createReadableTreeObjectFromImapTree(imapTree) {
+  const readableTree = [];
+  let folder = {};
+  Object.keys(imapTree).forEach((key) => {
+    if (imapTree[key].attribs.indexOf('\\HasChildren') > -1) {
+      const children = createReadableTreeObjectFromImapTree(
+        imapTree[key].children
+      );
+      folder = {
+        label: key,
+        children,
+      };
+    } else {
+      folder = {
+        label: key,
+      };
+    }
+    readableTree.push(folder);
+  });
+  return readableTree;
+}
+
+/**
+ * It takes an IMAP tree and returns a new IMAP tree with the folder names replaced with their full
+ * paths
+ * @param {object} imapTree - The tree structure of the IMAP folders.
+ * @param {object} originalTree - The tree structure of the IMAP folders.
+ * @returns {object} The imapTree object.
+ */
+function addPathPerFolder(imapTree, originalTree) {
+  Object.keys(imapTree).forEach((key) => {
+    if (imapTree[key].children) {
+      imapTree[key].path = findPathPerFolder(
+        originalTree,
+        imapTree[key].label,
+        ''
+      ).substring(1);
+      addPathPerFolder(imapTree[key].children, originalTree);
+    } else {
+      imapTree[key].path = findPathPerFolder(
+        originalTree,
+        imapTree[key].label,
+        ''
+      ).substring(1);
+    }
+  });
+
+  /**
+   * It takes the imaptree, a folder name, and a string path, and returns a full path string.
+   * @param imapTree - The tree structure of the IMAP folders
+   * @param folderName - The name of the folder you want to find the path for.
+   * @param path - The path to the folder.
+   * @returns The full path of the folder name.
+   */
+  function findPathPerFolder(imapTree, folderName, path) {
+    path = path || '';
+    let fullpath = '';
+    for (const folder in imapTree) {
+      /* istanbul ignore else */
+      if (imapTree[folder] === folderName) {
+        return path;
+      }
+      if (typeof imapTree[folder] === 'object') {
+        fullpath =
+          findPathPerFolder(
+            imapTree[folder],
+            folderName,
+            `${path}/${imapTree[folder].label}`
+          ) || fullpath;
+      } else {
+        continue;
+      }
+    }
+    return fullpath.replace('/undefined', '');
+  }
+  return imapTree;
+}
+
+/**
+ * It takes an imapTree and a userEmail and returns an array with a single object that has a label of
+ * the userEmail, a children array of the imapTree, and a total of the sum of all the totals in the
+ * imapTree
+ * @param {object} imapTree - The tree of folders and files that we want to add the total to.
+ * @param {string} userEmail - The email address of the user you want to get the data for.
+ * @returns {array} an array with one object. The object has a label property with the value of the userEmail
+ * argument. The object also has a children property with the value of the imapTree argument. The
+ * object also has a total property with the value of the total.sum property.
+ */
+function addChildrenTotalForParentFiles(imapTree, userEmail) {
+  const total = objectScan(['**.{total,children}'], {
+    joined: true,
+    filterFn: ({ parent, gparent, property, value, context }) => {
+      if (property == 'total') {
+        parent['totalIndiv'] = parent.total;
+      }
+      if (property == 'children') {
+        if (parent) {
+          value.map((element) => {
+            parent.total += element.total;
+          });
+        }
+      }
+      if (property == 'total') {
+        context.sum += value;
+      }
+    },
+  })(imapTree, { sum: 0 });
+  return [{ label: userEmail, children: [...imapTree], total: total.sum }];
+}
+
+/**
+ * It checks if an email object exists in an array of email objects
+ * @param  {array} EmailsMessagesBatch - emails objects batch
+ * @param  {object} emailObject - email object to check existence in EmailsMessagesBatch
+ * @returns A boolean value.
+ */
+function checkEmailObjectExistenceInBatch(EmailsMessagesBatch, emailObject) {
+  return EmailsMessagesBatch.some((element) => {
+    return element.address === emailObject.address;
+  });
+}
+
+/**
+ * It takes an array of objects and an object as arguments and updates the array of objects with the
+ * object
+ * @param  {array} EmailsMessagesBatch - emails objects batch
+ * @param  {object} emailObject - email object
+ */
+function updateTemporaryBatch(temporaryEmailsObjects, emailObject) {
+  for (const i in temporaryEmailsObjects) {
+    /* istanbul ignore else */
+    if (
+      emailObject.address == temporaryEmailsObjects[i].address &amp;&amp;
+      !emailObject.messageId.every((element) => {
+        return temporaryEmailsObjects[i].messageId.includes(element);
+      })
+    ) {
+      temporaryEmailsObjects[i].messageId.push(...emailObject.messageId);
+      temporaryEmailsObjects[i].engagement += 1;
+
+      // Object.keys(temporaryEmailsObjects[i].fields).includes(
+      //   Object.keys(emailObject.fields)[0]
+      // )
+      //   ? (temporaryEmailsObjects[i].fields[
+      //       Object.keys(emailObject.fields)[0]
+      //     ] += emailObject.fields[Object.keys(emailObject.fields)[0]])
+      //   : (temporaryEmailsObjects[i].fields[
+      //       Object.keys(emailObject.fields)[0]
+      //     ] = emailObject.fields[Object.keys(emailObject.fields)[0]]);
+      checkFieldExistenceInFieldsObject(
+        temporaryEmailsObjects[i].fields,
+        emailObject.fields
+      );
+    } else {
+      continue;
+    }
+  }
+  return temporaryEmailsObjects;
+}
+function checkFieldExistenceInFieldsObject(
+  fieldsObjectToUpdate,
+  emailObjectField
+) {
+  Object.keys(emailObjectField).map((fieldName) => {
+    const field = fieldName;
+    if (Object.keys(fieldsObjectToUpdate).includes(fieldName)) {
+      fieldsObjectToUpdate[field] =
+        fieldsObjectToUpdate[field] + emailObjectField[field];
+    } else {
+      fieldsObjectToUpdate[field] = emailObjectField[field];
+    }
+  });
+  return fieldsObjectToUpdate;
+}
+
+/**
+ * It takes two arrays of objects, and merges them into one array of objects
+ * @param {array} EmailsMessagesBatch - This is the batch of emails that we are going to merge with the new
+ * batch of emails.
+ * @param {object} emailsObjects - an array of objects that contain the email information from the body of the
+ * email.
+ * @returns An array of objects.
+ */
+function mergeEmailsObjectsFromHeaderAndBodyToBatch(emailsObjects) {
+  const temporaryEmailsObjects = [];
+  emailsObjects.map((emailObject) => {
+    if (checkEmailObjectExistenceInBatch(temporaryEmailsObjects, emailObject)) {
+      temporaryEmailsObjects.push(
+        updateTemporaryBatch(temporaryEmailsObjects, emailObject)
+      );
+    } else {
+      temporaryEmailsObjects.push(emailObject);
+    }
+  });
+  return temporaryEmailsObjects;
+}
+
+module.exports = {
+  createReadableTreeObjectFromImapTree,
+  addPathPerFolder,
+  addChildrenTotalForParentFiles,
+  mergeEmailsObjectsFromHeaderAndBodyToBatch,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="EmailAccountMiner.html">EmailAccountMiner</a></li><li><a href="EmailMessage.html">EmailMessage</a></li><li><a href="EmailServer.html">EmailServer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#addChildrenTotalForParentFiles">addChildrenTotalForParentFiles</a></li><li><a href="global.html#addEmailToDatabase">addEmailToDatabase</a></li><li><a href="global.html#addEmailType">addEmailType</a></li><li><a href="global.html#addFieldsAndFolder">addFieldsAndFolder</a></li><li><a href="global.html#addPathPerFolder">addPathPerFolder</a></li><li><a href="global.html#checkDNS">checkDNS</a></li><li><a href="global.html#checkEmailObjectExistenceInBatch">checkEmailObjectExistenceInBatch</a></li><li><a href="global.html#checkExistence">checkExistence</a></li><li><a href="global.html#compareDates">compareDates</a></li><li><a href="global.html#createImapInfo">createImapInfo</a></li><li><a href="global.html#createReadableTreeObjectFromImapTree">createReadableTreeObjectFromImapTree</a></li><li><a href="global.html#EqualPartsForSocket">EqualPartsForSocket</a></li><li><a href="global.html#extractNameAndEmail">extractNameAndEmail</a></li><li><a href="global.html#extractNameAndEmailFromBody">extractNameAndEmailFromBody</a></li><li><a href="global.html#generateXOauthToken">generateXOauthToken</a></li><li><a href="global.html#getBoxesAll">getBoxesAll</a></li><li><a href="global.html#getBoxesAndFolders">getBoxesAndFolders</a></li><li><a href="global.html#getEmails">getEmails</a></li><li><a href="global.html#getPath">getPath</a></li><li><a href="global.html#hashEmail">hashEmail</a></li><li><a href="global.html#IsNotNoReply">IsNotNoReply</a></li><li><a href="global.html#loginToAccount">loginToAccount</a></li><li><a href="global.html#manipulateData">manipulateData</a></li><li><a href="global.html#manipulateDataWithDns">manipulateDataWithDns</a></li><li><a href="global.html#mergeEmailsObjectsFromHeaderAndBodyToBatch">mergeEmailsObjectsFromHeaderAndBodyToBatch</a></li><li><a href="global.html#parseDate">parseDate</a></li><li><a href="global.html#refreshAccessToken">refreshAccessToken</a></li><li><a href="global.html#SignUpWithGoogle">SignUpWithGoogle</a></li><li><a href="global.html#sortDatabase">sortDatabase</a></li><li><a href="global.html#treatParsedEmails">treatParsedEmails</a></li><li><a href="global.html#updateTemporaryBatch">updateTemporaryBatch</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Tue Jun 21 2022 20:07:49 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

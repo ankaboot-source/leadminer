@@ -1,8 +1,10 @@
+const { GeoReplyWith } = require("redis");
+
 const casesObject = [
-  [1, 0, 10],
-  [3, 11, 50],
-  [5, 51, 99],
-  [10, 100, 499],
+  [1, 0, 100],
+  [2, 101, 399],
+  [3, 400, 799],
+  [5, 800, 14],
   [22, 500, 999],
   [50, 1000, 7999],
   [100, 8000, 19999],
@@ -45,7 +47,6 @@ function getPath(obj, val, path) {
 function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
-
   Object.keys(folders).forEach((key) => {
     if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
@@ -121,45 +122,56 @@ function EqualPartsForSocket(total) {
   return Parts;
 }
 /**
- * Sorts the virtual database array based on total interactions, alphabetics, and groups fields
- * @param  {Array} database
+ * Sorts the virtual data array based on total interactions, alphabetics, and groups fieldss
+ * @param  {Array} dataFromDatabse
  */
-function sortDatabase(database) {
-  const data = database.map((row) => {
-    if (!row.email?.name) {
-      row.email["name"] = "";
+function sortDatabase(dataFromDatabse) {
+  let data = dataFromDatabse.map((row) => {
+    if (row.dataValues.name == null) {
+      row.dataValues["name"] = [""];
+    } else {
+      row.dataValues["name"] = row.dataValues["name"].map((name) => {
+        name.replaceAll('"', "");
+        return name;
+      });
     }
-    row.email["name"] = row.email["name"].replaceAll('"', "");
-    row.field["recipient"] =
-      (row.field?.["cc"] ?? 0) +
-      (row.field?.["bcc"] ?? 0) +
-      (row.field?.["to"] ?? 0);
-    row.field["sender"] =
-      (row.field?.from ?? 0) + (row.field?.["reply-to"] ?? 0);
-    row.field["body"] = row.field?.body ?? 0;
-    row.field["total"] = row.field["sender"] + row.field["recipient"];
-    return row;
+    row.dataValues["recipient"] =
+      (parseInt(row.dataValues?.["cc"]) ?? 0) +
+      (parseInt(row.dataValues?.["bcc"]) ?? 0) +
+      (parseInt(row.dataValues?.["to"]) ?? 0);
+    row.dataValues["sender"] =
+      (parseInt(row.dataValues?.from) ?? 0) +
+      (parseInt(row.dataValues?.["reply_to"]) ?? 0);
+    row.dataValues["body"] = parseInt(row.dataValues?.body) ?? 0;
+    row.dataValues["total"] =
+      row.dataValues["sender"] + row.dataValues["recipient"];
+    row.dataValues["type"] = [];
+    if (row.dataValues.newsletter != 0) {
+      row.dataValues["type"].push("Newsletter");
+    }
+    if (row.dataValues.transactional != 0) {
+      row.dataValues["type"].push("Transactional");
+    }
+    return row.dataValues;
   });
   const wordArr = [];
   const numArr = [];
   const emptyArr = [];
   data.forEach((el) => {
-    if (Number(el.email.name.charAt(0))) {
+    if (Number(el.name[0].charAt(0))) {
       numArr.push(el);
-    } else if (el.email.name != "") {
+    } else if (el.name[0] != "") {
       wordArr.push(el);
     } else {
       emptyArr.push(el);
     }
   });
   wordArr.sort((a, b) => {
-    return (
-      !a.email.name - !b.email.name || a.email.name.localeCompare(b.email.name)
-    );
+    return !a.name[0] - !b.name[0] || a.name[0].localeCompare(b.name[0]);
   });
-  wordArr.sort((a, b) => b.field.total - a.field.total);
-  numArr.sort((a, b) => a - b);
-  emptyArr.sort((a, b) => b.field.total - a.field.total);
+  wordArr.sort((a, b) => b.total - a.total);
+  //numArr.sort((a, b) => a - b);
+  emptyArr.sort((a, b) => b.total - a.total);
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);
   return [...sorted];

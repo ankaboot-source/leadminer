@@ -10,3 +10,4 @@ logs
 **/.ncy_output/
 app/utils/out
 app/out
+coverage

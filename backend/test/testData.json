@@ -1,0 +1,142 @@
+{
+  "emailBody": "\n    -------- Forwarded Message --------\n    Subject: \tFwd: Fiches de paie\n    Date: \tTue, 5 Apr 2022 16:46:20 +0200\n    From: \tBadreddine Ladjemi <badredine.ladjemi@gmail.com>\n    To: \tyoussri <youssri@flyweight.tech>\n    \n    \n    \n    \n    ---------- Forwarded message ---------\n    From: Wafa BELAIDI <wapakaaca.idea@lmmmmaaaac.com.tn>\n    Date: Tue, Apr 5, 2022 at 4:43 PM\n    Subject: Fiches de paie\n    To: Badreddine Ladjemi <badredine.ladjemi@gmail.com>\n    \n    \n    Bonne réception\n    \n    \n    \n    -- \n    Badreddine LADJEMI\n    \n    tel/signal: +33 6 24 33 44 42\n    tel/whatsapp: +216 98 793 002\n    matrix: baderdean@matrix.org",
+  "EmailNameTest": [
+    "<leadminerTeam@ankaboot.fr>, leadminer team <leadminer-team@leadminer.io>, لغة عربية jhjhd azertyuiop!azertyuiop@leadminer.io, لغة english عربية leadminer-team@leadminer.io, русский язык <leadminer-team@leadminer.io>,لغة عربية <leadminer-team@leadminer.io>"
+  ],
+  "OneEmailNameTest": ["<leadminerTeam@ankaboot.fr>"],
+  "expectedEmailNameAddress": [
+    { "name": "", "address": "leadminerTeam@ankaboot.fr" },
+
+    { "name": "leadminer team", "address": "leadminer-team@leadminer.io" },
+    {
+      "name": "لغة عربية jhjhd",
+      "address": "azertyuiop!azertyuiop@leadminer.io"
+    },
+    { "name": "لغة english عربية", "address": "leadminer-team@leadminer.io" },
+
+    { "name": "русский язык", "address": "leadminer-team@leadminer.io" },
+    { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
+  ],
+  "minedDataExample": [
+    { "email": { "name": "", "address": "leadminer-team@leadminer.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer2.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer3.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer4.io" } }
+  ],
+  "expectedForBodyExtraction": [
+    "badredine.ladjemi@gmail.com",
+    "youssri@flyweight.tech",
+    "wapakaaca.idea@lmmmmaaaac.com.tn",
+    "badredine.ladjemi@gmail.com",
+    "baderdean@matrix.org"
+  ],
+  "dataForFormat": [
+    { "name": "", "address": "badredine.ladjemi@gmail.com" },
+    { "name": "", "address": "youssri@flyweight.tech" },
+    { "name": "", "address": "wapakaaca.idea@lmmmmaaaac.com.tn" },
+    { "name": "", "address": "badredine.ladjemi@gmail.com" },
+    { "name": "", "address": "baderdean@matrix.org" }
+  ],
+  "testPath": [
+    { "label": "Brouillons" },
+    { "label": "Corbeille" },
+    {
+      "label": "INBOX",
+      "children": [
+        {
+          "label": "test",
+          "children": [
+            {
+              "label": "test2"
+            }
+          ]
+        }
+      ]
+    },
+    { "label": "Spam" }
+  ],
+  "FormatForBody": "",
+  "NoReply": [
+    "send-as-noreply@leadminer.io",
+    "noreply@leadminer.io",
+    "no-reply@leadminer.io",
+    "notifications-noreply@leadminer.io",
+    "accusereception@leadminer.io",
+    "support@leadminer.io",
+    "maildaemon@leadminer.io",
+    "notifications@leadminer.io"
+  ],
+  "ReadyData": [
+    { "email": { "name": "", "address": "leadminerTeam@ankaboot.fr" } },
+
+    {
+      "email": {
+        "name": "leadminer team",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+    {
+      "email": {
+        "name": "لغة عربية jhjhd",
+        "address": "azertyuiop!azertyuiop@leadminer.io"
+      }
+    },
+    {
+      "email": {
+        "name": "لغة english عربية",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+
+    {
+      "email": {
+        "name": "русский язык",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+    {
+      "email": { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
+    }
+  ],
+  "imapTreeExample": {
+    "Brouillons": {
+      "attribs": ["\\Drafts", "\\HasNoChildren"],
+      "delimiter": "/",
+      "children": null,
+      "parent": null,
+      "special_use_attrib": "\\Drafts"
+    },
+    "INBOX": {
+      "attribs": ["\\HasChildren"],
+      "delimiter": "/",
+      "children": {
+        "mars": {
+          "attribs": ["\\Junk", "\\HasNoChildren"],
+          "delimiter": "/",
+          "children": null,
+          "parent": null,
+          "special_use_attrib": "\\Junk"
+        },
+        "Administratif": {
+          "attribs": ["\\Junk", "\\HasNoChildren"],
+          "delimiter": "/",
+          "children": null,
+          "parent": null,
+          "special_use_attrib": "\\Junk"
+        }
+      },
+      "parent": null
+    },
+    "Spam": {
+      "attribs": ["\\Junk", "\\HasNoChildren"],
+      "delimiter": "/",
+      "children": null,
+      "parent": null,
+      "special_use_attrib": "\\Junk"
+    }
+  },
+  "emailsHash": [
+    "leadminer@leadminer.io",
+    "51df9c677a3d413938dfbd1d36c806eaadc4ecec9265a926abbd615f5f57a722"
+  ]
+}

@@ -13,3 +13,5 @@ backend/.nyc_output
 frontend/coverage
 logs
 backend/app/out
+backend/.env
+backend/out

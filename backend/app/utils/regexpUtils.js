@@ -1,4 +1,4 @@
-const quotedPrintable = require("quoted-printable");
+const quotedPrintable = require('quoted-printable');
 /* eslint-disable */
 const regex = new RegExp(
   /((?<name>[\p{L}\p{M}.\p{L}\p{M}\w\W]{1,})\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
@@ -13,7 +13,7 @@ const regexForBody = new RegExp(
  * @param  {string} data A string that represents the mail body
  * @returns {Array} array of strings
  */
-function extractEmailsFromBody(data) {
+function extractNameAndEmailFromBody(data) {
   let reg = quotedPrintable.decode(data).match(regexForBody);
   /* istanbul ignore else */
   if (reg) {
@@ -35,7 +35,7 @@ function extractNameAndEmail(data) {
       return emailAfterRegEx.groups;
     }
   };
-  let email = data[0].split(",");
+  let email = data.split(",");
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
       let result = getRegExp(regex.exec(emails.trim()));
@@ -47,20 +47,6 @@ function extractNameAndEmail(data) {
     return [result];
   }
 }
-/**
- * Change extracted body email into {name,address} format
- * @param  {Array} data array of emails objects
- * @returns {Array} formated array of object
- */
-function FormatBodyEmail(data) {
-  /* istanbul ignore else */
-  if (data) {
-    return data.map((oneEmail) => {
-      return { name: "", address: oneEmail };
-    });
-  }
-}
 
 exports.extractNameAndEmail = extractNameAndEmail;
-exports.extractEmailsFromBody = extractEmailsFromBody;
-exports.FormatBodyEmail = FormatBodyEmail;
+exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;

@@ -4,13 +4,16 @@ const db = require("../models");
 const ImapInfo = db.imapInfo;
 const googleUser = db.googleUsers;
 const logger = require("../utils/logger")(module);
-const UtilsForData = require("../utils/inputHelpers");
-const utilsForToken = require("../utils/tokenHelpers");
-const imapService = require("../services/imapService");
-const objectScan = require("object-scan");
-
+const hashHelpers = require("../utils/hashHelpers");
+const databaseHelpers = require("../utils/databaseHelpers");
+const inputHelpers = require("../utils/inputHelpers");
+const EventEmitter = require("node:events");
+const ImapUser = require("../services/imapUser");
+const EmailServer = require("../services/EmailServer");
+const EmailAccountMiner = require("../services/EmailAccountMiner");
+const { imapInfo } = require("../models");
 /**
- *  Create imap info account.
+ *  Create imap account infos
  * @param  {} req
  * @param  {} res
  */
@@ -146,214 +149,132 @@ exports.loginToAccount = (req, res) => {
 };
 
 /**
- * Retrieve mailbox files.
- * @param  {} req
- * @param  {} res
+ * Retrieve mailbox folders.
+ * @param  {object} req - user request
+ * @param  {object} res - http response to be sent
  */
-exports.getImapBoxes = async (req, res) => {
-  let imap;
-  let tokens;
-  let user = JSON.parse(req.query.user);
-  if (user.access_token) {
-    try {
-      let dbUser = await googleUser.findByPk(user.id);
-      tokens = await utilsForToken.generateXOauthToken(
-        user.access_token,
-        user,
-        dbUser.refreshToken
-      );
-
-      imap = new Imap({
-        user: user.email,
-        xoauth2: tokens.xoauth2Token,
-        host: "imap.gmail.com",
-        port: 993,
-        tls: true,
-        tlsOptions: {
-          port: 993,
-          host: "imap.gmail.com",
-          servername: "imap.gmail.com",
-        },
-      });
-    } catch {
-      logger.error(`No account with id : ${req.params.id} found`);
-      res.status(404).send({
-        error: `No account with id : ${req.params.id} found`,
-      });
-    }
-  }
-
-  //case: password based authentication
-  else {
-    try {
-      let imapInfo = await ImapInfo.findByPk(req.query.userId);
-      imap = new Imap({
-        user: imapInfo.email,
-        password: req.query.password,
-        host: imapInfo.host,
-        port: imapInfo.port,
-        tls: true,
-        tlsOptions: {
-          port: imapInfo.port,
-          host: imapInfo.host,
-          servername: imapInfo.host,
-        },
-      });
-    } catch {
-      logger.error(`No account with email : ${req.params.id} found`);
-      res.status(404).send({
-        error: `No account with id : ${req.params.id} found`,
-      });
-    }
-  }
-  let Boxes = [];
-  // try connection to imap server
-  imap.connect();
-  imap.once("ready", () => {
-    logger.info(
-      `Begin fetching folders names from imap account with id : ${user.id}`
-    );
-    imap.getBoxes("", (err, boxes) => {
-      Boxes = UtilsForData.getBoxesAll(boxes);
-
-      function iterate(obj) {
-        obj.map((key) => {
-          if (key.hasOwnProperty("children")) {
-            let name = UtilsForData.getPath({ ...Boxes }, key.label);
-            imap.openBox(name.substring(1), true, (err, box) => {
-              if (box) {
-                key["total"] = box.messages.total;
-              } else {
-                key["total"] = 0;
-              }
-              if (key == obj[obj.length - 1]) {
-                imap.end();
-              }
-            });
-            iterate(key.children);
-          } else {
-            let name = UtilsForData.getPath({ ...Boxes }, key.label);
-            imap.openBox(name.substring(1), true, (err, box) => {
-              if (box) {
-                key["total"] = box.messages.total;
-              } else {
-                key["total"] = 0;
-              }
-              if (key == obj[obj.length - 1]) {
-                imap.end();
-              }
-            });
-          }
-        });
-      }
-      iterate(Boxes);
+/* A function that is called when a user wants to get his imap folders tree. */
+exports.getImapBoxes = async (req, res, sse) => {
+  console.log(req.query);
+  const query = JSON.parse(req.query.user);
+  if (query.access_token) {
+    const google_user = await googleUser.findOne({
+      where: { email: query.email },
     });
-  });
-  imap.once("error", (err) => {
-    logger.error(
-      `error occured when trying to connect to imap account with email : ${user.id} : **Error** ${err}`
-    );
-  });
-  imap.once("end", () => {
-    logger.info(
-      `End fetching folders names from imap account with id : ${user.id}`
-    );
-    if (Boxes.length > 0) {
-      let total = objectScan(["**.{total,children}"], {
-        joined: true,
-        filterFn: ({ parent, gparent, property, value, context }) => {
-          if (property == "total") {
-            parent["totalIndiv"] = parent.total;
-          }
-          if (property == "children") {
-            if (parent) {
-              value.map((element) => {
-                parent.total += element.total;
-              });
-            }
-          }
-          if (property == "total") {
-            context.sum += value;
-          }
-        },
-      })(Boxes, { sum: 0 });
-      Boxes = [{ label: user.email, children: [...Boxes], total: total.sum }];
-      res.status(200).send({
-        boxes: Boxes,
-        message: "End fetching boxes!",
-        token: tokens.newToken,
-      });
-    } else {
-      res.status(204).send({
-        error: "No boxes found!",
-      });
+    if (google_user) {
+      query["refresh_token"] = google_user.dataValues.refreshToken;
     }
-  });
+  } else {
+    const imap_user = await imapInfo.findOne({ where: { id: query.id } });
+    if (imap_user) {
+      query["host"] = imap_user.host;
+      query["port"] = imap_user.port;
+    }
+  }
+
+  // define user object from user request query
+  const user = new ImapUser(query).getUserConnetionDataFromQuery();
+  // initialise imap server connection
+  const server = new EmailServer(user);
+  // initialise EmailAccountMiner to mine imap tree
+  const miner = new EmailAccountMiner(server, user, {}, {}, "", "", "");
+  // get tree
+  const [tree, error] = await miner.getTree();
+  if (error) {
+    logger.error(
+      `Mining imap tree failed for user with email ${hashHelpers.hashEmail(
+        user.email
+      )} reason : ${error}`
+    );
+    res.status(400).send({
+      message: "Can't fetch imap folders",
+      error: error,
+    });
+  }
+  if (tree) {
+    console.log(tree);
+    logger.info(
+      `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
+        user.email
+      )}`
+    );
+    res.status(200).send({
+      message: "Imap folders fetched with success !",
+      imapFoldersTree: tree,
+    });
+  }
 };
+
 /**
  * Get Emails from imap server.
- * @param  {} req
- * @param  {} res
- * @param  {} sse server sent event instance
- * @param  {} RedisClient redis client
+ * @param  {object} req - user request
+ * @param  {object} res - http response to be sent
+ * @param  {object} sse - server sent event instance
+ * @param  {object} RedisClient - redis client
  */
-exports.getEmails = (req, res, sse, RedisClient) => {
-  // case : password authentication
-  if (req.query.password) {
-    // fetch imap from database then mine Emails
-    ImapInfo.findByPk(req.params.id)
-      .then((imapUser) => {
-        // data will include all of the data that will be mined from the mailbox.
-        let boxes = UtilsForData.getBoxesAndFolders(req.query);
-        // bodiesTofetch is the query that user sends
-        const bodiesTofetch = req.query.fields;
-        imapService.imapService(
-          bodiesTofetch,
-          boxes,
-          imapUser,
-          RedisClient,
-          sse,
-          req.query,
-          res,
-          req
-        );
-      })
-      .catch((err) => {
-        res.status(404).send({
-          error: `No account with id : ${req.params.id} found`,
-        });
-      });
-  } // case : token based authentication
-  else {
-    let boxes = UtilsForData.getBoxesAndFolders(req.query);
-    // bodiesTofetch is the query that user sends
-    const bodiesTofetch = req.query.fields;
-    let user = JSON.parse(JSON.parse(JSON.stringify(req.query.user)));
-    googleUser
-      .findByPk(user.id)
-      .then((googleUser) => {
-        user["refreshToken"] = googleUser.dataValues.refreshToken;
-        if (googleUser) {
-          imapService.imapService(
-            bodiesTofetch,
-            boxes,
-            user,
-            RedisClient,
-            sse,
-            req.query,
-            res,
-            req
-          );
-        } else {
-          res.status(404).send({
-            error: `No account with id : ${user.id} found`,
-          });
-        }
-      })
-      .catch(() => {
-        res.status(404).send({
-          error: `No account with id : ${user.id} found`,
-        });
-      });
+exports.getEmails = async (req, res, sse, RedisClient) => {
+  if (!req.query) {
+    logger.error(
+      "No user query param ! request can't be handled without a user"
+    );
+    return res.status(404).send({
+      message: "Bad request",
+      error: "Bad request! check query",
+    });
   }
+  const query = JSON.parse(req.query.user);
+  if (query.access_token) {
+    const google_user = await googleUser.findOne({
+      where: { email: query.email },
+    });
+    if (google_user) {
+      query["refresh_token"] = google_user.dataValues.refreshToken;
+    }
+  } else {
+    const imap_user = await imapInfo.findOne({ where: { id: query.id } });
+    if (imap_user) {
+      query["host"] = imap_user.host;
+      query["port"] = imap_user.port;
+    }
+  }
+  // define user object from user request query
+  const user = new ImapUser(query).getUserConnetionDataFromQuery();
+  // initialise imap server connection
+  const server = new EmailServer(user);
+  // initialise EmailAccountMiner to mine imap tree
+  class MyEmitter extends EventEmitter {}
+  const eventEmitter = new MyEmitter();
+  const miner = new EmailAccountMiner(
+    server,
+    user,
+    RedisClient,
+    sse,
+    ["HEADER", "1"],
+    req.query.boxes,
+    "",
+    100,
+    eventEmitter
+  );
+  miner.mine();
+  req.on("close", async () => {
+    // if stop mining from user then send data and end imap connexion
+    const data = await databaseHelpers.getEmails(user.id);
+    sse.send(inputHelpers.sortDatabase(data), "data" + user.id);
+    sse.send(true, "dns" + user.id);
+    eventEmitter.emit("endByUser", true);
+  });
+  eventEmitter.on("end", async () => {
+    // Find all emails
+    const data = await databaseHelpers.getEmails(user.id);
+    res.status(200).send({
+      message: "Done mining emails !",
+      data: inputHelpers.sortDatabase(data),
+    });
+  });
+  eventEmitter.on("error", () => {
+    res.status(500).send({
+      message: "Error occurend try to refresh the page or reconnect",
+    });
+  });
+  eventEmitter.removeListener("end", () => {});
 };
