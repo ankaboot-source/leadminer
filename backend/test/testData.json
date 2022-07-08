@@ -138,5 +138,19 @@
   "emailsHash": [
     "leadminer@leadminer.io",
     "51df9c677a3d413938dfbd1d36c806eaadc4ecec9265a926abbd615f5f57a722"
-  ]
+  ],
+  "queryExampleApi": {
+    "email": "leadminer",
+    "id": "123456789",
+    "token": "leaminer_123456789azertyuiop_",
+    "refreshToken": "/refresh_leadminer_token_123456789",
+    "access_token": "/access_leadminer_token_123456789"
+  },
+  "queryExampleImap": {
+    "email": "leadminer",
+    "id": "123456789",
+    "password": "_123456789azertyuiop_",
+    "host": "leadminer.io",
+    "port": "993"
+  }
 }
