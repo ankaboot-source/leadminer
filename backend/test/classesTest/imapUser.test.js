@@ -1,17 +1,21 @@
 const chai = require("chai"),
   expect = chai.expect;
 const imapUser = require("../../app/services/imapUser");
-const emailServer = require("../../app/services/EmailServer")
 const dataTest = require("../testData.json");
 
-describe("testCase for emailServer class", function () {
-  it("should connect to imap server : Case imap", function () {
-    const user = new ImapUser(dataTest.queryExampleImap).getUserConnetionDataFromQuery();
-    // initialise imap server connection
-    const server = new emailServer(user);
-    let connetion = await server.connecte()
-    expect(connetion)
-    
+describe("testCase for userImap class", function () {
+  it("should return a non empty user object with parsed query : Case Api", function () {
+    let user = new imapUser(dataTest.queryExampleApi);
+    let output = user.getUserConnetionDataFromQuery();
+    let expectedOutput = {
+      email: "leadminer",
+      id: "123456789",
+      token: "leaminer_123456789azertyuiop_",
+      refreshToken: "/refresh_leadminer_token_123456789",
+      access_token: "/access_leadminer_token_123456789",
+      port: 993,
+    };
+    expect(output).to.have.deep.members(expectedOutput);
   });
   it("should return a non empty user object with parsed query : Case Imap", function () {
     let user = new imapUser(dataTest.queryExampleImap);

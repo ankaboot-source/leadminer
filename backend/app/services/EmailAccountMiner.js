@@ -208,7 +208,10 @@ class EmailAccountMiner {
    * @param {object} folder - The folder to mine.
    */
   mineMessages(folder, folderName) {
-    const self = this;
+    let bufferHeader = "";
+    let bufferBody = "";
+    let size = 0;
+    let self = this;
     if (folder) {
       this.currentTotal = folder.messages.total;
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
@@ -218,9 +221,6 @@ class EmailAccountMiner {
         struct: true,
       });
       f.on("message", (msg, seqNumber) => {
-        let bufferHeader = "";
-        let bufferBody = "";
-        let size = 0;
         msg.on("body", async function (stream, streamInfo) {
           // parse the chunks of the message
           size = streamInfo.size;
@@ -243,6 +243,9 @@ class EmailAccountMiner {
             Imap.parseHeader(bufferHeader.toString("utf8")),
             bufferBody
           );
+          bufferHeader = "";
+          bufferBody = "";
+          size = 0;
         });
       });
       f.once("end", () => {
@@ -253,11 +256,13 @@ class EmailAccountMiner {
         if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
           // we are at the end of the folder array==>> end imap connection
           this.connection.end();
+          self = null;
         } else {
           // go to the next folder
           self
             .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
             .next();
+          self = null;
         }
       });
     } else {
@@ -265,6 +270,7 @@ class EmailAccountMiner {
       this.mineFolder(
         this.folders[this.folders.indexOf(folderName) + 1]
       ).next();
+      self = null;
     }
   }
   /**
@@ -276,8 +282,9 @@ class EmailAccountMiner {
    * @param body - the body of the email message
    */
   async mineBatch(size, seqNumber, header, body) {
+    let alreadyMined;
     // create EmailMessage object
-    const message = new EmailMessage(
+    let message = new EmailMessage(
       seqNumber,
       size,
       header,
@@ -287,16 +294,14 @@ class EmailAccountMiner {
     );
     let message_id = message.getMessageId();
     if (message_id) {
-      let alreadyMined = await this.redisClient.sIsMember(
-        "messages",
-        message_id
-      );
+      alreadyMined = await this.redisClient.sIsMember("messages", message_id);
       if (!alreadyMined) {
         await message.createMessage();
         // extract the header
         await message.extractEmailObjectsFromHeader();
         // extract the body
         await message.extractEmailObjectsFromBody();
+        message = null;
       }
     }
   }
@@ -307,11 +312,19 @@ class EmailAccountMiner {
    * @param batch - The array of objects that you want to store in the database.
    */
   async sendBatch(seqNumber) {
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    console.log(
+      `The script uses approximately ${Math.round(used * 100) / 100} MB`
+    );
+    if (Math.round(used * 100) / 100 > 420) {
+      global.gc();
+    }
+    //global.gc();
     let progress = seqNumber;
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
       progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
     }
-    const minedEmails = await databaseHelpers.getEmails(this.user.id);
+    let minedEmails = await databaseHelpers.getEmails(this.user.id);
     this.sse.send(
       {
         data: inputHelpers.sortDatabase(minedEmails),
@@ -319,6 +332,7 @@ class EmailAccountMiner {
       },
       `minedEmailsAndScannedEmails${this.user.id}`
     );
+    return;
   }
 }
 

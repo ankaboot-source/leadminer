@@ -5,7 +5,7 @@ const models = require("../models");
 const { emailsRaw } = require("../models");
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
-const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
+//const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
 const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {
@@ -25,13 +25,14 @@ class EmailMessage {
   }
 
   async createMessage() {
+    await this.redisClient.sAdd("messages", this.getMessageId());
     await models.Messages.create({
       message_id: this.getMessageId(),
       isNewsletter: this.isNewsletter(),
       isTransactional: this.isTransactional(),
       isInConversation: this.isInConversation(),
     });
-    await this.redisClient.sAdd("messages", this.getMessageId());
+    return;
   }
 
   /**
@@ -93,7 +94,7 @@ class EmailMessage {
    * @returns An object with only the messaging fields from the header.
    */
   getMessagingFieldsOnly() {
-    const messagingProps = {};
+    let messagingProps = {};
     Object.keys(this.header).map((key) => {
       if (FIELDS.includes(key)) {
         messagingProps[key] = this.header[key][0];
@@ -107,7 +108,7 @@ class EmailMessage {
    * @returns An object with all the metadata fields that are not in the FIELDS array.
    */
   getOtherMetaDataFields() {
-    const metaDataProps = {};
+    let metaDataProps = {};
     Object.keys(this.header).map((key) => {
       if (!FIELDS.includes(key)) {
         metaDataProps[key] = this.header[key][0];
@@ -134,7 +135,6 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async getEmailsObjectsFromHeader(messagingFields) {
-    let self = this;
     Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       let message_id = this.getMessageId();
@@ -147,7 +147,7 @@ class EmailMessage {
               dataStructureHelpers.IsNotNoReply(email.address) &&
               dataStructureHelpers.checkDomainIsOk(email.address)
             ) {
-              emailsRaw.create({
+              await emailsRaw.create({
                 user_id: this.user.id,
                 message_id: message_id,
                 from: key == "from" ? true : false,
@@ -167,6 +167,8 @@ class EmailMessage {
         });
       }
     });
+    messagingFields = null;
+    return;
   }
   /**
    * It takes the body of an email, extracts the email addresses from it, and returns an array of objects
@@ -177,7 +179,6 @@ class EmailMessage {
     const emails = regExHelpers.extractNameAndEmailFromBody(
       this.body.toString("utf8")
     );
-    let message_id = this.getMessageId();
     if (emails) {
       emails.map(async (email) => {
         if (
@@ -186,7 +187,7 @@ class EmailMessage {
           dataStructureHelpers.IsNotNoReply(email) &&
           dataStructureHelpers.checkDomainIsOk(email)
         ) {
-          emailsRaw.create({
+          await emailsRaw.create({
             user_id: this.user.id,
             message_id: this.getMessageId(),
             from: false,
@@ -204,6 +205,7 @@ class EmailMessage {
         }
       });
     }
+    return;
   }
   /**
    * It takes the header, extracts the messaging fields, extracts the other metadata fields, and then
@@ -228,6 +230,7 @@ class EmailMessage {
     if (Object.keys(this.body).length > 0) {
       await this.getEmailsObjectsFromBody();
     }
+    return;
   }
 }
 module.exports = EmailMessage;
