@@ -312,14 +312,13 @@ class EmailAccountMiner {
    * @param batch - The array of objects that you want to store in the database.
    */
   async sendBatch(seqNumber) {
-    const used = process.memoryUsage().heapUsed / 1024 / 1024;
+    let used = process.memoryUsage().heapUsed / 1024 / 1024;
     console.log(
       `The script uses approximately ${Math.round(used * 100) / 100} MB`
     );
     if (Math.round(used * 100) / 100 > 420) {
       global.gc();
     }
-    //global.gc();
     let progress = seqNumber;
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
       progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
