@@ -42,7 +42,6 @@ module.exports = (sequelize, Sequelize) => {
       onUpdate: "CASCADE",
       foreignKey: {
         name: "message_id",
-        allowNull: false,
       },
     });
   };

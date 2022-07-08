@@ -2,8 +2,8 @@ module.exports = (sequelize, Sequelize) => {
   const Messages = sequelize.define("messages", {
     message_id: {
       allowNull: false,
-      primaryKey: true,
       type: Sequelize.STRING,
+      primaryKey: true,
     },
     isNewsletter: {
       type: Sequelize.BOOLEAN,

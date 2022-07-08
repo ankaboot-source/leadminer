@@ -27,7 +27,7 @@ class EmailMessage {
   async createMessage() {
     await this.redisClient.sAdd("messages", this.getMessageId());
     await models.Messages.create({
-      message_id: this.getMessageId(),
+      message_id: this.getMessageId() + this.header["date"],
       isNewsletter: this.isNewsletter(),
       isTransactional: this.isTransactional(),
       isInConversation: this.isInConversation(),
@@ -139,7 +139,7 @@ class EmailMessage {
   async getEmailsObjectsFromHeader(messagingFields) {
     Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
-      let message_id = this.getMessageId();
+      let message_id = this.getMessageId() + this.header["date"];
       if (emails) {
         emails.map(async (email) => {
           if (email) {
@@ -191,7 +191,7 @@ class EmailMessage {
         ) {
           await emailsRaw.create({
             user_id: this.user.id,
-            message_id: this.getMessageId(),
+            message_id: this.getMessageId() + this.header["date"],
             from: false,
             reply_to: false,
             to: false,
