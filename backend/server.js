@@ -4,10 +4,10 @@ const app = express();
 const http = require("http");
 const logger = require("./app/utils/logger")(module);
 const SSE = require("express-sse").SSE;
-const redis = require("redis");
+let redis = require("./redis");
+redis.connect();
 // initialise sse (server sent events)
 const sse = new SSE();
-const client = redis.createClient(6379);
 app.use((req, res, next) => {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -47,7 +47,7 @@ db.sequelize
   .catch((error) => {
     console.log(error);
   });
-client.connect();
+
 // simple route when calling api.leadminer.io
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to leadminer application." });
@@ -67,7 +67,7 @@ app.get("/logs", function (req, res, next) {
   });
 });
 // The io instance is set in Express so it can be grabbed in a route
-require("./app/routes/imap.routes")(app, sse, client);
+require("./app/routes/imap.routes")(app, sse);
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8081;

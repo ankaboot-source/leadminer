@@ -2,7 +2,7 @@ module.exports = (sequelize, Sequelize) => {
   const Messages = sequelize.define("messages", {
     message_id: {
       allowNull: false,
-      type: Sequelize.STRING,
+      type: Sequelize.TEXT,
       primaryKey: true,
     },
     isNewsletter: {
@@ -18,8 +18,8 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: false,
     },
   });
-  Messages.associate = (models) => {
-    Messages.hasMany(models.emailsRaw, { foreignKey: "message_id" });
-  };
+  // Messages.associate = (models) => {
+  //   Messages.hasMany(models.emailsRaw, { foreignKey: "message_id" });
+  // };
   return Messages;
 };

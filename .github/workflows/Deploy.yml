@@ -25,4 +25,4 @@ jobs:
             echo ${{ secrets.PASSWORD }} | sudo -S cp -r dist //var/www/html
             cd ..
             cd backend && npm install
-            pm2 start server.js
+            pm2 start server.js --node-args="--expose_gc"

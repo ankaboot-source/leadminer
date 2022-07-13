@@ -6,14 +6,7 @@ module.exports = (sequelize, Sequelize) => {
       autoIncrement: true,
       primaryKey: true,
     },
-    message_id: {
-      allowNull: true,
-      type: Sequelize.STRING,
-      references: {
-        model: "messages",
-        key: "message_id",
-      },
-    },
+
     user_id: {
       allowNull: false,
       type: Sequelize.STRING,
@@ -36,15 +29,15 @@ module.exports = (sequelize, Sequelize) => {
     conversation: { type: Sequelize.INTEGER },
     newsletter: { type: Sequelize.BOOLEAN },
   });
-  EmailsRaw.associate = (models) => {
-    EmailsRaw.belongsTo(models.Messages, {
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-      foreignKey: {
-        name: "message_id",
-      },
-    });
-  };
+  // EmailsRaw.associate = (models) => {
+  //   EmailsRaw.belongsTo(models.Messages, {
+  //     onDelete: "SET NULL",
+  //     onUpdate: "CASCADE",
+  //     foreignKey: {
+  //       name: "message_id",
+  //     },
+  //   });
+  // };
 
   return EmailsRaw;
 };
