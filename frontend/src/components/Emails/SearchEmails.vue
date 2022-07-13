@@ -154,6 +154,7 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
+
             <template #body="props">
               <q-tr :props="props">
                 <q-td key="#" :props="props"
@@ -265,8 +266,14 @@
                 </q-td>
                 <q-td key="Date" :props="props">
                   <q-badge outline color="blue" transparent>
-                    {{ props.row.date }}
+                    {{ formatDate(props.row.date) }}
                   </q-badge>
+                  <q-tooltip
+                    class="bg-blue-8"
+                    anchor="top middle"
+                    self="center middle"
+                    >{{ getTimeOffset(props.row.date) }}</q-tooltip
+                  >
                 </q-td>
 
                 <q-td key="Type" :props="props"
@@ -447,48 +454,6 @@ export default defineComponent({
       selected: ref([]),
       ticked: ref([]),
       expanded: ref([]),
-      exportTable(Emails) {
-        let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Engagement;Date of last interaction;Body;Type\n`;
-        let emailsCsv = Emails;
-        let emailstoExport = emailsCsv.map((element) => {
-          let obj = {
-            Email: element.address,
-            Aliase: element.name.includes(";")
-              ? `"${element.name}"`
-              : element.name,
-            Status: "Valid",
-            To: element.to,
-            From: element.from,
-            Cc: element.cc,
-            Bcc: element.bcc,
-            Reply: element.reply_to,
-            Total: element.total,
-            Engagement: element.conversation,
-            Date: element.date,
-            Body: element.body,
-            Type: element.type,
-          };
-          return obj;
-        });
-        emailstoExport.forEach((row) => {
-          csv += Object.values(row).join(";");
-          csv += "\n";
-        });
-        const status = exportFile("Emails.csv", "\ufeff" + csv, "text/csv");
-        if (status !== true) {
-          $q.notify({
-            message: "Browser denied file download...",
-            color: "negative",
-            icon: "warning",
-          });
-        } else {
-          $q.notify({
-            message: "CSV downloaded",
-            color: "teal-7",
-            icon: "check",
-          });
-        }
-      },
     };
   },
   data() {
@@ -623,6 +588,58 @@ export default defineComponent({
           );
         }
       });
+    },
+    formatDate(e) {
+      let date = new Date(e);
+      return date.toLocaleDateString();
+    },
+    getTimeOffset(e) {
+      let offset = e.substr(e.indexOf("+"), 5).replaceAll(0, "");
+      let date = e.substring(0, e.indexOf("+"));
+      offset = offset == "+" ? "+" + 0 : offset;
+      return date + "GMT" + offset;
+    },
+    exportTable(Emails) {
+      let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Engagement;Date of last interaction;Body;Type\n`;
+      let emailsCsv = Emails;
+      let emailstoExport = emailsCsv.map((element) => {
+        let obj = {
+          Email: element.address,
+          Aliase: element.name.includes(";")
+            ? `"${element.name}"`
+            : element.name,
+          Status: "Valid",
+          To: element.to,
+          From: element.from,
+          Cc: element.cc,
+          Bcc: element.bcc,
+          Reply: element.reply_to,
+          Total: element.total,
+          Engagement: element.conversation,
+          Date: this.getTimeOffset(element.date),
+          Body: element.body,
+          Type: element.type,
+        };
+        return obj;
+      });
+      emailstoExport.forEach((row) => {
+        csv += Object.values(row).join(";");
+        csv += "\n";
+      });
+      const status = exportFile("Emails.csv", "\ufeff" + csv, "text/csv");
+      if (status !== true) {
+        this.quasar.notify({
+          message: "Browser denied file download...",
+          color: "negative",
+          icon: "warning",
+        });
+      } else {
+        this.quasar.notify({
+          message: "CSV downloaded",
+          color: "teal-7",
+          icon: "check",
+        });
+      }
     },
     cancelFetchEmails() {
       this.cancel = true;

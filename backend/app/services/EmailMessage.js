@@ -88,7 +88,7 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    return dateHelpers.parseDate(this.header?.date?.[0] ?? "");
+    return this.header?.date?.[0] ?? "";
   }
   /**
    * It returns an object with only the messaging fields from the header
@@ -161,9 +161,9 @@ class EmailMessage {
                 date: this.getDate(),
                 name: email?.name ?? "",
                 address: email.address,
-                newsletter: this.isNewsletter() ? true : false,
-                transactional: this.isTransactional() ? true : false,
-                conversation: this.isInConversation() == true ? 1 : 0,
+                newsletter: this.isNewsletter(),
+                transactional: this.isTransactional(),
+                conversation: this.isInConversation(),
               });
             }
           }
@@ -201,9 +201,9 @@ class EmailMessage {
             body: true,
             date: this.getDate(),
             address: email,
-            newsletter: this.isNewsletter() ? true : false,
-            transactional: this.isTransactional() ? true : false,
-            conversation: this.isInConversation() == true ? 1 : 0,
+            newsletter: this.isNewsletter(),
+            transactional: this.isTransactional(),
+            conversation: this.isInConversation(),
           });
         }
       });
