@@ -6,11 +6,11 @@ const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
+const redisClient = require("../../redis");
 
 class EmailAccountMiner {
   //public field
   tree = [];
-  EmailsMessagesBatch = [];
   currentTotal = 0;
   sends = [];
 
@@ -18,7 +18,6 @@ class EmailAccountMiner {
    * This function is a constructor for the class `EmailAccountMiner`
    * @param {object} connection - The connection to the imapserver.
    * @param {object} user - The user object that is currently associated with the connection.
-   * @param {object} redisClient - The redis client.
    * @param {object} sse - The SSE object that will be used to send the data to the client.
    * @param {array} fields - An array of fields to be used in the fetch.
    * @param {array} folders - An array of folder paths to fetch from.
@@ -28,7 +27,6 @@ class EmailAccountMiner {
   constructor(
     connection,
     user,
-    redisClient,
     sse,
     fields,
     folders,
@@ -38,7 +36,6 @@ class EmailAccountMiner {
   ) {
     this.connection = connection;
     this.user = user;
-    this.redisClient = redisClient;
     this.sse = sse;
     this.fields = fields;
     this.folders = folders;
@@ -237,15 +234,17 @@ class EmailAccountMiner {
             self.sendBatch(seqNumber);
           }
           // mine batch to treate this mined message
-          self.mineBatch(
-            seqNumber,
-            size,
-            Imap.parseHeader(bufferHeader.toString("utf8")),
-            bufferBody
-          );
-          bufferHeader = "";
-          bufferBody = "";
-          size = 0;
+          if ((bufferBody != "" || bufferHeader != "") && size != 0) {
+            self.mineBatch(
+              seqNumber,
+              size,
+              Imap.parseHeader(bufferHeader.toString("utf8")),
+              bufferBody
+            );
+            bufferHeader = "";
+            bufferBody = "";
+            size = 0;
+          }
         });
       });
       f.once("end", () => {
@@ -265,6 +264,9 @@ class EmailAccountMiner {
           self = null;
         }
       });
+    } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
+      this.connection.end();
+      self = null;
     } else {
       // if this folder is juste a label then pass to the next folder
       this.mineFolder(
@@ -282,28 +284,19 @@ class EmailAccountMiner {
    * @param body - the body of the email message
    */
   async mineBatch(size, seqNumber, header, body) {
-    let alreadyMined;
     // create EmailMessage object
-    let message = new EmailMessage(
-      seqNumber,
-      size,
-      header,
-      body,
-      this.user,
-      this.redisClient
-    );
+    let message = new EmailMessage(seqNumber, size, header, body, this.user);
     let message_id = message.getMessageId();
-    if (message_id) {
-      alreadyMined = await this.redisClient.sIsMember("messages", message_id);
+    redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
-        await message.createMessage();
-        // extract the header
-        await message.extractEmailObjectsFromHeader();
-        // extract the body
-        await message.extractEmailObjectsFromBody();
-        message = null;
+        if (message_id) {
+          redisClient.sAdd("messages", message_id).then(() => {
+            message.extractEmailObjectsFromHeader();
+            message.extractEmailObjectsFromBody();
+          });
+        }
       }
-    }
+    });
   }
 
   /**
@@ -319,6 +312,7 @@ class EmailAccountMiner {
     if (Math.round(used * 100) / 100 > 420) {
       global.gc();
     }
+
     let progress = seqNumber;
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
       progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];

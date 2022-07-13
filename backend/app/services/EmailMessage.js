@@ -3,6 +3,7 @@ const dateHelpers = require("../utils/dateHelpers");
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const models = require("../models");
 const { emailsRaw } = require("../models");
+const redisClient = require("../../redis");
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
 //const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
@@ -15,23 +16,23 @@ class EmailMessage {
    * @param header - This is a JSON object that contains the header information for the message.
    * @param body - The body of the message.
    */
-  constructor(sequentialId, size, header, body, user, redisClient) {
+  constructor(sequentialId, size, header, body, user) {
     this.sequentialId = sequentialId;
     this.size = size;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
-    this.redisClient = redisClient;
   }
 
   async createMessage() {
-    await this.redisClient.sAdd("messages", this.getMessageId());
+    await redisClient.sAdd("messages", this.getMessageId());
     await models.Messages.create({
       message_id: this.getMessageId() + this.header["date"],
       isNewsletter: this.isNewsletter(),
       isTransactional: this.isTransactional(),
       isInConversation: this.isInConversation(),
     });
+
     return;
   }
 

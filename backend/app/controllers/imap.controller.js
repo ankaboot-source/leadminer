@@ -208,9 +208,8 @@ exports.getImapBoxes = async (req, res, sse) => {
  * @param  {object} req - user request
  * @param  {object} res - http response to be sent
  * @param  {object} sse - server sent event instance
- * @param  {object} RedisClient - redis client
  */
-exports.getEmails = async (req, res, sse, RedisClient) => {
+exports.getEmails = async (req, res, sse) => {
   if (!req.query) {
     logger.error(
       "No user query param ! request can't be handled without a user"
@@ -245,7 +244,6 @@ exports.getEmails = async (req, res, sse, RedisClient) => {
   const miner = new EmailAccountMiner(
     server,
     user,
-    RedisClient,
     sse,
     ["HEADER", "1"],
     req.query.boxes,
