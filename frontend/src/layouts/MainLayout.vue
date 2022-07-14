@@ -36,8 +36,10 @@ export default defineComponent({
   methods: {
     logout() {
       LocalStorage.clear();
-      console.log(this);
       this.$router.push("/");
+      setTimeout(() => {
+        this.$router.go();
+      }, 500);
     },
   },
 });
