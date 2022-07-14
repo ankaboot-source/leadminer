@@ -88,7 +88,7 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    return this.header?.date?.[0] ?? "";
+    return this.header.date ? this.header.date[0] : "";
   }
   /**
    * It returns an object with only the messaging fields from the header

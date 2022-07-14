@@ -594,8 +594,13 @@ export default defineComponent({
       return date.toLocaleDateString();
     },
     getTimeOffset(e) {
-      let offset = e.substr(e.indexOf("+"), 5).replaceAll(0, "");
-      let date = e.substring(0, e.indexOf("+"));
+      let offset = e
+        .substr(e.indexOf("+") != -1 ? e.indexOf("+") : e.indexOf("-"), 5)
+        .replaceAll(0, "");
+      let date = e.substring(
+        0,
+        e.indexOf("+") != -1 ? e.indexOf("+") : e.indexOf("-")
+      );
       offset = offset == "+" ? "+" + 0 : offset;
       return date + "GMT" + offset;
     },

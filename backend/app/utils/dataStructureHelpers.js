@@ -187,7 +187,7 @@ function checkDomainIsOk(address) {
     return false;
   } else {
     // TODO : check mx
-    return false;
+    return true;
   }
 }
 module.exports = {
