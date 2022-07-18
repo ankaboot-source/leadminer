@@ -597,12 +597,24 @@ export default defineComponent({
       let offset = e
         .substr(e.indexOf("+") != -1 ? e.indexOf("+") : e.indexOf("-"), 5)
         .replaceAll(0, "");
-      let date = e.substring(
-        0,
-        e.indexOf("+") != -1 ? e.indexOf("+") : e.indexOf("-")
+      let date = new Date(
+        e.substring(0, e.indexOf("+") != -1 ? e.indexOf("+") : e.indexOf("-"))
       );
       offset = offset == "+" ? "+" + 0 : offset;
-      return date + "GMT" + offset;
+      return (
+        date.toLocaleDateString(undefined, {
+          weekday: "short",
+          year: "2-digit",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "numeric",
+          hour12: false,
+          minute: "numeric",
+          second: "numeric",
+        }) +
+        " GMT" +
+        offset
+      );
     },
     exportTable(Emails) {
       let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Engagement;Date of last interaction;Body;Type\n`;
@@ -610,9 +622,9 @@ export default defineComponent({
       let emailstoExport = emailsCsv.map((element) => {
         let obj = {
           Email: element.address,
-          Aliase: element.name.includes(";")
-            ? `"${element.name}"`
-            : element.name,
+          Aliase: element.name.map((el) => {
+            return el.includes(";") ? `"${el}"` : el;
+          }),
           Status: "Valid",
           To: element.to,
           From: element.from,

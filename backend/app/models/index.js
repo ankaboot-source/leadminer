@@ -1,14 +1,14 @@
-const Sequelize = require('sequelize');
-const dbConfig = require('../config/db.config');
+const Sequelize = require("sequelize");
+const dbConfig = require("../config/db.config");
 
-const sequelize = new Sequelize(dbConfig.db, 'postgres', dbConfig.password, {
-  host: 'localhost',
-  dialect: 'postgres',
+const sequelize = new Sequelize(dbConfig.db, "postgres", dbConfig.password, {
+  host: "localhost",
+  dialect: "postgres",
   pool: {
-    max: 15,
+    max: 50,
     min: 0,
-    acquire: 90000,
-    idle: 30000,
+    acquire: 80000,
+    idle: 10000,
   },
   retry: {
     match: [/Deadlock/i],
@@ -24,15 +24,15 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.imapInfo = require('./imap.model')(sequelize, Sequelize);
-db.emails = require('./emails.model')(sequelize, Sequelize);
-db.emailsRaw = require('./emailsRaw.model')(sequelize, Sequelize);
-db.Messages = require('./messages.model')(sequelize, Sequelize);
+db.imapInfo = require("./imap.model")(sequelize, Sequelize);
+db.emails = require("./emails.model")(sequelize, Sequelize);
+db.emailsRaw = require("./emailsRaw.model")(sequelize, Sequelize);
+db.Messages = require("./messages.model")(sequelize, Sequelize);
 
-db.googleUsers = require('./googleUser.model')(sequelize, Sequelize);
+db.googleUsers = require("./googleUser.model")(sequelize, Sequelize);
 Object.keys(db).forEach((modelName) => {
   console.log(modelName);
-  if ('associate' in db[modelName]) {
+  if ("associate" in db[modelName]) {
     // console.log(models[modelName]);
     db[modelName].associate(db);
   }

@@ -88,7 +88,13 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    return this.header.date ? this.header.date[0] : "";
+    if (this.header.date) {
+      if (Date.parse(this.header.date[0])) {
+        return this.header.date[0];
+      } else {
+        return "";
+      }
+    } else return "";
   }
   /**
    * It returns an object with only the messaging fields from the header
@@ -122,6 +128,7 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
+    console.log(this.header.from, this.header.to);
     if (this.header["message-id"]) {
       return this.header["message-id"][0].substring(0, 60);
     } else {
@@ -140,7 +147,6 @@ class EmailMessage {
   async getEmailsObjectsFromHeader(messagingFields) {
     Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
-      let message_id = this.getMessageId() + this.header["date"];
       if (emails) {
         emails.map(async (email) => {
           if (email) {
@@ -152,7 +158,6 @@ class EmailMessage {
             ) {
               await emailsRaw.create({
                 user_id: this.user.id,
-                message_id: message_id,
                 from: key == "from" ? true : false,
                 reply_to: key == "reply-to" ? true : false,
                 to: key == "to" ? true : false,
@@ -192,7 +197,6 @@ class EmailMessage {
         ) {
           await emailsRaw.create({
             user_id: this.user.id,
-            message_id: this.getMessageId() + this.header["date"],
             from: false,
             reply_to: false,
             to: false,
@@ -200,6 +204,7 @@ class EmailMessage {
             bcc: false,
             body: true,
             date: this.getDate(),
+            name: "",
             address: email,
             newsletter: this.isNewsletter(),
             transactional: this.isTransactional(),

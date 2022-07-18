@@ -132,7 +132,12 @@ function sortDatabase(dataFromDatabse) {
     } else {
       row.dataValues["name"] = row.dataValues["name"].map((name) => {
         if (name != row.dataValues.address) {
-          let Name = name.replaceAll('"', "").trim().toLowerCase();
+          let Name = name
+            .replaceAll('"', "")
+            .replaceAll("'", "")
+            .replaceAll("/", "")
+            .trim()
+            .toLowerCase();
           return Name;
         }
       });
