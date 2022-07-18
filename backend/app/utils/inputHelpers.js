@@ -131,9 +131,12 @@ function sortDatabase(dataFromDatabse) {
       row.dataValues["name"] = [""];
     } else {
       row.dataValues["name"] = row.dataValues["name"].map((name) => {
-        name.replaceAll('"', "");
-        return name;
+        if (name != row.dataValues.address) {
+          let Name = name.replaceAll('"', "").trim().toLowerCase();
+          return Name;
+        }
       });
+      row.dataValues["name"] = [...new Set(row.dataValues["name"])];
     }
     row.dataValues["recipient"] =
       (parseInt(row.dataValues?.["cc"]) ?? 0) +
