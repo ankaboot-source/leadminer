@@ -128,7 +128,6 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    console.log(this.header.from, this.header.to);
     if (this.header["message-id"]) {
       return this.header["message-id"][0].substring(0, 60);
     } else {
