@@ -317,13 +317,18 @@ class EmailAccountMiner {
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
       progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
     }
+    this.sse.send(
+      {
+        scanned: progress,
+      },
+      `ScannedEmails${this.user.id}`
+    );
     let minedEmails = await databaseHelpers.getEmails(this.user.id);
     this.sse.send(
       {
         data: inputHelpers.sortDatabase(minedEmails),
-        scanned: progress,
       },
-      `minedEmailsAndScannedEmails${this.user.id}`
+      `minedEmails${this.user.id}`
     );
     return;
   }

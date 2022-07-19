@@ -16,14 +16,21 @@ export async function getEmails({ context, getters }, { data }) {
   };
 
   source.addEventListener(
-    "minedEmailsAndScannedEmails" +
-      currentState.imapUser.id +
-      currentState.googleUser.id,
+    "minedEmails" + currentState.imapUser.id + currentState.googleUser.id,
+    (message) => {
+      let data = JSON.parse(message.data);
+      //this.commit("example/SET_SCANNEDEMAILS", data.scanned);
+      this.commit("example/SET_EMAILS", data.data);
+      this.commit("example/SET_INVALIDADDRESSES", data.invalid);
+    }
+  );
+  source.addEventListener(
+    "ScannedEmails" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
       let data = JSON.parse(message.data);
       this.commit("example/SET_SCANNEDEMAILS", data.scanned);
-      this.commit("example/SET_EMAILS", data.data);
-      this.commit("example/SET_INVALIDADDRESSES", data.invalid);
+      //this.commit("example/SET_EMAILS", data.data);
+      //this.commit("example/SET_INVALIDADDRESSES", data.invalid);
     }
   );
   source.addEventListener(
