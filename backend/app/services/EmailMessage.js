@@ -6,6 +6,7 @@ const { emailsRaw } = require("../models");
 const redisClient = require("../../redis");
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
+
 //const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
 const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
@@ -165,8 +166,14 @@ class EmailMessage {
                 date: this.getDate(),
                 name: email?.name ?? "",
                 address: email.address,
-                newsletter: this.isNewsletter(),
-                transactional: this.isTransactional(),
+                newsletter:
+                  key == "from" || key == "reply-to"
+                    ? this.isNewsletter()
+                    : false,
+                transactional:
+                  key == "from" || key == "reply-to"
+                    ? this.isTransactional()
+                    : false,
                 conversation: this.isInConversation(),
               });
             }
@@ -205,8 +212,8 @@ class EmailMessage {
             date: this.getDate(),
             name: "",
             address: email,
-            newsletter: this.isNewsletter(),
-            transactional: this.isTransactional(),
+            newsletter: false,
+            transactional: false,
             conversation: this.isInConversation(),
           });
         }

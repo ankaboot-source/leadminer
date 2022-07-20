@@ -241,6 +241,7 @@ class EmailAccountMiner {
               Imap.parseHeader(bufferHeader.toString("utf8")),
               bufferBody
             );
+
             bufferHeader = "";
             bufferBody = "";
             size = 0;
@@ -306,9 +307,6 @@ class EmailAccountMiner {
    */
   async sendBatch(seqNumber) {
     let used = process.memoryUsage().heapUsed / 1024 / 1024;
-    console.log(
-      `The script uses approximately ${Math.round(used * 100) / 100} MB`
-    );
     if (Math.round(used * 100) / 100 > 420) {
       global.gc();
     }

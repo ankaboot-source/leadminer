@@ -130,18 +130,24 @@ function sortDatabase(dataFromDatabse) {
     if (row.dataValues.name == null) {
       row.dataValues["name"] = [""];
     } else {
-      row.dataValues["name"] = row.dataValues["name"].map((name) => {
+      let NameArray = [];
+      row.dataValues["name"].map((name) => {
         if (name != row.dataValues.address) {
           let Name = name
             .replaceAll('"', "")
             .replaceAll("'", "")
             .replaceAll("/", "")
-            .trim()
-            .toLowerCase();
-          return Name;
+            .trim();
+          if (
+            NameArray.filter((str) =>
+              str.toLowerCase().includes(Name.toLowerCase())
+            ).length == 0
+          ) {
+            NameArray.push(Name);
+          }
         }
       });
-      row.dataValues["name"] = [...new Set(row.dataValues["name"])];
+      row.dataValues["name"] = NameArray;
     }
     row.dataValues["recipient"] =
       (parseInt(row.dataValues?.["cc"]) ?? 0) +
@@ -154,10 +160,13 @@ function sortDatabase(dataFromDatabse) {
     row.dataValues["total"] =
       row.dataValues["sender"] + row.dataValues["recipient"];
     row.dataValues["type"] = [];
-    if (row.dataValues.newsletter != 0) {
+    if (row.dataValues.newsletter == row.dataValues["total"]) {
+      if (row.dataValues.newsletter != row.dataValues["total"]) {
+        console.log(row.dataValues["total"], row.dataValues["name"]);
+      }
       row.dataValues["type"].push("Newsletter");
     }
-    if (row.dataValues.transactional != 0) {
+    if (row.dataValues.transactional == row.dataValues["total"]) {
       row.dataValues["type"].push("Transactional");
     }
     return row.dataValues;
