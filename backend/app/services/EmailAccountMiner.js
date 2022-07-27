@@ -368,7 +368,7 @@ class EmailAccountMiner {
   async sendBatch(seqNumber) {
     let used = process.memoryUsage().heapUsed / 1024 / 1024;
     logger.info(used + "************");
-    if (Math.round(used * 100) / 100 > 350) {
+    if (Math.round(used * 100) / 100 > 370) {
       global.gc();
     }
 
