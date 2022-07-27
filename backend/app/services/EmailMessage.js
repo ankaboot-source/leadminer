@@ -190,9 +190,7 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async getEmailsObjectsFromBody() {
-    const emails = regExHelpers.extractNameAndEmailFromBody(
-      this.body.toString("utf8")
-    );
+    const emails = this.body;
     if (emails) {
       emails.map(async (email) => {
         if (

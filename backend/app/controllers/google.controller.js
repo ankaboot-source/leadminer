@@ -1,12 +1,11 @@
 /* istanbul ignore file */
-const { google } = require('googleapis');
-const OAuth2 = google.auth.OAuth2;
-const db = require('../models');
+const OAuth2 = require("googleapis").google.auth.OAuth2;
+const db = require("../models");
 const googleUsers = db.googleUsers;
-const logger = require('../utils/logger')(module);
+const logger = require("../utils/logger")(module);
 const ClientId = process.env.GG_CLIENT_ID;
 const ClientSecret = process.env.GG_CLIENT_SECRET;
-const RedirectionUrl = 'postmessage';
+const RedirectionUrl = "postmessage";
 
 // returns Oauth client
 function getOAuthClient() {
@@ -21,12 +20,12 @@ function getOAuthClient() {
 exports.SignUpWithGoogle = async (req, res) => {
   const oauth2Client = getOAuthClient();
   // the query param authorization code
-  let code = '';
+  let code = "";
   if (req.body.authCode) {
     code = req.body.authCode;
   } else {
     res.status(400).send({
-      error: 'No valid authorization code !',
+      error: "No valid authorization code !",
     });
     return;
   }
@@ -38,9 +37,9 @@ exports.SignUpWithGoogle = async (req, res) => {
       oauth2Client.setCredentials({
         access_token: tokens.access_token,
       });
-      const oauth2 = google.oauth2({
+      const oauth2 = require("googleapis").google.oauth2({
         auth: oauth2Client,
-        version: 'v2',
+        version: "v2",
       });
       // get user infos( email, id, photo...)
       const response = await oauth2.userinfo.get({});
@@ -75,7 +74,7 @@ exports.SignUpWithGoogle = async (req, res) => {
                   );
                   res.status(500).send({
                     error:
-                      'Some error occurred while creating your account your account.',
+                      "Some error occurred while creating your account your account.",
                   });
                 });
             } else if (
@@ -93,7 +92,7 @@ exports.SignUpWithGoogle = async (req, res) => {
                   );
                   // case when user id exists
                   res.status(200).send({
-                    message: 'Your account already exists !',
+                    message: "Your account already exists !",
                     googleUser: {
                       email: google_user.email,
                       id: google_user.id,

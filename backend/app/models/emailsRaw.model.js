@@ -38,6 +38,22 @@ module.exports = (sequelize, Sequelize) => {
   //     },
   //   });
   // };
-
+  // EmailsInfos.beforeBulkCreate(async (emails, options) => {
+  //   emails.map(async (email) => {
+  //     const domain = email.address.split("@")[1];
+  //     console.log(domain);
+  //     let dnsAddressCheckRedis = await client.get(domain);
+  //     if (dnsAddressCheckRedis) {
+  //       email.validity = dnsAddressCheckRedis;
+  //     } else {
+  //       let dnsAddressCheckDns = await dnsHelpers.checkDNS(domain, client);
+  //       console.log(dnsAddressCheckDns);
+  //       if (dnsAddressCheckDns) {
+  //         email.validity = dnsAddressCheckDns;
+  //       }
+  //     }
+  //   });
+  //   options.updateOnDuplicate.push("validity");
+  // });
   return EmailsRaw;
 };

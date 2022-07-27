@@ -2,11 +2,52 @@ const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const databaseHelpers = require("../utils/databaseHelpers");
 const inputHelpers = require("../utils/inputHelpers");
+const regExHelpers = require("../utils/regexpUtils");
 const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
+const Queue = require("bull");
+var MailParser = require("mailparser").MailParser;
+
+const MessageQueue = new Queue("messageQueue");
+
+MessageQueue.process(async function (job, done) {
+  // job.data contains the custom data passed when the job was created
+  // job.id contains id of this job.
+  const redisClient = require("../../redis");
+  // transcode video asynchronously and report progress
+  let message = new EmailMessage(
+    job.data.seqNumber,
+    job.data.size,
+    job.data.header,
+    job.data.body,
+    job.data.user
+  );
+  let message_id = message.getMessageId();
+  redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
+    if (!alreadyMined) {
+      if (message_id) {
+        redisClient.sAdd("messages", message_id).then(() => {
+          message.extractEmailObjectsFromHeader();
+          message.extractEmailObjectsFromBody();
+        });
+      }
+    }
+    done();
+  });
+  // call done when finished
+
+  // // or give an error if error
+  // done(new Error('error transcoding'));
+
+  // // or pass it a result
+  // done(null, { framerate: 29.5 /* etc... */ });
+
+  // // If the job throws an unhandled exception it is also handled correctly
+  // throw new Error('some unexpected error');
+});
 
 class EmailAccountMiner {
   //public field
@@ -177,6 +218,10 @@ class EmailAccountMiner {
       );
       //this.eventEmitter.emit("end", true);
     });
+
+    this.connection.on("error", (err) => {
+      console.log(err);
+    });
     this.connection.once("end", () => {
       logger.info(`End collecting emails for user: ${this.mailHash}`);
       // sse here to send data based on end event
@@ -205,9 +250,6 @@ class EmailAccountMiner {
    * @param {object} folder - The folder to mine.
    */
   mineMessages(folder, folderName) {
-    let bufferHeader = "";
-    let bufferBody = "";
-    let size = 0;
     let self = this;
     if (folder) {
       this.currentTotal = folder.messages.total;
@@ -218,14 +260,30 @@ class EmailAccountMiner {
         struct: true,
       });
       f.on("message", (msg, seqNumber) => {
+        let emailsFromBody = [];
+        let Header = {};
+        let size = 0;
+
         msg.on("body", async function (stream, streamInfo) {
           // parse the chunks of the message
-          size = streamInfo.size;
+          size += streamInfo.size;
           stream.on("data", (chunk) => {
+            //console.log("chunk", chunk.length);
             if (streamInfo.which.includes("HEADER")) {
-              bufferHeader += chunk;
+              // console.log("chunk header", chunk.length);
+              Header = {
+                ...Header,
+                ...Imap.parseHeader(chunk.toString("utf8")),
+              };
             } else {
-              bufferBody += chunk;
+              //console.log(" body", chunk.length);
+
+              emailsFromBody = [
+                ...emailsFromBody,
+                ...regExHelpers.extractNameAndEmailFromBody(
+                  chunk.toString("utf8")
+                ),
+              ];
             }
           });
         });
@@ -233,19 +291,21 @@ class EmailAccountMiner {
           if (self.sends.includes(seqNumber)) {
             self.sendBatch(seqNumber);
           }
-          // mine batch to treate this mined message
-          if ((bufferBody != "" || bufferHeader != "") && size != 0) {
-            self.mineBatch(
-              seqNumber,
-              size,
-              Imap.parseHeader(bufferHeader.toString("utf8")),
-              bufferBody
-            );
-
-            bufferHeader = "";
-            bufferBody = "";
-            size = 0;
+          console.log(size);
+          if (size > 25000) {
+            MessageQueue.add({
+              header: Header,
+              body: [...new Set(emailsFromBody)],
+              seqNumber: seqNumber,
+              size: size,
+              user: self.user,
+            });
+          } else {
+            self.mineBatch(seqNumber, size, Header, [
+              ...new Set(emailsFromBody),
+            ]);
           }
+          // mine batch to treate this mined message
         });
       });
       f.once("end", () => {
@@ -307,9 +367,10 @@ class EmailAccountMiner {
    */
   async sendBatch(seqNumber) {
     let used = process.memoryUsage().heapUsed / 1024 / 1024;
-    if (Math.round(used * 100) / 100 > 420) {
-      global.gc();
-    }
+    logger.info(used + "************");
+    // if (Math.round(used * 100) / 100 > 420) {
+    //   global.gc();
+    // }
 
     let progress = seqNumber;
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {

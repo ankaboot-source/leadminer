@@ -20,7 +20,7 @@ function extractNameAndEmailFromBody(data) {
   /* istanbul ignore else */
   if (reg) {
     return [...new Set(reg)];
-  }
+  } else return [];
 }
 
 /**

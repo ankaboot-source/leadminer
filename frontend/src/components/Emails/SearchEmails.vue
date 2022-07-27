@@ -386,6 +386,13 @@ const columns = [
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
     sortable: true,
+    sort: (eng1, eng2) => {
+      if (eng1 > eng2) {
+        return -1;
+      } else {
+        return 1;
+      }
+    },
   },
 
   {
@@ -416,7 +423,13 @@ const columns = [
     field: "type",
     sortOrder: "ad",
     sort: (s1, s2) => {
-      return s1.localeCompare(s2);
+      if (s1.length > s2.length) {
+        return -1;
+      } else if (s1.length < s2.length) {
+        return 1;
+      } else {
+        return 0;
+      }
     },
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
