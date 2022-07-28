@@ -81,11 +81,13 @@ class EmailServer {
     return new Promise(async (res, reject) => {
       this.initConnection();
       if (this.isApiConnection()) {
+        logger.debug(`User connected using api`);
         const tokens = await tokenHelpers.generateXOauthToken(this.user);
         this.#connection._config.xoauth2 = tokens.xoauth2Token;
         this.#connection.connect();
         res(this.#connection);
       } else {
+        logger.debug(`User connected using imap account`);
         this.#connection.connect();
         res(this.#connection);
       }

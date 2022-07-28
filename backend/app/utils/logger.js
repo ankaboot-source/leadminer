@@ -1,6 +1,7 @@
-const { createLogger, format, transports } = require('winston');
+const { createLogger, format, transports } = require("winston");
+const winston = require("winston");
 const getLabel = function (callingModule) {
-  const parts = callingModule.filename.split('/');
+  const parts = callingModule.filename.split("/");
   return parts.pop();
 };
 
@@ -8,12 +9,12 @@ module.exports =
   /* A function that returns a logger object. */
   function (callingModule) {
     // Create and configure logger.
-    return createLogger({
+    const logger = winston.createLogger({
       transports: [
         new transports.File({
-          filename: 'logs/server.log',
+          filename: "logs/server.log",
           format: format.combine(
-            format.timestamp({ format: 'MMM-DD-YYYY HH:mm:ss' }),
+            format.timestamp({ format: "MMM-DD-YYYY HH:mm:ss" }),
             format.align(),
             format.label({ label: getLabel(callingModule) }),
             format.printf(
@@ -23,10 +24,12 @@ module.exports =
                 }`
             )
           ),
+          level: process.env.LOG_LEVEL,
         }),
+
         new transports.Console({
           format: format.combine(
-            format.timestamp({ format: 'MMM-DD-YYYY HH:mm:ss' }),
+            format.timestamp({ format: "MMM-DD-YYYY HH:mm:ss" }),
             format.colorize({ all: true }),
             format.label({ label: getLabel(callingModule) }),
             format.simple(),
@@ -37,7 +40,10 @@ module.exports =
                 }>>`
             )
           ),
+          level: process.env.LOG_LEVEL,
         }),
       ],
     });
+
+    return logger;
   };

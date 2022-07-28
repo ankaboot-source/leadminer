@@ -2,52 +2,11 @@ const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const databaseHelpers = require("../utils/databaseHelpers");
 const inputHelpers = require("../utils/inputHelpers");
-const regExHelpers = require("../utils/regexpUtils");
 const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
-const Queue = require("bull");
-var MailParser = require("mailparser").MailParser;
-
-const MessageQueue = new Queue("messageQueue");
-
-MessageQueue.process(async function (job, done) {
-  // job.data contains the custom data passed when the job was created
-  // job.id contains id of this job.
-  const redisClient = require("../../redis");
-  // transcode video asynchronously and report progress
-  let message = new EmailMessage(
-    job.data.seqNumber,
-    job.data.size,
-    job.data.header,
-    job.data.body,
-    job.data.user
-  );
-  let message_id = message.getMessageId();
-  redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
-    if (!alreadyMined) {
-      if (message_id) {
-        redisClient.sAdd("messages", message_id).then(() => {
-          message.extractEmailObjectsFromHeader();
-          message.extractEmailObjectsFromBody();
-        });
-      }
-    }
-    done();
-  });
-  // call done when finished
-
-  // // or give an error if error
-  // done(new Error('error transcoding'));
-
-  // // or pass it a result
-  // done(null, { framerate: 29.5 /* etc... */ });
-
-  // // If the job throws an unhandled exception it is also handled correctly
-  // throw new Error('some unexpected error');
-});
 
 class EmailAccountMiner {
   //public field
@@ -220,14 +179,16 @@ class EmailAccountMiner {
     });
 
     this.connection.on("error", (err) => {
-      console.log(err);
+      logger.error(`Error with imap connection${err}`);
     });
     this.connection.once("end", () => {
       logger.info(`End collecting emails for user: ${this.mailHash}`);
       // sse here to send data based on end event
       this.sse.send(true, "data");
       this.sse.send(true, "dns");
+      logger.debug(`sse data and dns events sent!`);
       this.eventEmitter.emit("end", true);
+      logger.debug(`End connection using end event`);
     });
   }
   /**
@@ -238,8 +199,12 @@ class EmailAccountMiner {
     logger.info(
       `Begin mining email messages from folder:${folder} for user: ${this.mailHash}`
     );
+
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, async (err, openedFolder) => {
+      logger.debug(
+        `Opening mail box folder: ${openedFolder} for User: ${this.mailHash}`
+      );
       this.mineMessages(openedFolder, folder);
     });
   }
@@ -251,61 +216,60 @@ class EmailAccountMiner {
    */
   mineMessages(folder, folderName) {
     let self = this;
+    let Header = "";
+    let body = "";
+    let size = 0;
+
     if (folder) {
       this.currentTotal = folder.messages.total;
+      logger.debug(
+        `Mining folder size: ${folder.messages.total} for User: ${this.mailHash}`
+      );
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
       // fetch function : pass fileds to fetch
       const f = this.connection.seq.fetch("1:*", {
         bodies: self.fields,
         struct: true,
       });
-      f.on("message", (msg, seqNumber) => {
-        let emailsFromBody = [];
-        let Header = {};
-        let size = 0;
+      logger.debug(
+        `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
+      );
 
+      f.on("message", (msg, seqNumber) => {
         msg.on("body", async function (stream, streamInfo) {
           // parse the chunks of the message
           size += streamInfo.size;
           stream.on("data", (chunk) => {
-            //console.log("chunk", chunk.length);
             if (streamInfo.which.includes("HEADER")) {
-              // console.log("chunk header", chunk.length);
-              Header = {
-                ...Header,
-                ...Imap.parseHeader(chunk.toString("utf8")),
-              };
-            } else {
-              //console.log(" body", chunk.length);
-
-              emailsFromBody = [
-                ...emailsFromBody,
-                ...regExHelpers.extractNameAndEmailFromBody(
-                  chunk.toString("utf8")
-                ),
-              ];
+              Header += chunk;
             }
+            // else {
+            //   //body += chunk;
+            // }
           });
         });
         msg.once("end", function () {
           if (self.sends.includes(seqNumber)) {
+            setTimeout(() => {
+              logger.debug(
+                `Timeout of 4000ms to let GC make some work User: ${this.mailHash}`
+              );
+            }, 4000);
             self.sendBatch(seqNumber);
           }
-          console.log(size);
-          if (size > 25000) {
-            MessageQueue.add({
-              header: Header,
-              body: [...new Set(emailsFromBody)],
-              seqNumber: seqNumber,
-              size: size,
-              user: self.user,
-            });
-          } else {
-            self.mineBatch(seqNumber, size, Header, [
-              ...new Set(emailsFromBody),
-            ]);
-          }
-          // mine batch to treate this mined message
+          // this will work only on headers
+          self.mineBatch(
+            seqNumber,
+            size,
+            Imap.parseHeader(Header.toString("utf8")),
+            undefined
+          );
+          // store body in redis
+
+          //redisClient.set(seqNumber.toString(), body);
+          Header = "";
+          body = "";
+          size = 0;
         });
       });
       f.once("end", () => {
@@ -315,10 +279,18 @@ class EmailAccountMiner {
         this.sse.send(folderName, `scannedBoxes${this.user.id}`);
         if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
           // we are at the end of the folder array==>> end imap connection
+          logger.debug(
+            `We are done...Ending connection for User: ${this.mailHash}`
+          );
+
           this.connection.end();
           self = null;
         } else {
           // go to the next folder
+          logger.debug(
+            `Going to next folder in folders array for User: ${this.mailHash}`
+          );
+
           self
             .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
             .next();
@@ -326,10 +298,14 @@ class EmailAccountMiner {
         }
       });
     } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
+      logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
       self = null;
     } else {
       // if this folder is juste a label then pass to the next folder
+      logger.debug(
+        `Going to next folder, this one is undefined or a label in folders array for User: ${this.mailHash}`
+      );
       this.mineFolder(
         this.folders[this.folders.indexOf(folderName) + 1]
       ).next();
@@ -367,8 +343,9 @@ class EmailAccountMiner {
    */
   async sendBatch(seqNumber) {
     let used = process.memoryUsage().heapUsed / 1024 / 1024;
-    logger.info(used + "************");
-    if (Math.round(used * 100) / 100 > 370) {
+    logger.debug(`Used Memory ${used} mb`);
+    if (Math.round(used * 100) / 100 > 220) {
+      logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
       global.gc();
     }
 
@@ -376,6 +353,7 @@ class EmailAccountMiner {
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
       progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
     }
+    logger.debug(`Progress for user ${this.mailHash} is ${progress}`);
     this.sse.send(
       {
         scanned: progress,
@@ -389,6 +367,7 @@ class EmailAccountMiner {
       },
       `minedEmails${this.user.id}`
     );
+    logger.info(`${minedEmails.length} mined emails for user ${this.mailHash}`);
     return;
   }
 }

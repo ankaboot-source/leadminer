@@ -3,6 +3,8 @@ const dateHelpers = require("../utils/dateHelpers");
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const models = require("../models");
 const { emailsRaw } = require("../models");
+const logger = require("../utils/logger")(module);
+
 const redisClient = require("../../redis");
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
@@ -145,6 +147,7 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async getEmailsObjectsFromHeader(messagingFields) {
+    logger.debug(`Saving emails`);
     Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails) {
@@ -182,6 +185,7 @@ class EmailMessage {
       }
     });
     messagingFields = null;
+
     return;
   }
   /**

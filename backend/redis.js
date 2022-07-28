@@ -22,6 +22,6 @@
 // };
 
 // module.exports = redisClient;
-var redis = require("redis").createClient(6379);
+var redis = require("redis").createClient(6379, { return_buffers: true });
 
 module.exports = redis;
