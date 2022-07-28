@@ -147,7 +147,6 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async getEmailsObjectsFromHeader(messagingFields) {
-    logger.debug(`Saving emails`);
     Object.keys(messagingFields).map(async (key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails) {
@@ -194,7 +193,9 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async getEmailsObjectsFromBody() {
-    const emails = this.body;
+    const emails = regExHelpers.extractNameAndEmailFromBody(
+      this.body.toString("utf8")
+    );
     if (emails) {
       emails.map(async (email) => {
         if (

@@ -236,34 +236,34 @@ class EmailAccountMiner {
       );
 
       f.on("message", (msg, seqNumber) => {
-        msg.on("body", async function (stream, streamInfo) {
+        msg.on("body", function (stream, streamInfo) {
           // parse the chunks of the message
           size += streamInfo.size;
           stream.on("data", (chunk) => {
             if (streamInfo.which.includes("HEADER")) {
               Header += chunk;
+            } else {
+              body += chunk;
             }
-            // else {
-            //   //body += chunk;
-            // }
           });
         });
         msg.once("end", function () {
-          if (self.sends.includes(seqNumber)) {
-            setTimeout(() => {
-              logger.debug(
-                `Timeout of 4000ms to let GC make some work User: ${this.mailHash}`
-              );
-            }, 4000);
-            self.sendBatch(seqNumber);
-          }
+          self.fetchMessages(seqNumber, Header, body, folderName);
+          // if (self.sends.includes(seqNumber)) {
+          //   setTimeout(() => {
+          //     logger.debug(
+          //       `Timeout of 4000ms to let GC make some work User: ${this.mailHash}`
+          //     );
+          //   }, 4000);
+          //   self.sendBatch(seqNumber);
+          // }
           // this will work only on headers
-          self.mineBatch(
-            seqNumber,
-            size,
-            Imap.parseHeader(Header.toString("utf8")),
-            undefined
-          );
+          // self.mineBatch(
+          //   seqNumber,
+          //   size,
+          //   Imap.parseHeader(Header.toString("utf8")),
+          //   undefined
+          // );
           // store body in redis
 
           //redisClient.set(seqNumber.toString(), body);
@@ -312,6 +312,48 @@ class EmailAccountMiner {
       self = null;
     }
   }
+
+  async minemessages(seqNumber, type, data) {
+    if (type == "body") {
+      redisClient.rPop("bodies").then(async (data) => {
+        await this.mineBatch(seqNumber, 0, undefined, data).then(() => {
+          // console.log(typeof data == "object" ? data : "");
+          redisClient.lRem("bodies", 1, data);
+        });
+      });
+    } else {
+      redisClient.rPop("headers").then(async (data) => {
+        await this.mineBatch(
+          seqNumber,
+          0,
+          Imap.parseHeader(data),
+          undefined
+        ).then(() => {
+          // console.log(typeof data == "object" ? data : "");
+          redisClient.lRem("headers", 1, data);
+        });
+      });
+    }
+  }
+  async fetchMessages(seqNumber, Header, Body, folderName) {
+    if (this.sends.includes(seqNumber)) {
+      this.sendBatch(seqNumber, folderName);
+    }
+    if (Body && Body != "") {
+      await redisClient.lPush("bodies", Body).then((reply) => {
+        this.minemessages(seqNumber, "body");
+      });
+    }
+    if (Header && Header != "") {
+      await redisClient.lPush("headers", Header).then((reply) => {
+        this.minemessages(seqNumber, "header");
+      });
+    }
+    // await redisClient.lPush("header", Header).then((reply) => {
+    //   console.log("Queue Length headers", reply);
+    //   this.minemessages(seqNumber);
+    // });
+  }
   /**
    * The function takes in a sequence number, header, and body of an email message, creates an
    * EmailMessage object, extracts email objects from the header and body, merges the two arrays of
@@ -341,7 +383,7 @@ class EmailAccountMiner {
    * the object, if it doesn't, it creates a new object
    * @param batch - The array of objects that you want to store in the database.
    */
-  async sendBatch(seqNumber) {
+  async sendBatch(seqNumber, folderName) {
     let used = process.memoryUsage().heapUsed / 1024 / 1024;
     logger.debug(`Used Memory ${used} mb`);
     if (Math.round(used * 100) / 100 > 220) {
@@ -353,7 +395,9 @@ class EmailAccountMiner {
     if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
       progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
     }
-    logger.debug(`Progress for user ${this.mailHash} is ${progress}`);
+    logger.debug(
+      `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
+    );
     this.sse.send(
       {
         scanned: progress,
