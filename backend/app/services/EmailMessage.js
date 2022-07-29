@@ -19,12 +19,13 @@ class EmailMessage {
    * @param header - This is a JSON object that contains the header information for the message.
    * @param body - The body of the message.
    */
-  constructor(sequentialId, size, header, body, user) {
+  constructor(sequentialId, size, header, body, user, dateCaseOfBody) {
     this.sequentialId = sequentialId;
     this.size = size;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
+    this.date = dateCaseOfBody;
   }
 
   async createMessage() {
@@ -212,7 +213,7 @@ class EmailMessage {
             cc: false,
             bcc: false,
             body: true,
-            date: this.getDate(),
+            date: this.date,
             name: "",
             address: email,
             newsletter: false,

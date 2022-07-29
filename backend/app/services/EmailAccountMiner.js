@@ -169,7 +169,7 @@ class EmailAccountMiner {
       this.mineFolder(this.folders[0]).next();
     });
 
-    // cacelation using req.close evnt from user(frontend button)
+    // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on("endByUser", () => {
       this.connection.destroy();
       logger.info(
@@ -313,47 +313,54 @@ class EmailAccountMiner {
     }
   }
 
-  async minemessages(seqNumber, type, data) {
+  async minemessages(seqNumber, type, dateInCaseOfBody) {
     if (type == "body") {
-      redisClient.rPop("bodies").then(async (data) => {
-        await this.mineBatch(seqNumber, 0, undefined, data).then(() => {
-          // console.log(typeof data == "object" ? data : "");
-          redisClient.lRem("bodies", 1, data);
-        });
+      redisClient.rPop("bodies").then((data) => {
+        this.mineBatch(seqNumber, 0, undefined, data, dateInCaseOfBody).then(
+          () => {
+            redisClient.lRem("bodies", 1, data);
+          }
+        );
       });
     } else {
-      redisClient.rPop("headers").then(async (data) => {
-        await this.mineBatch(
-          seqNumber,
-          0,
-          Imap.parseHeader(data),
-          undefined
-        ).then(() => {
-          // console.log(typeof data == "object" ? data : "");
-          redisClient.lRem("headers", 1, data);
-        });
+      redisClient.rPop("headers").then((data) => {
+        if (data) {
+          this.mineBatch(seqNumber, 0, JSON.parse(data), undefined, "").then(
+            () => {
+              redisClient.lRem("headers", 1, data);
+            }
+          );
+        }
       });
     }
   }
   async fetchMessages(seqNumber, Header, Body, folderName) {
+    let headerObject = Imap.parseHeader(Header);
     if (this.sends.includes(seqNumber)) {
       this.sendBatch(seqNumber, folderName);
     }
     if (Body && Body != "") {
-      await redisClient.lPush("bodies", Body).then((reply) => {
-        this.minemessages(seqNumber, "body");
+      redisClient.lPush("bodies", Body).then((reply) => {
+        this.minemessages(
+          seqNumber,
+          "body",
+          headerObject["date"] ? headerObject["date"][0] : ""
+        );
       });
     }
     if (Header && Header != "") {
-      await redisClient.lPush("headers", Header).then((reply) => {
-        this.minemessages(seqNumber, "header");
-      });
+      redisClient
+        .lPush("headers", JSON.stringify(headerObject))
+        .then((reply) => {
+          this.minemessages(seqNumber, "header", "");
+        });
     }
     // await redisClient.lPush("header", Header).then((reply) => {
     //   console.log("Queue Length headers", reply);
     //   this.minemessages(seqNumber);
     // });
   }
+
   /**
    * The function takes in a sequence number, header, and body of an email message, creates an
    * EmailMessage object, extracts email objects from the header and body, merges the two arrays of
@@ -362,9 +369,16 @@ class EmailAccountMiner {
    * @param header - the header of the email message
    * @param body - the body of the email message
    */
-  async mineBatch(size, seqNumber, header, body) {
+  async mineBatch(size, seqNumber, header, body, dateInCaseOfBody) {
     // create EmailMessage object
-    let message = new EmailMessage(seqNumber, size, header, body, this.user);
+    let message = new EmailMessage(
+      seqNumber,
+      size,
+      header,
+      body,
+      this.user,
+      dateInCaseOfBody
+    );
     let message_id = message.getMessageId();
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
