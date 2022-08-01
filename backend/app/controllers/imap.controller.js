@@ -256,19 +256,7 @@ exports.getEmails = async (req, res, sse) => {
   miner.mine();
   req.on("close", async () => {
     // if stop mining from user then send data and end imap connexion
-    let QueueLengthBody = await redisClient.lLen("bodies");
-    let QueueLengthHeader = await redisClient.lLen("headers");
-    let total =
-      QueueLengthBody + QueueLengthHeader == 0
-        ? 100
-        : QueueLengthBody + QueueLengthHeader * 20;
-    setTimeout(async () => {
-      const data = await databaseHelpers.getEmails(user.id);
-      res.status(200).send({
-        message: "Done mining emails !",
-        data: inputHelpers.sortDatabase(data),
-      });
-    }, total * 20);
+
     eventEmitter.emit("endByUser", true);
     sse.send(true, "dns" + user.id);
   });
