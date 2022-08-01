@@ -239,7 +239,7 @@ class EmailAccountMiner {
         msg.on("body", function (stream, streamInfo) {
           // parse the chunks of the message
           size += streamInfo.size;
-          stream.on("data", (chunk) => {
+          stream.on("data", async (chunk) => {
             if (streamInfo.which.includes("HEADER")) {
               Header += chunk;
             } else {
@@ -323,14 +323,12 @@ class EmailAccountMiner {
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  async pushMessageToQueue(seqNumber, Header, Body, folderName) {
-    let headerObject = Imap.parseHeader(Header);
+  async pushMessageToQueue(seqNumber, header, Body, folderName) {
+    let Header = Imap.parseHeader(header);
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
-    let message_id = headerObject["message-id"]
-      ? headerObject["message-id"][0]
-      : "";
+    let message_id = Header["message-id"] ? Header["message-id"][0] : "";
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
@@ -338,16 +336,14 @@ class EmailAccountMiner {
             this.getMessageFromQueue(
               seqNumber,
               "body",
-              headerObject["date"] ? headerObject["date"][0] : ""
+              Header["date"] ? Header["date"][0] : ""
             );
           });
         }
         if (Header && Header != "") {
-          redisClient
-            .lPush("headers", JSON.stringify(headerObject))
-            .then((reply) => {
-              this.getMessageFromQueue(seqNumber, "header", "");
-            });
+          redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
+            this.getMessageFromQueue(seqNumber, "header", "");
+          });
         }
       }
     });

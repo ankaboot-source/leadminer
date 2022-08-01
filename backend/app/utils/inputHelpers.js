@@ -132,12 +132,12 @@ function sortDatabase(dataFromDatabse) {
     } else {
       let NameArray = [];
       row.dataValues["name"].map((name) => {
-        if (name != row.dataValues.address) {
-          let Name = name
-            .replaceAll('"', "")
-            .replaceAll("'", "")
-            .replaceAll("/", "")
-            .trim();
+        let Name = name
+          .replaceAll('"', "")
+          .replaceAll("'", "")
+          .replaceAll("/", "")
+          .trim();
+        if (Name != row.dataValues.address) {
           if (
             NameArray.filter((str) =>
               str.toLowerCase().includes(Name.toLowerCase())
@@ -148,6 +148,9 @@ function sortDatabase(dataFromDatabse) {
         }
       });
       row.dataValues["name"] = NameArray;
+    }
+    if (row.dataValues["name"].length == 0) {
+      row.dataValues["name"] = [""];
     }
     row.dataValues["recipient"] =
       (parseInt(row.dataValues?.["cc"]) ?? 0) +
@@ -160,13 +163,16 @@ function sortDatabase(dataFromDatabse) {
     row.dataValues["total"] =
       row.dataValues["sender"] + row.dataValues["recipient"];
     row.dataValues["type"] = [];
-    if (row.dataValues.newsletter == row.dataValues["total"]) {
-      if (row.dataValues.newsletter != row.dataValues["total"]) {
-        console.log(row.dataValues["total"], row.dataValues["name"]);
-      }
+    if (
+      row.dataValues.newsletter != 0 &&
+      row.dataValues.newsletter == row.dataValues["sender"]
+    ) {
       row.dataValues["type"].push("Newsletter");
     }
-    if (row.dataValues.transactional == row.dataValues["total"]) {
+    if (
+      row.dataValues.transactional != 0 &&
+      row.dataValues.transactional == row.dataValues["sender"]
+    ) {
       row.dataValues["type"].push("Transactional");
     }
     return row.dataValues;
@@ -175,7 +181,7 @@ function sortDatabase(dataFromDatabse) {
   const numArr = [];
   const emptyArr = [];
   data.forEach((el) => {
-    if (Number(el.name[0].charAt(0))) {
+    if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
     } else if (el.name[0] != "") {
       wordArr.push(el);

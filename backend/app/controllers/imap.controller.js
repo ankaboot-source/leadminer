@@ -274,7 +274,7 @@ exports.getEmails = async (req, res, sse) => {
         message: "Done mining emails !",
         data: inputHelpers.sortDatabase(data),
       });
-    }, total * 20);
+    }, total * 70);
     sse.send(true, "dns" + user.id);
   });
   eventEmitter.on("error", () => {

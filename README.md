@@ -6,10 +6,37 @@ Leadminer is a NodeJS app to extract and qualify email addresses from your own m
 
 ## Installation
 
-Use [app](https://pip.pypa.io/en/stable/) to install leadminer.
+#### Developement mode:
+
+Vuejs version 3 and nodejs version 14 or above must first be installed.
+
+Then look through the frontend and backend Readme folders to setup each environment.
 
 ```bash
-command line installation
+TODO: make or sh script to setup in one command the full project
+```
+
+#### env variables
+
+```bash
+POSTGRES_DB = "postgres"
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = ""
+EMAIL_IMAP = "leadminer@leadminer.io"
+PASSWORD_IMAP = "abcd123"
+HOST_IMAP = "imap.domain.com"
+GOOGLE_IMAP_HOST = "imap.gmail.com"
+NEWSLETTER = ["list-unsubscribe", "list-id", "list"]
+TRANSACTIONAL = ["feedback-id", "x-feedback-id","x-Mandrill-User", "x-mailer","X-MarketoID","X-campaignid","X-Mailgun"]
+CAMPAIGN = ["x-campaignid"]
+HASH_SECRET = "customhashsecret"
+EX_REDIS = 259200
+GG_CLIENT_ID="8656********-customclientid**********.apps.googleusercontent.com"
+GG_CLIENT_SECRET="G*C*PX-*************yGHnVAnQ**********"
+AUTHENTICATION_TIMEOUT=10000
+CONNECTION_TIMEOUT=90000
+LOG_LEVEL='debug'
+
 ```
 
 ## Usage
