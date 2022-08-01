@@ -72,5 +72,11 @@ async function getEmails(userId) {
 
   return data;
 }
+async function getCountDB(userId) {
+  const count = await db.emailsRaw.count({
+    where: { user_id: userId },
+  });
+  return count;
+}
 
-module.exports = { getEmails };
+module.exports = { getEmails, getCountDB };

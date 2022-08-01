@@ -11,6 +11,8 @@ const EventEmitter = require("node:events");
 const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
 const EmailAccountMiner = require("../services/EmailAccountMiner");
+const redisClient = require("../../redis");
+
 const { imapInfo } = require("../models");
 /**
  *  Create imap account infos
@@ -254,18 +256,37 @@ exports.getEmails = async (req, res, sse) => {
   miner.mine();
   req.on("close", async () => {
     // if stop mining from user then send data and end imap connexion
-    const data = await databaseHelpers.getEmails(user.id);
-    sse.send(inputHelpers.sortDatabase(data), "data" + user.id);
-    sse.send(true, "dns" + user.id);
+    let QueueLengthBody = await redisClient.lLen("bodies");
+    let QueueLengthHeader = await redisClient.lLen("headers");
+    let total =
+      QueueLengthBody + QueueLengthHeader == 0
+        ? 100
+        : QueueLengthBody + QueueLengthHeader * 20;
+    setTimeout(async () => {
+      const data = await databaseHelpers.getEmails(user.id);
+      res.status(200).send({
+        message: "Done mining emails !",
+        data: inputHelpers.sortDatabase(data),
+      });
+    }, total * 20);
     eventEmitter.emit("endByUser", true);
+    sse.send(true, "dns" + user.id);
   });
   eventEmitter.on("end", async () => {
     // Find all emails
-    const data = await databaseHelpers.getEmails(user.id);
-    res.status(200).send({
-      message: "Done mining emails !",
-      data: inputHelpers.sortDatabase(data),
-    });
+    let QueueLengthBody = await redisClient.lLen("bodies");
+    let QueueLengthHeader = await redisClient.lLen("headers");
+    let total =
+      QueueLengthBody + QueueLengthHeader == 0
+        ? 100
+        : QueueLengthBody + QueueLengthHeader * 20;
+    setTimeout(async () => {
+      const data = await databaseHelpers.getEmails(user.id);
+      res.status(200).send({
+        message: "Done mining emails !",
+        data: inputHelpers.sortDatabase(data),
+      });
+    }, total * 20);
   });
   eventEmitter.on("error", () => {
     res.status(500).send({

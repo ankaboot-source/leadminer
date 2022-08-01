@@ -1,16 +1,62 @@
 <template>
-  <q-card flat class="bg-transparent" style="width: 100%">
-    <div class="text-h3 text-teal">
-      <q-badge :class="buttonColor" color="teal" outline
-        >{{ Emails }} legit email address over
-        {{ ScannedAddresses + Emails }} email address mined </q-badge
-      ><br />
-      <q-badge :class="buttonColor" color="teal-5" outline
-        >{{ ScannedEmails }} emails messages mined so far over
-        {{ TotalEmails }} emails to mine</q-badge
-      >
-    </div>
-    <!-- <q-circular-progress
+  <!-- <q-stepper v-model="step" ref="stepper" color="primary" animated>
+    <q-step
+      :name="1"
+      title="Initialize Connection..."
+      icon="settings"
+      :done="step > 1"
+      style="min-height: 200px"
+    >
+    </q-step>
+
+    <q-step
+      :name="2"
+      title="Mining messages"
+      icon="create_new_folder"
+      :done="step > 2"
+      style="min-height: 200px"
+    >
+    </q-step>
+
+    <q-step
+      :name="3"
+      title="Done"
+      icon="assignment"
+      disable
+      style="min-height: 200px"
+    >
+      This step won't show up because it is disabled.
+    </q-step>
+
+    <template v-slot:navigation>
+       <q-stepper-navigation>
+        <q-btn
+          @click="$refs.stepper.next()"
+          color="primary"
+          :label="step === 4 ? 'Finish' : 'Continue'"
+        />
+        <q-btn
+          v-if="step > 1"
+          flat
+          color="primary"
+          @click="$refs.stepper.previous()"
+          label="Back"
+          class="q-ml-sm"
+        />
+      </q-stepper-navigation> -->
+  <div class="text-h3 text-teal">
+    <q-badge :class="buttonColor" color="teal" outline
+      >{{ Emails }} legit email address over {{ ScannedAddresses }} email
+      address mined </q-badge
+    ><br />
+    <q-badge :class="buttonColor" color="teal-5" outline
+      >{{ ScannedEmails }} emails messages mined so far over
+      {{ TotalEmails }} emails to mine</q-badge
+    >
+  </div>
+</template>
+
+<!-- <q-circular-progress
       show-value
       class="text-white q-ma-md"
       :value="parseFloat(Percentage) * 100"
@@ -73,9 +119,7 @@
           />
         </div>
       </div> </q-circular-progress
-  >--></q-card
-  >
-</template>
+  >-->
 
 <script>
 import { defineComponent, computed } from "vue";

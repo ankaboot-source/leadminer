@@ -21,7 +21,7 @@ export async function getEmails({ context, getters }, { data }) {
       let data = JSON.parse(message.data);
       //this.commit("example/SET_SCANNEDEMAILS", data.scanned);
       this.commit("example/SET_EMAILS", data.data);
-      this.commit("example/SET_INVALIDADDRESSES", data.invalid);
+      this.commit("example/SET_INVALIDADDRESSES", data.totalScanned);
     }
   );
   source.addEventListener(
@@ -30,7 +30,7 @@ export async function getEmails({ context, getters }, { data }) {
       let data = JSON.parse(message.data);
       this.commit("example/SET_SCANNEDEMAILS", data.scanned);
       //this.commit("example/SET_EMAILS", data.data);
-      //this.commit("example/SET_INVALIDADDRESSES", data.invalid);
+      //this.commit("example/SET_INVALIDADDRESSES", data.totalScanned);
     }
   );
   source.addEventListener(
