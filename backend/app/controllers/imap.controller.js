@@ -287,6 +287,7 @@ exports.getEmails = async (req, res, sse) => {
         data: inputHelpers.sortDatabase(data),
       });
     }, total * 20);
+    sse.send(true, "dns" + user.id);
   });
   eventEmitter.on("error", () => {
     res.status(500).send({
