@@ -206,9 +206,11 @@ class EmailAccountMiner {
 
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, async (err, openedFolder) => {
-      logger.debug(
-        `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
-      );
+      if (openedFolder) {
+        logger.debug(
+          `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
+        );
+      }
       this.mineMessages(openedFolder, folder);
     });
   }
