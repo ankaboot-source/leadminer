@@ -119,7 +119,7 @@ exports.SignUpWithGoogle = async (req, res) => {
  * @param  {} refresh_token stored token
  */
 async function refreshAccessToken(refresh_token) {
-  console.log(refresh_token);
+  logger.debug("refreshing user token");
   return new Promise((resolve, reject) => {
     let tokenInfo = {};
     let access_token;

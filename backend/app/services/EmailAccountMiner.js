@@ -138,6 +138,8 @@ class EmailAccountMiner {
    * @param {string} folderName - the name of the folder you want to get the tree from.
    */
   getTreeByFolder(folderName) {
+    logger.debug(`fetching tree per folder for user : ${this.mailHash}`);
+
     let tree = {};
     const folderPath = dataStructureHelpers.getFolderPathFromTreeObject(
       tree,
@@ -151,6 +153,8 @@ class EmailAccountMiner {
       });
     });
     this.connection.once("end", () => {
+      logger.debug(`end fetching tree per folder for user : ${this.mailHash}`);
+
       return tree;
     });
   }
@@ -160,7 +164,7 @@ class EmailAccountMiner {
    * folders array
    */
   async mine() {
-    this.mineFolder(this.fields, this.folders);
+    //this.mineFolder(this.fields, this.folders);
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
@@ -203,7 +207,7 @@ class EmailAccountMiner {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, async (err, openedFolder) => {
       logger.debug(
-        `Opening mail box folder: ${openedFolder} for User: ${this.mailHash}`
+        `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
       );
       this.mineMessages(openedFolder, folder);
     });
@@ -234,7 +238,6 @@ class EmailAccountMiner {
       logger.debug(
         `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
       );
-
       f.on("message", (msg, seqNumber) => {
         msg.on("body", function (stream, streamInfo) {
           // parse the chunks of the message

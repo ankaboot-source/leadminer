@@ -1,13 +1,25 @@
 const express = require("express");
 require("dotenv").config();
+console.log(
+  `%c
+    ██╗     ███████╗ █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗███████╗██████╗ 
+    ██║     ██╔════╝██╔══██╗██╔══██╗████╗ ████║██║████╗  ██║██╔════╝██╔══██╗
+    ██║     █████╗  ███████║██║  ██║██╔████╔██║██║██╔██╗ ██║█████╗  ██████╔╝
+    ██║     ██╔══╝  ██╔══██║██║  ██║██║╚██╔╝██║██║██║╚██╗██║██╔══╝  ██╔══██╗
+    ███████╗███████╗██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║███████╗██║  ██║
+    ╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+`,
+  `font-family: monospace`
+);
 const app = express();
 const http = require("http");
 const logger = require("./app/utils/logger")(module);
 const SSE = require("express-sse").SSE;
 let redis = require("./redis");
-redis.connect();
-// initialise sse (server sent events)
 const sse = new SSE();
+const server = http.createServer(app);
+const db = require("./app/models");
+const PORT = process.env.PORT || 8081;
 app.use((req, res, next) => {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -38,16 +50,8 @@ app.use(express.json());
 
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
-const server = http.createServer(app);
-const db = require("./app/models");
-db.sequelize
-  .sync()
-  .then(() => {
-    console.log("done");
-  })
-  .catch((error) => {
-    console.log(error);
-  });
+// step 1 : connect to redis
+redis.connect();
 
 // simple route when calling api.leadminer.io
 app.get("/", (req, res) => {
@@ -70,9 +74,19 @@ app.get("/logs", function (req, res, next) {
 // The io instance is set in Express so it can be grabbed in a route
 require("./app/routes/imap.routes")(app, sse);
 
-// set port, listen for requests
-const PORT = process.env.PORT || 8081;
-server.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}.`);
-});
+db.sequelize
+  .sync()
+  .then(() => {
+    logger.debug("database initialized ✔️ ");
+    // if successful init then start server
+    server.listen(PORT, () => {
+      logger.info(`Server is running on port ${PORT}.`);
+    });
+  })
+  .catch((error) => {
+    logger.debug("can't initialize database ✖️ ");
+    logger.error(error);
+    process.exit();
+  });
+
 module.exports = server;

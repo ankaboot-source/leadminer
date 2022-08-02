@@ -192,7 +192,6 @@ exports.getImapBoxes = async (req, res, sse) => {
     });
   }
   if (tree) {
-    console.log(tree);
     logger.info(
       `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
         user.email
