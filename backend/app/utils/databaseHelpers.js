@@ -79,4 +79,10 @@ async function getCountDB(userId) {
   return count;
 }
 
-module.exports = { getEmails, getCountDB };
+async function deleteUserData(userId) {
+  return await db.emailsRaw.destroy({
+    where: { user_id: userId },
+  });
+}
+
+module.exports = { getEmails, getCountDB, deleteUserData };

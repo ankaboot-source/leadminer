@@ -273,8 +273,19 @@ exports.getEmails = async (req, res, sse) => {
         message: "Done mining emails !",
         data: inputHelpers.sortDatabase(data),
       });
-    }, total * 70);
-    sse.send(true, "dns" + user.id);
+      sse.send(true, "dns" + user.id);
+      logger.debug("cleaning data from database...");
+      await databaseHelpers.deleteUserData(user.id).then(() => {
+        logger.debug("database cleaned ✔️");
+      });
+      logger.debug("cleaning data from redis...");
+
+      redisClient.flushAll("ASYNC").then((res) => {
+        if (res == "OK") {
+          logger.debug("redis cleaned ✔️");
+        } else logger.debug("can't clean redis");
+      });
+    }, total * 150);
   });
   eventEmitter.on("error", () => {
     res.status(500).send({
