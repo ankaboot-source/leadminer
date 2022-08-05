@@ -97,8 +97,7 @@ export async function getEmails({ context, getters }, { data }) {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
-          this.commit("example/SET_EMAILS", response.data.data);
-          console.log(response.data.data);
+
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
         })
@@ -126,8 +125,6 @@ export async function getEmails({ context, getters }, { data }) {
         .then((response) => {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
-          console.log(response.data.data);
-          this.commit("example/SET_EMAILS", response.data.data);
           this.commit("example/SET_STATUS", "");
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
@@ -190,7 +187,6 @@ export async function signIn({ context, state }, { data }) {
         this.commit("example/SET_IMAP", response.data.imap);
         let imapUser = this.state.example.imapUser;
         imapUser["password"] = data.password;
-        console.log(imapUser);
         LocalStorage.set("imapUser", imapUser);
         resolve(response.data);
       })
@@ -232,7 +228,6 @@ export function getBoxes({ context, getters }) {
         },
       })
       .then((response) => {
-        console.log(response);
         this.commit("example/SET_LOADINGBOX", false);
         this.commit("example/SET_BOXES", response.data.imapFoldersTree);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);

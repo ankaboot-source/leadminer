@@ -17,8 +17,11 @@ const logger = require("./app/utils/logger")(module);
 const SSE = require("express-sse").SSE;
 let redis = require("./redis");
 const sse = new SSE();
-const server = http.createServer(app);
 const db = require("./app/models");
+const { EventEmitter } = require("stream");
+const server = http.createServer(app);
+class MyEmitter extends EventEmitter {}
+const event = new MyEmitter();
 const PORT = process.env.PORT || 8081;
 app.use((req, res, next) => {
   // Website you wish to allow to connect
@@ -73,7 +76,6 @@ app.get("/logs", function (req, res, next) {
 });
 // The io instance is set in Express so it can be grabbed in a route
 require("./app/routes/imap.routes")(app, sse);
-
 db.sequelize
   .sync()
   .then(() => {
@@ -81,12 +83,23 @@ db.sequelize
     // if successful init then start server
     server.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}.`);
+      event.emit("started");
+    });
+    server.on("error", (e) => {
+      if (e.code === "EADDRINUSE") {
+        console.debug("Address in use, retrying...");
+      }
     });
   })
   .catch((error) => {
     logger.debug("can't initialize database ✖️ ");
+    console.log(error);
     logger.error(error);
     process.exit();
   });
+server.emit("app_started", true);
 
-module.exports = server;
+function stop() {
+  server.close();
+}
+module.exports = { server, stop, event };

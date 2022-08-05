@@ -6,9 +6,8 @@ const { emailsRaw } = require("../models");
 const logger = require("../utils/logger")(module);
 
 const redisClient = require("../../redis");
-const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER;
-const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL;
-
+const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER.split(",");
+const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL.split(",");
 //const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
 const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
@@ -46,7 +45,10 @@ class EmailMessage {
    */
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
-      return NEWSLETTER_HEADER_FIELDS.includes(headerField.toLowerCase());
+      return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
+        let reg = new RegExp(regExHeader, "g");
+        reg.test(headerField.toLowerCase());
+      });
     });
   }
   isEmailConnection() {}
@@ -56,7 +58,10 @@ class EmailMessage {
    */
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
-      return TRANSACTIONAL_HEADER_FIELDS.includes(headerField.toLowerCase());
+      return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
+        let reg = new RegExp(regExHeader, "g");
+        reg.test(headerField.toLowerCase());
+      });
     });
   }
   /**
@@ -168,7 +173,7 @@ class EmailMessage {
                 bcc: key == "bcc" ? true : false,
                 date: this.getDate(),
                 name: email?.name ?? "",
-                address: email.address,
+                address: email.address.toLowerCase(),
                 newsletter:
                   key == "from" || key == "reply-to"
                     ? this.isNewsletter()
@@ -215,7 +220,7 @@ class EmailMessage {
             body: true,
             date: this.date,
             name: "",
-            address: email,
+            address: email.toLowerCase(),
             newsletter: false,
             transactional: false,
             conversation: this.isInConversation(),

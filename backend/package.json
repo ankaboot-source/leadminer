@@ -4,9 +4,10 @@
   "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
-    "test": "nyc --reporter=html --reporter=lcov --reporter=text mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
+    "test": "nyc --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
     "dev": "node server.js",
-    "lint:fix": "eslint --fix app/**"
+    "lint:fix": "eslint --fix app/**",
+    "make-badges": "istanbul-badges-readme --readmeDir='../'"
   },
   "keywords": [
     "nodejs",
@@ -50,6 +51,7 @@
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-vue": "^8.5.0",
+    "istanbul-badges-readme": "^1.8.2",
     "nyc": "^15.1.0"
   },
   "engines": {

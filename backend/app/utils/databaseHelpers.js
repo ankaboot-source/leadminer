@@ -1,7 +1,7 @@
 const db = require("../models");
 
 /**
- * It returns a list of all the emails in the database, with the number of times they appear in each
+ * returns a list of all the emails in the database, with the number of times they appear in each
  * field, and the last time they were used
  * @returns An array of objects with the following properties:
  * address, name, transactional, newsletter, conversation, from, to, cc, bcc, reply_to, body, date

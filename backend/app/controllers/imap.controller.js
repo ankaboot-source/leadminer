@@ -220,7 +220,10 @@ exports.getEmails = async (req, res, sse) => {
       error: "Bad request! check query",
     });
   }
+  console.log(req.query.user);
+
   const query = JSON.parse(req.query.user);
+  console.log(query);
   if (query.access_token) {
     const google_user = await googleUser.findOne({
       where: { email: query.email },
@@ -269,9 +272,18 @@ exports.getEmails = async (req, res, sse) => {
         : QueueLengthBody + QueueLengthHeader * 20;
     setTimeout(async () => {
       const data = await databaseHelpers.getEmails(user.id);
+      let totalScanned = await databaseHelpers.getCountDB(user.id);
+
+      sse.send(
+        {
+          data: inputHelpers.sortDatabase(data),
+
+          totalScanned: totalScanned,
+        },
+        `minedEmails${user.id}`
+      );
       res.status(200).send({
         message: "Done mining emails !",
-        data: inputHelpers.sortDatabase(data),
       });
       sse.send(true, "dns" + user.id);
       logger.debug("cleaning data from database...");

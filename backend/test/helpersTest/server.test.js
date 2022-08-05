@@ -3,7 +3,6 @@ const chai = require("chai"),
   expect = chai.expect;
 const request = require("supertest");
 require("dotenv").config();
-const app = require("../../server");
 
 describe("server", function () {
   describe("GET /", function () {

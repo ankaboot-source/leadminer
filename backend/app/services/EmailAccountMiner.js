@@ -7,6 +7,7 @@ const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
+const inspect = require("util").inspect;
 
 class EmailAccountMiner {
   //public field
@@ -222,9 +223,6 @@ class EmailAccountMiner {
    */
   mineMessages(folder, folderName) {
     let self = this;
-    let Header = "";
-    let body = "";
-    let size = 0;
 
     if (folder) {
       this.currentTotal = folder.messages.total;
@@ -241,12 +239,15 @@ class EmailAccountMiner {
         `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
       );
       f.on("message", (msg, seqNumber) => {
+        let Header = "";
+        let body = "";
+        let size = 0;
         msg.on("body", function (stream, streamInfo) {
           // parse the chunks of the message
           size += streamInfo.size;
           stream.on("data", async (chunk) => {
             if (streamInfo.which.includes("HEADER")) {
-              Header += chunk;
+              Header += chunk.toString("utf8");
             } else {
               body += chunk;
             }
@@ -254,9 +255,6 @@ class EmailAccountMiner {
         });
         msg.once("end", function () {
           self.pushMessageToQueue(seqNumber, Header, body, folderName);
-          Header = "";
-          body = "";
-          size = 0;
         });
       });
       f.once("end", () => {
@@ -334,24 +332,28 @@ class EmailAccountMiner {
       this.sendMiningProgress(seqNumber, folderName);
     }
     let message_id = Header["message-id"] ? Header["message-id"][0] : "";
-    redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
-      if (!alreadyMined) {
-        if (Body && Body != "") {
-          redisClient.lPush("bodies", Body).then((reply) => {
-            this.getMessageFromQueue(
-              seqNumber,
-              "body",
-              Header["date"] ? Header["date"][0] : ""
-            );
-          });
+    setTimeout(() => {
+      redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
+        if (!alreadyMined) {
+          if (Body && Body != "") {
+            redisClient.lPush("bodies", Body).then((reply) => {
+              this.getMessageFromQueue(
+                seqNumber,
+                "body",
+                Header["date"] ? Header["date"][0] : ""
+              );
+            });
+          }
+          if (Header && Header != "") {
+            redisClient
+              .lPush("headers", JSON.stringify(Header))
+              .then((reply) => {
+                this.getMessageFromQueue(seqNumber, "header", "");
+              });
+          }
         }
-        if (Header && Header != "") {
-          redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
-            this.getMessageFromQueue(seqNumber, "header", "");
-          });
-        }
-      }
-    });
+      });
+    }, 100);
   }
 
   /**

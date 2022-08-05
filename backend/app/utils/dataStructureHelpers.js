@@ -165,9 +165,9 @@ function addChildrenTotalForParentFiles(imapTree, userEmail) {
  * @returns A boolean value.
  */
 function IsNotNoReply(address) {
-  const noReply = NOREPLY.filter((word) =>
-    address.toLowerCase().includes(word.toLowerCase())
-  );
+  const noReply = NOREPLY.filter((word) => {
+    address.toLowerCase().includes(word.toLowerCase());
+  });
   if (noReply.length > 0) {
     return false;
   } else {
