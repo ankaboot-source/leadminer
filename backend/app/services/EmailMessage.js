@@ -1,14 +1,8 @@
 const regExHelpers = require("../utils/regexpUtils");
-const dateHelpers = require("../utils/dateHelpers");
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
-const models = require("../models");
 const { emailsRaw } = require("../models");
-const logger = require("../utils/logger")(module);
-
-const redisClient = require("../../redis");
 const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER.split(",");
 const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL.split(",");
-//const CAMPAIGN_HEADER_FIELDS = process.env.CAMPAIGN;
 const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {
@@ -27,18 +21,6 @@ class EmailMessage {
     this.date = dateCaseOfBody;
   }
 
-  async createMessage() {
-    await redisClient.sAdd("messages", this.getMessageId());
-    await models.Messages.create({
-      message_id: this.getMessageId() + this.header["date"],
-      isNewsletter: this.isNewsletter(),
-      isTransactional: this.isTransactional(),
-      isInConversation: this.isInConversation(),
-    });
-
-    return;
-  }
-
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
@@ -46,26 +28,26 @@ class EmailMessage {
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
       return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        let reg = new RegExp(regExHeader, "g");
-        reg.test(headerField.toLowerCase());
+        let reg = new RegExp(regExHeader, "i");
+        return reg.test(headerField);
       });
     });
   }
   isEmailConnection() {}
   /**
-   * It returns true if the email is transactional, and false if it's not
+   * isTransactional returns true if the email is transactional, and false if it's not
    * @returns A boolean value.
    */
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
       return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        let reg = new RegExp(regExHeader, "g");
-        reg.test(headerField.toLowerCase());
+        let reg = new RegExp(regExHeader, "i");
+        return reg.test(headerField);
       });
     });
   }
   /**
-   * If the header object has a key called "references", then return 1, otherwise return 0
+   * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
@@ -75,24 +57,14 @@ class EmailMessage {
       return 0;
     }
   }
-  getEmailType() {
-    const type = [];
-    if (this.isNewsletter()) {
-      type.push("Newsletter");
-    }
-    if (this.isTransactional()) {
-      type.push("Transactional");
-    }
-    return type;
-  }
 
   isInvitation() {}
   hasAttachement() {}
   getSenderIp() {}
   extractPhoneContact() {}
   /**
-   * It takes a metaDataProps object as an argument, and returns the value of the "date" property of that
-   * object
+   * getDate returns the value of the "date" property of the
+   * header
    * @param metaDataProps - This is the metadata object that is passed to the function.
    * @returns The date of the article.
    */
@@ -106,7 +78,7 @@ class EmailMessage {
     } else return "";
   }
   /**
-   * It returns an object with only the messaging fields from the header
+   * getMessagingFieldsOnly returns an object with only the messaging fields from the header
    * @returns An object with only the messaging fields from the header.
    */
   getMessagingFieldsOnly() {
@@ -119,7 +91,7 @@ class EmailMessage {
     return messagingProps;
   }
   /**
-   * It takes the header object and returns an object with all the properties that are not in the FIELDS
+   * getOtherMetaDataFields takes the header object and returns an object with all the properties that are not in the FIELDS
    * array
    * @returns An object with all the metadata fields that are not in the FIELDS array.
    */
@@ -133,7 +105,7 @@ class EmailMessage {
     return metaDataProps;
   }
   /**
-   * It returns the message-id of the email
+   * getMessageId returns the message-id of the email
    * @returns The message-id of the email.
    */
   getMessageId() {
@@ -145,26 +117,24 @@ class EmailMessage {
   }
 
   /**
-   * It takes in an object of messaging fields and metadata properties, and returns an array of email
-   * objects
-   * @param messagingFields - an object with the keys being the messaging fields and the values being the
-   * values of those fields.
-   * @param metaDataProps - This is the metadata object that is passed to the function.
-   * @returns An array of objects.
+   * getEmailsObjectsFromHeader takes the header of an email, extracts the email addresses from it, and saves them to the
+   * database
+   * @param messagingFields - an object containing the email headers
+   * @returns Nothing is being returned.
    */
-  async getEmailsObjectsFromHeader(messagingFields) {
-    Object.keys(messagingFields).map(async (key) => {
+  getEmailsObjectsFromHeader(messagingFields) {
+    Object.keys(messagingFields).map((key) => {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails) {
-        emails.map(async (email) => {
+        emails.map((email) => {
           if (email) {
             if (
               email.address &&
               this.user.email != email.address &&
-              dataStructureHelpers.IsNotNoReply(email.address) &&
+              !dataStructureHelpers.IsNoReply(email.address) &&
               dataStructureHelpers.checkDomainIsOk(email.address)
             ) {
-              await emailsRaw.create({
+              emailsRaw.create({
                 user_id: this.user.id,
                 from: key == "from" ? true : false,
                 reply_to: key == "reply-to" ? true : false,
@@ -189,28 +159,26 @@ class EmailMessage {
         });
       }
     });
-    messagingFields = null;
-
-    return;
   }
+
   /**
-   * It takes the body of an email, extracts the email addresses from it, and returns an array of objects
-   * that contain the email addresses and other information about the email
-   * @returns An array of objects.
+   * getEmailsObjectsFromBody takes the body of an email, extracts all the email addresses from it, and saves them to the
+   * database
+   * @returns Nothing
    */
   async getEmailsObjectsFromBody() {
     const emails = regExHelpers.extractNameAndEmailFromBody(
       this.body.toString("utf8")
     );
     if (emails) {
-      emails.map(async (email) => {
+      return emails.map(async (email) => {
         if (
           email &&
           this.user.email != email &&
-          dataStructureHelpers.IsNotNoReply(email) &&
+          !dataStructureHelpers.IsNoReply(email) &&
           dataStructureHelpers.checkDomainIsOk(email)
         ) {
-          await emailsRaw.create({
+          emailsRaw.create({
             user_id: this.user.id,
             from: false,
             reply_to: false,
@@ -231,7 +199,7 @@ class EmailMessage {
     return;
   }
   /**
-   * It takes the header, extracts the messaging fields, extracts the other metadata fields, and then
+   * extractEmailObjectsFromHeader takes the header, extracts the messaging fields, extracts the other metadata fields, and then
    * returns an array of objects that contain the email addresses and the metadata fields
    * @returns An array of objects.
    */
@@ -245,7 +213,7 @@ class EmailMessage {
     return emailsObjects;
   }
   /**
-   * It takes the body of the email, converts it to a string, and then uses a regular expression to
+   * extractEmailObjectsFromBody takes the body of the email, converts it to a string, and then uses a regular expression to
    * extract all the email addresses from the body
    * @returns An array of objects.
    */

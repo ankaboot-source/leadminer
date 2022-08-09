@@ -122,7 +122,7 @@ function EqualPartsForSocket(total) {
   return Parts;
 }
 /**
- * Sorts the virtual data array based on total interactions, alphabetics, and groups fieldss
+ * Sorts the data array based on total interactions, alphabetics, and groups fields
  * @param  {Array} dataFromDatabse
  */
 function sortDatabase(dataFromDatabse) {

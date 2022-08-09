@@ -2,13 +2,12 @@ const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const databaseHelpers = require("../utils/databaseHelpers");
 const inputHelpers = require("../utils/inputHelpers");
-const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
-const inspect = require("util").inspect;
-
+const { Worker } = require("worker_threads");
+const worker = new Worker("./app/services/worker.js");
 class EmailAccountMiner {
   //public field
   tree = [];
@@ -22,32 +21,19 @@ class EmailAccountMiner {
    * @param {object} sse - The SSE object that will be used to send the data to the client.
    * @param {array} fields - An array of fields to be used in the fetch.
    * @param {array} folders - An array of folder paths to fetch from.
-   * @param {object} cursor - The cursor is the current fetch position.
-   * @param {number} batch_size - The number of records to dtore in each batch.
    */
-  constructor(
-    connection,
-    user,
-    sse,
-    fields,
-    folders,
-    cursor,
-    batch_size,
-    eventEmitter
-  ) {
+  constructor(connection, user, sse, fields, folders, eventEmitter) {
     this.connection = connection;
     this.user = user;
     this.sse = sse;
     this.fields = fields;
     this.folders = folders;
-    this.cursor = cursor;
-    this.batch_size = batch_size || MAX_BATCH_SIZE;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
   }
 
   /**
-   * It connects to the IMAP server, gets the tree of folders, adds the total number of emails per
+   * getTree connects to the IMAP server, gets the tree of folders, adds the total number of emails per
    * folder, and then adds the total number of emails per parent folder
    * @async
    * @returns a promise that resolves to an array of two elements. The first element is the tree object,
@@ -75,6 +61,7 @@ class EmailAccountMiner {
             treeWithPaths,
             this.user.email
           );
+          this.connection.end();
         });
       });
       this.connection.once("end", () => {
@@ -93,7 +80,7 @@ class EmailAccountMiner {
   }
 
   /**
-   * It takes an imapTree, and for each folder in the tree, it opens the folder, and if it exists, it
+   * getTreeWithTotalPerFolder takes an imapTree, and for each folder in the tree, it opens the folder, and if it exists, it
    * adds the total number of messages in the folder to the folder object
    * @param {object} imapTree - The tree of folders that you want to get the total number of messages for.
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
@@ -111,8 +98,9 @@ class EmailAccountMiner {
             }
 
             if (folder == imapTree[imapTree.length - 1]) {
-              resolve();
+              console.log("hello");
               this.connection.end();
+              resolve();
             }
           });
           // recal on the children
@@ -126,8 +114,8 @@ class EmailAccountMiner {
               folder["total"] = 0;
             }
             if (folder == imapTree[imapTree.length - 1]) {
-              resolve();
               this.connection.end();
+              resolve();
             }
           });
         }
@@ -135,12 +123,11 @@ class EmailAccountMiner {
     });
   }
   /**
-   * It connects to the IMAP server, opens the folder, and returns the folder's tree
+   * getTreeByFolder connects to the IMAP server, opens the folder, and returns the folder's tree
    * @param {string} folderName - the name of the folder you want to get the tree from.
    */
   getTreeByFolder(folderName) {
     logger.debug(`fetching tree per folder for user : ${this.mailHash}`);
-
     let tree = {};
     const folderPath = dataStructureHelpers.getFolderPathFromTreeObject(
       tree,
@@ -154,18 +141,16 @@ class EmailAccountMiner {
       });
     });
     this.connection.once("end", () => {
-      logger.debug(`end fetching tree per folder for user : ${this.mailHash}`);
-
+      logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
       return tree;
     });
   }
 
   /**
-   * It connects to the IMAP server, and then calls the mineFolder() function on the first folder in the
+   * Mine connects to the IMAP server, and then calls the mineFolder() function on the first folder in the
    * folders array
    */
   async mine() {
-    //this.mineFolder(this.fields, this.folders);
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
@@ -176,11 +161,10 @@ class EmailAccountMiner {
 
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on("endByUser", () => {
-      this.connection.destroy();
+      this.connection.end();
       logger.info(
         `Connection to imap server destroyed by user: ${this.mailHash}`
       );
-      //this.eventEmitter.emit("end", true);
     });
 
     this.connection.on("error", (err) => {
@@ -189,16 +173,14 @@ class EmailAccountMiner {
     this.connection.once("end", () => {
       logger.info(`End collecting emails for user: ${this.mailHash}`);
       // sse here to send data based on end event
-      this.sse.send(true, "data");
-      this.sse.send(true, "dns");
-      logger.debug(`sse data and dns events sent!`);
+
       this.eventEmitter.emit("end", true);
       logger.debug(`End connection using end event`);
     });
   }
   /**
-   * It opens a folder, and when it's done, it mines the messages in that folder
-   * @param folder - The folder you want to mine.
+   * mineFolder opens a folder, and when it's done, it mines the messages in that folder
+   * @param folder - The folder we want to mine.
    */
   *mineFolder(folder) {
     logger.info(
@@ -217,18 +199,18 @@ class EmailAccountMiner {
   }
 
   /**
-   * It takes a folder name as an argument, and if it's not null, it fetches all the messages in that
+   * mineMessages takes a folder name as an argument, and if it's not null, it fetches all the messages in that
    * folder, and for each message, it parses the header and body, and then calls the mineMessage function
    * @param {object} folder - The folder to mine.
    */
   mineMessages(folder, folderName) {
     let self = this;
-
     if (folder) {
       this.currentTotal = folder.messages.total;
       logger.debug(
         `Mining folder size: ${folder.messages.total} for User: ${this.mailHash}`
       );
+      // this.sends is an array of integers represents the accumulation of numbers until we reach the total
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
       // fetch function : pass fileds to fetch
       const f = this.connection.seq.fetch("1:*", {
@@ -238,37 +220,71 @@ class EmailAccountMiner {
       logger.debug(
         `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
       );
+      // const worker = new Worker("./app/services/worker.js");
+      // const worker2 = new Worker("./app/services/worker.js");
+      // const worker11 = new Worker("./app/services/worker2.js");
+      // const worker22 = new Worker("./app/services/worker2.js");
+      // // message event
       f.on("message", (msg, seqNumber) => {
         let Header = "";
         let body = "";
         let size = 0;
         msg.on("body", function (stream, streamInfo) {
-          // parse the chunks of the message
+          // append the chunks of the message
           size += streamInfo.size;
           stream.on("data", async (chunk) => {
             if (streamInfo.which.includes("HEADER")) {
-              Header += chunk.toString("utf8");
+              Header += chunk;
             } else {
               body += chunk;
             }
           });
         });
         msg.once("end", function () {
+          // Send the contents to the worker
+          // console.log(seqNumber);
+          // if (seqNumber % 2 == 0) {
+          //   worker.postMessage({
+          //     header: Header,
+          //     body: body,
+          //   });
+          // } else {
+          //   worker2.postMessage({
+          //     header: Header,
+          //     body: body,
+          //   });
+          // }
           self.pushMessageToQueue(seqNumber, Header, body, folderName);
         });
       });
+      // worker.on("message", (result) => {
+      //   console.log(result[1]);
+      //   // if (result) {
+      //   //   this.mineMessage(12, 1, result[0], result[1]);
+      //   // }
+      //   /* Execution time end */
+      //   // `result` has the converted XML
+      // });
+      // worker2.on("message", (result) => {
+      //   console.log(result[1]);
+      //   // if (result) {
+      //   //   this.mineMessage(12, 1, result[0], result[1]);
+      //   // }
+      //   /* Execution time end */
+      //   // `result` has the converted XML
+      // });
       f.once("end", () => {
         logger.info(
           `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
         );
         this.sse.send(folderName, `scannedBoxes${this.user.id}`);
         if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
-          // we are at the end of the folder array==>> end imap connection
+          // we are at the end of the folder array ==>> end imap connection
           logger.debug(
             `We are done...Ending connection for User: ${this.mailHash}`
           );
-
           this.connection.end();
+
           self = null;
         } else {
           // go to the next folder
@@ -283,11 +299,11 @@ class EmailAccountMiner {
         }
       });
     } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
-      logger.debug(`Done for User: ${this.mailHash}`);
+      logger.debug(`Done mining for User: ${this.mailHash}`);
       this.connection.end();
       self = null;
     } else {
-      // if this folder is juste a label then pass to the next folder
+      // if this folder is just a label then pass to the next folder
       logger.debug(
         `Going to next folder, this one is undefined or a label in folders array for User: ${this.mailHash}`
       );
@@ -299,8 +315,8 @@ class EmailAccountMiner {
   }
 
   /**
-   * Takes the seuence message number, the part it's being mined and the date in case of a body
-   * then it will retrieve from one element redis queues and mine the create the message
+   * Takes the sequence message number, the part it's being mined and the date in case of a body
+   * then it will retrieve from redis queue
    * @param seqNumber - The sequence number of the block that is being mined.
    * @param type - "body" or "header"
    * @param dateInCaseOfBody - This is the date of the body that is being mined.
@@ -319,41 +335,35 @@ class EmailAccountMiner {
     }
   }
   /**
-   * It pushes the message to the queue and then calls the getMessageFromQueue function to get the
+   * Pushes the message to the queue and then calls the getMessageFromQueue function to get the
    * message from the queue asynchronously
    * @param seqNumber - The sequence number of the message
    * @param Header - The header of the email
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  async pushMessageToQueue(seqNumber, header, Body, folderName) {
-    let Header = Imap.parseHeader(header);
+  async pushMessageToQueue(seqNumber, Header, Body, folderName) {
+    let header = Imap.parseHeader(Header);
+
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
-    let message_id = Header["message-id"] ? Header["message-id"][0] : "";
-    setTimeout(() => {
-      redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
-        if (!alreadyMined) {
-          if (Body && Body != "") {
-            redisClient.lPush("bodies", Body).then((reply) => {
-              this.getMessageFromQueue(
-                seqNumber,
-                "body",
-                Header["date"] ? Header["date"][0] : ""
-              );
-            });
-          }
-          if (Header && Header != "") {
-            redisClient
-              .lPush("headers", JSON.stringify(Header))
-              .then((reply) => {
-                this.getMessageFromQueue(seqNumber, "header", "");
-              });
-          }
+
+    let message_id = header["message-id"] ? header["message-id"][0] : "";
+
+    redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
+      if (!alreadyMined) {
+        if (Body && Body != "") {
+          redisClient.lPush("bodies", Body);
+          this.getMessageFromQueue(seqNumber, "body", "");
         }
-      });
-    }, 100);
+        if (header && header != "") {
+          redisClient.lPush("headers", JSON.stringify(header));
+
+          this.getMessageFromQueue(seqNumber, "header", "");
+        }
+      }
+    });
   }
 
   /**
@@ -365,7 +375,6 @@ class EmailAccountMiner {
    * @param body - the body of the email message
    */
   async mineMessage(size, seqNumber, header, body, dateInCaseOfBody) {
-    // create EmailMessage object
     let message = new EmailMessage(
       seqNumber,
       size,
@@ -375,22 +384,20 @@ class EmailAccountMiner {
       dateInCaseOfBody
     );
     let message_id = message.getMessageId();
-    redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
-      if (!alreadyMined) {
-        if (message_id) {
-          redisClient.sAdd("messages", message_id).then(() => {
-            message.extractEmailObjectsFromHeader();
-            message.extractEmailObjectsFromBody();
-          });
-        }
-      }
-    });
+
+    if (message_id) {
+      redisClient.sAdd("messages", message_id).then(async () => {
+        message.extractEmailObjectsFromHeader();
+        message.extractEmailObjectsFromBody();
+      });
+    }
   }
 
   /**
-   * It takes an array of objects, checks if the object exists in the database, if it does, it updates
-   * the object, if it doesn't, it creates a new object
-   * @param batch - The array of objects that you want to store in the database.
+   * It sends the progress of the mining process to the user's browser
+   * @param seqNumber - The sequence number of the email being scanned
+   * @param folderName - The name of the folder being scanned
+   * @returns Nothing is being returned.
    */
   async sendMiningProgress(seqNumber, folderName) {
     let used = process.memoryUsage().heapUsed / 1024 / 1024;
@@ -423,10 +430,9 @@ class EmailAccountMiner {
         `minedEmails${this.user.id}`
       );
       logger.info(
-        `${minedEmails.length} mined emails for user ${this.mailHash}`
+        `Progress: ${minedEmails.length} mined emails for user ${this.mailHash}`
       );
     }
-    return;
   }
 }
 

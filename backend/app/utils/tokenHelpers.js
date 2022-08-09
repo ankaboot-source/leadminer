@@ -3,7 +3,7 @@ const xoauth2 = require("xoauth2");
 const googleController = require("../controllers/google.controller");
 
 /**
- * It generates an XOAuth2 token for the user to authenticate with the IMAP server
+ * generateXOauthToken generates an XOAuth2 token for the user to authenticate with the IMAP server
  * @param user - The user account data you're authenticating to.
  * @returns An object with two properties: xoauth2Token and newToken.
  */
@@ -20,6 +20,7 @@ async function generateXOauthToken(user) {
   );
   // if access_token is expired then refresh it using refresh_token
   if (Number(user.token.experation) + 8 < Math.floor(utc_timestamp / 1000)) {
+    console.log("expired");
     access_Token = await googleController.refreshAccessToken(user.refreshToken);
   }
   const xoauth2gen = xoauth2.createXOAuth2Generator({

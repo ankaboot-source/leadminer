@@ -220,7 +220,6 @@ exports.getEmails = async (req, res, sse) => {
       error: "Bad request! check query",
     });
   }
-  console.log(req.query.user);
 
   const query = JSON.parse(req.query.user);
   console.log(query);
@@ -251,8 +250,6 @@ exports.getEmails = async (req, res, sse) => {
     sse,
     ["HEADER", "1"],
     req.query.boxes,
-    "",
-    100,
     eventEmitter
   );
   miner.mine();
@@ -263,17 +260,19 @@ exports.getEmails = async (req, res, sse) => {
     sse.send(true, "dns" + user.id);
   });
   eventEmitter.on("end", async () => {
-    // Find all emails
+    //get the queues length
     let QueueLengthBody = await redisClient.lLen("bodies");
     let QueueLengthHeader = await redisClient.lLen("headers");
     let total =
       QueueLengthBody + QueueLengthHeader == 0
         ? 100
         : QueueLengthBody + QueueLengthHeader * 20;
+    //estimate a timeout to wait all queue jobs (150ms per command)
+    console.log(total);
     setTimeout(async () => {
       const data = await databaseHelpers.getEmails(user.id);
       let totalScanned = await databaseHelpers.getCountDB(user.id);
-
+      // send progress to user
       sse.send(
         {
           data: inputHelpers.sortDatabase(data),
@@ -282,6 +281,7 @@ exports.getEmails = async (req, res, sse) => {
         },
         `minedEmails${user.id}`
       );
+      logger.debug(data.length + " mined email");
       res.status(200).send({
         message: "Done mining emails !",
       });
@@ -297,7 +297,7 @@ exports.getEmails = async (req, res, sse) => {
           logger.debug("redis cleaned ✔️");
         } else logger.debug("can't clean redis");
       });
-    }, total * 150);
+    }, total * 15);
   });
   eventEmitter.on("error", () => {
     res.status(500).send({

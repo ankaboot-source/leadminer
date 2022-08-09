@@ -71,7 +71,7 @@ function createReadableTreeObjectFromImapTree(imapTree) {
 }
 
 /**
- * It takes an IMAP tree and returns a new IMAP tree with the folder names replaced with their full
+ * Takes an IMAP tree and returns a new IMAP tree with the folder names replaced with their full
  * paths
  * @param {object} imapTree - The tree structure of the IMAP folders.
  * @param {object} originalTree - The tree structure of the IMAP folders.
@@ -96,7 +96,7 @@ function addPathPerFolder(imapTree, originalTree) {
   });
 
   /**
-   * It takes the imaptree, a folder name, and a string path, and returns a full path string.
+   * findPathPerFolder() takes the imaptree, a folder name, and a string path, and returns a full path string.
    * @param imapTree - The tree structure of the IMAP folders
    * @param folderName - The name of the folder you want to find the path for.
    * @param path - The path to the folder.
@@ -127,7 +127,7 @@ function addPathPerFolder(imapTree, originalTree) {
 }
 
 /**
- * It takes an imapTree and a userEmail and returns an array with a single object that has a label of
+ * addChildrenTotalForParentFiles() takes an imapTree and a userEmail and returns an array with a single object that has a label of
  * the userEmail, a children array of the imapTree, and a total of the sum of all the totals in the
  * imapTree
  * @param {object} imapTree - The tree of folders and files that we want to add the total to.
@@ -159,20 +159,14 @@ function addChildrenTotalForParentFiles(imapTree, userEmail) {
 }
 
 /**
- * It takes an email address as a string and returns true if the email address does not contain any of
- * the words in the NOREPLY array
+ * IsNoReply takes an email address as a string and returns true if the email address is classified as "no-reply email"
  * @param address - The email address to check
  * @returns A boolean value.
  */
-function IsNotNoReply(address) {
-  const noReply = NOREPLY.filter((word) => {
-    address.toLowerCase().includes(word.toLowerCase());
+function IsNoReply(address) {
+  return NOREPLY.some((word) => {
+    return address.toLowerCase().includes(word.toLowerCase());
   });
-  if (noReply.length > 0) {
-    return false;
-  } else {
-    return true;
-  }
 }
 
 /**
@@ -196,6 +190,6 @@ module.exports = {
   createReadableTreeObjectFromImapTree,
   addPathPerFolder,
   addChildrenTotalForParentFiles,
-  IsNotNoReply,
+  IsNoReply,
   checkDomainIsOk,
 };

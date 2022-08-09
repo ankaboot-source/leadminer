@@ -1,5 +1,5 @@
 /**
- * It takes a date string, replaces the timezone with a fixed timezone, creates a date object from the
+ * parseDate takes a date string, replaces the timezone with a fixed timezone, creates a date object from the
  * string, and returns the date in ISO format
  * @param date - The date string to be parsed.
  * @returns A string with the date and time in ISO format.
@@ -17,7 +17,7 @@ function parseDate(date) {
 }
 
 /**
- * It takes two dates as arguments and returns true if the first date is greater than the second date
+ * compareDates() takes two dates as arguments and returns true if the first date is greater than the second date
  * @param date1 - The first date to compare.
  * @param date2 - The date to compare to.
  * @returns a boolean value.

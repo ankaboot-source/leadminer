@@ -72,6 +72,11 @@ async function getEmails(userId) {
 
   return data;
 }
+/**
+ * getCountDB returns the number of emails in the database for a given user
+ * @param userId - The user's ID.
+ * @returns The number of emails in the database for a given user.
+ */
 async function getCountDB(userId) {
   const count = await db.emailsRaw.count({
     where: { user_id: userId },
@@ -79,8 +84,13 @@ async function getCountDB(userId) {
   return count;
 }
 
+/**
+ * Delete all the emails for a user.
+ * @param userId - The user's ID.
+ * @returns The number of rows deleted.
+ */
 async function deleteUserData(userId) {
-  return await db.emailsRaw.destroy({
+  return db.emailsRaw.destroy({
     where: { user_id: userId },
   });
 }

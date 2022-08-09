@@ -15,7 +15,7 @@ class EmailServer {
     this.mailHash = hashHelpers.hashEmail(user.email);
   }
   /**
-   * It returns an IMAP object that is used to connect to the user's email account
+   * initConnection returns an IMAP object that is used to connect to the user's email account
    * @returns An Imap object
    */
   initConnection() {
@@ -74,7 +74,7 @@ class EmailServer {
     }
   }
   /**
-   * It connects to the IMAP server
+   * connecte() open a connection to the IMAP server
    * @returns A promise that resolves to the connection object.
    */
   async connecte() {

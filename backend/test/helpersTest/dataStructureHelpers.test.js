@@ -7,7 +7,6 @@ describe("dataStructureHelpers.createReadableTreeObjectFromImapTree(imapTree)", 
   let imapTreeExample = dataTest.imapTreeExample;
   let expectedOutput = [
     { label: "Brouillons" },
-
     {
       label: "INBOX",
       children: [{ label: "mars" }, { label: "Administratif" }],

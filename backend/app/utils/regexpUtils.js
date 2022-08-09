@@ -6,7 +6,7 @@ const regex = new RegExp(
 /* eslint-disable */
 const regexForBody = new RegExp(
   /((?:[A-Za-z])[A-Za-z&^_`{|\}~-]+(?:\.[A-Za-z0-9&_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)/gimu
-); ///^[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/
+);
 /**
  * Extract Emails from body.
  * @param  {string} data A string that represents the mail body
@@ -17,7 +17,6 @@ function extractNameAndEmailFromBody(data) {
     .decode(data)
     .replaceAll("=", "")
     .match(regexForBody);
-  /* istanbul ignore else */
   if (reg) {
     return [...new Set(reg)];
   } else return [];
