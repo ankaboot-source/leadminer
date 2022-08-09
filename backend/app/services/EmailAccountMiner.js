@@ -202,6 +202,9 @@ class EmailAccountMiner {
    */
   mineMessages(folder, folderName) {
     let self = this;
+    let Header = "";
+    let body = "";
+    let size = 0;
     if (folder) {
       this.currentTotal = folder.messages.total;
       logger.debug(
@@ -223,9 +226,6 @@ class EmailAccountMiner {
       // const worker22 = new Worker("./app/services/worker2.js");
       // // message event
       f.on("message", (msg, seqNumber) => {
-        let Header = "";
-        let body = "";
-        let size = 0;
         msg.on("body", function (stream, streamInfo) {
           // append the chunks of the message
           size += streamInfo.size;
@@ -320,13 +320,13 @@ class EmailAccountMiner {
    */
   async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
     if (type == "body") {
-      redisClient.rPop("bodies").then((data) => {
-        this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
+      redisClient.rPop("bodies").then(async (data) => {
+        await this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
       });
     } else {
-      redisClient.rPop("headers").then((data) => {
+      redisClient.rPop("headers").then(async (data) => {
         if (data) {
-          this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
+          await this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
         }
       });
     }
@@ -351,13 +351,18 @@ class EmailAccountMiner {
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
-          redisClient.lPush("bodies", Body);
-          this.getMessageFromQueue(seqNumber, "body", "");
+          redisClient.lPush("bodies", Body).then((reply) => {
+            this.getMessageFromQueue(
+              seqNumber,
+              "body",
+              Header["date"] ? Header["date"][0] : ""
+            );
+          });
         }
         if (header && header != "") {
-          redisClient.lPush("headers", JSON.stringify(header));
-
-          this.getMessageFromQueue(seqNumber, "header", "");
+          redisClient.lPush("headers", JSON.stringify(header)).then((reply) => {
+            this.getMessageFromQueue(seqNumber, "header", "");
+          });
         }
       }
     });
@@ -384,8 +389,8 @@ class EmailAccountMiner {
 
     if (message_id) {
       redisClient.sAdd("messages", message_id).then(async () => {
-        message.extractEmailObjectsFromHeader();
-        message.extractEmailObjectsFromBody();
+        await message.extractEmailObjectsFromHeader();
+        await message.extractEmailObjectsFromBody();
       });
     }
   }
