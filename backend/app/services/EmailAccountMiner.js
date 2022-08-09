@@ -318,15 +318,15 @@ class EmailAccountMiner {
    * @param type - "body" or "header"
    * @param dateInCaseOfBody - This is the date of the body that is being mined.
    */
-  async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
+  getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
     if (type == "body") {
-      redisClient.rPop("bodies").then(async (data) => {
-        await this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
+      redisClient.rPop("bodies").then((data) => {
+        this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
       });
     } else {
-      redisClient.rPop("headers").then(async (data) => {
+      redisClient.rPop("headers").then((data) => {
         if (data) {
-          await this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
+          this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
         }
       });
     }
@@ -352,16 +352,20 @@ class EmailAccountMiner {
       if (!alreadyMined) {
         if (Body && Body != "") {
           redisClient.lPush("bodies", Body).then((reply) => {
-            this.getMessageFromQueue(
-              seqNumber,
-              "body",
-              Header["date"] ? Header["date"][0] : ""
-            );
+            setTimeout(() => {
+              this.getMessageFromQueue(
+                seqNumber,
+                "body",
+                Header["date"] ? Header["date"][0] : ""
+              );
+            }, 50);
           });
         }
         if (header && header != "") {
           redisClient.lPush("headers", JSON.stringify(header)).then((reply) => {
-            this.getMessageFromQueue(seqNumber, "header", "");
+            setTimeout(() => {
+              this.getMessageFromQueue(seqNumber, "header", "");
+            }, 40);
           });
         }
       }
@@ -376,7 +380,7 @@ class EmailAccountMiner {
    * @param header - the header of the email message
    * @param body - the body of the email message
    */
-  async mineMessage(size, seqNumber, header, body, dateInCaseOfBody) {
+  mineMessage(size, seqNumber, header, body, dateInCaseOfBody) {
     let message = new EmailMessage(
       seqNumber,
       size,
@@ -388,9 +392,9 @@ class EmailAccountMiner {
     let message_id = message.getMessageId();
 
     if (message_id) {
-      redisClient.sAdd("messages", message_id).then(async () => {
-        await message.extractEmailObjectsFromHeader();
-        await message.extractEmailObjectsFromBody();
+      redisClient.sAdd("messages", message_id).then(() => {
+        message.extractEmailObjectsFromHeader();
+        message.extractEmailObjectsFromBody();
       });
     }
   }
@@ -422,18 +426,20 @@ class EmailAccountMiner {
       `ScannedEmails${this.user.id}`
     );
     if (this.sends.indexOf(seqNumber) % 2 == 0) {
-      let minedEmails = await databaseHelpers.getEmails(this.user.id);
-      let totalScanned = await databaseHelpers.getCountDB(this.user.id);
-      this.sse.send(
-        {
-          data: inputHelpers.sortDatabase(minedEmails),
-          totalScanned: totalScanned,
-        },
-        `minedEmails${this.user.id}`
-      );
-      logger.info(
-        `Progress: ${minedEmails.length} mined emails for user ${this.mailHash}`
-      );
+      databaseHelpers.getEmails(this.user.id).then((minedEmails) => {
+        databaseHelpers.getCountDB(this.user.id).then((totalScanned) => {
+          this.sse.send(
+            {
+              data: inputHelpers.sortDatabase(minedEmails),
+              totalScanned: totalScanned,
+            },
+            `minedEmails${this.user.id}`
+          );
+          logger.info(
+            `Progress: ${minedEmails.length} mined emails for user ${this.mailHash}`
+          );
+        });
+      });
     }
   }
 }
