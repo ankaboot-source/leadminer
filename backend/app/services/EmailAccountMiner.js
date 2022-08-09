@@ -6,8 +6,6 @@ const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
-const { Worker } = require("worker_threads");
-const worker = new Worker("./app/services/worker.js");
 class EmailAccountMiner {
   //public field
   tree = [];
