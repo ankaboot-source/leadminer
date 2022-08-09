@@ -222,7 +222,6 @@ exports.getEmails = async (req, res, sse) => {
   }
 
   const query = JSON.parse(req.query.user);
-  console.log(query);
   if (query.access_token) {
     const google_user = await googleUser.findOne({
       where: { email: query.email },
@@ -268,7 +267,6 @@ exports.getEmails = async (req, res, sse) => {
         ? 100
         : QueueLengthBody + QueueLengthHeader * 20;
     //estimate a timeout to wait all queue jobs (150ms per command)
-    console.log(total);
     setTimeout(async () => {
       const data = await databaseHelpers.getEmails(user.id);
       let totalScanned = await databaseHelpers.getCountDB(user.id);

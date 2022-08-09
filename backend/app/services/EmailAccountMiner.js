@@ -96,7 +96,6 @@ class EmailAccountMiner {
             }
 
             if (folder == imapTree[imapTree.length - 1]) {
-              console.log("hello");
               this.connection.end();
               resolve();
             }
