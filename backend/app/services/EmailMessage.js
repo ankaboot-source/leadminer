@@ -144,14 +144,8 @@ class EmailMessage {
                 date: this.getDate(),
                 name: email?.name ?? "",
                 address: email.address.toLowerCase(),
-                newsletter:
-                  key == "from" || key == "reply-to"
-                    ? this.isNewsletter()
-                    : false,
-                transactional:
-                  key == "from" || key == "reply-to"
-                    ? this.isTransactional()
-                    : false,
+                newsletter: key == "from" ? this.isNewsletter() : false,
+                transactional: key == "from" ? this.isTransactional() : false,
                 conversation: this.isInConversation(),
               });
             }
