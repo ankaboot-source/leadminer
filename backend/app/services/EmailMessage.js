@@ -7,10 +7,13 @@ const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {
   /**
-   * The constructor function is a function that is called when a new object is created.
-   * @param sequentialId - The sequential id of the message.
-   * @param header - This is a JSON object that contains the header information for the message.
+   * EmailMessage constructor
+   * @param sequentialId - The sequential ID of the message.
+   * @param size - The size of the message in bytes.
+   * @param header - The header of the message.
    * @param body - The body of the message.
+   * @param user - The user.
+   * @param dateCaseOfBody - The date.
    */
   constructor(sequentialId, size, header, body, user, dateCaseOfBody) {
     this.sequentialId = sequentialId;
@@ -33,7 +36,6 @@ class EmailMessage {
       });
     });
   }
-  isEmailConnection() {}
   /**
    * isTransactional returns true if the email is transactional, and false if it's not
    * @returns A boolean value.
@@ -57,11 +59,6 @@ class EmailMessage {
       return 0;
     }
   }
-
-  isInvitation() {}
-  hasAttachement() {}
-  getSenderIp() {}
-  extractPhoneContact() {}
   /**
    * getDate returns the value of the "date" property of the
    * header
@@ -124,6 +121,7 @@ class EmailMessage {
    */
   getEmailsObjectsFromHeader(messagingFields) {
     Object.keys(messagingFields).map((key) => {
+      //extract Name and Email in case of a header
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails) {
         emails.map((email) => {
@@ -165,7 +163,7 @@ class EmailMessage {
       this.body.toString("utf8")
     );
     if (emails) {
-      return emails.map(async (email) => {
+      emails.map(async (email) => {
         if (
           email &&
           this.user.email != email &&
@@ -200,7 +198,7 @@ class EmailMessage {
   async extractEmailObjectsFromHeader() {
     const messagingFields = this.getMessagingFieldsOnly();
     const metaDataProps = this.getOtherMetaDataFields();
-    const emailsObjects = await this.getEmailsObjectsFromHeader(
+    const emailsObjects = this.getEmailsObjectsFromHeader(
       messagingFields,
       metaDataProps
     );
@@ -213,7 +211,7 @@ class EmailMessage {
    */
   async extractEmailObjectsFromBody() {
     if (Object.keys(this.body).length > 0) {
-      await this.getEmailsObjectsFromBody();
+      this.getEmailsObjectsFromBody();
     }
     return;
   }

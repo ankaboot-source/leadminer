@@ -175,7 +175,7 @@ exports.getImapBoxes = async (req, res, sse) => {
   // define user object from user request query
   const user = new ImapUser(query).getUserConnetionDataFromQuery();
   // initialise imap server connection
-  const server = new EmailServer(user);
+  const server = new EmailServer(user, sse);
   // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(server, user, {}, {}, "", "", "");
   // get tree
@@ -239,10 +239,11 @@ exports.getEmails = async (req, res, sse) => {
   // define user object from user request query
   const user = new ImapUser(query).getUserConnetionDataFromQuery();
   // initialise imap server connection
-  const server = new EmailServer(user);
-  // initialise EmailAccountMiner to mine imap tree
+  const server = new EmailServer(user, sse);
+
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
+  // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(
     server,
     user,
@@ -253,8 +254,7 @@ exports.getEmails = async (req, res, sse) => {
   );
   miner.mine();
   req.on("close", async () => {
-    // if stop mining from user then send data and end imap connexion
-
+    // if stop mining from user then send data and end imap connetion
     eventEmitter.emit("endByUser", true);
     sse.send(true, "dns" + user.id);
   });

@@ -20,7 +20,6 @@ async function generateXOauthToken(user) {
   );
   // if access_token is expired then refresh it using refresh_token
   if (Number(user.token.experation) + 8 < Math.floor(utc_timestamp / 1000)) {
-    console.log("expired");
     access_Token = await googleController.refreshAccessToken(user.refreshToken);
   }
   const xoauth2gen = xoauth2.createXOAuth2Generator({

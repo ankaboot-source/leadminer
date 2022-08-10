@@ -42,7 +42,8 @@ export async function getEmails({ context, getters }, { data }) {
   source.addEventListener(
     "token" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
-      this.commit("example/UPDATE_TOKEN", message.data);
+      console.log(message.data);
+      this.commit("example/UPDATE_TOKEN", message.data.token);
     }
   );
 
@@ -199,8 +200,17 @@ export async function signIn({ context, state }, { data }) {
   });
 }
 export function getBoxes({ context, getters }) {
-  this.commit("example/SET_LOADINGBOX", true);
   const currentState = getters.getStates;
+  const source = new EventSource(`${this.$api}/stream/`);
+  source.addEventListener(
+    "token" + currentState.imapUser.id + currentState.googleUser.id,
+    (message) => {
+      console.log(JSON.parse(message.data).token);
+      this.commit("example/UPDATE_TOKEN", JSON.parse(message.data).token);
+    }
+  );
+  this.commit("example/SET_LOADINGBOX", true);
+
   if (currentState.googleUser.access_token == "") {
     this.$axios
       .get(
@@ -231,7 +241,7 @@ export function getBoxes({ context, getters }) {
         this.commit("example/SET_LOADINGBOX", false);
         this.commit("example/SET_BOXES", response.data.imapFoldersTree);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
-        this.commit("example/SET_UPDATE_TOKEN", response.data.token);
+        this.commit("example/UPDATE_TOKEN", response.data.token);
       })
       .catch((error) => {
         this.commit("example/SET_ERROR", error);

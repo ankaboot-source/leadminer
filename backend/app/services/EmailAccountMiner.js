@@ -7,6 +7,7 @@ const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
+const { redis } = require("googleapis/build/src/apis/redis");
 
 class EmailAccountMiner {
   //public field
@@ -21,29 +22,19 @@ class EmailAccountMiner {
    * @param {object} sse - The SSE object that will be used to send the data to the client.
    * @param {array} fields - An array of fields to be used in the fetch.
    * @param {array} folders - An array of folder paths to fetch from.
-
    */
-  constructor(
-    connection,
-    user,
-    sse,
-    fields,
-    folders,
-
-    eventEmitter
-  ) {
+  constructor(connection, user, sse, fields, folders, eventEmitter) {
     this.connection = connection;
     this.user = user;
     this.sse = sse;
     this.fields = fields;
     this.folders = folders;
-
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
   }
 
   /**
-   * It connects to the IMAP server, gets the tree of folders, adds the total number of emails per
+   * getTree connects to the IMAP server, gets the tree of folders, adds the total number of emails per
    * folder, and then adds the total number of emails per parent folder
    * @async
    * @returns a promise that resolves to an array of two elements. The first element is the tree object,
@@ -89,8 +80,8 @@ class EmailAccountMiner {
   }
 
   /**
-   * It takes an imapTree, and for each folder in the tree, it opens the folder, and if it exists, it
-   * adds the total number of messages in the folder to the folder object
+   * getTreeWithTotalPerFolder takes an imapTree, and for each folder in the tree, it opens the folder, and if it exists, it
+   * adds the total number of messages
    * @param {object} imapTree - The tree of folders that you want to get the total number of messages for.
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
@@ -131,7 +122,7 @@ class EmailAccountMiner {
     });
   }
   /**
-   * It connects to the IMAP server, opens the folder, and returns the folder's tree
+   * getTreeByFolder connects to the IMAP server, opens the folder, and returns the folder's tree
    * @param {string} folderName - the name of the folder you want to get the tree from.
    */
   getTreeByFolder(folderName) {
@@ -157,11 +148,10 @@ class EmailAccountMiner {
   }
 
   /**
-   * It connects to the IMAP server, and then calls the mineFolder() function on the first folder in the
+   * mine connects to the IMAP server, and then calls the mineFolder() function on the first folder in the
    * folders array
    */
   async mine() {
-    //this.mineFolder(this.fields, this.folders);
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
@@ -193,7 +183,8 @@ class EmailAccountMiner {
     });
   }
   /**
-   * It opens a folder, and when it's done, it mines the messages in that folder
+   * mineFolder is a generator function it opens a folder, and when it's done, it mines the messages in that folder
+   * and loops through all selected folders
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
@@ -213,8 +204,8 @@ class EmailAccountMiner {
   }
 
   /**
-   * It takes a folder name as an argument, and if it's not null, it fetches all the messages in that
-   * folder, and for each message, it parses the header and body, and then calls the mineMessage function
+   * mineMessages takes a folder name as an argument, and if it's not null, it fetches all the messages in that
+   * folder, and for each message, it parses the header and body, and then calls the pushToRedisQueue function
    * @param {object} folder - The folder to mine.
    */
   mineMessages(folder, folderName) {
@@ -250,6 +241,7 @@ class EmailAccountMiner {
           });
         });
         msg.once("end", function () {
+          // if end then push to queue
           self.pushMessageToQueue(seqNumber, Header, body, folderName);
           Header = "";
           body = "";
@@ -274,7 +266,6 @@ class EmailAccountMiner {
           logger.debug(
             `Going to next folder in folders array for User: ${this.mailHash}`
           );
-
           self
             .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
             .next();
@@ -298,8 +289,8 @@ class EmailAccountMiner {
   }
 
   /**
-   * Takes the seuence message number, the part it's being mined and the date in case of a body
-   * then it will retrieve from one element redis queues and mine the create the message
+   * Takes the sequence message number, the part it's being mined and the date in case of a body
+   * then it will retrieve from redis queue a message and parses it
    * @param seqNumber - The sequence number of the block that is being mined.
    * @param type - "body" or "header"
    * @param dateInCaseOfBody - This is the date of the body that is being mined.
@@ -307,13 +298,10 @@ class EmailAccountMiner {
   async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
     if (type == "body") {
       redisClient.rPop("bodies").then((data) => {
-        console.log("bodies");
         this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
       });
     } else {
       redisClient.rPop("headers").then((data) => {
-        console.log("header");
-
         if (data) {
           this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
         }
@@ -321,7 +309,7 @@ class EmailAccountMiner {
     }
   }
   /**
-   * It pushes the message to the queue and then calls the getMessageFromQueue function to get the
+   * pushMessageToQueue pushes the message to the queue and then calls the getMessageFromQueue function to get the
    * message from the queue asynchronously
    * @param seqNumber - The sequence number of the message
    * @param Header - The header of the email
@@ -337,7 +325,6 @@ class EmailAccountMiner {
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
-          console.log("push bodies");
           redisClient.lPush("bodies", Body).then((reply) => {
             this.getMessageFromQueue(
               seqNumber,
@@ -347,8 +334,6 @@ class EmailAccountMiner {
           });
         }
         if (Header && Header != "") {
-          console.log("push header");
-
           redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
             this.getMessageFromQueue(seqNumber, "header", "");
           });
@@ -358,9 +343,8 @@ class EmailAccountMiner {
   }
 
   /**
-   * The function takes in a sequence number, header, and body of an email message, creates an
-   * EmailMessage object, extracts email objects from the header and body, merges the two arrays of
-   * email objects, and then updates the batch array
+   * This function takes in a sequence number, header, and body of an email message, creates an
+   * EmailMessage object, extracts email objects from the header and body
    * @param seqNumber - The sequence number of the email message.
    * @param header - the header of the email message
    * @param body - the body of the email message
@@ -377,8 +361,6 @@ class EmailAccountMiner {
     );
     let message_id = message.getMessageId();
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
-      console.log("mining");
-
       if (!alreadyMined) {
         if (message_id) {
           redisClient.sAdd("messages", message_id).then(() => {
@@ -391,8 +373,7 @@ class EmailAccountMiner {
   }
 
   /**
-   * It takes an array of objects, checks if the object exists in the database, if it does, it updates
-   * the object, if it doesn't, it creates a new object
+   * sendMiningProgress sends progress to the user and logs memory usage in debug mode
    * @param batch - The array of objects that you want to store in the database.
    */
   async sendMiningProgress(seqNumber, folderName) {

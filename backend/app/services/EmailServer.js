@@ -10,8 +10,9 @@ class EmailServer {
    * The constructor function is a special function that is called when a new object is created
    * @param user - The user object that was passed to the constructor.
    */
-  constructor(user) {
+  constructor(user, sse) {
     this.user = user;
+    this.sse = sse;
     this.mailHash = hashHelpers.hashEmail(user.email);
   }
   /**
@@ -83,6 +84,8 @@ class EmailServer {
       if (this.isApiConnection()) {
         logger.debug(`User connected using api`);
         const tokens = await tokenHelpers.generateXOauthToken(this.user);
+
+        this.sse.send({ token: tokens.newToken }, "token" + this.user.id);
         this.#connection._config.xoauth2 = tokens.xoauth2Token;
         this.#connection.connect();
         res(this.#connection);

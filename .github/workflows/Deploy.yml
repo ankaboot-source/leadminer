@@ -13,7 +13,6 @@ jobs:
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{ secrets.SSH_USERNAME }} # User of the server
           script: |
-            whoami
             PATH=$PATH:/${{secrets.SSH_USER_NAME}}/.npm-global/bin
             cd leadminer
             git pull

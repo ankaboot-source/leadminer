@@ -68,7 +68,7 @@ export function SET_CANCEL(state, newValue) {
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;
 }
-export function SET_UPDATE_TOKEN(state, newToken) {
+export function UPDATE_TOKEN(state, newToken) {
   if (state.googleUser.access_token.access_token != newToken.access_token) {
     state.googleUser.access_token = newToken;
   }

@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "nyc --reporter=text --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
-    "dev": "node server.js",
+    "dev": "nodemon server.js",
     "lint:fix": "eslint --fix app/**",
     "make-badges": "istanbul-badges-readme --readmeDir='../'"
   },
