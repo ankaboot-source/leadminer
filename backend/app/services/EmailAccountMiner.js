@@ -2,12 +2,10 @@ const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const databaseHelpers = require("../utils/databaseHelpers");
 const inputHelpers = require("../utils/inputHelpers");
-const MAX_BATCH_SIZE = process.env.MAX_BATCH_SIZE;
 const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
-const { redis } = require("googleapis/build/src/apis/redis");
 
 class EmailAccountMiner {
   //public field
@@ -242,10 +240,11 @@ class EmailAccountMiner {
         });
         msg.once("end", function () {
           // if end then push to queue
-          self.pushMessageToQueue(seqNumber, Header, body, folderName);
+          let header = Header;
+          let Body = body;
+          self.pushMessageToQueue(seqNumber, header, Body, folderName);
           Header = "";
           body = "";
-          size = 0;
         });
       });
       f.once("end", () => {
@@ -317,7 +316,7 @@ class EmailAccountMiner {
    * @param folderName - The name of the folder that the message is in.
    */
   async pushMessageToQueue(seqNumber, header, Body, folderName) {
-    let Header = Imap.parseHeader(header);
+    let Header = Imap.parseHeader(header.toString("utf8"));
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }

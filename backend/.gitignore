@@ -11,3 +11,4 @@ logs
 app/utils/out
 app/out
 coverage
+config/default.yaml

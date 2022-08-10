@@ -2,7 +2,10 @@ const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const hashHelpers = require("../utils/hashHelpers");
 const tokenHelpers = require("../utils/tokenHelpers");
-const GOOGLE_IMAP_HOST = process.env.GOOGLE_IMAP_HOST;
+const config = require("config");
+const GOOGLE_IMAP_HOST = config.get("google_api.host");
+const AUTHENTICATION_TIMEOUT = config.get("server.imap.authentication_timeout");
+const CONNECTION_TIMEOUT = config.get("server.imap.connection_timeout");
 
 class EmailServer {
   #connection;
@@ -49,9 +52,9 @@ class EmailServer {
         host: this.user.host,
         port: this.user.port || 993,
         tls: true,
-        connTimeout: process.env.CONNECTION_TIMEOUT,
+        connTimeout: CONNECTION_TIMEOUT,
         keepalive: false,
-        authTimeout: process.env.AUTHENTICATION_TIMEOUT,
+        authTimeout: AUTHENTICATION_TIMEOUT,
         tlsOptions: {
           port: this.user.port || 993,
           host: this.user.host,

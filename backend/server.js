@@ -11,6 +11,8 @@ console.log(
 `,
   `font-family: monospace`
 );
+const config = require("config");
+const port = config.get("server.port");
 const app = express();
 const http = require("http");
 const logger = require("./app/utils/logger")(module);
@@ -22,7 +24,6 @@ const { EventEmitter } = require("stream");
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
-const PORT = process.env.PORT || 8081;
 app.use((req, res, next) => {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -81,8 +82,8 @@ db.sequelize
   .then(() => {
     logger.debug("database initialized ✔️ ");
     // if successful init then start server
-    server.listen(PORT, () => {
-      logger.info(`Server is running on port ${PORT}.`);
+    server.listen(port, () => {
+      logger.info(`Server is running port ${port}.`);
       event.emit("started");
     });
     server.on("error", (e) => {

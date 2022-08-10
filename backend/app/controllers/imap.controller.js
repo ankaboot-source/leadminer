@@ -265,21 +265,26 @@ exports.getEmails = async (req, res, sse) => {
     let total =
       QueueLengthBody + QueueLengthHeader == 0
         ? 100
-        : QueueLengthBody + QueueLengthHeader * 20;
+        : QueueLengthBody + QueueLengthHeader * 50;
     //estimate a timeout to wait all queue jobs (150ms per command)
-    setTimeout(async () => {
-      const data = await databaseHelpers.getEmails(user.id);
-      let totalScanned = await databaseHelpers.getCountDB(user.id);
-      // send progress to user
-      sse.send(
-        {
-          data: inputHelpers.sortDatabase(data),
 
-          totalScanned: totalScanned,
-        },
-        `minedEmails${user.id}`
-      );
-      logger.debug(data.length + " mined email");
+    setTimeout(async () => {
+      let data, totalScanned;
+      setImmediate(async () => {
+        data = await databaseHelpers.getEmails(user.id);
+        totalScanned = await databaseHelpers.getCountDB(user.id);
+        // send progress to user
+        sse.send(
+          {
+            data: inputHelpers.sortDatabase(data),
+
+            totalScanned: totalScanned,
+          },
+          `minedEmails${user.id}`
+        );
+        logger.debug(data.length + " mined email");
+      });
+
       res.status(200).send({
         message: "Done mining emails !",
       });
@@ -295,7 +300,7 @@ exports.getEmails = async (req, res, sse) => {
           logger.debug("redis cleaned ✔️");
         } else logger.debug("can't clean redis");
       });
-    }, total * 15);
+    }, total * 50);
   });
   eventEmitter.on("error", () => {
     res.status(500).send({

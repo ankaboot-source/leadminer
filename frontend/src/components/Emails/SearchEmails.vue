@@ -559,15 +559,7 @@ export default defineComponent({
       this.renderDialog = true;
     }
   },
-  beforeUnmount() {
-    const googleUser = LocalStorage.getItem("googleUser");
 
-    if (googleUser) {
-      LocalStorage.set("googleUser", this.$store.state.example.googleUser);
-    } else {
-      LocalStorage.set("imapUser", this.$store.state.exampleimapUser);
-    }
-  },
   methods: {
     updateSelectedFields(val) {
       this.selectedFields = val;

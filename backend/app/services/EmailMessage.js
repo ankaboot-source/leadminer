@@ -1,8 +1,13 @@
 const regExHelpers = require("../utils/regexpUtils");
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const { emailsRaw } = require("../models");
-const NEWSLETTER_HEADER_FIELDS = process.env.NEWSLETTER.split(",");
-const TRANSACTIONAL_HEADER_FIELDS = process.env.TRANSACTIONAL.split(",");
+const config = require("config");
+const NEWSLETTER_HEADER_FIELDS = config
+  .get("email_types.newsletter")
+  .split(",");
+const TRANSACTIONAL_HEADER_FIELDS = config
+  .get("email_types.transactional")
+  .split(",");
 const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {

@@ -1,10 +1,12 @@
 /* istanbul ignore file */
 const OAuth2 = require("googleapis").google.auth.OAuth2;
 const db = require("../models");
+const config = require("config");
+const port = config.get("server.redis.port");
 const googleUsers = db.googleUsers;
 const logger = require("../utils/logger")(module);
-const ClientId = process.env.GG_CLIENT_ID;
-const ClientSecret = process.env.GG_CLIENT_SECRET;
+const ClientId = config.get("google_api.client.id");
+const ClientSecret = config.get("google_api.client.secret");
 const RedirectionUrl = "postmessage";
 
 // returns Oauth client
