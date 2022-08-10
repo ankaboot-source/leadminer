@@ -42,8 +42,7 @@ export async function getEmails({ context, getters }, { data }) {
   source.addEventListener(
     "token" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
-      console.log(message.data);
-      this.commit("example/UPDATE_TOKEN", message.data.token);
+      this.commit("example/UPDATE_TOKEN", JSON.parse(message.data).token);
     }
   );
 
@@ -63,9 +62,6 @@ export async function getEmails({ context, getters }, { data }) {
     "dns" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
       this.commit("example/SET_LOADING_DNS", false);
-      setTimeout(() => {
-        source.close();
-      }, 100);
     }
   );
 
@@ -98,7 +94,7 @@ export async function getEmails({ context, getters }, { data }) {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
-
+          this.commit("example/SET_EMAILS", response.data.data);
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
           resolve(response);
         })
@@ -127,7 +123,9 @@ export async function getEmails({ context, getters }, { data }) {
           this.commit("example/SET_LOADING", false);
           this.commit("example/SET_LOADING_DNS", false);
           this.commit("example/SET_STATUS", "");
+          this.commit("example/SET_EMAILS", response.data.data);
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
+          source.close();
           resolve(response);
         })
         .catch((error) => {
@@ -205,7 +203,6 @@ export function getBoxes({ context, getters }) {
   source.addEventListener(
     "token" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
-      console.log(JSON.parse(message.data).token);
       this.commit("example/UPDATE_TOKEN", JSON.parse(message.data).token);
     }
   );

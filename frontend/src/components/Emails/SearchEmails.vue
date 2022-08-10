@@ -697,7 +697,7 @@ export default defineComponent({
         boxes: this.selectedBoxes,
         fields: fields,
       };
-      console.log(this.selectedBoxes);
+
       if (this.selectedBoxes.length > 0) {
         this.$store.dispatch("example/getEmails", { data }).then(() => {
           this.showNotif(

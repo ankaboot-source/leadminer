@@ -268,39 +268,37 @@ exports.getEmails = async (req, res, sse) => {
         : QueueLengthBody + QueueLengthHeader * 50;
     //estimate a timeout to wait all queue jobs (150ms per command)
 
-    setTimeout(async () => {
-      let data, totalScanned;
-      setImmediate(async () => {
-        data = await databaseHelpers.getEmails(user.id);
-        totalScanned = await databaseHelpers.getCountDB(user.id);
-        // send progress to user
-        sse.send(
-          {
+    setTimeout(() => {
+      databaseHelpers.getEmails(user.id).then((data) => {
+        databaseHelpers.getCountDB(user.id).then((totalScanned) => {
+          // send progress to user
+          sse.send(
+            { totalScanned: totalScanned },
+
+            `minedEmails${user.id}`
+          );
+
+          logger.debug(data.length + " mined email");
+          res.status(200).send({
+            message: "Done mining emails !",
             data: inputHelpers.sortDatabase(data),
+          });
 
-            totalScanned: totalScanned,
-          },
-          `minedEmails${user.id}`
-        );
-        logger.debug(data.length + " mined email");
-      });
+          sse.send(true, "dns" + user.id);
+          logger.debug("cleaning data from database...");
+          databaseHelpers.deleteUserData(user.id).then(() => {
+            logger.debug("database cleaned ✔️");
+          });
+          logger.debug("cleaning data from redis...");
 
-      res.status(200).send({
-        message: "Done mining emails !",
+          redisClient.flushAll("ASYNC").then((res) => {
+            if (res == "OK") {
+              logger.debug("redis cleaned ✔️");
+            } else logger.debug("can't clean redis");
+          });
+        });
       });
-      sse.send(true, "dns" + user.id);
-      logger.debug("cleaning data from database...");
-      await databaseHelpers.deleteUserData(user.id).then(() => {
-        logger.debug("database cleaned ✔️");
-      });
-      logger.debug("cleaning data from redis...");
-
-      redisClient.flushAll("ASYNC").then((res) => {
-        if (res == "OK") {
-          logger.debug("redis cleaned ✔️");
-        } else logger.debug("can't clean redis");
-      });
-    }, total * 50);
+    }, total * 20);
   });
   eventEmitter.on("error", () => {
     res.status(500).send({

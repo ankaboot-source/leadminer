@@ -124,7 +124,6 @@ export default defineComponent({
             }
           },
         })(this.boxes, { sum: 0 });
-        console.log(this.selected);
       }, 200);
     },
   },

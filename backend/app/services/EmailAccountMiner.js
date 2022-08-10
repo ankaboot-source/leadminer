@@ -208,8 +208,7 @@ class EmailAccountMiner {
    */
   mineMessages(folder, folderName) {
     let self = this;
-    let Header = "";
-    let body = "";
+
     let size = 0;
 
     if (folder) {
@@ -227,6 +226,8 @@ class EmailAccountMiner {
         `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
       );
       f.on("message", (msg, seqNumber) => {
+        let Header = "";
+        let body = "";
         msg.on("body", function (stream, streamInfo) {
           // parse the chunks of the message
           size += streamInfo.size;
