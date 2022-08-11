@@ -32,19 +32,17 @@ describe("Full maining flow", function () {
     });
   });
   describe("Get Tree from imap server", function () {
-    describe("GET /boxes", function () {
-      it("should return 200 ", async function () {
-        const response = await request(app.server)
-          .get(`/api/imap/${loggedInUser.id}/boxes`)
-          .query({
-            user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
-              '"' + loggedInUser.email + '"'
-            },"password":${'"' + passwordTest + '"'},"host":${
-              '"' + loggedInUser.host + '"'
-            },"port":"993"}`,
-          })
-          .expect(200);
-      });
+    it("should return 200 ", async function () {
+      const response = await request(app.server)
+        .get(`/api/imap/${loggedInUser.id}/boxes`)
+        .query({
+          user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
+            '"' + loggedInUser.email + '"'
+          },"password":${'"' + passwordTest + '"'},"host":${
+            '"' + loggedInUser.host + '"'
+          },"port":"993"}`,
+        })
+        .expect(200);
     });
   });
   describe("mine folder for the logged in user", function () {
