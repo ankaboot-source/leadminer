@@ -4,7 +4,8 @@ const getLabel = function (callingModule) {
   const parts = callingModule.filename.split("/");
   return parts.pop();
 };
-
+const config = require("config");
+const level = config.get("server.log_level");
 module.exports =
   /* A function that returns a logger object. */
   function (callingModule) {
@@ -24,7 +25,7 @@ module.exports =
                 }`
             )
           ),
-          level: process.env.LOG_LEVEL,
+          level: level,
         }),
 
         new transports.Console({
@@ -40,7 +41,7 @@ module.exports =
                 }>>`
             )
           ),
-          level: process.env.LOG_LEVEL,
+          level: level,
         }),
       ],
     });
