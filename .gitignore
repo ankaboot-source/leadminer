@@ -14,4 +14,4 @@ frontend/coverage
 logs
 backend/app/out
 backend/out
-backend/config/default.yaml
+backend/config/production.yaml
