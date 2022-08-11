@@ -1,15 +1,15 @@
-'use-strict';
-const regExHelpers = require('../utils/regexpUtils');
-const dataStructureHelpers = require('../utils/dataStructureHelpers');
-const { emailsRaw } = require('../models');
-const config = require('config');
+"use-strict";
+const regExHelpers = require("../utils/regexpUtils");
+const dataStructureHelpers = require("../utils/dataStructureHelpers");
+const { emailsRaw } = require("../models");
+const config = require("config");
 const NEWSLETTER_HEADER_FIELDS = config
-  .get('email_types.newsletter')
-  .split(',');
+  .get("email_types.newsletter")
+  .split(",");
 const TRANSACTIONAL_HEADER_FIELDS = config
-  .get('email_types.transactional')
-  .split(',');
-const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+  .get("email_types.transactional")
+  .split(",");
+const FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {
   /**
@@ -37,7 +37,7 @@ class EmailMessage {
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
       return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(regExHeader, 'i');
+        const reg = new RegExp(regExHeader, "i");
         return reg.test(headerField);
       });
     });
@@ -49,7 +49,7 @@ class EmailMessage {
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
       return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(regExHeader, 'i');
+        const reg = new RegExp(regExHeader, "i");
         return reg.test(headerField);
       });
     });
@@ -59,7 +59,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
+    if (Object.keys(this.header).includes("references")) {
       return 1;
     } else {
       return 0;
@@ -76,9 +76,9 @@ class EmailMessage {
       if (Date.parse(this.header.date[0])) {
         return this.header.date[0];
       } else {
-        return '';
+        return "";
       }
-    } else return '';
+    } else return "";
   }
   /**
    * getMessagingFieldsOnly returns an object with only the messaging fields from the header
@@ -112,10 +112,10 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header['message-id']) {
-      return this.header['message-id'][0].substring(0, 60);
+    if (this.header["message-id"]) {
+      return this.header["message-id"][0].substring(0, 60);
     } else {
-      return `message_id_unknown ${this.header['date']}`;
+      return `message_id_unknown ${this.header["date"]}`;
     }
   }
 
@@ -140,16 +140,16 @@ class EmailMessage {
           ) {
             emailsRaw.create({
               user_id: this.user.id,
-              from: key == 'from' ? true : false,
-              reply_to: key == 'reply-to' ? true : false,
-              to: key == 'to' ? true : false,
-              cc: key == 'cc' ? true : false,
-              bcc: key == 'bcc' ? true : false,
+              from: key == "from" ? true : false,
+              reply_to: key == "reply-to" ? true : false,
+              to: key == "to" ? true : false,
+              cc: key == "cc" ? true : false,
+              bcc: key == "bcc" ? true : false,
               date: this.getDate(),
-              name: email?.name ?? '',
+              name: email?.name ?? "",
               address: email.address.toLowerCase(),
-              newsletter: key == 'from' ? this.isNewsletter() : false,
-              transactional: key == 'from' ? this.isTransactional() : false,
+              newsletter: key == "from" ? this.isNewsletter() : false,
+              transactional: key == "from" ? this.isTransactional() : false,
               conversation: this.isInConversation(),
             });
           }
@@ -165,7 +165,7 @@ class EmailMessage {
    */
   async getEmailsObjectsFromBody() {
     const emails = regExHelpers.extractNameAndEmailFromBody(
-      this.body.toString('utf8')
+      this.body.toString("utf8")
     );
     if (emails) {
       emails.map(async (email) => {
@@ -184,7 +184,7 @@ class EmailMessage {
             bcc: false,
             body: true,
             date: this.date,
-            name: '',
+            name: "",
             address: email.toLowerCase(),
             newsletter: false,
             transactional: false,
