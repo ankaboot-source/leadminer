@@ -1,5 +1,3 @@
-const { GeoReplyWith } = require("redis");
-
 const casesObject = [
   [1, 0, 100],
   [2, 101, 399],
@@ -19,17 +17,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || "";
-  let fullpath = "";
+  path = path || '';
+  let fullpath = '';
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === "object") {
+    if (typeof obj[b] === 'object') {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace("/undefined", "");
+  return fullpath.replace('/undefined', '');
 }
 
 /**
@@ -48,7 +46,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
+    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -126,16 +124,16 @@ function EqualPartsForSocket(total) {
  * @param  {Array} dataFromDatabse
  */
 function sortDatabase(dataFromDatabse) {
-  let data = dataFromDatabse.map((row) => {
+  const data = dataFromDatabse.map((row) => {
     if (row.dataValues.name == null) {
-      row.dataValues["name"] = [""];
+      row.dataValues['name'] = [''];
     } else {
-      let NameArray = [];
-      row.dataValues["name"].map((name) => {
-        let Name = name
-          .replaceAll('"', "")
-          .replaceAll("'", "")
-          .replaceAll("/", "")
+      const NameArray = [];
+      row.dataValues['name'].map((name) => {
+        const Name = name
+          .replaceAll('"', '')
+          .replaceAll('\'', '')
+          .replaceAll('/', '')
           .trim();
         if (Name != row.dataValues.address) {
           if (
@@ -147,33 +145,31 @@ function sortDatabase(dataFromDatabse) {
           }
         }
       });
-      row.dataValues["name"] = NameArray;
+      row.dataValues['name'] = NameArray;
     }
-    if (row.dataValues["name"].length == 0) {
-      row.dataValues["name"] = [""];
-    }
-    row.dataValues["recipient"] =
-      (parseInt(row.dataValues?.["cc"]) ?? 0) +
-      (parseInt(row.dataValues?.["bcc"]) ?? 0) +
-      (parseInt(row.dataValues?.["to"]) ?? 0);
-    row.dataValues["sender"] =
+
+    row.dataValues['recipient'] =
+      (parseInt(row.dataValues?.['cc']) ?? 0) +
+      (parseInt(row.dataValues?.['bcc']) ?? 0) +
+      (parseInt(row.dataValues?.['to']) ?? 0);
+    row.dataValues['sender'] =
       (parseInt(row.dataValues?.from) ?? 0) +
-      (parseInt(row.dataValues?.["reply_to"]) ?? 0);
-    row.dataValues["body"] = parseInt(row.dataValues?.body) ?? 0;
-    row.dataValues["total"] =
-      row.dataValues["sender"] + row.dataValues["recipient"];
-    row.dataValues["type"] = [];
+      (parseInt(row.dataValues?.['reply_to']) ?? 0);
+    row.dataValues['body'] = parseInt(row.dataValues?.body) ?? 0;
+    row.dataValues['total'] =
+      row.dataValues['sender'] + row.dataValues['recipient'];
+    row.dataValues['type'] = [];
     if (
       row.dataValues.newsletter != 0 &&
-      row.dataValues.newsletter == row.dataValues["sender"]
+      row.dataValues.newsletter == row.dataValues['from']
     ) {
-      row.dataValues["type"].push("Newsletter");
+      row.dataValues['type'].push('Newsletter');
     }
     if (
       row.dataValues.transactional != 0 &&
-      row.dataValues.transactional == row.dataValues["sender"]
+      row.dataValues.transactional == row.dataValues['from']
     ) {
-      row.dataValues["type"].push("Transactional");
+      row.dataValues['type'].push('Transactional');
     }
     return row.dataValues;
   });
@@ -183,7 +179,7 @@ function sortDatabase(dataFromDatabse) {
   data.forEach((el) => {
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name[0] != "") {
+    } else if (el.name[0] != '') {
       wordArr.push(el);
     } else {
       emptyArr.push(el);
@@ -193,7 +189,6 @@ function sortDatabase(dataFromDatabse) {
     return !a.name[0] - !b.name[0] || a.name[0].localeCompare(b.name[0]);
   });
   wordArr.sort((a, b) => b.total - a.total);
-  //numArr.sort((a, b) => a - b);
   emptyArr.sort((a, b) => b.total - a.total);
   const dataend = wordArr.concat(numArr);
   const sorted = dataend.concat(emptyArr);

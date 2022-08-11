@@ -11,12 +11,12 @@
   },
   "ignorePatterns": ["*.test.js"],
   "rules": {
-    "complexity": ["error", 7],
+    "complexity": ["warn", 7],
     "no-console": "warn", //* Avoid Bugs
     "no-undef": "error",
     "semi": "error",
     "semi-spacing": "error", //* Best Practices
-    "eqeqeq": "warn",
+
     "no-invalid-this": "error",
     "no-return-assign": "error",
     "no-unused-expressions": ["error", { "allowTernary": true }],

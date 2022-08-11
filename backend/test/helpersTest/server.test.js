@@ -3,11 +3,12 @@ const chai = require("chai"),
   expect = chai.expect;
 const request = require("supertest");
 require("dotenv").config();
+const app = require("../../server");
 
 describe("server", function () {
   describe("GET /", function () {
     it("should return 200 OK with a specific message (Welcome to leadminer!)", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .get("/")
         .expect(200)
         .expect("Content-Type", /json/);
@@ -22,7 +23,7 @@ describe("server", function () {
 describe("Authentication(imap)", function () {
   describe("POST /api/imap/signup", function () {
     it("should return a message (account already exists) when submitting existing account credentials", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .post("/api/imap/signup")
         .send({
           email: process.env.EMAIL_IMAP,
@@ -39,7 +40,7 @@ describe("Authentication(imap)", function () {
       );
     });
     it("should return bad request(400) error when a field is missing", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .post("/api/imap/signup")
         .send({
           email: process.env.EMAIL_IMAP,
@@ -50,7 +51,7 @@ describe("Authentication(imap)", function () {
       assert.strictEqual(response.body.error, "Content can not be empty!");
     });
     it("should return internal server error(500) because of wrong credentials", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .post("/api/imap/signup")
         .send({
           email: process.env.EMAIL_IMAP,
@@ -69,7 +70,7 @@ describe("Authentication(imap)", function () {
   });
   describe("POST /api/imap/login", function () {
     it("should return bad request(400) error when email field is missing", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .post("/api/imap/login")
         .send({
           notemail: "thisIsNotTheEmailField",
@@ -79,7 +80,7 @@ describe("Authentication(imap)", function () {
       assert.strictEqual(response.body.error, "Content can not be empty!");
     });
     it("should return a message (welcome back !) when submitting account email", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .post("/api/imap/login")
         .send({
           email: process.env.EMAIL_IMAP,
@@ -89,7 +90,7 @@ describe("Authentication(imap)", function () {
       assert.strictEqual(response.body.message, "Welcome back !");
     });
     it("should return internal server error(500) error when no account found", async function () {
-      const response = await request(app)
+      const response = await request(app.server)
         .post("/api/imap/login")
         .send({
           email: "email@noexistingaccount.io",
@@ -107,7 +108,7 @@ describe("Authentication(imap)", function () {
 // describe("imap requests", function () {
 //   describe("GET /api/imap/:id/boxes", function () {
 //     it("should return 404  when given an invalid id (does not exist in the database)", async function () {
-//       const response = await request(app)
+//       const response = await request(app.server)
 //         .get("/api/imap/123/boxes")
 //         .query({ id: 1 })
 //         .expect(404);
@@ -118,7 +119,7 @@ describe("Authentication(imap)", function () {
 describe("Get logs file", function () {
   describe("GET /logs", function () {
     it("should send logs file", async function () {
-      const response = await request(app).get("/logs");
+      const response = await request(app.server).get("/logs");
       expect(response.header["content-type"]).to.have.string("text/plain");
     });
   });

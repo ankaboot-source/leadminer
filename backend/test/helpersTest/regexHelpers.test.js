@@ -15,9 +15,5 @@ describe("utilsForRegEx.extractNameAndEmail(data)", function () {
   it("should return valid name and email as object", function () {
     let output = utilsForRegEx.extractNameAndEmail(testData.EmailNameTest[0]);
     expect(output).to.have.deep.members(testData.expectedEmailNameAddress);
-    // let output1 = utilsForRegEx.extractNameAndEmail(testData.OneEmailNameTest);
-    // expect(output1).to.have.deep.members([
-    //   testData.expectedEmailNameAddress[0],
-    // ]);
   });
 });

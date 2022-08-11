@@ -1,5 +1,4 @@
 const redis = require('redis');
-const dnsHelpers = require('../utils/dnsHelpers');
 // initialise sse (server sent events)
 const client = redis.createClient(6379);
 client.connect();

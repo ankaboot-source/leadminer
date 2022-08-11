@@ -1,16 +1,35 @@
 name: Test
 on:
-  pull_request:
-    branches: [ main ]
+  push:
+    branches: [main]
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: ${{ matrix.database-name }}
+          POSTGRES_USER: ${{ matrix.database-user }}
+          POSTGRES_PASSWORD: ${{ matrix.database-password }}
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-      - name: Set up node 
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v2
+      - name: Setting up NodeJs
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+      - uses: shogo82148/actions-setup-redis@v1
+        with:
+          redis-version: "7.x"
+      - run: redis-cli ping
       - name: Install dependencies
         run: cd backend && npm install
       - name: Run tests
-        run: cd backend && npm run test
+        run: npm run test

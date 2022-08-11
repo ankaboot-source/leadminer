@@ -11,18 +11,18 @@ class ImapUser {
   getUserConnetionDataFromQuery() {
     const user = {};
     if (this.query.access_token) {
-      user["email"] = this.query.email;
-      user["id"] = this.query.id;
-      user["token"] = this.query.access_token;
-      user["refreshToken"] = this.query.refresh_token;
-      user["port"] = 993;
+      user['email'] = this.query.email;
+      user['id'] = this.query.id;
+      user['token'] = this.query.access_token;
+      user['refreshToken'] = this.query.refresh_token;
+      user['port'] = 993;
       return user;
     } else if (this.query.password) {
-      user["email"] = this.query.email;
-      user["id"] = this.query.id;
-      user["password"] = this.query.password;
-      user["host"] = this.query.host;
-      user["port"] = this.query.port;
+      user['email'] = this.query.email;
+      user['id'] = this.query.id;
+      user['password'] = this.query.password;
+      user['host'] = this.query.host;
+      user['port'] = this.query.port;
       return user;
     } else {
       return user;

@@ -1,3 +1,4 @@
+"use-strict";
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const databaseHelpers = require("../utils/databaseHelpers");
@@ -175,9 +176,9 @@ class EmailAccountMiner {
       // sse here to send data based on end event
       this.sse.send(true, "data");
       this.sse.send(true, "dns");
-      logger.debug(`sse data and dns events sent!`);
+      logger.debug("sse data and dns events sent!");
       this.eventEmitter.emit("end", true);
-      logger.debug(`End connection using end event`);
+      logger.debug("End connection using end event");
     });
   }
   /**
@@ -207,10 +208,6 @@ class EmailAccountMiner {
    * @param {object} folder - The folder to mine.
    */
   mineMessages(folder, folderName) {
-    let self = this;
-
-    let size = 0;
-
     if (folder) {
       this.currentTotal = folder.messages.total;
       logger.debug(
@@ -218,64 +215,10 @@ class EmailAccountMiner {
       );
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
       // fetch function : pass fileds to fetch
-      const f = this.connection.seq.fetch("1:*", {
-        bodies: self.fields,
-        struct: true,
-      });
-      logger.debug(
-        `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
-      );
-      f.on("message", (msg, seqNumber) => {
-        let Header = "";
-        let body = "";
-        msg.on("body", function (stream, streamInfo) {
-          // parse the chunks of the message
-          size += streamInfo.size;
-          stream.on("data", async (chunk) => {
-            if (streamInfo.which.includes("HEADER")) {
-              Header += chunk;
-            } else {
-              body += chunk;
-            }
-          });
-        });
-        msg.once("end", function () {
-          // if end then push to queue
-          let header = Header;
-          let Body = body;
-          self.pushMessageToQueue(seqNumber, header, Body, folderName);
-          Header = "";
-          body = "";
-        });
-      });
-      f.once("end", () => {
-        logger.info(
-          `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
-        );
-        this.sse.send(folderName, `scannedBoxes${this.user.id}`);
-        if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
-          // we are at the end of the folder array==>> end imap connection
-          logger.debug(
-            `We are done...Ending connection for User: ${this.mailHash}`
-          );
-
-          this.connection.end();
-          self = null;
-        } else {
-          // go to the next folder
-          logger.debug(
-            `Going to next folder in folders array for User: ${this.mailHash}`
-          );
-          self
-            .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
-            .next();
-          self = null;
-        }
-      });
+      this.ImapFetch(folder, folderName);
     } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
       logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
-      self = null;
     } else {
       // if this folder is juste a label then pass to the next folder
       logger.debug(
@@ -284,10 +227,67 @@ class EmailAccountMiner {
       this.mineFolder(
         this.folders[this.folders.indexOf(folderName) + 1]
       ).next();
-      self = null;
     }
   }
 
+  ImapFetch(folder, folderName) {
+    let self = this;
+    const f = this.connection.seq.fetch("1:*", {
+      bodies: self.fields,
+      struct: true,
+    });
+    logger.debug(
+      `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
+    );
+    f.on("message", (msg, seqNumber) => {
+      let Header = "";
+      let body = "";
+      let size = 0;
+      msg.on("body", function (stream, streamInfo) {
+        // parse the chunks of the message
+        size += streamInfo.size;
+        stream.on("data", async (chunk) => {
+          if (streamInfo.which.includes("HEADER")) {
+            Header += chunk;
+          } else {
+            body += chunk;
+          }
+        });
+      });
+      msg.once("end", function () {
+        // if end then push to queue
+        const header = Header;
+        const Body = body;
+        self.pushMessageToQueue(seqNumber, header, Body, folderName);
+        Header = "";
+        body = "";
+      });
+    });
+    f.once("end", () => {
+      logger.info(
+        `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
+      );
+      this.sse.send(folderName, `scannedBoxes${this.user.id}`);
+      if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
+        // we are at the end of the folder array==>> end imap connection
+        logger.debug(
+          `We are done...Ending connection for User: ${this.mailHash}`
+        );
+
+        this.connection.end();
+        self = null;
+      } else {
+        // go to the next folder
+        logger.debug(
+          `Going to next folder in folders array for User: ${this.mailHash}`
+        );
+        self
+          .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
+          .next();
+        self = null;
+      }
+    });
+  }
   /**
    * Takes the sequence message number, the part it's being mined and the date in case of a body
    * then it will retrieve from redis queue a message and parses it
@@ -317,11 +317,11 @@ class EmailAccountMiner {
    * @param folderName - The name of the folder that the message is in.
    */
   async pushMessageToQueue(seqNumber, header, Body, folderName) {
-    let Header = Imap.parseHeader(header.toString("utf8"));
+    const Header = Imap.parseHeader(header.toString("utf8"));
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
-    let message_id = Header["message-id"] ? Header["message-id"][0] : "";
+    const message_id = Header["message-id"] ? Header["message-id"][0] : "";
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
@@ -351,7 +351,7 @@ class EmailAccountMiner {
    */
   async mineMessage(size, seqNumber, header, body, dateInCaseOfBody) {
     // create EmailMessage object
-    let message = new EmailMessage(
+    const message = new EmailMessage(
       seqNumber,
       size,
       header,
@@ -359,7 +359,7 @@ class EmailAccountMiner {
       this.user,
       dateInCaseOfBody
     );
-    let message_id = message.getMessageId();
+    const message_id = message.getMessageId();
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (message_id) {
@@ -377,7 +377,7 @@ class EmailAccountMiner {
    * @param batch - The array of objects that you want to store in the database.
    */
   async sendMiningProgress(seqNumber, folderName) {
-    let used = process.memoryUsage().heapUsed / 1024 / 1024;
+    const used = process.memoryUsage().heapUsed / 1024 / 1024;
     logger.debug(`Used Memory ${used} mb`);
     if (Math.round(used * 100) / 100 > 190) {
       logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
@@ -397,8 +397,8 @@ class EmailAccountMiner {
       `ScannedEmails${this.user.id}`
     );
     if (this.sends.indexOf(seqNumber) % 2 == 0) {
-      let minedEmails = await databaseHelpers.getEmails(this.user.id);
-      let totalScanned = await databaseHelpers.getCountDB(this.user.id);
+      const minedEmails = await databaseHelpers.getEmails(this.user.id);
+      const totalScanned = await databaseHelpers.getCountDB(this.user.id);
       this.sse.send(
         {
           data: inputHelpers.sortDatabase(minedEmails),
@@ -410,7 +410,6 @@ class EmailAccountMiner {
         `${minedEmails.length} mined emails for user ${this.mailHash}`
       );
     }
-    return;
   }
 }
 

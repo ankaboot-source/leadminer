@@ -1,11 +1,11 @@
-const Imap = require("imap");
-const logger = require("../utils/logger")(module);
-const hashHelpers = require("../utils/hashHelpers");
-const tokenHelpers = require("../utils/tokenHelpers");
-const config = require("config");
-const GOOGLE_IMAP_HOST = config.get("google_api.host");
-const AUTHENTICATION_TIMEOUT = config.get("server.imap.authentication_timeout");
-const CONNECTION_TIMEOUT = config.get("server.imap.connection_timeout");
+const Imap = require('imap');
+const logger = require('../utils/logger')(module);
+const hashHelpers = require('../utils/hashHelpers');
+const tokenHelpers = require('../utils/tokenHelpers');
+const config = require('config');
+const GOOGLE_IMAP_HOST = config.get('google_api.host');
+const AUTHENTICATION_TIMEOUT = config.get('server.imap.authentication_timeout');
+const CONNECTION_TIMEOUT = config.get('server.imap.connection_timeout');
 
 class EmailServer {
   #connection;
@@ -29,7 +29,7 @@ class EmailServer {
       // the user is connected using api
       this.#connection = new Imap({
         user: this.user.email,
-        xoauth2: "",
+        xoauth2: '',
         host: GOOGLE_IMAP_HOST,
         port: this.user.port || 993,
         tls: true,
@@ -85,15 +85,15 @@ class EmailServer {
     return new Promise(async (res, reject) => {
       this.initConnection();
       if (this.isApiConnection()) {
-        logger.debug(`User connected using api`);
+        logger.debug('User connected using api');
         const tokens = await tokenHelpers.generateXOauthToken(this.user);
 
-        this.sse.send({ token: tokens.newToken }, "token" + this.user.id);
+        this.sse.send({ token: tokens.newToken }, `token${  this.user.id}`);
         this.#connection._config.xoauth2 = tokens.xoauth2Token;
         this.#connection.connect();
         res(this.#connection);
       } else {
-        logger.debug(`User connected using imap account`);
+        logger.debug('User connected using imap account');
         this.#connection.connect();
         res(this.#connection);
       }

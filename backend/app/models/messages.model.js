@@ -1,5 +1,5 @@
 module.exports = (sequelize, Sequelize) => {
-  const Messages = sequelize.define("messages", {
+  const Messages = sequelize.define('messages', {
     message_id: {
       allowNull: false,
       type: Sequelize.TEXT,

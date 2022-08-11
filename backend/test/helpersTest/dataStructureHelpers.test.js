@@ -49,20 +49,20 @@ describe("dataStructureHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer
     expect(output).to.have.deep.members(expectedOutput);
   });
 });
-describe("dataStructureHelpers.IsNotNoReply(oneEmail, imapEmail)", function () {
+describe("dataStructureHelpers.IsNoReply(oneEmail, imapEmail)", function () {
   it("should return false for no-reply-leadminer@leadminer.io", function () {
-    const output = dataStructureHelpers.IsNotNoReply(
+    const output = dataStructureHelpers.IsNoReply(
       "no-reply-leadminer@leadminer.io",
       "leadminer-team@leadminer.io"
     );
-    expect(output).to.be.false;
+    expect(output).to.be.true;
   });
   it("should return true for leadminer@leadminer.io", function () {
-    const output = dataStructureHelpers.IsNotNoReply(
+    const output = dataStructureHelpers.IsNoReply(
       "leadminer@leadminer.com",
       "leadminer-team@leadminer.io"
     );
-    expect(output).to.be.true;
+    expect(output).to.be.false;
   });
 });
 // describe("dataStructureHelpers.addChildrenTotalForParentFiles(imapTree,userEmails)", function () {
