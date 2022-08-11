@@ -4,7 +4,7 @@
   "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
-    "test": "nyc --reporter=text --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
+    "test": "nyc --reporter=text --reporter=lcov mocha -r dotenv/config test/**/EmailAccountMiner.test.js --config .mocharc.js --exit",
     "dev": "nodemon server.js",
     "lint:fix": "cd app && eslint --fix . --ignore-pattern 'out/' ",
     "make-badges": "istanbul-badges-readme --readmeDir='../'"
