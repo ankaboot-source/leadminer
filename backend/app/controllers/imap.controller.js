@@ -19,7 +19,7 @@ const { imapInfo } = require("../models");
  * @param  {} res
  */
 exports.createImapInfo = (req, res) => {
-  if (!req.body.email || !req.body.host || !req.body.port) {
+  if (!req.body.email || !req.body.host) {
     res.status(400).send({
       error: "Content can not be empty!",
     });
@@ -29,7 +29,7 @@ exports.createImapInfo = (req, res) => {
   const imapInfo = {
     email: req.body.email,
     host: req.body.host,
-    port: req.body.port,
+    port: req.body.port || 993,
     tls: req.body.tls ? req.body.tls : true,
   };
   // initiate imap client
@@ -56,7 +56,7 @@ exports.createImapInfo = (req, res) => {
         // Save ImapInfo in the database
         ImapInfo.create(imapInfo)
           .then((data) => {
-            res.status(200).send({ imapdata: data });
+            res.status(200).send({ imap: data });
           })
           .catch((err) => {
             logger.error(
@@ -73,8 +73,8 @@ exports.createImapInfo = (req, res) => {
         );
         res.status(200).send({
           message: "Your account already exists !",
-          switch: true,
-          imapdata,
+
+          imap,
         });
       }
       imap.end();
@@ -105,10 +105,6 @@ exports.loginToAccount = async (req, res) => {
   let imap = await ImapInfo.findOne({ where: { email: req.body.email } });
 
   if (imap == null) {
-    logger.error(
-      `On login : Account with email ${req.body.email} does not exist`
-    );
-
     this.createImapInfo(req, res);
   } else {
     const imapConnection = new Imap({
