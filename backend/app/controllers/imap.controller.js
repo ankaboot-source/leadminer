@@ -160,6 +160,7 @@ exports.getImapBoxes = async (req, res, sse) => {
       query["refresh_token"] = google_user.dataValues.refreshToken;
     }
   } else {
+    logger.debug(query.id, query.email);
     const imap_user = await imapInfo.findOne({ where: { id: query.id } });
     if (imap_user) {
       query["host"] = imap_user.host;
@@ -216,6 +217,8 @@ exports.getEmails = async (req, res, sse) => {
   }
 
   const query = JSON.parse(req.query.user);
+  logger.debug(query.id, query.email);
+
   if (query.access_token) {
     const google_user = await googleUser.findOne({
       where: { email: query.email },
@@ -224,6 +227,8 @@ exports.getEmails = async (req, res, sse) => {
       query["refresh_token"] = google_user.dataValues.refreshToken;
     }
   } else {
+    logger.debug(query.id, query.email, "getemails");
+
     const imap_user = await imapInfo.findOne({ where: { id: query.id } });
     if (imap_user) {
       query["host"] = imap_user.host;
