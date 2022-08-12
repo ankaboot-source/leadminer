@@ -35,7 +35,7 @@ jobs:
         run: cd backend && npm run test
       - name: Code Coverage Report
         if: always()
-        uses: romeovs/lcov-reporter-action@v0.2.19
+        uses: romeovs/lcov-reporter-action@v0.3.1
         with:
           lcov-file: backend/coverage/lcov.info
           github-token: ${{ secrets.GITHUB_TOKEN }}

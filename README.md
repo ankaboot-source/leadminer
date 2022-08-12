@@ -1,5 +1,5 @@
 [![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml/badge.svg?branch=main)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml)
-![Lines](https://img.shields.io/badge/Coverage-80.85%25-yellow.svg?style=flat)
+![Lines](https://img.shields.io/badge/Coverage-87.69%25-yellow.svg?style=flat)
 
 # Leadminer
 

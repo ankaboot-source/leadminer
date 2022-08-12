@@ -32,6 +32,7 @@ describe("Full mining flow", function () {
         });
     });
   });
+  console.log(loggedInUser);
   describe("tree", function () {
     it("Get Tree from imap server", async function () {
       await request(app.server)
