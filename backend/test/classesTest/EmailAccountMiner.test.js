@@ -3,6 +3,7 @@ const chai = require("chai"),
 const request = require("supertest");
 const app = require("../../server");
 const config = require("config");
+const logger = require("../../app/utils/logger")(module);
 const emailTest = config.get("test.imap_email");
 const hostTest = config.get("test.imap_host");
 const passwordTest = config.get("test.imap_password");
@@ -30,9 +31,9 @@ describe("Full mining flow", function () {
         .expect((res) => {
           loggedInUser = JSON.parse(res.text).imap;
         });
+      logger.debug(loggedInUser);
     });
   });
-  console.log(loggedInUser);
   describe("tree", function () {
     it("Get Tree from imap server", async function () {
       await request(app.server)
