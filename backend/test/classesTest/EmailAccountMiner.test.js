@@ -17,7 +17,6 @@ after(async () => {
   require("../../server").stop();
 });
 describe("Full mining flow", function () {
-  this.timeout(10000);
   let loggedInUser;
   describe("login", function () {
     it("create user (login request)", async function () {

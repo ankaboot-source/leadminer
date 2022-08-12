@@ -152,7 +152,6 @@ exports.loginToAccount = async (req, res) => {
 /* A function that is called when a user wants to get his imap folders tree. */
 exports.getImapBoxes = async (req, res, sse) => {
   const query = JSON.parse(req.query.user);
-  console.log(query);
   if (query.access_token) {
     const google_user = await googleUser.findOne({
       where: { email: query.email },
