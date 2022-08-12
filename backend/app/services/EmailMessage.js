@@ -129,7 +129,7 @@ class EmailMessage {
     Object.keys(messagingFields).map((key) => {
       //extract Name and Email in case of a header
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
-      if (emails) {
+      if (emails.length > 0) {
         emails.map((email) => {
           if (
             email &&
@@ -138,7 +138,7 @@ class EmailMessage {
             !dataStructureHelpers.IsNoReply(email.address) &&
             dataStructureHelpers.checkDomainIsOk(email.address)
           ) {
-            emailsRaw.create({
+            return emailsRaw.create({
               user_id: this.user.id,
               from: key == "from" ? true : false,
               reply_to: key == "reply-to" ? true : false,
@@ -154,6 +154,8 @@ class EmailMessage {
             });
           }
         });
+      } else {
+        return;
       }
     });
   }
@@ -163,19 +165,20 @@ class EmailMessage {
    * database
    * @returns Nothing
    */
-  async getEmailsObjectsFromBody() {
+  getEmailsObjectsFromBody() {
     const emails = regExHelpers.extractNameAndEmailFromBody(
       this.body.toString("utf8")
     );
-    if (emails) {
-      emails.map(async (email) => {
+
+    if (emails.length > 0) {
+      emails.map((email) => {
         if (
           email &&
           this.user.email != email &&
           !dataStructureHelpers.IsNoReply(email) &&
           dataStructureHelpers.checkDomainIsOk(email)
         ) {
-          emailsRaw.create({
+          return emailsRaw.create({
             user_id: this.user.id,
             from: false,
             reply_to: false,
@@ -192,6 +195,8 @@ class EmailMessage {
           });
         }
       });
+    } else {
+      return;
     }
   }
   /**
@@ -214,7 +219,7 @@ class EmailMessage {
    * @returns An array of objects.
    */
   async extractEmailObjectsFromBody() {
-    if (Object.keys(this.body).length > 0) {
+    if (this.body) {
       this.getEmailsObjectsFromBody();
     }
   }

@@ -6,9 +6,9 @@ const casesObject = [
   [22, 500, 999],
   [50, 1000, 7999],
   [100, 8000, 19999],
-  [200, 20000, 60000],
-  [300, 60001, 100000],
-  [400, 100001, 500001],
+  [500, 20000, 60000],
+  [700, 60001, 100000],
+  [1000, 100001, 500001],
 ];
 /**
  * Returns the path to a box(folder), usefull for nested folders.
@@ -125,7 +125,7 @@ function EqualPartsForSocket(total) {
  */
 function sortDatabase(dataFromDatabse) {
   const data = dataFromDatabse.map((row) => {
-    if (row.dataValues.name == null) {
+    if (!row.dataValues.name || row.dataValues.name == null) {
       row.dataValues["name"] = [""];
     } else {
       const NameArray = [];
@@ -179,7 +179,7 @@ function sortDatabase(dataFromDatabse) {
   data.forEach((el) => {
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name[0] != "") {
+    } else if (el.name && el.name.length > 0 && el.name[0] != "") {
       wordArr.push(el);
     } else {
       emptyArr.push(el);

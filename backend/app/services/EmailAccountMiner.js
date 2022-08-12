@@ -243,6 +243,7 @@ class EmailAccountMiner {
       let Header = "";
       let body = "";
       let size = 0;
+
       msg.on("body", function (stream, streamInfo) {
         // parse the chunks of the message
         size += streamInfo.size;
@@ -360,16 +361,13 @@ class EmailAccountMiner {
       dateInCaseOfBody
     );
     const message_id = message.getMessageId();
-    redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
-      if (!alreadyMined) {
-        if (message_id) {
-          redisClient.sAdd("messages", message_id).then(() => {
-            message.extractEmailObjectsFromHeader();
-            message.extractEmailObjectsFromBody();
-          });
-        }
-      }
-    });
+
+    if (message_id) {
+      redisClient.sAdd("messages", message_id).then(() => {
+        message.extractEmailObjectsFromHeader();
+        message.extractEmailObjectsFromBody();
+      });
+    }
   }
 
   /**
