@@ -33,3 +33,16 @@ jobs:
         run: cd backend && npm install
       - name: Run tests
         run: cd backend && npm run test
+      - name: Code Coverage Report
+        uses: romeovs/lcov-reporter-action@v0.2.11
+        with:
+          lcov-file: backend/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: generating badge
+        run: cd backend && npm run make-badges
+      - name: Commit badge
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: "Code Coverage badge"
+          add: "README.md"

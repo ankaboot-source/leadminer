@@ -142,7 +142,7 @@
     "email": "leadminer",
     "id": "123456789",
     "token": "leaminer_123456789azertyuiop_",
-    "refreshToken": "/refresh_leadminer_token_123456789",
+    "refresh_token": "/refresh_leadminer_token_123456789",
     "access_token": "/access_leadminer_token_123456789"
   },
   "queryExampleImap": {
