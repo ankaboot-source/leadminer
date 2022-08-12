@@ -18,44 +18,50 @@ after(async () => {
 describe("Full mining flow", function () {
   this.timeout(10000);
   let loggedInUser;
-  it("create user (login request)", async function () {
-    await request(app.server)
-      .post("/api/imap/login")
-      .send({
-        email: emailTest,
-        password: passwordTest,
-        host: hostTest,
-      })
-      .expect((res) => {
-        loggedInUser = JSON.parse(res.text).imap;
-      });
+  describe("login", function () {
+    it("create user (login request)", async function () {
+      await request(app.server)
+        .post("/api/imap/login")
+        .send({
+          email: emailTest,
+          password: passwordTest,
+          host: hostTest,
+        })
+        .expect((res) => {
+          loggedInUser = JSON.parse(res.text).imap;
+        });
+    });
   });
-  it("Get Tree from imap server", async function () {
-    await request(app.server)
-      .get(`/api/imap/${loggedInUser.id}/boxes`)
-      .query({
-        user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
-          '"' + loggedInUser.email + '"'
-        },"password":${'"' + passwordTest + '"'},"host":${
-          '"' + loggedInUser.host + '"'
-        },"port":"993"}`,
-      })
-      .expect(200);
+  describe("tree", function () {
+    it("Get Tree from imap server", async function () {
+      await request(app.server)
+        .get(`/api/imap/${loggedInUser.id}/boxes`)
+        .query({
+          user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
+            '"' + loggedInUser.email + '"'
+          },"password":${'"' + passwordTest + '"'},"host":${
+            '"' + loggedInUser.host + '"'
+          },"port":"993"}`,
+        })
+        .expect(200);
+    });
   });
-  it("mine folder for the logged in user", async function () {
-    // loggedInUser.email = '"' + loggedInUser.email + '"';
-    // loggedInUser.host = '"' + loggedInUser.host + '"';
-    await request(app.server)
-      .get(`/api/imap/${loggedInUser.id}/collectEmails`)
-      .query({
-        fields: ["HEADER", "1"],
-        boxes: ["testFile", "none"],
-        user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
-          '"' + loggedInUser.email + '"'
-        },"password":${'"' + passwordTest + '"'},"host":${
-          '"' + loggedInUser.host + '"'
-        },"port":"993"}`,
-      })
-      .expect(200);
+  describe("mine", function () {
+    it("mine folder for the logged in user", async function () {
+      // loggedInUser.email = '"' + loggedInUser.email + '"';
+      // loggedInUser.host = '"' + loggedInUser.host + '"';
+      await request(app.server)
+        .get(`/api/imap/${loggedInUser.id}/collectEmails`)
+        .query({
+          fields: ["HEADER", "1"],
+          boxes: ["testFile", "none"],
+          user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
+            '"' + loggedInUser.email + '"'
+          },"password":${'"' + passwordTest + '"'},"host":${
+            '"' + loggedInUser.host + '"'
+          },"port":"993"}`,
+        })
+        .expect(200);
+    });
   });
 });

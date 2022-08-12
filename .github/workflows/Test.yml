@@ -34,6 +34,7 @@ jobs:
       - name: Run tests
         run: cd backend && npm run test
       - name: Code Coverage Report
+        if: always()
         uses: romeovs/lcov-reporter-action@v0.2.11
         with:
           lcov-file: backend/coverage/lcov.info
