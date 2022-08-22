@@ -11,4 +11,4 @@ logs
 app/utils/out
 app/out
 coverage
-config/production.yaml
+app/config/production.yaml

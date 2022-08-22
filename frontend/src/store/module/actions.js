@@ -76,19 +76,15 @@ export async function getEmails({ context, getters }, { data }) {
     this.commit("example/SET_SCANNEDBOXES", []);
     if (currentState.googleUser.access_token != "") {
       this.$axios
-        .get(
-          this.$api + `/imap/1/collectEmails`,
-
-          {
-            cancelToken: sources.token,
-            params: {
-              fields: data.fields.split(","),
-              boxes: data.boxes,
-              folders: data.folders,
-              user: currentState.googleUser,
-            },
-          }
-        )
+        .get(this.$api + `/imap/1/collectEmails`, {
+          cancelToken: sources.token,
+          params: {
+            fields: data.fields.split(","),
+            boxes: data.boxes,
+            folders: data.folders,
+            user: currentState.googleUser,
+          },
+        })
         .then((response) => {
           source.close();
           this.commit("example/SET_LOADING", false);
