@@ -19,38 +19,51 @@ Leadminer is a tool to mine and transmute passive contacts from your own data so
 
 ## Installation
 
-#### Developement mode:
+### Developement mode:
+Dependencies:
+* nodejs (version 14 or higher)
+* postgresql
+* redis
 
-Vuejs version 3 and nodejs version 14 or above must first be installed.
+The following instructions are for setting up leadminer manually in an alpine docker container. Installing locally should be similar, please refer to your distribution instructions for correct package managment and for setting up redis and postgresql.
 
-Then look through the frontend and backend Readme folders to setup each environment.
-
-```bash
-TODO: make or sh script to setup in one command the full project
+Start a docker container
+```shell
+~# docker run -p 8080:8080 -it alpine ash
 ```
-
-#### env variables
-
-```bash
-POSTGRES_DB = "postgres"
-POSTGRES_USER = "postgres"
-POSTGRES_PASSWORD = ""
-EMAIL_IMAP = "leadminer@leadminer.io"
-PASSWORD_IMAP = "abcd123"
-HOST_IMAP = "imap.domain.com"
-GOOGLE_IMAP_HOST = "imap.gmail.com"
-NEWSLETTER = ["list-unsubscribe", "list-id", "list"]
-TRANSACTIONAL = ["feedback-id", "x-feedback-id","x-Mandrill-User", "x-mailer","X-MarketoID","X-campaignid","X-Mailgun"]
-CAMPAIGN = ["x-campaignid"]
-HASH_SECRET = "customhashsecret"
-EX_REDIS = 259200
-GG_CLIENT_ID="8656********-customclientid**********.apps.googleusercontent.com"
-GG_CLIENT_SECRET="G*C*PX-*************yGHnVAnQ**********"
-AUTHENTICATION_TIMEOUT=10000
-CONNECTION_TIMEOUT=90000
-LOG_LEVEL='debug'
-
+**Note**: For alpine linux, it's a good practice to `source /etc/profile` before starting
+Install the needed dependencies
+```shell
+apk add git npm postgresql redis
 ```
+Here are the instructions of setting up postgreSQL on alpine. From [Installing postgreSQL on alpine guide by aem.run](https://aem.run/posts/2021-05-30-installing-postgresql-on-alpine-rpi/) 
+```shell
+~# mkdir /run/postgresql
+~# chown postgres:postgres /run/postgresql
+~# mkdir /var/lib/postgresql/data
+~# chown postgres:postgres /var/lib/postgresql/data
+~# chmod 0700 /var/lib/postgresql/data
+~# su - postgres
+~$ initdb -D /var/lib/postgresql/data
+~$ pg_ctl start -D /var/lib/postgresql/data
+~$ exit
+```
+Start the redis server in the background.
+```shell
+redis-server &>/var/log/redis/log.txt &
+```
+**Note**: To check that the server is running, run `redis-cli` and execute `ping`.
+It is nether possible nor recommended to run this as root. Quasar node module does not work with root previlages. So we need to setup a new user account.
+```shell
+~# adduser user
+~# su user
+```
+Clone the repository
+```shell
+~$ git clone https://github.com/ankaboot-source/leadminer
+```
+A terminal multiplexer can be used to execute both the frontend and the backned. You can also setup a docker container with `-d --name` to have it reused without reinitializing the setup.
+Enter both the frontend and the backend directories and execute `npm i` to install the needed modules. Then execute `npm start` to start both the backend and the frontend.
 
 ## Usage
 
