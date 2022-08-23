@@ -1,5 +1,17 @@
-[![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml/badge.svg?branch=main)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml)
-![Lines](https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat)
+<h1 align="center">
+  <br>
+  <a href="https://github.com/ankaboot-source/"><img src="/frontend/public/icons/favicon-128x128.png" alt="Ankaboot" width="200"></a>
+  <br>
+  Ankaboot
+  <br>
+  <br>
+</h1>
+<h4 align="center">The inbox email addresses extractor and qualifier</h4>
+<p align="center">
+  <a href="https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml"><img src="https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml/badge.svg?branch=main" alt="Build & Deploy"></a>
+  <img src="https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat" alt="Lines"></a>
+</p>
+<br>
 
 # Leadminer
 
