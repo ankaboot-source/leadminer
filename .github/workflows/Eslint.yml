@@ -9,7 +9,7 @@ jobs:
       - name: Set up node
         uses: actions/setup-node@v1
       - name: Install backend dependencies
-        run: cd backend && npm install
+        run: cd backend && npm i eslint
       - name: Run linting for backend
         run: cd backend && npm run lint:fix
       - name: Annotate Code Linting Results
