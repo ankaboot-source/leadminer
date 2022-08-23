@@ -17,7 +17,7 @@ jobs:
         if: always()
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: "eslint_report.json"
+          report-json: "backend/app/eslint_report.json"
       - name: Upload ESLint report
         uses: actions/upload-artifact@v2
         with:
