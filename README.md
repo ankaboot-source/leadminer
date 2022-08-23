@@ -84,7 +84,16 @@ For any requests concerning the roadmap, you could either have a look on issues 
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Please feel free to contribute. Pull requests are welcome.
+
+
+1. Fork the project (<https://github.com/ankaboot-source/leadminer>)
+2. Create your feature branch (`git checkout -b feature/fooBar`)
+3. Commit your changes (`git commit -am 'Add some fooBar'`)
+4. Push to the branch (`git push origin feature/fooBar`)
+5. Create a new Pull Request
+
+For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
