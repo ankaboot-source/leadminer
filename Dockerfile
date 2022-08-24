@@ -1,8 +1,15 @@
 # syntax=docker/dockerfile:1
 FROM alpine:latest
 RUN apk add npm
-COPY . /leadminer
-RUN npm i --prefix /leadminer/backend
-RUN npm i --prefix /leadminer/frontend
+COPY . /app
+
+# Preparing frontend
+RUN npm i --prefix /app/frontend
+RUN npm run build --prefix /app/frontend
+
+# Preparing backend
 EXPOSE 8081
-CMD npm start --prefix /leadminer/backend & npm start --prefix /leadminer/frontend
+RUN rm /app/backend/config/*
+RUN npm run build --prefix /app/frontend/
+RUN npm i --prefix /app/backend
+CMD npm start --prefix /app/backend
