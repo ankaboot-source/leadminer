@@ -94,6 +94,7 @@ $ wget "https://raw.githubusercontent.com/ankaboot-source/leadminer/main/backend
 Edit the file according to your needs.
 #### Starting
 The docker container does not have default values on its own. There fore you MUST specify a configuration file to be mounted under `/app/backend/config/`.
+**Note**: that `--net=host` is only needed if your redis server is on your localhost. Using it is discouraged and it should be replaced with `--add-host=host.docker.internal` whenever possible (with the addition of using that `host.docker.internal` instead of `localhost` in the configuration).
 ##### Starting in development mode.
 ```shell
 # docker run \
