@@ -17,8 +17,7 @@
 
 Leadminer is a tool to mine and transmute passive contacts from your own data sources (email mailbox, social networks) into organic and qualified leads.
 
-## Installation
-
+## Installation And Deployment
 ### From source
 #### Prerequisites
 Install and configure the following dependencies.
@@ -40,14 +39,17 @@ Install the required node modules.
 $ npm install --prefix ./leadminer/backend
 $ npm install --prefix ./leadminer/frontend
 ```
-## Configuration
+#### Configuration
 To configure the backend API to use different variables. Please check the provided in `leadminer/backend/config/example.yaml` And edit `leadminer/backend/config/default.yaml` as needed.
+When working in production environment. Set the `NODE_ENV` environment variable to produciton.
+```shell
+$ export NODE_ENV=production
+```
 
 TODO: When the frontend endpoint bacomes dynamic, document the process of specifying the endpoint in production mode.
 
-
-## Deployment
-### Starting in development mode
+#### Deployment
+##### Starting in development mode
 Start the backend API server.
 ```shell
 $ npm start --prefix ./leadminer/backend
@@ -56,9 +58,59 @@ In another terminal window. Start the frontend.
 ```shell
 $ npm start --prefix ./ledminer/frontend
 ```
-### Starting in production mode
-Leadminer already have a CI/CD pipeline. You can find the deployment workflow yml file [here](/.github/workflows/Deploy.yml).
+##### Starting in production mode
+* Build and copy the frontend to the appropriate location.
+```shell
+$ npm run build --prefix ./leadminer/frontend
+$ cp ./leadminer/frontend/dist /var/www/html
+```
+* Make sure you have your HTTP serveri (nginx or apache) setup right.
+For example, for nignx add `root /var/www/html/dist/spa` under `server`
+* Enter the backend directory and start the server as a daemon
+```shell
+$ cd leadminer/backend
+$ pm2 start server.js --node-args="--expose_gc"
+```
+**Note**: Leadminer already have a CI/CD pipeline that does all of this. You can find the deployment workflow yml file [here](/.github/workflows/Deploy.yml).
 
+
+### Using Docker
+#### Prerequisites
+* docker
+Clone the repository and build the docker image
+```shell
+$ git clone https://github.com/ankaboot-source/leadminer
+$ docker build -t leadminer leadminer
+```
+#### Configuration
+* Copy or download the configuration example from the repository.
+```shell
+$ cp leadminer/backend/config/example.yaml
+```
+OR
+```shell
+$ wget "https://raw.githubusercontent.com/ankaboot-source/leadminer/main/backend/config/example.yml"
+```
+Edit the file according to your needs.
+#### Starting
+The docker container does not have default values on its own. There fore you MUST specify a configuration file to be mounted under `/app/backend/config/`.
+##### Starting in development mode.
+```shell
+# docker run \
+	--net=host \
+	-v /var/www/html/dist:/app/frontend/dist \
+	-v ${PWD}/edited-example.yaml:/app/backend/config/default.yaml \
+	-it leadminer
+```
+##### Starting in development mode.
+```shell
+# docker run \
+	--net=host \
+	-v /var/www/html/dist:/app/frontend/dist \
+	-v ${PWD}/edited-example.yaml:/app/backend/config/production.yaml \
+	-e "NODE_ENV=production" \
+	-it leadminer
+```
 ## Troubleshooting
 Nodejs must be version 14 or higher.
 ## Support
