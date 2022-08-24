@@ -3,7 +3,7 @@
 
 # Leadminer
 
-Leadminer is a NodeJS app to extract and qualify email addresses from your own mailboxes.
+Leadminer is a tool to mine and transmute passive contacts from your own data sources (email mailbox, social networks...) into organic and qualified leads.
 
 ## Installation
 
