@@ -5,5 +5,4 @@ COPY . /leadminer
 RUN npm i --prefix /leadminer/backend
 RUN npm i --prefix /leadminer/frontend
 EXPOSE 8081
-EXPOSE 6375
 CMD npm start --prefix /leadminer/backend & npm start --prefix /leadminer/frontend
