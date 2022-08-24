@@ -314,32 +314,29 @@ class EmailAccountMiner {
    * @param type - "body" or "header"
    * @param dateInCaseOfBody - This is the date of the body that is being mined.
    */
-  async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
+  async getMessageFromQueue(seqNumber, type, dateInCaseOfBody, start) {
     if (type == "body") {
-      let start = performance.now();
       redisClient.rPop("bodies").then((data) => {
         this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
-        let end = performance.now();
-        let timeTaken = end - start;
-        fs.appendFileSync(
-          "report.txt",
-          JSON.stringify({ getBody: timeTaken }) + "\n"
-        );
       });
+      let end = Date.now();
+      let timeTaken = end - start;
+      fs.appendFileSync(
+        "report.txt",
+        JSON.stringify({ Body: timeTaken }) + "\n"
+      );
     } else {
-      let start = performance.now();
       redisClient.rPop("headers").then((data) => {
         if (data) {
           this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
-
-          let end = performance.now();
-          let timeTaken = end - start;
-          fs.appendFileSync(
-            "report.txt",
-            JSON.stringify({ getHeader: timeTaken }) + "\n"
-          );
         }
       });
+      let end = Date.now();
+      let timeTaken = end - start;
+      fs.appendFileSync(
+        "report.txt",
+        JSON.stringify({ Header: timeTaken }) + "\n"
+      );
     }
   }
   /**
@@ -356,36 +353,22 @@ class EmailAccountMiner {
       this.sendMiningProgress(seqNumber, folderName);
     }
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
+    let start = Date.now();
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
-          let start = performance.now();
-          console.log(start);
           redisClient.lPush("bodies", Body).then((reply) => {
             this.getMessageFromQueue(
               seqNumber,
               "body",
-              Header["date"] ? Header["date"][0] : ""
-            );
-            let end = performance.now();
-            console.log(end);
-            let timeTaken = end - start;
-            fs.appendFileSync(
-              "report.txt",
-              JSON.stringify({ pushBody: timeTaken }) + "\n"
+              Header["date"] ? Header["date"][0] : "",
+              start
             );
           });
         }
         if (Header && Header != "") {
-          let start = performance.now();
           redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
-            this.getMessageFromQueue(seqNumber, "header", "");
-            let end = performance.now();
-            let timeTaken = end - start;
-            fs.appendFileSync(
-              "report.txt",
-              JSON.stringify({ pushHeader: timeTaken }) + "\n"
-            );
+            this.getMessageFromQueue(seqNumber, "header", "", start);
           });
         }
       }

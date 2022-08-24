@@ -297,7 +297,6 @@ exports.getEmails = async (req, res, sse) => {
             } else logger.debug("can't clean redis");
           });
           const fs = require("fs");
-          console.log(start);
           var array = fs.readFileSync("report.txt").toString().split("\n");
           let redisTime = 0;
           let messageFetchingTime = 0;
@@ -306,12 +305,7 @@ exports.getEmails = async (req, res, sse) => {
           for (i in array) {
             if (array[i] != "") {
               let line = JSON.parse(array[i]);
-              if (
-                line["pushHeader"] ||
-                line["pushBody"] ||
-                line["getHeader"] ||
-                line["getBody"]
-              ) {
+              if (line["Header"] || line["Body"]) {
                 redisTime = parseFloat(Object.values(line)[0]) + redisTime;
               }
               if (line["messageFetch"]) {
