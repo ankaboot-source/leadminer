@@ -19,61 +19,48 @@ Leadminer is a tool to mine and transmute passive contacts from your own data so
 
 ## Installation
 
-### Developement mode:
-Dependencies:
-* nodejs (version 14 or higher)
-* postgresql
+### From source
+#### Prerequisites
+Install and configure the following dependencies.
+* node (version 14 or higher)
+* [postgres]https://www.postgresql.org/docs/current/tutorial-start.html()
 * redis
 
-The following instructions are for setting up leadminer manually in an alpine docker container. Installing locally should be similar, please refer to your distribution instructions for correct package managment and for setting up redis and postgresql.
-
-Start a docker container
+To check if redis is working and accessible. Issue the following command.
 ```shell
-~# docker run -p 8080:8080 -it alpine ash
-```
-**Note**: For alpine linux, it's a good practice to `source /etc/profile` before starting
-Install the needed dependencies
-```shell
-apk add git npm postgresql redis
-```
-Here are the instructions of setting up postgreSQL on alpine. From [Installing postgreSQL on alpine guide by aem.run](https://aem.run/posts/2021-05-30-installing-postgresql-on-alpine-rpi/) 
-```shell
-~# mkdir /run/postgresql
-~# chown postgres:postgres /run/postgresql
-~# mkdir /var/lib/postgresql/data
-~# chown postgres:postgres /var/lib/postgresql/data
-~# chmod 0700 /var/lib/postgresql/data
-~# su - postgres
-~$ initdb -D /var/lib/postgresql/data
-~$ pg_ctl start -D /var/lib/postgresql/data
-~$ exit
-```
-Start the redis server in the background.
-```shell
-redis-server &>/var/log/redis/log.txt &
-```
-**Note**: To check that the server is running, run `redis-cli` and execute `ping`.
-It is nether possible nor recommended to run this as root. Quasar node module does not work with root previlages. So we need to setup a new user account.
-```shell
-~# adduser user
-~# su user
-```
-Clone the repository
-```shell
-~$ git clone https://github.com/ankaboot-source/leadminer
-```
-A terminal multiplexer can be used to execute both the frontend and the backned. You can also setup a docker container with `-d --name` to have it reused without reinitializing the setup.
-Enter both the frontend and the backend directories and execute `npm i` to install the needed modules. Then execute `npm start` to start both the backend and the frontend.
-
-## Usage
-
-```bash
-
-$ usage
-$ usage
-
+echo ping | redis-cli [URL|address]
 ```
 
+Clone the reposotory
+```shell
+$ git clone https://github.com/ankaboot-source/leadminer
+```
+Install the required node modules.
+```shell
+$ npm install --prefix ./leadminer/backend
+$ npm install --prefix ./leadminer/frontend
+```
+## Configuration
+To configure the backend API to use different variables. Please check the provided in `leadminer/backend/config/example.yaml` And edit `leadminer/backend/config/default.yaml` as needed.
+
+TODO: When the frontend endpoint bacomes dynamic, document the process of specifying the endpoint in production mode.
+
+
+## Deployment
+### Starting in development mode
+Start the backend API server.
+```shell
+$ npm start --prefix ./leadminer/backend
+```
+In another terminal window. Start the frontend.
+```shell
+$ npm start --prefix ./ledminer/frontend
+```
+### Starting in production mode
+Leadminer already have a CI/CD pipeline. You can find the deployment workflow yml file [here](/.github/workflows/Deploy.yml).
+
+## Troubleshooting
+Nodejs must be version 14 or higher.
 ## Support
 
 This app is provided for free as such with no guarantee nor support. For any kind of support, feel free to reach [ankaboot professional services](contact@ankaboot.fr).
