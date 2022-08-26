@@ -1,8 +1,8 @@
 const Sequelize = require('sequelize');
 const dbConfig = require('../config/db.config');
 const logger = require('../utils/logger')(module);
-const sequelize = new Sequelize(dbConfig.db, 'postgres', dbConfig.password, {
-  host: 'localhost',
+const sequelize = new Sequelize(dbConfig.db, dbConfig.user, dbConfig.password, {
+  host: dbConfig.host,
   dialect: 'postgres',
   pool: {
     max: 50,

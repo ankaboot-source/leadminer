@@ -102,7 +102,7 @@ exports.loginToAccount = async (req, res) => {
     });
     return;
   }
-  let imap = await ImapInfo.findOne({ where: { email: req.body.email } });
+  const imap = await ImapInfo.findOne({ where: { email: req.body.email } });
 
   if (imap == null) {
     this.createImapInfo(req, res);
@@ -251,6 +251,7 @@ exports.getEmails = async (req, res, sse) => {
     req.query.boxes,
     eventEmitter
   );
+  const start = performance.now();
   miner.mine();
   req.on("close", async () => {
     // if stop mining from user then send data and end imap connetion

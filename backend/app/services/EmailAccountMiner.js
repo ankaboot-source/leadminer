@@ -214,8 +214,9 @@ class EmailAccountMiner {
         `Mining folder size: ${folder.messages.total} for User: ${this.mailHash}`
       );
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
-      // fetch function : pass fileds to fetch
+
       this.ImapFetch(folder, folderName);
+      // fetch function : pass fileds to fetch
     } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
       logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
@@ -239,11 +240,12 @@ class EmailAccountMiner {
     logger.debug(
       `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
     );
+    const starts = performance.now();
+
     f.on("message", (msg, seqNumber) => {
       let Header = "";
       let body = "";
       let size = 0;
-
       msg.on("body", function (stream, streamInfo) {
         // parse the chunks of the message
         size += streamInfo.size;
@@ -264,6 +266,7 @@ class EmailAccountMiner {
         body = "";
       });
     });
+
     f.once("end", () => {
       logger.info(
         `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
@@ -276,6 +279,7 @@ class EmailAccountMiner {
         );
 
         this.connection.end();
+
         self = null;
       } else {
         // go to the next folder
@@ -296,7 +300,7 @@ class EmailAccountMiner {
    * @param type - "body" or "header"
    * @param dateInCaseOfBody - This is the date of the body that is being mined.
    */
-  async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
+  async getMessageFromQueue(seqNumber, type, dateInCaseOfBody, start) {
     if (type == "body") {
       redisClient.rPop("bodies").then((data) => {
         this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
@@ -323,20 +327,24 @@ class EmailAccountMiner {
       this.sendMiningProgress(seqNumber, folderName);
     }
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
+
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
+          const start = Date.now();
           redisClient.lPush("bodies", Body).then((reply) => {
             this.getMessageFromQueue(
               seqNumber,
               "body",
-              Header["date"] ? Header["date"][0] : ""
+              Header["date"] ? Header["date"][0] : "",
+              start
             );
           });
         }
         if (Header && Header != "") {
+          const start = Date.now();
           redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
-            this.getMessageFromQueue(seqNumber, "header", "");
+            this.getMessageFromQueue(seqNumber, "header", "", start);
           });
         }
       }
