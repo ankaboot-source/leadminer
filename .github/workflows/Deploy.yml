@@ -13,11 +13,8 @@ jobs:
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{ secrets.SSH_USERNAME }} # User of the server
           script: |
-            PATH=$PATH:/${{secrets.SSH_USER_NAME}}/.npm-global/bin
             cd leadminer
             git pull
-            export NVM_DIR=~/.nvm
-            source ~/.nvm/nvm.sh
             pm2 kill
             cd frontend && npm install
             quasar build

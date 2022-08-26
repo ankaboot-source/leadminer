@@ -1,22 +1,27 @@
 name: Linting
-on:
-  pull_request:
-    branches: [main]
+on: [pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2
-      - name: Set up node
-        uses: actions/setup-node@v1
+      - name: Setting up NodeJs
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
       - name: Install backend dependencies
-        run: cd backend && npm install
+        run: cd backend && npm i eslint
       - name: Run linting for backend
         run: cd backend && npm run lint:fix
-      - name: Go to root
-        run: cd ..
-      - name: Install frontend dependencies
-        run: cd frontend && npm install
-      - name: Run linting for frontend
-        run: cd frontend && npm run lint
+      - name: Annotate Code Linting Results
+        uses: ataylorme/eslint-annotate-action@v2
+        if: always()
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          report-json: "backend/app/eslint_report.json"
+      - name: Upload ESLint report
+        uses: actions/upload-artifact@v2
+        with:
+          name: eslint_report.json
+          path: backend/app/eslint_report.json

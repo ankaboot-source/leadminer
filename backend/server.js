@@ -23,6 +23,7 @@ const db = require("./app/models");
 const { EventEmitter } = require("stream");
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
+
 const event = new MyEmitter();
 app.use((req, res, next) => {
   // Website you wish to allow to connect
