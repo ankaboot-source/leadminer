@@ -7,7 +7,6 @@ const EmailMessage = require("./EmailMessage");
 const Imap = require("imap");
 const logger = require("../utils/logger")(module);
 const redisClient = require("../../redis");
-const fs = require("fs");
 
 class EmailAccountMiner {
   //public field
@@ -241,13 +240,12 @@ class EmailAccountMiner {
     logger.debug(
       `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
     );
-    let starts = performance.now();
+    const starts = performance.now();
 
     f.on("message", (msg, seqNumber) => {
       let Header = "";
       let body = "";
       let size = 0;
-      let start = performance.now();
       msg.on("body", function (stream, streamInfo) {
         // parse the chunks of the message
         size += streamInfo.size;
@@ -260,13 +258,6 @@ class EmailAccountMiner {
         });
       });
       msg.once("end", function () {
-        let end = performance.now();
-        let timeTaken = end - start;
-        fs.appendFileSync(
-          "report.txt",
-          JSON.stringify({ messageFetch: timeTaken }) + "\n"
-        );
-
         // if end then push to queue
         const header = Header;
         const Body = body;
@@ -277,12 +268,6 @@ class EmailAccountMiner {
     });
 
     f.once("end", () => {
-      let end = performance.now();
-      let timeTaken = end - starts;
-      fs.appendFileSync(
-        "report.txt",
-        JSON.stringify({ fetchEnd: timeTaken }) + "\n"
-      );
       logger.info(
         `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
       );
@@ -294,6 +279,7 @@ class EmailAccountMiner {
         );
 
         this.connection.end();
+
         self = null;
       } else {
         // go to the next folder
@@ -319,24 +305,12 @@ class EmailAccountMiner {
       redisClient.rPop("bodies").then((data) => {
         this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
       });
-      let end = Date.now();
-      let timeTaken = end - start;
-      fs.appendFileSync(
-        "report.txt",
-        JSON.stringify({ Body: timeTaken }) + "\n"
-      );
     } else {
       redisClient.rPop("headers").then((data) => {
         if (data) {
           this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
         }
       });
-      let end = Date.now();
-      let timeTaken = end - start;
-      fs.appendFileSync(
-        "report.txt",
-        JSON.stringify({ Header: timeTaken }) + "\n"
-      );
     }
   }
   /**
@@ -353,10 +327,11 @@ class EmailAccountMiner {
       this.sendMiningProgress(seqNumber, folderName);
     }
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
-    let start = Date.now();
+
     redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
+          const start = Date.now();
           redisClient.lPush("bodies", Body).then((reply) => {
             this.getMessageFromQueue(
               seqNumber,
@@ -367,6 +342,7 @@ class EmailAccountMiner {
           });
         }
         if (Header && Header != "") {
+          const start = Date.now();
           redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
             this.getMessageFromQueue(seqNumber, "header", "", start);
           });

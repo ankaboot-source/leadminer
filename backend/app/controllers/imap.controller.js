@@ -251,7 +251,7 @@ exports.getEmails = async (req, res, sse) => {
     req.query.boxes,
     eventEmitter
   );
-  let start = performance.now();
+  const start = performance.now();
   miner.mine();
   req.on("close", async () => {
     // if stop mining from user then send data and end imap connetion
@@ -296,36 +296,6 @@ exports.getEmails = async (req, res, sse) => {
               logger.debug("redis cleaned ✔️");
             } else logger.debug("can't clean redis");
           });
-          const fs = require("fs");
-          var array = fs.readFileSync("report.txt").toString().split("\n");
-          let redisTime = 0;
-          let messageFetchingTime = 0;
-          let imapTime = 0;
-
-          for (i in array) {
-            if (array[i] != "") {
-              let line = JSON.parse(array[i]);
-              if (line["Header"] || line["Body"]) {
-                redisTime = parseFloat(Object.values(line)[0]) + redisTime;
-              }
-              if (line["messageFetch"]) {
-                messageFetchingTime += parseFloat(line["messageFetch"]);
-              }
-              if (line["fetchEnd"]) {
-                imapTime = parseFloat(line["fetchEnd"]);
-              }
-            }
-          }
-
-          let end = performance.now();
-          let totalTime = end - start;
-          array.push({
-            totalMiningTime: totalTime,
-            messageFetchingTime: messageFetchingTime,
-            redisSpentTime: redisTime,
-            imapSpentTime: imapTime,
-          });
-          console.log(array[array.length - 1], totalTime);
         });
       });
     }, total * 20);
