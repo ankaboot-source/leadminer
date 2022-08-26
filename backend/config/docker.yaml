@@ -1,0 +1,27 @@
+server:
+  log_level: debug
+  port: 8081
+  postgres:
+    host: host.docker.internal
+    name: postgres
+    user: postgres
+    password: postgres
+  redis:
+    url: :@host.docker.internal:6379
+    expiration_timeout: 259200
+  hash_secret: oi.renimdeal
+  imap:
+    authentication_timeout: 10000
+    connection_timeout: 90000
+google_api:
+  host: imap.gmail.com
+  client:
+    id: 865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com
+    secret: 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
+email_types:
+  newsletter: "list-unsubscribe,list-id,list"
+  transactional: "feedback-id,x-feedback-id,x-mandrill-user,x-mailer: mailchimp *,X-LinkedIn-*,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*"
+test:
+  imap_email: "honeypot@flyweight.tech"
+  imap_host: "mail.gandi.net"
+  imap_password: "9Jkxd54DutETkx"
