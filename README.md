@@ -18,8 +18,7 @@ $ git clone https://github.com/ankaboot-source/leadminer
 ```
 Install the required node modules.
 ```shell
-$ npm install --prefix ./leadminer/backend
-$ npm install --prefix ./leadminer/frontend
+$ npm install --prefix ./leadminer/backend && npm install --prefix ./leadminer/frontend
 ```
 
 To configure the application (e.g database host and password), edit `leadminer/backend/config/example.yaml`. When working in production environment, set the `NODE_ENV` environment variable to `production`.
