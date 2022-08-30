@@ -260,8 +260,8 @@ exports.getEmails = async (req, res, sse) => {
   });
   eventEmitter.on("end", async () => {
     //get the queues length
-    const QueueLengthBody = await redisClient.lLen("bodies");
-    const QueueLengthHeader = await redisClient.lLen("headers");
+    const QueueLengthBody = await redisClient.llen("bodies");
+    const QueueLengthHeader = await redisClient.llen("headers");
     const total =
       QueueLengthBody + QueueLengthHeader == 0
         ? 100
@@ -291,7 +291,7 @@ exports.getEmails = async (req, res, sse) => {
           });
           logger.debug("cleaning data from redis...");
 
-          redisClient.flushAll("ASYNC").then((res) => {
+          redisClient.flushall("ASYNC").then((res) => {
             if (res === "OK") {
               logger.debug("redis cleaned ✔️");
             } else logger.debug("can't clean redis");

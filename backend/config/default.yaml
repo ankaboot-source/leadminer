@@ -7,7 +7,8 @@ server:
     user: postgres
     password: postgres
   redis:
-    url: :@localhost:6379
+    host: localhost
+    port: 6379
     expiration_timeout: 259200
   hash_secret: oi.renimdeal
   imap:

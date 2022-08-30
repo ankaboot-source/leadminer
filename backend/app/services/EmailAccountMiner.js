@@ -302,11 +302,11 @@ class EmailAccountMiner {
    */
   async getMessageFromQueue(seqNumber, type, dateInCaseOfBody, start) {
     if (type == "body") {
-      redisClient.rPop("bodies").then((data) => {
+      redisClient.rpop("bodies").then((data) => {
         this.mineMessage(seqNumber, 0, undefined, data, dateInCaseOfBody);
       });
     } else {
-      redisClient.rPop("headers").then((data) => {
+      redisClient.rpop("headers").then((data) => {
         if (data) {
           this.mineMessage(seqNumber, 0, JSON.parse(data), undefined, "");
         }
@@ -328,11 +328,11 @@ class EmailAccountMiner {
     }
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
 
-    redisClient.sIsMember("messages", message_id).then((alreadyMined) => {
+    redisClient.sismember("messages", message_id).then((alreadyMined) => {
       if (!alreadyMined) {
         if (Body && Body != "") {
           const start = Date.now();
-          redisClient.lPush("bodies", Body).then((reply) => {
+          redisClient.lpush("bodies", Body).then((reply) => {
             this.getMessageFromQueue(
               seqNumber,
               "body",
@@ -343,7 +343,7 @@ class EmailAccountMiner {
         }
         if (Header && Header != "") {
           const start = Date.now();
-          redisClient.lPush("headers", JSON.stringify(Header)).then((reply) => {
+          redisClient.lpush("headers", JSON.stringify(Header)).then((reply) => {
             this.getMessageFromQueue(seqNumber, "header", "", start);
           });
         }
@@ -371,7 +371,7 @@ class EmailAccountMiner {
     const message_id = message.getMessageId();
 
     if (message_id) {
-      redisClient.sAdd("messages", message_id).then(() => {
+      redisClient.sadd("messages", message_id).then(() => {
         message.extractEmailObjectsFromHeader();
         message.extractEmailObjectsFromBody();
       });
