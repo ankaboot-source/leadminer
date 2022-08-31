@@ -14,18 +14,22 @@ services:
     ports:
       - "6666:6666"
     expose:
-      - "6379"
-  leadminerd:
-    image: leadea01111:latest
+      - "6666"
+  leadminer_backend:
+    build: ./backend
     stdin_open: true
     tty: true
     ports:
-      - "8060:8081"
+      - "8081:8081"
     restart: always
     environment:
-      POSTGRES_PASSWORD: postgress
-      POSTGRES_USER: postgress
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
       POSTGRES_DB: postgres
     depends_on:
       - postgres
       - redis
+  leadminer_frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
