@@ -1,5 +1,8 @@
 server:
   log_level: debug
+  sentry:
+    enabled: true
+    dsn: https://d383400104b243a489c54831d4947f00@o1383368.ingest.sentry.io/6699794
   port: 8081
   postgres:
     host: localhost

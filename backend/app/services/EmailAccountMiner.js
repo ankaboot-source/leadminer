@@ -22,7 +22,7 @@ class EmailAccountMiner {
    * @param {array} fields - An array of fields to be used in the fetch.
    * @param {array} folders - An array of folder paths to fetch from.
    */
-  constructor(connection, user, sse, fields, folders, eventEmitter) {
+  constructor(connection, user, sse, fields, folders, eventEmitter, worker) {
     this.connection = connection;
     this.user = user;
     this.sse = sse;
@@ -30,6 +30,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
+    this.worker = worker;
+    this.worker1 = worker;
   }
 
   /**
@@ -132,6 +134,7 @@ class EmailAccountMiner {
       tree,
       folderName
     );
+    this.connection.initConnection();
     this.connection.connect();
     this.connection.once("ready", () => {
       this.connection.openBox(folderPath, true, (err, box) => {
@@ -220,6 +223,7 @@ class EmailAccountMiner {
     } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
       logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
+      this.connection.destroy();
     } else {
       // if this folder is juste a label then pass to the next folder
       logger.debug(
@@ -360,21 +364,18 @@ class EmailAccountMiner {
    */
   async mineMessage(size, seqNumber, header, body, dateInCaseOfBody) {
     // create EmailMessage object
-    const message = new EmailMessage(
-      seqNumber,
-      size,
-      header,
-      body,
-      this.user,
-      dateInCaseOfBody
-    );
-    const message_id = message.getMessageId();
-
-    if (message_id) {
-      redisClient.sadd("messages", message_id).then(() => {
-        message.extractEmailObjectsFromHeader();
-        message.extractEmailObjectsFromBody();
-      });
+    const message = {
+      seq: seqNumber,
+      size: size,
+      header: header,
+      body: body,
+      user: this.user,
+      date: dateInCaseOfBody,
+    };
+    if (body) {
+      this.worker.postMessage(message);
+    } else {
+      this.worker1.postMessage(message);
     }
   }
 

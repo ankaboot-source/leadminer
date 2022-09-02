@@ -11,7 +11,7 @@ const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
 const EmailAccountMiner = require("../services/EmailAccountMiner");
 const redisClient = require("../../redis");
-
+const { Worker, isMainThread } = require("worker_threads");
 const { imapInfo } = require("../models");
 /**
  *  Create imap account infos
@@ -239,9 +239,10 @@ exports.getEmails = async (req, res, sse) => {
   const user = new ImapUser(query).getUserConnetionDataFromQuery();
   // initialise imap server connection
   const server = new EmailServer(user, sse);
-
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
+  let data = "worker initiated";
+  const worker = new Worker("./app/services/worker.js", { data });
   // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(
     server,
@@ -249,15 +250,15 @@ exports.getEmails = async (req, res, sse) => {
     sse,
     ["HEADER", "1"],
     req.query.boxes,
-    eventEmitter
+    eventEmitter,
+    worker
   );
-  const start = performance.now();
   miner.mine();
-  req.on("close", async () => {
-    // if stop mining from user then send data and end imap connetion
-    eventEmitter.emit("endByUser", true);
-    sse.send(true, `dns${user.id}`);
-  });
+  // req.on("close", async () => {
+  //   // if stop mining from user then send data and end imap connetion
+  //   eventEmitter.emit("endByUser", true);
+  //   sse.send(true, `dns${user.id}`);
+  // });
   eventEmitter.on("end", async () => {
     //get the queues length
     const QueueLengthBody = await redisClient.llen("bodies");

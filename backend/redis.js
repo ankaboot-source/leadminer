@@ -1,7 +1,8 @@
 const Redis = require("ioredis");
 const config = require("config");
 const logger = require("./app/utils/logger")(module);
-
+const freeProviders = require("./app/utils/FreeProviders.json");
+const disposable = require("./app/utils/Disposable.json");
 const redis_host = config.get("server.redis.host")
   ? config.get("server.redis.host")
   : process.env.REDIS_HOST;
@@ -16,6 +17,24 @@ redisClient.on("error", function (err) {
   process.exit();
 });
 redisClient.on("connect", () => {
-  logger.debug("connected to redisClient ✔️ ");
+  logger.debug("connected to redisClient ✔️");
+  redisClient.exists("freeProviders").then((res) => {
+    if (res != 1) {
+      freeProviders.map((domain) => {
+        redisClient.sadd("freeProviders", domain);
+      });
+      logger.debug("redis initialized with freeProviders✔️");
+    }
+  });
+  redisClient.exists("freeProviders").then((res) => {
+    if (res != 1) {
+      disposable.map((domain) => {
+        redisClient.sadd("disposable", domain);
+      });
+      logger.debug("redis initialized with disposable ✔️");
+    } else {
+      logger.debug("redis is already initialized ✔️");
+    }
+  });
 });
 module.exports = redisClient;

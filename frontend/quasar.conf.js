@@ -45,7 +45,7 @@ module.exports = configure(function (ctx) {
       env: {
         //ENDPOINT: "http://localhost:8081",
         ENDPOINT: ctx.dev
-          ? "http://localhost:8060"
+          ? "http://localhost:8081"
           : "https://api.leadminer.io",
       },
       // transpile: false,
