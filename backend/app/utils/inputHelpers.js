@@ -3,11 +3,11 @@ const casesObject = [
   [2, 101, 399],
   [3, 400, 799],
   [5, 800, 14],
-  [22, 500, 999],
-  [50, 1000, 7999],
-  [100, 8000, 19999],
-  [500, 20000, 60000],
-  [700, 60001, 100000],
+  [10, 500, 999],
+  [15, 1000, 7999],
+  [50, 8000, 19999],
+  [100, 20000, 60000],
+  [300, 60001, 100000],
   [1000, 100001, 500001],
 ];
 /**
@@ -17,17 +17,17 @@ const casesObject = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || '';
-  let fullpath = '';
+  path = path || "";
+  let fullpath = "";
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === 'object') {
+    if (typeof obj[b] === "object") {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace('/undefined', '');
+  return fullpath.replace("/undefined", "");
 }
 
 /**
@@ -46,7 +46,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
+    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -126,14 +126,14 @@ function EqualPartsForSocket(total) {
 function sortDatabase(dataFromDatabse) {
   const data = dataFromDatabse.map((row) => {
     if (!row.dataValues.name || row.dataValues.name == null) {
-      row.dataValues['name'] = [''];
+      row.dataValues["name"] = [""];
     } else {
       const NameArray = [];
-      row.dataValues['name'].map((name) => {
+      row.dataValues["name"].map((name) => {
         const Name = name
-          .replaceAll('"', '')
-          .replaceAll('\'', '')
-          .replaceAll('/', '')
+          .replaceAll('"', "")
+          .replaceAll("'", "")
+          .replaceAll("/", "")
           .trim();
         if (Name != row.dataValues.address) {
           if (
@@ -145,31 +145,31 @@ function sortDatabase(dataFromDatabse) {
           }
         }
       });
-      row.dataValues['name'] = NameArray;
+      row.dataValues["name"] = NameArray;
     }
 
-    row.dataValues['recipient'] =
-      (parseInt(row.dataValues?.['cc']) ?? 0) +
-      (parseInt(row.dataValues?.['bcc']) ?? 0) +
-      (parseInt(row.dataValues?.['to']) ?? 0);
-    row.dataValues['sender'] =
+    row.dataValues["recipient"] =
+      (parseInt(row.dataValues?.["cc"]) ?? 0) +
+      (parseInt(row.dataValues?.["bcc"]) ?? 0) +
+      (parseInt(row.dataValues?.["to"]) ?? 0);
+    row.dataValues["sender"] =
       (parseInt(row.dataValues?.from) ?? 0) +
-      (parseInt(row.dataValues?.['reply_to']) ?? 0);
-    row.dataValues['body'] = parseInt(row.dataValues?.body) ?? 0;
-    row.dataValues['total'] =
-      row.dataValues['sender'] + row.dataValues['recipient'];
-    row.dataValues['type'] = [];
+      (parseInt(row.dataValues?.["reply_to"]) ?? 0);
+    row.dataValues["body"] = parseInt(row.dataValues?.body) ?? 0;
+    row.dataValues["total"] =
+      row.dataValues["sender"] + row.dataValues["recipient"];
+    row.dataValues["type"] = [];
     if (
       row.dataValues.newsletter != 0 &&
-      row.dataValues.newsletter == row.dataValues['from']
+      row.dataValues.newsletter == row.dataValues["from"]
     ) {
-      row.dataValues['type'].push('Newsletter');
+      row.dataValues["type"].push("Newsletter");
     }
     if (
       row.dataValues.transactional != 0 &&
-      row.dataValues.transactional == row.dataValues['from']
+      row.dataValues.transactional == row.dataValues["from"]
     ) {
-      row.dataValues['type'].push('Transactional');
+      row.dataValues["type"].push("Transactional");
     }
     return row.dataValues;
   });
@@ -179,7 +179,7 @@ function sortDatabase(dataFromDatabse) {
   data.forEach((el) => {
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name && el.name.length > 0 && el.name[0] != '') {
+    } else if (el.name && el.name.length > 0 && el.name[0] != "") {
       wordArr.push(el);
     } else {
       emptyArr.push(el);

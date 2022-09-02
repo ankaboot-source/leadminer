@@ -126,13 +126,15 @@ class EmailMessage {
    * @returns Nothing is being returned.
    */
   getEmailsObjectsFromHeader(messagingFields) {
+    //TODO find good names
     Object.keys(messagingFields).map((key) => {
       //extract Name and Email in case of a header
-      const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
+      let emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails.length > 0) {
         emails.map(async (email) => {
           if (email && email.address) {
-            let domain = await dataStructureHelpers.checkDomainIsOk(
+            // domain is an array
+            let domain = await dataStructureHelpers.CheckDomainStatus(
               email.address
             );
 
@@ -153,13 +155,16 @@ class EmailMessage {
                 address: email.address.toLowerCase(),
                 newsletter: key == "from" ? this.isNewsletter() : false,
                 transactional: key == "from" ? this.isTransactional() : false,
-                domain: domain[1],
+                domain_status: domain[1],
+                domain_name: domain[2],
                 conversation: this.isInConversation(),
               });
             }
           }
         });
+        emails.length = 0;
       } else {
+        delete this.header;
       }
     });
   }
@@ -173,10 +178,11 @@ class EmailMessage {
     const emails = regExHelpers.extractNameAndEmailFromBody(
       this.body.toString("utf8")
     );
+    delete this.body;
     if (emails.length > 0) {
       emails.map(async (email) => {
         if (email) {
-          let domain = await dataStructureHelpers.checkDomainIsOk(email);
+          let domain = await dataStructureHelpers.CheckDomainStatus(email);
           if (
             this.user.email != email &&
             !dataStructureHelpers.IsNoReply(email) &&
@@ -195,13 +201,15 @@ class EmailMessage {
               address: email.toLowerCase(),
               newsletter: false,
               transactional: false,
-              domain: domain[1],
+              domain_status: domain[1],
+              domain_name: domain[2],
               conversation: this.isInConversation(),
             });
           }
         }
       });
     } else {
+      delete this.body;
     }
   }
   /**
@@ -211,8 +219,8 @@ class EmailMessage {
    */
   async extractEmailObjectsFromHeader() {
     const messagingFields = this.getMessagingFieldsOnly();
-    const emailsObjects = this.getEmailsObjectsFromHeader(messagingFields);
-    return emailsObjects;
+    this.getEmailsObjectsFromHeader(messagingFields);
+    return;
   }
   /**
    * extractEmailObjectsFromBody takes the body of the email, converts it to a string, and then uses a regular expression to
@@ -222,7 +230,10 @@ class EmailMessage {
   async extractEmailObjectsFromBody() {
     if (this.body) {
       this.getEmailsObjectsFromBody();
+      return;
     }
+    delete this.body;
+    return;
   }
 }
 module.exports = EmailMessage;

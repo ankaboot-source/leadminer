@@ -1,4 +1,3 @@
-"use-strict";
 const dataStructureHelpers = require("../utils/dataStructureHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const databaseHelpers = require("../utils/databaseHelpers");

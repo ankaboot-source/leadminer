@@ -254,11 +254,11 @@ exports.getEmails = async (req, res, sse) => {
     worker
   );
   miner.mine();
-  // req.on("close", async () => {
-  //   // if stop mining from user then send data and end imap connetion
-  //   eventEmitter.emit("endByUser", true);
-  //   sse.send(true, `dns${user.id}`);
-  // });
+  req.on("close", async () => {
+    // if stop mining from user then send data and end imap connetion
+    eventEmitter.emit("endByUser", true);
+    sse.send(true, `dns${user.id}`);
+  });
   eventEmitter.on("end", async () => {
     //get the queues length
     const QueueLengthBody = await redisClient.llen("bodies");

@@ -176,45 +176,58 @@ function IsNoReply(address) {
  * @param address - The email address to check it domain.
  * @returns A boolean value.
  */
-async function checkDomainIsOk(address) {
+async function CheckDomainStatus(address) {
   const domain = address.split("@")[1];
+  /**
+   * as most of domaisn are free providers
+   * we can reduce the exution time when check for freeproviders first
+   */
   let exist = await redisClient.sismember("freeProviders", domain);
   if (exist == 1) {
-    return [true, "personal"];
+    return [true, "personal", domain];
   }
+  /**
+   * if not in free providers we check disposable
+   */
   let existDisposable = await redisClient.sismember("disposable", domain);
   if (existDisposable == 1) {
-    return [false, ""];
+    return [false, "", domain];
   }
-  let existInList = await redisClient.sismember("domainList", domain);
+  /**
+   * we check for already checked domains
+   */
+  let existInList = await redisClient.sismember("domainListValid", domain);
+  if (existInList == 1) {
+    return [true, "private", domain];
+  }
   let existInListInValid = await redisClient.sismember(
     "domainListInvalid",
     domain
   );
-  if (existInList == 1) {
-    return [true, "private"];
-  }
+
   if (existInListInValid == 1) {
-    return [false, ""];
+    return [false, "", domain];
   }
+  /**
+   * if not already scanned we check then the MX
+   */
   if (existInListInValid == 0 && existInList == 0) {
-    let result = await checkUsingMX(domain);
+    let result = await CheckMXStatus(domain);
     return result;
   }
 }
-function checkUsingMX(domain) {
+function CheckMXStatus(domain) {
   return new Promise((resolve, reject) => {
     dns.resolveMx(domain, async (error, addresses) => {
       if (addresses) {
         if (addresses.length > 0) {
           //set domain in redis
           await redisClient.sadd("domainListValid", domain);
-          resolve([true, "private"]);
+          resolve([true, "private", domain]);
         }
       } else {
         await redisClient.sadd("domainListInValid", domain);
-
-        resolve([false, ""]);
+        resolve([false, "", domain]);
       }
     });
   });
@@ -224,5 +237,5 @@ module.exports = {
   addPathPerFolder,
   addChildrenTotalForParentFiles,
   IsNoReply,
-  checkDomainIsOk,
+  CheckDomainStatus,
 };
