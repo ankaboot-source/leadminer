@@ -52,7 +52,7 @@ The docker container does not have default values on its own. Therefore you MUST
 ```
 To start the server in production mode change the configuration file name from `default.yaml` to `production.yaml`
 
-# Troubleshooting
+## Troubleshooting
 If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
 
 ## Support
