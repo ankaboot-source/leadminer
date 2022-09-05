@@ -61,10 +61,6 @@ async function getEmails(userId) {
         db.sequelize.literal('COUNT (*) FILTER ( WHERE "body" = \'true\' )'),
         'body',
       ],
-      [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "body" = \'true\' )'),
-        'body',
-      ],
       [db.sequelize.literal('MAX(date)'), 'date'],
     ],
     group: ['address'],

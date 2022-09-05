@@ -1,11 +1,10 @@
-const { parentPort, workerData } = require("worker_threads");
+const { parentPort } = require("worker_threads");
 const redisClient = require("../../redis");
 const EmailMessage = require("./EmailMessage");
-
+// get data from parent
 parentPort.on("message", (message) => {
   const Message = new EmailMessage(
     message.seq,
-    message.size,
     message.header,
     message.body,
     message.user,
@@ -14,8 +13,8 @@ parentPort.on("message", (message) => {
   const message_id = Message.getMessageId();
   if (message_id) {
     redisClient.sadd("messages", message_id).then(() => {
-      Message.extractEmailObjectsFromHeader();
-      Message.extractEmailObjectsFromBody();
+      Message.extractEmailAddressesFromHeader();
+      Message.extractEmailAddressesFromBody();
     });
   }
 });

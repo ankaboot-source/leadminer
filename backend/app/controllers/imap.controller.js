@@ -11,7 +11,7 @@ const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
 const EmailAccountMiner = require("../services/EmailAccountMiner");
 const redisClient = require("../../redis");
-const { Worker, isMainThread } = require("worker_threads");
+const { Worker } = require("worker_threads");
 const { imapInfo } = require("../models");
 /**
  *  Create imap account infos
@@ -241,7 +241,7 @@ exports.getEmails = async (req, res, sse) => {
   const server = new EmailServer(user, sse);
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
-  let data = "worker initiated";
+  const data = "worker initiated";
   const worker = new Worker("./app/services/worker.js", { data });
   // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(
@@ -287,16 +287,16 @@ exports.getEmails = async (req, res, sse) => {
 
           sse.send(true, `dns${user.id}`);
           logger.debug("cleaning data from database...");
-          databaseHelpers.deleteUserData(user.id).then(() => {
-            logger.debug("database cleaned ✔️");
-          });
-          logger.debug("cleaning data from redis...");
+          // databaseHelpers.deleteUserData(user.id).then(() => {
+          //   logger.debug('database cleaned ✔️');
+          // });
+          // logger.debug('cleaning data from redis...');
 
-          redisClient.flushall("ASYNC").then((res) => {
-            if (res === "OK") {
-              logger.debug("redis cleaned ✔️");
-            } else logger.debug("can't clean redis");
-          });
+          // redisClient.flushall('ASYNC').then((res) => {
+          //   if (res === 'OK') {
+          //     logger.debug('redis cleaned ✔️');
+          //   } else logger.debug('can\'t clean redis');
+          // });
         });
       });
     }, total * 20);

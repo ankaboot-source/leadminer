@@ -1,4 +1,4 @@
-//const uuid = require('uuid');
+/* Defining the model for the database for the imapInfo table. */
 module.exports = (sequelize, Sequelize) => {
   const ImapInfo = sequelize.define('imap_info', {
     id: {
