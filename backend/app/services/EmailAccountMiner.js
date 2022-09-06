@@ -20,7 +20,16 @@ class EmailAccountMiner {
    * @param {array} fields - An array of fields to be used in the fetch.
    * @param {array} folders - An array of folder paths to fetch from.
    */
-  constructor(connection, user, sse, fields, folders, eventEmitter, worker) {
+  constructor(
+    connection,
+    user,
+    sse,
+    fields,
+    folders,
+    eventEmitter,
+    worker,
+    worker1
+  ) {
     this.connection = connection;
     this.user = user;
     this.sse = sse;
@@ -30,6 +39,7 @@ class EmailAccountMiner {
     this.mailHash = hashHelpers.hashEmail(user.email);
     this.worker = worker;
     this.worker1 = worker;
+    this.worker2 = worker1;
   }
 
   /**
@@ -239,6 +249,15 @@ class EmailAccountMiner {
    * @param {string} folderName - The name of the folder we are mining
    */
   ImapFetch(folder, folderName) {
+    this.worker2.on("message", (data) => {
+      this.sse.send(
+        {
+          data: data.data,
+          totalScanned: data.totalScanned,
+        },
+        `minedEmails${this.user.id}`
+      );
+    });
     let self = this;
     const f = this.connection.seq.fetch("1:*", {
       bodies: self.fields,
@@ -386,7 +405,7 @@ class EmailAccountMiner {
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
     logger.debug(`Used Memory ${used} mb`);
-    if (Math.round(used * 100) / 100 > 190) {
+    if (Math.round(used * 100) / 100 > 170) {
       logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
       global.gc();
     }
@@ -405,18 +424,7 @@ class EmailAccountMiner {
       `ScannedEmails${this.user.id}`
     );
     if (this.sends.indexOf(seqNumber) % 2 == 0) {
-      const minedEmails = await databaseHelpers.getEmails(this.user.id);
-      const totalScanned = await databaseHelpers.getCountDB(this.user.id);
-      this.sse.send(
-        {
-          data: inputHelpers.sortDatabase(minedEmails),
-          totalScanned: totalScanned,
-        },
-        `minedEmails${this.user.id}`
-      );
-      logger.info(
-        `${minedEmails.length} mined emails for user ${this.mailHash}`
-      );
+      this.worker2.postMessage(this.user.id);
     }
   }
 }
