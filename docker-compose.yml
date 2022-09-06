@@ -4,9 +4,7 @@ services:
     image: "postgres"
     restart: always
     environment:
-      POSTGRES_PASSWORD: postgress
-      POSTGRES_USER: postgress
-      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
   redis:
     image: redis
@@ -15,21 +13,16 @@ services:
       - "6666:6666"
     expose:
       - "6666"
-  leadminer_backend:
-    build: ./backend
-    stdin_open: true
+  leadminer:
+    build: .
+    volumes:
+      - /var/www/html/dist:/usr/src/leadminer/frontend/dist
     tty: true
     ports:
       - "8081:8081"
-    restart: always
+        #restart: always
     environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: postgres
+      NODE_ENV: production
     depends_on:
       - postgres
       - redis
-  leadminer_frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
