@@ -114,7 +114,7 @@ class EmailMessage {
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails.length > 0) {
         emails.map(async (email) => {
-          if (this.user.email != email.address && email && email.address) {
+          if (email && email.address && this.user.email != email.address) {
             // domain is an array
             const domain = await dataStructureHelpers.CheckDomainStatus(
               email.address
@@ -132,7 +132,7 @@ class EmailMessage {
                 address: email.address.toLowerCase(),
                 newsletter: key == "from" ? this.isNewsletter() : false,
                 transactional: key == "from" ? this.isTransactional() : false,
-                domain_status: domain[1],
+                domain_type: domain[1],
                 domain_name: domain[2],
                 conversation: this.isInConversation(),
               });
@@ -174,7 +174,7 @@ class EmailMessage {
               address: email.toLowerCase(),
               newsletter: false,
               transactional: false,
-              domain_status: domain[1],
+              domain_type: domain[1],
               domain_name: domain[2],
               conversation: this.isInConversation(),
             });

@@ -1,4 +1,4 @@
-const db = require('../models');
+const db = require("../models");
 
 /**
  * returns a list of all the emails in the database, with the number of times they appear in each
@@ -10,60 +10,63 @@ async function getEmails(userId) {
   const data = await db.emailsRaw.findAll({
     where: { user_id: userId },
     attributes: [
-      'address',
+      "address",
       [
         db.sequelize.literal(
-          'json_agg(DISTINCT name) FILTER ( WHERE "name" = \'\' IS FALSE)'
+          "json_agg(DISTINCT name) FILTER ( WHERE \"name\" = '' IS FALSE)"
         ),
-        'name',
+        "name",
       ],
 
       [
         db.sequelize.literal(
-          'COUNT(*) FILTER ( WHERE "transactional" = \'true\' )'
+          "COUNT(*) FILTER ( WHERE \"transactional\" = 'true' )"
         ),
-        'transactional',
+        "transactional",
       ],
       [
         db.sequelize.literal(
-          'COUNT(*) FILTER ( WHERE "newsletter" = \'true\' )'
+          "COUNT(*) FILTER ( WHERE \"newsletter\" = 'true' )"
         ),
-        'newsletter',
+        "newsletter",
       ],
       [
-        db.sequelize.literal('COUNT(*) FILTER (WHERE "conversation" = \'1\')'),
-        'conversation',
+        db.sequelize.literal("COUNT(*) FILTER (WHERE \"conversation\" = '1')"),
+        "conversation",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "from" = \'true\' )'),
-        'from',
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"from\" = 'true' )"),
+        "from",
       ],
 
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "to" = \'true\' )'),
-        'to',
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"to\" = 'true' )"),
+        "to",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "cc" = \'true\' )'),
-        'cc',
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"cc\" = 'true' )"),
+        "cc",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "bcc" = \'true\' )'),
-        'bcc',
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"bcc\" = 'true' )"),
+        "bcc",
       ],
       [
         db.sequelize.literal(
-          'COUNT (*) FILTER ( WHERE "reply_to" = \'true\' )'
+          "COUNT (*) FILTER ( WHERE \"reply_to\" = 'true' )"
         ),
-        'reply_to',
+        "reply_to",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "body" = \'true\' )'),
-        'body',
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"body\" = 'true' )"),
+        "body",
       ],
-      [db.sequelize.literal('MAX(date)'), 'date'],
+
+      "domain_type",
+
+      [db.sequelize.literal("MAX(date)"), "date"],
     ],
-    group: ['address'],
+    group: ["address", "domain_type"],
   });
 
   return data;
