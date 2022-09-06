@@ -137,7 +137,7 @@
             <template v-slot:header-cell-Date="props">
               <q-th :props="props">
                 <q-tooltip
-                  class="bg-teal-4 text-caption"
+                  class="bg-orange-13 text-caption"
                   anchor="top middle"
                   self="center middle"
                   >Date of last interaction with this person</q-tooltip
@@ -147,10 +147,20 @@
             <template v-slot:header-cell-Engagement="props">
               <q-th :props="props">
                 <q-tooltip
-                  class="bg-teal-4 text-caption"
+                  class="bg-orange-13 text-caption"
                   anchor="top middle"
                   self="center middle"
                   >Count of conversations this email address was in</q-tooltip
+                >{{ props.col.label }}
+              </q-th>
+            </template>
+            <template v-slot:header-cell-Frequency="props">
+              <q-th :props="props">
+                <q-tooltip
+                  class="bg-orange-13 text-caption"
+                  anchor="top middle"
+                  self="center middle"
+                  >Total of interractions</q-tooltip
                 >{{ props.col.label }}
               </q-th>
             </template>
@@ -251,8 +261,8 @@
                   </q-badge>
                 </q-td>
 
-                <q-td v-show="false" key="Total" :props="props">
-                  <q-badge color="blue">
+                <q-td key="Frequency" :props="props">
+                  <q-badge outline color="orange-10" transparent>
                     {{ props.row.total }}
                   </q-badge> </q-td
                 ><q-td key="Body" :props="props">
@@ -360,6 +370,17 @@ const columns = [
     label: "Recipient",
     type: "number",
     field: (row) => row.recipient,
+    sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
+    sortable: true,
+  },
+  {
+    name: "Frequency",
+    align: "center",
+    label: "Frequency",
+    type: "number",
+    field: (row) => row.total,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
