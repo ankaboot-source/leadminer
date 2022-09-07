@@ -15,10 +15,6 @@ jobs:
           script: |
             cd leadminer
             git pull
-            pm2 kill
-            cd frontend && npm install
-            quasar build
-            echo ${{ secrets.PASSWORD }} | sudo -S cp -r dist //var/www/html
-            cd ..
-            cd backend && npm install
-            pm2 start server.js --node-args="--expose_gc"
+            export DB_PASSWORD=postgres
+            docker-compose down
+            docker-compose up -d --build
