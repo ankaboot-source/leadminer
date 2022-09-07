@@ -1,12 +1,12 @@
-const Sequelize = require('sequelize');
-const dbConfig = require('../config/db.config');
-const logger = require('../utils/logger')(module);
+const Sequelize = require("sequelize");
+const dbConfig = require("../config/db.config");
+const logger = require("../utils/logger")(module);
 // initialize a new connection to the DB
 const sequelize = new Sequelize(dbConfig.db, dbConfig.user, dbConfig.password, {
   host: dbConfig.host,
-  dialect: 'postgres',
+  dialect: "postgres",
   pool: {
-    max: 50,
+    max: 10,
     min: 0,
     acquire: 80000,
     idle: 10000,
@@ -20,15 +20,15 @@ const sequelize = new Sequelize(dbConfig.db, dbConfig.user, dbConfig.password, {
   logging: false,
 });
 // if not created we will create all the tables
-logger.debug('creating database tables...');
+logger.debug("creating database tables...");
 const db = {};
 
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 // import all models
-db.imapInfo = require('./imap.model')(sequelize, Sequelize);
-db.emails = require('./emails.model')(sequelize, Sequelize);
-db.emailsRaw = require('./emailsRaw.model')(sequelize, Sequelize);
-db.googleUsers = require('./googleUser.model')(sequelize, Sequelize);
+db.imapInfo = require("./imap.model")(sequelize, Sequelize);
+db.emails = require("./emails.model")(sequelize, Sequelize);
+db.emailsRaw = require("./emailsRaw.model")(sequelize, Sequelize);
+db.googleUsers = require("./googleUser.model")(sequelize, Sequelize);
 
 module.exports = db;
