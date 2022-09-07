@@ -15,6 +15,6 @@ jobs:
           script: |
             cd leadminer
             git pull
-            export DB_PASSWORD=postgres
+            export DB_PASSWORD=${{secrets.db_password}} # Database Password
             docker-compose down
             docker-compose up -d --build
