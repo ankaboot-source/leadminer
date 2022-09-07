@@ -28,8 +28,6 @@ Start the backend API server.
 ```shell
 $ npm start --prefix ./leadminer/backend & npm start --prefix ./ledminer/frontend
 ```
-**Note**: Leadminer already have a CI/CD pipeline that does all of this. You can find the [deployment workflow yml file](/.github/workflows/Deploy.yml).
-
 ### Using Docker Compose
 Clone the repository and start docker-compose
 ```shell
@@ -41,7 +39,9 @@ Edit the configuration in backend as needed and set the `DB_PASSWORD` environmen
 $ export DB_PASSWORD=mysecretpassword
 $ docker-compose up
 ```
-# Troubleshooting
+We have a CI/CD pipeline that does just that. Check the [deployment workflow yml file](/.github/workflows/Deploy.yml).
+
+## Troubleshooting
 If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
 
 ## Support
