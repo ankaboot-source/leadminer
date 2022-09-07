@@ -241,10 +241,11 @@ exports.getEmails = async (req, res, sse) => {
   const server = new EmailServer(user, sse);
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
-  const data = "worker initiated";
-  const worker = new Worker("./app/services/worker.js", { data });
-  const data1 = "worker initiated";
-  const worker1 = new Worker("./app/services/worker1.js", { data1 });
+  const data = "messageWorker initiated";
+  const messageWorker = new Worker("./app/services/messageWorker.js", { data });
+  const progressWorker = new Worker("./app/services/progressWorker.js", {
+    data,
+  });
   // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(
     server,
@@ -253,8 +254,8 @@ exports.getEmails = async (req, res, sse) => {
     ["HEADER", "1"],
     req.query.boxes,
     eventEmitter,
-    worker,
-    worker1
+    messageWorker,
+    progressWorker
   );
   miner.mine();
   // req.on("close", async () => {
@@ -272,7 +273,6 @@ exports.getEmails = async (req, res, sse) => {
         ? 100
         : (QueueLengthBody + QueueLengthHeader) * 50;
     //estimate a timeout to wait all queue jobs (150ms per command)
-
     setTimeout(() => {
       databaseHelpers.getEmails(user.id).then((data) => {
         databaseHelpers.getCountDB(user.id).then((totalScanned) => {
@@ -282,7 +282,6 @@ exports.getEmails = async (req, res, sse) => {
 
             `minedEmails${user.id}`
           );
-
           logger.debug(`${data.length} mined email`);
           res.status(200).send({
             message: "Done mining emails !",
@@ -291,16 +290,6 @@ exports.getEmails = async (req, res, sse) => {
 
           sse.send(true, `dns${user.id}`);
           logger.debug("cleaning data from database...");
-          // databaseHelpers.deleteUserData(user.id).then(() => {
-          //   logger.debug('database cleaned ✔️');
-          // });
-          // logger.debug('cleaning data from redis...');
-
-          // redisClient.flushall('ASYNC').then((res) => {
-          //   if (res === 'OK') {
-          //     logger.debug('redis cleaned ✔️');
-          //   } else logger.debug('can\'t clean redis');
-          // });
         });
       });
     }, total * 20);

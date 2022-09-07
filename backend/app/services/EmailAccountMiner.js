@@ -11,6 +11,7 @@ class EmailAccountMiner {
   tree = [];
   currentTotal = 0;
   sends = [];
+  emailsProgressIndexes = [];
 
   /**
    * This function is a constructor for the class `EmailAccountMiner`
@@ -27,8 +28,8 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    worker,
-    worker1
+    messageWorker,
+    progressWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -37,9 +38,9 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.worker = worker;
-    this.worker1 = worker;
-    this.worker2 = worker1;
+    this.messageWorkerForBody = messageWorker;
+    this.messageWorkerForHeader = messageWorker;
+    this.progressWorker = progressWorker;
   }
 
   /**
@@ -225,6 +226,10 @@ class EmailAccountMiner {
       );
       //used in sending progress
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
+      this.emailsProgressIndexes = inputHelpers.EqualPartsForSocket2(
+        folder.messages.total
+      );
+      console.log(this.sends);
       // fetching method
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
@@ -249,7 +254,7 @@ class EmailAccountMiner {
    * @param {string} folderName - The name of the folder we are mining
    */
   ImapFetch(folder, folderName) {
-    this.worker2.on("message", (data) => {
+    this.progressWorker.on("message", (data) => {
       this.sse.send(
         {
           data: data.data,
@@ -349,6 +354,9 @@ class EmailAccountMiner {
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
+    if (this.emailsProgressIndexes.includes(seqNumber)) {
+      this.sendMinedData(seqNumber, folderName);
+    }
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
 
     redisClient.sismember("messages", message_id).then((alreadyMined) => {
@@ -389,9 +397,9 @@ class EmailAccountMiner {
       date: dateInCaseOfBody,
     };
     if (body) {
-      this.worker.postMessage(message);
+      this.messageWorkerForBody.postMessage(message);
     } else {
-      this.worker1.postMessage(message);
+      this.messageWorkerForHeader.postMessage(message);
     }
   }
 
@@ -423,9 +431,13 @@ class EmailAccountMiner {
       },
       `ScannedEmails${this.user.id}`
     );
-    if (this.sends.indexOf(seqNumber) % 2 == 0) {
-      this.worker2.postMessage(this.user.id);
-    }
+  }
+
+  async sendMinedData(seqNumber, folderName) {
+    logger.debug(
+      `Sending minedData at ${seqNumber} and folder: ${folderName}...`
+    );
+    this.progressWorker.postMessage(this.user.id);
   }
 }
 
