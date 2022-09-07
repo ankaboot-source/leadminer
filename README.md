@@ -24,7 +24,7 @@ $ npm install --prefix ./leadminer/backend && npm install --prefix ./leadminer/f
 To configure the application (e.g database host and password), edit `leadminer/backend/config/example.yaml`. When working in production environment, set the `NODE_ENV` environment variable to `production`.
 
 #### Deployment
-Start the backend API server.
+Start the backend API server and the front-end if the backend has succeed.
 ```shell
 $ npm start --prefix ./leadminer/backend & npm start --prefix ./ledminer/frontend
 ```
