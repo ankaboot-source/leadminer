@@ -27,8 +27,8 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    worker,
-    worker1
+    messageWorker,
+    progressWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -37,9 +37,9 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.worker = worker;
-    this.worker1 = worker;
-    this.worker2 = worker1;
+    this.messageWorkerForBody = messageWorker;
+    this.messageWorkerForHeader = messageWorker;
+    this.progressWorker = progressWorker;
   }
 
   /**
@@ -249,7 +249,7 @@ class EmailAccountMiner {
    * @param {string} folderName - The name of the folder we are mining
    */
   ImapFetch(folder, folderName) {
-    this.worker2.on("message", (data) => {
+    this.progressWorker.on("message", (data) => {
       this.sse.send(
         {
           data: data.data,
@@ -389,9 +389,9 @@ class EmailAccountMiner {
       date: dateInCaseOfBody,
     };
     if (body) {
-      this.worker.postMessage(message);
+      this.messageWorkerForBody.postMessage(message);
     } else {
-      this.worker1.postMessage(message);
+      this.messageWorkerForHeader.postMessage(message);
     }
   }
 
@@ -424,7 +424,7 @@ class EmailAccountMiner {
       `ScannedEmails${this.user.id}`
     );
     if (this.sends.indexOf(seqNumber) % 2 == 0) {
-      this.worker2.postMessage(this.user.id);
+      this.progressWorker.postMessage(this.user.id);
     }
   }
 }
