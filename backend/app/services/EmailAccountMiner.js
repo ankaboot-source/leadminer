@@ -28,8 +28,7 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    messageWorker,
-    progressWorker
+    messageWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -40,7 +39,6 @@ class EmailAccountMiner {
     this.mailHash = hashHelpers.hashEmail(user.email);
     this.messageWorkerForBody = messageWorker;
     this.messageWorkerForHeader = messageWorker;
-    this.progressWorker = progressWorker;
   }
 
   /**
@@ -225,11 +223,14 @@ class EmailAccountMiner {
         `Mining folder size: ${folder.messages.total} for User: ${this.mailHash}`
       );
       //used in sending progress
-      this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
-      this.emailsProgressIndexes = inputHelpers.EqualPartsForSocket2(
-        folder.messages.total
+      this.sends = inputHelpers.EqualPartsForSocket(
+        folder.messages.total,
+        "position"
       );
-      console.log(this.sends);
+      this.emailsProgressIndexes = inputHelpers.EqualPartsForSocket(
+        folder.messages.total,
+        "data"
+      );
       // fetching method
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
@@ -254,15 +255,6 @@ class EmailAccountMiner {
    * @param {string} folderName - The name of the folder we are mining
    */
   ImapFetch(folder, folderName) {
-    this.progressWorker.on("message", (data) => {
-      this.sse.send(
-        {
-          data: data.data,
-          totalScanned: data.totalScanned,
-        },
-        `minedEmails${this.user.id}`
-      );
-    });
     let self = this;
     const f = this.connection.seq.fetch("1:*", {
       bodies: self.fields,
@@ -437,7 +429,18 @@ class EmailAccountMiner {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
-    this.progressWorker.postMessage(this.user.id);
+    databaseHelpers.getEmails(this.user.id).then((minedEmails) => {
+      databaseHelpers.getCountDB(this.user.id).then((totalScanned) => {
+        const data = inputHelpers.sortDatabase(minedEmails);
+        this.sse.send(
+          {
+            data: data,
+            totalScanned: totalScanned,
+          },
+          `minedEmails${this.user.id}`
+        );
+      });
+    });
   }
 }
 

@@ -286,17 +286,35 @@
                   >
                 </q-td>
 
-                <q-td key="Type" :props="props"
-                  ><div
-                    v-for="type in props.row.type.filter((element) => {
-                      return element != '';
-                    })"
-                    :bind="type.index"
-                  >
-                    <q-badge class="text-little" rounded color="green">
-                      {{ type }} </q-badge
-                    ><br /></div
-                ></q-td>
+                <q-td key="Type" :props="props">
+                  <div>
+                    <q-badge
+                      v-if="props.row.Newsletter == true"
+                      class="text-little"
+                      rounded
+                      color="amber-6"
+                    >
+                      Newsletter </q-badge
+                    ><br v-if="props.row.Newsletter == true" /><q-badge
+                      v-if="props.row.Transactional"
+                      class="text-little"
+                      rounded
+                      color="amber-7"
+                    >
+                      Transactional
+                    </q-badge>
+                    <br v-if="props.row.Transactional" /><q-badge
+                      v-if="
+                        props.row.type.length > 0 && props.row.type[0] != ''
+                      "
+                      class="text-little"
+                      rounded
+                      color="green"
+                    >
+                      {{ props.row.type[0] }}
+                    </q-badge>
+                  </div></q-td
+                >
                 <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
