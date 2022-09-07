@@ -17,19 +17,6 @@ async function getEmails(userId) {
         ),
         "name",
       ],
-
-      [
-        db.sequelize.literal(
-          "COUNT(*) FILTER ( WHERE \"transactional\" = 'true' )"
-        ),
-        "transactional",
-      ],
-      [
-        db.sequelize.literal(
-          "COUNT(*) FILTER ( WHERE \"newsletter\" = 'true' )"
-        ),
-        "newsletter",
-      ],
       [
         db.sequelize.literal("COUNT(*) FILTER (WHERE \"conversation\" = '1')"),
         "conversation",
@@ -40,28 +27,46 @@ async function getEmails(userId) {
       ],
 
       [
-        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"to\" = 'true' )"),
-        "to",
-      ],
-      [
-        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"cc\" = 'true' )"),
-        "cc",
-      ],
-      [
-        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"bcc\" = 'true' )"),
-        "bcc",
-      ],
-      [
-        db.sequelize.literal(
-          "COUNT (*) FILTER ( WHERE \"reply_to\" = 'true' )"
-        ),
-        "reply_to",
-      ],
-      [
         db.sequelize.literal("COUNT (*) FILTER ( WHERE \"body\" = 'true' )"),
         "body",
       ],
 
+      [
+        db.sequelize.fn(
+          "SUM",
+          db.sequelize.literal(
+            "CASE WHEN \"bcc\" = 'true' OR \"cc\" = 'true' OR \"to\" = 'true' THEN 1 ELSE 0 END "
+          )
+        ),
+        "recipient",
+      ],
+      [
+        db.sequelize.fn(
+          "EVERY",
+          db.sequelize.literal(
+            "CASE WHEN  \"from\" = 'true'  AND \"transactional\" = 'true'  THEN true ELSE false END "
+          )
+        ),
+        "Transactional",
+      ],
+      [
+        db.sequelize.fn(
+          "EVERY",
+          db.sequelize.literal(
+            "CASE WHEN  \"from\" = 'true'  AND \"newsletter\" = 'true'  THEN true ELSE false END "
+          )
+        ),
+        "Newsletter",
+      ],
+      [
+        db.sequelize.fn(
+          "SUM",
+          db.sequelize.literal(
+            "CASE WHEN \"from\" = 'true' OR \"reply_to\" = 'true' THEN 1 ELSE 0 END "
+          )
+        ),
+        "sender",
+      ],
       "domain_type",
 
       [db.sequelize.literal("MAX(date)"), "date"],

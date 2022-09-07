@@ -243,9 +243,7 @@ exports.getEmails = async (req, res, sse) => {
   const eventEmitter = new MyEmitter();
   const data = "messageWorker initiated";
   const messageWorker = new Worker("./app/services/messageWorker.js", { data });
-  const progressWorker = new Worker("./app/services/progressWorker.js", {
-    data,
-  });
+
   // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(
     server,
@@ -254,8 +252,7 @@ exports.getEmails = async (req, res, sse) => {
     ["HEADER", "1"],
     req.query.boxes,
     eventEmitter,
-    messageWorker,
-    progressWorker
+    messageWorker
   );
   miner.mine();
   // req.on("close", async () => {
