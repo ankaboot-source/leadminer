@@ -3,7 +3,7 @@
 
 # ⛏ Leadminer
 
-Leadminer is a tool to mine and transmute passive contacts from your own data sources (email mailbox, social networks) into organic and qualified leads.
+Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionables and qualified leads.
 
 ## Installation
 ### From source
