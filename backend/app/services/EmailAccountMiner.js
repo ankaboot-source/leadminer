@@ -11,6 +11,7 @@ class EmailAccountMiner {
   tree = [];
   currentTotal = 0;
   sends = [];
+  emailsProgressIndexes = [];
 
   /**
    * This function is a constructor for the class `EmailAccountMiner`
@@ -225,6 +226,10 @@ class EmailAccountMiner {
       );
       //used in sending progress
       this.sends = inputHelpers.EqualPartsForSocket(folder.messages.total);
+      this.emailsProgressIndexes = inputHelpers.EqualPartsForSocket2(
+        folder.messages.total
+      );
+      console.log(this.sends);
       // fetching method
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
@@ -349,6 +354,9 @@ class EmailAccountMiner {
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
+    if (this.emailsProgressIndexes.includes(seqNumber)) {
+      this.sendMinedData(seqNumber, folderName);
+    }
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
 
     redisClient.sismember("messages", message_id).then((alreadyMined) => {
@@ -423,9 +431,13 @@ class EmailAccountMiner {
       },
       `ScannedEmails${this.user.id}`
     );
-    if (this.sends.indexOf(seqNumber) % 2 == 0) {
-      this.progressWorker.postMessage(this.user.id);
-    }
+  }
+
+  async sendMinedData(seqNumber, folderName) {
+    logger.debug(
+      `Sending minedData at ${seqNumber} and folder: ${folderName}...`
+    );
+    this.progressWorker.postMessage(this.user.id);
   }
 }
 

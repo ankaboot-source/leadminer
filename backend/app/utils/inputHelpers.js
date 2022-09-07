@@ -7,8 +7,19 @@ const casesObject = [
   [15, 1000, 7999],
   [50, 8000, 19999],
   [500, 20000, 60000],
-  [500, 60001, 100000],
+  [700, 60001, 100000],
   [1000, 100001, 500001],
+];
+const casesObject2 = [
+  [1, 0, 100],
+  [2, 101, 399],
+  [3, 400, 799],
+  [5, 800, 999],
+  [10, 1000, 7999],
+  [15, 8000, 19999],
+  [25, 20000, 60000],
+  [40, 60001, 100000],
+  [35, 100001, 500001],
 ];
 /**
  * Returns the path to a box(folder), usefull for nested folders.
@@ -119,7 +130,34 @@ function EqualPartsForSocket(total) {
   values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
   return Parts;
 }
-
+function EqualPartsForSocket2(total) {
+  function inRange(n, nStart, nEnd) {
+    if (n >= nStart && n <= nEnd) return true;
+    else return false;
+  }
+  let boxCount = total;
+  const values = [];
+  let n = 350;
+  for (const i of casesObject2) {
+    if (inRange(boxCount, i[1], i[2])) {
+      n = i[0];
+      break;
+    } else if (i == casesObject2[casesObject2.length - 1]) {
+      break;
+    } else {
+      continue;
+    }
+  }
+  while (boxCount > 0 && n > 0) {
+    const a = Math.floor(boxCount / n);
+    boxCount -= a;
+    n--;
+    values.push(a);
+  }
+  const Parts = [];
+  values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+  return Parts;
+}
 function findEmailAddressType(emailAddress, UserName, domainType) {
   let domainAndUserName = emailAddress.split("@");
   function getScore(DomainAndUserName) {
@@ -256,4 +294,6 @@ exports.sortDatabase = sortDatabase;
 exports.getBoxesAndFolders = getBoxesAndFolders;
 exports.getBoxesAll = getBoxesAll;
 exports.EqualPartsForSocket = EqualPartsForSocket;
+exports.EqualPartsForSocket2 = EqualPartsForSocket2;
+
 exports.getPath = getPath;

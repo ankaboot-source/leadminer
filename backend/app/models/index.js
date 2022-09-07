@@ -8,7 +8,7 @@ const sequelize = new Sequelize(dbConfig.db, dbConfig.user, dbConfig.password, {
   pool: {
     max: 10,
     min: 0,
-    acquire: 80000,
+    acquire: 200000,
     idle: 10000,
   },
   retry: {
