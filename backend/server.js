@@ -13,18 +13,18 @@ console.log(
 );
 const config = require("config");
 const port = config.get("server.port");
-const app = express();
+var app = express();
 const http = require("http");
-const logger = require("./app/utils/logger")(module);
 const SSE = require("express-sse").SSE;
-let redis = require("./redis");
+const sentry = require("./sentry");
+const logger = require("./app/utils/logger")(module);
 const sse = new SSE();
 const db = require("./app/models");
 const { EventEmitter } = require("stream");
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
-
 const event = new MyEmitter();
+
 app.use((req, res, next) => {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -49,14 +49,20 @@ app.use((req, res, next) => {
   // Pass to next layer of middleware
   next();
 });
-
+if (config.get("server.sentry.enabled") == true) {
+  logger.debug("setting up sentry...");
+  integration = sentry(app);
+  app = integration[0];
+  const sentryInstance = integration[1];
+  logger.debug("sentry integrated to the server ✔️ ");
+}
 // parse requests of content-type - application/json
 app.use(express.json());
 
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 // step 1 : connect to redis
-redis.connect();
+//redisClient.connect();
 
 // simple route when calling api.leadminer.io
 app.get("/", (req, res) => {

@@ -1,15 +1,29 @@
 # syntax=docker/dockerfile:1
-FROM alpine:latest
-RUN apk add npm socat py-pip
-COPY . /app
-RUN pip install niet
+# Develop Stage
+FROM node as develop-stage
+WORKDIR /usr/src/leadminer/frontend
+COPY frontend/package*.json ./
+RUN yarn global add @quasar/cli
+COPY frontend .
 
-# Preparing frontend
-RUN npm i --prefix /app/frontend
-RUN npm run build --prefix /app/frontend
+# build stage
+FROM develop-stage as build-stage
+RUN yarn
+RUN quasar build
 
-# Preparing backend
-EXPOSE 8081
-RUN rm /app/backend/config/*
-RUN npm i --prefix /app/backend
-CMD /app/backend/redirect.sh & npm start --prefix /app/backend
+# Production stage
+FROM node as production-stage
+WORKDIR /usr/src/leadminer/frontend
+COPY frontend/package*.json ./
+RUN npm ci --only=production
+COPY --from=build-stage /usr/src/leadminer/frontend/dist ./dist
+
+WORKDIR /usr/src/leadminer/backend
+COPY backend/package*.json ./
+RUN npm ci --only=production
+
+WORKDIR /usr/src/leadminer
+COPY . .
+
+WORKDIR /usr/src/leadminer/backend
+CMD [ "node", "--expose_gc", "server.js" ]

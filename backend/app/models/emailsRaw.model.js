@@ -1,6 +1,6 @@
-//const uuid = require('uuid');
+/* Creating EmailsRaws table in the database. */
 module.exports = (sequelize, Sequelize) => {
-  const EmailsRaw = sequelize.define('emails_raw', {
+  const EmailsRaw = sequelize.define("emails_raw", {
     email_id: {
       type: Sequelize.INTEGER,
       autoIncrement: true,
@@ -22,9 +22,11 @@ module.exports = (sequelize, Sequelize) => {
 
     body: { type: Sequelize.BOOLEAN },
 
-    name: { type: Sequelize.STRING, defaultValue: '' },
+    name: { type: Sequelize.STRING, defaultValue: "" },
     address: { type: Sequelize.STRING },
     date: { type: Sequelize.STRING },
+    domain_type: { type: Sequelize.STRING },
+    domain_name: { type: Sequelize.STRING },
     transactional: { type: Sequelize.BOOLEAN },
     conversation: { type: Sequelize.INTEGER },
     newsletter: { type: Sequelize.BOOLEAN },

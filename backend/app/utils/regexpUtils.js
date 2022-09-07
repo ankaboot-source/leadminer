@@ -18,6 +18,7 @@ function extractNameAndEmailFromBody(data) {
     .replaceAll("=", "")
     .match(regexForBody);
   if (reg) {
+    delete data;
     return [...new Set(reg)];
   } else return [];
 }

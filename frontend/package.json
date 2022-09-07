@@ -1,6 +1,6 @@
 {
   "name": "leadminer.io",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "description": "leadminer.io app",
   "author": "ankaboot",
@@ -12,19 +12,19 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "@quasar/extras": "^1.12.5",
+    "@quasar/extras": "^1.15.2",
+    "@sentry/tracing": "^7.11.1",
+    "@sentry/vue": "^7.11.1",
     "assert": "^2.0.0",
-    "axios": "^0.21.4",
+    "axios": "^0.27.2",
     "core-js": "^3.6.5",
-    "csv-stringify": "^6.0.5",
     "node-polyfill-webpack-plugin": "^1.1.4",
     "object-scan": "^18.0.1",
-    "quasar": "^2.5.5",
+    "quasar": "^2.7.7",
     "vue": "^3.2.31",
     "vue-i18n": "^9.0.0-beta.0",
     "vue-router": "^4.0.13",
     "vue3-google-oauth2": "^1.0.6",
-    "vuedraggable": "^4.0.1",
     "vuex": "^4.0.1"
   },
   "devDependencies": {

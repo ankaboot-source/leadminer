@@ -11,7 +11,7 @@ const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
 const EmailAccountMiner = require("../services/EmailAccountMiner");
 const redisClient = require("../../redis");
-
+const { Worker } = require("worker_threads");
 const { imapInfo } = require("../models");
 /**
  *  Create imap account infos
@@ -239,9 +239,12 @@ exports.getEmails = async (req, res, sse) => {
   const user = new ImapUser(query).getUserConnetionDataFromQuery();
   // initialise imap server connection
   const server = new EmailServer(user, sse);
-
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
+  const data = "worker initiated";
+  const worker = new Worker("./app/services/worker.js", { data });
+  const data1 = "worker initiated";
+  const worker1 = new Worker("./app/services/worker1.js", { data1 });
   // initialise EmailAccountMiner to mine imap tree
   const miner = new EmailAccountMiner(
     server,
@@ -249,19 +252,21 @@ exports.getEmails = async (req, res, sse) => {
     sse,
     ["HEADER", "1"],
     req.query.boxes,
-    eventEmitter
+    eventEmitter,
+    worker,
+    worker1
   );
-  const start = performance.now();
   miner.mine();
-  req.on("close", async () => {
-    // if stop mining from user then send data and end imap connetion
-    eventEmitter.emit("endByUser", true);
-    sse.send(true, `dns${user.id}`);
-  });
+  // req.on("close", async () => {
+  //   console.log("**********************************End****************");
+  //   // if stop mining from user then send data and end imap connetion
+  //   eventEmitter.emit("endByUser", true);
+  //   sse.send(true, `dns${user.id}`);
+  // });
   eventEmitter.on("end", async () => {
     //get the queues length
-    const QueueLengthBody = await redisClient.lLen("bodies");
-    const QueueLengthHeader = await redisClient.lLen("headers");
+    const QueueLengthBody = await redisClient.llen("bodies");
+    const QueueLengthHeader = await redisClient.llen("headers");
     const total =
       QueueLengthBody + QueueLengthHeader == 0
         ? 100
@@ -286,16 +291,16 @@ exports.getEmails = async (req, res, sse) => {
 
           sse.send(true, `dns${user.id}`);
           logger.debug("cleaning data from database...");
-          databaseHelpers.deleteUserData(user.id).then(() => {
-            logger.debug("database cleaned ✔️");
-          });
-          logger.debug("cleaning data from redis...");
+          // databaseHelpers.deleteUserData(user.id).then(() => {
+          //   logger.debug('database cleaned ✔️');
+          // });
+          // logger.debug('cleaning data from redis...');
 
-          redisClient.flushAll("ASYNC").then((res) => {
-            if (res === "OK") {
-              logger.debug("redis cleaned ✔️");
-            } else logger.debug("can't clean redis");
-          });
+          // redisClient.flushall('ASYNC').then((res) => {
+          //   if (res === 'OK') {
+          //     logger.debug('redis cleaned ✔️');
+          //   } else logger.debug('can\'t clean redis');
+          // });
         });
       });
     }, total * 20);
@@ -304,6 +309,9 @@ exports.getEmails = async (req, res, sse) => {
     res.status(500).send({
       message: "Error occurend try to refresh the page or reconnect",
     });
+  });
+  process.on("unhandledRejection", (reason, promise) => {
+    console.log(reason);
   });
   eventEmitter.removeListener("end", () => {});
 };

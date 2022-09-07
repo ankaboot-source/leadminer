@@ -2,11 +2,13 @@ server:
   log_level: debug
   port: 8081
   postgres:
+    host: postgres
     name: postgres
     user: postgres
-    password:
+    password: postgres
   redis:
-    port: 6375
+    host: redis
+    port: 6666
     expiration_timeout: 259200
   hash_secret: oi.renimdeal
   imap:

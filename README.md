@@ -28,29 +28,18 @@ Start the backend API server and the front-end if the backend has succeed.
 ```shell
 $ npm start --prefix ./leadminer/backend & npm start --prefix ./ledminer/frontend
 ```
-**Note**: Leadminer already have a CI/CD pipeline that does all of this. You can find the [deployment workflow yml file](/.github/workflows/Deploy.yml).
-
-### Using Docker
-Clone the repository and build the docker image
+### Using Docker Compose
+Clone the repository and start docker-compose
 ```shell
 $ git clone https://github.com/ankaboot-source/leadminer
-$ docker build -t leadminer leadminer
+$ cd leadminer
 ```
-* Copy and edit the configuration example according to your needs.
-```shell
-$ cp leadminer/backend/config/example.yaml
+Edit the configuration in backend as needed and set the `DB_PASSWORD` environment variable to your database password specified in the config.
 ```
-
-The docker container does not have default values on its own. Therefore you MUST specify a configuration file to be mounted under `/app/backend/config/`.
-
-```shell
-# docker run \
-	--add-host=host.docker.internal \
-	-v /var/www/html/dist:/app/frontend/dist \
-	-v ${PWD}/edited-example.yaml:/app/backend/config/default.yaml \
-	-it leadminer
+$ export DB_PASSWORD=mysecretpassword
+$ docker-compose up
 ```
-To start the server in production mode change the configuration file name from `default.yaml` to `production.yaml`
+We have a CI/CD pipeline that does just that. Check the [deployment workflow yml file](/.github/workflows/Deploy.yml).
 
 ## Troubleshooting
 If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.

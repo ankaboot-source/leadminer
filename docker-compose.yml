@@ -1,0 +1,28 @@
+version: "3.1"
+services:
+  postgres:
+    image: "postgres"
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  redis:
+    image: redis
+    command: --port 6666
+    ports:
+      - "6666:6666"
+    expose:
+      - "6666"
+  leadminer:
+    build: .
+    volumes:
+      - /var/www/html/dist:/usr/src/leadminer/frontend/dist
+    tty: true
+    ports:
+      - "8081:8081"
+        #restart: always
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - postgres
+      - redis
