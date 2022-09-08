@@ -14,6 +14,7 @@ services:
     expose:
       - "6666"
   leadminer:
+    image: leadminer:git
     build: .
     volumes:
       - /var/www/html/dist:/usr/src/leadminer/frontend/dist
