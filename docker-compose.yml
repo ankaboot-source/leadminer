@@ -16,7 +16,7 @@ services:
   leadminer:
     build: .
     volumes:
-      - /var/www/html/dist:/usr/src/leadminer/frontend/dist
+      - dist:/usr/src/leadminer/frontend/dist
     tty: true
     ports:
       - "8081:8081"
@@ -26,3 +26,5 @@ services:
     depends_on:
       - postgres
       - redis
+volumes:
+  dist:
