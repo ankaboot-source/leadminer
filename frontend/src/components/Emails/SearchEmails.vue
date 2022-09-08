@@ -39,7 +39,7 @@
                     <q-btn
                       v-bind:disable="loadingStatusDns"
                       no-caps
-                      :color="loadingStatusDns ? 'grey-6' : 'teal-5'"
+                      :color="loadingStatusDns ? 'grey-6' : 'red'"
                       label="Collect emails addresses"
                       @click="fetchEmails()"
                     ></q-btn>

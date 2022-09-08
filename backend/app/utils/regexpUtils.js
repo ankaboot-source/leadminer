@@ -1,4 +1,4 @@
-const quotedPrintable = require( "quoted-printable" );
+const quotedPrintable = require('quoted-printable');
 /* eslint-disable */
 const regex = new RegExp(
   /((?<name>[\p{L}\p{M}.\p{L}\p{M}\w\W]{1,})\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu

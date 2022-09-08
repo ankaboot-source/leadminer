@@ -4,18 +4,18 @@
  * @param date - The date string to be parsed.
  * @returns A string with the date and time in ISO format.
  */
-function parseDate( date ) {
-    const tempDate = date
-            .replaceAll( / CEST-(.*)| CEST/g, "+0200" )
-            .replace( / UTC-(.*)/i, "" ),
-        dateFromString = new Date( tempDate );
+function parseDate(date) {
+  const tempDate = date
+      .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
+      .replace(/ UTC-(.*)/i, ''),
+    dateFromString = new Date(tempDate);
     /* istanbul ignore else */
 
-    if ( isNaN( Date.parse( dateFromString ) ) == false ) {
-        const ISODate = dateFromString.toISOString();
+  if (isNaN(Date.parse(dateFromString)) == false) {
+    const ISODate = dateFromString.toISOString();
 
-        return `${ISODate.substring( 0, 10 )} ${ISODate.substring( 11, 16 )}`;
-    }
+    return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
+  }
 }
 
 /**
@@ -24,14 +24,14 @@ function parseDate( date ) {
  * @param date2 - The date to compare to.
  * @returns a boolean value.
  */
-function compareDates( date1, date2 ) {
-    const d1 = Date.parse( date1 ),
-        d2 = Date.parse( date2 );
+function compareDates(date1, date2) {
+  const d1 = Date.parse(date1),
+    d2 = Date.parse(date2);
 
-    return d1 > d2;
+  return d1 > d2;
 }
 
 module.exports = {
-    compareDates,
-    parseDate
+  compareDates,
+  parseDate
 };
