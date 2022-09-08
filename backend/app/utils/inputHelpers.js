@@ -28,17 +28,17 @@ const casesForData = [
  * @param  {string} [path=""] The initial path
  */
 function getPath(obj, val, path) {
-  path = path || "";
-  let fullpath = "";
+  path = path || '';
+  let fullpath = '';
   for (const b in obj) {
     if (obj[b] === val) {
       return path;
     }
-    if (typeof obj[b] === "object") {
+    if (typeof obj[b] === 'object') {
       fullpath = getPath(obj[b], val, `${path}/${obj[b].label}`) || fullpath;
     }
   }
-  return fullpath.replace("/undefined", "");
+  return fullpath.replace('/undefined', '');
 }
 
 /**
@@ -57,7 +57,7 @@ function getBoxesAll(folders) {
   const finalFolders = [];
   let folder = {};
   Object.keys(folders).forEach((key) => {
-    if (folders[key].attribs.indexOf("\\HasChildren") > -1) {
+    if (folders[key].attribs.indexOf('\\HasChildren') > -1) {
       const children = getBoxesAll(folders[key].children);
       folder = {
         label: key,
@@ -103,7 +103,7 @@ function getBoxesAndFolders(userQuery) {
  *
  */
 function EqualPartsForSocket(total, type) {
-  let casesObject = type == "position" ? casesForPosition : casesForData;
+  const casesObject = type == 'position' ? casesForPosition : casesForData;
   function inRange(n, nStart, nEnd) {
     if (n >= nStart && n <= nEnd) return true;
     else return false;
@@ -133,15 +133,15 @@ function EqualPartsForSocket(total, type) {
 }
 
 function findEmailAddressType(emailAddress, UserName, domainType) {
-  let domainAndUserName = emailAddress.split("@");
+  const domainAndUserName = emailAddress.split('@');
   function getScore(DomainAndUserName) {
-    let splittedUserName = UserName.split(" ");
-    let UsernameWithoutSpace = UserName.replaceAll(/ /g, "").toLowerCase();
-    let domainAndUserName = DomainAndUserName.substring(
+    const splittedUserName = UserName.split(' ');
+    const UsernameWithoutSpace = UserName.replaceAll(/ /g, '').toLowerCase();
+    const domainAndUserName = DomainAndUserName.substring(
       0,
       UsernameWithoutSpace.length
     ).toLowerCase();
-    let length = domainAndUserName.length;
+    const length = domainAndUserName.length;
     let actualScore = length; // start with full points
     let i = 0;
 
@@ -161,21 +161,21 @@ function findEmailAddressType(emailAddress, UserName, domainType) {
   }
   //array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
   if (UserName.length > 0) {
-    if (domainType == "custom" && getScore(domainAndUserName[1]) > 40) {
-      return "Company";
+    if (domainType == 'custom' && getScore(domainAndUserName[1]) > 40) {
+      return 'Company';
     }
     if (
-      domainType == "provider" &&
-      domainType != "custom" &&
+      domainType == 'provider' &&
+      domainType != 'custom' &&
       getScore(domainAndUserName[0]) > 40
     ) {
-      return "Personal";
+      return 'Personal';
     }
-    if (getScore(domainAndUserName[0]) > 40 && domainType == "custom") {
-      return "Professional";
+    if (getScore(domainAndUserName[0]) > 40 && domainType == 'custom') {
+      return 'Professional';
     }
   }
-  return "";
+  return '';
 }
 /**
  * Sorts the data array based on total interactions, alphabetics, and groups fields
@@ -184,14 +184,14 @@ function findEmailAddressType(emailAddress, UserName, domainType) {
 function sortDatabase(dataFromDatabse) {
   const data = dataFromDatabse.map((row) => {
     if (!row.dataValues.name || row.dataValues.name == null) {
-      row.dataValues["name"] = [""];
+      row.dataValues['name'] = [''];
     } else {
       const NameArray = [];
-      row.dataValues["name"].map((name) => {
+      row.dataValues['name'].map((name) => {
         const Name = name
-          .replaceAll('"', "")
-          .replaceAll("'", "")
-          .replaceAll("/", "")
+          .replaceAll('"', '')
+          .replaceAll('\'', '')
+          .replaceAll('/', '')
           .trim();
         if (Name != row.dataValues.address) {
           if (
@@ -203,21 +203,19 @@ function sortDatabase(dataFromDatabse) {
           }
         }
       });
-      NameArray.length == 0
-        ? (row.dataValues["name"] = [""])
-        : (row.dataValues["name"] = NameArray);
+      NameArray.length == 0 ? (row.dataValues['name'] = ['']) : (row.dataValues['name'] = NameArray);
     }
 
-    row.dataValues["total"] =
-      parseInt(row.dataValues["sender"]) +
-      parseInt(row.dataValues["recipient"]);
-    row.dataValues["type"] = "";
+    row.dataValues['total'] =
+      parseInt(row.dataValues['sender']) +
+      parseInt(row.dataValues['recipient']);
+    row.dataValues['type'] = '';
     if (
       !row.dataValues.Newsletter &&
       !row.dataValues.Transactional &&
-      row.dataValues["name"] != [""]
+      row.dataValues['name'] != ['']
     ) {
-      row.dataValues["type"] = findEmailAddressType(
+      row.dataValues['type'] = findEmailAddressType(
         row.dataValues.address,
         row.dataValues?.name?.[0],
         row.dataValues.domain_type
@@ -231,7 +229,7 @@ function sortDatabase(dataFromDatabse) {
   data.forEach((el) => {
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name && el.name.length > 0 && el.name[0] != "") {
+    } else if (el.name && el.name.length > 0 && el.name[0] != '') {
       wordArr.push(el);
     } else {
       emptyArr.push(el);

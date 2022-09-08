@@ -62,7 +62,7 @@
               <div class="row q-md col-12">
                 <progress-card
                   v-if="Boxes"
-                  :collectedEmails="Emails ? Emails.length : 0"
+                  :collectedEmails="Emails?.length ?? 0"
                   :loadingStatusDns="loadingStatusDns"
                   :scannedEmails="ScannedEmails"
                   :totalEmails="TotalEmails"
@@ -287,32 +287,30 @@
                 </q-td>
 
                 <q-td key="Type" :props="props">
-                  <div>
-                    <q-badge
-                      v-if="props.row.Newsletter == true"
-                      class="text-little"
-                      rounded
-                      color="amber-6"
-                    >
-                      Newsletter </q-badge
-                    ><br v-if="props.row.Newsletter == true" /><q-badge
-                      v-if="props.row.Transactional == true"
-                      class="text-little"
-                      rounded
-                      color="amber-7"
-                    >
-                      Transactional
-                    </q-badge>
-                    <br v-if="props.row.Transactional == true" /><q-badge
-                      v-if="props.row.type != ''"
-                      class="text-little"
-                      rounded
-                      color="green"
-                    >
-                      {{ props.row.type }}
-                    </q-badge>
-                  </div></q-td
-                >
+                  <q-badge
+                    v-if="props.row.Newsletter == true"
+                    class="text-little"
+                    rounded
+                    color="amber-6"
+                  >
+                    Newsletter </q-badge
+                  ><br v-if="props.row.Newsletter == true" /><q-badge
+                    v-if="props.row.Transactional == true"
+                    class="text-little"
+                    rounded
+                    color="amber-7"
+                  >
+                    Transactional
+                  </q-badge>
+                  <br v-if="props.row.Transactional == true" /><q-badge
+                    v-if="props.row.type != ''"
+                    class="text-little"
+                    rounded
+                    color="green"
+                  >
+                    {{ props.row.type }}
+                  </q-badge>
+                </q-td>
                 <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
@@ -456,7 +454,6 @@ const columns = [
     align: "center",
     label: "Type",
     sortable: true,
-    field: "type",
     sortOrder: "ad",
     sort: (s1, s2) => {
       if (s1.length > s2.length) {

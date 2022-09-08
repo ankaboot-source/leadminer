@@ -6,7 +6,7 @@
   "scripts": {
     "test": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
     "dev": "nodemon server.js",
-    "lint:fix": "cd app && eslint --fix . --ignore-pattern 'out/' --output-file eslint_report.json --format json",
+    "lint:fix": "cd app && eslint --fix . --ignore-pattern 'out/' ",
     "make-badges": "istanbul-badges-readme --readmeDir='../' --linesLabel='Coverage'"
   },
   "keywords": [
