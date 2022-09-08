@@ -67,8 +67,18 @@ export default defineComponent({
     };
   },
   props: {
-    boxes: [],
-    scannedBoxes: [],
+    boxes: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
+    scannedBoxes: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
   },
 
   computed: {

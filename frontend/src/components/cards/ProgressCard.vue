@@ -147,7 +147,6 @@ export default defineComponent({
   name: "ProgressStatus",
   props: {
     collectedEmails: Number(0),
-    loadingStatusDns: Boolean(false),
     scannedEmails: Number(0),
     totalEmails: Number(0),
     scannedAddresses: Number(0),
@@ -164,9 +163,6 @@ export default defineComponent({
     },
     Emails: function () {
       return this.collectedEmails;
-    },
-    loadingStatusDns: function () {
-      return this.loadingStatusDns;
     },
   },
 });

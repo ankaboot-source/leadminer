@@ -83,7 +83,7 @@
             table-class="text-teal-10 "
             table-header-class="text-teal"
             title="Emails"
-            :rows="Emails ? Emails : []"
+            :rows="Emails.length > 0 ? Emails : []"
             :binary-state-sort="true"
             :columns="columns"
             :filter="filter"
@@ -130,7 +130,7 @@
                 icon-right="archive"
                 label="Export to csv"
                 no-caps
-                @click="exportTable(Emails)"
+                @click="exportTable(Emails.length > 0 ? Emails : [])"
                 :disable="loadingStatusDns"
               />
             </template>
@@ -289,29 +289,27 @@
                 <q-td key="Type" :props="props">
                   <div>
                     <q-badge
-                      v-if="props.row.Newsletter == true"
+                      v-show="props.row.Newsletter == true"
                       class="text-little"
                       rounded
                       color="amber-6"
                     >
                       Newsletter </q-badge
-                    ><br v-if="props.row.Newsletter == true" /><q-badge
-                      v-if="props.row.Transactional"
+                    ><br v-show="props.row.Newsletter == true" /><q-badge
+                      v-show="props.row.Transactional"
                       class="text-little"
                       rounded
                       color="amber-7"
                     >
                       Transactional
                     </q-badge>
-                    <br v-if="props.row.Transactional" /><q-badge
-                      v-if="
-                        props.row.type.length > 0 && props.row.type[0] != ''
-                      "
+                    <br v-show="props.row.Transactional" /><q-badge
+                      v-show="props.row.type"
                       class="text-little"
                       rounded
                       color="green"
                     >
-                      {{ props.row.type[0] }}
+                      {{ props.row.type }}
                     </q-badge>
                   </div></q-td
                 >
@@ -542,13 +540,14 @@ export default defineComponent({
       return this.progress.scannedBoxes;
     },
     Emails() {
-      console.log(this.retrievedEmails);
-      return this.retrievedEmails;
+      let data = this.retrievedEmails.length > 0 ? this.retrievedEmails : [];
+      return data;
     },
 
     ScannedEmails() {
       return this.progress.scannedEmails;
     },
+
     ScannedAddresses() {
       return this.progress.invalidAddresses;
     },
