@@ -1,4 +1,4 @@
-const db = require("../models");
+const db = require('../models');
 
 /**
  * returns a list of all the emails in the database, with the number of times they appear in each
@@ -10,68 +10,68 @@ async function getEmails(userId) {
   const data = await db.emailsRaw.findAll({
     where: { user_id: userId },
     attributes: [
-      "address",
+      'address',
       [
         db.sequelize.literal(
-          "json_agg(DISTINCT name) FILTER ( WHERE \"name\" = '' IS FALSE)"
+          'json_agg(DISTINCT name) FILTER ( WHERE "name" = \'\' IS FALSE)'
         ),
-        "name",
+        'name',
       ],
       [
-        db.sequelize.literal("COUNT(*) FILTER (WHERE \"conversation\" = '1')"),
-        "conversation",
+        db.sequelize.literal('COUNT(*) FILTER (WHERE "conversation" = \'1\')'),
+        'conversation',
       ],
       [
-        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"from\" = 'true' )"),
-        "from",
+        db.sequelize.literal('COUNT (*) FILTER ( WHERE "from" = \'true\' )'),
+        'from',
       ],
 
       [
-        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"body\" = 'true' )"),
-        "body",
+        db.sequelize.literal('COUNT (*) FILTER ( WHERE "body" = \'true\' )'),
+        'body',
       ],
 
       [
         db.sequelize.fn(
-          "SUM",
+          'SUM',
           db.sequelize.literal(
-            "CASE WHEN \"bcc\" = 'true' OR \"cc\" = 'true' OR \"to\" = 'true' THEN 1 ELSE 0 END "
+            'CASE WHEN "bcc" = \'true\' OR "cc" = \'true\' OR "to" = \'true\' THEN 1 ELSE 0 END '
           )
         ),
-        "recipient",
+        'recipient',
       ],
       [
         db.sequelize.fn(
-          "EVERY",
+          'EVERY',
           db.sequelize.literal(
-            "CASE WHEN  \"from\" = 'true'  AND \"transactional\" = 'true'  THEN true ELSE false END "
+            'CASE WHEN  "from" = \'true\'  AND "transactional" = \'true\'  THEN true ELSE false END '
           )
         ),
-        "Transactional",
+        'Transactional',
       ],
       [
         db.sequelize.fn(
-          "EVERY",
+          'EVERY',
           db.sequelize.literal(
-            "CASE WHEN  \"from\" = 'true'  AND \"newsletter\" = 'true'  THEN true ELSE false END "
+            'CASE WHEN  "from" = \'true\'  AND "newsletter" = \'true\'  THEN true ELSE false END '
           )
         ),
-        "Newsletter",
+        'Newsletter',
       ],
       [
         db.sequelize.fn(
-          "SUM",
+          'SUM',
           db.sequelize.literal(
-            "CASE WHEN \"from\" = 'true' OR \"reply_to\" = 'true' THEN 1 ELSE 0 END "
+            'CASE WHEN "from" = \'true\' OR "reply_to" = \'true\' THEN 1 ELSE 0 END '
           )
         ),
-        "sender",
+        'sender',
       ],
-      "domain_type",
+      'domain_type',
 
-      [db.sequelize.literal("MAX(date)"), "date"],
+      [db.sequelize.literal('MAX(date)'), 'date'],
     ],
-    group: ["address", "domain_type"],
+    group: ['address', 'domain_type'],
   });
 
   return data;
