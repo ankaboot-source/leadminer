@@ -212,6 +212,7 @@ function sortDatabase(dataFromDatabse) {
       parseInt(row.dataValues["sender"]) +
       parseInt(row.dataValues["recipient"]);
     row.dataValues["type"] = [];
+    console.log(row.dataValues.Newsletter, row.dataValues.Transactional);
     if (
       !row.dataValues.Newsletter &&
       !row.dataValues.Transactional &&
