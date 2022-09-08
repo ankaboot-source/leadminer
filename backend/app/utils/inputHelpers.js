@@ -211,7 +211,6 @@ function sortDatabase(dataFromDatabase) {
     row.dataValues.total =
       parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
     row.dataValues.type = "";
-    console.log(row.dataValues.name);
 
     if (
       !row.dataValues.Newsletter &&
