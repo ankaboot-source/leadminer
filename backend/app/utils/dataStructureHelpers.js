@@ -1,41 +1,41 @@
-const objectScan = require( "object-scan" );
-const dns = require( "dns" );
+const objectScan = require('object-scan');
+const dns = require('dns');
 
-const redisClient = require( "../../redis" ),
-    NOREPLY = [
-        "accusereception",
-        "alerts",
-        "alert",
-        "auto-confirm",
-        "donotreply",
-        "do-notreply",
-        "do-not-reply",
-        "FeedbackForm",
-        "mail daemon",
-        "maildaemon",
-        "mailer daemon",
-        "mailer-daemon",
-        "mailermasters",
-        "ne_pas_repondre",
-        "nepasrepondre",
-        "ne-pas-repondre",
-        "no.reply",
-        "no_reply",
-        "noreply",
-        "no-reply",
-        "notification",
-        "notifications",
-        "notifications-noreply",
-        "notify",
-        "pasdereponse",
-        "password",
-        "reply-",
-        "send-as-noreply",
-        "support",
-        "systemalert",
-        "unsubscribe",
-        "wordpress"
-    ];
+const redisClient = require('../../redis'),
+  NOREPLY = [
+    'accusereception',
+    'alerts',
+    'alert',
+    'auto-confirm',
+    'donotreply',
+    'do-notreply',
+    'do-not-reply',
+    'FeedbackForm',
+    'mail daemon',
+    'maildaemon',
+    'mailer daemon',
+    'mailer-daemon',
+    'mailermasters',
+    'ne_pas_repondre',
+    'nepasrepondre',
+    'ne-pas-repondre',
+    'no.reply',
+    'no_reply',
+    'noreply',
+    'no-reply',
+    'notification',
+    'notifications',
+    'notifications-noreply',
+    'notify',
+    'pasdereponse',
+    'password',
+    'reply-',
+    'send-as-noreply',
+    'support',
+    'systemalert',
+    'unsubscribe',
+    'wordpress'
+  ];
 /**
  * Create readable tree object
  * @param  {object} imapTree - native imap tree
@@ -50,28 +50,28 @@ const redisClient = require( "../../redis" ),
  * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren"})
  */
 
-function createReadableTreeObjectFromImapTree( imapTree ) {
-    const readableTree = [];
-    let folder = {};
+function createReadableTreeObjectFromImapTree(imapTree) {
+  const readableTree = [];
+  let folder = {};
 
-    Object.keys( imapTree ).forEach( ( key ) => {
-        if ( imapTree[ key ].attribs.indexOf( "\\HasChildren" ) > -1 ) {
-            const children = createReadableTreeObjectFromImapTree(
-                imapTree[ key ].children
-            );
+  Object.keys(imapTree).forEach((key) => {
+    if (imapTree[ key ].attribs.indexOf('\\HasChildren') > -1) {
+      const children = createReadableTreeObjectFromImapTree(
+        imapTree[ key ].children
+      );
 
-            folder = {
-                "label": key,
-                children
-            };
-        } else {
-            folder = {
-                "label": key
-            };
-        }
-        readableTree.push( folder );
-    } );
-    return readableTree;
+      folder = {
+        'label': key,
+        children
+      };
+    } else {
+      folder = {
+        'label': key
+      };
+    }
+    readableTree.push(folder);
+  });
+  return readableTree;
 }
 
 /**
@@ -81,53 +81,53 @@ function createReadableTreeObjectFromImapTree( imapTree ) {
  * @param {object} originalTree - The tree structure of the IMAP folders.
  * @returns {object} The imapTree object.
  */
-function addPathPerFolder( imapTree, originalTree ) {
-    Object.keys( imapTree ).forEach( ( key ) => {
-        if ( imapTree[ key ].children ) {
-            imapTree[ key ].path = findPathPerFolder(
-                originalTree,
-                imapTree[ key ].label,
-                ""
-            ).substring( 1 );
-            addPathPerFolder( imapTree[ key ].children, originalTree );
-        } else {
-            imapTree[ key ].path = findPathPerFolder(
-                originalTree,
-                imapTree[ key ].label,
-                ""
-            ).substring( 1 );
-        }
-    } );
+function addPathPerFolder(imapTree, originalTree) {
+  Object.keys(imapTree).forEach((key) => {
+    if (imapTree[ key ].children) {
+      imapTree[ key ].path = findPathPerFolder(
+        originalTree,
+        imapTree[ key ].label,
+        ''
+      ).substring(1);
+      addPathPerFolder(imapTree[ key ].children, originalTree);
+    } else {
+      imapTree[ key ].path = findPathPerFolder(
+        originalTree,
+        imapTree[ key ].label,
+        ''
+      ).substring(1);
+    }
+  });
 
-    /**
+  /**
    * findPathPerFolder() takes the imaptree, a folder name, and a string path, and returns a full path string.
    * @param imapTree - The tree structure of the IMAP folders
    * @param folderName - The name of the folder you want to find the path for.
    * @param path - The path to the folder.
    * @returns The full path of the folder name.
    */
-    function findPathPerFolder( imapTree, folderName, path ) {
-        path = path || "";
-        let fullpath = "";
+  function findPathPerFolder(imapTree, folderName, path) {
+    path = path || '';
+    let fullpath = '';
 
-        for ( const folder in imapTree ) {
-            /* istanbul ignore else */
-            if ( imapTree[ folder ] === folderName ) {
-                return path;
-            }
-            if ( typeof imapTree[ folder ] === "object" ) {
-                fullpath = findPathPerFolder(
-                    imapTree[ folder ],
-                    folderName,
-                    `${path}/${imapTree[ folder ].label}`
-                ) || fullpath;
-            } else {
-                continue;
-            }
-        }
-        return fullpath.replace( "/undefined", "" );
+    for (const folder in imapTree) {
+      /* istanbul ignore else */
+      if (imapTree[ folder ] === folderName) {
+        return path;
+      }
+      if (typeof imapTree[ folder ] === 'object') {
+        fullpath = findPathPerFolder(
+          imapTree[ folder ],
+          folderName,
+          `${path}/${imapTree[ folder ].label}`
+        ) || fullpath;
+      } else {
+        continue;
+      }
     }
-    return imapTree;
+    return fullpath.replace('/undefined', '');
+  }
+  return imapTree;
 }
 
 /**
@@ -140,27 +140,27 @@ function addPathPerFolder( imapTree, originalTree ) {
  * argument. The object also has a children property with the value of the imapTree argument. The
  * object also has a total property with the value of the total.sum property.
  */
-function addChildrenTotalForParentFiles( imapTree, userEmail ) {
-    const total = objectScan( [ "**.{total,children}" ], {
-        "joined": true,
-        "filterFn": ( { parent, gparent, property, value, context } ) => {
-            if ( property == "total" ) {
-                parent.totalIndiv = parent.total;
-            }
-            if ( property == "children" ) {
-                if ( parent ) {
-                    value.map( ( element ) => {
-                        parent.total += element.total;
-                    } );
-                }
-            }
-            if ( property == "total" ) {
-                context.sum += value;
-            }
+function addChildrenTotalForParentFiles(imapTree, userEmail) {
+  const total = objectScan([ '**.{total,children}' ], {
+    'joined': true,
+    'filterFn': ({ parent, gparent, property, value, context }) => {
+      if (property == 'total') {
+        parent.totalIndiv = parent.total;
+      }
+      if (property == 'children') {
+        if (parent) {
+          value.map((element) => {
+            parent.total += element.total;
+          });
         }
-    } )( imapTree, { "sum": 0 } );
+      }
+      if (property == 'total') {
+        context.sum += value;
+      }
+    }
+  })(imapTree, { 'sum': 0 });
 
-    return [ { "label": userEmail, "children": [ ...imapTree ], "total": total.sum } ];
+  return [ { 'label': userEmail, 'children': [ ...imapTree ], 'total': total.sum } ];
 }
 
 /**
@@ -168,10 +168,10 @@ function addChildrenTotalForParentFiles( imapTree, userEmail ) {
  * @param address - The email address to check
  * @returns A boolean value.
  */
-function IsNoReply( address ) {
-    return NOREPLY.some( ( word ) => {
-        return address.toLowerCase().includes( word.toLowerCase() );
-    } );
+function IsNoReply(address) {
+  return NOREPLY.some((word) => {
+    return address.toLowerCase().includes(word.toLowerCase());
+  });
 }
 
 /**
@@ -180,49 +180,49 @@ function IsNoReply( address ) {
  * @param address - The email address to check it domain.
  * @returns A boolean value.
  */
-async function CheckDomainStatus( address ) {
-    const domain = address.split( "@" )[ 1 ],
-        /**
+async function CheckDomainStatus(address) {
+  const domain = address.split('@')[ 1 ],
+    /**
    * as most of domaisn are free providers
    * we can reduce the exution time when check for freeproviders first
    */
-        exist = await redisClient.sismember( "freeProviders", domain );
+    exist = await redisClient.sismember('freeProviders', domain);
 
-    if ( exist == 1 ) {
-        return [ true, "provider", domain ];
-    }
-    /**
+  if (exist == 1) {
+    return [ true, 'provider', domain ];
+  }
+  /**
    * if not in free providers we check disposable
    */
-    const existDisposable = await redisClient.sismember( "disposable", domain );
+  const existDisposable = await redisClient.sismember('disposable', domain);
 
-    if ( existDisposable == 1 ) {
-        return [ false, "", domain ];
-    }
-    /**
+  if (existDisposable == 1) {
+    return [ false, '', domain ];
+  }
+  /**
    * we check for already checked domains
    */
-    const existInList = await redisClient.sismember( "domainListValid", domain );
+  const existInList = await redisClient.sismember('domainListValid', domain);
 
-    if ( existInList == 1 ) {
-        return [ true, "custom", domain ];
-    }
-    const existInListInValid = await redisClient.sismember(
-        "domainListInvalid",
-        domain
-    );
+  if (existInList == 1) {
+    return [ true, 'custom', domain ];
+  }
+  const existInListInValid = await redisClient.sismember(
+    'domainListInvalid',
+    domain
+  );
 
-    if ( existInListInValid == 1 ) {
-        return [ false, "", domain ];
-    }
-    /**
+  if (existInListInValid == 1) {
+    return [ false, '', domain ];
+  }
+  /**
    * if not already scanned we check then the MX
    */
-    if ( existInListInValid == 0 && existInList == 0 ) {
-        const result = await CheckMXStatus( domain );
+  if (existInListInValid == 0 && existInList == 0) {
+    const result = await CheckMXStatus(domain);
 
-        return result;
-    }
+    return result;
+  }
 }
 /**
  * CheckMXStatus checks if a domain has a valid MX record. If it does, it adds it to a redis set called
@@ -232,26 +232,26 @@ async function CheckDomainStatus( address ) {
  * indicates whether the domain is valid or not. The second element is a string that indicates the type
  * of domain, and finally the domain itself.
  */
-function CheckMXStatus( domain ) {
-    return new Promise( ( resolve, reject ) => {
-        dns.resolveMx( domain, async( error, addresses ) => {
-            if ( addresses ) {
-                if ( addresses.length > 0 ) {
-                    // set domain in redis
-                    await redisClient.sadd( "domainListValid", domain );
-                    resolve( [ true, "custom", domain ] );
-                }
-            } else {
-                await redisClient.sadd( "domainListInValid", domain );
-                resolve( [ false, "", domain ] );
-            }
-        } );
-    } );
+function CheckMXStatus(domain) {
+  return new Promise((resolve, reject) => {
+    dns.resolveMx(domain, async(error, addresses) => {
+      if (addresses) {
+        if (addresses.length > 0) {
+          // set domain in redis
+          await redisClient.sadd('domainListValid', domain);
+          resolve([ true, 'custom', domain ]);
+        }
+      } else {
+        await redisClient.sadd('domainListInValid', domain);
+        resolve([ false, '', domain ]);
+      }
+    });
+  });
 }
 module.exports = {
-    createReadableTreeObjectFromImapTree,
-    addPathPerFolder,
-    addChildrenTotalForParentFiles,
-    IsNoReply,
-    CheckDomainStatus
+  createReadableTreeObjectFromImapTree,
+  addPathPerFolder,
+  addChildrenTotalForParentFiles,
+  IsNoReply,
+  CheckDomainStatus
 };
