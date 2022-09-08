@@ -83,7 +83,7 @@
             table-class="text-teal-10 "
             table-header-class="text-teal"
             title="Emails"
-            :rows="Emails.length > 0 ? Emails : []"
+            :rows="Emails ?? []"
             :binary-state-sort="true"
             :columns="columns"
             :filter="filter"
@@ -289,22 +289,22 @@
                 <q-td key="Type" :props="props">
                   <div>
                     <q-badge
-                      v-show="props.row.Newsletter == true"
+                      v-if="props.row.Newsletter == true"
                       class="text-little"
                       rounded
                       color="amber-6"
                     >
                       Newsletter </q-badge
-                    ><br v-show="props.row.Newsletter == true" /><q-badge
-                      v-show="props.row.Transactional"
+                    ><br v-if="props.row.Newsletter == true" /><q-badge
+                      v-if="props.row.Transactional == true"
                       class="text-little"
                       rounded
                       color="amber-7"
                     >
                       Transactional
                     </q-badge>
-                    <br v-show="props.row.Transactional" /><q-badge
-                      v-show="props.row.type"
+                    <br v-if="props.row.Transactional == true" /><q-badge
+                      v-if="props.row.type != ''"
                       class="text-little"
                       rounded
                       color="green"
@@ -360,7 +360,6 @@ const columns = [
     name: "Names",
     align: "left",
     label: "Name",
-    //field: (row) => row.name.substring(0, 10).concat("..."),
     sortable: false,
     sort: (a, b) => {
       return b.localeCompare(a);
@@ -540,8 +539,7 @@ export default defineComponent({
       return this.progress.scannedBoxes;
     },
     Emails() {
-      let data = this.retrievedEmails.length > 0 ? this.retrievedEmails : [];
-      return data;
+      return this.retrievedEmails;
     },
 
     ScannedEmails() {
