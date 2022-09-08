@@ -62,7 +62,7 @@
               <div class="row q-md col-12">
                 <progress-card
                   v-if="Boxes"
-                  :collectedEmails="Emails.length"
+                  :collectedEmails="Emails ? Emails.length : 0"
                   :loadingStatusDns="loadingStatusDns"
                   :scannedEmails="ScannedEmails"
                   :totalEmails="TotalEmails"
@@ -83,7 +83,7 @@
             table-class="text-teal-10 "
             table-header-class="text-teal"
             title="Emails"
-            :rows="Emails"
+            :rows="Emails ? Emails : []"
             :binary-state-sort="true"
             :columns="columns"
             :filter="filter"
@@ -542,6 +542,7 @@ export default defineComponent({
       return this.progress.scannedBoxes;
     },
     Emails() {
+      console.log(this.retrievedEmails);
       return this.retrievedEmails;
     },
 
