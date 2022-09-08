@@ -22,3 +22,5 @@ jobs:
             docker-compose down
             docker rmi -f $(docker images -a | awk '/leadminer|<none>/{print $3}')
             docker-compose up -d --build
+            # Copy new compiled frontend
+            echo "${{secrets.SUDO_PASSWORD}}" | sudo -S cp -r /var/lib/docker/volumes/leadminer_dist/_data/spa /var/www/html/dist
