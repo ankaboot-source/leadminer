@@ -62,7 +62,7 @@
               <div class="row q-md col-12">
                 <progress-card
                   v-if="Boxes"
-                  :collectedEmails="Emails?.length ?? 0"
+                  :collectedEmails="Emails ? Emails.length : 0"
                   :loadingStatusDns="loadingStatusDns"
                   :scannedEmails="ScannedEmails"
                   :totalEmails="TotalEmails"
