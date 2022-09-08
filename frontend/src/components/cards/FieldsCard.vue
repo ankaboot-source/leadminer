@@ -130,7 +130,12 @@ export default defineComponent({
     };
   },
   props: {
-    selectedFields: [],
+    selectedFields: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
   },
   mounted() {
     this.selected = this.selectedFields;

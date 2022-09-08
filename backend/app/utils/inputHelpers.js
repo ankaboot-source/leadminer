@@ -211,19 +211,16 @@ function sortDatabase(dataFromDatabse) {
     row.dataValues["total"] =
       parseInt(row.dataValues["sender"]) +
       parseInt(row.dataValues["recipient"]);
-    row.dataValues["type"] = [];
-    console.log(row.dataValues.Newsletter, row.dataValues.Transactional);
+    row.dataValues["type"] = "";
     if (
       !row.dataValues.Newsletter &&
       !row.dataValues.Transactional &&
       row.dataValues["name"] != [""]
     ) {
-      row.dataValues["type"].push(
-        findEmailAddressType(
-          row.dataValues.address,
-          row.dataValues?.name?.[0],
-          row.dataValues.domain_type
-        )
+      row.dataValues["type"] = findEmailAddressType(
+        row.dataValues.address,
+        row.dataValues?.name?.[0],
+        row.dataValues.domain_type
       );
     }
     return row.dataValues;

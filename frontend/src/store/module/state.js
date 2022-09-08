@@ -49,9 +49,8 @@ export default function () {
       infoMessage: "",
       progress: {
         scannedEmails: Number(0),
-
         status: "",
-        scannedBoxes: [],
+        scannedBoxes: Array(0),
         invalidAddresses: Number(0),
       },
       cancel: null,
