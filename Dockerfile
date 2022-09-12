@@ -27,4 +27,4 @@ WORKDIR /usr/src/leadminer
 COPY . .
 
 WORKDIR /usr/src/leadminer/backend
-CMD "cp -r /usr/src/leadminer/dist/spa /var/www/html/dist/ && node --expose_gc server.js"
+CMD cp -r /usr/src/leadminer/frontend/dist/spa /var/www/html/dist/ && node --expose_gc server.js

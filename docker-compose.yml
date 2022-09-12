@@ -17,7 +17,7 @@ services:
     image: leadminer:git
     build: .
     volumes:
-      - /var/www/html/dist:/var/www/html/dist
+      - /var/www/html/dist:/var/www/html/dist:rw
     tty: true
     ports:
       - "8081:8081"
