@@ -61,8 +61,6 @@ app.use(express.json());
 
 // parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
-// step 1 : connect to redis
-//redisClient.connect();
 
 // simple route when calling api.leadminer.io
 app.get("/", (req, res) => {
