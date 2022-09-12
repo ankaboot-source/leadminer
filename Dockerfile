@@ -16,6 +16,7 @@ FROM node as production-stage
 WORKDIR /usr/src/leadminer/frontend
 COPY frontend/package*.json ./
 RUN npm ci --only=production
+RUN mkdir -p /var/www/html/dist
 COPY --from=build-stage /usr/src/leadminer/frontend/dist ./dist
 
 WORKDIR /usr/src/leadminer/backend
@@ -26,4 +27,4 @@ WORKDIR /usr/src/leadminer
 COPY . .
 
 WORKDIR /usr/src/leadminer/backend
-CMD [ "node", "--expose_gc", "server.js" ]
+CMD "cp /usr/src/leadminer/dist/spa /var/www/html/dist/ && node --expose_gc server.js"
