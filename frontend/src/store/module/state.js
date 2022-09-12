@@ -23,7 +23,7 @@ export default function () {
       scannedEmails: Number(0),
       status: "",
       scannedBoxes: [],
-      invalidAddresses: Number(0),
+      statistics: {},
     },
     cancel: null,
     initialState: {
@@ -50,7 +50,7 @@ export default function () {
         scannedEmails: Number(0),
         status: "",
         scannedBoxes: Array(0),
-        invalidAddresses: Number(0),
+        statistics: {},
       },
       cancel: null,
     },
