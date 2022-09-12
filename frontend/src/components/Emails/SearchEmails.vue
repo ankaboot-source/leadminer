@@ -66,6 +66,7 @@
                   :loadingStatusDns="loadingStatusDns"
                   :scannedEmails="ScannedEmails"
                   :totalEmails="TotalEmails"
+                  :statistics="Statistics"
                   :scannedAddresses="ScannedAddresses"
                 />
               </div>
@@ -124,7 +125,6 @@
                   }}
                 </q-tooltip>
               </q-btn>
-
               <q-btn
                 color="teal-5"
                 icon-right="archive"
@@ -183,7 +183,6 @@
                       : props.row.address
                   }}</q-td
                 >
-
                 <q-td key="Names" :props="props">
                   <q-expansion-item
                     v-if="props.row.name != null && props.row.name.length > 1"
@@ -548,6 +547,9 @@ export default defineComponent({
     },
     Status() {
       return this.progress.status;
+    },
+    Statistics() {
+      return this.progress.statistics;
     },
     TotalEmails() {
       if (this.boxes[0]) {

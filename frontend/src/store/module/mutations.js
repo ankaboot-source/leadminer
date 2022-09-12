@@ -39,11 +39,11 @@ export function SET_SCANNEDEMAILS(state, newValue) {
     state.progress.scannedEmails += parseInt(newValue);
   }
 }
-export function SET_INVALIDADDRESSES(state, newValue) {
+export function SET_STATISTICS(state, newValue) {
   if (newValue == "f") {
-    state.progress.invalidAddresses = 0;
+    state.progress.statistics = {};
   } else {
-    state.progress.invalidAddresses = parseInt(newValue);
+    state.progress.statistics = newValue;
   }
 }
 export function SET_SCANNEDBOXES(state, newValue) {

@@ -8,7 +8,7 @@ function eventListenersHandler(parent, currentState) {
       let data = JSON.parse(message.data);
       //parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
       parent.commit("example/SET_EMAILS", data.data);
-      parent.commit("example/SET_INVALIDADDRESSES", data.totalScanned);
+      parent.commit("example/SET_STATISTICS", data.statistics);
     }
   );
   source.addEventListener(
