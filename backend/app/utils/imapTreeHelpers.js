@@ -1,4 +1,4 @@
-const objectScan = require("object-scan");
+const objectScan = require('object-scan');
 
 /**
  * Create readable tree object
@@ -19,23 +19,53 @@ function createReadableTreeObjectFromImapTree(imapTree) {
   let folder = {};
 
   Object.keys(imapTree).forEach((key) => {
-    if (imapTree[key].attribs.indexOf("\\HasChildren") > -1) {
+    if (imapTree[key].attribs.indexOf('\\HasChildren') > -1) {
       const children = createReadableTreeObjectFromImapTree(
         imapTree[key].children
       );
 
       folder = {
         label: key,
-        children,
+        children
       };
     } else {
       folder = {
-        label: key,
+        label: key
       };
     }
     readableTree.push(folder);
   });
   return readableTree;
+}
+
+/**
+ * findPathPerFolder() takes the imaptree, a folder name, and a string path, and returns a full path string.
+ * @param {object} imapTree - The tree structure of the IMAP folders
+ * @param {string} folderName - The name of the folder you want to find the path for.
+ * @param {string} path - The path to the folder.
+ * @returns The full path of the folder name.
+ */
+function findPathPerFolder(imapTree, folderName, pathString) {
+  const path = pathString || '';
+  let fullpath = '';
+
+  for (const folder in imapTree) {
+    /* istanbul ignore else */
+    if (imapTree[folder] === folderName) {
+      return path;
+    }
+    if (typeof imapTree[folder] === 'object') {
+      fullpath =
+        findPathPerFolder(
+          imapTree[folder],
+          folderName,
+          `${path}/${imapTree[folder].label}`
+        ) || fullpath;
+    } else {
+      continue;
+    }
+  }
+  return fullpath.replace('/undefined', '');
 }
 
 /**
@@ -51,47 +81,18 @@ function addPathPerFolder(imapTree, originalTree) {
       imapTree[key].path = findPathPerFolder(
         originalTree,
         imapTree[key].label,
-        ""
+        ''
       ).substring(1);
       addPathPerFolder(imapTree[key].children, originalTree);
     } else {
       imapTree[key].path = findPathPerFolder(
         originalTree,
         imapTree[key].label,
-        ""
+        ''
       ).substring(1);
     }
   });
 
-  /**
-   * findPathPerFolder() takes the imaptree, a folder name, and a string path, and returns a full path string.
-   * @param {object} imapTree - The tree structure of the IMAP folders
-   * @param {string} folderName - The name of the folder you want to find the path for.
-   * @param {string} path - The path to the folder.
-   * @returns The full path of the folder name.
-   */
-  function findPathPerFolder(imapTree, folderName, path) {
-    path = path || "";
-    let fullpath = "";
-
-    for (const folder in imapTree) {
-      /* istanbul ignore else */
-      if (imapTree[folder] === folderName) {
-        return path;
-      }
-      if (typeof imapTree[folder] === "object") {
-        fullpath =
-          findPathPerFolder(
-            imapTree[folder],
-            folderName,
-            `${path}/${imapTree[folder].label}`
-          ) || fullpath;
-      } else {
-        continue;
-      }
-    }
-    return fullpath.replace("/undefined", "");
-  }
   return imapTree;
 }
 
@@ -106,23 +107,23 @@ function addPathPerFolder(imapTree, originalTree) {
  * object also has a total property with the value of the total.sum property.
  */
 function addChildrenTotalForParentFiles(imapTree, userEmail) {
-  const total = objectScan(["**.{total,children}"], {
+  const total = objectScan(['**.{total,children}'], {
     joined: true,
-    filterFn: ({ parent, gparent, property, value, context }) => {
-      if (property == "total") {
+    filterFn: ({ parent, property, value, context }) => {
+      if (property == 'total') {
         parent.totalIndiv = parent.total;
       }
-      if (property == "children") {
+      if (property == 'children') {
         if (parent) {
           value.map((element) => {
             parent.total += element.total;
           });
         }
       }
-      if (property == "total") {
+      if (property == 'total') {
         context.sum += value;
       }
-    },
+    }
   })(imapTree, { sum: 0 });
 
   return [{ label: userEmail, children: [...imapTree], total: total.sum }];
@@ -131,5 +132,5 @@ function addChildrenTotalForParentFiles(imapTree, userEmail) {
 module.exports = {
   createReadableTreeObjectFromImapTree,
   addPathPerFolder,
-  addChildrenTotalForParentFiles,
+  addChildrenTotalForParentFiles
 };

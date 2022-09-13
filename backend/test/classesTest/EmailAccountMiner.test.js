@@ -41,7 +41,7 @@ describe("Full mining flow", function () {
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
           fields: ["HEADER", "1"],
-          boxes: ["testFile", "none"],
+          boxes: ["testFile", "0"],
           user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
             '"' + loggedInUser.email + '"'
           },"password":${'"' + passwordTest + '"'},"host":${

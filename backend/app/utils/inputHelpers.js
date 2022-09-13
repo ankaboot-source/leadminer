@@ -8,7 +8,7 @@ const casesForPosition = [
     [50, 8000, 19999],
     [500, 20000, 60000],
     [700, 60001, 100000],
-    [1000, 100001, 500001],
+    [1000, 100001, 500001]
   ],
   casesForData = [
     [1, 0, 100],
@@ -19,7 +19,7 @@ const casesForPosition = [
     [15, 8000, 19999],
     [25, 20000, 60000],
     [40, 60001, 100000],
-    [35, 100001, 500001],
+    [35, 100001, 500001]
   ];
 /**
  * Returns an array of integers used in sending progress status.
@@ -28,7 +28,7 @@ const casesForPosition = [
  *
  */
 function EqualPartsForSocket(total, type) {
-  const casesObject = type == "position" ? casesForPosition : casesForData;
+  const casesObject = type == 'position' ? casesForPosition : casesForData;
 
   function inRange(n, nStart, nEnd) {
     if (n >= nStart && n <= nEnd) {

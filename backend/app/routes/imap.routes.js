@@ -1,8 +1,8 @@
-module.exports = (app, sse, client) => {
-  const imap = require('../controllers/imap.controller');
-  const googleApiController = require('../controllers/google.controller.js'),
-    router = require('express').Router();
+const imap = require('../controllers/imap.controller');
+const googleApiController = require('../controllers/google.controller.js'),
+  router = require('express').Router();
 
+module.exports = (app, sse, client) => {
   // Create a new imap account
   router.post('/signup', imap.createImapInfo);
   // signUp with google account route

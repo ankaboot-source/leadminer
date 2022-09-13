@@ -119,48 +119,6 @@ async function deleteUserData(userId) {
   });
 }
 
-/**
- * Sorts the data array based on total interactions, alphabetics, and groups fields
- * @param  {Array} dataFromDatabse
- */
-function sortDatabase(dataFromDatabase) {
-  let counter = 0;
-  const data = dataFromDatabase.map((row) => {
-    if (!row.dataValues.name || row.dataValues.name == null) {
-      row.dataValues.name = [""];
-    } else {
-      const NameArray = handleNames(
-        row.dataValues.name,
-        row.dataValues.address
-      );
-
-      NameArray.length == 0
-        ? (row.dataValues.name = [""])
-        : (row.dataValues.name = NameArray);
-    }
-    row.dataValues.total =
-      parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
-    row.dataValues.type = "";
-
-    if (
-      !row.dataValues.Newsletter &&
-      !row.dataValues.Transactional &&
-      row.dataValues.name != [""]
-    ) {
-      row.dataValues.type = findEmailAddressType(
-        row.dataValues.address,
-        row.dataValues?.name?.[0],
-        row.dataValues.domain_type
-      );
-    }
-    if (row.dataValues.Transactional) {
-      counter += 1;
-    }
-    return row.dataValues;
-  });
-  return [sortDataUsingAlpha(data), counter];
-}
-
 function findEmailAddressType(emailAddress, UserName, domainType) {
   const domainAndUserName = emailAddress.split("@");
   function getScore(DomainAndUserName) {
@@ -248,5 +206,46 @@ function sortDataUsingAlpha(data) {
   const WordThenNumArray = wordArr.concat(numArr);
 
   return WordThenNumArray.concat(emptyArr);
+}
+
+/**
+ * Sorts the data array based on total interactions, alphabetics, and groups fields
+ * @param  {Array} dataFromDatabse
+ */
+function sortDatabase(dataFromDatabase) {
+  let counter = 0;
+  const data = dataFromDatabase.map((row) => {
+    if (!row.dataValues.name || row.dataValues.name == null) {
+      row.dataValues.name = [""];
+    } else {
+      const NameArray = handleNames(
+        row.dataValues.name,
+        row.dataValues.address
+      );
+      NameArray.length == 0
+        ? (row.dataValues.name = [""])
+        : (row.dataValues.name = NameArray);
+    }
+    row.dataValues.total =
+      parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
+    row.dataValues.type = "";
+
+    if (
+      !row.dataValues.Newsletter &&
+      !row.dataValues.Transactional &&
+      row.dataValues.name != [""]
+    ) {
+      row.dataValues.type = findEmailAddressType(
+        row.dataValues.address,
+        row.dataValues?.name?.[0],
+        row.dataValues.domain_type
+      );
+    }
+    if (row.dataValues.Transactional) {
+      counter += 1;
+    }
+    return row.dataValues;
+  });
+  return [sortDataUsingAlpha(data), counter];
 }
 module.exports = { getEmails, getCountDB, deleteUserData, sortDatabase };
