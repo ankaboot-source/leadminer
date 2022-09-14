@@ -25,7 +25,7 @@ google_api:
 email_types:
   noreply: "accusereception,alerts,alert,auto-confirm,donotreply,do-notreply,do-not-reply,FeedbackForm,mail daemon,maildaemon,mailer daemon,mailer-daemon,mailermasters,ne_pas_repondre,nepasrepondre,ne-pas-repondre,no.reply,no_reply,noreply,no-reply,notification,notifications,notifications-noreply,notify,pasdereponse,password,reply-,send-as-noreply,support,systemalert,unsubscribe,wordpress"
   newsletter: "list-unsubscribe,list-id,list"
-  transactional: "feedback-id,x-feedback-id,x-mandrill-user,x-mailer: mailchimp *,X-LinkedIn-*,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*"
+  transactional: "feedback-id,x-feedback-id,x-mandrill-user,x-mailer: mailchimp *,X-LinkedIn-*,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*,x-job"
 test:
   imap_email: "honeypot@flyweight.tech"
   imap_host: "mail.gandi.net"
