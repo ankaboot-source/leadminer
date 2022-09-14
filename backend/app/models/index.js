@@ -6,10 +6,10 @@ const dbConfig = require("../config/db.config"),
     host: dbConfig.host,
     dialect: "postgres",
     pool: {
-      max: 7,
+      max: 7, //Maximum number of connection in pool(do not make more than 7 for the moment, else the query queue became full in a short time and this will carsh the DB)
       min: 0,
       acquire: 200000,
-      idle: 10000,
+      idle: 50000,
       idleTimeoutMillis: 0,
       connectionTimeoutMillis: 0,
     },
@@ -22,7 +22,6 @@ const dbConfig = require("../config/db.config"),
     logging: false,
   });
 // if not created we will create all the tables
-
 logger.debug("creating database tables...");
 const db = {};
 
@@ -30,7 +29,6 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 // import all models
 db.imapInfo = require("./imap.model")(sequelize, Sequelize);
-db.emails = require("./emails.model")(sequelize, Sequelize);
 db.emailsRaw = require("./emailsRaw.model")(sequelize, Sequelize);
 db.googleUsers = require("./googleUser.model")(sequelize, Sequelize);
 
