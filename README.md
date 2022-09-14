@@ -1,5 +1,11 @@
 <P><a href="https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml"><img src="https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml/badge.svg?branch=main" alt="Build & Deploy"></a>
 <img src="https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat" alt="Lines"></a></p>
+[![Maintainability](https://api.codeclimate.com/v1/badges/54ee3c20614d0ae8314b/maintainability)] (https://codeclimate.com/repos/6318a10510f06201be01345a/maintainability)
+
+[![Known Vulnerabilities](https://snyk.io/test/github/{username}/{repo}/badge.svg)] (https://snyk.io/test/github/{username}/{repo})
+
+<P><a href="https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml"><img src="https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy.yml/badge.svg?branch=main" alt="Build & Deploy"></a>
+<img src="https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat" alt="Lines"></a></p>
 
 # ⛏ Leadminer
 
