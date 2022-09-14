@@ -41,10 +41,8 @@ $ docker-compose up
 ```
 We have a CI/CD pipeline that does just that. Check the [deployment workflow yml file](/.github/workflows/Deploy.yml).
 
-## Troubleshooting
-If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
-
 ## Support
+If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue. 
 
 This app is provided for free as such with no guarantee nor support. For any kind of support, feel free to reach [ankaboot professional services](contact@ankaboot.fr).
 
