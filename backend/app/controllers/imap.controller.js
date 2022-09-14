@@ -5,7 +5,6 @@ const db = require("../models"),
   logger = require("../utils/logger")(module);
 const hashHelpers = require("../utils/hashHelpers");
 const minedDataHelpers = require("../utils/minedDataHelpers");
-const inputHelpers = require("../utils/inputHelpers");
 const EventEmitter = require("node:events");
 const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
@@ -13,12 +12,28 @@ const EmailAccountMiner = require("../services/EmailAccountMiner");
 const redisClient = require("../../redis");
 const { Worker } = require("worker_threads");
 const { imapInfo } = require("../models");
+
+function temporaryImapConnection(imapInfo, reqBody) {
+  return new Imap({
+    user: imapInfo.email,
+    password: reqBody.password,
+    host: imapInfo.host,
+    port: imapInfo.port,
+    tls: true,
+    connTimeout: 20000,
+    authTimeout: 7000,
+    tlsOptions: {
+      port: imapInfo.port,
+      host: imapInfo.host,
+      servername: imapInfo.host,
+    },
+  });
+}
 /**
  *  Create imap account infos
  * @param  {} req
  * @param  {} res
  */
-
 exports.createImapInfo = (req, res) => {
   "use strict";
   if (!req.body.email || !req.body.host) {
@@ -35,20 +50,7 @@ exports.createImapInfo = (req, res) => {
       tls: req.body.tls ? req.body.tls : true,
     },
     // initiate imap client
-    imap = new Imap({
-      user: imapInfo.email,
-      password: req.body.password,
-      host: imapInfo.host,
-      port: imapInfo.port,
-      tls: true,
-      connTimeout: 20000,
-      authTimeout: 7000,
-      tlsOptions: {
-        port: imapInfo.port,
-        host: imapInfo.host,
-        servername: imapInfo.host,
-      },
-    });
+    imap = temporaryImapConnection(imapInfo, req.body);
   // Ensures that the account exists
 
   imap.connect();
@@ -111,20 +113,7 @@ exports.loginToAccount = async (req, res) => {
   if (imap == null) {
     this.createImapInfo(req, res);
   } else {
-    const imapConnection = new Imap({
-      user: imap.email,
-      password: req.body.password,
-      host: imap.host,
-      port: imap.port,
-      tls: true,
-      connTimeout: 20000,
-      authTimeout: 7000,
-      tlsOptions: {
-        port: imap.port,
-        host: imap.host,
-        servername: imap.host,
-      },
-    });
+    const imapConnection = temporaryImapConnection(imap, req.body);
 
     imapConnection.connect();
     imapConnection.once("ready", () => {
@@ -312,8 +301,6 @@ exports.getEmails = async (req, res, sse) => {
       message: "Error occurend try to refresh the page or reconnect",
     });
   });
-  process.on("unhandledRejection", (reason, promise) => {
-    console.log(reason);
-  });
+
   eventEmitter.removeListener("end", () => {});
 };

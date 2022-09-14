@@ -10,9 +10,6 @@
     "ecmaVersion": "latest"
   },
   "ignorePatterns": ["*.test.js"],
-  // "rules": {
-
-  // }
   "rules": {
     "complexity": ["warn", 7],
     "no-undef": "error",
@@ -20,7 +17,10 @@
 
     "no-invalid-this": "error",
     "no-useless-return": "error",
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "req|res|next|__" }], //* Enhance Readability
+    "no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "req|res|next|__|reject" }
+    ], //* Enhance Readability
     "indent": ["error", 2, { "SwitchCase": 1 }],
     "no-mixed-spaces-and-tabs": "warn",
     "space-before-blocks": "error",

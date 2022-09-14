@@ -13,7 +13,7 @@ module.exports = {
   package: "./package.json",
   parallel: false,
   recursive: true,
-  timeout: "500000", // same as "timeout: '2s'"
+  timeout: "10000", // same as "timeout: '2s'"
   // timeout: false, // same as "timeout: 0"
   "trace-warnings": true, // node flags ok
   watch: false,

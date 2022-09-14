@@ -57,7 +57,7 @@ function initStore(parent) {
   parent.commit("example/SET_LOADING", true);
   parent.commit("example/SET_LOADING_DNS", true);
   parent.commit("example/SET_SCANNEDEMAILS", "f");
-  parent.commit("example/SET_INVALIDADDRESSES", "f");
+  parent.commit("example/SET_STATISTICS", "f");
   parent.commit("example/SET_EMAILS", []);
   parent.commit("example/SET_SCANNEDBOXES", []);
 }

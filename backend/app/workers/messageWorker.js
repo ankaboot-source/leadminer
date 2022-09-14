@@ -1,8 +1,9 @@
+//this is a worker to handle the messages
 const { parentPort } = require("worker_threads");
 const redisClient = require("../../redis");
 const EmailMessage = require("../services/EmailMessage");
 
-// get data from parent
+/* Listening for a message from the parent thread. */
 parentPort.on("message", (message) => {
   const Message = new EmailMessage(
       message.seq,

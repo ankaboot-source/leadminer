@@ -59,6 +59,7 @@ async function getEmails(userId) {
         ),
         "recipient",
       ],
+
       [
         db.sequelize.fn(
           "EVERY",
@@ -120,93 +121,82 @@ async function deleteUserData(userId) {
 }
 
 /**
- * Sorts the data array based on total interactions, alphabetics, and groups fields
- * @param  {Array} dataFromDatabse
+ * getScore takes the domain and username and return a "matching score" between
+ * username and email address username part
+ * @example leadminer@leadminer.io VS leadminer
+ * @param {string} DomainAndUserName - The email address of the user.
+ * @param {string} UserName - The name of the user
+ * @returns the percentage of the match between the username and the email address.
  */
-function sortDatabase(dataFromDatabase) {
-  let counter = 0;
-  const data = dataFromDatabase.map((row) => {
-    if (!row.dataValues.name || row.dataValues.name == null) {
-      row.dataValues.name = [""];
-    } else {
-      const NameArray = handleNames(
-        row.dataValues.name,
-        row.dataValues.address
-      );
+function getScore(DomainAndUserName, UserName) {
+  //split is to check each part of the name apart
+  //e.g: address: lead-miner@lead.com |||| Name: miner app
+  //then we can match the name with the address
+  const splittedUserName = UserName.split(" "),
+    UsernameWithoutSpace = UserName.replaceAll(/ /g, "").toLowerCase(), // try to get name with spaces
+    domainAndUserName = DomainAndUserName.substring(
+      0,
+      UsernameWithoutSpace.length
+    ).toLowerCase(), //get the same length so we can compare the part before "@" vs the current name
+    length = domainAndUserName.length;
+  let actualScore = length, // start with full points(100% match)
+    i = 0;
 
-      NameArray.length == 0
-        ? (row.dataValues.name = [""])
-        : (row.dataValues.name = NameArray);
-    }
-    row.dataValues.total =
-      parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
-    row.dataValues.type = "";
-
+  while (i < length) {
     if (
-      !row.dataValues.Newsletter &&
-      !row.dataValues.Transactional &&
-      row.dataValues.name != [""]
+      UsernameWithoutSpace[i] !== domainAndUserName[i] &&
+      !domainAndUserName.includes(splittedUserName[0].toLowerCase()) &&
+      !domainAndUserName.includes(splittedUserName?.[1]?.toLowerCase())
     ) {
-      row.dataValues.type = findEmailAddressType(
-        row.dataValues.address,
-        row.dataValues?.name?.[0],
-        row.dataValues.domain_type
-      );
+      actualScore--; // subtract 1 from actual score
     }
-    if (row.dataValues.Transactional) {
-      counter += 1;
-    }
-    return row.dataValues;
-  });
-  return [sortDataUsingAlpha(data), counter];
-}
-
-function findEmailAddressType(emailAddress, UserName, domainType) {
-  const domainAndUserName = emailAddress.split("@");
-  function getScore(DomainAndUserName) {
-    const splittedUserName = UserName.split(" "),
-      UsernameWithoutSpace = UserName.replaceAll(/ /g, "").toLowerCase(),
-      domainAndUserName = DomainAndUserName.substring(
-        0,
-        UsernameWithoutSpace.length
-      ).toLowerCase(),
-      length = domainAndUserName.length;
-    let actualScore = length, // start with full points
-      i = 0;
-
-    while (i < length) {
-      if (
-        UsernameWithoutSpace[i] !== domainAndUserName[i] &&
-        !domainAndUserName.includes(splittedUserName[0].toLowerCase()) &&
-        !domainAndUserName.includes(splittedUserName?.[1]?.toLowerCase())
-      ) {
-        actualScore--; // subtract 1 from actual score
-      }
-
-      i++; // move to the next index
-    }
-
-    return 100 * (actualScore / length);
+    i++; // move to the next index
   }
+  return 100 * (actualScore / length);
+}
+/**
+ * findEmailAddressType takes an email address, a list of user names, and a domain type, and returns the type of email
+ * address
+ * @param {String} emailAddress - The email address you want to check
+ * @param {Array} UserNames - An array of user names that you want to check against.
+ * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"
+ * @returns the type of email address.
+ */
+function findEmailAddressType(emailAddress, UserNames, domainType) {
   // array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
-  if (UserName.length > 0) {
-    if (
-      domainType == "provider" &&
-      domainType != "custom" &&
-      getScore(domainAndUserName[0]) > 40
-    ) {
-      return "Personal";
-    }
-    if (getScore(domainAndUserName[0]) > 40 && domainType == "custom") {
-      return "Professional";
+  const domainAndUserName = emailAddress.split("@");
+  //if the current email have names(already checked but in case of any conflicts we need to always re-check)
+  if (UserNames.length > 0) {
+    //loop throught Usernames
+
+    for (let userName of UserNames) {
+      if (
+        domainType == "provider" &&
+        domainType != "custom" &&
+        getScore(domainAndUserName[0], userName) > 40
+      ) {
+        return "Personal";
+      }
+      if (
+        getScore(domainAndUserName[0], userName) > 40 &&
+        domainType == "custom"
+      ) {
+        return "Professional";
+      }
     }
   }
   return "";
 }
 
-function handleNames(name, address) {
+/**
+ * handleNames takes in an array of names and an email address,
+ * and returns an array of names that are more readable and don't includes the address itself
+ * @param {String} name - This is the name of the business.
+ * @param {String} emailAddress - The address of the property
+ * @returns An array of names that have been cleaned up.
+ */
+function handleNames(name, emailAddress) {
   const NameArray = [];
-
   name.map((name) => {
     const Name = name
       .replaceAll('"', "")
@@ -214,7 +204,7 @@ function handleNames(name, address) {
       .replaceAll("/", "")
       .trim();
 
-    if (Name != address) {
+    if (Name != emailAddress) {
       if (
         NameArray.filter((str) =>
           str.toLowerCase().includes(Name.toLowerCase())
@@ -226,6 +216,12 @@ function handleNames(name, address) {
   });
   return NameArray;
 }
+/**
+ * sortDataUsingAlpha sorts the data base on the name letters
+ * first are alpha, then names with numbers, finally empty names
+ * @param data - an array of objects
+ * @returns an array of objects sorted by the total property in descending order.
+ */
 function sortDataUsingAlpha(data) {
   const wordArr = [],
     numArr = [],
@@ -248,5 +244,50 @@ function sortDataUsingAlpha(data) {
   const WordThenNumArray = wordArr.concat(numArr);
 
   return WordThenNumArray.concat(emptyArr);
+}
+
+/**
+ * Sorts the data array based on total interactions, alphabetics, and groups fields
+ * @param  {Array} dataFromDatabse
+ */
+function sortDatabase(dataFromDatabase) {
+  let counter = 0;
+  const data = dataFromDatabase.map((row) => {
+    //if for any reason we don't have names we should give empty string
+    if (!row.dataValues.name || row.dataValues.name == null) {
+      row.dataValues.name = [""];
+    } else {
+      // clean names
+      const NameArray = handleNames(
+        row.dataValues.name,
+        row.dataValues.address
+      );
+      NameArray.length == 0
+        ? (row.dataValues.name = [""])
+        : (row.dataValues.name = NameArray);
+    }
+    // can't be made in database level, so we do it here
+    row.dataValues.total =
+      parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
+    row.dataValues.type = "";
+
+    if (
+      !row.dataValues.Newsletter &&
+      !row.dataValues.Transactional &&
+      row.dataValues.name.every((val) => val != "")
+    ) {
+      //if not transactional or newsletter, then find the type
+      row.dataValues.type = findEmailAddressType(
+        row.dataValues.address,
+        row.dataValues?.name,
+        row.dataValues.domain_type
+      );
+    }
+    if (row.dataValues.Transactional) {
+      counter += 1;
+    }
+    return row.dataValues;
+  });
+  return [sortDataUsingAlpha(data), counter];
 }
 module.exports = { getEmails, getCountDB, deleteUserData, sortDatabase };
