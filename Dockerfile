@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Develop Stage
-FROM node as develop-stage
+FROM node:18.9.0-slim as develop-stage
 WORKDIR /usr/src/leadminer/frontend
 COPY frontend/package*.json ./
 RUN yarn global add @quasar/cli
@@ -12,7 +12,7 @@ RUN yarn
 RUN quasar build
 
 # Production stage
-FROM node as production-stage
+FROM node:18.9.0-slim as production-stage
 WORKDIR /usr/src/leadminer/frontend
 COPY frontend/package*.json ./
 RUN npm ci --only=production
