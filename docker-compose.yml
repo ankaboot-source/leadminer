@@ -8,22 +8,41 @@ services:
 
   redis:
     image: redis
-    command: --port 6666
+    command: --port ${REDIS_PORT}
+    restart: always
     ports:
-      - "6666:6666"
-    expose:
-      - "6666"
-  leadminer:
-    image: leadminer:git
-    build: .
-    volumes:
-      - /var/www/html/dist:/var/www/html/dist:rw
-    tty: true
-    ports:
-      - "8081:8081"
-        #restart: always
+      - ${REDIS_PORT}:${REDIS_PORT}
+  leadminer-api:
+    image: leadminer-api:git
+    container_name: leadminer_api
+    build: backend
+    restart: always
     environment:
       NODE_ENV: production
     depends_on:
       - postgres
       - redis
+  leadminer-server:
+    image: leadminer-server:git
+    container_name: nginx_server
+    build: frontend
+    restart: always
+    stdin_open: true
+    tty: true
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - leadminer-api
+    volumes:
+      - ./frontend/.nginx:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/lib/letsencrypt:/var/lib/letsencrypt
+  certbot:
+    image: certbot/certbot:latest
+    command: certonly --test-cert -v --keep --email contact@ankaboot.fr --agree-tos --no-eff-email --duplicate --expand --webroot -w=/etc/letsencrypt --cert-name leadminer.io -d leadminer.io,demo.leadminer.io,api.leadminer.io
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/lib/letsencrypt:/var/lib/letsencrypt
+    depends_on:
+      - leadminer-server
