@@ -3,14 +3,14 @@
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
       <q-card-section class="q-pa-none">
         <div v-if="renderDialog" class="row q-pa-sm">
-          <div class="bg-stransparent q-mr-sm col-7 q-pa-sm">
-            <q-card>
+          <div class="bg-stransparent q-mr-sm col-lg-5 col-md-5 q-pa-sm">
+            <q-card class="card-class">
               <q-card-section class="bg-tealgradient q-pa-sm text-white">
                 <div class="text-h5 text-bold">Preferences</div>
                 <div class="text-caption" />
               </q-card-section>
               <div class="text-custom row q-pa-sm">
-                <div class="bg-grey-2 border q-pa-md col-6">
+                <div class="bg-grey-2 border q-pa-sm col-lg-7 col-md-6">
                   <div class="text-h6 text-bold">Select mailbox folders</div>
                   <tree-card
                     v-if="Boxes.length > 0"
@@ -20,9 +20,9 @@
                   />
                   <q-spinner-tail v-else color="teal" size="4em" />
                 </div>
-                <div class="col" />
+                <div />
 
-                <div class="bg-grey-1 border q-pa-md q-ml-sm col-5">
+                <div class="bg-grey-1 border q-pa-md q-ml-sm col-lg-4 col-md-5">
                   <div class="text-h6 text-bold">Select fields</div>
                   <div
                     class="text-subtitle2 shadow-2 bborder q-pa-sm text-orange-8"
@@ -33,7 +33,7 @@
                     />
                   </div>
                 </div>
-                <div class="column col-12">
+                <div class="column col-lg-8">
                   <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-6">
                     <q-btn
@@ -154,13 +154,13 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
-            <template v-slot:header-cell-Frequency="props">
+            <template v-slot:header-cell-Occurence="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
                   anchor="top middle"
                   self="center middle"
-                  >Total of interractions</q-tooltip
+                  >Total occurences of this email address</q-tooltip
                 >{{ props.col.label }}
               </q-th>
             </template>
@@ -250,7 +250,7 @@
                     }}
                   </q-badge>
                 </q-td>
-                <q-td key="Sender" :props="props">
+                <!-- <q-td key="Sender" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.sender }}
                   </q-badge> </q-td
@@ -258,10 +258,10 @@
                   <q-badge outline color="orange" transparent>
                     {{ props.row.recipient }}
                   </q-badge>
-                </q-td>
+                </q-td> -->
 
-                <q-td key="Frequency" :props="props">
-                  <q-badge outline color="orange-10" transparent>
+                <q-td key="Occurence" :props="props">
+                  <q-badge outline color="orange" transparent>
                     {{ props.row.total }}
                   </q-badge> </q-td
                 ><q-td key="Body" :props="props">
@@ -365,32 +365,32 @@ const columns = [
     style: "max-width:190px;min-width: 190px !important",
     headerStyle: "width: 250px !important",
   },
+  // {
+  //   name: "Sender",
+  //   align: "center",
+  //   label: "Sender",
+  //   type: "number",
+  //   field: (row) => row.sender,
+  //   sortOrder: "ad",
+  //   style: "width: 50px !important",
+  //   headerStyle: "width: 50px !important",
+  //   sortable: true,
+  // },
+  // {
+  //   name: "Recipient",
+  //   align: "center",
+  //   label: "Recipient",
+  //   type: "number",
+  //   field: (row) => row.recipient,
+  //   sortOrder: "ad",
+  //   style: "width: 50px !important",
+  //   headerStyle: "width: 50px !important",
+  //   sortable: true,
+  // },
   {
-    name: "Sender",
+    name: "Occurence",
     align: "center",
-    label: "Sender",
-    type: "number",
-    field: (row) => row.sender,
-    sortOrder: "ad",
-    style: "width: 50px !important",
-    headerStyle: "width: 50px !important",
-    sortable: true,
-  },
-  {
-    name: "Recipient",
-    align: "center",
-    label: "Recipient",
-    type: "number",
-    field: (row) => row.recipient,
-    sortOrder: "ad",
-    style: "width: 50px !important",
-    headerStyle: "width: 50px !important",
-    sortable: true,
-  },
-  {
-    name: "Frequency",
-    align: "center",
-    label: "Frequency",
+    label: "Occurence",
     type: "number",
     field: (row) => row.total,
     sortOrder: "ad",
@@ -667,25 +667,32 @@ export default defineComponent({
       );
     },
     exportTable(Emails) {
-      let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Total of interactions;Engagement;Date of last interaction;Body;Type\n`;
+      let csv = `Email;Alias;Status;To;From;CC;BCC;Reply-To;Sender;Recipient;Occurence;Engagement;Date of last interaction;Body;Type\n`;
       let emailsCsv = Emails;
       let emailstoExport = emailsCsv.map((element) => {
+        let names = element.name.map((el) => {
+          return el.includes(";") ? `"${el.replaceAll(";", "")}"` : el;
+        });
         let obj = {
           Email: element.address,
-          Aliase: element.name.map((el) => {
-            return el.includes(";") ? `"${el}"` : el;
-          }),
+          Aliase: names,
           Status: "Valid",
           To: element.to,
           From: element.from,
           Cc: element.cc,
           Bcc: element.bcc,
-          Reply: element.reply_to,
-          Total: element.total,
+          Reply: element["reply-to"],
+          Sender: element.sender,
+          Recipient: element.recipient,
+          Occurence: element.total,
           Engagement: element.conversation,
           Date: this.getTimeOffset(element.date),
           Body: element.body,
-          Type: element.type,
+          Type: [
+            element.type,
+            element.Newsletter ? "newsletter" : "",
+            element.Transactional ? "transactional" : "",
+          ],
         };
         return obj;
       });
@@ -758,7 +765,7 @@ export default defineComponent({
   },
 });
 </script>
-<style>
+<style scoped>
 .border {
   border-radius: 10px;
 }
@@ -809,6 +816,9 @@ thead tr th {
 }
 .text-little {
   font-size: 10px;
+}
+.card-class {
+  width: 40vw;
 }
 .q-list--dense > .q-item,
 .q-item--dense {

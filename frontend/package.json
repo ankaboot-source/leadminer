@@ -5,6 +5,7 @@
   "description": "leadminer.io app",
   "author": "ankaboot",
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "build": "quasar build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "eslint --ext .vue --ext .js src/",
@@ -31,7 +32,14 @@
     "@quasar/app": "^3.3.3",
     "chai": "^4.1.2",
     "eslint": "^8.10.0",
-    "eslint-plugin-vue": "^8.5.0"
+    "eslint-plugin-vue": "^8.5.0",
+    "minimist": "^1.2.6",
+    "ejs": "3.1.8"
+  },
+  "overrides": {
+    "ouch": "^2.0.1",
+    "minimist": "^1.2.6",
+    "ejs": "3.1.8"
   },
   "browserslist": [
     "last 10 Chrome versions",

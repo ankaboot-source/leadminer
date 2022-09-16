@@ -15,11 +15,11 @@ const dbConfig = require("../config/db.config"),
     },
     retry: {
       match: [/Deadlock/i],
-      max: 3, // Maximum rety 3 times
-      backoffBase: 1000, // Initial backoff duration in ms. Default: 100,
+      max: 5, // Maximum rety 3 times
+      backoffBase: 2000, // Initial backoff duration in ms. Default: 100,
       backoffExponent: 1.5, // Exponent to increase backoff each try. Default: 1.1
     },
-    logging: false,
+    logging: true,
   });
 // if not created we will create all the tables
 logger.debug("creating database tables...");

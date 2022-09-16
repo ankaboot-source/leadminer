@@ -1,14 +1,14 @@
-'use-strict';
-const regExHelpers = require('../utils/regexpHelpers');
-const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const { emailsRaw } = require('../models');
-const redisClient = require('../../redis');
-const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
+"use-strict";
+const regExHelpers = require("../utils/regexpHelpers");
+const emailMessageHelpers = require("../utils/emailMessageHelpers");
+const { emailsRaw } = require("../models");
+const redisClient = require("../../redis");
+const config = require("config"),
+  NEWSLETTER_HEADER_FIELDS = config.get("email_types.newsletter").split(","),
   TRANSACTIONAL_HEADER_FIELDS = config
-    .get('email_types.transactional')
-    .split(','),
-  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+    .get("email_types.transactional")
+    .split(","),
+  FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
 class EmailMessage {
   /**
@@ -33,7 +33,7 @@ class EmailMessage {
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
       return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(regExHeader, 'i');
+        const reg = new RegExp(regExHeader, "i");
         return reg.test(headerField);
       });
     });
@@ -45,7 +45,7 @@ class EmailMessage {
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
       return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(regExHeader, 'i');
+        const reg = new RegExp(regExHeader, "i");
         return reg.test(headerField);
       });
     });
@@ -55,7 +55,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
+    if (Object.keys(this.header).includes("references")) {
       return 1;
     }
     return 0;
@@ -71,9 +71,9 @@ class EmailMessage {
       if (Date.parse(this.header.date[0])) {
         return this.header.date[0];
       }
-      return '';
+      return "";
     }
-    return '';
+    return "";
   }
   /**
    * getMessagingFieldsFromHeader returns an object with only the messaging fields from the header
@@ -93,8 +93,8 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header['message-id']) {
-      return this.header['message-id'][0].substring(0, 60);
+    if (this.header["message-id"]) {
+      return this.header["message-id"][0].substring(0, 60);
     }
     return `message_id_unknown ${this.header.date}`;
   }
@@ -114,31 +114,59 @@ class EmailMessage {
         emails.map(async (email) => {
           if (email && email.address && this.user.email != email.address) {
             // domain is an array
-            const domain = await emailMessageHelpers.checkDomainStatus(
-              email.address
-            );
-            if (!domain[0]) {
-              redisClient.incr('invalid');
-            } else if (emailMessageHelpers.isNoReply(email.address)) {
-              redisClient.incr('noReply');
-            }
-            if (!emailMessageHelpers.isNoReply(email.address) && domain[0]) {
+            let noReply = emailMessageHelpers.isNoReply(email.address);
+            if (noReply) {
+              //if no reply just store it with minimum infos(for statistics only)
               return emailsRaw.create({
                 user_id: this.user.id,
-                from: key == 'from',
-                reply_to: key == 'reply-to',
-                to: key == 'to',
-                cc: key == 'cc',
-                bcc: key == 'bcc',
+                from: key == "from",
+                reply_to: key == "reply-to",
+                to: key == "to",
+                cc: key == "cc",
+                bcc: key == "bcc",
                 date: this.getDate(),
-                name: email?.name ?? '',
+                name: email?.name ?? "",
                 address: email.address.toLowerCase(),
-                newsletter: key == 'from' ? this.isNewsletter() : false,
-                transactional: key == 'from' ? this.isTransactional() : false,
-                domain_type: domain[1],
-                domain_name: domain[2],
-                conversation: this.isInConversation()
+                newsletter: false,
+                transactional: false,
+                noReply: true,
+                domain_type: "",
+                domain_name: "",
+                conversation: 0,
               });
+            } else {
+              // else it's not a noRply email
+              const domain = await emailMessageHelpers.checkDomainStatus(
+                email.address
+              );
+              if (!domain[0]) {
+                redisClient
+                  .sismember("invalidDomainEmails", email.address)
+                  .then((member) => {
+                    if (member == 0) {
+                      redisClient.sadd("invalidDomainEmails", email.address);
+                    }
+                  });
+              }
+              if (!noReply && domain[0]) {
+                return emailsRaw.create({
+                  user_id: this.user.id,
+                  from: key == "from",
+                  reply_to: key == "reply-to",
+                  to: key == "to",
+                  cc: key == "cc",
+                  bcc: key == "bcc",
+                  date: this.getDate(),
+                  name: email?.name ?? "",
+                  address: email.address.toLowerCase(),
+                  newsletter: key == "from" ? this.isNewsletter() : false,
+                  transactional: key == "from" ? this.isTransactional() : false,
+                  noReply: false,
+                  domain_type: domain[1],
+                  domain_name: domain[2],
+                  conversation: this.isInConversation(),
+                });
+              }
             }
           }
         });
@@ -156,7 +184,7 @@ class EmailMessage {
    */
   storeEmailAddressesExtractedFromBody() {
     const emails = regExHelpers.extractNameAndEmailFromBody(
-      this.body.toString('utf8')
+      this.body.toString("utf8")
     );
     delete this.body;
     if (emails.length > 0) {
@@ -173,13 +201,13 @@ class EmailMessage {
               bcc: false,
               body: true,
               date: this.date,
-              name: '',
+              name: "",
               address: email.toLowerCase(),
               newsletter: false,
               transactional: false,
               domain_type: domain[1],
               domain_name: domain[2],
-              conversation: this.isInConversation()
+              conversation: this.isInConversation(),
             });
           }
         }

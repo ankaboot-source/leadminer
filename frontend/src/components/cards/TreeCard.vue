@@ -2,7 +2,7 @@
   <q-tree
     ref="tree"
     v-model:ticked="selected"
-    class="col-12 col-sm-6"
+    class="col-10 col-sm-6 q-ma-sm"
     icon="arrow_forward_ios"
     :nodes="Boxes"
     @update:ticked="Ticked"
