@@ -26,7 +26,7 @@ To configure the application (e.g database host and password), edit `leadminer/b
 #### Deployment
 Start the backend API server and the front-end if the backend has succeed.
 ```shell
-$ npm start --prefix ./leadminer/backend & npm start --prefix ./ledminer/frontend
+$ npm start --prefix ./leadminer/backend & npm start --prefix ./leadminer/frontend
 ```
 ### Using Docker Compose
 Clone the repository and start docker-compose
