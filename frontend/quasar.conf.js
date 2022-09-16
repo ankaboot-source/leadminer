@@ -7,7 +7,6 @@
 // https://quasar.dev/quasar-cli/quasar-conf-js
 
 const { configure } = require("quasar/wrappers");
-const { withCtx } = require("vue");
 module.exports = configure(function (ctx) {
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
@@ -43,10 +42,9 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        //ENDPOINT: "http://localhost:8081",
         ENDPOINT: ctx.dev
           ? "http://localhost:8081"
-          : "https://api.leadminer.io",
+          : process.env.SERVER_ENDPOINT,
       },
       // transpile: false,
 

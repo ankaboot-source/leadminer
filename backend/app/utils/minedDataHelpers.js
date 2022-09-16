@@ -18,10 +18,7 @@ async function getEmails(userId) {
         ),
         "name",
       ],
-      [
-        db.sequelize.literal("COUNT(*) FILTER (WHERE \"conversation\" = '1')"),
-        "conversation",
-      ],
+
       [
         db.sequelize.literal("COUNT (*) FILTER ( WHERE \"from\" = 'true' )"),
         "from",
@@ -44,10 +41,24 @@ async function getEmails(userId) {
         db.sequelize.literal("COUNT (*) FILTER ( WHERE \"to\" = 'true' )"),
         "to",
       ],
+      [
+        db.sequelize.literal("COUNT(*) FILTER (WHERE \"conversation\" = '1')"),
+        "conversation",
+      ],
 
       [
         db.sequelize.literal("COUNT (*) FILTER ( WHERE \"body\" = 'true' )"),
         "body",
+      ],
+
+      [
+        db.sequelize.fn(
+          "SUM",
+          db.sequelize.literal(
+            "CASE WHEN \"from\" = 'true' OR \"reply_to\" = 'true' THEN 1 ELSE 0 END "
+          )
+        ),
+        "sender",
       ],
 
       [
@@ -78,20 +89,13 @@ async function getEmails(userId) {
         ),
         "Newsletter",
       ],
-      [
-        db.sequelize.fn(
-          "SUM",
-          db.sequelize.literal(
-            "CASE WHEN \"from\" = 'true' OR \"reply_to\" = 'true' THEN 1 ELSE 0 END "
-          )
-        ),
-        "sender",
-      ],
+
       "domain_type",
+      "noReply",
 
       [db.sequelize.literal("MAX(date)"), "date"],
     ],
-    group: ["address", "domain_type"],
+    group: ["address", "domain_type", "noReply"],
   });
 
   return data;
@@ -106,6 +110,23 @@ async function getCountDB(userId) {
     where: { user_id: userId },
   });
 
+  return count;
+}
+
+/**
+ * "Get the number of emails that have been marked as no reply."
+ *
+ * The function is async because it uses the await keyword. The await keyword is used to wait for a
+ * promise to resolve
+ * @param userId - The user's ID
+ * @returns The number of emails that have been marked as noReply
+ */
+async function getNoReplyEmails(userId) {
+  let count = await db.emailsRaw.count({
+    where: { user_id: userId, noReply: true },
+    distinct: true,
+    col: "address",
+  });
   return count;
 }
 
@@ -252,42 +273,51 @@ function sortDataUsingAlpha(data) {
  */
 function sortDatabase(dataFromDatabase) {
   let counter = 0;
-  const data = dataFromDatabase.map((row) => {
+  const data = [];
+  dataFromDatabase.map((row) => {
     //if for any reason we don't have names we should give empty string
-    if (!row.dataValues.name || row.dataValues.name == null) {
-      row.dataValues.name = [""];
-    } else {
-      // clean names
-      const NameArray = handleNames(
-        row.dataValues.name,
-        row.dataValues.address
-      );
-      NameArray.length == 0
-        ? (row.dataValues.name = [""])
-        : (row.dataValues.name = NameArray);
-    }
-    // can't be made in database level, so we do it here
-    row.dataValues.total =
-      parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
-    row.dataValues.type = "";
+    if (row.dataValues.noReply == false) {
+      if (!row.dataValues.name || row.dataValues.name == null) {
+        row.dataValues.name = [""];
+      } else {
+        // clean names
+        const NameArray = handleNames(
+          row.dataValues.name,
+          row.dataValues.address
+        );
+        NameArray.length == 0
+          ? (row.dataValues.name = [""])
+          : (row.dataValues.name = NameArray);
+      }
+      // can't be made in database level, so we do it here
+      row.dataValues.total =
+        parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
+      row.dataValues.type = "";
 
-    if (
-      !row.dataValues.Newsletter &&
-      !row.dataValues.Transactional &&
-      row.dataValues.name.every((val) => val != "")
-    ) {
-      //if not transactional or newsletter, then find the type
-      row.dataValues.type = findEmailAddressType(
-        row.dataValues.address,
-        row.dataValues?.name,
-        row.dataValues.domain_type
-      );
+      if (
+        !row.dataValues.Newsletter &&
+        !row.dataValues.Transactional &&
+        row.dataValues.name.every((val) => val != "")
+      ) {
+        //if not transactional or newsletter, then find the type
+        row.dataValues.type = findEmailAddressType(
+          row.dataValues.address,
+          row.dataValues?.name,
+          row.dataValues.domain_type
+        );
+      }
+      if (row.dataValues.Transactional) {
+        counter += 1;
+      }
+      data.push(row.dataValues);
     }
-    if (row.dataValues.Transactional) {
-      counter += 1;
-    }
-    return row.dataValues;
   });
   return [sortDataUsingAlpha(data), counter];
 }
-module.exports = { getEmails, getCountDB, deleteUserData, sortDatabase };
+module.exports = {
+  getEmails,
+  getCountDB,
+  deleteUserData,
+  sortDatabase,
+  getNoReplyEmails,
+};
