@@ -12,7 +12,7 @@ const redis_port = config.get("server.redis.port")
 const redis_login = config.get("server.redis.login")
   ? config.get("server.redis.login")
   : process.env.REDIS_LOGIN;
-const redis_login = config.get("server.redis.password")
+const redis_password = config.get("server.redis.password")
   ? config.get("server.redis.password")
   : process.env.REDIS_PASSWORD;
 logger.debug("creating redis client...");
