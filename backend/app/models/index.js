@@ -19,7 +19,7 @@ const dbConfig = require("../config/db.config"),
       backoffBase: 2000, // Initial backoff duration in ms. Default: 100,
       backoffExponent: 1.5, // Exponent to increase backoff each try. Default: 1.1
     },
-    logging: true,
+    logging: false,
   });
 // if not created we will create all the tables
 logger.debug("creating database tables...");

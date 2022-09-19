@@ -17,10 +17,10 @@ jobs:
             cd leadminer
             git pull
             # Use POSTGRES_PASSWORD if defined, else get password from the config
-            REDIS_PORT=6375
-            export REDIS_PORT  
+             
             DB_PASSWORD="${POSTGRES_PASSWORD:-$(niet server.postgres.password "$config_path")}"
             export DB_PASSWORD # Database Password
+            export REDIS_PORT=6666 #Redis port matching the configuration in the api
             docker-compose down
             docker rmi -f $(docker images -a | awk '/leadminer|<none>/{print $3}')
             docker-compose up -d --build

@@ -1,6 +1,7 @@
 FROM node
 WORKDIR /leadminer-api
-COPY ./ /leadminer-api
+COPY package.json /leadminer-api
 RUN npm install
+COPY ./ /leadminer-api
 EXPOSE 8081
 CMD ["node", "--expose_gc", "server.js"]

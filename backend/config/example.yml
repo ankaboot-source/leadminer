@@ -6,7 +6,7 @@ server:
     user: postgres
     password:
   redis:
-    #login: redis
+    #username: redis
     #password: redispassword
     port: 6375
     expiration_timeout: 259200
