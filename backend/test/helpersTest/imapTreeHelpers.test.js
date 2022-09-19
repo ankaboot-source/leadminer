@@ -3,7 +3,7 @@ const chai = require("chai"),
 const imapTreeHelpers = require("../../app/utils/imapTreeHelpers");
 const dataTest = require("../testData.json");
 
-describe("imapTreeHelpers.createReadableTreeObjectFromImapTree(imapTree)", function () {
+describe("imapTreeHelpers.createTreeFromImap(imapTree)", function () {
   let imapTreeExample = dataTest.imapTreeExample;
   let expectedOutput = [
     { label: "Brouillons" },
@@ -14,8 +14,7 @@ describe("imapTreeHelpers.createReadableTreeObjectFromImapTree(imapTree)", funct
     { label: "Spam" },
   ];
   it("should return valid tree", function () {
-    let Output =
-      imapTreeHelpers.createReadableTreeObjectFromImapTree(imapTreeExample);
+    let Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
     expect(Output).to.have.deep.members(expectedOutput);
   });
 });

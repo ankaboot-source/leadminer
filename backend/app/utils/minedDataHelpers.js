@@ -118,7 +118,7 @@ async function getCountDB(userId) {
  * "Get the number of emails that have been marked as no reply."
  *
  * The function is async because it uses the await keyword. The await keyword is used to wait for a
- * promise to resolve, here it's count that returns the number of emails addresses marked as noreply email
+ * promise to resolve, here it counts that returns the number of emails addresses marked as noreply email
  * @param userId - The user's ID
  * @returns The number of emails that have been marked as noReply
  */
@@ -178,7 +178,7 @@ function getScore(DomainAndUserName, UserName) {
 }
 /**
  * findEmailAddressType takes an email address, a list of user names, and a domain type, and returns the type of email
- * address, base of the domain type and the matching score of the name before or after the "@"
+ * address, based on the domain type and the matching score of the name before or after the "@"
  * @param {String} emailAddress - The email address you want to check
  * @param {Array} UserNames - An array of user names that you want to check against.
  * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"

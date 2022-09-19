@@ -66,7 +66,7 @@ class EmailAccountMiner {
           }
           // extract only folder name
           const treeObjectWithChildrens =
-              imapTreeHelpers.createReadableTreeObjectFromImapTree(boxes),
+              imapTreeHelpers.createTreeFromImap(boxes),
             // add a path for each folder
             treeWithPaths = imapTreeHelpers.addPathPerFolder(
               treeObjectWithChildrens,

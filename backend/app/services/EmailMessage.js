@@ -187,9 +187,12 @@ class EmailMessage {
     );
     delete this.body;
     if (emails.length > 0) {
+      // loop through emails extracted from the current body
       emails.map(async (email) => {
         if (this.user.email != email && email) {
+          // get domain status from DomainStatus Helper
           const domain = await emailMessageHelpers.checkDomainStatus(email);
+          // check if it's not noReply, and the doamin is valid , if Ok Store it to the database
           if (!emailMessageHelpers.isNoReply(email) && domain[0]) {
             return emailsRaw.create({
               user_id: this.user.id,
