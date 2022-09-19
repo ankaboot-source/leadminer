@@ -109,7 +109,6 @@ class EmailMessage {
     Object.keys(messagingFields).map((key) => {
       // extract Name and Email in case of a header
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
-
       if (emails.length > 0) {
         emails.map(async (email) => {
           if (email && email.address && this.user.email != email.address) {

@@ -8,7 +8,7 @@ const createScript = () => {
       let gplatformScript = document.createElement("script");
       gplatformScript.setAttribute(
         "src",
-        "https://apis.google.com/js/platform.js?onload=onGapiLoad"
+        "https://accounts.google.com/gsi/client?onload=onGapiLoad"
       );
       gplatformScript.setAttribute("async", true);
       gplatformScript.setAttribute("defer", "defer");

@@ -1,4 +1,4 @@
-const quotedPrintable = require('quoted-printable');
+const quotedPrintable = require("quoted-printable");
 /* eslint-disable */
 const regex = new RegExp(
   /((?<name>[\p{L}\p{M}.\p{L}\p{M}\w\W]{1,})\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
@@ -27,23 +27,31 @@ function extractNameAndEmailFromBody(data) {
  * @param  {object} data
  */
 function extractNameAndEmail(data) {
+  // getRegEx returns a valid name and email regExgroup
   const getRegExp = (emailAfterRegEx) => {
     /* istanbul ignore else */
+    // check if it's really an email address(check if it's not "undefined")
     if (emailAfterRegEx && emailAfterRegEx.groups.address.includes("@")) {
       if (!emailAfterRegEx.groups.name) {
+        // if no name captured(name=undefined) we need to initialize it to empty string
         emailAfterRegEx.groups.name = "";
       }
       return emailAfterRegEx.groups;
     }
   };
+  // data is array of emails addresses
   let email = data.split(",");
+  // case when we have more than one email
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
+      // get the name and the Email
       let result = getRegExp(regex.exec(emails.trim()));
       return result;
     });
     return dataWithManyEmails;
-  } else {
+  }
+  // we have only one email address
+  else {
     let result = getRegExp(regex.exec(email));
     return [result];
   }

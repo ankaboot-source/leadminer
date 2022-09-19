@@ -395,8 +395,10 @@ class EmailAccountMiner {
     };
 
     if (body) {
+      //send message data to the body Worker
       this.messageWorkerForBody.postMessage(message);
     } else {
+      //send message data to the header Worker
       this.messageWorkerForHeader.postMessage(message);
     }
   }
@@ -432,11 +434,17 @@ class EmailAccountMiner {
     );
   }
 
-  async sendMinedData(seqNumber, folderName) {
+  /**
+   * It fires up refining worker when it's called
+   * @param seqNumber - The sequence number of the mined data.
+   * @param folderName - The name of the folder that contains the mined data.
+   */
+  sendMinedData(seqNumber, folderName) {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
     let userId = this.user.id;
+    // refining worker used to refine data to be send as progress status, using streaming.
     this.dataRefiningWorker.postMessage({ userId });
   }
 }

@@ -242,7 +242,7 @@ exports.getEmails = async (req, res, sse) => {
   const user = new ImapUser(query).getUserConnetionDataFromQuery(),
     // initialise imap server connection
     server = new EmailServer(user, sse);
-
+  // defines events, and workers
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter(),
     data = "messageWorker initiated",
@@ -250,6 +250,7 @@ exports.getEmails = async (req, res, sse) => {
     dataRefiningWorker = new Worker("./app/workers/dataRefiningWorker.js", {
       data,
     });
+  // refining worker listener, on event it send data to the client
   dataRefiningWorker.on("message", (data) => {
     sse.send(
       {
@@ -264,7 +265,7 @@ exports.getEmails = async (req, res, sse) => {
       `minedEmails${user.id}`
     );
   });
-  // initialise EmailAccountMiner to mine imap tree
+  // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
     server,
     user,
@@ -292,8 +293,9 @@ exports.getEmails = async (req, res, sse) => {
           ? 100
           : (QueueLengthBody + QueueLengthHeader) * 50;
     // estimate a timeout to wait all queue jobs (150ms per command)
-
     setTimeout(() => {
+      // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data
+      // because of async behaviour we may missed some emails in the worker
       minedDataHelpers.getEmails(user.id).then((data) => {
         minedDataHelpers.getCountDB(user.id).then((totalScanned) => {
           // send progress to user
@@ -303,12 +305,12 @@ exports.getEmails = async (req, res, sse) => {
             `minedEmails${user.id}`
           );
           logger.debug(`${data.length} mined email`);
+          sse.send(true, `dns${user.id}`);
           res.status(200).send({
             message: "Done mining emails !",
             data: minedDataHelpers.sortDatabase(data)[0],
           });
 
-          sse.send(true, `dns${user.id}`);
           logger.debug("cleaning data from database...");
         });
       });

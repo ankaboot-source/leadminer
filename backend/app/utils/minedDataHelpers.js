@@ -2,10 +2,10 @@ const db = require("../models");
 
 /**
  * returns a list of all the emails in the database, with the number of times they appear in each
- * field, and the last time they were used
+ * field, and the last time they were used, aggregates some fields and more
  * @param {id} userId - the cuurent user id.
  * @returns An array of objects with the following properties:
- * address, name, transactional, newsletter, conversation, from, to, cc, bcc, reply_to, body, date
+ * address, name, transactional, newsletter, conversation, from, to, cc, bcc, reply_to, body, date...
  */
 async function getEmails(userId) {
   const data = await db.emailsRaw.findAll({
@@ -102,6 +102,7 @@ async function getEmails(userId) {
 }
 /**
  * getCountDB returns the number of emails in the database for a given user
+ * used in counting mined emails
  * @param userId - The user's ID.
  * @returns The number of emails in the database for a given user.
  */
@@ -117,7 +118,7 @@ async function getCountDB(userId) {
  * "Get the number of emails that have been marked as no reply."
  *
  * The function is async because it uses the await keyword. The await keyword is used to wait for a
- * promise to resolve
+ * promise to resolve, here it's count that returns the number of emails addresses marked as noreply email
  * @param userId - The user's ID
  * @returns The number of emails that have been marked as noReply
  */
@@ -177,7 +178,7 @@ function getScore(DomainAndUserName, UserName) {
 }
 /**
  * findEmailAddressType takes an email address, a list of user names, and a domain type, and returns the type of email
- * address
+ * address, base of the domain type and the matching score of the name before or after the "@"
  * @param {String} emailAddress - The email address you want to check
  * @param {Array} UserNames - An array of user names that you want to check against.
  * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"
@@ -186,10 +187,8 @@ function getScore(DomainAndUserName, UserName) {
 function findEmailAddressType(emailAddress, UserNames, domainType) {
   // array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
   const domainAndUserName = emailAddress.split("@");
-  //if the current email have names(already checked but in case of any conflicts we need to always re-check)
+  //if the current email have names
   if (UserNames.length > 0) {
-    //loop throught Usernames
-
     for (let userName of UserNames) {
       if (
         domainType == "provider" &&
@@ -219,18 +218,20 @@ function findEmailAddressType(emailAddress, UserNames, domainType) {
 function handleNames(name, emailAddress) {
   const NameArray = [];
   name.map((name) => {
+    // remove all bad chars
     const Name = name
       .replaceAll('"', "")
       .replaceAll("'", "")
       .replaceAll("/", "")
       .trim();
-
+    // case when the name is not the same as the address
     if (Name != emailAddress) {
       if (
         NameArray.filter((str) =>
           str.toLowerCase().includes(Name.toLowerCase())
         ).length == 0
       ) {
+        // if OK then push to the array
         NameArray.push(Name);
       }
     }
@@ -249,19 +250,26 @@ function sortDataUsingAlpha(data) {
     emptyArr = [];
 
   data.forEach((el) => {
+    // name begins with number eg: name = 4four
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
     } else if (el.name && el.name.length > 0 && el.name[0] != "") {
+      // name begins with alpha or char
       wordArr.push(el);
     } else {
+      // no name at all
       emptyArr.push(el);
     }
   });
+  // sort the names desc: from A => Z
   wordArr.sort((a, b) => {
     return !a.name[0] - !b.name[0] || a.name[0].localeCompare(b.name[0]);
   });
+  // sort with total :desc
   wordArr.sort((a, b) => b.total - a.total);
+  // sort emails that have no names based on total :desc
   emptyArr.sort((a, b) => b.total - a.total);
+
   const WordThenNumArray = wordArr.concat(numArr);
 
   return WordThenNumArray.concat(emptyArr);
@@ -275,12 +283,13 @@ function sortDatabase(dataFromDatabase) {
   let counter = 0;
   const data = [];
   dataFromDatabase.map((row) => {
-    //if for any reason we don't have names we should give empty string
+    // we treat only emails that are not tagged "noReply"
     if (row.dataValues.noReply == false) {
+      //if for any reason we don't have names we should give empty string
       if (!row.dataValues.name || row.dataValues.name == null) {
         row.dataValues.name = [""];
       } else {
-        // clean names
+        // here are clean names
         const NameArray = handleNames(
           row.dataValues.name,
           row.dataValues.address
@@ -289,7 +298,7 @@ function sortDatabase(dataFromDatabase) {
           ? (row.dataValues.name = [""])
           : (row.dataValues.name = NameArray);
       }
-      // can't be made in database level, so we do it here
+      // sum the sender + the total so we can have total interactions with this email
       row.dataValues.total =
         parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
       row.dataValues.type = "";
@@ -306,12 +315,14 @@ function sortDatabase(dataFromDatabase) {
           row.dataValues.domain_type
         );
       }
+      // count of transactional emails
       if (row.dataValues.Transactional) {
         counter += 1;
       }
       data.push(row.dataValues);
     }
   });
+  // return the count and the data
   return [sortDataUsingAlpha(data), counter];
 }
 module.exports = {
