@@ -28,7 +28,8 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    messageWorker
+    messageWorker,
+    dataRefiningWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -39,6 +40,7 @@ class EmailAccountMiner {
     this.mailHash = hashHelpers.hashEmail(user.email);
     this.messageWorkerForBody = messageWorker;
     this.messageWorkerForHeader = messageWorker;
+    this.dataRefiningWorker = dataRefiningWorker;
   }
 
   /**
@@ -434,29 +436,8 @@ class EmailAccountMiner {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
-    minedDataHelpers.getEmails(this.user.id).then((data) => {
-      minedDataHelpers.getCountDB(this.user.id).then(async (totalScanned) => {
-        const sortedData = minedDataHelpers.sortDatabase(data);
-        const minedEmails = sortedData[0];
-        const transactional = sortedData[1];
-        const noReply = await minedDataHelpers.getNoReplyEmails(this.user.id);
-        console.log(noReply);
-        //const noReply = await redisClient.get('noReply');
-        const invalidDomain = await redisClient.scard("invalidDomainEmails");
-        this.sse.send(
-          {
-            data: minedEmails,
-            totalScanned: totalScanned,
-            statistics: {
-              noReply: noReply,
-              invalidDomain: invalidDomain,
-              transactional: transactional,
-            },
-          },
-          `minedEmails${this.user.id}`
-        );
-      });
-    });
+    let userId = this.user.id;
+    this.dataRefiningWorker.postMessage({ userId });
   }
 }
 

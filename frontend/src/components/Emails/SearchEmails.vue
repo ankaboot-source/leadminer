@@ -81,8 +81,8 @@
             class="sticky"
             style="height: 90vh"
             card-class="bg-white  text-teal-10"
-            table-class="text-teal-10 "
-            table-header-class="text-teal"
+            table-class="text-teal-10 sticky"
+            table-header-class="text-teal sticky"
             title="Emails"
             :rows="Emails ?? []"
             :binary-state-sort="true"
@@ -133,6 +133,19 @@
                 @click="exportTable(Emails.length > 0 ? Emails : [])"
                 :disable="loadingStatusDns"
               />
+            </template>
+            <template v-slot:header-cell-Names="props">
+              <q-th :props="props">{{ props.col.label }} </q-th>
+            </template>
+            <template v-slot:header-cell-Email="props">
+              <q-th :props="props">{{ props.col.label }} </q-th>
+            </template>
+            <template v-slot:header-cell-#="props">
+              <q-th :props="props">{{ props.col.label }} </q-th> </template
+            ><template v-slot:header-cell-Type="props">
+              <q-th :props="props">{{ props.col.label }} </q-th> </template
+            ><template v-slot:header-cell-Status="props">
+              <q-th :props="props">{{ props.col.label }} </q-th>
             </template>
             <template v-slot:header-cell-Date="props">
               <q-th :props="props">
@@ -250,25 +263,13 @@
                     }}
                   </q-badge>
                 </q-td>
-                <!-- <q-td key="Sender" :props="props">
-                  <q-badge outline color="orange" transparent>
-                    {{ props.row.sender }}
-                  </q-badge> </q-td
-                ><q-td key="Recipient" :props="props">
-                  <q-badge outline color="orange" transparent>
-                    {{ props.row.recipient }}
-                  </q-badge>
-                </q-td> -->
-
                 <q-td key="Occurence" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.total }}
-                  </q-badge> </q-td
-                ><q-td key="Body" :props="props">
-                  <q-badge outline color="orange" transparent>
-                    {{ props.row.body }}
-                  </q-badge> </q-td
-                ><q-td key="Engagement" :props="props">
+                  </q-badge>
+                </q-td>
+
+                <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.conversation }}
                   </q-badge>
@@ -362,7 +363,7 @@ const columns = [
       return b.localeCompare(a);
     },
     sortOrder: "ad",
-    style: "max-width:190px;min-width: 190px !important",
+    style: "max-width:190px;min-width: 190px !important;",
     headerStyle: "width: 250px !important",
   },
   // {
@@ -398,17 +399,17 @@ const columns = [
     headerStyle: "width: 50px !important",
     sortable: true,
   },
-  {
-    name: "Body",
-    align: "center",
-    label: "Body",
-    type: "number",
-    field: (row) => row.body,
-    sortOrder: "ad",
-    style: "width: 50px !important",
-    headerStyle: "width: 50px !important",
-    sortable: true,
-  },
+  // {
+  //   name: "Body",
+  //   align: "center",
+  //   label: "Body",
+  //   type: "number",
+  //   field: (row) => row.body,
+  //   sortOrder: "ad",
+  //   style: "width: 50px !important",
+  //   headerStyle: "width: 50px !important",
+  //   sortable: true,
+  // },
   {
     name: "Engagement",
     align: "center",
@@ -792,7 +793,19 @@ export default defineComponent({
 .text-tealgradient {
   color: #89d8d3;
 }
-
+.sticky .q-table__middle {
+  max-height: 200px;
+}
+.sticky .q-table__top,
+.sticky .q-table__bottom,
+.sticky thead tr:first-child th {
+  background-color: #f5f5dc;
+  z-index: 1000;
+}
+.sticky thead tr:first-child th {
+  position: sticky;
+  top: 0;
+}
 .bg-buttons {
   background-image: linear-gradient(315deg, #000000 0%, #03c8a8 74%);
 }
@@ -800,10 +813,7 @@ export default defineComponent({
   background-color: #deebdd;
   background-image: linear-gradient(315deg, #deebdd 0%, #bbdbbe 74%);
 }
-thead tr th {
-  position: sticky;
-  z-index: 1;
-}
+
 .q-td text-left {
   max-width: inherit;
   min-width: inherit;
