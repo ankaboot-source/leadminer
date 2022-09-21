@@ -24,6 +24,8 @@ const { EventEmitter } = require("stream");
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
+const redisClientForInitialisation =
+  require("./redis").redisClientForInitialConnection();
 
 app.use((req, res, next) => {
   // Website you wish to allow to connect
@@ -67,7 +69,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to leadminer application." });
 });
 // attach sse to api/stream endpoint
-app.get("/api/stream/", sse.init);
+app.get("/api/stream", sse.init);
 app.get("/logs", function (req, res, next) {
   var filePath = __dirname + "/logs/server.log";
 
@@ -86,6 +88,8 @@ db.sequelize
   .sync()
   .then(() => {
     logger.debug("database initialized ✔️ ");
+    //disconnect from redis after initialization
+    redisClientForInitialisation.disconnect();
     // if successful init then start server
     server.listen(port, () => {
       logger.info(`Server is running port ${port}.`);

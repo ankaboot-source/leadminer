@@ -7,29 +7,14 @@
       label="Start mining"
       color="teal"
     />
-    <!-- <button
-      @click="handleClickSignIn"
-      :disabled="!Vue3GoogleOauth.isInit || Vue3GoogleOauth.isAuthorized"
-    >
-      signin
-    </button>
-
-
-    <button
-      @click="handleClickDisconnect"
-      :disabled="!Vue3GoogleOauth.isAuthorized"
-    >
-      disconnect
-    </button>
-     -->
   </div>
 </template>
 
 <script>
-import { inject, toRefs } from "vue";
+import { googleSdkLoaded } from "vue3-google-login";
 import { useQuasar, LocalStorage } from "quasar";
 export default {
-  name: "HelloWorld",
+  name: "googleSignin",
   props: {
     msg: String,
     policyChecked: Boolean,
@@ -56,36 +41,39 @@ export default {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
         this.$router.push("/dashboard");
       } else {
-        const authCode = await this.$gAuth.getAuthCode();
-        if (authCode) {
-          let data = authCode;
-          this.$store.dispatch("example/signUpGoogle", { data }).then(() => {
-            LocalStorage.set(
-              "googleUser",
-              this.$store.state.example.googleUser
-            );
-            if (this.$store.state.example.googleUser) {
-              this.$router.push("/dashboard");
-            }
-          });
-        }
+        let authCode;
+        googleSdkLoaded((google) => {
+          google.accounts.oauth2
+            .initCodeClient({
+              client_id:
+                "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
+              scope:
+                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile",
+              prompt: "consent",
+              fetch_basic_profile: false,
+              callback: (response) => {
+                console.log("Handle the response", response);
+                authCode = response.code;
+                if (authCode) {
+                  let data = authCode;
+                  this.$store
+                    .dispatch("example/signUpGoogle", { data })
+                    .then(() => {
+                      LocalStorage.set(
+                        "googleUser",
+                        this.$store.state.example.googleUser
+                      );
+                      if (this.$store.state.example.googleUser) {
+                        this.$router.push("/dashboard");
+                      }
+                    });
+                }
+              },
+            })
+            .requestCode();
+        });
       }
     },
-
-    handleClickDisconnect() {
-      window.location.href = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${window.location.href}`;
-    },
-  },
-  setup(props) {
-    const { isSignIn } = toRefs(props);
-    const Vue3GoogleOauth = inject("Vue3GoogleOauth");
-
-    const handleClickLogin = () => {};
-    return {
-      Vue3GoogleOauth,
-      handleClickLogin,
-      isSignIn,
-    };
   },
 };
 </script>

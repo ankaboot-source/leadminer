@@ -1,34 +1,34 @@
 server:
   log_level: debug
-  sentry:
+  sentry: # default is enabled, to create your own go to : https://sentry.io
     enabled: false
     dsn: https://d383400104b243a489c54831d4947f00@o1383368.ingest.sentry.io/6699794
-  port: 8081
+  port: 8081 # used for server
   postgres:
     host: localhost
     name: postgres
     user: postgres
     password: postgres
   redis:
-    username:
-    password:
+    #username: redis  #optional
+    #password: redispassword #optional
     host: localhost
     port: 6379
-    expiration_timeout: 259200
-  hash_secret: oi.renimdeal
+    expiration_timeout: 259200 # experation timeout for redis entries
+  hash_secret: oi.renimdeal # hash secret used to hash the users emails addresses
   imap:
     authentication_timeout: 10000
     connection_timeout: 90000
 google_api:
   host: imap.gmail.com
-  client:
+  client: # to create you own client go to : https://developers.google.com/identity/protocols/oauth2
     id: 865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com
     secret: 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
-email_types:
+email_types: # filtring headers and strings for emails addresses
   noreply: "accusereception,alerts,alert,auto-confirm,donotreply,do-notreply,do-not-reply,FeedbackForm,mail daemon,maildaemon,mailer daemon,mailer-daemon,mailermasters,ne_pas_repondre,nepasrepondre,ne-pas-repondre,no.reply,no_reply,noreply,no-reply,notification,notifications,notifications-noreply,notify,pasdereponse,password,reply-,send-as-noreply,support,systemalert,unsubscribe,wordpress"
   newsletter: "list-unsubscribe,list-id,list"
   transactional: "feedback-id,x-feedback-id,x-mandrill-user,x-mailer: mailchimp *,X-LinkedIn-*,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*,x-job"
-test:
+test: #used in tests
   imap_email: "honeypot@flyweight.tech"
   imap_host: "mail.gandi.net"
   imap_password: "9Jkxd54DutETkx"

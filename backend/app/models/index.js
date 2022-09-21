@@ -22,7 +22,6 @@ const dbConfig = require("../config/db.config"),
     logging: false,
   });
 // if not created we will create all the tables
-logger.debug("creating database tables...");
 const db = {};
 
 db.Sequelize = Sequelize;

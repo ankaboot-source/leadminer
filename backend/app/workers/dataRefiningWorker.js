@@ -1,6 +1,7 @@
 const { parentPort } = require("worker_threads");
 const minedDataHelpers = require("../utils/minedDataHelpers");
-const redisClient = require("../../redis");
+const redisClientForNormalMode =
+  require("../../redis").redisClientForNormalMode();
 
 /* Listening for a message event from the parent thread.
  *  This worker is used to refine data stored in the database then
@@ -19,7 +20,9 @@ parentPort.on("message", (userId) => {
       // COunt of the noReply emails
       const noReply = await minedDataHelpers.getNoReplyEmails(userId.userId);
       // Count of invalid email addresses
-      const invalidDomain = await redisClient.scard("invalidDomainEmails");
+      const invalidDomain = await redisClientForNormalMode.scard(
+        "invalidDomainEmails"
+      );
       let data = {
         minedEmails: minedEmails,
         totalScanned: totalScanned,

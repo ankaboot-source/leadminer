@@ -1,10 +1,12 @@
 const imapTreeHelpers = require("../utils/imapTreeHelpers");
 const hashHelpers = require("../utils/hashHelpers");
-const minedDataHelpers = require("../utils/minedDataHelpers");
 const inputHelpers = require("../utils/inputHelpers");
 const Imap = require("imap"),
   logger = require("../utils/logger")(module);
-const redisClient = require("../../redis");
+const redisClientForPubSubMode =
+  require("../../redis").redisClientForPubSubMode();
+const redisClientForNormalMode =
+  require("../../redis").redisClientForNormalMode();
 
 class EmailAccountMiner {
   // public field
@@ -169,6 +171,7 @@ class EmailAccountMiner {
     this.connection = await this.connection.connecte();
     this.connection.once("ready", async () => {
       logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
+      this.messageWorkerForBody.postMessage("subscribe now!");
       this.mineFolder(this.folders[0]).next();
     });
     // cancelation using req.close event from user(frontend button)
@@ -325,19 +328,19 @@ class EmailAccountMiner {
    * @param type - "body" or "header"
    * @param dateInCaseOfBody - This is the date of the body that is being mined.
    */
-  async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
-    if (type == "body") {
-      redisClient.rpop("bodies").then((data) => {
-        this.mineMessage(seqNumber, undefined, data, dateInCaseOfBody);
-      });
-    } else {
-      redisClient.rpop("headers").then((data) => {
-        if (data) {
-          this.mineMessage(seqNumber, JSON.parse(data), undefined, "");
-        }
-      });
-    }
-  }
+  // async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
+  //   if (type == "body") {
+  //     redisClientForPubSubMode.rpop("bodies").then((data) => {
+  //       this.mineMessage(seqNumber, undefined, data, dateInCaseOfBody);
+  //     });
+  //   } else {
+  //     redisClientForPubSubMode.rpop("headers").then((data) => {
+  //       if (data) {
+  //         this.mineMessage(seqNumber, JSON.parse(data), undefined, "");
+  //       }
+  //     });
+  //   }
+  // }
   /**
    * pushMessageToQueue pushes the message to the queue and then calls the getMessageFromQueue function to get the
    * message from the queue asynchronously
@@ -346,34 +349,54 @@ class EmailAccountMiner {
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  async pushMessageToQueue(seqNumber, header, Body, folderName) {
-    const Header = Imap.parseHeader(header.toString("utf8"));
-
+  async pushMessageToQueue(seqNumber, header, body, folderName) {
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
     if (this.emailsProgressIndexes.includes(seqNumber)) {
       this.sendMinedData(seqNumber, folderName);
     }
+    const Header = Imap.parseHeader(header.toString("utf8"));
+
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
-    redisClient.sismember("messages", message_id).then((alreadyMined) => {
-      if (!alreadyMined) {
-        if (Body && Body != "") {
-          redisClient.lpush("bodies", Body).then(() => {
-            this.getMessageFromQueue(
-              seqNumber,
-              "body",
-              Header.date ? Header.date[0] : ""
-            );
-          });
+
+    redisClientForNormalMode
+      .sismember("messages", message_id)
+      .then((alreadyMined) => {
+        if (!alreadyMined) {
+          redisClientForPubSubMode.publish(
+            "messages-channel",
+            JSON.stringify({
+              seqNumber: seqNumber,
+              body: body,
+              header: JSON.stringify(Header),
+              user: this.user,
+            })
+          );
+        } else {
+          console.log("alreadymined");
         }
-        if (Header && Header != "") {
-          redisClient.lpush("headers", JSON.stringify(Header)).then(() => {
-            this.getMessageFromQueue(seqNumber, "header", "");
-          });
-        }
-      }
-    });
+      });
+
+    // const message_id = Header["message-id"] ? Header["message-id"][0] : "";
+    // redisClientForPubSubMode.sismember("messages", message_id).then((alreadyMined) => {
+    //   if (!alreadyMined) {
+    //     if (Body && Body != "") {
+    //       redisClientForPubSubMode.lpush("bodies", Body).then(() => {
+    //         this.getMessageFromQueue(
+    //           seqNumber,
+    //           "body",
+    //           Header.date ? Header.date[0] : ""
+    //         );
+    //       });
+    //     }
+    //     if (Header && Header != "") {
+    //       redisClientForPubSubMode.lpush("headers", JSON.stringify(Header)).then(() => {
+    //         this.getMessageFromQueue(seqNumber, "header", "");
+    //       });
+    //     }
+    //   }
+    // });
   }
 
   /**

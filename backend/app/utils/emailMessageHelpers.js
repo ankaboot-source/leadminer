@@ -1,5 +1,6 @@
 const dns = require("dns");
-const redisClient = require("../../redis");
+const redisClientForNormalMode =
+  require("../../redis").redisClientForNormalMode();
 const config = require("config");
 const NOREPLY = config.get("email_types.noreply").split(",");
 
@@ -28,12 +29,12 @@ function checkMXStatus(domain) {
       if (addresses) {
         if (addresses.length > 0) {
           // set domain in redis valid domains list
-          await redisClient.sadd("domainListValid", domain);
+          await redisClientForNormalMode.sadd("domainListValid", domain);
           resolve([true, "custom", domain]);
         }
       } else {
         // set domain in redis valid domains list
-        await redisClient.sadd("domainListInValid", domain);
+        await redisClientForNormalMode.sadd("domainListInValid", domain);
         resolve([false, "", domain]);
       }
     });
@@ -52,7 +53,7 @@ async function checkDomainStatus(emailAddress) {
      * as most of domaisn are free providers
      * we can reduce the execution time when check for freeproviders first
      */
-    exist = await redisClient.sismember("freeProviders", domain);
+    exist = await redisClientForNormalMode.sismember("freeProviders", domain);
 
   if (exist == 1) {
     return [true, "provider", domain];
@@ -60,18 +61,24 @@ async function checkDomainStatus(emailAddress) {
   /**
    * if not in free providers we check disposable
    */
-  const existDisposable = await redisClient.sismember("disposable", domain);
+  const existDisposable = await redisClientForNormalMode.sismember(
+    "disposable",
+    domain
+  );
   if (existDisposable == 1) {
     return [false, "", domain];
   }
   /**
    * we check for already checked domains
    */
-  const existInList = await redisClient.sismember("domainListValid", domain);
+  const existInList = await redisClientForNormalMode.sismember(
+    "domainListValid",
+    domain
+  );
   if (existInList == 1) {
     return [true, "custom", domain];
   }
-  const existInListInValid = await redisClient.sismember(
+  const existInListInValid = await redisClientForNormalMode.sismember(
     "domainListInvalid",
     domain
   );

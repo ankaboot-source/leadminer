@@ -1,30 +1,35 @@
 //this is a worker to handle the messages
 const { parentPort } = require("worker_threads");
-const redisClient = require("../../redis");
+const redisClient = require("../../redis").redisClientForPubSubMode();
 const EmailMessage = require("../services/EmailMessage");
 
-/* Listening for a message event from the parent thread.
- * This worker is used to extract emails addresss from
- * message header and body.
- */
-parentPort.on("message", (message) => {
-  // Create Message object using recieved email message data
+parentPort.on("message", () => {
+  redisClient.subscribe("messages-channel", (err, count) => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log("subscribed to messages-channel");
+    }
+  });
+});
+
+redisClient.on("message", (channel, messageFromChannel) => {
+  let message = JSON.parse(messageFromChannel);
+  const Header = JSON.parse(message.header);
+  const message_id = Header["message-id"] ? Header["message-id"][0] : "";
   const Message = new EmailMessage(
-      message.seq,
-      message.header,
-      message.body,
-      message.user,
-      message.date
-    ),
-    //Get the message id
-    message_id = Message.getMessageId();
+    message.seqNumber,
+    Header,
+    message.body,
+    message.user
+  );
   if (message_id) {
-    //Check if the message is already mined using it's ID
-    redisClient.sadd("messages", message_id).then(() => {
-      // Extract emails from the header
-      Message.extractEmailAddressesFromHeader();
-      // Extract emails from the Body
-      Message.extractEmailAddressesFromBody();
-    });
+    console.log(message.seqNumber);
+    // Extract emails from the header
+    Message.extractEmailAddressesFromHeader();
+    // Extract emails from the Body
+    Message.extractEmailAddressesFromBody();
   }
 });
+
+// });

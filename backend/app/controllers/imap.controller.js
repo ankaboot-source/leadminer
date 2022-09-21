@@ -9,7 +9,7 @@ const EventEmitter = require("node:events");
 const ImapUser = require("../services/imapUser");
 const EmailServer = require("../services/EmailServer");
 const EmailAccountMiner = require("../services/EmailAccountMiner");
-const redisClient = require("../../redis");
+const redisClient = require("../../redis").redisClientForNormalMode();
 const { Worker } = require("worker_threads");
 const { imapInfo } = require("../models");
 

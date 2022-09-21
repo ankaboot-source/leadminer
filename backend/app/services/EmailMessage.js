@@ -2,7 +2,8 @@
 const regExHelpers = require("../utils/regexpHelpers");
 const emailMessageHelpers = require("../utils/emailMessageHelpers");
 const { emailsRaw } = require("../models");
-const redisClient = require("../../redis");
+const redisClientForNormalMode =
+  require("../../redis").redisClientForNormalMode();
 const config = require("config"),
   NEWSLETTER_HEADER_FIELDS = config.get("email_types.newsletter").split(","),
   TRANSACTIONAL_HEADER_FIELDS = config
@@ -17,14 +18,13 @@ class EmailMessage {
    * @param header - The header of the message.
    * @param body - The body of the message.
    * @param user - The user.
-   * @param dateCaseOfBody - The date.
+
    */
-  constructor(sequentialId, header, body, user, dateCaseOfBody) {
+  constructor(sequentialId, header, body, user) {
     this.sequentialId = sequentialId;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
-    this.date = dateCaseOfBody;
   }
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
@@ -139,11 +139,14 @@ class EmailMessage {
                 email.address
               );
               if (!domain[0]) {
-                redisClient
+                redisClientForNormalMode
                   .sismember("invalidDomainEmails", email.address)
                   .then((member) => {
                     if (member == 0) {
-                      redisClient.sadd("invalidDomainEmails", email.address);
+                      redisClientForNormalMode.sadd(
+                        "invalidDomainEmails",
+                        email.address
+                      );
                     }
                   });
               }
@@ -202,7 +205,7 @@ class EmailMessage {
               cc: false,
               bcc: false,
               body: true,
-              date: this.date,
+              date: this.getDate(),
               name: "",
               address: email.toLowerCase(),
               newsletter: false,
