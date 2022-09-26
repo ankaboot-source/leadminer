@@ -4,7 +4,7 @@ class ImapUser {
   }
 
   /**
-   * It takes the query parameters from the URL and returns an object with the user's email, id, token,
+   * getUserConnetionDataFromQuery takes the query parameters from the URL and returns an object with the user's email, id, token,
    * refresh token, and port
    * @returns An object with the user's email, id, token, refreshToken, and port.
    */
@@ -27,7 +27,6 @@ class ImapUser {
       return user;
     }
     return user;
-    
   }
 }
 

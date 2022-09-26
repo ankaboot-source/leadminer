@@ -171,7 +171,7 @@ class EmailAccountMiner {
     this.connection = await this.connection.connecte();
     this.connection.once("ready", async () => {
       logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
-      this.messageWorkerForBody.postMessage("subscribe now!");
+      this.messageWorkerForBody.postMessage(this.user.id);
       this.mineFolder(this.folders[0]).next();
     });
     // cancelation using req.close event from user(frontend button)
@@ -291,7 +291,7 @@ class EmailAccountMiner {
         const header = Header,
           Body = body;
 
-        self.pushMessageToQueue(seqNumber, header, Body, folderName);
+        self.publishMessageToChannel(seqNumber, header, Body, folderName);
         Header = "";
         body = "";
       });
@@ -321,35 +321,16 @@ class EmailAccountMiner {
       }
     });
   }
+
   /**
-   * Takes the sequence message number, the part it's being mined and the date in case of a body
-   * then it will retrieve from redis queue a message and parses it
-   * @param seqNumber - The sequence number of the block that is being mined.
-   * @param type - "body" or "header"
-   * @param dateInCaseOfBody - This is the date of the body that is being mined.
-   */
-  // async getMessageFromQueue(seqNumber, type, dateInCaseOfBody) {
-  //   if (type == "body") {
-  //     redisClientForPubSubMode.rpop("bodies").then((data) => {
-  //       this.mineMessage(seqNumber, undefined, data, dateInCaseOfBody);
-  //     });
-  //   } else {
-  //     redisClientForPubSubMode.rpop("headers").then((data) => {
-  //       if (data) {
-  //         this.mineMessage(seqNumber, JSON.parse(data), undefined, "");
-  //       }
-  //     });
-  //   }
-  // }
-  /**
-   * pushMessageToQueue pushes the message to the queue and then calls the getMessageFromQueue function to get the
+   * publishMessageToChannel pushes the message to the queue and then calls the getMessageFromQueue function to get the
    * message from the queue asynchronously
    * @param seqNumber - The sequence number of the message
    * @param Header - The header of the email
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  async pushMessageToQueue(seqNumber, header, body, folderName) {
+  publishMessageToChannel(seqNumber, header, body, folderName) {
     if (this.sends.includes(seqNumber)) {
       this.sendMiningProgress(seqNumber, folderName);
     }
@@ -357,15 +338,14 @@ class EmailAccountMiner {
       this.sendMinedData(seqNumber, folderName);
     }
     const Header = Imap.parseHeader(header.toString("utf8"));
-
     const message_id = Header["message-id"] ? Header["message-id"][0] : "";
-
     redisClientForNormalMode
       .sismember("messages", message_id)
       .then((alreadyMined) => {
         if (!alreadyMined) {
+          //publish the message to the channel
           redisClientForPubSubMode.publish(
-            "messages-channel",
+            `messages-channel-${this.user.id}`,
             JSON.stringify({
               seqNumber: seqNumber,
               body: body,
@@ -373,30 +353,8 @@ class EmailAccountMiner {
               user: this.user,
             })
           );
-        } else {
-          console.log("alreadymined");
         }
       });
-
-    // const message_id = Header["message-id"] ? Header["message-id"][0] : "";
-    // redisClientForPubSubMode.sismember("messages", message_id).then((alreadyMined) => {
-    //   if (!alreadyMined) {
-    //     if (Body && Body != "") {
-    //       redisClientForPubSubMode.lpush("bodies", Body).then(() => {
-    //         this.getMessageFromQueue(
-    //           seqNumber,
-    //           "body",
-    //           Header.date ? Header.date[0] : ""
-    //         );
-    //       });
-    //     }
-    //     if (Header && Header != "") {
-    //       redisClientForPubSubMode.lpush("headers", JSON.stringify(Header)).then(() => {
-    //         this.getMessageFromQueue(seqNumber, "header", "");
-    //       });
-    //     }
-    //   }
-    // });
   }
 
   /**
@@ -458,7 +416,7 @@ class EmailAccountMiner {
   }
 
   /**
-   * It fires up refining worker when it's called
+   * sendMinedData fires up refining worker when it's called
    * @param seqNumber - The sequence number of the mined data.
    * @param folderName - The name of the folder that contains the mined data.
    */

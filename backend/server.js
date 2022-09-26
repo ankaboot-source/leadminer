@@ -24,13 +24,14 @@ const { EventEmitter } = require("stream");
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
+//init redis
 const redisClientForInitialisation =
   require("./redis").redisClientForInitialConnection();
 
+//*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "*");
-
   // Request methods you wish to allow
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -39,7 +40,7 @@ app.use((req, res, next) => {
   // Request headers you wish to allow
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "X-Requested-With,content-type"
+    "X-Requested-With,Content-type,X-imap-login"
   );
   res.setHeader("Connection", "keep-alive");
   res.setHeader("Content-Type", "text/event-stream");
@@ -51,6 +52,9 @@ app.use((req, res, next) => {
   // Pass to next layer of middleware
   next();
 });
+//***********setting response headers END █▌█▌***********/
+
+//***************█▌█▌Check if should enable sentry BEGIN**********/
 if (config.get("server.sentry.enabled") == true) {
   logger.debug("setting up sentry...");
   integration = sentry(app);
@@ -58,6 +62,8 @@ if (config.get("server.sentry.enabled") == true) {
   const sentryInstance = integration[1];
   logger.debug("sentry integrated to the server ✔️ ");
 }
+//***************Check if should enable sentry END █▌█▌**********/
+
 // parse requests of content-type - application/json
 app.use(express.json());
 
@@ -84,6 +90,8 @@ app.get("/logs", function (req, res, next) {
 });
 // The io instance is set in Express so it can be grabbed in a route
 require("./app/routes/imap.routes")(app, sse);
+
+//***************█▌█▌ init db and start server BEGIN**********/
 db.sequelize
   .sync()
   .then(() => {
@@ -107,6 +115,8 @@ db.sequelize
     logger.error(error);
     process.exit();
   });
+//***************init db and start server END █▌█▌**********/
+
 server.emit("app_started", true);
 
 function stop() {

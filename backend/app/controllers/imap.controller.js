@@ -146,7 +146,16 @@ exports.loginToAccount = async (req, res) => {
 /* A function that is called when a user wants to get his imap folders tree. */
 exports.getImapBoxes = async (req, res, sse) => {
   "use strict";
-  const query = JSON.parse(req.query.user);
+  console.log(JSON.parse(req.headers["x-imap-login"]));
+  if (!req.headers["x-imap-login"]) {
+    logger.error("No user login ! request can't be handled without a login");
+    return res.status(404).send({
+      message: "Bad request",
+      error: "Bad request! please check login!",
+    });
+  }
+
+  const query = JSON.parse(req.headers["x-imap-login"]);
 
   if (query.access_token) {
     const google_user = await googleUser.findOne({
@@ -206,17 +215,15 @@ exports.getImapBoxes = async (req, res, sse) => {
  */
 exports.getEmails = async (req, res, sse) => {
   "use strict";
-  if (!req.query) {
-    logger.error(
-      "No user query param ! request can't be handled without a user"
-    );
+  if (!req.headers["x-imap-login"]) {
+    logger.error("No user login ! request can't be handled without a user");
     return res.status(404).send({
       message: "Bad request",
-      error: "Bad request! check query",
+      error: "Bad request! please check login!",
     });
   }
 
-  const query = JSON.parse(req.query.user);
+  const query = JSON.parse(req.headers["x-imap-login"]);
 
   logger.debug(query.id, query.email);
 

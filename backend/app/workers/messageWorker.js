@@ -3,8 +3,9 @@ const { parentPort } = require("worker_threads");
 const redisClient = require("../../redis").redisClientForPubSubMode();
 const EmailMessage = require("../services/EmailMessage");
 
-parentPort.on("message", () => {
-  redisClient.subscribe("messages-channel", (err, count) => {
+parentPort.on("message", (userID) => {
+  //subscribe to created channel
+  redisClient.subscribe(`messages-channel-${userID}`, (err, count) => {
     if (err) {
       console.log(err);
     } else {

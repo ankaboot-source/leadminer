@@ -2,6 +2,7 @@
 const regExHelpers = require("../utils/regexpHelpers");
 const emailMessageHelpers = require("../utils/emailMessageHelpers");
 const { emailsRaw } = require("../models");
+const { createClient } = require("@supabase/supabase-js");
 const redisClientForNormalMode =
   require("../../redis").redisClientForNormalMode();
 const config = require("config"),
@@ -10,7 +11,9 @@ const config = require("config"),
     .get("email_types.transactional")
     .split(","),
   FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
-
+const supabaseUrl = config.get("server.supabase.url");
+const supabaseToken = config.get("server.supabase.token");
+const supabase = createClient(supabaseUrl, supabaseToken);
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -106,72 +109,100 @@ class EmailMessage {
    * @returns Nothing is being returned.
    */
   storeEmailAddressesExtractedFromHeader(messagingFields) {
-    Object.keys(messagingFields).map((key) => {
+    Object.keys(messagingFields).map(async (key) => {
       // extract Name and Email in case of a header
       const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
       if (emails.length > 0) {
-        emails.map(async (email) => {
-          if (email && email.address && this.user.email != email.address) {
-            // domain is an array
-            let noReply = emailMessageHelpers.isNoReply(email.address);
-            if (noReply) {
-              //if no reply just store it with minimum infos(for statistics only)
-              return emailsRaw.create({
-                user_id: this.user.id,
-                from: key == "from",
-                reply_to: key == "reply-to",
-                to: key == "to",
-                cc: key == "cc",
-                bcc: key == "bcc",
-                date: this.getDate(),
-                name: email?.name ?? "",
-                address: email.address.toLowerCase(),
-                newsletter: false,
-                transactional: false,
-                noReply: true,
-                domain_type: "",
-                domain_name: "",
-                conversation: 0,
-              });
-            } else {
-              // else it's not a noRply email
-              const domain = await emailMessageHelpers.checkDomainStatus(
-                email.address
-              );
-              if (!domain[0]) {
-                redisClientForNormalMode
-                  .sismember("invalidDomainEmails", email.address)
-                  .then((member) => {
-                    if (member == 0) {
-                      redisClientForNormalMode.sadd(
-                        "invalidDomainEmails",
-                        email.address
-                      );
-                    }
+        supabase
+          .from("messages")
+          .upsert({
+            messageid: this.getMessageId(),
+            userid: "123e4567-e89b-12d3-a456-426614174000",
+            channel: "imap",
+            folder: "test",
+            date: this.getDate(),
+          })
+          .then((data, error) => {
+            console.log(data, error);
+            //let datatat = data[0].messageid;
+            emails.map(async (email) => {
+              if (email && email.address && this.user.email != email.address) {
+                supabase
+                  .from("pointsofcontact")
+                  .upsert({
+                    messageid: data.body.messageid,
+                    userid: "123e4567-e89b-12d3-a456-426614174000",
+                    name: email?.name ?? "",
+                    torecipient: key == "to",
+                    ccrecipient: key == "cc",
+                    bccrecipient: key == "bcc",
+                    sender: key == "from",
+                  })
+                  .then((data, error) => {
+                    console.log(data, error);
                   });
+                // domain is an array
+                let noReply = emailMessageHelpers.isNoReply(email.address);
+                if (!noReply) {
+                  //if no reply just store it with minimum infos(for statistics only)
+                  // return emailsRaw.create({
+                  //   user_id: this.user.id,
+                  //   from: key == "from",
+                  //   reply_to: key == "reply-to",
+                  //   to: key == "to",
+                  //   cc: key == "cc",
+                  //   bcc: key == "bcc",
+                  //   date: this.getDate(),
+                  //   name: email?.name ?? "",
+                  //   address: email.address.toLowerCase(),
+                  //   newsletter: false,
+                  //   transactional: false,
+                  //   noReply: true,
+                  //   domain_type: "",
+                  //   domain_name: "",
+                  //   conversation: 0,
+                  // });
+                } else {
+                  // else it's not a noRply email
+                  const domain = await emailMessageHelpers.checkDomainStatus(
+                    email.address
+                  );
+                  if (!domain[0]) {
+                    redisClientForNormalMode
+                      .sismember("invalidDomainEmails", email.address)
+                      .then((member) => {
+                        if (member == 0) {
+                          redisClientForNormalMode.sadd(
+                            "invalidDomainEmails",
+                            email.address
+                          );
+                        }
+                      });
+                  }
+                  if (!noReply && domain[0]) {
+                    return emailsRaw.create({
+                      user_id: this.user.id,
+                      from: key == "from",
+                      reply_to: key == "reply-to",
+                      to: key == "to",
+                      cc: key == "cc",
+                      bcc: key == "bcc",
+                      date: this.getDate(),
+                      name: email?.name ?? "",
+                      address: email.address.toLowerCase(),
+                      newsletter: key == "from" ? this.isNewsletter() : false,
+                      transactional:
+                        key == "from" ? this.isTransactional() : false,
+                      noReply: false,
+                      domain_type: domain[1],
+                      domain_name: domain[2],
+                      conversation: this.isInConversation(),
+                    });
+                  }
+                }
               }
-              if (!noReply && domain[0]) {
-                return emailsRaw.create({
-                  user_id: this.user.id,
-                  from: key == "from",
-                  reply_to: key == "reply-to",
-                  to: key == "to",
-                  cc: key == "cc",
-                  bcc: key == "bcc",
-                  date: this.getDate(),
-                  name: email?.name ?? "",
-                  address: email.address.toLowerCase(),
-                  newsletter: key == "from" ? this.isNewsletter() : false,
-                  transactional: key == "from" ? this.isTransactional() : false,
-                  noReply: false,
-                  domain_type: domain[1],
-                  domain_name: domain[2],
-                  conversation: this.isInConversation(),
-                });
-              }
-            }
-          }
-        });
+            });
+          });
         emails.length = 0;
       } else {
         delete this.header;

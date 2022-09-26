@@ -1,6 +1,9 @@
 server:
   log_level: debug
   port: 8081
+  supabase:
+    url: url
+    token: token
   postgres:
     host: postgres
     name: postgres

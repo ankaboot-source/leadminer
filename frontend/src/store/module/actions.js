@@ -89,12 +89,12 @@ export async function getEmails({ context, getters }, { data }) {
     if (currentState.googleUser.access_token != "") {
       this.$axios
         .get(this.$api + `/imap/1/collectEmails`, {
+          headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
           cancelToken: sources.token,
           params: {
             fields: data.fields.split(","),
             boxes: data.boxes,
             folders: data.folders,
-            user: currentState.googleUser,
           },
         })
         .then((response) => {
@@ -114,12 +114,13 @@ export async function getEmails({ context, getters }, { data }) {
               JSON.stringify(currentState.imapUser.id)
             )}/collectEmails`,
           {
+            headers: { "X-imap-login": JSON.stringify(currentState.imapUser) },
+
             cancelToken: sources.token,
             params: {
               fields: data.fields.split(","),
               boxes: data.boxes,
               folders: data.folders,
-              user: currentState.imapUser,
             },
           }
         )
@@ -214,9 +215,7 @@ export function getBoxes({ context, getters }) {
         this.$api +
           `/imap/${JSON.parse(JSON.stringify(currentState.imapUser.id))}/boxes`,
         {
-          params: {
-            user: currentState.imapUser,
-          },
+          headers: { "X-imap-login": JSON.stringify(currentState.imapUser) },
         }
       )
       .then((response) => {
@@ -230,9 +229,7 @@ export function getBoxes({ context, getters }) {
   } else {
     this.$axios
       .get(this.$api + `/imap/${currentState.googleUser.id}/boxes`, {
-        params: {
-          user: currentState.googleUser,
-        },
+        headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
       })
       .then((response) => {
         this.commit("example/SET_LOADINGBOX", false);
