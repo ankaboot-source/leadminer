@@ -249,11 +249,20 @@ export default {
           host: this.host,
           port: this.port || 993,
         };
-        this.$store.dispatch("example/signIn", { data }).then(() => {
-          setTimeout(() => {
-            this.$router.push("/dashboard");
-          }, 1500);
-        });
+        this.$store
+          .dispatch("example/signIn", { data })
+          .then(() => {
+            setTimeout(() => {
+              this.$router.push("/dashboard");
+            }, 1500);
+          })
+          .catch((error) => {
+            this.showNotif(
+              this.$store.getters["example/getStates"].errorMessage,
+              "red",
+              "error"
+            );
+          });
       }
     },
   },

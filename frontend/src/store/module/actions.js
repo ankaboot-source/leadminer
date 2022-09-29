@@ -104,7 +104,7 @@ export async function getEmails({ context, getters }, { data }) {
         })
         .catch((error) => {
           this.commit("example/SET_ERROR", error);
-          reject(error);
+          reject(error.message);
         });
     } else {
       this.$axios
@@ -133,7 +133,7 @@ export async function getEmails({ context, getters }, { data }) {
           if (error) {
             this.commit("example/SET_ERROR", error);
           }
-          reject(error);
+          reject(error.message);
         });
     }
   });
@@ -154,7 +154,7 @@ export async function signUp({ context, state }, { data }) {
         if (error) {
           this.commit("example/SET_ERROR", error.response.data.error);
         }
-        reject(error);
+        reject(error.message);
       });
   });
 }
@@ -172,7 +172,7 @@ export async function signUpGoogle({ context, state }, { data }) {
         if (error) {
           this.commit("example/SET_ERROR", error.response.data.error);
         }
-        reject(error);
+        reject(error.message);
       });
   });
 }
@@ -192,13 +192,13 @@ export async function signIn({ context, state }, { data }) {
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", "can't login");
+          this.commit("example/SET_ERROR", error.response.data.error);
         }
-        reject(error);
+        reject(error.message);
       });
   });
 }
-export function getBoxes({ context, getters }) {
+export async function getBoxes({ context, getters }) {
   const currentState = getters.getStates;
   const source = new EventSource(`${this.$api}/stream/`);
   source.addEventListener(
@@ -208,37 +208,49 @@ export function getBoxes({ context, getters }) {
     }
   );
   this.commit("example/SET_LOADINGBOX", true);
-
-  if (currentState.googleUser.access_token == "") {
-    this.$axios
-      .get(
-        this.$api +
-          `/imap/${JSON.parse(JSON.stringify(currentState.imapUser.id))}/boxes`,
-        {
-          headers: { "X-imap-login": JSON.stringify(currentState.imapUser) },
-        }
-      )
-      .then((response) => {
-        this.commit("example/SET_LOADINGBOX", false);
-        this.commit("example/SET_BOXES", response.data.imapFoldersTree);
-        this.commit("example/SET_INFO_MESSAGE", response.data.message);
-      })
-      .catch((error) => {
-        this.commit("example/SET_ERROR", error);
-      });
-  } else {
-    this.$axios
-      .get(this.$api + `/imap/${currentState.googleUser.id}/boxes`, {
-        headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
-      })
-      .then((response) => {
-        this.commit("example/SET_LOADINGBOX", false);
-        this.commit("example/SET_BOXES", response.data.imapFoldersTree);
-        this.commit("example/SET_INFO_MESSAGE", response.data.message);
-        this.commit("example/UPDATE_TOKEN", response.data.token);
-      })
-      .catch((error) => {
-        this.commit("example/SET_ERROR", error);
-      });
-  }
+  return new Promise((resolve, reject) => {
+    if (currentState.googleUser.access_token == "") {
+      this.$axios
+        .get(
+          this.$api +
+            `/imap/${JSON.parse(
+              JSON.stringify(currentState.imapUser.id)
+            )}/boxes`,
+          {
+            headers: { "X-imap-login": JSON.stringify(currentState.imapUser) },
+          }
+        )
+        .then((response) => {
+          this.commit("example/SET_LOADINGBOX", false);
+          this.commit("example/SET_BOXES", response.data.imapFoldersTree);
+          this.commit("example/SET_INFO_MESSAGE", response.data.message);
+          resolve();
+        })
+        .catch((error) => {
+          this.commit(
+            "example/SET_ERROR",
+            error?.response?.data?.error
+              ? error?.response?.data?.error
+              : error.message
+          );
+          reject(error.message);
+        });
+    } else {
+      this.$axios
+        .get(this.$api + `/imap/${currentState.googleUser.id}/boxes`, {
+          headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
+        })
+        .then((response) => {
+          this.commit("example/SET_LOADINGBOX", false);
+          this.commit("example/SET_BOXES", response.data.imapFoldersTree);
+          this.commit("example/SET_INFO_MESSAGE", response.data.message);
+          this.commit("example/UPDATE_TOKEN", response.data.token);
+        })
+        .catch((error) => {
+          if (error.response) {
+            this.commit("example/SET_ERROR", error.response.data.error);
+          }
+        });
+    }
+  });
 }

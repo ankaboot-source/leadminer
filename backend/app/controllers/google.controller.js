@@ -50,22 +50,23 @@ exports.SignUpWithGoogle = async (req, res) => {
         tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
 
       googleUser.email = response.data.email;
-      googleUser.id = response.data.id;
+
       googleUser.refreshToken = tokens.refresh_token;
 
-      if (googleUser.id) {
+      if (googleUser) {
         googleUsers
-          .findOne({ where: { id: googleUser.id } })
+          .findOne({ where: { email: googleUser.email } })
           .then((google_user) => {
             if (google_user === null) {
               // Save googleUsers in the database
               googleUsers
                 .create(googleUser)
-                .then(() => {
+                .then((data) => {
+                  console.log(data);
                   res.status(200).send({
                     googleUser: {
-                      email: googleUser.email,
-                      id: googleUser.id,
+                      email: google_users.dataValues.id.email,
+                      id: google_users.dataValues.id.id,
                       access_token: {
                         access_token: tokens.access_token,
                         experation: tokenInfo.exp,

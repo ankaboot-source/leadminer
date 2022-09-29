@@ -2,7 +2,6 @@
 const regExHelpers = require("../utils/regexpHelpers");
 const emailMessageHelpers = require("../utils/emailMessageHelpers");
 const { emailsRaw } = require("../models");
-const { createClient } = require("@supabase/supabase-js");
 const redisClientForNormalMode =
   require("../../redis").redisClientForNormalMode();
 const config = require("config"),
@@ -11,9 +10,12 @@ const config = require("config"),
     .get("email_types.transactional")
     .split(","),
   FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
+
 const supabaseUrl = config.get("server.supabase.url");
 const supabaseToken = config.get("server.supabase.token");
-const supabase = createClient(supabaseUrl, supabaseToken);
+const { createClient } = require("@supabase/supabase-js");
+const supabaseClient = createClient(supabaseUrl, supabaseToken);
+const supabaseHandlers = require("./supabaseServices/supabase");
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -36,7 +38,7 @@ class EmailMessage {
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
       return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(regExHeader, "i");
+        const reg = new RegExp(`${regExHeader}`, "i");
         return reg.test(headerField);
       });
     });
@@ -48,7 +50,7 @@ class EmailMessage {
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
       return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(regExHeader, "i");
+        const reg = new RegExp(`${regExHeader}`, "i");
         return reg.test(headerField);
       });
     });
@@ -86,7 +88,7 @@ class EmailMessage {
     const messagingProps = {};
     Object.keys(this.header).map((key) => {
       if (FIELDS.includes(key)) {
-        messagingProps[key] = this.header[key][0];
+        messagingProps[`${key}`] = this.header[`${key}`][0];
       }
     });
     return messagingProps;
@@ -109,40 +111,41 @@ class EmailMessage {
    * @returns Nothing is being returned.
    */
   storeEmailAddressesExtractedFromHeader(messagingFields) {
+    const messageID = this.getMessageId(),
+      date = this.getDate();
     Object.keys(messagingFields).map(async (key) => {
       // extract Name and Email in case of a header
-      const emails = regExHelpers.extractNameAndEmail(messagingFields[key]);
+      const emails = regExHelpers.extractNameAndEmail(
+        messagingFields[`${key}`]
+      );
       if (emails.length > 0) {
-        supabase
-          .from("messages")
-          .upsert({
-            messageid: this.getMessageId(),
-            userid: "123e4567-e89b-12d3-a456-426614174000",
-            channel: "imap",
-            folder: "test",
-            date: this.getDate(),
-          })
+        supabaseHandlers
+          .upsertMessage(
+            supabaseClient,
+            messageID,
+            this.user.id,
+            "imap",
+            "test",
+            date
+          )
           .then((data, error) => {
             console.log(data, error);
             //let datatat = data[0].messageid;
             emails.map(async (email) => {
               if (email && email.address && this.user.email != email.address) {
-                supabase
-                  .from("pointsofcontact")
-                  .upsert({
-                    messageid: data.body.messageid,
-                    userid: "123e4567-e89b-12d3-a456-426614174000",
-                    name: email?.name ?? "",
-                    torecipient: key == "to",
-                    ccrecipient: key == "cc",
-                    bccrecipient: key == "bcc",
-                    sender: key == "from",
-                  })
+                supabaseHandlers
+                  .upsertPointOfContact(
+                    supabaseClient,
+                    data.body.messageid,
+                    this.user.id,
+                    email?.name ?? "",
+                    key
+                  )
                   .then((data, error) => {
                     console.log(data, error);
                   });
                 // domain is an array
-                let noReply = emailMessageHelpers.isNoReply(email.address);
+                const noReply = emailMessageHelpers.isNoReply(email.address);
                 if (!noReply) {
                   //if no reply just store it with minimum infos(for statistics only)
                   // return emailsRaw.create({

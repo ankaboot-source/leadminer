@@ -45,6 +45,7 @@ module.exports = configure(function (ctx) {
         ENDPOINT: ctx.dev
           ? "http://localhost:8081"
           : process.env.SERVER_ENDPOINT,
+        GG_CLIENT_ID: process.env.GG_CLIENT_ID,
       },
       // transpile: false,
 

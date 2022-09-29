@@ -5,15 +5,15 @@ server:
     dsn: https://d383400104b243a489c54831d4947f00@o1383368.ingest.sentry.io/6699794
   port: 8081 # used for server
   supabase:
-    url: url
-    token: token
+    url: "https://lhbuszxrfblzysndtrye.supabase.co"
+    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoYnVzenhyZmJsenlzbmR0cnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjQ0NzEzMTEsImV4cCI6MTk4MDA0NzMxMX0.IPMS-jxZtzSmeGbh2bthzy8X7JossgM3mYipdyQS9KY"
   postgres:
     host: localhost
     name: postgres
     user: postgres
     password: postgres
   redis:
-    username: admin #optional
+    username: admin #VlLAlC5i986HZTJI optional
     password: admin #optional
     host: localhost
     port: 6379

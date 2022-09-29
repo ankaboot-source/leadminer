@@ -1,17 +1,17 @@
-const Imap = require("imap");
-const db = require("../models"),
+const Imap = require('imap');
+const db = require('../models'),
   ImapInfo = db.imapInfo,
   googleUser = db.googleUsers,
-  logger = require("../utils/logger")(module);
-const hashHelpers = require("../utils/hashHelpers");
-const minedDataHelpers = require("../utils/minedDataHelpers");
-const EventEmitter = require("node:events");
-const ImapUser = require("../services/imapUser");
-const EmailServer = require("../services/EmailServer");
-const EmailAccountMiner = require("../services/EmailAccountMiner");
-const redisClient = require("../../redis").redisClientForNormalMode();
-const { Worker } = require("worker_threads");
-const { imapInfo } = require("../models");
+  logger = require('../utils/logger')(module);
+const hashHelpers = require('../utils/hashHelpers');
+const minedDataHelpers = require('../utils/minedDataHelpers');
+const EventEmitter = require('node:events');
+const ImapUser = require('../services/imapUser');
+const EmailServer = require('../services/EmailServer');
+const EmailAccountMiner = require('../services/EmailAccountMiner');
+const redisClient = require('../../redis').redisClientForNormalMode();
+const { Worker } = require('worker_threads');
+const { imapInfo } = require('../models');
 
 function temporaryImapConnection(imapInfo, reqBody) {
   return new Imap({
@@ -25,8 +25,8 @@ function temporaryImapConnection(imapInfo, reqBody) {
     tlsOptions: {
       port: imapInfo.port,
       host: imapInfo.host,
-      servername: imapInfo.host,
-    },
+      servername: imapInfo.host
+    }
   });
 }
 /**
@@ -35,10 +35,10 @@ function temporaryImapConnection(imapInfo, reqBody) {
  * @param  {} res
  */
 exports.createImapInfo = (req, res) => {
-  "use strict";
+  'use strict';
   if (!req.body.email || !req.body.host) {
     res.status(400).send({
-      error: "Content can not be empty!",
+      error: 'Content can not be empty!'
     });
     return;
   }
@@ -47,7 +47,7 @@ exports.createImapInfo = (req, res) => {
       email: req.body.email,
       host: req.body.host,
       port: req.body.port || 993,
-      tls: req.body.tls ? req.body.tls : true,
+      tls: req.body.tls ? req.body.tls : true
     },
     // initiate imap client
     imap = temporaryImapConnection(imapInfo, req.body);
@@ -55,7 +55,7 @@ exports.createImapInfo = (req, res) => {
 
   imap.connect();
   // if we can connect to the imap account
-  imap.once("ready", () => {
+  imap.once('ready', () => {
     ImapInfo.findOne({ where: { email: imapInfo.email } }).then((imapdata) => {
       if (imapdata === null) {
         // Save ImapInfo in the database
@@ -69,7 +69,7 @@ exports.createImapInfo = (req, res) => {
             );
             res.status(500).send({
               error:
-                "Some error occurred while creating your account imap info.",
+                'Some error occurred while creating your account imap info.'
             });
           });
       } else {
@@ -77,21 +77,21 @@ exports.createImapInfo = (req, res) => {
           `On signup : Account with email ${req.body.email} already exist`
         );
         res.status(200).send({
-          message: "Your account already exists !",
+          message: 'Your account already exists !',
 
-          imap,
+          imap
         });
       }
       imap.end();
     });
   });
   // The imap account does not exists or connexion denied
-  imap.once("error", (err) => {
+  imap.once('error', (err) => {
     logger.error(
       `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}  : **Error** ${err}`
     );
     res.status(500).send({
-      error: "We can't connect to your imap account.",
+      error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
     });
   });
 };
@@ -101,38 +101,37 @@ exports.createImapInfo = (req, res) => {
  * @param  {} res
  */
 exports.loginToAccount = async (req, res) => {
-  "use strict";
+  'use strict';
   if (!req.body.email) {
     res.status(400).send({
-      error: "Content can not be empty!",
+      error: 'Content can not be empty!'
     });
     return;
   }
   const imap = await ImapInfo.findOne({ where: { email: req.body.email } });
-
   if (imap == null) {
     this.createImapInfo(req, res);
   } else {
     const imapConnection = temporaryImapConnection(imap, req.body);
 
     imapConnection.connect();
-    imapConnection.once("ready", () => {
+    imapConnection.once('ready', () => {
       if (imap) {
         logger.info(
           `Account with email ${req.body.email} succesfully logged in`
         );
         res.status(200).send({
-          imap,
+          imap
         });
         imapConnection.end();
       }
     });
-    imapConnection.on("error", (err) => {
+    imapConnection.on('error', (err) => {
       logger.error(
         `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
       );
       res.status(500).send({
-        error: "We can't connect to your imap account, Check credentials.",
+        error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
       });
     });
   }
@@ -145,21 +144,20 @@ exports.loginToAccount = async (req, res) => {
  */
 /* A function that is called when a user wants to get his imap folders tree. */
 exports.getImapBoxes = async (req, res, sse) => {
-  "use strict";
-  console.log(JSON.parse(req.headers["x-imap-login"]));
-  if (!req.headers["x-imap-login"]) {
-    logger.error("No user login ! request can't be handled without a login");
+  'use strict';
+  if (!req.headers['x-imap-login']) {
+    logger.error('No user login ! request can\'t be handled without a login');
     return res.status(404).send({
-      message: "Bad request",
-      error: "Bad request! please check login!",
+      message: 'Bad request',
+      error: 'Bad request! please check login!'
     });
   }
 
-  const query = JSON.parse(req.headers["x-imap-login"]);
+  const query = JSON.parse(req.headers['x-imap-login']);
 
   if (query.access_token) {
     const google_user = await googleUser.findOne({
-      where: { email: query.email },
+      where: { email: query.email }
     });
 
     if (google_user) {
@@ -179,7 +177,7 @@ exports.getImapBoxes = async (req, res, sse) => {
     // initialise imap server connection
     server = new EmailServer(user, sse),
     // initialise EmailAccountMiner to mine imap tree
-    miner = new EmailAccountMiner(server, user, {}, {}, "", "", ""),
+    miner = new EmailAccountMiner(server, user, {}, {}, '', '', ''),
     // get tree
     [tree, error] = await miner.getTree();
 
@@ -190,8 +188,8 @@ exports.getImapBoxes = async (req, res, sse) => {
       )} reason : ${error}`
     );
     res.status(400).send({
-      message: "Can't fetch imap folders",
-      error: error,
+      message: 'Can\'t fetch imap folders',
+      error: error
     });
   }
   if (tree) {
@@ -201,8 +199,8 @@ exports.getImapBoxes = async (req, res, sse) => {
       )}`
     );
     res.status(200).send({
-      message: "Imap folders fetched with success !",
-      imapFoldersTree: tree,
+      message: 'Imap folders fetched with success !',
+      imapFoldersTree: tree
     });
   }
 };
@@ -214,29 +212,29 @@ exports.getImapBoxes = async (req, res, sse) => {
  * @param  {object} sse - server sent event instance
  */
 exports.getEmails = async (req, res, sse) => {
-  "use strict";
-  if (!req.headers["x-imap-login"]) {
-    logger.error("No user login ! request can't be handled without a user");
+  'use strict';
+  if (!req.headers['x-imap-login']) {
+    logger.error('No user login ! request can\'t be handled without a user');
     return res.status(404).send({
-      message: "Bad request",
-      error: "Bad request! please check login!",
+      message: 'Bad request',
+      error: 'Bad request! please check login!'
     });
   }
 
-  const query = JSON.parse(req.headers["x-imap-login"]);
+  const query = JSON.parse(req.headers['x-imap-login']);
 
   logger.debug(query.id, query.email);
 
   if (query.access_token) {
     const google_user = await googleUser.findOne({
-      where: { email: query.email },
+      where: { email: query.email }
     });
 
     if (google_user) {
       query.refresh_token = google_user.dataValues.refreshToken;
     }
   } else {
-    logger.debug(query.id, query.email, "getemails");
+    logger.debug(query.id, query.email, 'getemails');
 
     const imap_user = await imapInfo.findOne({ where: { id: query.id } });
 
@@ -252,13 +250,13 @@ exports.getEmails = async (req, res, sse) => {
   // defines events, and workers
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter(),
-    data = "messageWorker initiated",
-    messageWorker = new Worker("./app/workers/messageWorker.js", { data }),
-    dataRefiningWorker = new Worker("./app/workers/dataRefiningWorker.js", {
-      data,
+    data = 'messageWorker initiated',
+    messageWorker = new Worker('./app/workers/messageWorker.js', { data }),
+    dataRefiningWorker = new Worker('./app/workers/dataRefiningWorker.js', {
+      data
     });
   // refining worker listener, on event it send data to the client
-  dataRefiningWorker.on("message", (data) => {
+  dataRefiningWorker.on('message', (data) => {
     sse.send(
       {
         data: data.minedEmails,
@@ -266,8 +264,8 @@ exports.getEmails = async (req, res, sse) => {
         statistics: {
           noReply: data.noReply,
           invalidDomain: data.invalidDomain,
-          transactional: data.transactional,
-        },
+          transactional: data.transactional
+        }
       },
       `minedEmails${user.id}`
     );
@@ -277,7 +275,7 @@ exports.getEmails = async (req, res, sse) => {
     server,
     user,
     sse,
-    ["HEADER", "1"],
+    ['HEADER', '1'],
     req.query.boxes,
     eventEmitter,
     messageWorker,
@@ -291,14 +289,12 @@ exports.getEmails = async (req, res, sse) => {
   //   eventEmitter.emit("endByUser", true);
   //   sse.send(true, `dns${user.id}`);
   // });
-  eventEmitter.on("end", async () => {
+  eventEmitter.on('end', async () => {
     // get the queues length
-    const QueueLengthBody = await redisClient.llen("bodies"),
-      QueueLengthHeader = await redisClient.llen("headers"),
+    const QueueLengthBody = await redisClient.llen('bodies'),
+      QueueLengthHeader = await redisClient.llen('headers'),
       total =
-        QueueLengthBody + QueueLengthHeader == 0
-          ? 100
-          : (QueueLengthBody + QueueLengthHeader) * 50;
+        QueueLengthBody + QueueLengthHeader == 0 ? 100 : (QueueLengthBody + QueueLengthHeader) * 50;
     // estimate a timeout to wait all queue jobs (150ms per command)
     setTimeout(() => {
       // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data
@@ -314,20 +310,20 @@ exports.getEmails = async (req, res, sse) => {
           logger.debug(`${data.length} mined email`);
           sse.send(true, `dns${user.id}`);
           res.status(200).send({
-            message: "Done mining emails !",
-            data: minedDataHelpers.sortDatabase(data)[0],
+            message: 'Done mining emails !',
+            data: minedDataHelpers.sortDatabase(data)[0]
           });
 
-          logger.debug("cleaning data from database...");
+          logger.debug('cleaning data from database...');
         });
       });
     }, total * 20);
   });
-  eventEmitter.on("error", () => {
+  eventEmitter.on('error', () => {
     res.status(500).send({
-      message: "Error occurend try to refresh the page or reconnect",
+      message: 'Error occurend try to refresh the page or reconnect'
     });
   });
 
-  eventEmitter.removeListener("end", () => {});
+  eventEmitter.removeListener('end', () => {});
 };

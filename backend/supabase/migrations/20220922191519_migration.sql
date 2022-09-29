@@ -9,26 +9,6 @@ CREATE TABLE IF NOT EXISTS public.users
 );
 
 
---stores the imapConnections infos(multi-tenancy)
-CREATE TABLE IF NOT EXISTS public.imapConnections
-(
-    id uuid DEFAULT uuid_generate_v4(),
-    userID uuid,
-    email text, --email used in connecting to imap server
-    imapHost text,
-    port text,
-    usingImap bool,
-    apiGoogle bool,
-    apiMicrosoft bool,
-    refreshToken text, --if it's api connection
-    lastConnection timestamptz,
-    folders text, --it will be stored as stringfied object
-    events text ARRAY, --it could be jsonb, but for now will append small events that are related to this connetion eg:user refetched folders tree, user excutes mining for folders...
-    boxStatus text, --mailbox status
-   PRIMARY KEY (id),
-    FOREIGN KEY (userID) REFERENCES users(id)
-);
-
 CREATE TABLE IF NOT EXISTS public.messages
 (
     id text,
@@ -36,13 +16,14 @@ CREATE TABLE IF NOT EXISTS public.messages
     folder text,
     date timestamptz,
     userID uuid,
-    connectionID uuid,
+    listid text,
+    messageid text,
+    reference text,
     PRIMARY KEY (id,userID),
-    FOREIGN KEY (userID) REFERENCES users(id),                 --|
-    FOREIGN KEY (connectionID) REFERENCES imapConnections(id)  --|-> the user, and the message should be here
-
+    FOREIGN KEY (userID) REFERENCES users(id)
 
 );
+
 CREATE TABLE IF NOT EXISTS public.pointsofcontact
 (
     id uuid DEFAULT uuid_generate_v4(),
@@ -57,13 +38,15 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     PRIMARY KEY (id),
     FOREIGN KEY (userID, messageID) REFERENCES messages(userID,id)
 );
+
 CREATE TABLE IF NOT EXISTS public.domains
 (
     id SERIAL PRIMARY KEY,
     name text,
     lastCheck timestamptz,
-    type text
+    emailServertype text
 );
+
 CREATE TABLE IF NOT EXISTS public.organizations
 (
     name text,
@@ -71,11 +54,10 @@ CREATE TABLE IF NOT EXISTS public.organizations
     CONSTRAINT name PRIMARY KEY (name),
     FOREIGN KEY (domain) REFERENCES domains(id)
 );
+
 CREATE TABLE IF NOT EXISTS public.persons
 (
     personID uuid DEFAULT uuid_generate_v4(),
-    userID uuid,
-    messageID text,
     name text,
     email text,
     pointofcontact uuid,

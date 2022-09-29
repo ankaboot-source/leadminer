@@ -1,13 +1,13 @@
-const { parentPort } = require("worker_threads");
-const minedDataHelpers = require("../utils/minedDataHelpers");
+const { parentPort } = require('worker_threads');
+const minedDataHelpers = require('../utils/minedDataHelpers');
 const redisClientForNormalMode =
-  require("../../redis").redisClientForNormalMode();
+  require('../../redis').redisClientForNormalMode();
 
 /* Listening for a message event from the parent thread.
  *  This worker is used to refine data stored in the database then
  *  post the refined data to the main event loop so we can stream it
  */
-parentPort.on("message", (userId) => {
+parentPort.on('message', (userId) => {
   // Get all mined emails (no duplicates, with aggregation view: minedDataHelpers.getEmails in /utils/minedDataHelpers)
   minedDataHelpers.getEmails(userId.userId).then((Data) => {
     minedDataHelpers.getCountDB(userId.userId).then(async (totalScanned) => {
@@ -21,16 +21,16 @@ parentPort.on("message", (userId) => {
       const noReply = await minedDataHelpers.getNoReplyEmails(userId.userId);
       // Count of invalid email addresses
       const invalidDomain = await redisClientForNormalMode.scard(
-        "invalidDomainEmails"
+        'invalidDomainEmails'
       );
-      let data = {
+      const data = {
         minedEmails: minedEmails,
         totalScanned: totalScanned,
         statistics: {
           noReply: noReply,
           invalidDomain: invalidDomain,
-          transactional: transactional,
-        },
+          transactional: transactional
+        }
       };
       // Send data to main process(main event loop)
       parentPort.postMessage(data);

@@ -53,48 +53,50 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   async getTree() {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       let result = [];
-      this.connection = await this.connection.connecte();
-      this.connection.once("ready", () => {
-        logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
-        this.connection.getBoxes("", async (err, boxes) => {
-          if (err) {
-            logger.error(
-              `Failed mining folders tree for user: ${this.mailHash}  raison: ${err}`
-            );
-            result = [this.tree, err];
-            resolve(result);
-          }
-          // extract only folder name
-          const treeObjectWithChildrens =
-              imapTreeHelpers.createTreeFromImap(boxes),
-            // add a path for each folder
-            treeWithPaths = imapTreeHelpers.addPathPerFolder(
-              treeObjectWithChildrens,
-              treeObjectWithChildrens
-            );
-          // extract the total for each folder
+      this.connection.connecte().then((connection) => {
+        this.connection = connection;
+        this.connection.once("ready", () => {
+          logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
+          this.connection.getBoxes("", async (err, boxes) => {
+            if (err) {
+              logger.error(
+                `Failed mining folders tree for user: ${this.mailHash}  raison: ${err}`
+              );
+              result = [this.tree, err];
+              resolve(result);
+            }
+            // extract only folder name
+            const treeObjectWithChildrens =
+                imapTreeHelpers.createTreeFromImap(boxes),
+              // add a path for each folder
+              treeWithPaths = imapTreeHelpers.addPathPerFolder(
+                treeObjectWithChildrens,
+                treeObjectWithChildrens
+              );
+            // extract the total for each folder
 
-          await this.getTreeWithTotalPerFolder(treeWithPaths);
-          // sum childrens total for folder that has childrens
-          this.tree = imapTreeHelpers.addChildrenTotalForParentFiles(
-            treeWithPaths,
-            this.user.email
-          );
+            await this.getTreeWithTotalPerFolder(treeWithPaths);
+            // sum childrens total for folder that has childrens
+            this.tree = imapTreeHelpers.addChildrenTotalForParentFiles(
+              treeWithPaths,
+              this.user.email
+            );
+          });
         });
-      });
-      this.connection.once("end", () => {
-        logger.info(`End mining folders tree for user : ${this.mailHash}`);
-        result = [this.tree, null];
-        resolve(result);
-      });
-      this.connection.once("error", (error) => {
-        logger.error(
-          `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
-        );
-        result = [this.tree, error];
-        resolve(result);
+        this.connection.once("end", () => {
+          logger.info(`End mining folders tree for user : ${this.mailHash}`);
+          result = [this.tree, null];
+          resolve(result);
+        });
+        this.connection.once("error", (error) => {
+          logger.error(
+            `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
+          );
+          result = [this.tree, error];
+          resolve(result);
+        });
       });
     });
   }
@@ -424,7 +426,7 @@ class EmailAccountMiner {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
-    let userId = this.user.id;
+    const userId = this.user.id;
     // refining worker used to refine data to be send as progress status, using streaming.
     this.dataRefiningWorker.postMessage({ userId });
   }

@@ -43,6 +43,7 @@ export default {
       } else {
         let authCode;
         googleSdkLoaded((google) => {
+          console.log(process.env);
           google.accounts.oauth2
             .initCodeClient({
               client_id:

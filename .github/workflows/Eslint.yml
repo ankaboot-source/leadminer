@@ -13,7 +13,7 @@ jobs:
       - name: Install backend dependencies
         run: cd backend && npm i eslint
       - name: Run linting for backend
-        run: cd backend && npm run lint:fix
+        run: cd backend && npm run lint:report
       - name: Annotate Code Linting Results
         uses: ataylorme/eslint-annotate-action@v2
         if: always()
