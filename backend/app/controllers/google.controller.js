@@ -65,8 +65,8 @@ exports.SignUpWithGoogle = async (req, res) => {
                   console.log(data);
                   res.status(200).send({
                     googleUser: {
-                      email: google_users.dataValues.id.email,
-                      id: google_users.dataValues.id.id,
+                      email: data.google_users.dataValues.id.email,
+                      id: data.google_users.dataValues.id.id,
                       access_token: {
                         access_token: tokens.access_token,
                         experation: tokenInfo.exp,
