@@ -24,7 +24,7 @@
     "@sentry/tracing": "^7.11.1",
     "amqplib": "^0.10.0",
     "chai": "^4.3.6",
-    "config": "^3.3.7",
+    "config": "^3.3.8",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.18.1",
