@@ -34,7 +34,7 @@ Clone the repository and start docker-compose
  git clone https://github.com/ankaboot-source/leadminer
  cd leadminer
 ```
-Edit the configuration in backend as needed and make sure to set the `REDIS_PORT` environment variable to the same port specified in your config.
+Edit the configuration in `backend/config/example.yml` and change its name to `default.yaml` or `production.yaml` as needed and make sure to set the `REDIS_PORT` environment variable to the same port specified in your config.
 ```
  docker-compose up
 ```
