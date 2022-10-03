@@ -103,7 +103,12 @@ export async function getEmails({ context, getters }, { data }) {
           resolve(response);
         })
         .catch((error) => {
-          this.commit("example/SET_ERROR", error);
+          this.commit(
+            "example/SET_ERROR",
+            error?.response?.data?.error
+              ? error?.response?.data?.error
+              : error.message
+          );
           reject(error.message);
         });
     } else {
@@ -130,9 +135,12 @@ export async function getEmails({ context, getters }, { data }) {
           resolve(response);
         })
         .catch((error) => {
-          if (error) {
-            this.commit("example/SET_ERROR", error);
-          }
+          this.commit(
+            "example/SET_ERROR",
+            error?.response?.data?.error
+              ? error?.response?.data?.error
+              : error.message
+          );
           reject(error.message);
         });
     }
@@ -204,6 +212,16 @@ export async function getBoxes({ context, getters }) {
   source.addEventListener(
     "token" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
+      let googleUser = LocalStorage.getItem("googleUser");
+
+      LocalStorage.remove("googleUser");
+      let access_token = JSON.parse(message.data).token;
+      LocalStorage.set("googleUser", {
+        access_token: access_token,
+        email: googleUser.email,
+        id: googleUser.id,
+      });
+
       this.commit("example/UPDATE_TOKEN", JSON.parse(message.data).token);
     }
   );
@@ -241,15 +259,19 @@ export async function getBoxes({ context, getters }) {
           headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
         })
         .then((response) => {
+          console.log(response);
           this.commit("example/SET_LOADINGBOX", false);
           this.commit("example/SET_BOXES", response.data.imapFoldersTree);
           this.commit("example/SET_INFO_MESSAGE", response.data.message);
-          this.commit("example/UPDATE_TOKEN", response.data.token);
         })
         .catch((error) => {
-          if (error.response) {
-            this.commit("example/SET_ERROR", error.response.data.error);
-          }
+          this.commit(
+            "example/SET_ERROR",
+            error?.response?.data?.error
+              ? error?.response?.data?.error
+              : error.message
+          );
+          reject(error.message);
         });
     }
   });

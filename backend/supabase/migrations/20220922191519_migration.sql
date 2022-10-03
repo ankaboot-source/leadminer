@@ -1,17 +1,17 @@
---required for app level authentication layer(not the imap, but leadminer app)
-CREATE TABLE IF NOT EXISTS public.users
-(
-    id uuid DEFAULT uuid_generate_v4(),
-    email text, -- email used to connect to leadminer.io
-    password text,
-    emailHash text,
-    PRIMARY KEY (id)  
-);
+-- --required for app level authentication layer(not the imap, but leadminer app)
+-- CREATE TABLE IF NOT EXISTS public.users
+-- (
+--     id uuid DEFAULT uuid_generate_v4(),
+--     email text, -- email used to connect to leadminer.io
+--     password text,
+--     emailHash text,
+--     PRIMARY KEY (id)  
+-- );
 
 
 CREATE TABLE IF NOT EXISTS public.messages
 (
-    id text,
+    id uuid DEFAULT uuid_generate_v4(),
     channel text,
     folder text,
     date timestamptz,
@@ -19,16 +19,14 @@ CREATE TABLE IF NOT EXISTS public.messages
     listid text,
     messageid text,
     reference text,
-    PRIMARY KEY (id,userID),
-    FOREIGN KEY (userID) REFERENCES users(id)
-
+    PRIMARY KEY (id,userID)
 );
 
 CREATE TABLE IF NOT EXISTS public.pointsofcontact
 (
     id uuid DEFAULT uuid_generate_v4(),
     userID uuid,
-    messageID text,
+    messageID uuid,
     name text,
     sender bool,
     recipient bool,

@@ -753,13 +753,22 @@ export default defineComponent({
       };
 
       if (this.selectedBoxes.length > 0) {
-        this.$store.dispatch("example/getEmails", { data }).then(() => {
-          this.showNotif(
-            this.$store.getters["example/getStates"].infoMessage,
-            "teal-5",
-            "check"
-          );
-        });
+        this.$store
+          .dispatch("example/getEmails", { data })
+          .then(() => {
+            this.showNotif(
+              this.$store.getters["example/getStates"].infoMessage,
+              "teal-5",
+              "check"
+            );
+          })
+          .catch((error) => {
+            this.showNotif(
+              this.$store.getters["example/getStates"].errorMessage,
+              "red",
+              "error"
+            );
+          });
       } else {
         this.showNotif("Select at least one folder", "orange-5", "warning");
       }
@@ -775,6 +784,7 @@ export default defineComponent({
           );
         })
         .catch((error) => {
+          console.log(error);
           this.showNotif(
             this.$store.getters["example/getStates"].errorMessage,
             "red",

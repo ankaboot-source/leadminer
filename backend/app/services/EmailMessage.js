@@ -76,9 +76,9 @@ class EmailMessage {
       if (Date.parse(this.header.date[0])) {
         return this.header.date[0];
       }
-      return "";
+      return this.header.date;
     }
-    return "";
+    return this.header.date;
   }
   /**
    * getMessagingFieldsFromHeader returns an object with only the messaging fields from the header
@@ -110,102 +110,88 @@ class EmailMessage {
    * @param messagingFields - an object containing the email headers
    * @returns Nothing is being returned.
    */
-  storeEmailAddressesExtractedFromHeader(messagingFields) {
+  async storeEmailAddressesExtractedFromHeader(messagingFields) {
     const messageID = this.getMessageId(),
       date = this.getDate();
+    let message = await supabaseHandlers.upsertMessage(
+      supabaseClient,
+      messageID,
+      this.user.id,
+      "imap",
+      "test",
+      date
+    );
     Object.keys(messagingFields).map(async (key) => {
       // extract Name and Email in case of a header
       const emails = regExHelpers.extractNameAndEmail(
         messagingFields[`${key}`]
       );
+
       if (emails.length > 0) {
-        supabaseHandlers
-          .upsertMessage(
-            supabaseClient,
-            messageID,
-            this.user.id,
-            "imap",
-            "test",
-            date
-          )
-          .then((data, error) => {
-            console.log(data, error);
-            //let datatat = data[0].messageid;
-            emails.map(async (email) => {
-              if (email && email.address && this.user.email != email.address) {
-                supabaseHandlers
-                  .upsertPointOfContact(
-                    supabaseClient,
-                    data.body.messageid,
-                    this.user.id,
-                    email?.name ?? "",
-                    key
-                  )
-                  .then((data, error) => {
-                    console.log(data, error);
-                  });
-                // domain is an array
-                const noReply = emailMessageHelpers.isNoReply(email.address);
-                if (!noReply) {
-                  //if no reply just store it with minimum infos(for statistics only)
-                  // return emailsRaw.create({
-                  //   user_id: this.user.id,
-                  //   from: key == "from",
-                  //   reply_to: key == "reply-to",
-                  //   to: key == "to",
-                  //   cc: key == "cc",
-                  //   bcc: key == "bcc",
-                  //   date: this.getDate(),
-                  //   name: email?.name ?? "",
-                  //   address: email.address.toLowerCase(),
-                  //   newsletter: false,
-                  //   transactional: false,
-                  //   noReply: true,
-                  //   domain_type: "",
-                  //   domain_name: "",
-                  //   conversation: 0,
-                  // });
-                } else {
-                  // else it's not a noRply email
-                  const domain = await emailMessageHelpers.checkDomainStatus(
-                    email.address
-                  );
-                  if (!domain[0]) {
-                    redisClientForNormalMode
-                      .sismember("invalidDomainEmails", email.address)
-                      .then((member) => {
-                        if (member == 0) {
-                          redisClientForNormalMode.sadd(
-                            "invalidDomainEmails",
-                            email.address
-                          );
-                        }
-                      });
+        //let datatat = data[0].messageid;
+        emails.map(async (email) => {
+          if (email && email.address && this.user.email != email.address) {
+            // domain is an array
+            const noReply = emailMessageHelpers.isNoReply(email.address);
+
+            // else it's not a noRply email
+            const domain = await emailMessageHelpers.checkDomainStatus(
+              email.address
+            );
+            if (!domain[0]) {
+              redisClientForNormalMode
+                .sismember("invalidDomainEmails", email.address)
+                .then((member) => {
+                  if (member == 0) {
+                    redisClientForNormalMode.sadd(
+                      "invalidDomainEmails",
+                      email.address
+                    );
                   }
-                  if (!noReply && domain[0]) {
-                    return emailsRaw.create({
-                      user_id: this.user.id,
-                      from: key == "from",
-                      reply_to: key == "reply-to",
-                      to: key == "to",
-                      cc: key == "cc",
-                      bcc: key == "bcc",
-                      date: this.getDate(),
-                      name: email?.name ?? "",
-                      address: email.address.toLowerCase(),
-                      newsletter: key == "from" ? this.isNewsletter() : false,
-                      transactional:
-                        key == "from" ? this.isTransactional() : false,
-                      noReply: false,
-                      domain_type: domain[1],
-                      domain_name: domain[2],
-                      conversation: this.isInConversation(),
+                });
+            }
+            if (!noReply && domain[0]) {
+              supabaseHandlers
+                .upsertPointOfContact(
+                  supabaseClient,
+                  message.body[0]?.id,
+                  this.user.id,
+                  email?.name ?? "",
+                  key
+                )
+                .then((pointOfContact, error) => {
+                  supabaseHandlers
+                    .upsertPersons(
+                      supabaseClient,
+                      email?.name ?? "",
+                      email.address.toLowerCase(),
+                      pointOfContact.body[0]?.id
+                    )
+                    .then((data, error) => {
+                      //console.log(data);
                     });
-                  }
-                }
-              }
-            });
-          });
+                });
+              return emailsRaw.create({
+                user_id: this.user.id,
+                from: key == "from",
+                reply_to: key == "reply-to",
+                to: key == "to",
+                cc: key == "cc",
+                bcc: key == "bcc",
+                date: this.getDate(),
+                name: email?.name ?? "",
+                address: email.address.toLowerCase(),
+                newsletter: key == "from" ? this.isNewsletter() : false,
+                transactional: key == "from" ? this.isTransactional() : false,
+                noReply: false,
+                domain_type: domain[1],
+                domain_name: domain[2],
+                conversation: this.isInConversation(),
+              });
+            }
+          }
+        });
+
         emails.length = 0;
       } else {
         delete this.header;

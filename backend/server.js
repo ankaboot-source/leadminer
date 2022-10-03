@@ -84,7 +84,7 @@ app.get("/logs", function (req, res, next) {
     if (err) {
       next(err);
     } else {
-      console.log("Sent the logs..");
+      logger.log("Sent the logs..");
     }
   });
 });
@@ -105,13 +105,12 @@ db.sequelize
     });
     server.on("error", (e) => {
       if (e.code === "EADDRINUSE") {
-        console.debug("Address in use, retrying...");
+        logger.debug("Address in use, retrying...");
       }
     });
   })
   .catch((error) => {
     logger.debug("can't initialize database ✖️ ");
-    console.log(error);
     logger.error(error);
     process.exit();
   });

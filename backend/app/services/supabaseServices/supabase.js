@@ -1,3 +1,6 @@
+const { datacatalog } = require("googleapis/build/src/apis/datacatalog");
+const { emailsRaw } = require("../../models");
+
 function upsertMessage(
   supabaseClient,
   messageID,
@@ -6,13 +9,14 @@ function upsertMessage(
   folder,
   date
 ) {
-  console.log("hello");
   return supabaseClient.from("messages").upsert({
     messageid: messageID,
     userid: userID,
     channel: channel,
     folder: folder,
     date: date,
+    listid: "",
+    reference: "",
   });
 }
 
@@ -25,10 +29,28 @@ function upsertPointOfContact(supabaseClient, messageID, userID, name, key) {
     ccrecipient: key == "cc",
     bccrecipient: key == "bcc",
     sender: key == "from",
+    recipient: false,
+  });
+}
+function upsertPersons(supabaseClient, name, emailsAddress, pointofcontact_id) {
+  return supabaseClient.from("persons").upsert({
+    name: name,
+    email: emailsAddress,
+    pointofcontact: pointofcontact_id,
+    url: "",
+    image: "",
+    address: "",
+    alternatenames: [],
+    sameas: [],
+    givenname: name,
+    familyname: "",
+    jobtitle: "",
+    worksfor: "flyweight",
   });
 }
 
 module.exports = {
   upsertMessage,
   upsertPointOfContact,
+  upsertPersons,
 };
