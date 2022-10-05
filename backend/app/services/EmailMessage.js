@@ -18,6 +18,7 @@ const { createClient } = require("@supabase/supabase-js");
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
 const supabaseHandlers = require("./supabaseServices/supabase");
 const logger = require("../utils/logger");
+const { setTags } = require("@sentry/node");
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -153,8 +154,23 @@ class EmailMessage {
    * @returns Nothing is being returned.
    */
   storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
+    let tags = [];
+    if (fieldName == "from") {
+      // get if newsletter
+      const newsletter = this.isNewsletter();
+      if (newsletter) {
+        tags.push(this.buildTag("newsletter", "Nawsletter", true, "refined"));
+      }
+      // get if transactional
+      const transactional = this.isTransactional();
+      if (transactional) {
+        tags.push(
+          this.buildTag("transactional", "transactional", true, "refined")
+        );
+      }
+    }
     if (emails?.length > 0) {
-      //let datatat = data[0].messageid;
+      // loop through emails array
       emails.map(async (email) => {
         if (email && email.address && this.user.email != email.address) {
           // get if it's a noreply email
@@ -163,6 +179,7 @@ class EmailMessage {
           const domain = await emailMessageHelpers.checkDomainStatus(
             email.address
           );
+
           if (!domain[0]) {
             // this domain is invalid
             redisClientForNormalMode
@@ -206,6 +223,16 @@ class EmailMessage {
                         logger.debug(
                           `error when inserting to perssons table ${error}`
                         );
+                      }
+                      if (data?.body[0]?.id) {
+                        // store all tags
+                        for (let i = 0; i < tags.length; i++) {
+                          supabaseHandlers.createTags(
+                            supabaseClient,
+                            tags[i],
+                            data.body[0].id
+                          );
+                        }
                       }
                     });
                 }
@@ -283,6 +310,14 @@ class EmailMessage {
     } else {
       delete this.body;
     }
+  }
+  buildTag(name, reachable, label, type) {
+    return {
+      name: name,
+      label: label,
+      reachable: reachable,
+      type: type,
+    };
   }
 }
 module.exports = EmailMessage;

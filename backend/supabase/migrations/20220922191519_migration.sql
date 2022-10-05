@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS public.organizations
     FOREIGN KEY (domain) REFERENCES domains(id)
 );
 
+
 CREATE TABLE IF NOT EXISTS public.persons
 (
     personID uuid DEFAULT uuid_generate_v4(),
@@ -71,5 +72,17 @@ CREATE TABLE IF NOT EXISTS public.persons
     PRIMARY KEY (personID),
     FOREIGN KEY (pointofcontact) REFERENCES pointsofcontact(id),
     FOREIGN KEY (worksFor) REFERENCES organizations(name)
+    
 );
 
+CREATE TABLE IF NOT EXISTS public.tags
+(
+    id uuid DEFAULT uuid_generate_v4(),
+    personid uuid,
+    name text,
+    label text,
+    reachable bool,
+    type text,
+    PRIMARY KEY (id),
+    FOREIGN KEY (personid) REFERENCES persons(personID)
+);

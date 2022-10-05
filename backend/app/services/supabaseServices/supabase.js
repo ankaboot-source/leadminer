@@ -46,6 +46,24 @@ function upsertPersons(supabaseClient, name, emailsAddress, pointofcontact_id) {
   });
 }
 
+function createTags(supabaseClient, tag, personID) {
+  return supabaseClient.from("TAGS").insert([
+    {
+      name: name,
+      email: emailsAddress,
+      pointofcontact: pointofcontact_id,
+      url: "",
+      image: "",
+      address: "",
+      alternatenames: [],
+      sameas: [],
+      givenname: name,
+      familyname: "",
+      jobtitle: "",
+      worksfor: "flyweight",
+    },
+  ]);
+}
 module.exports = {
   upsertMessage,
   upsertPointOfContact,
