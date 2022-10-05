@@ -3,50 +3,113 @@ const config = require("config");
 const logger = require("./app/utils/logger")(module);
 const freeProviders = require("./app/utils/FreeProviders.json");
 const disposable = require("./app/utils/Disposable.json");
+//*******█▌█▌ get the configuration from config file BEGIN *******
+let redis = config.get("server.redis");
 const redis_host = config.get("server.redis.host")
   ? config.get("server.redis.host")
   : process.env.REDIS_HOST;
 const redis_port = config.get("server.redis.port")
   ? config.get("server.redis.port")
   : process.env.REDIS_PORT;
-const redis_username = config.get("server.redis.username")
-  ? config.get("server.redis.username")
-  : process.env.REDIS_USERNAME;
-const redis_password = config.get("server.redis.password")
-  ? config.get("server.redis.password")
-  : process.env.REDIS_PASSWORD;
-logger.debug("creating redis client...");
+//*******get the configuration from config file END █▌█▌*******
 
-const redisClient = new Redis(
-  redis_port,
-  redis_host,
-  redis_username,
-  redis_password
-);
-redisClient.on("error", function (err) {
-  logger.debug("can't connect to redisClient ✖️ ");
-  console.error("Error connecting to redisClient", err);
-  process.exit();
-});
-redisClient.on("connect", () => {
-  logger.debug("connected to redisClient ✔️");
-  redisClient.exists("freeProviders").then((res) => {
-    if (res != 1) {
-      freeProviders.map((domain) => {
-        redisClient.sadd("freeProviders", domain);
-      });
-      logger.debug("redis initialized with freeProviders✔️");
-    }
+/**
+ * redisClientForInitialConnection creates a redis client and connects to the redis server(used for initialization)
+ * @returns A redis client object
+ */
+function redisClientForInitialConnection() {
+  let redisClient = {};
+  //check for username and password
+  if (redis.password && redis.username) {
+    redisClient = new Redis(redis_port, redis_host, {
+      password: redis.password,
+      user: redis.username,
+    });
+  } else {
+    //no password
+    redisClient = new Redis(redis_port, redis_host);
+  }
+  redisClient.on("error", function (err) {
+    logger.debug("can't connect to redisClient ✖️ ");
+    console.error("Error connecting to redisClient", err);
+    process.exit();
   });
-  redisClient.exists("freeProviders").then((res) => {
-    if (res != 1) {
-      disposable.map((domain) => {
-        redisClient.sadd("disposable", domain);
-      });
-      logger.debug("redis initialized with disposable ✔️");
-    } else {
-      logger.debug("redis is already initialized ✔️");
-    }
+  redisClient.on("connect", () => {
+    logger.debug("connected to redisClient ✔️");
+    //init the redis db with domain providers strings
+    redisClient.exists("freeProviders").then((res) => {
+      if (res != 1) {
+        freeProviders.map((domain) => {
+          redisClient.sadd("freeProviders", domain);
+        });
+        logger.debug("redis initialized with freeProviders✔️");
+      }
+    });
+    redisClient.exists("freeProviders").then((res) => {
+      if (res != 1) {
+        disposable.map((domain) => {
+          redisClient.sadd("disposable", domain);
+        });
+        logger.debug("redis initialized with disposable ✔️");
+      } else {
+        logger.debug("redis is already initialized ✔️");
+      }
+    });
   });
-});
-module.exports = redisClient;
+  return redisClient;
+}
+
+/**
+ * redisClientForPubSubMode creates a new Redis client for pub/sub mode (workers)
+ * @returns A function that returns a redis client.
+ */
+function redisClientForPubSubMode() {
+  let redisClientForPubSubMode = {};
+  if (redis.password && redis.username) {
+    redisClientForPubSubMode = new Redis(redis_port, redis_host, {
+      password: redis.password,
+      user: redis.username,
+    });
+  } else {
+    redisClientForPubSubMode = new Redis(redis_port, redis_host);
+  }
+  redisClientForPubSubMode.on("error", function (err) {
+    logger.debug("can't connect to redisClientForPubSubMode ✖️ ");
+    console.error("Error connecting to redisClientForPubSubMode", err);
+    process.exit();
+  });
+  redisClientForPubSubMode.on("connect", () => {
+    logger.debug("connected to redis using pubSub connection");
+  });
+  return redisClientForPubSubMode;
+}
+
+/**
+ *redisClientForNormalModet creates a redis client for normal mode, (all the app but without initialization)
+ * @returns A function that returns a redis client.
+ */
+function redisClientForNormalMode() {
+  let redisClientNormalMode = {};
+  if (redis.password && redis.username) {
+    redisClientNormalMode = new Redis(redis_port, redis_host, {
+      password: redis.password,
+      user: redis.username,
+    });
+  } else {
+    redisClientNormalMode = new Redis(redis_port, redis_host);
+  }
+  redisClientNormalMode.on("error", function (err) {
+    logger.debug("can't connect to redisClientNormalMode ✖️ ");
+    console.error("Error connecting to redisClientNormalMode", err);
+    process.exit();
+  });
+  redisClientNormalMode.on("connect", () => {
+    logger.debug("connected to redis using Normal connection");
+  });
+  return redisClientNormalMode;
+}
+module.exports = {
+  redisClientForInitialConnection,
+  redisClientForPubSubMode,
+  redisClientForNormalMode,
+};

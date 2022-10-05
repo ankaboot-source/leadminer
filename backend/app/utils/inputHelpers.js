@@ -71,7 +71,7 @@ function EqualPartsForSocket(total, type) {
   }
   const Parts = [];
 
-  values.reduce((prev, curr, i) => (Parts[i] = prev + curr), 0);
+  values.reduce((prev, curr, i) => (Parts[`${i}`] = prev + curr), 0);
 
   return Parts;
 }

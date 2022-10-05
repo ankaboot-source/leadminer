@@ -81,19 +81,19 @@ class EmailServer {
    * @returns A promise that resolves to the connection object.
    */
   async connecte() {
-    return new Promise(async (res, reject) => {
+    return new Promise((res, reject) => {
       // initialize the connection
       this.initConnection();
       if (this.isApiConnection()) {
         logger.debug("User connected using api");
-        const tokens = await tokenHelpers.generateXOauthToken(this.user);
-        this.sse.send({ token: tokens.newToken }, `token${this.user.id}`);
-        this.#connection._config.xoauth2 = tokens.xoauth2Token;
-        this.#connection.connect();
-        res(this.#connection);
+        tokenHelpers.generateXOauthToken(this.user).then((tokens) => {
+          this.sse.send({ token: tokens.newToken }, `token${this.user.id}`);
+          this.#connection._config.xoauth2 = tokens.xoauth2Token;
+          this.#connection.connect();
+          res(this.#connection);
+        });
       } else {
         logger.info(`User connected using imap: ${this.mailHash}`);
-
         this.#connection.connect();
         res(this.#connection);
       }

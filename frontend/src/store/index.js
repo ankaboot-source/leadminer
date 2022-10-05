@@ -17,7 +17,6 @@ export default store(function (/* { ssrContext } */) {
     modules: {
       example: example,
     },
-
     // enable strict mode (adds overhead!)
     // for dev mode and --debug builds only
     //strict: process.env.DEBUGGING

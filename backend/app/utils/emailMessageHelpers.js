@@ -1,7 +1,8 @@
-const dns = require("dns");
-const redisClient = require("../../redis");
-const config = require("config");
-const NOREPLY = config.get("email_types.noreply").split(",");
+const dns = require('dns');
+const redisClientForNormalMode =
+  require('../../redis').redisClientForNormalMode();
+const config = require('config');
+const NOREPLY = config.get('email_types.noreply').split(',');
 
 /**
  * IsNoReply takes an email address as a string and returns true if the email address is classified as "no-reply email"
@@ -28,13 +29,13 @@ function checkMXStatus(domain) {
       if (addresses) {
         if (addresses.length > 0) {
           // set domain in redis valid domains list
-          await redisClient.sadd("domainListValid", domain);
-          resolve([true, "custom", domain]);
+          await redisClientForNormalMode.sadd('domainListValid', domain);
+          resolve([true, 'custom', domain]);
         }
       } else {
         // set domain in redis valid domains list
-        await redisClient.sadd("domainListInValid", domain);
-        resolve([false, "", domain]);
+        await redisClientForNormalMode.sadd('domainListInValid', domain);
+        resolve([false, '', domain]);
       }
     });
   });
@@ -47,36 +48,42 @@ function checkMXStatus(domain) {
  * @returns A boolean value.
  */
 async function checkDomainStatus(emailAddress) {
-  const domain = emailAddress.split("@")[1],
+  const domain = emailAddress.split('@')[1],
     /**
      * as most of domaisn are free providers
      * we can reduce the execution time when check for freeproviders first
      */
-    exist = await redisClient.sismember("freeProviders", domain);
+    exist = await redisClientForNormalMode.sismember('freeProviders', domain);
 
   if (exist == 1) {
-    return [true, "provider", domain];
+    return [true, 'provider', domain];
   }
   /**
    * if not in free providers we check disposable
    */
-  const existDisposable = await redisClient.sismember("disposable", domain);
+  const existDisposable = await redisClientForNormalMode.sismember(
+    'disposable',
+    domain
+  );
   if (existDisposable == 1) {
-    return [false, "", domain];
+    return [false, '', domain];
   }
   /**
    * we check for already checked domains
    */
-  const existInList = await redisClient.sismember("domainListValid", domain);
+  const existInList = await redisClientForNormalMode.sismember(
+    'domainListValid',
+    domain
+  );
   if (existInList == 1) {
-    return [true, "custom", domain];
+    return [true, 'custom', domain];
   }
-  const existInListInValid = await redisClient.sismember(
-    "domainListInvalid",
+  const existInListInValid = await redisClientForNormalMode.sismember(
+    'domainListInvalid',
     domain
   );
   if (existInListInValid == 1) {
-    return [false, "", domain];
+    return [false, '', domain];
   }
   /**
    * if not already scanned we check then the MX
@@ -90,5 +97,5 @@ async function checkDomainStatus(emailAddress) {
 module.exports = {
   isNoReply,
   checkDomainStatus,
-  checkMXStatus,
+  checkMXStatus
 };

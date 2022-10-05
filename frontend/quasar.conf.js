@@ -18,7 +18,7 @@ module.exports = configure(function (ctx) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://quasar.dev/quasar-cli/boot-files
-    boot: ["i18n", "axios", "gauth"],
+    boot: ["i18n", "axios"],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
     css: ["app.css"],
@@ -45,6 +45,7 @@ module.exports = configure(function (ctx) {
         ENDPOINT: ctx.dev
           ? "http://localhost:8081"
           : process.env.SERVER_ENDPOINT,
+        GG_CLIENT_ID: process.env.GG_CLIENT_ID,
       },
       // transpile: false,
 

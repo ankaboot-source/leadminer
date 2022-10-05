@@ -1,30 +1,34 @@
 //this is a worker to handle the messages
 const { parentPort } = require("worker_threads");
-const redisClient = require("../../redis");
+const redisClient = require("../../redis").redisClientForPubSubMode();
 const EmailMessage = require("../services/EmailMessage");
+const logger = require("../utils/logger")(module);
 
-/* Listening for a message event from the parent thread.
- * This worker is used to extract emails addresss from
- * message header and body.
- */
-parentPort.on("message", (message) => {
-  // Create Message object using recieved email message data
+parentPort.on("message", (userID) => {
+  //subscribe to created channel
+  redisClient.subscribe(`messages-channel-${userID}`, (err) => {
+    if (err) {
+      logger.debug(
+        `error in message worker, can't subscribe to channel ${err}`
+      );
+    } else {
+      logger.debug(`worker ${userID} is subscribed to its channel`);
+    }
+  });
+});
+
+redisClient.on("message", (channel, messageFromChannel) => {
+  const message = JSON.parse(messageFromChannel);
+  const Header = JSON.parse(message.header);
+  const message_id = Header["message-id"] ? Header["message-id"][0] : "";
   const Message = new EmailMessage(
-      message.seq,
-      message.header,
-      message.body,
-      message.user,
-      message.date
-    ),
-    //Get the message id
-    message_id = Message.getMessageId();
+    message.seqNumber,
+    Header,
+    message.body,
+    message.user
+  );
   if (message_id) {
-    //Check if the message is already mined using it's ID
-    redisClient.sadd("messages", message_id).then(() => {
-      // Extract emails from the header
-      Message.extractEmailAddressesFromHeader();
-      // Extract emails from the Body
-      Message.extractEmailAddressesFromBody();
-    });
+    // Extract emails from the header
+    Message.extractThenStoreEmailsAddresses();
   }
 });

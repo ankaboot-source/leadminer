@@ -1,17 +1,16 @@
 /* istanbul ignore file */
-const OAuth2 = require("googleapis").google.auth.OAuth2;
+const { OAuth2Client } = require("google-auth-library");
 const db = require("../models");
 const config = require("config"),
   googleUsers = db.googleUsers,
   logger = require("../utils/logger")(module),
   ClientId = config.get("google_api.client.id"),
   ClientSecret = config.get("google_api.client.secret"),
-  RedirectionUrl = "postmessage",
-  googleApi = require("googleapis").google;
+  RedirectionUrl = "postmessage";
 
 // returns Oauth client
 function getOAuthClient() {
-  return new OAuth2(ClientId, ClientSecret, RedirectionUrl);
+  return new OAuth2Client(ClientId, ClientSecret, RedirectionUrl);
 }
 /**
  * Uses the authorization code to retrieve tokens
@@ -41,31 +40,31 @@ exports.SignUpWithGoogle = async (req, res) => {
       oauth2Client.setCredentials({
         access_token: tokens.access_token,
       });
-      const oauth2 = googleApi.oauth2({
-          auth: oauth2Client,
-          version: "v2",
-        }),
-        // get user infos( email, id, photo...)
-        response = await oauth2.userinfo.get({}),
-        tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
+      // const oauth2 = googleApi.oauth2({
+      //     auth: oauth2Client,
+      //     version: "v2",
+      //   }),
+      // get user infos( email, id, photo...)
+      //response = await oauth2.userinfo.get({}),
+      const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
+      console.log(tokenInfo);
+      googleUser.email = tokenInfo.email;
 
-      googleUser.email = response.data.email;
-      googleUser.id = response.data.id;
       googleUser.refreshToken = tokens.refresh_token;
 
-      if (googleUser.id) {
+      if (googleUser) {
         googleUsers
-          .findOne({ where: { id: googleUser.id } })
+          .findOne({ where: { email: googleUser.email } })
           .then((google_user) => {
             if (google_user === null) {
               // Save googleUsers in the database
               googleUsers
                 .create(googleUser)
-                .then(() => {
+                .then((data) => {
                   res.status(200).send({
                     googleUser: {
-                      email: googleUser.email,
-                      id: googleUser.id,
+                      email: data.google_users.dataValues.email,
+                      id: data.google_users.dataValues.id,
                       access_token: {
                         access_token: tokens.access_token,
                         experation: tokenInfo.exp,
@@ -88,8 +87,8 @@ exports.SignUpWithGoogle = async (req, res) => {
             ) {
               googleUsers
                 .update(
-                  { refreshToken: googleUser.refreshToken },
-                  { where: { id: googleUser.id } }
+                  { refreshToken: google_user.dataValues.refreshToken },
+                  { where: { id: google_user.dataValues.id } }
                 )
                 .then(() => {
                   logger.info(
@@ -129,9 +128,7 @@ async function refreshAccessToken(refresh_token) {
     let tokenInfo = {},
       access_token;
     // return OAuth2 client
-    function getOAuthClient() {
-      return new OAuth2(ClientId, ClientSecret, RedirectionUrl);
-    }
+
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({

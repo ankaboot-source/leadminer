@@ -11,7 +11,17 @@
               </q-card-section>
               <div class="text-custom row q-pa-sm">
                 <div class="bg-grey-2 border q-pa-sm col-lg-7 col-md-6">
-                  <div class="text-h6 text-bold">Select mailbox folders</div>
+                  <div class="text-h6 text-bold col-lg-5 col-md-5">
+                    Select mailbox folders &emsp;&emsp;&emsp;&emsp;
+                    <q-btn
+                      outline
+                      round
+                      size="sm"
+                      color="orange-5"
+                      icon="refresh"
+                      @click="getBoxes()"
+                    />
+                  </div>
                   <tree-card
                     v-if="Boxes.length > 0"
                     :boxes="Boxes"
@@ -743,25 +753,44 @@ export default defineComponent({
       };
 
       if (this.selectedBoxes.length > 0) {
-        this.$store.dispatch("example/getEmails", { data }).then(() => {
-          this.showNotif(
-            this.$store.getters["example/getStates"].infoMessage,
-            "teal-5",
-            "check"
-          );
-        });
+        this.$store
+          .dispatch("example/getEmails", { data })
+          .then(() => {
+            this.showNotif(
+              this.$store.getters["example/getStates"].infoMessage,
+              "teal-5",
+              "check"
+            );
+          })
+          .catch((error) => {
+            this.showNotif(
+              this.$store.getters["example/getStates"].errorMessage,
+              "red",
+              "error"
+            );
+          });
       } else {
         this.showNotif("Select at least one folder", "orange-5", "warning");
       }
     },
     getBoxes() {
-      this.$store.dispatch("example/getBoxes").then(() => {
-        this.showNotif(
-          this.$store.getters["example/getStates"].infoMessage,
-          "teal-5",
-          "check"
-        );
-      });
+      this.$store
+        .dispatch("example/getBoxes")
+        .then(() => {
+          this.showNotif(
+            this.$store.getters["example/getStates"].infoMessage,
+            "teal-5",
+            "check"
+          );
+        })
+        .catch((error) => {
+          console.log(error);
+          this.showNotif(
+            this.$store.getters["example/getStates"].errorMessage,
+            "red",
+            "error"
+          );
+        });
     },
   },
 });

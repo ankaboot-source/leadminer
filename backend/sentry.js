@@ -4,6 +4,7 @@ const config = require("config");
 let dsn = config.get("server.sentry.dsn");
 
 module.exports = function SentryMonitoring(app) {
+  // init the sentry instance
   Sentry.init({
     dsn: dsn,
     integrations: [
