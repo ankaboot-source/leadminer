@@ -14,11 +14,11 @@ Install and configure the following dependencies.
 
 Clone the repository
 ```shell
-$ git clone https://github.com/ankaboot-source/leadminer
+ git clone https://github.com/ankaboot-source/leadminer
 ```
 Install the required node modules.
 ```shell
-$ npm install --prefix ./leadminer/backend && npm install --prefix ./leadminer/frontend
+ npm install --prefix ./leadminer/backend && npm install --prefix ./leadminer/frontend
 ```
 
 To configure the application (e.g database host and password), edit `leadminer/backend/config/example.yaml`. When working in production environment, set the `NODE_ENV` environment variable to `production`.
@@ -26,20 +26,19 @@ To configure the application (e.g database host and password), edit `leadminer/b
 #### Deployment
 Start the backend API server and the front-end if the backend has succeed.
 ```shell
-$ npm start --prefix ./leadminer/backend & npm start --prefix ./leadminer/frontend
+ npm start --prefix ./leadminer/backend & npm start --prefix ./leadminer/frontend
 ```
 ### Using Docker Compose
 Clone the repository and start docker-compose
 ```shell
-$ git clone https://github.com/ankaboot-source/leadminer
-$ cd leadminer
+ git clone https://github.com/ankaboot-source/leadminer
+ cd leadminer
 ```
-Edit the configuration in backend as needed and set the `DB_PASSWORD` environment variable to your database password specified in the config.
+Edit the configuration in `backend/config/example.yml` and change its name to `default.yaml` or `production.yaml` as needed and make sure to set the `REDIS_PORT` environment variable to the same port specified in your config.
 ```
-$ export DB_PASSWORD=mysecretpassword
-$ docker-compose up
+ docker-compose up
 ```
-We have a CI/CD pipeline that does just that. Check the [deployment workflow yml file](/.github/workflows/Deploy.yml).
+open `localhost:8080` and see the result.
 
 ## Support
 If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue. 

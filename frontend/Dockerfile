@@ -2,7 +2,8 @@ FROM node as build-stage
 WORKDIR /frontend
 COPY ./ /frontend
 RUN npm install
-ENV SERVER_ENDPOINT=https://api.leadminer.io
+# Change this to your server endpoint
+ENV SERVER_ENDPOINT=https://localhost:8081
 RUN npm run build
 
 FROM nginx

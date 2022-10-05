@@ -4,14 +4,12 @@ services:
     image: "postgres"
     restart: always
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
 
   redis:
     image: redis
-    command: --port ${REDIS_PORT}
+    command: --port ${REDIS_PORT:-6379}
     restart: always
-    ports:
-      - ${REDIS_PORT}:${REDIS_PORT}
   leadminer-api:
     image: leadminer-api:git
     container_name: leadminer_api
@@ -30,19 +28,9 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - 80:80
-      - 443:443
+      - 8080:8080
+      - 8081:8081
     depends_on:
       - leadminer-api
     volumes:
       - ./frontend/.nginx:/etc/nginx/conf.d
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/lib/letsencrypt:/var/lib/letsencrypt
-  certbot:
-    image: certbot/certbot:latest
-    command: certonly --test-cert -v --keep --email contact@ankaboot.fr --agree-tos --no-eff-email --duplicate --expand --webroot -w=/etc/letsencrypt --cert-name leadminer.io -d leadminer.io,demo.leadminer.io,api.leadminer.io
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/lib/letsencrypt:/var/lib/letsencrypt
-    depends_on:
-      - leadminer-server
