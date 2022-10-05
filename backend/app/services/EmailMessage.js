@@ -1,5 +1,6 @@
 "use-strict";
 const regExHelpers = require("../utils/regexpHelpers");
+const dateHelpers = require("../utils/dateHelpers");
 const emailMessageHelpers = require("../utils/emailMessageHelpers");
 const { emailsRaw } = require("../models");
 const redisClientForNormalMode =
@@ -16,6 +17,7 @@ const supabaseToken = config.get("server.supabase.token");
 const { createClient } = require("@supabase/supabase-js");
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
 const supabaseHandlers = require("./supabaseServices/supabase");
+const logger = require("../utils/logger");
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -74,7 +76,7 @@ class EmailMessage {
   getDate() {
     if (this.header.date) {
       if (Date.parse(this.header.date[0])) {
-        return this.header.date[0];
+        return dateHelpers.parseDate(this.header.date[0]);
       }
       return this.header.date;
     }
@@ -117,7 +119,7 @@ class EmailMessage {
       supabaseClient,
       messageID,
       this.user.id,
-      "imap",
+      "imap header",
       "test",
       date
     );
@@ -126,15 +128,13 @@ class EmailMessage {
       const emails = regExHelpers.extractNameAndEmail(
         messagingFields[`${key}`]
       );
-
       if (emails.length > 0) {
         //let datatat = data[0].messageid;
         emails.map(async (email) => {
           if (email && email.address && this.user.email != email.address) {
-            // domain is an array
+            // get if it's a noreply email
             const noReply = emailMessageHelpers.isNoReply(email.address);
-
-            // else it's not a noRply email
+            // get the domain status
             const domain = await emailMessageHelpers.checkDomainStatus(
               email.address
             );
@@ -149,8 +149,10 @@ class EmailMessage {
                     );
                   }
                 });
-            }
-            if (!noReply && domain[0]) {
+            } else if (!noReply && domain[0]) {
+              if (message.body == null) {
+                console.log(message);
+              }
               supabaseHandlers
                 .upsertPointOfContact(
                   supabaseClient,
@@ -160,38 +162,31 @@ class EmailMessage {
                   key
                 )
                 .then((pointOfContact, error) => {
-                  supabaseHandlers
-                    .upsertPersons(
-                      supabaseClient,
-                      email?.name ?? "",
-                      email.address.toLowerCase(),
-                      pointOfContact.body[0]?.id
-                    )
-                    .then((data, error) => {
-                      //console.log(data);
-                    });
+                  if (error) {
+                    logger.debug(
+                      `error when inserting to pointsOfContact table ${error}`
+                    );
+                  }
+                  if (pointOfContact && pointOfContact.body[0]) {
+                    supabaseHandlers
+                      .upsertPersons(
+                        supabaseClient,
+                        email?.name ?? "",
+                        email.address.toLowerCase(),
+                        pointOfContact.body[0]?.id
+                      )
+                      .then((data, error) => {
+                        if (error) {
+                          logger.debug(
+                            `error when inserting to perssons table ${error}`
+                          );
+                        }
+                      });
+                  }
                 });
-              return emailsRaw.create({
-                user_id: this.user.id,
-                from: key == "from",
-                reply_to: key == "reply-to",
-                to: key == "to",
-                cc: key == "cc",
-                bcc: key == "bcc",
-                date: this.getDate(),
-                name: email?.name ?? "",
-                address: email.address.toLowerCase(),
-                newsletter: key == "from" ? this.isNewsletter() : false,
-                transactional: key == "from" ? this.isTransactional() : false,
-                noReply: false,
-                domain_type: domain[1],
-                domain_name: domain[2],
-                conversation: this.isInConversation(),
-              });
             }
           }
         });
-
         emails.length = 0;
       } else {
         delete this.header;

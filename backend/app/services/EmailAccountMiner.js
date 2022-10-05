@@ -157,7 +157,7 @@ class EmailAccountMiner {
       });
     });
     this.connection.once("end", () => {
-      logger.debug(`end fetching tree per folder for user : ${this.mailHash}`);
+      logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
 
       return tree;
     });
@@ -193,7 +193,7 @@ class EmailAccountMiner {
       // sse here to send data based on end event
       this.sse.send(true, "data");
       this.sse.send(true, "dns");
-      logger.debug("sse data and dns events sent!");
+      logger.debug("SSE data and dns events sent!");
       this.eventEmitter.emit("end", true);
       logger.debug("End connection using end event");
     });

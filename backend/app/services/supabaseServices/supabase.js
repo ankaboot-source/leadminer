@@ -1,6 +1,3 @@
-const { datacatalog } = require("googleapis/build/src/apis/datacatalog");
-const { emailsRaw } = require("../../models");
-
 function upsertMessage(
   supabaseClient,
   messageID,
