@@ -107,156 +107,182 @@ class EmailMessage {
   }
 
   /**
-   * storeEmailAddressesExtractedFromHeader takes the header of an email, extracts the email addresses from it, and saves them to the
-   * database
-   * @param messagingFields - an object containing the email headers
-   * @returns Nothing is being returned.
+   * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
-  async storeEmailAddressesExtractedFromHeader(messagingFields) {
+  async extractThenStoreEmailsAddresses() {
+    let messagingFields = this.getMessagingFieldsFromHeader();
     const messageID = this.getMessageId(),
       date = this.getDate();
     let message = await supabaseHandlers.upsertMessage(
       supabaseClient,
       messageID,
       this.user.id,
-      "imap header",
+      "imap",
       "test",
       date
     );
-    Object.keys(messagingFields).map(async (key) => {
-      // extract Name and Email in case of a header
-      const emails = regExHelpers.extractNameAndEmail(
-        messagingFields[`${key}`]
+    // case when header should be scanned
+    if (true) {
+      Object.keys(messagingFields).map(async (key) => {
+        // extract Name and Email in case of a header
+        const emails = regExHelpers.extractNameAndEmail(
+          messagingFields[`${key}`]
+        );
+
+        this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
+      });
+    }
+    // case when body should be scanned
+    if (true) {
+      // TODO : OPTIONS as user query
+      const emails = regExHelpers.extractNameAndEmailFromBody(
+        this.body.toString("utf8")
       );
-      if (emails.length > 0) {
-        //let datatat = data[0].messageid;
-        emails.map(async (email) => {
-          if (email && email.address && this.user.email != email.address) {
-            // get if it's a noreply email
-            const noReply = emailMessageHelpers.isNoReply(email.address);
-            // get the domain status
-            const domain = await emailMessageHelpers.checkDomainStatus(
-              email.address
-            );
-            if (!domain[0]) {
-              redisClientForNormalMode
-                .sismember("invalidDomainEmails", email.address)
-                .then((member) => {
-                  if (member == 0) {
-                    redisClientForNormalMode.sadd(
-                      "invalidDomainEmails",
-                      email.address
-                    );
-                  }
-                });
-            } else if (!noReply && domain[0]) {
-              if (message.body == null) {
-                console.log(message);
-              }
-              supabaseHandlers
-                .upsertPointOfContact(
-                  supabaseClient,
-                  message.body[0]?.id,
-                  this.user.id,
-                  email?.name ?? "",
-                  key
-                )
-                .then((pointOfContact, error) => {
-                  if (error) {
-                    logger.debug(
-                      `error when inserting to pointsOfContact table ${error}`
-                    );
-                  }
-                  if (pointOfContact && pointOfContact.body[0]) {
-                    supabaseHandlers
-                      .upsertPersons(
-                        supabaseClient,
-                        email?.name ?? "",
-                        email.address.toLowerCase(),
-                        pointOfContact.body[0]?.id
-                      )
-                      .then((data, error) => {
-                        if (error) {
-                          logger.debug(
-                            `error when inserting to perssons table ${error}`
-                          );
-                        }
-                      });
-                  }
-                });
-            }
-          }
-        });
-        emails.length = 0;
-      } else {
-        delete this.header;
-      }
-    });
+      delete this.body;
+      // store extracted emails
+      this.storeEmailsAddressesExtractedFromBody(message, emails);
+    }
   }
 
   /**
-   * storeEmailAddressesExtractedFromBody takes the body of an email, extracts all the email addresses from it, and saves them to the
+   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses, and saves them to the
    * database
-   * @returns Nothing
+   * @param {object} messages - an object containing the saved message data row
+   * @param {array} emails - an array of objects that contains the extracted email addresses and the names
+   * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
+   * @returns Nothing is being returned.
    */
-  storeEmailAddressesExtractedFromBody() {
-    const emails = regExHelpers.extractNameAndEmailFromBody(
-      this.body.toString("utf8")
-    );
-    delete this.body;
-    if (emails.length > 0) {
+  storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
+    if (emails?.length > 0) {
+      //let datatat = data[0].messageid;
+      emails.map(async (email) => {
+        if (email && email.address && this.user.email != email.address) {
+          // get if it's a noreply email
+          const noReply = emailMessageHelpers.isNoReply(email.address);
+          // get the domain status
+          const domain = await emailMessageHelpers.checkDomainStatus(
+            email.address
+          );
+          if (!domain[0]) {
+            // this domain is invalid
+            redisClientForNormalMode
+              .sismember("invalidDomainEmails", email.address)
+              .then((member) => {
+                if (member == 0) {
+                  redisClientForNormalMode.sadd(
+                    "invalidDomainEmails",
+                    email.address
+                  );
+                }
+              });
+          } else if (!noReply && domain[0]) {
+            // if domain ok then we store to DB
+            supabaseHandlers
+              .upsertPointOfContact(
+                supabaseClient,
+                message.body[0]?.id,
+                this.user.id,
+                email?.name ?? "",
+                fieldName
+              )
+              // we should wait for the response so we capture the id
+              .then((pointOfContact, error) => {
+                if (error) {
+                  logger.debug(
+                    `error when inserting to pointsOfContact table ${error}`
+                  );
+                }
+                if (pointOfContact && pointOfContact.body[0]) {
+                  //if saved and no errors then we can store the person linked to this point of contact
+                  supabaseHandlers
+                    .upsertPersons(
+                      supabaseClient,
+                      email?.name ?? "",
+                      email.address.toLowerCase(),
+                      pointOfContact.body[0]?.id
+                    )
+                    .then((data, error) => {
+                      if (error) {
+                        logger.debug(
+                          `error when inserting to perssons table ${error}`
+                        );
+                      }
+                    });
+                }
+              });
+          }
+        }
+      });
+      emails.length = 0;
+    } else {
+      delete this.header;
+    }
+  }
+  /**
+   * storeEmailsAddressesExtractedFromBody takes the extracted email addresses from the body, and saves them to the
+   * database
+   * @param {object} messages - an object containing the saved message data row
+   * @param {array} emails - an array of objects that contains the extracted email addresses
+   * @returns Nothing is being returned.
+   */
+  storeEmailsAddressesExtractedFromBody(message, emails) {
+    if (emails?.length > 0) {
       // loop through emails extracted from the current body
       emails.map(async (email) => {
         if (this.user.email != email && email) {
           // get domain status from DomainStatus Helper
+          const noReply = emailMessageHelpers.isNoReply(email);
+          // get the domain status
           const domain = await emailMessageHelpers.checkDomainStatus(email);
-          // check if it's not noReply, and the doamin is valid , if Ok Store it to the database
-          if (!emailMessageHelpers.isNoReply(email) && domain[0]) {
-            return emailsRaw.create({
-              user_id: this.user.id,
-              from: false,
-              reply_to: false,
-              to: false,
-              cc: false,
-              bcc: false,
-              body: true,
-              date: this.getDate(),
-              name: "",
-              address: email.toLowerCase(),
-              newsletter: false,
-              transactional: false,
-              domain_type: domain[1],
-              domain_name: domain[2],
-              conversation: this.isInConversation(),
-            });
+          if (!domain[0]) {
+            redisClientForNormalMode
+              .sismember("invalidDomainEmails", email)
+              .then((member) => {
+                if (member == 0) {
+                  redisClientForNormalMode.sadd("invalidDomainEmails", email);
+                }
+              });
+          } else if (!noReply && domain[0]) {
+            if (message.body == null) {
+              console.log(message);
+            }
+            supabaseHandlers
+              .upsertPointOfContact(
+                supabaseClient,
+                message.body[0]?.id,
+                this.user.id,
+                "",
+                "body"
+              )
+              .then((pointOfContact, error) => {
+                if (error) {
+                  logger.debug(
+                    `error when inserting to pointsOfContact table ${error}`
+                  );
+                }
+                if (pointOfContact && pointOfContact.body[0]) {
+                  supabaseHandlers
+                    .upsertPersons(
+                      supabaseClient,
+                      "",
+                      email.toLowerCase(),
+                      pointOfContact.body[0]?.id
+                    )
+                    .then((data, error) => {
+                      if (error) {
+                        logger.debug(
+                          `error when inserting to perssons table ${error}`
+                        );
+                      }
+                    });
+                }
+              });
           }
         }
       });
     } else {
       delete this.body;
     }
-  }
-  /**
-   * extractEmailAddressesFromHeader calls functions to extract and store addresses.
-   * @returns the email addresses extracted from the header.
-   */
-  extractEmailAddressesFromHeader() {
-    if (this.header) {
-      // used to reduce looping through useless fields
-      const messagingFields = this.getMessagingFieldsFromHeader();
-      this.storeEmailAddressesExtractedFromHeader(messagingFields);
-    }
-  }
-  /**
-   * extractEmailAddressesFromBody calls functions to extract and store addresses.
-   * @returns the email addresses extracted from the header.
-   */
-  extractEmailAddressesFromBody() {
-    if (this.body) {
-      this.storeEmailAddressesExtractedFromBody();
-      return;
-    }
-    delete this.body;
   }
 }
 module.exports = EmailMessage;
