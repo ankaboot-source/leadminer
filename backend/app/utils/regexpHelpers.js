@@ -40,7 +40,7 @@ function extractNameAndEmail(data) {
     }
   };
   // data is array of emails addresses
-  let email = data.split(",");
+  let email = data.split(/(?:,|;)+/);
   // case when we have more than one email
   if (email[1]) {
     let dataWithManyEmails = email.map((emails) => {
