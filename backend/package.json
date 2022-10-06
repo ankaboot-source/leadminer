@@ -22,7 +22,7 @@
   "license": "GNU AGPL v3",
   "dependencies": {
     "@sentry/node": "^7.11.1",
-    "@sentry/tracing": "^7.11.1",
+    "@sentry/tracing": "^7.13.0",
     "@supabase/supabase-js": "^1.35.6",
     "amqplib": "^0.10.0",
     "chai": "^4.3.6",
