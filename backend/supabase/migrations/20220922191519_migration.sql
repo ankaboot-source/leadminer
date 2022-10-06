@@ -22,20 +22,7 @@ CREATE TABLE IF NOT EXISTS public.messages
     PRIMARY KEY (id,userID)
 );
 
-CREATE TABLE IF NOT EXISTS public.pointsofcontact
-(
-    id uuid DEFAULT uuid_generate_v4(),
-    userID uuid,
-    messageID uuid,
-    name text,
-    sender bool,
-    recipient bool,
-    toRecipient bool,
-    ccRecipient bool,
-    bccRecipient bool,
-    PRIMARY KEY (id),
-    FOREIGN KEY (userID, messageID) REFERENCES messages(userID,id)
-);
+
 
 CREATE TABLE IF NOT EXISTS public.domains
 (
@@ -59,7 +46,6 @@ CREATE TABLE IF NOT EXISTS public.persons
     personID uuid DEFAULT uuid_generate_v4(),
     name text,
     email text,
-    pointofcontact uuid,
     url text,
     image text,
     address text,
@@ -70,10 +56,28 @@ CREATE TABLE IF NOT EXISTS public.persons
     jobTitle text,
     worksFor text,
     PRIMARY KEY (personID),
-    FOREIGN KEY (pointofcontact) REFERENCES pointsofcontact(id),
+    UNIQUE(email),
     FOREIGN KEY (worksFor) REFERENCES organizations(name)
     
 );
+
+CREATE TABLE IF NOT EXISTS public.pointsofcontact
+(
+    id uuid DEFAULT uuid_generate_v4(),
+    userID uuid,
+    messageID uuid,
+    sender bool,
+    recipient bool,
+    toRecipient bool,
+    ccRecipient bool,
+    bccRecipient bool,
+    _personid uuid,
+    PRIMARY KEY (id),
+    FOREIGN KEY (userID, messageID) REFERENCES messages(userID,id),
+    FOREIGN KEY (_personid) REFERENCES persons(personID)
+
+);
+
 
 CREATE TABLE IF NOT EXISTS public.tags
 (
@@ -81,8 +85,9 @@ CREATE TABLE IF NOT EXISTS public.tags
     personid uuid,
     name text,
     label text,
-    reachable bool,
+    reachable int,
     type text,
     PRIMARY KEY (id),
+    UNIQUE (personid, name),
     FOREIGN KEY (personid) REFERENCES persons(personID)
 );
