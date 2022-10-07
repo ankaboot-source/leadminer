@@ -91,3 +91,17 @@ CREATE TABLE IF NOT EXISTS public.tags
     UNIQUE (personid, name),
     FOREIGN KEY (personid) REFERENCES persons(personID)
 );
+
+CREATE TABLE IF NOT EXISTS public.refinedPersons
+(
+    id uuid DEFAULT uuid_generate_v4(),
+    personid uuid,
+    recency date,
+    engagement int,
+    occurence int,
+    tags text ARRAY,
+    name text,
+    email text,
+    PRIMARY KEY (id),
+    UNIQUE FOREIGN KEY (personid) REFERENCES persons(personID)
+);

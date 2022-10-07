@@ -1,24 +1,24 @@
-'use-strict';
-const regExHelpers = require('../utils/regexpHelpers');
-const dateHelpers = require('../utils/dateHelpers');
-const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const emailAddressHelpers = require('../utils/minedDataHelpers');
+"use-strict";
+const regExHelpers = require("../utils/regexpHelpers");
+const dateHelpers = require("../utils/dateHelpers");
+const emailMessageHelpers = require("../utils/emailMessageHelpers");
+const emailAddressHelpers = require("../utils/minedDataHelpers");
 const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
-const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
+  require("../../redis").redisClientForNormalMode();
+const config = require("config"),
+  NEWSLETTER_HEADER_FIELDS = config.get("email_types.newsletter").split(","),
   TRANSACTIONAL_HEADER_FIELDS = config
-    .get('email_types.transactional')
-    .split(','),
-  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+    .get("email_types.transactional")
+    .split(","),
+  FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
 
-const supabaseUrl = config.get('server.supabase.url');
-const supabaseToken = config.get('server.supabase.token');
-const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = config.get("server.supabase.url");
+const supabaseToken = config.get("server.supabase.token");
+const { createClient } = require("@supabase/supabase-js");
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
-const supabaseHandlers = require('./supabaseServices/supabase');
-const logger = require('../utils/logger');
-const { setTags } = require('@sentry/node');
+const supabaseHandlers = require("./supabaseServices/supabase");
+const logger = require("../utils/logger");
+const { setTags } = require("@sentry/node");
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -41,7 +41,7 @@ class EmailMessage {
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
       return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, 'i');
+        const reg = new RegExp(`${regExHeader}`, "i");
         return reg.test(headerField);
       });
     });
@@ -53,7 +53,7 @@ class EmailMessage {
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
       return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, 'i');
+        const reg = new RegExp(`${regExHeader}`, "i");
         return reg.test(headerField);
       });
     });
@@ -63,7 +63,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
+    if (Object.keys(this.header).includes("references")) {
       return 1;
     }
     return 0;
@@ -101,8 +101,8 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header['message-id']) {
-      return this.header['message-id'][0].substring(0, 60);
+    if (this.header["message-id"]) {
+      return this.header["message-id"][0].substring(0, 60);
     }
     return `message_id_unknown ${this.header.date}`;
   }
@@ -118,8 +118,8 @@ class EmailMessage {
       supabaseClient,
       messageID,
       this.user.id,
-      'imap',
-      'test',
+      "imap",
+      "test",
       date
     );
     // case when header should be scanned
@@ -137,7 +137,7 @@ class EmailMessage {
     if (true) {
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
-        this.body.toString('utf8')
+        this.body.toString("utf8")
       );
       delete this.body;
       // store extracted emails
@@ -146,7 +146,7 @@ class EmailMessage {
   }
 
   /**
-   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses, and saves them to the
+   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses, give tags, check for noreply,check domain and saves them to the
    * database
    * @param {object} messages - an object containing the saved message data row
    * @param {array} emails - an array of objects that contains the extracted email addresses and the names
@@ -155,17 +155,17 @@ class EmailMessage {
    */
   storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
     const tags = [];
-    if (fieldName == 'from') {
+    if (fieldName == "from") {
       // get if newsletter
       const newsletter = this.isNewsletter();
       if (newsletter) {
-        tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
+        tags.push(this.buildTag("newsletter", "Newsletter", 2, "refined"));
       }
       // get if transactional
       const transactional = this.isTransactional();
       if (transactional) {
         tags.push(
-          this.buildTag('transactional', 'Transactional', 2, 'refined')
+          this.buildTag("transactional", "Transactional", 2, "refined")
         );
       }
     }
@@ -175,80 +175,43 @@ class EmailMessage {
         if (email && email.address && this.user.email != email.address) {
           // get if it's a noreply email
           const noReply = emailMessageHelpers.isNoReply(email.address);
-          // get the domain status //TODO: SAVE DOMAIN STATUS IF DB
+          // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
           const domain = await emailMessageHelpers.checkDomainStatus(
             email.address
           );
+          // find the email type
           const type = emailAddressHelpers.findEmailAddressType(
             email.address,
             [email?.name],
             domain[1]
           );
-          if (type != '') {
-            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
+          if (type != "") {
+            tags.push(this.buildTag(type.toLowerCase(), type, 1, "refined"));
           }
           if (noReply) {
-            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+            tags.push(this.buildTag("no-reply", "noReply", 0, "refined"));
           }
           if (!domain[0]) {
             // this domain is invalid
             redisClientForNormalMode
-              .sismember('invalidDomainEmails', email.address)
+              .sismember("invalidDomainEmails", email.address)
               .then((member) => {
                 if (member == 0) {
                   redisClientForNormalMode.sadd(
-                    'invalidDomainEmails',
+                    "invalidDomainEmails",
                     email.address
                   );
                 }
               });
-          } else if (!noReply && domain[0]) {
+          } else {
             // if domain ok then we store to DB
-
-            supabaseHandlers
-              .upsertPersons(
-                supabaseClient,
-                email?.name ?? '',
-                email.address.toLowerCase()
-              )
-              // we should wait for the response so we capture the id
-              .then((person, error) => {
-                if (error) {
-                  logger.debug(
-                    `error when inserting to persons table ${error}`
-                  );
-                }
-
-                if (person && person?.body[0]) {
-                  //if saved and no errors then we can store the person linked to this point of contact
-                  supabaseHandlers
-                    .upsertPointOfContact(
-                      supabaseClient,
-                      message.body[0]?.id,
-                      this.user.id,
-                      person.body[0].personid,
-                      fieldName
-                    )
-                    .then((pointOfContact, error) => {
-                      if (error) {
-                        logger.debug(
-                          `error when inserting to perssons table ${error}`
-                        );
-                      }
-                    });
-
-                  // add the person id to tags
-                  for (let i = 0; i < tags.length; i++) {
-                    tags[i].personid = person.body[0].personid;
-                  }
-                  supabaseHandlers
-                    .createTags(supabaseClient, tags)
-                    .then((data, error) => {
-                      console.log(data, error);
-                      // TODO : HANDLE DATA AND ERROR
-                    });
-                }
-              });
+            this.storeEmails(
+              message,
+              email.address,
+              email?.name,
+              tags,
+              fieldName
+            );
           }
         }
       });
@@ -265,6 +228,7 @@ class EmailMessage {
    * @returns Nothing is being returned.
    */
   storeEmailsAddressesExtractedFromBody(message, emails) {
+    const tags = [];
     if (emails?.length > 0) {
       // loop through emails extracted from the current body
       emails.map(async (email) => {
@@ -273,49 +237,28 @@ class EmailMessage {
           const noReply = emailMessageHelpers.isNoReply(email);
           // get the domain status
           const domain = await emailMessageHelpers.checkDomainStatus(email);
+
+          const type = emailAddressHelpers.findEmailAddressType(
+            email,
+            [email?.name] ?? "",
+            domain[1]
+          );
+          if (type != "") {
+            tags.push(this.buildTag(type.toLowerCase(), type, 1, "refined"));
+          }
+          if (noReply) {
+            tags.push(this.buildTag("no-reply", "noReply", 0, "refined"));
+          }
           if (!domain[0]) {
             redisClientForNormalMode
-              .sismember('invalidDomainEmails', email)
+              .sismember("invalidDomainEmails", email)
               .then((member) => {
                 if (member == 0) {
-                  redisClientForNormalMode.sadd('invalidDomainEmails', email);
+                  redisClientForNormalMode.sadd("invalidDomainEmails", email);
                 }
               });
-          } else if (!noReply && domain[0]) {
-            if (message.body == null) {
-              console.log(message);
-            }
-            supabaseHandlers
-              .upsertPointOfContact(
-                supabaseClient,
-                message.body[0]?.id,
-                this.user.id,
-                '',
-                'body'
-              )
-              .then((pointOfContact, error) => {
-                if (error) {
-                  logger.debug(
-                    `error when inserting to pointsOfContact table ${error}`
-                  );
-                }
-                if (pointOfContact && pointOfContact.body?.[0]) {
-                  supabaseHandlers
-                    .upsertPersons(
-                      supabaseClient,
-                      '',
-                      email.toLowerCase(),
-                      pointOfContact.body[0]?.id
-                    )
-                    .then((data, error) => {
-                      if (error) {
-                        logger.debug(
-                          `error when inserting to perssons table ${error}`
-                        );
-                      }
-                    });
-                }
-              });
+          } else {
+            this.storeEmails(message, email, "", tags, "body");
           }
         }
       });
@@ -323,13 +266,71 @@ class EmailMessage {
       delete this.body;
     }
   }
+  /**
+   * buildTag takes in a name, label, reachable, and type, and returns an object with those properties
+   * used to build a tag object type
+   * @param {string} name - The name of the tag.
+   * @param {string} label - The label of the tag.
+   * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
+   * @param {string} type - The type of the tag. This can be either "tag" or "branch".
+   * @returns An object with the following properties:
+   *   name: name,
+   *   label: label,
+   *   reachable: reachable,
+   *   type: type,
+   */
   buildTag(name, label, reachable, type) {
     return {
       name: name,
       label: label,
       reachable: reachable,
-      type: type
+      type: type,
     };
+  }
+
+  /**
+   * storeEmails store the email address, name, tags and field name in the database
+   * @param message - the message object returned from the API
+   * @param email - the email address of the person
+   * @param name - The name of the person
+   * @param tags - an array of tags to be added to the person
+   * @param fieldName - the name of the field that the email was found in
+   */
+  storeEmails(message, email, name, tags, fieldName) {
+    supabaseHandlers
+      .upsertPersons(supabaseClient, name ?? "", email.toLowerCase())
+      // we should wait for the response so we capture the id
+      .then((person, error) => {
+        if (error) {
+          logger.debug(`error when inserting to persons table ${error}`);
+        }
+        if (person && person?.body[0]) {
+          //if saved and no errors then we can store the person linked to this point of contact
+          supabaseHandlers
+            .upsertPointOfContact(
+              supabaseClient,
+              message.body[0]?.id,
+              this.user.id,
+              person.body[0].personid,
+              fieldName
+            )
+            .then((pointOfContact, error) => {
+              if (error) {
+                logger.debug(`error when inserting to perssons table ${error}`);
+              }
+            });
+
+          // add the person id to tags
+          for (let i = 0; i < tags.length; i++) {
+            tags[i].personid = person.body[0].personid;
+          }
+          supabaseHandlers
+            .createTags(supabaseClient, tags)
+            .then((data, error) => {
+              // TODO : HANDLE DATA AND ERROR
+            });
+        }
+      });
   }
 }
 module.exports = EmailMessage;

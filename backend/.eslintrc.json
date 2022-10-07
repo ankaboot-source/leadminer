@@ -32,8 +32,11 @@
     "space-unary-ops": "error",
     "quotes": ["warn", "single"],
     //
-    "max-len": ["error", { "code": 200 }],
-    "max-lines": ["error", { "max": 500 }],
+    "max-len": ["error", { "code": 150 }],
+    "max-lines": [
+      "error",
+      { "max": 500, "skipComments": true, "skipBlankLines": true }
+    ],
     "keyword-spacing": "error",
     "multiline-ternary": ["error", "never"],
     "no-mixed-operators": "error",

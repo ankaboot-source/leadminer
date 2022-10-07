@@ -196,13 +196,12 @@ function findEmailAddressType(emailAddress, UserNames, domainType) {
         getScore(domainAndUserName[0], userName) > 40
       ) {
         return 'Personal';
-      }
-      if (
+      } else if (
         getScore(domainAndUserName[0], userName) > 40 &&
         domainType == 'custom'
       ) {
         return 'Professional';
-      }
+      } return '';
     }
   }
   return '';
