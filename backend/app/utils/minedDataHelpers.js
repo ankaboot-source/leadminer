@@ -286,7 +286,7 @@ function sortDatabase(dataFromDatabase) {
     // we treat only emails that are not tagged "noReply"
     if (row.dataValues.noReply == false) {
       //if for any reason we don't have names we should give empty string
-      if (!row.dataValues.name || row.dataValues.name == null) {
+      if (!row.dataValues.name || row.dataValues.name === null) {
         row.dataValues.name = [''];
       } else {
         // here are clean names

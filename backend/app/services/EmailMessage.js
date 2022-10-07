@@ -243,7 +243,7 @@ class EmailMessage {
                 }
               });
           } else if (!noReply && domain[0]) {
-            if (message.body == null) {
+            if (message.body === null) {
               console.log(message);
             }
             supabaseHandlers
