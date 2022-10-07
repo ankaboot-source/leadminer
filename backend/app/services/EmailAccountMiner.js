@@ -52,7 +52,7 @@ class EmailAccountMiner {
    * @returns a promise that resolves to an array of two elements. The first element is the tree object,
    * the second element is an error object.
    */
-  async getTree() {
+  getTree() {
     return new Promise((resolve, reject) => {
       let result = [];
       this.connection.connecte().then((connection) => {
@@ -171,7 +171,7 @@ class EmailAccountMiner {
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
-    this.connection.once("ready", async () => {
+    this.connection.once("ready", () => {
       logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
       this.messageWorkerForBody.postMessage(this.user.id);
       this.mineFolder(this.folders[0]).next();
@@ -209,7 +209,7 @@ class EmailAccountMiner {
     );
 
     // we use generator to stope function execution then we recall it with new params using next()
-    yield this.connection.openBox(folder, true, async (err, openedFolder) => {
+    yield this.connection.openBox(folder, true, (err, openedFolder) => {
       if (openedFolder) {
         logger.debug(
           `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
@@ -280,7 +280,7 @@ class EmailAccountMiner {
       msg.on("body", (stream, streamInfo) => {
         // parse the chunks of the message
 
-        stream.on("data", async (chunk) => {
+        stream.on("data", (chunk) => {
           if (streamInfo.which.includes("HEADER")) {
             Header += chunk;
           } else {
@@ -367,7 +367,7 @@ class EmailAccountMiner {
    * @param body - The body of the email message
    * @param dataInCaseOfBody - The date of a message
    */
-  async mineMessage(seqNumber, header, body, dateInCaseOfBody) {
+  mineMessage(seqNumber, header, body, dateInCaseOfBody) {
     // create EmailMessage object
     const message = {
       seq: seqNumber,
@@ -391,7 +391,7 @@ class EmailAccountMiner {
    * @param seqNumber - The current sequence number of the email being scanned
    * @param folderName - The name of the folder being scanned
    */
-  async sendMiningProgress(seqNumber, folderName) {
+  sendMiningProgress(seqNumber, folderName) {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;

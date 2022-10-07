@@ -80,7 +80,7 @@ class EmailServer {
    * connecte() open a connection to the IMAP server
    * @returns A promise that resolves to the connection object.
    */
-  async connecte() {
+  connecte() {
     return new Promise((res, reject) => {
       // initialize the connection
       this.initConnection();

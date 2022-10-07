@@ -13,7 +13,7 @@ before((done) => {
     done();
   });
 });
-after(async () => {
+after( () => {
   require("../../server").stop();
 });
 describe("Full mining flow", function () {

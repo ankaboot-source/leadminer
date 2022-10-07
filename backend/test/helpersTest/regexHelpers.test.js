@@ -3,8 +3,8 @@ const chai = require("chai"),
 const regExHelpers = require("../../app/utils/regexpHelpers");
 const testData = require("../testData.json");
 
-describe("regExHelpers.extractEmailsFromBody(text)", async function () {
-  it("should return array of emails", async function () {
+describe("regExHelpers.extractEmailsFromBody(text)", function () {
+  it("should return array of emails", function () {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.emailBody);
     expect(output).to.eql(testData.expectedForBodyExtraction);
   });

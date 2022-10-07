@@ -68,7 +68,7 @@ function updateStoreWhenFinish(response, parent) {
   parent.commit("example/SET_EMAILS", response.data.data);
   parent.commit("example/SET_INFO_MESSAGE", response.data.message);
 }
-export async function getEmails({ context, getters }, { data }) {
+export function getEmails({ context, getters }, { data }) {
   const currentState = getters.getStates;
   const CancelToken = this.$axios.CancelToken;
   const sources = CancelToken.source();
@@ -147,7 +147,7 @@ export async function getEmails({ context, getters }, { data }) {
   });
 }
 
-export async function signUp({ context, state }, { data }) {
+export function signUp({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     // get imapInfo account or create one
@@ -166,7 +166,7 @@ export async function signUp({ context, state }, { data }) {
       });
   });
 }
-export async function signUpGoogle({ context, state }, { data }) {
+export function signUpGoogle({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     this.$axios
@@ -184,7 +184,7 @@ export async function signUpGoogle({ context, state }, { data }) {
       });
   });
 }
-export async function signIn({ context, state }, { data }) {
+export function signIn({ context, state }, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     // get imapInfo account or create one
@@ -206,7 +206,7 @@ export async function signIn({ context, state }, { data }) {
       });
   });
 }
-export async function getBoxes({ context, getters }) {
+export function getBoxes({ context, getters }) {
   const currentState = getters.getStates;
   const source = new EventSource(`${this.$api}/stream/`);
   source.addEventListener(

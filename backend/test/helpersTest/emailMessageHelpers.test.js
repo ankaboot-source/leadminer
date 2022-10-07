@@ -14,7 +14,7 @@ describe("emailMessageHelpers.isNoReply(emailAddress)", function () {
     expect(output).to.be.false;
   });
 });
-describe("emailMessageHelpers.checkMXStatus(domain)", async function () {
+describe("emailMessageHelpers.checkMXStatus(domain)", function () {
   it("should return true", async function () {
     let output = await emailMessageHelpers.checkMXStatus("gmail.com");
     expect(output[0]).to.be.true;
@@ -26,7 +26,7 @@ describe("emailMessageHelpers.checkMXStatus(domain)", async function () {
     expect(output[0]).to.be.false;
   });
 });
-describe("emailMessageHelpers.checkDomainStatus(emailAddress)", async function () {
+describe("emailMessageHelpers.checkDomainStatus(emailAddress)", function () {
   it("should return true", async function () {
     let output = await emailMessageHelpers.checkDomainStatus(
       "leadminer@gmail.com"

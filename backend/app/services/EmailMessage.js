@@ -123,7 +123,7 @@ class EmailMessage {
     );
     // case when header should be scanned
     if (true) {
-      Object.keys(messagingFields).map(async (key) => {
+      Object.keys(messagingFields).map( (key) => {
         // extract Name and Email in case of a header
         const emails = regExHelpers.extractNameAndEmail(
           messagingFields[`${key}`]
