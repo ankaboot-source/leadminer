@@ -92,16 +92,79 @@ CREATE TABLE IF NOT EXISTS public.tags
     FOREIGN KEY (personid) REFERENCES persons(personID)
 );
 
-CREATE TABLE IF NOT EXISTS public.refinedPersons
+
+CREATE TABLE IF NOT EXISTS public.refinedpersons
 (
     id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
-    recency date,
+    --recency date,
     engagement int,
     occurence int,
     tags text ARRAY,
     name text,
     email text,
     PRIMARY KEY (id),
-    UNIQUE FOREIGN KEY (personid) REFERENCES persons(personID)
+    UNIQUE(personid),
+    FOREIGN KEY (personid) REFERENCES persons(personID)
 );
+
+
+create or replace function get_tags_per_person(param uuid)
+returns text[]
+language plpgsql
+as $$
+declare
+  tag text[];
+begin
+    select array_agg(name) into tag from tags where personid=get_tags_per_person.param;
+  return tag;
+end;
+$$;
+
+
+create or replace function get_occurences_per_person(param uuid)
+returns int
+language plpgsql
+as $$
+declare
+  occurences int;
+begin
+    select count(*) into occurences filter (where ccrecipient or torecipient or sender or bccrecipient)
+    FROM pointsofcontact where _personid=get_occurences_per_person.param;
+  return occurences;
+end;
+$$;
+
+
+create or replace function refined_persons() RETURNS void
+language plpgsql
+as $$
+DECLARE
+    person persons%rowtype;
+    t text[];
+    occurences int;
+BEGIN
+    FOR person IN
+        SELECT * FROM persons
+    LOOP
+        t=public.get_tags_per_person(person.personid);
+        occurences=public.get_occurences_per_person(person.personid);
+        INSERT INTO refinedpersons(personid, engagement,occurence,tags, name, email)
+        VALUES(person.personid,0,occurences, t, person.name, person.email)
+        ON CONFLICT(personid) DO UPDATE SET occurence=occurences,tags=t;
+    END LOOP;
+END;
+$$
+
+
+
+-- HOW TO DROP a FUNCTION 
+
+-- DO $$DECLARE command text;
+-- BEGIN
+-- command = (SELECT 'DROP FUNCTION ' || ns.nspname || '.' || proname 
+--       || '(' || oidvectortypes(proargtypes) || ');'
+--  FROM pg_proc INNER JOIN pg_namespace ns ON (pg_proc.pronamespace = ns.oid)
+--   WHERE ns.nspname = 'public'  order by proname LIMIT 1);
+-- execute command;    
+-- END$$;

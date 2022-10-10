@@ -11,3 +11,4 @@ app/utils/out
 app/out
 coverage
 app/config/production.yaml
+app/config/default.yaml
