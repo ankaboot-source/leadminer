@@ -1,23 +1,23 @@
-"use-strict";
-const regExHelpers = require("../utils/regexpHelpers");
-const dateHelpers = require("../utils/dateHelpers");
-const emailMessageHelpers = require("../utils/emailMessageHelpers");
-const { emailsRaw } = require("../models");
+'use-strict';
+const regExHelpers = require('../utils/regexpHelpers');
+const dateHelpers = require('../utils/dateHelpers');
+const emailMessageHelpers = require('../utils/emailMessageHelpers');
+const { emailsRaw } = require('../models');
 const redisClientForNormalMode =
-  require("../../redis").redisClientForNormalMode();
-const config = require("config"),
-  NEWSLETTER_HEADER_FIELDS = config.get("email_types.newsletter").split(","),
+  require('../../redis').redisClientForNormalMode();
+const config = require('config'),
+  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
   TRANSACTIONAL_HEADER_FIELDS = config
-    .get("email_types.transactional")
-    .split(","),
-  FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
+    .get('email_types.transactional')
+    .split(','),
+  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
-const supabaseUrl = config.get("server.supabase.url");
-const supabaseToken = config.get("server.supabase.token");
-const { createClient } = require("@supabase/supabase-js");
+const supabaseUrl = config.get('server.supabase.url');
+const supabaseToken = config.get('server.supabase.token');
+const { createClient } = require('@supabase/supabase-js');
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
-const supabaseHandlers = require("./supabaseServices/supabase");
-const logger = require("../utils/logger");
+const supabaseHandlers = require('./supabaseServices/supabase');
+const logger = require('../utils/logger');
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -33,36 +33,41 @@ class EmailMessage {
     this.body = body || {};
     this.user = user;
   }
+
+  /**
+   * hasSpecificHeader returns true if the email has specific types based on his headers
+   * @returns A boolean value.
+   */
+  hasSpecificHeader(headerFields) {
+    return Object.keys(this.header).some((headerField) => {
+      return headerFields.some((regExHeader) => {
+        const reg = new RegExp(`${regExHeader}`, 'i');
+        return reg.test(headerField);
+      });
+    });
+  }
+
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
    */
   isNewsletter() {
-    return Object.keys(this.header).some((headerField) => {
-      return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, "i");
-        return reg.test(headerField);
-      });
-    });
+    this.hasSpecificHeader(NEWSLETTER_HEADER_FIELDS);
   }
+
   /**
    * isTransactional returns true if the email is transactional, and false if it's not
    * @returns A boolean value.
    */
   isTransactional() {
-    return Object.keys(this.header).some((headerField) => {
-      return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, "i");
-        return reg.test(headerField);
-      });
-    });
+    return this.hasSpecificHeader(TRANSACTIONAL_HEADER_FIELDS);
   }
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes("references")) {
+    if (Object.keys(this.header).includes('references')) {
       return 1;
     }
     return 0;
@@ -100,8 +105,8 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header["message-id"]) {
-      return this.header["message-id"][0].substring(0, 60);
+    if (this.header['message-id']) {
+      return this.header['message-id'][0].substring(0, 60);
     }
     return `message_id_unknown ${this.header.date}`;
   }
@@ -117,8 +122,8 @@ class EmailMessage {
       supabaseClient,
       messageID,
       this.user.id,
-      "imap",
-      "test",
+      'imap',
+      'test',
       date
     );
     // case when header should be scanned
@@ -136,7 +141,7 @@ class EmailMessage {
     if (true) {
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
-        this.body.toString("utf8")
+        this.body.toString('utf8')
       );
       delete this.body;
       // store extracted emails
@@ -166,11 +171,11 @@ class EmailMessage {
           if (!domain[0]) {
             // this domain is invalid
             redisClientForNormalMode
-              .sismember("invalidDomainEmails", email.address)
+              .sismember('invalidDomainEmails', email.address)
               .then((member) => {
                 if (member == 0) {
                   redisClientForNormalMode.sadd(
-                    "invalidDomainEmails",
+                    'invalidDomainEmails',
                     email.address
                   );
                 }
@@ -182,7 +187,7 @@ class EmailMessage {
                 supabaseClient,
                 message.body[0]?.id,
                 this.user.id,
-                email?.name ?? "",
+                email?.name ?? '',
                 fieldName
               )
               // we should wait for the response so we capture the id
@@ -197,7 +202,7 @@ class EmailMessage {
                   supabaseHandlers
                     .upsertPersons(
                       supabaseClient,
-                      email?.name ?? "",
+                      email?.name ?? '',
                       email.address.toLowerCase(),
                       pointOfContact.body[0]?.id
                     )
@@ -236,10 +241,10 @@ class EmailMessage {
           const domain = await emailMessageHelpers.checkDomainStatus(email);
           if (!domain[0]) {
             redisClientForNormalMode
-              .sismember("invalidDomainEmails", email)
+              .sismember('invalidDomainEmails', email)
               .then((member) => {
                 if (member == 0) {
-                  redisClientForNormalMode.sadd("invalidDomainEmails", email);
+                  redisClientForNormalMode.sadd('invalidDomainEmails', email);
                 }
               });
           } else if (!noReply && domain[0]) {
@@ -251,8 +256,8 @@ class EmailMessage {
                 supabaseClient,
                 message.body[0]?.id,
                 this.user.id,
-                "",
-                "body"
+                '',
+                'body'
               )
               .then((pointOfContact, error) => {
                 if (error) {
@@ -264,7 +269,7 @@ class EmailMessage {
                   supabaseHandlers
                     .upsertPersons(
                       supabaseClient,
-                      "",
+                      '',
                       email.toLowerCase(),
                       pointOfContact.body[0]?.id
                     )
