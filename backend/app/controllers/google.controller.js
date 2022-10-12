@@ -1,12 +1,12 @@
 /* istanbul ignore file */
-const { OAuth2Client } = require("google-auth-library");
-const db = require("../models");
-const config = require("config"),
+const { OAuth2Client } = require('google-auth-library');
+const db = require('../models');
+const config = require('config'),
   googleUsers = db.googleUsers,
-  logger = require("../utils/logger")(module),
-  ClientId = config.get("google_api.client.id"),
-  ClientSecret = config.get("google_api.client.secret"),
-  RedirectionUrl = "postmessage";
+  logger = require('../utils/logger')(module),
+  ClientId = config.get('google_api.client.id'),
+  ClientSecret = config.get('google_api.client.secret'),
+  RedirectionUrl = 'postmessage';
 
 // returns Oauth client
 function getOAuthClient() {
@@ -21,13 +21,13 @@ function getOAuthClient() {
 exports.SignUpWithGoogle = async (req, res) => {
   const oauth2Client = getOAuthClient();
   // the query param authorization code
-  let code = "";
+  let code = '';
 
   if (req.body.authCode) {
     code = req.body.authCode;
   } else {
     res.status(400).send({
-      error: "No valid authorization code !",
+      error: 'No valid authorization code !'
     });
     return;
   }
@@ -38,7 +38,7 @@ exports.SignUpWithGoogle = async (req, res) => {
       // oauthclient to use the access_token
 
       oauth2Client.setCredentials({
-        access_token: tokens.access_token,
+        access_token: tokens.access_token
       });
       // const oauth2 = googleApi.oauth2({
       //     auth: oauth2Client,
@@ -67,9 +67,9 @@ exports.SignUpWithGoogle = async (req, res) => {
                       id: data.google_users.dataValues.id,
                       access_token: {
                         access_token: tokens.access_token,
-                        experation: tokenInfo.exp,
-                      },
-                    },
+                        experation: tokenInfo.exp
+                      }
+                    }
                   });
                 })
                 .catch((err) => {
@@ -78,7 +78,7 @@ exports.SignUpWithGoogle = async (req, res) => {
                   );
                   res.status(500).send({
                     error:
-                      "Some error occurred while creating your account your account.",
+                      'Some error occurred while creating your account your account.'
                   });
                 });
             } else if (
@@ -96,15 +96,15 @@ exports.SignUpWithGoogle = async (req, res) => {
                   );
                   // case when user id exists
                   res.status(200).send({
-                    message: "Your account already exists !",
+                    message: 'Your account already exists !',
                     googleUser: {
                       email: google_user.email,
                       id: google_user.id,
                       access_token: {
                         access_token: tokens.access_token,
-                        experation: tokenInfo.exp,
-                      },
-                    },
+                        experation: tokenInfo.exp
+                      }
+                    }
                   });
                 });
             }
@@ -113,7 +113,7 @@ exports.SignUpWithGoogle = async (req, res) => {
     } else {
       // erro with authorization code
       res.status(400).send({
-        error: `Can't authenticate using google account, reason : ${err}`,
+        error: `Can't authenticate using google account, reason : ${err}`
       });
     }
   });
@@ -123,7 +123,7 @@ exports.SignUpWithGoogle = async (req, res) => {
  * @param  {} refresh_token stored token
  */
 async function refreshAccessToken(refresh_token) {
-  logger.debug("refreshing user token");
+  logger.debug('refreshing user token');
   return new Promise((resolve, reject) => {
     let tokenInfo = {},
       access_token;
@@ -132,7 +132,7 @@ async function refreshAccessToken(refresh_token) {
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({
-      refresh_token: refresh_token,
+      refresh_token: refresh_token
     });
     return oauth2Client.getAccessToken(async (err, token) => {
       if (err) {
@@ -141,7 +141,7 @@ async function refreshAccessToken(refresh_token) {
       tokenInfo = await oauth2Client.getTokenInfo(token);
       access_token = {
         access_token: token,
-        experation: Math.floor(tokenInfo.expiry_date / 1000),
+        experation: Math.floor(tokenInfo.expiry_date / 1000)
       };
       resolve(access_token);
     });

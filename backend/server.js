@@ -1,5 +1,5 @@
-const express = require("express");
-require("dotenv").config();
+const express = require('express');
+require('dotenv').config();
 console.log(
   `%c
     ██╗     ███████╗ █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗███████╗██████╗ 
@@ -11,56 +11,56 @@ console.log(
 `,
   `font-family: monospace`
 );
-const config = require("config");
-const port = config.get("server.port");
+const config = require('config');
+const port = config.get('server.port');
 var app = express();
-const http = require("http");
-const SSE = require("express-sse").SSE;
-const sentry = require("./sentry");
-const logger = require("./app/utils/logger")(module);
+const http = require('http');
+const SSE = require('express-sse').SSE;
+const sentry = require('./sentry');
+const logger = require('./app/utils/logger')(module);
 const sse = new SSE();
-const db = require("./app/models");
-const { EventEmitter } = require("stream");
+const db = require('./app/models');
+const { EventEmitter } = require('stream');
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
 //init redis
 const redisClientForInitialisation =
-  require("./redis").redisClientForInitialConnection();
+  require('./redis').redisClientForInitialConnection();
 
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader('Access-Control-Allow-Origin', '*');
   // Request methods you wish to allow
   res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+    'Access-Control-Allow-Methods',
+    'GET, POST, OPTIONS, PUT, PATCH, DELETE'
   );
   // Request headers you wish to allow
   res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With,Content-type,X-imap-login"
+    'Access-Control-Allow-Headers',
+    'X-Requested-With,Content-type,X-imap-login'
   );
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("X-Accel-Buffering", "no");
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
   // Set to true if you need the website to include cookies in the requests sent
   // to the API (e.g. in case you use sessions)
-  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader('Access-Control-Allow-Credentials', true);
   // Pass to next layer of middleware
   next();
 });
 //***********setting response headers END █▌█▌***********/
 
 //***************█▌█▌Check if should enable sentry BEGIN**********/
-if (config.get("server.sentry.enabled") == true) {
-  logger.debug("setting up sentry...");
+if (config.get('server.sentry.enabled') == true) {
+  logger.debug('setting up sentry...');
   integration = sentry(app);
   app = integration[0];
   const sentryInstance = integration[1];
-  logger.debug("sentry integrated to the server ✔️ ");
+  logger.debug('sentry integrated to the server ✔️ ');
 }
 //***************Check if should enable sentry END █▌█▌**********/
 
@@ -71,41 +71,41 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // simple route when calling api.leadminer.io
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to leadminer application." });
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to leadminer application.' });
 });
 // attach sse to api/stream endpoint
-app.get("/api/stream", sse.init);
-app.get("/logs", function (req, res, next) {
-  var filePath = __dirname + "/logs/server.log";
+app.get('/api/stream', sse.init);
+app.get('/logs', function (req, res, next) {
+  var filePath = __dirname + '/logs/server.log';
 
   res.sendFile(filePath, function (err) {
     /* istanbul ignore if */
     if (err) {
       next(err);
     } else {
-      logger.log("Sent the logs..");
+      logger.log('Sent the logs..');
     }
   });
 });
 // The io instance is set in Express so it can be grabbed in a route
-require("./app/routes/imap.routes")(app, sse);
+require('./app/routes/imap.routes')(app, sse);
 
 //***************█▌█▌ init db and start server BEGIN**********/
 db.sequelize
   .sync()
   .then(() => {
-    logger.debug("database initialized ✔️ ");
+    logger.debug('database initialized ✔️ ');
     //disconnect from redis after initialization
     redisClientForInitialisation.disconnect();
     // if successful init then start server
     server.listen(port, () => {
       logger.info(`Server is running port ${port}.`);
-      event.emit("started");
+      event.emit('started');
     });
-    server.on("error", (e) => {
-      if (e.code === "EADDRINUSE") {
-        logger.debug("Address in use, retrying...");
+    server.on('error', (e) => {
+      if (e.code === 'EADDRINUSE') {
+        logger.debug('Address in use, retrying...');
       }
     });
   })
@@ -116,7 +116,7 @@ db.sequelize
   });
 //***************init db and start server END █▌█▌**********/
 
-server.emit("app_started", true);
+server.emit('app_started', true);
 
 function stop() {
   server.close();
