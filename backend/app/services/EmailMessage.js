@@ -2,7 +2,6 @@
 const regExHelpers = require('../utils/regexpHelpers');
 const dateHelpers = require('../utils/dateHelpers');
 const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const { emailsRaw } = require('../models');
 const redisClientForNormalMode =
   require('../../redis').redisClientForNormalMode();
 const config = require('config'),
@@ -62,6 +61,7 @@ class EmailMessage {
   isTransactional() {
     return this.hasSpecificHeader(TRANSACTIONAL_HEADER_FIELDS);
   }
+
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
    * @returns The function isInConversation() is returning a boolean value.
@@ -72,6 +72,7 @@ class EmailMessage {
     }
     return 0;
   }
+
   /**
    * getDate returns the value of the "date" property of the
    * header
@@ -87,6 +88,7 @@ class EmailMessage {
     }
     return this.header.date;
   }
+
   /**
    * getMessagingFieldsFromHeader returns an object with only the messaging fields from the header
    * @returns An object with only the messaging fields from the header.
@@ -100,6 +102,7 @@ class EmailMessage {
     });
     return messagingProps;
   }
+
   /**
    * getMessageId returns the message-id of the email
    * @returns The message-id of the email.
@@ -127,6 +130,7 @@ class EmailMessage {
       date
     );
     // case when header should be scanned
+    // eslint-disable-next-line
     if (true) {
       Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
@@ -142,6 +146,7 @@ class EmailMessage {
       });
     }
     // case when body should be scanned
+    // eslint-disable-next-line
     if (true) {
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
@@ -248,7 +253,7 @@ class EmailMessage {
               });
           } else if (!noReply && domain[0]) {
             if (message.body == null) {
-              console.log(message);
+              logger.log(message);
             }
             supabaseHandlers
               .upsertPointOfContact(
