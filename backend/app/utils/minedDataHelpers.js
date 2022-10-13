@@ -1,4 +1,4 @@
-const db = require('../models');
+const db = require("../models");
 
 /**
  * returns a list of all the emails in the database, with the number of times they appear in each
@@ -11,91 +11,91 @@ async function getEmails(userId) {
   const data = await db.emailsRaw.findAll({
     where: { user_id: userId },
     attributes: [
-      'address',
+      "address",
       [
         db.sequelize.literal(
-          'json_agg(DISTINCT name) FILTER ( WHERE "name" = \'\' IS FALSE)'
+          "json_agg(DISTINCT name) FILTER ( WHERE \"name\" = '' IS FALSE)"
         ),
-        'name'
+        "name",
       ],
 
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "from" = \'true\' )'),
-        'from'
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"from\" = 'true' )"),
+        "from",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "cc" = \'true\' )'),
-        'cc'
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"cc\" = 'true' )"),
+        "cc",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "bcc" = \'true\' )'),
-        'bcc'
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"bcc\" = 'true' )"),
+        "bcc",
       ],
       [
         db.sequelize.literal(
-          'COUNT (*) FILTER ( WHERE "reply_to" = \'true\' )'
+          "COUNT (*) FILTER ( WHERE \"reply_to\" = 'true' )"
         ),
-        'reply-to'
+        "reply-to",
       ],
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "to" = \'true\' )'),
-        'to'
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"to\" = 'true' )"),
+        "to",
       ],
       [
-        db.sequelize.literal('COUNT(*) FILTER (WHERE "conversation" = \'1\')'),
-        'conversation'
+        db.sequelize.literal("COUNT(*) FILTER (WHERE \"conversation\" = '1')"),
+        "conversation",
       ],
 
       [
-        db.sequelize.literal('COUNT (*) FILTER ( WHERE "body" = \'true\' )'),
-        'body'
+        db.sequelize.literal("COUNT (*) FILTER ( WHERE \"body\" = 'true' )"),
+        "body",
       ],
 
       [
         db.sequelize.fn(
-          'SUM',
+          "SUM",
           db.sequelize.literal(
-            'CASE WHEN "from" = \'true\' OR "reply_to" = \'true\' THEN 1 ELSE 0 END '
+            "CASE WHEN \"from\" = 'true' OR \"reply_to\" = 'true' THEN 1 ELSE 0 END "
           )
         ),
-        'sender'
+        "sender",
       ],
 
       [
         db.sequelize.fn(
-          'SUM',
+          "SUM",
           db.sequelize.literal(
-            'CASE WHEN "bcc" = \'true\' OR "cc" = \'true\' OR "to" = \'true\' THEN 1 ELSE 0 END '
+            "CASE WHEN \"bcc\" = 'true' OR \"cc\" = 'true' OR \"to\" = 'true' THEN 1 ELSE 0 END "
           )
         ),
-        'recipient'
+        "recipient",
       ],
 
       [
         db.sequelize.fn(
-          'EVERY',
+          "EVERY",
           db.sequelize.literal(
-            'CASE WHEN  "from" = \'true\'  AND "transactional" = \'true\'  THEN true ELSE false END '
+            "CASE WHEN  \"from\" = 'true'  AND \"transactional\" = 'true'  THEN true ELSE false END "
           )
         ),
-        'Transactional'
+        "Transactional",
       ],
       [
         db.sequelize.fn(
-          'EVERY',
+          "EVERY",
           db.sequelize.literal(
-            'CASE WHEN  "from" = \'true\'  AND "newsletter" = \'true\'  THEN true ELSE false END '
+            "CASE WHEN  \"from\" = 'true'  AND \"newsletter\" = 'true'  THEN true ELSE false END "
           )
         ),
-        'Newsletter'
+        "Newsletter",
       ],
 
-      'domain_type',
-      'noReply',
+      "domain_type",
+      "noReply",
 
-      [db.sequelize.literal('MAX(date)'), 'date']
+      [db.sequelize.literal("MAX(date)"), "date"],
     ],
-    group: ['address', 'domain_type', 'noReply']
+    group: ["address", "domain_type", "noReply"],
   });
 
   return data;
@@ -108,7 +108,7 @@ async function getEmails(userId) {
  */
 async function getCountDB(userId) {
   const count = await db.emailsRaw.count({
-    where: { user_id: userId }
+    where: { user_id: userId },
   });
 
   return count;
@@ -126,7 +126,7 @@ async function getNoReplyEmails(userId) {
   const count = await db.emailsRaw.count({
     where: { user_id: userId, noReply: true },
     distinct: true,
-    col: 'address'
+    col: "address",
   });
   return count;
 }
@@ -138,7 +138,7 @@ async function getNoReplyEmails(userId) {
  */
 async function deleteUserData(userId) {
   return db.emailsRaw.destroy({
-    where: { user_id: userId }
+    where: { user_id: userId },
   });
 }
 
@@ -154,8 +154,8 @@ function getScore(DomainAndUserName, UserName) {
   //split is to check each part of the name apart
   //e.g: address: lead-miner@lead.com |||| Name: miner app
   //then we can match the name with the address
-  const splittedUserName = UserName.split(' '),
-    UsernameWithoutSpace = UserName.replaceAll(/ /g, '').toLowerCase(), // try to get name with spaces
+  const splittedUserName = UserName.split(" "),
+    UsernameWithoutSpace = UserName.replaceAll(/ /g, "").toLowerCase(), // try to get name with spaces
     domainAndUserName = DomainAndUserName.substring(
       0,
       UsernameWithoutSpace.length
@@ -186,25 +186,26 @@ function getScore(DomainAndUserName, UserName) {
  */
 function findEmailAddressType(emailAddress, UserNames, domainType) {
   // array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
-  const domainAndUserName = emailAddress.split('@');
+  const domainAndUserName = emailAddress.split("@");
   //if the current email have names
   if (UserNames.length > 0) {
     for (const userName of UserNames) {
       if (
-        domainType == 'provider' &&
-        domainType != 'custom' &&
+        domainType === "provider" &&
+        domainType !== "custom" &&
         getScore(domainAndUserName[0], userName) > 40
       ) {
-        return 'Personal';
+        return "Personal";
       } else if (
         getScore(domainAndUserName[0], userName) > 40 &&
-        domainType == 'custom'
+        domainType === "custom"
       ) {
-        return 'Professional';
-      } return '';
+        return "Professional";
+      }
+      return "";
     }
   }
-  return '';
+  return "";
 }
 
 /**
@@ -219,16 +220,16 @@ function handleNames(name, emailAddress) {
   name.map((name) => {
     // remove all bad chars
     const Name = name
-      .replaceAll('"', '')
-      .replaceAll('\'', '')
-      .replaceAll('/', '')
+      .replaceAll('"', "")
+      .replaceAll("'", "")
+      .replaceAll("/", "")
       .trim();
     // case when the name is not the same as the address
-    if (Name != emailAddress) {
+    if (Name !== emailAddress) {
       if (
         NameArray.filter((str) =>
           str.toLowerCase().includes(Name.toLowerCase())
-        ).length == 0
+        ).length === 0
       ) {
         // if OK then push to the array
         NameArray.push(Name);
@@ -252,7 +253,7 @@ function sortDataUsingAlpha(data) {
     // name begins with number eg: name = 4four
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name && el.name.length > 0 && el.name[0] != '') {
+    } else if (el.name && el.name.length > 0 && el.name[0] !== "") {
       // name begins with alpha or char
       wordArr.push(el);
     } else {
@@ -283,27 +284,27 @@ function sortDatabase(dataFromDatabase) {
   const data = [];
   dataFromDatabase.map((row) => {
     // we treat only emails that are not tagged "noReply"
-    if (row.dataValues.noReply == false) {
+    if (row.dataValues.noReply === false) {
       //if for any reason we don't have names we should give empty string
-      if (!row.dataValues.name || row.dataValues.name == null) {
-        row.dataValues.name = [''];
+      if (!row.dataValues.name || row.dataValues.name === null) {
+        row.dataValues.name = [""];
       } else {
         // here are clean names
         const NameArray = handleNames(
           row.dataValues.name,
           row.dataValues.address
         );
-        row.dataValues.name = NameArray.length == 0 ? [''] : NameArray;
+        row.dataValues.name = NameArray.length === 0 ? [""] : NameArray;
       }
       // sum the sender + the total so we can have total interactions with this email
       row.dataValues.total =
         parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
-      row.dataValues.type = '';
+      row.dataValues.type = "";
 
       if (
         !row.dataValues.Newsletter &&
         !row.dataValues.Transactional &&
-        row.dataValues.name.every((val) => val != '')
+        row.dataValues.name.every((val) => val !== "")
       ) {
         //if not transactional or newsletter, then find the type
         row.dataValues.type = findEmailAddressType(
@@ -328,5 +329,5 @@ module.exports = {
   getCountDB,
   deleteUserData,
   sortDatabase,
-  getNoReplyEmails
+  getNoReplyEmails,
 };

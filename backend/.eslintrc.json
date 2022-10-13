@@ -8,7 +8,8 @@
   "extends": [
     "eslint:recommended",
     "plugin:node/recommended",
-    "plugin:security/recommended"
+    "plugin:security/recommended",
+    "plugin:eqeqeq-fix/recommended"
   ],
   "parserOptions": {
     "ecmaVersion": "latest"
@@ -25,6 +26,7 @@
       { "argsIgnorePattern": "req|res|next|__|reject" }
     ], //* Enhance Readability
     "indent": ["error", 2, { "SwitchCase": 1 }],
+    "eqeqeq": "error",
     "no-mixed-spaces-and-tabs": "warn",
     "space-before-blocks": "error",
     "space-in-parens": "error",

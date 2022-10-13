@@ -11,7 +11,7 @@ function parseDate(date) {
     dateFromString = new Date(tempDate);
     /* istanbul ignore else */
 
-  if (isNaN(Date.parse(dateFromString)) == false) {
+  if (isNaN(Date.parse(dateFromString)) === false) {
     const ISODate = dateFromString.toISOString();
 
     return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;

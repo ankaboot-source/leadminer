@@ -66,11 +66,11 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     id uuid DEFAULT uuid_generate_v4(),
     userID uuid,
     messageID uuid,
-    sender bool,
-    recipient bool,
-    toRecipient bool,
-    ccRecipient bool,
-    bccRecipient bool,
+    _from bool,
+    reply_to bool,
+    _to bool,
+    cc bool,
+    bcc bool,
     _personid uuid,
     PRIMARY KEY (id),
     FOREIGN KEY (userID, messageID) REFERENCES messages(userID,id),
@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS public.tags
 (
     id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
+    userid uuid,
     name text,
     label text,
     reachable int,
@@ -97,6 +98,7 @@ CREATE TABLE IF NOT EXISTS public.refinedpersons
 (
     id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
+    userid uuid,
     --recency date,
     engagement int,
     occurence int,
@@ -109,48 +111,52 @@ CREATE TABLE IF NOT EXISTS public.refinedpersons
 );
 
 
-create or replace function get_tags_per_person(param uuid)
+create or replace function get_tags_per_person(personid uuid, userid uuid)
 returns text[]
 language plpgsql
 as $$
 declare
   tag text[];
 begin
-    select array_agg(name) into tag from tags where personid=get_tags_per_person.param;
+    select array_agg(name) into tag from tags where tags.personid=get_tags_per_person.personid and tags.userid=get_tags_per_person.userid;
   return tag;
 end;
 $$;
 
 
-create or replace function get_occurences_per_person(param uuid)
+create or replace function get_occurences_per_person(personid uuid,userid uuid)
 returns int
 language plpgsql
 as $$
 declare
   occurences int;
 begin
-    select count(*) into occurences filter (where ccrecipient or torecipient or sender or bccrecipient)
-    FROM pointsofcontact where _personid=get_occurences_per_person.param;
+    select count(*) into occurences filter (where cc or _to or _from or reply_to or bcc)
+    FROM pointsofcontact where _personid=get_occurences_per_person.personid and pointsofcontact.userid=get_occurences_per_person.userid;
   return occurences;
 end;
 $$;
 
 
-create or replace function refined_persons() RETURNS void
+create or replace function refined_persons(userid uuid) RETURNS void
 language plpgsql
 as $$
 DECLARE
     person persons%rowtype;
     t text[];
     occurences int;
+    pid uuid;
+    uidd uuid;
 BEGIN
+    uidd=refined_persons.userid;
     FOR person IN
         SELECT * FROM persons
     LOOP
-        t=public.get_tags_per_person(person.personid);
-        occurences=public.get_occurences_per_person(person.personid);
-        INSERT INTO refinedpersons(personid, engagement,occurence,tags, name, email)
-        VALUES(person.personid,0,occurences, t, person.name, person.email)
+        t=public.get_tags_per_person(person.personid, refined_persons.userid);
+        occurences=public.get_occurences_per_person(person.personid, refined_persons.userid);
+        pid=person.personid;
+        INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
+        VALUES(pid, uidd, 0, occurences, t, person.name, person.email)
         ON CONFLICT(personid) DO UPDATE SET occurence=occurences,tags=t;
     END LOOP;
 END;

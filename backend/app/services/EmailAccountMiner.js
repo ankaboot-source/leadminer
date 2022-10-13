@@ -2,12 +2,16 @@ const imapTreeHelpers = require("../utils/imapTreeHelpers");
 const hashHelpers = require("../utils/hashHelpers");
 const inputHelpers = require("../utils/inputHelpers");
 const Imap = require("imap"),
-  logger = require("../utils/logger")(module);
+  logger = require("../utils/logger")(module),
+  config = require("config");
 const redisClientForPubSubMode =
   require("../../redis").redisClientForPubSubMode();
 const redisClientForNormalMode =
   require("../../redis").redisClientForNormalMode();
-
+const supabaseUrl = config.get("server.supabase.url");
+const supabaseToken = config.get("server.supabase.token");
+const { createClient } = require("@supabase/supabase-js");
+const supabaseClient = createClient(supabaseUrl, supabaseToken);
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -118,7 +122,7 @@ class EmailAccountMiner {
             } else {
               folder.total = 0;
             }
-            if (folder == imapTree[imapTree.length - 1]) {
+            if (folder === imapTree[imapTree.length - 1]) {
               resolve();
               self.connection.end();
             }
@@ -242,7 +246,7 @@ class EmailAccountMiner {
       // fetching method
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
-    } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
+    } else if (this.folders.indexOf(folderName) + 1 === this.folders.length) {
       logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
       this.connection.destroy();
@@ -304,7 +308,7 @@ class EmailAccountMiner {
         `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
       );
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
-      if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
+      if (self.folders.indexOf(folder.name) + 1 === self.folders.length) {
         // we are at the end of the folder array==>> end imap connection
         logger.debug(
           `We are done...Ending connection for User: ${this.mailHash}`
@@ -422,12 +426,16 @@ class EmailAccountMiner {
    * @param seqNumber - The sequence number of the mined data.
    * @param folderName - The name of the folder that contains the mined data.
    */
-  sendMinedData(seqNumber, folderName) {
+  async sendMinedData(seqNumber, folderName) {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
     const userId = this.user.id;
-    // refining worker used to refine data to be send as progress status, using streaming.
+    // call supabase function to refine data
+    let { data, error } = await supabaseClient.rpc("refined_persons", {
+      userid: this.user.id,
+    });
+    console.log(data, error);
   }
 }
 

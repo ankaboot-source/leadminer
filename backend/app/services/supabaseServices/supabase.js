@@ -43,18 +43,17 @@ function upsertPointOfContact(
   messageID,
   userID,
   personid,
-
   key
 ) {
   return supabaseClient.from("pointsofcontact").upsert({
     messageid: messageID,
     userid: userID,
-    torecipient: key == "to",
-    ccrecipient: key == "cc",
-    bccrecipient: key == "bcc",
-    sender: key == "from" || key == "reply-to",
+    _to: key === "to",
+    cc: key === "cc",
+    bcc: key === "bcc",
+    _from: key === "from",
+    reply_to: key === "reply-to",
     _personid: personid,
-    recipient: key == "to" || key == "cc" || key == "bcc",
   });
 }
 /**

@@ -197,17 +197,17 @@
                     size="sm"
                     color="teal"
                     icon="content_copy"
-                    @click="CopyToClipboard(props.row.address)"
+                    @click="CopyToClipboard(props.row.email)"
                 /></q-td>
                 <q-td key="Email" :props="props">
                   {{
-                    props.row.address.length > 38
-                      ? props.row.address.substring(0, 38).concat("...")
-                      : props.row.address
+                    props.row.email.length > 38
+                      ? props.row.email.substring(0, 38).concat("...")
+                      : props.row.email
                   }}</q-td
                 >
                 <q-td key="Names" :props="props">
-                  <q-expansion-item
+                  <!-- <q-expansion-item
                     v-if="props.row.name != null && props.row.name.length > 1"
                     dense
                     dense-toggle
@@ -255,36 +255,38 @@
                             : name
                         }} </q-badge
                       ><br /></div
-                  ></q-expansion-item>
+                  ></q-expansion-item> -->
                   <q-badge
-                    v-if="
-                      props.row.name != null &&
-                      props.row.name.length == 1 &&
-                      props.row.name[0].length > 0
-                    "
+                    v-if="props.row.name"
                     outline
                     color="orange"
                     transparent
                     class="padding-zero"
                     >{{
-                      props.row.name[0].length > 30
-                        ? props.row.name[0].substring(0, 25).concat("...")
-                        : props.row.name[0]
+                      props.row.name.length > 30
+                        ? props.row.name.substring(0, 25).concat("...")
+                        : props.row.name
                     }}
                   </q-badge>
                 </q-td>
                 <q-td key="Occurence" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.total }}
+                    {{ props.row.occurence }}
                   </q-badge>
                 </q-td>
 
                 <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ props.row.conversation }}
+                    {{ props.row.engagement }}
                   </q-badge>
                 </q-td>
-                <q-td key="Date" :props="props">
+                <q-td key="Type" :props="props">
+                  <span v-for="tag in props.row.tags"
+                    ><q-badge color="teal">{{ tag }}</q-badge
+                    ><br
+                  /></span>
+                </q-td>
+                <!-- <q-td key="Date" :props="props">
                   <q-badge outline color="blue" transparent>
                     {{ formatDate(props.row.date) }}
                   </q-badge>
@@ -294,17 +296,18 @@
                     self="center middle"
                     >{{ getTimeOffset(props.row.date) }}</q-tooltip
                   >
-                </q-td>
+                </q-td> -->
 
-                <q-td key="Type" :props="props">
-                  <q-badge
-                    v-if="props.row.Newsletter == true"
-                    class="text-little"
-                    rounded
-                    color="amber-6"
-                  >
-                    Newsletter </q-badge
-                  ><br v-if="props.row.Newsletter == true" /><q-badge
+                <!-- <q-td
+                  v-for="tag in props.row.tags"
+                  v-bind="key"
+                  key="Type"
+                  :props="props"
+                >
+                  <q-badge class="text-little" rounded color="amber-6">
+                    {{ tag }} </q-badge
+                  ><br /> -->
+                <!--<q-badge
                     v-if="props.row.Transactional == true"
                     class="text-little"
                     rounded
@@ -312,15 +315,14 @@
                   >
                     Transactional
                   </q-badge>
-                  <br v-if="props.row.Transactional == true" /><q-badge
+                  <br v-if="props.row.includes('Transactional')" /><q-badge
                     v-if="props.row.type != ''"
                     class="text-little"
                     rounded
                     color="green"
                   >
-                    {{ props.row.type }}
-                  </q-badge>
-                </q-td>
+                    {{ props.row.type }}    </q-badge></q-td>-->
+
                 <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
@@ -354,12 +356,10 @@ const columns = [
     name: "Email",
     align: "left",
     label: "Email",
-    field: (row) => row.address,
+    field: (row) => row.email,
     sortable: true,
     sort: (a, b) => {
-      const domainA = a.split("@")[0];
-      const domainB = b.split("@")[0];
-      return domainA.localeCompare(domainB);
+      return a.localeCompare(b);
     },
     style: "max-width:380px;min-width: 380px !important",
     headerStyle: "width: 380px !important",
@@ -403,11 +403,20 @@ const columns = [
     align: "center",
     label: "Occurence",
     type: "number",
-    field: (row) => row.total,
+    field: (row) => row.occurence,
     sortOrder: "ad",
     style: "width: 50px !important",
-    headerStyle: "width: 50px !important",
+    headerStyle: "width: 51px !important",
     sortable: true,
+    sort: (eng1, eng2) => {
+      if (eng1 > eng2) {
+        return -1;
+      } else if (eng1 < eng2) {
+        return 1;
+      } else {
+        return 0;
+      }
+    },
   },
   // {
   //   name: "Body",
@@ -425,7 +434,7 @@ const columns = [
     align: "center",
     label: "Engagement",
     type: "number",
-    field: (row) => row.conversation,
+    field: (row) => row.engagement,
     sortOrder: "ad",
     style: "width: 50px !important",
     headerStyle: "width: 50px !important",
@@ -439,25 +448,25 @@ const columns = [
     },
   },
 
-  {
-    name: "Date",
-    align: "center",
-    label: "Recency",
-    sortable: true,
-    sort: (date1, date2) => {
-      var d1 = Date.parse(date1);
-      var d2 = Date.parse(date2);
-      if (d1 < d2) {
-        return 1;
-      } else {
-        return -1;
-      }
-    },
-    field: (row) => row.date,
-    sortOrder: "ad",
-    style: "width: 50px !important",
-    headerStyle: "width: 50px !important",
-  },
+  // {
+  //   name: "Date",
+  //   align: "center",
+  //   label: "Recency",
+  //   sortable: true,
+  //   sort: (date1, date2) => {
+  //     var d1 = Date.parse(date1);
+  //     var d2 = Date.parse(date2);
+  //     if (d1 < d2) {
+  //       return 1;
+  //     } else {
+  //       return -1;
+  //     }
+  //   },
+  //   field: (row) => row.date,
+  //   sortOrder: "ad",
+  //   style: "width: 50px !important",
+  //   headerStyle: "width: 50px !important",
+  // },
 
   {
     name: "Type",
@@ -465,11 +474,13 @@ const columns = [
     label: "Type",
     sortable: true,
     sortOrder: "ad",
+    field: (row) => row.tags,
     sort: (s1, s2) => {
+      console.log(s1.length, s2.length);
       if (s1.length > s2.length) {
-        return -1;
-      } else if (s1.length < s2.length) {
         return 1;
+      } else if (s1.length < s2.length) {
+        return -1;
       } else {
         return 0;
       }
@@ -505,6 +516,8 @@ export default defineComponent({
       columns,
       pagination: {
         rowsPerPage: 55000,
+        sortBy: "Occurence",
+        descending: false,
       },
       persistent: ref(false),
       selected: ref([]),

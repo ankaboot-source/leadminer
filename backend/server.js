@@ -76,18 +76,6 @@ app.get("/", (req, res) => {
 });
 // attach sse to api/stream endpoint
 app.get("/api/stream", sse.init);
-app.get("/logs", function (req, res, next) {
-  var filePath = __dirname + "/logs/server.log";
-
-  res.sendFile(filePath, function (err) {
-    /* istanbul ignore if */
-    if (err) {
-      next(err);
-    } else {
-      logger.log("Sent the logs..");
-    }
-  });
-});
 // The io instance is set in Express so it can be grabbed in a route
 require("./app/routes/imap.routes")(app, sse);
 

@@ -108,17 +108,17 @@ function addChildrenTotalForParentFiles(imapTree, userEmail) {
   const total = objectScan(['**.{total,children}'], {
     joined: true,
     filterFn: ({ parent, property, value, context }) => {
-      if (property == 'total') {
+      if (property === 'total') {
         parent.totalIndiv = parent.total;
       }
-      if (property == 'children') {
+      if (property === 'children') {
         if (parent) {
           value.map((element) => {
             parent.total += element.total;
           });
         }
       }
-      if (property == 'total') {
+      if (property === 'total') {
         context.sum += value;
       }
     }
