@@ -9,7 +9,7 @@ function parseDate(date) {
       .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
       .replace(/ UTC-(.*)/i, ''),
     dateFromString = new Date(tempDate);
-    /* istanbul ignore else */
+  /* istanbul ignore else */
 
   if (isNaN(Date.parse(dateFromString)) == false) {
     const ISODate = dateFromString.toISOString();

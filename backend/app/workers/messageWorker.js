@@ -1,10 +1,10 @@
 //this is a worker to handle the messages
-const { parentPort } = require("worker_threads");
-const redisClient = require("../../redis").redisClientForPubSubMode();
-const EmailMessage = require("../services/EmailMessage");
-const logger = require("../utils/logger")(module);
+const { parentPort } = require('worker_threads');
+const redisClient = require('../../redis').redisClientForPubSubMode();
+const EmailMessage = require('../services/EmailMessage');
+const logger = require('../utils/logger')(module);
 
-parentPort.on("message", (userID) => {
+parentPort.on('message', (userID) => {
   //subscribe to created channel
   redisClient.subscribe(`messages-channel-${userID}`, (err) => {
     if (err) {
@@ -17,10 +17,10 @@ parentPort.on("message", (userID) => {
   });
 });
 
-redisClient.on("message", (channel, messageFromChannel) => {
+redisClient.on('message', (channel, messageFromChannel) => {
   const message = JSON.parse(messageFromChannel);
   const Header = JSON.parse(message.header);
-  const message_id = Header["message-id"] ? Header["message-id"][0] : "";
+  const message_id = Header['message-id'] ? Header['message-id'][0] : '';
   const Message = new EmailMessage(
     message.seqNumber,
     Header,

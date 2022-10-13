@@ -1,12 +1,12 @@
-const imapTreeHelpers = require("../utils/imapTreeHelpers");
-const hashHelpers = require("../utils/hashHelpers");
-const inputHelpers = require("../utils/inputHelpers");
-const Imap = require("imap"),
-  logger = require("../utils/logger")(module);
+const imapTreeHelpers = require('../utils/imapTreeHelpers');
+const hashHelpers = require('../utils/hashHelpers');
+const inputHelpers = require('../utils/inputHelpers');
+const Imap = require('imap'),
+  logger = require('../utils/logger')(module);
 const redisClientForPubSubMode =
-  require("../../redis").redisClientForPubSubMode();
+  require('../../redis').redisClientForPubSubMode();
 const redisClientForNormalMode =
-  require("../../redis").redisClientForNormalMode();
+  require('../../redis').redisClientForNormalMode();
 
 class EmailAccountMiner {
   // public field
@@ -57,9 +57,9 @@ class EmailAccountMiner {
       let result = [];
       this.connection.connecte().then((connection) => {
         this.connection = connection;
-        this.connection.once("ready", () => {
+        this.connection.once('ready', () => {
           logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
-          this.connection.getBoxes("", async (err, boxes) => {
+          this.connection.getBoxes('', async (err, boxes) => {
             if (err) {
               logger.error(
                 `Failed mining folders tree for user: ${this.mailHash}  raison: ${err}`
@@ -85,12 +85,12 @@ class EmailAccountMiner {
             );
           });
         });
-        this.connection.once("end", () => {
+        this.connection.once('end', () => {
           logger.info(`End mining folders tree for user : ${this.mailHash}`);
           result = [this.tree, null];
           resolve(result);
         });
-        this.connection.once("error", (error) => {
+        this.connection.once('error', (error) => {
           logger.error(
             `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
           );
@@ -125,7 +125,7 @@ class EmailAccountMiner {
           });
         }
         // the folder has childrens
-        if (Object.prototype.hasOwnProperty.call(folder, "children")) {
+        if (Object.prototype.hasOwnProperty.call(folder, 'children')) {
           openBoxThenGetTotal();
           // recal on the children
           this.getTreeWithTotalPerFolder(folder.children);
@@ -150,13 +150,13 @@ class EmailAccountMiner {
     );
     this.connection.initConnection();
     this.connection.connect();
-    this.connection.once("ready", () => {
+    this.connection.once('ready', () => {
       this.connection.openBox(folderPath, true, (err, box) => {
         tree = box;
         this.connection.end();
       });
     });
-    this.connection.once("end", () => {
+    this.connection.once('end', () => {
       logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
 
       return tree;
@@ -171,13 +171,13 @@ class EmailAccountMiner {
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
-    this.connection.once("ready", async () => {
+    this.connection.once('ready', async () => {
       logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
       this.messageWorkerForBody.postMessage(this.user.id);
       this.mineFolder(this.folders[0]).next();
     });
     // cancelation using req.close event from user(frontend button)
-    this.eventEmitter.on("endByUser", () => {
+    this.eventEmitter.on('endByUser', () => {
       this.connection.destroy();
       logger.info(
         `Connection to imap server destroyed by user: ${this.mailHash}`
@@ -185,17 +185,17 @@ class EmailAccountMiner {
       // this.eventEmitter.emit("end", true);
     });
 
-    this.connection.on("error", (err) => {
+    this.connection.on('error', (err) => {
       logger.error(`Error with imap connection${err}`);
     });
-    this.connection.once("end", () => {
+    this.connection.once('end', () => {
       logger.info(`End collecting emails for user: ${this.mailHash}`);
       // sse here to send data based on end event
-      this.sse.send(true, "data");
-      this.sse.send(true, "dns");
-      logger.debug("SSE data and dns events sent!");
-      this.eventEmitter.emit("end", true);
-      logger.debug("End connection using end event");
+      this.sse.send(true, 'data');
+      this.sse.send(true, 'dns');
+      logger.debug('SSE data and dns events sent!');
+      this.eventEmitter.emit('end', true);
+      logger.debug('End connection using end event');
     });
   }
   /**
@@ -233,11 +233,11 @@ class EmailAccountMiner {
       // used in sending progress
       this.sends = inputHelpers.EqualPartsForSocket(
         folder.messages.total,
-        "position"
+        'position'
       );
       this.emailsProgressIndexes = inputHelpers.EqualPartsForSocket(
         folder.messages.total,
-        "data"
+        'data'
       );
       // fetching method
       this.ImapFetch(folder, folderName);
@@ -264,42 +264,42 @@ class EmailAccountMiner {
    */
   ImapFetch(folder, folderName) {
     let self = this;
-    const f = this.connection.seq.fetch("1:*", {
+    const f = this.connection.seq.fetch('1:*', {
       bodies: self.fields,
-      struct: true,
+      struct: true
     });
 
     logger.debug(
       `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
     );
     // message event
-    f.on("message", (msg, seqNumber) => {
-      let Header = "",
-        body = "";
+    f.on('message', (msg, seqNumber) => {
+      let Header = '',
+        body = '';
 
-      msg.on("body", (stream, streamInfo) => {
+      msg.on('body', (stream, streamInfo) => {
         // parse the chunks of the message
 
-        stream.on("data", async (chunk) => {
-          if (streamInfo.which.includes("HEADER")) {
+        stream.on('data', async (chunk) => {
+          if (streamInfo.which.includes('HEADER')) {
             Header += chunk;
           } else {
             body += chunk;
           }
         });
       });
-      msg.once("end", () => {
+      msg.once('end', () => {
         // if end then push to queue
         const header = Header,
           Body = body;
 
         self.publishMessageToChannel(seqNumber, header, Body, folderName);
-        Header = "";
-        body = "";
+        Header = '';
+        body = '';
       });
     });
     // end event
-    f.once("end", () => {
+    f.once('end', () => {
       logger.info(
         `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
       );
@@ -339,10 +339,10 @@ class EmailAccountMiner {
     if (this.emailsProgressIndexes.includes(seqNumber)) {
       this.sendMinedData(seqNumber, folderName);
     }
-    const Header = Imap.parseHeader(header.toString("utf8"));
-    const message_id = Header["message-id"] ? Header["message-id"][0] : "";
+    const Header = Imap.parseHeader(header.toString('utf8'));
+    const message_id = Header['message-id'] ? Header['message-id'][0] : '';
     redisClientForNormalMode
-      .sismember("messages", message_id)
+      .sismember('messages', message_id)
       .then((alreadyMined) => {
         if (!alreadyMined) {
           //publish the message to the channel
@@ -352,7 +352,7 @@ class EmailAccountMiner {
               seqNumber: seqNumber,
               body: body,
               header: JSON.stringify(Header),
-              user: this.user,
+              user: this.user
             })
           );
         }
@@ -374,7 +374,7 @@ class EmailAccountMiner {
       header: header,
       body: body,
       user: this.user,
-      date: dateInCaseOfBody,
+      date: dateInCaseOfBody
     };
 
     if (body) {
@@ -411,7 +411,7 @@ class EmailAccountMiner {
     );
     this.sse.send(
       {
-        scanned: progress,
+        scanned: progress
       },
       `ScannedEmails${this.user.id}`
     );
