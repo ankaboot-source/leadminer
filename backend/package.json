@@ -8,6 +8,8 @@
     "dev": "nodemon server.js",
     "lint:fix": "cd app && eslint --fix . --ignore-pattern 'out/'",
     "lint:report": "cd app && eslint --fix . --ignore-pattern 'out/' --output-file eslint_report.json --format json",
+    "prettier": "prettier --check .",
+    "prettier:fix": "prettier . --write",
     "make-badges": "istanbul-badges-readme --readmeDir='../' --linesLabel='Coverage'"
   },
   "keywords": [
@@ -57,7 +59,8 @@
     "eslint-plugin-security": "^1.5.0",
     "eslint-plugin-vue": "^8.5.0",
     "istanbul-badges-readme": "^1.8.2",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "prettier": "2.7.1"
   },
   "engines": {
     "node": ">=15.0.0"

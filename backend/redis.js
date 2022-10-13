@@ -1,15 +1,15 @@
-const Redis = require("ioredis");
-const config = require("config");
-const logger = require("./app/utils/logger")(module);
-const freeProviders = require("./app/utils/FreeProviders.json");
-const disposable = require("./app/utils/Disposable.json");
+const Redis = require('ioredis');
+const config = require('config');
+const logger = require('./app/utils/logger')(module);
+const freeProviders = require('./app/utils/FreeProviders.json');
+const disposable = require('./app/utils/Disposable.json');
 //*******█▌█▌ get the configuration from config file BEGIN *******
-let redis = config.get("server.redis");
-const redis_host = config.get("server.redis.host")
-  ? config.get("server.redis.host")
+let redis = config.get('server.redis');
+const redis_host = config.get('server.redis.host')
+  ? config.get('server.redis.host')
   : process.env.REDIS_HOST;
-const redis_port = config.get("server.redis.port")
-  ? config.get("server.redis.port")
+const redis_port = config.get('server.redis.port')
+  ? config.get('server.redis.port')
   : process.env.REDIS_PORT;
 //*******get the configuration from config file END █▌█▌*******
 
@@ -23,36 +23,36 @@ function redisClientForInitialConnection() {
   if (redis.password && redis.username) {
     redisClient = new Redis(redis_port, redis_host, {
       password: redis.password,
-      user: redis.username,
+      user: redis.username
     });
   } else {
     //no password
     redisClient = new Redis(redis_port, redis_host);
   }
-  redisClient.on("error", function (err) {
+  redisClient.on('error', function (err) {
     logger.debug("can't connect to redisClient ✖️ ");
-    console.error("Error connecting to redisClient", err);
+    console.error('Error connecting to redisClient', err);
     process.exit();
   });
-  redisClient.on("connect", () => {
-    logger.debug("connected to redisClient ✔️");
+  redisClient.on('connect', () => {
+    logger.debug('connected to redisClient ✔️');
     //init the redis db with domain providers strings
-    redisClient.exists("freeProviders").then((res) => {
+    redisClient.exists('freeProviders').then((res) => {
       if (res != 1) {
         freeProviders.map((domain) => {
-          redisClient.sadd("freeProviders", domain);
+          redisClient.sadd('freeProviders', domain);
         });
-        logger.debug("redis initialized with freeProviders✔️");
+        logger.debug('redis initialized with freeProviders✔️');
       }
     });
-    redisClient.exists("freeProviders").then((res) => {
+    redisClient.exists('freeProviders').then((res) => {
       if (res != 1) {
         disposable.map((domain) => {
-          redisClient.sadd("disposable", domain);
+          redisClient.sadd('disposable', domain);
         });
-        logger.debug("redis initialized with disposable ✔️");
+        logger.debug('redis initialized with disposable ✔️');
       } else {
-        logger.debug("redis is already initialized ✔️");
+        logger.debug('redis is already initialized ✔️');
       }
     });
   });
@@ -68,18 +68,18 @@ function redisClientForPubSubMode() {
   if (redis.password && redis.username) {
     redisClientForPubSubMode = new Redis(redis_port, redis_host, {
       password: redis.password,
-      user: redis.username,
+      user: redis.username
     });
   } else {
     redisClientForPubSubMode = new Redis(redis_port, redis_host);
   }
-  redisClientForPubSubMode.on("error", function (err) {
+  redisClientForPubSubMode.on('error', function (err) {
     logger.debug("can't connect to redisClientForPubSubMode ✖️ ");
-    console.error("Error connecting to redisClientForPubSubMode", err);
+    console.error('Error connecting to redisClientForPubSubMode', err);
     process.exit();
   });
-  redisClientForPubSubMode.on("connect", () => {
-    logger.debug("connected to redis using pubSub connection");
+  redisClientForPubSubMode.on('connect', () => {
+    logger.debug('connected to redis using pubSub connection');
   });
   return redisClientForPubSubMode;
 }
@@ -93,23 +93,23 @@ function redisClientForNormalMode() {
   if (redis.password && redis.username) {
     redisClientNormalMode = new Redis(redis_port, redis_host, {
       password: redis.password,
-      user: redis.username,
+      user: redis.username
     });
   } else {
     redisClientNormalMode = new Redis(redis_port, redis_host);
   }
-  redisClientNormalMode.on("error", function (err) {
+  redisClientNormalMode.on('error', function (err) {
     logger.debug("can't connect to redisClientNormalMode ✖️ ");
-    console.error("Error connecting to redisClientNormalMode", err);
+    console.error('Error connecting to redisClientNormalMode', err);
     process.exit();
   });
-  redisClientNormalMode.on("connect", () => {
-    logger.debug("connected to redis using Normal connection");
+  redisClientNormalMode.on('connect', () => {
+    logger.debug('connected to redis using Normal connection');
   });
   return redisClientNormalMode;
 }
 module.exports = {
   redisClientForInitialConnection,
   redisClientForPubSubMode,
-  redisClientForNormalMode,
+  redisClientForNormalMode
 };

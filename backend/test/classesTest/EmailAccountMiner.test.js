@@ -1,31 +1,31 @@
-const chai = require("chai"),
+const chai = require('chai'),
   expect = chai.expect;
-const request = require("supertest");
-const app = require("../../server");
-const config = require("config");
-const logger = require("../../app/utils/logger")(module);
-const emailTest = config.get("test.imap_email");
-const hostTest = config.get("test.imap_host");
-const passwordTest = config.get("test.imap_password");
+const request = require('supertest');
+const app = require('../../server');
+const config = require('config');
+const logger = require('../../app/utils/logger')(module);
+const emailTest = config.get('test.imap_email');
+const hostTest = config.get('test.imap_host');
+const passwordTest = config.get('test.imap_password');
 
 before((done) => {
-  app.event.on("started", function () {
+  app.event.on('started', function () {
     done();
   });
 });
 after(async () => {
-  require("../../server").stop();
+  require('../../server').stop();
 });
-describe("Full mining flow", function () {
+describe('Full mining flow', function () {
   let loggedInUser;
-  describe("login", function () {
-    it("create user (login request)", async function () {
+  describe('login', function () {
+    it('create user (login request)', async function () {
       await request(app.server)
-        .post("/api/imap/login")
+        .post('/api/imap/login')
         .send({
           email: emailTest,
           password: passwordTest,
-          host: hostTest,
+          host: hostTest
         })
         .expect((res) => {
           loggedInUser = JSON.parse(res.text).imap;
@@ -33,26 +33,26 @@ describe("Full mining flow", function () {
     });
   });
 
-  describe("mine", function () {
-    it("mine folder for the logged in user", async function () {
+  describe('mine', function () {
+    it('mine folder for the logged in user', async function () {
       // loggedInUser.email = '"' + loggedInUser.email + '"';
       // loggedInUser.host = '"' + loggedInUser.host + '"';
       await request(app.server)
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
-          fields: ["HEADER", "1"],
-          boxes: ["testFile", "0"],
+          fields: ['HEADER', '1'],
+          boxes: ['testFile', '0'],
           user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
             '"' + loggedInUser.email + '"'
           },"password":${'"' + passwordTest + '"'},"host":${
             '"' + loggedInUser.host + '"'
-          },"port":"993"}`,
+          },"port":"993"}`
         })
         .expect(200);
     });
   });
-  describe("tree", () => {
-    it("Get Tree from imap server", async function () {
+  describe('tree', () => {
+    it('Get Tree from imap server', async function () {
       await request(app.server)
         .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
         .query({
@@ -60,7 +60,7 @@ describe("Full mining flow", function () {
             '"' + loggedInUser.email + '"'
           },"password":${'"' + passwordTest + '"'},"host":${
             '"' + loggedInUser.host + '"'
-          },"port":"993"}`,
+          },"port":"993"}`
         })
         .expect(200);
     });
