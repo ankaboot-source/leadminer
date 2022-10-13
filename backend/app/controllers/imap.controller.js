@@ -146,7 +146,7 @@ exports.loginToAccount = async (req, res) => {
 exports.getImapBoxes = async (req, res, sse) => {
   'use strict';
   if (!req.headers['x-imap-login']) {
-    logger.error('No user login ! request can\'t be handled without a login');
+    logger.error("No user login ! request can't be handled without a login");
     return res.status(404).send({
       message: 'Bad request',
       error: 'Bad request! please check login!'
@@ -188,7 +188,7 @@ exports.getImapBoxes = async (req, res, sse) => {
       )} reason : ${error}`
     );
     res.status(400).send({
-      message: 'Can\'t fetch imap folders',
+      message: "Can't fetch imap folders",
       error: error
     });
   }
@@ -214,7 +214,7 @@ exports.getImapBoxes = async (req, res, sse) => {
 exports.getEmails = async (req, res, sse) => {
   'use strict';
   if (!req.headers['x-imap-login']) {
-    logger.error('No user login ! request can\'t be handled without a user');
+    logger.error("No user login ! request can't be handled without a user");
     return res.status(404).send({
       message: 'Bad request',
       error: 'Bad request! please check login!'
@@ -294,7 +294,7 @@ exports.getEmails = async (req, res, sse) => {
     const QueueLengthBody = await redisClient.llen('bodies'),
       QueueLengthHeader = await redisClient.llen('headers'),
       totalQueueLength = QueueLengthBody + QueueLengthHeader,
-      total = totalQueueLength == 0 ? 100 : totalQueueLength * 50;
+      total = totalQueueLength === 0 ? 100 : totalQueueLength * 50;
     // estimate a timeout to wait all queue jobs (150ms per command)
     setTimeout(() => {
       // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data
