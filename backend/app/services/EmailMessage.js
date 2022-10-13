@@ -187,10 +187,10 @@ class EmailMessage {
                 fieldName
               )
               // we should wait for the response so we capture the id
-              .then((pointOfContact, error) => {
-                if (error) {
+              .then((pointOfContact, pointOfContactUpsertError) => {
+                if (pointOfContactUpsertError) {
                   logger.debug(
-                    `error when inserting to pointsOfContact table ${error}`
+                    `error when inserting to pointsOfContact table ${pointOfContactUpsertError}`
                   );
                 }
                 if (pointOfContact && pointOfContact.body[0]) {
@@ -202,10 +202,10 @@ class EmailMessage {
                       email.address.toLowerCase(),
                       pointOfContact.body[0]?.id
                     )
-                    .then((data, error) => {
-                      if (error) {
+                    .then((data, personUpsertError) => {
+                      if (personUpsertError) {
                         logger.debug(
-                          `error when inserting to perssons table ${error}`
+                          `error when inserting to perssons table ${personUpsertError}`
                         );
                       }
                     });
