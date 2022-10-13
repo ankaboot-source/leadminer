@@ -1,6 +1,5 @@
 const Sequelize = require('sequelize');
 const dbConfig = require('../config/db.config'),
-  logger = require('../utils/logger')(module),
   // initialize a new connection to the DB
   sequelize = new Sequelize(dbConfig.db, dbConfig.user, dbConfig.password, {
     host: dbConfig.host,
