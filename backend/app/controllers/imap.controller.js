@@ -293,10 +293,8 @@ exports.getEmails = async (req, res, sse) => {
     // get the queues length
     const QueueLengthBody = await redisClient.llen('bodies'),
       QueueLengthHeader = await redisClient.llen('headers'),
-      total =
-        QueueLengthBody + QueueLengthHeader == 0
-          ? 100
-          : (QueueLengthBody + QueueLengthHeader) * 50;
+      totalQueueLength = QueueLengthBody + QueueLengthHeader,
+      total = totalQueueLength === 0 ? 100 : totalQueueLength * 50;
     // estimate a timeout to wait all queue jobs (150ms per command)
     setTimeout(() => {
       // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data

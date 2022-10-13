@@ -29,6 +29,7 @@ function upsertPointOfContact(supabaseClient, messageID, userID, name, key) {
     recipient: key == 'to' || key == 'cc' || key == 'bcc'
   });
 }
+
 function upsertPersons(supabaseClient, name, emailsAddress, pointofcontact_id) {
   return supabaseClient.from('persons').upsert({
     name: name,

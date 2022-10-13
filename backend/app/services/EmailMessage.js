@@ -2,7 +2,6 @@
 const regExHelpers = require('../utils/regexpHelpers');
 const dateHelpers = require('../utils/dateHelpers');
 const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const { emailsRaw } = require('../models');
 const redisClientForNormalMode =
   require('../../redis').redisClientForNormalMode();
 const config = require('config'),
@@ -110,10 +109,10 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    let messagingFields = this.getMessagingFieldsFromHeader();
+    const messagingFields = this.getMessagingFieldsFromHeader();
     const messageID = this.getMessageId(),
       date = this.getDate();
-    let message = await supabaseHandlers.upsertMessage(
+    const message = await supabaseHandlers.upsertMessage(
       supabaseClient,
       messageID,
       this.user.id,
@@ -122,6 +121,7 @@ class EmailMessage {
       date
     );
     // case when header should be scanned
+    // eslint-disable-next-line
     if (true) {
       Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
@@ -133,6 +133,7 @@ class EmailMessage {
       });
     }
     // case when body should be scanned
+    // eslint-disable-next-line
     if (true) {
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
@@ -186,10 +187,10 @@ class EmailMessage {
                 fieldName
               )
               // we should wait for the response so we capture the id
-              .then((pointOfContact, error) => {
-                if (error) {
+              .then((pointOfContact, pointOfContactUpsertError) => {
+                if (pointOfContactUpsertError) {
                   logger.debug(
-                    `error when inserting to pointsOfContact table ${error}`
+                    `error when inserting to pointsOfContact table ${pointOfContactUpsertError}`
                   );
                 }
                 if (pointOfContact && pointOfContact.body[0]) {
@@ -201,10 +202,10 @@ class EmailMessage {
                       email.address.toLowerCase(),
                       pointOfContact.body[0]?.id
                     )
-                    .then((data, error) => {
-                      if (error) {
+                    .then((data, personUpsertError) => {
+                      if (personUpsertError) {
                         logger.debug(
-                          `error when inserting to perssons table ${error}`
+                          `error when inserting to perssons table ${personUpsertError}`
                         );
                       }
                     });
@@ -254,10 +255,10 @@ class EmailMessage {
                 '',
                 'body'
               )
-              .then((pointOfContact, error) => {
-                if (error) {
+              .then((pointOfContact, pointOfContactUpsertError) => {
+                if (pointOfContactUpsertError) {
                   logger.debug(
-                    `error when inserting to pointsOfContact table ${error}`
+                    `error when inserting to pointsOfContact table ${pointOfContactUpsertError}`
                   );
                 }
                 if (pointOfContact && pointOfContact.body[0]) {
@@ -268,10 +269,10 @@ class EmailMessage {
                       email.toLowerCase(),
                       pointOfContact.body[0]?.id
                     )
-                    .then((data, error) => {
-                      if (error) {
+                    .then((data, personUpsertError) => {
+                      if (personUpsertError) {
                         logger.debug(
-                          `error when inserting to perssons table ${error}`
+                          `error when inserting to perssons table ${personUpsertError}`
                         );
                       }
                     });
