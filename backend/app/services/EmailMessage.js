@@ -1,24 +1,23 @@
-"use-strict";
-const regExHelpers = require("../utils/regexpHelpers");
-const dateHelpers = require("../utils/dateHelpers");
-const emailMessageHelpers = require("../utils/emailMessageHelpers");
-const emailAddressHelpers = require("../utils/minedDataHelpers");
+'use-strict';
+const regExHelpers = require('../utils/regexpHelpers');
+const dateHelpers = require('../utils/dateHelpers');
+const emailMessageHelpers = require('../utils/emailMessageHelpers');
+const emailAddressHelpers = require('../utils/minedDataHelpers');
 const redisClientForNormalMode =
-  require("../../redis").redisClientForNormalMode();
-const config = require("config"),
-  NEWSLETTER_HEADER_FIELDS = config.get("email_types.newsletter").split(","),
+  require('../../redis').redisClientForNormalMode();
+const config = require('config'),
+  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
   TRANSACTIONAL_HEADER_FIELDS = config
-    .get("email_types.transactional")
-    .split(","),
-  FIELDS = ["to", "from", "cc", "bcc", "reply-to"];
+    .get('email_types.transactional')
+    .split(','),
+  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
-const supabaseUrl = config.get("server.supabase.url");
-const supabaseToken = config.get("server.supabase.token");
-const { createClient } = require("@supabase/supabase-js");
+const supabaseUrl = config.get('server.supabase.url');
+const supabaseToken = config.get('server.supabase.token');
+const { createClient } = require('@supabase/supabase-js');
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
-const supabaseHandlers = require("./supabaseServices/supabase");
-const logger = require("../utils/logger");
-const { setTags } = require("@sentry/node");
+const supabaseHandlers = require('./supabaseServices/supabase');
+const logger = require('../utils/logger');
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -41,7 +40,7 @@ class EmailMessage {
   isNewsletter() {
     return Object.keys(this.header).some((headerField) => {
       return NEWSLETTER_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, "i");
+        const reg = new RegExp(`${regExHeader}`, 'i');
         return reg.test(headerField);
       });
     });
@@ -53,7 +52,7 @@ class EmailMessage {
   isTransactional() {
     return Object.keys(this.header).some((headerField) => {
       return TRANSACTIONAL_HEADER_FIELDS.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, "i");
+        const reg = new RegExp(`${regExHeader}`, 'i');
         return reg.test(headerField);
       });
     });
@@ -63,7 +62,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes("references")) {
+    if (Object.keys(this.header).includes('references')) {
       return 1;
     }
     return 0;
@@ -101,8 +100,8 @@ class EmailMessage {
    * @returns The message-id of the email.
    */
   getMessageId() {
-    if (this.header["message-id"]) {
-      return this.header["message-id"][0].substring(0, 60);
+    if (this.header['message-id']) {
+      return this.header['message-id'][0].substring(0, 60);
     }
     return `message_id_unknown ${this.header.date}`;
   }
@@ -118,11 +117,12 @@ class EmailMessage {
       supabaseClient,
       messageID,
       this.user.id,
-      "imap",
-      "test",
+      'imap',
+      'test',
       date
     );
     // case when header should be scanned
+    // eslint-disable-next-line
     if (true) {
       Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
@@ -134,10 +134,11 @@ class EmailMessage {
       });
     }
     // case when body should be scanned
+    // eslint-disable-next-line
     if (true) {
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
-        this.body.toString("utf8")
+        this.body.toString('utf8')
       );
       delete this.body;
       // store extracted emails
@@ -155,17 +156,17 @@ class EmailMessage {
    */
   storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
     const tags = [];
-    if (fieldName === "from") {
+    if (fieldName === 'from') {
       // get if newsletter
       const newsletter = this.isNewsletter();
       if (newsletter) {
-        tags.push(this.buildTag("newsletter", "Newsletter", 2, "refined"));
+        tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
       }
       // get if transactional
       const transactional = this.isTransactional();
       if (transactional) {
         tags.push(
-          this.buildTag("transactional", "Transactional", 2, "refined")
+          this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
       }
     }
@@ -185,20 +186,20 @@ class EmailMessage {
             [email?.name],
             domain[1]
           );
-          if (type !== "") {
-            tags.push(this.buildTag(type.toLowerCase(), type, 1, "refined"));
+          if (type !== '') {
+            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
           }
           if (noReply) {
-            tags.push(this.buildTag("no-reply", "noReply", 0, "refined"));
+            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
           }
           if (!domain[0]) {
             // this domain is invalid
             redisClientForNormalMode
-              .sismember("invalidDomainEmails", email.address)
+              .sismember('invalidDomainEmails', email.address)
               .then((member) => {
                 if (member === 0) {
                   redisClientForNormalMode.sadd(
-                    "invalidDomainEmails",
+                    'invalidDomainEmails',
                     email.address
                   );
                 }
@@ -240,25 +241,25 @@ class EmailMessage {
 
           const type = emailAddressHelpers.findEmailAddressType(
             email,
-            [email?.name] ?? "",
+            [email?.name] ?? '',
             domain[1]
           );
-          if (type !== "") {
-            tags.push(this.buildTag(type.toLowerCase(), type, 1, "refined"));
+          if (type !== '') {
+            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
           }
           if (noReply) {
-            tags.push(this.buildTag("no-reply", "noReply", 0, "refined"));
+            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
           }
           if (!domain[0]) {
             redisClientForNormalMode
-              .sismember("invalidDomainEmails", email)
+              .sismember('invalidDomainEmails', email)
               .then((member) => {
                 if (member === 0) {
-                  redisClientForNormalMode.sadd("invalidDomainEmails", email);
+                  redisClientForNormalMode.sadd('invalidDomainEmails', email);
                 }
               });
           } else {
-            this.storeEmails(message, email, "", tags, "body");
+            this.storeEmails(message, email, '', tags, 'body');
           }
         }
       });
@@ -285,7 +286,7 @@ class EmailMessage {
       label: label,
       reachable: reachable,
       type: type,
-      userid: this.user.id,
+      userid: this.user.id
     };
   }
 
@@ -301,7 +302,7 @@ class EmailMessage {
     supabaseHandlers
       .upsertPersons(
         supabaseClient,
-        name ?? "",
+        name ?? '',
         email.toLowerCase(),
         this.user.id
       )

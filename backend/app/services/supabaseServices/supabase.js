@@ -17,14 +17,14 @@ function upsertMessage(
   folder,
   date
 ) {
-  return supabaseClient.from("messages").upsert({
+  return supabaseClient.from('messages').upsert({
     messageid: messageID,
     userid: userID,
     channel: channel,
     folder: folder,
     date: date,
-    listid: "",
-    reference: "",
+    listid: '',
+    reference: ''
   });
 }
 
@@ -45,15 +45,15 @@ function upsertPointOfContact(
   personid,
   key
 ) {
-  return supabaseClient.from("pointsofcontact").upsert({
+  return supabaseClient.from('pointsofcontact').upsert({
     messageid: messageID,
     userid: userID,
-    _to: key === "to",
-    cc: key === "cc",
-    bcc: key === "bcc",
-    _from: key === "from",
-    reply_to: key === "reply-to",
-    _personid: personid,
+    _to: key === 'to',
+    cc: key === 'cc',
+    bcc: key === 'bcc',
+    _from: key === 'from',
+    reply_to: key === 'reply-to',
+    _personid: personid
   });
 }
 /**
@@ -64,22 +64,22 @@ function upsertPointOfContact(
  * @returns {promise}
  */
 function upsertPersons(supabaseClient, name, emailsAddress, userID) {
-  return supabaseClient.from("persons").upsert(
+  return supabaseClient.from('persons').upsert(
     {
       name: name,
       email: emailsAddress,
       _userid: userID,
-      url: "",
-      image: "",
-      address: "",
+      url: '',
+      image: '',
+      address: '',
       alternatenames: [],
       sameas: [],
       givenname: name,
-      familyname: "",
-      jobtitle: "",
-      worksfor: "flyweight",
+      familyname: '',
+      jobtitle: '',
+      worksfor: 'flyweight'
     },
-    { onConflict: "email" }
+    { onConflict: 'email' }
   );
 }
 
@@ -91,12 +91,12 @@ function upsertPersons(supabaseClient, name, emailsAddress, userID) {
  */
 function createTags(supabaseClient, tags) {
   return supabaseClient
-    .from("tags")
-    .upsert([...tags], { onConflict: "personid, name" });
+    .from('tags')
+    .upsert([...tags], { onConflict: 'personid, name' });
 }
 module.exports = {
   upsertMessage,
   upsertPointOfContact,
   upsertPersons,
-  createTags,
+  createTags
 };
