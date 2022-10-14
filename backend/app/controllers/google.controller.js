@@ -118,8 +118,6 @@ exports.SignUpWithGoogle = async (req, res) => {
 async function refreshAccessToken(refresh_token) {
   logger.debug('refreshing user token');
   return new Promise((resolve, reject) => {
-    let tokenInfo = {},
-      access_token;
     // return OAuth2 client
 
     const oauth2Client = getOAuthClient();
@@ -127,17 +125,17 @@ async function refreshAccessToken(refresh_token) {
     oauth2Client.setCredentials({
       refresh_token: refresh_token
     });
-    return oauth2Client.getAccessToken(async (err, token) => {
-      if (err) {
-        resolve(null);
-      }
-      tokenInfo = await oauth2Client.getTokenInfo(token);
-      access_token = {
-        access_token: token,
-        experation: Math.floor(tokenInfo.expiry_date / 1000)
-      };
-      resolve(access_token);
-    });
+    const { err, token } = await oauth2Client.getAccessToken();
+    if (err) {
+      reject("can't retrieve token");
+    }
+
+    const tokenInfo = await oauth2Client.getTokenInfo(token);
+    const access_token = {
+      access_token: token,
+      experation: Math.floor(tokenInfo.expiry_date / 1000)
+    };
+    resolve(access_token);
   });
 }
 

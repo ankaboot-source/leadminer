@@ -20,6 +20,7 @@
     "semi-spacing": "error", //* Best Practices
     "no-invalid-this": "error",
     "no-useless-return": "error",
+    "no-async-promise-executor": "warn",
     "no-unused-vars": [
       "warn",
       { "argsIgnorePattern": "req|res|next|__|reject" }
