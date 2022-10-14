@@ -63,11 +63,12 @@ function upsertPointOfContact(
  * @param emailsAddress - The email address of the person you want to add to the database.
  * @returns {promise}
  */
-function upsertPersons(supabaseClient, name, emailsAddress) {
+function upsertPersons(supabaseClient, name, emailsAddress, userID) {
   return supabaseClient.from("persons").upsert(
     {
       name: name,
       email: emailsAddress,
+      _userid: userID,
       url: "",
       image: "",
       address: "",

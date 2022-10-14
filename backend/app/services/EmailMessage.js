@@ -299,7 +299,12 @@ class EmailMessage {
    */
   storeEmails(message, email, name, tags, fieldName) {
     supabaseHandlers
-      .upsertPersons(supabaseClient, name ?? "", email.toLowerCase())
+      .upsertPersons(
+        supabaseClient,
+        name ?? "",
+        email.toLowerCase(),
+        this.user.id
+      )
       // we should wait for the response so we capture the id
       .then((person, error) => {
         if (error) {

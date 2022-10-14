@@ -57,50 +57,58 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   async getTree() {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const self = this;
       let result = [];
-      this.connection.connecte().then((connection) => {
-        this.connection = connection;
-        this.connection.once("ready", () => {
-          logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
-          this.connection.getBoxes("", async (err, boxes) => {
-            if (err) {
-              logger.error(
-                `Failed mining folders tree for user: ${this.mailHash}  raison: ${err}`
-              );
-              result = [this.tree, err];
-              resolve(result);
-            }
-            // extract only folder name
-            const treeObjectWithChildrens =
-                imapTreeHelpers.createTreeFromImap(boxes),
-              // add a path for each folder
-              treeWithPaths = imapTreeHelpers.addPathPerFolder(
-                treeObjectWithChildrens,
-                treeObjectWithChildrens
-              );
-            // extract the total for each folder
-
-            await this.getTreeWithTotalPerFolder(treeWithPaths);
-            // sum childrens total for folder that has childrens
-            this.tree = imapTreeHelpers.addChildrenTotalForParentFiles(
-              treeWithPaths,
-              this.user.email
+      this.connection = await this.connection.connecte();
+      this.connection.once("ready", () => {
+        logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
+        this.connection.getBoxes("", async (err, boxes) => {
+          if (err) {
+            logger.error(
+              `Failed mining folders tree for user: ${this.mailHash}  raison: ${err}`
             );
-          });
-        });
-        this.connection.once("end", () => {
-          logger.info(`End mining folders tree for user : ${this.mailHash}`);
-          result = [this.tree, null];
-          resolve(result);
-        });
-        this.connection.once("error", (error) => {
-          logger.error(
-            `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
+            result = [this.tree, err];
+            resolve(result);
+          }
+          console.log("before createtree");
+          // extract only folder name
+          const treeObjectWithChildrens =
+            imapTreeHelpers.createTreeFromImap(boxes);
+          console.log("after create tree");
+          // add a path for each folder
+
+          const treeWithPaths = imapTreeHelpers.addPathPerFolder(
+            treeObjectWithChildrens,
+            treeObjectWithChildrens
           );
-          result = [this.tree, error];
-          resolve(result);
+          console.log("after add path");
+
+          // extract the total for each folder
+
+          await this.getTreeWithTotalPerFolder(treeWithPaths);
+          console.log("get total");
+          // sum childrens total for folder that has childrens
+          this.tree = imapTreeHelpers.addChildrenTotalForParentFiles(
+            treeWithPaths,
+            this.user.email
+          );
+          console.log("after childtotal");
+          this.connection.destroy();
+          this.connection.end();
         });
+      });
+      this.connection.once("close", () => {
+        logger.info(`End mining folders tree for user : ${this.mailHash}`);
+        result = [this.tree, null];
+        resolve(result);
+      });
+      this.connection.once("error", (error) => {
+        logger.error(
+          `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
+        );
+        result = [this.tree, error];
+        resolve(result);
       });
     });
   }
@@ -112,9 +120,9 @@ class EmailAccountMiner {
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
+    const self = this;
     return new Promise((resolve, reject) => {
       imapTree.map((folder) => {
-        const self = this;
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
@@ -123,8 +131,8 @@ class EmailAccountMiner {
               folder.total = 0;
             }
             if (folder === imapTree[imapTree.length - 1]) {
-              resolve();
               self.connection.end();
+              resolve();
             }
           });
         }
@@ -160,7 +168,7 @@ class EmailAccountMiner {
         this.connection.end();
       });
     });
-    this.connection.once("end", () => {
+    this.connection.once("close", () => {
       logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
 
       return tree;
@@ -435,7 +443,6 @@ class EmailAccountMiner {
     let { data, error } = await supabaseClient.rpc("refined_persons", {
       userid: this.user.id,
     });
-    console.log(data, error);
   }
 }
 

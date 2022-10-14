@@ -63,7 +63,9 @@ if (config.get("server.sentry.enabled") == true) {
   logger.debug("sentry integrated to the server ✔️ ");
 }
 //***************Check if should enable sentry END █▌█▌**********/
-
+process.on("uncaughtException", function (err, origin) {
+  logger.error(`${err} , ${err.stack}`);
+});
 // parse requests of content-type - application/json
 app.use(express.json());
 

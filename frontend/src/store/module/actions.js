@@ -284,7 +284,6 @@ export async function getBoxes({ context, getters }) {
           headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
         })
         .then((response) => {
-          console.log(response);
           this.commit("example/SET_LOADINGBOX", false);
           this.commit("example/SET_BOXES", response.data.imapFoldersTree);
           this.commit("example/SET_INFO_MESSAGE", response.data.message);

@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.persons
     personID uuid DEFAULT uuid_generate_v4(),
     name text,
     email text,
+    _userid uuid,
     url text,
     image text,
     address text,
@@ -150,10 +151,10 @@ DECLARE
 BEGIN
     uidd=refined_persons.userid;
     FOR person IN
-        SELECT * FROM persons
+        SELECT * FROM persons WHERE _userid=uidd
     LOOP
-        t=public.get_tags_per_person(person.personid, refined_persons.userid);
-        occurences=public.get_occurences_per_person(person.personid, refined_persons.userid);
+        t=public.get_tags_per_person(person.personid, uidd);
+        occurences=public.get_occurences_per_person(person.personid, uidd);
         pid=person.personid;
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
         VALUES(pid, uidd, 0, occurences, t, person.name, person.email)

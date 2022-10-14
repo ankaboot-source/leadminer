@@ -476,7 +476,6 @@ const columns = [
     sortOrder: "ad",
     field: (row) => row.tags,
     sort: (s1, s2) => {
-      console.log(s1.length, s2.length);
       if (s1.length > s2.length) {
         return 1;
       } else if (s1.length < s2.length) {
@@ -797,7 +796,6 @@ export default defineComponent({
           );
         })
         .catch((error) => {
-          console.log(error);
           this.showNotif(
             this.$store.getters["example/getStates"].errorMessage,
             "red",
