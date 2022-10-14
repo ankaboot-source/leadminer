@@ -57,7 +57,7 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   async getTree() {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const self = this;
       let result = [];
       this.connection.connecte().then((connection) => {
