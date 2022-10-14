@@ -174,7 +174,7 @@ class EmailMessage {
     if (emails?.length > 0) {
       // loop through emails array
       emails.map(async (email) => {
-        if (email && email.address && this.user.email != email.address) {
+        if (email && email.address && this.user.email !== email.address) {
           // get if it's a noreply email
           const noReply = emailMessageHelpers.isNoReply(email.address);
           // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
@@ -198,7 +198,7 @@ class EmailMessage {
             redisClientForNormalMode
               .sismember('invalidDomainEmails', email.address)
               .then((member) => {
-                if (member == 0) {
+                if (member === 0) {
                   redisClientForNormalMode.sadd(
                     'invalidDomainEmails',
                     email.address
@@ -234,7 +234,7 @@ class EmailMessage {
     if (emails?.length > 0) {
       // loop through emails extracted from the current body
       emails.map(async (email) => {
-        if (this.user.email != email && email) {
+        if (this.user.email !== email && email) {
           // get domain status from DomainStatus Helper
           const noReply = emailMessageHelpers.isNoReply(email);
           // get the domain status
@@ -274,7 +274,7 @@ class EmailMessage {
    * @param {string} name - The name of the tag.
    * @param {string} label - The label of the tag.
    * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
-   * @param {string} type - The type of the tag. This can be either "tag" or "branch".
+   * @param {string} type - The type of the tag.
    * @returns An object with the following properties:
    *   name: name,
    *   label: label,
@@ -306,25 +306,27 @@ class EmailMessage {
         if (error) {
           logger.debug(`error when inserting to persons table ${error}`);
         }
-        if (person && person?.body[0]) {
+        if (person && person?.body?.[0]) {
           //if saved and no errors then we can store the person linked to this point of contact
           supabaseHandlers
             .upsertPointOfContact(
               supabaseClient,
-              message.body[0]?.id,
+              message.body?.[0]?.id,
               this.user.id,
-              person.body[0].personid,
+              person.body?.[0].personid,
               fieldName
             )
             .then((pointOfContact, error) => {
               if (error) {
-                logger.debug(`error when inserting to perssons table ${error}`);
+                logger.debug(
+                  `error when inserting to pointOfContact table ${error}`
+                );
               }
             });
 
           // add the person id to tags
           for (let i = 0; i < tags.length; i++) {
-            tags[i].personid = person.body[0].personid;
+            tags[i].personid = person.body?.[0].personid;
           }
           supabaseHandlers
             .createTags(supabaseClient, tags)

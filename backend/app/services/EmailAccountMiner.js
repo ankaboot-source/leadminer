@@ -2,12 +2,16 @@ const imapTreeHelpers = require('../utils/imapTreeHelpers');
 const hashHelpers = require('../utils/hashHelpers');
 const inputHelpers = require('../utils/inputHelpers');
 const Imap = require('imap'),
-  logger = require('../utils/logger')(module);
+  logger = require('../utils/logger')(module),
+  config = require('config');
 const redisClientForPubSubMode =
   require('../../redis').redisClientForPubSubMode();
 const redisClientForNormalMode =
   require('../../redis').redisClientForNormalMode();
-
+const supabaseUrl = config.get('server.supabase.url');
+const supabaseToken = config.get('server.supabase.token');
+const { createClient } = require('@supabase/supabase-js');
+const supabaseClient = createClient(supabaseUrl, supabaseToken);
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -53,7 +57,8 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   async getTree() {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const self = this;
       let result = [];
       this.connection.connecte().then((connection) => {
         this.connection = connection;
@@ -85,7 +90,7 @@ class EmailAccountMiner {
             );
           });
         });
-        this.connection.once('end', () => {
+        this.connection.once('close', () => {
           logger.info(`End mining folders tree for user : ${this.mailHash}`);
           result = [this.tree, null];
           resolve(result);
@@ -94,8 +99,9 @@ class EmailAccountMiner {
           logger.error(
             `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
           );
-          result = [this.tree, error];
-          resolve(result);
+          console.log('after childtotal');
+          this.connection.destroy();
+          this.connection.end();
         });
       });
     });
@@ -108,9 +114,9 @@ class EmailAccountMiner {
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
+    const self = this;
     return new Promise((resolve, reject) => {
       imapTree.map((folder) => {
-        const self = this;
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
@@ -118,9 +124,9 @@ class EmailAccountMiner {
             } else {
               folder.total = 0;
             }
-            if (folder == imapTree[imapTree.length - 1]) {
-              resolve();
+            if (folder === imapTree[imapTree.length - 1]) {
               self.connection.end();
+              resolve();
             }
           });
         }
@@ -156,7 +162,7 @@ class EmailAccountMiner {
         this.connection.end();
       });
     });
-    this.connection.once('end', () => {
+    this.connection.once('close', () => {
       logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
 
       return tree;
@@ -242,7 +248,7 @@ class EmailAccountMiner {
       // fetching method
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
-    } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
+    } else if (this.folders.indexOf(folderName) + 1 === this.folders.length) {
       logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
       this.connection.destroy();
@@ -304,7 +310,7 @@ class EmailAccountMiner {
         `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
       );
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
-      if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
+      if (self.folders.indexOf(folder.name) + 1 === self.folders.length) {
         // we are at the end of the folder array==>> end imap connection
         logger.debug(
           `We are done...Ending connection for User: ${this.mailHash}`
@@ -422,13 +428,15 @@ class EmailAccountMiner {
    * @param seqNumber - The sequence number of the mined data.
    * @param folderName - The name of the folder that contains the mined data.
    */
-  sendMinedData(seqNumber, folderName) {
+  async sendMinedData(seqNumber, folderName) {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
     const userId = this.user.id;
-    // refining worker used to refine data to be send as progress status, using streaming.
-    this.dataRefiningWorker.postMessage({ userId });
+    // call supabase function to refine data
+    const { data, error } = await supabaseClient.rpc('refined_persons', {
+      userid: this.user.id
+    });
   }
 }
 

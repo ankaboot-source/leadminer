@@ -109,7 +109,7 @@ exports.loginToAccount = async (req, res) => {
     return;
   }
   const imap = await ImapInfo.findOne({ where: { email: req.body.email } });
-  if (imap == null) {
+  if (imap === null) {
     this.createImapInfo(req, res);
   } else {
     const imapConnection = temporaryImapConnection(imap, req.body);

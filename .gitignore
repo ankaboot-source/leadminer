@@ -16,4 +16,4 @@ backend/app/out
 backend/out
 backend/config/production.yaml
 /dump.rdb
-backend/config/default.yaml
+backend/config/default.yml
