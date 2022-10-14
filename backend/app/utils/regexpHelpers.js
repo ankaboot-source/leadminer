@@ -15,7 +15,7 @@ const regexForBody = new RegExp(
 function extractNameAndEmailFromBody(data) {
   let reg = quotedPrintable
     .decode(data)
-    .replaceAll("=", "")
+    .replaceAll('=', '')
     .match(regexForBody);
   if (reg) {
     return [...new Set(reg)];
@@ -31,10 +31,10 @@ function extractNameAndEmail(data) {
   const getRegExp = (emailAfterRegEx) => {
     /* istanbul ignore else */
     // check if it's really an email address(check if it's not "undefined")
-    if (emailAfterRegEx && emailAfterRegEx.groups.address.includes("@")) {
+    if (emailAfterRegEx && emailAfterRegEx.groups.address.includes('@')) {
       if (!emailAfterRegEx.groups.name) {
         // if no name captured(name=undefined) we need to initialize it to empty string
-        emailAfterRegEx.groups.name = "";
+        emailAfterRegEx.groups.name = '';
       }
       return emailAfterRegEx.groups;
     }

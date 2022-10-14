@@ -201,7 +201,8 @@ function findEmailAddressType(emailAddress, UserNames, domainType) {
         domainType == 'custom'
       ) {
         return 'Professional';
-      } return '';
+      }
+      return '';
     }
   }
   return '';
@@ -220,7 +221,7 @@ function handleNames(name, emailAddress) {
     // remove all bad chars
     const Name = name
       .replaceAll('"', '')
-      .replaceAll('\'', '')
+      .replaceAll("'", '')
       .replaceAll('/', '')
       .trim();
     // case when the name is not the same as the address

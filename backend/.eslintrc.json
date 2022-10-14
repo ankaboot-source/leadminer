@@ -30,8 +30,7 @@
     "space-in-parens": "error",
     "space-infix-ops": "error",
     "space-unary-ops": "error",
-    "quotes": ["warn", "single"],
-    //
+    "quotes": ["warn", "single", { "avoidEscape": true }],
     "max-len": ["error", { "code": 150 }],
     "max-lines": [
       "error",
