@@ -323,7 +323,9 @@ class EmailMessage {
             )
             .then((pointOfContact, error) => {
               if (error) {
-                logger.debug(`error when inserting to perssons table ${error}`);
+                logger.debug(
+                  `error when inserting to pointOfContact table ${error}`
+                );
               }
             });
 

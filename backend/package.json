@@ -6,7 +6,7 @@
   "scripts": {
     "test": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
     "dev": "nodemon server.js",
-    "lint:fix": "cd app && eslint --fix --fix-type problem --fix-type suggestion . --ignore-pattern 'out/'",
+    "lint:fix": "cd app && eslint --fix . --ignore-pattern 'out/'",
     "lint:report": "cd app && eslint --fix . --ignore-pattern 'out/' --output-file eslint_report.json --format json",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier . --write",

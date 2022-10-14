@@ -41,7 +41,7 @@ const casesForPosition = [
  * @returns {Array}
  */
 function EqualPartsForSocket(total, type) {
-  const casesObject = type == 'position' ? casesForPosition : casesForData;
+  const casesObject = type === 'position' ? casesForPosition : casesForData;
 
   function inRange(n, nStart, nEnd) {
     if (n >= nStart && n <= nEnd) {

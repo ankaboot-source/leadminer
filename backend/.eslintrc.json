@@ -8,8 +8,7 @@
   "extends": [
     "eslint:recommended",
     "plugin:node/recommended",
-    "plugin:security/recommended",
-    "plugin:eqeqeq-fix/recommended"
+    "plugin:security/recommended"
   ],
   "parserOptions": {
     "ecmaVersion": "latest"
@@ -26,7 +25,6 @@
       { "argsIgnorePattern": "req|res|next|__|reject" }
     ], //* Enhance Readability
     "indent": ["error", 2, { "SwitchCase": 1 }],
-    "eqeqeq": "error",
     "no-mixed-spaces-and-tabs": "warn",
     "space-before-blocks": "error",
     "space-in-parens": "error",
@@ -34,11 +32,8 @@
     "space-unary-ops": "error",
     "quotes": ["warn", "single"],
     //
-    "max-len": ["error", { "code": 150 }],
-    "max-lines": [
-      "error",
-      { "max": 500, "skipComments": true, "skipBlankLines": true }
-    ],
+    "max-len": ["error", { "code": 200 }],
+    "max-lines": ["error", { "max": 500 }],
     "keyword-spacing": "error",
     "multiline-ternary": ["error", "never"],
     "no-mixed-operators": "error",

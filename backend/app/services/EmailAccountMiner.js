@@ -434,7 +434,7 @@ class EmailAccountMiner {
     );
     const userId = this.user.id;
     // call supabase function to refine data
-    let { data, error } = await supabaseClient.rpc('refined_persons', {
+    const { data, error } = await supabaseClient.rpc('refined_persons', {
       userid: this.user.id
     });
   }
