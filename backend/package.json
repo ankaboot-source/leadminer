@@ -37,7 +37,7 @@
     "googleapis": "^100.0.0",
     "imap": "github:ankaboot-source/node-imap",
     "ioredis": "^5.2.2",
-    "mocha": "^9.2.1",
+    "mocha": "^10.1.0",
     "nodemon": "^2.0.15",
     "object-scan": "^17.1.0",
     "pg": "^8.6.0",
