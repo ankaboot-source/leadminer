@@ -27,19 +27,18 @@ function redisClientForInitialConnection() {
     redisClient = new Redis(redis_port, redis_host);
   }
   redisClient.on('error', (err) => {
-    logger.debug("can't connect to redisClient ✖️ ");
-    logger.error('Error connecting to redisClient', err);
+    logger.error('Error connecting with redisClient.', { error: err });
     throw err;
   });
   redisClient.on('connect', () => {
-    logger.debug('connected to redisClient ✔️');
+    logger.debug('Connected to redisClient ✔️');
     //init the redis db with domain providers strings
     redisClient.exists('freeProviders').then((res) => {
       if (res != 1) {
         freeProviders.map((domain) => {
           redisClient.sadd('freeProviders', domain);
         });
-        logger.debug('redis initialized with freeProviders✔️');
+        logger.debug('Redis initialized with freeProviders✔️');
       }
     });
     redisClient.exists('freeProviders').then((res) => {
@@ -47,9 +46,9 @@ function redisClientForInitialConnection() {
         disposable.map((domain) => {
           redisClient.sadd('disposable', domain);
         });
-        logger.debug('redis initialized with disposable ✔️');
+        logger.debug('Redis initialized with disposable ✔️');
       } else {
-        logger.debug('redis is already initialized ✔️');
+        logger.debug('Redis is already initialized ✔️');
       }
     });
   });
@@ -61,7 +60,7 @@ function redisClientForInitialConnection() {
  * for pub/sub mode (workers).
  * @returns A function that returns a redis client.
  */
-function redisClientForPubSubMode() {
+function getRedisClientForPubSubMode() {
   let redisClientForPubSubMode = {};
   if (redis.password && redis.username) {
     redisClientForPubSubMode = new Redis(redis_port, redis_host, {
@@ -72,12 +71,13 @@ function redisClientForPubSubMode() {
     redisClientForPubSubMode = new Redis(redis_port, redis_host);
   }
   redisClientForPubSubMode.on('error', (err) => {
-    logger.debug("can't connect to redisClientForPubSubMode ✖️ ");
-    logger.error('Error connecting to redisClientForPubSubMode', err);
+    logger.error('Error connecting with redisClientForPubSubMode.', {
+      error: err
+    });
     throw err;
   });
   redisClientForPubSubMode.on('connect', () => {
-    logger.debug('connected to redis using pubSub connection');
+    logger.debug('Connected to redis using pubSub connection');
   });
   return redisClientForPubSubMode;
 }
@@ -98,17 +98,16 @@ function redisClientForNormalMode() {
     redisClientNormalMode = new Redis(redis_port, redis_host);
   }
   redisClientNormalMode.on('error', (err) => {
-    logger.debug("can't connect to redisClientNormalMode ✖️ ");
-    logger.error('Error connecting to redisClientNormalMode', err);
+    logger.error('Error connecting to redisClientNormalMode.', { error: err });
     throw err;
   });
   redisClientNormalMode.on('connect', () => {
-    logger.debug('connected to redis using Normal connection');
+    logger.debug('Connected to redis using Normal connection');
   });
   return redisClientNormalMode;
 }
 module.exports = {
   redisClientForInitialConnection,
-  redisClientForPubSubMode,
+  redisClientForPubSubMode: getRedisClientForPubSubMode,
   redisClientForNormalMode
 };

@@ -66,12 +66,9 @@ exports.SignUpWithGoogle = (req, res) => {
                   });
                 })
                 .catch((err) => {
-                  logger.error(
-                    `can't create account with for user Error : ${err}`
-                  );
+                  logger.error('Unable to create use account.', { error: err });
                   res.status(500).send({
-                    error:
-                      'Some error occurred while creating your account your account.'
+                    error: 'An error has occurred while creating your account.'
                   });
                 });
             } else if (
@@ -85,7 +82,7 @@ exports.SignUpWithGoogle = (req, res) => {
                 )
                 .then(() => {
                   logger.info(
-                    `On signUp With Google : Account with id: ${googleUser.id} already exist`
+                    `On signUp With Google : Account with id: ${googleUser.id} already exists`
                   );
                   // case when user id exists
                   res.status(200).send({

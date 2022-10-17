@@ -23,7 +23,9 @@ class EmailServer {
    * @returns An Imap object
    */
   initConnection() {
-    logger.info(`Preparing imap connection for user : ${this.mailHash}`);
+    logger.info('Preparing IMAP connection for user.', {
+      emailHash: this.mailHash
+    });
 
     if (this.user.token) {
       // the user is connected using api
@@ -40,9 +42,9 @@ class EmailServer {
         },
         keepalive: false
       });
-      logger.info(
-        `API connection to imap server initiated for user: ${this.mailHash}`
-      );
+      logger.info('API connection to IMAP server initiated for user.', {
+        emailHash: this.mailHash
+      });
     }
     if (this.user.password) {
       // the user is connected using password
@@ -62,9 +64,9 @@ class EmailServer {
           servername: this.user.host
         }
       });
-      logger.info(
-        `IMAP connection to imap server initiated for user: ${this.mailHash}`
-      );
+      logger.info('IMAP connection to IMAP server initiated for user.', {
+        emailHash: this.mailHash
+      });
     }
   }
   /**
@@ -94,7 +96,7 @@ class EmailServer {
           res(this.#connection);
         });
       } else {
-        logger.info(`User connected using imap: ${this.mailHash}`);
+        logger.info('User connected using IMAP.', { emailHash: this.mailHash });
         this.#connection.connect();
         res(this.#connection);
       }
