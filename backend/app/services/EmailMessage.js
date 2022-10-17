@@ -2,6 +2,7 @@
 const regExHelpers = require('../utils/regexpHelpers');
 const dateHelpers = require('../utils/dateHelpers');
 const emailMessageHelpers = require('../utils/emailMessageHelpers');
+const emailAddressHelpers = require('../utils/minedDataHelpers');
 const redisClientForNormalMode =
   require('../../redis').redisClientForNormalMode();
 const config = require('config'),
@@ -16,7 +17,8 @@ const supabaseToken = config.get('server.supabase.token');
 const { createClient } = require('@supabase/supabase-js');
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
 const supabaseHandlers = require('./supabaseServices/supabase');
-const logger = require('../utils/logger');
+const logger = require('../utils/logger')(module);
+
 class EmailMessage {
   /**
    * EmailMessage constructor
@@ -26,11 +28,12 @@ class EmailMessage {
    * @param user - The user.
 
    */
-  constructor(sequentialId, header, body, user) {
+  constructor(sequentialId, header, body, user, folder) {
     this.sequentialId = sequentialId;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
+    this.folderPath = folder;
   }
 
   /**
@@ -126,11 +129,17 @@ class EmailMessage {
       messageID,
       this.user.id,
       'imap',
-      'test',
+      this.folderPath,
       date
     );
+    if (message.error) {
+      logger.debug(
+        `error when inserting to messages table ${message.error.message}`
+      );
+    }
+
     // case when header should be scanned
-    // eslint-disable-next-line
+    // eslint-disable-next-line no-constant-condition
     if (true) {
       Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
@@ -146,7 +155,7 @@ class EmailMessage {
       });
     }
     // case when body should be scanned
-    // eslint-disable-next-line
+    // eslint-disable-next-line no-constant-condition
     if (true) {
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
@@ -159,70 +168,73 @@ class EmailMessage {
   }
 
   /**
-   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses, and saves them to the
+   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses, give tags, check for noreply,check domain and saves them to the
    * database
    * @param {object} messages - an object containing the saved message data row
    * @param {array} emails - an array of objects that contains the extracted email addresses and the names
    * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
    * @returns Nothing is being returned.
    */
-  async storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
-    if (emails?.length < 1) {
-      delete this.header;
-      return;
-    }
-
-    emails
-      .filter((email) => this.user.email != email?.address)
-      .forEach(async (email) => {
-        const noReply = emailMessageHelpers.isNoReply(email.address);
-        // get the domain status
-        const domain = await emailMessageHelpers.checkDomainStatus(
-          email.address
+  storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
+    const tags = [];
+    if (fieldName == 'from') {
+      // get if newsletter
+      const newsletter = this.isNewsletter();
+      if (newsletter) {
+        tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
+      }
+      // get if transactional
+      const transactional = this.isTransactional();
+      if (transactional) {
+        tags.push(
+          this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
-
-        if (!domain[0]) {
-          const member = await redisClientForNormalMode.sismember(
-            'invalidDomainEmails',
+      }
+    }
+    if (emails?.length > 0) {
+      // loop through emails array
+      emails.map(async (email) => {
+        if (email && email.address && this.user.email !== email.address) {
+          // get if it's a noreply email
+          const noReply = emailMessageHelpers.isNoReply(email.address);
+          // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
+          const domain = await emailMessageHelpers.checkDomainStatus(
             email.address
           );
-
-          member == 0 &&
-            redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-        } else if (!noReply) {
-          supabaseHandlers
-            .upsertPointOfContact(
-              supabaseClient,
-              message.body[0]?.id,
-              this.user.id,
-              email?.name ?? '',
+          // find the email type
+          const type = emailAddressHelpers.findEmailAddressType(
+            email.address,
+            [email?.name],
+            domain[1]
+          );
+          if (type != '') {
+            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
+          }
+          if (noReply) {
+            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+          }
+          if (!domain[0]) {
+            // this domain is invalid
+            redisClientForNormalMode
+              .sismember('invalidDomainEmails', email.address)
+              .then((member) => {
+                if (member === 0) {
+                  redisClientForNormalMode.sadd(
+                    'invalidDomainEmails',
+                    email.address
+                  );
+                }
+              });
+          } else {
+            // if domain ok then we store to DB
+            this.storeEmails(
+              message,
+              email.address,
+              email?.name,
+              tags,
               fieldName
-            )
-
-            // we should wait for the response so we capture the id
-            .then((pointOfContact, error) => {
-              error &&
-                logger.debug(
-                  `error when inserting to pointsOfContact table ${error}`
-                );
-
-              if (pointOfContact && pointOfContact.body[0]) {
-                //if saved and no errors then we can store the person linked to this point of contact
-                supabaseHandlers
-                  .upsertPersons(
-                    supabaseClient,
-                    email?.name ?? '',
-                    email.address.toLowerCase(),
-                    pointOfContact.body[0]?.id
-                  )
-                  .then((_, error) => {
-                    error &&
-                      logger.debug(
-                        `error when inserting to persons table ${error}`
-                      );
-                  });
-              }
-            });
+            );
+          }
         }
       });
   }
@@ -234,15 +246,29 @@ class EmailMessage {
    * @param {array} emails - an array of objects that contains the extracted email addresses
    * @returns Nothing is being returned.
    */
-  async storeEmailsAddressesExtractedFromBody(message, emails) {
+  storeEmailsAddressesExtractedFromBody(message, emails) {
+    const tags = [];
     if (emails?.length > 0) {
       // loop through emails extracted from the current body
       emails.map(async (email) => {
-        if (this.user.email != email && email) {
+        if (this.user.email !== email && email) {
           // get domain status from DomainStatus Helper
           const noReply = emailMessageHelpers.isNoReply(email);
           // get the domain status
           const domain = await emailMessageHelpers.checkDomainStatus(email);
+
+          const type = emailAddressHelpers.findEmailAddressType(
+            email,
+            [email?.name ?? ''],
+            domain[1]
+          );
+
+          if (type != '') {
+            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
+          }
+          if (noReply) {
+            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+          }
           if (!domain[0]) {
             redisClientForNormalMode
               .sismember('invalidDomainEmails', email)
@@ -251,47 +277,92 @@ class EmailMessage {
                   redisClientForNormalMode.sadd('invalidDomainEmails', email);
                 }
               });
-          } else if (!noReply && domain[0]) {
-            if (message.body == null) {
-              logger.log(message);
-            }
-            supabaseHandlers
-              .upsertPointOfContact(
-                supabaseClient,
-                message.body[0]?.id,
-                this.user.id,
-                '',
-                'body'
-              )
-              .then((pointOfContact, error) => {
-                if (error) {
-                  logger.debug(
-                    `error when inserting to pointsOfContact table ${error}`
-                  );
-                }
-                if (pointOfContact && pointOfContact.body[0]) {
-                  supabaseHandlers
-                    .upsertPersons(
-                      supabaseClient,
-                      '',
-                      email.toLowerCase(),
-                      pointOfContact.body[0]?.id
-                    )
-                    .then((data, error) => {
-                      if (error) {
-                        logger.debug(
-                          `error when inserting to perssons table ${error}`
-                        );
-                      }
-                    });
-                }
-              });
+          } else {
+            this.storeEmails(message, email, '', tags, 'body');
           }
         }
       });
     } else {
       delete this.body;
     }
+  }
+  /**
+   * buildTag takes in a name, label, reachable, and type, and returns an object with those properties
+   * used to build a tag object type
+   * @param {string} name - The name of the tag.
+   * @param {string} label - The label of the tag.
+   * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
+   * @param {string} type - The type of the tag.
+   * @returns An object with the following properties:
+   *   name: name,
+   *   label: label,
+   *   reachable: reachable,
+   *   type: type,
+   */
+  buildTag(name, label, reachable, type) {
+    const userid = this.user.id;
+    return {
+      userid,
+      name,
+      label,
+      reachable,
+      type
+    };
+  }
+
+  /**
+   * storeEmails store the email address, name, tags and field name in the database
+   * @param message - the message object returned from the API
+   * @param email - the email address of the person
+   * @param name - The name of the person
+   * @param tags - an array of tags to be added to the person
+   * @param fieldName - the name of the field that the email was found in
+   */
+  storeEmails(message, email, name, tags, fieldName) {
+    supabaseHandlers
+      .upsertPersons(
+        supabaseClient,
+        name ?? '',
+        email.toLowerCase(),
+        this.user.id
+      )
+      // we should wait for the response so we capture the id
+      .then((person) => {
+        if (person.error) {
+          logger.debug(
+            `error when inserting to persons table ${person.error.message}`
+          );
+        }
+        if (person && person?.body?.[0]) {
+          //if saved and no errors then we can store the person linked to this point of contact
+          supabaseHandlers
+            .upsertPointOfContact(
+              supabaseClient,
+              message.body?.[0]?.messageid,
+              this.user.id,
+              person.body?.[0].personid,
+              fieldName
+            )
+            .then((pointOfContact) => {
+              if (pointOfContact.error) {
+                logger.debug(
+                  `error when inserting to pointOfContact table ${pointOfContact.error.message}`
+                );
+              }
+            });
+
+          // add the person id to tags
+          for (let i = 0; i < tags.length; i++) {
+            tags[i].personid = person.body?.[0].personid;
+          }
+          supabaseHandlers
+            .createTags(supabaseClient, tags)
+            // eslint-disable-next-line no-unused-vars
+            .then((data, error) => {
+              // TODO : HANDLE DATA AND ERROR
+            });
+        }
+      });
   }
 }
 module.exports = EmailMessage;

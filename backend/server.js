@@ -1,5 +1,6 @@
 const express = require('express');
 require('dotenv').config();
+// eslint-disable-next-line no-console
 console.log(
   `%c
     ██╗     ███████╗ █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗███████╗██████╗ 
@@ -9,11 +10,11 @@ console.log(
     ███████╗███████╗██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║███████╗██║  ██║
     ╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
 `,
-  `font-family: monospace`
+  'font-family: monospace'
 );
 const config = require('config');
 const port = config.get('server.port');
-var app = express();
+let app = express();
 const http = require('http');
 const SSE = require('express-sse').SSE;
 const sentry = require('./sentry');
@@ -57,13 +58,14 @@ app.use((req, res, next) => {
 //***************█▌█▌Check if should enable sentry BEGIN**********/
 if (config.get('server.sentry.enabled') == true) {
   logger.debug('setting up sentry...');
-  integration = sentry(app);
+  const integration = sentry(app);
   app = integration[0];
-  const sentryInstance = integration[1];
   logger.debug('sentry integrated to the server ✔️ ');
 }
 //***************Check if should enable sentry END █▌█▌**********/
-
+process.on('uncaughtException', (err, origin) => {
+  logger.error(`${err} , ${err.stack}`);
+});
 // parse requests of content-type - application/json
 app.use(express.json());
 
@@ -76,10 +78,10 @@ app.get('/', (req, res) => {
 });
 // attach sse to api/stream endpoint
 app.get('/api/stream', sse.init);
-app.get('/logs', function (req, res, next) {
-  var filePath = __dirname + '/logs/server.log';
+app.get('/logs', (req, res, next) => {
+  const filePath = `${__dirname}/logs/server.log`;
 
-  res.sendFile(filePath, function (err) {
+  res.sendFile(filePath, (err) => {
     /* istanbul ignore if */
     if (err) {
       next(err);
@@ -112,7 +114,7 @@ db.sequelize
   .catch((error) => {
     logger.debug("can't initialize database ✖️ ");
     logger.error(error);
-    process.exit();
+    throw error;
   });
 //***************init db and start server END █▌█▌**********/
 

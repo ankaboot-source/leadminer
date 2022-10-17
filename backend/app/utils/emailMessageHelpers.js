@@ -44,9 +44,9 @@ function checkMXStatus(domain) {
 /**
  * Checks the domain status.
  * @param emailAddress - The email address to check its domain.
- * @returns An array of three elements. 
- * The first element is a boolean that indicates whether the domain is valid or not. 
- * The second element is a string that indicates the type of domain. 
+ * @returns An array of three elements.
+ * The first element is a boolean that indicates whether the domain is valid or not.
+ * The second element is a string that indicates the type of domain.
  * The third element is the domain itself.
  */
 async function checkDomainStatus(emailAddress) {
@@ -58,20 +58,23 @@ async function checkDomainStatus(emailAddress) {
    * The order here matters.
    */
   const providers = [
-    {redisKey : 'freeProviders', type : 'provider', isValid : true},
-    {redisKey : 'disposable', type : 'disposable', isValid : false},
-    {redisKey : 'domainListValid', type : 'custom', isValid : true},
-    {redisKey : 'domainListInvalid', type : '', isValid : false}
+    { redisKey: 'freeProviders', type: 'provider', isValid: true },
+    { redisKey: 'disposable', type: 'disposable', isValid: false },
+    { redisKey: 'domainListValid', type: 'custom', isValid: true },
+    { redisKey: 'domainListInvalid', type: '', isValid: false }
   ];
-  
+
   for (const provider of providers) {
-    const exists = await redisClientForNormalMode.sismember(provider.redisKey, domain);
-    
+    const exists = await redisClientForNormalMode.sismember(
+      provider.redisKey,
+      domain
+    );
+
     if (exists == 1) {
       return [provider.isValid, provider.type, domain];
-    } 
+    }
   }
-  
+
   // if not already scanned we check the MX
   return await checkMXStatus(domain);
 }

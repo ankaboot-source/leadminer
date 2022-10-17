@@ -4,12 +4,10 @@ const db = require('../models'),
   googleUser = db.googleUsers,
   logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/hashHelpers');
-const minedDataHelpers = require('../utils/minedDataHelpers');
 const EventEmitter = require('node:events');
 const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
-const redisClient = require('../../redis').redisClientForNormalMode();
 const { Worker } = require('worker_threads');
 const { imapInfo } = require('../models');
 
@@ -109,7 +107,7 @@ exports.loginToAccount = async (req, res) => {
     return;
   }
   const imap = await ImapInfo.findOne({ where: { email: req.body.email } });
-  if (imap == null) {
+  if (imap === null) {
     this.createImapInfo(req, res);
   } else {
     const imapConnection = temporaryImapConnection(imap, req.body);
@@ -189,7 +187,7 @@ exports.getImapBoxes = async (req, res, sse) => {
     );
     res.status(400).send({
       message: "Can't fetch imap folders",
-      error: error
+      error
     });
   }
   if (tree) {
@@ -251,25 +249,8 @@ exports.getEmails = async (req, res, sse) => {
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter(),
     data = 'messageWorker initiated',
-    messageWorker = new Worker('./app/workers/messageWorker.js', { data }),
-    dataRefiningWorker = new Worker('./app/workers/dataRefiningWorker.js', {
-      data
-    });
-  // refining worker listener, on event it send data to the client
-  dataRefiningWorker.on('message', (data) => {
-    sse.send(
-      {
-        data: data.minedEmails,
-        totalScanned: data.totalScanned,
-        statistics: {
-          noReply: data.noReply,
-          invalidDomain: data.invalidDomain,
-          transactional: data.transactional
-        }
-      },
-      `minedEmails${user.id}`
-    );
-  });
+    messageWorker = new Worker('./app/workers/messageWorker.js', { data });
+
   // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
     server,
@@ -278,8 +259,7 @@ exports.getEmails = async (req, res, sse) => {
     ['HEADER', '1'],
     req.query.boxes,
     eventEmitter,
-    messageWorker,
-    dataRefiningWorker
+    messageWorker
   );
 
   miner.mine();
@@ -289,36 +269,7 @@ exports.getEmails = async (req, res, sse) => {
   //   eventEmitter.emit("endByUser", true);
   //   sse.send(true, `dns${user.id}`);
   // });
-  eventEmitter.on('end', async () => {
-    // get the queues length
-    const QueueLengthBody = await redisClient.llen('bodies'),
-      QueueLengthHeader = await redisClient.llen('headers'),
-      totalQueueLength = QueueLengthBody + QueueLengthHeader,
-      total = totalQueueLength === 0 ? 100 : totalQueueLength * 50;
-    // estimate a timeout to wait all queue jobs (150ms per command)
-    setTimeout(() => {
-      // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data
-      // because of async behaviour we may missed some emails in the worker
-      minedDataHelpers.getEmails(user.id).then((data) => {
-        minedDataHelpers.getCountDB(user.id).then((totalScanned) => {
-          // send progress to user
-          sse.send(
-            { totalScanned: totalScanned },
 
-            `minedEmails${user.id}`
-          );
-          logger.debug(`${data.length} mined email`);
-          sse.send(true, `dns${user.id}`);
-          res.status(200).send({
-            message: 'Done mining emails !',
-            data: minedDataHelpers.sortDatabase(data)[0]
-          });
-
-          logger.debug('cleaning data from database...');
-        });
-      });
-    }, total * 20);
-  });
   eventEmitter.on('error', () => {
     res.status(500).send({
       message: 'Error occurend try to refresh the page or reconnect'

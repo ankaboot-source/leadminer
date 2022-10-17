@@ -110,6 +110,7 @@
                           <a
                             href="https://github.com/ankaboot-source/leadminer/issues/url"
                             target="_blank"
+                            rel="noopener noreferrer"
                             >Terms of Service.</a
                           >
                           <br />I also agree to receive information and offers

@@ -52,6 +52,7 @@ class EmailServer {
         host: this.user.host,
         port: this.user.port || 993,
         tls: true,
+
         connTimeout: CONNECTION_TIMEOUT,
         keepalive: false,
         authTimeout: AUTHENTICATION_TIMEOUT,
