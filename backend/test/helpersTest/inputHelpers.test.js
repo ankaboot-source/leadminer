@@ -1,7 +1,7 @@
 const chai = require('chai'),
   expect = chai.expect;
 const inputHelpers = require('../../app/utils/inputHelpers');
-const testData = require('../testData.json');
+
 describe('inputHelpers.EqualPartsForSocket(total)', function () {
   it('should return array of length 1 (range between 0 and 10)', function () {
     let output = inputHelpers.EqualPartsForSocket(9);

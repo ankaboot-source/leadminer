@@ -73,7 +73,7 @@ describe('Authentication(imap)', function () {
       );
     });
     it('should return a message (welcome back !) when submitting account email', async function () {
-      const response = await request(app.server)
+      await request(app.server)
         .post('/api/imap/login')
         .send({
           email: emailTest

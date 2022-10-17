@@ -115,11 +115,10 @@ exports.SignUpWithGoogle = (req, res) => {
  * Uses the refresh_token to refresh the expired access_token
  * @param  {} refresh_token stored token
  */
-async function refreshAccessToken(refresh_token) {
+function refreshAccessToken(refresh_token) {
   logger.debug('refreshing user token');
   return new Promise(async (resolve, reject) => {
     // return OAuth2 client
-
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({

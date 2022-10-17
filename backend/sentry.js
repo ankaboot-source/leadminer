@@ -3,7 +3,7 @@ const Tracing = require('@sentry/tracing');
 const config = require('config');
 const dsn = config.get('server.sentry.dsn');
 
-module.exports = function SentryMonitoring(app) {
+function initializeSentry(app) {
   // init the sentry instance
   Sentry.init({
     dsn: dsn,
@@ -26,5 +26,6 @@ module.exports = function SentryMonitoring(app) {
   app.use(Sentry.Handlers.requestHandler());
   // TracingHandler creates a trace for every incoming request
   app.use(Sentry.Handlers.tracingHandler());
-  return [app, Sentry];
-};
+}
+
+module.exports = { initializeSentry };
