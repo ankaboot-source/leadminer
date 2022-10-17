@@ -18,7 +18,7 @@ function getOAuthClient() {
  * @param  {} req
  * @param  {} res
  */
-exports.SignUpWithGoogle = async (req, res) => {
+exports.SignUpWithGoogle = (req, res) => {
   const oauth2Client = getOAuthClient();
   // the query param authorization code
   let code = '';
@@ -40,14 +40,7 @@ exports.SignUpWithGoogle = async (req, res) => {
       oauth2Client.setCredentials({
         access_token: tokens.access_token
       });
-      // const oauth2 = googleApi.oauth2({
-      //     auth: oauth2Client,
-      //     version: "v2",
-      //   }),
-      // get user infos( email, id, photo...)
-      //response = await oauth2.userinfo.get({}),
       const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
-      console.log(tokenInfo);
       googleUser.email = tokenInfo.email;
 
       googleUser.refreshToken = tokens.refresh_token;
@@ -124,27 +117,25 @@ exports.SignUpWithGoogle = async (req, res) => {
  */
 async function refreshAccessToken(refresh_token) {
   logger.debug('refreshing user token');
-  return new Promise((resolve, reject) => {
-    let tokenInfo = {},
-      access_token;
+  return new Promise(async (resolve, reject) => {
     // return OAuth2 client
 
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({
-      refresh_token: refresh_token
+      refresh_token
     });
-    return oauth2Client.getAccessToken(async (err, token) => {
-      if (err) {
-        resolve(null);
-      }
-      tokenInfo = await oauth2Client.getTokenInfo(token);
-      access_token = {
-        access_token: token,
-        experation: Math.floor(tokenInfo.expiry_date / 1000)
-      };
-      resolve(access_token);
-    });
+    const { err, token } = await oauth2Client.getAccessToken();
+    if (err) {
+      reject("can't retrieve token");
+    }
+
+    const tokenInfo = await oauth2Client.getTokenInfo(token);
+    const access_token = {
+      access_token: token,
+      experation: Math.floor(tokenInfo.expiry_date / 1000)
+    };
+    resolve(access_token);
   });
 }
 

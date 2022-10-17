@@ -55,7 +55,7 @@ async function checkDomainStatus(emailAddress) {
      */
     exist = await redisClientForNormalMode.sismember('freeProviders', domain);
 
-  if (exist == 1) {
+  if (exist === 1) {
     return [true, 'provider', domain];
   }
   /**
@@ -65,7 +65,7 @@ async function checkDomainStatus(emailAddress) {
     'disposable',
     domain
   );
-  if (existDisposable == 1) {
+  if (existDisposable === 1) {
     return [false, '', domain];
   }
   /**
@@ -75,20 +75,20 @@ async function checkDomainStatus(emailAddress) {
     'domainListValid',
     domain
   );
-  if (existInList == 1) {
+  if (existInList === 1) {
     return [true, 'custom', domain];
   }
   const existInListInValid = await redisClientForNormalMode.sismember(
     'domainListInvalid',
     domain
   );
-  if (existInListInValid == 1) {
+  if (existInListInValid === 1) {
     return [false, '', domain];
   }
   /**
    * if not already scanned we check then the MX
    */
-  if (existInListInValid == 0 && existInList == 0) {
+  if (existInListInValid === 0 && existInList === 0) {
     const result = await checkMXStatus(domain);
     return result;
   }

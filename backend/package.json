@@ -54,6 +54,7 @@
     "c8": "^7.11.0",
     "eslint": "^8.10.0",
     "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-eqeqeq-fix": "^1.0.3",
     "eslint-plugin-import": "^2.25.4",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-security": "^1.5.0",
