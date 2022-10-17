@@ -92,7 +92,7 @@ function updateStoreWhenFinish(response, parent) {
   parent.commit("example/SET_EMAILS", response.data.data);
   parent.commit("example/SET_INFO_MESSAGE", response.data.message);
 }
-export async function getEmails({ getters }, { data }) {
+export function getEmails({ getters }, { data }) {
   const currentState = getters.getStates;
   const CancelToken = this.$axios.CancelToken;
   const sources = CancelToken.source();
