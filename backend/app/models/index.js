@@ -5,7 +5,9 @@ const dbConfig = require('../config/db.config'),
     host: dbConfig.host,
     dialect: 'postgres',
     pool: {
-      max: 7, //Maximum number of connection in pool(do not make more than 7 for the moment, else the query queue became full in a short time and this will carsh the DB)
+      // Maximum number of connection in pool(do not make more than 7 for the moment,
+      // else the query queue became full in a short time and this will carsh the DB)
+      max: 7,
       min: 0,
       acquire: 200000,
       idle: 50000,

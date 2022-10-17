@@ -52,6 +52,7 @@ class EmailServer {
         host: this.user.host,
         port: this.user.port || 993,
         tls: true,
+
         connTimeout: CONNECTION_TIMEOUT,
         keepalive: false,
         authTimeout: AUTHENTICATION_TIMEOUT,
@@ -81,7 +82,7 @@ class EmailServer {
    * @returns A promise that resolves to the connection object.
    */
   async connecte() {
-    return new Promise((res, reject) => {
+    return new Promise((res) => {
       // initialize the connection
       this.initConnection();
       if (this.isApiConnection()) {

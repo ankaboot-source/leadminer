@@ -191,18 +191,18 @@ function findEmailAddressType(emailAddress, UserNames, domainType) {
   if (UserNames.length > 0) {
     for (const userName of UserNames) {
       if (
-        domainType == 'provider' &&
-        domainType != 'custom' &&
+        domainType === 'provider' &&
+        domainType !== 'custom' &&
         getScore(domainAndUserName[0], userName) > 40
       ) {
         return 'Personal';
-      }
-      if (
+      } else if (
         getScore(domainAndUserName[0], userName) > 40 &&
-        domainType == 'custom'
+        domainType === 'custom'
       ) {
         return 'Professional';
       }
+      return '';
     }
   }
   return '';
@@ -225,11 +225,11 @@ function handleNames(name, emailAddress) {
       .replaceAll('/', '')
       .trim();
     // case when the name is not the same as the address
-    if (Name != emailAddress) {
+    if (Name !== emailAddress) {
       if (
         NameArray.filter((str) =>
           str.toLowerCase().includes(Name.toLowerCase())
-        ).length == 0
+        ).length === 0
       ) {
         // if OK then push to the array
         NameArray.push(Name);
@@ -253,7 +253,7 @@ function sortDataUsingAlpha(data) {
     // name begins with number eg: name = 4four
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name && el.name.length > 0 && el.name[0] != '') {
+    } else if (el.name && el.name.length > 0 && el.name[0] !== '') {
       // name begins with alpha or char
       wordArr.push(el);
     } else {
@@ -284,9 +284,9 @@ function sortDatabase(dataFromDatabase) {
   const data = [];
   dataFromDatabase.map((row) => {
     // we treat only emails that are not tagged "noReply"
-    if (row.dataValues.noReply == false) {
+    if (row.dataValues.noReply === false) {
       //if for any reason we don't have names we should give empty string
-      if (!row.dataValues.name || row.dataValues.name == null) {
+      if (!row.dataValues.name || row.dataValues.name === null) {
         row.dataValues.name = [''];
       } else {
         // here are clean names
@@ -294,7 +294,7 @@ function sortDatabase(dataFromDatabase) {
           row.dataValues.name,
           row.dataValues.address
         );
-        row.dataValues.name = NameArray.length == 0 ? [''] : NameArray;
+        row.dataValues.name = NameArray.length === 0 ? [''] : NameArray;
       }
       // sum the sender + the total so we can have total interactions with this email
       row.dataValues.total =
@@ -304,7 +304,7 @@ function sortDatabase(dataFromDatabase) {
       if (
         !row.dataValues.Newsletter &&
         !row.dataValues.Transactional &&
-        row.dataValues.name.every((val) => val != '')
+        row.dataValues.name.every((val) => val !== '')
       ) {
         //if not transactional or newsletter, then find the type
         row.dataValues.type = findEmailAddressType(
@@ -324,6 +324,7 @@ function sortDatabase(dataFromDatabase) {
   return [sortDataUsingAlpha(data), counter];
 }
 module.exports = {
+  findEmailAddressType,
   getEmails,
   getCountDB,
   deleteUserData,

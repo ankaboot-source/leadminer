@@ -25,7 +25,8 @@ redisClient.on('message', (channel, messageFromChannel) => {
     message.seqNumber,
     Header,
     message.body,
-    message.user
+    message.user,
+    message.folderName
   );
   if (message_id) {
     // Extract emails from the header

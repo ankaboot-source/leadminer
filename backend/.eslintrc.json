@@ -20,6 +20,7 @@
     "semi-spacing": "error", //* Best Practices
     "no-invalid-this": "error",
     "no-useless-return": "error",
+    "no-async-promise-executor": "warn",
     "no-unused-vars": [
       "warn",
       { "argsIgnorePattern": "req|res|next|__|reject" }
@@ -30,11 +31,14 @@
     "space-in-parens": "error",
     "space-infix-ops": "error",
     "space-unary-ops": "error",
-    "quotes": ["warn", "single"],
-    //
-    "max-len": ["error", { "code": 200 }],
-    "max-lines": ["error", { "max": 500 }],
+    "quotes": ["warn", "single", { "avoidEscape": true }],
+    "max-len": ["error", { "code": 150 }],
+    "max-lines": [
+      "error",
+      { "max": 500, "skipComments": true, "skipBlankLines": true }
+    ],
     "keyword-spacing": "error",
+    "object-shorthand": ["error", "always", { "avoidQuotes": true }],
     "multiline-ternary": ["error", "never"],
     "no-mixed-operators": "error",
     //
@@ -48,7 +52,6 @@
     "arrow-spacing": "error",
     "no-confusing-arrow": "error",
     "no-duplicate-imports": "error",
-    "object-shorthand": "off",
     "prefer-const": "error",
     "prefer-template": "warn",
     "comma-dangle": [2, "never"],
