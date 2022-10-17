@@ -14,15 +14,15 @@ function upsertMessage(
   messageID,
   userID,
   channel,
-  folder,
+  folderPath,
   date
 ) {
   return supabaseClient.from('messages').upsert({
-    messageid: messageID,
+    message_id: messageID,
     userid: userID,
-    channel: channel,
-    folder: folder,
-    date: date,
+    channel,
+    folderpath: folderPath,
+    date,
     listid: '',
     reference: ''
   });
@@ -53,7 +53,7 @@ function upsertPointOfContact(
     bcc: key === 'bcc',
     _from: key === 'from',
     reply_to: key === 'reply-to',
-    _personid: personid
+    personid
   });
 }
 /**
@@ -66,7 +66,7 @@ function upsertPointOfContact(
 function upsertPersons(supabaseClient, name, emailsAddress, userID) {
   return supabaseClient.from('persons').upsert(
     {
-      name: name,
+      name,
       email: emailsAddress,
       _userid: userID,
       url: '',

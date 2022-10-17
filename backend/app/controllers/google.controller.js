@@ -18,7 +18,7 @@ function getOAuthClient() {
  * @param  {} req
  * @param  {} res
  */
-exports.SignUpWithGoogle = async (req, res) => {
+exports.SignUpWithGoogle = (req, res) => {
   const oauth2Client = getOAuthClient();
   // the query param authorization code
   let code = '';
@@ -117,13 +117,13 @@ exports.SignUpWithGoogle = async (req, res) => {
  */
 async function refreshAccessToken(refresh_token) {
   logger.debug('refreshing user token');
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     // return OAuth2 client
 
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({
-      refresh_token: refresh_token
+      refresh_token
     });
     const { err, token } = await oauth2Client.getAccessToken();
     if (err) {

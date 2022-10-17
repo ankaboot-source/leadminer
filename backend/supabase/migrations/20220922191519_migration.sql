@@ -11,39 +11,53 @@
 
 CREATE TABLE IF NOT EXISTS public.messages
 (
-    id uuid DEFAULT uuid_generate_v4(),
+    messageid uuid DEFAULT uuid_generate_v4(),
     channel text,
-    folder text,
+    folderPath text,
     date timestamptz,
-    userID uuid,
+    userid uuid,
     listid text,
-    messageid text,
+    message_id text,
     reference text,
-    PRIMARY KEY (id,userID)
+    PRIMARY KEY (messageid,userid)
 );
 
 
 
 CREATE TABLE IF NOT EXISTS public.domains
 (
-    id SERIAL PRIMARY KEY,
+    domainid uuid DEFAULT uuid_generate_v4(),
     name text,
     lastCheck timestamptz,
-    emailServertype text
+    emailServertype text,
+    PRIMARY KEY (domainid)
 );
 
 CREATE TABLE IF NOT EXISTS public.organizations
 (
     name text,
-    domain SERIAL,
+    alternateName text,
+    address text,
+    url text,
+    legalName text,
+    telephone text,
+    email text,
+    image text,
+    founder uuid,
+    employee uuid,
+    _domain uuid,
     CONSTRAINT name PRIMARY KEY (name),
-    FOREIGN KEY (domain) REFERENCES domains(id)
+    FOREIGN KEY (_domain) REFERENCES domains(domainid)
+    --FOREIGN KEY (founder) REFERENCES persons(personid)
+    
+
+
 );
 
 
 CREATE TABLE IF NOT EXISTS public.persons
 (
-    personID uuid DEFAULT uuid_generate_v4(),
+    personid uuid DEFAULT uuid_generate_v4(),
     name text,
     email text,
     _userid uuid,
@@ -55,49 +69,48 @@ CREATE TABLE IF NOT EXISTS public.persons
     givenName text,
     familyName text,
     jobTitle text,
-    worksFor text,
-    PRIMARY KEY (personID),
-    UNIQUE(email),
-    FOREIGN KEY (worksFor) REFERENCES organizations(name)
-    
+    worksFor text DEFAULT (''),
+    PRIMARY KEY (personid),
+    UNIQUE(email)
+    --FOREIGN KEY (worksFor) REFERENCES organizations(name)
 );
 
 CREATE TABLE IF NOT EXISTS public.pointsofcontact
 (
-    id uuid DEFAULT uuid_generate_v4(),
-    userID uuid,
-    messageID uuid,
-    _from bool,
+    pointid uuid DEFAULT uuid_generate_v4(),
+    userid uuid,
+    messageid uuid,
+    _from bool, --reserved word in postgres, so we can't use from
     reply_to bool,
-    _to bool,
+    _to bool, --reserved
     cc bool,
     bcc bool,
-    _personid uuid,
-    PRIMARY KEY (id),
-    FOREIGN KEY (userID, messageID) REFERENCES messages(userID,id),
-    FOREIGN KEY (_personid) REFERENCES persons(personID)
+    personid uuid,
+    PRIMARY KEY (pointid),
+    FOREIGN KEY (userid, messageid) REFERENCES messages(userid,messageid),
+    FOREIGN KEY (personid) REFERENCES persons(personid)
 
 );
 
 
 CREATE TABLE IF NOT EXISTS public.tags
 (
-    id uuid DEFAULT uuid_generate_v4(),
+    tagid uuid DEFAULT uuid_generate_v4(),
     personid uuid,
     userid uuid,
     name text,
     label text,
     reachable int,
     type text,
-    PRIMARY KEY (id),
+    PRIMARY KEY (tagid),
     UNIQUE (personid, name),
-    FOREIGN KEY (personid) REFERENCES persons(personID)
+    FOREIGN KEY (personid) REFERENCES persons(personid)
 );
 
 
 CREATE TABLE IF NOT EXISTS public.refinedpersons
 (
-    id uuid DEFAULT uuid_generate_v4(),
+    refinedid uuid DEFAULT uuid_generate_v4(),
     personid uuid,
     userid uuid,
     --recency date,
@@ -106,9 +119,9 @@ CREATE TABLE IF NOT EXISTS public.refinedpersons
     tags text ARRAY,
     name text,
     email text,
-    PRIMARY KEY (id),
+    PRIMARY KEY (refinedid),
     UNIQUE(personid),
-    FOREIGN KEY (personid) REFERENCES persons(personID)
+    FOREIGN KEY (personid) REFERENCES persons(personid)
 );
 
 
@@ -133,7 +146,7 @@ declare
   occurences int;
 begin
     select count(*) into occurences filter (where cc or _to or _from or reply_to or bcc)
-    FROM pointsofcontact where _personid=get_occurences_per_person.personid and pointsofcontact.userid=get_occurences_per_person.userid;
+    FROM pointsofcontact where pointsofcontact.personid=get_occurences_per_person.personid and pointsofcontact.userid=get_occurences_per_person.userid;
   return occurences;
 end;
 $$;

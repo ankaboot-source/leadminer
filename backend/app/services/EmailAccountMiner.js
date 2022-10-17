@@ -6,8 +6,6 @@ const Imap = require('imap'),
   config = require('config');
 const redisClientForPubSubMode =
   require('../../redis').redisClientForPubSubMode();
-const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
 const supabaseUrl = config.get('server.supabase.url');
 const supabaseToken = config.get('server.supabase.token');
 const { createClient } = require('@supabase/supabase-js');
@@ -34,8 +32,7 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    messageWorker,
-    dataRefiningWorker
+    messageWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -46,19 +43,16 @@ class EmailAccountMiner {
     this.mailHash = hashHelpers.hashEmail(user.email);
     this.messageWorkerForBody = messageWorker;
     this.messageWorkerForHeader = messageWorker;
-    this.dataRefiningWorker = dataRefiningWorker;
   }
 
   /**
    * getTree connects to the IMAP server, gets the tree of folders, adds the total number of emails per
    * folder, and then adds the total number of emails per parent folder
-   * @async
    * @returns a promise that resolves to an array of two elements. The first element is the tree object,
    * the second element is an error object.
    */
-  async getTree() {
+  getTree() {
     return new Promise((resolve, reject) => {
-      const self = this;
       let result = [];
       this.connection.connecte().then((connection) => {
         this.connection = connection;
@@ -99,7 +93,6 @@ class EmailAccountMiner {
           logger.error(
             `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
           );
-          console.log('after childtotal');
           this.connection.destroy();
           this.connection.end();
         });
@@ -346,50 +339,25 @@ class EmailAccountMiner {
       this.sendMinedData(seqNumber, folderName);
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
+    // TODO : check message if it's already mined
     const message_id = Header['message-id'] ? Header['message-id'][0] : '';
-    redisClientForNormalMode
-      .sismember('messages', message_id)
-      .then((alreadyMined) => {
-        if (!alreadyMined) {
-          //publish the message to the channel
-          redisClientForPubSubMode.publish(
-            `messages-channel-${this.user.id}`,
-            JSON.stringify({
-              seqNumber: seqNumber,
-              body: body,
-              header: JSON.stringify(Header),
-              user: this.user
-            })
-          );
-        }
-      });
-  }
-
-  /**
-   * This function takes in a sequence number, header, and body of an email message, creates an
-   * EmailMessage object, extracts email objects from the header and body
-   * @param seqNumber - The sequence number of the email message.
-   * @param header - The header of the email message
-   * @param body - The body of the email message
-   * @param dataInCaseOfBody - The date of a message
-   */
-  async mineMessage(seqNumber, header, body, dateInCaseOfBody) {
-    // create EmailMessage object
-    const message = {
-      seq: seqNumber,
-      header: header,
-      body: body,
-      user: this.user,
-      date: dateInCaseOfBody
-    };
-
-    if (body) {
-      //send message data to the body Worker
-      this.messageWorkerForBody.postMessage(message);
-    } else {
-      //send message data to the header Worker
-      this.messageWorkerForHeader.postMessage(message);
-    }
+    // redisClientForNormalMode
+    //   .sismember('messages', message_id)
+    //   .then((alreadyMined) => {
+    //     if (!alreadyMined) {
+    //publish the message to the channel
+    redisClientForPubSubMode.publish(
+      `messages-channel-${this.user.id}`,
+      JSON.stringify({
+        seqNumber,
+        body,
+        header: JSON.stringify(Header),
+        user: this.user,
+        folderName
+      })
+    );
+    //   }
+    // });
   }
 
   /**
@@ -432,11 +400,16 @@ class EmailAccountMiner {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
-    const userId = this.user.id;
     // call supabase function to refine data
-    const { data, error } = await supabaseClient.rpc('refined_persons', {
-      userid: this.user.id
-    });
+    supabaseClient
+      .rpc('refined_persons', {
+        userid: this.user.id
+      })
+      .then((res) => {
+        if (res.error) {
+          logger.error(res.error);
+        }
+      });
   }
 }
 

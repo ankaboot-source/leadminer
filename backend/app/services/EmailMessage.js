@@ -17,7 +17,7 @@ const supabaseToken = config.get('server.supabase.token');
 const { createClient } = require('@supabase/supabase-js');
 const supabaseClient = createClient(supabaseUrl, supabaseToken);
 const supabaseHandlers = require('./supabaseServices/supabase');
-const logger = require('../utils/logger');
+const logger = require('../utils/logger')(module);
 
 class EmailMessage {
   /**
@@ -28,11 +28,12 @@ class EmailMessage {
    * @param user - The user.
 
    */
-  constructor(sequentialId, header, body, user) {
+  constructor(sequentialId, header, body, user, folder) {
     this.sequentialId = sequentialId;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
+    this.folderPath = folder;
   }
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
@@ -119,9 +120,15 @@ class EmailMessage {
       messageID,
       this.user.id,
       'imap',
-      'test',
+      this.folderPath,
       date
     );
+    if (message.error) {
+      logger.debug(
+        `error when inserting to messages table ${message.error.message}`
+      );
+    }
+
     // case when header should be scanned
     // eslint-disable-next-line no-constant-condition
     if (true) {
@@ -143,7 +150,7 @@ class EmailMessage {
       );
       delete this.body;
       // store extracted emails
-      //this.storeEmailsAddressesExtractedFromBody(message, emails);
+      this.storeEmailsAddressesExtractedFromBody(message, emails);
     }
   }
 
@@ -242,9 +249,10 @@ class EmailMessage {
 
           const type = emailAddressHelpers.findEmailAddressType(
             email,
-            [email?.name] ?? '',
+            [email?.name ?? ''],
             domain[1]
           );
+
           if (type != '') {
             tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
           }
@@ -282,11 +290,13 @@ class EmailMessage {
    *   type: type,
    */
   buildTag(name, label, reachable, type) {
+    const userid = this.user.id;
     return {
-      name: name,
-      label: label,
-      reachable: reachable,
-      type: type
+      userid,
+      name,
+      label,
+      reachable,
+      type
     };
   }
 
@@ -300,26 +310,33 @@ class EmailMessage {
    */
   storeEmails(message, email, name, tags, fieldName) {
     supabaseHandlers
-      .upsertPersons(supabaseClient, name ?? '', email.toLowerCase())
+      .upsertPersons(
+        supabaseClient,
+        name ?? '',
+        email.toLowerCase(),
+        this.user.id
+      )
       // we should wait for the response so we capture the id
-      .then((person, error) => {
-        if (error) {
-          logger.debug(`error when inserting to persons table ${error}`);
+      .then((person) => {
+        if (person.error) {
+          logger.debug(
+            `error when inserting to persons table ${person.error.message}`
+          );
         }
         if (person && person?.body?.[0]) {
           //if saved and no errors then we can store the person linked to this point of contact
           supabaseHandlers
             .upsertPointOfContact(
               supabaseClient,
-              message.body?.[0]?.id,
+              message.body?.[0]?.messageid,
               this.user.id,
               person.body?.[0].personid,
               fieldName
             )
-            .then((pointOfContact, error) => {
-              if (error) {
+            .then((pointOfContact) => {
+              if (pointOfContact.error) {
                 logger.debug(
-                  `error when inserting to pointOfContact table ${error}`
+                  `error when inserting to pointOfContact table ${pointOfContact.error.message}`
                 );
               }
             });

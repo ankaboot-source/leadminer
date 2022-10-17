@@ -38,6 +38,7 @@
       { "max": 500, "skipComments": true, "skipBlankLines": true }
     ],
     "keyword-spacing": "error",
+    "object-shorthand": ["error", "always", { "avoidQuotes": true }],
     "multiline-ternary": ["error", "never"],
     "no-mixed-operators": "error",
     //
@@ -51,7 +52,6 @@
     "arrow-spacing": "error",
     "no-confusing-arrow": "error",
     "no-duplicate-imports": "error",
-    "object-shorthand": "off",
     "prefer-const": "error",
     "prefer-template": "warn",
     "comma-dangle": [2, "never"],
