@@ -1,5 +1,7 @@
 export function SET_EMAILS(state, emails) {
-  state.retrievedEmails = emails;
+  if (!Array.isArray(emails)) {
+    state.retrievedEmails.push(emails);
+  }
 }
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;

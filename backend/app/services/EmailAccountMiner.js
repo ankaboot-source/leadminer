@@ -2,12 +2,14 @@ const imapTreeHelpers = require('../utils/imapTreeHelpers');
 const hashHelpers = require('../utils/hashHelpers');
 const inputHelpers = require('../utils/inputHelpers');
 const Imap = require('imap'),
-  logger = require('../utils/logger')(module);
+  logger = require('../utils/logger')(module),
+  config = require('config');
 const redisClientForPubSubMode =
   require('../../redis').redisClientForPubSubMode();
-const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
-
+const supabaseUrl = config.get('server.supabase.url');
+const supabaseToken = config.get('server.supabase.token');
+const { createClient } = require('@supabase/supabase-js');
+const supabaseClient = createClient(supabaseUrl, supabaseToken);
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -30,8 +32,7 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    messageWorker,
-    dataRefiningWorker
+    messageWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -42,18 +43,16 @@ class EmailAccountMiner {
     this.mailHash = hashHelpers.hashEmail(user.email);
     this.messageWorkerForBody = messageWorker;
     this.messageWorkerForHeader = messageWorker;
-    this.dataRefiningWorker = dataRefiningWorker;
   }
 
   /**
    * getTree connects to the IMAP server, gets the tree of folders, adds the total number of emails per
    * folder, and then adds the total number of emails per parent folder
-   * @async
    * @returns a promise that resolves to an array of two elements. The first element is the tree object,
    * the second element is an error object.
    */
   getTree() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       let result = [];
       this.connection.connecte().then((connection) => {
         this.connection = connection;
@@ -88,7 +87,7 @@ class EmailAccountMiner {
             );
           });
         });
-        this.connection.once('end', () => {
+        this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
             emailHash: this.mailHash
           });
@@ -114,9 +113,8 @@ class EmailAccountMiner {
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       imapTree.map((folder) => {
-        const self = this;
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
@@ -124,9 +122,9 @@ class EmailAccountMiner {
             } else {
               folder.total = 0;
             }
-            if (folder == imapTree[imapTree.length - 1]) {
-              resolve();
+            if (folder === imapTree[imapTree.length - 1]) {
               self.connection.end();
+              resolve();
             }
           });
         }
@@ -162,7 +160,7 @@ class EmailAccountMiner {
         this.connection.end();
       });
     });
-    this.connection.once('end', () => {
+    this.connection.once('close', () => {
       logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
 
       return tree;
@@ -216,7 +214,7 @@ class EmailAccountMiner {
   *mineFolder(folder) {
     logger.info('Started mining email messages from folder.', {
       emailHash: this.mailHash,
-      folder: folder
+      folder
     });
 
     // we use generator to stope function execution then we recall it with new params using next()
@@ -253,7 +251,7 @@ class EmailAccountMiner {
       // fetching method
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
-    } else if (this.folders.indexOf(folderName) + 1 == this.folders.length) {
+    } else if (this.folders.indexOf(folderName) + 1 === this.folders.length) {
       logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
       this.connection.destroy();
@@ -316,7 +314,7 @@ class EmailAccountMiner {
         folder: folder.name
       });
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
-      if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
+      if (self.folders.indexOf(folder.name) + 1 === self.folders.length) {
         // we are at the end of the folder array==>> end imap connection
         logger.debug(
           `We are done...Ending connection for User: ${this.mailHash}`
@@ -352,50 +350,25 @@ class EmailAccountMiner {
       this.sendMinedData(seqNumber, folderName);
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
+    // TODO : check message if it's already mined
     const message_id = Header['message-id'] ? Header['message-id'][0] : '';
-    redisClientForNormalMode
-      .sismember('messages', message_id)
-      .then((alreadyMined) => {
-        if (!alreadyMined) {
-          //publish the message to the channel
-          redisClientForPubSubMode.publish(
-            `messages-channel-${this.user.id}`,
-            JSON.stringify({
-              seqNumber: seqNumber,
-              body: body,
-              header: JSON.stringify(Header),
-              user: this.user
-            })
-          );
-        }
-      });
-  }
-
-  /**
-   * This function takes in a sequence number, header, and body of an email message, creates an
-   * EmailMessage object, extracts email objects from the header and body
-   * @param seqNumber - The sequence number of the email message.
-   * @param header - The header of the email message
-   * @param body - The body of the email message
-   * @param dataInCaseOfBody - The date of a message
-   */
-  async mineMessage(seqNumber, header, body, dateInCaseOfBody) {
-    // create EmailMessage object
-    const message = {
-      seq: seqNumber,
-      header: header,
-      body: body,
-      user: this.user,
-      date: dateInCaseOfBody
-    };
-
-    if (body) {
-      //send message data to the body Worker
-      this.messageWorkerForBody.postMessage(message);
-    } else {
-      //send message data to the header Worker
-      this.messageWorkerForHeader.postMessage(message);
-    }
+    // redisClientForNormalMode
+    //   .sismember('messages', message_id)
+    //   .then((alreadyMined) => {
+    //     if (!alreadyMined) {
+    //publish the message to the channel
+    redisClientForPubSubMode.publish(
+      `messages-channel-${this.user.id}`,
+      JSON.stringify({
+        seqNumber,
+        body,
+        header: JSON.stringify(Header),
+        user: this.user,
+        folderName
+      })
+    );
+    //   }
+    // });
   }
 
   /**
@@ -434,13 +407,20 @@ class EmailAccountMiner {
    * @param seqNumber - The sequence number of the mined data.
    * @param folderName - The name of the folder that contains the mined data.
    */
-  sendMinedData(seqNumber, folderName) {
+  async sendMinedData(seqNumber, folderName) {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
-    const userId = this.user.id;
-    // refining worker used to refine data to be send as progress status, using streaming.
-    this.dataRefiningWorker.postMessage({ userId });
+    // call supabase function to refine data
+    supabaseClient
+      .rpc('refined_persons', {
+        userid: this.user.id
+      })
+      .then((res) => {
+        if (res.error) {
+          logger.error(res.error);
+        }
+      });
   }
 }
 
