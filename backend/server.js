@@ -1,5 +1,6 @@
 const express = require('express');
 require('dotenv').config();
+// eslint-disable-next-line no-console
 console.log(
   `%c
     ██╗     ███████╗ █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗███████╗██████╗ 
@@ -9,7 +10,7 @@ console.log(
     ███████╗███████╗██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║███████╗██║  ██║
     ╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
 `,
-  `font-family: monospace`
+  'font-family: monospace'
 );
 const config = require('config');
 const port = config.get('server.port');
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
 
 //***************█▌█▌Check if should enable sentry BEGIN**********/
 if (config.get('server.sentry.enabled') == true) {
-  logger.debug('setting up sentry...');
+  logger.debug('Setting up sentry...');
   integration = sentry(app);
   app = integration[0];
   const sentryInstance = integration[1];
@@ -84,7 +85,7 @@ app.get('/logs', function (req, res, next) {
     if (err) {
       next(err);
     } else {
-      logger.log('Sent the logs..');
+      logger.info('Sent the logs..');
     }
   });
 });
@@ -95,23 +96,22 @@ require('./app/routes/imap.routes')(app, sse);
 db.sequelize
   .sync()
   .then(() => {
-    logger.debug('database initialized ✔️ ');
+    logger.debug('Database initialized ✔️ ');
     //disconnect from redis after initialization
     redisClientForInitialisation.disconnect();
     // if successful init then start server
     server.listen(port, () => {
-      logger.info(`Server is running port ${port}.`);
+      logger.info(`Server is running on port ${port}.`);
       event.emit('started');
     });
     server.on('error', (e) => {
       if (e.code === 'EADDRINUSE') {
-        logger.debug('Address in use, retrying...');
+        logger.error('Address in use, retrying...', { error: e });
       }
     });
   })
   .catch((error) => {
-    logger.debug("can't initialize database ✖️ ");
-    logger.error(error);
+    logger.error('Error initializing database.', { error });
     process.exit();
   });
 //***************init db and start server END █▌█▌**********/

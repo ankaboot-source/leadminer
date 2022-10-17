@@ -245,7 +245,7 @@ class EmailMessage {
               });
           } else if (!noReply && domain[0]) {
             if (message.body == null) {
-              console.log(message);
+              logger.debug(message);
             }
             supabaseHandlers
               .upsertPointOfContact(

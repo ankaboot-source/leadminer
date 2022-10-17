@@ -64,21 +64,21 @@ exports.createImapInfo = (req, res) => {
             res.status(200).send({ imap: data });
           })
           .catch((err) => {
-            logger.error(
-              `can't create account with email ${req.body.email} : ${err}`
-            );
+            logger.error('Unable to create account with this email.', {
+              error: err,
+              email: req.body.email
+            });
             res.status(500).send({
               error:
                 'Some error occurred while creating your account imap info.'
             });
           });
       } else {
-        logger.info(
-          `On signup : Account with email ${req.body.email} already exist`
-        );
+        logger.info('On signup : An account with this email already exists.', {
+          email: req.body.email
+        });
         res.status(200).send({
           message: 'Your account already exists !',
-
           imap
         });
       }
@@ -87,9 +87,11 @@ exports.createImapInfo = (req, res) => {
   });
   // The imap account does not exists or connexion denied
   imap.once('error', (err) => {
-    logger.error(
-      `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}  : **Error** ${err}`
-    );
+    logger.error('Unable to connect to imap account with this email and host', {
+      error: err,
+      email: req.body.email,
+      host: req.body.host
+    });
     res.status(500).send({
       error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
     });
@@ -117,9 +119,9 @@ exports.loginToAccount = async (req, res) => {
     imapConnection.connect();
     imapConnection.once('ready', () => {
       if (imap) {
-        logger.info(
-          `Account with email ${req.body.email} succesfully logged in`
-        );
+        logger.info('Account succesfully logged in.', {
+          email: req.body.email
+        });
         res.status(200).send({
           imap
         });
@@ -127,9 +129,11 @@ exports.loginToAccount = async (req, res) => {
       }
     });
     imapConnection.on('error', (err) => {
-      logger.error(
-        `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
-      );
+      logger.error('Unable to connect to imap account.', {
+        error: err,
+        email: req.body.email,
+        host: req.body.host
+      });
       res.status(500).send({
         error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
       });
@@ -146,7 +150,7 @@ exports.loginToAccount = async (req, res) => {
 exports.getImapBoxes = async (req, res, sse) => {
   'use strict';
   if (!req.headers['x-imap-login']) {
-    logger.error("No user login ! request can't be handled without a login");
+    logger.error('No user login! Unable to handle request without a login');
     return res.status(404).send({
       message: 'Bad request',
       error: 'Bad request! please check login!'
@@ -182,24 +186,21 @@ exports.getImapBoxes = async (req, res, sse) => {
     [tree, error] = await miner.getTree();
 
   if (error) {
-    logger.error(
-      `Mining imap tree failed for user with email ${hashHelpers.hashEmail(
-        user.email
-      )} reason : ${error}`
-    );
+    logger.error('Mining IMAP tree failed.', {
+      error,
+      emailHash: hashHelpers.hashEmail(user.email)
+    });
     res.status(400).send({
-      message: "Can't fetch imap folders",
+      message: 'Unable to fetch IMAP folders.',
       error: error
     });
   }
   if (tree) {
-    logger.info(
-      `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
-        user.email
-      )}`
-    );
+    logger.info('Mining IMAP tree succeeded.', {
+      emailHash: hashHelpers.hashEmail(user.email)
+    });
     res.status(200).send({
-      message: 'Imap folders fetched with success !',
+      message: 'IMAP folders fetched successfully!',
       imapFoldersTree: tree
     });
   }
@@ -214,7 +215,7 @@ exports.getImapBoxes = async (req, res, sse) => {
 exports.getEmails = async (req, res, sse) => {
   'use strict';
   if (!req.headers['x-imap-login']) {
-    logger.error("No user login ! request can't be handled without a user");
+    logger.error('No user login! Unable to handle request without a user');
     return res.status(404).send({
       message: 'Bad request',
       error: 'Bad request! please check login!'

@@ -47,7 +47,7 @@ exports.SignUpWithGoogle = async (req, res) => {
       // get user infos( email, id, photo...)
       //response = await oauth2.userinfo.get({}),
       const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
-      console.log(tokenInfo);
+      logger.debug(tokenInfo);
       googleUser.email = tokenInfo.email;
 
       googleUser.refreshToken = tokens.refresh_token;
@@ -73,12 +73,9 @@ exports.SignUpWithGoogle = async (req, res) => {
                   });
                 })
                 .catch((err) => {
-                  logger.error(
-                    `can't create account with for user Error : ${err}`
-                  );
+                  logger.error('Unable to create use account.', { error: err });
                   res.status(500).send({
-                    error:
-                      'Some error occurred while creating your account your account.'
+                    error: 'An error has occurred while creating your account.'
                   });
                 });
             } else if (
@@ -92,7 +89,7 @@ exports.SignUpWithGoogle = async (req, res) => {
                 )
                 .then(() => {
                   logger.info(
-                    `On signUp With Google : Account with id: ${googleUser.id} already exist`
+                    `On signUp With Google : Account with id: ${googleUser.id} already exists`
                   );
                   // case when user id exists
                   res.status(200).send({
@@ -123,7 +120,7 @@ exports.SignUpWithGoogle = async (req, res) => {
  * @param  {} refresh_token stored token
  */
 async function refreshAccessToken(refresh_token) {
-  logger.debug('refreshing user token');
+  logger.debug('Refreshing user token');
   return new Promise((resolve, reject) => {
     let tokenInfo = {},
       access_token;

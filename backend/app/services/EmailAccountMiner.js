@@ -58,12 +58,15 @@ class EmailAccountMiner {
       this.connection.connecte().then((connection) => {
         this.connection = connection;
         this.connection.once('ready', () => {
-          logger.info(`Begin mining folders tree for user : ${this.mailHash}`);
+          logger.info('Started mining folders tree for user.', {
+            emailHash: this.mailHash
+          });
           this.connection.getBoxes('', async (err, boxes) => {
             if (err) {
-              logger.error(
-                `Failed mining folders tree for user: ${this.mailHash}  raison: ${err}`
-              );
+              logger.error('Failed mining folders tree for user', {
+                error: err,
+                emailHash: this.mailHash
+              });
               result = [this.tree, err];
               resolve(result);
             }
@@ -86,14 +89,17 @@ class EmailAccountMiner {
           });
         });
         this.connection.once('end', () => {
-          logger.info(`End mining folders tree for user : ${this.mailHash}`);
+          logger.info('Finished mining folders tree for user.', {
+            emailHash: this.mailHash
+          });
           result = [this.tree, null];
           resolve(result);
         });
         this.connection.once('error', (error) => {
-          logger.error(
-            `Failed mining folders tree for user: ${this.mailHash}  raison: ${error}`
-          );
+          logger.error('Failed mining folders tree for user', {
+            error,
+            emailHash: this.mailHash
+          });
           result = [this.tree, error];
           resolve(result);
         });
@@ -172,24 +178,28 @@ class EmailAccountMiner {
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
     this.connection.once('ready', async () => {
-      logger.info(`Begin mining emails messages for user: ${this.mailHash}`);
+      logger.info('Started mining email messages for user.', {
+        emailHash: this.mailHash
+      });
       this.messageWorkerForBody.postMessage(this.user.id);
       this.mineFolder(this.folders[0]).next();
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
       this.connection.destroy();
-      logger.info(
-        `Connection to imap server destroyed by user: ${this.mailHash}`
-      );
+      logger.info('Connection to IMAP server destroyed by user.', {
+        emailHash: this.mailHash
+      });
       // this.eventEmitter.emit("end", true);
     });
 
     this.connection.on('error', (err) => {
-      logger.error(`Error with imap connection${err}`);
+      logger.error('Error with IMAP connection.', { error: err });
     });
     this.connection.once('end', () => {
-      logger.info(`End collecting emails for user: ${this.mailHash}`);
+      logger.info('Finished collecting emails for user.', {
+        emailHash: this.mailHash
+      });
       // sse here to send data based on end event
       this.sse.send(true, 'data');
       this.sse.send(true, 'dns');
@@ -204,9 +214,10 @@ class EmailAccountMiner {
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
-    logger.info(
-      `Begin mining email messages from folder:${folder} for user: ${this.mailHash}`
-    );
+    logger.info('Started mining email messages from folder.', {
+      emailHash: this.mailHash,
+      folder: folder
+    });
 
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, async (err, openedFolder) => {
@@ -300,9 +311,10 @@ class EmailAccountMiner {
     });
     // end event
     f.once('end', () => {
-      logger.info(
-        `End mining email messages from folder:${folder.name} for user: ${this.mailHash}`
-      );
+      logger.info('Finished mining email messages from folder.', {
+        emailHash: this.mailHash,
+        folder: folder.name
+      });
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
       if (self.folders.indexOf(folder.name) + 1 == self.folders.length) {
         // we are at the end of the folder array==>> end imap connection

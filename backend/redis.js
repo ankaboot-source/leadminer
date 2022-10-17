@@ -30,19 +30,18 @@ function redisClientForInitialConnection() {
     redisClient = new Redis(redis_port, redis_host);
   }
   redisClient.on('error', function (err) {
-    logger.debug("can't connect to redisClient ✖️ ");
-    console.error('Error connecting to redisClient', err);
+    logger.error('Error connecting with redisClient.', { error: err });
     process.exit();
   });
   redisClient.on('connect', () => {
-    logger.debug('connected to redisClient ✔️');
+    logger.debug('Connected to redisClient ✔️');
     //init the redis db with domain providers strings
     redisClient.exists('freeProviders').then((res) => {
       if (res != 1) {
         freeProviders.map((domain) => {
           redisClient.sadd('freeProviders', domain);
         });
-        logger.debug('redis initialized with freeProviders✔️');
+        logger.debug('Redis initialized with freeProviders✔️');
       }
     });
     redisClient.exists('freeProviders').then((res) => {
@@ -50,9 +49,9 @@ function redisClientForInitialConnection() {
         disposable.map((domain) => {
           redisClient.sadd('disposable', domain);
         });
-        logger.debug('redis initialized with disposable ✔️');
+        logger.debug('Redis initialized with disposable ✔️');
       } else {
-        logger.debug('redis is already initialized ✔️');
+        logger.debug('Redis is already initialized ✔️');
       }
     });
   });
@@ -74,12 +73,13 @@ function redisClientForPubSubMode() {
     redisClientForPubSubMode = new Redis(redis_port, redis_host);
   }
   redisClientForPubSubMode.on('error', function (err) {
-    logger.debug("can't connect to redisClientForPubSubMode ✖️ ");
-    console.error('Error connecting to redisClientForPubSubMode', err);
+    logger.error('Error connecting with redisClientForPubSubMode.', {
+      error: err
+    });
     process.exit();
   });
   redisClientForPubSubMode.on('connect', () => {
-    logger.debug('connected to redis using pubSub connection');
+    logger.debug('Connected to redis using pubSub connection');
   });
   return redisClientForPubSubMode;
 }
@@ -99,12 +99,11 @@ function redisClientForNormalMode() {
     redisClientNormalMode = new Redis(redis_port, redis_host);
   }
   redisClientNormalMode.on('error', function (err) {
-    logger.debug("can't connect to redisClientNormalMode ✖️ ");
-    console.error('Error connecting to redisClientNormalMode', err);
+    logger.error('Error connecting to redisClientNormalMode.', { error: err });
     process.exit();
   });
   redisClientNormalMode.on('connect', () => {
-    logger.debug('connected to redis using Normal connection');
+    logger.debug('Connected to redis using Normal connection');
   });
   return redisClientNormalMode;
 }

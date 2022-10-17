@@ -1,12 +1,13 @@
 const { format, transports } = require('winston');
-const winston = require('winston'),
-  getLabel = function (callingModule) {
-    const parts = callingModule.filename.split('/');
+const winston = require('winston');
+const config = require('config');
+const level = config.get('server.log_level');
 
-    return parts.pop();
-  };
-const config = require('config'),
-  level = config.get('server.log_level');
+function getLabel(callingModule) {
+  const parts = callingModule.filename.split('/');
+
+  return parts.pop();
+}
 
 module.exports =
   /* A function that returns a logger object. */
