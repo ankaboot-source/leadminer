@@ -27,7 +27,7 @@ module.exports =
                 }`
             )
           ),
-          level: level
+          level
         }),
 
         new transports.Console({
@@ -43,7 +43,7 @@ module.exports =
                 }>>`
             )
           ),
-          level: level
+          level
         })
       ]
     });
