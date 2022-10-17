@@ -53,7 +53,7 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   async getTree() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       let result = [];
       this.connection.connecte().then((connection) => {
         this.connection = connection;
@@ -108,7 +108,7 @@ class EmailAccountMiner {
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       imapTree.map((folder) => {
         const self = this;
         function openBoxThenGetTotal() {

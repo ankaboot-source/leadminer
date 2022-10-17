@@ -13,10 +13,10 @@ console.log(
 );
 const config = require('config');
 const port = config.get('server.port');
-var app = express();
+const app = express();
 const http = require('http');
 const SSE = require('express-sse').SSE;
-const sentry = require('./sentry');
+const { initializeSentry } = require('./sentry');
 const logger = require('./app/utils/logger')(module);
 const sse = new SSE();
 const db = require('./app/models');
@@ -57,9 +57,7 @@ app.use((req, res, next) => {
 //***************█▌█▌Check if should enable sentry BEGIN**********/
 if (config.get('server.sentry.enabled') == true) {
   logger.debug('setting up sentry...');
-  integration = sentry(app);
-  app = integration[0];
-  const sentryInstance = integration[1];
+  initializeSentry(app);
   logger.debug('sentry integrated to the server ✔️ ');
 }
 //***************Check if should enable sentry END █▌█▌**********/

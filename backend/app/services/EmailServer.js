@@ -81,7 +81,7 @@ class EmailServer {
    * @returns A promise that resolves to the connection object.
    */
   async connecte() {
-    return new Promise((res, reject) => {
+    return new Promise((res) => {
       // initialize the connection
       this.initConnection();
       if (this.isApiConnection()) {

@@ -124,7 +124,7 @@ exports.SignUpWithGoogle = async (req, res) => {
  */
 async function refreshAccessToken(refresh_token) {
   logger.debug('refreshing user token');
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let tokenInfo = {},
       access_token;
     // return OAuth2 client

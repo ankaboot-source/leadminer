@@ -24,8 +24,8 @@ function isNoReply(emailAddress) {
  * of domain, and finally the domain itself.
  */
 function checkMXStatus(domain) {
-  return new Promise((resolve, reject) => {
-    dns.resolveMx(domain, async (error, addresses) => {
+  return new Promise((resolve) => {
+    dns.resolveMx(domain, async (_, addresses) => {
       if (addresses) {
         if (addresses.length > 0) {
           // set domain in redis valid domains list
