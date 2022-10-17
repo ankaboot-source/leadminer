@@ -29,7 +29,7 @@ function redisClientForInitialConnection() {
     //no password
     redisClient = new Redis(redis_port, redis_host);
   }
-  redisClient.on('error', function (err) {
+  redisClient.on('error', (err) => {
     logger.error('Error connecting with redisClient.', { error: err });
     process.exit();
   });
@@ -62,7 +62,7 @@ function redisClientForInitialConnection() {
  * redisClientForPubSubMode creates a new Redis client for pub/sub mode (workers)
  * @returns A function that returns a redis client.
  */
-function redisClientForPubSubMode() {
+function getRedisClientForPubSubMode() {
   let redisClientForPubSubMode = {};
   if (redis.password && redis.username) {
     redisClientForPubSubMode = new Redis(redis_port, redis_host, {
@@ -72,7 +72,7 @@ function redisClientForPubSubMode() {
   } else {
     redisClientForPubSubMode = new Redis(redis_port, redis_host);
   }
-  redisClientForPubSubMode.on('error', function (err) {
+  redisClientForPubSubMode.on('error', (err) => {
     logger.error('Error connecting with redisClientForPubSubMode.', {
       error: err
     });
@@ -98,7 +98,7 @@ function redisClientForNormalMode() {
   } else {
     redisClientNormalMode = new Redis(redis_port, redis_host);
   }
-  redisClientNormalMode.on('error', function (err) {
+  redisClientNormalMode.on('error', (err) => {
     logger.error('Error connecting to redisClientNormalMode.', { error: err });
     process.exit();
   });
@@ -109,6 +109,6 @@ function redisClientForNormalMode() {
 }
 module.exports = {
   redisClientForInitialConnection,
-  redisClientForPubSubMode,
+  redisClientForPubSubMode: getRedisClientForPubSubMode,
   redisClientForNormalMode
 };

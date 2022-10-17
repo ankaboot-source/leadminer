@@ -52,7 +52,7 @@ class EmailAccountMiner {
    * @returns a promise that resolves to an array of two elements. The first element is the tree object,
    * the second element is an error object.
    */
-  async getTree() {
+  getTree() {
     return new Promise((resolve, reject) => {
       let result = [];
       this.connection.connecte().then((connection) => {
@@ -177,7 +177,7 @@ class EmailAccountMiner {
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
     this.connection = await this.connection.connecte();
-    this.connection.once('ready', async () => {
+    this.connection.once('ready', () => {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });

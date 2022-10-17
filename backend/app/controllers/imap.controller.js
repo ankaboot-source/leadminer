@@ -257,15 +257,15 @@ exports.getEmails = async (req, res, sse) => {
       data
     });
   // refining worker listener, on event it send data to the client
-  dataRefiningWorker.on('message', (data) => {
+  dataRefiningWorker.on('message', (refininingWorkerData) => {
     sse.send(
       {
-        data: data.minedEmails,
-        totalScanned: data.totalScanned,
+        data: refininingWorkerData.minedEmails,
+        totalScanned: refininingWorkerData.totalScanned,
         statistics: {
-          noReply: data.noReply,
-          invalidDomain: data.invalidDomain,
-          transactional: data.transactional
+          noReply: refininingWorkerData.noReply,
+          invalidDomain: refininingWorkerData.invalidDomain,
+          transactional: refininingWorkerData.transactional
         }
       },
       `minedEmails${user.id}`
@@ -300,7 +300,7 @@ exports.getEmails = async (req, res, sse) => {
     setTimeout(() => {
       // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data
       // because of async behaviour we may missed some emails in the worker
-      minedDataHelpers.getEmails(user.id).then((data) => {
+      minedDataHelpers.getEmails(user.id).then((emails) => {
         minedDataHelpers.getCountDB(user.id).then((totalScanned) => {
           // send progress to user
           sse.send(
@@ -308,11 +308,11 @@ exports.getEmails = async (req, res, sse) => {
 
             `minedEmails${user.id}`
           );
-          logger.debug(`${data.length} mined email`);
+          logger.debug(`${emails.length} mined email`);
           sse.send(true, `dns${user.id}`);
           res.status(200).send({
             message: 'Done mining emails !',
-            data: minedDataHelpers.sortDatabase(data)[0]
+            data: minedDataHelpers.sortDatabase(emails)[0]
           });
 
           logger.debug('cleaning data from database...');

@@ -18,7 +18,7 @@ function getOAuthClient() {
  * @param  {} req
  * @param  {} res
  */
-exports.SignUpWithGoogle = async (req, res) => {
+exports.SignUpWithGoogle = (req, res) => {
   const oauth2Client = getOAuthClient();
   // the query param authorization code
   let code = '';
