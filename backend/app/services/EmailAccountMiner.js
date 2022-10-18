@@ -212,7 +212,7 @@ class EmailAccountMiner {
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
-    logger.info('Started mining email messages from folder.', {
+    logger.debug('Started mining email messages from folder.', {
       emailHash: this.mailHash,
       folder
     });
@@ -309,7 +309,7 @@ class EmailAccountMiner {
     });
     // end event
     f.once('end', () => {
-      logger.info('Finished mining email messages from folder.', {
+      logger.debug('Finished mining email messages from folder.', {
         emailHash: this.mailHash,
         folder: folder.name
       });
