@@ -5,27 +5,33 @@ const level = config.get('server.log_level');
 
 function getLabel(callingModule) {
   const parts = callingModule.filename.split('/');
-
   return parts.pop();
 }
 
 module.exports =
   /* A function that returns a logger object. */
   function (callingModule) {
+    const commonFormats = [
+      format.timestamp({ format: 'MMM-DD-YYYY HH:mm:ss' }),
+      format.label({ label: getLabel(callingModule) }),
+      format.metadata({
+        fillExcept: ['message', 'level', 'timestamp', 'label']
+      })
+    ];
+
     // Create and configure logger.
     const logger = winston.createLogger({
       transports: [
         new transports.File({
           filename: 'logs/server.log',
           format: format.combine(
-            format.timestamp({ format: 'MMM-DD-YYYY HH:mm:ss' }),
+            ...commonFormats,
             format.align(),
-            format.label({ label: getLabel(callingModule) }),
             format.printf(
               (info) =>
                 `${[info.timestamp]}  ${info.level}  ${info.message}  at  ${
                   info.label
-                }`
+                } | ${JSON.stringify(info.meta)}`
             )
           ),
           level
@@ -33,15 +39,14 @@ module.exports =
 
         new transports.Console({
           format: format.combine(
-            format.timestamp({ format: 'MMM-DD-YYYY HH:mm:ss' }),
+            ...commonFormats,
             format.colorize({ all: true }),
-            format.label({ label: getLabel(callingModule) }),
             format.simple(),
             format.printf(
               (info) =>
                 `${[info.timestamp]}  [${info.level}]  ${info.message}    <<${
                   info.label
-                }>>`
+                }>> | ${JSON.stringify(info.meta)}`
             )
           ),
           level
