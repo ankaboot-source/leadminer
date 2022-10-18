@@ -35,6 +35,7 @@ class EmailMessage {
     this.user = user;
     this.folderPath = folder;
   }
+
   /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
@@ -59,6 +60,7 @@ class EmailMessage {
       });
     });
   }
+
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
    * @returns The function isInConversation() is returning a boolean value.
@@ -69,6 +71,7 @@ class EmailMessage {
     }
     return 0;
   }
+
   /**
    * getDate returns the value of the "date" property of the
    * header
@@ -76,14 +79,12 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    if (this.header.date) {
-      if (Date.parse(this.header.date[0])) {
-        return dateHelpers.parseDate(this.header.date[0]);
-      }
-      return this.header.date;
+    if (this.header.date && Date.parse(this.header.date[0])) {
+      return dateHelpers.parseDate(this.header.date[0]);
     }
     return this.header.date;
   }
+
   /**
    * getMessagingFieldsFromHeader returns an object with only the messaging fields from the header
    * @returns An object with only the messaging fields from the header.
@@ -97,6 +98,7 @@ class EmailMessage {
     });
     return messagingProps;
   }
+
   /**
    * getMessageId returns the message-id of the email
    * @returns The message-id of the email.
@@ -112,26 +114,26 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    const messagingFields = this.getMessagingFieldsFromHeader();
-    const messageID = this.getMessageId(),
-      date = this.getDate();
     const message = await supabaseHandlers.upsertMessage(
       supabaseClient,
-      messageID,
+      this.getMessageId(),
       this.user.id,
       'imap',
       this.folderPath,
-      date
+      this.getDate()
     );
+
     if (message.error) {
-      logger.debug(
-        `error when inserting to messages table ${message.error.message}`
-      );
+      logger.error('Error when inserting to messages table.', {
+        error: message.error.message,
+        emailMessageDate: this.getDate()
+      });
     }
 
     // case when header should be scanned
     // eslint-disable-next-line no-constant-condition
     if (true) {
+      const messagingFields = this.getMessagingFieldsFromHeader();
       Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
         const emails = regExHelpers.extractNameAndEmail(
@@ -229,6 +231,7 @@ class EmailMessage {
       delete this.header;
     }
   }
+
   /**
    * storeEmailsAddressesExtractedFromBody takes the extracted email addresses from the body, and saves them to the
    * database
@@ -276,6 +279,7 @@ class EmailMessage {
       delete this.body;
     }
   }
+
   /**
    * buildTag takes in a name, label, reachable, and type, and returns an object with those properties
    * used to build a tag object type
@@ -319,9 +323,10 @@ class EmailMessage {
       // we should wait for the response so we capture the id
       .then((person) => {
         if (person.error) {
-          logger.debug(
-            `error when inserting to persons table ${person.error.message}`
-          );
+          logger.error('Error when inserting to persons table.', {
+            error: person.error.message,
+            emailMessageDate: this.getDate()
+          });
         }
         if (person && person?.body?.[0]) {
           //if saved and no errors then we can store the person linked to this point of contact
@@ -335,9 +340,10 @@ class EmailMessage {
             )
             .then((pointOfContact) => {
               if (pointOfContact.error) {
-                logger.debug(
-                  `error when inserting to pointOfContact table ${pointOfContact.error.message}`
-                );
+                logger.error('Error when inserting to pointOfContact table.', {
+                  error: pointOfContact.error.message,
+                  emailMessageDate: this.getDate()
+                });
               }
             });
 
