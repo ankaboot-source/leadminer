@@ -14,10 +14,10 @@ console.log(
 );
 const config = require('config');
 const port = config.get('server.port');
-let app = express();
+const app = express();
 const http = require('http');
 const SSE = require('express-sse').SSE;
-const sentry = require('./sentry');
+const { initializeSentry } = require('./sentry');
 const logger = require('./app/utils/logger')(module);
 const sse = new SSE();
 const db = require('./app/models');
@@ -58,12 +58,11 @@ app.use((req, res, next) => {
 //***************█▌█▌Check if should enable sentry BEGIN**********/
 if (config.get('server.sentry.enabled') == true) {
   logger.debug('setting up sentry...');
-  const integration = sentry(app);
-  app = integration[0];
+  initializeSentry(app);
   logger.debug('sentry integrated to the server ✔️ ');
 }
 //***************Check if should enable sentry END █▌█▌**********/
-process.on('uncaughtException', (err, origin) => {
+process.on('uncaughtException', (err) => {
   logger.error(`${err} , ${err.stack}`);
 });
 // parse requests of content-type - application/json
@@ -86,7 +85,7 @@ app.get('/logs', (req, res, next) => {
     if (err) {
       next(err);
     } else {
-      logger.log('Sent the logs..');
+      logger.info('Sent the logs..');
     }
   });
 });
@@ -97,23 +96,22 @@ require('./app/routes/imap.routes')(app, sse);
 db.sequelize
   .sync()
   .then(() => {
-    logger.debug('database initialized ✔️ ');
+    logger.debug('Database initialized ✔️ ');
     //disconnect from redis after initialization
     redisClientForInitialisation.disconnect();
     // if successful init then start server
     server.listen(port, () => {
-      logger.info(`Server is running port ${port}.`);
+      logger.info(`Server is running on port ${port}.`);
       event.emit('started');
     });
     server.on('error', (e) => {
       if (e.code === 'EADDRINUSE') {
-        logger.debug('Address in use, retrying...');
+        logger.error('Address in use, retrying...', { error: e });
       }
     });
   })
   .catch((error) => {
-    logger.debug("can't initialize database ✖️ ");
-    logger.error(error);
+    logger.error('Error initializing database.', { error });
     throw error;
   });
 //***************init db and start server END █▌█▌**********/
