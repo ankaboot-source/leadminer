@@ -115,7 +115,7 @@ class EmailAccountMiner {
   getTreeWithTotalPerFolder(imapTree) {
     const self = this;
     return new Promise((resolve) => {
-      imapTree.map((folder) => {
+      imapTree.forEach((folder) => {
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
@@ -213,13 +213,13 @@ class EmailAccountMiner {
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
-    logger.info('Started mining email messages from folder.', {
+    logger.debug('Started mining email messages from folder.', {
       emailHash: this.mailHash,
       folder
     });
 
     // we use generator to stope function execution then we recall it with new params using next()
-    yield this.connection.openBox(folder, true, async (err, openedFolder) => {
+    yield this.connection.openBox(folder, true, (err, openedFolder) => {
       if (openedFolder) {
         logger.debug(
           `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
@@ -257,7 +257,7 @@ class EmailAccountMiner {
       this.connection.end();
       this.connection.destroy();
     } else {
-      // if this folder is juste a label then pass to the next folder
+      // if this folder is just a label then pass to the next folder
       logger.debug(
         `Going to next folder, this one is undefined or a label in folders array for User: ${this.mailHash}`
       );
@@ -274,7 +274,7 @@ class EmailAccountMiner {
    */
   ImapFetch(folder, folderName) {
     let self = this;
-    const f = this.connection.seq.fetch('1:*', {
+    const fetchResult = this.connection.seq.fetch('1:*', {
       bodies: self.fields,
       struct: true
     });
@@ -283,14 +283,14 @@ class EmailAccountMiner {
       `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
     );
     // message event
-    f.on('message', (msg, seqNumber) => {
+    fetchResult.on('message', (msg, seqNumber) => {
       let Header = '',
         body = '';
 
       msg.on('body', (stream, streamInfo) => {
         // parse the chunks of the message
 
-        stream.on('data', async (chunk) => {
+        stream.on('data', (chunk) => {
           if (streamInfo.which.includes('HEADER')) {
             Header += chunk;
           } else {
@@ -309,8 +309,8 @@ class EmailAccountMiner {
       });
     });
     // end event
-    f.once('end', () => {
-      logger.info('Finished mining email messages from folder.', {
+    fetchResult.once('end', () => {
+      logger.debug('Finished mining email messages from folder.', {
         emailHash: this.mailHash,
         folder: folder.name
       });
@@ -352,7 +352,7 @@ class EmailAccountMiner {
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
     // TODO : check message if it's already mined
-    const message_id = Header['message-id'] ? Header['message-id'][0] : '';
+    // const message_id = Header['message-id'] ? Header['message-id'][0] : '';
     // redisClientForNormalMode
     //   .sismember('messages', message_id)
     //   .then((alreadyMined) => {
@@ -377,7 +377,7 @@ class EmailAccountMiner {
    * @param seqNumber - The current sequence number of the email being scanned
    * @param folderName - The name of the folder being scanned
    */
-  async sendMiningProgress(seqNumber, folderName) {
+  sendMiningProgress(seqNumber, folderName) {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
@@ -408,7 +408,7 @@ class EmailAccountMiner {
    * @param seqNumber - The sequence number of the mined data.
    * @param folderName - The name of the folder that contains the mined data.
    */
-  async sendMinedData(seqNumber, folderName) {
+  sendMinedData(seqNumber, folderName) {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
