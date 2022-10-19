@@ -34,21 +34,21 @@ function redisClientForInitialConnection() {
   });
 
   redisClient.on('connect', async () => {
-    logger.debug('Connected to redisClient ✔️');
+    logger.info('Connected to redisClient ✔️');
     //init the redis db with domain providers strings
     const res = await redisClient.exists('freeProviders');
     if (res != 1) {
       freeProviders.forEach((domain) => {
         redisClient.sadd('freeProviders', domain);
       });
-      logger.debug('Redis initialized with freeProviders ✔️');
+      logger.info('Redis initialized with freeProviders ✔️');
 
       disposable.forEach((domain) => {
         redisClient.sadd('disposable', domain);
       });
-      logger.debug('Redis initialized with disposable ✔️');
+      logger.info('Redis initialized with disposable ✔️');
     } else {
-      logger.debug('Redis is already initialized ✔️');
+      logger.info('Redis is already initialized ✔️');
     }
   });
 
@@ -70,7 +70,7 @@ function getRedisClientForPubSubMode() {
     throw err;
   });
   redisClientForPubSubMode.on('connect', () => {
-    logger.debug('Connected to redis using pubSub connection');
+    logger.info('Connected to redis using pubSub connection');
   });
   return redisClientForPubSubMode;
 }
@@ -88,7 +88,7 @@ function redisClientForNormalMode() {
     throw err;
   });
   redisClientNormalMode.on('connect', () => {
-    logger.debug('Connected to redis using Normal connection');
+    logger.info('Connected to redis using Normal connection');
   });
   return redisClientNormalMode;
 }
