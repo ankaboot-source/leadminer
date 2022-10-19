@@ -113,6 +113,7 @@ class EmailAccountMiner {
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
+    const self = this;
     return new Promise((resolve) => {
       imapTree.map((folder) => {
         function openBoxThenGetTotal() {
