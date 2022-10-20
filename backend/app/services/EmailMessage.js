@@ -95,7 +95,7 @@ class EmailMessage {
    */
   getMessagingFieldsFromHeader() {
     const messagingProps = {};
-    Object.keys(this.header).map((key) => {
+    Object.keys(this.header).forEach((key) => {
       if (FIELDS.includes(key)) {
         messagingProps[`${key}`] = this.header[`${key}`][0];
       }
@@ -138,7 +138,7 @@ class EmailMessage {
     // eslint-disable-next-line no-constant-condition
     if (true) {
       const messagingFields = this.getMessagingFieldsFromHeader();
-      Object.keys(messagingFields).map(async (key) => {
+      Object.keys(messagingFields).forEach(async (key) => {
         // extract Name and Email in case of a header
         const emails = regExHelpers.extractNameAndEmail(
           messagingFields[`${key}`]
@@ -165,8 +165,8 @@ class EmailMessage {
   }
 
   /**
-   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses, give tags, check for noreply,check domain and saves them to the
-   * database
+   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses,
+   * gives tags, checks for noreply, checks domain and saves them to the database.
    * @param {object} messages - an object containing the saved message data row
    * @param {array} emails - an array of objects that contains the extracted email addresses and the names
    * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
@@ -174,115 +174,102 @@ class EmailMessage {
    */
   storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
     const tags = [];
-    if (fieldName == 'from') {
-      // get if newsletter
-      const newsletter = this.isNewsletter();
-      if (newsletter) {
+    if (fieldName === 'from') {
+      if (this.isNewsletter()) {
         tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
       }
-      // get if transactional
-      const transactional = this.isTransactional();
-      if (transactional) {
+      if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
       }
     }
-    if (emails?.length > 0) {
-      // loop through emails array
-      emails.map(async (email) => {
-        if (email && email.address && this.user.email !== email.address) {
-          // get if it's a noreply email
-          const noReply = emailMessageHelpers.isNoReply(email.address);
-          // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
-          const domain = await emailMessageHelpers.checkDomainStatus(
-            email.address
+
+    emails
+      .filter((email) => this.user.email !== email?.address)
+      .forEach(async (email) => {
+        // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
+        const domain = await emailMessageHelpers.checkDomainStatus(
+          email.address
+        );
+        const emailType = emailAddressHelpers.findEmailAddressType(
+          email.address,
+          [email?.name],
+          domain[1]
+        );
+
+        if (emailType != '') {
+          tags.push(
+            this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
-          // find the email type
-          const type = emailAddressHelpers.findEmailAddressType(
-            email.address,
-            [email?.name],
-            domain[1]
-          );
-          if (type != '') {
-            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
-          }
-          if (noReply) {
-            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-          }
-          if (!domain[0]) {
-            // this domain is invalid
-            redisClientForNormalMode
-              .sismember('invalidDomainEmails', email.address)
-              .then((member) => {
-                if (member === 0) {
-                  redisClientForNormalMode.sadd(
-                    'invalidDomainEmails',
-                    email.address
-                  );
-                }
-              });
-          } else {
-            // if domain ok then we store to DB
-            this.storeEmails(
-              message,
-              email.address,
-              email?.name,
-              tags,
-              fieldName
-            );
-          }
+        }
+        if (emailMessageHelpers.isNoReply(email.address)) {
+          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+        }
+
+        if (domain[0]) {
+          this.storeEmails(message, email.address, email.name, tags, fieldName);
+          return;
+        }
+
+        const member = await redisClientForNormalMode.sismember(
+          'invalidDomainEmails',
+          email.address
+        );
+
+        if (member === 0) {
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
       });
-    }
   }
 
   /**
-   * storeEmailsAddressesExtractedFromBody takes the extracted email addresses from the body, and saves them to the
-   * database
+   * storeEmailsAddressesExtractedFromBody takes the extracted email addresses from the body
+   * and saves them to the database
    * @param {object} messages - an object containing the saved message data row
    * @param {array} emails - an array of objects that contains the extracted email addresses
    * @returns Nothing is being returned.
    */
   storeEmailsAddressesExtractedFromBody(message, emails) {
-    const tags = [];
-    if (emails?.length > 0) {
-      // loop through emails extracted from the current body
-      emails.map(async (email) => {
-        if (this.user.email !== email && email) {
-          // get domain status from DomainStatus Helper
-          const noReply = emailMessageHelpers.isNoReply(email);
-          // get the domain status
-          const domain = await emailMessageHelpers.checkDomainStatus(email);
+    if (emails.length === 0) {
+      delete this.body;
+      return;
+    }
 
-          const type = emailAddressHelpers.findEmailAddressType(
-            email,
-            [email?.name ?? ''],
-            domain[1]
+    emails
+      .filter((email) => this.user.email !== email.address)
+      .forEach(async (email) => {
+        const domain = await emailMessageHelpers.checkDomainStatus(email);
+        const emailType = emailAddressHelpers.findEmailAddressType(
+          email,
+          [email?.name ?? ''],
+          domain[1]
+        );
+
+        const tags = [];
+        if (emailType != '') {
+          tags.push(
+            this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
+        }
+        if (emailMessageHelpers.isNoReply(email)) {
+          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+        }
 
-          if (type != '') {
-            tags.push(this.buildTag(type.toLowerCase(), type, 1, 'refined'));
-          }
-          if (noReply) {
-            tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-          }
-          if (!domain[0]) {
-            redisClientForNormalMode
-              .sismember('invalidDomainEmails', email)
-              .then((member) => {
-                if (member == 0) {
-                  redisClientForNormalMode.sadd('invalidDomainEmails', email);
-                }
-              });
-          } else {
-            this.storeEmails(message, email, '', tags, 'body');
-          }
+        if (domain[0]) {
+          this.storeEmails(message, email, '', tags, 'body');
+          return;
+        }
+
+        const member = await redisClientForNormalMode.sismember(
+          'invalidDomainEmails',
+          email.address
+        );
+
+        if (member === 0) {
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
       });
-    } else {
-      delete this.body;
-    }
   }
 
   /**
@@ -360,6 +347,7 @@ class EmailMessage {
             .createTags(supabaseClient, tags)
             // eslint-disable-next-line no-unused-vars
             .then((data, error) => {
+              // eslint-disable-next-line no-warning-comments
               // TODO : HANDLE DATA AND ERROR
             });
         }
