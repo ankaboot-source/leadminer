@@ -19,18 +19,16 @@ function getOAuthClient() {
  * @param  {} req
  * @param  {} res
  */
-exports.SignUpWithGoogle = async (req, res) => {
+exports.signUpWithGoogle = async (req, res) => {
   if (!req.body?.authCode) {
     return res.status(400).send({
       error: 'No valid authorization code !'
     });
   }
 
-  // the query param authorization code
-  const authCode = req.body.authCode;
   const oauth2Client = getOAuthClient();
 
-  oauth2Client.getToken(authCode, async (err, tokens) => {
+  oauth2Client.getToken(req.body.authCode, async (err, tokens) => {
     if (err || !tokens) {
       return res.status(400).send({
         error: `Can't authenticate using google account, reason : ${err}`
@@ -64,7 +62,7 @@ exports.SignUpWithGoogle = async (req, res) => {
       const newGoogleUser = await googleUsers
         .create(googleUser)
         .catch((err) => {
-          logger.error(`can't create account for user Error : ${err}`);
+          logger.error('Unable to create account for user.', { error: err });
           res.status(500).send({
             error: 'An error has occurred while creating your account.'
           });
@@ -74,9 +72,9 @@ exports.SignUpWithGoogle = async (req, res) => {
         googleUser: {
           email: newGoogleUser.google_users.dataValues.email,
           id: newGoogleUser.google_users.dataValues.id,
-          access_token: {
+          token: {
             access_token: tokens.access_token,
-            experation: tokenInfo.exp
+            expiration: tokenInfo.exp
           }
         }
       });
@@ -86,19 +84,18 @@ exports.SignUpWithGoogle = async (req, res) => {
         { where: { id: dbGoogleUser.dataValues.id } }
       );
 
-      logger.info(
-        `On signUp With Google : Account with id: ${googleUser.id} already exists.`
-      );
+      logger.info('On signUp With Google : Account already exists.', {
+        googleUserId: googleUser.id
+      });
 
-      // case when user id exists
       res.status(200).send({
         message: 'Your account already exists !',
         googleUser: {
           email: dbGoogleUser.email,
           id: dbGoogleUser.id,
-          access_token: {
+          token: {
             access_token: tokens.access_token,
-            experation: tokenInfo.exp
+            expiration: tokenInfo.exp
           }
         }
       });
@@ -127,7 +124,7 @@ function refreshAccessToken(refresh_token) {
     const tokenInfo = await oauth2Client.getTokenInfo(token);
     const access_token = {
       access_token: token,
-      experation: Math.floor(tokenInfo.expiry_date / 1000)
+      expiration: Math.floor(tokenInfo.expiry_date / 1000)
     };
     resolve(access_token);
   });
