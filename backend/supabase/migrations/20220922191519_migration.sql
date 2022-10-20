@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.messages
     date timestamptz,
     userid uuid,
     listid text,
-    message_id text,
+    message_id text UNIQUE,
     reference text,
     PRIMARY KEY (messageid,userid)
 );
