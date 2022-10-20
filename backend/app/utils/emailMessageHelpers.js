@@ -53,7 +53,7 @@ async function checkDomainStatus(emailAddress) {
   const domain = emailAddress.split('@')[1];
 
   /**
-   * As most of domaisn are free providers,
+   * As most of domains are free providers,
    * we can reduce the execution time when check for freeproviders first.
    * The order here matters.
    */

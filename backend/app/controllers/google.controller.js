@@ -21,18 +21,20 @@ function getOAuthClient() {
  */
 exports.signUpWithGoogle = (req, res) => {
   if (!req.body?.authCode) {
-    return res.status(400).send({
+    res.status(400).send({
       error: 'No valid authorization code !'
     });
+    return;
   }
 
   const oauth2Client = getOAuthClient();
 
   oauth2Client.getToken(req.body.authCode, async (err, tokens) => {
     if (err || !tokens) {
-      return res.status(400).send({
+      res.status(400).send({
         error: `Can't authenticate using google account, reason : ${err}`
       });
+      return;
     }
 
     oauth2Client.setCredentials({
