@@ -132,35 +132,40 @@ class EmailMessage {
         error: message.error.message,
         emailMessageDate: this.getDate()
       });
+
+      if (message.error.code == '23505') {
+        logger.debug(`message with id ${messageID} already mined`);
+      }
     }
 
     // case when header should be scanned
     // eslint-disable-next-line no-constant-condition
-    if (true) {
-      const messagingFields = this.getMessagingFieldsFromHeader();
-      Object.keys(messagingFields).forEach(async (key) => {
-        // extract Name and Email in case of a header
-        const emails = regExHelpers.extractNameAndEmail(
-          messagingFields[`${key}`]
-        );
+    else {
+      if (true) {
+        Object.keys(messagingFields).map(async (key) => {
+          // extract Name and Email in case of a header
+          const emails = regExHelpers.extractNameAndEmail(
+            messagingFields[`${key}`]
+          );
 
-        await this.storeEmailsAddressesExtractedFromHeader(
-          message,
-          emails,
-          key
+          await this.storeEmailsAddressesExtractedFromHeader(
+            message,
+            emails,
+            key
+          );
+        });
+      }
+      // case when body should be scanned
+      // eslint-disable-next-line no-constant-condition
+      if (true) {
+        // TODO : OPTIONS as user query
+        const emails = regExHelpers.extractNameAndEmailFromBody(
+          this.body.toString('utf8')
         );
-      });
-    }
-    // case when body should be scanned
-    // eslint-disable-next-line no-constant-condition
-    if (true) {
-      // TODO : OPTIONS as user query
-      const emails = regExHelpers.extractNameAndEmailFromBody(
-        this.body.toString('utf8')
-      );
-      delete this.body;
-      // store extracted emails
-      await this.storeEmailsAddressesExtractedFromBody(message, emails);
+        delete this.body;
+        // store extracted emails
+        await this.storeEmailsAddressesExtractedFromBody(message, emails);
+      }
     }
   }
 
