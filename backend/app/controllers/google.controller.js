@@ -19,7 +19,7 @@ function getOAuthClient() {
  * @param  {} req
  * @param  {} res
  */
-exports.signUpWithGoogle = async (req, res) => {
+exports.signUpWithGoogle = (req, res) => {
   if (!req.body?.authCode) {
     return res.status(400).send({
       error: 'No valid authorization code !'
@@ -61,8 +61,10 @@ exports.signUpWithGoogle = async (req, res) => {
     if (!dbGoogleUser) {
       const newGoogleUser = await googleUsers
         .create(googleUser)
-        .catch((err) => {
-          logger.error('Unable to create account for user.', { error: err });
+        .catch((googleUserCreationError) => {
+          logger.error('Unable to create account for user.', {
+            error: googleUserCreationError
+          });
           res.status(500).send({
             error: 'An error has occurred while creating your account.'
           });

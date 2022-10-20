@@ -70,13 +70,14 @@ async function checkDomainStatus(emailAddress) {
       domain
     );
 
-    if (exists == 1) {
+    if (exists) {
       return [provider.isValid, provider.type, domain];
     }
   }
 
   // if not already scanned we check the MX
-  return await checkMXStatus(domain);
+  const MXStatus = await checkMXStatus(domain);
+  return MXStatus;
 }
 
 module.exports = {

@@ -198,7 +198,7 @@ class EmailMessage {
           domain[1]
         );
 
-        if (emailType != '') {
+        if (emailType !== '') {
           tags.push(
             this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
@@ -247,7 +247,7 @@ class EmailMessage {
         );
 
         const tags = [];
-        if (emailType != '') {
+        if (emailType !== '') {
           tags.push(
             this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );

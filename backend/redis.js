@@ -37,7 +37,7 @@ function redisClientForInitialConnection() {
     logger.info('Connected to redisClient ✔️');
     //init the redis db with domain providers strings
     const res = await redisClient.exists('freeProviders');
-    if (res != 1) {
+    if (res !== 1) {
       freeProviders.forEach((domain) => {
         redisClient.sadd('freeProviders', domain);
       });
