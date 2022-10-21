@@ -12,7 +12,6 @@ console.log(
 `,
   'font-family: monospace'
 );
-const config = require('config');
 const { port } = require('./app/config/server.config');
 const app = express();
 const http = require('http');

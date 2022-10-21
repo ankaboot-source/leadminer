@@ -4,11 +4,7 @@ const chai = require('chai'),
 const request = require('supertest');
 require('dotenv').config();
 const app = require('../../server');
-const {
-  testImapEmail,
-  testImapHost,
-  testImapPassword
-} = require('../../app/config/test.config');
+const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
 describe('Authentication(imap)', function () {
   describe('POST /api/imap/signup', function () {
