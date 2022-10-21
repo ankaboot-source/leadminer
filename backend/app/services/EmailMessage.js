@@ -136,33 +136,27 @@ class EmailMessage {
       if (message.error.code == '23505') {
         logger.debug(`message with id:${this.getMessageId()} already mined`);
       }
-    }
+    } else {
+      const messagingFields = this.getMessagingFieldsFromHeader();
+      Object.keys(messagingFields).map(async (key) => {
+        // extract Name and Email in case of a header
+        const emails = regExHelpers.extractNameAndEmail(
+          messagingFields[`${key}`]
+        );
 
-    // case when header should be scanned
-    // eslint-disable-next-line no-constant-condition
-    else {
-      if (true) {
-        const messagingFields = this.getMessagingFieldsFromHeader();
-        Object.keys(messagingFields).map(async (key) => {
-          // extract Name and Email in case of a header
-          const emails = regExHelpers.extractNameAndEmail(
-            messagingFields[`${key}`]
-          );
+        this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
+      });
 
-          this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
-        });
-      }
       // case when body should be scanned
       // eslint-disable-next-line no-constant-condition
-      if (true) {
-        // TODO : OPTIONS as user query
-        const emails = regExHelpers.extractNameAndEmailFromBody(
-          this.body.toString('utf8')
-        );
-        delete this.body;
-        // store extracted emails
-        this.storeEmailsAddressesExtractedFromBody(message, emails);
-      }
+
+      // TODO : OPTIONS as user query
+      const emails = regExHelpers.extractNameAndEmailFromBody(
+        this.body.toString('utf8')
+      );
+      delete this.body;
+      // store extracted emails
+      this.storeEmailsAddressesExtractedFromBody(message, emails);
     }
   }
 
