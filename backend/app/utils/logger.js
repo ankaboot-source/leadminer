@@ -46,7 +46,7 @@ module.exports =
               (info) =>
                 `${[info.timestamp]}  [${info.level}]  ${info.message}    <<${
                   info.label
-                }>> | ${JSON.stringify(info.meta)}`
+                }>> | ${JSON.stringify(info.metadata)}`
             )
           ),
           level

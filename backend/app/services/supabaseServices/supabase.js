@@ -17,7 +17,6 @@ function upsertMessage(
   folderPath,
   date
 ) {
-  console.log('times', messageID);
   return supabaseClient.from('messages').insert(
     {
       message_id: messageID,

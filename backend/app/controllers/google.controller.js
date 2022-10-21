@@ -71,19 +71,17 @@ exports.SignUpWithGoogle = (req, res) => {
                     error: 'An error has occurred while creating your account.'
                   });
                 });
-            } else if (
-              google_user &&
-              google_user.refreshToken !== googleUser.refreshToken
-            ) {
+            } else if (google_user) {
               googleUsers
                 .update(
-                  { refreshToken: google_user.dataValues.refreshToken },
+                  { refreshToken: googleUser?.refreshToken },
                   { where: { id: google_user.dataValues.id } }
                 )
                 .then(() => {
                   logger.info(
                     `On signUp With Google : Account with id: ${googleUser.id} already exists`
                   );
+                  console.log(tokens, tokenInfo);
                   // case when user id exists
                   res.status(200).send({
                     message: 'Your account already exists !',
@@ -121,17 +119,20 @@ function refreshAccessToken(refresh_token) {
     oauth2Client.setCredentials({
       refresh_token
     });
-    const { err, token } = await oauth2Client.getAccessToken();
-    if (err) {
-      reject("can't retrieve token");
-    }
-
-    const tokenInfo = await oauth2Client.getTokenInfo(token);
-    const access_token = {
-      access_token: token,
-      experation: Math.floor(tokenInfo.expiry_date / 1000)
-    };
-    resolve(access_token);
+    oauth2Client.getAccessToken().then(async (err, token) => {
+      if (token) {
+        const tokenInfo = await oauth2Client.getTokenInfo(token);
+        const access_token = {
+          access_token: token,
+          experation: Math.floor(tokenInfo.expiry_date / 1000)
+        };
+        resolve(access_token);
+      }
+    });
+    // if (err) {
+    //   console.log(err, token);
+    //   reject("can't retrieve token");
+    // }
   });
 }
 

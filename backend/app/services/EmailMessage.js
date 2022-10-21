@@ -124,40 +124,26 @@ class EmailMessage {
     );
 
     if (message.error) {
-<<<<<<< HEAD
       logger.error('Error when inserting to messages table.', {
         error: message.error.message,
+        code: message.error.code,
         emailMessageDate: this.getDate()
       });
-=======
-      logger.error(
-        `error when inserting to messages table ${message.error.message}`
-      );
       if (message.error.code == '23505') {
-        logger.debug(`message with id ${messageID} already mined`);
+        logger.debug(`message with id:${this.getMessageId()} already mined`);
       }
->>>>>>> 3919f8f (fix:frontend changes)
     }
 
     // case when header should be scanned
     // eslint-disable-next-line no-constant-condition
-<<<<<<< HEAD
-    if (true) {
-      const messagingFields = this.getMessagingFieldsFromHeader();
-      Object.keys(messagingFields).map(async (key) => {
-        // extract Name and Email in case of a header
-        const emails = regExHelpers.extractNameAndEmail(
-          messagingFields[`${key}`]
-        );
-=======
     else {
       if (true) {
+        const messagingFields = this.getMessagingFieldsFromHeader();
         Object.keys(messagingFields).map(async (key) => {
           // extract Name and Email in case of a header
           const emails = regExHelpers.extractNameAndEmail(
             messagingFields[`${key}`]
           );
->>>>>>> 3919f8f (fix:frontend changes)
 
           this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
         });
@@ -343,15 +329,11 @@ class EmailMessage {
       // we should wait for the response so we capture the id
       .then((person) => {
         if (person.error) {
-<<<<<<< HEAD
           logger.error('Error when inserting to persons table.', {
             error: person.error.message,
+            code: person.error.code,
             emailMessageDate: this.getDate()
           });
-=======
-          console.log(person, email);
-          logger.debug(`error when inserting to persons table ${person.error}`);
->>>>>>> 3919f8f (fix:frontend changes)
         }
         if (person && person?.body?.[0]) {
           //if saved and no errors then we can store the person linked to this point of contact
@@ -367,6 +349,7 @@ class EmailMessage {
               if (pointOfContact.error) {
                 logger.error('Error when inserting to pointOfContact table.', {
                   error: pointOfContact.error.message,
+                  code: pointOfContact.error.code,
                   emailMessageDate: this.getDate()
                 });
               }
