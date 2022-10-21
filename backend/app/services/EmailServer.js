@@ -1,12 +1,12 @@
-const Imap = require('imap'),
-  logger = require('../utils/logger')(module);
+const Imap = require('imap');
+const logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/hashHelpers');
 const tokenHelpers = require('../utils/tokenHelpers');
-const config = require('config'),
-  GOOGLE_IMAP_HOST = config.get('google_api.host'),
-  AUTHENTICATION_TIMEOUT = config.get('server.imap.authentication_timeout'),
-  CONNECTION_TIMEOUT = config.get('server.imap.connection_timeout');
-
+const {
+  imapAuthTimeout,
+  imapConnectionTimeout
+} = require('../config/server.config');
+const { googleImapHost } = require('../config/google.config');
 class EmailServer {
   #connection;
   /**
@@ -32,13 +32,13 @@ class EmailServer {
       this.#connection = new Imap({
         user: this.user.email,
         xoauth2: '',
-        host: GOOGLE_IMAP_HOST,
+        host: googleImapHost,
         port: this.user.port || 993,
         tls: true,
         tlsOptions: {
           port: this.user.port || 993,
-          host: GOOGLE_IMAP_HOST,
-          servername: GOOGLE_IMAP_HOST
+          host: googleImapHost,
+          servername: googleImapHost
         },
         keepalive: false
       });
@@ -55,9 +55,9 @@ class EmailServer {
         port: this.user.port || 993,
         tls: true,
 
-        connTimeout: CONNECTION_TIMEOUT,
+        connTimeout: imapConnectionTimeout,
         keepalive: false,
-        authTimeout: AUTHENTICATION_TIMEOUT,
+        authTimeout: imapAuthTimeout,
         tlsOptions: {
           port: this.user.port || 993,
           host: this.user.host,
