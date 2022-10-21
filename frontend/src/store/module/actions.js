@@ -4,7 +4,6 @@ const supabase = createClient(
   "https://lhbuszxrfblzysndtrye.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoYnVzenhyZmJsenlzbmR0cnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjQ0NzEzMTEsImV4cCI6MTk4MDA0NzMxMX0.IPMS-jxZtzSmeGbh2bthzy8X7JossgM3mYipdyQS9KY"
 );
-console.dir(process.env.SUPABASE_ID);
 function eventListenersHandler(parent, currentState) {
   const source = new EventSource(`${parent.$api}/stream/`);
 
@@ -51,7 +50,6 @@ function eventListenersHandler(parent, currentState) {
       //parent.commit("example/SET_EMAILS", JSON.parse(message.data));
     }
   );
-  console.log(currentState.imapUser.id, currentState.googleUser.id);
   source.addEventListener(
     "dns" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
