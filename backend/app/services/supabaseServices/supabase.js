@@ -17,15 +17,18 @@ function upsertMessage(
   folderPath,
   date
 ) {
-  return supabaseClient.from('messages').upsert({
-    message_id: messageID,
-    userid: userID,
-    channel,
-    folderpath: folderPath,
-    date,
-    listid: '',
-    reference: ''
-  });
+  return supabaseClient.from('messages').insert(
+    {
+      message_id: messageID,
+      userid: userID,
+      channel,
+      folderpath: folderPath,
+      date,
+      listid: '',
+      reference: ''
+    },
+    { ignoreDuplicates: false }
+  );
 }
 
 /**
@@ -45,7 +48,7 @@ function upsertPointOfContact(
   personid,
   key
 ) {
-  return supabaseClient.from('pointsofcontact').upsert({
+  return supabaseClient.from('pointsofcontact').insert({
     messageid: messageID,
     userid: userID,
     _to: key === 'to',
@@ -79,7 +82,7 @@ function upsertPersons(supabaseClient, name, emailsAddress, userID) {
       jobtitle: '',
       worksfor: 'flyweight'
     },
-    { onConflict: 'email' }
+    { onConflict: 'email', ignoreDuplicates: false }
   );
 }
 
