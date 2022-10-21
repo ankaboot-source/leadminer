@@ -7,6 +7,7 @@ const {
   imapConnectionTimeout
 } = require('../config/server.config');
 const { googleImapHost } = require('../config/google.config');
+
 class EmailServer {
   #connection;
   /**
