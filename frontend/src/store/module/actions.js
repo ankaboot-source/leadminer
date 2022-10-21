@@ -62,7 +62,7 @@ function eventListenersHandler(parent, currentState) {
 }
 function initStore(parent, currentState) {
   console.log("subscribed");
-  const mySubscription = supabase
+  supabase
     .channel("refinedpersons")
     .on(
       "postgres_changes",
