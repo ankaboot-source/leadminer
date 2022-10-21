@@ -1,9 +1,10 @@
 const request = require('supertest');
 const app = require('../../server');
-const config = require('config');
-const emailTest = config.get('test.imap_email');
-const hostTest = config.get('test.imap_host');
-const passwordTest = config.get('test.imap_password');
+const {
+  testImapEmail,
+  testImapHost,
+  testImapPassword
+} = require('../../app/config/test.config');
 
 before((done) => {
   app.event.on('started', function () {
@@ -20,9 +21,9 @@ describe('Full mining flow', function () {
       await request(app.server)
         .post('/api/imap/login')
         .send({
-          email: emailTest,
-          password: passwordTest,
-          host: hostTest
+          email: testImapEmail,
+          password: testImapPassword,
+          host: testImapHost
         })
         .expect((res) => {
           loggedInUser = JSON.parse(res.text).imap;
@@ -41,7 +42,7 @@ describe('Full mining flow', function () {
           boxes: ['testFile', '0'],
           user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
             '"' + loggedInUser.email + '"'
-          },"password":${'"' + passwordTest + '"'},"host":${
+          },"password":${'"' + testImapPassword + '"'},"host":${
             '"' + loggedInUser.host + '"'
           },"port":"993"}`
         })
@@ -55,7 +56,7 @@ describe('Full mining flow', function () {
         .query({
           user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
             '"' + loggedInUser.email + '"'
-          },"password":${'"' + passwordTest + '"'},"host":${
+          },"password":${'"' + testImapPassword + '"'},"host":${
             '"' + loggedInUser.host + '"'
           },"port":"993"}`
         })

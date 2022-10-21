@@ -1,15 +1,13 @@
 const imapTreeHelpers = require('../utils/imapTreeHelpers');
 const hashHelpers = require('../utils/hashHelpers');
 const inputHelpers = require('../utils/inputHelpers');
-const Imap = require('imap'),
-  logger = require('../utils/logger')(module),
-  config = require('config');
+const Imap = require('imap');
+const logger = require('../utils/logger')(module);
+
 const redisClientForPubSubMode =
   require('../../redis').redisClientForPubSubMode();
-const supabaseUrl = config.get('server.supabase.url');
-const supabaseToken = config.get('server.supabase.token');
-const { createClient } = require('@supabase/supabase-js');
-const supabaseClient = createClient(supabaseUrl, supabaseToken);
+
+const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -412,9 +410,10 @@ class EmailAccountMiner {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
+
     // call supabase function to refine data
-    supabaseClient
-      .rpc('refined_persons', {
+    supabaseHandlers
+      .invokeRpc('refined_persons', {
         userid: this.user.id
       })
       .then((res) => {
