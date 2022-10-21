@@ -42,56 +42,42 @@ function checkMXStatus(domain) {
 }
 
 /**
- * If the domain is in the freeProviders array, return true. If the domain is in the disposable array,
- * return false. If the domain is not in either array, return false
- * @param emailAddress - The email address to check it domain.
- * @returns A boolean value.
+ * Checks the domain status.
+ * @param emailAddress - The email address to check its domain.
+ * @returns An array of three elements.
+ * The first element is a boolean that indicates whether the domain is valid or not.
+ * The second element is a string that indicates the type of domain.
+ * The third element is the domain itself.
  */
 async function checkDomainStatus(emailAddress) {
-  const domain = emailAddress.split('@')[1],
-    /**
-     * as most of domaisn are free providers
-     * we can reduce the execution time when check for freeproviders first
-     */
-    exist = await redisClientForNormalMode.sismember('freeProviders', domain);
+  const domain = emailAddress.split('@')[1];
 
-  if (exist === 1) {
-    return [true, 'provider', domain];
-  }
   /**
-   * if not in free providers we check disposable
+   * As most of domains are free providers,
+   * we can reduce the execution time when check for freeproviders first.
+   * The order here matters.
    */
-  const existDisposable = await redisClientForNormalMode.sismember(
-    'disposable',
-    domain
-  );
-  if (existDisposable === 1) {
-    return [false, '', domain];
+  const providers = [
+    { redisKey: 'freeProviders', type: 'provider', isValid: true },
+    { redisKey: 'disposable', type: 'disposable', isValid: false },
+    { redisKey: 'domainListValid', type: 'custom', isValid: true },
+    { redisKey: 'domainListInvalid', type: '', isValid: false }
+  ];
+
+  for (const provider of providers) {
+    const exists = await redisClientForNormalMode.sismember(
+      provider.redisKey,
+      domain
+    );
+
+    if (exists) {
+      return [provider.isValid, provider.type, domain];
+    }
   }
-  /**
-   * we check for already checked domains
-   */
-  const existInList = await redisClientForNormalMode.sismember(
-    'domainListValid',
-    domain
-  );
-  if (existInList === 1) {
-    return [true, 'custom', domain];
-  }
-  const existInListInValid = await redisClientForNormalMode.sismember(
-    'domainListInvalid',
-    domain
-  );
-  if (existInListInValid === 1) {
-    return [false, '', domain];
-  }
-  /**
-   * if not already scanned we check then the MX
-   */
-  if (existInListInValid === 0 && existInList === 0) {
-    const result = await checkMXStatus(domain);
-    return result;
-  }
+
+  // if not already scanned we check the MX
+  const MXStatus = await checkMXStatus(domain);
+  return MXStatus;
 }
 
 module.exports = {
