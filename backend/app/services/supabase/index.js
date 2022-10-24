@@ -6,11 +6,11 @@ class SupabaseHandlers {
 
   /**
    * SupabaseHandlers constructor
-   * @param {string} supabaseUrl - The supabase URL.
-   * @param {string} supabaseToken - The supabase token.
+   * @param {string} url - The supabase URL.
+   * @param {string} token - The supabase token.
    */
-  constructor(supabaseUrl, supabaseToken) {
-    this.supabaseClient = createClient(supabaseUrl, supabaseToken);
+  constructor(url, token) {
+    this.supabaseClient = createClient(url, token);
   }
 
   /**

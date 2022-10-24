@@ -44,15 +44,15 @@ function refreshAccessToken(refresh_token, tokenInfo) {
  */
 async function generateXOauthToken(user) {
   let access_Token = user.token;
-  const now = new Date(),
-    utc_timestamp = Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      now.getUTCHours(),
-      now.getUTCMinutes(),
-      now.getUTCSeconds()
-    );
+  const now = new Date();
+  // const utc_timestamp = Date.UTC(
+  //   now.getUTCFullYear(),
+  //   now.getUTCMonth(),
+  //   now.getUTCDate(),
+  //   now.getUTCHours(),
+  //   now.getUTCMinutes(),
+  //   now.getUTCSeconds()
+  // );
   // if access_token is expired then refresh it using refresh_token
 
   const oauth2Client = getOAuthClient();
