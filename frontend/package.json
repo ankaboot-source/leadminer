@@ -6,7 +6,7 @@
   "author": "ankaboot",
   "scripts": {
     "preinstall": "npx npm-force-resolutions",
-    "build": "envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar build",
+    "build": "quasar build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "eslint --ext .vue --ext .js src/",
     "start": "quasar dev",
