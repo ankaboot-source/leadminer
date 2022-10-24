@@ -182,7 +182,7 @@ class EmailMessage {
     }
 
     emails
-      .filter((email) => this.user.email !== email?.address)
+      .filter((email) => email && this.user.email !== email?.address)
       .forEach(async (email) => {
         // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
         const domain = await emailMessageHelpers.checkDomainStatus(
