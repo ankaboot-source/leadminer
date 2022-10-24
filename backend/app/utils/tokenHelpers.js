@@ -1,13 +1,14 @@
 /* istanbul ignore file */
 const xoauth2 = require('xoauth2');
 const { OAuth2Client } = require('google-auth-library');
-const config = require('config');
-const ClientId = config.get('google_api.client.id'),
-  ClientSecret = config.get('google_api.client.secret'),
-  RedirectionUrl = 'postmessage';
+const {
+  googleClientId,
+  googleClientSecret
+} = require('../config/google.config');
+const RedirectionUrl = 'postmessage';
 
 function getOAuthClient() {
-  return new OAuth2Client(ClientId, ClientSecret, RedirectionUrl);
+  return new OAuth2Client(googleClientId, googleClientSecret, RedirectionUrl);
 }
 /**
  * Uses the refresh_token to refresh the expired access_token
@@ -61,7 +62,6 @@ async function generateXOauthToken(user) {
     Number(user.token.experation) + 8 >
     Math.floor(tokenInfo.expiry_date / 1000)
   ) {
-    console.log('refresh');
     access_Token = await refreshAccessToken(user.refreshToken, tokenInfo);
   }
   // create xoauth2 token

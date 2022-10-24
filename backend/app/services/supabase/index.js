@@ -24,15 +24,18 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   upsertMessage(messageID, userID, channel, folderPath, date) {
-    return this.supabaseClient.from('messages').upsert({
-      message_id: messageID,
-      userid: userID,
-      channel,
-      folderpath: folderPath,
-      date,
-      listid: '',
-      reference: ''
-    });
+    return this.supabaseClient.from('messages').insert(
+      {
+        message_id: messageID,
+        userid: userID,
+        channel,
+        folderpath: folderPath,
+        date,
+        listid: '',
+        reference: ''
+      },
+      { ignoreDuplicates: false }
+    );
   }
 
   /**
@@ -45,7 +48,7 @@ class SupabaseHandlers {
    * @returns {promise} .
    */
   upsertPointOfContact(messageID, userID, personid, key) {
-    return this.supabaseClient.from('pointsofcontact').upsert({
+    return this.supabaseClient.from('pointsofcontact').insert({
       messageid: messageID,
       userid: userID,
       _to: key === 'to',
@@ -79,7 +82,7 @@ class SupabaseHandlers {
         jobtitle: '',
         worksfor: 'flyweight'
       },
-      { onConflict: 'email' }
+      { onConflict: 'email', ignoreDuplicates: false }
     );
   }
 
@@ -92,16 +95,6 @@ class SupabaseHandlers {
     return this.supabaseClient
       .from('tags')
       .upsert([...tags], { onConflict: 'personid, name' });
-  }
-
-  /**
-   * `invokeRpc` performs a function call on supabase.
-   * @param {string} functionName - Function name.
-   * @param {object} data - Data to be passed to the function.
-   * @returns {promise}
-   */
-  invokeRpc(functionName, data) {
-    return this.supabaseClient.rpc(functionName, data);
   }
 }
 
