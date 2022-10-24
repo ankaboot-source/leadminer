@@ -2,6 +2,7 @@ FROM node as build-stage
 WORKDIR /frontend
 COPY ./ /frontend
 RUN npm install
+RUN apk add gettext
 # Change this to your server endpoint
 ENV SERVER_ENDPOINT=https://localhost:8081
 # ENV VARS REQUIRED
