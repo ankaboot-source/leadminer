@@ -1,5 +1,6 @@
 const express = require('express');
 require('dotenv').config();
+const cors = require('cors');
 // eslint-disable-next-line no-console
 console.log(
   `%c
@@ -21,6 +22,7 @@ const logger = require('./app/utils/logger')(module);
 const sse = new SSE();
 const db = require('./app/models');
 const { EventEmitter } = require('stream');
+app.use(cors());
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();

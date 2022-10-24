@@ -179,7 +179,9 @@ class EmailAccountMiner {
         emailHash: this.mailHash
       });
       this.messageWorkerForBody.postMessage(this.user.id);
-      this.mineFolder(this.folders[0]).next();
+      setTimeout(() => {
+        this.mineFolder(this.folders[0]).next();
+      }, 1000);
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
@@ -193,13 +195,13 @@ class EmailAccountMiner {
     this.connection.on('error', (err) => {
       logger.error('Error with IMAP connection.', { error: err });
     });
-    this.connection.once('end', () => {
+    this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
         emailHash: this.mailHash
       });
       // sse here to send data based on end event
       this.sse.send(true, 'data');
-      this.sse.send(true, 'dns');
+      this.sse.send(true, `dns${this.user.id}`);
       logger.debug('SSE data and dns events sent!');
       this.eventEmitter.emit('end', true);
       logger.debug('End connection using end event');

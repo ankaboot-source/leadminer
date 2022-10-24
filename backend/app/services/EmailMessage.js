@@ -126,37 +126,33 @@ class EmailMessage {
     if (message.error) {
       logger.error('Error when inserting to messages table.', {
         error: message.error.message,
+        code: message.error.code,
         emailMessageDate: this.getDate()
       });
-    }
-
-    // case when header should be scanned
-    // eslint-disable-next-line no-constant-condition
-    if (true) {
+      if (message.error.code == '23505') {
+        logger.debug(`message with id:${this.getMessageId()} already mined`);
+      }
+    } else {
       const messagingFields = this.getMessagingFieldsFromHeader();
-      Object.keys(messagingFields).forEach(async (key) => {
+      Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
         const emails = regExHelpers.extractNameAndEmail(
           messagingFields[`${key}`]
         );
 
-        await this.storeEmailsAddressesExtractedFromHeader(
-          message,
-          emails,
-          key
-        );
+        this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
       });
-    }
-    // case when body should be scanned
-    // eslint-disable-next-line no-constant-condition
-    if (true) {
+
+      // case when body should be scanned
+      // eslint-disable-next-line no-constant-condition
+
       // TODO : OPTIONS as user query
       const emails = regExHelpers.extractNameAndEmailFromBody(
         this.body.toString('utf8')
       );
       delete this.body;
       // store extracted emails
-      await this.storeEmailsAddressesExtractedFromBody(message, emails);
+      this.storeEmailsAddressesExtractedFromBody(message, emails);
     }
   }
 
@@ -182,7 +178,7 @@ class EmailMessage {
     }
 
     emails
-      .filter((email) => this.user.email !== email?.address)
+      .filter((email) => email && this.user.email !== email?.address)
       .forEach(async (email) => {
         // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
         const domain = await emailMessageHelpers.checkDomainStatus(
@@ -308,6 +304,7 @@ class EmailMessage {
         if (person.error) {
           logger.error('Error when inserting to persons table.', {
             error: person.error.message,
+            code: person.error.code,
             emailMessageDate: this.getDate()
           });
         }
@@ -324,6 +321,7 @@ class EmailMessage {
               if (pointOfContact.error) {
                 logger.error('Error when inserting to pointOfContact table.', {
                   error: pointOfContact.error.message,
+                  code: pointOfContact.error.code,
                   emailMessageDate: this.getDate()
                 });
               }

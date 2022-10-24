@@ -797,7 +797,7 @@ export default defineComponent({
         })
         .catch((error) => {
           this.showNotif(
-            this.$store.getters["example/getStates"].errorMessage,
+            this.$store.getters["example/getStates"]?.errorMessage,
             "red",
             "error"
           );
