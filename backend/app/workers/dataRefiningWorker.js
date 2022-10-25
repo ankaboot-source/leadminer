@@ -24,12 +24,12 @@ parentPort.on('message', (userId) => {
         'invalidDomainEmails'
       );
       const data = {
-        minedEmails: minedEmails,
-        totalScanned: totalScanned,
+        minedEmails,
+        totalScanned,
         statistics: {
-          noReply: noReply,
-          invalidDomain: invalidDomain,
-          transactional: transactional
+          noReply,
+          invalidDomain,
+          transactional
         }
       };
       // Send data to main process(main event loop)

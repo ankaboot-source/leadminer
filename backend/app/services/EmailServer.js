@@ -1,11 +1,12 @@
-const Imap = require("imap"),
-  logger = require("../utils/logger")(module);
-const hashHelpers = require("../utils/hashHelpers");
-const tokenHelpers = require("../utils/tokenHelpers");
-const config = require("config"),
-  GOOGLE_IMAP_HOST = config.get("google_api.host"),
-  AUTHENTICATION_TIMEOUT = config.get("server.imap.authentication_timeout"),
-  CONNECTION_TIMEOUT = config.get("server.imap.connection_timeout");
+const Imap = require('imap');
+const logger = require('../utils/logger')(module);
+const hashHelpers = require('../utils/hashHelpers');
+const tokenHelpers = require('../utils/tokenHelpers');
+const {
+  imapAuthTimeout,
+  imapConnectionTimeout
+} = require('../config/server.config');
+const { googleImapHost } = require('../config/google.config');
 
 class EmailServer {
   #connection;
@@ -23,26 +24,28 @@ class EmailServer {
    * @returns An Imap object
    */
   initConnection() {
-    logger.info(`Preparing imap connection for user : ${this.mailHash}`);
+    logger.info('Preparing IMAP connection for user.', {
+      emailHash: this.mailHash
+    });
 
     if (this.user.token) {
       // the user is connected using api
       this.#connection = new Imap({
         user: this.user.email,
-        xoauth2: "",
-        host: GOOGLE_IMAP_HOST,
+        xoauth2: '',
+        host: googleImapHost,
         port: this.user.port || 993,
         tls: true,
         tlsOptions: {
           port: this.user.port || 993,
-          host: GOOGLE_IMAP_HOST,
-          servername: GOOGLE_IMAP_HOST,
+          host: googleImapHost,
+          servername: googleImapHost
         },
-        keepalive: false,
+        keepalive: false
       });
-      logger.info(
-        `API connection to imap server initiated for user: ${this.mailHash}`
-      );
+      logger.info('API connection to IMAP server initiated for user.', {
+        emailHash: this.mailHash
+      });
     }
     if (this.user.password) {
       // the user is connected using password
@@ -52,18 +55,19 @@ class EmailServer {
         host: this.user.host,
         port: this.user.port || 993,
         tls: true,
-        connTimeout: CONNECTION_TIMEOUT,
+
+        connTimeout: imapConnectionTimeout,
         keepalive: false,
-        authTimeout: AUTHENTICATION_TIMEOUT,
+        authTimeout: imapAuthTimeout,
         tlsOptions: {
           port: this.user.port || 993,
           host: this.user.host,
-          servername: this.user.host,
-        },
+          servername: this.user.host
+        }
       });
-      logger.info(
-        `IMAP connection to imap server initiated for user: ${this.mailHash}`
-      );
+      logger.info('IMAP connection to IMAP server initiated for user.', {
+        emailHash: this.mailHash
+      });
     }
   }
   /**
@@ -81,11 +85,11 @@ class EmailServer {
    * @returns A promise that resolves to the connection object.
    */
   async connecte() {
-    return new Promise((res, reject) => {
+    return new Promise((res) => {
       // initialize the connection
       this.initConnection();
       if (this.isApiConnection()) {
-        logger.debug("User connected using api");
+        logger.debug('User connected using api');
         tokenHelpers.generateXOauthToken(this.user).then((tokens) => {
           this.sse.send({ token: tokens.newToken }, `token${this.user.id}`);
           this.#connection._config.xoauth2 = tokens.xoauth2Token;
@@ -93,7 +97,7 @@ class EmailServer {
           res(this.#connection);
         });
       } else {
-        logger.info(`User connected using imap: ${this.mailHash}`);
+        logger.info('User connected using IMAP.', { emailHash: this.mailHash });
         this.#connection.connect();
         res(this.#connection);
       }
