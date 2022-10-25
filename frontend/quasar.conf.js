@@ -44,8 +44,9 @@ module.exports = configure(function (ctx) {
       env: {
         ENDPOINT: ctx.dev ? "http://localhost:8081" : "",
         GG_CLIENT_ID: "",
-        SUPABASE_ID: "",
-        SUPABASE_TOKEN: "",
+        SUPABASE_ID:
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoYnVzenhyZmJsenlzbmR0cnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjQ0NzEzMTEsImV4cCI6MTk4MDA0NzMxMX0.IPMS-jxZtzSmeGbh2bthzy8X7JossgM3mYipdyQS9KY",
+        SUPABASE_TOKEN: "https://lhbuszxrfblzysndtrye.supabase.co",
       },
       // transpile: false,
 

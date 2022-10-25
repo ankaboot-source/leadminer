@@ -1,4 +1,4 @@
-FROM node as build-stage
+FROM node:alpine as build-stage
 WORKDIR /frontend
 COPY ./ /frontend
 RUN npm install
