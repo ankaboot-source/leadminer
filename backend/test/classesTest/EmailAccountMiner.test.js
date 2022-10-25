@@ -5,6 +5,7 @@ const {
   testImapHost,
   testImapPassword
 } = require('../../app/config/test.config');
+const { json } = require('sequelize/types');
 
 before((done) => {
   app.event.on('started', function () {
@@ -15,6 +16,13 @@ after(async () => {
   require('../../server').stop();
 });
 describe('Full mining flow', function () {
+  const userObject = {
+    id: loggedInUser.id,
+    email: loggedInUser.email,
+    password: testImapPassword,
+    host: loggedInUser.host,
+    port: 993
+  };
   let loggedInUser;
   describe('login', function () {
     it('create user (login request)', async function () {
@@ -33,18 +41,12 @@ describe('Full mining flow', function () {
 
   describe('mine', function () {
     it('mine folder for the logged in user', async function () {
-      // loggedInUser.email = '"' + loggedInUser.email + '"';
-      // loggedInUser.host = '"' + loggedInUser.host + '"';
       await request(app.server)
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
           fields: ['HEADER', '1'],
           boxes: ['testFile', '0'],
-          user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
-            '"' + loggedInUser.email + '"'
-          },"password":${'"' + testImapPassword + '"'},"host":${
-            '"' + loggedInUser.host + '"'
-          },"port":"993"}`
+          user: JSON.stringify(userObject)
         })
         .expect(200);
     });
@@ -54,11 +56,7 @@ describe('Full mining flow', function () {
       await request(app.server)
         .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
         .query({
-          user: `{"id":${'"' + loggedInUser.id + '"'},"email":${
-            '"' + loggedInUser.email + '"'
-          },"password":${'"' + testImapPassword + '"'},"host":${
-            '"' + loggedInUser.host + '"'
-          },"port":"993"}`
+          user: JSON.stringify(userObject)
         })
         .expect(200);
     });
