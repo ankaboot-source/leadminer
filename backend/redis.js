@@ -1,23 +1,24 @@
 const Redis = require('ioredis');
-const config = require('config');
 const logger = require('./app/utils/logger')(module);
 const freeProviders = require('./app/utils/FreeProviders.json');
 const disposable = require('./app/utils/Disposable.json');
-//*******█▌█▌ get the configuration from config file BEGIN *******
-const redis = config.get('server.redis');
-const redis_host = config.get('server.redis.host') ?? process.env.REDIS_HOST;
-const redis_port = config.get('server.redis.port') ?? process.env.REDIS_PORT;
-//*******get the configuration from config file END █▌█▌*******
+
+const {
+  redisUsername,
+  redisPassword,
+  redisHost,
+  redisPort
+} = require('./app/config/redis.config');
 
 function initializeRedis() {
-  if (redis.password && redis.username) {
-    return new Redis(redis_port, redis_host, {
-      password: redis.password,
-      user: redis.username
+  if (redisUsername && redisPassword) {
+    return new Redis(redisPort, redisHost, {
+      password: redisUsername,
+      user: redisPassword
     });
   }
   //no password
-  return new Redis(redis_port, redis_host);
+  return new Redis(redisPort, redisHost);
 }
 
 /**

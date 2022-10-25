@@ -1,7 +1,6 @@
 const { format, transports } = require('winston');
 const winston = require('winston');
-const config = require('config');
-const level = config.get('server.log_level');
+const { logLevel } = require('../config/server.config');
 
 function getLabel(callingModule) {
   const parts = callingModule.filename.split('/');
@@ -34,7 +33,7 @@ module.exports =
                 } | ${JSON.stringify(info.meta)}`
             )
           ),
-          level
+          logLevel
         }),
 
         new transports.Console({
@@ -49,7 +48,7 @@ module.exports =
                 }>> | ${JSON.stringify(info.metadata)}`
             )
           ),
-          level
+          logLevel
         })
       ]
     });

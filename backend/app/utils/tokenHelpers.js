@@ -1,27 +1,28 @@
 /* istanbul ignore file */
 const xoauth2 = require('xoauth2');
 const { OAuth2Client } = require('google-auth-library');
-const config = require('config');
-const ClientId = config.get('google_api.client.id'),
-  ClientSecret = config.get('google_api.client.secret'),
-  RedirectionUrl = 'postmessage';
+const {
+  googleClientId,
+  googleClientSecret
+} = require('../config/google.config');
+const RedirectionUrl = 'postmessage';
 
 function getOAuthClient() {
-  return new OAuth2Client(ClientId, ClientSecret, RedirectionUrl);
+  return new OAuth2Client(googleClientId, googleClientSecret, RedirectionUrl);
 }
 /**
  * Uses the refresh_token to refresh the expired access_token
  * @param  {} refresh_token stored token
  */
 function refreshAccessToken(refresh_token, tokenInfo) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve) => {
     // return OAuth2 client
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({
       refresh_token
     });
-    oauth2Client.getAccessToken().then(async (err, token) => {
+    oauth2Client.getAccessToken().then((err, token) => {
       if (token) {
         const access_token = {
           access_token: token,
@@ -43,15 +44,15 @@ function refreshAccessToken(refresh_token, tokenInfo) {
  */
 async function generateXOauthToken(user) {
   let access_Token = user.token;
-  const now = new Date(),
-    utc_timestamp = Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      now.getUTCHours(),
-      now.getUTCMinutes(),
-      now.getUTCSeconds()
-    );
+  // const now = new Date();
+  // const utc_timestamp = Date.UTC(
+  //   now.getUTCFullYear(),
+  //   now.getUTCMonth(),
+  //   now.getUTCDate(),
+  //   now.getUTCHours(),
+  //   now.getUTCMinutes(),
+  //   now.getUTCSeconds()
+  // );
   // if access_token is expired then refresh it using refresh_token
 
   const oauth2Client = getOAuthClient();
@@ -61,7 +62,6 @@ async function generateXOauthToken(user) {
     Number(user.token.experation) + 8 >
     Math.floor(tokenInfo.expiry_date / 1000)
   ) {
-    console.log('refresh');
     access_Token = await refreshAccessToken(user.refreshToken, tokenInfo);
   }
   // create xoauth2 token
@@ -69,7 +69,7 @@ async function generateXOauthToken(user) {
       user: user.email,
       clientId: process.env.GG_CLIENT_ID,
       clientSecret: process.env.GG_CLIENT_SECRET,
-      accessToken: access_Token.access_token
+      accessToken: access_Token.access_tokenasync
     }),
     authData = `user=${user.email}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`,
     xoauth2_token = new Buffer.from(authData, 'utf-8').toString('base64');

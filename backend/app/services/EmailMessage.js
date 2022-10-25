@@ -12,12 +12,9 @@ const config = require('config'),
     .split(','),
   FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
-const supabaseUrl = config.get('server.supabase.url');
-const supabaseToken = config.get('server.supabase.token');
-const { createClient } = require('@supabase/supabase-js');
-const supabaseClient = createClient(supabaseUrl, supabaseToken);
-const supabaseHandlers = require('./supabaseServices/supabase');
 const logger = require('../utils/logger')(module);
+
+const { supabaseHandlers } = require('./supabase');
 
 class EmailMessage {
   /**
@@ -119,7 +116,6 @@ class EmailMessage {
    */
   async extractThenStoreEmailsAddresses() {
     const message = await supabaseHandlers.upsertMessage(
-      supabaseClient,
       this.getMessageId(),
       this.user.id,
       'imap',
@@ -302,12 +298,7 @@ class EmailMessage {
    */
   storeEmails(message, email, name, tags, fieldName) {
     supabaseHandlers
-      .upsertPersons(
-        supabaseClient,
-        name ?? '',
-        email.toLowerCase(),
-        this.user.id
-      )
+      .upsertPersons(name ?? '', email.toLowerCase(), this.user.id)
       // we should wait for the response so we capture the id
       .then((person) => {
         if (person.error) {
@@ -321,7 +312,6 @@ class EmailMessage {
           //if saved and no errors then we can store the person linked to this point of contact
           supabaseHandlers
             .upsertPointOfContact(
-              supabaseClient,
               message.body?.[0]?.messageid,
               this.user.id,
               person.body?.[0].personid,
@@ -342,7 +332,7 @@ class EmailMessage {
             tags[i].personid = person.body?.[0].personid;
           }
           supabaseHandlers
-            .createTags(supabaseClient, tags)
+            .createTags(tags)
             // eslint-disable-next-line no-unused-vars
             .then((data, error) => {
               // eslint-disable-next-line no-warning-comments
