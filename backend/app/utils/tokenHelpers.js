@@ -22,11 +22,11 @@ function refreshAccessToken(refresh_token, tokenInfo) {
     oauth2Client.setCredentials({
       refresh_token
     });
-    oauth2Client.getAccessToken().then((err, token) => {
+    oauth2Client.getAccessToken().then((_, token) => {
       if (token) {
         const access_token = {
           access_token: token,
-          experation: Math.floor(tokenInfo.expiry_date / 1000)
+          expiration: Math.floor(tokenInfo.expiry_date / 1000)
         };
         resolve(access_token);
       }
@@ -59,7 +59,7 @@ async function generateXOauthToken(user) {
 
   const tokenInfo = await oauth2Client.getTokenInfo(access_Token.access_token);
   if (
-    Number(user.token.experation) + 8 >
+    Number(user.token.expiration) + 8 >
     Math.floor(tokenInfo.expiry_date / 1000)
   ) {
     access_Token = await refreshAccessToken(user.refreshToken, tokenInfo);
@@ -69,7 +69,7 @@ async function generateXOauthToken(user) {
       user: user.email,
       clientId: process.env.GG_CLIENT_ID,
       clientSecret: process.env.GG_CLIENT_SECRET,
-      accessToken: access_Token.access_tokenasync
+      accessToken: access_Token.access_token
     }),
     authData = `user=${user.email}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`,
     xoauth2_token = new Buffer.from(authData, 'utf-8').toString('base64');
