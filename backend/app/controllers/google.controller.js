@@ -1,16 +1,16 @@
 /* istanbul ignore file */
 const { OAuth2Client } = require('google-auth-library');
-const db = require('../models');
-const config = require('config'),
-  googleUsers = db.googleUsers,
-  logger = require('../utils/logger')(module),
-  ClientId = config.get('google_api.client.id'),
-  ClientSecret = config.get('google_api.client.secret'),
-  RedirectionUrl = 'postmessage';
+const googleUsers = require('../models').googleUsers;
+const logger = require('../utils/logger')(module);
+const {
+  googleClientId,
+  googleClientSecret
+} = require('../config/google.config');
+const RedirectionUrl = 'postmessage';
 
 // returns Oauth client
 function getOAuthClient() {
-  return new OAuth2Client(ClientId, ClientSecret, RedirectionUrl);
+  return new OAuth2Client(googleClientId, googleClientSecret, RedirectionUrl);
 }
 
 /**

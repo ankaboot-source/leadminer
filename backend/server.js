@@ -13,12 +13,11 @@ console.log(
 `,
   'font-family: monospace'
 );
-const config = require('config');
-const port = config.get('server.port');
+const { port } = require('./app/config/server.config');
 const app = express();
 const http = require('http');
 const SSE = require('express-sse').SSE;
-const { initializeSentry } = require('./sentry');
+const { initializeSentryIfNeeded } = require('./sentry');
 const logger = require('./app/utils/logger')(module);
 const sse = new SSE();
 const db = require('./app/models');
@@ -57,13 +56,11 @@ app.use((req, res, next) => {
 });
 //***********setting response headers END █▌█▌***********/
 
-//***************█▌█▌Check if should enable sentry BEGIN**********/
-if (config.get('server.sentry.enabled') == true) {
-  logger.debug('setting up sentry...');
-  initializeSentry(app);
-  logger.debug('sentry integrated to the server ✔️ ');
-}
-//***************Check if should enable sentry END █▌█▌**********/
+initializeSentryIfNeeded(app);
+
+process.on('uncaughtException', (err) => {
+  logger.error(`${err} , ${err.stack}`);
+});
 
 // parse requests of content-type - application/json
 app.use(express.json());

@@ -1,8 +1,5 @@
 const crypto = require('crypto');
-
-// secret used in hash
-const config = require('config'),
-  secret = config.get('server.hash_secret');
+const { hashSecret } = require('../config/server.config');
 
 /**
  * hashEmail takes an email address, runs it through a cryptographic hash function, and returns the result
@@ -10,7 +7,10 @@ const config = require('config'),
  * @returns A hash of the email address.
  */
 function hashEmail(emailAddress) {
-  return crypto.createHmac('sha256', secret).update(emailAddress).digest('hex');
+  return crypto
+    .createHmac('sha256', hashSecret)
+    .update(emailAddress)
+    .digest('hex');
 }
 
 module.exports = {
