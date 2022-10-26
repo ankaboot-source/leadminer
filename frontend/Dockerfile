@@ -1,4 +1,4 @@
-FROM node:alpine as build-stage
+FROM node:lts-alpine as build-stage
 WORKDIR /frontend
 COPY ./ /frontend
 RUN npm install
@@ -11,5 +11,5 @@ ENV SUPABASE_TOKEN=
 ENV GG_CLIENT_ID=
 RUN npm run build
 
-FROM nginx
+FROM nginx:stable-alpine
 COPY --from=build-stage /frontend/dist /var/www/html/dist
