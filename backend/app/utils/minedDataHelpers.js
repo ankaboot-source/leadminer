@@ -180,32 +180,26 @@ function getScore(DomainAndUserName, UserName) {
  * findEmailAddressType takes an email address, a list of user names, and a domain type, and returns the type of email
  * address, based on the domain type and the matching score of the name before or after the "@"
  * @param {String} emailAddress - The email address you want to check
- * @param {Array} UserNames - An array of user names that you want to check against.
+ * @param {Array} userNames - An array of user names that you want to check against.
  * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"
  * @returns the type of email address.
  */
-function findEmailAddressType(emailAddress, UserNames, domainType) {
+function findEmailAddressType(emailAddress, userNames, domainType) {
   // array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
-  const domainAndUserName = emailAddress.split('@');
-  //if the current email have names
-  if (UserNames.length > 0) {
-    for (const userName of UserNames) {
-      if (
-        domainType == 'provider' &&
-        domainType != 'custom' &&
-        getScore(domainAndUserName[0], userName) > 40
-      ) {
-        return 'Personal';
-      }
-      if (
-        getScore(domainAndUserName[0], userName) > 40 &&
-        domainType == 'custom'
-      ) {
-        return 'Professional';
-      }
-    }
+  const domainAndUserName = emailAddress.split('@')[0];
+
+  if (!userNames || getScore(domainAndUserName[0], userNames[0]) <= 40) {
+    return '';
   }
-  return '';
+
+  switch (domainType) {
+    case 'custom':
+      return 'Professional';
+    case 'provider':
+      return 'Personal';
+    default:
+      return '';
+  }
 }
 
 /**
@@ -221,15 +215,15 @@ function handleNames(name, emailAddress) {
     // remove all bad chars
     const Name = name
       .replaceAll('"', '')
-      .replaceAll('\'', '')
+      .replaceAll("'", '')
       .replaceAll('/', '')
       .trim();
     // case when the name is not the same as the address
-    if (Name != emailAddress) {
+    if (Name !== emailAddress) {
       if (
         NameArray.filter((str) =>
           str.toLowerCase().includes(Name.toLowerCase())
-        ).length == 0
+        ).length === 0
       ) {
         // if OK then push to the array
         NameArray.push(Name);
@@ -253,7 +247,7 @@ function sortDataUsingAlpha(data) {
     // name begins with number eg: name = 4four
     if (Number(el.name[0]?.charAt(0))) {
       numArr.push(el);
-    } else if (el.name && el.name.length > 0 && el.name[0] != '') {
+    } else if (el.name && el.name.length > 0 && el.name[0] !== '') {
       // name begins with alpha or char
       wordArr.push(el);
     } else {
@@ -284,9 +278,9 @@ function sortDatabase(dataFromDatabase) {
   const data = [];
   dataFromDatabase.map((row) => {
     // we treat only emails that are not tagged "noReply"
-    if (row.dataValues.noReply == false) {
+    if (row.dataValues.noReply === false) {
       //if for any reason we don't have names we should give empty string
-      if (!row.dataValues.name || row.dataValues.name == null) {
+      if (!row.dataValues.name || row.dataValues.name === null) {
         row.dataValues.name = [''];
       } else {
         // here are clean names
@@ -294,7 +288,7 @@ function sortDatabase(dataFromDatabase) {
           row.dataValues.name,
           row.dataValues.address
         );
-        row.dataValues.name = NameArray.length == 0 ? [''] : NameArray;
+        row.dataValues.name = NameArray.length === 0 ? [''] : NameArray;
       }
       // sum the sender + the total so we can have total interactions with this email
       row.dataValues.total =
@@ -304,7 +298,7 @@ function sortDatabase(dataFromDatabase) {
       if (
         !row.dataValues.Newsletter &&
         !row.dataValues.Transactional &&
-        row.dataValues.name.every((val) => val != '')
+        row.dataValues.name.every((val) => val !== '')
       ) {
         //if not transactional or newsletter, then find the type
         row.dataValues.type = findEmailAddressType(
@@ -324,6 +318,7 @@ function sortDatabase(dataFromDatabase) {
   return [sortDataUsingAlpha(data), counter];
 }
 module.exports = {
+  findEmailAddressType,
   getEmails,
   getCountDB,
   deleteUserData,
