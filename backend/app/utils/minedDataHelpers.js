@@ -136,7 +136,7 @@ async function getNoReplyEmails(userId) {
  * @param userId - The user's ID.
  * @returns The number of rows deleted.
  */
-async function deleteUserData(userId) {
+function deleteUserData(userId) {
   return db.emailsRaw.destroy({
     where: { user_id: userId }
   });

@@ -24,7 +24,7 @@
   "license": "GNU AGPL v3",
   "dependencies": {
     "@sentry/node": "^7.13.0",
-    "@sentry/tracing": "^7.11.1",
+    "@sentry/tracing": "^7.13.0",
     "@supabase/supabase-js": "^1.35.7",
     "amqplib": "^0.10.0",
     "chai": "^4.3.6",
@@ -44,7 +44,7 @@
     "pg-hstore": "^2.3.4",
     "quoted-printable": "^1.0.1",
     "sequelize": "^6.21.4",
-    "supabase": "^1.4.9",
+    "supabase": "^1.5.0",
     "supertest": "^6.2.2",
     "uuid": "^8.3.2",
     "winston": "^3.6.0",
