@@ -136,7 +136,7 @@ async function getNoReplyEmails(userId) {
  * @param userId - The user's ID.
  * @returns The number of rows deleted.
  */
-async function deleteUserData(userId) {
+function deleteUserData(userId) {
   return db.emailsRaw.destroy({
     where: { user_id: userId }
   });
@@ -180,32 +180,26 @@ function getScore(DomainAndUserName, UserName) {
  * findEmailAddressType takes an email address, a list of user names, and a domain type, and returns the type of email
  * address, based on the domain type and the matching score of the name before or after the "@"
  * @param {String} emailAddress - The email address you want to check
- * @param {Array} UserNames - An array of user names that you want to check against.
+ * @param {Array} userNames - An array of user names that you want to check against.
  * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"
  * @returns the type of email address.
  */
-function findEmailAddressType(emailAddress, UserNames, domainType) {
+function findEmailAddressType(emailAddress, userNames, domainType) {
   // array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
-  const domainAndUserName = emailAddress.split('@');
-  //if the current email have names
-  if (UserNames.length > 0) {
-    for (const userName of UserNames) {
-      if (
-        domainType === 'provider' &&
-        domainType !== 'custom' &&
-        getScore(domainAndUserName[0], userName) > 40
-      ) {
-        return 'Personal';
-      } else if (
-        getScore(domainAndUserName[0], userName) > 40 &&
-        domainType === 'custom'
-      ) {
-        return 'Professional';
-      }
-      return '';
-    }
+  const domainAndUserName = emailAddress.split('@')[0];
+
+  if (!userNames || getScore(domainAndUserName[0], userNames[0]) <= 40) {
+    return '';
   }
-  return '';
+
+  switch (domainType) {
+    case 'custom':
+      return 'Professional';
+    case 'provider':
+      return 'Personal';
+    default:
+      return '';
+  }
 }
 
 /**

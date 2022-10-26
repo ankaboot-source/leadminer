@@ -1,6 +1,6 @@
 out/
 coverage/
-config/
+./config/
 logs/
-supabase
+./supabase
 .*

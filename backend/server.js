@@ -1,5 +1,16 @@
 const express = require('express');
 require('dotenv').config();
+const { serverPort } = require('./app/config/server.config');
+const http = require('http');
+const { initializeSentryIfNeeded } = require('./sentry');
+const logger = require('./app/utils/logger')(module);
+const db = require('./app/models');
+const { EventEmitter } = require('stream');
+const SSE = require('express-sse').SSE;
+const cors = require('cors');
+//init redis
+const redisClientForInitialization =
+  require('./redis').redisClientForInitialConnection();
 // eslint-disable-next-line no-console
 console.log(
   `%c
@@ -12,23 +23,13 @@ console.log(
 `,
   'font-family: monospace'
 );
-const config = require('config');
-const port = config.get('server.port');
 const app = express();
-const http = require('http');
-const SSE = require('express-sse').SSE;
-const { initializeSentry } = require('./sentry');
-const logger = require('./app/utils/logger')(module);
 const sse = new SSE();
-const db = require('./app/models');
-const { EventEmitter } = require('stream');
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
-//init redis
-const redisClientForInitialisation =
-  require('./redis').redisClientForInitialConnection();
 
+app.use(cors());
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
@@ -55,16 +56,12 @@ app.use((req, res, next) => {
 });
 //***********setting response headers END █▌█▌***********/
 
-//***************█▌█▌Check if should enable sentry BEGIN**********/
-if (config.get('server.sentry.enabled') == true) {
-  logger.debug('setting up sentry...');
-  initializeSentry(app);
-  logger.debug('sentry integrated to the server ✔️ ');
-}
-//***************Check if should enable sentry END █▌█▌**********/
+initializeSentryIfNeeded(app);
+
 process.on('uncaughtException', (err) => {
   logger.error(`${err} , ${err.stack}`);
 });
+
 // parse requests of content-type - application/json
 app.use(express.json());
 
@@ -98,10 +95,10 @@ db.sequelize
   .then(() => {
     logger.debug('Database initialized ✔️ ');
     //disconnect from redis after initialization
-    redisClientForInitialisation.disconnect();
+    redisClientForInitialization.disconnect();
     // if successful init then start server
-    server.listen(port, () => {
-      logger.info(`Server is running on port ${port}.`);
+    server.listen(serverPort, () => {
+      logger.info(`Server is running on port ${serverPort}.`);
       event.emit('started');
     });
     server.on('error', (e) => {

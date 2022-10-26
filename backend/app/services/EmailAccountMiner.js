@@ -1,15 +1,13 @@
 const imapTreeHelpers = require('../utils/imapTreeHelpers');
 const hashHelpers = require('../utils/hashHelpers');
 const inputHelpers = require('../utils/inputHelpers');
-const Imap = require('imap'),
-  logger = require('../utils/logger')(module),
-  config = require('config');
+const Imap = require('imap');
+const logger = require('../utils/logger')(module);
+
 const redisClientForPubSubMode =
   require('../../redis').redisClientForPubSubMode();
-const supabaseUrl = config.get('server.supabase.url');
-const supabaseToken = config.get('server.supabase.token');
-const { createClient } = require('@supabase/supabase-js');
-const supabaseClient = createClient(supabaseUrl, supabaseToken);
+
+const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -113,8 +111,9 @@ class EmailAccountMiner {
    * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
    */
   getTreeWithTotalPerFolder(imapTree) {
+    const self = this;
     return new Promise((resolve) => {
-      imapTree.map((folder) => {
+      imapTree.forEach((folder) => {
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
             if (box) {
@@ -180,7 +179,9 @@ class EmailAccountMiner {
         emailHash: this.mailHash
       });
       this.messageWorkerForBody.postMessage(this.user.id);
-      this.mineFolder(this.folders[0]).next();
+      setTimeout(() => {
+        this.mineFolder(this.folders[0]).next();
+      }, 1000);
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
@@ -194,13 +195,13 @@ class EmailAccountMiner {
     this.connection.on('error', (err) => {
       logger.error('Error with IMAP connection.', { error: err });
     });
-    this.connection.once('end', () => {
+    this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
         emailHash: this.mailHash
       });
       // sse here to send data based on end event
       this.sse.send(true, 'data');
-      this.sse.send(true, 'dns');
+      this.sse.send(true, `dns${this.user.id}`);
       logger.debug('SSE data and dns events sent!');
       this.eventEmitter.emit('end', true);
       logger.debug('End connection using end event');
@@ -212,13 +213,13 @@ class EmailAccountMiner {
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
-    logger.info('Started mining email messages from folder.', {
+    logger.debug('Started mining email messages from folder.', {
       emailHash: this.mailHash,
       folder
     });
 
     // we use generator to stope function execution then we recall it with new params using next()
-    yield this.connection.openBox(folder, true, async (err, openedFolder) => {
+    yield this.connection.openBox(folder, true, (err, openedFolder) => {
       if (openedFolder) {
         logger.debug(
           `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
@@ -256,7 +257,7 @@ class EmailAccountMiner {
       this.connection.end();
       this.connection.destroy();
     } else {
-      // if this folder is juste a label then pass to the next folder
+      // if this folder is just a label then pass to the next folder
       logger.debug(
         `Going to next folder, this one is undefined or a label in folders array for User: ${this.mailHash}`
       );
@@ -273,7 +274,7 @@ class EmailAccountMiner {
    */
   ImapFetch(folder, folderName) {
     let self = this;
-    const f = this.connection.seq.fetch('1:*', {
+    const fetchResult = this.connection.seq.fetch('1:*', {
       bodies: self.fields,
       struct: true
     });
@@ -282,14 +283,14 @@ class EmailAccountMiner {
       `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
     );
     // message event
-    f.on('message', (msg, seqNumber) => {
+    fetchResult.on('message', (msg, seqNumber) => {
       let Header = '',
         body = '';
 
       msg.on('body', (stream, streamInfo) => {
         // parse the chunks of the message
 
-        stream.on('data', async (chunk) => {
+        stream.on('data', (chunk) => {
           if (streamInfo.which.includes('HEADER')) {
             Header += chunk;
           } else {
@@ -308,8 +309,8 @@ class EmailAccountMiner {
       });
     });
     // end event
-    f.once('end', () => {
-      logger.info('Finished mining email messages from folder.', {
+    fetchResult.once('end', () => {
+      logger.debug('Finished mining email messages from folder.', {
         emailHash: this.mailHash,
         folder: folder.name
       });
@@ -351,7 +352,7 @@ class EmailAccountMiner {
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
     // TODO : check message if it's already mined
-    const message_id = Header['message-id'] ? Header['message-id'][0] : '';
+    // const message_id = Header['message-id'] ? Header['message-id'][0] : '';
     // redisClientForNormalMode
     //   .sismember('messages', message_id)
     //   .then((alreadyMined) => {
@@ -376,7 +377,7 @@ class EmailAccountMiner {
    * @param seqNumber - The current sequence number of the email being scanned
    * @param folderName - The name of the folder being scanned
    */
-  async sendMiningProgress(seqNumber, folderName) {
+  sendMiningProgress(seqNumber, folderName) {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
@@ -407,13 +408,14 @@ class EmailAccountMiner {
    * @param seqNumber - The sequence number of the mined data.
    * @param folderName - The name of the folder that contains the mined data.
    */
-  async sendMinedData(seqNumber, folderName) {
+  sendMinedData(seqNumber, folderName) {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
+
     // call supabase function to refine data
-    supabaseClient
-      .rpc('refined_persons', {
+    supabaseHandlers
+      .invokeRpc('refined_persons', {
         userid: this.user.id
       })
       .then((res) => {

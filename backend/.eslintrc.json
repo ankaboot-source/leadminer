@@ -39,7 +39,6 @@
     ],
     "keyword-spacing": "error",
     "object-shorthand": ["error", "always", { "avoidQuotes": true }],
-    "multiline-ternary": ["error", "never"],
     "no-mixed-operators": "error",
     //
     "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 1 }],

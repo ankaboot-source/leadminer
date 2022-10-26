@@ -1,5 +1,5 @@
-import { LocalStorage } from "quasar";
 import { createClient } from "@supabase/supabase-js";
+import { LocalStorage } from "quasar";
 const supabase = createClient(
   "https://lhbuszxrfblzysndtrye.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoYnVzenhyZmJsenlzbmR0cnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjQ0NzEzMTEsImV4cCI6MTk4MDA0NzMxMX0.IPMS-jxZtzSmeGbh2bthzy8X7JossgM3mYipdyQS9KY"
@@ -19,25 +19,6 @@ function eventListenersHandler(parent, currentState) {
   source.addEventListener(
     "ScannedEmails" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
-      const mySubscription = supabase
-        .channel("*")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "refinedpersons",
-            filter: `userid=eq.${
-              currentState.imapUser.id + currentState.googleUser.id
-            }`,
-          },
-          (payload) => {
-            parent.commit("example/SET_EMAILS", payload.new);
-
-            console.log("Change received!", payload);
-          }
-        )
-        .subscribe();
       let data = JSON.parse(message.data);
       parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
       //parent.commit("example/SET_EMAILS", data.data);
@@ -64,25 +45,38 @@ function eventListenersHandler(parent, currentState) {
     }
   );
   source.addEventListener(
-    "data" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
-      //parent.commit("example/SET_EMAILS", JSON.parse(message.data));
-    }
-  );
-  source.addEventListener(
     "dns" + currentState.imapUser.id + currentState.googleUser.id,
-    (_) => {
+    (message) => {
       parent.commit("example/SET_LOADING_DNS", false);
     }
   );
   return source;
 }
-function initStore(parent) {
+function initStore(parent, currentState) {
+  console.log("subscribed");
+  supabase
+    .channel("refinedpersons")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "refinedpersons",
+        filter: `userid=eq.${
+          currentState.imapUser.id + currentState.googleUser.id
+        }`,
+      },
+      (payload) => {
+        parent.commit("example/SET_EMAILS", payload.new);
+
+        console.log("Change received!", payload);
+      }
+    )
+    .subscribe();
   parent.commit("example/SET_LOADING", true);
   parent.commit("example/SET_LOADING_DNS", true);
   parent.commit("example/SET_SCANNEDEMAILS", "f");
   parent.commit("example/SET_STATISTICS", "f");
-  //parent.commit("example/SET_EMAILS", []);
   parent.commit("example/SET_SCANNEDBOXES", []);
 }
 function updateStoreWhenFinish(response, parent) {
@@ -94,6 +88,7 @@ function updateStoreWhenFinish(response, parent) {
 }
 export function getEmails({ getters }, { data }) {
   const currentState = getters.getStates;
+
   const CancelToken = this.$axios.CancelToken;
   const sources = CancelToken.source();
   let source = eventListenersHandler(this, currentState);
@@ -108,7 +103,7 @@ export function getEmails({ getters }, { data }) {
   };
   return new Promise((resolve, reject) => {
     const timer = new Proxy({ cancelRequest: false }, ProxyChange);
-    initStore(this);
+    initStore(this, currentState);
     this.commit("example/SET_CANCEL", timer);
     if (currentState.googleUser.access_token) {
       this.$axios
@@ -184,7 +179,7 @@ export async function signUp(_, { data }) {
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error.response.data.error);
+          this.commit("example/SET_ERROR", error?.response.data.error);
         }
         reject(error.message);
       });
@@ -202,7 +197,7 @@ export async function signUpGoogle(_, { data }) {
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error.response.data.error);
+          this.commit("example/SET_ERROR", error?.response.data.error);
         }
         reject(error.message);
       });
@@ -224,7 +219,7 @@ export async function signIn(_, { data }) {
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error.response.data.error);
+          this.commit("example/SET_ERROR", error?.response.data.error);
         }
         reject(error.message);
       });
@@ -275,6 +270,7 @@ export async function getBoxes({ getters }) {
               ? error?.response?.data?.error
               : error.message
           );
+
           reject(error.message);
         });
     } else {
@@ -294,7 +290,12 @@ export async function getBoxes({ getters }) {
               ? error?.response?.data?.error
               : error.message
           );
+
           reject(error.message);
+          if (error?.response?.status == 500) {
+            LocalStorage.remove("googleUser");
+            this.$router.push({ path: "/" });
+          }
         });
     }
   });

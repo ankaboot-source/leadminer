@@ -4,10 +4,7 @@ const chai = require('chai'),
 const request = require('supertest');
 require('dotenv').config();
 const app = require('../../server');
-const config = require('config');
-const emailTest = config.get('test.imap_email');
-const hostTest = config.get('test.imap_host');
-const passwordTest = config.get('test.imap_password');
+const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
 describe('Authentication(imap)', function () {
   describe('POST /api/imap/signup', function () {
@@ -32,7 +29,7 @@ describe('Authentication(imap)', function () {
       const response = await request(app.server)
         .post('/api/imap/signup')
         .send({
-          email: emailTest,
+          email: testImapEmail,
           port: 993
         })
         .expect(400)
@@ -46,9 +43,9 @@ describe('Authentication(imap)', function () {
       const response = await request(app.server)
         .post('/api/imap/signup')
         .send({
-          email: emailTest,
+          email: testImapEmail,
           password: 'wrongpassword',
-          host: hostTest,
+          host: testImapHost,
           port: 993,
           tls: true
         })
@@ -76,7 +73,7 @@ describe('Authentication(imap)', function () {
       await request(app.server)
         .post('/api/imap/login')
         .send({
-          email: emailTest
+          email: testImapEmail
         })
         .expect(200);
     });
