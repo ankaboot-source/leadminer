@@ -34,7 +34,7 @@ export default {
   },
 
   methods: {
-    async handleClickSignIn() {
+    handleClickSignIn() {
       let googleUser = LocalStorage.getItem("googleUser");
 
       if (googleUser) {
