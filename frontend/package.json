@@ -9,7 +9,7 @@
     "build": "envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "eslint --ext .vue --ext .js src/",
-    "start": "quasar dev",
+    "start": "chmod +x ./check-env-vars.sh && ./check-env-vars.sh && envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar dev",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {

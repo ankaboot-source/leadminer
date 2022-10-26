@@ -43,9 +43,9 @@ module.exports = configure(function (ctx) {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
         ENDPOINT: ctx.dev ? "http://localhost:8081" : "$SERVER_ENDPOINT",
-        GG_CLIENT_ID: "$GG_CLIENT_ID",
-        SUPABASE_ID: "$SUPABASE_ID",
-        SUPABASE_TOKEN: "$SUPABASE_TOKEN",
+        GG_CLIENT_ID: ctx.dev ? "$GG_CLIENT_ID" : "$GG_CLIENT_ID",
+        SUPABASE_ID: ctx.dev ? "$SUPABASE_ID" : "$SUPABASE_ID",
+        SUPABASE_TOKEN: ctx.dev ? "$SUPABASE_TOKEN" : "$SUPABASE_TOKEN",
       },
       // transpile: false,
 
