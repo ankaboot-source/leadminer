@@ -1,4 +1,4 @@
-FROM node
+FROM node:lts-alpine
 WORKDIR /leadminer-api
 COPY package.json /leadminer-api
 RUN npm install
