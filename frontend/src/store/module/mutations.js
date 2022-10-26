@@ -1,5 +1,14 @@
-export function SET_EMAILS(state, emails) {
-  state.retrievedEmails = emails;
+export function SET_EMAILS(state, streamedEmail) {
+  if (!Array.isArray(streamedEmail)) {
+    var index = state.retrievedEmails.findIndex(
+      (email) => email.email == streamedEmail.email
+    );
+    if (index === -1) {
+      state.retrievedEmails.push(streamedEmail);
+    } else {
+      state.retrievedEmails[index] = streamedEmail;
+    }
+  }
 }
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;

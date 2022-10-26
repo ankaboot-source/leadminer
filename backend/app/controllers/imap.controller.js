@@ -4,12 +4,10 @@ const db = require('../models'),
   googleUser = db.googleUsers,
   logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/hashHelpers');
-const minedDataHelpers = require('../utils/minedDataHelpers');
 const EventEmitter = require('node:events');
 const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
-const redisClient = require('../../redis').redisClientForNormalMode();
 const { Worker } = require('worker_threads');
 const { imapInfo } = require('../models');
 
@@ -64,21 +62,21 @@ exports.createImapInfo = (req, res) => {
             res.status(200).send({ imap: data });
           })
           .catch((err) => {
-            logger.error(
-              `can't create account with email ${req.body.email} : ${err}`
-            );
+            logger.error('Unable to create account with this email.', {
+              error: err,
+              email: req.body.email
+            });
             res.status(500).send({
               error:
                 'Some error occurred while creating your account imap info.'
             });
           });
       } else {
-        logger.info(
-          `On signup : Account with email ${req.body.email} already exist`
-        );
+        logger.info('On signup : An account with this email already exists.', {
+          email: req.body.email
+        });
         res.status(200).send({
           message: 'Your account already exists !',
-
           imap
         });
       }
@@ -87,9 +85,11 @@ exports.createImapInfo = (req, res) => {
   });
   // The imap account does not exists or connexion denied
   imap.once('error', (err) => {
-    logger.error(
-      `Can't connect to imap account with email ${req.body.email} and host ${req.body.host}  : **Error** ${err}`
-    );
+    logger.error('Unable to connect to imap account with this email and host', {
+      error: err,
+      email: req.body.email,
+      host: req.body.host
+    });
     res.status(500).send({
       error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
     });
@@ -109,7 +109,7 @@ exports.loginToAccount = async (req, res) => {
     return;
   }
   const imap = await ImapInfo.findOne({ where: { email: req.body.email } });
-  if (imap == null) {
+  if (imap === null) {
     this.createImapInfo(req, res);
   } else {
     const imapConnection = temporaryImapConnection(imap, req.body);
@@ -117,9 +117,9 @@ exports.loginToAccount = async (req, res) => {
     imapConnection.connect();
     imapConnection.once('ready', () => {
       if (imap) {
-        logger.info(
-          `Account with email ${req.body.email} succesfully logged in`
-        );
+        logger.info('Account succesfully logged in.', {
+          email: req.body.email
+        });
         res.status(200).send({
           imap
         });
@@ -127,9 +127,11 @@ exports.loginToAccount = async (req, res) => {
       }
     });
     imapConnection.on('error', (err) => {
-      logger.error(
-        `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
-      );
+      logger.error('Unable to connect to imap account.', {
+        error: err,
+        email: req.body.email,
+        host: req.body.host
+      });
       res.status(500).send({
         error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
       });
@@ -146,7 +148,7 @@ exports.loginToAccount = async (req, res) => {
 exports.getImapBoxes = async (req, res, sse) => {
   'use strict';
   if (!req.headers['x-imap-login']) {
-    logger.error('No user login ! request can\'t be handled without a login');
+    logger.error('No user login! Unable to handle request without a login');
     return res.status(404).send({
       message: 'Bad request',
       error: 'Bad request! please check login!'
@@ -182,24 +184,21 @@ exports.getImapBoxes = async (req, res, sse) => {
     [tree, error] = await miner.getTree();
 
   if (error) {
-    logger.error(
-      `Mining imap tree failed for user with email ${hashHelpers.hashEmail(
-        user.email
-      )} reason : ${error}`
-    );
+    logger.error('Mining IMAP tree failed.', {
+      error,
+      emailHash: hashHelpers.hashEmail(user.email)
+    });
     res.status(400).send({
-      message: 'Can\'t fetch imap folders',
-      error: error
+      message: 'Unable to fetch IMAP folders.',
+      error
     });
   }
   if (tree) {
-    logger.info(
-      `Mining imap tree succeded for user with email ${hashHelpers.hashEmail(
-        user.email
-      )}`
-    );
+    logger.info('Mining IMAP tree succeeded.', {
+      emailHash: hashHelpers.hashEmail(user.email)
+    });
     res.status(200).send({
-      message: 'Imap folders fetched with success !',
+      message: 'IMAP folders fetched successfully!',
       imapFoldersTree: tree
     });
   }
@@ -214,7 +213,7 @@ exports.getImapBoxes = async (req, res, sse) => {
 exports.getEmails = async (req, res, sse) => {
   'use strict';
   if (!req.headers['x-imap-login']) {
-    logger.error('No user login ! request can\'t be handled without a user');
+    logger.error('No user login! Unable to handle request without a user');
     return res.status(404).send({
       message: 'Bad request',
       error: 'Bad request! please check login!'
@@ -251,25 +250,8 @@ exports.getEmails = async (req, res, sse) => {
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter(),
     data = 'messageWorker initiated',
-    messageWorker = new Worker('./app/workers/messageWorker.js', { data }),
-    dataRefiningWorker = new Worker('./app/workers/dataRefiningWorker.js', {
-      data
-    });
-  // refining worker listener, on event it send data to the client
-  dataRefiningWorker.on('message', (data) => {
-    sse.send(
-      {
-        data: data.minedEmails,
-        totalScanned: data.totalScanned,
-        statistics: {
-          noReply: data.noReply,
-          invalidDomain: data.invalidDomain,
-          transactional: data.transactional
-        }
-      },
-      `minedEmails${user.id}`
-    );
-  });
+    messageWorker = new Worker('./app/workers/messageWorker.js', { data });
+
   // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
     server,
@@ -278,8 +260,7 @@ exports.getEmails = async (req, res, sse) => {
     ['HEADER', '1'],
     req.query.boxes,
     eventEmitter,
-    messageWorker,
-    dataRefiningWorker
+    messageWorker
   );
 
   miner.mine();
@@ -289,36 +270,7 @@ exports.getEmails = async (req, res, sse) => {
   //   eventEmitter.emit("endByUser", true);
   //   sse.send(true, `dns${user.id}`);
   // });
-  eventEmitter.on('end', async () => {
-    // get the queues length
-    const QueueLengthBody = await redisClient.llen('bodies'),
-      QueueLengthHeader = await redisClient.llen('headers'),
-      total =
-        QueueLengthBody + QueueLengthHeader == 0 ? 100 : (QueueLengthBody + QueueLengthHeader) * 50;
-    // estimate a timeout to wait all queue jobs (150ms per command)
-    setTimeout(() => {
-      // this is the final stream(after mining ends), this is for ensuring we make the client up to date with the database data
-      // because of async behaviour we may missed some emails in the worker
-      minedDataHelpers.getEmails(user.id).then((data) => {
-        minedDataHelpers.getCountDB(user.id).then((totalScanned) => {
-          // send progress to user
-          sse.send(
-            { totalScanned: totalScanned },
 
-            `minedEmails${user.id}`
-          );
-          logger.debug(`${data.length} mined email`);
-          sse.send(true, `dns${user.id}`);
-          res.status(200).send({
-            message: 'Done mining emails !',
-            data: minedDataHelpers.sortDatabase(data)[0]
-          });
-
-          logger.debug('cleaning data from database...');
-        });
-      });
-    }, total * 20);
-  });
   eventEmitter.on('error', () => {
     res.status(500).send({
       message: 'Error occurend try to refresh the page or reconnect'
