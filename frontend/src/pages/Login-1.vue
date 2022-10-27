@@ -206,7 +206,7 @@ export default {
       clearTimeout(this.timer);
       this.timer = setTimeout(() => {
         if (this.isValidEmail(e)) {
-          if (e.includes("gmail") || e == "") {
+          if (e.includes("@gmail.com") && process.env.GOOGLE) {
             this.showImap = false;
           } else {
             this.showImap = true;
