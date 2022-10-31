@@ -116,7 +116,7 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    let message = await supabaseHandlers.upsertMessage(
+    const message = await supabaseHandlers.upsertMessage(
       this.getMessageId(),
       this.user.id,
       'imap',

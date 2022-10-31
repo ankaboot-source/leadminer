@@ -51,7 +51,7 @@ class SupabaseHandlers {
     return this.supabaseClient.from('pointsofcontact').insert({
       messageid: messageID,
       userid: userID,
-      name: name,
+      name,
       _to: key === 'to',
       cc: key === 'cc',
       bcc: key === 'bcc',
