@@ -6,9 +6,9 @@ require('dotenv').config();
 const app = require('../../app');
 const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
-describe('Authentication(imap)', function () {
-  describe('POST /api/imap/signup', function () {
-    // it("should return a message (account already exists) when submitting existing account credentials", async function () {
+describe('Authentication(imap)', () => {
+  describe('POST /api/imap/signup', () => {
+    // it("should return a message (account already exists) when submitting existing account credentials", async () => {
     //   const response = await request(app.server)
     //     .post("/api/imap/signup")
     //     .send({
@@ -25,7 +25,7 @@ describe('Authentication(imap)', function () {
     //     "Your account already exists !"
     //   );
     // });
-    it('should return bad request(400) error when a field is missing', async function () {
+    it('should return bad request(400) error when a field is missing', async () => {
       const response = await request(app)
         .post('/api/imap/signup')
         .send({
@@ -39,7 +39,7 @@ describe('Authentication(imap)', function () {
         'Content can not be empty!'
       );
     });
-    it('should return internal server error(500) because of wrong credentials', async function () {
+    it('should return internal server error(500) because of wrong credentials', async () => {
       const response = await request(app.server)
         .post('/api/imap/signup')
         .send({
@@ -56,8 +56,8 @@ describe('Authentication(imap)', function () {
       );
     });
   });
-  describe('POST /api/imap/login', function () {
-    it('should return bad request(400) error when email field is missing', async function () {
+  describe('POST /api/imap/login', () => {
+    it('should return bad request(400) error when email field is missing', async () => {
       const response = await request(app.server)
         .post('/api/imap/login')
         .send({
@@ -69,7 +69,7 @@ describe('Authentication(imap)', function () {
         'Content can not be empty!'
       );
     });
-    it('should return a message (welcome back !) when submitting account email', async function () {
+    it('should return a message (welcome back !) when submitting account email', async () => {
       await request(app.server)
         .post('/api/imap/login')
         .send({
@@ -80,9 +80,9 @@ describe('Authentication(imap)', function () {
   });
 });
 
-// describe("imap requests", function () {
-//   describe("GET /api/imap/:id/boxes", function () {
-//     it("should return 404  when given an invalid id (does not exist in the database)", async function () {
+// describe("imap requests", () => {
+//   describe("GET /api/imap/:id/boxes", () => {
+//     it("should return 404  when given an invalid id (does not exist in the database)", async () => {
 //       const response = await request(app.server)
 //         .get("/api/imap/123/boxes")
 //         .query({ id: 1 })
@@ -91,9 +91,9 @@ describe('Authentication(imap)', function () {
 //   });
 // });
 
-describe('Get logs file', function () {
-  describe('GET /logs', function () {
-    it('should send logs file', async function () {
+describe('Get logs file', () => {
+  describe('GET /logs', () => {
+    it('should send logs file', async () => {
       const response = await request(app.server).get('/logs').expect(200);
       expect(response.header['content-type']).to.have.string(
         'text/event-stream'

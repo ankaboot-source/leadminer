@@ -6,10 +6,10 @@ const {
   testImapPassword
 } = require('../../app/config/test.config');
 
-describe('Full mining flow', function () {
+describe('Full mining flow', () => {
   let loggedInUser;
-  describe('login', function () {
-    it('create user (login request)', async function () {
+  describe('login', () => {
+    it('create user (login request)', async () => {
       await request(app)
         .post('/api/imap/login')
         .send({
@@ -23,8 +23,8 @@ describe('Full mining flow', function () {
     });
   });
 
-  describe('mine', function () {
-    it('mine folder for the logged in user', async function () {
+  describe('mine', () => {
+    it('mine folder for the logged in user', async () => {
       await request(app)
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
@@ -43,7 +43,7 @@ describe('Full mining flow', function () {
   });
 
   describe('tree', () => {
-    it('Get Tree from imap server', async function () {
+    it('Get Tree from imap server', async () => {
       await request(app)
         .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
         .query({
