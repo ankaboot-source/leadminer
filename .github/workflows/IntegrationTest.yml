@@ -29,5 +29,7 @@ jobs:
       - run: redis-cli ping
       - name: Install dependencies
         run: cd backend && npm install
+      - name: Copy config file
+        run: cd backend && mv config/example.yml default.yml
       - name: Run tests
         run: cd backend && npm run test:integration
