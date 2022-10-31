@@ -1,6 +1,5 @@
-const chai = require('chai'),
-  expect = chai.expect;
-const imapTreeHelpers = require('../../app/utils/imapTreeHelpers');
+const { expect } = require('chai');
+const imapTreeHelpers = require('../../app/utils/helpers/imapTreeHelpers');
 const dataTest = require('../testData.json');
 
 describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
@@ -13,14 +12,15 @@ describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
     },
     { label: 'Spam' }
   ];
+
   it('should return valid tree', function () {
-    let Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
+    const Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
     expect(Output).to.have.deep.members(expectedOutput);
   });
 });
 describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', function () {
   it('should add path for each folder', function () {
-    let expectedOutput = [
+    const expectedOutput = [
       { label: 'Brouillons', path: 'Brouillons' },
 
       {
@@ -33,7 +33,7 @@ describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', f
       },
       { label: 'Spam', path: 'Spam' }
     ];
-    let tree = [
+    const tree = [
       { label: 'Brouillons' },
 
       {
@@ -42,7 +42,7 @@ describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', f
       },
       { label: 'Spam' }
     ];
-    let output = imapTreeHelpers.addPathPerFolder(tree, tree);
+    const output = imapTreeHelpers.addPathPerFolder(tree, tree);
     expect(output).to.have.deep.members(expectedOutput);
   });
 });

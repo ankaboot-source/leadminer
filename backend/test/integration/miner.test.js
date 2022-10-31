@@ -1,32 +1,16 @@
 const request = require('supertest');
-const app = require('../../server');
+const app = require('../../app');
 const {
   testImapEmail,
   testImapHost,
   testImapPassword
 } = require('../../app/config/test.config');
-const { json } = require('sequelize/types');
 
-before((done) => {
-  app.event.on('started', function () {
-    done();
-  });
-});
-after(async () => {
-  require('../../server').stop();
-});
 describe('Full mining flow', function () {
-  const userObject = {
-    id: loggedInUser.id,
-    email: loggedInUser.email,
-    password: testImapPassword,
-    host: loggedInUser.host,
-    port: 993
-  };
   let loggedInUser;
   describe('login', function () {
     it('create user (login request)', async function () {
-      await request(app.server)
+      await request(app)
         .post('/api/imap/login')
         .send({
           email: testImapEmail,
@@ -41,22 +25,35 @@ describe('Full mining flow', function () {
 
   describe('mine', function () {
     it('mine folder for the logged in user', async function () {
-      await request(app.server)
+      await request(app)
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
           fields: ['HEADER', '1'],
           boxes: ['testFile', '0'],
-          user: JSON.stringify(userObject)
+          user: JSON.stringify({
+            id: loggedInUser.id,
+            email: loggedInUser.email,
+            password: testImapPassword,
+            host: loggedInUser.host,
+            port: 993
+          })
         })
         .expect(200);
     });
   });
+
   describe('tree', () => {
     it('Get Tree from imap server', async function () {
-      await request(app.server)
+      await request(app)
         .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
         .query({
-          user: JSON.stringify(userObject)
+          user: JSON.stringify({
+            id: loggedInUser.id,
+            email: loggedInUser.email,
+            password: testImapPassword,
+            host: loggedInUser.host,
+            port: 993
+          })
         })
         .expect(200);
     });

@@ -3,7 +3,7 @@ const chai = require('chai'),
   expect = chai.expect;
 const request = require('supertest');
 require('dotenv').config();
-const app = require('../../server');
+const app = require('../../app');
 const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
 describe('Authentication(imap)', function () {
@@ -26,7 +26,7 @@ describe('Authentication(imap)', function () {
     //   );
     // });
     it('should return bad request(400) error when a field is missing', async function () {
-      const response = await request(app.server)
+      const response = await request(app)
         .post('/api/imap/signup')
         .send({
           email: testImapEmail,

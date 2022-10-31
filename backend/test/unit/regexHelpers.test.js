@@ -1,6 +1,5 @@
-const chai = require('chai'),
-  expect = chai.expect;
-const regExHelpers = require('../../app/utils/regexpHelpers');
+const { expect } = require('chai');
+const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
 const testData = require('../testData.json');
 
 describe('regExHelpers.extractEmailsFromBody(text)', async function () {
@@ -9,6 +8,7 @@ describe('regExHelpers.extractEmailsFromBody(text)', async function () {
     expect(output).to.eql(testData.expectedForBodyExtraction);
   });
 });
+
 describe('regExHelpers.extractNameAndEmail(data)', function () {
   it('should return valid name and email as object', function () {
     let output = regExHelpers.extractNameAndEmail(testData.EmailNameTest[0]);

@@ -1,4 +1,4 @@
-const db = require('../models');
+const db = require('../../models');
 
 /**
  * returns a list of all the emails in the database, with the number of times they appear in each

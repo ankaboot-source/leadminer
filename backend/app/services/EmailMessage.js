@@ -1,10 +1,10 @@
 'use-strict';
-const regExHelpers = require('../utils/regexpHelpers');
-const dateHelpers = require('../utils/dateHelpers');
-const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const emailAddressHelpers = require('../utils/minedDataHelpers');
+const regExHelpers = require('../utils/helpers/regexpHelpers');
+const dateHelpers = require('../utils/helpers/dateHelpers');
+const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
+const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
+  require('../utils/redis').redisClientForNormalMode();
 const config = require('config'),
   NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
   TRANSACTIONAL_HEADER_FIELDS = config

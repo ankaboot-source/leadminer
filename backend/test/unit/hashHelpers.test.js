@@ -1,6 +1,5 @@
-const chai = require('chai'),
-  expect = chai.expect;
-const hashHelpers = require('../../app/utils/hashHelpers');
+const { expect } = require('chai');
+const hashHelpers = require('../../app/utils/helpers/hashHelpers');
 const dataTest = require('../testData.json');
 
 describe('hashHelpers.hashEmail(emailAddress)', function () {

@@ -1,11 +1,11 @@
-const imapTreeHelpers = require('../utils/imapTreeHelpers');
-const hashHelpers = require('../utils/hashHelpers');
-const inputHelpers = require('../utils/inputHelpers');
+const imapTreeHelpers = require('../utils/helpers/imapTreeHelpers');
+const hashHelpers = require('../utils/helpers/hashHelpers');
+const inputHelpers = require('../utils/helpers/inputHelpers');
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
 
 const redisClientForPubSubMode =
-  require('../../redis').redisClientForPubSubMode();
+  require('../utils/redis').redisClientForPubSubMode();
 
 const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {

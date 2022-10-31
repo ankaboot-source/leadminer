@@ -4,7 +4,7 @@ const { OAuth2Client } = require('google-auth-library');
 const {
   googleClientId,
   googleClientSecret
-} = require('../config/google.config');
+} = require('../../config/google.config');
 const RedirectionUrl = 'postmessage';
 
 function getOAuthClient() {
