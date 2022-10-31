@@ -3,8 +3,8 @@ const imapTreeHelpers = require('../../app/utils/helpers/imapTreeHelpers');
 const dataTest = require('../testData.json');
 
 describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
-  let imapTreeExample = dataTest.imapTreeExample;
-  let expectedOutput = [
+  const imapTreeExample = dataTest.imapTreeExample;
+  const expectedOutput = [
     { label: 'Brouillons' },
     {
       label: 'INBOX',

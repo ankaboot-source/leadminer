@@ -11,7 +11,7 @@ describe('regExHelpers.extractEmailsFromBody(text)', async function () {
 
 describe('regExHelpers.extractNameAndEmail(data)', function () {
   it('should return valid name and email as object', function () {
-    let output = regExHelpers.extractNameAndEmail(testData.EmailNameTest[0]);
+    const output = regExHelpers.extractNameAndEmail(testData.EmailNameTest[0]);
     expect(output).to.have.deep.members(testData.expectedEmailNameAddress);
   });
 });

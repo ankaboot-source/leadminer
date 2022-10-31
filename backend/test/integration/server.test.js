@@ -35,7 +35,7 @@ describe('Authentication(imap)', function () {
         .expect(400)
         .expect('Content-Type', 'text/event-stream; charset=utf-8');
       assert.strictEqual(
-        JSON.parse(response.text)['error'],
+        JSON.parse(response.text).error,
         'Content can not be empty!'
       );
     });
@@ -51,7 +51,7 @@ describe('Authentication(imap)', function () {
         })
         .expect(500);
       assert.strictEqual(
-        JSON.parse(response.text)['error'],
+        JSON.parse(response.text).error,
         "We can't connect to your imap account."
       );
     });
@@ -65,7 +65,7 @@ describe('Authentication(imap)', function () {
         })
         .expect(400);
       assert.strictEqual(
-        JSON.parse(response.text)['error'],
+        JSON.parse(response.text).error,
         'Content can not be empty!'
       );
     });
