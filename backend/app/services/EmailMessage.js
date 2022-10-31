@@ -80,7 +80,6 @@ class EmailMessage {
    * @returns The date of the article.
    */
   getDate() {
-    console.log(this.header.date);
     if (this.header.date && Date.parse(this.header.date[0])) {
       return dateHelpers.parseDate(this.header.date[0]);
     }

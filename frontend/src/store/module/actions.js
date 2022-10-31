@@ -30,15 +30,11 @@ export function setupEventSource(data) {
     setTimeout(tryToSetupFunc, waitFunc());
   };
   source = new EventSource(`${self.$api}/stream`, { withCredentials: true });
-  source.onmessage = function (e) {
-    console.log(e);
-  };
+  source.onmessage = function (e) {};
   source.onopen = function (e) {
-    console.log("open");
     reconnectFrequencySeconds = 1;
   };
   source.onerror = function (e) {
-    console.log("err", e);
     source.close();
     reconnectFunc();
   };
@@ -46,7 +42,6 @@ export function setupEventSource(data) {
 
 //////
 function eventListenersHandler(parent, currentState) {
-  console.log(source.readyState);
   source.addEventListener(
     "minedEmails" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
@@ -59,7 +54,6 @@ function eventListenersHandler(parent, currentState) {
   source.addEventListener(
     `ScannedEmails${currentState.imapUser.id}${currentState.googleUser.id}`,
     (message) => {
-      console.log(message);
       let data = JSON.parse(message.data);
       parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
       //parent.commit("example/SET_EMAILS", data.data);
@@ -127,8 +121,6 @@ function initStore(parent, currentState) {
         setTimeout(() => {
           parent.commit("example/SET_EMAILS", payload.new);
         }, 100);
-        console.log(supabase.getChannels());
-        console.log("Change received!", payload);
       }
     )
     .subscribe();
@@ -285,12 +277,10 @@ export async function signIn(_, { data }) {
   });
 }
 export async function getBoxes({ getters }) {
-  console.log("hello");
   const currentState = getters.getStates;
 
   this.commit("example/SET_LOADINGBOX", true);
   return new Promise((resolve, reject) => {
-    console.log(currentState.googleUser);
     if (currentState.googleUser.access_token == "") {
       this.$axios
         .get(
