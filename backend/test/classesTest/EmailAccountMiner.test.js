@@ -8,14 +8,14 @@ const {
 const { json } = require('sequelize/types');
 
 before((done) => {
-  app.event.on('started', function () {
+  app.event.on('started', () => {
     done();
   });
 });
 after(async () => {
   require('../../server').stop();
 });
-describe('Full mining flow', function () {
+describe('Full mining flow', () => {
   const userObject = {
     id: loggedInUser.id,
     email: loggedInUser.email,
@@ -24,8 +24,8 @@ describe('Full mining flow', function () {
     port: 993
   };
   let loggedInUser;
-  describe('login', function () {
-    it('create user (login request)', async function () {
+  describe('login', () => {
+    it('create user (login request)', async () => {
       await request(app.server)
         .post('/api/imap/login')
         .send({
@@ -39,8 +39,8 @@ describe('Full mining flow', function () {
     });
   });
 
-  describe('mine', function () {
-    it('mine folder for the logged in user', async function () {
+  describe('mine', () => {
+    it('mine folder for the logged in user', async () => {
       await request(app.server)
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
@@ -52,7 +52,7 @@ describe('Full mining flow', function () {
     });
   });
   describe('tree', () => {
-    it('Get Tree from imap server', async function () {
+    it('Get Tree from imap server', async () => {
       await request(app.server)
         .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
         .query({
