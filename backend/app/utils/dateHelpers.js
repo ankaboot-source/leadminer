@@ -5,6 +5,7 @@
  * @returns A string with the date and time in ISO format.
  */
 function parseDate(date) {
+  console.log(date);
   const tempDate = date
       .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
       .replace(/ UTC-(.*)/i, ''),

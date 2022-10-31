@@ -28,12 +28,16 @@ const sse = new SSE();
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
-
-app.use(cors());
+var corsOptions = {
+  origin: ['http://localhost:8082', 'https://leadminer.io'],
+  optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
+  credentials: true
+};
+app.use(cors(corsOptions));
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  //res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8081');
   // Request methods you wish to allow
   res.setHeader(
     'Access-Control-Allow-Methods',
@@ -50,7 +54,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Accel-Buffering', 'no');
   // Set to true if you need the website to include cookies in the requests sent
   // to the API (e.g. in case you use sessions)
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  //res.setHeader('Access-Control-Allow-Credentials', true);
   // Pass to next layer of middleware
   next();
 });
