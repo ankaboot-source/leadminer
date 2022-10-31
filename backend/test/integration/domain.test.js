@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const domainHelpers = require('../../app/utils/helpers/domainHelpers');
 
-describe('domainHelpers.checkMXStatus(domain)', async () => {
+describe('domainHelpers.checkMXStatus(domain)', () => {
   it('should return true', async () => {
     const validDomain = 'gmail.com';
     const output = await domainHelpers.checkMXStatus(validDomain);
