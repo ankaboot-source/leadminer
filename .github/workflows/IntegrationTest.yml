@@ -30,6 +30,6 @@ jobs:
       - name: Install dependencies
         run: cd backend && npm install
       - name: Copy config file
-        run: cd backend && mv ./config/example.yml ./config/default.yml
+        run: cd backend && cp ./config/example.yml ./config/default.yml
       - name: Run tests
         run: cd backend && npm run test:integration
