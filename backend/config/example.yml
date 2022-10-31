@@ -1,28 +1,37 @@
 server:
   log_level: debug
-  port: 8081
+  sentry: # default is enabled, to create your own go to : https://sentry.io
+    enabled: false
+    dsn: dsn
+  port: 8081 # used for server
+  supabase:
+    url: supabaseUrl
+    token: supabaseToken
   postgres:
+    host: localhost
     name: postgres
     user: postgres
-    password:
+    password: postgres
   redis:
-    #username: redis
-    #password: redispassword
-    port: 6375
-    expiration_timeout: 259200
-  hash_secret: customsecret
+    username: admin
+    password: admin
+    host: localhost
+    port: 6379
+    expiration_timeout: 259200 # expiration timeout for redis entries
+  hash_secret: your_hash_secret # hash secret used to hash the users emails addresses
   imap:
     authentication_timeout: 10000
     connection_timeout: 90000
 google_api:
-  host: imap.gmail.com
-  client:
-    id: 86*********337-d1********2vvl.apps.googleusercontent.com
-    secret: GO*******************hXqV93
-email_types:
-  newsletter: "list-unsubscribe,list-id,list"
-  transactional: "feedback-id,x-feedback-id,x-mandrill-user,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*"
-test:
-  imap_email: "leadminer@leadminer.io"
-  imap_host: "imaphost"
-  imap_password: "yourownpassword"
+  host: host.example
+  client: # to create you own client go to : https://developers.google.com/identity/protocols/oauth2
+    id: googleClientId
+    secret: googleClientSecret
+email_types: # filtering headers and strings for emails addresses
+  noreply: 'accusereception,alerts,alert,auto-confirm,donotreply,do-notreply,do-not-reply,FeedbackForm,mail daemon,maildaemon,mailer daemon,mailer-daemon,mailermasters,ne_pas_repondre,nepasrepondre,ne-pas-repondre,no.reply,no_reply,noreply,no-reply,notification,notifications,notifications-noreply,notify,pasdereponse,password,reply-,send-as-noreply,support,systemalert,unsubscribe,wordpress'
+  newsletter: 'list-unsubscribe,list-id,list'
+  transactional: 'feedback-id,x-feedback-id,x-mandrill-user,x-mailer: mailchimp *,X-LinkedIn-*,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*,x-job'
+test: #used in tests
+  imap_email: 'email@example.net'
+  imap_host: 'imap.host.net'
+  imap_password: 'imap_password'
