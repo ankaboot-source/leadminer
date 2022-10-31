@@ -1,0 +1,49 @@
+name: Run Integration Tests
+on: [pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setting up NodeJs
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+      - uses: shogo82148/actions-setup-redis@v1
+        with:
+          redis-version: "7.x"
+      - run: redis-cli ping
+      - name: Install dependencies
+        run: cd backend && npm install
+      - name: Run tests
+        run: cd backend && npm run test:integration
+      - name: Code Coverage Report
+        if: always()
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: backend/coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generating badge
+        if: always()
+        run: cd backend && npm run make-badges
+      - name: Commit badge
+        if: always()
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: "Code Coverage badge"
+          add: "README.md"
