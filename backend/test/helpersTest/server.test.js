@@ -7,7 +7,7 @@ const app = require('../../server');
 const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
 describe('Authentication(imap)', function () {
-  describe('POST /api/imap/signup', function () {
+  describe('POST /api/imap/signup', () => {
     // it("should return a message (account already exists) when submitting existing account credentials", async function () {
     //   const response = await request(app.server)
     //     .post("/api/imap/signup")
@@ -25,7 +25,7 @@ describe('Authentication(imap)', function () {
     //     "Your account already exists !"
     //   );
     // });
-    it('should return bad request(400) error when a field is missing', async function () {
+    it('should return bad request(400) error when a field is missing', async () => {
       const response = await request(app.server)
         .post('/api/imap/signup')
         .send({
@@ -39,7 +39,7 @@ describe('Authentication(imap)', function () {
         'Content can not be empty!'
       );
     });
-    it('should return internal server error(500) because of wrong credentials', async function () {
+    it('should return internal server error(500) because of wrong credentials', async () => {
       const response = await request(app.server)
         .post('/api/imap/signup')
         .send({
@@ -57,7 +57,7 @@ describe('Authentication(imap)', function () {
     });
   });
   describe('POST /api/imap/login', function () {
-    it('should return bad request(400) error when email field is missing', async function () {
+    it('should return bad request(400) error when email field is missing', async () => {
       const response = await request(app.server)
         .post('/api/imap/login')
         .send({
@@ -69,7 +69,7 @@ describe('Authentication(imap)', function () {
         'Content can not be empty!'
       );
     });
-    it('should return a message (welcome back !) when submitting account email', async function () {
+    it('should return a message (welcome back !) when submitting account email', async () => {
       await request(app.server)
         .post('/api/imap/login')
         .send({
@@ -93,7 +93,7 @@ describe('Authentication(imap)', function () {
 
 describe('Get logs file', function () {
   describe('GET /logs', function () {
-    it('should send logs file', async function () {
+    it('should send logs file', async () => {
       const response = await request(app.server).get('/logs').expect(200);
       expect(response.header['content-type']).to.have.string(
         'text/event-stream'
