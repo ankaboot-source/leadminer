@@ -26,7 +26,7 @@ class SupabaseHandlers {
   upsertMessage(message_id, userID, channel, folderPath, date) {
     return this.supabaseClient.from('messages').insert(
       {
-        message_id: message_id,
+        message_id,
         userid: userID,
         channel,
         folderpath: folderPath,
