@@ -27,15 +27,15 @@ Install the required node modules.
  npm install --prefix ./leadminer/backend && npm install --prefix ./leadminer/frontend
 ```
 
-### Prepare the required env vars.
+### Set the required environment variables.
 
-##### Frontend (frontend/.temp.quasar.conf.js)
+#### Frontend
 
-- google client id = GG_CLIENT_ID (frontend/.temp.quasar.conf.js) (required if using google api) (default = "")
-- supabase client id = SUPABASE_ID (frontend/.temp.quasar.conf.js) (required) (default = "")
-- supabase project token = SUPABASE_TOKEN (frontend/.temp.quasar.conf.js) (required) (default = "")
+- Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
+- Supabase Client Id : `SUPABASE_ID` (**Required**)
+- Supabase Project Token : `SUPABASE_TOKEN` (**Required**)
 
-##### Backend (/backend/config)
+#### Backend
 
 - There are several environment variables that need to be set. A template of the configuration file is provided in `backend/config/example.yml`.
 
