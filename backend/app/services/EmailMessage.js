@@ -74,15 +74,10 @@ class EmailMessage {
   }
 
   /**
-   * getDate returns the value of the "date" property of the
-   * header
-   * @param metaDataProps - This is the metadata object that is passed to the function.
+   * getDate returns the value of the "date" property of the header
    * @returns The date of the article.
    */
   getDate() {
-    if (this.header.date && Date.parse(this.header.date[0])) {
-      return dateHelpers.parseDate(this.header.date[0]);
-    }
     return this.header.date;
   }
 
