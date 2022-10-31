@@ -202,7 +202,7 @@ export default {
       clearTimeout(this.timer);
       this.timer = setTimeout(() => {
         if (this.isValidEmail(e)) {
-          if (e.includes("gmail") || e == "") {
+          if (e.endsWith("@gmail.com") && process.env.GG_CLIENT_ID) {
             this.showImap = false;
           } else {
             this.showImap = true;
