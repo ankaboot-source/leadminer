@@ -7,4 +7,3 @@ dist
 coverage
 .vscode
 quasar.conf.js
-./quasar.conf.js
