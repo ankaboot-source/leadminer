@@ -40,7 +40,7 @@ Install the required node modules.
 - There is several env vars...check **/backend/config/example.yml**
 
 To configure the application (e.g database host and password), reference **example.yml** `leadminer/backend/config/example.yaml` and create your own config file, depending on your environement you should name it **production.yml** if you are in production, else **default.yml**.(Any other name the app will consider that no config file is provided, so it will throw errors.)
-When working in production environment, don't forgot to set the `NODE_ENV` environment variable to `production`.
+When working in production environment, don't forget to set `NODE_ENV` to `production`.
 
 #### Development mode
 
