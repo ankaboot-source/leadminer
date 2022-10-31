@@ -9,7 +9,7 @@
     "build": "envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "eslint --ext .vue --ext .js src/",
-    "start": "chmod +x ./check-env-vars.sh && ./check-env-vars.sh && envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar dev",
+    "start": "envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar dev",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
@@ -27,7 +27,6 @@
     "vue-i18n": "^9.0.0-beta.0",
     "vue-router": "^4.0.13",
     "vue3-google-login": "^2.0.12",
-    "vue3-google-oauth2": "^1.0.6",
     "vuex": "^4.0.1"
   },
   "devDependencies": {
