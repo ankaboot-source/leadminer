@@ -163,10 +163,6 @@ export default {
   },
   data() {
     return {
-      params: {
-        client_id:
-          "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
-      },
       // only needed if you want to render the button with the google ui
       renderParams: {
         width: 250,
@@ -206,7 +202,7 @@ export default {
       clearTimeout(this.timer);
       this.timer = setTimeout(() => {
         if (this.isValidEmail(e)) {
-          if (e.includes("gmail") || e == "") {
+          if (e.endsWith("@gmail.com") && process.env.GG_CLIENT_ID) {
             this.showImap = false;
           } else {
             this.showImap = true;

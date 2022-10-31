@@ -43,11 +43,9 @@ export default {
       } else {
         let authCode;
         googleSdkLoaded((google) => {
-          
           google.accounts.oauth2
             .initCodeClient({
-              client_id:
-                "865693030337-d1lmavgk1fp3nfk8dfo38j75nobn2vvl.apps.googleusercontent.com",
+              client_id: process.env.GG_CLIENT_ID,
               scope:
                 "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile",
               prompt: "consent",

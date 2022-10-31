@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { LocalStorage } from "quasar";
 const supabase = createClient(
-  "https://lhbuszxrfblzysndtrye.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoYnVzenhyZmJsenlzbmR0cnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NjQ0NzEzMTEsImV4cCI6MTk4MDA0NzMxMX0.IPMS-jxZtzSmeGbh2bthzy8X7JossgM3mYipdyQS9KY"
+  process.env.SUPABASE_ID,
+  process.env.SUPABASE_TOKEN
 );
 function eventListenersHandler(parent, currentState) {
   const source = new EventSource(`${parent.$api}/stream/`);
