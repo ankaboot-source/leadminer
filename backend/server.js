@@ -29,7 +29,7 @@ const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
 var corsOptions = {
-  origin: ['http://localhost:8082', 'https://leadminer.io'],
+  origin: ['*'],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
   credentials: true,
   allRoutes: true
@@ -39,7 +39,7 @@ const sse = new SSE();
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
-  res.setHeader('Access-Control-Allow-Origin', 'https://leadminer.io');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   // Request methods you wish to allow
   res.setHeader(
     'Access-Control-Allow-Methods',
@@ -79,7 +79,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to leadminer application.' });
 });
 // attach sse to api/stream endpoint
-app.get('/api/stream', sse.init);
+app.get('/api/stream', (req, res) => sse.init(req, res));
 app.get('/logs', (req, res, next) => {
   const filePath = `${__dirname}/logs/server.log`;
 

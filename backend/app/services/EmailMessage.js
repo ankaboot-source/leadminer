@@ -115,13 +115,14 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    const message = await supabaseHandlers.upsertMessage(
-      this.getMessageId(),
-      this.user.id,
-      'imap',
-      this.folderPath,
-      this.getDate()
-    );
+    let message;
+    //  = await supabaseHandlers.upsertMessage(
+    //   this.getMessageId(),
+    //   this.user.id,
+    //   'imap',
+    //   this.folderPath,
+    //   this.getDate()
+    // );
 
     if (message?.error) {
       logger.error('Error when inserting to messages table.', {
@@ -200,13 +201,13 @@ class EmailMessage {
         }
 
         if (domain[0]) {
-          this.storeEmails(
-            message,
-            email.address,
-            email?.name.replaceAll(/"|'/g, ''),
-            tags,
-            fieldName
-          );
+          // this.storeEmails(
+          //   message,
+          //   email.address,
+          //   email?.name.replaceAll(/"|'/g, ''),
+          //   tags,
+          //   fieldName
+          // );
           return;
         }
 
@@ -255,7 +256,7 @@ class EmailMessage {
         }
 
         if (domain[0]) {
-          this.storeEmails(message, email, '', tags, 'body');
+          //this.storeEmails(message, email, '', tags, 'body');
           return;
         }
 

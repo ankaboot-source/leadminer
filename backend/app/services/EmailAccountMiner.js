@@ -30,7 +30,8 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    messageWorker
+    evenMessageWorker,
+    oddMessageWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -39,8 +40,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.messageWorkerForBody = messageWorker;
-    this.messageWorkerForHeader = messageWorker;
+    this.messageWorkerOddSeqNumber = oddMessageWorker;
+    this.messageWorkerEvenSeqNumber = evenMessageWorker;
   }
 
   /**
@@ -178,10 +179,11 @@ class EmailAccountMiner {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
-      this.messageWorkerForBody.postMessage(this.user.id);
+      this.messageWorkerOddSeqNumber.postMessage(this.user.id);
+      this.messageWorkerEvenSeqNumber.postMessage(this.user.id);
       setTimeout(() => {
         this.mineFolder(this.folders[0]).next();
-      }, 1000);
+      }, 1500);
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
@@ -345,6 +347,7 @@ class EmailAccountMiner {
    */
   publishMessageToChannel(seqNumber, header, body, folderName) {
     if (this.sends.includes(seqNumber)) {
+      console.log('*************');
       this.sendMiningProgress(seqNumber, folderName);
     }
     if (this.emailsProgressIndexes.includes(seqNumber)) {
@@ -357,17 +360,30 @@ class EmailAccountMiner {
     //   .sismember('messages', message_id)
     //   .then((alreadyMined) => {
     //     if (!alreadyMined) {
-    //publish the message to the channel
-    redisClientForPubSubMode.publish(
-      `messages-channel-${this.user.id}`,
-      JSON.stringify({
-        seqNumber,
-        body,
-        header: JSON.stringify(Header),
-        user: this.user,
-        folderName
-      })
-    );
+    //publish the message to the odd channel
+    if (seqNumber % 2 !== 0) {
+      redisClientForPubSubMode.publish(
+        `odd-messages-channel-${this.user.id}`,
+        JSON.stringify({
+          seqNumber,
+          body,
+          header: JSON.stringify(Header),
+          user: this.user,
+          folderName
+        })
+      );
+    } else {
+      redisClientForPubSubMode.publish(
+        `even-messages-channel-${this.user.id}`,
+        JSON.stringify({
+          seqNumber,
+          body,
+          header: JSON.stringify(Header),
+          user: this.user,
+          folderName
+        })
+      );
+    }
     //   }
     // });
   }
@@ -381,7 +397,7 @@ class EmailAccountMiner {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    logger.debug(`Used Memory ${used} mb`);
+    console.log(`Used Memory ${used} mb`);
     if (Math.round(used * 100) / 100 > 170) {
       logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
       global.gc();

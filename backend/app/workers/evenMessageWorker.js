@@ -5,19 +5,23 @@ const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 
 parentPort.on('message', (userID) => {
+  const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  console.log(`Used Memory for even worker ${used} mb`);
   //subscribe to created channel
-  redisClient.subscribe(`messages-channel-${userID}`, (err) => {
+  redisClient.subscribe(`even-messages-channel-${userID}`, (err) => {
     if (err) {
       logger.debug(
         `error in message worker, can't subscribe to channel ${err}`
       );
     } else {
-      logger.debug(`worker ${userID} is subscribed to its channel`);
+      logger.debug(`even worker ${userID} is subscribed to its channel`);
     }
   });
 });
 
 redisClient.on('message', (channel, messageFromChannel) => {
+  const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  console.log(`Used Memory even worker ${used} mb`);
   const message = JSON.parse(messageFromChannel);
   const Header = JSON.parse(message.header);
   const message_id = Header['message-id'] ? Header['message-id'][0] : '';
