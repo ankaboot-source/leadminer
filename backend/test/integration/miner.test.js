@@ -14,7 +14,7 @@ describe('Full mining flow', () => {
       password: testImapPassword,
       host: testImapHost
     });
-
+    console.log(loginResponse);
     expect(loginResponse.statusCode).to.equal(200);
     const loggedInUser = loginResponse.body.imap;
     const imapLoginHeader = JSON.stringify({
@@ -25,16 +25,21 @@ describe('Full mining flow', () => {
       port: 993
     });
 
+    console.log(loginResponse);
+
     const collectEmailsResponse = await request(app)
       .get(`/api/imap/${loggedInUser.id}/collectEmails`)
       .set('x-imap-login', imapLoginHeader);
+    console.log(collectEmailsResponse);
 
     expect(collectEmailsResponse.statusCode).to.equal(200);
 
     const getBoxesResponse = await request(app)
       .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
-      .set('x-imap-login', imapLoginHeader);
+      .set('x-imap-login', imapLoginHeader)
+      .query({ boxes: 'testFile' });
 
     expect(getBoxesResponse.statusCode).to.equal(200);
+    console.log(getBoxesResponse);
   });
 });
