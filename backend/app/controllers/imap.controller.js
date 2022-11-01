@@ -250,7 +250,12 @@ exports.getEmails = async (req, res, sse) => {
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter(),
     data = 'messageWorker initiated',
-    messageWorker = new Worker('./app/workers/messageWorker.js', { data });
+    evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
+      data
+    }),
+    oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
+      data
+    });
 
   // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
@@ -260,7 +265,8 @@ exports.getEmails = async (req, res, sse) => {
     ['HEADER', '1'],
     req.query.boxes,
     eventEmitter,
-    messageWorker
+    evenMessageWorker,
+    oddMessageWorker
   );
 
   miner.mine();
