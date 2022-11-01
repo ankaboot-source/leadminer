@@ -26,7 +26,7 @@ module.exports = (sequelize, Sequelize) => {
     date: { type: Sequelize.STRING },
     domain_type: { type: Sequelize.STRING },
     domain_name: { type: Sequelize.STRING },
-    noReply: { type: Sequelize.BOOLEAN },
+    no_reply: { type: Sequelize.BOOLEAN },
     transactional: { type: Sequelize.BOOLEAN },
     conversation: { type: Sequelize.INTEGER },
     newsletter: { type: Sequelize.BOOLEAN }
