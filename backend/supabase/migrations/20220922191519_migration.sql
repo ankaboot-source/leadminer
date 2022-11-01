@@ -11,7 +11,7 @@
 
 CREATE TABLE IF NOT EXISTS public.messages
 (
-    messageid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     channel text,
     folder_path text,
     date timestamptz,
