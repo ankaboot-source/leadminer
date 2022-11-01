@@ -10,7 +10,7 @@ module.exports = (sequelize, Sequelize) => {
     email: {
       type: Sequelize.STRING
     },
-    refreshToken: {
+    refresh_token: {
       type: Sequelize.STRING
     }
   });
