@@ -2,8 +2,7 @@ const assert = require('assert');
 const chai = require('chai'),
   expect = chai.expect;
 const request = require('supertest');
-require('dotenv').config();
-const app = require('../../app');
+const { app } = require('../../app');
 const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
 describe('Authentication(imap)', () => {
@@ -40,7 +39,7 @@ describe('Authentication(imap)', () => {
       );
     });
     it('should return internal server error(500) because of wrong credentials', async () => {
-      const response = await request(app.server)
+      const response = await request(app)
         .post('/api/imap/signup')
         .send({
           email: testImapEmail,
@@ -58,7 +57,7 @@ describe('Authentication(imap)', () => {
   });
   describe('POST /api/imap/login', () => {
     it('should return bad request(400) error when email field is missing', async () => {
-      const response = await request(app.server)
+      const response = await request(app)
         .post('/api/imap/login')
         .send({
           notemail: 'thisIsNotTheEmailField'
@@ -70,7 +69,7 @@ describe('Authentication(imap)', () => {
       );
     });
     it('should return a message (welcome back !) when submitting account email', async () => {
-      await request(app.server)
+      await request(app)
         .post('/api/imap/login')
         .send({
           email: testImapEmail
@@ -94,7 +93,7 @@ describe('Authentication(imap)', () => {
 describe('Get logs file', () => {
   describe('GET /logs', () => {
     it('should send logs file', async () => {
-      const response = await request(app.server).get('/logs').expect(200);
+      const response = await request(app).get('/logs').expect(200);
       expect(response.header['content-type']).to.have.string(
         'text/event-stream'
       );
