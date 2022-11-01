@@ -8,33 +8,37 @@ const {
 } = require('../../app/config/test.config');
 
 describe('Full mining flow', () => {
-  it('Should login -> mine -> return tree', async () => {
-    const loginResponse = await request(app).post('/api/imap/login').send({
-      email: testImapEmail,
-      password: testImapPassword,
-      host: testImapHost
-    });
+  it(
+    'Should login -> mine -> return tree',
+    async () => {
+      const loginResponse = await request(app).post('/api/imap/login').send({
+        email: testImapEmail,
+        password: testImapPassword,
+        host: testImapHost
+      });
 
-    expect(loginResponse.statusCode).to.equal(200);
-    const loggedInUser = loginResponse.body.imap;
-    const imapLoginHeader = JSON.stringify({
-      id: loggedInUser.id,
-      email: loggedInUser.email,
-      password: testImapPassword,
-      host: loggedInUser.host,
-      port: 993
-    });
+      expect(loginResponse.statusCode).to.equal(200);
+      const loggedInUser = loginResponse.body.imap;
+      const imapLoginHeader = JSON.stringify({
+        id: loggedInUser.id,
+        email: loggedInUser.email,
+        password: testImapPassword,
+        host: loggedInUser.host,
+        port: 993
+      });
 
-    const collectEmailsResponse = await request(app)
-      .get(`/api/imap/${loggedInUser.id}/collectEmails`)
-      .set('x-imap-login', imapLoginHeader);
+      const collectEmailsResponse = await request(app)
+        .get(`/api/imap/${loggedInUser.id}/collectEmails`)
+        .set('x-imap-login', imapLoginHeader);
 
-    expect(collectEmailsResponse.statusCode).to.equal(200);
+      expect(collectEmailsResponse.statusCode).to.equal(200);
 
-    const getBoxesResponse = await request(app)
-      .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
-      .set('x-imap-login', imapLoginHeader);
+      const getBoxesResponse = await request(app)
+        .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
+        .set('x-imap-login', imapLoginHeader);
 
-    expect(getBoxesResponse.statusCode).to.equal(200);
-  });
+      expect(getBoxesResponse.statusCode).to.equal(200);
+    },
+    timeout(30000)
+  );
 });
