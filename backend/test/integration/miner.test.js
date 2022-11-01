@@ -9,9 +9,9 @@ const {
 
 describe('Full mining flow', () => {
   it('Should login -> mine -> return tree', async () => {
-    console.log(testImapEmail);
-    console.log(testImapHost);
-    console.log(testImapPassword);
+    console.log(`TEST${testImapEmail}TE`);
+    console.log(`TEST${testImapHost}TE`);
+    console.log(`TEST${testImapPassword}TE`);
 
     const loginResponse = await request(app).post('/api/imap/login').send({
       email: testImapEmail,
