@@ -9,13 +9,17 @@ const {
 
 describe('Full mining flow', () => {
   it('Should login -> mine -> return tree', async () => {
+    console.log(testImapEmail);
+    console.log(testImapHost);
+    console.log(testImapPassword);
+
     const loginResponse = await request(app).post('/api/imap/login').send({
       email: testImapEmail,
       password: testImapPassword,
       host: testImapHost
     });
-    console.log(loginResponse);
     expect(loginResponse.statusCode).to.equal(200);
+
     const loggedInUser = loginResponse.body.imap;
     const imapLoginHeader = JSON.stringify({
       id: loggedInUser.id,
@@ -25,12 +29,9 @@ describe('Full mining flow', () => {
       port: 993
     });
 
-    console.log(loginResponse);
-
     const collectEmailsResponse = await request(app)
       .get(`/api/imap/${loggedInUser.id}/collectEmails`)
       .set('x-imap-login', imapLoginHeader);
-    console.log(collectEmailsResponse);
 
     expect(collectEmailsResponse.statusCode).to.equal(200);
 
@@ -40,6 +41,5 @@ describe('Full mining flow', () => {
       .query({ boxes: 'testFile' });
 
     expect(getBoxesResponse.statusCode).to.equal(200);
-    console.log(getBoxesResponse);
   });
 });
