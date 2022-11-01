@@ -346,10 +346,8 @@ class EmailAccountMiner {
    * @param folderName - The name of the folder that the message is in.
    */
   publishMessageToChannel(seqNumber, header, body, folderName) {
-    if (this.sends.includes(seqNumber)) {
-      console.log('*************');
-      this.sendMiningProgress(seqNumber, folderName);
-    }
+    this.sendMiningProgress(seqNumber, folderName);
+
     if (this.emailsProgressIndexes.includes(seqNumber)) {
       this.sendMinedData(seqNumber, folderName);
     }
@@ -405,9 +403,8 @@ class EmailAccountMiner {
     // define the progress
     let progress = seqNumber;
 
-    if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
-      progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
-    }
+    progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
+
     logger.debug(
       `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
     );
