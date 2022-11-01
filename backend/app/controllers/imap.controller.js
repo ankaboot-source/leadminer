@@ -35,10 +35,9 @@ function temporaryImapConnection(imapInfo, reqBody) {
 exports.createImapInfo = (req, res) => {
   'use strict';
   if (!req.body.email || !req.body.host) {
-    res.status(400).send({
+    return res.status(400).json({
       error: 'Content can not be empty!'
     });
-    return;
   }
   // imapInfo object
   const imapInfo = {
