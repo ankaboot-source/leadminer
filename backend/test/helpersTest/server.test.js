@@ -6,7 +6,7 @@ require('dotenv').config();
 const app = require('../../server');
 const { testImapEmail, testImapHost } = require('../../app/config/test.config');
 
-describe('Authentication(imap)', function () {
+describe('Authentication(imap)', () => {
   describe('POST /api/imap/signup', () => {
     // it("should return a message (account already exists) when submitting existing account credentials", async function () {
     //   const response = await request(app.server)
@@ -56,7 +56,7 @@ describe('Authentication(imap)', function () {
       );
     });
   });
-  describe('POST /api/imap/login', function () {
+  describe('POST /api/imap/login', () => {
     it('should return bad request(400) error when email field is missing', async () => {
       const response = await request(app.server)
         .post('/api/imap/login')
@@ -91,8 +91,8 @@ describe('Authentication(imap)', function () {
 //   });
 // });
 
-describe('Get logs file', function () {
-  describe('GET /logs', function () {
+describe('Get logs file', () => {
+  describe('GET /logs', () => {
     it('should send logs file', async () => {
       const response = await request(app.server).get('/logs').expect(200);
       expect(response.header['content-type']).to.have.string(

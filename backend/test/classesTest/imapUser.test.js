@@ -3,8 +3,8 @@ const chai = require('chai'),
 const imapUser = require('../../app/services/imapUser');
 const dataTest = require('../testData.json');
 
-describe('testCase for userImap class', function () {
-  it('should return a non empty user object with parsed query : Case Api', function () {
+describe('testCase for userImap class', () => {
+  it('should return a non empty user object with parsed query : Case Api', () => {
     let user = new imapUser(dataTest.queryExampleApi);
     let output = user.getUserConnetionDataFromQuery();
     let expectedOutput = [
@@ -18,7 +18,7 @@ describe('testCase for userImap class', function () {
     ];
     expect([output]).to.have.deep.members(expectedOutput);
   });
-  it('should return a non empty user object with parsed query : Case Imap', function () {
+  it('should return a non empty user object with parsed query : Case Imap', () => {
     let user = new imapUser(dataTest.queryExampleImap);
     let output = user.getUserConnetionDataFromQuery();
     let expectedOutput = [
@@ -32,7 +32,7 @@ describe('testCase for userImap class', function () {
     ];
     expect([output]).to.have.deep.members(expectedOutput);
   });
-  it('should return a non empty user object with parsed query : Case emptyQuery', function () {
+  it('should return a non empty user object with parsed query : Case emptyQuery', () => {
     let user = new imapUser({});
     let output = user.getUserConnetionDataFromQuery();
     let expectedOutput = [{}];

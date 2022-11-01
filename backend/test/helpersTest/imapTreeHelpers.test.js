@@ -3,7 +3,7 @@ const chai = require('chai'),
 const imapTreeHelpers = require('../../app/utils/imapTreeHelpers');
 const dataTest = require('../testData.json');
 
-describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
+describe('imapTreeHelpers.createTreeFromImap(imapTree)', () => {
   let imapTreeExample = dataTest.imapTreeExample;
   let expectedOutput = [
     { label: 'Brouillons' },
@@ -13,13 +13,13 @@ describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
     },
     { label: 'Spam' }
   ];
-  it('should return valid tree', function () {
+  it('should return valid tree', () => {
     let Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
     expect(Output).to.have.deep.members(expectedOutput);
   });
 });
-describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', function () {
-  it('should add path for each folder', function () {
+describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', () => {
+  it('should add path for each folder', () => {
     let expectedOutput = [
       { label: 'Brouillons', path: 'Brouillons' },
 
