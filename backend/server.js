@@ -24,16 +24,18 @@ console.log(
   'font-family: monospace'
 );
 const app = express();
-const sse = new SSE();
+
 const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
 var corsOptions = {
-  origin: ['http://localhost:8082', 'https://leadminer.io'],
+  origin: ['http://localhost:8082', 'https://leadminer.io/'],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
-  credentials: true
+  credentials: true,
+  allRoutes: true
 };
 app.use(cors(corsOptions));
+const sse = new SSE();
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
