@@ -15,7 +15,7 @@ describe('Full mining flow', () => {
         password: testImapPassword,
         host: testImapHost
       })
-      // .expect(200)
+      .expect(200)
       .then((response) => {
         const loggedInUser = response.body.imap;
         supertest(app)

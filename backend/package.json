@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test:unit": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha test/unit/*.test.js --config .mocharc.js",
-    "test:integration": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha test/integration/*.test.js --config .mocharc.js",
+    "test:integration": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js",
     "test": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
     "dev": "nodemon server.js",
     "lint:fix": "cd app && eslint --fix .",
