@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     pointid uuid DEFAULT uuid_generate_v4(),
     userid uuid,
     messageid uuid,
+    name text,
     _from bool, --reserved word in postgres, so we can't use from
     reply_to bool,
     _to bool, --reserved

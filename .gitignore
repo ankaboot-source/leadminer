@@ -17,3 +17,4 @@ backend/out
 backend/config/production.yaml
 /dump.rdb
 backend/config/default.yml
+frontend/quasar.conf.js

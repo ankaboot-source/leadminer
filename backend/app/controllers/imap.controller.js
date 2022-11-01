@@ -146,7 +146,7 @@ exports.loginToAccount = async (req, res) => {
  */
 /* A function that is called when a user wants to get his imap folders tree. */
 exports.getImapBoxes = async (req, res, sse) => {
-  'use strict';
+  ('use strict');
   if (!req.headers['x-imap-login']) {
     logger.error('No user login! Unable to handle request without a login');
     return res.status(404).send({

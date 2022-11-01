@@ -118,7 +118,7 @@ class EmailMessage {
       this.getDate()
     );
 
-    if (message.error) {
+    if (message?.error) {
       logger.error('Error when inserting to messages table.', {
         error: message.error.message,
         code: message.error.code,
@@ -195,7 +195,13 @@ class EmailMessage {
         }
 
         if (domain[0]) {
-          this.storeEmails(message, email.address, email.name, tags, fieldName);
+          this.storeEmails(
+            message,
+            email.address,
+            email?.name.replaceAll(/"|'/g, ''),
+            tags,
+            fieldName
+          );
           return;
         }
 
@@ -310,7 +316,8 @@ class EmailMessage {
               message.body?.[0]?.messageid,
               this.user.id,
               person.body?.[0].personid,
-              fieldName
+              fieldName,
+              name ?? ''
             )
             .then((pointOfContact) => {
               if (pointOfContact.error) {

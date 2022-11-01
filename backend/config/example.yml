@@ -2,11 +2,11 @@ server:
   log_level: debug
   sentry: # default is enabled, to create your own go to : https://sentry.io
     enabled: false
-    dsn: dsn
+    dsn: https://d38********************47f00@o13******8.ingest.sentry.io/66*******4
   port: 8081 # used for server
   supabase:
-    url: supabaseUrl
-    token: supabaseToken
+    url: 'https://lhbus***********ye.supabase.co'
+    token: 'eyJh********************.******************************************************************.IP**-j*******eG*****************************'
   postgres:
     # host: localhost
     # name: postgres
@@ -23,15 +23,15 @@ server:
     authentication_timeout: 10000
     connection_timeout: 90000
 google_api:
-  # host: host.example
-  # client: # to create you own client go to : https://developers.google.com/identity/protocols/oauth2
-  #   id: googleClientId
-  #   secret: googleClientSecret
-email_types: # filtering headers and strings for emails addresses
+  host: imap.gmail.com
+  client: # to create you own client go to : https://developers.google.com/identity/protocols/oauth2
+    id: 86***********7-d*****************n2vvl.apps.googleusercontent.com
+    secret: GOC***-****VAn***************XqV93
+email_types: # filtring headers and strings for emails addresses
   noreply: 'accusereception,alerts,alert,auto-confirm,donotreply,do-notreply,do-not-reply,FeedbackForm,mail daemon,maildaemon,mailer daemon,mailer-daemon,mailermasters,ne_pas_repondre,nepasrepondre,ne-pas-repondre,no.reply,no_reply,noreply,no-reply,notification,notifications,notifications-noreply,notify,pasdereponse,password,reply-,send-as-noreply,support,systemalert,unsubscribe,wordpress'
   newsletter: 'list-unsubscribe,list-id,list'
   transactional: 'feedback-id,x-feedback-id,x-mandrill-user,x-mailer: mailchimp *,X-LinkedIn-*,x-mailer: ec-messenger*,x-mailer: nlserver *,x-marketoid,x-campaignid,x-Mailgun*,x-job'
 test: #used in tests
-  imap_email: 'email@example.net'
-  imap_host: 'imap.host.net'
-  imap_password: 'imap_password'
+  imap_email: 'test@example.io'
+  imap_host: 'mail.example.com'
+  imap_password: '9sldkf****dfdfx'

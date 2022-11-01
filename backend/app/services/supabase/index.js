@@ -47,15 +47,16 @@ class SupabaseHandlers {
    * @param key - the key of the email address in the email object
    * @returns {promise} .
    */
-  upsertPointOfContact(messageID, userID, personid, key) {
+  upsertPointOfContact(messageID, userID, personid, key, name) {
     return this.supabaseClient.from('pointsofcontact').insert({
       messageid: messageID,
       userid: userID,
+      name,
       _to: key === 'to',
       cc: key === 'cc',
       bcc: key === 'bcc',
       _from: key === 'from',
-      reply_to: key === 'reply-to',
+      reply_to: key === 'reply-to' || key === 'reply_to',
       personid
     });
   }
