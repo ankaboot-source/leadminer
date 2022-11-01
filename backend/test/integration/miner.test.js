@@ -1,3 +1,4 @@
+const { expect } = require('chai');
 const request = require('supertest');
 const { app } = require('../../app');
 const {
@@ -7,44 +8,33 @@ const {
 } = require('../../app/config/test.config');
 
 describe('Full mining flow', () => {
-  it('Should login -> mine -> return tree', (done) => {
-    request(app)
-      .post('/api/imap/login')
-      .send({
-        email: testImapEmail,
-        password: testImapPassword,
-        host: testImapHost
-      })
-      .expect(200)
-      .then((response) => {
-        const loggedInUser = response.body.imap;
-        supertest(app)
-          .get(`/api/imap/${loggedInUser.id}/collectEmails`)
-          .query({
-            fields: ['HEADER', '1'],
-            boxes: ['testFile', '0'],
-            user: JSON.stringify({
-              id: loggedInUser.id,
-              email: loggedInUser.email,
-              password: testImapPassword,
-              host: loggedInUser.host,
-              port: 993
-            })
-          })
-          .expect(200);
+  it('Should login -> mine -> return tree', async () => {
+    const loginResponse = await request(app).post('/api/imap/login').send({
+      email: testImapEmail,
+      password: testImapPassword,
+      host: testImapHost
+    });
 
-        supertest(app)
-          .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
-          .query({
-            user: JSON.stringify({
-              id: loggedInUser.id,
-              email: loggedInUser.email,
-              password: testImapPassword,
-              host: loggedInUser.host,
-              port: 993
-            })
-          })
-          .expect(200, done());
-      });
+    expect(loginResponse.statusCode).to.equal(200);
+    const loggedInUser = loginResponse.body.imap;
+    const imapLoginHeader = JSON.stringify({
+      id: loggedInUser.id,
+      email: loggedInUser.email,
+      password: testImapPassword,
+      host: loggedInUser.host,
+      port: 993
+    });
+
+    const collectEmailsResponse = await request(app)
+      .get(`/api/imap/${loggedInUser.id}/collectEmails`)
+      .set('x-imap-login', imapLoginHeader);
+
+    expect(collectEmailsResponse.statusCode).to.equal(200);
+
+    const getBoxesResponse = await request(app)
+      .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
+      .set('x-imap-login', imapLoginHeader);
+
+    expect(getBoxesResponse.statusCode).to.equal(200);
   });
 });
