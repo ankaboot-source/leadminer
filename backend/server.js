@@ -34,8 +34,8 @@ var corsOptions = {
   credentials: true,
   allRoutes: true
 };
-app.use(cors(corsOptions));
-const sse = new SSE();
+//app.use(cors(corsOptions));
+
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
@@ -78,8 +78,12 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to leadminer application.' });
 });
+const sse = new SSE();
 // attach sse to api/stream endpoint
-app.get('/api/stream', (req, res) => sse.init(req, res));
+app.get('/api/stream', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  sse.init(req, res);
+});
 app.get('/logs', (req, res, next) => {
   const filePath = `${__dirname}/logs/server.log`;
 
