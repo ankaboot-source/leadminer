@@ -8,9 +8,9 @@ server:
     url: 'https://lhbus***********ye.supabase.co'
     token: 'eyJh********************.******************************************************************.IP**-j*******eG*****************************'
   postgres:
-    host: localhost
-    name: postgres
-    user: postgres
+    # host: localhost
+    # name: postgres
+    # user: postgres
     # password: postgres
   redis:
     # username: admin

@@ -9,8 +9,6 @@ jobs:
       postgres:
         image: postgres:latest
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
@@ -39,6 +37,10 @@ jobs:
           TEST_IMAP_HOST: ${{ secrets.TEST_IMAP_HOST }}
           TEST_IMAP_PASSWORD: ${{ secrets.TEST_IMAP_PASSWORD }}
           TEST_IMAP_EMAIL: ${{ secrets.TEST_IMAP_EMAIL }}
+          POSTGRES_HOST: localhost
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
       - name: Code Coverage Report
         if: always()
         uses: romeovs/lcov-reporter-action@v0.3.1
