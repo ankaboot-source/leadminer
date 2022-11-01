@@ -29,7 +29,7 @@ const server = http.createServer(app);
 class MyEmitter extends EventEmitter {}
 const event = new MyEmitter();
 var corsOptions = {
-  origin: ['http://localhost:8082', 'https://leadminer.io/'],
+  origin: ['http://localhost:8082', 'https://leadminer.io'],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
   credentials: true,
   allRoutes: true
@@ -39,7 +39,7 @@ const sse = new SSE();
 //*********** █▌█▌ setting response headers BEGIN***********/
 app.use((req, res, next) => {
   // Website you wish to allow to connect
-  //res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8081');
+  res.setHeader('Access-Control-Allow-Origin', 'https://leadminer.io');
   // Request methods you wish to allow
   res.setHeader(
     'Access-Control-Allow-Methods',
