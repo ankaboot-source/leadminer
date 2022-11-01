@@ -1,3 +1,4 @@
+const { expect } = require('chai');
 const supertest = require('supertest');
 const { app } = require('../../app');
 const {
@@ -7,20 +8,17 @@ const {
 } = require('../../app/config/test.config');
 
 describe('Full mining flow', () => {
-  it('create user (login request)', async () => {
-    let loggedInUser;
-    await supertest(app)
-      .post('/api/imap/login')
-      .send({
-        email: testImapEmail,
-        password: testImapPassword,
-        host: testImapHost
-      })
-      .expect((res) => {
-        loggedInUser = res.body.imap;
-      });
+  it('Should login -> mine -> return tree', async () => {
+    const response = await supertest(app).post('/api/imap/login').send({
+      email: testImapEmail,
+      password: testImapPassword,
+      host: testImapHost
+    });
 
-    await supertest(app)
+    expect(response.statusCode).to.equal(200);
+    const loggedInUser = response.body.imap;
+
+    supertest(app)
       .get(`/api/imap/${loggedInUser.id}/collectEmails`)
       .query({
         fields: ['HEADER', '1'],
@@ -35,7 +33,7 @@ describe('Full mining flow', () => {
       })
       .expect(200);
 
-    await supertest(app)
+    return supertest(app)
       .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
       .query({
         user: JSON.stringify({

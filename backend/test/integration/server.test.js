@@ -1,6 +1,4 @@
-const assert = require('assert');
-const chai = require('chai'),
-  expect = chai.expect;
+const { expect } = require('chai');
 const request = require('supertest');
 const { app } = require('../../app');
 const { testImapEmail, testImapHost } = require('../../app/config/test.config');
@@ -25,56 +23,47 @@ describe('Authentication(imap)', () => {
     //   );
     // });
     it('should return bad request(400) error when a field is missing', async () => {
-      await request(app)
-        .post('/api/imap/signup')
-        .send({
-          email: testImapEmail,
-          port: 993
-        })
-        .expect(400)
-        .expect('Content-Type', 'text/event-stream; charset=utf-8')
-        .expect((res) => {
-          assert.strictEqual(res.body.error, 'Content can not be empty!');
-        });
+      const response = await request(app).post('/api/imap/signup').send({
+        email: testImapEmail,
+        port: 993
+      });
+
+      expect(response.statusCode).to.equal(400);
+      expect(response.body).to.equal({ error: 'Content can not be empty!' });
+      expect(response.headers['Content-Type']).to.equal(
+        'text/event-stream; charset=utf-8'
+      );
     });
+
     it('should return internal server error(500) because of wrong credentials', async () => {
-      await request(app)
-        .post('/api/imap/signup')
-        .send({
-          email: testImapEmail,
-          password: 'wrongpassword',
-          host: testImapHost,
-          port: 993,
-          tls: true
-        })
-        .expect(500)
-        .expect((res) => {
-          assert.strictEqual(
-            res.body.error,
-            "We can't connect to your imap account."
-          );
-        });
+      const response = await request(app).post('/api/imap/signup').send({
+        email: testImapEmail,
+        password: 'wrongpassword',
+        host: testImapHost,
+        port: 993,
+        tls: true
+      });
+      expect(response.statusCode).to.equal(500);
+      expect(response.body).to.equal({
+        error: "We can't connect to your imap account."
+      });
     });
   });
   describe('POST /api/imap/login', () => {
     it('should return bad request(400) error when email field is missing', async () => {
-      await request(app)
-        .post('/api/imap/login')
-        .send({
-          notemail: 'thisIsNotTheEmailField'
-        })
-        .expect(400)
-        .expect((res) => {
-          assert.strictEqual(res.body.error, 'Content can not be empty!');
-        });
+      const response = await request(app).post('/api/imap/login').send({
+        notemail: 'thisIsNotTheEmailField'
+      });
+
+      expect(response.status).to.equal(400);
+      expect(response.body).to.equal({ error: 'Content can not be empty!' });
     });
     it('should return a message (welcome back !) when submitting account email', async () => {
-      await request(app)
-        .post('/api/imap/login')
-        .send({
-          email: testImapEmail
-        })
-        .expect(200);
+      const response = await request(app).post('/api/imap/login').send({
+        email: testImapEmail
+      });
+
+      expect(response.statusCode).to.equal(200);
     });
   });
 });
@@ -93,10 +82,10 @@ describe('Authentication(imap)', () => {
 describe('Get logs file', () => {
   describe('GET /logs', () => {
     it('should send logs file', async () => {
-      const response = await request(app).get('/logs').expect(200);
-      expect(response.header['content-type']).to.have.string(
-        'text/event-stream'
-      );
+      const response = await request(app).get('/logs');
+
+      expect(response.statusCode).to.equal(200);
+      expect(response.headers['content-type']).to.equal('text/event-stream');
     });
   });
 });
