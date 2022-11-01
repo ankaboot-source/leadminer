@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.messages
 (
     messageid uuid DEFAULT uuid_generate_v4(),
     channel text,
-    folderPath text,
+    folder_path text,
     date timestamptz,
     userid uuid,
     listid text,
@@ -28,18 +28,18 @@ CREATE TABLE IF NOT EXISTS public.domains
 (
     domainid uuid DEFAULT uuid_generate_v4(),
     name text,
-    lastCheck timestamptz,
-    emailServertype text,
+    last_check timestamptz,
+    email_server_type text,
     PRIMARY KEY (domainid)
 );
 
 CREATE TABLE IF NOT EXISTS public.organizations
 (
     name text,
-    alternateName text,
+    alternate_name text,
     address text,
     url text,
-    legalName text,
+    legal_name text,
     telephone text,
     email text,
     image text,
@@ -64,15 +64,15 @@ CREATE TABLE IF NOT EXISTS public.persons
     url text,
     image text,
     address text,
-    alternateNames text ARRAY,
-    sameAs text ARRAY,
-    givenName text,
-    familyName text,
-    jobTitle text,
-    worksFor text DEFAULT (''),
+    alternate_names text ARRAY,
+    same_as text ARRAY,
+    given_name text,
+    family_name text,
+    job_title text,
+    works_for text DEFAULT (''),
     PRIMARY KEY (personid),
     UNIQUE(email)
-    --FOREIGN KEY (worksFor) REFERENCES organizations(name)
+    --FOREIGN KEY (works_for) REFERENCES organizations(name)
 );
 
 CREATE TABLE IF NOT EXISTS public.pointsofcontact

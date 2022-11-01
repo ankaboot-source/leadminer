@@ -16,20 +16,20 @@ class SupabaseHandlers {
   /**
    * `upsertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
    * the `messages` table if the message ID doesn't already exist
-   * @param messageID - The unique ID of the message
+   * @param message_id - The unique ID of the message
    * @param userID - The user running the mining
    * @param channel - The channel name
-   * @param folder - inbox, sent, trash
+   * @param folderPath - inbox, sent, trash
    * @param date - The date the message was sent
    * @returns {promise}
    */
-  upsertMessage(messageID, userID, channel, folderPath, date) {
+  upsertMessage(messageId, userID, channel, folderPath, date) {
     return this.supabaseClient.from('messages').insert(
       {
-        message_id: messageID,
+        message_id: messageId,
         userid: userID,
         channel,
-        folderpath: folderPath,
+        folder_path: folderPath,
         date,
         listid: '',
         reference: ''
@@ -76,12 +76,12 @@ class SupabaseHandlers {
         url: '',
         image: '',
         address: '',
-        alternatenames: [],
-        sameas: [],
-        givenname: name,
-        familyname: '',
-        jobtitle: '',
-        worksfor: 'flyweight'
+        alternate_names: [],
+        same_as: [],
+        given_name: name,
+        family_name: '',
+        job_title: '',
+        works_for: 'flyweight'
       },
       { onConflict: 'email', ignoreDuplicates: false }
     );

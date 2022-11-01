@@ -142,7 +142,7 @@ export function getEmails({ getters }, { data }) {
 
   const CancelToken = this.$axios.CancelToken;
   const sources = CancelToken.source();
-  let source = eventListenersHandler(this, currentState);
+  source = eventListenersHandler(this, currentState);
   const ProxyChange = {
     // eslint-disable-line
     set: function (target, key, value) {
