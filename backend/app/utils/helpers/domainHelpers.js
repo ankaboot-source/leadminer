@@ -20,7 +20,7 @@ function checkMXStatus(domain) {
         }
       } else {
         // set domain in redis valid domains list
-        await redisClientForNormalMode.sadd('domainListInValid', domain);
+        await redisClientForNormalMode.sadd('domainListInvalid', domain);
         resolve([false, '', domain]);
       }
     });

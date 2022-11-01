@@ -1,4 +1,4 @@
-const request = require('supertest');
+const supertest = require('supertest');
 const app = require('../../app');
 const {
   testImapEmail,
@@ -10,7 +10,7 @@ describe('Full mining flow', () => {
   let loggedInUser;
   describe('login', () => {
     it('create user (login request)', async () => {
-      await request(app)
+      await supertest(app)
         .post('/api/imap/login')
         .send({
           email: testImapEmail,
@@ -18,14 +18,18 @@ describe('Full mining flow', () => {
           host: testImapHost
         })
         .expect((res) => {
-          loggedInUser = JSON.parse(res.text).imap;
+          loggedInUser = res.body.imap;
+        })
+        .end((err, _) => {
+          if (err) throw err;
+          done();
         });
     });
   });
 
   describe('mine', () => {
     it('mine folder for the logged in user', async () => {
-      await request(app)
+      await supertest(app)
         .get(`/api/imap/${loggedInUser.id}/collectEmails`)
         .query({
           fields: ['HEADER', '1'],
@@ -44,7 +48,7 @@ describe('Full mining flow', () => {
 
   describe('tree', () => {
     it('Get Tree from imap server', async () => {
-      await request(app)
+      await supertest(app)
         .get(`/api/imap/${loggedInUser.id.trim()}/boxes`)
         .query({
           user: JSON.stringify({
