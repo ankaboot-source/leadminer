@@ -2,6 +2,7 @@ const express = require('express');
 const { initializeSentryIfNeeded } = require('./middleware/sentry');
 const logger = require('./utils/logger')(module);
 const { SSE } = require('express-sse');
+const path = require('path');
 const { corsMiddleware } = require('./middleware/cors');
 
 const app = express();
@@ -34,7 +35,7 @@ app.get('/', (_, res) => {
 const sse = new SSE();
 app.get('/api/stream', sse.init);
 app.get('/logs', (_, res, next) => {
-  const filePath = `${__dirname}/logs/server.log`;
+  const filePath = path.resolve(__dirname, '..', 'logs/server.log');
 
   res.sendFile(filePath, (err) => {
     /* istanbul ignore if */

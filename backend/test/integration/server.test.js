@@ -25,21 +25,20 @@ describe('Authentication(imap)', () => {
     //   );
     // });
     it('should return bad request(400) error when a field is missing', async () => {
-      const response = await request(app)
+      await request(app)
         .post('/api/imap/signup')
         .send({
           email: testImapEmail,
           port: 993
         })
         .expect(400)
-        .expect('Content-Type', 'text/event-stream; charset=utf-8');
-      assert.strictEqual(
-        JSON.parse(response.text).error,
-        'Content can not be empty!'
-      );
+        .expect('Content-Type', 'text/event-stream; charset=utf-8')
+        .expect((res) => {
+          assert.strictEqual(res.body.error, 'Content can not be empty!');
+        });
     });
     it('should return internal server error(500) because of wrong credentials', async () => {
-      const response = await request(app)
+      await request(app)
         .post('/api/imap/signup')
         .send({
           email: testImapEmail,
@@ -48,25 +47,26 @@ describe('Authentication(imap)', () => {
           port: 993,
           tls: true
         })
-        .expect(500);
-      assert.strictEqual(
-        JSON.parse(response.text).error,
-        "We can't connect to your imap account."
-      );
+        .expect(500)
+        .expect((res) => {
+          assert.strictEqual(
+            res.body.error,
+            "We can't connect to your imap account."
+          );
+        });
     });
   });
   describe('POST /api/imap/login', () => {
     it('should return bad request(400) error when email field is missing', async () => {
-      const response = await request(app)
+      await request(app)
         .post('/api/imap/login')
         .send({
           notemail: 'thisIsNotTheEmailField'
         })
-        .expect(400);
-      assert.strictEqual(
-        JSON.parse(response.text).error,
-        'Content can not be empty!'
-      );
+        .expect(400)
+        .expect((res) => {
+          assert.strictEqual(res.body.error, 'Content can not be empty!');
+        });
     });
     it('should return a message (welcome back !) when submitting account email', async () => {
       await request(app)

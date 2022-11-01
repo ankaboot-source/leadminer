@@ -33,3 +33,7 @@ jobs:
         run: cd backend && cp ./config/example.yml ./config/default.yml
       - name: Run tests
         run: cd backend && npm run test:integration
+        env:
+          TEST_IMAP_HOST: ${{ secrets.TEST_IMAP_HOST }}
+          TEST_IMAP_PASSWORD: ${{ secrets.TEST_IMAP_PASSWORD }}
+          TEST_IMAP_EMAIL: ${{ secrets.TEST_IMAP_EMAIL }}

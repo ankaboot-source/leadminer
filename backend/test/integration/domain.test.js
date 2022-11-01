@@ -22,7 +22,7 @@ describe('domainHelpers.checkDomainStatus(emailAddress)', async () => {
       emailAddressWithValidDomain
     );
     expect(output[0]).to.be.true;
-    expect(output[1]).eq('provider');
+    expect(output[1]).eq('custom');
   });
 
   it('should return false', async () => {
