@@ -5,8 +5,6 @@ const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 
 parentPort.on('message', (userID) => {
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  logger.info(`Used Memory for even worker ${used} mb`);
   //subscribe to created channel
   redisClient.subscribe(`even-messages-channel-${userID}`, (err) => {
     if (err) {
@@ -20,8 +18,6 @@ parentPort.on('message', (userID) => {
 });
 
 redisClient.on('message', (channel, messageFromChannel) => {
-  const used = process.memoryUsage().heapUsed / 1024 / 1024;
-  logger.info(`Used Memory even worker ${used} mb`);
   const message = JSON.parse(messageFromChannel);
   const Header = JSON.parse(message.header);
   const message_id = Header['message-id'] ? Header['message-id'][0] : '';
