@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS public.organizations
     employee uuid,
     _domain uuid,
     CONSTRAINT name PRIMARY KEY (name),
-    FOREIGN KEY (_domain) REFERENCES domains(domainid)
+    FOREIGN KEY (_domain) REFERENCES domains(id)
     --FOREIGN KEY (founder) REFERENCES persons(personid)
     
 
