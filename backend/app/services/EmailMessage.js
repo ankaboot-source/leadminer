@@ -314,7 +314,7 @@ class EmailMessage {
             .upsertPointOfContact(
               message.body?.[0]?.id,
               this.user.id,
-              person.body?.[0].personid,
+              person.body?.[0].id,
               fieldName
             )
             .then((pointOfContact) => {
