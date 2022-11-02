@@ -1,110 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 import { LocalStorage } from "quasar";
+import {
+  setupEventSourceHelper,
+  eventListenersHandler,
+} from "../helpers/SSEHelpers";
 const supabase = createClient(
   process.env.SUPABASE_ID,
   process.env.SUPABASE_TOKEN
 );
-
 /////////
-let reconnectFrequencySeconds = 1;
 let source;
-let self;
 // Putting these functions in extra variables is just for the sake of readability
 
-export function setupEventSource(data) {
-  if (this) {
-    self = this;
-  }
-  let waitFunc = function () {
-    return reconnectFrequencySeconds * 10;
-  };
-  let tryToSetupFunc = function () {
-    setupEventSource();
-    reconnectFrequencySeconds *= 2;
-    if (reconnectFrequencySeconds >= 64) {
-      reconnectFrequencySeconds = 64;
-    }
-  };
-
-  let reconnectFunc = function () {
-    setTimeout(tryToSetupFunc, waitFunc());
-  };
-  source = new EventSource(`${self.$api}/stream`, { withCredentials: true });
-  source.onmessage = function (e) {};
-  source.onopen = function (e) {
-    reconnectFrequencySeconds = 1;
-  };
-  source.onerror = function (e) {
-    source.close();
-    reconnectFunc();
-  };
+export function setupEventSource() {
+  source = setupEventSourceHelper.bind(this);
 }
 
 //////
-function eventListenersHandler(parent, currentState) {
-  source.addEventListener(
-    "minedEmails" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
-      let data = JSON.parse(message.data);
-      //parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
-      parent.commit("example/SET_EMAILS", data.data);
-      parent.commit("example/SET_STATISTICS", data.statistics);
-    }
-  );
-  source.addEventListener(
-    `ScannedEmails${currentState.imapUser.id}${currentState.googleUser.id}`,
-    (message) => {
-      let data = JSON.parse(message.data);
-      parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
-      //parent.commit("example/SET_EMAILS", data.data);
-      //parent.commit("example/SET_INVALIDADDRESSES", data.totalScanned);
-    }
-  );
-  source.addEventListener(
-    "scannedBoxes" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
-      parent.commit("example/SET_SCANNEDBOXES", message.data);
-    }
-  );
-  source.addEventListener(
-    "token" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
-      let googleUser = LocalStorage.getItem("googleUser");
 
-      LocalStorage.remove("googleUser");
-      let access_token = JSON.parse(message.data).token;
-      LocalStorage.set("googleUser", {
-        access_token: access_token,
-        email: googleUser.email,
-        id: googleUser.id,
-      });
-
-      parent.commit("example/UPDATE_TOKEN", JSON.parse(message.data).token);
-    }
-  );
-  source.addEventListener(
-    "token" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
-      parent.commit("example/UPDATE_TOKEN", JSON.parse(message.data).token);
-    }
-  );
-
-  window.addEventListener(
-    "beforeunload" + currentState.imapUser.id + currentState.googleUser.id,
-    () => {
-      source.close();
-    }
-  );
-  source.addEventListener(
-    "dns" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
-      parent.commit("example/SET_LOADING_DNS", false);
-    }
-  );
-  return source;
-}
 function initStore(parent, currentState) {
-  console.log("subscribed");
   supabase
     .channel("leadminerProject")
     .on(
@@ -139,10 +53,10 @@ function updateStoreWhenFinish(response, parent) {
 }
 export function getEmails({ getters }, { data }) {
   const currentState = getters.getStates;
-
   const CancelToken = this.$axios.CancelToken;
   const sources = CancelToken.source();
-  source = eventListenersHandler(this, currentState);
+  source = setupEventSourceHelper(this);
+  source = eventListenersHandler(currentState, source, this);
   const ProxyChange = {
     // eslint-disable-line
     set: function (target, key, value) {
