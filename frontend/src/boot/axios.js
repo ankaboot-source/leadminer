@@ -1,7 +1,10 @@
-import { boot } from "quasar/wrappers";
 import axios from "axios";
+import { boot } from "quasar/wrappers";
 
-const api = axios.create({ baseURL: process.env.ENDPOINT + "/api" });
+const api = axios.create({
+  baseURL: process.env.ENDPOINT + "/api",
+  withCredentials: true,
+});
 export default boot(({ app, store }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
