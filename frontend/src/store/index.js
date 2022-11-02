@@ -12,7 +12,7 @@ import example from "./module/index";
  * with the Store instance.
  */
 
-export default store(function (/* { ssrContext } */) {
+export default store((/* { ssrContext } */) => {
   const Store = createStore({
     modules: {
       example: example,
