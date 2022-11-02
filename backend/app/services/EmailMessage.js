@@ -331,7 +331,7 @@ class EmailMessage {
 
           // add the person id to tags
           for (let i = 0; i < tags.length; i++) {
-            tags[i].personid = person.body?.[0].personid;
+            tags[i].personid = person.body?.[0].id;
           }
           supabaseHandlers
             .createTags(tags)
