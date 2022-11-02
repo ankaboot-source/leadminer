@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     bcc bool,
     personid uuid,
     PRIMARY KEY (id),
-    FOREIGN KEY (userid, messageid) REFERENCES messages(userid,messageid),
+    FOREIGN KEY (userid, messageid) REFERENCES messages(userid,id),
     FOREIGN KEY (personid) REFERENCES persons(id)
 
 );
