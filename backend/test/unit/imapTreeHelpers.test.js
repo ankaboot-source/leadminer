@@ -1,11 +1,10 @@
-const chai = require('chai'),
-  expect = chai.expect;
-const imapTreeHelpers = require('../../app/utils/imapTreeHelpers');
+const { expect } = require('chai');
+const imapTreeHelpers = require('../../app/utils/helpers/imapTreeHelpers');
 const dataTest = require('../testData.json');
 
-describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
-  let imapTreeExample = dataTest.imapTreeExample;
-  let expectedOutput = [
+describe('imapTreeHelpers.createTreeFromImap(imapTree)', () => {
+  const imapTreeExample = dataTest.imapTreeExample;
+  const expectedOutput = [
     { label: 'Brouillons' },
     {
       label: 'INBOX',
@@ -13,14 +12,15 @@ describe('imapTreeHelpers.createTreeFromImap(imapTree)', function () {
     },
     { label: 'Spam' }
   ];
-  it('should return valid tree', function () {
-    let Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
+
+  it('should return valid tree', () => {
+    const Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
     expect(Output).to.have.deep.members(expectedOutput);
   });
 });
-describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', function () {
-  it('should add path for each folder', function () {
-    let expectedOutput = [
+describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', () => {
+  it('should add path for each folder', () => {
+    const expectedOutput = [
       { label: 'Brouillons', path: 'Brouillons' },
 
       {
@@ -33,7 +33,7 @@ describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', f
       },
       { label: 'Spam', path: 'Spam' }
     ];
-    let tree = [
+    const tree = [
       { label: 'Brouillons' },
 
       {
@@ -42,7 +42,7 @@ describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', f
       },
       { label: 'Spam' }
     ];
-    let output = imapTreeHelpers.addPathPerFolder(tree, tree);
+    const output = imapTreeHelpers.addPathPerFolder(tree, tree);
     expect(output).to.have.deep.members(expectedOutput);
   });
 });

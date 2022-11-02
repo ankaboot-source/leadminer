@@ -1,0 +1,17 @@
+name: Run Unit Tests
+on: [pull_request]
+jobs:
+  run-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setting up NodeJs
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+      - name: Install dependencies
+        run: cd backend && npm install
+      - name: Copy config file
+        run: cd backend && cp ./config/example.yml ./config/default.yml
+      - name: Run tests
+        run: cd backend && npm run test:unit

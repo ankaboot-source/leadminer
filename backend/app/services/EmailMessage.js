@@ -1,10 +1,10 @@
 'use-strict';
-const regExHelpers = require('../utils/regexpHelpers');
-const dateHelpers = require('../utils/dateHelpers');
-const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const emailAddressHelpers = require('../utils/minedDataHelpers');
+const regExHelpers = require('../utils/helpers/regexpHelpers');
+const dateHelpers = require('../utils/helpers/dateHelpers');
+const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
+const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
+  require('../utils/redis').redisClientForNormalMode();
 const config = require('config'),
   NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
   TRANSACTIONAL_HEADER_FIELDS = config
@@ -74,15 +74,10 @@ class EmailMessage {
   }
 
   /**
-   * getDate returns the value of the "date" property of the
-   * header
-   * @param metaDataProps - This is the metadata object that is passed to the function.
+   * getDate returns the value of the "date" property of the header
    * @returns The date of the article.
    */
   getDate() {
-    if (this.header.date && Date.parse(this.header.date[0])) {
-      return dateHelpers.parseDate(this.header.date[0]);
-    }
     return this.header.date;
   }
 

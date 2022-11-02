@@ -3,7 +3,7 @@ const db = require('../models'),
   ImapInfo = db.imapInfo,
   googleUser = db.googleUsers,
   logger = require('../utils/logger')(module);
-const hashHelpers = require('../utils/hashHelpers');
+const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
 const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
@@ -35,10 +35,9 @@ function temporaryImapConnection(imapInfo, reqBody) {
 exports.createImapInfo = (req, res) => {
   'use strict';
   if (!req.body.email || !req.body.host) {
-    res.status(400).send({
+    return res.status(400).json({
       error: 'Content can not be empty!'
     });
-    return;
   }
   // imapInfo object
   const imapInfo = {

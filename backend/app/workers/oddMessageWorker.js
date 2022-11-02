@@ -1,6 +1,6 @@
 //this is a worker to handle the messages
 const { parentPort } = require('worker_threads');
-const redisClient = require('../../redis').redisClientForPubSubMode();
+const redisClient = require('../utils/redis').redisClientForPubSubMode();
 const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 
