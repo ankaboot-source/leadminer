@@ -6,12 +6,8 @@ const redisUsername = config.has('server.redis.username')
 const redisPassword = config.has('server.redis.password')
   ? config.get('server.redis.password')
   : undefined;
-const redisHost = config.has('server.redis.host')
-  ? config.get('server.redis.host')
-  : process.env.REDIS_HOST;
-const redisPort = config.has('server.redis.port')
-  ? config.get('server.redis.port')
-  : process.env.REDIS_PORT;
+const redisHost = config.get('server.redis.host');
+const redisPort = config.get('server.redis.port');
 
 module.exports = {
   redisUsername,

@@ -1,18 +1,18 @@
 //this is a worker to handle the messages
 const { parentPort } = require('worker_threads');
-const redisClient = require('../../redis').redisClientForPubSubMode();
+const redisClient = require('../utils/redis').redisClientForPubSubMode();
 const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 
 parentPort.on('message', (userID) => {
   //subscribe to created channel
-  redisClient.subscribe(`messages-channel-${userID}`, (err) => {
+  redisClient.subscribe(`odd-messages-channel-${userID}`, (err) => {
     if (err) {
       logger.debug(
         `error in message worker, can't subscribe to channel ${err}`
       );
     } else {
-      logger.debug(`worker ${userID} is subscribed to its channel`);
+      logger.debug(`odd worker ${userID} is subscribed to its channel`);
     }
   });
 });

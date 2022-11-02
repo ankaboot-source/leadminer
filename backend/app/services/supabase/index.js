@@ -47,15 +47,16 @@ class SupabaseHandlers {
    * @param key - the key of the email address in the email object
    * @returns {promise} .
    */
-  upsertPointOfContact(messageID, userID, personid, key) {
+  upsertPointOfContact(messageID, userID, personid, key, name) {
     return this.supabaseClient.from('pointsofcontact').insert({
       messageid: messageID,
       userid: userID,
+      name,
       _to: key === 'to',
       cc: key === 'cc',
       bcc: key === 'bcc',
       _from: key === 'from',
-      reply_to: key === 'reply-to',
+      reply_to: key === 'reply-to' || key === 'reply_to',
       personid
     });
   }
@@ -87,7 +88,7 @@ class SupabaseHandlers {
   }
 
   /**
-   * `createTags` takes a `supabaseClient` and an array of `tags` and inserts them into the `tags` table
+   * `createTags` takes an array of `tags` and inserts them into the `tags` table
    * @param tags - an array of objects with the following properties:
    * @returns {promise}
    */
@@ -95,6 +96,16 @@ class SupabaseHandlers {
     return this.supabaseClient
       .from('tags')
       .upsert([...tags], { onConflict: 'personid, name' });
+  }
+
+  /**
+   * `invokeRpc` calls a Postgres function as a Remote Procedure Call.
+   * @param functionName - Name of the function to be invoked
+   * @param data - Data to be passed to the function
+   * @returns {promise}
+   */
+  invokeRpc(functionName, data) {
+    return this.supabaseClient.rpc(functionName, data);
   }
 }
 

@@ -61,7 +61,7 @@ Clone the repository and start docker-compose
  cd leadminer
 ```
 
-Edit the configuration in `backend/config/example.yml` and change its name to `default.yaml` or `production.yaml` as needed and make sure to set the `REDIS_PORT` environment variable to the same port specified in your config.
+Copy [example.yml](/backend/config/example.yml) to `default.yml` and edit it.
 
 ```
  docker-compose up

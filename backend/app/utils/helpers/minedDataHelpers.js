@@ -1,4 +1,4 @@
-const db = require('../models');
+const db = require('../../models');
 
 /**
  * returns a list of all the emails in the database, with the number of times they appear in each
@@ -209,9 +209,9 @@ function findEmailAddressType(emailAddress, userNames, domainType) {
  * @param {String} emailAddress - The address of the property
  * @returns An array of names that have been cleaned up.
  */
-function handleNames(name, emailAddress) {
-  const NameArray = [];
-  name.map((name) => {
+function handleNames(names, emailAddress) {
+  const namesArray = [];
+  for (const name of names) {
     // remove all bad chars
     const Name = name
       .replaceAll('"', '')
@@ -221,16 +221,17 @@ function handleNames(name, emailAddress) {
     // case when the name is not the same as the address
     if (Name !== emailAddress) {
       if (
-        NameArray.filter((str) =>
+        namesArray.filter((str) =>
           str.toLowerCase().includes(Name.toLowerCase())
         ).length === 0
       ) {
         // if OK then push to the array
-        NameArray.push(Name);
+        namesArray.push(Name);
       }
     }
-  });
-  return NameArray;
+  }
+
+  return namesArray;
 }
 /**
  * sortDataUsingAlpha sorts the data base on the name letters
@@ -276,44 +277,48 @@ function sortDataUsingAlpha(data) {
 function sortDatabase(dataFromDatabase) {
   let counter = 0;
   const data = [];
-  dataFromDatabase.map((row) => {
+  for (const row of dataFromDatabase) {
     // we treat only emails that are not tagged "noReply"
-    if (row.dataValues.noReply === false) {
-      //if for any reason we don't have names we should give empty string
-      if (!row.dataValues.name || row.dataValues.name === null) {
-        row.dataValues.name = [''];
-      } else {
-        // here are clean names
-        const NameArray = handleNames(
-          row.dataValues.name,
-          row.dataValues.address
-        );
-        row.dataValues.name = NameArray.length === 0 ? [''] : NameArray;
-      }
-      // sum the sender + the total so we can have total interactions with this email
-      row.dataValues.total =
-        parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
-      row.dataValues.type = '';
-
-      if (
-        !row.dataValues.Newsletter &&
-        !row.dataValues.Transactional &&
-        row.dataValues.name.every((val) => val !== '')
-      ) {
-        //if not transactional or newsletter, then find the type
-        row.dataValues.type = findEmailAddressType(
-          row.dataValues.address,
-          row.dataValues?.name,
-          row.dataValues.domain_type
-        );
-      }
-      // count of transactional emails
-      if (row.dataValues.Transactional) {
-        counter += 1;
-      }
-      data.push(row.dataValues);
+    if (row.dataValues.noReply === true) {
+      continue;
     }
-  });
+
+    //if for any reason we don't have names we should give empty string
+    if (!row.dataValues.name || row.dataValues.name === null) {
+      row.dataValues.name = [''];
+    } else {
+      // here are clean names
+      const NameArray = handleNames(
+        row.dataValues.name,
+        row.dataValues.address
+      );
+      row.dataValues.name = NameArray.length === 0 ? [''] : NameArray;
+    }
+    // sum the sender + the total so we can have total interactions with this email
+    row.dataValues.total =
+      parseInt(row.dataValues.sender) + parseInt(row.dataValues.recipient);
+    row.dataValues.type = '';
+
+    if (
+      !row.dataValues.Newsletter &&
+      !row.dataValues.Transactional &&
+      row.dataValues.name.every((val) => val !== '')
+    ) {
+      //if not transactional or newsletter, then find the type
+      row.dataValues.type = findEmailAddressType(
+        row.dataValues.address,
+        row.dataValues?.name,
+        row.dataValues.domain_type
+      );
+    }
+
+    // count of transactional emails
+    if (row.dataValues.Transactional) {
+      counter += 1;
+    }
+
+    data.push(row.dataValues);
+  }
   // return the count and the data
   return [sortDataUsingAlpha(data), counter];
 }

@@ -1,10 +1,10 @@
 'use-strict';
-const regExHelpers = require('../utils/regexpHelpers');
-const dateHelpers = require('../utils/dateHelpers');
-const emailMessageHelpers = require('../utils/emailMessageHelpers');
-const emailAddressHelpers = require('../utils/minedDataHelpers');
+const regExHelpers = require('../utils/helpers/regexpHelpers');
+const dateHelpers = require('../utils/helpers/dateHelpers');
+const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
+const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
+  require('../utils/redis').redisClientForNormalMode();
 const config = require('config'),
   NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
   TRANSACTIONAL_HEADER_FIELDS = config
@@ -74,15 +74,10 @@ class EmailMessage {
   }
 
   /**
-   * getDate returns the value of the "date" property of the
-   * header
-   * @param metaDataProps - This is the metadata object that is passed to the function.
+   * getDate returns the value of the "date" property of the header
    * @returns The date of the article.
    */
   getDate() {
-    if (this.header.date && Date.parse(this.header.date[0])) {
-      return dateHelpers.parseDate(this.header.date[0]);
-    }
     return this.header.date;
   }
 
@@ -123,7 +118,7 @@ class EmailMessage {
       this.getDate()
     );
 
-    if (message.error) {
+    if (message?.error) {
       logger.error('Error when inserting to messages table.', {
         error: message.error.message,
         code: message.error.code,
@@ -200,7 +195,13 @@ class EmailMessage {
         }
 
         if (domain[0]) {
-          this.storeEmails(message, email.address, email.name, tags, fieldName);
+          this.storeEmails(
+            message,
+            email.address,
+            email?.name.replaceAll(/"|'/g, ''),
+            tags,
+            fieldName
+          );
           return;
         }
 
@@ -315,7 +316,8 @@ class EmailMessage {
               message.body?.[0]?.id,
               this.user.id,
               person.body?.[0].id,
-              fieldName
+              fieldName,
+              name ?? ''
             )
             .then((pointOfContact) => {
               if (pointOfContact.error) {

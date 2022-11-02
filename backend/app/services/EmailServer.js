@@ -1,7 +1,7 @@
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
-const hashHelpers = require('../utils/hashHelpers');
-const tokenHelpers = require('../utils/tokenHelpers');
+const hashHelpers = require('../utils/helpers/hashHelpers');
+const tokenHelpers = require('../utils/helpers/tokenHelpers');
 const {
   imapAuthTimeout,
   imapConnectionTimeout

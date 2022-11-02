@@ -4,10 +4,12 @@
   "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
+    "test:unit": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha test/unit/*.test.js --config .mocharc.js",
+    "test:integration": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js --timeout 60000",
     "test": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
     "dev": "nodemon server.js",
-    "lint:fix": "cd app && eslint --fix . --ignore-pattern 'out/'",
-    "lint:report": "cd app && eslint --fix . --ignore-pattern 'out/' --output-file eslint_report.json --format json",
+    "lint:fix": "cd app && eslint --fix .",
+    "lint:report": "cd app && eslint --fix . --output-file eslint_report.json --format json",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier . --write",
     "make-badges": "istanbul-badges-readme --readmeDir='../' --linesLabel='Coverage'"
@@ -29,7 +31,9 @@
     "amqplib": "^0.10.0",
     "chai": "^4.3.6",
     "config": "^3.3.7",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "csurf": "^1.11.0",
     "dotenv": "^16.0.0",
     "express": "^4.18.1",
     "express-sse": "github:omgimalexis/express-sse",
@@ -52,6 +56,7 @@
   },
   "devDependencies": {
     "c8": "^7.11.0",
+    "chai-spies": "^1.0.0",
     "eslint": "^8.10.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-eqeqeq-fix": "^1.0.3",

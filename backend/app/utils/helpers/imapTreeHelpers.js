@@ -112,7 +112,7 @@ function addChildrenTotalForParentFiles(imapTree, userEmail) {
       }
       if (property === 'children') {
         if (parent) {
-          value.map((element) => {
+          value.forEach((element) => {
             parent.total += element.total;
           });
         }

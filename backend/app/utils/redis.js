@@ -1,14 +1,14 @@
 const Redis = require('ioredis');
-const logger = require('./app/utils/logger')(module);
-const freeProviders = require('./app/utils/FreeProviders.json');
-const disposable = require('./app/utils/Disposable.json');
+const logger = require('./logger')(module);
+const freeProviders = require('./FreeProviders.json');
+const disposable = require('./Disposable.json');
 
 const {
   redisUsername,
   redisPassword,
   redisHost,
   redisPort
-} = require('./app/config/redis.config');
+} = require('../config/redis.config');
 
 function initializeRedis() {
   if (redisUsername && redisPassword) {

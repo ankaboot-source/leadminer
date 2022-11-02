@@ -1,11 +1,11 @@
-const imapTreeHelpers = require('../utils/imapTreeHelpers');
-const hashHelpers = require('../utils/hashHelpers');
-const inputHelpers = require('../utils/inputHelpers');
+const imapTreeHelpers = require('../utils/helpers/imapTreeHelpers');
+const hashHelpers = require('../utils/helpers/hashHelpers');
+const inputHelpers = require('../utils/helpers/inputHelpers');
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
 
 const redisClientForPubSubMode =
-  require('../../redis').redisClientForPubSubMode();
+  require('../utils/redis').redisClientForPubSubMode();
 
 const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {
@@ -30,7 +30,8 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    messageWorker
+    evenMessageWorker,
+    oddMessageWorker
   ) {
     this.connection = connection;
     this.user = user;
@@ -39,8 +40,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.messageWorkerForBody = messageWorker;
-    this.messageWorkerForHeader = messageWorker;
+    this.messageWorkerOddSeqNumber = oddMessageWorker;
+    this.messageWorkerEvenSeqNumber = evenMessageWorker;
   }
 
   /**
@@ -112,10 +113,13 @@ class EmailAccountMiner {
    */
   getTreeWithTotalPerFolder(imapTree) {
     const self = this;
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       imapTree.forEach((folder) => {
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
+            if (err) {
+              reject();
+            }
             if (box) {
               folder.total = box.messages.total;
             } else {
@@ -155,6 +159,9 @@ class EmailAccountMiner {
     this.connection.connect();
     this.connection.once('ready', () => {
       this.connection.openBox(folderPath, true, (err, box) => {
+        if (err) {
+          return tree;
+        }
         tree = box;
         this.connection.end();
       });
@@ -178,10 +185,11 @@ class EmailAccountMiner {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
-      this.messageWorkerForBody.postMessage(this.user.id);
+      this.messageWorkerOddSeqNumber.postMessage(this.user.id);
+      this.messageWorkerEvenSeqNumber.postMessage(this.user.id);
       setTimeout(() => {
         this.mineFolder(this.folders[0]).next();
-      }, 1000);
+      }, 1500);
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
@@ -220,6 +228,11 @@ class EmailAccountMiner {
 
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
+      if (err) {
+        logger.error(
+          `Error occured when opening folder for User: ${this.mailHash}`
+        );
+      }
       if (openedFolder) {
         logger.debug(
           `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
@@ -344,9 +357,8 @@ class EmailAccountMiner {
    * @param folderName - The name of the folder that the message is in.
    */
   publishMessageToChannel(seqNumber, header, body, folderName) {
-    if (this.sends.includes(seqNumber)) {
-      this.sendMiningProgress(seqNumber, folderName);
-    }
+    this.sendMiningProgress(seqNumber, folderName);
+
     if (this.emailsProgressIndexes.includes(seqNumber)) {
       this.sendMinedData(seqNumber, folderName);
     }
@@ -357,17 +369,30 @@ class EmailAccountMiner {
     //   .sismember('messages', message_id)
     //   .then((alreadyMined) => {
     //     if (!alreadyMined) {
-    //publish the message to the channel
-    redisClientForPubSubMode.publish(
-      `messages-channel-${this.user.id}`,
-      JSON.stringify({
-        seqNumber,
-        body,
-        header: JSON.stringify(Header),
-        user: this.user,
-        folderName
-      })
-    );
+    //publish the message to the odd channel
+    if (seqNumber % 2 !== 0) {
+      redisClientForPubSubMode.publish(
+        `odd-messages-channel-${this.user.id}`,
+        JSON.stringify({
+          seqNumber,
+          body,
+          header: JSON.stringify(Header),
+          user: this.user,
+          folderName
+        })
+      );
+    } else {
+      redisClientForPubSubMode.publish(
+        `even-messages-channel-${this.user.id}`,
+        JSON.stringify({
+          seqNumber,
+          body,
+          header: JSON.stringify(Header),
+          user: this.user,
+          folderName
+        })
+      );
+    }
     //   }
     // });
   }
@@ -381,26 +406,25 @@ class EmailAccountMiner {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    logger.debug(`Used Memory ${used} mb`);
     if (Math.round(used * 100) / 100 > 170) {
       logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
       global.gc();
     }
     // define the progress
-    let progress = seqNumber;
+    if (this.sends.includes(seqNumber)) {
+      const progress =
+        seqNumber - (this.sends[this.sends.indexOf(seqNumber) - 1] ?? 0);
+      logger.debug(
+        `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
+      );
 
-    if (this.sends[this.sends.indexOf(seqNumber) - 1]) {
-      progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
+      this.sse.send(
+        {
+          scanned: progress
+        },
+        `ScannedEmails${this.user.id}`
+      );
     }
-    logger.debug(
-      `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
-    );
-    this.sse.send(
-      {
-        scanned: progress
-      },
-      `ScannedEmails${this.user.id}`
-    );
   }
 
   /**

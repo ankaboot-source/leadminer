@@ -49,7 +49,6 @@ exports.signUpWithGoogle = (req, res) => {
     //response = await oauth2.userinfo.get({}),
 
     const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
-    logger.log(tokenInfo);
 
     const googleUser = {
       email: tokenInfo.email,

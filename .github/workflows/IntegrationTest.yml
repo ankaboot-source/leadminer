@@ -1,9 +1,7 @@
-name: Run Tests
-# on:
-#   push:
-#     branches: [main]
+name: Run Integration Tests
+# on: [pull_request]
 jobs:
-  run-tests:
+  run-integration-tests:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -32,7 +30,7 @@ jobs:
       - name: Copy config file
         run: cd backend && cp ./config/example.yml ./config/default.yml
       - name: Run tests
-        run: cd backend && npm run test
+        run: cd backend && npm run test:integration
         env:
           TEST_IMAP_HOST: ${{ secrets.TEST_IMAP_HOST }}
           TEST_IMAP_PASSWORD: ${{ secrets.TEST_IMAP_PASSWORD }}
@@ -41,19 +39,3 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
           POSTGRES_USER: postgres
-      - name: Code Coverage Report
-        if: always()
-        uses: romeovs/lcov-reporter-action@v0.3.1
-        with:
-          lcov-file: backend/coverage/lcov.info
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Generating badge
-        if: always()
-        run: cd backend && npm run make-badges
-      - name: Commit badge
-        if: always()
-        uses: EndBug/add-and-commit@v9
-        with:
-          default_author: github_actions
-          message: "Code Coverage badge"
-          add: "README.md"

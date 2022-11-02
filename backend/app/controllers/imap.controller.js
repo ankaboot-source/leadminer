@@ -3,7 +3,7 @@ const db = require('../models'),
   ImapInfo = db.imapInfo,
   googleUser = db.googleUsers,
   logger = require('../utils/logger')(module);
-const hashHelpers = require('../utils/hashHelpers');
+const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
 const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
@@ -35,10 +35,9 @@ function temporaryImapConnection(imapInfo, reqBody) {
 exports.createImapInfo = (req, res) => {
   'use strict';
   if (!req.body.email || !req.body.host) {
-    res.status(400).send({
+    return res.status(400).json({
       error: 'Content can not be empty!'
     });
-    return;
   }
   // imapInfo object
   const imapInfo = {
@@ -146,7 +145,7 @@ exports.loginToAccount = async (req, res) => {
  */
 /* A function that is called when a user wants to get his imap folders tree. */
 exports.getImapBoxes = async (req, res, sse) => {
-  'use strict';
+  ('use strict');
   if (!req.headers['x-imap-login']) {
     logger.error('No user login! Unable to handle request without a login');
     return res.status(404).send({
@@ -189,8 +188,7 @@ exports.getImapBoxes = async (req, res, sse) => {
       emailHash: hashHelpers.hashEmail(user.email)
     });
     res.status(400).send({
-      message: 'Unable to fetch IMAP folders.',
-      error
+      message: 'Unable to fetch IMAP folders.'
     });
   }
   if (tree) {
@@ -250,7 +248,12 @@ exports.getEmails = async (req, res, sse) => {
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter(),
     data = 'messageWorker initiated',
-    messageWorker = new Worker('./app/workers/messageWorker.js', { data });
+    evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
+      data
+    }),
+    oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
+      data
+    });
 
   // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
@@ -260,7 +263,8 @@ exports.getEmails = async (req, res, sse) => {
     ['HEADER', '1'],
     req.query.boxes,
     eventEmitter,
-    messageWorker
+    evenMessageWorker,
+    oddMessageWorker
   );
 
   miner.mine();

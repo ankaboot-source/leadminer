@@ -1,8 +1,8 @@
 const Sentry = require('@sentry/node');
 const Tracing = require('@sentry/tracing');
-const logger = require('./app/utils/logger')(module);
+const logger = require('../utils/logger')(module);
 
-const { sentryDsn, sentryIsEnabled } = require('./app/config/sentry.config');
+const { sentryDsn, sentryIsEnabled } = require('../config/sentry.config');
 
 function initializeSentryIfNeeded(app) {
   if (!sentryIsEnabled) {
