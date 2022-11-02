@@ -313,9 +313,9 @@ class EmailMessage {
           //if saved and no errors then we can store the person linked to this point of contact
           supabaseHandlers
             .upsertPointOfContact(
-              message.body?.[0]?.messageid,
+              message.body?.[0]?.id,
               this.user.id,
-              person.body?.[0].personid,
+              person.body?.[0].id,
               fieldName,
               name ?? ''
             )

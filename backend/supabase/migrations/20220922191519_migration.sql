@@ -11,7 +11,7 @@
 
 CREATE TABLE IF NOT EXISTS public.messages
 (
-    messageid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     channel text,
     folder_path text,
     date timestamptz,
@@ -26,11 +26,11 @@ CREATE TABLE IF NOT EXISTS public.messages
 
 CREATE TABLE IF NOT EXISTS public.domains
 (
-    domainid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     name text,
     last_check timestamptz,
     email_server_type text,
-    PRIMARY KEY (domainid)
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.organizations
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS public.organizations
     employee uuid,
     _domain uuid,
     CONSTRAINT name PRIMARY KEY (name),
-    FOREIGN KEY (_domain) REFERENCES domains(domainid)
-    --FOREIGN KEY (founder) REFERENCES persons(personid)
+    FOREIGN KEY (_domain) REFERENCES domains(id)
+    --FOREIGN KEY (founder) REFERENCES persons(id)
     
 
 
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.organizations
 
 CREATE TABLE IF NOT EXISTS public.persons
 (
-    personid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     name text,
     email text,
     _userid uuid,
@@ -70,14 +70,14 @@ CREATE TABLE IF NOT EXISTS public.persons
     family_name text,
     job_title text,
     works_for text DEFAULT (''),
-    PRIMARY KEY (personid),
+    PRIMARY KEY (id),
     UNIQUE(email)
     --FOREIGN KEY (works_for) REFERENCES organizations(name)
 );
 
 CREATE TABLE IF NOT EXISTS public.pointsofcontact
 (
-    pointid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     userid uuid,
     messageid uuid,
     name text,
@@ -87,31 +87,31 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     cc bool,
     bcc bool,
     personid uuid,
-    PRIMARY KEY (pointid),
-    FOREIGN KEY (userid, messageid) REFERENCES messages(userid,messageid),
-    FOREIGN KEY (personid) REFERENCES persons(personid)
+    PRIMARY KEY (id),
+    FOREIGN KEY (userid, messageid) REFERENCES messages(userid,id),
+    FOREIGN KEY (personid) REFERENCES persons(id)
 
 );
 
 
 CREATE TABLE IF NOT EXISTS public.tags
 (
-    tagid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
     userid uuid,
     name text,
     label text,
     reachable int,
     type text,
-    PRIMARY KEY (tagid),
+    PRIMARY KEY (id),
     UNIQUE (personid, name),
-    FOREIGN KEY (personid) REFERENCES persons(personid)
+    FOREIGN KEY (personid) REFERENCES persons(id)
 );
 
 
 CREATE TABLE IF NOT EXISTS public.refinedpersons
 (
-    refinedid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
     userid uuid,
     --recency date,
@@ -120,9 +120,9 @@ CREATE TABLE IF NOT EXISTS public.refinedpersons
     tags text ARRAY,
     name text,
     email text,
-    PRIMARY KEY (refinedid),
+    PRIMARY KEY (id),
     UNIQUE(personid),
-    FOREIGN KEY (personid) REFERENCES persons(personid)
+    FOREIGN KEY (personid) REFERENCES persons(id)
 );
 
 
@@ -167,9 +167,9 @@ BEGIN
     FOR person IN
         SELECT * FROM persons WHERE _userid=uidd
     LOOP
-        t=public.get_tags_per_person(person.personid, uidd);
-        occurences=public.get_occurences_per_person(person.personid, uidd);
-        pid=person.personid;
+        t=public.get_tags_per_person(person.id, uidd);
+        occurences=public.get_occurences_per_person(person.id, uidd);
+        pid=person.id;
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
         VALUES(pid, uidd, 0, occurences, t, person.name, person.email)
         ON CONFLICT(personid) DO UPDATE SET occurence=occurences,tags=t;
