@@ -81,7 +81,8 @@ app.get('/', (req, res) => {
 const sse = new SSE();
 // attach sse to api/stream endpoint
 app.get('/api/stream', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8082');
+  res.setHeader('Access-Control-Allow-Credentials', true);
   sse.init(req, res);
 });
 app.get('/logs', (req, res, next) => {

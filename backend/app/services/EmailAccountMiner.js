@@ -113,10 +113,13 @@ class EmailAccountMiner {
    */
   getTreeWithTotalPerFolder(imapTree) {
     const self = this;
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       imapTree.forEach((folder) => {
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
+            if (err) {
+              reject();
+            }
             if (box) {
               folder.total = box.messages.total;
             } else {
@@ -156,6 +159,9 @@ class EmailAccountMiner {
     this.connection.connect();
     this.connection.once('ready', () => {
       this.connection.openBox(folderPath, true, (err, box) => {
+        if (err) {
+          return tree;
+        }
         tree = box;
         this.connection.end();
       });
@@ -222,6 +228,11 @@ class EmailAccountMiner {
 
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
+      if (err) {
+        logger.error(
+          `Error occured when opening folder for User: ${this.mailHash}`
+        );
+      }
       if (openedFolder) {
         logger.debug(
           `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
@@ -395,25 +406,25 @@ class EmailAccountMiner {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    console.log(`Used Memory ${used} mb`);
     if (Math.round(used * 100) / 100 > 170) {
       logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
       global.gc();
     }
     // define the progress
-    let progress = seqNumber;
+    if (this.sends.includes(seqNumber)) {
+      const progress =
+        seqNumber - (this.sends[this.sends.indexOf(seqNumber) - 1] ?? 0);
+      logger.debug(
+        `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
+      );
 
-    progress = seqNumber - this.sends[this.sends.indexOf(seqNumber) - 1];
-
-    logger.debug(
-      `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
-    );
-    this.sse.send(
-      {
-        scanned: progress
-      },
-      `ScannedEmails${this.user.id}`
-    );
+      this.sse.send(
+        {
+          scanned: progress
+        },
+        `ScannedEmails${this.user.id}`
+      );
+    }
   }
 
   /**
