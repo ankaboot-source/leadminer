@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS public.tags
 
 CREATE TABLE IF NOT EXISTS public.refinedpersons
 (
-    refinedid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
     userid uuid,
     --recency date,
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS public.refinedpersons
     tags text ARRAY,
     name text,
     email text,
-    PRIMARY KEY (refinedid),
+    PRIMARY KEY (id),
     UNIQUE(personid),
     FOREIGN KEY (personid) REFERENCES persons(id)
 );
