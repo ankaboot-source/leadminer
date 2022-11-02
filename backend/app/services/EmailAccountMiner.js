@@ -113,13 +113,11 @@ class EmailAccountMiner {
    */
   getTreeWithTotalPerFolder(imapTree) {
     const self = this;
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       imapTree.forEach((folder) => {
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
-            if (err) {
-              reject();
-            }
+            
             if (box) {
               folder.total = box.messages.total;
             } else {
