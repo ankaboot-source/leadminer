@@ -188,8 +188,7 @@ exports.getImapBoxes = async (req, res, sse) => {
       emailHash: hashHelpers.hashEmail(user.email)
     });
     res.status(400).send({
-      message: 'Unable to fetch IMAP folders.',
-      error
+      message: 'Unable to fetch IMAP folders.'
     });
   }
   if (tree) {
