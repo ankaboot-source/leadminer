@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.organizations
     _domain uuid,
     CONSTRAINT name PRIMARY KEY (name),
     FOREIGN KEY (_domain) REFERENCES domains(id)
-    --FOREIGN KEY (founder) REFERENCES persons(personid)
+    --FOREIGN KEY (founder) REFERENCES persons(id)
     
 
 
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.organizations
 
 CREATE TABLE IF NOT EXISTS public.persons
 (
-    personid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     name text,
     email text,
     _userid uuid,
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS public.persons
     family_name text,
     job_title text,
     works_for text DEFAULT (''),
-    PRIMARY KEY (personid),
+    PRIMARY KEY (id),
     UNIQUE(email)
     --FOREIGN KEY (works_for) REFERENCES organizations(name)
 );
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     personid uuid,
     PRIMARY KEY (pointid),
     FOREIGN KEY (userid, messageid) REFERENCES messages(userid,messageid),
-    FOREIGN KEY (personid) REFERENCES persons(personid)
+    FOREIGN KEY (personid) REFERENCES persons(id)
 
 );
 
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS public.tags
     type text,
     PRIMARY KEY (tagid),
     UNIQUE (personid, name),
-    FOREIGN KEY (personid) REFERENCES persons(personid)
+    FOREIGN KEY (personid) REFERENCES persons(id)
 );
 
 
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS public.refinedpersons
     email text,
     PRIMARY KEY (refinedid),
     UNIQUE(personid),
-    FOREIGN KEY (personid) REFERENCES persons(personid)
+    FOREIGN KEY (personid) REFERENCES persons(id)
 );
 
 
@@ -166,9 +166,9 @@ BEGIN
     FOR person IN
         SELECT * FROM persons WHERE _userid=uidd
     LOOP
-        t=public.get_tags_per_person(person.personid, uidd);
-        occurences=public.get_occurences_per_person(person.personid, uidd);
-        pid=person.personid;
+        t=public.get_tags_per_person(person.id, uidd);
+        occurences=public.get_occurences_per_person(person.id, uidd);
+        pid=person.id;
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
         VALUES(pid, uidd, 0, occurences, t, person.name, person.email)
         ON CONFLICT(personid) DO UPDATE SET occurence=occurences,tags=t;
