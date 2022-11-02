@@ -1,7 +1,7 @@
 const { parentPort } = require('worker_threads');
-const minedDataHelpers = require('../utils/minedDataHelpers');
+const minedDataHelpers = require('../utils/helpers/minedDataHelpers');
 const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
+  require('../utils/redis').redisClientForNormalMode();
 
 /* Listening for a message event from the parent thread.
  *  This worker is used to refine data stored in the database then

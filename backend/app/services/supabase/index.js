@@ -88,7 +88,7 @@ class SupabaseHandlers {
   }
 
   /**
-   * `createTags` takes a `supabaseClient` and an array of `tags` and inserts them into the `tags` table
+   * `createTags` takes an array of `tags` and inserts them into the `tags` table
    * @param tags - an array of objects with the following properties:
    * @returns {promise}
    */
@@ -98,8 +98,14 @@ class SupabaseHandlers {
       .upsert([...tags], { onConflict: 'personid, name' });
   }
 
-  invokeRpc(funcName, options) {
-    return this.supabaseClient.rpc(funcName, options);
+  /**
+   * `invokeRpc` calls a Postgres function as a Remote Procedure Call.
+   * @param functionName - Name of the function to be invoked
+   * @param data - Data to be passed to the function
+   * @returns {promise}
+   */
+  invokeRpc(functionName, data) {
+    return this.supabaseClient.rpc(functionName, data);
   }
 }
 

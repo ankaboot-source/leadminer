@@ -1,19 +1,5 @@
 const dns = require('dns');
-const redisClientForNormalMode =
-  require('../../redis').redisClientForNormalMode();
-const config = require('config');
-const NOREPLY = config.get('email_types.noreply').split(',');
-
-/**
- * IsNoReply takes an email address as a string and returns true if the email address is classified as "no-reply email"
- * @param address - The email address to check
- * @returns A boolean value.
- */
-function isNoReply(emailAddress) {
-  return NOREPLY.some((word) => {
-    return emailAddress.toLowerCase().includes(word.toLowerCase());
-  });
-}
+const redisClientForNormalMode = require('../redis').redisClientForNormalMode();
 
 /**
  * CheckMXStatus checks if a domain has a valid MX record. If it does, it adds it to a redis set called
@@ -34,7 +20,7 @@ function checkMXStatus(domain) {
         }
       } else {
         // set domain in redis valid domains list
-        await redisClientForNormalMode.sadd('domainListInValid', domain);
+        await redisClientForNormalMode.sadd('domainListInvalid', domain);
         resolve([false, '', domain]);
       }
     });
@@ -81,7 +67,6 @@ async function checkDomainStatus(emailAddress) {
 }
 
 module.exports = {
-  isNoReply,
   checkDomainStatus,
   checkMXStatus
 };
