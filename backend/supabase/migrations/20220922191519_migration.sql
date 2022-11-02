@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS public.persons
 
 CREATE TABLE IF NOT EXISTS public.pointsofcontact
 (
-    pointid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     userid uuid,
     messageid uuid,
     _from bool, --reserved word in postgres, so we can't use from
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
     cc bool,
     bcc bool,
     personid uuid,
-    PRIMARY KEY (pointid),
+    PRIMARY KEY (id),
     FOREIGN KEY (userid, messageid) REFERENCES messages(userid,messageid),
     FOREIGN KEY (personid) REFERENCES persons(id)
 
