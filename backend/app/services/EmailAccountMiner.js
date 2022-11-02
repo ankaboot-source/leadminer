@@ -117,7 +117,6 @@ class EmailAccountMiner {
       imapTree.forEach((folder) => {
         function openBoxThenGetTotal() {
           self.connection.openBox(folder.path, true, (err, box) => {
-            
             if (box) {
               folder.total = box.messages.total;
             } else {
@@ -205,6 +204,10 @@ class EmailAccountMiner {
       logger.info('Finished collecting emails for user.', {
         emailHash: this.mailHash
       });
+      setTimeout(() => {
+        this.evenMessageWorker.terminate();
+        this.oddMessageWorker.terminate();
+      }, 5000);
       // sse here to send data based on end event
       this.sse.send(true, 'data');
       this.sse.send(true, `dns${this.user.id}`);
@@ -331,6 +334,14 @@ class EmailAccountMiner {
         logger.debug(
           `We are done...Ending connection for User: ${this.mailHash}`
         );
+        setTimeout(() => {
+          redisClientForPubSubMode.pubsub('channels', (err, channels) => {
+            if (err) {
+            } else {
+              console.log('Channels:', channels); // array
+            }
+          });
+        }, 2000);
         this.connection.end();
         self = null;
       } else {
@@ -391,6 +402,7 @@ class EmailAccountMiner {
         })
       );
     }
+
     //   }
     // });
   }
@@ -404,10 +416,7 @@ class EmailAccountMiner {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    if (Math.round(used * 100) / 100 > 170) {
-      logger.debug(`Used Memory ${used} is high...forcing garbage collector`);
-      global.gc();
-    }
+
     // define the progress
     if (this.sends.includes(seqNumber)) {
       const progress =
@@ -434,7 +443,6 @@ class EmailAccountMiner {
     logger.debug(
       `Sending minedData at ${seqNumber} and folder: ${folderName}...`
     );
-
     // call supabase function to refine data
     supabaseHandlers
       .invokeRpc('refined_persons', {
