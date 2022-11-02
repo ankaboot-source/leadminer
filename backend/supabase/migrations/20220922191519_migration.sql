@@ -95,14 +95,14 @@ CREATE TABLE IF NOT EXISTS public.pointsofcontact
 
 CREATE TABLE IF NOT EXISTS public.tags
 (
-    tagid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     personid uuid,
     userid uuid,
     name text,
     label text,
     reachable int,
     type text,
-    PRIMARY KEY (tagid),
+    PRIMARY KEY (id),
     UNIQUE (personid, name),
     FOREIGN KEY (personid) REFERENCES persons(id)
 );
