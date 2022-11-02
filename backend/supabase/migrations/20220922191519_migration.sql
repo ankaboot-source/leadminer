@@ -26,11 +26,11 @@ CREATE TABLE IF NOT EXISTS public.messages
 
 CREATE TABLE IF NOT EXISTS public.domains
 (
-    domainid uuid DEFAULT uuid_generate_v4(),
+    id uuid DEFAULT uuid_generate_v4(),
     name text,
     last_check timestamptz,
     email_server_type text,
-    PRIMARY KEY (domainid)
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.organizations
