@@ -12,7 +12,7 @@ const app = express();
 initializeSentryIfNeeded(app);
 
 app.use(corsMiddleware);
-app.use(cookieParser);
+app.use(cookieParser());
 app.use(csrfProtection);
 app.use(csrfHandler);
 app.use((_, res, next) => {
