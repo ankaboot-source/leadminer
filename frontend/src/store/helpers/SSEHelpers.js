@@ -85,6 +85,9 @@ export function setupEventSourceHelper(self) {
   });
   console.log(source);
   return source;
+  
+  /* Unreachable code
+  
   source.onmessage = function (e) {};
   source.onopen = function (e) {
     reconnectFrequencySeconds = 1;
@@ -94,4 +97,6 @@ export function setupEventSourceHelper(self) {
     source.close();
     reconnectFunc();
   };
+  */
+
 }
