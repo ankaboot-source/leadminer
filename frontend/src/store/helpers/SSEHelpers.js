@@ -58,7 +58,7 @@ export function eventListenersHandler(currentState, source, parent) {
   );
   source.addEventListener(
     "dns" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
+    () => {
       parent.commit("example/SET_LOADING_DNS", false);
     }
   );
