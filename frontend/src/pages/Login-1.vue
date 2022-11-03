@@ -100,13 +100,13 @@
                 </q-input>
                 <div>
                   <div class="column col-12">
-                    <q-item tag="label" v-ripple>
+                    <q-item v-ripple tag="label">
                       <q-item-section avatar>
                         <q-checkbox v-model="policyChecked" color="teal" />
                       </q-item-section>
                       <q-item-section>
-                        <q-item-label caption
-                          >I read and accept Leadminer.io
+                        <q-item-label caption>
+                          I read and accept Leadminer
                           <a
                             href="https://github.com/ankaboot-source/leadminer/issues/url"
                             target="_blank"
@@ -129,17 +129,14 @@
                         type="submit"
                         color="teal"
                       />
-                      <GoogleButton
-                        v-else
-                        :policyChecked="policyChecked"
-                      ></GoogleButton>
+                      <GoogleButton v-else :policy-checked="policyChecked" />
                     </div>
                   </div>
 
                   <div class="column col-12">
-                    <div class="col-6"></div>
+                    <div class="col-6" />
 
-                    <div class="q-mt-md q-ml-lg col-6"></div>
+                    <div class="q-mt-md q-ml-lg col-6" />
                   </div>
                 </div>
               </q-form>
@@ -152,7 +149,7 @@
 </template>
 
 <script>
-import { useQuasar, LocalStorage } from "quasar";
+import { LocalStorage, useQuasar } from "quasar";
 import { ref } from "vue";
 import { mapState } from "vuex";
 import GoogleButton from "../components/LoginButtons/GoogleLogin";
@@ -253,7 +250,7 @@ export default {
               this.$router.push("/dashboard");
             }, 1500);
           })
-          .catch((error) => {
+          .catch(() => {
             this.showNotif(
               this.$store.getters["example/getStates"].errorMessage,
               "red",
