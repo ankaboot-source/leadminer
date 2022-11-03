@@ -66,6 +66,7 @@ export function eventListenersHandler(currentState, source, parent) {
 }
 
 export function setupEventSourceHelper(self) {
+/*
   let waitFunc = function () {
     return reconnectFrequencySeconds * 10;
   };
@@ -76,10 +77,10 @@ export function setupEventSourceHelper(self) {
       reconnectFrequencySeconds = 64;
     }
   };
-
   let reconnectFunc = function () {
     setTimeout(tryToSetupFunc, waitFunc());
   };
+*/
   let source = new EventSource(`${self.$api}/stream`, {
     withCredentials: true,
   });
