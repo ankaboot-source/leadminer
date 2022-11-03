@@ -31,7 +31,6 @@ app.use(express.urlencoded({ extended: true }));
 // Disable X-POWERED-BY HTTP header
 app.disable('x-powered-by');
 
-// simple route when calling api.leadminer.io
 app.get('/', (_, res) => {
   return res.json({ message: 'Welcome to leadminer application.' });
 });

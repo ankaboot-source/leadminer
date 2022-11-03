@@ -1,5 +1,8 @@
 server:
   log_level: debug
+  allowed_origins:
+    - 'http://localhost:8082' # Needed for local development
+    - 'https://app.example.io'
   sentry: # default is enabled, to create your own go to : https://sentry.io
     enabled: false
     dsn: https://d38********************47f00@o13******8.ingest.sentry.io/66*******4

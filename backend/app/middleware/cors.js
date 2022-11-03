@@ -1,7 +1,8 @@
 const cors = require('cors');
+const { allowedOrigins } = require('../config/server.config');
 
 const corsOptions = {
-  origin: ['http://localhost:8082', 'https://leadminer.io'],
+  origin: allowedOrigins,
   methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE',
   allowedHeaders: 'X-Requested-With,Content-type,X-imap-login',
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
