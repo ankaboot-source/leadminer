@@ -336,9 +336,8 @@ class EmailAccountMiner {
         );
         setTimeout(() => {
           redisClientForPubSubMode.pubsub('channels', (err, channels) => {
-            if (err) {
-            } else {
-              console.log('Channels:', channels); // array
+            if (!err) {
+              logger.debug(channels);
             }
           });
         }, 2000);
