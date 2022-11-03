@@ -178,7 +178,7 @@ export async function signIn(_, { data }) {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_IMAP", response.data.imap);
         let imapUser = this.state.example.imapUser;
-        imapUser["password"] = data.password;
+        imapUser.password = data.password;
         LocalStorage.set("imapUser", imapUser);
         resolve(response.data);
       })
