@@ -1,4 +1,4 @@
-let reconnectFrequencySeconds = 1;
+//let reconnectFrequencySeconds = 1;
 
 export function eventListenersHandler(currentState, source, parent) {
   console.log(source);
