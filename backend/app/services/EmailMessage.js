@@ -1,6 +1,5 @@
 'use-strict';
 const regExHelpers = require('../utils/helpers/regexpHelpers');
-const dateHelpers = require('../utils/helpers/dateHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const redisClientForNormalMode =
