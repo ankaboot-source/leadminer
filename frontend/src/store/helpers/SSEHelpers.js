@@ -30,11 +30,11 @@ export function eventListenersHandler(currentState, source, parent) {
   source.addEventListener(
     "token" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
-      let googleUser = LocalStorage.getItem("googleUser");
+      let googleUser = localStorage.getItem("googleUser");
 
-      LocalStorage.remove("googleUser");
+      localStorage.remove("googleUser");
       let access_token = JSON.parse(message.data).token;
-      LocalStorage.set("googleUser", {
+      localStorage.set("googleUser", {
         access_token: access_token,
         email: googleUser.email,
         id: googleUser.id,
