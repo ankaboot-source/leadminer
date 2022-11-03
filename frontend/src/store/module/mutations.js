@@ -1,7 +1,7 @@
 export function SET_EMAILS(state, streamedEmail) {
   if (!Array.isArray(streamedEmail)) {
     var index = state.retrievedEmails.findIndex(
-      (email) => email.email == streamedEmail.email
+      (email) => email.email === streamedEmail.email
     );
     if (index === -1) {
       state.retrievedEmails.push(streamedEmail);
@@ -42,21 +42,21 @@ export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
 export function SET_SCANNEDEMAILS(state, newValue) {
-  if (newValue == "f") {
+  if (newValue === "f") {
     state.progress.scannedEmails = 0;
   } else {
     state.progress.scannedEmails += parseInt(newValue);
   }
 }
 export function SET_STATISTICS(state, newValue) {
-  if (newValue == "f") {
+  if (newValue === "f") {
     state.progress.statistics = {};
   } else {
     state.progress.statistics = newValue;
   }
 }
 export function SET_SCANNEDBOXES(state, newValue) {
-  if (newValue.length == 0) {
+  if (newValue.length === 0) {
     state.progress.scannedBoxes = newValue;
   } else {
     let boxesArray = [
@@ -78,7 +78,7 @@ export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;
 }
 export function UPDATE_TOKEN(state, newToken) {
-  if (state.googleUser.access_token.access_token != newToken.access_token) {
+  if (state.googleUser.access_token.access_token !== newToken.access_token) {
     state.googleUser.access_token = newToken;
   }
 }

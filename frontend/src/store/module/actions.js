@@ -60,7 +60,7 @@ export function getEmails({ getters }, { data }) {
   const ProxyChange = {
     // eslint-disable-line
     set: function (target, key, value) {
-      if (value == true) {
+      if (value === true) {
         sources.cancel();
       }
       return Reflect.set(...arguments);
@@ -195,7 +195,7 @@ export async function getBoxes({ getters }) {
 
   this.commit("example/SET_LOADINGBOX", true);
   return new Promise((resolve, reject) => {
-    if (currentState.googleUser.access_token == "") {
+    if (currentState.googleUser.access_token === "") {
       this.$axios
         .get(
           this.$api +
@@ -241,7 +241,7 @@ export async function getBoxes({ getters }) {
           );
 
           reject(error.message);
-          if (error?.response?.status == 500) {
+          if (error?.response?.status === 500) {
             LocalStorage.remove("googleUser");
             this.$router.push({ path: "/" });
           }

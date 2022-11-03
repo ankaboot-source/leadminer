@@ -123,7 +123,7 @@ class EmailMessage {
         code: message.error.code,
         emailMessageDate: this.getDate()
       });
-      if (message.error.code == '23505') {
+      if (message.error.code === '23505') {
         logger.debug(`message with id:${this.getMessageId()} already mined`);
       }
     } else {
