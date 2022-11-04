@@ -3,9 +3,8 @@ const hashHelpers = require('../utils/helpers/hashHelpers');
 const inputHelpers = require('../utils/helpers/inputHelpers');
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
-
-const redisClientForPubSubMode =
-  require('../utils/redis').redisClientForPubSubMode();
+const { redis } = require('../utils/redis');
+const redisClientForPubSubMode = redis.getPubSubClient();
 
 const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {
@@ -384,7 +383,7 @@ class EmailAccountMiner {
         JSON.stringify({
           seqNumber,
           body,
-          header: JSON.stringify(Header),
+          header: Header,
           user: this.user,
           folderName
         })
@@ -395,7 +394,7 @@ class EmailAccountMiner {
         JSON.stringify({
           seqNumber,
           body,
-          header: JSON.stringify(Header),
+          header: Header,
           user: this.user,
           folderName
         })
