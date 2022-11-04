@@ -2,7 +2,7 @@
 -- CREATE TABLE IF NOT EXISTS public.users
 -- (
 --     id uuid DEFAULT uuid_generate_v4(),
---     email text, -- email used to connect to leadminer.io
+--     email text, -- email used to connect to leadminer
 --     password text,
 --     emailHash text,
 --     PRIMARY KEY (id)  
