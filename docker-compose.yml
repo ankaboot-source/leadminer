@@ -29,8 +29,5 @@ services:
     restart: always
     stdin_open: true
     tty: true
-    ports:
-      - 8080:8080
-      - 8081:8081
     depends_on:
       - leadminer-api
