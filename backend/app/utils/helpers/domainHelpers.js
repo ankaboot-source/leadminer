@@ -1,5 +1,7 @@
 const dns = require('dns');
-const redisClientForNormalMode = require('../redis').redisClientForNormalMode();
+
+const { redis } = require('../redis');
+const redisClientForNormalMode = redis.getClient();
 
 /**
  * CheckMXStatus checks if a domain has a valid MX record. If it does, it adds it to a redis set called
