@@ -21,7 +21,7 @@ function initializeSentryIfNeeded(app) {
     tracesSampler: (samplingContext) => {
       // sample out transactions from http OPTIONS requests hitting endpoints
       const request = samplingContext.request;
-      if (request && request.method == 'OPTIONS') {
+      if (request && request.method === 'OPTIONS') {
         return 0.0;
       }
 

@@ -1,4 +1,4 @@
-let reconnectFrequencySeconds = 1;
+//let reconnectFrequencySeconds = 1;
 
 export function eventListenersHandler(currentState, source, parent) {
   console.log(source);
@@ -30,11 +30,11 @@ export function eventListenersHandler(currentState, source, parent) {
   source.addEventListener(
     "token" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
-      let googleUser = LocalStorage.getItem("googleUser");
+      let googleUser = localStorage.getItem("googleUser");
 
-      LocalStorage.remove("googleUser");
+      localStorage.remove("googleUser");
       let access_token = JSON.parse(message.data).token;
-      LocalStorage.set("googleUser", {
+      localStorage.set("googleUser", {
         access_token: access_token,
         email: googleUser.email,
         id: googleUser.id,
@@ -58,7 +58,7 @@ export function eventListenersHandler(currentState, source, parent) {
   );
   source.addEventListener(
     "dns" + currentState.imapUser.id + currentState.googleUser.id,
-    (message) => {
+    () => {
       parent.commit("example/SET_LOADING_DNS", false);
     }
   );
@@ -66,6 +66,7 @@ export function eventListenersHandler(currentState, source, parent) {
 }
 
 export function setupEventSourceHelper(self) {
+/*
   let waitFunc = function () {
     return reconnectFrequencySeconds * 10;
   };
@@ -76,15 +77,18 @@ export function setupEventSourceHelper(self) {
       reconnectFrequencySeconds = 64;
     }
   };
-
   let reconnectFunc = function () {
     setTimeout(tryToSetupFunc, waitFunc());
   };
+*/
   let source = new EventSource(`${self.$api}/stream`, {
     withCredentials: true,
   });
   console.log(source);
   return source;
+  
+  /* Unreachable code
+  
   source.onmessage = function (e) {};
   source.onopen = function (e) {
     reconnectFrequencySeconds = 1;
@@ -94,4 +98,6 @@ export function setupEventSourceHelper(self) {
     source.close();
     reconnectFunc();
   };
+  */
+
 }
