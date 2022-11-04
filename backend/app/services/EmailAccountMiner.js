@@ -204,10 +204,7 @@ class EmailAccountMiner {
       logger.info('Finished collecting emails for user.', {
         emailHash: this.mailHash
       });
-      setTimeout(() => {
-        this.evenMessageWorker.terminate();
-        this.oddMessageWorker.terminate();
-      }, 5000);
+
       // sse here to send data based on end event
       this.sse.send(true, 'data');
       this.sse.send(true, `dns${this.user.id}`);
@@ -335,12 +332,9 @@ class EmailAccountMiner {
           `We are done...Ending connection for User: ${this.mailHash}`
         );
         setTimeout(() => {
-          redisClientForPubSubMode.pubsub('channels', (err, channels) => {
-            if (!err) {
-              logger.debug(channels);
-            }
-          });
-        }, 2000);
+          this.messageWorkerEvenSeqNumber.terminate();
+          this.messageWorkerOddSeqNumber.terminate();
+        }, 5000);
         this.connection.end();
         self = null;
       } else {
@@ -371,34 +365,23 @@ class EmailAccountMiner {
       this.sendMinedData(seqNumber, folderName);
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
-    // TODO : check message if it's already mined
-    // const message_id = Header['message-id'] ? Header['message-id'][0] : '';
-    // redisClientForNormalMode
-    //   .sismember('messages', message_id)
-    //   .then((alreadyMined) => {
-    //     if (!alreadyMined) {
     //publish the message to the odd channel
+    const message = JSON.stringify({
+      seqNumber,
+      body,
+      header: JSON.stringify(Header),
+      user: this.user,
+      folderName
+    });
     if (seqNumber % 2 !== 0) {
       redisClientForPubSubMode.publish(
         `odd-messages-channel-${this.user.id}`,
-        JSON.stringify({
-          seqNumber,
-          body,
-          header: JSON.stringify(Header),
-          user: this.user,
-          folderName
-        })
+        message
       );
     } else {
       redisClientForPubSubMode.publish(
         `even-messages-channel-${this.user.id}`,
-        JSON.stringify({
-          seqNumber,
-          body,
-          header: JSON.stringify(Header),
-          user: this.user,
-          folderName
-        })
+        message
       );
     }
 
@@ -414,7 +397,6 @@ class EmailAccountMiner {
   sendMiningProgress(seqNumber, folderName) {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
-    const used = process.memoryUsage().heapUsed / 1024 / 1024;
 
     // define the progress
     if (this.sends.includes(seqNumber)) {

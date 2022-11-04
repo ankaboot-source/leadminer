@@ -8,9 +8,8 @@ const supabase = createClient(
   process.env.SUPABASE_ID,
   process.env.SUPABASE_TOKEN
 );
-/////////
+//register source globally so we can access from anywere
 let source;
-// Putting these functions in extra variables is just for the sake of readability
 
 export function setupEventSource() {
   source = setupEventSourceHelper.bind(this);
@@ -34,7 +33,7 @@ function initStore(parent, currentState) {
       (payload) => {
         setTimeout(() => {
           parent.commit("example/SET_EMAILS", payload.new);
-        }, 100);
+        }, 50);
       }
     )
     .subscribe();
@@ -83,8 +82,10 @@ export function getEmails({ getters }, { data }) {
         })
         .then((response) => {
           source.close();
+
           updateStoreWhenFinish(response, this);
           resolve(response);
+          source = null;
         })
         .catch((error) => {
           this.commit(
@@ -93,6 +94,7 @@ export function getEmails({ getters }, { data }) {
               ? error?.response?.data?.error
               : error.message
           );
+          source = null;
           reject(error.message);
         });
     } else {
@@ -116,6 +118,7 @@ export function getEmails({ getters }, { data }) {
         .then((response) => {
           updateStoreWhenFinish(response, this);
           source.close();
+          source = null;
           resolve(response);
         })
         .catch((error) => {
@@ -125,6 +128,7 @@ export function getEmails({ getters }, { data }) {
               ? error?.response?.data?.error
               : error.message
           );
+          source = null;
           reject(error.message);
         });
     }

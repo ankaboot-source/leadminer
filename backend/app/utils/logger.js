@@ -21,20 +21,20 @@ module.exports =
     // Create and configure logger.
     const logger = winston.createLogger({
       transports: [
-        new transports.File({
-          filename: 'logs/server.log',
-          format: format.combine(
-            ...commonFormats,
-            format.align(),
-            format.printf(
-              (info) =>
-                `${[info.timestamp]}  ${info.level}  ${info.message}  at  ${
-                  info.label
-                } | ${JSON.stringify(info.meta)}`
-            )
-          ),
-          logLevel
-        }),
+        // new transports.File({
+        //   filename: 'logs/server.log',
+        //   format: format.combine(
+        //     ...commonFormats,
+        //     format.align(),
+        //     format.printf(
+        //       (info) =>
+        //         `${[info.timestamp]}  ${info.level}  ${info.message}  at  ${
+        //           info.label
+        //         } | ${JSON.stringify(info.meta)}`
+        //     )
+        //   ),
+        //   logLevel
+        // }),
 
         new transports.Console({
           format: format.combine(

@@ -11,6 +11,3 @@ ENV SUPABASE_TOKEN=
 ENV GG_CLIENT_ID=
 COPY ./ /frontend
 RUN npm run build
-
-FROM nginx:stable-alpine
-COPY --from=build-stage /frontend/dist /var/www/html/dist
