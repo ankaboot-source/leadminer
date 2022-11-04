@@ -20,6 +20,8 @@ services:
     depends_on:
       - postgres
       - redis
+    ports:
+      - 8081:8081
   leadminer-server:
     image: leadminer-server:git
     container_name: nginx_server
@@ -32,5 +34,3 @@ services:
       - 8081:8081
     depends_on:
       - leadminer-api
-    volumes:
-      - ./frontend/.nginx:/etc/nginx/conf.d
