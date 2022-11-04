@@ -11,6 +11,24 @@ function compareDates(date1, date2) {
   return d1 > d2;
 }
 
-module.exports = {
-  compareDates
-};
+/**
+ * parseDate takes a date string, replaces the timezone with a fixed timezone, creates a date object from the
+ * string, and returns the date in ISO format
+ * @param date - The date string to be parsed.
+ * @returns A string with the date and time in ISO format.
+ */
+function parseDate(date) {
+  const tempDate = date
+      .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
+      .replace(/ UTC-(.*)/i, ''),
+    dateFromString = new Date(tempDate);
+  /* istanbul ignore else */
+
+  if (isNaN(Date.parse(dateFromString)) === false) {
+    const ISODate = dateFromString.toISOString();
+
+    return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
+  }
+}
+
+module.exports = { parseDate, compareDates };
