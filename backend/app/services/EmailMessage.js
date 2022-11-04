@@ -2,6 +2,7 @@
 const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
+const domainHelpers = require("../utils/helpers/domainHelpers")
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
 const config = require('config'),
@@ -109,14 +110,15 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    const message = await supabaseHandlers.upsertMessage(
+    supabaseHandlers.upsertMessage(
       this.getMessageId(),
       this.user.id,
       'imap',
       this.folderPath,
       this.getDate()
-    );
+    ).then((message)=>{
 
+    
     if (message?.error) {
       logger.error('Error when inserting to messages table.', {
         error: message.error.message,
@@ -127,6 +129,7 @@ class EmailMessage {
         logger.debug(`message with id:${this.getMessageId()} already mined`);
       }
     } else {
+        
       const messagingFields = this.getMessagingFieldsFromHeader();
       Object.keys(messagingFields).map(async (key) => {
         // extract Name and Email in case of a header
@@ -147,7 +150,7 @@ class EmailMessage {
       delete this.body;
       // store extracted emails
       this.storeEmailsAddressesExtractedFromBody(message, emails);
-    }
+    }})
   }
 
   /**
@@ -175,7 +178,7 @@ class EmailMessage {
       .filter((email) => email && this.user.email !== email?.address)
       .forEach(async (email) => {
         // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
-        const domain = await emailMessageHelpers.checkDomainStatus(
+        const domain = await domainHelpers.checkDomainStatus(
           email.address
         );
         const emailType = emailAddressHelpers.findEmailAddressType(
@@ -192,7 +195,6 @@ class EmailMessage {
         if (emailMessageHelpers.isNoReply(email.address)) {
           tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
         }
-
         if (domain[0]) {
           this.storeEmails(
             message,
@@ -231,7 +233,7 @@ class EmailMessage {
     emails
       .filter((email) => this.user.email !== email.address)
       .forEach(async (email) => {
-        const domain = await emailMessageHelpers.checkDomainStatus(email);
+        const domain = await domainHelpers.checkDomainStatus(email);
         const emailType = emailAddressHelpers.findEmailAddressType(
           email,
           [email?.name ?? ''],
