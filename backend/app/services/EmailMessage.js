@@ -11,8 +11,8 @@ const config = require('config'),
   TRANSACTIONAL_HEADER_FIELDS = config
     .get('email_types.transactional')
     .split(','),
-  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
-  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',')
+  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'],
+  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',');
 
 const logger = require('../utils/logger')(module);
 
