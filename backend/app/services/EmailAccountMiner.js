@@ -7,12 +7,12 @@ const { redis } = require('../utils/redis');
 const { Worker } = require('worker_threads');
 const redisClientForPubSubMode = redis.getPubSubClient();
 const data = 'messageWorker initiated',
-    evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
-      data
-    }),
-    oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
-      data
-    });
+  evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
+    data
+  }),
+  oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
+    data
+  });
 const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {
   // public field
@@ -35,7 +35,7 @@ class EmailAccountMiner {
     sse,
     fields,
     folders,
-    eventEmitter,
+    eventEmitter
   ) {
     this.connection = connection;
     this.user = user;

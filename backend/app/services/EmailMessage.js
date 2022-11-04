@@ -2,7 +2,8 @@
 const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
-const domainHelpers = require("../utils/helpers/domainHelpers")
+const domainHelpers = require('../utils/helpers/domainHelpers');
+const dateHelpers = require('../utils/helpers/dateHelpers');
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
 const config = require('config'),
@@ -116,47 +117,49 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    supabaseHandlers.upsertMessage(
-      this.getMessageId(),
-      this.user.id,
-      'imap',
-      this.folderPath,
-      this.getDate()
-    ).then((message)=>{
+    supabaseHandlers
+      .upsertMessage(
+        this.getMessageId(),
+        this.user.id,
+        'imap',
+        this.folderPath,
+        this.getDate()
+      )
+      .then((message) => {
+        if (message?.error) {
+          logger.error('Error when inserting to messages table.', {
+            error: message.error.message,
+            code: message.error.code,
+            emailMessageDate: this.getDate()
+          });
+          if (message.error.code === '23505') {
+            logger.debug(
+              `message with id:${this.getMessageId()} already mined`
+            );
+          }
+        } else {
+          const messagingFields = this.getMessagingFieldsFromHeader();
+          Object.keys(messagingFields).map(async (key) => {
+            // extract Name and Email in case of a header
+            const emails = regExHelpers.extractNameAndEmail(
+              messagingFields[`${key}`]
+            );
 
-    
-    if (message?.error) {
-      logger.error('Error when inserting to messages table.', {
-        error: message.error.message,
-        code: message.error.code,
-        emailMessageDate: this.getDate()
+            this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
+          });
+
+          // case when body should be scanned
+          // eslint-disable-next-line no-constant-condition
+
+          // TODO : OPTIONS as user query
+          const emails = regExHelpers.extractNameAndEmailFromBody(
+            this.body.toString('utf8')
+          );
+          delete this.body;
+          // store extracted emails
+          this.storeEmailsAddressesExtractedFromBody(message, emails);
+        }
       });
-      if (message.error.code === '23505') {
-        logger.debug(`message with id:${this.getMessageId()} already mined`);
-      }
-    } else {
-        
-      const messagingFields = this.getMessagingFieldsFromHeader();
-      Object.keys(messagingFields).map(async (key) => {
-        // extract Name and Email in case of a header
-        const emails = regExHelpers.extractNameAndEmail(
-          messagingFields[`${key}`]
-        );
-
-        this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
-      });
-
-      // case when body should be scanned
-      // eslint-disable-next-line no-constant-condition
-
-      // TODO : OPTIONS as user query
-      const emails = regExHelpers.extractNameAndEmailFromBody(
-        this.body.toString('utf8')
-      );
-      delete this.body;
-      // store extracted emails
-      this.storeEmailsAddressesExtractedFromBody(message, emails);
-    }})
   }
 
   /**
@@ -184,9 +187,7 @@ class EmailMessage {
       .filter((email) => email && this.user.email !== email?.address)
       .forEach(async (email) => {
         // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
-        const domain = await domainHelpers.checkDomainStatus(
-          email.address
-        );
+        const domain = await domainHelpers.checkDomainStatus(email.address);
         const emailType = emailAddressHelpers.findEmailAddressType(
           email.address,
           [email?.name],

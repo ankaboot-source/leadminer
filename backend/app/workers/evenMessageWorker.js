@@ -6,7 +6,6 @@ const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 
 parentPort.on('message', (userID) => {
-  console.log(userID, '*******************');
   //subscribe to created channel
   redisClient.subscribe(`even-messages-channel-${userID}`, (err) => {
     if (err) {

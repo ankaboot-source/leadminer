@@ -255,7 +255,7 @@ exports.getEmails = async (req, res, sse) => {
     sse,
     ['HEADER', '1'],
     req.query.boxes,
-    eventEmitter,
+    eventEmitter
 
   );
 
