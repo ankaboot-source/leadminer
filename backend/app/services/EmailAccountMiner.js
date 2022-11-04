@@ -4,8 +4,15 @@ const inputHelpers = require('../utils/helpers/inputHelpers');
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
 const { redis } = require('../utils/redis');
+const { Worker } = require('worker_threads');
 const redisClientForPubSubMode = redis.getPubSubClient();
-
+const data = 'messageWorker initiated',
+    evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
+      data
+    }),
+    oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
+      data
+    });
 const { supabaseHandlers } = require('./supabase/index');
 class EmailAccountMiner {
   // public field
@@ -29,8 +36,6 @@ class EmailAccountMiner {
     fields,
     folders,
     eventEmitter,
-    evenMessageWorker,
-    oddMessageWorker
   ) {
     this.connection = connection;
     this.user = user;

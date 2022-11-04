@@ -8,7 +8,6 @@ const EventEmitter = require('node:events');
 const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
-const { Worker } = require('worker_threads');
 const { imapInfo } = require('../models');
 
 function temporaryImapConnection(imapInfo, reqBody) {
@@ -246,14 +245,8 @@ exports.getEmails = async (req, res, sse) => {
     server = new EmailServer(user, sse);
   // defines events, and workers
   class MyEmitter extends EventEmitter {}
-  const eventEmitter = new MyEmitter(),
-    data = 'messageWorker initiated',
-    evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
-      data
-    }),
-    oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
-      data
-    });
+  const eventEmitter = new MyEmitter();
+    
 
   // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
@@ -263,8 +256,7 @@ exports.getEmails = async (req, res, sse) => {
     ['HEADER', '1'],
     req.query.boxes,
     eventEmitter,
-    evenMessageWorker,
-    oddMessageWorker
+
   );
 
   miner.mine();

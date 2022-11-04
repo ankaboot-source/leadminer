@@ -20,7 +20,7 @@ parentPort.on('message', (userID) => {
 
 redisClient.on('message', (channel, messageFromChannel) => {
   const message = JSON.parse(messageFromChannel);
-  const Header = JSON.parse(message.header);
+  const Header = message.header;
   const message_id = Header['message-id'] ? Header['message-id'][0] : '';
   const Message = new EmailMessage(
     message.seqNumber,
