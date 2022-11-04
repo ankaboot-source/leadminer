@@ -332,18 +332,9 @@ class EmailAccountMiner {
           `We are done...Ending connection for User: ${this.mailHash}`
         );
         setTimeout(() => {
-<<<<<<< HEAD
           this.messageWorkerEvenSeqNumber.terminate();
           this.messageWorkerOddSeqNumber.terminate();
         }, 5000);
-=======
-          redisClientForPubSubMode.pubsub('channels', (err, channels) => {
-            if (!err) {
-              logger.debug(channels);
-            }
-          });
-        }, 2000);
->>>>>>> main
         this.connection.end();
         self = null;
       } else {
