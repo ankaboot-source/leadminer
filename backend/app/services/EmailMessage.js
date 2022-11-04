@@ -12,6 +12,7 @@ const config = require('config'),
     .get('email_types.transactional')
     .split(','),
   FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',')
 
 const logger = require('../utils/logger')(module);
 
@@ -62,6 +63,14 @@ class EmailMessage {
   isTransactional() {
     return this.hasSpecificHeader(TRANSACTIONAL_HEADER_FIELDS);
   }
+
+  /**
+   * isList returns true if the email has List-Post in header, and false if it's not
+   * @returns A boolean value.
+   */
+     isList() {
+        return this.hasSpecificHeader(MAILING_LIST_HEADER_FIELDS);
+      }
 
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
@@ -179,6 +188,11 @@ class EmailMessage {
       if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
+        );
+      }
+      if (this.isList()) {
+        tags.push(
+          this.buildTag('list', 'List', 2, 'refined')
         );
       }
     }
