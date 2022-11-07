@@ -36,24 +36,11 @@ class EmailMessage {
   }
 
   /**
-   * hasSpecificHeader returns true if the email has specific types based on his headers
-   * @returns A boolean value.
-   */
-  hasSpecificHeader(headerFields) {
-    return Object.keys(this.header).some((headerField) => {
-      return headerFields.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, 'i');
-        return reg.test(headerField);
-      });
-    });
-  }
-
-  /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
    */
   isNewsletter() {
-    return this.hasSpecificHeader(NEWSLETTER_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(this.header, NEWSLETTER_HEADER_FIELDS);
   }
 
   /**
@@ -61,7 +48,7 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isTransactional() {
-    return this.hasSpecificHeader(TRANSACTIONAL_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(this.header, TRANSACTIONAL_HEADER_FIELDS);
   }
 
   /**
@@ -69,7 +56,7 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isList() {
-    return this.hasSpecificHeader(MAILING_LIST_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(this.header, MAILING_LIST_HEADER_FIELDS);
   }
 
   /**
@@ -77,7 +64,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
+    if (emailMessageHelpers.hasSpecificHeader(this.header, ['references'])) {
       return 1;
     }
     return 0;

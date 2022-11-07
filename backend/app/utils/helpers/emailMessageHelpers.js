@@ -1,4 +1,5 @@
 const config = require('config');
+
 const NOREPLY = config.get('email_types.noreply').split(',');
 
 /**
@@ -12,6 +13,20 @@ function isNoReply(emailAddress) {
   });
 }
 
+/**
+ * hasSpecificHeader returns true if the email has specific types based on his headers
+ * @returns A boolean value.
+ */
+function hasSpecificHeader(header, headerFields) {
+return Object.keys(header).some((headerField) => {
+    return headerFields.some((regExHeader) => {
+    const reg = new RegExp(`${regExHeader}`, 'i');
+    return reg.test(headerField);
+    });
+});
+}
+
 module.exports = {
-  isNoReply
+  isNoReply,
+  hasSpecificHeader
 };
