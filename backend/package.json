@@ -39,7 +39,7 @@
     "express-sse": "github:omgimalexis/express-sse",
     "google-auth-library": "^8.5.2",
     "googleapis": "^100.0.0",
-    "imap": "github:ankaboot-source/node-imap",
+    "imap": "^0.8.19",
     "ioredis": "^5.2.2",
     "mocha": "^10.1.0",
     "nodemon": "^2.0.15",
