@@ -67,7 +67,9 @@ services:
         SUPABASE_TOKEN: ${SUPABASE_TOKEN}
         GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     ports:
-      - 8080:80
+      - 8080:8080
     restart: always
     depends_on:
       - leadminer-api
+    volumes:
+      - ./frontend/.nginx:/etc/nginx/conf.d
