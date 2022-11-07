@@ -7,11 +7,12 @@ const dateHelpers = require('../utils/helpers/dateHelpers');
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
 const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
+  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(',').filter(n => n),
   TRANSACTIONAL_HEADER_FIELDS = config
     .get('email_types.transactional')
-    .split(','),
-  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+    .split(',').filter(n => n),
+  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'],
+  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',').filter(n => n);
 
 const logger = require('../utils/logger')(module);
 
@@ -35,24 +36,11 @@ class EmailMessage {
   }
 
   /**
-   * hasSpecificHeader returns true if the email has specific types based on his headers
-   * @returns A boolean value.
-   */
-  hasSpecificHeader(headerFields) {
-    return Object.keys(this.header).some((headerField) => {
-      return headerFields.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, 'i');
-        return reg.test(headerField);
-      });
-    });
-  }
-
-  /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
    */
   isNewsletter() {
-    this.hasSpecificHeader(NEWSLETTER_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(this.header, NEWSLETTER_HEADER_FIELDS);
   }
 
   /**
@@ -60,7 +48,15 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isTransactional() {
-    return this.hasSpecificHeader(TRANSACTIONAL_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(this.header, TRANSACTIONAL_HEADER_FIELDS);
+  }
+
+  /**
+   * isList returns true if the email has List-Post in header, and false if it's not
+   * @returns A boolean value.
+   */
+  isList() {
+    return emailMessageHelpers.hasSpecificHeader(this.header, MAILING_LIST_HEADER_FIELDS);
   }
 
   /**
@@ -68,7 +64,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
+    if (emailMessageHelpers.hasSpecificHeader(this.header, ['references'])) {
       return 1;
     }
     return 0;
@@ -179,6 +175,11 @@ class EmailMessage {
       if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
+        );
+      }
+      if (this.isList()) {
+        tags.push(
+          this.buildTag('list', 'List', 2, 'refined')
         );
       }
     }
