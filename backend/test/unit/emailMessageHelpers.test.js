@@ -67,7 +67,7 @@ describe('EmailMessage.isNewsletter', () => {
 
     NEWSLETTER_HEADER_FIELDS.forEach(
         (el) => {
-            it('Should return true for header: ' + el, () => {
+            it(`Should return true for header: ${el}`, () => {
                 Email.header[el] = ['']
                 expect(Email.isNewsletter()).to.be.true
                 delete Email.header[el]
@@ -90,7 +90,7 @@ describe('EmailMessage.isTransactional', () => {
 
     TRANSACTIONAL_HEADER_FIELDS.forEach(
         (el) => {
-            it('Should return true for header: ' + el, () => {
+            it(`Should return true for header: ${el}`, () => {
                 Email.header[el] = ['']
                 expect(Email.isTransactional()).to.be.true
                 delete Email.header[el]
@@ -113,7 +113,7 @@ describe('EmailMessage.isList', () => {
 
     MAILING_LIST_HEADER_FIELDS.forEach(
         (el) => {
-            it('Should return true for header: ' + el, () => {
+            it(`Should return true for header: ${el}`, () => {
                 Email.header[el] = ['']
                 expect(Email.isList()).to.be.true
                 delete Email.header[el]
