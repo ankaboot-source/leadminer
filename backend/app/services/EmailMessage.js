@@ -7,12 +7,12 @@ const dateHelpers = require('../utils/helpers/dateHelpers');
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
 const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
+  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(',').filter(n => n),
   TRANSACTIONAL_HEADER_FIELDS = config
     .get('email_types.transactional')
-    .split(','),
+    .split(',').filter(n => n),
   FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'],
-  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',');
+  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',').filter(n => n);
 
 const logger = require('../utils/logger')(module);
 
@@ -53,7 +53,7 @@ class EmailMessage {
    * @returns True or False
    */
   isNewsletter() {
-    this.hasSpecificHeader(NEWSLETTER_HEADER_FIELDS);
+    return this.hasSpecificHeader(NEWSLETTER_HEADER_FIELDS);
   }
 
   /**
@@ -68,9 +68,9 @@ class EmailMessage {
    * isList returns true if the email has List-Post in header, and false if it's not
    * @returns A boolean value.
    */
-     isList() {
-        return this.hasSpecificHeader(MAILING_LIST_HEADER_FIELDS);
-      }
+  isList() {
+    return this.hasSpecificHeader(MAILING_LIST_HEADER_FIELDS);
+  }
 
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
