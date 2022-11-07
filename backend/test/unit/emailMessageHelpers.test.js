@@ -59,7 +59,7 @@ describe('emailMessageHepers.hasSpecificHeader', () => {
                 if (TEST_HEADERS[el])
                     delete TEST_HEADERS[el];
         })
-        expect(emailMessageHelpers.hasSpecificHeader(TEST_HEADERS, NEWSLETTER_HEADER_FIELDS)).to.be.false
+        expect(emailMessageHelpers.hasSpecificHeader(TEST_HEADERS, HEADER_FIELDS)).to.be.false
     })
 
     HEADER_FIELDS.forEach(
