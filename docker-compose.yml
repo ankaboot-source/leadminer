@@ -52,7 +52,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy # Make sure postgres is ready to accept connections
-
     ports:
       - 8081:${LEADMINER_API_PORT}
 
@@ -67,9 +66,7 @@ services:
         SUPABASE_TOKEN: ${SUPABASE_TOKEN}
         GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     ports:
-      - 8080:8080
+      - 8080:80
     restart: always
     depends_on:
       - leadminer-api
-    volumes:
-      - ./frontend/.nginx:/etc/nginx/conf.d
