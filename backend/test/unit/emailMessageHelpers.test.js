@@ -1,14 +1,13 @@
 const { expect } = require('chai');
 
 const emailMessageHelpers = require('../../app/utils/helpers/emailMessageHelpers');
-const EmailMessage = require("../../app/services/EmailMessage")
-
 const config = require('config'),
   NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(',').filter(n => n),
   TRANSACTIONAL_HEADER_FIELDS = config
     .get('email_types.transactional')
     .split(',').filter(n => n),
   MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',').filter(n => n);
+  HEADER_FIELDS = [...NEWSLETTER_HEADER_FIELDS, ...TRANSACTIONAL_HEADER_FIELDS, ...MAILING_LIST_HEADER_FIELDS, "references"] 
 
 const TEST_HEADERS = {
     'delivered-to': [ '' ],
@@ -37,8 +36,6 @@ const TEST_HEADERS = {
     'feedback-id': [ '' ]
   }
 
-const Email = new EmailMessage('', TEST_HEADERS, '', '', '')
-
 describe('emailMessageHelpers.isNoReply(emailAddress)', () => {
   it('should return true for no-reply-leadminer@leadminer.io', () => {
     const output = emailMessageHelpers.isNoReply(
@@ -53,86 +50,25 @@ describe('emailMessageHelpers.isNoReply(emailAddress)', () => {
   });
 });
 
-describe('EmailMessage.isNewsletter', () => {
+describe('emailMessageHepers.hasSpecificHeader', () => {
     
     it('Should return false when headers not present', () => {
 
-        NEWSLETTER_HEADER_FIELDS.forEach(
+        HEADER_FIELDS.forEach(
             (el) => {
-                if (Email.header[el])
-                    delete Email.header[el];
+                if (TEST_HEADERS[el])
+                    delete TEST_HEADERS[el];
         })
-        expect(Email.isNewsletter()).to.be.false
+        expect(emailMessageHelpers.hasSpecificHeader(TEST_HEADERS, NEWSLETTER_HEADER_FIELDS)).to.be.false
     })
 
-    NEWSLETTER_HEADER_FIELDS.forEach(
+    HEADER_FIELDS.forEach(
         (el) => {
             it(`Should return true for header: ${el}`, () => {
-                Email.header[el] = ['']
-                expect(Email.isNewsletter()).to.be.true
-                delete Email.header[el]
+                TEST_HEADERS[el] = ['']
+                expect(emailMessageHelpers.hasSpecificHeader(TEST_HEADERS, [el])).to.be.true
+                delete TEST_HEADERS[el]
             })
         }
     )
-})
-
-describe('EmailMessage.isTransactional', () => {
-
-    it('Should return false when headers not present', () => {
-
-        TRANSACTIONAL_HEADER_FIELDS.forEach(
-            (el) => {
-                if (Email.header[el])
-                    delete Email.header[el];
-        })
-        expect(Email.isTransactional()).to.be.false
-    })
-
-    TRANSACTIONAL_HEADER_FIELDS.forEach(
-        (el) => {
-            it(`Should return true for header: ${el}`, () => {
-                Email.header[el] = ['']
-                expect(Email.isTransactional()).to.be.true
-                delete Email.header[el]
-            })
-        }
-    )
-})
-
-describe('EmailMessage.isList', () => {
-
-    it('Should return false when headers not present', () => {
-
-        MAILING_LIST_HEADER_FIELDS.forEach(
-            (el) => {
-                if (Email.header[el])
-                    delete Email.header[el];
-        })
-        expect(Email.isList()).to.be.false
-    })
-
-    MAILING_LIST_HEADER_FIELDS.forEach(
-        (el) => {
-            it(`Should return true for header: ${el}`, () => {
-                Email.header[el] = ['']
-                expect(Email.isList()).to.be.true
-                delete Email.header[el]
-            })
-        }
-    )
-})
-
-describe('EmailMessage.isInConversation', () => {
-
-    it('Should return 0 when key "references" is not present', () => {
-        if (Email.header.references)
-            delete Email.header.references
-        expect(Email.isInConversation()).equal(0)
-    })
-
-    it('Should return 1 if key "references" is present', () => {
-        Email.header.references = ['']
-        expect(Email.isInConversation()).equal(1)
-        delete Email.header.references
-    })
 })
