@@ -125,14 +125,14 @@ describe('EmailMessage.isList', () => {
 describe('EmailMessage.isInConversation', () => {
 
     it('Should return 0 when key "references" is not present', () => {
-        if (Email.header["references"])
-            delete Email.header["references"]
+        if (Email.header.references)
+            delete Email.header.references
         expect(Email.isInConversation()).equal(0)
     })
 
     it('Should return 1 if key "references" is present', () => {
-        Email.header["references"] = ['']
+        Email.header.references = ['']
         expect(Email.isInConversation()).equal(1)
-        delete Email.header["references"]
+        delete Email.header.references
     })
 })
