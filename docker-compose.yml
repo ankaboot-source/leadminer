@@ -27,7 +27,9 @@ services:
     container_name: nginx_server
     build: frontend
     restart: always
-    stdin_open: true
-    tty: true
     depends_on:
       - leadminer-api
+    ports:
+      - 8080:8080
+    volumes:
+      - ./frontend/.nginx:/etc/nginx/conf.d
