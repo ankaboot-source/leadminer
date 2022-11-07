@@ -18,12 +18,12 @@ function isNoReply(emailAddress) {
  * @returns A boolean value.
  */
 function hasSpecificHeader(header, headerFields) {
-return Object.keys(header).some((headerField) => {
-    return headerFields.some((regExHeader) => {
-    const reg = new RegExp(`${regExHeader}`, 'i');
-    return reg.test(headerField);
+    return Object.keys(header).some((headerField) => {
+        return headerFields.some((regExHeader) => {
+            const reg = new RegExp(`${regExHeader}`, 'i');
+            return reg.test(headerField);
+        });
     });
-});
 }
 
 module.exports = {
