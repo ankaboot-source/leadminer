@@ -1,17 +1,10 @@
 const config = require('config');
 
-const POSTGRES_DB = config.has('server.postgres.name')
-  ? config.get('server.postgres.name')
-  : process.env.POSTGRES_DB;
-const POSTGRES_PASSWORD = config.has('server.postgres.password')
-  ? config.get('server.postgres.password')
-  : process.env.POSTGRES_PASSWORD;
-const POSTGRES_USER = config.has('server.postgres.user')
-  ? config.get('server.postgres.user')
-  : process.env.POSTGRES_USER;
-const POSTGRES_HOST = config.has('server.postgres.host')
-  ? config.get('server.postgres.host')
-  : process.env.POSTGRES_HOST;
+const POSTGRES_DB = process.env.PG_NAME ?? config.get('server.postgres.name');
+const POSTGRES_PASSWORD =
+  process.env.PG_PASSWORD ?? config.get('server.postgres.password');
+const POSTGRES_USER = process.env.PG_USER ?? config.get('server.postgres.user');
+const POSTGRES_HOST = process.env.PG_HOST ?? config.get('server.postgres.host');
 
 /* Exporting the database information to be used in the server.js file. */
 module.exports = {

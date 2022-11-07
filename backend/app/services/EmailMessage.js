@@ -6,13 +6,12 @@ const domainHelpers = require('../utils/helpers/domainHelpers');
 const dateHelpers = require('../utils/helpers/dateHelpers');
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
-const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(','),
-  TRANSACTIONAL_HEADER_FIELDS = config
-    .get('email_types.transactional')
-    .split(','),
-  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+const {
+  newsletterHeaders,
+  transactionalHeaders
+} = require('../config/emailHeaders.config');
 
+const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 const logger = require('../utils/logger')(module);
 
 const { supabaseHandlers } = require('./supabase');
@@ -52,7 +51,7 @@ class EmailMessage {
    * @returns True or False
    */
   isNewsletter() {
-    this.hasSpecificHeader(NEWSLETTER_HEADER_FIELDS);
+    this.hasSpecificHeader(newsletterHeaders);
   }
 
   /**
@@ -60,7 +59,7 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isTransactional() {
-    return this.hasSpecificHeader(TRANSACTIONAL_HEADER_FIELDS);
+    return this.hasSpecificHeader(transactionalHeaders);
   }
 
   /**
