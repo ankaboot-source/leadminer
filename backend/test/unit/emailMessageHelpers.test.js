@@ -1,14 +1,13 @@
 const { expect } = require('chai');
 
 const emailMessageHelpers = require('../../app/utils/helpers/emailMessageHelpers');
-const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(',').filter(n => n),
-  TRANSACTIONAL_HEADER_FIELDS = config
-    .get('email_types.transactional')
-    .split(',').filter(n => n),
-  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',').filter(n => n);
-  HEADER_FIELDS = [...NEWSLETTER_HEADER_FIELDS, ...TRANSACTIONAL_HEADER_FIELDS, ...MAILING_LIST_HEADER_FIELDS, "references"] 
+const {
+    newsletterHeaders,
+    transactionalHeaders,
+    mailingListHeaders
+} = require('../../app/config/emailHeaders.config');
 
+const HEADER_FIELDS = [...newsletterHeaders, ...transactionalHeaders, ...mailingListHeaders, "references"]
 const TEST_HEADERS = {
     'delivered-to': [ '' ],
     'received': ['',],
