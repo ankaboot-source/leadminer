@@ -8,7 +8,8 @@ const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
 const {
   newsletterHeaders,
-  transactionalHeaders
+  transactionalHeaders,
+  mailingListHeaders
 } = require('../config/emailHeaders.config');
 
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
@@ -34,24 +35,14 @@ class EmailMessage {
   }
 
   /**
-   * hasSpecificHeader returns true if the email has specific types based on his headers
-   * @returns A boolean value.
-   */
-  hasSpecificHeader(headerFields) {
-    return Object.keys(this.header).some((headerField) => {
-      return headerFields.some((regExHeader) => {
-        const reg = new RegExp(`${regExHeader}`, 'i');
-        return reg.test(headerField);
-      });
-    });
-  }
-
-  /**
    * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
    */
   isNewsletter() {
-    this.hasSpecificHeader(newsletterHeaders);
+    return emailMessageHelpers.hasSpecificHeader(
+      this.header,
+      newsletterHeaders
+    );
   }
 
   /**
@@ -59,7 +50,21 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isTransactional() {
-    return this.hasSpecificHeader(transactionalHeaders);
+    return emailMessageHelpers.hasSpecificHeader(
+      this.header,
+      transactionalHeaders
+    );
+  }
+
+  /**
+   * isList returns true if the email has List-Post in header, and false if it's not
+   * @returns A boolean value.
+   */
+  isList() {
+    return emailMessageHelpers.hasSpecificHeader(
+      this.header,
+      mailingListHeaders
+    );
   }
 
   /**
@@ -67,10 +72,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (Object.keys(this.header).includes('references')) {
-      return 1;
-    }
-    return 0;
+    return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
   }
 
   /**
@@ -179,6 +181,9 @@ class EmailMessage {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
+      }
+      if (this.isList()) {
+        tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
 
