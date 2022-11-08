@@ -10,7 +10,7 @@
                 <div class="text-caption" />
               </q-card-section>
               <div class="text-custom row q-pa-sm">
-                <div class="bg-grey-2 border q-pa-sm col-lg-7 col-md-6">
+                <div class="bg-grey-2 border q-pa-sm col-lg-12 col-md-6" style="padding-left: 10px;border-right-width: 10px;">
                   <div class="text-h6 text-bold col-lg-5 col-md-5">
                     Select mailbox folders &emsp;&emsp;&emsp;&emsp;
                     <q-btn
@@ -32,7 +32,7 @@
                 </div>
                 <div />
 
-                <div class="bg-grey-1 border q-pa-md q-ml-sm col-lg-4 col-md-5">
+                <div class="bg-grey-1 border q-pa-md q-ml-sm col-lg-4 col-md-5" style="display: none;">
                   <div class="text-h6 text-bold">Select fields</div>
                   <div
                     class="text-subtitle2 shadow-2 bborder q-pa-sm text-orange-8"
