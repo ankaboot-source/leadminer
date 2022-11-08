@@ -19,7 +19,7 @@ server:
     host:
     port: 6379
     expiration_timeout: 259200 # expiration timeout for redis entries
-  hash_secret: # hash secret used to hash the users emails addresses
+  hash_secret: super_secret_hash_secret # hash secret used to hash the users emails addresses
   imap:
     authentication_timeout: 10000
     connection_timeout: 90000
