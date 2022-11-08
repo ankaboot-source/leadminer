@@ -49,6 +49,7 @@ services:
       EMAIL_HEADERS_NOREPLY: ${EMAIL_HEADERS_NOREPLY}
       EMAIL_HEADERS_NEWSLETTER: ${EMAIL_HEADERS_NEWSLETTER}
       EMAIL_HEADERS_TRANSACTIONAL: ${EMAIL_HEADERS_TRANSACTIONAL}
+      EMAIL_HEADERS_MAILING_LIST: ${EMAIL_HEADERS_MAILING_LIST}
     depends_on:
       postgres:
         condition: service_healthy # Make sure postgres is ready to accept connections
