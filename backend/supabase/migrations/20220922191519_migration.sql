@@ -152,6 +152,20 @@ begin
 end;
 $$;
 
+create or replace function get_top_name(personid uuid, userid uuid)
+returns varchar
+as
+$$
+BEGIN
+    return (
+      select name FROM public.pointsofcontact 
+      WHERE public.pointsofcontact.personid=get_top_name.personid and public.pointsofcontact.userid=get_top_name.userid
+      group by name
+      order by count(name) desc
+      limit 1
+    );
+END
+$$ language plpgsql;
 
 create or replace function refined_persons(userid uuid) RETURNS void
 language plpgsql
@@ -160,18 +174,19 @@ DECLARE
     person persons%rowtype;
     t text[];
     occurences int;
+    top_name varchar;
     pid uuid;
     uidd uuid;
 BEGIN
-    uidd=refined_persons.userid;
     FOR person IN
         SELECT * FROM persons WHERE _userid=uidd
     LOOP
         t=public.get_tags_per_person(person.id, uidd);
-        occurences=public.get_occurences_per_person(person.id, uidd);
+        occurences=public.get_occurences_per_person(person.id, refined_persons.userid);
+        top_name=public.get_top_name(person.id, refined_persons.userid);
         pid=person.id;
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
-        VALUES(pid, uidd, 0, occurences, t, person.name, person.email)
+        VALUES(pid, uidd, 0, occurences, t, top_name, person.email)
         ON CONFLICT(personid) DO UPDATE SET occurence=occurences,tags=t;
     END LOOP;
 END;
