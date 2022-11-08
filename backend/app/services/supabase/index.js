@@ -81,7 +81,7 @@ class SupabaseHandlers {
         given_name: name,
         family_name: '',
         job_title: '',
-        works_for: 'flyweight'
+        works_for: '' // Will be retrieved with transmutation
       },
       { onConflict: 'email', ignoreDuplicates: false }
     );
