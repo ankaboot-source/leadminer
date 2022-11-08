@@ -2,7 +2,7 @@ import axios from "axios";
 import { boot } from "quasar/wrappers";
 
 const api = axios.create({
-  baseURL: `${process.env.ENDPOINT}/api`,
+  baseURL: `${process.env.SERVER_ENDPOINT}/api`,
   // withCredentials: true,
 });
 export default boot(({ app, store }) => {

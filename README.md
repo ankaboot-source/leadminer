@@ -3,75 +3,78 @@
 
 # ⛏ Leadminer
 
-Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionables and qualified leads.
+Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionable and qualified leads.
 
-## Installation
+## Self-hosting and running Leadminer
 
-### From source
+Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use. You can also run Leadminer without using Docker containers.
 
-Install and configure the following dependencies.
+### Run Leadminer using docker-compose
 
-- node (version 14 or higher)
-- [postgres](https://www.postgresql.org/docs/current/tutorial-start.html)
-- redis
-
-Clone the repository
-
-```shell
- git clone https://github.com/ankaboot-source/leadminer
-```
-
-Install the required node modules.
-
-```shell
- npm install --prefix ./leadminer/backend && npm install --prefix ./leadminer/frontend
-```
-
-### Set the required environment variables.
-
-#### Frontend
-
-- Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
-- Supabase Client Id : `SUPABASE_ID` (**Required**)
-- Supabase Project Token : `SUPABASE_TOKEN` (**Required**)
-
-#### Backend
-
-- There are several environment variables that need to be set. A template of the configuration file is provided in `backend/config/example.yml`.
-
-To configure the application (e.g database host and password), reference **example.yml** `leadminer/backend/config/example.yaml` and create your own config file, depending on your environement you should name it **production.yml** if you are in production, else **default.yml**.(Any other name the app will consider that no config file is provided, so it will throw errors.)
-When working in production environment, don't forget to set `NODE_ENV` to `production`.
-
-#### Development mode
-
-Here you will start the project in **dev mode**
-
-Start the backend API server and the front-end if the backend has succeed.
-
-```shell
- npm start --prefix ./leadminer/backend & npm start --prefix ./leadminer/frontend
-```
-
-### Run leadminer using Docker Compose
-
-Clone the repository and start docker-compose
+1. Clone the repository
 
 ```shell
  git clone https://github.com/ankaboot-source/leadminer
  cd leadminer
 ```
 
-Copy [example.yml](/backend/config/example.yml) to `default.yml` and edit it.
+2. Copy [.env.example](/.env.example) to `.env` and edit it depending on your environment.
+
+3. Start docker-compose
 
 ```
- docker-compose up
+ docker-compose up --build --force-recreate
 ```
 
-open `localhost:8080` and see the result.
+4. Navigate to `localhost:8080`.
+
+### Run Leadminer locally
+
+1. Install and configure the following dependencies:
+
+   - Node JS (version 14 or higher)
+   - [Postgres](https://www.postgresql.org/docs/current/tutorial-start.html)
+   - Redis
+
+2. Clone the repository and install the required node modules.
+
+```sh
+# Clone the repository
+git clone https://github.com/ankaboot-source/leadminer
+cd leadminer
+
+# Install the required node modules.
+npm i --prefix ./backend && npm i --prefix ./frontend
+```
+
+3.  Set the required environment variables:
+
+    - **Frontend (Quasar SPA)** :
+
+      - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
+      - Supabase Client Id : `SUPABASE_ID` (**Required**)
+      - Supabase Project Token : `SUPABASE_TOKEN` (**Required**)
+      - Leadminer API Server Host : `SERVER_ENDPOINT` (**Required**)
+
+      **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
+
+    - **Backend (Express JS Server)** :
+
+      - There are several environment variables that need to be set.A template of the configuration file is provided in `/backend/config/example.yml`.
+
+      - To configure the application, reference **example.yml** `/backend/config/example.yaml` and create your own config file. Depending on your environment, you should name it **production.yml** if you are in production, else **default.yml**.
+
+      - _When working in production environment, don't forget to set `NODE_ENV` to `production`_.
+
+4.  Start the API Server and the Frontend
+
+```sh
+ npm start --prefix ./backend & npm start --prefix ./frontend
+```
 
 ## Support
 
-If you have any trouble, check the issues. We might already have fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
+If you have any trouble, check the [issues tab](https://github.com/ankaboot-source/leadminer/issues). We might already have reported/fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
 
 This app is provided for free as such with no guarantee nor support. For any kind of support, feel free to reach [ankaboot professional services](contact@ankaboot.fr).
 
@@ -87,7 +90,7 @@ For any requests concerning the roadmap, you could either have a look on issues 
 
 Please feel free to contribute. Pull requests are welcome.
 
-1. Fork the project (<https://github.com/ankaboot-source/leadminer>)
+1. Fork this [repository](https://github.com/ankaboot-source/leadminer)
 2. Create your feature branch (`git checkout -b feature/fooBar`)
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
@@ -95,7 +98,7 @@ Please feel free to contribute. Pull requests are welcome.
 
 For major changes, please open an issue first to discuss what you would like to change.
 
-Please make sure to update tests as appropriate.
+_Make sure to update/create tests as appropriate._
 
 ## License
 

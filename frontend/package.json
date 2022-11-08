@@ -6,11 +6,11 @@
   "author": "ankaboot",
   "scripts": {
     "preinstall": "npx npm-force-resolutions",
-    "build": "envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar build",
+    "build": "quasar build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "eslint --ext .vue --ext .js src/",
-		"format": "prettier .  --write",
-    "start": "envsubst < .temp.quasar.conf.js > quasar.conf.js && quasar dev",
+    "format": "prettier .  --write",
+    "start": "quasar dev",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
@@ -33,6 +33,7 @@
   "devDependencies": {
     "@quasar/app": "^3.3.3",
     "chai": "^4.1.2",
+    "dotenv": "^16.0.3",
     "ejs": "3.1.8",
     "eslint": "^8.10.0",
     "eslint-config-prettier": "^8.5.0",

@@ -1,15 +1,21 @@
 version: "3.1"
+
 services:
   postgres:
-    image: "postgres"
-    restart: always
+    image: postgres:alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 2s
+      retries: 5
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
 
   redis:
-    image: redis
-    command: --port ${REDIS_PORT:-6379}
+    image: redis:alpine
+    command: --port ${REDIS_PORT}
     restart: always
+
   leadminer-api:
     image: leadminer-api:git
     container_name: leadminer_api
@@ -17,19 +23,50 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+      LEADMINER_API_PORT: ${LEADMINER_API_PORT}
+      LEADMINER_API_HASH_SECRET: ${LEADMINER_API_HASH_SECRET}
+      LEADMINER_API_LOG_LEVEL: ${LEADMINER_API_LOG_LEVEL}
+      LEADMINER_API_HOST: ${LEADMINER_API_HOST}
+      FRONTEND_HOST: ${FRONTEND_HOST}
+      IMAP_AUTH_TIMEOUT: ${IMAP_AUTH_TIMEOUT}
+      IMAP_CONNECTION_TIMEOUT: ${IMAP_CONNECTION_TIMEOUT}
+      SUPABASE_ID: ${SUPABASE_ID}
+      SUPABASE_TOKEN: ${SUPABASE_TOKEN}
+      PG_HOST: ${PG_HOST}
+      PG_NAME: ${PG_NAME}
+      PG_USER: ${PG_USER}
+      PG_PASSWORD: ${PG_PASSWORD}
+      REDIS_USERNAME: ${REDIS_USERNAME}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_EXPIRATION_TIMEOUT: ${REDIS_EXPIRATION_TIMEOUT}
+      GOOGLE_IMAP_HOST: ${GOOGLE_IMAP_HOST}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_SECRET: ${GOOGLE_SECRET}
+      SENTRY_ENABLED: ${SENTRY_ENABLED}
+      SENTRY_DSN: ${SENTRY_DSN}
+      EMAIL_HEADERS_NOREPLY: ${EMAIL_HEADERS_NOREPLY}
+      EMAIL_HEADERS_NEWSLETTER: ${EMAIL_HEADERS_NEWSLETTER}
+      EMAIL_HEADERS_TRANSACTIONAL: ${EMAIL_HEADERS_TRANSACTIONAL}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy # Make sure postgres is ready to accept connections
     ports:
-      - 8081:8081
+      - 8081:${LEADMINER_API_PORT}
+
   leadminer-server:
     image: leadminer-server:git
     container_name: nginx_server
-    build: frontend
+    build:
+      context: frontend
+      args:
+        SERVER_ENDPOINT: ${LEADMINER_API_HOST}
+        SUPABASE_ID: ${SUPABASE_ID}
+        SUPABASE_TOKEN: ${SUPABASE_TOKEN}
+        GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+    ports:
+      - 8080:80
     restart: always
     depends_on:
       - leadminer-api
-    ports:
-      - 8080:8080
-    volumes:
-      - ./frontend/.nginx:/etc/nginx/conf.d

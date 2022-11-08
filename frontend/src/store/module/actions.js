@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { LocalStorage } from "quasar";
 import {
-  setupEventSourceHelper,
   eventListenersHandler,
+  setupEventSourceHelper,
 } from "../helpers/SSEHelpers";
 const supabase = createClient(
   process.env.SUPABASE_ID,

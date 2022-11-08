@@ -6,14 +6,13 @@ const domainHelpers = require('../utils/helpers/domainHelpers');
 const dateHelpers = require('../utils/helpers/dateHelpers');
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
-const config = require('config'),
-  NEWSLETTER_HEADER_FIELDS = config.get('email_types.newsletter').split(',').filter(n => n),
-  TRANSACTIONAL_HEADER_FIELDS = config
-    .get('email_types.transactional')
-    .split(',').filter(n => n),
-  FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'],
-  MAILING_LIST_HEADER_FIELDS = config.get('email_types.list').split(',').filter(n => n);
+const {
+  newsletterHeaders,
+  transactionalHeaders,
+  mailingListHeaders
+} = require('../config/emailHeaders.config');
 
+const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 const logger = require('../utils/logger')(module);
 
 const { supabaseHandlers } = require('./supabase');
@@ -40,7 +39,10 @@ class EmailMessage {
    * @returns True or False
    */
   isNewsletter() {
-    return emailMessageHelpers.hasSpecificHeader(this.header, NEWSLETTER_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(
+      this.header,
+      newsletterHeaders
+    );
   }
 
   /**
@@ -48,7 +50,10 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isTransactional() {
-    return emailMessageHelpers.hasSpecificHeader(this.header, TRANSACTIONAL_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(
+      this.header,
+      transactionalHeaders
+    );
   }
 
   /**
@@ -56,7 +61,10 @@ class EmailMessage {
    * @returns A boolean value.
    */
   isList() {
-    return emailMessageHelpers.hasSpecificHeader(this.header, MAILING_LIST_HEADER_FIELDS);
+    return emailMessageHelpers.hasSpecificHeader(
+      this.header,
+      mailingListHeaders
+    );
   }
 
   /**
@@ -64,10 +72,7 @@ class EmailMessage {
    * @returns The function isInConversation() is returning a boolean value.
    */
   isInConversation() {
-    if (emailMessageHelpers.hasSpecificHeader(this.header, ['references'])) {
-      return 1;
-    }
-    return 0;
+    return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
   }
 
   /**
@@ -178,9 +183,7 @@ class EmailMessage {
         );
       }
       if (this.isList()) {
-        tags.push(
-          this.buildTag('list', 'List', 2, 'refined')
-        );
+        tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
 
