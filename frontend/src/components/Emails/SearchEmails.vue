@@ -31,18 +31,6 @@
                   <q-spinner-tail v-else color="teal" size="4em" />
                 </div>
                 <div />
-
-                <div class="bg-grey-1 border q-pa-md q-ml-sm col-lg-4 col-md-5 hidden">
-                  <div class="text-h6 text-bold">Select fields</div>
-                  <div
-                    class="text-subtitle2 shadow-2 bborder q-pa-sm text-orange-8"
-                  >
-                    <fields-card
-                      :selectedFields="acceptedFields"
-                      @selectedFieldsChanged="updateSelectedFields"
-                    />
-                  </div>
-                </div>
                 <div class="column col-lg-8">
                   <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-6">
@@ -544,8 +532,7 @@ export default defineComponent({
       host: "",
       scrolledToBottom: false,
       port: "",
-      acceptedFields: ref(["FROM", "TO", "CC", "BCC", "REPLY-TO", "1"]),
-      selectedFields: ref([]),
+      selectedFields: ref(["FROM", "TO", "CC", "BCC", "REPLY-TO", "1"]),
       selectedBoxes: ref([]),
       quasar: useQuasar(),
     };
@@ -621,9 +608,6 @@ export default defineComponent({
   },
 
   methods: {
-    updateSelectedFields(val) {
-      this.selectedFields = val;
-    },
     updateSelectedBoxes(val) {
       this.selectedBoxes = val;
     },
