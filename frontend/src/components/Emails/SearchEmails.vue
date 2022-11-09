@@ -491,7 +491,6 @@ export default defineComponent({
     ProgressCard: defineAsyncComponent(() =>
       import("../cards/ProgressCard.vue")
     ),
-    FieldsCard: defineAsyncComponent(() => import("../cards/FieldsCard.vue")),
     TreeCard: defineAsyncComponent(() => import("../cards/TreeCard.vue")),
   },
   setup() {
