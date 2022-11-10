@@ -27,6 +27,22 @@ end;
 $function$
 ;
 
+create or replace function get_alternate_names(personid uuid, userid uuid)
+returns text[]
+as
+$$
+begin
+    return array
+    (
+        select name from public.pointsofcontact
+        where public.pointsofcontact.personid=get_alternate_names.personid
+        and public.pointsofcontact.userid=get_alternate_names.userid and name != ''
+        group by name
+        order by count(name) desc
+    );
+end
+$$ language plpgsql;
+
 create or replace function update_names_table_persons(personid uuid, userid uuid)
 returns varchar
 as
@@ -49,14 +65,7 @@ begin
     ) into freq_name;
 
     -- get total alternate names
-    select array
-    (
-        select name from public.pointsofcontact
-        where public.pointsofcontact.personid=update_names_table_persons.personid
-        and public.pointsofcontact.userid=update_names_table_persons.userid and name != ''
-        group by name
-        order by count(name) desc
-    ) into result;
+    result = public.get_alternate_names(update_names_table_persons.personid, update_names_table_persons.userid);
 
     -- in case there is no name in the last x days
     if (freq_name = '' or freq_name is null) then
