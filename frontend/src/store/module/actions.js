@@ -18,7 +18,6 @@ export function setupEventSource() {
 //////
 
 function initStore(parent, currentState) {
-  console.log("init store");
   supabase
     .channel("*")
     .on(
@@ -27,12 +26,11 @@ function initStore(parent, currentState) {
         event: "*",
         schema: "public",
         table: "refinedpersons",
-        // filter: `userid=eq.${
-        //   currentState.imapUser.id + currentState.googleUser.id
-        // }`,
+        filter: `userid=eq.${
+          currentState.imapUser.id + currentState.googleUser.id
+        }`,
       },
       (payload) => {
-        console.log("TEST");
         setTimeout(() => {
           parent.commit("example/SET_EMAILS", payload.new);
         }, 50);
