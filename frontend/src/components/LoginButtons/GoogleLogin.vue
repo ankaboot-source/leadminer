@@ -28,20 +28,17 @@ export default {
   },
 
   computed: {
-    policy: function () {
-      return this.policyChecked;
-    },
+    policy: () => this.policyChecked,
   },
 
   methods: {
     handleClickSignIn() {
-      let googleUser = LocalStorage.getItem("googleUser");
+      const googleUser = LocalStorage.getItem("googleUser");
 
       if (googleUser) {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
         this.$router.push("/dashboard");
       } else {
-        let authCode;
         googleSdkLoaded((google) => {
           google.accounts.oauth2
             .initCodeClient({
@@ -51,12 +48,10 @@ export default {
               prompt: "consent",
               fetch_basic_profile: false,
               callback: (response) => {
-                console.log("Handle the response", response);
-                authCode = response.code;
+                const authCode = response.code;
                 if (authCode) {
-                  let data = authCode;
                   this.$store
-                    .dispatch("example/signUpGoogle", { data })
+                    .dispatch("example/signUpGoogle", { data: authCode })
                     .then(() => {
                       LocalStorage.set(
                         "googleUser",
