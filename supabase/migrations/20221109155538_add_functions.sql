@@ -1,15 +1,15 @@
 set check_function_bodies = off;
 
-CREATE OR REPLACE FUNCTION public.get_occurences_per_person(personid uuid, userid uuid)
+CREATE OR REPLACE FUNCTION public.get_occurrences_per_person(personid uuid, userid uuid)
  RETURNS integer
  LANGUAGE plpgsql
 AS $function$
 declare
-  occurences int;
+  occurrences int;
 begin
-    select count(*) into occurences filter (where cc or _to or _from or reply_to or bcc)
-    FROM pointsofcontact where pointsofcontact.personid=get_occurences_per_person.personid and pointsofcontact.userid=get_occurences_per_person.userid;
-  return occurences;
+    select count(*) into occurrences filter (where cc or _to or _from or reply_to or bcc)
+    FROM pointsofcontact where pointsofcontact.personid=get_occurrences_per_person.personid and pointsofcontact.userid=get_occurrences_per_person.userid;
+  return occurrences;
 end;
 $function$
 ;
@@ -27,6 +27,52 @@ end;
 $function$
 ;
 
+create or replace function update_names_table_persons(personid uuid, userid uuid)
+returns varchar
+as
+$$
+declare
+    freq_name varchar;
+    result text[];
+begin
+    -- get top frequent name in x days
+    select
+    (
+        select name FROM public.pointsofcontact
+        inner join public.messages as msg on public.pointsofcontact.messageid = msg.id
+        where public.pointsofcontact.personid=update_names_table_persons.personid
+            and public.pointsofcontact.userid=update_names_table_persons.userid
+            and msg.date >= current_date - interval '365' day
+        group by name
+        order by count(name) desc
+        limit 1
+    ) into freq_name;
+
+    -- get total alternate names
+    select array
+    (
+        select name from public.pointsofcontact
+        where public.pointsofcontact.personid=update_names_table_persons.personid
+        and public.pointsofcontact.userid=update_names_table_persons.userid and name != ''
+        group by name
+        order by count(name) desc
+    ) into result;
+
+    -- in case there is no name in the last x days
+    if (freq_name = '' or freq_name is null) then
+        freq_name = result[1];
+    end if;
+
+    -- update name, alternate_names in table persons
+    update public.persons
+        set name = freq_name, alternate_names = result
+    where public.persons.id = personid;
+
+    -- return top name
+    return freq_name;
+end
+$$ language plpgsql;
+
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -34,20 +80,19 @@ AS $function$
 DECLARE
     person persons%rowtype;
     t text[];
-    occurences int;
-    pid uuid;
-    uidd uuid;
+    occurrences int;
+    person_name varchar;
 BEGIN
-    uidd=refined_persons.userid;
     FOR person IN
-        SELECT * FROM persons WHERE _userid=uidd
+        SELECT * FROM persons WHERE _userid=refined_persons.userid
     LOOP
-        t=public.get_tags_per_person(person.id, uidd);
-        occurences=public.get_occurences_per_person(person.id, uidd);
-        pid=person.id;
+        t=public.get_tags_per_person(person.id, refined_persons.userid);
+        occurrences=public.get_occurrences_per_person(person.id, refined_persons.userid);
+        person_name=public.update_names_table_persons(person.id, refined_persons.userid);
+
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
-        VALUES(pid, uidd, 0, occurences, t, person.name, person.email)
-        ON CONFLICT(personid) DO UPDATE SET occurence=occurences,tags=t;
+        VALUES(person.id, refined_persons.userid, 0, occurrences, t, person_name, person.email)
+        ON CONFLICT(personid) DO UPDATE SET occurence=occurrences,tags=t;
     END LOOP;
 END;
 $function$
