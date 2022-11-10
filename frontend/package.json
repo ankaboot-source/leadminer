@@ -10,7 +10,7 @@
     "test:unit": "vue-cli-service test:unit",
     "lint": "eslint --ext .vue --ext .js src/",
     "format": "prettier .  --write",
-    "start": "quasar dev",
+    "dev": "quasar dev",
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {

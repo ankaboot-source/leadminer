@@ -18,19 +18,21 @@ export function setupEventSource() {
 //////
 
 function initStore(parent, currentState) {
+  console.log("init store");
   supabase
-    .channel("leadminerProject")
+    .channel("*")
     .on(
       "postgres_changes",
       {
         event: "*",
         schema: "public",
         table: "refinedpersons",
-        filter: `userid=eq.${
-          currentState.imapUser.id + currentState.googleUser.id
-        }`,
+        // filter: `userid=eq.${
+        //   currentState.imapUser.id + currentState.googleUser.id
+        // }`,
       },
       (payload) => {
+        console.log("TEST");
         setTimeout(() => {
           parent.commit("example/SET_EMAILS", payload.new);
         }, 50);

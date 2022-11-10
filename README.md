@@ -72,6 +72,35 @@ npm i --prefix ./backend && npm i --prefix ./frontend
  npm start --prefix ./backend & npm start --prefix ./frontend
 ```
 
+### Run Leadminer in development mode
+
+You can easily get started with development mode by following theses steps:
+
+1. Install the required dependencies
+
+```sh
+npm run install-deps
+```
+
+2. Copy `/backend/config/development.example.yml` and `/frontend/.env.example` to `/backend/config/development.yml` and `/frontend/.env` respectively, then add the missing configurations (Google client Id and secret -- You can set the `SUPABASE_TOKEN` after starting supabase services).
+
+3. Start your environment by running the following commands:
+
+```sh
+# Start supabase services
+npm run dev:supabase
+# Make sure to update SUPABASE_TOKEN using the provided anon_key in both frontend and backend
+
+# Start required services (Redis) -- You can skip this step if you want to use your local instances
+docker-compose -f docker-compose.dev.yml up
+
+# Start the backend in development mode
+npm run dev:backend
+
+# Start the frontend in development mode
+npm run dev:frontend
+```
+
 ## Support
 
 If you have any trouble, check the [issues tab](https://github.com/ankaboot-source/leadminer/issues). We might already have reported/fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
