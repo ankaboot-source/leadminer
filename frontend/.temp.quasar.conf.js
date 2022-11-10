@@ -7,7 +7,7 @@
 // https://quasar.dev/quasar-cli/quasar-conf-js
 
 const { configure } = require("quasar/wrappers");
-module.exports = configure(function (ctx) {
+module.exports = configure((ctx) => {
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
     supportTS: false,
@@ -42,10 +42,10 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: ctx.dev ? "http://localhost:8081" : "$SERVER_ENDPOINT",
-        GG_CLIENT_ID: "$GG_CLIENT_ID",
-        SUPABASE_ID: "$SUPABASE_ID",
-        SUPABASE_TOKEN: "$SUPABASE_TOKEN",
+        SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
+        SUPABASE_ID: process.env.SUPABASE_ID,
+        SUPABASE_TOKEN: process.env.SUPABASE_TOKEN,
+        GG_CLIENT_ID: process.env.GG_CLIENT_ID,
       },
       // transpile: false,
 
