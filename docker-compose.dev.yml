@@ -1,0 +1,14 @@
+version: "3.1"
+
+services:
+  postgres-test:
+    image: postgres:alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
