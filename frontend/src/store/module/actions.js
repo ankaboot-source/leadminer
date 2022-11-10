@@ -19,7 +19,7 @@ export function setupEventSource() {
 
 function initStore(parent, currentState) {
   supabase
-    .channel("leadminerProject")
+    .channel("*")
     .on(
       "postgres_changes",
       {

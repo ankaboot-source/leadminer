@@ -7,7 +7,15 @@
 // https://quasar.dev/quasar-cli/quasar-conf-js
 
 const { configure } = require("quasar/wrappers");
-module.exports = configure(function (ctx) {
+
+// This will load from `.env` if it exists, but not override existing `process.env.*` values
+require("dotenv").config();
+// process.env now contains the terminal variables and the ones from the .env file
+// Precedence:
+//   1. Environment variables (API_URL=https://api.com quasar build)
+//   2. `.env` file
+
+module.exports = configure(() => {
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
     supportTS: false,
@@ -42,10 +50,10 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
-        ENDPOINT: ctx.dev ? "http://localhost:8081" : "$SERVER_ENDPOINT",
-        GG_CLIENT_ID: "$GG_CLIENT_ID",
-        SUPABASE_ID: "$SUPABASE_ID",
-        SUPABASE_TOKEN: "$SUPABASE_TOKEN",
+        SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
+        SUPABASE_ID: process.env.SUPABASE_ID,
+        SUPABASE_TOKEN: process.env.SUPABASE_TOKEN,
+        GG_CLIENT_ID: process.env.GG_CLIENT_ID,
       },
       // transpile: false,
 
