@@ -13,9 +13,6 @@ module.exports = (app, sse, client) => {
   router.post('/login', imap.loginToAccount);
   // Retrieve emails based on user prefrences for a given imap account
   router.get('/:id/boxes', (req, res) => {
-    process.on('uncaughtException', () => {
-      res.status(500).end();
-    });
     imap.getImapBoxes(req, res, sse);
   });
   // Retrieve emails based on user prefrences for a given imap account

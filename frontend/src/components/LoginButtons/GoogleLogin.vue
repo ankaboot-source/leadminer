@@ -2,28 +2,22 @@
   <div>
     <q-btn
       :disable="!policy"
-      @click="handleClickSignIn"
       class="text-capitalize text-weight-regular"
       label="Start mining"
       color="teal"
+      @click="handleClickSignIn"
     />
   </div>
 </template>
 
 <script>
+import { LocalStorage, useQuasar } from "quasar";
 import { googleSdkLoaded } from "vue3-google-login";
-import { useQuasar, LocalStorage } from "quasar";
 export default {
-  name: "googleSignin",
+  name: "GoogleSignin",
   props: {
     msg: String,
     policyChecked: Boolean,
-  },
-
-  computed: {
-    policy: function () {
-      return this.policyChecked;
-    },
   },
 
   data() {
@@ -31,6 +25,12 @@ export default {
       user: "",
       quasar: useQuasar(),
     };
+  },
+
+  computed: {
+    policy: function () {
+      return this.policyChecked;
+    },
   },
 
   methods: {
@@ -47,7 +47,7 @@ export default {
             .initCodeClient({
               client_id: process.env.GG_CLIENT_ID,
               scope:
-                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile",
+                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
               prompt: "consent",
               fetch_basic_profile: false,
               callback: (response) => {

@@ -24,18 +24,15 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   upsertMessage(messageId, userID, channel, folderPath, date) {
-    return this.supabaseClient.from('messages').insert(
-      {
-        message_id: messageId,
-        userid: userID,
-        channel,
-        folder_path: folderPath,
-        date,
-        listid: '',
-        reference: ''
-      },
-      { ignoreDuplicates: false }
-    );
+    return this.supabaseClient.from('messages').upsert({
+      message_id: messageId,
+      userid: userID,
+      channel,
+      folder_path: folderPath,
+      date,
+      listid: '',
+      reference: ''
+    });
   }
 
   /**
