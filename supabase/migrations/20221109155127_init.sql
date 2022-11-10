@@ -151,16 +151,13 @@ alter table "public"."tags" validate constraint "tags_personid_fkey";
 
 alter table "public"."tags" add constraint "tags_personid_name_key" UNIQUE using index "tags_personid_name_key";
 
+-- SETUP REALTIME --
 begin;
-
-  -- remove the supabase_realtime publication
   drop publication if exists supabase_realtime;
-
-  -- re-create the supabase_realtime publication with no tables and only for insert
+  -- Re-create the supabase_realtime publication with no tables and 
+	-- for insert, update and delete operation
   create publication supabase_realtime with (publish = 'insert,update,delete');
-
 commit;
 
-
--- add a table to the publication
+-- Add a table to the publication
 alter publication supabase_realtime add table public.refinedpersons;

@@ -101,6 +101,19 @@ npm run dev:backend
 npm run dev:frontend
 ```
 
+- When altering the database schema or creating new tables, functions..., make sure to run these commands (While supabase services are up):
+
+```sh
+# List the changes that you made
+npx supabase db diff --use-migra
+
+# Create a migration for the changes that you have made
+npx supabase db diff --use-migra -f <name_of_migration>
+
+# Stop supabase services once you're done
+npx supabase stop
+```
+
 ## Support
 
 If you have any trouble, check the [issues tab](https://github.com/ankaboot-source/leadminer/issues). We might already have reported/fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
