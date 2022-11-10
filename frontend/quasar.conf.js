@@ -7,7 +7,15 @@
 // https://quasar.dev/quasar-cli/quasar-conf-js
 
 const { configure } = require("quasar/wrappers");
-module.exports = configure((ctx) => {
+
+// This will load from `.env` if it exists, but not override existing `process.env.*` values
+require("dotenv").config();
+// process.env now contains the terminal variables and the ones from the .env file
+// Precedence:
+//   1. Environment variables (API_URL=https://api.com quasar build)
+//   2. `.env` file
+
+module.exports = configure(() => {
   return {
     // https://quasar.dev/quasar-cli/supporting-ts
     supportTS: false,
