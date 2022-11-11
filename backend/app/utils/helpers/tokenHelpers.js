@@ -57,7 +57,7 @@ async function generateXOauthToken(user) {
 
   const oauth2Client = getOAuthClient();
 
-  const tokenInfo = await oauth2Client.getTokenInfo(access_Token.access_token);
+  const tokenInfo = await oauth2Client.getTokenInfo(access_Token);
   if (
     Number(user.token.expiration) + 8 >
     Math.floor(tokenInfo.expiry_date / 1000)
@@ -67,9 +67,9 @@ async function generateXOauthToken(user) {
   // create xoauth2 token
   const xoauth2gen = xoauth2.createXOAuth2Generator({
       user: user.email,
-      clientId: process.env.GG_CLIENT_ID,
-      clientSecret: process.env.GG_CLIENT_SECRET,
-      accessToken: access_Token.access_token
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+      accessToken: access_Token
     }),
     authData = `user=${user.email}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`,
     xoauth2_token = new Buffer.from(authData, 'utf-8').toString('base64');

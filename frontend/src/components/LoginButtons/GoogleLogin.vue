@@ -2,28 +2,22 @@
   <div>
     <q-btn
       :disable="!policy"
-      @click="handleClickSignIn"
       class="text-capitalize text-weight-regular"
       label="Start mining"
       color="teal"
+      @click="handleClickSignIn"
     />
   </div>
 </template>
 
 <script>
+import { LocalStorage, useQuasar } from "quasar";
 import { googleSdkLoaded } from "vue3-google-login";
-import { useQuasar, LocalStorage } from "quasar";
 export default {
-  name: "googleSignin",
+  name: "GoogleSignin",
   props: {
     msg: String,
     policyChecked: Boolean,
-  },
-
-  computed: {
-    policy: function () {
-      return this.policyChecked;
-    },
   },
 
   data() {
@@ -33,30 +27,31 @@ export default {
     };
   },
 
+  computed: {
+    policy: () => this.policyChecked,
+  },
+
   methods: {
     handleClickSignIn() {
-      let googleUser = LocalStorage.getItem("googleUser");
+      const googleUser = LocalStorage.getItem("googleUser");
 
       if (googleUser) {
         this.$store.commit("example/SET_GOOGLE_USER", googleUser);
         this.$router.push("/dashboard");
       } else {
-        let authCode;
         googleSdkLoaded((google) => {
           google.accounts.oauth2
             .initCodeClient({
               client_id: process.env.GG_CLIENT_ID,
               scope:
-                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile",
+                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
               prompt: "consent",
               fetch_basic_profile: false,
               callback: (response) => {
-                console.log("Handle the response", response);
-                authCode = response.code;
+                const authCode = response.code;
                 if (authCode) {
-                  let data = authCode;
                   this.$store
-                    .dispatch("example/signUpGoogle", { data })
+                    .dispatch("example/signUpGoogle", { data: authCode })
                     .then(() => {
                       LocalStorage.set(
                         "googleUser",
