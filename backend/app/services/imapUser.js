@@ -8,7 +8,7 @@ class ImapUser {
    * refresh token, and port
    * @returns An object with the user's email, id, token, refreshToken, and port.
    */
-  getUserConnetionDataFromQuery() {
+  getUserConnectionDataFromQuery() {
     const user = {};
 
     if (this.query.access_token) {

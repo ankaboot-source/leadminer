@@ -173,24 +173,24 @@ exports.getImapBoxes = async (req, res, sse) => {
     }
   }
   // define user object from user request query
-  const user = new ImapUser(query).getUserConnetionDataFromQuery(),
-    // initialise imap server connection
-    server = new EmailServer(user, sse),
-    // initialise EmailAccountMiner to mine imap tree
-    miner = new EmailAccountMiner(server, user, {}, {}, '', '', ''),
-    // get tree
-    [tree, error] = await miner.getTree();
+  const user = new ImapUser(query).getUserConnectionDataFromQuery();
+  // initialise imap server connection
+  const server = new EmailServer(user, sse);
+  // initialise EmailAccountMiner to mine imap tree
+  const miner = new EmailAccountMiner(server, user, {}, {}, '', '', '');
+  // get tree
+  const [tree, error] = await miner.getTree();
 
   if (error) {
     logger.error('Mining IMAP tree failed.', {
       error,
       emailHash: hashHelpers.hashEmail(user.email)
     });
-    res.status(400).send({
+    return res.status(400).send({
       message: 'Unable to fetch IMAP folders.'
     });
   }
-  if (tree) {
+  if (tree.length > 0) {
     logger.info('Mining IMAP tree succeeded.', {
       emailHash: hashHelpers.hashEmail(user.email)
     });
@@ -240,13 +240,12 @@ exports.getEmails = async (req, res, sse) => {
     }
   }
   // define user object from user request query
-  const user = new ImapUser(query).getUserConnetionDataFromQuery(),
+  const user = new ImapUser(query).getUserConnectionDataFromQuery(),
     // initialise imap server connection
     server = new EmailServer(user, sse);
   // defines events, and workers
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
-    
 
   // initialise EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
@@ -256,7 +255,6 @@ exports.getEmails = async (req, res, sse) => {
     ['HEADER', '1'],
     req.query.boxes,
     eventEmitter
-
   );
 
   miner.mine();

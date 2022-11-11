@@ -27,28 +27,22 @@ exports.signUpWithGoogle = (req, res) => {
     return;
   }
 
-  const oauth2Client = getOAuthClient();
+  const oAuth2Client = getOAuthClient();
 
-  oauth2Client.getToken(req.body.authCode, async (err, tokens) => {
+  oAuth2Client.getToken(req.body.authCode, async (err, tokens) => {
     if (err || !tokens) {
-      res.status(400).send({
-        error: `Can't authenticate using google account, reason : ${err}`
-      });
-      return;
+      Promise.resolve(
+        res.status(400).send({
+          error: `Can't authenticate using google account, reason : ${err}`
+        })
+      );
     }
 
-    oauth2Client.setCredentials({
+    oAuth2Client.setCredentials({
       access_token: tokens.access_token
     });
 
-    // const oauth2 = googleApi.oauth2({
-    //     auth: oauth2Client,
-    //     version: "v2",
-    //   }),
-    // get user infos( email, id, photo...)
-    //response = await oauth2.userinfo.get({}),
-
-    const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
+    const tokenInfo = await oAuth2Client.getTokenInfo(tokens.access_token);
 
     const googleUser = {
       email: tokenInfo.email,
@@ -73,8 +67,9 @@ exports.signUpWithGoogle = (req, res) => {
 
       res.status(200).send({
         googleUser: {
-          email: newGoogleUser.google_users.dataValues.email,
-          id: newGoogleUser.google_users.dataValues.id,
+          email: newGoogleUser.dataValues.email,
+          id: newGoogleUser.dataValues.id,
+          access_token: tokens.access_token,
           token: {
             access_token: tokens.access_token,
             expiration: tokenInfo.exp
@@ -96,6 +91,7 @@ exports.signUpWithGoogle = (req, res) => {
         googleUser: {
           email: dbGoogleUser.email,
           id: dbGoogleUser.id,
+          access_token: tokens.access_token,
           token: {
             access_token: tokens.access_token,
             expiration: tokenInfo.exp

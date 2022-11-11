@@ -326,11 +326,10 @@
 </template>
 
 <script>
-import { defineComponent, defineAsyncComponent } from "vue";
-import { exportFile, useQuasar, copyToClipboard, LocalStorage } from "quasar";
-import { ref } from "vue";
-import { mapState } from "vuex";
 import objectScan from "object-scan";
+import { copyToClipboard, exportFile, LocalStorage, useQuasar } from "quasar";
+import { defineAsyncComponent, defineComponent, ref } from "vue";
+import { mapState } from "vuex";
 
 const columns = [
   {
