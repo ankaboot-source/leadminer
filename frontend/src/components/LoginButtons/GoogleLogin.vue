@@ -28,7 +28,7 @@ export default {
   },
 
   computed: {
-    policy: () => this.policyChecked,
+    policy: (p) => p.policyChecked,
   },
 
   methods: {
