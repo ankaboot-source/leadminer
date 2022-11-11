@@ -67,8 +67,9 @@ exports.signUpWithGoogle = (req, res) => {
 
       res.status(200).send({
         googleUser: {
-          email: newGoogleUser.google_users.dataValues.email,
-          id: newGoogleUser.google_users.dataValues.id,
+          email: newGoogleUser.dataValues.email,
+          id: newGoogleUser.dataValues.id,
+          access_token: tokens.access_token,
           token: {
             access_token: tokens.access_token,
             expiration: tokenInfo.exp
