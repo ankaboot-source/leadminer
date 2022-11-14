@@ -3,18 +3,13 @@ const { initializeSentryIfNeeded } = require('./middleware/sentry');
 const logger = require('./utils/logger')(module);
 const { SSE } = require('express-sse');
 const path = require('path');
-// const cookieParser = require('cookie-parser');
 const { corsMiddleware } = require('./middleware/cors');
-// const { csrfProtection, csrfHandler } = require('./middleware/csrf');
 
 const app = express();
 
 initializeSentryIfNeeded(app);
 
 app.use(corsMiddleware);
-// app.use(cookieParser());
-// app.use(csrfProtection);
-// app.use(csrfHandler);
 app.use((_, res, next) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Content-Type', 'text/event-stream');
