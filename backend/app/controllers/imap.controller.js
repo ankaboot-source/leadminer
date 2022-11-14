@@ -9,7 +9,6 @@ const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
 const { imapInfo } = require('../models');
-const { sse } = require('../middleware/sse');
 
 function temporaryImapConnection(imapInfo, reqBody) {
   return new Imap({
@@ -32,24 +31,22 @@ function temporaryImapConnection(imapInfo, reqBody) {
  * @param  {} req
  * @param  {} res
  */
-exports.createImapInfo = (req, res, next) => {
-  const { email, host, tls, port } = req.body;
-
-  if (!email || !host) {
-    res.status(400);
-    next(new Error('Email and host are required for IMAP.'));
+exports.createImapInfo = (req, res) => {
+  'use strict';
+  if (!req.body.email || !req.body.host) {
+    return res.status(400).json({
+      error: 'Content can not be empty!'
+    });
   }
-
   // imapInfo object
   const imapInfo = {
-    email,
-    host,
-    port: port || 993,
-    tls: tls ? tls : true
-  };
-
-  // initiate imap client
-  const imap = temporaryImapConnection(imapInfo, req.body);
+      email: req.body.email,
+      host: req.body.host,
+      port: req.body.port || 993,
+      tls: req.body.tls ? req.body.tls : true
+    },
+    // initiate imap client
+    imap = temporaryImapConnection(imapInfo, req.body);
   // Ensures that the account exists
 
   imap.connect();
@@ -63,10 +60,19 @@ exports.createImapInfo = (req, res, next) => {
             res.status(200).send({ imap: data });
           })
           .catch((err) => {
-            err.message = 'Failed to create IMAP user.';
-            next(err);
+            logger.error('Unable to create account with this email.', {
+              error: err,
+              email: req.body.email
+            });
+            res.status(500).send({
+              error:
+                'Some error occurred while creating your account imap info.'
+            });
           });
       } else {
+        logger.info('On signup : An account with this email already exists.', {
+          email: req.body.email
+        });
         res.status(200).send({
           message: 'Your account already exists !',
           imap
@@ -77,8 +83,14 @@ exports.createImapInfo = (req, res, next) => {
   });
   // The imap account does not exists or connexion denied
   imap.once('error', (err) => {
-    err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
-    next(err);
+    logger.error('Unable to connect to imap account with this email and host', {
+      error: err,
+      email: req.body.email,
+      host: req.body.host
+    });
+    res.status(500).send({
+      error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
+    });
   });
 };
 /**
@@ -86,15 +98,15 @@ exports.createImapInfo = (req, res, next) => {
  * @param  {} req
  * @param  {} res
  */
-exports.loginToAccount = async (req, res, next) => {
-  const { email } = req.body;
-
-  if (!email) {
-    res.status(400);
-    next(new Error('Email is required to login'));
+exports.loginToAccount = async (req, res) => {
+  'use strict';
+  if (!req.body.email) {
+    res.status(400).send({
+      error: 'Content can not be empty!'
+    });
+    return;
   }
-
-  const imap = await ImapInfo.findOne({ where: { email } });
+  const imap = await ImapInfo.findOne({ where: { email: req.body.email } });
   if (imap === null) {
     this.createImapInfo(req, res);
   } else {
@@ -104,7 +116,7 @@ exports.loginToAccount = async (req, res, next) => {
     imapConnection.once('ready', () => {
       if (imap) {
         logger.info('Account succesfully logged in.', {
-          email
+          email: req.body.email
         });
         res.status(200).send({
           imap
@@ -113,8 +125,14 @@ exports.loginToAccount = async (req, res, next) => {
       }
     });
     imapConnection.on('error', (err) => {
-      err.message = 'Unable to connect to IMAP account.';
-      next(err);
+      logger.error('Unable to connect to imap account.', {
+        error: err,
+        email: req.body.email,
+        host: req.body.host
+      });
+      res.status(500).send({
+        error: `Can't connect to imap account with email ${req.body.email} and host ${req.body.host} : **Error** ${err}`
+      });
     });
   }
 };
@@ -125,10 +143,14 @@ exports.loginToAccount = async (req, res, next) => {
  * @param  {object} res - http response to be sent
  */
 /* A function that is called when a user wants to get his imap folders tree. */
-exports.getImapBoxes = async (req, res, next) => {
+exports.getImapBoxes = async (req, res, sse) => {
+  ('use strict');
   if (!req.headers['x-imap-login']) {
-    res.status(400);
-    next(new Error('An x-imap-login header field is required.'));
+    logger.error('No user login! Unable to handle request without a login');
+    return res.status(404).send({
+      message: 'Bad request',
+      error: 'Bad request! please check login!'
+    });
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
@@ -142,6 +164,7 @@ exports.getImapBoxes = async (req, res, next) => {
       query.refresh_token = google_user.dataValues.refreshToken;
     }
   } else {
+    logger.debug(query.id, query.email);
     const imap_user = await imapInfo.findOne({ where: { id: query.id } });
 
     if (imap_user) {
@@ -159,9 +182,13 @@ exports.getImapBoxes = async (req, res, next) => {
   const [tree, error] = await miner.getTree();
 
   if (error) {
-    error.message = 'Unable to fetch IMAP folders.';
-    error.emailHash = hashHelpers.hashEmail(user.email);
-    next(error);
+    logger.error('Mining IMAP tree failed.', {
+      error,
+      emailHash: hashHelpers.hashEmail(user.email)
+    });
+    return res.status(400).send({
+      message: 'Unable to fetch IMAP folders.'
+    });
   }
   if (tree.length > 0) {
     logger.info('Mining IMAP tree succeeded.', {
@@ -178,16 +205,21 @@ exports.getImapBoxes = async (req, res, next) => {
  * Get Emails from imap server.
  * @param  {object} req - user request
  * @param  {object} res - http response to be sent
+ * @param  {object} sse - server sent event instance
  */
-exports.getEmails = async (req, res, next) => {
+exports.getEmails = async (req, res, sse) => {
+  'use strict';
   if (!req.headers['x-imap-login']) {
-    if (!req.headers['x-imap-login']) {
-      res.status(400);
-      next(new Error('An x-imap-login header field is required.'));
-    }
+    logger.error('No user login! Unable to handle request without a user');
+    return res.status(404).send({
+      message: 'Bad request',
+      error: 'Bad request! please check login!'
+    });
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
+
+  logger.debug(query.id, query.email);
 
   if (query.access_token) {
     const google_user = await googleUser.findOne({

@@ -19,72 +19,87 @@ function getOAuthClient() {
  * @param  {} req
  * @param  {} res
  */
-exports.signUpWithGoogle = async (req, res, next) => {
-  const { authCode } = req.body;
-
-  if (!authCode) {
-    res.status(400);
-    return next(
-      new Error('An authorization code is required to signup with Google.')
-    );
+exports.signUpWithGoogle = (req, res) => {
+  if (!req.body?.authCode) {
+    res.status(400).send({
+      error: 'No valid authorization code !'
+    });
+    return;
   }
 
   const oAuth2Client = getOAuthClient();
 
-  try {
-    const { tokens } = await oAuth2Client.getToken(authCode);
-    const { access_token, refresh_token } = tokens;
+  oAuth2Client.getToken(req.body.authCode, async (err, tokens) => {
+    if (err || !tokens) {
+      Promise.resolve(
+        res.status(400).send({
+          error: `Can't authenticate using google account, reason : ${err}`
+        })
+      );
+    }
 
     oAuth2Client.setCredentials({
-      access_token
+      access_token: tokens.access_token
     });
-    const { exp, email } = await oAuth2Client.getTokenInfo(access_token);
+
+    const tokenInfo = await oAuth2Client.getTokenInfo(tokens.access_token);
+
+    const googleUser = {
+      email: tokenInfo.email,
+      refreshToken: tokens.refresh_token
+    };
 
     const dbGoogleUser = await googleUsers.findOne({
-      where: { email }
+      where: { email: googleUser.email }
     });
 
     if (!dbGoogleUser) {
-      const newGoogleUser = await googleUsers.create({
-        email,
-        refreshToken: refresh_token
-      });
-      return res.status(200).send({
+      const newGoogleUser = await googleUsers
+        .create(googleUser)
+        .catch((googleUserCreationError) => {
+          logger.error('Unable to create account for user.', {
+            error: googleUserCreationError
+          });
+          res.status(500).send({
+            error: 'An error has occurred while creating your account.'
+          });
+        });
+
+      res.status(200).send({
         googleUser: {
           email: newGoogleUser.dataValues.email,
           id: newGoogleUser.dataValues.id,
-          access_token,
+          access_token: tokens.access_token,
           token: {
-            access_token,
-            expiration: exp
+            access_token: tokens.access_token,
+            expiration: tokenInfo.exp
           }
         }
       });
-    }
-
-    if (dbGoogleUser.refreshToken !== refresh_token) {
+    } else if (dbGoogleUser.refreshToken !== googleUser.refreshToken) {
       await googleUsers.update(
         { refreshToken: dbGoogleUser.dataValues.refreshToken },
         { where: { id: dbGoogleUser.dataValues.id } }
       );
 
-      return res.status(200).send({
+      logger.info('On signUp With Google : Account already exists.', {
+        googleUserId: googleUser.id
+      });
+
+      res.status(200).send({
         message: 'Your account already exists !',
         googleUser: {
-          email: dbGoogleUser.dataValues.email,
-          id: dbGoogleUser.dataValues.id,
-          access_token,
+          email: dbGoogleUser.email,
+          id: dbGoogleUser.id,
+          access_token: tokens.access_token,
           token: {
-            access_token,
-            expiration: exp
+            access_token: tokens.access_token,
+            expiration: tokenInfo.exp
           }
         }
       });
     }
-  } catch (error) {
-    error.message = 'Failed to signup with Google.';
-    return next(error);
-  }
+  });
 };
 
 /**
@@ -92,6 +107,7 @@ exports.signUpWithGoogle = async (req, res, next) => {
  * @param  {} refresh_token stored token
  */
 function refreshAccessToken(refresh_token) {
+  logger.debug('refreshing user token');
   return new Promise(async (resolve, reject) => {
     // return OAuth2 client
     const oauth2Client = getOAuthClient();

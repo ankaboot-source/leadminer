@@ -1,13 +1,9 @@
 const express = require('express');
 const { initializeSentryIfNeeded } = require('./middleware/sentry');
 const logger = require('./utils/logger')(module);
+const { SSE } = require('express-sse');
 const path = require('path');
 const { corsMiddleware } = require('./middleware/cors');
-const { notFound } = require('./middleware/notFound');
-const { errorLogger } = require('./middleware/errorLogger');
-const { errorHandler } = require('./middleware/errorHandler');
-const imapRouter = require('./routes/imap.routes');
-const { sse } = require('./middleware/sse');
 
 const app = express();
 
@@ -34,6 +30,8 @@ app.get('/', (_, res) => {
   return res.json({ message: 'Welcome to leadminer application.' });
 });
 
+// attach sse to api/stream endpoint
+const sse = new SSE();
 app.get('/api/stream', sse.init);
 app.get('/logs', (_, res, next) => {
   const filePath = path.resolve(__dirname, '..', 'logs/server.log');
@@ -48,10 +46,7 @@ app.get('/logs', (_, res, next) => {
   });
 });
 
-app.use('/api/imap', imapRouter);
-
-app.use(notFound);
-app.use(errorLogger);
-app.use(errorHandler);
+// The io instance is set in Express so it can be grabbed in a route
+require('./routes/imap.routes')(app, sse);
 
 module.exports = { app };
