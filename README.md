@@ -52,8 +52,8 @@ npm i --prefix ./backend && npm i --prefix ./frontend
     - **Frontend (Quasar SPA)** :
 
       - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
-      - Supabase Client Id : `SUPABASE_ID` (**Required**)
-      - Supabase Project Token : `SUPABASE_TOKEN` (**Required**)
+      - Supabase Project Url : `SUPABASE_PROJECT_URL` (**Required**)
+      - Supabase Project Token : `SUPABASE_SECRET_PROJECT_TOKEN` (**Required**)
       - Leadminer API Server Host : `SERVER_ENDPOINT` (**Required**)
 
       **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
@@ -82,14 +82,14 @@ You can easily get started with development mode by following theses steps:
 npm run install-deps
 ```
 
-2. Copy `/backend/config/development.example.yml` and `/frontend/.env.example` to `/backend/config/development.yml` and `/frontend/.env` respectively, then add the missing configurations (Google client Id and secret -- You can set the `SUPABASE_TOKEN` after starting supabase services).
+2. Copy `/backend/config/development.example.yml` and `/frontend/.env.example` to `/backend/config/development.yml` and `/frontend/.env` respectively, then add the missing configurations (Google client Id and secret -- You can set the `SUPABASE_SECRET_PROJECT_TOKEN` after starting supabase services).
 
 3. Start your environment by running the following commands:
 
 ```sh
 # Start supabase services
 npm run dev:supabase
-# Make sure to update SUPABASE_TOKEN using the provided anon_key in both frontend and backend
+# Make sure to update SUPABASE_SECRET_PROJECT_TOKEN using the provided anon_key in both frontend and backend
 
 # Start required services (Redis) -- You can skip this step if you want to use your local instances
 docker-compose -f docker-compose.dev.yml up

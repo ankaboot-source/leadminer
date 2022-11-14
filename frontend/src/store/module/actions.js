@@ -5,8 +5,8 @@ import {
   setupEventSourceHelper,
 } from "../helpers/SSEHelpers";
 const supabase = createClient(
-  process.env.SUPABASE_ID,
-  process.env.SUPABASE_TOKEN
+  process.env.SUPABASE_PROJECT_URL,
+  process.env.SUPABASE_SECRET_PROJECT_TOKEN
 );
 //register source globally so we can access from anywere
 let source;

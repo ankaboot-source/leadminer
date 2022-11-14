@@ -51,8 +51,9 @@ module.exports = configure(() => {
       vueRouterMode: "history", // available values: 'hash', 'history'
       env: {
         SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
-        SUPABASE_ID: process.env.SUPABASE_ID,
-        SUPABASE_TOKEN: process.env.SUPABASE_TOKEN,
+        SUPABASE_PROJECT_URL: process.env.SUPABASE_PROJECT_URL,
+        SUPABASE_SECRET_PROJECT_TOKEN:
+          process.env.SUPABASE_SECRET_PROJECT_TOKEN,
         GG_CLIENT_ID: process.env.GG_CLIENT_ID,
       },
       // transpile: false,
