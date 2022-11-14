@@ -9,8 +9,6 @@ function initializeSentryIfNeeded(app) {
     return;
   }
 
-  logger.debug('Setting up sentry...');
-  // init the sentry instance
   Sentry.init({
     dsn: sentryDsn,
     integrations: [
