@@ -1,10 +1,11 @@
 /* istanbul ignore file */
 const { OAuth2Client } = require('google-auth-library');
-const googleUsers = require('../models').googleUsers;
+
 const {
   googleClientId,
   googleClientSecret
 } = require('../config/google.config');
+const { supabaseHandlers } = require('../services/supabase');
 const RedirectionUrl = 'postmessage';
 
 // returns Oauth client
@@ -39,19 +40,18 @@ exports.signUpWithGoogle = async (req, res, next) => {
     });
     const { exp, email } = await oAuth2Client.getTokenInfo(access_token);
 
-    const dbGoogleUser = await googleUsers.findOne({
-      where: { email }
-    });
+    const dbGoogleUser = await supabaseHandlers.getGoogleUserByEmail(email);
 
     if (!dbGoogleUser) {
-      const newGoogleUser = await googleUsers.create({
+      const { id } = await supabaseHandlers.createGoogleUser({
         email,
-        refreshToken: refresh_token
+        refresh_token
       });
+
       return res.status(200).send({
         googleUser: {
-          email: newGoogleUser.dataValues.email,
-          id: newGoogleUser.dataValues.id,
+          email,
+          id,
           access_token,
           token: {
             access_token,
@@ -61,18 +61,17 @@ exports.signUpWithGoogle = async (req, res, next) => {
       });
     }
 
-    if (dbGoogleUser.refreshToken !== refresh_token) {
-      await googleUsers.update(
-        { refreshToken: dbGoogleUser.dataValues.refreshToken },
-        { where: { id: dbGoogleUser.dataValues.id } }
-      );
+    if (dbGoogleUser.refresh_token !== refresh_token) {
+      await supabaseHandlers.updateGoogleUser(dbGoogleUser.id, {
+        refresh_token
+      });
     }
 
     return res.status(200).send({
       message: 'Your account already exists !',
       googleUser: {
-        email: dbGoogleUser.dataValues.email,
-        id: dbGoogleUser.dataValues.id,
+        email: dbGoogleUser.email,
+        id: dbGoogleUser.id,
         access_token,
         token: {
           access_token,

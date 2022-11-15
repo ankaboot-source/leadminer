@@ -8,11 +8,6 @@ server:
   supabase:
     url:
     token:
-  postgres:
-    host:
-    name:
-    user:
-    password:
   redis:
     username: # Optional
     password: # Optional

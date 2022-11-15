@@ -95,6 +95,104 @@ class SupabaseHandlers {
       .upsert([...tags], { onConflict: 'personid, name' });
   }
 
+  async createGoogleUser({ email, refresh_token }) {
+    const { data, error } = await this.supabaseClient
+      .from('google_users')
+      .insert({ email, refresh_token })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async getGoogleUserByEmail(email) {
+    const { data, error } = await this.supabaseClient
+      .from('google_users')
+      .select()
+      .eq('email', email)
+      .limit(1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data.length === 1 ? data[0] : null;
+  }
+
+  async updateGoogleUser(id, updatedFields) {
+    const { data, error } = await this.supabaseClient
+      .from('google_users')
+      .update(updatedFields)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data.length === 1 ? data[0] : null;
+  }
+
+  async createImapUser({ email, host, port, tls }) {
+    const { data, error } = await this.supabaseClient
+      .from('imap_users')
+      .insert({ email, host, port, tls })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
+  async updateImapUser(id, updatedFields) {
+    const { data, error } = await this.supabaseClient
+      .from('imap_users')
+      .update(updatedFields)
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data.length === 1 ? data[0] : null;
+  }
+
+  async getImapUserByEmail(email) {
+    const { data, error } = await this.supabaseClient
+      .from('imap_users')
+      .select()
+      .eq('email', email)
+      .limit(1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data.length === 1 ? data[0] : null;
+  }
+
+  async getImapUserById(id) {
+    const { data, error } = await this.supabaseClient
+      .from('imap_users')
+      .select()
+      .eq('id', id)
+      .limit(1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data.length === 1 ? data[0] : null;
+  }
+
   /**
    * `invokeRpc` calls a Postgres function as a Remote Procedure Call.
    * @param functionName - Name of the function to be invoked

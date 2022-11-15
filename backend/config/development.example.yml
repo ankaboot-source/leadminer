@@ -9,11 +9,6 @@ server:
     url: 'http://localhost:54321'
     # The anon_key generated after you start your local supabase services
     token:
-  postgres:
-    host: localhost
-    name: postgres
-    user: postgres
-    password: postgres
   redis:
     host: localhost
     port: 6379

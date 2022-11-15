@@ -87,6 +87,22 @@ create table "public"."tags" (
 );
 
 
+create table "public"."google_users" (
+    "id" uuid not null default uuid_generate_v4(),
+    "email" text not null,
+    "refresh_token" text
+);
+
+
+create table "public"."imap_users" (
+    "id" uuid not null default uuid_generate_v4(),
+    "email" text not null,
+    "host" text,
+    "port" integer,
+    "tls" boolean
+);
+
+
 CREATE UNIQUE INDEX domains_pkey ON public.domains USING btree (id);
 
 CREATE UNIQUE INDEX messages_message_id_key ON public.messages USING btree (message_id);
@@ -108,6 +124,14 @@ CREATE UNIQUE INDEX refinedpersons_pkey ON public.refinedpersons USING btree (id
 CREATE UNIQUE INDEX tags_personid_name_key ON public.tags USING btree (personid, name);
 
 CREATE UNIQUE INDEX tags_pkey ON public.tags USING btree (id);
+
+CREATE UNIQUE INDEX google_users_email_key ON public.google_users USING btree (email);
+
+CREATE UNIQUE INDEX google_users_pkey ON public.google_users USING btree (id);
+
+CREATE UNIQUE INDEX imap_users_email_key ON public.imap_users USING btree (email);
+
+CREATE UNIQUE INDEX imap_users_pkey ON public.imap_users USING btree (id);
 
 alter table "public"."domains" add constraint "domains_pkey" PRIMARY KEY using index "domains_pkey";
 
@@ -150,6 +174,14 @@ alter table "public"."tags" add constraint "tags_personid_fkey" FOREIGN KEY (per
 alter table "public"."tags" validate constraint "tags_personid_fkey";
 
 alter table "public"."tags" add constraint "tags_personid_name_key" UNIQUE using index "tags_personid_name_key";
+
+alter table "public"."google_users" add constraint "google_users_pkey" PRIMARY KEY using index "google_users_pkey";
+
+alter table "public"."imap_users" add constraint "imap_users_pkey" PRIMARY KEY using index "imap_users_pkey";
+
+alter table "public"."google_users" add constraint "google_users_email_key" UNIQUE using index "google_users_email_key";
+
+alter table "public"."imap_users" add constraint "imap_users_email_key" UNIQUE using index "imap_users_email_key";
 
 -- SETUP REALTIME --
 begin;
