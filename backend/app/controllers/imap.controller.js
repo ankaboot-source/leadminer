@@ -229,5 +229,7 @@ exports.getEmails = async (req, res, next) => {
     });
   });
 
-  eventEmitter.removeListener('end', () => {});
+  eventEmitter.removeListener('end', () => {
+    logger.debug('Remove event listener.');
+  });
 };
