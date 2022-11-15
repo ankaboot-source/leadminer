@@ -28,12 +28,6 @@ db.sequelize
     app.listen(serverPort, () => {
       logger.info(`Server is running on port ${serverPort}.`);
     });
-
-    app.on('error', (e) => {
-      if (e.code === 'EADDRINUSE') {
-        logger.error('Address in use, retrying...', { error: e });
-      }
-    });
   })
   .catch((error) => {
     logger.error('Error initializing database.', { error });

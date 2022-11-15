@@ -117,7 +117,7 @@ class EmailMessage {
   /**
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
-  async extractThenStoreEmailsAddresses() {
+  extractThenStoreEmailsAddresses() {
     supabaseHandlers
       .upsertMessage(
         this.getMessageId(),
@@ -133,11 +133,6 @@ class EmailMessage {
             code: message.error.code,
             emailMessageDate: this.getDate()
           });
-          if (message.error.code === '23505') {
-            logger.debug(
-              `message with id:${this.getMessageId()} already mined`
-            );
-          }
         } else {
           const messagingFields = this.getMessagingFieldsFromHeader();
           Object.keys(messagingFields).map(async (key) => {

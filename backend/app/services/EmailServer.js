@@ -81,15 +81,14 @@ class EmailServer {
     return false;
   }
   /**
-   * connecte() open a connection to the IMAP server
+   * connect() open a connection to the IMAP server
    * @returns A promise that resolves to the connection object.
    */
-  async connecte() {
+  connect() {
     return new Promise((res) => {
       // initialize the connection
       this.initConnection();
       if (this.isApiConnection()) {
-        logger.debug('User connected using api');
         tokenHelpers.generateXOauthToken(this.user).then((tokens) => {
           this.sse.send({ token: tokens.newToken }, `token${this.user.id}`);
           this.#connection._config.xoauth2 = tokens.xoauth2Token;

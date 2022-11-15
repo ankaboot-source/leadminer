@@ -14,13 +14,13 @@ function getOAuthClient() {
  * Uses the refresh_token to refresh the expired access_token
  * @param  {} refresh_token stored token
  */
-function refreshAccessToken(refresh_token, tokenInfo) {
+function refreshAccessToken(refreshToken, tokenInfo) {
   return new Promise((resolve) => {
     // return OAuth2 client
     const oauth2Client = getOAuthClient();
 
     oauth2Client.setCredentials({
-      refresh_token
+      refreshToken
     });
     oauth2Client.getAccessToken().then((_, token) => {
       if (token) {

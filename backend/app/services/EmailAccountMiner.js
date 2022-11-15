@@ -29,14 +29,7 @@ class EmailAccountMiner {
    * @param {array} fields - An array of fields to be used in the fetch.
    * @param {array} folders - An array of folder paths to fetch from.
    */
-  constructor(
-    connection,
-    user,
-    sse,
-    fields,
-    folders,
-    eventEmitter
-  ) {
+  constructor(connection, user, sse, fields, folders, eventEmitter) {
     this.connection = connection;
     this.user = user;
     this.sse = sse;
@@ -57,7 +50,7 @@ class EmailAccountMiner {
   getTree() {
     return new Promise((resolve) => {
       let result = [];
-      this.connection.connecte().then((connection) => {
+      this.connection.connect().then((connection) => {
         this.connection = connection;
         this.connection.once('ready', () => {
           logger.info('Started mining folders tree for user.', {
@@ -65,10 +58,6 @@ class EmailAccountMiner {
           });
           this.connection.getBoxes('', async (err, boxes) => {
             if (err) {
-              logger.error('Failed mining folders tree for user', {
-                error: err,
-                emailHash: this.mailHash
-              });
               result = [this.tree, err];
               resolve(result);
             }
@@ -98,10 +87,6 @@ class EmailAccountMiner {
           resolve(result);
         });
         this.connection.once('error', (error) => {
-          logger.error('Failed mining folders tree for user', {
-            error,
-            emailHash: this.mailHash
-          });
           result = [this.tree, error];
           resolve(result);
         });
@@ -149,8 +134,6 @@ class EmailAccountMiner {
    * @param {string} folderName - the name of the folder you want to get the tree from.
    */
   getTreeByFolder(folderName) {
-    logger.debug(`fetching tree per folder for user : ${this.mailHash}`);
-
     let tree = {};
     const folderPath = imapTreeHelpers.getFolderPathFromTreeObject(
       tree,
@@ -168,8 +151,6 @@ class EmailAccountMiner {
       });
     });
     this.connection.once('close', () => {
-      logger.debug(`End fetching tree per folder for user : ${this.mailHash}`);
-
       return tree;
     });
   }
@@ -181,7 +162,7 @@ class EmailAccountMiner {
   async mine() {
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
-    this.connection = await this.connection.connecte();
+    this.connection = await this.connection.connect();
     this.connection.once('ready', () => {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
@@ -212,9 +193,7 @@ class EmailAccountMiner {
       // sse here to send data based on end event
       this.sse.send(true, 'data');
       this.sse.send(true, `dns${this.user.id}`);
-      logger.debug('SSE data and dns events sent!');
       this.eventEmitter.emit('end', true);
-      logger.debug('End connection using end event');
     });
   }
   /**
@@ -223,21 +202,11 @@ class EmailAccountMiner {
    * @param folder - The folder you want to mine.
    */
   *mineFolder(folder) {
-    logger.debug('Started mining email messages from folder.', {
-      emailHash: this.mailHash,
-      folder
-    });
-
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
       if (err) {
         logger.error(
           `Error occured when opening folder for User: ${this.mailHash}`
-        );
-      }
-      if (openedFolder) {
-        logger.debug(
-          `Opening mail box folder: ${openedFolder.name} for User: ${this.mailHash}`
         );
       }
       this.mineMessages(openedFolder, folder);
@@ -252,9 +221,6 @@ class EmailAccountMiner {
   mineMessages(folder, folderName) {
     if (folder) {
       this.currentTotal = folder.messages.total;
-      logger.debug(
-        `Mining folder size: ${folder.messages.total} for User: ${this.mailHash}`
-      );
       // used in sending progress
       this.sends = inputHelpers.EqualPartsForSocket(
         folder.messages.total,
@@ -268,14 +234,10 @@ class EmailAccountMiner {
       this.ImapFetch(folder, folderName);
       // fetch function : pass fileds to fetch
     } else if (this.folders.indexOf(folderName) + 1 === this.folders.length) {
-      logger.debug(`Done for User: ${this.mailHash}`);
       this.connection.end();
       this.connection.destroy();
     } else {
       // if this folder is just a label then pass to the next folder
-      logger.debug(
-        `Going to next folder, this one is undefined or a label in folders array for User: ${this.mailHash}`
-      );
       this.mineFolder(
         this.folders[this.folders.indexOf(folderName) + 1]
       ).next();
@@ -294,9 +256,6 @@ class EmailAccountMiner {
       struct: true
     });
 
-    logger.debug(
-      `Fetch method using bodies ${self.fields} for User: ${this.mailHash}`
-    );
     // message event
     fetchResult.on('message', (msg, seqNumber) => {
       let Header = '',
@@ -325,16 +284,9 @@ class EmailAccountMiner {
     });
     // end event
     fetchResult.once('end', () => {
-      logger.debug('Finished mining email messages from folder.', {
-        emailHash: this.mailHash,
-        folder: folder.name
-      });
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
       if (self.folders.indexOf(folder.name) + 1 === self.folders.length) {
         // we are at the end of the folder array==>> end imap connection
-        logger.debug(
-          `We are done...Ending connection for User: ${this.mailHash}`
-        );
         setTimeout(() => {
           this.messageWorkerEvenSeqNumber.terminate();
           this.messageWorkerOddSeqNumber.terminate();
@@ -343,9 +295,6 @@ class EmailAccountMiner {
         self = null;
       } else {
         // go to the next folder
-        logger.debug(
-          `Going to next folder in folders array for User: ${this.mailHash}`
-        );
         self
           .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
           .next();
@@ -363,10 +312,10 @@ class EmailAccountMiner {
    * @param folderName - The name of the folder that the message is in.
    */
   publishMessageToChannel(seqNumber, header, body, folderName) {
-    this.sendMiningProgress(seqNumber, folderName);
+    this.sendMiningProgress(seqNumber);
 
     if (this.emailsProgressIndexes.includes(seqNumber)) {
-      this.sendMinedData(seqNumber, folderName);
+      this.sendMinedData();
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
     //publish the message to the odd channel
@@ -396,9 +345,8 @@ class EmailAccountMiner {
   /**
    * sendMiningProgress sends the progress of the mining process to the user's browser
    * @param seqNumber - The current sequence number of the email being scanned
-   * @param folderName - The name of the folder being scanned
    */
-  sendMiningProgress(seqNumber, folderName) {
+  sendMiningProgress(seqNumber) {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
 
@@ -406,9 +354,6 @@ class EmailAccountMiner {
     if (this.sends.includes(seqNumber)) {
       const progress =
         seqNumber - (this.sends[this.sends.indexOf(seqNumber) - 1] ?? 0);
-      logger.debug(
-        `Progress for user ${this.mailHash} is ${seqNumber} at folder ${folderName}`
-      );
 
       this.sse.send(
         {
@@ -421,13 +366,8 @@ class EmailAccountMiner {
 
   /**
    * sendMinedData fires up refining worker when it's called
-   * @param seqNumber - The sequence number of the mined data.
-   * @param folderName - The name of the folder that contains the mined data.
    */
-  sendMinedData(seqNumber, folderName) {
-    logger.debug(
-      `Sending minedData at ${seqNumber} and folder: ${folderName}...`
-    );
+  sendMinedData() {
     // call supabase function to refine data
     supabaseHandlers
       .invokeRpc('refined_persons', {
