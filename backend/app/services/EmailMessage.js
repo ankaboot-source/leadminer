@@ -117,7 +117,7 @@ class EmailMessage {
   /**
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
-  async extractThenStoreEmailsAddresses() {
+  extractThenStoreEmailsAddresses() {
     supabaseHandlers
       .upsertMessage(
         this.getMessageId(),

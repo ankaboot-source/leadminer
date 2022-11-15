@@ -50,7 +50,7 @@ class EmailAccountMiner {
   getTree() {
     return new Promise((resolve) => {
       let result = [];
-      this.connection.connecte().then((connection) => {
+      this.connection.connect().then((connection) => {
         this.connection = connection;
         this.connection.once('ready', () => {
           logger.info('Started mining folders tree for user.', {
@@ -162,7 +162,7 @@ class EmailAccountMiner {
   async mine() {
     // init the connection using the user info (name, host, port, password, token...)
     this.connection.initConnection();
-    this.connection = await this.connection.connecte();
+    this.connection = await this.connection.connect();
     this.connection.once('ready', () => {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
@@ -312,10 +312,10 @@ class EmailAccountMiner {
    * @param folderName - The name of the folder that the message is in.
    */
   publishMessageToChannel(seqNumber, header, body, folderName) {
-    this.sendMiningProgress(seqNumber, folderName);
+    this.sendMiningProgress(seqNumber);
 
     if (this.emailsProgressIndexes.includes(seqNumber)) {
-      this.sendMinedData(seqNumber, folderName);
+      this.sendMinedData();
     }
     const Header = Imap.parseHeader(header.toString('utf8'));
     //publish the message to the odd channel
@@ -345,9 +345,8 @@ class EmailAccountMiner {
   /**
    * sendMiningProgress sends the progress of the mining process to the user's browser
    * @param seqNumber - The current sequence number of the email being scanned
-   * @param folderName - The name of the folder being scanned
    */
-  sendMiningProgress(seqNumber, folderName) {
+  sendMiningProgress(seqNumber) {
     // as it's a periodic function, we can watch memory usage here
     // we can also force garbage_collector if we have many objects are created
 
@@ -367,10 +366,8 @@ class EmailAccountMiner {
 
   /**
    * sendMinedData fires up refining worker when it's called
-   * @param seqNumber - The sequence number of the mined data.
-   * @param folderName - The name of the folder that contains the mined data.
    */
-  sendMinedData(seqNumber, folderName) {
+  sendMinedData() {
     // call supabase function to refine data
     supabaseHandlers
       .invokeRpc('refined_persons', {

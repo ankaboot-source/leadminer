@@ -81,10 +81,10 @@ class EmailServer {
     return false;
   }
   /**
-   * connecte() open a connection to the IMAP server
+   * connect() open a connection to the IMAP server
    * @returns A promise that resolves to the connection object.
    */
-  async connecte() {
+  connect() {
     return new Promise((res) => {
       // initialize the connection
       this.initConnection();

@@ -1,7 +1,6 @@
 /* istanbul ignore file */
 const { OAuth2Client } = require('google-auth-library');
 const googleUsers = require('../models').googleUsers;
-const logger = require('../utils/logger')(module);
 const {
   googleClientId,
   googleClientSecret
@@ -67,20 +66,20 @@ exports.signUpWithGoogle = async (req, res, next) => {
         { refreshToken: dbGoogleUser.dataValues.refreshToken },
         { where: { id: dbGoogleUser.dataValues.id } }
       );
-
-      return res.status(200).send({
-        message: 'Your account already exists !',
-        googleUser: {
-          email: dbGoogleUser.dataValues.email,
-          id: dbGoogleUser.dataValues.id,
-          access_token,
-          token: {
-            access_token,
-            expiration: exp
-          }
-        }
-      });
     }
+
+    return res.status(200).send({
+      message: 'Your account already exists !',
+      googleUser: {
+        email: dbGoogleUser.dataValues.email,
+        id: dbGoogleUser.dataValues.id,
+        access_token,
+        token: {
+          access_token,
+          expiration: exp
+        }
+      }
+    });
   } catch (error) {
     error.message = 'Failed to signup with Google.';
     return next(error);
