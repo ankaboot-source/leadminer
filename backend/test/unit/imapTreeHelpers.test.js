@@ -2,47 +2,59 @@ const { expect } = require('chai');
 const imapTreeHelpers = require('../../app/utils/helpers/imapTreeHelpers');
 const dataTest = require('../testData.json');
 
-describe('imapTreeHelpers.createTreeFromImap(imapTree)', () => {
+describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const imapTreeExample = dataTest.imapTreeExample;
   const expectedOutput = [
-    { label: 'Brouillons' },
+    { label: 'Brouillons', path: 'Brouillons', parent: undefined },
+    { label: 'INBOX', path: 'INBOX', parent: undefined },
     {
-      label: 'INBOX',
-      children: [{ label: 'mars' }, { label: 'Administratif' }]
+      label: 'mars',
+      path: 'INBOX/mars',
+      parent: { label: 'INBOX', path: 'INBOX', parent: undefined }
     },
-    { label: 'Spam' }
-  ];
+    {
+      label: 'Administratif',
+      path: 'INBOX/Administratif',
+      parent: { label: 'INBOX', path: 'INBOX', parent: undefined }
+    },
+    { label: 'Spam', path: 'Spam', parent: undefined }
+  ];  
 
-  it('should return valid tree', () => {
-    const Output = imapTreeHelpers.createTreeFromImap(imapTreeExample);
+  it('should return valid flat array', () => {
+    const Output = imapTreeHelpers.createFlatTreeFromImap(imapTreeExample);
     expect(Output).to.have.deep.members(expectedOutput);
   });
 });
-describe('imapTreeHelpers.addPathPerFolder(imapTree, imapTreeFromImapServer)', () => {
-  it('should add path for each folder', () => {
+
+describe('imapTreeHelpers.BuildFinaltTree(foldersFlatArray, UserEmail)', () => {
+  it('should build a valid tree', () => {
+    
     const expectedOutput = [
-      { label: 'Brouillons', path: 'Brouillons' },
-
       {
-        label: 'INBOX',
-        path: 'INBOX',
+        label: 'email@example.com',
         children: [
-          { label: 'mars', path: 'INBOX/mars' },
-          { label: 'Administratif', path: 'INBOX/Administratif' }
-        ]
-      },
-      { label: 'Spam', path: 'Spam' }
-    ];
-    const tree = [
-      { label: 'Brouillons' },
+          { label: 'Brouillons', path: 'Brouillons', total: 1 },
+          {
+            label: 'INBOX',
+            path: 'INBOX',
+            total: 3,
+            children: [
+              {"label": "mars", "path": "INBOX/mars", "total": 1},
+              {"label": "Administratif", "path": "INBOX/Administratif","total": 1}
+            ]
+          },
+          { label: 'Spam', path: 'Spam', total: 1 }
+        ],
+        total: 5
+      }
+    ] 
 
-      {
-        label: 'INBOX',
-        children: [{ label: 'mars' }, { label: 'Administratif' }]
-      },
-      { label: 'Spam' }
-    ];
-    const output = imapTreeHelpers.addPathPerFolder(tree, tree);
+    const flattree =  imapTreeHelpers.createFlatTreeFromImap(dataTest.imapTreeExample)
+    // add total to folders acts like AddTotalPerFolder (EmailAccountMiner.js)
+    Object.keys(flattree).forEach((key) => {
+      flattree[`${key}`].total = 1
+    })
+    const output = imapTreeHelpers.BuildFinaltTree(flattree, "email@example.com");
     expect(output).to.have.deep.members(expectedOutput);
   });
 });
