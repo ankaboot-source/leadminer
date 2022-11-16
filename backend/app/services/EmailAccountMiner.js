@@ -110,32 +110,6 @@ class EmailAccountMiner {
   }
 
   /**
-   * getTreeByFolder connects to the IMAP server, opens the folder, and returns the folder's tree
-   * @param {string} folderName - the name of the folder you want to get the tree from.
-   */
-  getTreeByFolder(folderName) {
-    let tree = {};
-    const folderPath = imapTreeHelpers.getFolderPathFromTreeObject(
-      tree,
-      folderName
-    );
-    this.connection.initConnection();
-    this.connection.connect();
-    this.connection.once('ready', () => {
-      this.connection.openBox(folderPath, true, (err, box) => {
-        if (err) {
-          return tree;
-        }
-        tree = box;
-        this.connection.end();
-      });
-    });
-    this.connection.once('close', () => {
-      return tree;
-    });
-  }
-
-  /**
    * mine connects to the IMAP server, and then calls the mineFolder() function on the first folder in the
    * folders array
    */
