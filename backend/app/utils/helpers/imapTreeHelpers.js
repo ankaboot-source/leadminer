@@ -53,7 +53,7 @@ function createFlatTreeFromImap(imapTree, currentParent) {
  * ]
  */
 
-function BuildFinaltTree(FlatTree, userEmail) {
+function BuildFinaltTree(flatTree, userEmail) {
   const readableTree = [];
   let totalInEmail = 0;
 
