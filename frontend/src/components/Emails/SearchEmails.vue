@@ -561,11 +561,11 @@ export default defineComponent({
     },
     TotalEmails() {
       if (this.boxes[0]) {
-        return objectScan(["**.{totalIndiv}"], {
+        return objectScan(["**.{total}"], {
           joined: true,
           filterFn: ({ parent, gparent, property, value, context }) => {
             if (
-              property == "totalIndiv" &&
+              property == "total" && parent.path &&
               this.selectedBoxes.includes(parent.path)
             ) {
               context.sum += value;
