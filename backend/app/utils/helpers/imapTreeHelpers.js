@@ -18,10 +18,11 @@ function createFlatTreeFromImap(imapTree, currentParent) {
 
   Object.keys(imapTree).forEach((key) => {
 
-    folder = {};
-    folder.label = key;
-    folder.path = currentParent ? `${currentParent.path }/${ key}` : key;
-    folder.parent = currentParent;
+    const folder = {
+      label: key,
+      path: currentParent ? `${currentParent.path }/${ key}` : key,
+      parent: currentParent
+    };
 
     if (imapTree[`${key}`].children) {
       readableTree.push(folder, ...createFlatTreeFromImap(imapTree[`${key}`].children, folder));
