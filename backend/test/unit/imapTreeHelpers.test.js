@@ -36,7 +36,7 @@ describe('imapTreeHelpers.BuildFinaltTree(foldersFlatArray, UserEmail)', () => {
       {
         label: 'email@example.com',
         children: [
-          { label: 'Brouillons', path: 'Brouillons', total: 1 },
+          { label: 'Brouillons', path: '', total: 0 },
           {
             label: 'INBOX',
             path: 'INBOX',
@@ -55,7 +55,7 @@ describe('imapTreeHelpers.BuildFinaltTree(foldersFlatArray, UserEmail)', () => {
     const flattree =  imapTreeHelpers.createFlatTreeFromImap(dataTest.imapTreeExample)
     // add total to folders acts like AddTotalPerFolder (EmailAccountMiner.js)
     Object.keys(flattree).forEach((key) => {
-      flattree[`${key}`].total = 1
+      flattree[`${key}`].total = flattree[`${key}`].label === 'Brouillons' ? 0: 1
     })
     const output = imapTreeHelpers.BuildFinaltTree(flattree, "email@example.com");
     expect(output).to.have.deep.members(expectedOutput);
