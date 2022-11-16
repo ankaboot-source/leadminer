@@ -1,7 +1,7 @@
 /**
  * createFlatTreeFromImap - creates a readable flat array from tree object
- * @param  {object} imapTree - native imap tree
- * @return {array} Array of objects
+ * @param  {object[]} imapTree - native imap tree
+ * @return {{label: string, path: string, parent: object}[]} Array of objects
  * @example
  * // returns
  * [
@@ -38,9 +38,9 @@ function createFlatTreeFromImap(imapTree, currentParent) {
 /**
  * BuildFinaltTree() takes a flat array of objects and a userEmail. Then builds the flat array to a Tree object 
  * and returns an array with a single object that has a label of the userEmail, a children array of the Tree, and a total.
- * @param {object} FlatTree - A flat array of objects to build a tree.
+ * @param {{label: string, path: string, parent: object, total: number}[]} flatTree - A flat array of objects to build a tree.
  * @param {string} userEmail - The email address of the user you want to get the data for.
- * @returns {array} an array with one object.
+ * @returns {label: string, children: object[], total: number} an array with one object.
  * 
  * @example
  * // returns
@@ -48,7 +48,7 @@ function createFlatTreeFromImap(imapTree, currentParent) {
  *  {
  *    label: 'email@example.com',
  *    children: [ [Object], [Object] ],
- *   totalEmails: 0
+ *    total: 0
  *  }
  * ]
  */

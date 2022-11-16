@@ -87,8 +87,8 @@ this.connection.end();
 
   /**
    * AddTotalPerFolder Gets the total number of messages per folder
-   * @param {array} folders - flat array of objects.
-   * @returns {Promise<object>} A promise that resolves to the folders with the total number of messages.
+   * @param {{label: string, path: string}[]} folders - flat array of objects.
+   * @returns {Promise} A promise that resolves to the folders with the total number of messages.
    */
   AddTotalPerFolder(folders) {
     const self = this;
