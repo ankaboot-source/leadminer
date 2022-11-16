@@ -61,22 +61,14 @@ class EmailAccountMiner {
               result = [this.tree, err];
               resolve(result);
             }
-            // extract only folder name
-            const treeObjectWithChildrens =
-                imapTreeHelpers.createTreeFromImap(boxes),
-              // add a path for each folder
-              treeWithPaths = imapTreeHelpers.addPathPerFolder(
-                treeObjectWithChildrens,
-                treeObjectWithChildrens
-              );
-            // extract the total for each folder
+            // extract All folders with their parents and path
+            const treeWithPaths = imapTreeHelpers.createFlatTreeFromImap(boxes);
 
-            await this.getTreeWithTotalPerFolder(treeWithPaths);
-            // sum childrens total for folder that has childrens
-            this.tree = imapTreeHelpers.addChildrenTotalForParentFiles(
-              treeWithPaths,
-              this.user.email
-            );
+            // add total to each folder
+            await this.AddTotalPerFolder(treeWithPaths).then( () => {
+              this.tree = imapTreeHelpers.BuildFinaltTree(treeWithPaths, this.user.email);
+              this.connection.end()
+            });
           });
         });
         this.connection.once('close', () => {
@@ -95,40 +87,26 @@ class EmailAccountMiner {
   }
 
   /**
-   * getTreeWithTotalPerFolder takes an imapTree, and for each folder in the tree, it opens the folder, and if it exists, it
-   * adds the total number of messages
-   * @param {object} imapTree - The tree of folders that you want to get the total number of messages for.
-   * @returns {Promise<object>} A promise that resolves to the imapTree with the total number of messages per folder.
+   * AddTotalPerFolder Gets the total number of messages per folder
+   * @param {array} folders - flat array of objects.
+   * @returns {Promise<object>} A promise that resolves to the folders with the total number of messages.
    */
-  getTreeWithTotalPerFolder(imapTree) {
+  AddTotalPerFolder(folders) {
     const self = this;
-    return new Promise((resolve) => {
-      imapTree.forEach((folder) => {
-        function openBoxThenGetTotal() {
-          self.connection.openBox(folder.path, true, (err, box) => {
-            if (box) {
-              folder.total = box.messages.total;
-            } else {
-              folder.total = 0;
-            }
-            if (folder === imapTree[imapTree.length - 1]) {
-              self.connection.end();
-              resolve();
-            }
-          });
-        }
-        // the folder has childrens
-        if (Object.prototype.hasOwnProperty.call(folder, 'children')) {
-          openBoxThenGetTotal();
-          // recal on the children
-          this.getTreeWithTotalPerFolder(folder.children);
-        } else {
-          // has no childrens
-          openBoxThenGetTotal();
-        }
-      });
-    });
-  }
+
+    const promises = folders.map((folder, index) => {
+      return new Promise((resolve) => {
+        self.connection.openBox(folder.path, true, (err, box) => {
+
+          if (box) folders[index].total = box.messages.total;
+          else folders[index].total = 0;
+          resolve();
+        })
+      })
+    })
+    return Promise.all(promises)
+}
+
   /**
    * getTreeByFolder connects to the IMAP server, opens the folder, and returns the folder's tree
    * @param {string} folderName - the name of the folder you want to get the tree from.
