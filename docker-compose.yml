@@ -1,16 +1,6 @@
 version: "3.1"
 
 services:
-  postgres:
-    image: postgres:alpine
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 3s
-      timeout: 2s
-      retries: 5
-    environment:
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-
   redis:
     image: redis:alpine
     command: --port ${REDIS_PORT}
@@ -32,10 +22,6 @@ services:
       IMAP_CONNECTION_TIMEOUT: ${IMAP_CONNECTION_TIMEOUT}
       SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
       SUPABASE_SECRET_PROJECT_TOKEN: ${SUPABASE_SECRET_PROJECT_TOKEN}
-      PG_HOST: ${PG_HOST}
-      PG_NAME: ${PG_NAME}
-      PG_USER: ${PG_USER}
-      PG_PASSWORD: ${PG_PASSWORD}
       REDIS_USERNAME: ${REDIS_USERNAME}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_HOST: ${REDIS_HOST}
@@ -50,9 +36,7 @@ services:
       EMAIL_HEADERS_NEWSLETTER: ${EMAIL_HEADERS_NEWSLETTER}
       EMAIL_HEADERS_TRANSACTIONAL: ${EMAIL_HEADERS_TRANSACTIONAL}
       EMAIL_HEADERS_MAILING_LIST: ${EMAIL_HEADERS_MAILING_LIST}
-    depends_on:
-      postgres:
-        condition: service_healthy # Make sure postgres is ready to accept connections
+    depends_on: redis
     ports:
       - 8081:${LEADMINER_API_PORT}
 

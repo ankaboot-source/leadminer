@@ -28,8 +28,6 @@
     "@sentry/node": "^7.13.0",
     "@sentry/tracing": "^7.13.0",
     "@supabase/supabase-js": "^1.35.7",
-    "amqplib": "^0.10.0",
-    "chai": "^4.3.6",
     "config": "^3.3.7",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -39,20 +37,15 @@
     "google-auth-library": "^8.5.2",
     "imap": "^0.8.19",
     "ioredis": "^5.2.2",
-    "mocha": "^10.1.0",
     "nodemon": "^2.0.15",
     "object-scan": "^17.1.0",
-    "pg": "^8.6.0",
-    "pg-hstore": "^2.3.4",
     "quoted-printable": "^1.0.1",
-    "sequelize": "^6.23.2",
-    "supertest": "^6.2.2",
-    "uuid": "^8.3.2",
     "winston": "^3.6.0",
     "xoauth2": "^1.2.0"
   },
   "devDependencies": {
     "c8": "^7.11.0",
+    "chai": "^4.3.7",
     "chai-spies": "^1.0.0",
     "eslint": "^8.10.0",
     "eslint-config-airbnb-base": "^15.0.0",
@@ -62,8 +55,10 @@
     "eslint-plugin-security": "^1.5.0",
     "eslint-plugin-vue": "^8.5.0",
     "istanbul-badges-readme": "^1.8.2",
+    "mocha": "^10.1.0",
     "nyc": "^15.1.0",
-    "prettier": "2.7.1"
+    "prettier": "2.7.1",
+    "supertest": "^6.3.1"
   },
   "engines": {
     "node": ">=15.0.0"

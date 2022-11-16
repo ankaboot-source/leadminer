@@ -1,15 +1,12 @@
 const Imap = require('imap');
-const db = require('../models'),
-  ImapInfo = db.imapInfo,
-  googleUser = db.googleUsers,
-  logger = require('../utils/logger')(module);
+const logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
 const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
-const { imapInfo } = require('../models');
 const { sse } = require('../middleware/sse');
+const { supabaseHandlers } = require('../services/supabase');
 
 function temporaryImapConnection(imapInfo, reqBody) {
   return new Imap({
@@ -50,32 +47,32 @@ exports.createImapInfo = (req, res, next) => {
 
   // initiate imap client
   const imap = temporaryImapConnection(imapInfo, req.body);
-  // Ensures that the account exists
-
   imap.connect();
+
   // if we can connect to the imap account
-  imap.once('ready', () => {
-    ImapInfo.findOne({ where: { email: imapInfo.email } }).then((imapdata) => {
-      if (imapdata === null) {
-        // Save ImapInfo in the database
-        ImapInfo.create(imapInfo)
-          .then((data) => {
-            res.status(200).send({ imap: data });
-          })
-          .catch((err) => {
-            err.message = 'Failed to create IMAP user.';
-            next(err);
-          });
-      } else {
+  imap.once('ready', async () => {
+    try {
+      const imapData = await supabaseHandlers.getImapUserByEmail(
+        imapInfo.email
+      );
+
+      if (imapData !== null) {
         res.status(200).send({
           message: 'Your account already exists !',
           imap
         });
+      } else {
+        const data = await supabaseHandlers.createImapUser(imapInfo);
+        res.status(200).send({ imap: data });
       }
+    } catch (error) {
+      next(error);
+    } finally {
       imap.end();
-    });
+    }
   });
-  // The imap account does not exists or connexion denied
+
+  // The imap account does not exists or connection denied
   imap.once('error', (err) => {
     err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
     next(err);
@@ -93,8 +90,7 @@ exports.loginToAccount = async (req, res, next) => {
     res.status(400);
     next(new Error('Email is required to login'));
   }
-
-  const imap = await ImapInfo.findOne({ where: { email } });
+  const imap = await supabaseHandlers.getImapUserByEmail(email);
   if (imap === null) {
     this.createImapInfo(req, res);
   } else {
@@ -103,7 +99,7 @@ exports.loginToAccount = async (req, res, next) => {
     imapConnection.connect();
     imapConnection.once('ready', () => {
       if (imap) {
-        logger.info('Account succesfully logged in.', {
+        logger.info('Account successfully logged in.', {
           email
         });
         res.status(200).send({
@@ -134,19 +130,17 @@ exports.getImapBoxes = async (req, res, next) => {
   const query = JSON.parse(req.headers['x-imap-login']);
 
   if (query.access_token) {
-    const google_user = await googleUser.findOne({
-      where: { email: query.email }
-    });
+    const googleUser = await supabaseHandlers.getGoogleUserByEmail(query.email);
 
-    if (google_user) {
-      query.refresh_token = google_user.dataValues.refreshToken;
+    if (googleUser) {
+      query.refresh_token = googleUser.refresh_token;
     }
   } else {
-    const imap_user = await imapInfo.findOne({ where: { id: query.id } });
+    const imapUser = await supabaseHandlers.getImapUserById(query.id);
 
-    if (imap_user) {
-      query.host = imap_user.host;
-      query.port = imap_user.port;
+    if (imapUser) {
+      query.host = imapUser.host;
+      query.port = imapUser.port;
     }
   }
   // define user object from user request query
@@ -190,21 +184,17 @@ exports.getEmails = async (req, res, next) => {
   const query = JSON.parse(req.headers['x-imap-login']);
 
   if (query.access_token) {
-    const google_user = await googleUser.findOne({
-      where: { email: query.email }
-    });
+    const googleUser = await supabaseHandlers.getGoogleUserByEmail(query.email);
 
-    if (google_user) {
-      query.refresh_token = google_user.dataValues.refreshToken;
+    if (googleUser) {
+      query.refresh_token = googleUser.refresh_token;
     }
   } else {
     logger.debug(query.id, query.email, 'getemails');
-
-    const imap_user = await imapInfo.findOne({ where: { id: query.id } });
-
-    if (imap_user) {
-      query.host = imap_user.host;
-      query.port = imap_user.port;
+    const imapUser = await supabaseHandlers.getImapUserById(query.id);
+    if (imapUser) {
+      query.host = imapUser.host;
+      query.port = imapUser.port;
     }
   }
   // define user object from user request query
@@ -239,5 +229,7 @@ exports.getEmails = async (req, res, next) => {
     });
   });
 
-  eventEmitter.removeListener('end', () => {});
+  eventEmitter.removeListener('end', () => {
+    logger.debug('Remove event listener.');
+  });
 };
