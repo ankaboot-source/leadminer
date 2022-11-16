@@ -5,23 +5,26 @@ const dataTest = require('../testData.json');
 describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const imapTreeExample = dataTest.imapTreeExample;
   const expectedOutput = [
-    { label: 'Brouillons', path: 'Brouillons', parent: undefined },
-    { label: 'INBOX', path: 'INBOX', parent: undefined },
+    { label: 'Brouillons', path: 'Brouillons', parent: null },
+    { label: 'INBOX', path: 'INBOX', parent: null },
     {
       label: 'mars',
       path: 'INBOX/mars',
-      parent: { label: 'INBOX', path: 'INBOX', parent: undefined }
+      parent: { label: 'INBOX', path: 'INBOX', parent: null }
     },
     {
       label: 'Administratif',
       path: 'INBOX/Administratif',
-      parent: { label: 'INBOX', path: 'INBOX', parent: undefined }
+      parent: { label: 'INBOX', path: 'INBOX', parent: null }
     },
-    { label: 'Spam', path: 'Spam', parent: undefined }
+    { label: 'Spam', path: 'Spam', parent: null }
   ];  
 
   it('should return valid flat array', () => {
     const Output = imapTreeHelpers.createFlatTreeFromImap(imapTreeExample);
+    Object.keys(Output).forEach((key) => {
+      if (!Output[`${key}`].parent) Output[`${key}`].parent = null 
+    })
     expect(Output).to.have.deep.members(expectedOutput);
   });
 });

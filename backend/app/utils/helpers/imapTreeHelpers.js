@@ -1,5 +1,3 @@
-const objectScan = require('object-scan');
-
 /**
  * createFlatTreeFromImap - creates a readable flat array from tree object
  * @param  {object} imapTree - native imap tree
