@@ -65,9 +65,9 @@ class EmailAccountMiner {
             const treeWithPaths = imapTreeHelpers.createFlatTreeFromImap(boxes);
 
             // add total to each folder
-            await this.AddTotalPerFolder(treeWithPaths).then( () => {
+            await this.AddTotalPerFolder(treeWithPaths).then(() => {
               this.tree = imapTreeHelpers.BuildFinaltTree(treeWithPaths, this.user.email);
-              this.connection.end()
+              this.connection.end();
             });
           });
         });
@@ -98,14 +98,17 @@ class EmailAccountMiner {
       return new Promise((resolve) => {
         self.connection.openBox(folder.path, true, (err, box) => {
 
-          if (box) folders[index].total = box.messages.total;
-          else folders[index].total = 0;
+          if (box) {
+            folders[index].total = box.messages.total; 
+          } else {
+            folders[index].total = 0; 
+          }
           resolve();
-        })
-      })
-    })
-    return Promise.all(promises)
-}
+        });
+      });
+    });
+    return Promise.all(promises);
+  }
 
   /**
    * getTreeByFolder connects to the IMAP server, opens the folder, and returns the folder's tree

@@ -20,15 +20,16 @@ function createFlatTreeFromImap(imapTree, currentParent) {
 
   Object.keys(imapTree).forEach((key) => {
 
-    folder = {}
-    folder.label = key
-    folder.path = currentParent ? currentParent.path + '/' + key : key
-    folder.parent = currentParent
+    folder = {};
+    folder.label = key;
+    folder.path = currentParent ? `${currentParent.path }/${ key}` : key;
+    folder.parent = currentParent;
 
     if (imapTree[`${key}`].children) {
-        readableTree.push(folder, ...createFlatTreeFromImap(imapTree[`${key}`].children, folder))
-    } else
-      readableTree.push(folder);
+      readableTree.push(folder, ...createFlatTreeFromImap(imapTree[`${key}`].children, folder));
+    } else {
+      readableTree.push(folder); 
+    }
   });
   return readableTree;
 
@@ -36,8 +37,8 @@ function createFlatTreeFromImap(imapTree, currentParent) {
 
 
 /**
- * BuildFinaltTree() takes a flat array of objects and a userEmail. Then builds the flat array to a Tree object and returns an array with a single object that has a label of
- * the userEmail, a children array of the Tree, and a total.
+ * BuildFinaltTree() takes a flat array of objects and a userEmail. Then builds the flat array to a Tree object 
+ * and returns an array with a single object that has a label of the userEmail, a children array of the Tree, and a total.
  * @param {object} FlatTree - A flat array of objects to build a tree.
  * @param {string} userEmail - The email address of the user you want to get the data for.
  * @returns {array} an array with one object.
@@ -54,27 +55,29 @@ function createFlatTreeFromImap(imapTree, currentParent) {
  */
 
 function BuildFinaltTree(FlatTree, userEmail) {
-  readableTree = []
-  let totalInEmail =  0
+  const readableTree = [];
+  let totalInEmail = 0;
 
-  Object.keys(FlatTree).forEach( (key) => {
+  Object.keys(FlatTree).forEach((key) => {
 
-    if (FlatTree[`${key}`].parent)
-    {
-      if (FlatTree[`${key}`].parent.children) FlatTree[`${key}`].parent.children.push(FlatTree[`${key}`])
-      else FlatTree[`${key}`].parent.children = [FlatTree[`${key}`]] 
+    if (FlatTree[`${key}`].parent) {
+      if (FlatTree[`${key}`].parent.children) {
+        FlatTree[`${key}`].parent.children.push(FlatTree[`${key}`]); 
+      } else {
+        FlatTree[`${key}`].parent.children = [FlatTree[`${key}`]]; 
+      } 
 
-      FlatTree[`${key}`].parent.total += FlatTree[`${key}`].total
+      FlatTree[`${key}`].parent.total += FlatTree[`${key}`].total;
 
     } else {
-      FlatTree[`${key}`].path = FlatTree[`${key}`].total > 0 ? FlatTree[`${key}`].path : ''
-      readableTree.push(FlatTree[`${key}`])
+      FlatTree[`${key}`].path = FlatTree[`${key}`].total > 0 ? FlatTree[`${key}`].path : '';
+      readableTree.push(FlatTree[`${key}`]);
     }
-    totalInEmail += FlatTree[`${key}`].total
-    delete FlatTree[`${key}`].parent
+    totalInEmail += FlatTree[`${key}`].total;
+    delete FlatTree[`${key}`].parent;
     
-  })
-  return [{ label: userEmail, children: [...readableTree], total: totalInEmail }]
+  });
+  return [{ label: userEmail, children: [...readableTree], total: totalInEmail }];
 }
 
 module.exports = {
