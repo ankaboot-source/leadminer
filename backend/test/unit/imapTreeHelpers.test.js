@@ -48,7 +48,7 @@ describe('imapTreeHelpers.BuildFinaltTree(foldersFlatArray, UserEmail)', () => {
           },
           { label: 'Spam', path: 'Spam', total: 1 }
         ],
-        total: 5
+        total: 4
       }
     ] 
 
