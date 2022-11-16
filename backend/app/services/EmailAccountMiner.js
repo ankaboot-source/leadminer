@@ -66,8 +66,8 @@ class EmailAccountMiner {
 
             // add total to each folder
             await this.AddTotalPerFolder(treeWithPaths)
-this.tree = imapTreeHelpers.BuildFinaltTree(treeWithPaths,this.user.email);
-this.connection.end();
+            this.tree = imapTreeHelpers.BuildFinaltTree(treeWithPaths,this.user.email);
+            this.connection.end();
           });
         });
         this.connection.once('close', () => {
