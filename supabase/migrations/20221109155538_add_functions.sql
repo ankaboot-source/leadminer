@@ -36,7 +36,7 @@ begin
     (
         select name from public.pointsofcontact
         where public.pointsofcontact.personid=get_alternate_names.personid
-        and public.pointsofcontact.userid=get_alternate_names.userid and name != ''
+        and public.pointsofcontact.userid=get_alternate_names.userid and (name != ' ' and name != '')
         group by name
         order by count(name) desc
     );
