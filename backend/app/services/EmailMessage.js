@@ -171,13 +171,11 @@ class EmailMessage {
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
         tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
-      }
-      else if (this.isTransactional()) {
+      } else if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
-      }
-      else if (this.isList()) {
+      } else if (this.isList()) {
         tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
@@ -195,9 +193,7 @@ class EmailMessage {
         
         if (emailMessageHelpers.isNoReply(email.address)) {
           tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-        }
-        
-        else if (emailType !== '') {
+        } else if (emailType !== '') {
           tags.push(
             this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
@@ -251,9 +247,7 @@ class EmailMessage {
         const tags = [];
         if (emailMessageHelpers.isNoReply(email)) {
           tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-        }
-
-        else if (emailType !== '') {
+        } else if (emailType !== '') {
           tags.push(
             this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
@@ -347,7 +341,7 @@ class EmailMessage {
             .createTags(tags)
             // eslint-disable-next-line no-unused-vars
             .then((data, error) => {
-              // eslint-disable-next-line no-warning-comments
+              /* empty */ 
               // TODO : HANDLE DATA AND ERROR
             });
         }
