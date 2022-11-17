@@ -172,12 +172,12 @@ class EmailMessage {
       if (this.isNewsletter()) {
         tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
       }
-      if (this.isTransactional()) {
+      else if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
       }
-      if (this.isList()) {
+      else if (this.isList()) {
         tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
@@ -192,15 +192,17 @@ class EmailMessage {
           [email?.name],
           domain[1]
         );
-
-        if (emailType !== '') {
+        
+        if (emailMessageHelpers.isNoReply(email.address)) {
+          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+        }
+        
+        else if (emailType !== '') {
           tags.push(
             this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
         }
-        if (emailMessageHelpers.isNoReply(email.address)) {
-          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-        }
+
         if (domain[0]) {
           this.storeEmails(
             message,
@@ -247,13 +249,14 @@ class EmailMessage {
         );
 
         const tags = [];
-        if (emailType !== '') {
+        if (emailMessageHelpers.isNoReply(email)) {
+          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+        }
+
+        else if (emailType !== '') {
           tags.push(
             this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
           );
-        }
-        if (emailMessageHelpers.isNoReply(email)) {
-          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
         }
 
         if (domain[0]) {
