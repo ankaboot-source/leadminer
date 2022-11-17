@@ -340,9 +340,10 @@ class EmailMessage {
           supabaseHandlers
             .createTags(tags)
             // eslint-disable-next-line no-unused-vars
-            .then(() => {
-              // do nothing.
-              // TODO : HANDLE DATA AND ERROR
+            .then((data, error) => {
+              if (error) {
+                logger.error('Error when creating tags.', { error: error.message, emailMessageDate: this.getDate()}); 
+              }
             });
         }
       });
