@@ -98,9 +98,12 @@ BEGIN
         person_alternate_names=public.get_alternate_names(person.id, refined_persons.userid);
         person_name=public.update_names_table_persons(person.id, refined_persons.userid, person_alternate_names);
 
-        INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email)
-        VALUES(person.id, refined_persons.userid, 0, occurrences, t, person_name, person_alternate_names, person.email)
-        ON CONFLICT(personid) DO UPDATE SET occurence=occurrences,tags=t, name=person_name, alternate_names=person_alternate_names;
+        if ('transactional' != all(t)) and ('no-reply' != all(t)) then
+            INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email)
+            VALUES(person.id, refined_persons.userid, 0, occurrences, t, person_name, person_alternate_names, person.email)
+            ON CONFLICT(personid) DO UPDATE SET occurence=occurrences,tags=t, name=person_name, alternate_names=person_alternate_names;
+        end if;
+
     END LOOP;
 END;
 $function$
