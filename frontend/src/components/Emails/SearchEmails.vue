@@ -229,6 +229,7 @@
                       v-for="name in props.row.alternate_names.filter((element) => {
                         return element != ' ';
                       })"
+                      :key="name.index"
                       :bind="name.index"
                       style="padding-left: 16px;"
                     >

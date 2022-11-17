@@ -340,8 +340,8 @@ class EmailMessage {
           supabaseHandlers
             .createTags(tags)
             // eslint-disable-next-line no-unused-vars
-            .then((data, error) => {
-              /* empty */ 
+            .then(() => {
+              // do nothing.
               // TODO : HANDLE DATA AND ERROR
             });
         }
