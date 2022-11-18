@@ -1,4 +1,4 @@
-const logger = require('../utils/logger');
+const logger = require('../utils/logger')(module);
 
 function errorLogger(err, _req, _res, next) {
   logger.error(err.message, {
