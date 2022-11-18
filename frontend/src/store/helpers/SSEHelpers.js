@@ -16,7 +16,6 @@ export function eventListenersHandler(currentState, source, parent) {
   source.addEventListener(
     `ScannedEmails${currentState.imapUser.id}${currentState.googleUser.id}`,
     (message) => {
-      console.log("hello");
       let data = JSON.parse(message.data);
       parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
       //parent.commit("example/SET_EMAILS", data.data);
