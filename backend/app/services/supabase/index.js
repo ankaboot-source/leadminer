@@ -140,7 +140,7 @@ class SupabaseHandlers {
    * @param tags - an array of objects with the following properties:
    * @returns {promise}
    */
-  async createTags(tags) {
+  createTags(tags) {
     return this.supabaseClient
       .from('tags')
       .upsert([...tags], { onConflict: 'personid, name' });
