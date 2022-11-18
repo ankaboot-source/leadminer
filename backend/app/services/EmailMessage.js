@@ -347,7 +347,7 @@ class EmailMessage {
       }
 
       for (const tag of tags) {
-        tag.persondid = person.id;
+        tag.personid = person.id;
       }
 
       supabaseHandlers
