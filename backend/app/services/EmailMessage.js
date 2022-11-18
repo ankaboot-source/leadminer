@@ -201,8 +201,6 @@ class EmailMessage {
         domain[1]
       );
 
-      console.log('EMAIL TYPE', emailType);
-
       if (emailMessageHelpers.isNoReply(email.address)) {
         tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
       } else if (emailType !== '') {

@@ -96,7 +96,6 @@ class SupabaseHandlers {
       .select()
       .single();
 
-    console.log(result);
     return result;
   }
 
