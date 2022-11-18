@@ -23,16 +23,22 @@ class SupabaseHandlers {
    * @param date - The date the message was sent
    * @returns {promise}
    */
-  upsertMessage(messageId, userID, channel, folderPath, date) {
-    return this.supabaseClient.from('messages').upsert({
-      message_id: messageId,
-      userid: userID,
-      channel,
-      folder_path: folderPath,
-      date,
-      listid: '',
-      reference: ''
-    });
+  async upsertMessage(messageId, userID, channel, folderPath, date) {
+    const result = await this.supabaseClient
+      .from('messages')
+      .insert({
+        message_id: messageId,
+        userid: userID,
+        channel,
+        folder_path: folderPath,
+        date,
+        listid: '',
+        reference: ''
+      })
+      .select()
+      .single();
+
+    return result;
   }
 
   /**
@@ -44,18 +50,24 @@ class SupabaseHandlers {
    * @param key - the key of the email address in the email object
    * @returns {promise} .
    */
-  upsertPointOfContact(messageID, userID, personid, key, name) {
-    return this.supabaseClient.from('pointsofcontact').insert({
-      messageid: messageID,
-      userid: userID,
-      name,
-      _to: key === 'to',
-      cc: key === 'cc',
-      bcc: key === 'bcc',
-      _from: key === 'from',
-      reply_to: key === 'reply-to' || key === 'reply_to',
-      personid
-    });
+  async upsertPointOfContact(messageID, userID, personid, key, name) {
+    const result = await this.supabaseClient
+      .from('pointsofcontact')
+      .insert({
+        messageid: messageID,
+        userid: userID,
+        name,
+        _to: key === 'to',
+        cc: key === 'cc',
+        bcc: key === 'bcc',
+        _from: key === 'from',
+        reply_to: key === 'reply-to' || key === 'reply_to',
+        personid
+      })
+      .select()
+      .single();
+
+    return result;
   }
 
   /**
@@ -64,9 +76,10 @@ class SupabaseHandlers {
    * @param emailsAddress - The email address of the person you want to add to the database.
    * @returns {promise}
    */
-  upsertPersons(name, emailsAddress, userID) {
-    return this.supabaseClient.from('persons').upsert(
-      {
+  async upsertPersons(name, emailsAddress, userID) {
+    const result = await this.supabaseClient
+      .from('persons')
+      .insert({
         name,
         email: emailsAddress,
         _userid: userID,
@@ -79,9 +92,12 @@ class SupabaseHandlers {
         family_name: '',
         job_title: '',
         works_for: '' // Will be retrieved with transmutation
-      },
-      { onConflict: 'email', ignoreDuplicates: false }
-    );
+      })
+      .select()
+      .single();
+
+    console.log(result);
+    return result;
   }
 
   /**
