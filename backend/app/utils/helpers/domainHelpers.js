@@ -13,8 +13,8 @@ const redisClientForNormalMode = redis.getClient();
  */
 function checkMXStatus(domain) {
   return new Promise((resolve) => {
-    dns.resolveMx(domain, async (_, addresses) => {
-      if (addresses) {
+    dns.resolveMx(domain, async (err, addresses) => {
+      if (addresses && !err) {
         if (addresses.length > 0) {
           // set domain in redis valid domains list
           await redisClientForNormalMode.sadd('domainListValid', domain);

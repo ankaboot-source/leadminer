@@ -117,56 +117,49 @@ class EmailMessage {
   /**
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
-  extractThenStoreEmailsAddresses() {
-    supabaseHandlers
-      .upsertMessage(
-        this.getMessageId(),
-        this.user.id,
-        'imap',
-        this.folderPath,
-        this.getDate()
-      )
-      .then((message) => {
-        if (message?.error) {
-          logger.error('Error when inserting to messages table.', {
-            error: message.error.message,
-            code: message.error.code,
-            emailMessageDate: this.getDate()
-          });
-        } else {
-          const messagingFields = this.getMessagingFieldsFromHeader();
-          Object.keys(messagingFields).map(async (key) => {
-            // extract Name and Email in case of a header
-            const emails = regExHelpers.extractNameAndEmail(
-              messagingFields[`${key}`]
-            );
+  async extractThenStoreEmailsAddresses() {
+    const { data, error } = await supabaseHandlers.upsertMessage(
+      this.getMessageId(),
+      this.user.id,
+      'imap',
+      this.folderPath,
+      this.getDate()
+    );
 
-            this.storeEmailsAddressesExtractedFromHeader(message, emails, key);
-          });
+    const message = data;
 
-          // case when body should be scanned
-          // eslint-disable-next-line no-constant-condition
-
-          // TODO : OPTIONS as user query
-          const emails = regExHelpers.extractNameAndEmailFromBody(
-            this.body.toString('utf8')
-          );
-          delete this.body;
-          // store extracted emails
-          this.storeEmailsAddressesExtractedFromBody(message, emails);
-        }
+    if (error) {
+      logger.error('Error when inserting to messages table.', {
+        error: error.message,
+        code: error.code,
+        emailMessageDate: this.getDate()
       });
+    } else {
+      const messagingFields = this.getMessagingFieldsFromHeader();
+
+      for (const key of Object.keys(messagingFields)) {
+        // extract Name and Email in case of a header
+        const emails = regExHelpers.extractNameAndEmail(
+          messagingFields[`${key}`]
+        );
+
+        await this.storeEmailsAddressesExtractedFromHeader(
+          message,
+          emails,
+          key
+        );
+      }
+
+      const emails = regExHelpers.extractNameAndEmailFromBody(
+        this.body.toString('utf8')
+      );
+      delete this.body;
+      // store extracted emails
+      this.storeEmailsAddressesExtractedFromBody(message, emails);
+    }
   }
 
-  /**
-   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses,
-   * gives tags, checks for noreply, checks domain and saves them to the database.
-   * @param {object} messages - an object containing the saved message data row
-   * @param {array} emails - an array of objects that contains the extracted email addresses and the names
-   * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
-   * @returns Nothing is being returned.
-   */
-  storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
+  getTags(fieldName) {
     const tags = [];
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
@@ -180,45 +173,62 @@ class EmailMessage {
       }
     }
 
-    emails
-      .filter((email) => email && this.user.email !== email?.address)
-      .forEach(async (email) => {
-        // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
-        const domain = await domainHelpers.checkDomainStatus(email.address);
-        const emailType = emailAddressHelpers.findEmailAddressType(
+    return tags;
+  }
+
+  /**
+   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses,
+   * gives tags, checks for noreply, checks domain and saves them to the database.
+   * @param {object} messages - an object containing the saved message data row
+   * @param {array} emails - an array of objects that contains the extracted email addresses and the names
+   * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
+   * @returns Nothing is being returned.
+   */
+  async storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
+    const tags = this.getTags(fieldName);
+
+    const filteredEmails = emails.filter(
+      (email) => email && this.user.email !== email?.address
+    );
+
+    for (const email of filteredEmails) {
+      // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
+      const domain = await domainHelpers.checkDomainStatus(email.address);
+
+      const emailType = emailAddressHelpers.findEmailAddressType(
+        email.address,
+        [email?.name],
+        domain[1]
+      );
+
+      if (emailMessageHelpers.isNoReply(email.address)) {
+        tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+      } else if (emailType !== '') {
+        tags.push(
+          this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
+        );
+      }
+
+      if (domain[0]) {
+        await this.storeEmails(
+          message,
           email.address,
-          [email?.name],
-          domain[1]
+          email?.name.replaceAll(/"|'/g, ''),
+          tags,
+          fieldName
         );
-        
-        if (emailMessageHelpers.isNoReply(email.address)) {
-          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-        } else if (emailType !== '') {
-          tags.push(
-            this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
-          );
-        }
+        return;
+      }
 
-        if (domain[0]) {
-          this.storeEmails(
-            message,
-            email.address,
-            email?.name.replaceAll(/"|'/g, ''),
-            tags,
-            fieldName
-          );
-          return;
-        }
+      const member = await redisClientForNormalMode.sismember(
+        'invalidDomainEmails',
+        email.address
+      );
 
-        const member = await redisClientForNormalMode.sismember(
-          'invalidDomainEmails',
-          email.address
-        );
-
-        if (member === 0) {
-          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-        }
-      });
+      if (member === 0) {
+        redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
+      }
+    }
   }
 
   /**
@@ -254,7 +264,7 @@ class EmailMessage {
         }
 
         if (domain[0]) {
-          this.storeEmails(message, email, '', tags, 'body');
+          await this.storeEmails(message, email, '', tags, 'body');
           return;
         }
 
@@ -301,52 +311,57 @@ class EmailMessage {
    * @param tags - an array of tags to be added to the person
    * @param fieldName - the name of the field that the email was found in
    */
-  storeEmails(message, email, name, tags, fieldName) {
-    supabaseHandlers
-      .upsertPersons(name ?? '', email.toLowerCase(), this.user.id)
-      // we should wait for the response so we capture the id
-      .then((person) => {
-        if (person.error) {
-          logger.error('Error when inserting to persons table.', {
-            error: person.error.message,
-            code: person.error.code,
-            emailMessageDate: this.getDate()
-          });
-        }
-        if (person && person?.body?.[0]) {
-          //if saved and no errors then we can store the person linked to this point of contact
-          supabaseHandlers
-            .upsertPointOfContact(
-              message.body?.[0]?.id,
-              this.user.id,
-              person.body?.[0].id,
-              fieldName,
-              name ?? ''
-            )
-            .then((pointOfContact) => {
-              if (pointOfContact.error) {
-                logger.error('Error when inserting to pointOfContact table.', {
-                  error: pointOfContact.error.message,
-                  code: pointOfContact.error.code,
-                  emailMessageDate: this.getDate()
-                });
-              }
-            });
+  async storeEmails(message, email, name, tags, fieldName) {
+    const result = await supabaseHandlers.upsertPersons(
+      name ?? '',
+      email.toLowerCase(),
+      this.user.id
+    );
 
-          // add the person id to tags
-          for (let i = 0; i < tags.length; i++) {
-            tags[i].personid = person.body?.[0].id;
-          }
-          supabaseHandlers
-            .createTags(tags)
-            // eslint-disable-next-line no-unused-vars
-            .then((data, error) => {
-              if (error) {
-                logger.error('Error when creating tags.', { error: error.message, emailMessageDate: this.getDate()}); 
-              }
-            });
-        }
+    const person = result.data;
+
+    if (result.error) {
+      logger.error('Error when inserting to persons table.', {
+        error: result.error.message,
+        code: result.error.code,
+        emailMessageDate: this.getDate()
       });
+    }
+    if (person) {
+      //if saved and no errors then we can store the person linked to this point of contact
+      const pointOfContactUpsertionResult =
+        await supabaseHandlers.upsertPointOfContact(
+          message.id,
+          this.user.id,
+          person.id,
+          fieldName,
+          name ?? ''
+        );
+
+      if (pointOfContactUpsertionResult.error) {
+        logger.error('Error when inserting to pointOfContact table.', {
+          error: pointOfContactUpsertionResult.error.message,
+          code: pointOfContactUpsertionResult.error.code,
+          emailMessageDate: this.getDate()
+        });
+      }
+
+      for (const tag of tags) {
+        tag.personid = person.id;
+      }
+
+      supabaseHandlers
+        .createTags(tags)
+        // eslint-disable-next-line no-unused-vars
+        .then((data, error) => {
+          if (error) {
+            logger.error('Error when creating tags.', {
+              error: error.message,
+              emailMessageDate: this.getDate()
+            });
+          }
+        });
+    }
   }
 }
 module.exports = EmailMessage;
