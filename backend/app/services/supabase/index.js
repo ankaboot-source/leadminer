@@ -24,7 +24,7 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertMessage(messageId, userID, channel, folderPath, date) {
-    const result = await this.supabaseClient
+    let result = await this.supabaseClient
       .from('messages')
       .insert({
         message_id: messageId,
@@ -37,7 +37,22 @@ class SupabaseHandlers {
       })
       .select()
       .single();
-
+    if (result.error?.code === '23505') {
+      result = await this.supabaseClient
+      .from('messages')
+      .update({
+        message_id: messageId,
+        userid: userID,
+        channel,
+        folder_path: folderPath,
+        date,
+        listid: '',
+        reference: ''
+      })
+      .eq('message_id', messageId)
+      .select()
+      .single()
+    }
     return result;
   }
 
@@ -77,7 +92,7 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertPersons(name, emailsAddress, userID) {
-    const result = await this.supabaseClient
+    let result = await this.supabaseClient
       .from('persons')
       .insert({
         name,
@@ -95,7 +110,28 @@ class SupabaseHandlers {
       })
       .select()
       .single();
-
+    
+    if (result.error?.code === '23505') {
+      result = await this.supabaseClient
+      .from('persons')
+      .update({
+          name,
+          email: emailsAddress,
+          _userid: userID,
+          url: '',
+          image: '',
+          address: '',
+          alternate_names: [],
+          same_as: [],
+          given_name: name,
+          family_name: '',
+          job_title: '',
+          works_for: '' // Will be retrieved with transmutation
+        })
+        .eq('email', emailsAddress)
+        .select()
+        .single()
+    }
     return result;
   }
 
@@ -104,7 +140,7 @@ class SupabaseHandlers {
    * @param tags - an array of objects with the following properties:
    * @returns {promise}
    */
-  createTags(tags) {
+  async createTags(tags) {
     return this.supabaseClient
       .from('tags')
       .upsert([...tags], { onConflict: 'personid, name' });
