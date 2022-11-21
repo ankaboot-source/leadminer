@@ -24,34 +24,28 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertMessage(messageId, userID, channel, folderPath, date) {
+    const message = {
+      message_id: messageId,
+      userid: userID,
+      channel,
+      folder_path: folderPath,
+      date,
+      listid: '',
+      reference: ''
+    };
     let result = await this.supabaseClient
       .from('messages')
-      .insert({
-        message_id: messageId,
-        userid: userID,
-        channel,
-        folder_path: folderPath,
-        date,
-        listid: '',
-        reference: ''
-      })
+      .insert(message)
       .select()
       .single();
+
     if (result.error?.code === '23505') {
       result = await this.supabaseClient
-      .from('messages')
-      .update({
-        message_id: messageId,
-        userid: userID,
-        channel,
-        folder_path: folderPath,
-        date,
-        listid: '',
-        reference: ''
-      })
-      .eq('message_id', messageId)
-      .select()
-      .single()
+        .from('messages')
+        .update(message)
+        .eq('message_id', messageId)
+        .select()
+        .single();
     }
     return result;
   }
@@ -92,45 +86,33 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertPersons(name, emailsAddress, userID) {
+    const person = {
+      name,
+      email: emailsAddress,
+      _userid: userID,
+      url: '',
+      image: '',
+      address: '',
+      alternate_names: [],
+      same_as: [],
+      given_name: name,
+      family_name: '',
+      job_title: '',
+      works_for: '' // Will be retrieved with transmutation
+    };
     let result = await this.supabaseClient
       .from('persons')
-      .insert({
-        name,
-        email: emailsAddress,
-        _userid: userID,
-        url: '',
-        image: '',
-        address: '',
-        alternate_names: [],
-        same_as: [],
-        given_name: name,
-        family_name: '',
-        job_title: '',
-        works_for: '' // Will be retrieved with transmutation
-      })
+      .insert(person)
       .select()
       .single();
-    
+
     if (result.error?.code === '23505') {
       result = await this.supabaseClient
-      .from('persons')
-      .update({
-          name,
-          email: emailsAddress,
-          _userid: userID,
-          url: '',
-          image: '',
-          address: '',
-          alternate_names: [],
-          same_as: [],
-          given_name: name,
-          family_name: '',
-          job_title: '',
-          works_for: '' // Will be retrieved with transmutation
-        })
+        .from('persons')
+        .update(person)
         .eq('email', emailsAddress)
         .select()
-        .single()
+        .single();
     }
     return result;
   }
