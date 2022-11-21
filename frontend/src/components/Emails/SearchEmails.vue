@@ -133,7 +133,7 @@
               />
             </template>
             <template v-slot:header-cell-Names="props">
-              <q-th :props="props">{{ props.col.label }} </q-th>
+              <q-th :props="props" style="padding-left: 35px;">{{ props.col.label }} </q-th>
             </template>
             <template v-slot:header-cell-Email="props">
               <q-th :props="props">{{ props.col.label }} </q-th>
@@ -195,67 +195,71 @@
                   }}</q-td
                 >
                 <q-td key="Names" :props="props">
-                  <!-- <q-expansion-item
-                    v-if="props.row.name != null && props.row.name.length > 1"
+                  <q-expansion-item
+                    v-if="props.row.name && props.row.alternate_names.length > 1"
                     dense
                     dense-toggle
                     expand-icon-class="text-orange"
+                    header-class="q-prl-16"
                   >
                     <template v-slot:header>
-                      <q-item-section
-                        v-if="props.row.name.length > 0"
-                        class="padding-zero"
-                      >
-                        <q-badge outline color="orange" transparent
-                          >{{
-                            props.row.name[0].length > 25
-                              ? props.row.name[0].substring(0, 22).concat("...")
-                              : props.row.name[0]
-                          }}
-                        </q-badge>
-                      </q-item-section>
-                      <q-item-section v-if="props.row.name.length - 1 > 0" side>
-                        <div class="row items-center">
+                    <q-item-section>
+                      <div class="row items-center">
                           <q-badge
-                            class="text-little"
-                            rounded
-                            color="orange"
-                            transparent
-                            >+{{ props.row.name.length - 1 }}</q-badge
+                          outline
+                          color="orange"
                           >
-                        </div>
-                      </q-item-section>
+                            {{
+                              props.row.name.length > 35
+                                ? props.row.name.substring(0, 30).concat("...")
+                                : props.row.name
+                            }}
+                        </q-badge>
+                        <q-badge
+                          class="text-little q-ml-sm"
+                          outline
+                          color="orange"
+                          transparent
+                          >+{{ props.row.alternate_names.length - 1}}
+                        </q-badge>
+                      </div>  
+                    </q-item-section>
                     </template>
                     <div
-                      v-for="name in props.row.name.filter((element) => {
+                      v-for="name in props.row.alternate_names.filter((element) => {
                         return element != ' ';
                       })"
+                      :key="name.index"
                       :bind="name.index"
+                      style="padding-left: 16px;"
                     >
                       <q-badge
                         v-if="name.length > 0"
                         outline
                         color="orange"
-                        transparent
-                        >{{
+                        >
+                        {{
                           name.length > 35
                             ? name.substring(0, 30).concat("...")
                             : name
-                        }} </q-badge
-                      ><br /></div
-                  ></q-expansion-item> -->
-                  <q-badge
-                    v-if="props.row.name"
+                        }}
+                      </q-badge>
+                      <br/>
+                    </div
+                  >
+                </q-expansion-item>
+                <div class="row items-center" style="padding-left: 16px" v-else-if="props.row.name">
+                    <q-badge
                     outline
                     color="orange"
-                    transparent
-                    class="padding-zero"
-                    >{{
-                      props.row.name.length > 30
-                        ? props.row.name.substring(0, 25).concat("...")
-                        : props.row.name
-                    }}
+                    >
+                      {{
+                        props.row.name
+                          ? props.row.name
+                          : ""
+                      }}
                   </q-badge>
+                </div>
                 </q-td>
                 <q-td key="Occurence" :props="props">
                   <q-badge outline color="orange" transparent>
@@ -857,4 +861,5 @@ export default defineComponent({
 .q-item--dense {
   padding: 0px;
 }
+
 </style>

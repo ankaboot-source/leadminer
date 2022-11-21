@@ -92,7 +92,7 @@ exports.loginToAccount = async (req, res, next) => {
   }
   const imap = await supabaseHandlers.getImapUserByEmail(email);
   if (imap === null) {
-    this.createImapInfo(req, res);
+    this.createImapInfo(req, res, next);
   } else {
     const imapConnection = temporaryImapConnection(imap, req.body);
 

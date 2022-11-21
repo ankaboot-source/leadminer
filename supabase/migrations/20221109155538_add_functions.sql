@@ -36,14 +36,14 @@ begin
     (
         select name from public.pointsofcontact
         where public.pointsofcontact.personid=get_alternate_names.personid
-        and public.pointsofcontact.userid=get_alternate_names.userid and name != ''
+        and public.pointsofcontact.userid=get_alternate_names.userid and (name != ' ' and name != '')
         group by name
         order by count(name) desc
     );
 end
 $$ language plpgsql;
 
-create or replace function update_names_table_persons(personid uuid, userid uuid)
+create or replace function update_names_table_persons(personid uuid, userid uuid, alternate_names text[])
 returns varchar
 as
 $$
@@ -64,17 +64,14 @@ begin
         limit 1
     ) into freq_name;
 
-    -- get total alternate names
-    result = public.get_alternate_names(update_names_table_persons.personid, update_names_table_persons.userid);
-
     -- in case there is no name in the last x days
     if (freq_name = '' or freq_name is null) then
-        freq_name = result[1];
+        freq_name = update_names_table_persons.alternate_names[1];
     end if;
 
     -- update name, alternate_names in table persons
     update public.persons
-        set name = freq_name, alternate_names = result
+        set name = freq_name, alternate_names = update_names_table_persons.alternate_names
     where public.persons.id = personid;
 
     -- return top name
@@ -90,6 +87,7 @@ DECLARE
     person persons%rowtype;
     t text[];
     occurrences int;
+    person_alternate_names text[];
     person_name varchar;
 BEGIN
     FOR person IN
@@ -97,11 +95,15 @@ BEGIN
     LOOP
         t=public.get_tags_per_person(person.id, refined_persons.userid);
         occurrences=public.get_occurrences_per_person(person.id, refined_persons.userid);
-        person_name=public.update_names_table_persons(person.id, refined_persons.userid);
+        person_alternate_names=public.get_alternate_names(person.id, refined_persons.userid);
+        person_name=public.update_names_table_persons(person.id, refined_persons.userid, person_alternate_names);
 
-        INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, email)
-        VALUES(person.id, refined_persons.userid, 0, occurrences, t, person_name, person.email)
-        ON CONFLICT(personid) DO UPDATE SET occurence=occurrences,tags=t;
+        if ('transactional' != all(t)) and ('no-reply' != all(t)) then
+            INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email)
+            VALUES(person.id, refined_persons.userid, 0, occurrences, t, person_name, person_alternate_names, person.email)
+            ON CONFLICT(personid) DO UPDATE SET occurence=occurrences,tags=t, name=person_name, alternate_names=person_alternate_names;
+        end if;
+
     END LOOP;
 END;
 $function$

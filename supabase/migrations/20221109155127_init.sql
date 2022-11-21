@@ -72,6 +72,7 @@ create table "public"."refinedpersons" (
     "occurence" integer,
     "tags" text[],
     "name" text,
+    "alternate_names" text[],
     "email" text
 );
 
