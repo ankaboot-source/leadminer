@@ -24,35 +24,31 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertMessage(messageId, userID, channel, folderPath, date) {
+    const message = {
+      message_id: messageId,
+      userid: userID,
+      channel,
+      folder_path: folderPath,
+      date,
+      listid: '',
+      reference: ''
+    };
+
     let result = await this.supabaseClient
       .from('messages')
-      .insert({
-        message_id: messageId,
-        userid: userID,
-        channel,
-        folder_path: folderPath,
-        date,
-        listid: '',
-        reference: ''
-      })
+      .insert(message)
       .select()
       .single();
+
     if (result.error?.code === '23505') {
       result = await this.supabaseClient
-      .from('messages')
-      .update({
-        message_id: messageId,
-        userid: userID,
-        channel,
-        folder_path: folderPath,
-        date,
-        listid: '',
-        reference: ''
-      })
-      .eq('message_id', messageId)
-      .select()
-      .single()
+        .from('messages')
+        .update(message)
+        .eq('message_id', messageId)
+        .select()
+        .single();
     }
+
     return result;
   }
 
@@ -77,6 +73,7 @@ class SupabaseHandlers {
         bcc: key === 'bcc',
         _from: key === 'from',
         reply_to: key === 'reply-to' || key === 'reply_to',
+        body: key === 'body',
         personid
       })
       .select()
@@ -110,11 +107,11 @@ class SupabaseHandlers {
       })
       .select()
       .single();
-    
+
     if (result.error?.code === '23505') {
       result = await this.supabaseClient
-      .from('persons')
-      .update({
+        .from('persons')
+        .update({
           name,
           email: emailsAddress,
           _userid: userID,
@@ -130,7 +127,7 @@ class SupabaseHandlers {
         })
         .eq('email', emailsAddress)
         .select()
-        .single()
+        .single();
     }
     return result;
   }
