@@ -14,19 +14,6 @@ end;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.get_tags_per_person(personid uuid, userid uuid)
- RETURNS text[]
- LANGUAGE plpgsql
-AS $function$
-declare
-  tag text[];
-begin
-    select array_agg(name) into tag from tags where tags.personid=get_tags_per_person.personid and tags.userid=get_tags_per_person.userid;
-  return tag;
-end;
-$function$
-;
-
 create or replace function get_alternate_names(personid uuid, userid uuid)
 returns text[]
 as
@@ -84,26 +71,26 @@ CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid)
  LANGUAGE plpgsql
 AS $function$
 DECLARE
-    person persons%rowtype;
-    t text[];
-    occurrences int;
-    person_alternate_names text[];
+    person record;
     person_name varchar;
 BEGIN
     FOR person IN
-        SELECT * FROM persons WHERE _userid=refined_persons.userid
+        select
+            personid as id,
+            array_agg(name) as tags,
+            public.get_occurrences_per_person(personid, refined_persons.userid) as occurrences,
+            public.get_alternate_names(personid, refined_persons.userid) as alternate_names,
+            (select email from public.persons where id=personid) as email
+        from public.tags where id not in (
+            select id from public.tags 
+            where name in ('transactional', 'no-reply')
+        )
+        group by personid
     LOOP
-        t=public.get_tags_per_person(person.id, refined_persons.userid);
-        occurrences=public.get_occurrences_per_person(person.id, refined_persons.userid);
-        person_alternate_names=public.get_alternate_names(person.id, refined_persons.userid);
-        person_name=public.update_names_table_persons(person.id, refined_persons.userid, person_alternate_names);
-
-        if ('transactional' != all(t)) and ('no-reply' != all(t)) then
-            INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email)
-            VALUES(person.id, refined_persons.userid, 0, occurrences, t, person_name, person_alternate_names, person.email)
-            ON CONFLICT(personid) DO UPDATE SET occurence=occurrences,tags=t, name=person_name, alternate_names=person_alternate_names;
-        end if;
-
+        person_name = public.update_names_table_persons(person.id, refined_persons.userid, person.alternate_names);
+        INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email)
+        VALUES(person.id, refined_persons.userid, 0, person.occurrences, person.tags, person_name, person.alternate_names, person.email)
+        ON CONFLICT(personid) DO UPDATE SET occurence=person.occurrences,tags=person.tags, name=person_name, alternate_names=person.alternate_names;
     END LOOP;
 END;
 $function$
