@@ -60,6 +60,7 @@ create table "public"."pointsofcontact" (
     "_to" boolean,
     "cc" boolean,
     "bcc" boolean,
+		"body" boolean,
     "personid" uuid
 );
 
