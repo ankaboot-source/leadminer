@@ -5,35 +5,38 @@
     class="col-10 col-sm-6 q-ma-sm"
     icon="arrow_forward_ios"
     :nodes="Boxes"
-    @update:ticked="Ticked"
     node-key="path"
     color="teal"
     tick-strategy="leaf"
-    ><template class="row" v-slot:default-header="prop">
+    @update:ticked="Ticked"
+  >
+    <template #default-header="prop">
       <div
         class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
       >
         <div class="col-10 text-weight-bold text-primary">
-          {{ prop.node.label
-          }}<q-badge
+          {{ prop.node.label }}
+          <q-badge
             v-if="!prop.expanded"
             color="orange"
             class="q-ml-lg"
             rounded
             floating
             transparent
-            >{{ prop.node.total }}</q-badge
-          ><q-badge
+          >
+            {{ prop.node.total }}
+          </q-badge>
+          <q-badge
             v-else
             color="orange"
             class="q-ml-lg"
             rounded
             floating
             transparent
-            >{{ prop.node.totalIndiv }}</q-badge
           >
+            {{ prop.node.totalIndiv }}
+          </q-badge>
         </div>
-
         <div class="col-2">
           <q-icon
             :name="Scanned.includes(prop.node.label) ? 'check' : ''"
@@ -42,15 +45,18 @@
             class="q-mr-sm"
           />
         </div>
-      </div> </template
-  ></q-tree>
+      </div>
+    </template>
+  </q-tree>
 </template>
 
 <script>
-import { defineComponent, computed, ref } from "vue";
 import objectScan from "object-scan";
+import { defineComponent, ref } from "vue";
 
 const excludedFolders = [
+  "junk",
+  "mailspring",
   "spam",
   "corbeille",
   "brouillons",
@@ -61,11 +67,6 @@ const excludedFolders = [
 ]; //
 export default defineComponent({
   name: "TreeCard",
-  data() {
-    return {
-      selected: ref([]),
-    };
-  },
   props: {
     boxes: {
       type: Array,
@@ -79,6 +80,11 @@ export default defineComponent({
         return [];
       },
     },
+  },
+  data() {
+    return {
+      selected: ref([]),
+    };
   },
 
   computed: {
