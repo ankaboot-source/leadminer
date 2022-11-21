@@ -24,35 +24,31 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertMessage(messageId, userID, channel, folderPath, date) {
+    const message = {
+      message_id: messageId,
+      userid: userID,
+      channel,
+      folder_path: folderPath,
+      date,
+      listid: '',
+      reference: ''
+    };
+
     let result = await this.supabaseClient
       .from('messages')
-      .insert({
-        message_id: messageId,
-        userid: userID,
-        channel,
-        folder_path: folderPath,
-        date,
-        listid: '',
-        reference: ''
-      })
+      .insert(message)
       .select()
       .single();
+
     if (result.error?.code === '23505') {
       result = await this.supabaseClient
         .from('messages')
-        .update({
-          message_id: messageId,
-          userid: userID,
-          channel,
-          folder_path: folderPath,
-          date,
-          listid: '',
-          reference: ''
-        })
+        .update(message)
         .eq('message_id', messageId)
         .select()
         .single();
     }
+
     return result;
   }
 
