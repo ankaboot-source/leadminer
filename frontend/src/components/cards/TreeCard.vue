@@ -23,7 +23,8 @@
             rounded
             floating
             transparent
-            >{{ prop.node.total }}
+          >
+            {{ prop.node.total }}
           </q-badge>
           <q-badge
             v-else
