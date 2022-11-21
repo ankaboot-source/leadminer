@@ -10,7 +10,7 @@ function errorHandler(err, _, res, _next) {
     response.error = err;
   }
 
-  return res.status(statusCode).status(response);
+  return res.status(statusCode).send(response);
 }
 
 module.exports = {

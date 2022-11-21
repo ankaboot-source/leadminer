@@ -7,7 +7,7 @@ AS $function$
 declare
   occurrences int;
 begin
-    select count(*) into occurrences filter (where cc or _to or _from or reply_to or bcc)
+    select count(*) into occurrences filter (where cc or _to or _from or reply_to or bcc or body)
     FROM pointsofcontact where pointsofcontact.personid=get_occurrences_per_person.personid and pointsofcontact.userid=get_occurrences_per_person.userid;
   return occurrences;
 end;

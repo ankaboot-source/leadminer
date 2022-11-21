@@ -18,7 +18,7 @@ parentPort.on('message', (userID) => {
   });
 });
 
-redisClient.on('message', (channel, messageFromChannel) => {
+redisClient.on('message', async (channel, messageFromChannel) => {
   const message = JSON.parse(messageFromChannel);
   const Header = message.header;
   const message_id = Header['message-id'] ? Header['message-id'][0] : '';
@@ -31,6 +31,6 @@ redisClient.on('message', (channel, messageFromChannel) => {
   );
   if (message_id) {
     // Extract emails from the header
-    Message.extractThenStoreEmailsAddresses();
+    await Message.extractThenStoreEmailsAddresses();
   }
 });
