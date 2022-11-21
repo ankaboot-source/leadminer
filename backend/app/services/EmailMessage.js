@@ -164,11 +164,11 @@ class EmailMessage {
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
         tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
-      } else if (this.isTransactional()) {
+      } if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
-      } else if (this.isList()) {
+      } if (this.isList()) {
         tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
