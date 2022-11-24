@@ -47,6 +47,7 @@ class SupabaseHandlers {
         .select()
         .single();
     }
+
     return result;
   }
 
@@ -71,6 +72,7 @@ class SupabaseHandlers {
         bcc: key === 'bcc',
         _from: key === 'from',
         reply_to: key === 'reply-to' || key === 'reply_to',
+        body: key === 'body',
         personid
       })
       .select()
