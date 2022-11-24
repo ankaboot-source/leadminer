@@ -51,7 +51,7 @@ function createFlatTreeFromImap(imapTree, currentParent) {
  * ]
  */
 
-function BuildFinalTree(flatTree, userEmail) {
+function buildFinalTree(flatTree, userEmail) {
   const readableTree = [];
   let totalInEmail = 0;
 
@@ -79,5 +79,5 @@ function BuildFinalTree(flatTree, userEmail) {
 
 module.exports = {
   createFlatTreeFromImap,
-  BuildFinalTree
+  buildFinalTree
 };
