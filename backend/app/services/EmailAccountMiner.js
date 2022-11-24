@@ -212,7 +212,9 @@ class EmailAccountMiner {
     let self = this;
 
     const bodies = ['HEADER'];
-    imapFetchBody && bodies.push('TEXT');
+    if (imapFetchBody) {
+      bodies.push('TEXT');
+    }
 
     const fetchResult = this.connection.seq.fetch('1:*', {
       bodies
