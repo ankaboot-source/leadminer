@@ -53,7 +53,7 @@ services:
         SUPABASE_SECRET_PROJECT_TOKEN: ${SUPABASE_SECRET_PROJECT_TOKEN}
         GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     ports:
-      - ${FRONTEND_PORT}:80
+      - 8080:80
     restart: always
     depends_on:
       - leadminer-api
