@@ -15,6 +15,7 @@ server:
     expiration_timeout: 259200 # expiration timeout for redis entries
   hash_secret: dev-hash # hash secret used to hash the users emails addresses
   imap:
+    fetch_body: false
     authentication_timeout: 10000
     connection_timeout: 90000
 google_api:

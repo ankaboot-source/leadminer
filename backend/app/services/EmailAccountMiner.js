@@ -14,6 +14,7 @@ const data = 'messageWorker initiated',
     data
   });
 const { supabaseHandlers } = require('./supabase/index');
+const { imapFetchBody } = require('../config/server.config');
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -66,10 +67,14 @@ class EmailAccountMiner {
 
             // add total to each folder
             await this.AddTotalPerFolder(treeWithPaths);
-            this.tree = imapTreeHelpers.BuildFinaltTree(treeWithPaths,this.user.email);
+            this.tree = imapTreeHelpers.buildFinalTree(
+              treeWithPaths,
+              this.user.email
+            );
             this.connection.end();
           });
         });
+
         this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
             emailHash: this.mailHash
@@ -77,6 +82,7 @@ class EmailAccountMiner {
           result = [this.tree, null];
           resolve(result);
         });
+
         this.connection.once('error', (error) => {
           result = [this.tree, error];
           resolve(result);
@@ -96,11 +102,10 @@ class EmailAccountMiner {
     const promises = folders.map((folder, index) => {
       return new Promise((resolve) => {
         self.connection.openBox(folder.path, true, (err, box) => {
-
           if (box) {
-            folders[index].total = box.messages.total; 
+            folders[index].total = box.messages.total;
           } else {
-            folders[index].total = 0; 
+            folders[index].total = 0;
           }
           resolve();
         });
@@ -121,7 +126,9 @@ class EmailAccountMiner {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
-      this.evenMessageWorker.postMessage(`even-messages-channel-${this.user.id}`);
+      this.evenMessageWorker.postMessage(
+        `even-messages-channel-${this.user.id}`
+      );
       this.oddMessageWorker.postMessage(`odd-messages-channel-${this.user.id}`);
       setTimeout(() => {
         this.mineFolder(this.folders[0]).next();
@@ -205,37 +212,54 @@ class EmailAccountMiner {
    */
   ImapFetch(folder, folderName) {
     let self = this;
+
+    const bodies = ['HEADER'];
+    if (imapFetchBody) {
+      bodies.push('TEXT');
+    }
+
     const fetchResult = this.connection.seq.fetch('1:*', {
-      bodies: self.fields,
-      struct: true
+      bodies
     });
 
-    // message event
     fetchResult.on('message', (msg, seqNumber) => {
-      let Header = '',
-        body = '';
+      logger.debug('Message #%d', seqNumber);
+      const prefix = `(#${seqNumber}) `;
 
       msg.on('body', (stream, streamInfo) => {
-        // parse the chunks of the message
+        let header = '';
+        let body = '';
 
         stream.on('data', (chunk) => {
           if (streamInfo.which.includes('HEADER')) {
-            Header += chunk;
+            header += chunk;
           } else {
             body += chunk;
           }
         });
-      });
-      msg.once('end', () => {
-        // if end then push to queue
-        const header = Header,
-          Body = body;
 
-        self.publishMessageToChannel(seqNumber, header, Body, folderName);
-        Header = '';
-        body = '';
+        stream.once('end', () => {
+          const parsedHeader = Imap.parseHeader(header.toString('utf8'));
+          const parsedBody = body.toString('utf8');
+
+          self.publishMessageToChannel(
+            seqNumber,
+            parsedHeader,
+            parsedBody,
+            folderName
+          );
+        });
+      });
+
+      msg.once('end', () => {
+        logger.debug(`${prefix}Finished`);
       });
     });
+
+    fetchResult.on('error', (err) => {
+      logger.error(`Fetch error: ${err}`);
+    });
+
     // end event
     fetchResult.once('end', () => {
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
@@ -244,6 +268,7 @@ class EmailAccountMiner {
         setTimeout(() => {
           this.evenMessageWorker.terminate();
           this.oddMessageWorker.terminate();
+          this.sendMinedData();
         }, 5000);
         this.connection.end();
         self = null;
@@ -271,12 +296,11 @@ class EmailAccountMiner {
     if (this.emailsProgressIndexes.includes(seqNumber)) {
       this.sendMinedData();
     }
-    const Header = Imap.parseHeader(header.toString('utf8'));
-    //publish the message to the odd channel
+
     const message = JSON.stringify({
       seqNumber,
       body,
-      header: Header,
+      header,
       user: this.user,
       folderName
     });
@@ -291,9 +315,6 @@ class EmailAccountMiner {
         message
       );
     }
-
-    //   }
-    // });
   }
 
   /**
