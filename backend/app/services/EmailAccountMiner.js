@@ -291,6 +291,10 @@ class EmailAccountMiner {
   publishMessageToChannel(seqNumber, header, body, folderName) {
     this.sendMiningProgress(seqNumber);
 
+    if (this.emailsProgressIndexes.includes(seqNumber)) {
+      this.sendMinedData();
+    }
+
     const message = JSON.stringify({
       seqNumber,
       body,
