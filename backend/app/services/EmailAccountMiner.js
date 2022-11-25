@@ -7,10 +7,10 @@ const { redis } = require('../utils/redis');
 const { Worker } = require('worker_threads');
 const redisClientForPubSubMode = redis.getPubSubClient();
 const data = 'messageWorker initiated',
-  evenMessageWorker = new Worker('./app/workers/evenMessageWorker.js', {
+  MessageWorker1 = new Worker('./app/workers/messageWorker.js', {
     data
   }),
-  oddMessageWorker = new Worker('./app/workers/oddMessageWorker.js', {
+  MessageWorker2 = new Worker('./app/workers/messageWorker.js', {
     data
   });
 const { supabaseHandlers } = require('./supabase/index');
@@ -38,8 +38,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.messageWorkerOddSeqNumber = oddMessageWorker;
-    this.messageWorkerEvenSeqNumber = evenMessageWorker;
+    this.evenMessageWorker = MessageWorker1;
+    this.oddMessageWorker = MessageWorker2;
   }
 
   /**
@@ -126,8 +126,10 @@ class EmailAccountMiner {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
-      this.messageWorkerOddSeqNumber.postMessage(this.user.id);
-      this.messageWorkerEvenSeqNumber.postMessage(this.user.id);
+      this.evenMessageWorker.postMessage(
+        `even-messages-channel-${this.user.id}`
+      );
+      this.oddMessageWorker.postMessage(`odd-messages-channel-${this.user.id}`);
       setTimeout(() => {
         this.mineFolder(this.folders[0]).next();
       }, 1500);
@@ -264,8 +266,8 @@ class EmailAccountMiner {
       if (self.folders.indexOf(folder.name) + 1 === self.folders.length) {
         // we are at the end of the folder array==>> end imap connection
         setTimeout(() => {
-          this.messageWorkerEvenSeqNumber.terminate();
-          this.messageWorkerOddSeqNumber.terminate();
+          this.evenMessageWorker.terminate();
+          this.oddMessageWorker.terminate();
           this.sendMinedData();
         }, 5000);
         this.connection.end();

@@ -33,7 +33,6 @@ class SupabaseHandlers {
       listid: '',
       reference: ''
     };
-
     let result = await this.supabaseClient
       .from('messages')
       .insert(message)
@@ -89,42 +88,30 @@ class SupabaseHandlers {
    * @returns {promise}
    */
   async upsertPersons(name, emailsAddress, userID) {
+    const person = {
+      name,
+      email: emailsAddress,
+      _userid: userID,
+      url: '',
+      image: '',
+      address: '',
+      alternate_names: [],
+      same_as: [],
+      given_name: name,
+      family_name: '',
+      job_title: '',
+      works_for: '' // Will be retrieved with transmutation
+    };
     let result = await this.supabaseClient
       .from('persons')
-      .insert({
-        name,
-        email: emailsAddress,
-        _userid: userID,
-        url: '',
-        image: '',
-        address: '',
-        alternate_names: [],
-        same_as: [],
-        given_name: name,
-        family_name: '',
-        job_title: '',
-        works_for: '' // Will be retrieved with transmutation
-      })
+      .insert(person)
       .select()
       .single();
 
     if (result.error?.code === '23505') {
       result = await this.supabaseClient
         .from('persons')
-        .update({
-          name,
-          email: emailsAddress,
-          _userid: userID,
-          url: '',
-          image: '',
-          address: '',
-          alternate_names: [],
-          same_as: [],
-          given_name: name,
-          family_name: '',
-          job_title: '',
-          works_for: '' // Will be retrieved with transmutation
-        })
+        .update(person)
         .eq('email', emailsAddress)
         .select()
         .single();
