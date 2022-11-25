@@ -11,6 +11,8 @@ const imapAuthTimeout =
 const imapConnectionTimeout =
   process.env.IMAP_CONNECTION_TIMEOUT ??
   config.get('server.imap.connection_timeout');
+const imapFetchBody =
+  process.env.IMAP_FETCH_BODY ?? config.get('server.imap.fetch_body');
 
 const allowedOrigins = [
   'http://localhost:8080', // For local development
@@ -19,6 +21,7 @@ const allowedOrigins = [
 
 module.exports = {
   serverPort,
+  imapFetchBody,
   hashSecret,
   logLevel,
   imapAuthTimeout,

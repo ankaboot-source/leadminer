@@ -5,15 +5,15 @@ const redisClient = redis.getPubSubClient();
 const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 
-parentPort.on('message', (userID) => {
+parentPort.on('message', (channel) => {
   //subscribe to created channel
-  redisClient.subscribe(`even-messages-channel-${userID}`, (err) => {
+  redisClient.subscribe(channel, (err) => {
     if (err) {
       logger.debug(
         `error in message worker, can't subscribe to channel ${err}`
       );
     } else {
-      logger.debug(`even worker ${userID} is subscribed to its channel`);
+      logger.debug(`worker subscribed to ${channel}.`);
     }
   });
 });
