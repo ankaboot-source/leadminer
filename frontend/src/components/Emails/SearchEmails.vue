@@ -61,11 +61,8 @@
                 <progress-card
                   v-if="Boxes"
                   :collected-emails="Emails ? Emails.length : 0"
-                  :loading-status-dns="loadingStatusDns"
                   :scanned-emails="ScannedEmails"
                   :total-emails="TotalEmails"
-                  :statistics="Statistics"
-                  :scanned-addresses="ScannedAddresses"
                 />
               </div>
             </div>
@@ -76,7 +73,7 @@
           class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll"
         >
           <q-table
-            v-model:pagination="pagination"
+            :pagination="pagination"
             class="sticky"
             style="height: 90vh"
             card-class="bg-white  text-teal-10"
@@ -491,14 +488,11 @@ export default defineComponent({
     Status() {
       return this.progress.status;
     },
-    Statistics() {
-      return this.progress.statistics;
-    },
     TotalEmails() {
       if (this.boxes[0]) {
         return objectScan(["**.{total}"], {
           joined: true,
-          filterFn: ({ parent, gparent, property, value, context }) => {
+          filterFn: ({ parent, _gparent, property, value, context }) => {
             if (
               property == "total" &&
               parent.path &&

@@ -1,5 +1,3 @@
-//let reconnectFrequencySeconds = 1;
-
 import { LocalStorage } from "quasar";
 
 export function eventListenersHandler(currentState, source, parent) {
@@ -8,7 +6,6 @@ export function eventListenersHandler(currentState, source, parent) {
     "minedEmails" + currentState.imapUser.id + currentState.googleUser.id,
     (message) => {
       let data = JSON.parse(message.data);
-      //parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
       parent.commit("example/SET_EMAILS", data.data);
       parent.commit("example/SET_STATISTICS", data.statistics);
     }
@@ -18,8 +15,6 @@ export function eventListenersHandler(currentState, source, parent) {
     (message) => {
       let data = JSON.parse(message.data);
       parent.commit("example/SET_SCANNEDEMAILS", data.scanned);
-      //parent.commit("example/SET_EMAILS", data.data);
-      //parent.commit("example/SET_INVALIDADDRESSES", data.totalScanned);
     }
   );
   source.addEventListener(
