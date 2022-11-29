@@ -216,12 +216,6 @@ exports.getEmails = async (req, res, next) => {
   );
 
   miner.mine();
-  // req.on("close", async () => {
-  //   console.log("**********************************End****************");
-  //   // if stop mining from user then send data and end imap connetion
-  //   eventEmitter.emit("endByUser", true);
-  //   sse.send(true, `dns${user.id}`);
-  // });
 
   eventEmitter.on('error', () => {
     res.status(500).send({
