@@ -25,7 +25,7 @@
                   <tree-card
                     v-if="Boxes.length > 0"
                     :boxes="Boxes"
-                    :scannedBoxes="Scanned"
+                    :scanned-boxes="Scanned"
                     @selectedBoxes="updateSelectedBoxes"
                   />
                   <q-spinner-tail v-else color="teal" size="4em" />
@@ -35,14 +35,14 @@
                   <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-6">
                     <q-btn
-                      v-bind:disable="loadingStatusDns"
+                      :disable="loadingStatusDns"
                       no-caps
                       :color="loadingStatusDns ? 'grey-6' : 'red'"
                       label="Collect emails addresses"
                       @click="fetchEmails()"
                     ></q-btn>
                     <q-btn
-                      v-bind:disable="!loadingStatusDns"
+                      :disable="!loadingStatusDns"
                       class="q-ma-md"
                       no-caps
                       :color="loadingStatusDns ? 'red' : 'grey-6'"
@@ -60,12 +60,9 @@
               <div class="row q-md col-12">
                 <progress-card
                   v-if="Boxes"
-                  :collectedEmails="Emails ? Emails.length : 0"
-                  :loadingStatusDns="loadingStatusDns"
-                  :scannedEmails="ScannedEmails"
-                  :totalEmails="TotalEmails"
-                  :statistics="Statistics"
-                  :scannedAddresses="ScannedAddresses"
+                  :collected-emails="Emails ? Emails.length : 0"
+                  :scanned-emails="ScannedEmails"
+                  :total-emails="TotalEmails"
                 />
               </div>
             </div>
@@ -76,6 +73,7 @@
           class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll"
         >
           <q-table
+            v-model:pagination="pagination"
             class="sticky"
             style="height: 90vh"
             card-class="bg-white  text-teal-10"
@@ -90,7 +88,6 @@
             row-key="email"
             virtual-scroll
             column-sort-order="ad"
-            :pagination.sync="pagination"
           >
             <template #top-right="props">
               <q-input
@@ -128,24 +125,26 @@
                 icon-right="archive"
                 label="Export to csv"
                 no-caps
-                @click="exportTable(Emails.length > 0 ? Emails : [])"
                 :disable="loadingStatusDns"
+                @click="exportTable(Emails.length > 0 ? Emails : [])"
               />
             </template>
-            <template v-slot:header-cell-Names="props">
-              <q-th :props="props" style="padding-left: 35px;">{{ props.col.label }} </q-th>
+            <template #header-cell-Names="props">
+              <q-th :props="props" style="padding-left: 35px"
+                >{{ props.col.label }}
+              </q-th>
             </template>
-            <template v-slot:header-cell-Email="props">
+            <template #header-cell-Email="props">
               <q-th :props="props">{{ props.col.label }} </q-th>
             </template>
             <template v-slot:header-cell-#="props">
               <q-th :props="props">{{ props.col.label }} </q-th> </template
-            ><template v-slot:header-cell-Type="props">
+            ><template #header-cell-Type="props">
               <q-th :props="props">{{ props.col.label }} </q-th> </template
-            ><template v-slot:header-cell-Status="props">
+            ><template #header-cell-Status="props">
               <q-th :props="props">{{ props.col.label }} </q-th>
             </template>
-            <template v-slot:header-cell-Date="props">
+            <template #header-cell-Date="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
@@ -155,7 +154,7 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
-            <template v-slot:header-cell-Engagement="props">
+            <template #header-cell-Engagement="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
@@ -165,7 +164,7 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
-            <template v-slot:header-cell-Occurence="props">
+            <template #header-cell-Occurence="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
@@ -196,70 +195,63 @@
                 >
                 <q-td key="Names" :props="props">
                   <q-expansion-item
-                    v-if="props.row.name && props.row.alternate_names.length > 1"
+                    v-if="
+                      props.row.name && props.row.alternate_names.length > 1
+                    "
                     dense
                     dense-toggle
                     expand-icon-class="text-orange"
                     header-class="q-prl-16"
                   >
-                    <template v-slot:header>
-                    <q-item-section>
-                      <div class="row items-center">
-                          <q-badge
-                          outline
-                          color="orange"
-                          >
+                    <template #header>
+                      <q-item-section>
+                        <div class="row items-center">
+                          <q-badge outline color="orange">
                             {{
                               props.row.name.length > 35
                                 ? props.row.name.substring(0, 30).concat("...")
                                 : props.row.name
                             }}
-                        </q-badge>
-                        <q-badge
-                          class="text-little q-ml-sm"
-                          outline
-                          color="orange"
-                          transparent
-                          >+{{ props.row.alternate_names.length - 1}}
-                        </q-badge>
-                      </div>  
-                    </q-item-section>
+                          </q-badge>
+                          <q-badge
+                            class="text-little q-ml-sm"
+                            outline
+                            color="orange"
+                            transparent
+                            >+{{ props.row.alternate_names.length - 1 }}
+                          </q-badge>
+                        </div>
+                      </q-item-section>
                     </template>
                     <div
-                      v-for="name in props.row.alternate_names.filter((element) => {
-                        return element != ' ';
-                      })"
+                      v-for="name in props.row.alternate_names.filter(
+                        (element) => {
+                          return element != ' ';
+                        }
+                      )"
                       :key="name.index"
                       :bind="name.index"
-                      style="padding-left: 16px;"
+                      style="padding-left: 16px"
                     >
-                      <q-badge
-                        v-if="name.length > 0"
-                        outline
-                        color="orange"
-                        >
+                      <q-badge v-if="name.length > 0" outline color="orange">
                         {{
                           name.length > 35
                             ? name.substring(0, 30).concat("...")
                             : name
                         }}
                       </q-badge>
-                      <br/>
-                    </div
+                      <br />
+                    </div>
+                  </q-expansion-item>
+                  <div
+                    v-else-if="props.row.name"
+                    class="row items-center"
+                    style="padding-left: 16px"
                   >
-                </q-expansion-item>
-                <div class="row items-center" style="padding-left: 16px" v-else-if="props.row.name">
-                    <q-badge
-                    outline
-                    color="orange"
-                    >
-                      {{
-                        props.row.name
-                          ? props.row.name
-                          : ""
-                      }}
-                  </q-badge>
-                </div>
+                    <q-badge outline color="orange">
+                      {{ props.row.name ? props.row.name : "" }}
+                    </q-badge>
+                  </div>
                 </q-td>
                 <q-td key="Occurence" :props="props">
                   <q-badge outline color="orange" transparent>
@@ -560,16 +552,14 @@ export default defineComponent({
     Status() {
       return this.progress.status;
     },
-    Statistics() {
-      return this.progress.statistics;
-    },
     TotalEmails() {
       if (this.boxes[0]) {
         return objectScan(["**.{total}"], {
           joined: true,
-          filterFn: ({ parent, gparent, property, value, context }) => {
+          filterFn: ({ parent, _gparent, property, value, context }) => {
             if (
-              property == "total" && parent.path &&
+              property == "total" &&
+              parent.path &&
               this.selectedBoxes.includes(parent.path)
             ) {
               context.sum += value;
@@ -861,5 +851,4 @@ export default defineComponent({
 .q-item--dense {
   padding: 0px;
 }
-
 </style>
