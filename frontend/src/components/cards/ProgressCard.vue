@@ -34,12 +34,12 @@ export default defineComponent({
     const $q = useQuasar();
     const buttonSize = computed(() => {
       switch (true) {
-        case $q.screen.lt.sm == true:
+        case $q.screen.lt.sm === true:
           return "0.7em";
-        case $q.screen.gt.sm == true && $q.screen.lt.md == true:
+        case $q.screen.gt.sm === true && $q.screen.lt.md === true:
           return "2em";
 
-        case $q.screen.gt.md == true:
+        case $q.screen.gt.md === true:
           return "1.15em";
 
         default:

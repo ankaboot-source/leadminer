@@ -73,7 +73,7 @@
           class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll"
         >
           <q-table
-            v-model:pagination="pagination"
+            :pagination="pagination"
             class="sticky"
             style="height: 90vh"
             card-class="bg-white  text-teal-10"
