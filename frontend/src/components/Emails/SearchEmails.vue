@@ -25,7 +25,7 @@
                   <tree-card
                     v-if="Boxes.length > 0"
                     :boxes="Boxes"
-                    :scannedBoxes="Scanned"
+                    :scanned-boxes="Scanned"
                     @selectedBoxes="updateSelectedBoxes"
                   />
                   <q-spinner-tail v-else color="teal" size="4em" />
@@ -35,14 +35,14 @@
                   <div class="col-6" />
                   <div class="q-mt-md q-ml-lg col-6">
                     <q-btn
-                      v-bind:disable="loadingStatusDns"
+                      :disable="loadingStatusDns"
                       no-caps
                       :color="loadingStatusDns ? 'grey-6' : 'red'"
                       label="Collect emails addresses"
                       @click="fetchEmails()"
                     ></q-btn>
                     <q-btn
-                      v-bind:disable="!loadingStatusDns"
+                      :disable="!loadingStatusDns"
                       class="q-ma-md"
                       no-caps
                       :color="loadingStatusDns ? 'red' : 'grey-6'"
@@ -60,12 +60,12 @@
               <div class="row q-md col-12">
                 <progress-card
                   v-if="Boxes"
-                  :collectedEmails="Emails ? Emails.length : 0"
-                  :loadingStatusDns="loadingStatusDns"
-                  :scannedEmails="ScannedEmails"
-                  :totalEmails="TotalEmails"
+                  :collected-emails="Emails ? Emails.length : 0"
+                  :loading-status-dns="loadingStatusDns"
+                  :scanned-emails="ScannedEmails"
+                  :total-emails="TotalEmails"
                   :statistics="Statistics"
-                  :scannedAddresses="ScannedAddresses"
+                  :scanned-addresses="ScannedAddresses"
                 />
               </div>
             </div>
@@ -76,6 +76,7 @@
           class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll"
         >
           <q-table
+            v-model:pagination="pagination"
             class="sticky"
             style="height: 90vh"
             card-class="bg-white  text-teal-10"
@@ -90,7 +91,6 @@
             row-key="email"
             virtual-scroll
             column-sort-order="ad"
-            :pagination.sync="pagination"
           >
             <template #top-right="props">
               <q-input
@@ -128,24 +128,26 @@
                 icon-right="archive"
                 label="Export to csv"
                 no-caps
-                @click="exportTable(Emails.length > 0 ? Emails : [])"
                 :disable="loadingStatusDns"
+                @click="exportTable(Emails.length > 0 ? Emails : [])"
               />
             </template>
-            <template v-slot:header-cell-Names="props">
-              <q-th :props="props" style="padding-left: 35px;">{{ props.col.label }} </q-th>
+            <template #header-cell-Names="props">
+              <q-th :props="props" style="padding-left: 35px"
+                >{{ props.col.label }}
+              </q-th>
             </template>
-            <template v-slot:header-cell-Email="props">
+            <template #header-cell-Email="props">
               <q-th :props="props">{{ props.col.label }} </q-th>
             </template>
             <template v-slot:header-cell-#="props">
               <q-th :props="props">{{ props.col.label }} </q-th> </template
-            ><template v-slot:header-cell-Type="props">
+            ><template #header-cell-Type="props">
               <q-th :props="props">{{ props.col.label }} </q-th> </template
-            ><template v-slot:header-cell-Status="props">
+            ><template #header-cell-Status="props">
               <q-th :props="props">{{ props.col.label }} </q-th>
             </template>
-            <template v-slot:header-cell-Date="props">
+            <template #header-cell-Date="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
@@ -155,7 +157,7 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
-            <template v-slot:header-cell-Engagement="props">
+            <template #header-cell-Engagement="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
@@ -165,7 +167,7 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
-            <template v-slot:header-cell-Occurence="props">
+            <template #header-cell-Occurence="props">
               <q-th :props="props">
                 <q-tooltip
                   class="bg-orange-13 text-caption"
@@ -173,6 +175,18 @@
                   self="center middle"
                   >Total occurences of this email address</q-tooltip
                 >{{ props.col.label }}
+              </q-th>
+            </template>
+            <template #header-cell-Recency="props">
+              <q-th :props="props">
+                <q-tooltip
+                  class="bg-orange-13 text-caption"
+                  anchor="top middle"
+                  self="center middle"
+                >
+                  Date of last interaction with this person
+                </q-tooltip>
+                {{ props.col.label }}
               </q-th>
             </template>
 
@@ -196,77 +210,74 @@
                 >
                 <q-td key="Names" :props="props">
                   <q-expansion-item
-                    v-if="props.row.name && props.row.alternate_names.length > 1"
+                    v-if="
+                      props.row.name && props.row.alternate_names.length > 1
+                    "
                     dense
                     dense-toggle
                     expand-icon-class="text-orange"
                     header-class="q-prl-16"
                   >
-                    <template v-slot:header>
-                    <q-item-section>
-                      <div class="row items-center">
-                          <q-badge
-                          outline
-                          color="orange"
-                          >
+                    <template #header>
+                      <q-item-section>
+                        <div class="row items-center">
+                          <q-badge outline color="orange">
                             {{
                               props.row.name.length > 35
                                 ? props.row.name.substring(0, 30).concat("...")
                                 : props.row.name
                             }}
-                        </q-badge>
-                        <q-badge
-                          class="text-little q-ml-sm"
-                          outline
-                          color="orange"
-                          transparent
-                          >+{{ props.row.alternate_names.length - 1}}
-                        </q-badge>
-                      </div>  
-                    </q-item-section>
+                          </q-badge>
+                          <q-badge
+                            class="text-little q-ml-sm"
+                            outline
+                            color="orange"
+                            transparent
+                            >+{{ props.row.alternate_names.length - 1 }}
+                          </q-badge>
+                        </div>
+                      </q-item-section>
                     </template>
                     <div
-                      v-for="name in props.row.alternate_names.filter((element) => {
-                        return element != ' ';
-                      })"
+                      v-for="name in props.row.alternate_names.filter(
+                        (element) => {
+                          return element != ' ';
+                        }
+                      )"
                       :key="name.index"
                       :bind="name.index"
-                      style="padding-left: 16px;"
+                      style="padding-left: 16px"
                     >
-                      <q-badge
-                        v-if="name.length > 0"
-                        outline
-                        color="orange"
-                        >
+                      <q-badge v-if="name.length > 0" outline color="orange">
                         {{
                           name.length > 35
                             ? name.substring(0, 30).concat("...")
                             : name
                         }}
                       </q-badge>
-                      <br/>
-                    </div
+                      <br />
+                    </div>
+                  </q-expansion-item>
+                  <div
+                    v-else-if="props.row.name"
+                    class="row items-center"
+                    style="padding-left: 16px"
                   >
-                </q-expansion-item>
-                <div class="row items-center" style="padding-left: 16px" v-else-if="props.row.name">
-                    <q-badge
-                    outline
-                    color="orange"
-                    >
-                      {{
-                        props.row.name
-                          ? props.row.name
-                          : ""
-                      }}
-                  </q-badge>
-                </div>
+                    <q-badge outline color="orange">
+                      {{ props.row.name ? props.row.name : "" }}
+                    </q-badge>
+                  </div>
                 </q-td>
                 <q-td key="Occurence" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.occurence }}
                   </q-badge>
                 </q-td>
-
+                <q-td key="Recency" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ new Date(props.row.recency) }}
+                  </q-badge>
+                </q-td>
                 <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.engagement }}
@@ -278,43 +289,6 @@
                     ><br
                   /></span>
                 </q-td>
-                <!-- <q-td key="Date" :props="props">
-                  <q-badge outline color="blue" transparent>
-                    {{ formatDate(props.row.date) }}
-                  </q-badge>
-                  <q-tooltip
-                    class="bg-blue-8"
-                    anchor="top middle"
-                    self="center middle"
-                    >{{ getTimeOffset(props.row.date) }}</q-tooltip
-                  >
-                </q-td> -->
-
-                <!-- <q-td
-                  v-for="tag in props.row.tags"
-                  v-bind="key"
-                  key="Type"
-                  :props="props"
-                >
-                  <q-badge class="text-little" rounded color="amber-6">
-                    {{ tag }} </q-badge
-                  ><br /> -->
-                <!--<q-badge
-                    v-if="props.row.Transactional == true"
-                    class="text-little"
-                    rounded
-                    color="amber-7"
-                  >
-                    Transactional
-                  </q-badge>
-                  <br v-if="props.row.includes('Transactional')" /><q-badge
-                    v-if="props.row.type != ''"
-                    class="text-little"
-                    rounded
-                    color="green"
-                  >
-                    {{ props.row.type }}    </q-badge></q-td>-->
-
                 <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
@@ -367,28 +341,6 @@ const columns = [
     style: "max-width:190px;min-width: 190px !important;",
     headerStyle: "width: 250px !important",
   },
-  // {
-  //   name: "Sender",
-  //   align: "center",
-  //   label: "Sender",
-  //   type: "number",
-  //   field: (row) => row.sender,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  //   sortable: true,
-  // },
-  // {
-  //   name: "Recipient",
-  //   align: "center",
-  //   label: "Recipient",
-  //   type: "number",
-  //   field: (row) => row.recipient,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  //   sortable: true,
-  // },
   {
     name: "Occurence",
     align: "center",
@@ -409,17 +361,17 @@ const columns = [
       }
     },
   },
-  // {
-  //   name: "Body",
-  //   align: "center",
-  //   label: "Body",
-  //   type: "number",
-  //   field: (row) => row.body,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  //   sortable: true,
-  // },
+  {
+    name: "Recency",
+    align: "center",
+    label: "Recency",
+    type: "number",
+    field: (row) => new Date(row.recency),
+    sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
+    sortable: true,
+  },
   {
     name: "Engagement",
     align: "center",
@@ -438,27 +390,6 @@ const columns = [
       }
     },
   },
-
-  // {
-  //   name: "Date",
-  //   align: "center",
-  //   label: "Recency",
-  //   sortable: true,
-  //   sort: (date1, date2) => {
-  //     var d1 = Date.parse(date1);
-  //     var d2 = Date.parse(date2);
-  //     if (d1 < d2) {
-  //       return 1;
-  //     } else {
-  //       return -1;
-  //     }
-  //   },
-  //   field: (row) => row.date,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  // },
-
   {
     name: "Type",
     align: "center",
@@ -569,7 +500,8 @@ export default defineComponent({
           joined: true,
           filterFn: ({ parent, gparent, property, value, context }) => {
             if (
-              property == "total" && parent.path &&
+              property == "total" &&
+              parent.path &&
               this.selectedBoxes.includes(parent.path)
             ) {
               context.sum += value;
@@ -861,5 +793,4 @@ export default defineComponent({
 .q-item--dense {
   padding: 0px;
 }
-
 </style>

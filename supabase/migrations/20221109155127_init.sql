@@ -74,7 +74,8 @@ create table "public"."refinedpersons" (
     "tags" text[],
     "name" text,
     "alternate_names" text[],
-    "email" text
+    "email" text,
+		"recency" timestamp with time zone
 );
 
 
