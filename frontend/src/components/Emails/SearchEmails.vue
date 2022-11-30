@@ -174,6 +174,18 @@
                 >{{ props.col.label }}
               </q-th>
             </template>
+            <template #header-cell-Recency="props">
+              <q-th :props="props">
+                <q-tooltip
+                  class="bg-orange-13 text-caption"
+                  anchor="top middle"
+                  self="center middle"
+                >
+                  Date of last interaction with this person
+                </q-tooltip>
+                {{ props.col.label }}
+              </q-th>
+            </template>
 
             <template #body="props">
               <q-tr :props="props">
@@ -258,7 +270,11 @@
                     {{ props.row.occurence }}
                   </q-badge>
                 </q-td>
-
+                <q-td key="Recency" :props="props">
+                  <q-badge outline color="orange" transparent>
+                    {{ new Date(props.row.recency) }}
+                  </q-badge>
+                </q-td>
                 <q-td key="Engagement" :props="props">
                   <q-badge outline color="orange" transparent>
                     {{ props.row.engagement }}
@@ -270,43 +286,6 @@
                     ><br
                   /></span>
                 </q-td>
-                <!-- <q-td key="Date" :props="props">
-                  <q-badge outline color="blue" transparent>
-                    {{ formatDate(props.row.date) }}
-                  </q-badge>
-                  <q-tooltip
-                    class="bg-blue-8"
-                    anchor="top middle"
-                    self="center middle"
-                    >{{ getTimeOffset(props.row.date) }}</q-tooltip
-                  >
-                </q-td> -->
-
-                <!-- <q-td
-                  v-for="tag in props.row.tags"
-                  v-bind="key"
-                  key="Type"
-                  :props="props"
-                >
-                  <q-badge class="text-little" rounded color="amber-6">
-                    {{ tag }} </q-badge
-                  ><br /> -->
-                <!--<q-badge
-                    v-if="props.row.Transactional == true"
-                    class="text-little"
-                    rounded
-                    color="amber-7"
-                  >
-                    Transactional
-                  </q-badge>
-                  <br v-if="props.row.includes('Transactional')" /><q-badge
-                    v-if="props.row.type != ''"
-                    class="text-little"
-                    rounded
-                    color="green"
-                  >
-                    {{ props.row.type }}    </q-badge></q-td>-->
-
                 <q-td key="Status" :props="props">
                   <q-badge rounded color="green">
                     {{ " " }}
@@ -359,28 +338,6 @@ const columns = [
     style: "max-width:190px;min-width: 190px !important;",
     headerStyle: "width: 250px !important",
   },
-  // {
-  //   name: "Sender",
-  //   align: "center",
-  //   label: "Sender",
-  //   type: "number",
-  //   field: (row) => row.sender,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  //   sortable: true,
-  // },
-  // {
-  //   name: "Recipient",
-  //   align: "center",
-  //   label: "Recipient",
-  //   type: "number",
-  //   field: (row) => row.recipient,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  //   sortable: true,
-  // },
   {
     name: "Occurence",
     align: "center",
@@ -401,17 +358,17 @@ const columns = [
       }
     },
   },
-  // {
-  //   name: "Body",
-  //   align: "center",
-  //   label: "Body",
-  //   type: "number",
-  //   field: (row) => row.body,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  //   sortable: true,
-  // },
+  {
+    name: "Recency",
+    align: "center",
+    label: "Recency",
+    type: "number",
+    field: (row) => new Date(row.recency),
+    sortOrder: "ad",
+    style: "width: 50px !important",
+    headerStyle: "width: 50px !important",
+    sortable: true,
+  },
   {
     name: "Engagement",
     align: "center",
@@ -430,27 +387,6 @@ const columns = [
       }
     },
   },
-
-  // {
-  //   name: "Date",
-  //   align: "center",
-  //   label: "Recency",
-  //   sortable: true,
-  //   sort: (date1, date2) => {
-  //     var d1 = Date.parse(date1);
-  //     var d2 = Date.parse(date2);
-  //     if (d1 < d2) {
-  //       return 1;
-  //     } else {
-  //       return -1;
-  //     }
-  //   },
-  //   field: (row) => row.date,
-  //   sortOrder: "ad",
-  //   style: "width: 50px !important",
-  //   headerStyle: "width: 50px !important",
-  // },
-
   {
     name: "Type",
     align: "center",
