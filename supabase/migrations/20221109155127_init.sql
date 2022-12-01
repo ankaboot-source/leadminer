@@ -19,6 +19,7 @@ create table "public"."messages" (
 
 
 create table "public"."organizations" (
+		"id" uuid not null default uuid_generate_v4(),
     "name" text not null,
     "alternate_name" text,
     "address" text,
@@ -28,7 +29,6 @@ create table "public"."organizations" (
     "email" text,
     "image" text,
     "founder" uuid,
-    "employee" uuid,
     "_domain" uuid
 );
 
@@ -46,7 +46,7 @@ create table "public"."persons" (
     "given_name" text,
     "family_name" text,
     "job_title" text,
-    "works_for" text default ''::text
+    "works_for" uuid
 );
 
 
@@ -112,11 +112,11 @@ CREATE UNIQUE INDEX messages_message_id_key ON public.messages USING btree (mess
 
 CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id, userid);
 
-CREATE UNIQUE INDEX name ON public.organizations USING btree (name);
-
 CREATE UNIQUE INDEX persons_email_key ON public.persons USING btree (email);
 
 CREATE UNIQUE INDEX persons_pkey ON public.persons USING btree (id);
+
+CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id);
 
 CREATE UNIQUE INDEX pointsofcontact_pkey ON public.pointsofcontact USING btree (id);
 
@@ -140,7 +140,7 @@ alter table "public"."domains" add constraint "domains_pkey" PRIMARY KEY using i
 
 alter table "public"."messages" add constraint "messages_pkey" PRIMARY KEY using index "messages_pkey";
 
-alter table "public"."organizations" add constraint "name" PRIMARY KEY using index "name";
+alter table "public"."organizations" add constraint "organizations_pkey" PRIMARY KEY using index "organizations_pkey";
 
 alter table "public"."persons" add constraint "persons_pkey" PRIMARY KEY using index "persons_pkey";
 
@@ -155,6 +155,10 @@ alter table "public"."messages" add constraint "messages_message_id_key" UNIQUE 
 alter table "public"."organizations" add constraint "organizations__domain_fkey" FOREIGN KEY (_domain) REFERENCES domains(id) not valid;
 
 alter table "public"."organizations" validate constraint "organizations__domain_fkey";
+
+alter table "public"."persons" add constraint "persons_works_for_fkey" FOREIGN KEY (works_for) REFERENCES organizations(id) not valid;
+
+alter table "public"."persons" validate constraint "persons_works_for_fkey";
 
 alter table "public"."persons" add constraint "persons_email_key" UNIQUE using index "persons_email_key";
 
