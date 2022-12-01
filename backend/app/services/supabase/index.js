@@ -99,8 +99,8 @@ class SupabaseHandlers {
       same_as: [],
       given_name: name,
       family_name: '',
-      job_title: '',
-      works_for: '' // Will be retrieved with transmutation
+      job_title: ''
+      // works_for: ''  Will be retrieved with transmutation
     };
     let result = await this.supabaseClient
       .from('persons')
