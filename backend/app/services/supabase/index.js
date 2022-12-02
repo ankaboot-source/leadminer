@@ -4,15 +4,12 @@ const fetch = require('cross-fetch');
 const http = require('http');
 const https = require('https');
 
-const httpAgent = new http.Agent({
+const options = {
   keepAlive: true,
   maxSockets: 40
-});
-
-const httpsAgent = new https.Agent({
-  keepAlive: true,
-  maxSockets: 40
-});
+}
+const httpAgent = new http.Agent(options);
+const httpsAgent = new https.Agent(options);
 
 const customFetch = (url, options) => {
   return fetch(url, {
