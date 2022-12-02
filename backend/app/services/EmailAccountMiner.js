@@ -15,7 +15,7 @@ const data = 'messageWorker initiated',
   });
 const { supabaseHandlers } = require('./supabase/index');
 const { imapFetchBody } = require('../config/server.config');
-const MAX_WORKER_TIMEOUT = 600000
+const MAX_WORKER_TIMEOUT = 600000;
 
 class EmailAccountMiner {
   // public field

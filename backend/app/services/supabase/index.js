@@ -1,8 +1,8 @@
 const { createClient } = require('@supabase/supabase-js');
 const { supabaseToken, supabaseUrl } = require('../../config/supabase.config');
-const fetch = require('cross-fetch')
-const http = require("http");
-const https = require("https");
+const fetch = require('cross-fetch');
+const http = require('http');
+const https = require('https');
 
 const httpAgent = new http.Agent({
   keepAlive: true,
@@ -17,11 +17,10 @@ const httpsAgent = new https.Agent({
 const customFetch = (url, options) => {
   return fetch(url, {
     agent: (parsedURL) => {
-      if (parsedURL.protocol === "http:") {
+      if (parsedURL.protocol === 'http:') {
         return httpAgent;
-      } else {
-        return httpsAgent;
       }
+      return httpsAgent;
     },
     ...options
   });
@@ -59,7 +58,7 @@ class SupabaseHandlers {
       listid: '',
       reference: ''
     };
-    let result = await this.supabaseClient
+    const result = await this.supabaseClient
       .from('messages')
       .insert(message)
       .select()
