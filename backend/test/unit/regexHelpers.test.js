@@ -7,6 +7,15 @@ describe('regExHelpers.extractEmailsFromBody(text)', () => {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.emailBody);
     expect(output).to.eql(testData.expectedForBodyExtraction);
   });
+  it('should return valid emails', () => {
+    const result =testData.randomEmails.split(' ')
+    
+    // add some false data
+    testData.randomEmails += " ThisFalseInput@ false@. falsetest"
+
+    const output = regExHelpers.extractNameAndEmailFromBody(testData.randomEmails);
+    expect(output).to.eql(result);
+  });
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
