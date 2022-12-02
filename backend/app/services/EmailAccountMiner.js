@@ -15,6 +15,8 @@ const data = 'messageWorker initiated',
   });
 const { supabaseHandlers } = require('./supabase/index');
 const { imapFetchBody } = require('../config/server.config');
+const MAX_WORKER_TIMEOUT = 600000
+
 class EmailAccountMiner {
   // public field
   tree = [];
@@ -269,7 +271,7 @@ class EmailAccountMiner {
           this.evenMessageWorker.terminate();
           this.oddMessageWorker.terminate();
           this.sendMinedData();
-        }, 5000);
+        }, MAX_WORKER_TIMEOUT);
         this.connection.end();
         self = null;
       } else {
