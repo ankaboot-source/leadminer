@@ -64,16 +64,6 @@ class SupabaseHandlers {
       .insert(message)
       .select()
       .single();
-
-    if (result.error?.code === '23505') {
-      result = await this.supabaseClient
-        .from('messages')
-        .update(message)
-        .eq('message_id', messageId)
-        .select()
-        .single();
-    }
-
     return result;
   }
 
