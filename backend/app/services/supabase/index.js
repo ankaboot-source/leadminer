@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const { supabaseToken, supabaseUrl } = require('../../config/supabase.config');
+const { fetch } = require('./fetch');
 
 class SupabaseHandlers {
   supabaseClient;
@@ -10,7 +11,7 @@ class SupabaseHandlers {
    * @param {string} token - The supabase token.
    */
   constructor(url, token) {
-    this.supabaseClient = createClient(url, token);
+    this.supabaseClient = createClient(url, token, {global: {fetch:fetch.bind(globalThis)}});
   }
 
   /**
@@ -33,21 +34,11 @@ class SupabaseHandlers {
       listid: '',
       reference: ''
     };
-    let result = await this.supabaseClient
+    const result = await this.supabaseClient
       .from('messages')
       .insert(message)
       .select()
       .single();
-
-    if (result.error?.code === '23505') {
-      result = await this.supabaseClient
-        .from('messages')
-        .update(message)
-        .eq('message_id', messageId)
-        .select()
-        .single();
-    }
-
     return result;
   }
 
