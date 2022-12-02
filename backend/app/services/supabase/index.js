@@ -1,27 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const { supabaseToken, supabaseUrl } = require('../../config/supabase.config');
-const fetch = require('cross-fetch');
-const http = require('http');
-const https = require('https');
-
-const agentOptions = {
-  keepAlive: true,
-  maxSockets: 40
-}
-const httpAgent = new http.Agent(agentOptions);
-const httpsAgent = new https.Agent(agentOptions);
-
-const customFetch = (url, options) => {
-  return fetch(url, {
-    agent: (parsedURL) => {
-      if (parsedURL.protocol === 'http:') {
-        return httpAgent;
-      }
-      return httpsAgent;
-    },
-    ...options
-  });
-};
+const { fetch } = require('./fetch');
 
 class SupabaseHandlers {
   supabaseClient;
@@ -32,7 +11,7 @@ class SupabaseHandlers {
    * @param {string} token - The supabase token.
    */
   constructor(url, token) {
-    this.supabaseClient = createClient(url, token, {global: {fetch: customFetch}});
+    this.supabaseClient = createClient(url, token, {global: {fetch:fetch.bind(globalThis)}});
   }
 
   /**
