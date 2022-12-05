@@ -5,7 +5,7 @@ const regex = new RegExp(
 );
 /* eslint-disable */
 const regexForBody = new RegExp(
-  /(?<username>[a-zA-Z0-9._+-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi
+  /(?<=\=|\<|\s|^)(?<username>[\w-]+(?:[\+\.][\w-]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}(?:\.[a-z]{2})?)\b/gi
 );
 /**
  * Extract Emails from body.
@@ -15,8 +15,7 @@ const regexForBody = new RegExp(
 function extractNameAndEmailFromBody(data) {
   let reg = quotedPrintable
     .decode(data)
-    .replaceAll('=', '')
-    .match(regexForBody);
+    .match(regexForBody)
   if (reg) {
     return [...new Set(reg)];
   } else return [];
