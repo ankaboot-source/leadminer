@@ -5,7 +5,7 @@ const regex = new RegExp(
 );
 /* eslint-disable */
 const regexForBody = new RegExp(
-  /(?<=\=|\<|\s|^)(?<username>[\w-]+(?:[\+\.][\w-]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}(?:\.[a-z]{2})?)\b/gi
+  /(?<==|<|\s|^)(?<username>[\w-]+(?:[+.][\w-]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}(?:\.[a-z]{2})?)\b/gi
 );
 /**
  * Extract Emails from body.
