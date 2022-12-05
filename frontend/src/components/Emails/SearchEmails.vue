@@ -272,7 +272,7 @@
                 </q-td>
                 <q-td key="Recency" :props="props">
                   <q-badge outline color="orange" transparent>
-                    {{ new Date(props.row.recency) }}
+                    {{ new Date(props.row.recency).toISOString().slice(0, 10) }}
                   </q-badge>
                 </q-td>
                 <q-td key="Engagement" :props="props">
