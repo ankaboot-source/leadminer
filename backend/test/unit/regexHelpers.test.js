@@ -3,18 +3,15 @@ const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
 const testData = require('../testData.json');
 
 describe('regExHelpers.extractEmailsFromBody(text)', () => {
-  it('should return array of emails', () => {
+  
+  it('should return a valid array of emails', () => {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.emailBody);
     expect(output).to.eql(testData.expectedForBodyExtraction);
   });
-  it('should return valid emails', () => {
-    const result =testData.randomEmails.split(' ')
-    
-    // add some false data
-    testData.randomEmails += " ThisFalseInput@ false@. falsetest"
 
+  it('should return only valid emails', () => {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.randomEmails);
-    expect(output).to.eql(result);
+    expect(output).to.eql(testData.validrandomEmails.split(' '));
   });
 });
 
