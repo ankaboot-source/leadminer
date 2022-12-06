@@ -66,6 +66,41 @@ begin
 end
 $$ language plpgsql;
 
+create or replace function public.get_recency(personid uuid, userid uuid)
+ returns timestamp with time zone
+ LANGUAGE plpgsql
+AS $function$
+declare
+  recency timestamp with time zone;
+begin
+    select max(m.date) into recency
+    FROM public.messages m
+		inner join public.pointsofcontact poc on poc.messageid = m.id
+		where poc.userid = get_recency.userid and poc.personid = get_recency.personid;
+
+  	return recency;
+end;
+$function$
+;
+
+create or replace function get_engagement(personid uuid, userid uuid)
+returns int
+as
+$$
+declare
+  total int;
+begin
+    -- Count total of messages where message.conversation = true
+  select count(*) into total
+  FROM public.pointsofcontact
+    inner join public.messages as msg on public.pointsofcontact.messageid = msg.id
+  where public.pointsofcontact.personid=get_engagement.personid
+      and public.pointsofcontact.userid=get_engagement.userid
+      and msg.conversation;
+  return total;
+end;
+$$ language plpgsql;
+
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -89,28 +124,11 @@ BEGIN
         group by personid
     LOOP
         person_name = public.update_names_table_persons(person.id, refined_persons.userid, person.alternate_names);
-				poc_recency = public.get_recency(person.id, refined_persons.userid);
+		poc_recency = public.get_recency(person.id, refined_persons.userid);
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email, recency)
         VALUES(person.id, refined_persons.userid, 0, person.occurrences, person.tags, person_name, person.alternate_names, person.email, poc_recency)
         ON CONFLICT(personid) DO UPDATE SET occurence=person.occurrences,tags=person.tags, name=person_name, alternate_names=person.alternate_names, recency=poc_recency;
     END LOOP;
 END;
-$function$
-;
-
-create or replace function public.get_recency(personid uuid, userid uuid)
- returns timestamp with time zone
- LANGUAGE plpgsql
-AS $function$
-declare
-  recency timestamp with time zone;
-begin
-    select max(m.date) into recency
-    FROM public.messages m
-		inner join public.pointsofcontact poc on poc.messageid = m.id
-		where poc.userid = get_recency.userid and poc.personid = get_recency.personid;
-
-  	return recency;
-end;
 $function$
 ;
