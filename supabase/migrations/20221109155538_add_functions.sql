@@ -108,7 +108,7 @@ AS $function$
 DECLARE
     person record;
     person_name varchar;
-		poc_recency timestamp with time zone;
+    poc_recency timestamp with time zone;
 BEGIN
     FOR person IN
         select
@@ -116,6 +116,7 @@ BEGIN
             array_agg(name) as tags,
             public.get_occurrences_per_person(personid, refined_persons.userid) as occurrences,
             public.get_alternate_names(personid, refined_persons.userid) as alternate_names,
+            public.get_engagement(personid, refined_persons.userid) as engagement,
             (select email from public.persons where id=personid) as email
         from public.tags where id not in (
             select id from public.tags 
@@ -124,10 +125,11 @@ BEGIN
         group by personid
     LOOP
         person_name = public.update_names_table_persons(person.id, refined_persons.userid, person.alternate_names);
-		poc_recency = public.get_recency(person.id, refined_persons.userid);
+        poc_recency = public.get_recency(person.id, refined_persons.userid);
         INSERT INTO refinedpersons(personid, userid, engagement, occurence, tags, name, alternate_names, email, recency)
-        VALUES(person.id, refined_persons.userid, 0, person.occurrences, person.tags, person_name, person.alternate_names, person.email, poc_recency)
-        ON CONFLICT(personid) DO UPDATE SET occurence=person.occurrences,tags=person.tags, name=person_name, alternate_names=person.alternate_names, recency=poc_recency;
+        VALUES(person.id, refined_persons.userid, person.engagement, person.occurrences, person.tags, person_name, person.alternate_names, person.email, poc_recency)
+        ON CONFLICT(personid) DO 
+        UPDATE SET occurence=person.occurrences,tags=person.tags, name=person_name, alternate_names=person.alternate_names, recency=poc_recency, engagement=person.engagement;
     END LOOP;
 END;
 $function$
