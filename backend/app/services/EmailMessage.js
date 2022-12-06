@@ -80,12 +80,12 @@ class EmailMessage {
    * @returns Array of strings 
    */
   getReferences() {
-    if (this.isConversation())
-      // references in header comes as one string in a list: references: ["<r1> <r2> <r3> ..."]
-      return this.header.references[0].split(' ')
-    return []
+    if (this.isConversation()) {
+      return this.header.references[0].split(' '); // references in header comes as ["<r1> <r2> <r3> ..."]
+    }
+    return [];
   }
-  
+
   /**
    * getDate returns the parsed value of the "date" property of the header if it should be parsed
    * @returns The date of the article.
