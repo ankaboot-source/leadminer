@@ -75,6 +75,7 @@ class EmailMessage {
     return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
   }
 
+  getReferences() {
   /**
    * getDate returns the parsed value of the "date" property of the header if it should be parsed
    * @returns The date of the article.
