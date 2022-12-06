@@ -69,13 +69,22 @@ class EmailMessage {
 
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
-   * @returns The function isInConversation() is returning a boolean value.
+   * @returns Boolean value.
    */
-  isInConversation() {
+  isConversation() {
     return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
   }
 
+  /**
+   * getReferences returns a list for references from header if message in conversation, otherwise empty array
+   * @returns Array of strings 
+   */
   getReferences() {
+    if (this.isConversation())
+      // references in header comes as one string in a list: references: ["<r1> <r2> <r3> ..."]
+      return this.header.references[0].split(' ')
+    return []
+  }
   /**
    * getDate returns the parsed value of the "date" property of the header if it should be parsed
    * @returns The date of the article.
