@@ -14,6 +14,7 @@ create table "public"."messages" (
     "userid" uuid not null,
     "list_id" text,
     "message_id" text,
+    "reference" text[], 
     "conversation" boolean
 );
 
