@@ -13,7 +13,7 @@ const regexForBody = new RegExp(
  * @returns {Array} array of strings
  */
 function extractNameAndEmailFromBody(data) {
-  let reg = quotedPrintable
+  const reg = quotedPrintable
     .decode(data)
     .match(regexForBody)
   if (reg) {
