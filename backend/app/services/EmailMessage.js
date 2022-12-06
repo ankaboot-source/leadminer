@@ -47,7 +47,7 @@ class EmailMessage {
 
   /**
    * isTransactional returns true if the email is transactional, and false if it's not
-   * @returns A boolean value.
+   * @returns Boolean value.
    */
   isTransactional() {
     return emailMessageHelpers.hasSpecificHeader(
@@ -58,7 +58,7 @@ class EmailMessage {
 
   /**
    * isList returns true if the email has List-Post in header, and false if it's not
-   * @returns A boolean value.
+   * @returns Boolean value.
    */
   isList() {
     return emailMessageHelpers.hasSpecificHeader(
@@ -85,6 +85,7 @@ class EmailMessage {
       return this.header.references[0].split(' ')
     return []
   }
+  
   /**
    * getDate returns the parsed value of the "date" property of the header if it should be parsed
    * @returns The date of the article.
@@ -133,7 +134,10 @@ class EmailMessage {
       this.user.id,
       'imap',
       this.folderPath,
-      this.getDate()
+      this.getDate(),
+      '',
+      this.getReferences(),
+      this.isConversation()
     );
 
     const message = data;
