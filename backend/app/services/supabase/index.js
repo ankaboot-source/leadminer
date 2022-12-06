@@ -19,21 +19,21 @@ class SupabaseHandlers {
    * the `messages` table if the message ID doesn't already exist
    * @param messageId - The unique ID of the message
    * @param userID - The user running the mining
-   * @param channel - The channel name
+   * @param messageChannel - The channel name
    * @param folderPath - inbox, sent, trash
-   * @param date - The date the message was sent
+   * @param messageDate - The date the message was sent
    * @param listId - listId
    * @param references - List of referenecs if email is in conversation
    * @param conversation - Boolean indicates if email is in conversation
    * @returns {promise}
    */
-  async upsertMessage(messageId, userID, channel, folderPath, date, listId, references, isConversation) {
+  async upsertMessage(messageId, userID, messageChannel, folderPath, messageDate, listId, references, isConversation) {
     const message = {
       'message_id': messageId,
       'userid': userID,
-      'channel': channel,
+      'channel': messageChannel,
       'folder_path': folderPath,
-      'date': date,
+      'date': messageDate,
       'list_id': listId,
       'reference': references,
       'conversation': isConversation
