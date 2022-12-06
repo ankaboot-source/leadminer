@@ -157,15 +157,13 @@ exports.getImapBoxes = async (req, res, next) => {
     error.emailHash = hashHelpers.hashEmail(user.email);
     next(error);
   }
-  if (tree.length > 0) {
-    logger.info('Mining IMAP tree succeeded.', {
-      emailHash: hashHelpers.hashEmail(user.email)
-    });
-    res.status(200).send({
-      message: 'IMAP folders fetched successfully!',
-      imapFoldersTree: tree
-    });
-  }
+  logger.info('Mining IMAP tree succeeded.', {
+    emailHash: hashHelpers.hashEmail(user.email)
+  });
+  res.status(200).send({
+    message: 'IMAP folders fetched successfully!',
+    imapFoldersTree: tree
+  });
 };
 
 /**

@@ -24,7 +24,7 @@
             floating
             transparent
           >
-            {{ prop.node.total }}
+            {{ prop.node.path ? prop.node.cumulativeTotal : prop.node.total }}
           </q-badge>
           <q-badge
             v-else

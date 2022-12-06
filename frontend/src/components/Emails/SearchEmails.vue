@@ -503,6 +503,7 @@ export default defineComponent({
           },
         })(this.boxes, { sum: 0 }).sum;
       }
+      return 0;
     },
     ProgressLabel() {
       return this.progress.ProgressLabel;

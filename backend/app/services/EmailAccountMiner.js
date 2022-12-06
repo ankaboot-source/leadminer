@@ -66,7 +66,6 @@ class EmailAccountMiner {
             }
             // extract All folders with their parents and path
             const treeWithPaths = imapTreeHelpers.createFlatTreeFromImap(boxes);
-
             // add total to each folder
             await this.AddTotalPerFolder(treeWithPaths);
             this.tree = imapTreeHelpers.buildFinalTree(
@@ -101,19 +100,24 @@ class EmailAccountMiner {
   AddTotalPerFolder(folders) {
     const self = this;
 
-    const promises = folders.map((folder, index) => {
-      return new Promise((resolve) => {
+    const promises = folders.map((folder) => {
+      return new Promise((resolve, reject) => {
         self.connection.openBox(folder.path, true, (err, box) => {
+          if (err) {
+            reject(err);
+          }
           if (box) {
-            folders[index].total = box.messages.total;
+            folder.total = box.messages.total;
+            folder.cumulativeTotal = box.messages.total;
           } else {
-            folders[index].total = 0;
+            folder.total = 0;
+            folder.cumulativeTotal = 0;
           }
           resolve();
         });
       });
     });
-    return Promise.all(promises);
+    return Promise.allSettled(promises);
   }
 
   /**
