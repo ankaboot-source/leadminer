@@ -12,7 +12,7 @@ create table "public"."messages" (
     "folder_path" text,
     "date" timestamp with time zone,
     "userid" uuid not null,
-    "listid" text,
+    "list_id" text,
     "message_id" text,
     "reference" text
 );
