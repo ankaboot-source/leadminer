@@ -22,17 +22,21 @@ class SupabaseHandlers {
    * @param channel - The channel name
    * @param folderPath - inbox, sent, trash
    * @param date - The date the message was sent
+   * @param listId - listId
+   * @param references - List of referenecs if email is in conversation
+   * @param conversation - Boolean indicates if email is in conversation
    * @returns {promise}
    */
-  async upsertMessage(messageId, userID, channel, folderPath, date) {
+  async upsertMessage(messageId, userID, channel, folderPath, date, listId, references, isConversation) {
     const message = {
-      message_id: messageId,
-      userid: userID,
-      channel,
-      folder_path: folderPath,
-      date,
-      listid: '',
-      reference: ''
+      'message_id': messageId,
+      'userid': userID,
+      'channel': channel,
+      'folder_path': folderPath,
+      'date': date,
+      'list_id': listId,
+      'reference': references,
+      'conversation': isConversation
     };
     const result = await this.supabaseClient
       .from('messages')
