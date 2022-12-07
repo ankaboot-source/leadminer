@@ -17,10 +17,9 @@ function createFlatTreeFromImap(imapTree, currentParent) {
   Object.keys(imapTree).forEach((folderLabel) => {
     const folder = {
       label: folderLabel,
-      path:
-        currentParent !== null
-          ? `${currentParent.path}/${folderLabel}`
-          : folderLabel,
+      path: currentParent
+        ? `${currentParent.path}/${folderLabel}`
+        : folderLabel,
       parent: currentParent
     };
 

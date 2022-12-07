@@ -51,6 +51,8 @@ class EmailAccountMiner {
    * the second element is an error object.
    */
   getTree() {
+    // eslint-disable-next-line no-warning-comments
+    // TODO - Rework tree parsing algorithm
     return new Promise((resolve) => {
       let result = [];
       this.connection.connect().then((connection) => {
