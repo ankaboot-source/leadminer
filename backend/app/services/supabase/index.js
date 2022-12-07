@@ -17,8 +17,8 @@ class SupabaseHandlers {
   /**
    * `upsertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
    * the `messages` table if the message ID doesn't already exist
-   * @param messageId - The unique ID of the message
-   * @param userID - The user running the mining
+   * @param {string} messageId - The unique ID of the message
+   * @param {string} userId - The user running the mining
    * @param messageChannel - The channel name
    * @param folderPath - inbox, sent, trash
    * @param messageDate - The date the message was sent
