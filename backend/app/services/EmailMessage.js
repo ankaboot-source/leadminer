@@ -47,7 +47,7 @@ class EmailMessage {
 
   /**
    * isTransactional returns true if the email is transactional, and false if it's not
-   * @returns Boolean value.
+   * @returns {boolean}
    */
   isTransactional() {
     return emailMessageHelpers.hasSpecificHeader(
