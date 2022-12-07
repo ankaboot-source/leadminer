@@ -47,7 +47,7 @@ class EmailMessage {
 
   /**
    * isTransactional returns true if the email is transactional, and false if it's not
-   * @returns A boolean value.
+   * @returns {boolean}
    */
   isTransactional() {
     return emailMessageHelpers.hasSpecificHeader(
@@ -58,7 +58,7 @@ class EmailMessage {
 
   /**
    * isList returns true if the email has List-Post in header, and false if it's not
-   * @returns A boolean value.
+   * @returns {boolean}
    */
   isList() {
     return emailMessageHelpers.hasSpecificHeader(
@@ -69,10 +69,21 @@ class EmailMessage {
 
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
-   * @returns The function isInConversation() is returning a boolean value.
+   * @returns {boolean}
    */
-  isInConversation() {
+  isConversation() {
     return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
+  }
+
+  /**
+   * getReferences returns a list for references from header if message in conversation, otherwise empty array
+   * @returns {string[]}
+   */
+  getReferences() {
+    if (this.isConversation()) {
+      return this.header.references[0].split(' '); // references in header comes as ["<r1> <r2> <r3> ..."]
+    }
+    return [];
   }
 
   /**
@@ -123,7 +134,10 @@ class EmailMessage {
       this.user.id,
       'imap',
       this.folderPath,
-      this.getDate()
+      this.getDate(),
+      '',
+      this.getReferences(),
+      this.isConversation()
     );
 
     const message = data;
