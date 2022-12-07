@@ -19,7 +19,7 @@ class SupabaseHandlers {
    * the `messages` table if the message ID doesn't already exist
    * @param {string} messageId - The unique ID of the message
    * @param {string} userId - The user running the mining
-   * @param messageChannel - The channel name
+   * @param {string} messageChannel - The channel name
    * @param folderPath - inbox, sent, trash
    * @param messageDate - The date the message was sent
    * @param listId - List-id header field, to identify if email is part of a list and which one.
