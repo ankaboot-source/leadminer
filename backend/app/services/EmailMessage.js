@@ -77,7 +77,7 @@ class EmailMessage {
 
   /**
    * getReferences returns a list for references from header if message in conversation, otherwise empty array
-   * @returns Array of strings 
+   * @returns {string[]}
    */
   getReferences() {
     if (this.isConversation()) {
