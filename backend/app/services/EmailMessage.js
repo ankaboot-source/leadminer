@@ -58,7 +58,7 @@ class EmailMessage {
 
   /**
    * isList returns true if the email has List-Post in header, and false if it's not
-   * @returns Boolean value.
+   * @returns {boolean}
    */
   isList() {
     return emailMessageHelpers.hasSpecificHeader(
