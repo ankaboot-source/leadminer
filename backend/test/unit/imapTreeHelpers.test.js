@@ -102,6 +102,6 @@ describe.skip('imapTreeHelpers.buildFinalTree(foldersFlatArray, userEmail)', () 
       }
     ];
     const output = imapTreeHelpers.buildFinalTree(input, 'email@example.com');
-    expect(output).to.eql(output);
+    expect(output).to.eql(expectedOutput);
   });
 });
