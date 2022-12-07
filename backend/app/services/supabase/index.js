@@ -22,7 +22,7 @@ class SupabaseHandlers {
    * @param messageChannel - The channel name
    * @param folderPath - inbox, sent, trash
    * @param messageDate - The date the message was sent
-   * @param listId - listId
+   * @param listId - List-id header field, to identify if email is part of a list and which one.
    * @param references - List of referenecs if email is in conversation
    * @param conversation - Boolean indicates if email is in conversation
    * @returns {promise}
