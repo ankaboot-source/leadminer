@@ -69,7 +69,7 @@ class EmailMessage {
 
   /**
    * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
-   * @returns Boolean value.
+   * @returns {boolean}
    */
   isConversation() {
     return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
