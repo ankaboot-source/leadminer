@@ -14,22 +14,35 @@ class SupabaseHandlers {
   /**
    * `insertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
    * the `messages` table if the message ID doesn't already exist
-   * @param messageId - The unique ID of the message
-   * @param userID - The user running the mining
-   * @param channel - The channel name
+   * @param {string} messageId - The unique ID of the message
+   * @param {string} userId - The user running the mining
+   * @param {string} messageChannel - The channel name
    * @param folderPath - inbox, sent, trash
-   * @param date - The date the message was sent
+   * @param {Date} messageDate - The date the message was sent
+   * @param {string} listId - List-id header field, to identify if email is part of a list and which one.
+   * @param {string[]} references - List of referenecs if email is in conversation
+   * @param {boolean} conversation - Boolean indicates if email is in conversation
    * @returns {promise}
    */
-  async insertMessage(messageId, userID, channel, folderPath, date) {
+  async insertMessage(
+    messageId,
+    userID,
+    messageChannel,
+    folderPath,
+    messageDate,
+    listId,
+    references,
+    isConversation
+  ) {
     const message = {
       message_id: messageId,
       userid: userID,
-      channel,
+      channel: messageChannel,
       folder_path: folderPath,
-      date,
-      listid: '',
-      reference: ''
+      date: messageDate,
+      list_id: listId,
+      reference: references,
+      conversation: isConversation
     };
     const result = await this.supabaseClient
       .from('messages')
