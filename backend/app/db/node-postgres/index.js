@@ -81,6 +81,15 @@ class Postgres {
       'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *';
 
     try {
+      const { rows, rowCount } = await pool.query(
+        'SELECT * FROM persons WHERE email = $1',
+        [emailsAddress],
+        this.logger
+      );
+      if (rowCount !== 0) {
+        return { data: rows[0], error: null };
+      }
+
       const result = await pool.query(
         query,
         [name, emailsAddress, userID, '', '', '', [], [], name, '', ''],
@@ -99,17 +108,39 @@ class Postgres {
    */
   async createTags(tags) {
     try {
-      const query =
-        'INSERT INTO tags(personid, userid, name, label, reachable, type) ' +
-        'VALUES($1, $2, $3, $4, $5, $6)';
-
       return await Promise.all(
-        tags.map(({ userid, name, label, reachable, type, personid }) => {
-          pool.query(
-            query,
-            [personid, userid, name, label, reachable, type],
+        tags.map(async ({ userid, name, label, reachable, type, personid }) => {
+          const existingTag = await pool.query(
+            'SELECT * FROM tags WHERE personid = $1 AND name = $2',
+            [personid, name],
             this.logger
           );
+
+          if (existingTag.rowCount === 0) {
+            const query =
+              'INSERT INTO tags(personid, userid, name, label, reachable, type) ' +
+              'VALUES($1, $2, $3, $4, $5, $6)';
+
+            await pool.query(
+              query,
+              [personid, userid, name, label, reachable, type],
+              this.logger
+            );
+          } else {
+            await pool.query(
+              'UPDATE tags SET personid = $1, userid = $2, name = $3, label = $4, reachable = $5, type = $6 WHERE id = $7',
+              [
+                personid,
+                userid,
+                name,
+                label,
+                reachable,
+                type,
+                existingTag.rows[0]
+              ],
+              this.logger
+            );
+          }
         })
       );
     } catch (error) {
