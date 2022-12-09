@@ -10,7 +10,7 @@ function getDb() {
     case 'pgrest':
       return new SupabaseHandlers();
     default:
-      break;
+      return new Postgres(logger);
   }
 }
 
