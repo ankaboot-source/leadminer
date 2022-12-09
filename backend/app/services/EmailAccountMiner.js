@@ -13,7 +13,7 @@ const data = 'messageWorker initiated',
   MessageWorker2 = new Worker('./app/workers/messageWorker.js', {
     data
   });
-const { supabaseHandlers } = require('./supabase/index');
+const { db } = require('../db');
 const { imapFetchBody } = require('../config/server.config');
 const MAX_WORKER_TIMEOUT = 600000;
 
@@ -352,15 +352,11 @@ class EmailAccountMiner {
    */
   sendMinedData() {
     // call supabase function to refine data
-    supabaseHandlers
-      .invokeRpc('refined_persons', {
-        userid: this.user.id
-      })
-      .then((res) => {
-        if (res.error) {
-          logger.error(res.error);
-        }
-      });
+    db.refinePersons(this.user.id).then((res) => {
+      if (res.error) {
+        logger.error(res.error);
+      }
+    });
   }
 }
 

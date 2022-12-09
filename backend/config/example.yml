@@ -6,6 +6,8 @@ server:
     dsn:
   port: 8081
   supabase:
+    connection_type: 'native' # 'native' or 'pgrest'
+    connection_string: 'postgresql://postgres:postgres@localhost:54322/postgres'
     url:
     token:
   redis:

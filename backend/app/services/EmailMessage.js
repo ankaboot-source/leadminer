@@ -15,7 +15,7 @@ const {
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 const logger = require('../utils/logger')(module);
 
-const { supabaseHandlers } = require('./supabase');
+const { db } = require('../db');
 
 class EmailMessage {
   /**
@@ -118,7 +118,7 @@ class EmailMessage {
    * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
    */
   async extractThenStoreEmailsAddresses() {
-    const { data, error } = await supabaseHandlers.upsertMessage(
+    const { data, error } = await db.insertMessage(
       this.getMessageId(),
       this.user.id,
       'imap',
@@ -164,11 +164,13 @@ class EmailMessage {
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
         tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
-      } if (this.isTransactional()) {
+      }
+      if (this.isTransactional()) {
         tags.push(
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
-      } if (this.isList()) {
+      }
+      if (this.isList()) {
         tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
@@ -312,7 +314,7 @@ class EmailMessage {
    * @param fieldName - the name of the field that the email was found in
    */
   async storeEmails(message, email, name, tags, fieldName) {
-    const result = await supabaseHandlers.upsertPersons(
+    const result = await db.insertPerson(
       name ?? '',
       email.toLowerCase(),
       this.user.id
@@ -329,14 +331,13 @@ class EmailMessage {
     }
     if (person) {
       //if saved and no errors then we can store the person linked to this point of contact
-      const pointOfContactUpsertionResult =
-        await supabaseHandlers.upsertPointOfContact(
-          message.id,
-          this.user.id,
-          person.id,
-          fieldName,
-          name ?? ''
-        );
+      const pointOfContactUpsertionResult = await db.insertPointOfContact(
+        message.id,
+        this.user.id,
+        person.id,
+        fieldName,
+        name ?? ''
+      );
 
       if (pointOfContactUpsertionResult.error) {
         logger.error('Error when inserting to pointOfContact table.', {
@@ -350,8 +351,7 @@ class EmailMessage {
         tag.personid = person.id;
       }
 
-      supabaseHandlers
-        .createTags(tags)
+      db.createTags(tags)
         // eslint-disable-next-line no-unused-vars
         .then((data, error) => {
           if (error) {

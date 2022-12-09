@@ -40,6 +40,7 @@
     "ioredis": "^5.2.2",
     "nodemon": "^2.0.15",
     "object-scan": "^17.1.0",
+    "pg": "^8.8.0",
     "quoted-printable": "^1.0.1",
     "winston": "^3.6.0",
     "xoauth2": "^1.2.0"
