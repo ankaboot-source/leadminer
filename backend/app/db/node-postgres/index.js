@@ -15,15 +15,33 @@ class Postgres {
    * @param date - The date the message was sent
    * @returns {promise}
    */
-  async insertMessage(messageId, userID, channel, folderPath, date) {
+  async insertMessage(
+    messageId,
+    userID,
+    messageChannel,
+    folderPath,
+    messageDate,
+    listId,
+    references,
+    isConversation
+  ) {
     const query =
-      'INSERT INTO messages(channel, folder_path, date, userid, listid, message_id, reference) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *';
+      'INSERT INTO messages(channel, folder_path, date, userid, message_id, reference, list_id, conversation) ' +
+      'VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
 
     try {
       const result = await pool.query(
         query,
-        [channel, folderPath, date, userID, '', messageId, ''],
+        [
+          messageChannel,
+          folderPath,
+          new Date(messageDate),
+          userID,
+          messageId,
+          references,
+          listId,
+          isConversation
+        ],
         this.logger
       );
       return { data: result.rows[0], error: null };
@@ -205,12 +223,17 @@ class Postgres {
    * @param  {string} userid  - User ID
    * @returns {promise}
    */
-  refinePersons({ userid }) {
-    return pool.query(
-      'SELECT * FROM refined_persons($1)',
-      [userid],
-      this.logger
-    );
+  async refinePersons({ userid }) {
+    try {
+      const result = await pool.query(
+        'SELECT * FROM refined_persons($1)',
+        [userid],
+        this.logger
+      );
+      return { data: result.rows, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
   }
 }
 
