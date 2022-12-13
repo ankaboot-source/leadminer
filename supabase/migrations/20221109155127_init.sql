@@ -15,7 +15,7 @@ create table "public"."domains" (
     "email_server_type" text
 );
 
--- sbp_5dc248f1e158fe7aa72130c5e536e613d83db7ed
+
 create table "public"."messages" (
     "id" uuid not null default uuid_generate_v4(),
     "channel" text,
