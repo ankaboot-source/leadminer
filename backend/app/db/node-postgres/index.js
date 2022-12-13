@@ -223,7 +223,7 @@ class Postgres {
    * @param  {string} userid  - User ID
    * @returns {promise}
    */
-  async refinePersons({ userid }) {
+  async refinePersons(userid) {
     try {
       const result = await pool.query(
         'SELECT * FROM refined_persons($1)',
