@@ -17,7 +17,7 @@
     "@quasar/extras": "^1.15.5",
     "@sentry/tracing": "^7.14.1",
     "@sentry/vue": "^7.14.1",
-    "@supabase/supabase-js": "^2.0.3",
+    "@supabase/supabase-js": "^2.1.4",
     "assert": "^2.0.0",
     "axios": "^0.27.2",
     "core-js": "^3.25.5",
