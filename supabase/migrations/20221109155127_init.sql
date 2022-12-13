@@ -1,13 +1,3 @@
-drop table if exists imap_users cascade;
-drop table if exists refinedpersons cascade;
-drop table if exists google_users cascade;
-drop table if exists messages cascade;
-drop table if exists domains cascade;
-drop table if exists pointsofcontact cascade;
-drop table if exists persons cascade;
-drop table if exists organizations cascade;
-drop table if exists tags cascade;
-
 create table "public"."domains" (
     "id" uuid not null default uuid_generate_v4(),
     "name" text,
