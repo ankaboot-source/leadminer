@@ -88,7 +88,7 @@ class SupabaseHandlers {
    * @param emailsAddress - The email address of the person you want to add to the database.
    * @returns {promise}
    */
-  async insertPerson(name, emailsAddress, userID) {
+  async upsertPerson(name, emailsAddress, userID) {
     const person = {
       name,
       email: emailsAddress,
@@ -159,10 +159,10 @@ class SupabaseHandlers {
     return data.length === 1 ? data[0] : null;
   }
 
-  async updateGoogleUser(id, updatedFields) {
+  async updateGoogleUser(id, refresh_token) {
     const { data, error } = await this.supabaseClient
       .from('google_users')
-      .update(updatedFields)
+      .update({ refresh_token })
       .eq('id', id)
       .select();
 

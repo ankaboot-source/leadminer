@@ -62,9 +62,7 @@ exports.signUpWithGoogle = async (req, res, next) => {
     }
 
     if (dbGoogleUser.refresh_token !== refresh_token) {
-      await db.updateGoogleUser(dbGoogleUser.id, {
-        refresh_token
-      });
+      await db.updateGoogleUser(dbGoogleUser.id, refresh_token);
     }
 
     return res.status(200).send({

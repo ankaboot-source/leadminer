@@ -328,7 +328,7 @@ class EmailMessage {
    * @param fieldName - the name of the field that the email was found in
    */
   async storeEmails(message, email, name, tags, fieldName) {
-    const result = await db.insertPerson(
+    const result = await db.upsertPerson(
       name ?? '',
       email.toLowerCase(),
       this.user.id
