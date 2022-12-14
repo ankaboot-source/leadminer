@@ -5,7 +5,7 @@ const {
   googleClientId,
   googleClientSecret
 } = require('../config/google.config');
-const { supabaseHandlers } = require('../services/supabase');
+const { db } = require('../db');
 const RedirectionUrl = 'postmessage';
 
 // returns Oauth client
@@ -40,10 +40,10 @@ exports.signUpWithGoogle = async (req, res, next) => {
     });
     const { exp, email } = await oAuth2Client.getTokenInfo(access_token);
 
-    const dbGoogleUser = await supabaseHandlers.getGoogleUserByEmail(email);
+    const dbGoogleUser = await db.getGoogleUserByEmail(email);
 
     if (!dbGoogleUser) {
-      const { id } = await supabaseHandlers.createGoogleUser({
+      const { id } = await db.createGoogleUser({
         email,
         refresh_token
       });
@@ -62,9 +62,7 @@ exports.signUpWithGoogle = async (req, res, next) => {
     }
 
     if (dbGoogleUser.refresh_token !== refresh_token) {
-      await supabaseHandlers.updateGoogleUser(dbGoogleUser.id, {
-        refresh_token
-      });
+      await db.updateGoogleUser(dbGoogleUser.id, refresh_token);
     }
 
     return res.status(200).send({

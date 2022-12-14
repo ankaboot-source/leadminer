@@ -5,17 +5,14 @@ const { fetch } = require('./fetch');
 class SupabaseHandlers {
   supabaseClient;
 
-  /**
-   * SupabaseHandlers constructor
-   * @param {string} url - The supabase URL.
-   * @param {string} token - The supabase token.
-   */
-  constructor(url, token) {
-    this.supabaseClient = createClient(url, token, {global: {fetch:fetch.bind(globalThis)}});
+  constructor() {
+    this.supabaseClient = createClient(supabaseUrl, supabaseToken, {
+      global: { fetch: fetch.bind(globalThis) }
+    });
   }
 
   /**
-   * `upsertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
+   * `insertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
    * the `messages` table if the message ID doesn't already exist
    * @param {string} messageId - The unique ID of the message
    * @param {string} userId - The user running the mining
@@ -27,16 +24,25 @@ class SupabaseHandlers {
    * @param {boolean} conversation - Boolean indicates if email is in conversation
    * @returns {promise}
    */
-  async upsertMessage(messageId, userID, messageChannel, folderPath, messageDate, listId, references, isConversation) {
+  async insertMessage(
+    messageId,
+    userID,
+    messageChannel,
+    folderPath,
+    messageDate,
+    listId,
+    references,
+    isConversation
+  ) {
     const message = {
-      'message_id': messageId,
-      'userid': userID,
-      'channel': messageChannel,
-      'folder_path': folderPath,
-      'date': messageDate,
-      'list_id': listId,
-      'reference': references,
-      'conversation': isConversation
+      message_id: messageId,
+      userid: userID,
+      channel: messageChannel,
+      folder_path: folderPath,
+      date: messageDate,
+      list_id: listId,
+      reference: references,
+      conversation: isConversation
     };
     const result = await this.supabaseClient
       .from('messages')
@@ -55,7 +61,7 @@ class SupabaseHandlers {
    * @param key - the key of the email address in the email object
    * @returns {promise} .
    */
-  async upsertPointOfContact(messageID, userID, personid, key, name) {
+  async insertPointOfContact(messageID, userID, personid, key, name) {
     const result = await this.supabaseClient
       .from('pointsofcontact')
       .insert({
@@ -77,12 +83,12 @@ class SupabaseHandlers {
   }
 
   /**
-   * Upsert a person record into the persons table, using the email address as the unique identifier
+   * Insert a person record into the persons table, using the email address as the unique identifier
    * @param name - The name of the person
    * @param emailsAddress - The email address of the person you want to add to the database.
    * @returns {promise}
    */
-  async upsertPersons(name, emailsAddress, userID) {
+  async upsertPerson(name, emailsAddress, userID) {
     const person = {
       name,
       email: emailsAddress,
@@ -153,10 +159,10 @@ class SupabaseHandlers {
     return data.length === 1 ? data[0] : null;
   }
 
-  async updateGoogleUser(id, updatedFields) {
+  async updateGoogleUser(id, refresh_token) {
     const { data, error } = await this.supabaseClient
       .from('google_users')
-      .update(updatedFields)
+      .update({ refresh_token })
       .eq('id', id)
       .select();
 
@@ -179,20 +185,6 @@ class SupabaseHandlers {
     }
 
     return data;
-  }
-
-  async updateImapUser(id, updatedFields) {
-    const { data, error } = await this.supabaseClient
-      .from('imap_users')
-      .update(updatedFields)
-      .eq('id', id)
-      .select();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return data.length === 1 ? data[0] : null;
   }
 
   async getImapUserByEmail(email) {
@@ -224,18 +216,15 @@ class SupabaseHandlers {
   }
 
   /**
-   * `invokeRpc` calls a Postgres function as a Remote Procedure Call.
-   * @param functionName - Name of the function to be invoked
-   * @param data - Data to be passed to the function
+   * Invokes the `refined_persons` function in Postgres.
+   * @param  {string} userid  - User ID
    * @returns {promise}
    */
-  invokeRpc(functionName, data) {
-    return this.supabaseClient.rpc(functionName, data);
+  refinePersons(userid) {
+    return this.supabaseClient.rpc('refined_persons', { userid });
   }
 }
 
-const supabaseHandlers = new SupabaseHandlers(supabaseUrl, supabaseToken);
-
 module.exports = {
-  supabaseHandlers
+  SupabaseHandlers
 };

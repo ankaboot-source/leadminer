@@ -6,7 +6,7 @@ const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
 const { sse } = require('../middleware/sse');
-const { supabaseHandlers } = require('../services/supabase');
+const { db } = require('../db');
 
 function temporaryImapConnection(imapInfo, reqBody) {
   return new Imap({
@@ -52,9 +52,7 @@ exports.createImapInfo = (req, res, next) => {
   // if we can connect to the imap account
   imap.once('ready', async () => {
     try {
-      const imapData = await supabaseHandlers.getImapUserByEmail(
-        imapInfo.email
-      );
+      const imapData = await db.getImapUserByEmail(imapInfo.email);
 
       if (imapData !== null) {
         res.status(200).send({
@@ -62,7 +60,7 @@ exports.createImapInfo = (req, res, next) => {
           imap
         });
       } else {
-        const data = await supabaseHandlers.createImapUser(imapInfo);
+        const data = await db.createImapUser(imapInfo);
         res.status(200).send({ imap: data });
       }
     } catch (error) {
@@ -90,7 +88,7 @@ exports.loginToAccount = async (req, res, next) => {
     res.status(400);
     next(new Error('Email is required to login'));
   }
-  const imap = await supabaseHandlers.getImapUserByEmail(email);
+  const imap = await db.getImapUserByEmail(email);
   if (imap === null) {
     this.createImapInfo(req, res, next);
   } else {
@@ -130,13 +128,13 @@ exports.getImapBoxes = async (req, res, next) => {
   const query = JSON.parse(req.headers['x-imap-login']);
 
   if (query.access_token) {
-    const googleUser = await supabaseHandlers.getGoogleUserByEmail(query.email);
+    const googleUser = await db.getGoogleUserByEmail(query.email);
 
     if (googleUser) {
       query.refresh_token = googleUser.refresh_token;
     }
   } else {
-    const imapUser = await supabaseHandlers.getImapUserById(query.id);
+    const imapUser = await db.getImapUserById(query.id);
 
     if (imapUser) {
       query.host = imapUser.host;
@@ -182,14 +180,14 @@ exports.getEmails = async (req, res, next) => {
   const query = JSON.parse(req.headers['x-imap-login']);
 
   if (query.access_token) {
-    const googleUser = await supabaseHandlers.getGoogleUserByEmail(query.email);
+    const googleUser = await db.getGoogleUserByEmail(query.email);
 
     if (googleUser) {
       query.refresh_token = googleUser.refresh_token;
     }
   } else {
     logger.debug(query.id, query.email, 'getemails');
-    const imapUser = await supabaseHandlers.getImapUserById(query.id);
+    const imapUser = await db.getImapUserById(query.id);
     if (imapUser) {
       query.host = imapUser.host;
       query.port = imapUser.port;
