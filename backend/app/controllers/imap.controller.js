@@ -173,10 +173,8 @@ exports.getImapBoxes = async (req, res, next) => {
  */
 exports.getEmails = async (req, res, next) => {
   if (!req.headers['x-imap-login']) {
-    if (!req.headers['x-imap-login']) {
-      res.status(400);
-      next(new Error('An x-imap-login header field is required.'));
-    }
+    res.status(400);
+    next(new Error('An x-imap-login header field is required.'));
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
@@ -219,6 +217,10 @@ exports.getEmails = async (req, res, next) => {
     res.status(500).send({
       message: 'Error occurend try to refresh the page or reconnect'
     });
+  });
+
+  eventEmitter.on('end', () => {
+    res.status(200).send();
   });
 
   eventEmitter.removeListener('end', () => {

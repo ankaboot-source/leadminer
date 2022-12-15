@@ -533,7 +533,6 @@ export default defineComponent({
       this.boxOptions = this.$store.state.boxes;
       this.renderDialog = true;
     }
-    this.$store.dispatch("example/setupEventSource", { this: this });
   },
 
   methods: {

@@ -1,21 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { LocalStorage } from "quasar";
-import {
-  eventListenersHandler,
-  setupEventSourceHelper,
-} from "../helpers/SSEHelpers";
+import { registerEventHandlers } from "src/helpers/sse";
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
   process.env.SUPABASE_SECRET_PROJECT_TOKEN
 );
-//register source globally so we can access from anywere
-let source;
-
-export function setupEventSource() {
-  source = setupEventSourceHelper.bind(this);
-}
-
-//////
 
 function initStore(parent, currentState) {
   supabase
@@ -31,9 +20,7 @@ function initStore(parent, currentState) {
         }`,
       },
       (payload) => {
-        setTimeout(() => {
-          parent.commit("example/SET_EMAILS", payload.new);
-        }, 50);
+        parent.commit("example/SET_EMAILS", payload.new);
       }
     )
     .subscribe();
@@ -43,96 +30,58 @@ function initStore(parent, currentState) {
   parent.commit("example/SET_STATISTICS", "f");
   parent.commit("example/SET_SCANNEDBOXES", []);
 }
+
 function updateStoreWhenFinish(response, parent) {
   parent.commit("example/SET_LOADING", false);
   parent.commit("example/SET_LOADING_DNS", false);
   parent.commit("example/SET_STATUS", "");
-  parent.commit("example/SET_EMAILS", response.data.data);
-  parent.commit("example/SET_INFO_MESSAGE", response.data.message);
 }
-export function getEmails({ getters }, { data }) {
+
+export async function getEmails({ getters }, { data }) {
   const currentState = getters.getStates;
-  const CancelToken = this.$axios.CancelToken;
-  const sources = CancelToken.source();
-  source = setupEventSourceHelper(this);
-  source = eventListenersHandler(currentState, source, this);
-  const ProxyChange = {
-    // eslint-disable-line
-    set: function (target, key, value) {
-      if (value === true) {
-        sources.cancel();
-      }
-      return Reflect.set(...arguments);
-    },
-  };
-  return new Promise((resolve, reject) => {
-    const timer = new Proxy({ cancelRequest: false }, ProxyChange);
-    initStore(this, currentState);
-    this.commit("example/SET_CANCEL", timer);
-    if (currentState.googleUser.access_token) {
-      this.$axios
-        .get(this.$api + `/imap/1/collectEmails`, {
-          headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
-          cancelToken: sources.token,
-          params: {
-            fields: data.fields.split(","),
-            boxes: data.boxes,
-            folders: data.folders,
-          },
-        })
-        .then((response) => {
-          source.close();
 
-          updateStoreWhenFinish(response, this);
-          resolve(response);
-          source = null;
-        })
-        .catch((error) => {
-          this.commit(
-            "example/SET_ERROR",
-            error?.response?.data?.error
-              ? error?.response?.data?.error
-              : error.message
-          );
-          source = null;
-          reject(error.message);
-        });
-    } else {
-      this.$axios
-        .get(
-          this.$api +
-            `/imap/${JSON.parse(
-              JSON.stringify(currentState.imapUser.id)
-            )}/collectEmails`,
-          {
-            headers: { "X-imap-login": JSON.stringify(currentState.imapUser) },
+  initStore(this, currentState);
 
-            cancelToken: sources.token,
-            params: {
-              fields: data.fields.split(","),
-              boxes: data.boxes,
-              folders: data.folders,
-            },
-          }
-        )
-        .then((response) => {
-          updateStoreWhenFinish(response, this);
-          source.close();
-          source = null;
-          resolve(response);
-        })
-        .catch((error) => {
-          this.commit(
-            "example/SET_ERROR",
-            error?.response?.data?.error
-              ? error?.response?.data?.error
-              : error.message
-          );
-          source = null;
-          reject(error.message);
-        });
+  const eventSource = new EventSource(
+    `${process.env.SERVER_ENDPOINT}/api/stream`,
+    {
+      withCredentials: true,
     }
-  });
+  );
+
+  const user = currentState.googleUser.id
+    ? currentState.googleUser
+    : currentState.imapUser;
+
+  registerEventHandlers(eventSource, user.id, this);
+
+  try {
+    const response = await this.$axios.get(
+      this.$api + `/imap/1/collectEmails`,
+      {
+        headers: { "X-imap-login": JSON.stringify(user) },
+        params: {
+          fields: data.fields.split(","),
+          boxes: data.boxes,
+          folders: data.folders,
+        },
+      }
+    );
+
+    eventSource.close();
+    updateStoreWhenFinish(response, this);
+
+    return response;
+  } catch (error) {
+    this.commit(
+      "example/SET_ERROR",
+      error?.response?.data?.error
+        ? error?.response?.data?.error
+        : error.message
+    );
+    eventSource.close();
+    throw new Error(error.message);
+  }
 }
 
 export async function signUp(_, { data }) {
