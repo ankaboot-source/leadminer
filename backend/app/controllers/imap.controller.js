@@ -24,12 +24,13 @@ function temporaryImapConnection(imapInfo, reqBody) {
     }
   });
 }
+
 /**
  *  Create imap account infos
  * @param  {} req
  * @param  {} res
  */
-exports.createImapInfo = (req, res, next) => {
+function createImapInfo(req, res, next) {
   const { email, host, tls, port } = req.body;
 
   if (!email || !host) {
@@ -75,13 +76,14 @@ exports.createImapInfo = (req, res, next) => {
     err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
     next(err);
   });
-};
+}
+
 /**
  * Login to account
  * @param  {} req
  * @param  {} res
  */
-exports.loginToAccount = async (req, res, next) => {
+async function loginToAccount(req, res, next) {
   const { email } = req.body;
 
   if (!email) {
@@ -90,7 +92,7 @@ exports.loginToAccount = async (req, res, next) => {
   }
   const imap = await db.getImapUserByEmail(email);
   if (imap === null) {
-    this.createImapInfo(req, res, next);
+    createImapInfo(req, res, next);
   } else {
     const imapConnection = temporaryImapConnection(imap, req.body);
 
@@ -111,15 +113,14 @@ exports.loginToAccount = async (req, res, next) => {
       next(err);
     });
   }
-};
+}
 
 /**
  * Retrieve mailbox folders.
  * @param  {object} req - user request
  * @param  {object} res - http response to be sent
  */
-/* A function that is called when a user wants to get his imap folders tree. */
-exports.getImapBoxes = async (req, res, next) => {
+async function getImapBoxes(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
     next(new Error('An x-imap-login header field is required.'));
@@ -162,19 +163,17 @@ exports.getImapBoxes = async (req, res, next) => {
     message: 'IMAP folders fetched successfully!',
     imapFoldersTree: tree
   });
-};
+}
 
 /**
  * Get Emails from imap server.
  * @param  {object} req - user request
  * @param  {object} res - http response to be sent
  */
-exports.getEmails = async (req, res, next) => {
+async function getEmails(req, res, next) {
   if (!req.headers['x-imap-login']) {
-    if (!req.headers['x-imap-login']) {
-      res.status(400);
-      next(new Error('An x-imap-login header field is required.'));
-    }
+    res.status(400);
+    next(new Error('An x-imap-login header field is required.'));
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
@@ -195,13 +194,13 @@ exports.getEmails = async (req, res, next) => {
   }
   // define user object from user request query
   const user = new ImapUser(query).getUserConnectionDataFromQuery(),
-    // initialise imap server connection
+    // initialize imap server connection
     server = new EmailServer(user, sse);
 
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
 
-  // initialise EmailAccountMiner to mine imap folder
+  // initialize EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
     server,
     user,
@@ -219,7 +218,18 @@ exports.getEmails = async (req, res, next) => {
     });
   });
 
+  eventEmitter.on('end', () => {
+    res.status(200).send();
+  });
+
   eventEmitter.removeListener('end', () => {
     logger.debug('Remove event listener.');
   });
+}
+
+module.exports = {
+  getEmails,
+  getImapBoxes,
+  loginToAccount,
+  createImapInfo
 };

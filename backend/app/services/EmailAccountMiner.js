@@ -197,7 +197,6 @@ class EmailAccountMiner {
       // fetch function : pass fileds to fetch
     } else if (this.folders.indexOf(folderName) + 1 === this.folders.length) {
       this.connection.end();
-      this.connection.destroy();
     } else {
       // if this folder is just a label then pass to the next folder
       this.mineFolder(
