@@ -26,12 +26,13 @@ class EmailMessage {
    * @param user - The user.
 
    */
-  constructor(sequentialId, header, body, user, folder) {
+  constructor(sequentialId, header, body, user, folder, isLast) {
     this.sequentialId = sequentialId;
     this.header = header || {};
     this.body = body || {};
     this.user = user;
     this.folderPath = folder;
+    this.isLast = isLast;
   }
 
   /**
@@ -167,9 +168,13 @@ class EmailMessage {
       const emails = regExHelpers.extractNameAndEmailFromBody(
         this.body.toString('utf8')
       );
-      delete this.body;
+
       // store extracted emails
       this.storeEmailsAddressesExtractedFromBody(message, emails);
+
+      if (this.isLast) {
+        await db.refinePersons(this.user.id);
+      }
     }
   }
 

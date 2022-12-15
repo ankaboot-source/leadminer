@@ -4,18 +4,14 @@ const inputHelpers = require('../utils/helpers/inputHelpers');
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
 const { redis } = require('../utils/redis');
-const { Worker } = require('worker_threads');
 const redisClientForPubSubMode = redis.getPubSubClient();
-const data = 'messageWorker initiated',
-  MessageWorker1 = new Worker('./app/workers/messageWorker.js', {
-    data
-  }),
-  MessageWorker2 = new Worker('./app/workers/messageWorker.js', {
-    data
-  });
+
 const { db } = require('../db');
 const { imapFetchBody } = require('../config/server.config');
-const MAX_WORKER_TIMEOUT = 600000;
+const {
+  MAX_WORKER_TIMEOUT,
+  REDIS_MESSAGES_CHANNEL
+} = require('../utils/constants');
 
 class EmailAccountMiner {
   // public field
@@ -40,8 +36,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.evenMessageWorker = MessageWorker1;
-    this.oddMessageWorker = MessageWorker2;
+    this.lastFolder = false;
+    this.lastMessage = false;
   }
 
   /**
@@ -134,13 +130,7 @@ class EmailAccountMiner {
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
-      this.evenMessageWorker.postMessage(
-        `even-messages-channel-${this.user.id}`
-      );
-      this.oddMessageWorker.postMessage(`odd-messages-channel-${this.user.id}`);
-      setTimeout(() => {
-        this.mineFolder(this.folders[0]).next();
-      }, 1500);
+      this.mineFolder(this.folders[0]).next();
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
@@ -173,6 +163,9 @@ class EmailAccountMiner {
   *mineFolder(folder) {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
+      if (this.isLastFolderToFetch(folder)) {
+        this.lastFolder = true;
+      }
       if (err) {
         logger.error(
           `Error occured when opening folder for User: ${this.mailHash}`
@@ -219,7 +212,7 @@ class EmailAccountMiner {
    * @param {string} folderName - The name of the folder we are mining
    */
   ImapFetch(folder, folderName) {
-    let self = this;
+    const self = this;
 
     const bodies = ['HEADER'];
     if (imapFetchBody) {
@@ -232,6 +225,8 @@ class EmailAccountMiner {
 
     fetchResult.on('message', (msg, seqNumber) => {
       logger.debug('Message #%d', seqNumber);
+      this.lastMessage = seqNumber === folder.messages.total;
+
       const prefix = `(#${seqNumber}) `;
 
       msg.on('body', (stream, streamInfo) => {
@@ -268,26 +263,23 @@ class EmailAccountMiner {
       logger.error(`Fetch error: ${err}`);
     });
 
-    // end event
     fetchResult.once('end', () => {
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
-      if (self.folders.indexOf(folder.name) + 1 === self.folders.length) {
+
+      if (this.isLastFolderToFetch(folderName)) {
         // we are at the end of the folder array==>> end imap connection
-        setTimeout(() => {
-          this.evenMessageWorker.terminate();
-          this.oddMessageWorker.terminate();
-          this.sendMinedData();
-        }, MAX_WORKER_TIMEOUT);
         this.connection.end();
-        self = null;
       } else {
         // go to the next folder
         self
           .mineFolder(self.folders[self.folders.indexOf(folder.name) + 1])
           .next();
-        self = null;
       }
     });
+  }
+
+  isLastFolderToFetch(folderName) {
+    return this.folders.indexOf(folderName) + 1 === this.folders.length;
   }
 
   /**
@@ -310,19 +302,11 @@ class EmailAccountMiner {
       body,
       header,
       user: this.user,
-      folderName
+      folderName,
+      isLast: this.lastFolder && this.lastMessage
     });
-    if (seqNumber % 2 !== 0) {
-      redisClientForPubSubMode.publish(
-        `odd-messages-channel-${this.user.id}`,
-        message
-      );
-    } else {
-      redisClientForPubSubMode.publish(
-        `even-messages-channel-${this.user.id}`,
-        message
-      );
-    }
+
+    redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);
   }
 
   /**
@@ -330,9 +314,6 @@ class EmailAccountMiner {
    * @param seqNumber - The current sequence number of the email being scanned
    */
   sendMiningProgress(seqNumber) {
-    // as it's a periodic function, we can watch memory usage here
-    // we can also force garbage_collector if we have many objects are created
-
     // define the progress
     if (this.sends.includes(seqNumber)) {
       const progress =

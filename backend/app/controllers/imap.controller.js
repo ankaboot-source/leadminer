@@ -197,7 +197,7 @@ exports.getEmails = async (req, res, next) => {
   const user = new ImapUser(query).getUserConnectionDataFromQuery(),
     // initialise imap server connection
     server = new EmailServer(user, sse);
-  // defines events, and workers
+
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
 
