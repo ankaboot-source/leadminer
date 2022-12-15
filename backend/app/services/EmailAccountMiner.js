@@ -8,10 +8,7 @@ const redisClientForPubSubMode = redis.getPubSubClient();
 
 const { db } = require('../db');
 const { imapFetchBody } = require('../config/server.config');
-const {
-  MAX_WORKER_TIMEOUT,
-  REDIS_MESSAGES_CHANNEL
-} = require('../utils/constants');
+const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 
 class EmailAccountMiner {
   // public field
