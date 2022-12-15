@@ -19,7 +19,8 @@ console.log(
 
 (async () => {
   await redis.loadData();
-  const messagesWorker = new Worker('./app/workers/messageWorker.js');
+  // eslint-disable-next-line no-unused-vars
+  const messageWorker = new Worker('./app/workers/messageWorker.js');
   app.listen(serverPort, () => {
     logger.info(`Server is running on port ${serverPort}.`);
   });

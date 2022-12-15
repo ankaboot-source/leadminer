@@ -168,7 +168,7 @@ class EmailAccountMiner {
       }
       if (err) {
         logger.error(
-          `Error occured when opening folder for User: ${this.mailHash}`
+          `Error occurred when opening folder for User: ${this.mailHash}`
         );
       }
       this.mineMessages(openedFolder, folder);
@@ -183,7 +183,6 @@ class EmailAccountMiner {
   mineMessages(folder, folderName) {
     if (folder) {
       this.currentTotal = folder.messages.total;
-      // used in sending progress
       this.sends = inputHelpers.EqualPartsForSocket(
         folder.messages.total,
         'position'
@@ -192,9 +191,7 @@ class EmailAccountMiner {
         folder.messages.total,
         'data'
       );
-      // fetching method
       this.ImapFetch(folder, folderName);
-      // fetch function : pass fileds to fetch
     } else if (this.folders.indexOf(folderName) + 1 === this.folders.length) {
       this.connection.end();
     } else {
