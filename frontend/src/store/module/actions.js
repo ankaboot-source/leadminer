@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { LocalStorage } from "quasar";
+
 import { registerEventHandlers } from "src/helpers/sse";
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
@@ -57,7 +58,7 @@ export async function getEmails({ getters }, { data }) {
 
   try {
     const response = await this.$axios.get(
-      this.$api + `/imap/1/collectEmails`,
+      `${this.$api}/imap/1/collectEmails`,
       {
         headers: { "X-imap-login": JSON.stringify(user) },
         params: {
