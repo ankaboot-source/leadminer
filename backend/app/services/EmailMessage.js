@@ -171,10 +171,10 @@ class EmailMessage {
 
       // store extracted emails
       this.storeEmailsAddressesExtractedFromBody(message, emails);
+    }
 
-      if (this.isLast) {
-        await db.refinePersons(this.user.id);
-      }
+    if (this.isLast) {
+      await db.refinePersons(this.user.id);
     }
   }
 
