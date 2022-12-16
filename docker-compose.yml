@@ -42,7 +42,7 @@ services:
     depends_on:
       - redis
     ports:
-      - ${LEADMINER_API_PORT}:8081
+      - ${LEADMINER_API_PORT}:${LEADMINER_API_PORT}
 
   leadminer-server:
     image: leadminer-server:git
