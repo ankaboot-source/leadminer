@@ -25,7 +25,7 @@ services:
       SUPABASE_SECRET_PROJECT_TOKEN: ${SUPABASE_SECRET_PROJECT_TOKEN}
       PG_CONNECTION_STRING: ${PG_CONNECTION_STRING}
       CONNECTION_TYPE: ${CONNECTION_TYPE}
-      REDIS_USERNAME: ${REDIS_USERNAME}
+      REDIS_USERNAME: ${REDIS_USERNAME}lkol
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
@@ -42,7 +42,7 @@ services:
     depends_on:
       - redis
     ports:
-      - ${LEADMINER_API_PORT}:${LEADMINER_API_PORT}
+      - ${LEADMINER_API_PORT}:8081
 
   leadminer-server:
     image: leadminer-server:git
@@ -55,7 +55,7 @@ services:
         SUPABASE_SECRET_PROJECT_TOKEN: ${SUPABASE_SECRET_PROJECT_TOKEN}
         GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     ports:
-      - 8080:80
+      - 8020:80
     restart: always
     depends_on:
       - leadminer-api
