@@ -3,7 +3,7 @@ const { parentPort } = require('worker_threads');
 const { redis } = require('../utils/redis');
 const redisClient = redis.getPubSubClient();
 const EmailMessage = require('../services/EmailMessage');
-const {storage} = require('../services/storage');
+const { storage } = require('../services/storage');
 
 const logger = require('../utils/logger')(module);
 
@@ -33,10 +33,9 @@ redisClient.on('message', (channel, messageFromChannel) => {
   );
   if (message_id) {
     // Extract emails from the header
-    Message.extractEmailsAddresses().then( async (data)=>
-      {
-        await storage.storeData(message.user.id, data)
-      }
+    Message.extractEmailsAddresses().then(async (data) => {
+      await storage.storeData(message.user.id, data);
+    }
     );
   }
 });

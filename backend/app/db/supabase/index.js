@@ -12,7 +12,7 @@ class SupabaseHandlers {
   }
 
   /**
-   * `insertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
+   * `insertMessage` takes a message Object (ID, user ID, channel, folder, and date) and inserts a new row into
    * the `messages` table if the message ID doesn't already exist
    * @param {string} message - Message Object
    * @returns {promise}
@@ -22,38 +22,38 @@ class SupabaseHandlers {
     const result = await this.supabaseClient
       .from('messages')
       .insert([...message])
-      .select()
+      .select();
 
     return result;
   }
 
   /**
-   * It takes a message ID, a user ID, a person ID, and a key (which is either 'to', 'cc', 'bcc', 'from',
-   * or 'reply-to') and then inserts a new row into the pointsofcontact table
+   * It takes a pointofcontact Object (message ID, a user ID, a person ID, 'to', 'cc', 'bcc', 'from',or 'reply-to')
+   * and then inserts a new row into the pointsofcontact table.
    * @param messageID - PointofContact Object
    * @returns {promise} .
    */
   async insertPointOfContact(pointOfContact) {
     const result = await this.supabaseClient
       .from('pointsofcontact')
-      .insert([...pointOfContact])
-      //.select() We don't need returned rows for now.
+      .insert([...pointOfContact]);
+    //.select() We don't need returned rows for now.
 
     return result;
   }
 
   /**
-   * Insert a person record into the persons table, using the email address as the unique identifier
+   * Insert a person Object() into the persons table, using the email address as the unique identifier
    * @param person - Person object
    * @returns {promise}
    */
   async upsertPerson(person) {
 
-    let result = await this.supabaseClient
+    const result = await this.supabaseClient
       .from('persons')
-      .upsert([...person], {onConflict: 'email'})
-      .select()
-    
+      .upsert([...person], { onConflict: 'email' })
+      .select();
+
     return result;
   }
 
@@ -65,7 +65,7 @@ class SupabaseHandlers {
   createTags(tags) {
     return this.supabaseClient
       .from('tags')
-      .upsert([...tags], { onConflict: 'personid, name', ignoreDuplicates: true});
+      .upsert([...tags], { onConflict: 'personid, name', ignoreDuplicates: true });
   }
 
   async createGoogleUser({ email, refresh_token }) {

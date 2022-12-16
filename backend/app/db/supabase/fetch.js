@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 
 const agentOptions = {
-  keepAlive: true,
+  keepAlive: true
   //maxSockets: 40 Depends on network speed
 };
 const httpAgent = new http.Agent(agentOptions);

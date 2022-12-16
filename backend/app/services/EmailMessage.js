@@ -181,9 +181,9 @@ class EmailMessage {
       return [this.buildTag('no-reply', 'noReply', 0, 'refined')];
     }
     if (emailType && emailType !== '') {
-      return [this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')]
+      return [this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')];
     }
-    return []
+    return [];
   }
 
   /**
@@ -191,7 +191,7 @@ class EmailMessage {
    */
   async extractEmailsAddresses() {
 
-    const extractedData = {}
+    const extractedData = {};
 
     extractedData.message = {
 
@@ -206,16 +206,16 @@ class EmailMessage {
 
     };
 
-    extractedData.persons = []
-    this.message = extractedData.message
+    extractedData.persons = [];
+    this.message = extractedData.message;
 
     const messagingFields = this.getMessagingFieldsFromHeader();
 
     for (const key of Object.keys(messagingFields)) {
-      const emails = regExHelpers.extractNameAndEmail(   // extract Name and Email in case of a header
+      const emails = regExHelpers.extractNameAndEmail( // extract Name and Email in case of a header
         messagingFields[`${key}`]
       );
-      const p = await this.emailsAddressesExtractedFromHeader(emails, key)
+      const p = await this.emailsAddressesExtractedFromHeader(emails, key);
       extractedData.persons.push(...p);
     }
 
@@ -225,7 +225,7 @@ class EmailMessage {
     delete this.body;
     // store extracted emails
     extractedData.persons.push(...await this.emailsAddressesExtractedFromBody(emails));
-    return extractedData
+    return extractedData;
   }
 
 
@@ -241,20 +241,19 @@ class EmailMessage {
 
     //const persons = []
 
-    for (const email of emails.filter((email) => email && this.user.email !== email?.address))
-    {
+    for (const email of emails.filter((email) => email && this.user.email !== email?.address)) {
       const domain = await domainHelpers.checkDomainStatus(email.address); // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
 
-      if (domain[0]) {   // Valid email
+      if (domain[0]) { // Valid email
 
         const tags = this.getTagsField(fieldName);
-        const name = email?.name.replaceAll(/"|'/g, '')
+        const name = email?.name.replaceAll(/"|'/g, '');
 
         const emailType = emailAddressHelpers
           .findEmailAddressType(email.address, [email?.name], domain[1]);
 
-        tags.push(...this.getTagsEmail(email, emailType))
-        return [this.extractPerson(email.address, name, tags, fieldName)] // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
+        tags.push(...this.getTagsEmail(email, emailType));
+        return [this.extractPerson(email.address, name, tags, fieldName)]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
       }
       const member = await redisClientForNormalMode.sismember(
         'invalidDomainEmails',
@@ -264,7 +263,7 @@ class EmailMessage {
         redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
       }
     }
-    return []
+    return [];
   }
 
   /**
@@ -280,15 +279,15 @@ class EmailMessage {
 
     for (const email of emails.filter((email) => email && this.user.email !== email.address)) {
 
-      const domain = await domainHelpers.checkDomainStatus(email);  // check for Domain validity
+      const domain = await domainHelpers.checkDomainStatus(email); // check for Domain validity
 
       if (domain[0]) {
 
-        const tags = this.getTagsEmail(email, emailType)
         const emailType = emailAddressHelpers.findEmailAddressType(
           email, [email?.name ?? ''], domain[1]
         );
-        return [this.extractPerson(email, '', tags, 'body')]  // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
+        const tags = this.getTagsEmail(email, emailType);
+        return [this.extractPerson(email, '', tags, 'body')]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
       }
 
       const member = await redisClientForNormalMode.sismember(
@@ -298,9 +297,9 @@ class EmailMessage {
       if (member === 0) {
         redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
       }
-    };
+    }
 
-    return []
+    return [];
   }
 
 
@@ -314,8 +313,9 @@ class EmailMessage {
    */
   extractPerson(email, name, tags, fieldName) {
 
-    for (const tag of tags)
-      tag.email = email.toLowerCase()
+    for (const tag of tags) {
+      tag.email = email.toLowerCase();
+    }
 
     return {
       person: {
@@ -333,9 +333,9 @@ class EmailMessage {
         // works_for: ''  Will be retrieved with transmutation
       },
       pointOfContact: {
-        messageid: "",
-        personid: "",
-        message_id: this.message.message_id,  //  TODO: To save us some for loops, but needs to change.
+        messageid: '',
+        personid: '',
+        message_id: this.message.message_id, //  TODO: To save us some for loops, but needs to change.
         userid: this.user.id,
         email: email.toLowerCase(), // TODO: To save us some for loops, but needs to change.
         name: name ?? '',
@@ -346,8 +346,8 @@ class EmailMessage {
         reply_to: fieldName === 'reply-to' || fieldName === 'reply_to',
         body: fieldName === 'body'
       },
-      tags: tags
-    }
+      tags
+    };
   }
 }
 
