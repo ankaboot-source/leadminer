@@ -5,6 +5,10 @@ const pool = new Client({
   connectionString: pgConnectionString
 });
 
+(async () => {
+  await pool.connect();
+})();
+
 module.exports = {
   async query(text, params, logger) {
     const start = Date.now();
