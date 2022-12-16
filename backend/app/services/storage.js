@@ -146,32 +146,63 @@ class Storage {
      * @param {*} Object 
      */
     async store(object) {
-        // TODO: rebuild this !!!
 
-        // const { data, error } = await this.db.insertMessage(message_id, userid, channel, folderPath, date)
-        // const messageID = data?.id
+    /**
+             * This can be change instead of awaiting for message then acting, we can
+             * fire (message call, person call) -> wait -> prepare -> fire (poc, tags)
+             */
 
-        // if (error) {
-        //     console.log(error)
-        // }
-        // for (const data of dataObject.persons) {
-        //     const { _userid, email, name } = data.person
-        //     const { field_name } = data.pointOfContact
+    const { message, persons } = object;
 
-        //     this.db.insertPersons(name, email, _userid).then((person, error) => {
+    const { data, error } = await this.db.insertMessage([message]);
 
-        //         if (messageID && person.data.id) {
-        //             this.db.insertPointOfContact(messageID, _userid, person.data.id, field_name, name)
-        //             for (const tag of data.tags)
-        //                 tag.personid = person.data.id
+    if (error) {
+      // TODO: Add proper logging
+      console.log(error);
+      return;
+    }
 
-        //             this.db.createTags(data.tags)
-        //         } else {
-        //             console.log(error)
-        //         }
+    const messageID = data[0]?.id;
 
-        //     })
-        // }
+    for (const dataObject of persons) {
+
+      this.db.upsertPerson([dataObject.person]).then((result) => {
+
+        const { data, error } = result;
+        const personID = data[0]?.id;
+
+        if (messageID && personID) {
+
+          // Clean data before inserting
+          delete dataObject.pointOfContact.email;
+          delete dataObject.pointOfContact.message_id;
+
+          // Add relational Id's (Message, Person)
+          dataObject.pointOfContact.personid = personID;
+          dataObject.pointOfContact.messageid = messageID;
+
+          for (const tag of dataObject.tags) {
+            delete tag.email; // Clean
+            tag.personid = personID; // Adds personID to tags
+          }
+
+          this.db.insertPointOfContact([dataObject.pointOfContact]).then((res) => {
+            if (res.error) {
+              console.log('poc ', res.error); //TODO: Proper Logging
+            }
+          });
+          this.db.createTags(dataObject.tags).then((res) => {
+            if (res.error) {
+              console.log('tag ', res.error); //TODO: Proper Logging
+            }
+          });
+
+        } else {
+          // TODO: add proper logging
+          console.log('Error in inserting persons: ', error);
+        }
+      });
+    }
     }
 
     /**
