@@ -9,14 +9,14 @@ describe('Regex redos checker', () => {
     const regex = regExHelpers.getRegEx()
     let messageError = 'Regex is vulnerable !'
     
-    regex.map((r) => {
+    regex.forEach((r) => {
       it('regex should be REDOS safe', async () => {
         const result = await check(r.source, r.flags)
         
         if (result.status === 'vulnerable'){  // Constructs helpful error message
           const attack = result.attack.pattern
           const complexity = result.complexity.type
-          vulParts = result.hotspot.map((i) => {return ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}`})
+          const vulParts = result.hotspot.map((i) => {return ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}`})
           messageError += ` \n\t- Complixity: ${complexity} \n\t- Attack string: ${attack} \n\t- Vulnerable parts: ${vulParts}\n\t`
         }
         expect(result, messageError).to.deep.have.property('status', 'safe')

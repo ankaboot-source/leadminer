@@ -33,21 +33,24 @@ function extractNameAndEmailFromBody(data) {
  */
 function extractNameAndEmail(data) {
 
-  // Emails are spereated with comma if there is more than 1
-  const emails = data.split(',').map((email) => {
+  const emails = []
 
-    emailData = email.match(regexForBody.source)
+  for (const email of data.split(',')) {
+
+    let emailData = email.match(regexForBody.source)
 
     if (emailData) {
-      return {
-        name: email.split(' ').slice(0, -1).join(' ').trim(),  // Email is always at the end, -1 to exclude email.
+      emailData = {
+
+        name: email.split(' ').slice(0, -1).join(' ').trim(), // -1 to exclude email.
         address: emailData[0],
         identifier: emailData.groups.identifier
-      }
-    }
-  })
-  return emails.filter(Boolean)
 
+      }
+      emails.push(emailData)
+    }
+  }
+  return emails
 }
 
 exports.extractNameAndEmail = extractNameAndEmail;
