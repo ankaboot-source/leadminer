@@ -98,11 +98,12 @@ class SupabaseHandlers {
       address: '',
       alternate_names: [],
       same_as: [],
-      given_name: name,
+      given_name: '',
       family_name: '',
       job_title: ''
       // works_for: ''  Will be retrieved with transmutation
     };
+
     let result = await this.supabaseClient
       .from('persons')
       .insert(person)

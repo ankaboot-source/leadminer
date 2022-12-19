@@ -114,7 +114,7 @@ class Postgres {
 
       const result = await pool.query(
         query,
-        [name, emailsAddress, userID, '', '', '', [], [], name, '', ''],
+        [name, emailsAddress, userID, '', '', '', [], [], '', '', ''],
         this.logger
       );
       return { data: result.rows[0], error: null };
