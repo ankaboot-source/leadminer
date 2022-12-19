@@ -158,7 +158,7 @@ class Postgres {
                 label,
                 reachable,
                 type,
-                existingTag.rows[0]
+                existingTag.rows[0].id
               ],
               this.logger
             );
