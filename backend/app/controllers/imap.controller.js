@@ -200,18 +200,6 @@ async function getEmails(req, res, next) {
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
 
-  // initialize EmailAccountMiner to mine imap folder
-  const miner = new EmailAccountMiner(
-    server,
-    user,
-    sse,
-    ['HEADER', '1'],
-    req.query.boxes,
-    eventEmitter
-  );
-
-  miner.mine();
-
   eventEmitter.on('error', () => {
     res.status(500).send({
       message: 'Error occurend try to refresh the page or reconnect'
@@ -225,6 +213,18 @@ async function getEmails(req, res, next) {
   eventEmitter.removeListener('end', () => {
     logger.debug('Remove event listener.');
   });
+
+  // initialize EmailAccountMiner to mine imap folder
+  const miner = new EmailAccountMiner(
+    server,
+    user,
+    sse,
+    ['HEADER', '1'],
+    req.query.boxes,
+    eventEmitter
+  );
+
+  await miner.mine();
 }
 
 module.exports = {
