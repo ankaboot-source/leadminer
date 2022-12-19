@@ -42,6 +42,7 @@
     "object-scan": "^17.1.0",
     "pg": "^8.8.0",
     "quoted-printable": "^1.0.1",
+    "recheck": "^4.4.1",
     "winston": "^3.6.0",
     "xoauth2": "^1.2.0"
   },

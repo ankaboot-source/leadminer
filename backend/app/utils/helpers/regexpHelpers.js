@@ -7,6 +7,14 @@ const regex = new RegExp(
 const regexForBody = new RegExp(
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi
 );
+
+/**
+ * getRegex - Returns the current used regex.
+ */
+function getRegex()
+{
+  return [regex, regexForBody]
+}
 /**
  * Extract Emails from body.
  * @param  {string} data A string that represents the mail body
@@ -58,3 +66,4 @@ function extractNameAndEmail(data) {
 
 exports.extractNameAndEmail = extractNameAndEmail;
 exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;
+exports.getRegEx = getRegex;
