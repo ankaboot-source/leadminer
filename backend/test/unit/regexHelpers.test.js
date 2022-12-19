@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { checkSync } = require('recheck');
+const { check } = require('recheck');
 const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
 const testData = require('../testData.json');
 
@@ -10,8 +10,8 @@ describe('Regex redos checker', () => {
     let messageError = 'Regex is vulnerable !'
     
     regex.map((r) => {
-      it('regex should be REDOS safe', () => {
-        const result = checkSync(r.source, r.flags)  // checks for regex safety
+      it('regex should be REDOS safe', async () => {
+        const result = await check(r.source, r.flags)
         
         if (result.status === 'vulnerable'){  // Constructs helpful error message
           const attack = result.attack.pattern
@@ -27,20 +27,32 @@ describe('Regex redos checker', () => {
 
 describe('regExHelpers.extractEmailsFromBody(text)', () => {
   
-  it('should return a valid array of emails', () => {
+  it('Should return a valid array of emails', () => {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.emailBody);
     expect(output).to.eql(testData.expectedForBodyExtraction);
   });
 
-  it('should return only valid emails', () => {
+  it('Should return only valid emails', () => {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.randomEmails);
     expect(output).to.eql(testData.validrandomEmails.split(' '));
   });
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
-  it('should return valid name and email as object', () => {
+  it('Should return objects with valid emails', () => {
     const output = regExHelpers.extractNameAndEmail(testData.EmailNameTest[0]);
     expect(output).to.have.deep.members(testData.expectedEmailNameAddress);
+
   });
+
+  it('Should return array with one valid object', () => {
+    // Test with all information
+    let output = regExHelpers.extractNameAndEmail("this is myyyyyyyyyyyyyyyy name <tester@testing.com>");
+    expect(output).to.have.deep.members([{name:'this is myyyyyyyyyyyyyyyy name', identifier: 'tester', address:'tester@testing.com'}]);
+
+    // test only with email
+    output = regExHelpers.extractNameAndEmail("<tester@testing.com>");
+    expect(output).to.have.deep.members([{name:'', identifier: 'tester', address:'tester@testing.com'}]);
+
+  })
 });
