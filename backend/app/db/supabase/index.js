@@ -41,7 +41,7 @@ class SupabaseHandlers {
       folder_path: folderPath,
       date: messageDate,
       list_id: listId,
-      reference: references,
+      references,
       conversation: isConversation
     };
     const result = await this.supabaseClient
