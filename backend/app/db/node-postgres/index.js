@@ -28,7 +28,7 @@ class Postgres {
     isConversation
   ) {
     const query =
-      'INSERT INTO messages(channel, folder_path, date, userid, message_id, reference, list_id, conversation) ' +
+      'INSERT INTO messages(channel, folder_path, date, userid, message_id, references, list_id, conversation) ' +
       'VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
 
     try {
