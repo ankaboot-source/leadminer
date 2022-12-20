@@ -145,7 +145,7 @@ class EmailMessage {
       'imap',
       this.folderPath,
       this.getDate(),
-      '',
+      this.getListId(),
       this.getReferences(),
       this.isConversation()
     );
