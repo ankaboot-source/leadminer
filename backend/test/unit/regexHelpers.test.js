@@ -11,7 +11,7 @@ describe('Regex redos checker', () => {
     
     regex.forEach((r) => {
       it('regex should be REDOS safe', async () => {
-        { attack, complexity, hotspots } = await check(r.source, r.flags)
+        const { attack, complexity, hotspots } = await check(r.source, r.flags)
         
         if (result.status === 'vulnerable'){  // Constructs helpful error message
           const attack = attack.pattern
