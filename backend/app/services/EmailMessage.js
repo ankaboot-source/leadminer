@@ -88,7 +88,16 @@ class EmailMessage {
   }
 
   /**
-   * getDate returns the parsed value of the "date" property of the header if it should be parsed
+   * getListId - Returns list-id from header or an empty string.
+   * @returns {string}
+   */
+  getListId() {
+
+    if (this.isList()) {
+      return this.header['list-id'][0].match(/<.*>/g)[0]; // extracts this part <list-id>
+    }
+    return '';
+  }
    * @returns The date of the article.
    */
   getDate() {
