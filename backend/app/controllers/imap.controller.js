@@ -123,7 +123,7 @@ async function loginToAccount(req, res, next) {
 async function getImapBoxes(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
-    next(new Error('An x-imap-login header field is required.'));
+    return next(new Error('An x-imap-login header field is required.'));
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
