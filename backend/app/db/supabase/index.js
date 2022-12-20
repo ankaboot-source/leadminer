@@ -100,7 +100,8 @@ class SupabaseHandlers {
       same_as: [],
       given_name: '',
       family_name: '',
-      job_title: ''
+      job_title: '',
+      identifiers: []
       // works_for: ''  Will be retrieved with transmutation
     };
 

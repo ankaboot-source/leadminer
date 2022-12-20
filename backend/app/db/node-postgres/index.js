@@ -99,8 +99,8 @@ class Postgres {
    */
   async upsertPerson(name, emailsAddress, userID) {
     const query =
-      'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *';
+      'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers) ' +
+      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *';
 
     try {
       const { rows, rowCount } = await pool.query(
@@ -114,7 +114,7 @@ class Postgres {
 
       const result = await pool.query(
         query,
-        [name, emailsAddress, userID, '', '', '', [], [], '', '', ''],
+        [name, emailsAddress, userID, '', '', '', [], [], '', '', '', ''],
         this.logger
       );
       return { data: result.rows[0], error: null };
