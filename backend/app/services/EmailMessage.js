@@ -36,7 +36,7 @@ class EmailMessage {
   }
 
   /**
-   * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
+   * isNewsletter - If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
    * @returns True or False
    */
   isNewsletter() {
@@ -47,7 +47,7 @@ class EmailMessage {
   }
 
   /**
-   * isTransactional returns true if the email is transactional, and false if it's not
+   * isTransactional - Returns true if the email is transactional, and false if it's not
    * @returns {boolean}
    */
   isTransactional() {
@@ -58,7 +58,7 @@ class EmailMessage {
   }
 
   /**
-   * isList returns true if the email has List-Post in header, and false if it's not
+   * isList - Returns true if the email has List-Post in header, and false if it's not
    * @returns {boolean}
    */
   isList() {
@@ -69,7 +69,7 @@ class EmailMessage {
   }
 
   /**
-   * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
+   * isInConversation - Returns 1 if the header object has a key called "references", otherwise return 0
    * @returns {boolean}
    */
   isConversation() {
@@ -77,7 +77,7 @@ class EmailMessage {
   }
 
   /**
-   * getReferences returns a list for references from header if message in conversation, otherwise empty array
+   * getReferences - Returns a list for references from header if message in conversation, otherwise empty array
    * @returns {string[]}
    */
   getReferences() {
@@ -98,6 +98,9 @@ class EmailMessage {
     }
     return '';
   }
+
+  /**
+   * getDate - Returns the parsed value of the "date" property of the header if it should be parsed
    * @returns The date of the article.
    */
   getDate() {
@@ -111,7 +114,7 @@ class EmailMessage {
   }
 
   /**
-   * getMessagingFieldsFromHeader returns an object with only the messaging fields from the header
+   * getMessagingFieldsFromHeader - Returns an object with only the messaging fields from the header
    * @returns An object with only the messaging fields from the header.
    */
   getMessagingFieldsFromHeader() {
@@ -125,7 +128,7 @@ class EmailMessage {
   }
 
   /**
-   * getMessageId returns the message-id of the email
+   * getMessageId - Returns the message-id of the email
    * @returns The message-id of the email.
    */
   getMessageId() {
