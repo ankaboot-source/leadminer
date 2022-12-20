@@ -140,6 +140,7 @@ class EmailAccountMiner {
 
     this.connection.on('error', (err) => {
       logger.error('Error with IMAP connection.', { error: err });
+      this.eventEmitter.emit('error')
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {

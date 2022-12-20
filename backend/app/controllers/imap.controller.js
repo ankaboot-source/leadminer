@@ -123,7 +123,7 @@ async function loginToAccount(req, res, next) {
 async function getImapBoxes(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
-    next(new Error('An x-imap-login header field is required.'));
+    return next(new Error('An x-imap-login header field is required.'));
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
@@ -154,7 +154,7 @@ async function getImapBoxes(req, res, next) {
   if (error) {
     error.message = 'Unable to fetch IMAP folders.';
     error.emailHash = hashHelpers.hashEmail(user.email);
-    next(error);
+    return next(error);
   }
   logger.info('Mining IMAP tree succeeded.', {
     emailHash: hashHelpers.hashEmail(user.email)
