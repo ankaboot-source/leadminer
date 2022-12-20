@@ -2,7 +2,8 @@ const quotedPrintable = require('quoted-printable');
 
 
 /* eslint-disable */
-const regexForBody = new RegExp(
+const regexEmailForHeader = /(?<=<|\s|^)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>)/
+const regexEmailForBody = new RegExp(
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi
 );
 
@@ -10,7 +11,7 @@ const regexForBody = new RegExp(
  * getRegex - Returns the current used regex.
  */
 function getRegex() {
-  return [regexForBody]
+  return [regexEmailForBody, regexEmailForHeader]
 }
 
 /**
@@ -21,7 +22,7 @@ function getRegex() {
 function extractNameAndEmailFromBody(data) {
   const reg = quotedPrintable
     .decode(data)
-    .match(regexForBody)
+    .match(regexEmailForBody)
   if (reg) {
     return [...new Set(reg)];
   } else return [];
@@ -37,7 +38,7 @@ function extractNameAndEmail(data) {
 
   for (const email of data.split(',')) {
 
-    let emailData = email.match(regexForBody.source)
+    let emailData = email.match(regexEmailForHeader.source)
 
     if (emailData) {
       emailData = {
