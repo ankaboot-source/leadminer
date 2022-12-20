@@ -97,7 +97,7 @@ class Postgres {
    * @param {string} userID - The user ID
    * @returns {Promise<object>} The inserted/updated person
    */
-  async upsertPerson(name, emailsAddress, userID) {
+  async upsertPerson(name, emailsAddress, userID, identifiers) {
     const query =
       'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers) ' +
       'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *';
@@ -114,7 +114,7 @@ class Postgres {
 
       const result = await pool.query(
         query,
-        [name, emailsAddress, userID, '', '', '', [], [], '', '', '', ''],
+        [name, emailsAddress, userID, '', '', '', [], [], '', '', '', identifiers],
         this.logger
       );
       return { data: result.rows[0], error: null };
