@@ -6,11 +6,13 @@ const testData = require('../testData.json');
 
 describe('Regex redos checker', () => {
 
-  const regex = regExHelpers.getRegEx()
-  let messageError = 'Regex is vulnerable !'
+  const regex = Object.values(regExHelpers.regex)
 
   regex.forEach((r) => {
     it('regex should be REDOS safe', async () => {
+
+      let messageError = 'Regex is vulnerable !'
+
       const { attack, complexity, hotspots, status } = await check(r.source, r.flags)
 
       if (status === 'vulnerable') {  // Constructs helpful error message

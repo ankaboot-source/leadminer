@@ -56,4 +56,4 @@ function extractNameAndEmail(emails) {
 
 exports.extractNameAndEmail = extractNameAndEmail;
 exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;
-exports.getRegEx = getRegex;
+exports.regex = {headerRegex: headerEmailRegex, bodyRegex: bodyEmailRegex};
