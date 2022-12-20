@@ -86,9 +86,10 @@ class SupabaseHandlers {
    * Insert a person record into the persons table, using the email address as the unique identifier
    * @param name - The name of the person
    * @param emailsAddress - The email address of the person you want to add to the database.
+   * @param {string} identifier - The user identifier extracted from email.
    * @returns {promise}
    */
-  async upsertPerson(name, emailsAddress, userID, identifiers) {
+  async upsertPerson(name, emailsAddress, userID, identifier) {
     const person = {
       name,
       email: emailsAddress,
@@ -101,7 +102,7 @@ class SupabaseHandlers {
       given_name: '',
       family_name: '',
       job_title: '',
-      identifiers
+      identifiers: identifier
       // works_for: ''  Will be retrieved with transmutation
     };
 
