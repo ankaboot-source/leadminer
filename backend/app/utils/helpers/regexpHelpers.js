@@ -1,9 +1,8 @@
 const quotedPrintable = require('quoted-printable');
 
-
 /* eslint-disable */
-const regexEmailForHeader = /(?<=<|\s|^)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>)/
-const regexEmailForBody = new RegExp(
+const headerEmailRegex = /(?<=<|\s|^)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>)/
+const bodyEmailRegex = new RegExp(
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi
 );
 
@@ -11,7 +10,7 @@ const regexEmailForBody = new RegExp(
  * getRegex - Returns the current used regex.
  */
 function getRegex() {
-  return [regexEmailForBody, regexEmailForHeader]
+  return [bodyEmailRegex, headerEmailRegex]
 }
 
 /**
@@ -22,23 +21,24 @@ function getRegex() {
 function extractNameAndEmailFromBody(data) {
   const reg = quotedPrintable
     .decode(data)
-    .match(regexEmailForBody)
+    .match(bodyEmailRegex)
   if (reg) {
     return [...new Set(reg)];
   } else return [];
 }
 
 /**
- * Using regEx extract emails addresses, identifiers and names if available.
- * @param  {string} data - string represents one or multiple emails.   
+ * Extracts email addresses, identifiers and names if available using regex.
+ * @param  {string} emails - can be either comma-separated emails or one email.
+ * @returns {Array} An array of obejcts
  */
-function extractNameAndEmail(data) {
+function extractNameAndEmail(emails) {
 
-  const emails = []
+  const result = []
 
-  for (const email of data.split(',')) {
+  for (const email of emails.split(',')) {
 
-    let emailData = email.match(regexEmailForHeader.source)
+    let emailData = email.match(headerEmailRegex.source)
 
     if (emailData) {
       emailData = {
@@ -48,10 +48,10 @@ function extractNameAndEmail(data) {
         identifier: emailData.groups.identifier
 
       }
-      emails.push(emailData)
+      result.push(emailData)
     }
   }
-  return emails
+  return result
 }
 
 exports.extractNameAndEmail = extractNameAndEmail;
