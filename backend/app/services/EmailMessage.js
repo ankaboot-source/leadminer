@@ -36,7 +36,7 @@ class EmailMessage {
   }
 
   /**
-   * If the header contains any of the fields in the NEWSLETTER_HEADER_FIELDS array, then return true
+   * Determines whether the email header contains any newsletter header fields or not.
    * @returns True or False
    */
   isNewsletter() {
@@ -47,7 +47,7 @@ class EmailMessage {
   }
 
   /**
-   * isTransactional returns true if the email is transactional, and false if it's not
+   * Determines whether the email header contains any transactional header fields or not.
    * @returns {boolean}
    */
   isTransactional() {
@@ -58,7 +58,7 @@ class EmailMessage {
   }
 
   /**
-   * isList returns true if the email has List-Post in header, and false if it's not
+   * Determines if the email header contains any mailing list header fields or not.
    * @returns {boolean}
    */
   isList() {
@@ -69,7 +69,7 @@ class EmailMessage {
   }
 
   /**
-   * isInConversation returns 1 if the header object has a key called "references", otherwise return 0
+   * Determines if the email header has a `references` field or not.
    * @returns {boolean}
    */
   isConversation() {
@@ -77,7 +77,7 @@ class EmailMessage {
   }
 
   /**
-   * getReferences returns a list for references from header if message in conversation, otherwise empty array
+   * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns {string[]}
    */
   getReferences() {
@@ -88,7 +88,19 @@ class EmailMessage {
   }
 
   /**
-   * getDate returns the parsed value of the "date" property of the header if it should be parsed
+   * Gets the `list-id` header field if the email is in a mailing list otherwise returns an empty string.
+   * @returns {string}
+   */
+  getListId() {
+
+    if (this.isList()) {
+      return this.header['list-id'][0].match(/<.*>/g)[0]; // extracts this part <list-id>
+    }
+    return '';
+  }
+
+  /**
+   * getDate - Returns the parsed value of the "date" property of the header if it should be parsed
    * @returns The date of the article.
    */
   getDate() {
@@ -102,8 +114,8 @@ class EmailMessage {
   }
 
   /**
-   * getMessagingFieldsFromHeader returns an object with only the messaging fields from the header
-   * @returns An object with only the messaging fields from the header.
+   * Extracts messaging fields from the email header.
+   * @returns {object}
    */
   getMessagingFieldsFromHeader() {
     const messagingProps = {};
@@ -116,8 +128,8 @@ class EmailMessage {
   }
 
   /**
-   * getMessageId returns the message-id of the email
-   * @returns The message-id of the email.
+   * Gets the `message-id` header field of the email.
+   * @returns {string}
    */
   getMessageId() {
     if (this.header['message-id']) {
@@ -136,7 +148,7 @@ class EmailMessage {
       'imap',
       this.folderPath,
       this.getDate(),
-      '',
+      this.getListId(),
       this.getReferences(),
       this.isConversation()
     );
