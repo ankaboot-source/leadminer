@@ -7,17 +7,30 @@
   ],
   "OneEmailNameTest": ["<leadminerTeam@ankaboot.fr>"],
   "expectedEmailNameAddress": [
-    { "name": "", "address": "leadminerTeam@ankaboot.fr" },
-
-    { "name": "leadminer team", "address": "leadminer-team@leadminer.io" },
     {
-      "name": "لغة عربية jhjhd",
-      "address": "azertyuiop!azertyuiop@leadminer.io"
-    },
-    { "name": "لغة english عربية", "address": "leadminer-team@leadminer.io" },
+      "name": "",
+      "address": "leadminerTeam@ankaboot.fr",
+      "identifier": "leadminerTeam"},
 
-    { "name": "русский язык", "address": "leadminer-team@leadminer.io" },
-    { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
+    {
+      "name": "leadminer team",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team" },
+    {
+      "name": "لغة english عربية",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team" },
+
+    {
+      "name": "русский язык",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team"
+    },
+    {
+      "name": "لغة عربية",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team"
+    }
   ],
   "minedDataExample": [
     { "email": { "name": "", "address": "leadminer-team@leadminer.io" } },

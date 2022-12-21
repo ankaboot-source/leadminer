@@ -60,6 +60,7 @@
     "mocha": "^10.1.0",
     "nyc": "^15.1.0",
     "prettier": "2.7.1",
+    "recheck": "^4.4.1",
     "supertest": "^6.3.1"
   },
   "engines": {
