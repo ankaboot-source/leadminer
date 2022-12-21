@@ -1,17 +1,5 @@
+const { REGEX_HEADER, REGEX_BODY } = require('../constants');
 const quotedPrintable = require('quoted-printable');
-
-/* eslint-disable */
-const headerEmailRegex = /(?<=<|\s|^)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>)/
-const bodyEmailRegex = new RegExp(
-  /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi
-);
-
-/**
- * getRegex - Returns the current used regex.
- */
-function getRegex() {
-  return [bodyEmailRegex, headerEmailRegex]
-}
 
 /**
  * Extract Emails from body.
@@ -21,10 +9,10 @@ function getRegex() {
 function extractNameAndEmailFromBody(data) {
   const reg = quotedPrintable
     .decode(data)
-    .match(bodyEmailRegex)
+    .match(REGEX_BODY);
   if (reg) {
     return [...new Set(reg)];
-  } else return [];
+  } return [];
 }
 
 /**
@@ -34,11 +22,11 @@ function extractNameAndEmailFromBody(data) {
  */
 function extractNameAndEmail(emails) {
 
-  const result = []
+  const result = [];
 
   for (const email of emails.split(',')) {
 
-    let emailData = email.match(headerEmailRegex.source)
+    let emailData = email.match(REGEX_HEADER.source);
 
     if (emailData) {
       emailData = {
@@ -47,13 +35,12 @@ function extractNameAndEmail(emails) {
         address: emailData[0],
         identifier: emailData.groups.identifier
 
-      }
-      result.push(emailData)
+      };
+      result.push(emailData);
     }
   }
-  return result
+  return result;
 }
 
 exports.extractNameAndEmail = extractNameAndEmail;
 exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;
-exports.regex = {headerRegex: headerEmailRegex, bodyRegex: bodyEmailRegex};
