@@ -1,24 +1,24 @@
 const { expect } = require('chai');
 const { check } = require('recheck');
 const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
-const { REGEX_HEADER, REGEX_BODY } = require('../../app/utils/constants')
+const { REGEX_HEADER, REGEX_BODY, REGEX_LIST_ID } = require('../../app/utils/constants')
 
 const testData = require('../testData.json');
 
 
 describe('Regex redos checker', () => {
 
-  const regex = [REGEX_HEADER, REGEX_BODY]
+  const regex = [REGEX_HEADER, REGEX_BODY] // TODO: REGEX_LIST_ID
 
   regex.forEach((r) => {
     it('regex should be REDOS safe', async () => {
 
       let messageError = 'Regex is vulnerable !'
 
-      const { attack, complexity, hotspots, status } = await check(r.source, r.flags)
+      const { attack, complexity, hotspot, status } = await check(r.source, r.flags)
 
       if (status === 'vulnerable') {  // Constructs helpful error message
-        const vulParts = hotspots.map((i) => { return ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}` })
+        const vulParts = hotspot.map((i) => { return ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}` })
         messageError += ` \n\t- Complixity: ${complexity.type} \n\t- Attack string: ${attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`
       }
       expect(status, messageError).to.eq('safe')

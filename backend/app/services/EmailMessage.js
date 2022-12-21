@@ -11,7 +11,7 @@ const {
   transactionalHeaders,
   mailingListHeaders
 } = require('../config/emailHeaders.config');
-
+const { REGEX_LIST_ID } = require('../utils/constants')
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {
@@ -91,7 +91,7 @@ class EmailMessage {
   getListId() {
 
     if (this.isList()) {
-      return this.header['list-id'][0].match(/<.*>/g)[0]; // extracts this part <list-id>
+      return this.header['list-id'][0].match(REGEX_LIST_ID)[0]; // extracts this part <list-id>
     }
     return '';
   }
@@ -213,7 +213,7 @@ class EmailMessage {
       channel: 'imap',
       folder_path: this.folderPath,
       date: this.getDate(),
-      list_id: '',
+      list_id: this.getListId(),
       reference: this.getReferences(),
       conversation: this.isConversation()
 
@@ -238,11 +238,11 @@ class EmailMessage {
     delete this.body;
     // store extracted emails
     extractedData.persons.push(...await this.emailsAddressesExtractedFromBody(emails));
-    
+
     if (this.isLast) {
       await db.refinePersons(this.user.id);
     }
-    
+
     return extractedData;
   }
 
