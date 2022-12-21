@@ -1,12 +1,6 @@
+const { REGEX_HEADER, REGEX_BODY } = require('../constants');
 const quotedPrintable = require('quoted-printable');
-/* eslint-disable */
-const regex = new RegExp(
-  /((?<name>[\p{L}\p{M}.\p{L}\p{M}\w\W]{1,})\s)*(<|\[)*(?<address>[A-Za-z0-9!#$%&+?^_`{|\}~-]+(?:\.[A-Za-z0-9!#$%&'*+=?^_`\{|\}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)(>|\])*/imu
-);
-/* eslint-disable */
-const regexForBody = new RegExp(
-  /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi
-);
+
 /**
  * Extract Emails from body.
  * @param  {string} data A string that represents the mail body
@@ -15,45 +9,37 @@ const regexForBody = new RegExp(
 function extractNameAndEmailFromBody(data) {
   const reg = quotedPrintable
     .decode(data)
-    .match(regexForBody)
+    .match(REGEX_BODY);
   if (reg) {
     return [...new Set(reg)];
-  } else return [];
+  } return [];
 }
 
 /**
- * Using regEx extract emails addresses and users names if available.
- * @param  {object} data
+ * Extracts email addresses, identifiers and names if available using regex.
+ * @param  {string} emails - can be either comma-separated emails or one email.
+ * @returns {Array} An array of obejcts
  */
-function extractNameAndEmail(data) {
-  // getRegEx returns a valid name and email regExgroup
-  const getRegExp = (emailAfterRegEx) => {
-    /* istanbul ignore else */
-    // check if it's really an email address(check if it's not "undefined")
-    if (emailAfterRegEx && emailAfterRegEx.groups.address.includes('@')) {
-      if (!emailAfterRegEx.groups.name) {
-        // if no name captured(name=undefined) we need to initialize it to empty string
-        emailAfterRegEx.groups.name = '';
-      }
-      return emailAfterRegEx.groups;
+function extractNameAndEmail(emails) {
+
+  const result = [];
+
+  for (const email of emails.split(',')) {
+
+    let emailData = email.match(REGEX_HEADER.source);
+
+    if (emailData) {
+      emailData = {
+
+        name: email.split(' ').slice(0, -1).join(' ').trim(), // -1 to exclude email.
+        address: emailData[0],
+        identifier: emailData.groups.identifier
+
+      };
+      result.push(emailData);
     }
-  };
-  // data is array of emails addresses
-  let email = data.split(/(?:,|;)+/);
-  // case when we have more than one email
-  if (email[1]) {
-    let dataWithManyEmails = email.map((emails) => {
-      // get the name and the Email
-      let result = getRegExp(regex.exec(emails.trim()));
-      return result;
-    });
-    return dataWithManyEmails;
   }
-  // we have only one email address
-  else {
-    let result = getRegExp(regex.exec(email));
-    return [result];
-  }
+  return result;
 }
 
 exports.extractNameAndEmail = extractNameAndEmail;
