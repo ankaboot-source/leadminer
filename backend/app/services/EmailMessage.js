@@ -271,7 +271,7 @@ class EmailMessage {
           .findEmailAddressType(email.address, [email?.name], domain[1]);
 
         tags.push(...this.getTagsEmail(email, emailType));
-        return [this.extractPerson(email.address, name, tags, fieldName)]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
+        return [this.extractPerson(email.address, name, tags, email?.identifier , fieldName)]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
       }
       const member = await redisClientForNormalMode.sismember(
         'invalidDomainEmails',
@@ -327,9 +327,10 @@ class EmailMessage {
    * @param email - the email address of the person
    * @param name - The name of the person
    * @param tags - an array of tags to be added to the person
+   * @param identifier - The identifier of the person.
    * @param fieldName - the name of the field that the email was found in
    */
-  extractPerson(email, name, tags, fieldName) {
+  extractPerson(email, name, tags, identifier, fieldName) {
 
     for (const tag of tags) {
       tag.email = email.toLowerCase();
@@ -347,7 +348,8 @@ class EmailMessage {
         same_as: [],
         given_name: name,
         family_name: '',
-        job_title: ''
+        job_title: '',
+        identifiers: [identifier]
         // works_for: ''  Will be retrieved with transmutation
       },
       pointOfContact: {
