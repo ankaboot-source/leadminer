@@ -93,7 +93,10 @@ class EmailMessage {
    */
   getListId() {
 
-    this.isList() ? return this.header['list-id'][0].match(/<.*>/g)[0] : return '';
+    if (this.isList()) {
+      return this.header['list-id'][0].match(/<.*>/g)[0]; // extracts this part <list-id>
+    }
+    return '';
   }
 
   /**
