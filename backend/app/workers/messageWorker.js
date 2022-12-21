@@ -1,41 +1,50 @@
-//this is a worker to handle the messages
-const { parentPort } = require('worker_threads');
 const { redis } = require('../utils/redis');
 const redisClient = redis.getPubSubClient();
 const EmailMessage = require('../services/EmailMessage');
 const { storage } = require('../services/storage');
-
+const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
 
-parentPort.on('message', (channel) => {
-  //subscribe to created channel
-  redisClient.subscribe(channel, (err) => {
-    if (err) {
-      logger.debug(
-        `error in message worker, can't subscribe to channel ${err}`
-      );
-    } else {
-      logger.debug(`worker subscribed to ${channel}.`);
-    }
-  });
+async function handleMessage({
+  seqNumber,
+  body,
+  header,
+  folderName,
+  user,
+  isLast
+}) {
+  const message_id = header['message-id'] ? header['message-id'][0] : '';
+  if (message_id) {
+    const message = new EmailMessage(
+      seqNumber,
+      header,
+      body,
+      user,
+      folderName,
+      isLast
+    );
+    await message.extractThenStoreEmailsAddresses().then(async (data) => {
+      await storage.storeData(message.user.id, data);
+    });
+  }
+}
+
+redisClient.subscribe(REDIS_MESSAGES_CHANNEL, (err) => {
+  if (err) {
+    logger.error('Unable to subscribe to Redis.', err);
+  } else {
+    logger.info('Worker subscribed to Redis.');
+  }
 });
 
-redisClient.on('message', (channel, messageFromChannel) => {
-  const message = JSON.parse(messageFromChannel);
-  const Header = message.header;
-  const message_id = Header['message-id'] ? Header['message-id'][0] : '';
-  const Message = new EmailMessage(
-    message.seqNumber,
-    Header,
-    message.body,
-    message.user,
-    message.folderName
-  );
-  if (message_id) {
-    // Extract emails from the header
-    Message.extractEmailsAddresses().then(async (data) => {
-      await storage.storeData(message.user.id, data);
-    }
-    );
+redisClient.on('message', async (channel, messageFromChannel) => {
+  const data = JSON.parse(messageFromChannel);
+
+  switch (channel) {
+    case REDIS_MESSAGES_CHANNEL:
+      await handleMessage(data);
+      break;
+    default:
+      break;
   }
 });

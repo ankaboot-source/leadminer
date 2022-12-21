@@ -28,7 +28,7 @@ class Postgres {
     isConversation
   ) {
     const query =
-      'INSERT INTO messages(channel, folder_path, date, userid, message_id, reference, list_id, conversation) ' +
+      'INSERT INTO messages(channel, folder_path, date, userid, message_id, references, list_id, conversation) ' +
       'VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
 
     try {
@@ -95,12 +95,13 @@ class Postgres {
    * @param {string} name - The name of the person
    * @param {string} emailsAddress - The email address of the person
    * @param {string} userID - The user ID
+   * @param {string} identifier - The user identifier extracted from email.
    * @returns {Promise<object>} The inserted/updated person
    */
-  async upsertPerson(name, emailsAddress, userID) {
+  async upsertPerson(name, emailsAddress, userID, identifier) {
     const query =
-      'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *';
+      'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers) ' +
+      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *';
 
     try {
       const { rows, rowCount } = await pool.query(
@@ -114,7 +115,7 @@ class Postgres {
 
       const result = await pool.query(
         query,
-        [name, emailsAddress, userID, '', '', '', [], [], name, '', ''],
+        [name, emailsAddress, userID, '', '', '', [], [], '', '', '', [identifier]],
         this.logger
       );
       return { data: result.rows[0], error: null };
@@ -158,7 +159,7 @@ class Postgres {
                 label,
                 reachable,
                 type,
-                existingTag.rows[0]
+                existingTag.rows[0].id
               ],
               this.logger
             );

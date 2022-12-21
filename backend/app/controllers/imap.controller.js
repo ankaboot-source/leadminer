@@ -123,7 +123,7 @@ async function loginToAccount(req, res, next) {
 async function getImapBoxes(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
-    next(new Error('An x-imap-login header field is required.'));
+    return next(new Error('An x-imap-login header field is required.'));
   }
 
   const query = JSON.parse(req.headers['x-imap-login']);
@@ -154,7 +154,7 @@ async function getImapBoxes(req, res, next) {
   if (error) {
     error.message = 'Unable to fetch IMAP folders.';
     error.emailHash = hashHelpers.hashEmail(user.email);
-    next(error);
+    return next(error);
   }
   logger.info('Mining IMAP tree succeeded.', {
     emailHash: hashHelpers.hashEmail(user.email)
@@ -196,21 +196,9 @@ async function getEmails(req, res, next) {
   const user = new ImapUser(query).getUserConnectionDataFromQuery(),
     // initialize imap server connection
     server = new EmailServer(user, sse);
-  // defines events, and workers
+
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
-
-  // initialize EmailAccountMiner to mine imap folder
-  const miner = new EmailAccountMiner(
-    server,
-    user,
-    sse,
-    ['HEADER', '1'],
-    req.query.boxes,
-    eventEmitter
-  );
-
-  miner.mine();
 
   eventEmitter.on('error', () => {
     res.status(500).send({
@@ -225,6 +213,18 @@ async function getEmails(req, res, next) {
   eventEmitter.removeListener('end', () => {
     logger.debug('Remove event listener.');
   });
+
+  // initialize EmailAccountMiner to mine imap folder
+  const miner = new EmailAccountMiner(
+    server,
+    user,
+    sse,
+    ['HEADER', '1'],
+    req.query.boxes,
+    eventEmitter
+  );
+
+  await miner.mine();
 }
 
 module.exports = {
