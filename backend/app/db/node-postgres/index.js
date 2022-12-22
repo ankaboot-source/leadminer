@@ -1,4 +1,20 @@
 const pool = require('./setup');
+const format = require('pg-format')
+
+function buildValues(arr) {
+
+  return arr.map((i) => {
+
+    const values = []
+    for (let obj of Object.values(i))  // changes format [values] to '{values}'
+      values.push(Array.isArray(obj) ? `{${obj.flat()}}` : obj)
+    return values
+  })
+}
+
+function isEmpty(array) {
+  return array.length === 0 || (array.length === 1 && array[0].length === 0)
+}
 
 class Postgres {
   constructor(logger) {
@@ -17,39 +33,30 @@ class Postgres {
    * @param {boolean} isConversation - Indicates if the email message is in a conversation
    * @returns {Promise<object>} The inserted message
    */
-  async insertMessage(
-    messageID,
-    userID,
-    messageChannel,
-    folderPath,
-    messageDate,
-    listId,
-    references,
-    isConversation
-  ) {
-    const query =
-      'INSERT INTO messages(channel, folder_path, date, userid, message_id, references, list_id, conversation) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+  async insertMessage(messageArray) {
 
+    const result = { data: [], error: null }
+
+    if (isEmpty(messageArray)) {
+      return result
+    }
+    const values = buildValues(messageArray)
+    const query =
+      format(
+        `INSERT INTO messages(channel, folder_path, date, userid, message_id, reference, list_id, conversation) VALUES %L RETURNING *`, values
+      )
     try {
-      const result = await pool.query(
+      const res = await pool.query(
         query,
-        [
-          messageChannel,
-          folderPath,
-          new Date(messageDate),
-          userID,
-          messageID,
-          references,
-          listId,
-          isConversation
-        ],
+        null,
         this.logger
       );
-      return { data: result.rows[0], error: null };
+      result.data = res.rows
     } catch (error) {
-      return { data: null, error };
+      error.message = error.details
+      result.error = error
     }
+    return result
   }
 
   /**
@@ -62,32 +69,32 @@ class Postgres {
    * @param {string} name - The identified person name
    * @returns {Promise<object>} The inserted point of contact
    */
-  async insertPointOfContact(messageID, userID, personID, fieldName, name) {
+  async insertPointOfContact(pointOfContactArray) {
+        
+    const result = { data: [], error: null }
+
+    if (isEmpty(pointOfContactArray)) {
+      return result
+    }
+    const values = buildValues(pointOfContactArray)
+
     const query =
-      'INSERT INTO pointsofcontact(userid, messageid, name, _from, reply_to, _to, cc, bcc, body, personid) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *';
+      format('INSERT INTO pointsofcontact(userid, messageid, name, _from, reply_to, _to, cc, bcc, body, personid) ' +
+        'VALUES %L RETURNING *', values);
 
     try {
-      const result = await pool.query(
+      const res = await pool.query(
         query,
-        [
-          userID,
-          messageID,
-          name,
-          fieldName === 'from',
-          fieldName === 'reply-to' || fieldName === 'reply_to',
-          fieldName === 'to',
-          fieldName === 'cc',
-          fieldName === 'bcc',
-          fieldName === 'body',
-          personID
-        ],
+        null,
         this.logger
       );
-      return { data: result.rows[0], error: null };
+
+      result.data = res.rows
     } catch (error) {
-      return { data: null, error };
+      error.message = error.details
+      result.error = error
     }
+    return result
   }
 
   /**
@@ -98,31 +105,35 @@ class Postgres {
    * @param {string} identifier - The user identifier extracted from email.
    * @returns {Promise<object>} The inserted/updated person
    */
-  async upsertPerson(name, emailsAddress, userID, identifier) {
+  async upsertPerson(personArray) {
+
+    const result = { data: [], error: null }
+
+    if (isEmpty(personArray)) {
+      return result
+    }
+    const values = buildValues(personArray)
+
     const query =
-      'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *';
+      format(
+        `INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers)
+         VALUES %L ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`, values
+      );
 
     try {
-      const { rows, rowCount } = await pool.query(
-        'SELECT * FROM persons WHERE email = $1',
-        [emailsAddress],
-        this.logger
-      );
-      if (rowCount !== 0) {
-        return { data: rows[0], error: null };
-      }
-
-      const result = await pool.query(
+      const res = await pool.query(
         query,
-        [name, emailsAddress, userID, '', '', '', [], [], '', '', '', [identifier]],
+        null,
         this.logger
       );
-      return { data: result.rows[0], error: null };
+      result.data = res.rows
     } catch (error) {
-      return { data: null, error };
+      error.message = error.details
+      result.error = error
     }
+    return result
   }
+
 
   /**
    * Inserts a list of tags.
@@ -130,46 +141,29 @@ class Postgres {
    * @returns {Promise<void>}
    */
   async createTags(tags) {
-    try {
-      return await Promise.all(
-        tags.map(async ({ userid, name, label, reachable, type, personid }) => {
-          const existingTag = await pool.query(
-            'SELECT * FROM tags WHERE personid = $1 AND name = $2',
-            [personid, name],
-            this.logger
-          );
+    
+    const result = { data: [], error: null }
 
-          if (existingTag.rowCount === 0) {
-            const query =
-              'INSERT INTO tags(personid, userid, name, label, reachable, type) ' +
-              'VALUES($1, $2, $3, $4, $5, $6)';
-
-            await pool.query(
-              query,
-              [personid, userid, name, label, reachable, type],
-              this.logger
-            );
-          } else {
-            await pool.query(
-              'UPDATE tags SET personid = $1, userid = $2, name = $3, label = $4, reachable = $5, type = $6 WHERE id = $7',
-              [
-                personid,
-                userid,
-                name,
-                label,
-                reachable,
-                type,
-                existingTag.rows[0].id
-              ],
-              this.logger
-            );
-          }
-        })
-      );
-    } catch (error) {
-      return { error };
+    if (isEmpty(tags)) {
+      return result
     }
+    const values = buildValues(tags)
+    const query = format('INSERT INTO tags(userid, name, label, reachable, type, personid) VALUES %L ON CONFLICT (personid, name) DO NOTHING', values);
+
+    try {
+      const res = await pool.query(
+        query,
+        null,
+        this.logger
+      );
+      result.data = res.rows
+    } catch (error) {
+      error.message = error.details
+      result.error = error
+    }
+    return result
   }
+
 
   /**
    * Creates a google user.
