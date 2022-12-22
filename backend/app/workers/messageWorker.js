@@ -23,7 +23,12 @@ async function handleMessage({
       folderName,
       isLast
     );
-    await message.extractThenStoreEmailsAddresses().then(async (data) => {
+    
+    if (this.isLast) {
+      await db.refinePersons(this.user.id);
+    }
+
+    await message.extractEmailsAddresses().then(async (data) => {
       await storage.storeData(message.user.id, data);
     });
   }
