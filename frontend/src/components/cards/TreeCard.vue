@@ -113,8 +113,8 @@ export default defineComponent({
     },
   },
   watch: {
-    selected(newValue, oldValue) {
-      this.$emit("selectedBoxes", newValue);
+    selected(newValue) {
+      this.$emit("selected-boxes", newValue);
     },
   },
   methods: {
