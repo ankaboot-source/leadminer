@@ -130,7 +130,7 @@ class EmailMessage {
    */
   getMessageId() {
     if (this.header['message-id']) {
-      return this.header['message-id'][0].substring(0, 60);
+      return this.header['message-id'][0];
     }
     return `message_id_unknown ${this.header.date}`;
   }
