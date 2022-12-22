@@ -140,7 +140,7 @@ class EmailAccountMiner {
 
     this.connection.on('error', (err) => {
       logger.error('Error with IMAP connection.', { error: err });
-      this.eventEmitter.emit('error')
+      this.eventEmitter.emit('error');
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
@@ -218,7 +218,7 @@ class EmailAccountMiner {
     });
 
     fetchResult.on('message', (msg, seqNumber) => {
-      logger.debug('Message #%d', seqNumber);
+      //logger.debug('Message #%d', seqNumber);
       this.lastMessage = seqNumber === folder.messages.total;
 
       const prefix = `(#${seqNumber}) `;
@@ -249,7 +249,7 @@ class EmailAccountMiner {
       });
 
       msg.once('end', () => {
-        logger.debug(`${prefix}Finished`);
+        //logger.debug(`${prefix}Finished`);
       });
     });
 

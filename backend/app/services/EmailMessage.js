@@ -11,7 +11,7 @@ const {
   transactionalHeaders,
   mailingListHeaders
 } = require('../config/emailHeaders.config');
-const { REGEX_LIST_ID } = require('../utils/constants')
+const { REGEX_LIST_ID } = require('../utils/constants');
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {
@@ -266,7 +266,7 @@ class EmailMessage {
           .findEmailAddressType(email.address, [email?.name], domain[1]);
 
         tags.push(...this.getTagsEmail(email, emailType));
-        return [this.extractPerson(email.address, name, tags, email?.identifier , fieldName)]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
+        return [this.extractPerson(email.address, name, tags, email?.identifier , fieldName)];
       }
       const member = await redisClientForNormalMode.sismember(
         'invalidDomainEmails',

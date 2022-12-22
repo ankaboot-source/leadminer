@@ -1,51 +1,63 @@
 const { db } = require('../db');
 const logger = require('../utils/logger')(module);
 
-const BATCH_SIZE = 200
-const USE_BATCH = false
+const BATCH_SIZE = 200;
+const USE_BATCH = false;
 
 /**
- * prepareData - creates an arrays with data linked through message_id, email. 
- * @param {Object[]} dataArray - An array of objects {message: {}, persons: [{}]}
- * @returns {Object}
+ * prepareData - Making relation between objects using fields (message_id, email). 
+ * @param {Object[]} arrayData - An array of objects {message: {}, persons: [{}]} comes from buffer.
+ * @returns {Object}  An object contains a list of messages, persons, pointOfContacts, tags.
  */
 function prepareData(arrayData) {
 
   const object = { messages: [], persons: new Map(), pointOfContacts: [], tags: [] };
 
-  arrayData.forEach(data => {
+  for (const data of arrayData) {
+
     object.messages.push(data.message);
+
     for (const personObject of data.persons) {
+
       object.persons.set(personObject.person.email, personObject.person);
       object.pointOfContacts.push(personObject.pointOfContact);
       object.tags.push(...personObject.tags);
+
     }
-  });
+
+  }
   object.persons = [...object.persons.values()]; // No duplicates
   return object;
 
 }
 
-function logErrorMessage(tableName, error) {
+/**
+ * logInsertionError - Formatting and logging insertion errors to stdout.
+ * @param {*} tableName -  Name of db table.
+ * @param {*} err  - Error object that comes from the query.
+ */
+function logInsertionError(tableName, err) {
 
   logger.error(`Error when inserting to ${tableName} table.`, {
-    error: error.message ? error.message : error,
-    code: error.code,
+    error: err.message ? err.message : err.detail ? err.detail : err,
+    code: err.code
   });
 }
 
 /**
- * buildLookup - Creates a new object like this {data[key]: data}.
+ * buildLookup - IT takes an array of objects and returns a new restructured object.
  * @param {string} key - Represents a property inside the object
- * @param {*} objects - Array of objects to be modified
+ * @param {Object[]} arrayOfObjects - Array of objects to be modified
  * @returns {Object}
  */
-function buildLookup(key, objects) {
+function buildLookup(key, arrayOfObjects) {
+
   const result = {};
 
-  for (const data of objects) {
-    result[data[key]] = data;
+  for (const object of arrayOfObjects) {
+    result[object[key.toString()]] = object; 
   }
+
   return result;
 }
 
@@ -54,11 +66,10 @@ class Storage {
   #BULK_INSERT_BUFFER = {}; // Private temporary storage for data
 
   /**
-       * Storage constructor - Manages The way we store data
-       * @param {string} batch - Inserts in bulk if true else normal insert. Default: True
-       * @param {string} batchSize - The Size of the bulk data to be inserted.
-       */
-  constructor(batch, batchSize, dbClient) {
+   * @param {string} batch - Inserts in bulk if true else normal insert. Default: True
+   * @param {string} batchSize - The Size of the bulk data to be inserted.
+   */
+  constructor(batch, batchSize, dbClient = db) {
 
     this.db = dbClient;
     this.batchSize = batchSize;
@@ -66,51 +77,59 @@ class Storage {
   }
 
   /**
-       * exists - Checks for userID  
-       * @param {string} userID - ID of the user.
-       */
+   * #exists - Returns true if user id exists in buffer, else false.  
+   * @param {string} userID - ID of the user.
+   */
   #exists(userID) {
-    return this.#BULK_INSERT_BUFFER[userID] !== undefined;
+    return this.#BULK_INSERT_BUFFER[userID.toString()] !== undefined;
   }
 
   /**
-       * _registerUser - Creates new user in buffer.
-       * @param {string} userID - ID of the user.
-       */
+   * #registerUser - Register userID in buffer.
+   * @param {string} userID - ID of the user.
+   * @param {object} data - An object to be stored
+   */
   #registerUser(userID, data) {
 
     if (!this.#exists(userID)) {
-      this.#BULK_INSERT_BUFFER[userID] = [data]; // reserves space for new user
+      this.#BULK_INSERT_BUFFER[userID.toString()] = [data]; // reserves space for new user
     }
   }
 
   /**
-       * _checkAndReleaseBuffer - Checks if buffer is full
-       * @param {string} userID - ID of the user.
-       */
+   * #checkAndReleaseBuffer - Checks if buffer reached batchSize for a spesific user.
+   * if limit is reached, then data in the buffer will be returned and the reserved place will be deleted.
+   * @param {string} userID - ID of the user.
+   * @returns {Object[]} An array of objects.
+   */
   #checkAndReleaseBuffer(userID) {
 
-    const isFull = this.#exists(userID) && this.#BULK_INSERT_BUFFER[userID].length === this.batchSize; // check if max limit is reached
-    const data = isFull ? Object.assign([], this.#BULK_INSERT_BUFFER[userID]) : [];
+    const isFull = this.#exists(userID) && this.#BULK_INSERT_BUFFER[userID.toString()].length === this.batchSize; // check if max limit is reached
+    const data = isFull ? Object.assign([], this.#BULK_INSERT_BUFFER[userID.toString()]) : [];
     if (isFull) {
-      delete this.#BULK_INSERT_BUFFER[userID];
+      delete this.#BULK_INSERT_BUFFER[userID.toString()];
     }
     return data;
   }
 
+  /**
+   * #addToBuffer - stores data in buffer
+   * @param {string} userID ID of the user
+   * @param {Object} data  The object to be stored.
+   */
   #addToBuffer(userID, data) {
 
     if (this.#exists(userID)) {
-      this.#BULK_INSERT_BUFFER[userID].push(data);
+      this.#BULK_INSERT_BUFFER[userID.toString()].push(data);
     } else {
       this.#registerUser(userID, data);
     }
 
   }
   /**
-       * storeBulk - Stores data in batches
-       * @param {Object[]} bulkData - Array of objects contains extrcted data [{message: {}, persons: []} ...]
-       */
+   * storeBulk -  Stores data to Message, Person, pointOfContact, tags tables using bulk insertion.
+   * @param {Object[]} bulkData - Array of objects.
+   */
   async storeBulk(bulkObjects) {
 
     const { messages, persons, pointOfContacts, tags } = prepareData(bulkObjects);
@@ -141,19 +160,31 @@ class Storage {
 
           }
 
-          this.db.insertPointOfContact(pointOfContacts).then((data, error) => { if (error) { logErrorMessage('points of contact', res.error) } });
-          this.db.createTags(tags).then((data, error) => { if (error) { logErrorMessage('tags', res.error) } });
+          this.db.insertPointOfContact(pointOfContacts).then((data, error) => {
+            if (error) {
+              logInsertionError('points of contact', error); 
+            } 
+          });
+          this.db.createTags(tags).then((data, error) => {
+            if (error) {
+              logInsertionError('tags', error); 
+            } 
+          });
 
         } else {
-          if (mids.error) logErrorMessage('messages', mids.error);
-          if (pids.error) logErrorMessage('persons', pids.error);
+          if (mids.error) {
+            logInsertionError('messages', mids.error); 
+          }
+          if (pids.error) {
+            logInsertionError('persons', pids.error); 
+          }
         }
       });
   }
 
   /**
    * _storeData -  Stores data to Message, Person, pointOfContact, tags tables. 
-   * @param {*} Object - An object contains extrcted data {message: {}, persons: []}
+   * @param {*} Object - An object contains (message, person, pointOfContact, tags) props
    */
   async store(object) {
 
@@ -167,7 +198,7 @@ class Storage {
     const { data, error } = await this.db.insertMessage([message]);
 
     if (error) {
-      logErrorMessage('messages', error)
+      logInsertionError('messages', error);
       return;
     }
 
@@ -175,12 +206,12 @@ class Storage {
 
     for (const dataObject of persons) {
 
-      const { data, error } = await this.db.upsertPerson([dataObject.person])
+      const { data, error } = await this.db.upsertPerson([dataObject.person]);
       const personID = error ? null : data[0]?.id;
 
       if (error) {
 
-        logErrorMessage('persons', error)
+        logInsertionError('persons', error);
 
       } else {
 
@@ -193,39 +224,47 @@ class Storage {
         dataObject.pointOfContact.messageid = messageID;
 
         for (const tag of dataObject.tags) {
-          delete tag.email; // Clean
+          delete tag.email;
           tag.personid = personID; // Adds personID to tags
         }
 
-        this.db.insertPointOfContact([dataObject.pointOfContact]).then((data, error) => { if (error) { logErrorMessage('points of contact', res.error) } });
-        this.db.createTags(dataObject.tags).then((data, error) => { if (error) { logErrorMessage('tags', res.error) } });
+        this.db.insertPointOfContact([dataObject.pointOfContact]).then((data, error) => {
+          if (error) {
+            logInsertionError('points of contact', error); 
+          } 
+        });
+        this.db.createTags(dataObject.tags).then((data, error) => {
+          if (error) {
+            logInsertionError('tags', error); 
+          }
+        });
       }
     }
   }
 
   /**
-       * storeData - Stores data, redirects to differnt storing channels based on configuration.
-       * @param {*} userID - ID of user
-       * @param { Object } object - An object contains extrcted data {message: {}, persons: []}
-       */
+   * storeData - Stores data, redirects to differnt storing channels based on configuration.
+   * @param {*} userID - ID of user
+   * @param { Object } object - An object contains extrcted data {message: {}, persons: []}
+   */
   async storeData(userID, data) {
 
-    switch (this.batch) { // Redirects between channels
+    if (this.batch) { // Redirects between bulk and normal insertion.
 
-      case true:
+      const releasedData = this.#checkAndReleaseBuffer(userID);
+      if (releasedData.length) {
+        await this.storeBulk(releasedData); 
+      } else {
+        this.#addToBuffer(userID, data); 
+      }
 
-        const releasedData = this.#checkAndReleaseBuffer(userID);
-        if (releasedData.length) await this.storeBulk(releasedData);
-        else this.#addToBuffer(userID, data);
-
-      default:
-        this.store(data)
+    } else {
+      this.store(data); 
     }
-
   }
 }
 
-const storage = new Storage(USE_BATCH, BATCH_SIZE, db);
+const storage = new Storage(USE_BATCH, BATCH_SIZE);
 
 module.exports = {
   storage

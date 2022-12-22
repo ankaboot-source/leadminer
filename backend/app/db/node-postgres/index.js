@@ -1,19 +1,20 @@
 const pool = require('./setup');
-const format = require('pg-format')
+const format = require('pg-format');
 
 function buildValues(arr) {
 
   return arr.map((i) => {
 
-    const values = []
-    for (let obj of Object.values(i))  // changes format [values] to '{values}'
-      values.push(Array.isArray(obj) ? `{${obj.flat()}}` : obj)
-    return values
-  })
+    const values = [];
+    for (const obj of Object.values(i)) { // changes format [values] to '{values}'
+      values.push(Array.isArray(obj) ? `{${obj.flat()}}` : obj); 
+    }
+    return values;
+  });
 }
 
 function isEmpty(array) {
-  return array.length === 0 || (array.length === 1 && array[0].length === 0)
+  return array.length === 0 || (array.length === 1 && array[0].length === 0);
 }
 
 class Postgres {
@@ -35,28 +36,28 @@ class Postgres {
    */
   async insertMessage(messageArray) {
 
-    const result = { data: [], error: null }
+    const result = { data: [], error: null };
 
     if (isEmpty(messageArray)) {
-      return result
+      return result;
     }
-    const values = buildValues(messageArray)
+    const values = buildValues(messageArray);
     const query =
       format(
-        `INSERT INTO messages(channel, folder_path, date, userid, message_id, reference, list_id, conversation) VALUES %L RETURNING *`, values
-      )
+        'INSERT INTO messages(channel, folder_path, date, userid, message_id, "references", list_id, conversation) VALUES %L RETURNING *', values
+      );
     try {
       const res = await pool.query(
         query,
         null,
         this.logger
       );
-      result.data = res.rows
+      result.data = res.rows;
     } catch (error) {
-      error.message = error.details
-      result.error = error
+      error.message = error.details;
+      result.error = error;
     }
-    return result
+    return result;
   }
 
   /**
@@ -71,12 +72,12 @@ class Postgres {
    */
   async insertPointOfContact(pointOfContactArray) {
         
-    const result = { data: [], error: null }
+    const result = { data: [], error: null };
 
     if (isEmpty(pointOfContactArray)) {
-      return result
+      return result;
     }
-    const values = buildValues(pointOfContactArray)
+    const values = buildValues(pointOfContactArray);
 
     const query =
       format('INSERT INTO pointsofcontact(userid, messageid, name, _from, reply_to, _to, cc, bcc, body, personid) ' +
@@ -89,12 +90,12 @@ class Postgres {
         this.logger
       );
 
-      result.data = res.rows
+      result.data = res.rows;
     } catch (error) {
-      error.message = error.details
-      result.error = error
+      error.message = error.details;
+      result.error = error;
     }
-    return result
+    return result;
   }
 
   /**
@@ -107,12 +108,12 @@ class Postgres {
    */
   async upsertPerson(personArray) {
 
-    const result = { data: [], error: null }
+    const result = { data: [], error: null };
 
     if (isEmpty(personArray)) {
-      return result
+      return result;
     }
-    const values = buildValues(personArray)
+    const values = buildValues(personArray);
 
     const query =
       format(
@@ -126,12 +127,12 @@ class Postgres {
         null,
         this.logger
       );
-      result.data = res.rows
+      result.data = res.rows;
     } catch (error) {
-      error.message = error.details
-      result.error = error
+      error.message = error.details;
+      result.error = error;
     }
-    return result
+    return result;
   }
 
 
@@ -142,13 +143,16 @@ class Postgres {
    */
   async createTags(tags) {
     
-    const result = { data: [], error: null }
+    const result = { data: [], error: null };
 
     if (isEmpty(tags)) {
-      return result
+      return result;
     }
-    const values = buildValues(tags)
-    const query = format('INSERT INTO tags(userid, name, label, reachable, type, personid) VALUES %L ON CONFLICT (personid, name) DO NOTHING', values);
+    const values = buildValues(tags);
+    const query = format(
+      'INSERT INTO tags(userid, name, label, reachable, type, personid) VALUES %L ON CONFLICT (personid, name) DO NOTHING',
+      values
+    );
 
     try {
       const res = await pool.query(
@@ -156,12 +160,12 @@ class Postgres {
         null,
         this.logger
       );
-      result.data = res.rows
+      result.data = res.rows;
     } catch (error) {
-      error.message = error.details
-      result.error = error
+      error.message = error.details;
+      result.error = error;
     }
-    return result
+    return result;
   }
 
 
