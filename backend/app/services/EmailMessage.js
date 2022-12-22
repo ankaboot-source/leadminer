@@ -207,14 +207,13 @@ class EmailMessage {
     const extractedData = {};
 
     extractedData.message = {
-
-      message_id: this.getMessageId(),
-      userid: this.user.id,
       channel: 'imap',
       folder_path: this.folderPath,
       date: this.getDate(),
+      userid: this.user.id,
+      message_id: this.getMessageId(),
+      references: this.getReferences(),
       list_id: this.getListId(),
-      reference: this.getReferences(),
       conversation: this.isConversation()
 
     };
@@ -238,10 +237,6 @@ class EmailMessage {
     delete this.body;
     // store extracted emails
     extractedData.persons.push(...await this.emailsAddressesExtractedFromBody(emails));
-
-    if (this.isLast) {
-      await db.refinePersons(this.user.id);
-    }
 
     return extractedData;
   }
@@ -335,7 +330,6 @@ class EmailMessage {
     for (const tag of tags) {
       tag.email = email.toLowerCase();
     }
-
     return {
       person: {
         name: name ?? '',
@@ -353,18 +347,20 @@ class EmailMessage {
         // works_for: ''  Will be retrieved with transmutation
       },
       pointOfContact: {
-        messageid: '',
-        personid: '',
+        
         message_id: this.message.message_id, //  TODO: To save us some for loops, but needs to change.
-        userid: this.user.id,
         email: email.toLowerCase(), // TODO: To save us some for loops, but needs to change.
+        
+        userid: this.user.id,
+        messageid: '',
         name: name ?? '',
+        _from: fieldName === 'from',
+        reply_to: fieldName === 'reply-to' || fieldName === 'reply_to',
         _to: fieldName === 'to',
         cc: fieldName === 'cc',
         bcc: fieldName === 'bcc',
-        _from: fieldName === 'from',
-        reply_to: fieldName === 'reply-to' || fieldName === 'reply_to',
-        body: fieldName === 'body'
+        body: fieldName === 'body',
+        personid: ''
       },
       tags
     };
