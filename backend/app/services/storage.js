@@ -1,12 +1,15 @@
 const { db } = require('../db');
 const logger = require('../utils/logger')(module);
 
+const BATCH_SIZE = 200
+const USE_BATCH = false
+
 /**
- * PrepareData - creates an arrays with data linked through message_id, email. 
+ * prepareData - creates an arrays with data linked through message_id, email. 
  * @param {Object[]} dataArray - An array of objects {message: {}, persons: [{}]}
  * @returns {Object}
  */
-function PrepareData(arrayData) {
+function prepareData(arrayData) {
 
   const object = { messages: [], persons: new Map(), pointOfContacts: [], tags: [] };
 
@@ -21,6 +24,14 @@ function PrepareData(arrayData) {
   object.persons = [...object.persons.values()]; // No duplicates
   return object;
 
+}
+
+function logErrorMessage(tableName, error) {
+
+  logger.error(`Error when inserting to ${tableName} table.`, {
+    error: error.message ? error.message : error,
+    code: error.code,
+  });
 }
 
 /**
@@ -47,7 +58,7 @@ class Storage {
        * @param {string} batch - Inserts in bulk if true else normal insert. Default: True
        * @param {string} batchSize - The Size of the bulk data to be inserted.
        */
-  constructor(batch = false, batchSize = 200, dbClient) {
+  constructor(batch, batchSize, dbClient) {
 
     this.db = dbClient;
     this.batchSize = batchSize;
@@ -102,7 +113,7 @@ class Storage {
        */
   async storeBulk(bulkObjects) {
 
-    const { messages, persons, pointOfContacts, tags } = PrepareData(bulkObjects);
+    const { messages, persons, pointOfContacts, tags } = prepareData(bulkObjects);
 
     Promise.allSettled([this.db.upsertPerson(persons), this.db.insertMessage(messages)])
 
@@ -111,65 +122,52 @@ class Storage {
         const mids = mPromise.value;
         const pids = pPromise.value;
 
-        if (pids.data && mids.data) {
+        if (!pids.error && !mids.error) {
           pids.data = buildLookup('email', pids.data);
           mids.data = buildLookup('message_id', mids.data);
 
           for (const tag of tags) {
-            if (tag && pids.data[tag.email]) {
-              tag.personid = pids.data[tag.email].id;
-              delete tag.email;
-            }
+
+            tag.personid = pids.data[tag.email].id;
+            delete tag.email;
           }
 
           for (const poc of pointOfContacts) {
-            if (pids.data[poc.email] && mids.data[poc.message_id]) {
-              poc.personid = pids.data[poc.email].id;
-              poc.messageid = mids.data[poc.message_id].id;
-              delete poc.message_id;
-              delete poc.email;
-            } else {
-              // TODO: add logging
-            }
+
+            poc.personid = pids.data[poc.email].id;
+            poc.messageid = mids.data[poc.message_id].id;
+            delete poc.message_id;
+            delete poc.email;
+
           }
 
-          this.db.insertPointOfContact(pointOfContacts).then((res) => {
-            if (res.error) {
-              console.log(res.error); //TODO: Proper Logging
-            }
-          });
-          this.db.createTags(tags).then((res) => {
-            if (res.error) {
-              console.log(res.error); //TODO: Proper Logging
-            }
-          });
+          this.db.insertPointOfContact(pointOfContacts).then((data, error) => { if (error) { logErrorMessage('points of contact', res.error) } });
+          this.db.createTags(tags).then((data, error) => { if (error) { logErrorMessage('tags', res.error) } });
 
         } else {
-          //TODO: Proper Logging
-          console.log('Top level Message Error', mids.error);
-          console.log('Top level Person Error', pids.error);
+          if (mids.error) logErrorMessage('messages', mids.error);
+          if (pids.error) logErrorMessage('persons', pids.error);
         }
       });
   }
 
   /**
-       * _storeData -  Stores data to Message, Person, pointOfContact, tags tables. 
-       * @param {*} Object - An object contains extrcted data {message: {}, persons: []}
-       */
+   * _storeData -  Stores data to Message, Person, pointOfContact, tags tables. 
+   * @param {*} Object - An object contains extrcted data {message: {}, persons: []}
+   */
   async store(object) {
 
     /**
-             * This can be change instead of awaiting for message then acting, we can
-             * fire (message call, person call) -> wait -> prepare -> fire (poc, tags)
-             */
+     * This can be change instead of awaiting for message then acting, we can
+     * fire (message call, person call) -> wait -> prepare -> fire (poc, tags)
+     */
 
     const { message, persons } = object;
 
     const { data, error } = await this.db.insertMessage([message]);
 
     if (error) {
-      // TODO: Add proper logging
-      console.log(error);
+      logErrorMessage('messages', error)
       return;
     }
 
@@ -177,42 +175,31 @@ class Storage {
 
     for (const dataObject of persons) {
 
-      this.db.upsertPerson([dataObject.person]).then((result) => {
+      const { data, error } = await this.db.upsertPerson([dataObject.person])
+      const personID = error ? null : data[0]?.id;
 
-        const { data, error } = result;
-        const personID = data[0]?.id;
+      if (error) {
 
-        if (messageID && personID) {
+        logErrorMessage('persons', error)
 
-          // Clean data before inserting
-          delete dataObject.pointOfContact.email;
-          delete dataObject.pointOfContact.message_id;
+      } else {
 
-          // Add relational Id's (Message, Person)
-          dataObject.pointOfContact.personid = personID;
-          dataObject.pointOfContact.messageid = messageID;
+        // Clean data before inserting
+        delete dataObject.pointOfContact.email;
+        delete dataObject.pointOfContact.message_id;
 
-          for (const tag of dataObject.tags) {
-            delete tag.email; // Clean
-            tag.personid = personID; // Adds personID to tags
-          }
+        // Add relational Id's (Message, Person)
+        dataObject.pointOfContact.personid = personID;
+        dataObject.pointOfContact.messageid = messageID;
 
-          this.db.insertPointOfContact([dataObject.pointOfContact]).then((res) => {
-            if (res.error) {
-              console.log('poc ', res.error); //TODO: Proper Logging
-            }
-          });
-          this.db.createTags(dataObject.tags).then((res) => {
-            if (res.error) {
-              console.log('tag ', res.error); //TODO: Proper Logging
-            }
-          });
-
-        } else {
-          // TODO: add proper logging
-          console.log('Error in inserting persons: ', error);
+        for (const tag of dataObject.tags) {
+          delete tag.email; // Clean
+          tag.personid = personID; // Adds personID to tags
         }
-      });
+
+        this.db.insertPointOfContact([dataObject.pointOfContact]).then((data, error) => { if (error) { logErrorMessage('points of contact', res.error) } });
+        this.db.createTags(dataObject.tags).then((data, error) => { if (error) { logErrorMessage('tags', res.error) } });
+      }
     }
   }
 
@@ -223,20 +210,22 @@ class Storage {
        */
   async storeData(userID, data) {
 
-    if (!this.batch) {
-      await this.store(data);
-    } else { // In case we're using bulk
-      const releasedData = this.#checkAndReleaseBuffer(userID);
-      if (releasedData.length) {
-        await this.storeBulk(releasedData);
-      } else {
-        this.#addToBuffer(userID, data);
-      }
+    switch (this.batch) { // Redirects between channels
+
+      case true:
+
+        const releasedData = this.#checkAndReleaseBuffer(userID);
+        if (releasedData.length) await this.storeBulk(releasedData);
+        else this.#addToBuffer(userID, data);
+
+      default:
+        this.store(data)
     }
+
   }
 }
 
-const storage = new Storage();
+const storage = new Storage(USE_BATCH, BATCH_SIZE, db);
 
 module.exports = {
   storage
