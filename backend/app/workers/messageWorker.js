@@ -29,7 +29,7 @@ async function handleMessage({
       await storage.storeData(message.user.id, isLast, data);
     });
     if (isLast) {
-      db.refinePersons(this.user.id); // runs rpc function.
+      db.refinePersons(user.id); // runs rpc function.
     }
 
   }
