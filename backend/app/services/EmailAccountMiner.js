@@ -33,8 +33,6 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.lastFolder = false;
-    this.lastMessage = false;
   }
 
   /**
@@ -161,9 +159,6 @@ class EmailAccountMiner {
   *mineFolder(folder) {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
-      if (this.isLastFolderToFetch(folder)) {
-        this.lastFolder = true;
-      }
       if (err) {
         logger.error(
           `Error occurred when opening folder for User: ${this.mailHash}`
@@ -219,7 +214,6 @@ class EmailAccountMiner {
 
     fetchResult.on('message', (msg, seqNumber) => {
       //logger.debug('Message #%d', seqNumber);
-      this.lastMessage = seqNumber === folder.messages.total;
 
       const prefix = `(#${seqNumber}) `;
 
@@ -240,10 +234,11 @@ class EmailAccountMiner {
           const parsedBody = body.toString('utf8');
 
           self.publishMessageToChannel(
-            seqNumber,
             parsedHeader,
             parsedBody,
-            folderName
+            folderName,
+            folder.messages.total,
+            seqNumber
           );
         });
       });
@@ -284,7 +279,7 @@ class EmailAccountMiner {
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  publishMessageToChannel(seqNumber, header, body, folderName) {
+  publishMessageToChannel(header, body, folderName, folderTotal, seqNumber) {
     this.sendMiningProgress(seqNumber);
 
     if (this.emailsProgressIndexes.includes(seqNumber)) {
@@ -297,7 +292,7 @@ class EmailAccountMiner {
       header,
       user: this.user,
       folderName,
-      isLast: this.lastFolder && this.lastMessage
+      isLast: this.isLastFolderToFetch(folderName) && seqNumber === folderTotal
     });
 
     redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);

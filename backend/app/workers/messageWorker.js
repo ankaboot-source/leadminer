@@ -4,6 +4,7 @@ const EmailMessage = require('../services/EmailMessage');
 const { storage } = require('../services/storage');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
+const { db } = require('../db');
 
 async function handleMessage({
   seqNumber,
@@ -21,16 +22,16 @@ async function handleMessage({
       body,
       user,
       folderName,
-      isLast
+      isLast // If it's the last element that comes from (fetch/redis).
     );
-    
-    if (this.isLast) {
-      await db.refinePersons(this.user.id);
-    }
 
     await message.extractEmailsAddresses().then(async (data) => {
-      await storage.storeData(message.user.id, data);
+      await storage.storeData(message.user.id, isLast, data);
     });
+    if (isLast) {
+      db.refinePersons(this.user.id); // runs rpc function.
+    }
+
   }
 }
 
