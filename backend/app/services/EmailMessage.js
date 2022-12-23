@@ -228,7 +228,7 @@ class EmailMessage {
         messagingFields[`${key}`]
       );
       const persons = await this.emailsAddressesExtractedFromHeader(emails, key);
-      extractedData.persons.push(...persons);
+        extractedData.persons.push(...persons); 
     }
 
     const emails = regExHelpers.extractNameAndEmailFromBody(
@@ -268,13 +268,12 @@ class EmailMessage {
         tags.push(...this.getTagsEmail(email, emailType));
         return [this.extractPerson(email.address, name, tags, email?.identifier , fieldName)];
       }
-      const member = await redisClientForNormalMode.sismember(
-        'invalidDomainEmails',
-        email.address
-      );
-      if (member === 0) {
-        redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-      }
+
+      redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
+        if (member === 0) {
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address); 
+        }
+      });
     }
     return [];
   }
@@ -303,13 +302,11 @@ class EmailMessage {
         return [this.extractPerson(email, '', tags, 'body')]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
       }
 
-      const member = await redisClientForNormalMode.sismember(
-        'invalidDomainEmails',
-        email.address
-      );
-      if (member === 0) {
-        redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-      }
+      redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
+        if (member === 0) {
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address); 
+        }
+      });
     }
 
     return [];
