@@ -67,10 +67,10 @@ class Storage {
    * @param {string} batch - Inserts in bulk if true else normal insert. Default: True
    * @param {string} batchSize - The Size of the bulk data to be inserted.
    */
-  constructor(batch, batchSize, dbClient = db) {
+  constructor(batch, batchMaxSize, dbClient = db) {
 
     this.db = dbClient;
-    this.batchSize = batchSize;
+    this.batchSize = batchMaxSize;
     this.batch = batch;
   }
 
@@ -205,14 +205,14 @@ class Storage {
 
     const { message, persons } = object;
 
-    const { data, error } = await this.db.insertMessage([message]);
+    const messageResult = await this.db.insertMessage([message]);
 
-    if (error) {
-      logInsertionError('messages', error);
+    if (messageResult.error) {
+      logInsertionError('messages', messageResult.error);
       return;
     }
 
-    const messageID = data[0]?.id;
+    const messageID = messageResult.data[0]?.id;
 
     for (const dataObject of persons) {
 
