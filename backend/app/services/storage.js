@@ -1,6 +1,6 @@
 const { db } = require('../db');
 const logger = require('../utils/logger')(module);
-const {BATCH_SIZE, USE_BATCH } = require('../config/supabase.config');
+const {useBatch, batchSize } = require('../config/supabase.config');
 
 /**
  * prepareData - Making relation between objects using fields (message_id, email). 
@@ -274,7 +274,7 @@ class Storage {
   }
 }
 
-const storage = new Storage(USE_BATCH, BATCH_SIZE);
+const storage = new Storage(useBatch, batchSize);
 
 module.exports = {
   storage
