@@ -3,22 +3,24 @@
     <q-table
       class="table"
       virtual-scroll
-      :rows-per-page-options="[0]"
       :virtual-scroll-sticky-size-start="48"
-      row-key="id"
+      :rows-per-page-options="[20]"
+      row-key="email"
       title="Mined emails"
+      :loading="isLoading"
       :filter="filter"
       :filter-method="filterFn"
       :rows="rows"
       :columns="columns"
     >
-      <template #top-right="props">
+      <template #top-right>
         <q-input
           v-model="filter"
           rounded
           dense
           standout
           bg-color="teal-4"
+          class="q-px-sm"
           debounce="300"
           placeholder="Search"
         >
@@ -27,36 +29,37 @@
           </template>
         </q-input>
 
-        <q-btn
-          flat
-          round
-          dense
-          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-          class="q-px-sm"
-          @click="props.toggleFullscreen"
-        >
-          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
-            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
-          </q-tooltip>
-        </q-btn>
-        <q-btn
-          color="teal-5"
-          icon-right="archive"
-          label="Export to csv"
-          no-caps
-          :disable="$store.state.example.loadingStatusdns"
-          @click="exportTable"
-        />
+        <div class="q-px-sm">
+          <q-btn
+            color="teal-5"
+            icon-right="archive"
+            label="Export to csv"
+            no-caps
+            :disable="loadingStatusDns"
+            @click="exportTable"
+          />
+        </div>
+        <div>
+          <q-btn
+            color="teal-5"
+            label="Refresh"
+            icon="refresh"
+            no-caps
+            :disable="isLoading || loadingStatusDns"
+            @click="fetchRefinedPersons"
+          />
+        </div>
       </template>
 
-      <!-- Header tooltips -->
+      <!--Header tooltips -->
       <template #header-cell-recency="props">
         <q-th :props="props">
           <q-tooltip
             class="bg-orange-13 text-caption"
             anchor="top middle"
             self="center middle"
-            >Date of last interaction with this person
+          >
+            Date of last interaction with this person
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -68,7 +71,8 @@
             class="bg-orange-13 text-caption"
             anchor="top middle"
             self="center middle"
-            >Count of conversations this email address was in
+          >
+            Count of conversations this email address was in
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -80,7 +84,8 @@
             class="bg-orange-13 text-caption"
             anchor="top middle"
             self="center middle"
-            >Total occurrences of this email address
+          >
+            Total occurrences of this email address
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -164,6 +169,7 @@
 </template>
 
 <script setup>
+import { createClient } from "@supabase/supabase-js";
 import exportFromJSON from "export-from-json";
 import { useQuasar } from "quasar";
 import { computed, ref } from "vue";
@@ -172,9 +178,23 @@ import { useStore } from "vuex";
 const $q = useQuasar();
 const $store = useStore();
 
-const rows = computed(() => $store.getters["example/getRetrievedEmails"]);
+const rows = ref([]);
+const isLoading = ref(false);
+const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
 
 const filter = ref("");
+
+const supabase = createClient(
+  process.env.SUPABASE_PROJECT_URL,
+  process.env.SUPABASE_SECRET_PROJECT_TOKEN
+);
+
+// Potential solution for auto fetching of refined
+//onMounted(() => {
+//  setInterval(async () => {
+//    await fetchRefinedPersons();
+//  }, 3000);
+//});
 
 const columns = [
   {
@@ -208,7 +228,8 @@ const columns = [
     name: "recency",
     label: "Recency",
     align: "center",
-    field: (row) => new Date(row.recency).toISOString().slice(0, 10),
+    field: "recency",
+    format: (val) => new Date(val).toISOString().slice(0, 10),
     sortable: true,
   },
   {
@@ -222,7 +243,8 @@ const columns = [
     name: "tags",
     label: "Type",
     align: "center",
-    field: (row) => row.tags.join(" "),
+    field: "tags",
+    format: (val) => val.join(" "),
   },
   {
     name: "status",
@@ -233,6 +255,22 @@ const columns = [
 
 function filterFn(rows, term) {
   return rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase()));
+}
+
+async function fetchRefinedPersons() {
+  isLoading.value = true;
+  const { data, error } = await supabase
+    .from("refinedpersons")
+    .select()
+    .eq("userid", $store.state.example.userId);
+
+  isLoading.value = false;
+
+  if (error) {
+    return $q.notify("Error when fetching refined emails.");
+  }
+
+  rows.value = data;
 }
 
 function exportTable() {

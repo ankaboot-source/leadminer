@@ -3,13 +3,15 @@ import { LocalStorage } from "quasar";
 import { createClient } from "@supabase/supabase-js";
 import { registerEventHandlers } from "src/helpers/sse";
 
-function subscribeToRefined(userId, commit) {
-  const supabase = createClient(
-    process.env.SUPABASE_PROJECT_URL,
-    process.env.SUPABASE_SECRET_PROJECT_TOKEN
-  );
+const supabase = createClient(
+  process.env.SUPABASE_PROJECT_URL,
+  process.env.SUPABASE_SECRET_PROJECT_TOKEN
+);
 
-  supabase
+let subscription;
+
+function subscribeToRefined(userId, commit) {
+  subscription = supabase
     .channel("*")
     .on(
       "postgres_changes",
@@ -35,6 +37,7 @@ export async function getEmails({ state, commit }, { data }) {
   commit("SET_STATISTICS", "f");
   commit("SET_SCANNEDBOXES", []);
 
+  if (subscription) await subscription.unsubscribe();
   subscribeToRefined(user.id, commit);
 
   const eventSource = new EventSource(
@@ -47,16 +50,13 @@ export async function getEmails({ state, commit }, { data }) {
   registerEventHandlers(eventSource, user.id, this);
 
   try {
-    const response = await this.$axios.get(
-      `${this.$api}/imap/1/collectEmails`,
-      {
-        headers: { "X-imap-login": JSON.stringify(user) },
-        params: {
-          boxes: data.boxes,
-          folders: data.folders,
-        },
-      }
-    );
+    await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
+      headers: { "X-imap-login": JSON.stringify(user) },
+      params: {
+        boxes: data.boxes,
+        folders: data.folders,
+      },
+    });
 
     eventSource.close();
     commit("SET_LOADING", false);
@@ -139,6 +139,8 @@ export async function getBoxes({ state, commit }) {
 
   const user =
     state.googleUser.access_token === "" ? state.imapUser : state.googleUser;
+
+  commit("SET_USERID", user.id);
 
   try {
     const { data } = await this.$axios.get(this.$api + `/imap/1/boxes`, {

@@ -60,7 +60,7 @@
             <div class="row q-md col-12">
               <ProgressCard
                 v-if="boxes"
-                :collected-emails="retrievedEmails ? retrievedEmails.length : 0"
+                :mined-emails="retrievedEmails.length"
                 :scanned-emails="scannedEmails"
                 :total-emails="totalEmails"
               />
@@ -68,8 +68,8 @@
           </div>
         </div>
       </div>
+      <MinedPersons />
     </div>
-    <MinedPersons />
   </div>
 </template>
 
@@ -109,7 +109,9 @@ onMounted(async () => {
 const boxes = computed(() => $store.state.example.boxes);
 
 const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
-const retrievedEmails = computed(() => $store.state.example.retrievedEmails);
+const retrievedEmails = computed(
+  () => $store.getters["example/getRetrievedEmails"]
+);
 const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
 const scannedEmails = computed(
   () => $store.state.example.progress.scannedEmails

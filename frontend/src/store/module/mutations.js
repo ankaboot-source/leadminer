@@ -1,18 +1,14 @@
 export function SET_EMAILS(state, streamedEmail) {
-  const index = state.retrievedEmails.findIndex(
-    (person) => person.id === streamedEmail.id
-  );
-  if (index === -1) {
-    state.retrievedEmails.push(streamedEmail);
-  } else {
-    state.retrievedEmails[index] = streamedEmail;
-  }
+  state.retrievedEmails[streamedEmail.email] = streamedEmail;
 }
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;
 }
 export function SET_LOADING_DNS(state, newLoadingStatusDns) {
   state.loadingStatusDns = newLoadingStatusDns;
+}
+export function SET_USERID(state, id) {
+  state.userId = id;
 }
 export function SET_LOADINGBOX(state, newLoadingStatusbox) {
   state.loadingStatusbox = newLoadingStatusbox;

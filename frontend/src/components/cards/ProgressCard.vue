@@ -3,7 +3,7 @@
     <q-banner rounded>
       <q-chip :size="buttonColor" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ collectedEmails }}
+          {{ minedEmails }}
         </div>
         legit email addresses mined.
       </q-chip>
@@ -26,7 +26,7 @@ import { computed, defineComponent } from "vue";
 export default defineComponent({
   name: "ProgressStatus",
   props: {
-    collectedEmails: Number(0),
+    minedEmails: Number(0),
     scannedEmails: Number(0),
     totalEmails: Number(0),
   },
