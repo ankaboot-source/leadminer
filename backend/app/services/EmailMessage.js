@@ -247,7 +247,7 @@ class EmailMessage {
           email.address,
           email?.name.replaceAll(/"|'/g, ''),
           tags,
-          [],
+          email.identifier,
           fieldName
         );
         return;
@@ -344,12 +344,12 @@ class EmailMessage {
    * @param tags - an array of tags to be added to the person
    * @param fieldName - the name of the field that the email was found in
    */
-  async storeEmails(message, email, name, tags, fieldName) {
+  async storeEmails(message, email, name, tags, identifier, fieldName) {
     const result = await db.upsertPerson(
       name ?? '',
       email.toLowerCase(),
       this.user.id,
-      email.identifier
+      identifier
     );
 
     const person = result.data;
