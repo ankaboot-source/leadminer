@@ -143,7 +143,7 @@ export async function getBoxes({ state, commit }) {
   commit("SET_USERID", user.id);
 
   try {
-    const { data } = await this.$axios.get(this.$api + `/imap/1/boxes`, {
+    const { data } = await this.$axios.get(`${this.$api}/imap/1/boxes`, {
       headers: { "X-imap-login": JSON.stringify(user) },
     });
 
