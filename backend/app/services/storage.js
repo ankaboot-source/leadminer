@@ -113,6 +113,18 @@ class Storage {
   }
 
   /**
+   * Returns all data in buffer.
+   * @param {*} userID 
+   * @returns 
+   */
+  #lastchunckBuffer(userID) {
+    
+    const data = Object.assign([], this.#BULK_INSERT_BUFFER[userID.toString()]);
+    delete this.#BULK_INSERT_BUFFER[userID.toString()];
+    return data;
+  }
+
+  /**
    * #addToBuffer - stores data in buffer
    * @param {string} userID ID of the user
    * @param {Object} data  The object to be stored.
@@ -247,13 +259,13 @@ class Storage {
    * @param {*} userID - ID of user
    * @param { Object } object - An object contains extrcted data {message: {}, persons: []}
    */
-  async storeData(userID, data) {
+  async storeData(userID, isLast, data) {
 
     if (this.batch) { // Redirects between bulk and normal insertion.
 
-      const releasedData = this.#checkAndReleaseBuffer(userID);
+      const releasedData = isLast ? this.#lastchunckBuffer(userID) : this.#checkAndReleaseBuffer(userID);
       if (releasedData.length) {
-        await this.storeBulk(releasedData); 
+        await this.storeBulk(releasedData);
       } else {
         this.#addToBuffer(userID, data); 
       }
