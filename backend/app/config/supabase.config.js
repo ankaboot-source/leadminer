@@ -14,8 +14,8 @@ const pgConnectionString =
 const connectionType =
   process.env.CONNECTION_TYPE ?? config.get('server.supabase.connection_type');
 
-const useBatch = process.env.USE_BATCH ?? config.get('server.supabase.use_batch')
-const batchSize = process.env.BATCH_SIZE ?? config.get('server.supabase.batch_size')
+const useBatch = process.env.USE_BATCH ?? config.get('server.supabase.use_batch');
+const batchSize = process.env.BATCH_SIZE ?? config.get('server.supabase.batch_size');
 
 module.exports = {
   supabaseUrl,
