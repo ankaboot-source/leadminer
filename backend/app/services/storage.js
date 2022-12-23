@@ -140,13 +140,13 @@ class Storage {
    * storeBulk -  Stores data to Message, Person, pointOfContact, tags tables using bulk insertion.
    * @param {Object[]} bulkData - Array of objects.
    */
-  async storeBulk(bulkObjects) {
+  storeBulk(bulkObjects) {
 
     const { messages, persons, pointOfContacts, tags } = prepareData(bulkObjects);
 
     Promise.allSettled([this.db.upsertPerson(persons), this.db.insertMessage(messages)])
 
-      .then(async ([pPromise, mPromise]) => {
+      .then(([pPromise, mPromise]) => {
 
         const mids = mPromise.value;
         const pids = pPromise.value;
@@ -238,14 +238,14 @@ class Storage {
           tag.personid = personID; // Adds personID to tags
         }
 
-        this.db.insertPointOfContact([dataObject.pointOfContact]).then((data, error) => {
-          if (error) {
-            logInsertionError('points of contact', error); 
+        this.db.insertPointOfContact([dataObject.pointOfContact]).then((result) => {
+          if (result.error) {
+            logInsertionError('points of contact', result.error); 
           } 
         });
-        this.db.createTags(dataObject.tags).then((data, error) => {
-          if (error) {
-            logInsertionError('tags', error); 
+        this.db.createTags(dataObject.tags).then((result) => {
+          if (result.error) {
+            logInsertionError('tags', result.error); 
           }
         });
       }
@@ -263,13 +263,13 @@ class Storage {
 
       const releasedData = isLast ? this.#lastchunckBuffer(userID) : this.#checkAndReleaseBuffer(userID);
       if (releasedData.length) {
-        await this.storeBulk(releasedData);
+        this.storeBulk(releasedData);
       } else {
         this.#addToBuffer(userID, data); 
       }
 
     } else {
-      this.store(data); 
+      await this.store(data); 
     }
   }
 }

@@ -227,8 +227,8 @@ class EmailMessage {
       const emails = regExHelpers.extractNameAndEmail( // extract Name and Email in case of a header
         messagingFields[`${key}`]
       );
-      const p = await this.emailsAddressesExtractedFromHeader(emails, key);
-      extractedData.persons.push(...p);
+      const persons = await this.emailsAddressesExtractedFromHeader(emails, key);
+      extractedData.persons.push(...persons);
     }
 
     const emails = regExHelpers.extractNameAndEmailFromBody(
@@ -254,7 +254,7 @@ class EmailMessage {
 
     //const persons = []
 
-    for (const email of emails.filter((email) => email && this.user.email !== email?.address)) {
+    for (const email of emails.filter((e) => e && this.user.email !== e?.address)) {
       const domain = await domainHelpers.checkDomainStatus(email.address); // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
 
       if (domain[0]) { // Valid email
@@ -290,7 +290,7 @@ class EmailMessage {
 
     // const persons = []
 
-    for (const email of emails.filter((email) => email && this.user.email !== email.address)) {
+    for (const email of emails.filter((e) => e && this.user.email !== e.address)) {
 
       const domain = await domainHelpers.checkDomainStatus(email); // check for Domain validity
 

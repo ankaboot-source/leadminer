@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { check } = require('recheck');
 const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
-const { REGEX_HEADER, REGEX_BODY, REGEX_LIST_ID } = require('../../app/utils/constants')
+const { REGEX_HEADER, REGEX_BODY } = require('../../app/utils/constants')
 
 const testData = require('../testData.json');
 

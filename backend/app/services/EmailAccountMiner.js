@@ -243,9 +243,7 @@ class EmailAccountMiner {
         });
       });
 
-      msg.once('end', () => {
-        //logger.debug(`${prefix}Finished`);
-      });
+      msg.once('end', () => { /* Do nothing for now. logger.debug(`${prefix}Finished`); */})
     });
 
     fetchResult.on('error', (err) => {
