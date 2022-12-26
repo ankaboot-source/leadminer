@@ -131,7 +131,7 @@ class EmailAccountMiner {
     });
     // cancelation using req.close event from user(frontend button)
     this.eventEmitter.on('endByUser', () => {
-      this.connection.destroy();
+      this.connection.end();
       logger.info('Connection to IMAP server destroyed by user.', {
         emailHash: this.mailHash
       });

@@ -200,9 +200,13 @@ async function getEmails(req, res, next) {
   class MyEmitter extends EventEmitter {}
   const eventEmitter = new MyEmitter();
 
+  req.on('close', () => {
+    eventEmitter.emit('endByUser');
+  });
+
   eventEmitter.on('error', () => {
     res.status(500).send({
-      message: 'Error occurend try to refresh the page or reconnect'
+      message: 'An error has occurred while trying to fetch emails.'
     });
   });
 
