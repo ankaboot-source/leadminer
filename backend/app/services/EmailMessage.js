@@ -230,7 +230,7 @@ class EmailMessage {
         const emailType = emailAddressHelpers
           .findEmailAddressType(email.address, [email?.name], domain[1]);
         const tags = this.getTags(fieldName, email, emailType);
-        return [this.constructPersonPocTags(email, tags, fieldName)];
+        return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
       }
 
       redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
@@ -259,7 +259,7 @@ class EmailMessage {
           email, [email?.name ?? ''], domain[1]
         );
         const tags = this.getTags('', email, emailType);
-        return [this.constructPersonPocTags(email, tags, 'body')];
+        return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
       }
 
       redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
@@ -278,7 +278,7 @@ class EmailMessage {
    * @param {[{name: string, label; string, reachable: string, type: string}] | []} tags - Array of tags
    * @param {string} fieldName - The Header field.
    */
-  constructPersonPocTags(email, tags, fieldName) {
+  static constructPersonPocTags(email, tags, fieldName) {
 
     const { address, identifier, name } = email;
     return {

@@ -27,9 +27,9 @@ class Storage {
    * Example:
    *  - {userId: 1} = {user_id: 1}
    */
-  #construcObjectDB(obj) {
+  static construcObjectDB(obj) {
     return Object.assign({}, ...Object.keys(obj).map(key => {
-      return { [key.replace(/([A-Z])/g, '_$1').toLowerCase()]: obj[key.toString()] };
+      return { [key.replace(/(?<c>[A-Z])/g, '_$1').toLowerCase()]: obj[key.toString()] };
     }));
   }
 
@@ -51,15 +51,15 @@ class Storage {
       personObj.person.userid = userID;
       personObj.pointOfContact.userid = userID;
 
-      personObj.person = this.#construcObjectDB(personObj.person);
-      personObj.pointOfContact = this.#construcObjectDB(personObj.pointOfContact);
+      personObj.person = Storage.construcObjectDB(personObj.person);
+      personObj.pointOfContact = Storage.construcObjectDB(personObj.pointOfContact);
 
       for (let tag of personObj.tags) {
         tag.userid = userID;
-        tag = this.#construcObjectDB(tag);
+        tag = Storage.construcObjectDB(tag);
       }
     }
-    return { message: this.#construcObjectDB(message), persons };
+    return { message: Storage.construcObjectDB(message), persons };
   }
 
   /**
