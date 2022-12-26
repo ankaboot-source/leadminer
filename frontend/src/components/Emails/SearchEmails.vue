@@ -84,6 +84,7 @@ import TreeCard from "../cards/TreeCard.vue";
 import MinedPersons from "../MinedPersons.vue";
 
 const selectedBoxes = ref([]);
+let abortController;
 
 const $q = useQuasar();
 const $store = useStore();
@@ -153,8 +154,7 @@ function showNotification(msg, color, icon) {
 }
 
 function cancelFetchEmails() {
-  // const cancelAction = $store.getters["example/getStates"].cancel;
-  // cancelAction.cancelRequest = true;
+  abortController.abort();
 }
 
 async function fetchEmails() {
@@ -167,8 +167,9 @@ async function fetchEmails() {
   }
 
   try {
+    abortController = new AbortController();
     await $store.dispatch("example/getEmails", {
-      data: { boxes: selectedBoxes.value },
+      data: { boxes: selectedBoxes.value, abortController },
     });
     showNotification($store.state.example.infoMessage, "teal-5", "check");
   } catch (error) {

@@ -50,11 +50,22 @@ export async function getEmails({ state, commit }, { data }) {
   registerEventHandlers(eventSource, user.id, this);
 
   try {
+    const { boxes, folders, abortController } = data;
+
+    abortController.signal.addEventListener("abort", () => {
+      commit("SET_LOADING", false);
+      commit("SET_LOADING_DNS", false);
+      commit("SET_STATUS", "");
+      commit("SET_INFO_MESSAGE", "Emails fetching aborted.");
+      eventSource.close();
+    });
+
     await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
+      signal: abortController.signal,
       headers: { "X-imap-login": JSON.stringify(user) },
       params: {
-        boxes: data.boxes,
-        folders: data.folders,
+        boxes,
+        folders,
       },
     });
 

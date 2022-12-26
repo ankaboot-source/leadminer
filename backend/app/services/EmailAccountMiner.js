@@ -135,12 +135,11 @@ class EmailAccountMiner {
       logger.info('Connection to IMAP server destroyed by user.', {
         emailHash: this.mailHash
       });
-      // this.eventEmitter.emit("end", true);
     });
 
     this.connection.on('error', (err) => {
       logger.error('Error with IMAP connection.', { error: err });
-      this.eventEmitter.emit('error')
+      this.eventEmitter.emit('error');
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {

@@ -210,10 +210,6 @@ async function getEmails(req, res, next) {
     res.status(200).send();
   });
 
-  eventEmitter.removeListener('end', () => {
-    logger.debug('Remove event listener.');
-  });
-
   // initialize EmailAccountMiner to mine imap folder
   const miner = new EmailAccountMiner(
     server,
