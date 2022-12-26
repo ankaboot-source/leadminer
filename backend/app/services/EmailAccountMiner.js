@@ -140,7 +140,7 @@ class EmailAccountMiner {
 
     this.connection.on('error', (err) => {
       logger.error('Error with IMAP connection.', { error: err });
-      this.eventEmitter.emit('error')
+      this.eventEmitter.emit('error');
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
@@ -313,12 +313,7 @@ class EmailAccountMiner {
       const progress =
         seqNumber - (this.sends[this.sends.indexOf(seqNumber) - 1] ?? 0);
 
-      this.sse.send(
-        {
-          scanned: progress
-        },
-        `ScannedEmails${this.user.id}`
-      );
+      this.sse.send(progress, `ScannedEmails${this.user.id}`);
     }
   }
 

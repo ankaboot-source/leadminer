@@ -8,7 +8,7 @@ export function registerEventHandlers(eventSource, userId, store) {
   });
 
   eventSource.addEventListener(`ScannedEmails${userId}`, (message) => {
-    const { scanned } = JSON.parse(message.data);
+    const scanned = parseInt(message.data);
     store.commit("example/SET_SCANNEDEMAILS", scanned);
   });
 
