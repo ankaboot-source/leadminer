@@ -193,7 +193,7 @@ class EmailMessage {
         conversation: this.isConversation()
       },
       persons: []
-    }
+    };
     this.message = extractedData.message;
 
     const messagingFields = this.getMessagingFieldsFromHeader();
