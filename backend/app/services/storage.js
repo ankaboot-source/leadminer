@@ -39,7 +39,7 @@ class Storage {
    * @param {string} userID - The id of the user
    * @returns {object}
    */
-  #prepareData(extractedData, userID) {
+  static prepareData(extractedData, userID) {
 
     const { message, persons } = extractedData;
 
@@ -110,7 +110,7 @@ class Storage {
      * fire (message call, person call) -> wait -> prepare -> fire (poc, tags)
      */
 
-    const { message, persons } = this.#prepareData(extractedData, userID);
+    const { message, persons } = Storage.prepareData(extractedData, userID);
 
     const messageResult = await this.db.insertMessage(message);
 
