@@ -1,4 +1,4 @@
-const { Pool, Client } = require('pg');
+const { Client } = require('pg');
 const { pgConnectionString } = require('../../config/supabase.config');
 
 const pool = new Client({

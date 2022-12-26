@@ -23,11 +23,11 @@ class EmailMessage {
    * @param user - The user.
 
    */
-  constructor(sequentialId, header, body, user, folder, isLast) {
+  constructor(userEmail, sequentialId, header, body, folder, isLast) {
+    this.userEmail = userEmail;
     this.sequentialId = sequentialId;
     this.header = header || {};
     this.body = body || {};
-    this.user = user;
     this.folderPath = folder;
     this.isLast = isLast;
   }
@@ -136,67 +136,44 @@ class EmailMessage {
   }
 
   /**
-   * buildTag takes in a name, label, reachable, and type, and returns an object with those properties
-   * used to build a tag object type
-   * @param {string} name - The name of the tag.
-   * @param {string} label - The label of the tag.
-   * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
-   * @param {string} type - The type of the tag.
-   * @returns An object with the following properties:
-   *   name: name,
-   *   label: label,
-   *   reachable: reachable,
-   *   type: type,
+   * Constructs tags from fieldName, email, emailType.
+   * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
+   * @param {string} email  - Email address
+   * @param {string} emailType - The type of the email
+   * @returns { [{name: string, label; string, reachable: string, type: string}] | []}
+   *  An empty array if there is no tags, else returns array of objects.
+   *  
    */
-  buildTag(name, label, reachable, type) {
-    const userid = this.user.id;
-    return {
-      userid,
-      name,
-      label,
-      reachable,
-      type
-    };
-  }
+  getTags(fieldName, email, emailType) {
 
-  /**
-   * getTagsField - Builds tags for field 'FROM'
-   * @param {string} fieldName - 
-   * @returns {array} returns a list of tags
-   */
-  getTagsField(fieldName) {
     const tags = [];
+
+    const constructTags = (name, label, reachable, type) => {
+      return { name, label, reachable, type };
+    };
+
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
-        tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
+        tags.push(constructTags('newsletter', 'Newsletter', 2, 'refined'));
       }
       if (this.isTransactional()) {
         tags.push(
-          this.buildTag('transactional', 'Transactional', 2, 'refined')
+          constructTags('transactional', 'Transactional', 2, 'refined')
         );
       }
       if (this.isList()) {
-        tags.push(this.buildTag('list', 'List', 2, 'refined'));
+        tags.push(constructTags('list', 'List', 2, 'refined'));
       }
     }
-    return tags;
-  }
 
-  /**
-   * getTagsEmail- Build tags for email
-   * @param {*} email
-   * @param {*} emailType - Type of an email (no-reply, personal, ...) 
-   * @returns 
-   */
-  getTagsEmail(email, emailType) {
-
-    if (emailMessageHelpers.isNoReply(email.address)) {
-      return [this.buildTag('no-reply', 'noReply', 0, 'refined')];
+    if (email && emailMessageHelpers.isNoReply(email.address)) {
+      tags.push(constructTags('no-reply', 'noReply', 0, 'refined'));
     }
     if (emailType && emailType !== '') {
-      return [this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')];
+      tags.push(constructTags(emailType.toLowerCase(), emailType, 1, 'refined'));
     }
-    return [];
+
+    return tags;
   }
 
   /**
@@ -204,21 +181,19 @@ class EmailMessage {
    */
   async extractEmailsAddresses() {
 
-    const extractedData = {};
+    const extractedData = {
 
-    extractedData.message = {
-      channel: 'imap',
-      folder_path: this.folderPath,
-      date: this.getDate(),
-      userid: this.user.id,
-      message_id: this.getMessageId(),
-      references: this.getReferences(),
-      list_id: this.getListId(),
-      conversation: this.isConversation()
-
-    };
-
-    extractedData.persons = [];
+      message: {
+        channel: 'imap',
+        folderPath: this.folderPath,
+        date: this.getDate(),
+        messageId: this.getMessageId(),
+        references: this.getReferences(),
+        listId: this.getListId(),
+        conversation: this.isConversation()
+      },
+      persons: []
+    }
     this.message = extractedData.message;
 
     const messagingFields = this.getMessagingFieldsFromHeader();
@@ -227,51 +202,41 @@ class EmailMessage {
       const emails = regExHelpers.extractNameAndEmail( // extract Name and Email in case of a header
         messagingFields[`${key}`]
       );
-      const persons = await this.emailsAddressesExtractedFromHeader(emails, key);
-        extractedData.persons.push(...persons); 
+      const persons = await this.personsExtractedFromHeader(emails, key);
+      extractedData.persons.push(...persons);
     }
 
     const emails = regExHelpers.extractNameAndEmailFromBody(
       this.body.toString('utf8')
     );
     delete this.body;
-    // store extracted emails
-    extractedData.persons.push(...await this.emailsAddressesExtractedFromBody(emails));
+    extractedData.persons.push(...await this.personsExtractedFromBody(emails));
 
     return extractedData;
   }
 
-
   /**
-   * emailsAddressesExtractedFromHeader takes the extracted email addresses,
-   * checks for validty then build a person objects.
-   * @param {object} messages - an object containing the saved message data row
+   * personsExtractedFromHeader checks for email validty then returns a person objects with thier tags and point of contact.
    * @param {array} emails - an array of objects that contains the extracted email addresses and the names
-   * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
+   * @param {string} fieldName - the current extracted field name (eg: from , cc , to...)
    * @returns {Object[]} An array of objects
    */
-  async emailsAddressesExtractedFromHeader(emails, fieldName) {
+  async personsExtractedFromHeader(emails, fieldName) {
 
-    //const persons = []
-
-    for (const email of emails.filter((e) => e && this.user.email !== e?.address)) {
+    for (const email of emails.filter((e) => e && this.userEmail !== e?.address)) {
       const domain = await domainHelpers.checkDomainStatus(email.address); // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
 
       if (domain[0]) { // Valid email
 
-        const tags = this.getTagsField(fieldName);
-        const name = email?.name.replaceAll(/"|'/g, '');
-
         const emailType = emailAddressHelpers
           .findEmailAddressType(email.address, [email?.name], domain[1]);
-
-        tags.push(...this.getTagsEmail(email, emailType));
-        return [this.extractPerson(email.address, name, tags, email?.identifier , fieldName)];
+        const tags = this.getTags(fieldName, email, emailType);
+        return [this.constructPersonPocTags(email, tags, fieldName)];
       }
 
       redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
         if (member === 0) {
-          redisClientForNormalMode.sadd('invalidDomainEmails', email.address); 
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
       });
     }
@@ -279,17 +244,13 @@ class EmailMessage {
   }
 
   /**
-   * emailsAddressesExtractedFromBody takes the extracted email addresses from the body
-   * and checks validty then return a list of persons.
-   * @param {object} messages - an object containing the saved message data row
+   * personsExtractedFromBody checks for email validty then returns a person objects with thier tags and point of contact.
    * @param {array} emails - an array of objects that contains the extracted email addresses
    * @returns {Object[]} An array of object.
    */
-  async emailsAddressesExtractedFromBody(emails) {
+  async personsExtractedFromBody(emails) { // TODO: why takes an array of emails but don't process all of them.
 
-    // const persons = []
-
-    for (const email of emails.filter((e) => e && this.user.email !== e.address)) {
+    for (const email of emails.filter((e) => e && this.userEmail !== e.address)) {
 
       const domain = await domainHelpers.checkDomainStatus(email); // check for Domain validity
 
@@ -298,13 +259,13 @@ class EmailMessage {
         const emailType = emailAddressHelpers.findEmailAddressType(
           email, [email?.name ?? ''], domain[1]
         );
-        const tags = this.getTagsEmail(email, emailType);
-        return [this.extractPerson(email, '', tags, 'body')]; // TODO: WHY poc jumps from 3.3k to 33k if u remove return statement
+        const tags = this.getTags('', email, emailType);
+        return [this.constructPersonPocTags(email, tags, 'body')];
       }
 
       redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
         if (member === 0) {
-          redisClientForNormalMode.sadd('invalidDomainEmails', email.address); 
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
       });
     }
@@ -312,47 +273,34 @@ class EmailMessage {
     return [];
   }
 
-
   /**
-   * extractPerson takes the email address, name, tags and field name 
-   * and returns an object with person, pointofcontact, tags.
-   * @param email - the email address of the person
-   * @param name - The name of the person
-   * @param tags - an array of tags to be added to the person
-   * @param identifier - The identifier of the person.
-   * @param fieldName - the name of the field that the email was found in
+   * constructPersonPocTags - Constructs the person && pointofcontact objects using email, tags, fieldName 
+   * @param {{name: string, adddress: string, identifier: string}} email - The Email object
+   * @param {[{name: string, label; string, reachable: string, type: string}] | []} tags - Array of tags
+   * @param {string} fieldName - The Header field.
    */
-  extractPerson(email, name, tags, identifier, fieldName) {
+  constructPersonPocTags(email, tags, fieldName) {
 
-    for (const tag of tags) {
-      tag.email = email.toLowerCase();
-    }
+    const { address, identifier, name } = email;
     return {
       person: {
-        name: name ?? '',
-        email: email.toLowerCase(),
-        _userid: this.user.id,
+        name,
+        email: address,
         url: '',
         image: '',
         address: '',
         alternate_names: [],
-        same_as: [],
-        given_name: name,
-        family_name: '',
-        job_title: '',
+        sameAs: [],
+        givenName: name,
+        familyName: '',
+        jobTitle: '',
         identifiers: [identifier]
-        // works_for: ''  Will be retrieved with transmutation
       },
       pointOfContact: {
-        
-        message_id: this.message.message_id, //  TODO: To save us some for loops, but needs to change.
-        email: email.toLowerCase(), // TODO: To save us some for loops, but needs to change.
-        
-        userid: this.user.id,
         messageid: '',
         name: name ?? '',
         _from: fieldName === 'from',
-        reply_to: fieldName === 'reply-to' || fieldName === 'reply_to',
+        replyTo: fieldName === 'reply-to' || fieldName === 'reply_to',
         _to: fieldName === 'to',
         cc: fieldName === 'cc',
         bcc: fieldName === 'bcc',

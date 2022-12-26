@@ -31,9 +31,9 @@ function extractNameAndEmail(emails) {
     if (emailData) {
       emailData = {
 
-        name: email.split(' ').slice(0, -1).join(' ').trim(), // -1 to exclude email.
-        address: emailData[0],
-        identifier: emailData.groups.identifier
+        name: email.toLowerCase().split(' ').slice(0, -1).join(' ').trim(), // -1 to exclude email.
+        address: emailData[0].toLowerCase(),
+        identifier: emailData.groups.identifier.toLowerCase()
 
       };
       result.push(emailData);

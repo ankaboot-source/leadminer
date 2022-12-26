@@ -214,9 +214,6 @@ class EmailAccountMiner {
 
     fetchResult.on('message', (msg, seqNumber) => {
 
-      //const prefix = `(#${seqNumber}) `;
-      //logger.debug('Message #%d', seqNumber);
-
       msg.on('body', (stream, streamInfo) => {
         let header = '';
         let body = '';

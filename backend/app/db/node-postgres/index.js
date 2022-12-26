@@ -1,21 +1,6 @@
 const pool = require('./setup');
 const format = require('pg-format');
 
-function buildValues(arr) {
-
-  return arr.map((i) => {
-
-    const values = [];
-    for (const obj of Object.values(i)) { // changes format [values] to '{values}'
-      values.push(Array.isArray(obj) ? `{${obj.flat()}}` : obj); 
-    }
-    return values;
-  });
-}
-
-function isEmpty(array) {
-  return array.length === 0 || (array.length === 1 && array[0].length === 0);
-}
 
 class Postgres {
   constructor(logger) {
@@ -24,37 +9,24 @@ class Postgres {
 
   /**
    * Inserts a new message record.
-   * @param {string} messageID - The unique ID of the message
-   * @param {string} userID - The user running the mining
-   * @param {string} messageChannel - The channel name (`imap`...)
-   * @param {string} folderPath - The folder path of the message
-   * @param {string} messageDate - The date the message was sent
-   * @param {string} listId - The List-id header field, to identify if email message is part of a list and which one
-   * @param {string[]} references - List of references if the email message is in conversation
-   * @param {boolean} isConversation - Indicates if the email message is in a conversation
-   * @returns {Promise<object>} The inserted message
+   * @param {object} message - Message object
+   * @returns {Promise<object>} The inserted row
    */
-  async insertMessage(messageArray) {
-
-    const result = { data: [], error: null };
-
-    if (isEmpty(messageArray)) {
-      return result;
-    }
-    const values = buildValues(messageArray);
+  async insertMessage(message) {
+    const result = { data: null, error: null };
+    
     const query =
-      format(
-        'INSERT INTO messages(channel, folder_path, date, userid, message_id, "references", list_id, conversation) VALUES %L RETURNING *', values
-      );
+        'INSERT INTO messages(channel, folder_path, date, message_id, "references", list_id, conversation, userid)'
+        + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+
     try {
-      const res = await pool.query(
+      const {rows} = await pool.query(
         query,
-        null,
+        Object.values(message),
         this.logger
       );
-      result.data = res.rows;
+      result.data = rows;
     } catch (error) {
-      error.message = error.details;
       result.error = error;
     }
     return result;
@@ -62,37 +34,25 @@ class Postgres {
 
   /**
    * Inserts a point of contact record.
-   * @param {string} messageID - The message ID
-   * @param {string} userID - The user ID
-   * @param {string} personID - The person ID
-   * @param {string} fieldName - The name of the field where the email address was found
-   * (`to`, `from`, `body` ...)
-   * @param {string} name - The identified person name
-   * @returns {Promise<object>} The inserted point of contact
+   * @param {object} pointOfContact - Point of contact object.
+   * @returns {Promise<object>} The inserted row
    */
-  async insertPointOfContact(pointOfContactArray) {
+  async insertPointOfContact(pointOfContact) {
         
-    const result = { data: [], error: null };
-
-    if (isEmpty(pointOfContactArray)) {
-      return result;
-    }
-    const values = buildValues(pointOfContactArray);
+    const result = { data: null, error: null };
 
     const query =
-      format('INSERT INTO pointsofcontact(userid, messageid, name, _from, reply_to, _to, cc, bcc, body, personid) ' +
-        'VALUES %L RETURNING *', values);
+      'INSERT INTO pointsofcontact(messageid, name, _from, reply_to, _to, cc, bcc, body, personid, userid)'
+      + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *';
 
     try {
-      const res = await pool.query(
+      const {rows} = await pool.query(
         query,
-        null,
+        Object.values(pointOfContact),
         this.logger
       );
-
-      result.data = res.rows;
+      result.data = rows;
     } catch (error) {
-      error.message = error.details;
       result.error = error;
     }
     return result;
@@ -100,41 +60,29 @@ class Postgres {
 
   /**
    * Inserts or updates a person record into the persons table.
-   * @param {string} name - The name of the person
-   * @param {string} emailsAddress - The email address of the person
-   * @param {string} userID - The user ID
-   * @param {string} identifier - The user identifier extracted from email.
-   * @returns {Promise<object>} The inserted/updated person
+   * @param {object} person - The person object 
+   * @returns {Promise<object>} The inserted/updated row
    */
-  async upsertPerson(personArray) {
+  async upsertPerson(person) {
 
-    const result = { data: [], error: null };
-
-    if (isEmpty(personArray)) {
-      return result;
-    }
-    const values = buildValues(personArray);
+    const result = { data: null, error: null };
 
     const query =
-      format(
-        `INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers)
-         VALUES %L ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`, values
-      );
+      'INSERT INTO persons(name, email, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers, userid)'
+      + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *';
 
     try {
-      const res = await pool.query(
+      const {rows} = await pool.query(
         query,
-        null,
+        Object.values(person),
         this.logger
       );
-      result.data = res.rows;
+      result.data = rows;
     } catch (error) {
-      error.message = error.details;
       result.error = error;
     }
     return result;
   }
-
 
   /**
    * Inserts a list of tags.
@@ -143,31 +91,28 @@ class Postgres {
    */
   async createTags(tags) {
     
-    const result = { data: [], error: null };
-
-    if (isEmpty(tags)) {
+    const result = { data: null, error: null };
+  
+    if (tags.length === 0) {
       return result;
     }
-    const values = buildValues(tags);
+    const values = tags.map((t) => Object.values(t));
     const query = format(
-      'INSERT INTO tags(userid, name, label, reachable, type, personid) VALUES %L ON CONFLICT (personid, name) DO NOTHING',
+      'INSERT INTO tags(name, label, reachable, type, userid, personid) VALUES %L ON CONFLICT (personid, name) DO NOTHING',
       values
     );
-
     try {
-      const res = await pool.query(
+      const {rows} = await pool.query(
         query,
         null,
         this.logger
       );
-      result.data = res.rows;
+      result.data = rows;
     } catch (error) {
-      error.message = error.details;
       result.error = error;
     }
     return result;
   }
-
 
   /**
    * Creates a google user.

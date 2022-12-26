@@ -17,16 +17,16 @@ async function handleMessage({
   const message_id = header['message-id'] ? header['message-id'][0] : '';
   if (message_id) {
     const message = new EmailMessage(
+      user.email,
       seqNumber,
       header,
       body,
-      user,
       folderName,
       isLast // If it's the last element that comes from (fetch/redis).
     );
 
     await message.extractEmailsAddresses().then(async (data) => {
-      await storage.storeData(message.user.id, isLast, data);
+      await storage.store(data, user.id);
     });
     if (isLast) {
       db.refinePersons(user.id); // runs rpc function.
