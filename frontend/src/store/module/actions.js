@@ -46,17 +46,16 @@ export async function getEmails({ state, commit }, { data }) {
       withCredentials: true,
     }
   );
-
   registerEventHandlers(eventSource, user.id, this);
 
   try {
-    const { boxes, folders, abortController } = data;
+    const { boxes, abortController } = data;
 
     abortController.signal.addEventListener("abort", () => {
       commit("SET_LOADING", false);
       commit("SET_LOADING_DNS", false);
       commit("SET_STATUS", "");
-      commit("SET_INFO_MESSAGE", "Emails fetching aborted.");
+      commit("SET_INFO_MESSAGE", "Emails fetching stopped.");
       eventSource.close();
     });
 
@@ -65,7 +64,6 @@ export async function getEmails({ state, commit }, { data }) {
       headers: { "X-imap-login": JSON.stringify(user) },
       params: {
         boxes,
-        folders,
       },
     });
 
