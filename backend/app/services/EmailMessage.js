@@ -89,7 +89,6 @@ class EmailMessage {
    * @returns {string}
    */
   getListId() {
-
     if (this.isList()) {
       return this.header['list-id'][0].match(REGEX_LIST_ID)[0]; // extracts this part <list-id>
     }

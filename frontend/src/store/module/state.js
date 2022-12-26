@@ -1,9 +1,10 @@
 export default function () {
   return {
-    retrievedEmails: [],
+    retrievedEmails: {},
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,
+    userId: "",
     imapUser: {
       id: "",
       email: "",

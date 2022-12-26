@@ -1,14 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
 import { LocalStorage } from "quasar";
 
+import { createClient } from "@supabase/supabase-js";
 import { registerEventHandlers } from "src/helpers/sse";
+
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
   process.env.SUPABASE_SECRET_PROJECT_TOKEN
 );
 
-function initStore(parent, currentState) {
-  supabase
+let subscription;
+
+function subscribeToRefined(userId, commit) {
+  subscription = supabase
     .channel("*")
     .on(
       "postgres_changes",
@@ -16,32 +19,26 @@ function initStore(parent, currentState) {
         event: "*",
         schema: "public",
         table: "refinedpersons",
-        filter: `userid=eq.${
-          currentState.imapUser.id + currentState.googleUser.id
-        }`,
+        filter: `userid=eq.${userId}`,
       },
       (payload) => {
-        parent.commit("example/SET_EMAILS", payload.new);
+        commit("SET_EMAILS", payload.new);
       }
     )
     .subscribe();
-  parent.commit("example/SET_LOADING", true);
-  parent.commit("example/SET_LOADING_DNS", true);
-  parent.commit("example/SET_SCANNEDEMAILS", "f");
-  parent.commit("example/SET_STATISTICS", "f");
-  parent.commit("example/SET_SCANNEDBOXES", []);
 }
 
-function updateStoreWhenFinish(response, parent) {
-  parent.commit("example/SET_LOADING", false);
-  parent.commit("example/SET_LOADING_DNS", false);
-  parent.commit("example/SET_STATUS", "");
-}
+export async function getEmails({ state, commit }, { data }) {
+  const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
-export async function getEmails({ getters }, { data }) {
-  const currentState = getters.getStates;
+  commit("SET_LOADING", true);
+  commit("SET_LOADING_DNS", true);
+  commit("SET_SCANNEDEMAILS", "f");
+  commit("SET_STATISTICS", "f");
+  commit("SET_SCANNEDBOXES", []);
 
-  initStore(this, currentState);
+  if (subscription) await subscription.unsubscribe();
+  subscribeToRefined(user.id, commit);
 
   const eventSource = new EventSource(
     `${process.env.SERVER_ENDPOINT}/api/stream`,
@@ -49,39 +46,40 @@ export async function getEmails({ getters }, { data }) {
       withCredentials: true,
     }
   );
-
-  const user = currentState.googleUser.id
-    ? currentState.googleUser
-    : currentState.imapUser;
-
   registerEventHandlers(eventSource, user.id, this);
 
   try {
-    const response = await this.$axios.get(
-      `${this.$api}/imap/1/collectEmails`,
-      {
-        headers: { "X-imap-login": JSON.stringify(user) },
-        params: {
-          fields: data.fields.split(","),
-          boxes: data.boxes,
-          folders: data.folders,
-        },
-      }
-    );
+    const { boxes, abortController } = data;
+
+    abortController.signal.addEventListener("abort", () => {
+      commit("SET_LOADING", false);
+      commit("SET_LOADING_DNS", false);
+      commit("SET_STATUS", "");
+      commit("SET_INFO_MESSAGE", "Emails fetching stopped.");
+      eventSource.close();
+    });
+
+    await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
+      signal: abortController.signal,
+      headers: { "X-imap-login": JSON.stringify(user) },
+      params: {
+        boxes,
+      },
+    });
 
     eventSource.close();
-    updateStoreWhenFinish(response, this);
-
-    return response;
+    commit("SET_LOADING", false);
+    commit("SET_LOADING_DNS", false);
+    commit("SET_STATUS", "");
+    commit("SET_INFO_MESSAGE", "Successfully fetched emails");
   } catch (error) {
-    this.commit(
-      "example/SET_ERROR",
+    commit(
+      "SET_ERROR",
       error?.response?.data?.error
         ? error?.response?.data?.error
         : error.message
     );
     eventSource.close();
-    throw new Error(error.message);
   }
 }
 
@@ -144,62 +142,30 @@ export async function signIn(_, { data }) {
       });
   });
 }
-export async function getBoxes({ getters }) {
-  const currentState = getters.getStates;
 
-  this.commit("example/SET_LOADINGBOX", true);
-  return new Promise((resolve, reject) => {
-    if (currentState.googleUser.access_token === "") {
-      this.$axios
-        .get(
-          this.$api +
-            `/imap/${JSON.parse(
-              JSON.stringify(currentState.imapUser.id)
-            )}/boxes`,
-          {
-            headers: { "X-imap-login": JSON.stringify(currentState.imapUser) },
-          }
-        )
-        .then((response) => {
-          this.commit("example/SET_LOADINGBOX", false);
-          this.commit("example/SET_BOXES", response.data.imapFoldersTree);
-          this.commit("example/SET_INFO_MESSAGE", response.data.message);
-          resolve();
-        })
-        .catch((error) => {
-          this.commit(
-            "example/SET_ERROR",
-            error?.response?.data?.error
-              ? error?.response?.data?.error
-              : error.message
-          );
+export async function getBoxes({ state, commit }) {
+  commit("SET_LOADINGBOX", true);
 
-          reject(error.message);
-        });
-    } else {
-      this.$axios
-        .get(this.$api + `/imap/${currentState.googleUser.id}/boxes`, {
-          headers: { "X-imap-login": JSON.stringify(currentState.googleUser) },
-        })
-        .then((response) => {
-          this.commit("example/SET_LOADINGBOX", false);
-          this.commit("example/SET_BOXES", response.data.imapFoldersTree);
-          this.commit("example/SET_INFO_MESSAGE", response.data.message);
-        })
-        .catch((error) => {
-          this.commit(
-            "example/SET_ERROR",
-            error?.response?.data?.error
-              ? error?.response?.data?.error
-              : error.message
-          );
+  const user =
+    state.googleUser.access_token === "" ? state.imapUser : state.googleUser;
 
-          reject(error.message);
-          if (error?.response?.status === 500) {
-            LocalStorage.remove("googleUser");
-            this.$router.push({ path: "/" });
-          }
-        });
-    }
-  });
+  commit("SET_USERID", user.id);
+
+  try {
+    const { data } = await this.$axios.get(`${this.$api}/imap/1/boxes`, {
+      headers: { "X-imap-login": JSON.stringify(user) },
+    });
+
+    commit("SET_LOADINGBOX", false);
+    commit("SET_BOXES", data.imapFoldersTree);
+    commit("SET_INFO_MESSAGE", "Successfully retrieved IMAP boxes.");
+  } catch (error) {
+    commit(
+      "SET_ERROR",
+      error?.response?.data?.error
+        ? error?.response?.data?.error
+        : error.message
+    );
+    throw error;
+  }
 }

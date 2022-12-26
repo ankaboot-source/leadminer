@@ -7,12 +7,11 @@ const quotedPrintable = require('quoted-printable');
  * @returns {Array} array of strings
  */
 function extractNameAndEmailFromBody(data) {
-  const reg = quotedPrintable
-    .decode(data)
-    .match(REGEX_BODY);
+  const reg = quotedPrintable.decode(data).match(REGEX_BODY);
   if (reg) {
     return [...new Set(reg)];
-  } return [];
+  }
+  return [];
 }
 
 /**
@@ -21,20 +20,16 @@ function extractNameAndEmailFromBody(data) {
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
-
   const result = [];
 
   for (const email of emails.split(',')) {
-
     let emailData = email.match(REGEX_HEADER.source);
 
     if (emailData) {
       emailData = {
-
         name: email.toLowerCase().split(' ').slice(0, -1).join(' ').trim(), // -1 to exclude email.
         address: emailData[0].toLowerCase(),
         identifier: emailData.groups.identifier.toLowerCase()
-
       };
       result.push(emailData);
     }

@@ -46,7 +46,7 @@ export default defineComponent({
       required: false,
       default: "left",
     },
-    collectedEmails: Number(0),
+    minedEmails: Number(0),
   },
   computed: {
     items: function () {
@@ -54,28 +54,28 @@ export default defineComponent({
         {
           title: "Legit email address",
           icon: "email",
-          value: this.collectedEmails,
+          value: this.minedEmails,
           color1: "#f8f9fa",
           color2: "#03c8a8",
         },
         {
           title: "over email address mined ",
           icon: "email",
-          value: this.collectedEmails,
+          value: this.minedEmails,
           color1: "#f8f900",
           color2: "#03c8a8",
         },
         {
           title: "emails messages mined so far",
           icon: "email",
-          value: this.collectedEmails,
+          value: this.minedEmails,
           color1: "#f8f9fa",
           color2: "#03c8a8",
         },
         {
           title: "Over emails to mine",
           icon: "email",
-          value: this.collectedEmails,
+          value: this.minedEmails,
           color1: "#f8f9fa",
           color2: "#03c8a8",
         },
