@@ -177,6 +177,7 @@ class EmailMessage {
 
   /**
    * extractEmailsAddresses - extracts emails from the header and body of an email, then returns an object
+   * @returns {{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}[]}}
    */
   async extractEmailsAddresses() {
 
