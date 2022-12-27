@@ -25,11 +25,10 @@ async function handleMessage({
       isLast // If it's the last element that comes from (fetch/redis).
     );
 
-    await message.extractEmailsAddresses().then(async (data) => {
-      await storage.store(data, user.id);
-    });
+    const data = await message.extractEmailsAddresses();
+    await storage.store(data, user.id);
     if (isLast) {
-      db.refinePersons(user.id); // runs rpc function.
+      await db.refinePersons(user.id);
     }
 
   }
