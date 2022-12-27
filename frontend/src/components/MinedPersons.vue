@@ -45,8 +45,8 @@
             label="Refresh"
             icon="refresh"
             no-caps
-            :disable="isLoading || loadingStatusDns"
-            @click="fetchRefinedPersons"
+            :disable="isLoading"
+            @click="updateRefinedPersons"
           />
         </div>
       </template>
@@ -169,32 +169,29 @@
 </template>
 
 <script setup>
-import { createClient } from "@supabase/supabase-js";
 import exportFromJSON from "export-from-json";
 import { useQuasar } from "quasar";
-import { computed, ref } from "vue";
+import { computed, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
 const $store = useStore();
 
 const rows = ref([]);
+const filter = ref("");
 const isLoading = ref(false);
+
 const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
 
-const filter = ref("");
+const refreshInterval = setInterval(() => {
+  if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
+    updateRefinedPersons();
+  }
+}, 3000);
 
-const supabase = createClient(
-  process.env.SUPABASE_PROJECT_URL,
-  process.env.SUPABASE_SECRET_PROJECT_TOKEN
-);
-
-// Potential solution for auto fetching of refined
-//onMounted(() => {
-//  setInterval(async () => {
-//    await fetchRefinedPersons();
-//  }, 3000);
-//});
+onUnmounted(() => {
+  clearInterval(refreshInterval);
+});
 
 const columns = [
   {
@@ -257,20 +254,10 @@ function filterFn(rows, term) {
   return rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase()));
 }
 
-async function fetchRefinedPersons() {
+function updateRefinedPersons() {
   isLoading.value = true;
-  const { data, error } = await supabase
-    .from("refinedpersons")
-    .select()
-    .eq("userid", $store.state.example.userId);
-
+  rows.value = $store.getters["example/getRetrievedEmails"];
   isLoading.value = false;
-
-  if (error) {
-    return $q.notify("Error when fetching refined emails.");
-  }
-
-  rows.value = data;
 }
 
 function exportTable() {
