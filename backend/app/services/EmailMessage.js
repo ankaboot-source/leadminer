@@ -135,41 +135,60 @@ class EmailMessage {
   }
 
   /**
+   * Constructs a tag object.
+   * @param {string} name - The name of the tag.
+   * @param {string} label - The label of the tag.
+   * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
+   * @param {string} type - The type of the tag.
+   * @returns {{name: string, label: string; string, reachable: int, type: string}}
+   */
+  static constructTags(name, label, reachable, type) {
+    return { name, label, reachable, type };
+  }
+
+  /**
+   * constructs tags for header field FROM.
+   * @param {string} fieldName - header field name
+   * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
+   */
+  getTagsField(fieldName) {
+
+    const tags = [];
+
+    if (fieldName === 'from') {
+      if (this.isNewsletter()) {
+        tags.push(EmailMessage.constructTags('newsletter', 'Newsletter', 2, 'refined'));
+      }
+      if (this.isTransactional()) {
+        tags.push(
+          EmailMessage.constructTags('transactional', 'Transactional', 2, 'refined')
+        );
+      }
+      if (this.isList()) {
+        tags.push(EmailMessage.constructTags('list', 'List', 2, 'refined'));
+      }
+    }
+    return tags;
+  }
+
+  /**
    * Constructs tags from fieldName, email, emailType.
    * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
    * @param {string} email  - Email address
    * @param {string} emailType - The type of the email
-   * @returns { [{name: string, label; string, reachable: string, type: string}] | []}
+   * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
    *  An empty array if there is no tags, else returns array of objects.
    *  
    */
   getTags(fieldName, email, emailType) {
 
-    const tags = [];
-
-    const constructTags = (name, label, reachable, type) => {
-      return { name, label, reachable, type };
-    };
-
-    if (fieldName === 'from') {
-      if (this.isNewsletter()) {
-        tags.push(constructTags('newsletter', 'Newsletter', 2, 'refined'));
-      }
-      if (this.isTransactional()) {
-        tags.push(
-          constructTags('transactional', 'Transactional', 2, 'refined')
-        );
-      }
-      if (this.isList()) {
-        tags.push(constructTags('list', 'List', 2, 'refined'));
-      }
-    }
+    const tags = this.getTagsField(fieldName);
 
     if (email && emailMessageHelpers.isNoReply(email.address)) {
-      tags.push(constructTags('no-reply', 'noReply', 0, 'refined'));
+      tags.push(EmailMessage.constructTags('no-reply', 'noReply', 0, 'refined'));
     }
     if (emailType && emailType !== '') {
-      tags.push(constructTags(emailType.toLowerCase(), emailType, 1, 'refined'));
+      tags.push(EmailMessage.constructTags(emailType.toLowerCase(), emailType, 1, 'refined'));
     }
 
     return tags;
