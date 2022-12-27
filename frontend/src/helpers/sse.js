@@ -7,13 +7,13 @@ export function registerEventHandlers(eventSource, userId, store) {
     store.commit("example/SET_STATISTICS", statistics);
   });
 
-  eventSource.addEventListener(`ScannedEmails${userId}`, (message) => {
-    const scanned = parseInt(message.data);
+  eventSource.addEventListener(`ScannedEmails${userId}`, ({ data }) => {
+    const scanned = parseInt(data);
     store.commit("example/SET_SCANNEDEMAILS", scanned);
   });
 
-  eventSource.addEventListener(`scannedBoxes${userId}`, (message) => {
-    store.commit("example/SET_SCANNEDBOXES", message.data);
+  eventSource.addEventListener(`scannedBoxes${userId}`, ({ data }) => {
+    store.commit("example/SET_SCANNEDBOXES", data);
   });
 
   eventSource.addEventListener(`token${userId}`, (message) => {
