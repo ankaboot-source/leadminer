@@ -1,7 +1,6 @@
 const pool = require('./setup');
 const format = require('pg-format');
 
-
 class Postgres {
   constructor(logger) {
     this.logger = logger;

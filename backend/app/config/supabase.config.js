@@ -14,7 +14,6 @@ const pgConnectionString =
 const connectionType =
   process.env.CONNECTION_TYPE ?? config.get('server.supabase.connection_type');
 
-
 module.exports = {
   supabaseUrl,
   supabaseToken,
