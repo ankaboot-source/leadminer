@@ -5,7 +5,7 @@ const {
   googleClientId,
   googleClientSecret
 } = require('../config/google.config');
-const { db } = require('../db');
+const { db } = require('../db').db.getClient();
 const RedirectionUrl = 'postmessage';
 
 // returns Oauth client
