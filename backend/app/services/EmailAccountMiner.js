@@ -238,8 +238,6 @@ class EmailAccountMiner {
           );
         });
       });
-
-      // msg.once('end', () => { /* Do nothing for now. logger.debug(`${prefix}Finished`); */})
     });
 
     fetchResult.on('error', (err) => {
