@@ -21,7 +21,8 @@ class SupabaseHandlers {
     const result = await this.supabaseClient
       .from('messages')
       .insert(message)
-      .select();
+      .select()
+      .single();
 
     return result;
   }
@@ -48,7 +49,8 @@ class SupabaseHandlers {
     const result = await this.supabaseClient
       .from('persons')
       .upsert(person, { onConflict: 'email' })
-      .select();
+      .select()
+      .single();
     return result;
   }
 
