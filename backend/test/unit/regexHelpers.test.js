@@ -8,7 +8,7 @@ const testData = require('../testData.json');
 
 describe('Regex redos checker', () => {
 
-  const regex = [REGEX_HEADER, REGEX_BODY] // TODO: REGEX_LIST_ID
+  const regex = [REGEX_HEADER, REGEX_BODY]
 
   regex.forEach((r) => {
     it('regex should be REDOS safe', async () => {
