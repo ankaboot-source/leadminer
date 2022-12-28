@@ -6,8 +6,6 @@ server:
     dsn:
   port: 8081
   supabase:
-    use_batch: false # changed to true for bulk insertion
-    batch_size: 200 # number of records to insert per batch. for batch_size > 1000 && conn_type 'pgrest' refer to this https://supabase.com/docs/reference/javascript/select
     connection_type: 'native' # 'native' or 'pgrest'
     connection_string: 'postgresql://postgres:postgres@localhost:54322/postgres'
     url:
