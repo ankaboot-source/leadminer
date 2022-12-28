@@ -25,15 +25,14 @@ async function handleMessage({
       isLast // If it's the last element that comes from (fetch/redis).
     );
 
-    await message.extractEmailsAddresses().then(async (data) => {
-      await storage.store(data, user.id);
-    });
-    if (isLast) {
-      db.refinePersons(user.id); // runs rpc function.
-    }
-
+    const extractedContacts = await message.extractEmailsAddresses()
+    await db.add(extractedContacts, user.id);
+    
+    if (isLast)
+      db.getClient().refinePersons(user.id); // runs rpc function.
   }
 }
+
 
 redisClient.subscribe(REDIS_MESSAGES_CHANNEL, (err) => {
   if (err) {
