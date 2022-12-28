@@ -1,10 +1,10 @@
 <template>
-  <div class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll">
+  <div class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg">
     <q-table
       class="table"
       virtual-scroll
       :virtual-scroll-sticky-size-start="48"
-      :rows-per-page-options="[20]"
+      :rows-per-page-options="[10, 50, 100]"
       row-key="email"
       title="Mined emails"
       :loading="isLoading"
@@ -13,7 +13,7 @@
       :rows="rows"
       :columns="columns"
     >
-      <template #top-right>
+      <template #top-right="props">
         <q-input
           v-model="filter"
           rounded
@@ -28,6 +28,19 @@
             <q-icon name="search" />
           </template>
         </q-input>
+
+        <q-btn
+          flat
+          round
+          dense
+          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
+          class="q-px-sm"
+          @click="props.toggleFullscreen"
+        >
+          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
+            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
+          </q-tooltip>
+        </q-btn>
 
         <div class="q-px-sm">
           <q-btn
@@ -265,14 +278,17 @@ function exportTable() {
     exportFromJSON({
       data: rows.value.map((r) => {
         return {
-          names: r.alternate_names.join(","),
+          names: r.alternate_names.join("\n"),
           email: r.email,
           engagement: r.engagement,
-          recency: r.recency,
-          tags: r.tags.join(","),
+          recency: new Date(r.recency).toISOString().slice(0, 10),
+          tags: r.tags.join("\n"),
         };
       }),
-      fileName: "refined-persons",
+      fileName: `leadminer-${new Date(Date.now())
+        .toLocaleString()
+        .replace(" ", "-")}`,
+      withBOM: true,
       exportType: exportFromJSON.types.csv,
     });
     $q.notify("Successfully exported table.");
