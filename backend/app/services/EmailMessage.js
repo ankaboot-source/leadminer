@@ -135,18 +135,6 @@ class EmailMessage {
   }
 
   /**
-   * Constructs a tag object.
-   * @param {string} name - The name of the tag.
-   * @param {string} label - The label of the tag.
-   * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
-   * @param {string} type - The type of the tag.
-   * @returns {{name: string, label: string; string, reachable: int, type: string}}
-   */
-  static constructTags(name, label, reachable, type) {
-    return { name, label, reachable, type };
-  }
-
-  /**
    * constructs tags for header field FROM.
    * @param {string} fieldName - header field name
    * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
@@ -157,15 +145,13 @@ class EmailMessage {
 
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
-        tags.push(EmailMessage.constructTags('newsletter', 'Newsletter', 2, 'refined'));
+        tags.push({name:'newsletter', label:'Newsletter', reachable:2, type:'refined'});
       }
       if (this.isTransactional()) {
-        tags.push(
-          EmailMessage.constructTags('transactional', 'Transactional', 2, 'refined')
-        );
+        tags.push({name:'transactional', label:'Transactional', reachable:2, type:'refined'})
       }
       if (this.isList()) {
-        tags.push(EmailMessage.constructTags('list', 'List', 2, 'refined'));
+        tags.push({name:'list', label:'List', reachable:2, type:'refined'});
       }
     }
     return tags;
@@ -185,10 +171,10 @@ class EmailMessage {
     const tags = this.getTagsField(fieldName);
 
     if (email && emailMessageHelpers.isNoReply(email.address)) {
-      tags.push(EmailMessage.constructTags('no-reply', 'noReply', 0, 'refined'));
+      tags.push({name:'no-reply', label:'noReply', reachable:0, type:'refined'});
     }
     if (emailType && emailType !== '') {
-      tags.push(EmailMessage.constructTags(emailType.toLowerCase(), emailType, 1, 'refined'));
+      tags.push({name:emailType.toLowerCase(), label:emailType, reachable:1, type:'refined'});
     }
 
     return tags;
