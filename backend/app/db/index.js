@@ -3,7 +3,7 @@ const { PostgresHandler } = require('./node-postgres');
 const { SupabaseHandler } = require('./supabase');
 const { prepareContacts, logInsertionError } = require('./helpers');
 
-const handler = connectionType == 'pgrest' ? SupabaseHandler : PostgresHandler;
+const handler = connectionType === 'pgrest' ? SupabaseHandler : PostgresHandler;
 
 /**
  * Inserts person, pointOfContact, tags to database.
