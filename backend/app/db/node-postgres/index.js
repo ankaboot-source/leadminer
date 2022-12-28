@@ -66,7 +66,7 @@ class PostgresHandler {
         Object.values(pointOfContact),
         this.logger
       );
-      return {data: rows[0], error: null} // single object;
+      return {data: rows[0], error: null}; // single object;
     } catch (error) {
       return { data: null, error};
     }
@@ -88,7 +88,7 @@ class PostgresHandler {
         Object.values(person),
         this.logger
       );
-      return {data: rows[0], error: null} // single object;
+      return {data: rows[0], error: null}; // single object;
     } catch (error) {
       return { data: null, error};
     }
@@ -102,7 +102,7 @@ class PostgresHandler {
   async insertTags(tags) {
 
     if (tags.length === 0) {
-      return result;
+      return {data: null, error: null};
     }
     const values = tags.map((t) => Object.values(t));
     const keys = Object.keys(tags[0]).map((i) => {
@@ -118,7 +118,7 @@ class PostgresHandler {
         null,
         this.logger
       );
-      return {data: rows, error: null}
+      return {data: rows, error: null};
     } catch (error) {
       return { data: null, error};
     }
