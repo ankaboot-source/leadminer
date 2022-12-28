@@ -56,7 +56,7 @@ handler.prototype.store = async function (contacts, userID) {
     return;
   }
   const messageID = messageResult.data.id;
-  return Promise.allSettled(
+  Promise.allSettled(
     persons.map(({ person, pointOfContact, tags }) => this.storePersonPointOfContactTags(messageID, person, pointOfContact, tags))
   );
 
