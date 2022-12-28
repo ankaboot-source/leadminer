@@ -6,7 +6,7 @@ const ImapUser = require('../services/imapUser');
 const EmailServer = require('../services/EmailServer');
 const EmailAccountMiner = require('../services/EmailAccountMiner');
 const { sse } = require('../middleware/sse');
-const { db } = require('../db').db.getClient();
+const { db } = require('../db');
 
 function temporaryImapConnection(imapInfo, reqBody) {
   return new Imap({
