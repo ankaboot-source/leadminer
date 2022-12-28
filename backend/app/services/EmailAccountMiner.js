@@ -35,6 +35,7 @@ class EmailAccountMiner {
     this.mailHash = hashHelpers.hashEmail(user.email);
     this.lastFolder = false;
     this.lastMessage = false;
+    this.fetchedMessagesCount = 0;
   }
 
   /**
@@ -238,6 +239,7 @@ class EmailAccountMiner {
           const parsedHeader = Imap.parseHeader(header.toString('utf8'));
           const parsedBody = body.toString('utf8');
 
+          this.fetchedMessagesCount++;
           self.publishMessageToChannel(
             seqNumber,
             parsedHeader,
@@ -309,15 +311,7 @@ class EmailAccountMiner {
   sendMiningProgress(seqNumber) {
     // define the progress
     if (this.sends.includes(seqNumber)) {
-      const progress =
-        seqNumber - (this.sends[this.sends.indexOf(seqNumber) - 1] ?? 0);
-
-      this.sse.send(
-        {
-          scanned: progress
-        },
-        `ScannedEmails${this.user.id}`
-      );
+      this.sse.send(this.fetchedMessagesCount, `ScannedEmails${this.user.id}`);
     }
   }
 
