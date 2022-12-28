@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { supabaseToken, supabaseUrl } = require('../../config/supabase.config');
 const { fetch } = require('./fetch');
 
-class SupabaseHandlers {
+class SupabaseHandler {
   supabaseClient;
 
   constructor() {
@@ -12,7 +12,7 @@ class SupabaseHandlers {
   }
 
   /**
-   * inserts a message or list of messages
+   * Inserts a message or list of messages
    * @param {object} message - Message Object
    * @returns {promise} The inserted rows
    */
@@ -28,7 +28,7 @@ class SupabaseHandlers {
   }
 
   /**
-   * inserts a pointofcontact or list of pointofcontacts
+   * Inserts a point of contact record. or list of pointofcontacts
    * @param {object} pointOfContact - PointofContact Object
    * @returns {promise}
    */
@@ -40,7 +40,7 @@ class SupabaseHandlers {
   }
 
   /**
-   * inserts a person or list of persons
+   * Inserts a person record
    * @param {object} person - Person object
    * @returns {promise} The inserted rows
    */
@@ -55,11 +55,11 @@ class SupabaseHandlers {
   }
 
   /**
-   * inserts a list of tags
+   * Inserts a list of tag records.
    * @param {object[]} tags - Array of tags
    * @returns {promise}
    */
-  createTags(tags) {
+  insertTags(tags) {
     return this.supabaseClient
       .from('tags')
       .upsert(tags, { onConflict: 'personid, name', ignoreDuplicates: true });
@@ -160,5 +160,5 @@ class SupabaseHandlers {
 }
 
 module.exports = {
-  SupabaseHandlers
+  SupabaseHandler
 };
