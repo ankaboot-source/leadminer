@@ -1,11 +1,35 @@
 const pool = require('./setup');
 const format = require('pg-format');
 
-class Postgres {
-  constructor(logger) {
-    this.logger = logger;
+const { Client } = require('pg');
+const { pgConnectionString } = require('../../config/supabase.config');
+
+/**
+ * Creates a parametrized query.
+ * @param {string[]} fields - Array of field names 
+ * @returns {string}
+ */
+function parametrizeQuery(fields) {
+  return `(${fields.map((i) => {
+    return `"${i}"`; 
+  }).join(', ')}) VALUES (${fields.map((_, i) => {
+    return `$${i + 1}`; 
+  }).join(', ')})`;
   }
 
+class PostgresHandler {
+  constructor() {
+    this.client = new Client({
+      connectionString: pgConnectionString
+    });
+    this.#connect();
+  }
+
+  #connect() {
+    (async () => {
+      await this.client.connect(); 
+    })();
+  }
   /**
    * Inserts a new message record.
    * @param {object} message - Message object
@@ -15,9 +39,7 @@ class Postgres {
     const result = { data: null, error: null };
     
     const query =
-        'INSERT INTO messages(channel, folder_path, date, message_id, "references", list_id, conversation, userid)'
-        + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
-
+      `INSERT INTO messages ${parametrizeQuery(Object.keys(message))} RETURNING *`;
     try {
       const {rows} = await pool.query(
         query,
@@ -41,8 +63,7 @@ class Postgres {
     const result = { data: null, error: null };
 
     const query =
-      'INSERT INTO pointsofcontact(messageid, name, _from, reply_to, _to, cc, bcc, body, personid, userid)'
-      + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *';
+      `INSERT INTO pointsofcontact ${parametrizeQuery(Object.keys(pointOfContact))} RETURNING *`;
 
     try {
       const {rows} = await pool.query(
@@ -67,8 +88,7 @@ class Postgres {
     const result = { data: null, error: null };
 
     const query =
-      'INSERT INTO persons(name, email, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers, userid)'
-      + ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *';
+      `INSERT INTO persons ${parametrizeQuery(Object.keys(person))} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
 
     try {
       const {rows} = await pool.query(
@@ -96,10 +116,13 @@ class Postgres {
       return result;
     }
     const values = tags.map((t) => Object.values(t));
+    const keys = Object.keys(tags[0]).map((i) => {
+      return `"${i}"`; 
+    }).join(', ');
     const query = format(
-      'INSERT INTO tags(name, label, reachable, type, userid, personid) VALUES %L ON CONFLICT (personid, name) DO NOTHING',
-      values
+      `INSERT INTO tags (${keys}) VALUES %L ON CONFLICT (personid, name) DO NOTHING`, values
     );
+
     try {
       const {rows} = await pool.query(
         query,
