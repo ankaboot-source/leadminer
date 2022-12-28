@@ -148,7 +148,7 @@ class EmailMessage {
         tags.push({name:'newsletter', label:'Newsletter', reachable:2, type:'refined'});
       }
       if (this.isTransactional()) {
-        tags.push({name:'transactional', label:'Transactional', reachable:2, type:'refined'})
+        tags.push({name:'transactional', label:'Transactional', reachable:2, type:'refined'});
       }
       if (this.isList()) {
         tags.push({name:'list', label:'List', reachable:2, type:'refined'});

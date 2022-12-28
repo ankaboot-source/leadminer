@@ -1,7 +1,6 @@
 const { redis } = require('../utils/redis');
 const redisClient = redis.getPubSubClient();
 const EmailMessage = require('../services/EmailMessage');
-const { storage } = require('../services/storage');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
 const { db } = require('../db');
@@ -25,11 +24,12 @@ async function handleMessage({
       isLast // If it's the last element that comes from (fetch/redis).
     );
 
-    const extractedContacts = await message.extractEmailsAddresses()
-    await db.add(extractedContacts, user.id);
+    const extractedContacts = await message.extractEmailsAddresses();
+    await db.store(extractedContacts, user.id);
     
-    if (isLast)
-      db.getClient().refinePersons(user.id); // runs rpc function.
+    if (isLast) {
+      db.refinePersons(user.id); 
+    } // runs rpc function.
   }
 }
 
