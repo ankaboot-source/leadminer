@@ -81,11 +81,11 @@ Store.prototype = {
 
     } else {
 
-      pointOfContact.personid = data[0].id;
+      pointOfContact.personid = data.id;
       pointOfContact.messageid = messageID;
 
       for (const tag of tags) {
-        tag.personid = data[0].id;
+        tag.personid = data.id;
       }
 
       const [pocResult, tagResult] = await Promise.allSettled([db.insertPointOfContact(pointOfContact), db.createTags(tags)]);
@@ -114,7 +114,7 @@ Store.prototype = {
       logInsertionError('messages', messageResult.error);
       return;
     }
-    const messageID = messageResult.data[0]?.id;
+    const messageID = messageResult.data.id;
     return Promise.allSettled(
       persons.map(({ person, pointOfContact, tags }) => this.#storePersonPointOfContactTags(messageID, person, pointOfContact, tags))
     );
