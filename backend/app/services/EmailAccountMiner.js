@@ -6,7 +6,7 @@ const logger = require('../utils/logger')(module);
 const { redis } = require('../utils/redis');
 const redisClientForPubSubMode = redis.getPubSubClient();
 
-const { db } = require('../db').db.getClient();
+const { db } = require('../db');
 const { imapFetchBody } = require('../config/server.config');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 
