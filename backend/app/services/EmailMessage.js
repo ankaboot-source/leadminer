@@ -297,7 +297,7 @@ class EmailMessage {
         }
 
         if (domain[0]) {
-          await this.storeEmails(message, email, tags, '', 'body');
+          await this.storeEmails(message, email, email.name, tags, email.identifier, 'body');
           return;
         }
 
