@@ -106,7 +106,7 @@ async function loginToAccount(req, res, next) {
         imapConnection.end();
       }
       logger.info('Account successfully logged in.', {
-        email, duration: performance.measure('login-start').duration
+        email, duration: performance.measure('measure login', 'login-start').duration
       });
     });
     imapConnection.on('error', (err) => {

@@ -96,7 +96,10 @@ class EmailServer {
           res(this.#connection);
         });
       } else {
-        logger.info('User connected using IMAP.', { emailHash: this.mailHash, duration: performance.measure('imapConn-start').duration});
+        logger.info('User connected using IMAP.', {
+          emailHash: this.mailHash,
+          duration: performance.measure('imap connection', 'imapConn-start').duration
+        });
         this.#connection.connect();
         res(this.#connection);
       }

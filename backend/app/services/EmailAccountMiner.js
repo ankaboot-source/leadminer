@@ -75,7 +75,7 @@ class EmailAccountMiner {
 
         this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
-            emailHash: this.mailHash, duration: performance.measure('fetchBoxes-start').duration
+            emailHash: this.mailHash, duration: performance.measure('fetch folders', 'fetchBoxes-start').duration
           });
           result = [this.tree, null];
           resolve(result);
@@ -146,7 +146,7 @@ class EmailAccountMiner {
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
-        emailHash: this.mailHash, duration: performance.measure('fetching-start').duration
+        emailHash: this.mailHash, duration: performance.measure('measure fetching', 'fetching-start').duration
       });
 
       // sse here to send data based on end event
