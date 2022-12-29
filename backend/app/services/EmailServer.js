@@ -27,7 +27,6 @@ class EmailServer {
     logger.info('Preparing IMAP connection for user.', {
       emailHash: this.mailHash
     });
-
     if (this.user.token) {
       // the user is connected using api
       this.#connection = new Imap({
@@ -87,6 +86,7 @@ class EmailServer {
   connect() {
     return new Promise((res) => {
       // initialize the connection
+      performance.mark('imapConn-start')
       this.initConnection();
       if (this.isApiConnection()) {
         tokenHelpers.generateXOauthToken(this.user).then((tokens) => {
@@ -96,7 +96,7 @@ class EmailServer {
           res(this.#connection);
         });
       } else {
-        logger.info('User connected using IMAP.', { emailHash: this.mailHash });
+        logger.info('User connected using IMAP.', { emailHash: this.mailHash, duration: performance.measure('imapConn-start').duration});
         this.#connection.connect();
         res(this.#connection);
       }
