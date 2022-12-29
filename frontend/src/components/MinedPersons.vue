@@ -1,5 +1,7 @@
 <template>
-  <div style="height: 50vh">
+  <div
+    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll container"
+  >
     <q-table
       class="table"
       virtual-scroll
@@ -302,6 +304,9 @@ function exportTable() {
 </script>
 
 <style>
+.container {
+  height: 50vh;
+}
 .table {
   height: 100%;
 }
