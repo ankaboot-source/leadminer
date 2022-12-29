@@ -36,11 +36,7 @@ export function SET_SESSIONID(state, newSocket) {
   state.socketId = newSocket;
 }
 export function SET_SCANNEDEMAILS(state, newValue) {
-  if (newValue === "f") {
-    state.progress.scannedEmails = 0;
-  } else {
-    state.progress.scannedEmails += parseInt(newValue);
-  }
+  state.progress.scannedEmails = newValue;
 }
 export function SET_STATISTICS(state, newValue) {
   if (newValue === "f") {

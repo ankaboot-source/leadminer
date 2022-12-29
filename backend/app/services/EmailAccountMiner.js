@@ -33,8 +33,9 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.lastFolder = false;
-    this.lastMessage = false;
+    this.isLastFolder = false;
+    this.isLastMessage = false;
+    this.fetchedMessagesCount = 0;
   }
 
   /**
@@ -47,6 +48,7 @@ class EmailAccountMiner {
     // eslint-disable-next-line no-warning-comments
     // TODO - Rework tree parsing algorithm
     return new Promise((resolve) => {
+      performance.mark('fetchBoxes-start')
       let result = [];
       this.connection.connect().then((connection) => {
         this.connection = connection;
@@ -73,7 +75,7 @@ class EmailAccountMiner {
 
         this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
-            emailHash: this.mailHash
+            emailHash: this.mailHash, duration: performance.measure('fetchBoxes-start').duration
           });
           result = [this.tree, null];
           resolve(result);
@@ -124,6 +126,7 @@ class EmailAccountMiner {
     this.connection.initConnection();
     this.connection = await this.connection.connect();
     this.connection.once('ready', () => {
+      performance.mark('fetching-start')
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
@@ -133,7 +136,7 @@ class EmailAccountMiner {
     this.eventEmitter.on('endByUser', () => {
       this.connection.end();
       logger.info('Connection to IMAP server destroyed by user.', {
-        emailHash: this.mailHash
+        emailHash: this.mailHash,
       });
     });
 
@@ -143,7 +146,7 @@ class EmailAccountMiner {
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
-        emailHash: this.mailHash
+        emailHash: this.mailHash, duration: performance.measure('fetching-start').duration
       });
 
       // sse here to send data based on end event
@@ -161,7 +164,7 @@ class EmailAccountMiner {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
       if (this.isLastFolderToFetch(folder)) {
-        this.lastFolder = true;
+        this.isLastFolder = true;
       }
       if (err) {
         logger.error(
@@ -217,15 +220,12 @@ class EmailAccountMiner {
     });
 
     fetchResult.on('message', (msg, seqNumber) => {
-      logger.debug('Message #%d', seqNumber);
-      this.lastMessage = seqNumber === folder.messages.total;
+      this.isLastMessage = seqNumber === folder.messages.total;
 
-      const prefix = `(#${seqNumber}) `;
+      let header = '';
+      let body = '';
 
       msg.on('body', (stream, streamInfo) => {
-        let header = '';
-        let body = '';
-
         stream.on('data', (chunk) => {
           if (streamInfo.which.includes('HEADER')) {
             header += chunk;
@@ -233,22 +233,20 @@ class EmailAccountMiner {
             body += chunk;
           }
         });
-
-        stream.once('end', () => {
-          const parsedHeader = Imap.parseHeader(header.toString('utf8'));
-          const parsedBody = body.toString('utf8');
-
-          self.publishMessageToChannel(
-            seqNumber,
-            parsedHeader,
-            parsedBody,
-            folderName
-          );
-        });
       });
 
       msg.once('end', () => {
-        logger.debug(`${prefix}Finished`);
+        const parsedHeader = Imap.parseHeader(header.toString('utf8'));
+        const parsedBody = body.toString('utf8');
+
+        this.fetchedMessagesCount++;
+
+        self.publishMessageToChannel(
+          seqNumber,
+          parsedHeader,
+          parsedBody,
+          folderName
+        );
       });
     });
 
@@ -296,7 +294,7 @@ class EmailAccountMiner {
       header,
       user: this.user,
       folderName,
-      isLast: this.lastFolder && this.lastMessage
+      isLast: this.isLastFolder && this.isLastMessage
     });
 
     redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);
@@ -309,15 +307,7 @@ class EmailAccountMiner {
   sendMiningProgress(seqNumber) {
     // define the progress
     if (this.sends.includes(seqNumber)) {
-      const progress =
-        seqNumber - (this.sends[this.sends.indexOf(seqNumber) - 1] ?? 0);
-
-      this.sse.send(
-        {
-          scanned: progress
-        },
-        `ScannedEmails${this.user.id}`
-      );
+      this.sse.send(this.fetchedMessagesCount, `ScannedEmails${this.user.id}`);
     }
   }
 
