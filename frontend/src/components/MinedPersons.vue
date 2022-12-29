@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg">
+  <div style="height: 50vh">
     <q-table
       class="table"
       virtual-scroll
@@ -108,7 +108,7 @@
       <template #body-cell-tags="props">
         <q-td :props="props">
           <q-badge v-for="tag in props.row.tags" :key="tag" color="teal">
-            {{ tag }}
+            {{ tag }} <br />
           </q-badge>
         </q-td>
       </template>
@@ -254,7 +254,6 @@ const columns = [
     label: "Type",
     align: "center",
     field: "tags",
-    format: (val) => val.join(" "),
   },
   {
     name: "status",
@@ -274,6 +273,12 @@ function updateRefinedPersons() {
 }
 
 function exportTable() {
+  const currentDatetime = new Date();
+  const userEmail = $store.getters["example/getUserEmail"];
+  const fileName = `leadminer-${userEmail}-${currentDatetime
+    .toISOString()
+    .slice(0, 10)}`;
+
   try {
     exportFromJSON({
       data: rows.value.map((r) => {
@@ -285,9 +290,7 @@ function exportTable() {
           tags: r.tags.join("\n"),
         };
       }),
-      fileName: `leadminer-${new Date(Date.now())
-        .toLocaleString()
-        .replace(" ", "-")}`,
+      fileName,
       withBOM: true,
       exportType: exportFromJSON.types.csv,
     });
@@ -300,10 +303,8 @@ function exportTable() {
 
 <style>
 .table {
-  /* height or max-height is important */
-  height: 50vh;
+  height: 100%;
 }
-
 .q-table__top,
   .q-table__bottom,
   thead tr:first-child th /* bg color is important for th; just specify one */ {
