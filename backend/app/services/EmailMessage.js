@@ -69,7 +69,7 @@ class EmailMessage {
     ]);
 
     if (references) {
-      return references[0].split(' '); // references in header comes as ["<r1> <r2> <r3> ..."]
+      return references[0].split(' ').filter((ref) => ref !== ''); // references in header comes as ["<r1> <r2> <r3> ..."]
     }
 
     return [];
@@ -86,7 +86,7 @@ class EmailMessage {
     );
 
     if (listId) {
-      return listId.match(/<.*>/g)[0];
+      return listId[0].match(/<.*>/g)[0];
     }
 
     return '';
@@ -143,7 +143,7 @@ class EmailMessage {
       this.getDate(),
       this.getListId(),
       this.getReferences(),
-      this.isConversation()
+      this.getReferences() !== ''
     );
 
     const message = data;
@@ -194,7 +194,7 @@ class EmailMessage {
           this.buildTag('transactional', 'Transactional', 2, 'refined')
         );
       }
-      if (this.isList()) {
+      if (this.getListId() !== '') {
         tags.push(this.buildTag('list', 'List', 2, 'refined'));
       }
     }
