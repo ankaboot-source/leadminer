@@ -48,7 +48,7 @@ class EmailAccountMiner {
     // eslint-disable-next-line no-warning-comments
     // TODO - Rework tree parsing algorithm
     return new Promise((resolve) => {
-      performance.mark('fetchBoxes-start')
+      performance.mark('fetchBoxes-start');
       let result = [];
       this.connection.connect().then((connection) => {
         this.connection = connection;
@@ -75,7 +75,9 @@ class EmailAccountMiner {
 
         this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
-            emailHash: this.mailHash, duration: performance.measure('fetch folders', 'fetchBoxes-start').duration
+            emailHash: this.mailHash,
+            duration: performance.measure('fetch folders', 'fetchBoxes-start')
+              .duration
           });
           result = [this.tree, null];
           resolve(result);
@@ -126,7 +128,7 @@ class EmailAccountMiner {
     this.connection.initConnection();
     this.connection = await this.connection.connect();
     this.connection.once('ready', () => {
-      performance.mark('fetching-start')
+      performance.mark('fetching-start');
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
@@ -136,7 +138,7 @@ class EmailAccountMiner {
     this.eventEmitter.on('endByUser', () => {
       this.connection.end();
       logger.info('Connection to IMAP server destroyed by user.', {
-        emailHash: this.mailHash,
+        emailHash: this.mailHash
       });
     });
 
@@ -146,7 +148,9 @@ class EmailAccountMiner {
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
-        emailHash: this.mailHash, duration: performance.measure('measure fetching', 'fetching-start').duration
+        emailHash: this.mailHash,
+        duration: performance.measure('measure fetching', 'fetching-start')
+          .duration
       });
 
       // sse here to send data based on end event
@@ -229,7 +233,7 @@ class EmailAccountMiner {
         stream.on('data', (chunk) => {
           if (streamInfo.which.includes('HEADER')) {
             header += chunk;
-          } else {
+          } else if (imapFetchBody) {
             body += chunk;
           }
         });
