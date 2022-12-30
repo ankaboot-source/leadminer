@@ -215,7 +215,7 @@ class EmailAccountMiner {
     const self = this;
 
     const bodies = ['HEADER'];
-    if (imapFetchBody) {
+    if (imapFetchBody === true) {
       bodies.push('TEXT');
     }
 
