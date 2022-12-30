@@ -181,7 +181,7 @@ class EmailMessage {
       );
 
       // store extracted emails
-      this.storeEmailsAddressesExtractedFromBody(message, emails);
+      await this.storeEmailsAddressesExtractedFromBody(message, emails);
     }
 
     if (this.isLast) {
@@ -271,15 +271,16 @@ class EmailMessage {
    * @param {array} emails - an array of objects that contains the extracted email addresses
    * @returns Nothing is being returned.
    */
-  storeEmailsAddressesExtractedFromBody(message, emails) {
+  async storeEmailsAddressesExtractedFromBody(message, emails) {
     if (emails.length === 0) {
       delete this.body;
       return;
     }
+    const filteredEmails = emails.filter(
+      (email) => email && this.user.email !== email?.address
+    );
 
-    emails
-      .filter((email) => this.user.email !== email.address)
-      .forEach(async (email) => {
+    for (const email of filteredEmails) {
         const domain = await domainHelpers.checkDomainStatus(email);
         const emailType = emailAddressHelpers.findEmailAddressType(
           email,
@@ -309,7 +310,7 @@ class EmailMessage {
         if (member === 0) {
           redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
-      });
+      };
   }
 
   /**
