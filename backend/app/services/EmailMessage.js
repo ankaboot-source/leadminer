@@ -40,9 +40,9 @@ class EmailMessage {
    * @returns True or False
    */
   isNewsletter() {
-    return emailMessageHelpers.hasSpecificHeader(
-      this.header,
-      newsletterHeaders
+    return (
+      emailMessageHelpers.getSpecificHeader(this.header, newsletterHeaders) !==
+      null
     );
   }
 
@@ -51,29 +51,12 @@ class EmailMessage {
    * @returns {boolean}
    */
   isTransactional() {
-    return emailMessageHelpers.hasSpecificHeader(
-      this.header,
-      transactionalHeaders
+    return (
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        transactionalHeaders
+      ) !== null
     );
-  }
-
-  /**
-   * Determines if the email header contains any mailing list header fields or not.
-   * @returns {boolean}
-   */
-  isList() {
-    return emailMessageHelpers.hasSpecificHeader(
-      this.header,
-      mailingListHeaders
-    );
-  }
-
-  /**
-   * Determines if the email header has a `references` field or not.
-   * @returns {boolean}
-   */
-  isConversation() {
-    return emailMessageHelpers.hasSpecificHeader(this.header, ['references']);
   }
 
   /**
@@ -81,9 +64,14 @@ class EmailMessage {
    * @returns {string[]}
    */
   getReferences() {
-    if (this.isConversation()) {
-      return this.header.references[0].split(' '); // references in header comes as ["<r1> <r2> <r3> ..."]
+    const references = emailMessageHelpers.getSpecificHeader(this.header, [
+      'references'
+    ]);
+
+    if (references) {
+      return references[0].split(' '); // references in header comes as ["<r1> <r2> <r3> ..."]
     }
+
     return [];
   }
 
@@ -92,9 +80,15 @@ class EmailMessage {
    * @returns {string}
    */
   getListId() {
-    if (this.isList()) {
-      return this.header['list-id'][0].match(/<.*>/g)[0]; // extracts this part <list-id>
+    const listId = emailMessageHelpers.getSpecificHeader(
+      this.header,
+      mailingListHeaders
+    );
+
+    if (listId) {
+      return listId.match(/<.*>/g)[0];
     }
+
     return '';
   }
 
@@ -281,36 +275,43 @@ class EmailMessage {
     );
 
     for (const email of filteredEmails) {
-        const domain = await domainHelpers.checkDomainStatus(email);
-        const emailType = emailAddressHelpers.findEmailAddressType(
+      const domain = await domainHelpers.checkDomainStatus(email);
+      const emailType = emailAddressHelpers.findEmailAddressType(
+        email,
+        [email?.name ?? ''],
+        domain[1]
+      );
+
+      const tags = [];
+      if (emailMessageHelpers.isNoReply(email)) {
+        tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
+      } else if (emailType !== '') {
+        tags.push(
+          this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
+        );
+      }
+
+      if (domain[0]) {
+        await this.storeEmails(
+          message,
           email,
-          [email?.name ?? ''],
-          domain[1]
+          email.name,
+          tags,
+          email.identifier,
+          'body'
         );
+        return;
+      }
 
-        const tags = [];
-        if (emailMessageHelpers.isNoReply(email)) {
-          tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-        } else if (emailType !== '') {
-          tags.push(
-            this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
-          );
-        }
+      const member = await redisClientForNormalMode.sismember(
+        'invalidDomainEmails',
+        email.address
+      );
 
-        if (domain[0]) {
-          await this.storeEmails(message, email, email.name, tags, email.identifier, 'body');
-          return;
-        }
-
-        const member = await redisClientForNormalMode.sismember(
-          'invalidDomainEmails',
-          email.address
-        );
-
-        if (member === 0) {
-          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-        }
-      };
+      if (member === 0) {
+        redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
+      }
+    }
   }
 
   /**

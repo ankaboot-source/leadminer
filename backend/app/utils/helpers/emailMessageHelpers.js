@@ -12,19 +12,22 @@ function isNoReply(emailAddress) {
 }
 
 /**
- * hasSpecificHeader returns true if the email has specific types based on his headers
- * @returns A boolean value.
+ * Gets the first matching header value from a list of header fields if it exists.
+ * @param {Object} Header - Header object.
+ * @param {string[]} headerFields - A list of possible header fields.
+ * @returns Header value or null.
  */
-function hasSpecificHeader(header, headerFields) {
-  return Object.keys(header).some((headerField) => {
-    return headerFields.some((regExHeader) => {
-      const reg = new RegExp(`${regExHeader}`, 'i');
-      return reg.test(headerField);
-    });
-  });
+function getSpecificHeader(header, headerFields) {
+  for (const headerField of header) {
+    const [firstMatch] = headerFields.match(headerField, 'i');
+    if (firstMatch) {
+      return header[`${firstMatch}`];
+    }
+  }
+  return null;
 }
 
 module.exports = {
   isNoReply,
-  hasSpecificHeader
+  getSpecificHeader
 };
