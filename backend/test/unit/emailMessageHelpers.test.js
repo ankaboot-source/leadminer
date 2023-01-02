@@ -55,19 +55,18 @@ describe('emailMessageHelpers.isNoReply(emailAddress)', () => {
 });
 
 describe('emailMessageHepers.getSpecificHeader', () => {
-  it('Should return false when headers not present', () => {
+  it('Should return null when headers not present', () => {
     HEADER_FIELDS.forEach((el) => {
       if (TEST_HEADERS[el]) delete TEST_HEADERS[el];
     });
     expect(emailMessageHelpers.getSpecificHeader(TEST_HEADERS, HEADER_FIELDS))
-      .to.be.false;
+      .to.be.null;
   });
 
   HEADER_FIELDS.forEach((el) => {
-    it(`Should return true for header: ${el}`, () => {
+    it(`Should return value for header: ${el}`, () => {
       TEST_HEADERS[el] = [''];
-      expect(emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [el])).to.be
-        .true;
+      expect(emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [el])).to.not.be.null
       delete TEST_HEADERS[el];
     });
   });

@@ -83,7 +83,7 @@ class EmailMessage {
     );
 
     if (listId) {
-      return listId[0].match(/<.*>/g)[0];
+      return listId[0].match(REGEX_LIST_ID)[0];
     }
 
     return '';
