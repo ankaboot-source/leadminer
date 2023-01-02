@@ -131,7 +131,7 @@ class EmailMessage {
   /**
    * constructs tags for header field FROM.
    * @param {string} fieldName - header field name
-   * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
+   * @returns { [{name: string, label: string; string, reachable: int, source: string}] | []}
    */
   getTagsField(fieldName) {
 
@@ -139,13 +139,13 @@ class EmailMessage {
 
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
-        tags.push({name:'newsletter', label:'Newsletter', reachable:2, type:'refined'});
+        tags.push({name:'newsletter', reachable:2, source:'refined'});
       }
       if (this.isTransactional()) {
-        tags.push({name:'transactional', label:'Transactional', reachable:2, type:'refined'});
+        tags.push({name:'transactional', reachable:2, source:'refined'});
       }
       if (this.getListId() !== '') {
-        tags.push({name:'list', label:'List', reachable:2, type:'refined'});
+        tags.push({name:'list', reachable:2, source:'refined'});
       }
     }
     return tags;
@@ -156,7 +156,7 @@ class EmailMessage {
    * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
    * @param {string} email  - Email address
    * @param {string} emailType - The type of the email
-   * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
+   * @returns { [{name: string, label: string; string, reachable: int, source: string}] | []}
    *  An empty array if there is no tags, else returns array of objects.
    *  
    */
@@ -165,10 +165,10 @@ class EmailMessage {
     const tags = this.getTagsField(fieldName);
 
     if (email && emailMessageHelpers.isNoReply(email.address)) {
-      tags.push({name:'no-reply', label:'noReply', reachable:0, type:'refined'});
+      tags.push({name:'no-reply', reachable:0, source:'refined'});
     }
     if (emailType && emailType !== '') {
-      tags.push({name:emailType.toLowerCase(), label:emailType, reachable:1, type:'refined'});
+      tags.push({name:emailType.toLowerCase(), reachable:1, source:'refined'});
     }
 
     return tags;
