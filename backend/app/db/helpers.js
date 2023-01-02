@@ -15,14 +15,14 @@ function logInsertionError(tableName, err) {
 
 /**
  * Converts object keys from camelCase to snake_case for db fields.
- * @param {object} CamelCaseObject - Object with possible camleCase fields
+ * @param {object} camelCaseObject - Object with possible camleCase fields
  * @returns {object} new object with keys converted to snake_case.
  * Example:
  *  - {userId: 1} = {user_id: 1}
  */
-function normalizeFields(CamelCaseObject) {
-  return Object.assign({}, ...Object.keys(CamelCaseObject).map(key => {
-    return { [key.replace(/(?<c>[A-Z])/g, '_$1').toLowerCase()]: CamelCaseObject[key.toString()] };
+function normalizeFields(camelCaseObject) {
+  return Object.assign({}, ...Object.keys(camelCaseObject).map(key => {
+    return { [key.replace(/(?<c>[A-Z])/g, '_$1').toLowerCase()]: camelCaseObject[key.toString()] };
   }));
 }
 
