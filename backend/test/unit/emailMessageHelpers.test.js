@@ -2,38 +2,43 @@ const { expect } = require('chai');
 
 const emailMessageHelpers = require('../../app/utils/helpers/emailMessageHelpers');
 const {
-    newsletterHeaders,
-    transactionalHeaders,
-    mailingListHeaders
+  newsletterHeaders,
+  transactionalHeaders,
+  mailingListHeaders
 } = require('../../app/config/emailHeaders.config');
 
-const HEADER_FIELDS = [...newsletterHeaders, ...transactionalHeaders, ...mailingListHeaders, "references"]
+const HEADER_FIELDS = [
+  ...newsletterHeaders,
+  ...transactionalHeaders,
+  ...mailingListHeaders,
+  'references'
+];
 const TEST_HEADERS = {
-    'delivered-to': [ '' ],
-    'received': ['',],
-    'x-google-smtp-source': [''],
-    'x-received': [''],
-    'arc-seal': [''],
-    'arc-message-signature': [''],
-    'arc-authentication-results': [''],
-    'return-path': ['',''],
-    'received-spf': [''],
-    'authentication-results': [''],
-    'dkim-signature': [''],
-    'x-hs-cid': [ '' ],
-    'list-unsubscribe': [''],
-    'date': [ '' ],
-    'from': [ '' ],
-    'reply-to': [ '' ],
-    'to': [ '' ],
-    'message-id': [''],
-    'subject': [ '' ],
-    'mime-version': [ '1.0' ],
-    'content-type': [''],
-    'precedence': [ 'bulk' ],
-    'x-report-abuse-to': [''],
-    'feedback-id': [ '' ]
-  }
+  'delivered-to': [''],
+  received: [''],
+  'x-google-smtp-source': [''],
+  'x-received': [''],
+  'arc-seal': [''],
+  'arc-message-signature': [''],
+  'arc-authentication-results': [''],
+  'return-path': ['', ''],
+  'received-spf': [''],
+  'authentication-results': [''],
+  'dkim-signature': [''],
+  'x-hs-cid': [''],
+  'list-unsubscribe': [''],
+  date: [''],
+  from: [''],
+  'reply-to': [''],
+  to: [''],
+  'message-id': [''],
+  subject: [''],
+  'mime-version': ['1.0'],
+  'content-type': [''],
+  precedence: ['bulk'],
+  'x-report-abuse-to': [''],
+  'feedback-id': ['']
+};
 
 describe('emailMessageHelpers.isNoReply(emailAddress)', () => {
   it('should return true for no-reply-leadminer@leadminer.io', () => {
@@ -49,25 +54,21 @@ describe('emailMessageHelpers.isNoReply(emailAddress)', () => {
   });
 });
 
-describe('emailMessageHepers.hasSpecificHeader', () => {
-    
-    it('Should return false when headers not present', () => {
+describe('emailMessageHepers.getSpecificHeader', () => {
+  it('Should return false when headers not present', () => {
+    HEADER_FIELDS.forEach((el) => {
+      if (TEST_HEADERS[el]) delete TEST_HEADERS[el];
+    });
+    expect(emailMessageHelpers.getSpecificHeader(TEST_HEADERS, HEADER_FIELDS))
+      .to.be.false;
+  });
 
-        HEADER_FIELDS.forEach(
-            (el) => {
-                if (TEST_HEADERS[el])
-                    delete TEST_HEADERS[el];
-        })
-        expect(emailMessageHelpers.hasSpecificHeader(TEST_HEADERS, HEADER_FIELDS)).to.be.false
-    })
-
-    HEADER_FIELDS.forEach(
-        (el) => {
-            it(`Should return true for header: ${el}`, () => {
-                TEST_HEADERS[el] = ['']
-                expect(emailMessageHelpers.hasSpecificHeader(TEST_HEADERS, [el])).to.be.true
-                delete TEST_HEADERS[el]
-            })
-        }
-    )
-})
+  HEADER_FIELDS.forEach((el) => {
+    it(`Should return true for header: ${el}`, () => {
+      TEST_HEADERS[el] = [''];
+      expect(emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [el])).to.be
+        .true;
+      delete TEST_HEADERS[el];
+    });
+  });
+});

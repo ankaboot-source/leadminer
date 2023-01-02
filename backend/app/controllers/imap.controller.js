@@ -90,6 +90,7 @@ async function loginToAccount(req, res, next) {
     res.status(400);
     next(new Error('Email is required to login'));
   }
+  performance.mark('login-start')
   const imap = await db.getImapUserByEmail(email);
   if (imap === null) {
     createImapInfo(req, res, next);
@@ -99,14 +100,14 @@ async function loginToAccount(req, res, next) {
     imapConnection.connect();
     imapConnection.once('ready', () => {
       if (imap) {
-        logger.info('Account successfully logged in.', {
-          email
-        });
         res.status(200).send({
           imap
         });
         imapConnection.end();
       }
+      logger.info('Account successfully logged in.', {
+        email, duration: performance.measure('measure login', 'login-start').duration
+      });
     });
     imapConnection.on('error', (err) => {
       err.message = 'Unable to connect to IMAP account.';

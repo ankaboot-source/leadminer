@@ -33,8 +33,8 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.lastFolder = false;
-    this.lastMessage = false;
+    this.isLastFolder = false;
+    this.isLastMessage = false;
     this.fetchedMessagesCount = 0;
   }
 
@@ -48,6 +48,7 @@ class EmailAccountMiner {
     // eslint-disable-next-line no-warning-comments
     // TODO - Rework tree parsing algorithm
     return new Promise((resolve) => {
+      performance.mark('fetchBoxes-start');
       let result = [];
       this.connection.connect().then((connection) => {
         this.connection = connection;
@@ -74,7 +75,9 @@ class EmailAccountMiner {
 
         this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
-            emailHash: this.mailHash
+            emailHash: this.mailHash,
+            duration: performance.measure('fetch folders', 'fetchBoxes-start')
+              .duration
           });
           result = [this.tree, null];
           resolve(result);
@@ -125,6 +128,7 @@ class EmailAccountMiner {
     this.connection.initConnection();
     this.connection = await this.connection.connect();
     this.connection.once('ready', () => {
+      performance.mark('fetching-start');
       logger.info('Started mining email messages for user.', {
         emailHash: this.mailHash
       });
@@ -144,7 +148,9 @@ class EmailAccountMiner {
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
-        emailHash: this.mailHash
+        emailHash: this.mailHash,
+        duration: performance.measure('measure fetching', 'fetching-start')
+          .duration
       });
 
       // sse here to send data based on end event
@@ -161,6 +167,9 @@ class EmailAccountMiner {
   *mineFolder(folder) {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
+      if (this.isLastFolderToFetch(folder)) {
+        this.isLastFolder = true;
+      }
       if (err) {
         logger.error(
           `Error occurred when opening folder for User: ${this.mailHash}`
@@ -206,7 +215,7 @@ class EmailAccountMiner {
     const self = this;
 
     const bodies = ['HEADER'];
-    if (imapFetchBody) {
+    if (imapFetchBody === true) {
       bodies.push('TEXT');
     }
 
@@ -215,32 +224,33 @@ class EmailAccountMiner {
     });
 
     fetchResult.on('message', (msg, seqNumber) => {
+      this.isLastMessage = seqNumber === folder.messages.total;
+
+      let header = '';
+      let body = '';
 
       msg.on('body', (stream, streamInfo) => {
-        let header = '';
-        let body = '';
-
         stream.on('data', (chunk) => {
           if (streamInfo.which.includes('HEADER')) {
             header += chunk;
-          } else {
+          } else if (imapFetchBody) {
             body += chunk;
           }
         });
+      });
 
-        stream.once('end', () => {
-          const parsedHeader = Imap.parseHeader(header.toString('utf8'));
-          const parsedBody = body.toString('utf8');
+      msg.once('end', () => {
+        const parsedHeader = Imap.parseHeader(header.toString('utf8'));
+        const parsedBody = body.toString('utf8');
 
-          this.fetchedMessagesCount++;
-          self.publishMessageToChannel(
-            parsedHeader,
-            parsedBody,
-            folderName,
-            folder.messages.total,
-            seqNumber
-          );
-        });
+        this.fetchedMessagesCount++;
+
+        self.publishMessageToChannel(
+          seqNumber,
+          parsedHeader,
+          parsedBody,
+          folderName
+        );
       });
     });
 
@@ -288,7 +298,7 @@ class EmailAccountMiner {
       header,
       user: this.user,
       folderName,
-      isLast: this.isLastFolderToFetch(folderName) && seqNumber === folderTotal
+      isLast: this.isLastFolder && this.isLastMessage
     });
 
     redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);
