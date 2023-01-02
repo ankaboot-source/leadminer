@@ -15,10 +15,10 @@ describe('Regex redos checker', () => {
 
       let messageError = 'Regex is vulnerable !'
 
-      const { attack, complexity, hotspots, status } = await check(r.source, r.flags)
+      const { attack, complexity, hotspot, status } = await check(r.source, r.flags)
 
       if (status === 'vulnerable') {  // Constructs helpful error message
-        const vulParts = hotspots.map((i) => { return ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}` })
+        const vulParts = hotspot.map((i) => { return ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}` })
         messageError += ` \n\t- Complixity: ${complexity.type} \n\t- Attack string: ${attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`
       }
       expect(status, messageError).to.eq('safe')

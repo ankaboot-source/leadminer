@@ -7,7 +7,3 @@ export function getBoxes(state) {
 export function getStates(state) {
   return state;
 }
-
-export function getUserEmail(state) {
-  return state.imapUser.email ? state.imapUser.email : state.googleUser.email;
-}

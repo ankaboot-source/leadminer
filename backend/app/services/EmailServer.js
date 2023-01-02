@@ -86,7 +86,7 @@ class EmailServer {
   connect() {
     return new Promise((res) => {
       // initialize the connection
-      performance.mark('imapConn-start')
+      performance.mark('imapConn-start');
       this.initConnection();
       if (this.isApiConnection()) {
         tokenHelpers.generateXOauthToken(this.user).then((tokens) => {

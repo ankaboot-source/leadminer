@@ -1,12 +1,10 @@
 <template>
-  <div
-    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll container"
-  >
+  <div class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll">
     <q-table
       class="table"
       virtual-scroll
       :virtual-scroll-sticky-size-start="48"
-      :rows-per-page-options="[10, 50, 100]"
+      :rows-per-page-options="[20]"
       row-key="email"
       title="Mined emails"
       :loading="isLoading"
@@ -15,7 +13,7 @@
       :rows="rows"
       :columns="columns"
     >
-      <template #top-right="props">
+      <template #top-right>
         <q-input
           v-model="filter"
           rounded
@@ -30,19 +28,6 @@
             <q-icon name="search" />
           </template>
         </q-input>
-
-        <q-btn
-          flat
-          round
-          dense
-          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-          class="q-px-sm"
-          @click="props.toggleFullscreen"
-        >
-          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
-            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
-          </q-tooltip>
-        </q-btn>
 
         <div class="q-px-sm">
           <q-btn
@@ -110,7 +95,7 @@
       <template #body-cell-tags="props">
         <q-td :props="props">
           <q-badge v-for="tag in props.row.tags" :key="tag" color="teal">
-            {{ tag }} <br />
+            {{ tag }}
           </q-badge>
         </q-td>
       </template>
@@ -256,6 +241,7 @@ const columns = [
     label: "Type",
     align: "center",
     field: "tags",
+    format: (val) => val.join(" "),
   },
   {
     name: "status",
@@ -275,25 +261,18 @@ function updateRefinedPersons() {
 }
 
 function exportTable() {
-  const currentDatetime = new Date();
-  const userEmail = $store.getters["example/getUserEmail"];
-  const fileName = `leadminer-${userEmail}-${currentDatetime
-    .toISOString()
-    .slice(0, 10)}`;
-
   try {
     exportFromJSON({
       data: rows.value.map((r) => {
         return {
-          names: r.alternate_names.join("\n"),
+          names: r.alternate_names.join(","),
           email: r.email,
           engagement: r.engagement,
-          recency: new Date(r.recency).toISOString().slice(0, 10),
-          tags: r.tags.join("\n"),
+          recency: r.recency,
+          tags: r.tags.join(","),
         };
       }),
-      fileName,
-      withBOM: true,
+      fileName: "refined-persons",
       exportType: exportFromJSON.types.csv,
     });
     $q.notify("Successfully exported table.");
@@ -304,12 +283,11 @@ function exportTable() {
 </script>
 
 <style>
-.container {
+.table {
+  /* height or max-height is important */
   height: 50vh;
 }
-.table {
-  height: 100%;
-}
+
 .q-table__top,
   .q-table__bottom,
   thead tr:first-child th /* bg color is important for th; just specify one */ {

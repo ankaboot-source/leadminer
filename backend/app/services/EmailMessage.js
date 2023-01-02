@@ -11,11 +11,8 @@ const {
   transactionalHeaders,
   mailingListHeaders
 } = require('../config/emailHeaders.config');
-
+const { REGEX_LIST_ID } = require('../utils/constants');
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
-const logger = require('../utils/logger')(module);
-
-const { db } = require('../db');
 
 class EmailMessage {
   /**
@@ -26,11 +23,11 @@ class EmailMessage {
    * @param user - The user.
 
    */
-  constructor(sequentialId, header, body, user, folder, isLast) {
+  constructor(userEmail, sequentialId, header, body, folder, isLast) {
+    this.userEmail = userEmail;
     this.sequentialId = sequentialId;
     this.header = header || {};
     this.body = body || {};
-    this.user = user;
     this.folderPath = folder;
     this.isLast = isLast;
   }
@@ -86,7 +83,7 @@ class EmailMessage {
     );
 
     if (listId) {
-      return listId[0].match(/<.*>/g)[0];
+      return listId[0].match(REGEX_LIST_ID)[0];
     }
 
     return '';
@@ -126,276 +123,192 @@ class EmailMessage {
    */
   getMessageId() {
     if (this.header['message-id']) {
-      return this.header['message-id'][0].substring(0, 60);
+      return this.header['message-id'][0];
     }
     return `message_id_unknown ${this.header.date}`;
   }
 
   /**
-   * extractThenStoreEmailsAddresses extracts emails from the header and body of an email, then stores them in a database
+   * constructs tags for header field FROM.
+   * @param {string} fieldName - header field name
+   * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
    */
-  async extractThenStoreEmailsAddresses() {
-    const { data, error } = await db.insertMessage(
-      this.getMessageId(),
-      this.user.id,
-      'imap',
-      this.folderPath,
-      this.getDate(),
-      this.getListId(),
-      this.getReferences(),
-      this.getReferences() !== ''
-    );
+  getTagsField(fieldName) {
 
-    const message = data;
-
-    if (error) {
-      logger.error('Error when inserting to messages table.', {
-        error: error.message,
-        code: error.code,
-        emailMessageDate: this.getDate()
-      });
-    } else {
-      const messagingFields = this.getMessagingFieldsFromHeader();
-
-      for (const key of Object.keys(messagingFields)) {
-        // extract Name and Email in case of a header
-        const emails = regExHelpers.extractNameAndEmail(
-          messagingFields[`${key}`]
-        );
-
-        await this.storeEmailsAddressesExtractedFromHeader(
-          message,
-          emails,
-          key
-        );
-      }
-
-      const emails = regExHelpers.extractNameAndEmailFromBody(
-        this.body.toString('utf8')
-      );
-
-      // store extracted emails
-      await this.storeEmailsAddressesExtractedFromBody(message, emails);
-    }
-
-    if (this.isLast) {
-      await db.refinePersons(this.user.id);
-    }
-  }
-
-  getTags(fieldName) {
     const tags = [];
+
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
-        tags.push(this.buildTag('newsletter', 'Newsletter', 2, 'refined'));
+        tags.push({name:'newsletter', label:'Newsletter', reachable:2, type:'refined'});
       }
       if (this.isTransactional()) {
-        tags.push(
-          this.buildTag('transactional', 'Transactional', 2, 'refined')
-        );
+        tags.push({name:'transactional', label:'Transactional', reachable:2, type:'refined'});
       }
       if (this.getListId() !== '') {
-        tags.push(this.buildTag('list', 'List', 2, 'refined'));
+        tags.push({name:'list', label:'List', reachable:2, type:'refined'});
       }
+    }
+    return tags;
+  }
+
+  /**
+   * Constructs tags from fieldName, email, emailType.
+   * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
+   * @param {string} email  - Email address
+   * @param {string} emailType - The type of the email
+   * @returns { [{name: string, label: string; string, reachable: int, type: string}] | []}
+   *  An empty array if there is no tags, else returns array of objects.
+   *  
+   */
+  getTags(fieldName, email, emailType) {
+
+    const tags = this.getTagsField(fieldName);
+
+    if (email && emailMessageHelpers.isNoReply(email.address)) {
+      tags.push({name:'no-reply', label:'noReply', reachable:0, type:'refined'});
+    }
+    if (emailType && emailType !== '') {
+      tags.push({name:emailType.toLowerCase(), label:emailType, reachable:1, type:'refined'});
     }
 
     return tags;
   }
 
   /**
-   * storeEmailsAddressesExtractedFromHeader takes the extracted email addresses,
-   * gives tags, checks for noreply, checks domain and saves them to the database.
-   * @param {object} messages - an object containing the saved message data row
-   * @param {array} emails - an array of objects that contains the extracted email addresses and the names
-   * @param {string} fieldName - the current extracting field name (eg: from , cc , to...)
-   * @returns Nothing is being returned.
+   * extractEmailsAddresses - extracts emails from the header and body of an email, then returns an object
+   * @returns {{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}[]}}
    */
-  async storeEmailsAddressesExtractedFromHeader(message, emails, fieldName) {
-    const tags = this.getTags(fieldName);
+  async extractEmailsAddresses() {
 
-    const filteredEmails = emails.filter(
-      (email) => email && this.user.email !== email?.address
-    );
+    const extractedData = {
 
-    for (const email of filteredEmails) {
-      // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
-      const domain = await domainHelpers.checkDomainStatus(email.address);
-
-      const emailType = emailAddressHelpers.findEmailAddressType(
-        email.address,
-        [email?.name],
-        domain[1]
-      );
-
-      if (emailMessageHelpers.isNoReply(email.address)) {
-        tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-      } else if (emailType !== '') {
-        tags.push(
-          this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
-        );
-      }
-
-      if (domain[0]) {
-        await this.storeEmails(
-          message,
-          email.address,
-          email?.name.replaceAll(/"|'/g, ''),
-          tags,
-          email.identifier,
-          fieldName
-        );
-        return;
-      }
-
-      const member = await redisClientForNormalMode.sismember(
-        'invalidDomainEmails',
-        email.address
-      );
-
-      if (member === 0) {
-        redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-      }
-    }
-  }
-
-  /**
-   * storeEmailsAddressesExtractedFromBody takes the extracted email addresses from the body
-   * and saves them to the database
-   * @param {object} messages - an object containing the saved message data row
-   * @param {array} emails - an array of objects that contains the extracted email addresses
-   * @returns Nothing is being returned.
-   */
-  async storeEmailsAddressesExtractedFromBody(message, emails) {
-    if (emails.length === 0) {
-      delete this.body;
-      return;
-    }
-    const filteredEmails = emails.filter(
-      (email) => email && this.user.email !== email?.address
-    );
-
-    for (const email of filteredEmails) {
-      const domain = await domainHelpers.checkDomainStatus(email);
-      const emailType = emailAddressHelpers.findEmailAddressType(
-        email,
-        [email?.name ?? ''],
-        domain[1]
-      );
-
-      const tags = [];
-      if (emailMessageHelpers.isNoReply(email)) {
-        tags.push(this.buildTag('no-reply', 'noReply', 0, 'refined'));
-      } else if (emailType !== '') {
-        tags.push(
-          this.buildTag(emailType.toLowerCase(), emailType, 1, 'refined')
-        );
-      }
-
-      if (domain[0]) {
-        await this.storeEmails(
-          message,
-          email,
-          email.name,
-          tags,
-          email.identifier,
-          'body'
-        );
-        return;
-      }
-
-      const member = await redisClientForNormalMode.sismember(
-        'invalidDomainEmails',
-        email.address
-      );
-
-      if (member === 0) {
-        redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-      }
-    }
-  }
-
-  /**
-   * buildTag takes in a name, label, reachable, and type, and returns an object with those properties
-   * used to build a tag object type
-   * @param {string} name - The name of the tag.
-   * @param {string} label - The label of the tag.
-   * @param {int} reachable - true if the tag is reachable from the current tag, false otherwise
-   * @param {string} type - The type of the tag.
-   * @returns An object with the following properties:
-   *   name: name,
-   *   label: label,
-   *   reachable: reachable,
-   *   type: type,
-   */
-  buildTag(name, label, reachable, type) {
-    const userid = this.user.id;
-    return {
-      userid,
-      name,
-      label,
-      reachable,
-      type
+      message: {
+        channel: 'imap',
+        folderPath: this.folderPath,
+        date: this.getDate(),
+        messageId: this.getMessageId(),
+        references: this.getReferences(),
+        listId: this.getListId(),
+        conversation: this.getReferences() !== ''
+      },
+      persons: []
     };
+    this.message = extractedData.message;
+
+    const messagingFields = this.getMessagingFieldsFromHeader();
+
+    for (const key of Object.keys(messagingFields)) {
+      const emails = regExHelpers.extractNameAndEmail( // extract Name and Email in case of a header
+        messagingFields[`${key}`]
+      );
+      const persons = await this.personsExtractedFromHeader(emails, key);
+      extractedData.persons.push(...persons);
+    }
+
+    const emails = regExHelpers.extractNameAndEmailFromBody(
+      this.body.toString('utf8')
+    );
+    delete this.body;
+    extractedData.persons.push(...await this.personsExtractedFromBody(emails));
+
+    return extractedData;
   }
 
   /**
-   * storeEmails store the email address, name, tags and field name in the database
-   * @param message - the message object returned from the API
-   * @param email - the email address of the person
-   * @param name - The name of the person
-   * @param tags - an array of tags to be added to the person
-   * @param fieldName - the name of the field that the email was found in
+   * personsExtractedFromHeader checks for email validty then returns a person objects with thier tags and point of contact.
+   * @param {array} emails - an array of objects that contains the extracted email addresses and the names
+   * @param {string} fieldName - the current extracted field name (eg: from , cc , to...)
+   * @returns {Object[]} An array of objects
    */
-  async storeEmails(message, email, name, tags, identifier, fieldName) {
-    const result = await db.upsertPerson(
-      name ?? '',
-      email.toLowerCase(),
-      this.user.id,
-      identifier
-    );
+  async personsExtractedFromHeader(emails, fieldName) {
 
-    const person = result.data;
+    for (const email of emails.filter((e) => e && this.userEmail !== e?.address)) {
+      const domain = await domainHelpers.checkDomainStatus(email.address); // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
 
-    if (result.error) {
-      logger.error('Error when inserting to persons table.', {
-        error: result.error.message,
-        code: result.error.code,
-        emailMessageDate: this.getDate()
+      if (domain[0]) { // Valid email
+
+        const emailType = emailAddressHelpers
+          .findEmailAddressType(email.address, [email?.name], domain[1]);
+        const tags = this.getTags(fieldName, email, emailType);
+        return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
+      }
+
+      redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
+        if (member === 0) {
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
+        }
       });
     }
-    if (person) {
-      //if saved and no errors then we can store the person linked to this point of contact
-      const pointOfContactUpsertionResult = await db.insertPointOfContact(
-        message.id,
-        this.user.id,
-        person.id,
-        fieldName,
-        name ?? ''
-      );
+    return [];
+  }
 
-      if (pointOfContactUpsertionResult.error) {
-        logger.error('Error when inserting to pointOfContact table.', {
-          error: pointOfContactUpsertionResult.error.message,
-          code: pointOfContactUpsertionResult.error.code,
-          emailMessageDate: this.getDate()
-        });
+  /**
+   * personsExtractedFromBody checks for email validty then returns a person objects with thier tags and point of contact.
+   * @param {array} emails - an array of objects that contains the extracted email addresses
+   * @returns {Object[]} An array of object.
+   */
+  async personsExtractedFromBody(emails) { // TODO: why takes an array of emails but don't process all of them.
+
+    for (const email of emails.filter((e) => e && this.userEmail !== e.address)) {
+
+      const domain = await domainHelpers.checkDomainStatus(email); // check for Domain validity
+
+      if (domain[0]) {
+
+        const emailType = emailAddressHelpers.findEmailAddressType(
+          email, [email?.name ?? ''], domain[1]
+        );
+        const tags = this.getTags('', email, emailType);
+        return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
       }
 
-      for (const tag of tags) {
-        tag.personid = person.id;
-      }
-
-      db.createTags(tags)
-        // eslint-disable-next-line no-unused-vars
-        .then((data, error) => {
-          if (error) {
-            logger.error('Error when creating tags.', {
-              error: error.message,
-              emailMessageDate: this.getDate()
-            });
-          }
-        });
+      redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
+        if (member === 0) {
+          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
+        }
+      });
     }
+
+    return [];
+  }
+
+  /**
+   * constructPersonPocTags - Constructs the person && pointofcontact objects using email, tags, fieldName 
+   * @param {{name: string, adddress: string, identifier: string}} email - The Email object
+   * @param {[{name: string, label; string, reachable: string, type: string}] | []} tags - Array of tags
+   * @param {string} fieldName - The Header field.
+   */
+  static constructPersonPocTags(email, tags, fieldName) {
+
+    const { address, identifier, name } = email;
+    return {
+      person: {
+        name,
+        email: address,
+        url: '',
+        image: '',
+        address: '',
+        alternate_names: [],
+        sameAs: [],
+        givenName: name,
+        familyName: '',
+        jobTitle: '',
+        identifiers: [identifier]
+      },
+      pointOfContact: {
+        messageid: '',
+        name: name ?? '',
+        _from: fieldName === 'from',
+        replyTo: fieldName === 'reply-to' || fieldName === 'reply_to',
+        _to: fieldName === 'to',
+        cc: fieldName === 'cc',
+        bcc: fieldName === 'bcc',
+        body: fieldName === 'body',
+        personid: ''
+      },
+      tags
+    };
   }
 }
+
 module.exports = EmailMessage;

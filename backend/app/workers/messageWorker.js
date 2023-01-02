@@ -3,6 +3,7 @@ const redisClient = redis.getPubSubClient();
 const EmailMessage = require('../services/EmailMessage');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
+const { db } = require('../db');
 
 async function handleMessage({
   seqNumber,
@@ -15,16 +16,23 @@ async function handleMessage({
   const message_id = header['message-id'] ? header['message-id'][0] : '';
   if (message_id) {
     const message = new EmailMessage(
+      user.email,
       seqNumber,
       header,
       body,
-      user,
       folderName,
-      isLast
+      isLast // If it's the last element that comes from (fetch/redis).
     );
-    await message.extractThenStoreEmailsAddresses();
+
+    const extractedContacts = await message.extractEmailsAddresses();
+    await db.store(extractedContacts, user.id);
+    
+    if (isLast) {
+      db.refinePersons(user.id); 
+    } // runs rpc function.
   }
 }
+
 
 redisClient.subscribe(REDIS_MESSAGES_CHANNEL, (err) => {
   if (err) {

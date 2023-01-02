@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 const { supabaseToken, supabaseUrl } = require('../../config/supabase.config');
 const { fetch } = require('./fetch');
 
-class SupabaseHandlers {
+class SupabaseHandler {
   supabaseClient;
 
   constructor() {
@@ -12,126 +12,57 @@ class SupabaseHandlers {
   }
 
   /**
-   * `insertMessage` takes a message ID, user ID, channel, folder, and date, and inserts a new row into
-   * the `messages` table if the message ID doesn't already exist
-   * @param {string} messageId - The unique ID of the message
-   * @param {string} userId - The user running the mining
-   * @param {string} messageChannel - The channel name
-   * @param folderPath - inbox, sent, trash
-   * @param {Date} messageDate - The date the message was sent
-   * @param {string} listId - List-id header field, to identify if email is part of a list and which one.
-   * @param {string[]} references - List of referenecs if email is in conversation
-   * @param {boolean} conversation - Boolean indicates if email is in conversation
-   * @returns {promise}
+   * Inserts a message or list of messages
+   * @param {object} message - Message Object
+   * @returns {promise} The inserted rows
    */
-  async insertMessage(
-    messageId,
-    userID,
-    messageChannel,
-    folderPath,
-    messageDate,
-    listId,
-    references,
-    isConversation
-  ) {
-    const message = {
-      message_id: messageId,
-      userid: userID,
-      channel: messageChannel,
-      folder_path: folderPath,
-      date: messageDate,
-      list_id: listId,
-      references,
-      conversation: isConversation
-    };
+  async insertMessage(message) {
+
     const result = await this.supabaseClient
       .from('messages')
       .insert(message)
       .select()
       .single();
+
     return result;
   }
 
   /**
-   * It takes a message ID, a user ID, a person ID, and a key (which is either 'to', 'cc', 'bcc', 'from',
-   * or 'reply-to') and then inserts a new row into the pointsofcontact table
-   * @param messageID - the ID of the message we're inserting
-   * @param userID - the current user
-   * @param personid - The personid of the person we're adding to the point of contact table.
-   * @param key - the key of the email address in the email object
-   * @returns {promise} .
+   * Inserts a point of contact record. or list of pointofcontacts
+   * @param {object} pointOfContact - PointofContact Object
+   * @returns {promise}
    */
-  async insertPointOfContact(messageID, userID, personid, key, name) {
+  async insertPointOfContact(pointOfContact) {
     const result = await this.supabaseClient
       .from('pointsofcontact')
-      .insert({
-        messageid: messageID,
-        userid: userID,
-        name,
-        _to: key === 'to',
-        cc: key === 'cc',
-        bcc: key === 'bcc',
-        _from: key === 'from',
-        reply_to: key === 'reply-to' || key === 'reply_to',
-        body: key === 'body',
-        personid
-      })
-      .select()
-      .single();
-
+      .insert(pointOfContact);
     return result;
   }
 
   /**
-   * Insert a person record into the persons table, using the email address as the unique identifier
-   * @param name - The name of the person
-   * @param emailsAddress - The email address of the person you want to add to the database.
-   * @param {string} identifier - The user identifier extracted from email.
-   * @returns {promise}
+   * Inserts a person record
+   * @param {object} person - Person object
+   * @returns {promise} The inserted rows
    */
-  async upsertPerson(name, emailsAddress, userID, identifier) {
-    const person = {
-      name,
-      email: emailsAddress,
-      _userid: userID,
-      url: '',
-      image: '',
-      address: '',
-      alternate_names: [],
-      same_as: [],
-      given_name: '',
-      family_name: '',
-      job_title: '',
-      identifiers: identifier
-      // works_for: ''  Will be retrieved with transmutation
-    };
+  async upsertPerson(person) {
 
-    let result = await this.supabaseClient
+    const result = await this.supabaseClient
       .from('persons')
-      .insert(person)
+      .upsert(person, { onConflict: 'email' })
       .select()
       .single();
-
-    if (result.error?.code === '23505') {
-      result = await this.supabaseClient
-        .from('persons')
-        .update(person)
-        .eq('email', emailsAddress)
-        .select()
-        .single();
-    }
     return result;
   }
 
   /**
-   * `createTags` takes an array of `tags` and inserts them into the `tags` table
-   * @param tags - an array of objects with the following properties:
+   * Inserts a list of tag records.
+   * @param {object[]} tags - Array of tags
    * @returns {promise}
    */
-  createTags(tags) {
+  insertTags(tags) {
     return this.supabaseClient
       .from('tags')
-      .upsert([...tags], { onConflict: 'personid, name' });
+      .upsert(tags, { onConflict: 'personid, name', ignoreDuplicates: true });
   }
 
   async createGoogleUser({ email, refresh_token }) {
@@ -229,5 +160,5 @@ class SupabaseHandlers {
 }
 
 module.exports = {
-  SupabaseHandlers
+  SupabaseHandler
 };

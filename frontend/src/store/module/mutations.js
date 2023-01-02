@@ -60,6 +60,9 @@ export function SET_SCANNEDBOXES(state, newValue) {
     state.progress.scannedBoxes = [...new Set(boxesArray)];
   }
 }
+export function SET_CANCEL(state, newValue) {
+  state.cancel = newValue;
+}
 
 export function SET_STATUS(state, newStatus) {
   state.progress.status = newStatus;

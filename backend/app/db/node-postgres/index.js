@@ -1,139 +1,96 @@
-const pool = require('./setup');
+const format = require('pg-format');
 
-class Postgres {
-  constructor(logger) {
-    this.logger = logger;
+const { Client } = require('pg');
+const { pgConnectionString } = require('../../config/supabase.config');
+
+/**
+ * Creates a parametrized query.
+ * @param {string[]} fields - Array of field names 
+ * @returns {string}
+ */
+function parametrizeQuery(fields) {
+  return `(${fields.map((i) => {
+    return `"${i}"`; 
+  }).join(', ')}) VALUES (${fields.map((_, i) => {
+    return `$${i + 1}`; 
+  }).join(', ')})`;
+}
+
+class PostgresHandler {
+  constructor() {
+    this.client = new Client({
+      connectionString: pgConnectionString
+    });
+    this.#connect();
   }
 
+  #connect() {
+    (async () => {
+      await this.client.connect(); 
+    })();
+  }
   /**
    * Inserts a new message record.
-   * @param {string} messageID - The unique ID of the message
-   * @param {string} userID - The user running the mining
-   * @param {string} messageChannel - The channel name (`imap`...)
-   * @param {string} folderPath - The folder path of the message
-   * @param {string} messageDate - The date the message was sent
-   * @param {string} listId - The List-id header field, to identify if email message is part of a list and which one
-   * @param {string[]} references - List of references if the email message is in conversation
-   * @param {boolean} isConversation - Indicates if the email message is in a conversation
-   * @returns {Promise<object>} The inserted message
+   * @param {object} message - Message object
+   * @returns {Promise<object>} The inserted row
    */
-  async insertMessage(
-    messageID,
-    userID,
-    messageChannel,
-    folderPath,
-    messageDate,
-    listId,
-    references,
-    isConversation
-  ) {
-    const query =
-      'INSERT INTO messages(channel, folder_path, date, userid, message_id, "references", list_id, conversation) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *';
+  async insertMessage(message) {
 
+    const query =
+      `INSERT INTO messages ${parametrizeQuery(Object.keys(message))} RETURNING *`;
     try {
-      const result = await pool.query(
+      const { rows } = await this.client.query(
         query,
-        [
-          messageChannel,
-          folderPath,
-          new Date(messageDate),
-          userID,
-          messageID,
-          references,
-          listId,
-          isConversation
-        ],
+        Object.values(message),
         this.logger
       );
-      return { data: result.rows[0], error: null };
+      return {data: rows[0], error: null}; // single object;  
     } catch (error) {
-      return { data: null, error };
+      return { data: null, error};
     }
   }
 
   /**
    * Inserts a point of contact record.
-   * @param {string} messageID - The message ID
-   * @param {string} userID - The user ID
-   * @param {string} personID - The person ID
-   * @param {string} fieldName - The name of the field where the email address was found
-   * (`to`, `from`, `body` ...)
-   * @param {string} name - The identified person name
-   * @returns {Promise<object>} The inserted point of contact
+   * @param {object} pointOfContact - Point of contact object.
+   * @returns {Promise<object>} The inserted row
    */
-  async insertPointOfContact(messageID, userID, personID, fieldName, name) {
-    const query =
-      'INSERT INTO pointsofcontact(userid, messageid, name, _from, reply_to, _to, cc, bcc, body, personid) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *';
+  async insertPointOfContact(pointOfContact) {
 
+    const query =
+      `INSERT INTO pointsofcontact ${parametrizeQuery(Object.keys(pointOfContact))} RETURNING *`;
+    
     try {
-      const result = await pool.query(
+      const { rows } = await this.client.query(
         query,
-        [
-          userID,
-          messageID,
-          name,
-          fieldName === 'from',
-          fieldName === 'reply-to' || fieldName === 'reply_to',
-          fieldName === 'to',
-          fieldName === 'cc',
-          fieldName === 'bcc',
-          fieldName === 'body',
-          personID
-        ],
+        Object.values(pointOfContact),
         this.logger
       );
-      return { data: result.rows[0], error: null };
+      return {data: rows[0], error: null}; // single object;
     } catch (error) {
-      return { data: null, error };
+      return { data: null, error};
     }
   }
 
   /**
    * Inserts or updates a person record into the persons table.
-   * @param {string} name - The name of the person
-   * @param {string} emailsAddress - The email address of the person
-   * @param {string} userID - The user ID
-   * @param {string} identifier - The user identifier extracted from email.
-   * @returns {Promise<object>} The inserted/updated person
+   * @param {object} person - The person object 
+   * @returns {Promise<object>} The inserted/updated row
    */
-  async upsertPerson(name, emailsAddress, userID, identifier) {
+  async upsertPerson(person) {
+
     const query =
-      'INSERT INTO persons(name, email, _userid, url, image, address, alternate_names, same_as, given_name, family_name, job_title, identifiers) ' +
-      'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *';
+      `INSERT INTO persons ${parametrizeQuery(Object.keys(person))} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
 
     try {
-      const { rows, rowCount } = await pool.query(
-        'SELECT * FROM persons WHERE email = $1',
-        [emailsAddress],
-        this.logger
-      );
-      if (rowCount !== 0) {
-        return { data: rows[0], error: null };
-      }
-
-      const result = await pool.query(
+      const { rows } = await this.client.query(
         query,
-        [
-          name,
-          emailsAddress,
-          userID,
-          '',
-          '',
-          '',
-          [],
-          [],
-          '',
-          '',
-          '',
-          [identifier]
-        ],
+        Object.values(person),
         this.logger
       );
-      return { data: result.rows[0], error: null };
+      return {data: rows[0], error: null}; // single object;
     } catch (error) {
-      return { data: null, error };
+      return { data: null, error};
     }
   }
 
@@ -142,45 +99,28 @@ class Postgres {
    * @param {object[]} tags - List of tag objects
    * @returns {Promise<void>}
    */
-  async createTags(tags) {
+  async insertTags(tags) {
+
+    if (tags.length === 0) {
+      return {data: null, error: null};
+    }
+    const values = tags.map((t) => Object.values(t));
+    const keys = Object.keys(tags[0]).map((i) => {
+      return `"${i}"`; 
+    }).join(', ');
+    const query = format(
+      `INSERT INTO tags (${keys}) VALUES %L ON CONFLICT (personid, name) DO NOTHING`, values
+    );
+
     try {
-      return await Promise.all(
-        tags.map(async ({ userid, name, label, reachable, type, personid }) => {
-          const existingTag = await pool.query(
-            'SELECT * FROM tags WHERE personid = $1 AND name = $2',
-            [personid, name],
-            this.logger
-          );
-
-          if (existingTag.rowCount === 0) {
-            const query =
-              'INSERT INTO tags(personid, userid, name, label, reachable, type) ' +
-              'VALUES($1, $2, $3, $4, $5, $6)';
-
-            await pool.query(
-              query,
-              [personid, userid, name, label, reachable, type],
-              this.logger
-            );
-          } else {
-            await pool.query(
-              'UPDATE tags SET personid = $1, userid = $2, name = $3, label = $4, reachable = $5, type = $6 WHERE id = $7',
-              [
-                personid,
-                userid,
-                name,
-                label,
-                reachable,
-                type,
-                existingTag.rows[0].id
-              ],
-              this.logger
-            );
-          }
-        })
+      const { rows } = await this.client.query(
+        query,
+        null,
+        this.logger
       );
+      return {data: rows, error: null};
     } catch (error) {
-      return { error };
+      return { data: null, error};
     }
   }
 
@@ -196,7 +136,7 @@ class Postgres {
       'INSERT INTO google_users(email, refresh_token) ' +
       'VALUES($1, $2) RETURNING *';
 
-    const result = await pool.query(query, [email, refresh_token], this.logger);
+    const result = await this.client.query(query, [email, refresh_token], this.logger);
     return result.rows[0];
   }
 
@@ -208,7 +148,7 @@ class Postgres {
   async getGoogleUserByEmail(email) {
     const query = 'SELECT * FROM google_users WHERE email = $1';
 
-    const result = await pool.query(query, [email], this.logger);
+    const result = await this.client.query(query, [email], this.logger);
     return result.rows[0];
   }
 
@@ -222,7 +162,7 @@ class Postgres {
     const query =
       'UPDATE google_users SET refresh_token = $1 WHERE id = $2 RETURNING *';
 
-    const result = await pool.query(query, [id, refresh_token], this.logger);
+    const result = await this.client.query(query, [id, refresh_token], this.logger);
     return result.rows[0];
   }
 
@@ -240,7 +180,7 @@ class Postgres {
       'INSERT INTO imap_users(email, host, port, tls) ' +
       'VALUES($1, $2, $3, $4) RETURNING *';
 
-    const result = await pool.query(
+    const result = await this.client.query(
       query,
       [email, host, port, tls],
       this.logger
@@ -257,7 +197,7 @@ class Postgres {
   async getImapUserByEmail(email) {
     const query = 'SELECT * FROM imap_users WHERE email = $1';
 
-    const result = await pool.query(query, [email], this.logger);
+    const result = await this.client.query(query, [email], this.logger);
     return result.rowCount > 0 ? result.rows[0] : null;
   }
 
@@ -269,7 +209,7 @@ class Postgres {
   async getImapUserById(id) {
     const query = 'SELECT * FROM imap_users WHERE id = $1';
 
-    const result = await pool.query(query, [id], this.logger);
+    const result = await this.client.query(query, [id], this.logger);
     return result.rowCount > 0 ? result.rows[0] : null;
   }
 
@@ -280,7 +220,7 @@ class Postgres {
    */
   async refinePersons(userid) {
     try {
-      const result = await pool.query(
+      const result = await this.client.query(
         'SELECT * FROM refined_persons($1)',
         [userid],
         this.logger
@@ -292,4 +232,4 @@ class Postgres {
   }
 }
 
-module.exports = { Postgres };
+module.exports = { PostgresHandler };

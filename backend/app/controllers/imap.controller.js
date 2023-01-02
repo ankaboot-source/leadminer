@@ -90,7 +90,7 @@ async function loginToAccount(req, res, next) {
     res.status(400);
     next(new Error('Email is required to login'));
   }
-  performance.mark('login-start')
+  performance.mark('login-start');
   const imap = await db.getImapUserByEmail(email);
   if (imap === null) {
     createImapInfo(req, res, next);
