@@ -189,7 +189,7 @@ class EmailMessage {
         messageId: this.getMessageId(),
         references: this.getReferences(),
         listId: this.getListId(),
-        conversation: this.getReferences() !== ''
+        conversation: this.getReferences().length > 0
       },
       persons: []
     };
