@@ -285,7 +285,7 @@ class EmailAccountMiner {
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  publishMessageToChannel(header, body, folderName, folderTotal, seqNumber) {
+  publishMessageToChannel(seqNumber, header, body, folderName) {
     this.sendMiningProgress(seqNumber);
 
     if (this.emailsProgressIndexes.includes(seqNumber)) {
