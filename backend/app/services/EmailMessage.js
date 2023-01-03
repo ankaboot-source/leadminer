@@ -57,6 +57,19 @@ class EmailMessage {
   }
 
   /**
+   * Determines whether the email header contains any List header fields or not.
+   * @returns {boolean}
+   */
+  isList() {
+    return (
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        mailingListHeaders
+      ) !== null
+    );
+  }
+
+  /**
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns {string[]}
    */
@@ -77,15 +90,13 @@ class EmailMessage {
    * @returns {string}
    */
   getListId() {
-    const listId = emailMessageHelpers.getSpecificHeader(
-      this.header,
-      mailingListHeaders
-    );
+    const listId = this.isList()
+    ? emailMessageHelpers.getSpecificHeader(this.header,['list-id'])
+    : null
 
     if (listId) {
       return listId[0].match(REGEX_LIST_ID)[0];
     }
-
     return '';
   }
 
@@ -144,7 +155,7 @@ class EmailMessage {
       if (this.isTransactional()) {
         tags.push({name:'transactional', reachable:2, source:'refined'});
       }
-      if (this.getListId() !== '') {
+      if (this.isList()) {
         tags.push({name:'list', reachable:2, source:'refined'});
       }
     }
