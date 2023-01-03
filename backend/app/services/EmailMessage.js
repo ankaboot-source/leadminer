@@ -142,7 +142,7 @@ class EmailMessage {
   /**
    * constructs tags for header field FROM.
    * @param {string} fieldName - header field name
-   * @returns { [{name: string, label: string; string, reachable: int, source: string}] | []}
+   * @returns { [{name: string, reachable: int, source: string}] | []}
    */
   getTagsField(fieldName) {
 
@@ -167,7 +167,7 @@ class EmailMessage {
    * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
    * @param {string} email  - Email address
    * @param {string} emailType - The type of the email
-   * @returns { [{name: string, label: string; string, reachable: int, source: string}] | []}
+   * @returns { [{name: string, reachable: int, source: string}] | []}
    *  An empty array if there is no tags, else returns array of objects.
    *  
    */
