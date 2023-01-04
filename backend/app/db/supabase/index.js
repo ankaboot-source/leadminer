@@ -154,8 +154,8 @@ class SupabaseHandler {
    * @param  {string} userid  - User ID
    * @returns {promise}
    */
-  refinePersons(userid) {
-    return this.supabaseClient.rpc('refined_persons', { userid });
+  callRpcFunction(userid, functionName) {
+    return this.supabaseClient.rpc(functionName, { userid });
   }
 }
 

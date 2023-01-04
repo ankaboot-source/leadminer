@@ -320,7 +320,7 @@ class EmailAccountMiner {
    */
   sendMinedData() {
     // call supabase function to refine data
-    db.refinePersons(this.user.id).then((res) => {
+    db.callRpcFunction(this.user.id, 'populate_refined').then((res) => {
       if (res.error) {
         logger.error(res.error);
       }
