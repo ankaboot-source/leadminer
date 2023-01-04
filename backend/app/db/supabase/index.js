@@ -152,6 +152,7 @@ class SupabaseHandler {
   /**
    * Invokes the `refined_persons` function in Postgres.
    * @param  {string} userid  - User ID
+   * @param {string} functionName - Name of the rpc function to invoke.
    * @returns {promise}
    */
   callRpcFunction(userid, functionName) {
