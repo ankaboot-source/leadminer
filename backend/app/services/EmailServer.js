@@ -83,27 +83,26 @@ class EmailServer {
    * connect() open a connection to the IMAP server
    * @returns A promise that resolves to the connection object.
    */
-  connect() {
-    return new Promise((res) => {
-      // initialize the connection
-      performance.mark('imapConn-start');
-      this.initConnection();
-      if (this.isApiConnection()) {
-        tokenHelpers.generateXOauthToken(this.user).then((tokens) => {
-          this.sse.send({ token: tokens.newToken }, `token${this.user.id}`);
-          this.#connection._config.xoauth2 = tokens.xoauth2Token;
-          this.#connection.connect();
-          res(this.#connection);
-        });
-      } else {
-        logger.info('User connected using IMAP.', {
-          emailHash: this.mailHash,
-          duration: performance.measure('imap connection', 'imapConn-start').duration
-        });
-        this.#connection.connect();
-        res(this.#connection);
-      }
-    });
+  async connect() {
+    performance.mark('imapConn-start');
+    this.initConnection();
+
+    if (this.isApiConnection()) {
+      const { newToken, xoauth2Token } = await tokenHelpers.generateXOauthToken(
+        this.user
+      );
+      this.sse.send({ token: newToken }, `token${this.user.id}`);
+      this.#connection._config.xoauth2 = xoauth2Token;
+    } else {
+      logger.info('User connected using IMAP.', {
+        emailHash: this.mailHash,
+        duration: performance.measure('imap connection', 'imapConn-start')
+          .duration
+      });
+    }
+
+    this.#connection.connect();
+    return this.#connection;
   }
 }
 

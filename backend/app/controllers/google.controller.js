@@ -6,11 +6,10 @@ const {
   googleClientSecret
 } = require('../config/google.config');
 const { db } = require('../db');
-const RedirectionUrl = 'postmessage';
 
 // returns Oauth client
 function getOAuthClient() {
-  return new OAuth2Client(googleClientId, googleClientSecret, RedirectionUrl);
+  return new OAuth2Client(googleClientId, googleClientSecret, 'postmessage');
 }
 
 /**
@@ -82,31 +81,3 @@ exports.signUpWithGoogle = async (req, res, next) => {
     return next(error);
   }
 };
-
-/**
- * Uses the refresh_token to refresh the expired access_token
- * @param  {} refresh_token stored token
- */
-function refreshAccessToken(refresh_token) {
-  return new Promise(async (resolve, reject) => {
-    // return OAuth2 client
-    const oauth2Client = getOAuthClient();
-
-    oauth2Client.setCredentials({
-      refresh_token
-    });
-    const { err, token } = await oauth2Client.getAccessToken();
-    if (err) {
-      reject("can't retrieve token");
-    }
-
-    const tokenInfo = await oauth2Client.getTokenInfo(token);
-    const access_token = {
-      access_token: token,
-      expiration: Math.floor(tokenInfo.expiry_date / 1000)
-    };
-    resolve(access_token);
-  });
-}
-
-exports.refreshAccessToken = refreshAccessToken;
