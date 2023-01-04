@@ -80,5 +80,6 @@ BEGIN
       from public.persons
     ) as _
     where not tags && '{"transactional", "no-reply"}'
+  on conflict(personid) do nothing;
 END;
 $function$
