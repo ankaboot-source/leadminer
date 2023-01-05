@@ -5,16 +5,16 @@ const {
   googleClientId,
   googleClientSecret
 } = require('../../config/google.config');
-const RedirectionUrl = 'postmessage';
 
 function getOAuthClient() {
-  return new OAuth2Client(googleClientId, googleClientSecret, RedirectionUrl);
+  return new OAuth2Client(googleClientId, googleClientSecret, 'postmessage');
 }
+
 /**
  * Uses the refreshToken to refresh an expired accessToken
  * @param {string} refreshToken - Stored token
- * @param {string} expirationDate - Expiration date of the token
- *  @returns {Promise<object>}
+ * @param {number} expirationDate - Expiration date of the token
+ * @returns {Promise<object>} New access token and expiration
  */
 async function refreshAccessToken(refreshToken, expirationDate) {
   const oauth2Client = getOAuthClient();
