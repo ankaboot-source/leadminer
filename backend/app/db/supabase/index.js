@@ -152,10 +152,11 @@ class SupabaseHandler {
   /**
    * Invokes the `refined_persons` function in Postgres.
    * @param  {string} userid  - User ID
+   * @param {string} functionName - Name of the rpc function to invoke.
    * @returns {promise}
    */
-  refinePersons(userid) {
-    return this.supabaseClient.rpc('refined_persons', { userid });
+  callRpcFunction(userid, functionName) {
+    return this.supabaseClient.rpc(functionName, { userid });
   }
 }
 

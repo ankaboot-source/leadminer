@@ -33,8 +33,6 @@ class EmailAccountMiner {
     this.folders = folders;
     this.eventEmitter = eventEmitter;
     this.mailHash = hashHelpers.hashEmail(user.email);
-    this.isLastFolder = false;
-    this.isLastMessage = false;
     this.fetchedMessagesCount = 0;
   }
 
@@ -167,9 +165,7 @@ class EmailAccountMiner {
   *mineFolder(folder) {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
-      if (this.isLastFolderToFetch(folder)) {
-        this.isLastFolder = true;
-      }
+
       if (err) {
         logger.error(
           `Error occurred when opening folder for User: ${this.mailHash}`
@@ -224,7 +220,6 @@ class EmailAccountMiner {
     });
 
     fetchResult.on('message', (msg, seqNumber) => {
-      this.isLastMessage = seqNumber === folder.messages.total;
 
       let header = '';
       let body = '';
@@ -249,7 +244,8 @@ class EmailAccountMiner {
           seqNumber,
           parsedHeader,
           parsedBody,
-          folderName
+          folderName,
+          this.isLastFolderToFetch(folderName) && seqNumber === folder.messages.total
         );
       });
     });
@@ -285,7 +281,7 @@ class EmailAccountMiner {
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  publishMessageToChannel(seqNumber, header, body, folderName) {
+  publishMessageToChannel(seqNumber, header, body, folderName, isLast) {
     this.sendMiningProgress(seqNumber);
 
     if (this.emailsProgressIndexes.includes(seqNumber)) {
@@ -298,7 +294,7 @@ class EmailAccountMiner {
       header,
       user: this.user,
       folderName,
-      isLast: this.isLastFolder && this.isLastMessage
+      isLast
     });
 
     redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);
@@ -320,7 +316,7 @@ class EmailAccountMiner {
    */
   sendMinedData() {
     // call supabase function to refine data
-    db.refinePersons(this.user.id).then((res) => {
+    db.callRpcFunction(this.user.id, 'populate_refined').then((res) => {
       if (res.error) {
         logger.error(res.error);
       }

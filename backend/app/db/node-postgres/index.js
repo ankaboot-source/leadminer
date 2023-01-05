@@ -199,12 +199,13 @@ class PostgresHandler {
   /**
    * Invokes the `refined_persons` stored function in Postgres.
    * @param {string} userid - User ID
+   * @param {string} functionName - Name of the rpc function to invoke.
    * @returns {Promise<object>}
    */
-  async refinePersons(userid) {
+  async callRpcFunction(userid, functionName) {
     try {
       const result = await this.client.query(
-        'SELECT * FROM refined_persons($1)',
+        `SELECT * FROM ${functionName}($1)`,
         [userid]
       );
       return { data: result.rows, error: null };
