@@ -1,52 +1,46 @@
 const format = require('pg-format');
 
-const { Client } = require('pg');
+const { Pool } = require('pg');
 const { pgConnectionString } = require('../../config/supabase.config');
 
 /**
  * Creates a parametrized query.
- * @param {string[]} fields - Array of field names 
+ * @param {string[]} fields - Array of field names
  * @returns {string}
  */
 function parametrizeQuery(fields) {
-  return `(${fields.map((i) => {
-    return `"${i}"`; 
-  }).join(', ')}) VALUES (${fields.map((_, i) => {
-    return `$${i + 1}`; 
-  }).join(', ')})`;
+  return `(${fields
+    .map((i) => {
+      return `"${i}"`;
+    })
+    .join(', ')}) VALUES (${fields
+    .map((_, i) => {
+      return `$${i + 1}`;
+    })
+    .join(', ')})`;
 }
 
 class PostgresHandler {
   constructor() {
-    this.client = new Client({
+    this.client = new Pool({
       connectionString: pgConnectionString
     });
-    this.#connect();
   }
 
-  #connect() {
-    (async () => {
-      await this.client.connect(); 
-    })();
-  }
   /**
    * Inserts a new message record.
    * @param {object} message - Message object
    * @returns {Promise<object>} The inserted row
    */
   async insertMessage(message) {
-
-    const query =
-      `INSERT INTO messages ${parametrizeQuery(Object.keys(message))} RETURNING *`;
+    const query = `INSERT INTO messages ${parametrizeQuery(
+      Object.keys(message)
+    )} RETURNING *`;
     try {
-      const { rows } = await this.client.query(
-        query,
-        Object.values(message),
-        this.logger
-      );
-      return {data: rows[0], error: null}; // single object;  
+      const { rows } = await this.client.query(query, Object.values(message));
+      return { data: rows[0], error: null }; // single object;
     } catch (error) {
-      return { data: null, error};
+      return { data: null, error };
     }
   }
 
@@ -56,41 +50,36 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertPointOfContact(pointOfContact) {
+    const query = `INSERT INTO pointsofcontact ${parametrizeQuery(
+      Object.keys(pointOfContact)
+    )} RETURNING *`;
 
-    const query =
-      `INSERT INTO pointsofcontact ${parametrizeQuery(Object.keys(pointOfContact))} RETURNING *`;
-    
     try {
       const { rows } = await this.client.query(
         query,
-        Object.values(pointOfContact),
-        this.logger
+        Object.values(pointOfContact)
       );
-      return {data: rows[0], error: null}; // single object;
+      return { data: rows[0], error: null }; // single object;
     } catch (error) {
-      return { data: null, error};
+      return { data: null, error };
     }
   }
 
   /**
    * Inserts or updates a person record into the persons table.
-   * @param {object} person - The person object 
+   * @param {object} person - The person object
    * @returns {Promise<object>} The inserted/updated row
    */
   async upsertPerson(person) {
-
-    const query =
-      `INSERT INTO persons ${parametrizeQuery(Object.keys(person))} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
+    const query = `INSERT INTO persons ${parametrizeQuery(
+      Object.keys(person)
+    )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
 
     try {
-      const { rows } = await this.client.query(
-        query,
-        Object.values(person),
-        this.logger
-      );
-      return {data: rows[0], error: null}; // single object;
+      const { rows } = await this.client.query(query, Object.values(person));
+      return { data: rows[0], error: null }; // single object;
     } catch (error) {
-      return { data: null, error};
+      return { data: null, error };
     }
   }
 
@@ -100,27 +89,25 @@ class PostgresHandler {
    * @returns {Promise<void>}
    */
   async insertTags(tags) {
-
     if (tags.length === 0) {
-      return {data: null, error: null};
+      return { data: null, error: null };
     }
     const values = tags.map((t) => Object.values(t));
-    const keys = Object.keys(tags[0]).map((i) => {
-      return `"${i}"`; 
-    }).join(', ');
+    const keys = Object.keys(tags[0])
+      .map((i) => {
+        return `"${i}"`;
+      })
+      .join(', ');
     const query = format(
-      `INSERT INTO tags (${keys}) VALUES %L ON CONFLICT (personid, name) DO NOTHING`, values
+      `INSERT INTO tags (${keys}) VALUES %L ON CONFLICT (personid, name) DO NOTHING`,
+      values
     );
 
     try {
-      const { rows } = await this.client.query(
-        query,
-        null,
-        this.logger
-      );
-      return {data: rows, error: null};
+      const { rows } = await this.client.query(query, null);
+      return { data: rows, error: null };
     } catch (error) {
-      return { data: null, error};
+      return { data: null, error };
     }
   }
 
@@ -136,7 +123,7 @@ class PostgresHandler {
       'INSERT INTO google_users(email, refresh_token) ' +
       'VALUES($1, $2) RETURNING *';
 
-    const result = await this.client.query(query, [email, refresh_token], this.logger);
+    const result = await this.client.query(query, [email, refresh_token]);
     return result.rows[0];
   }
 
@@ -148,7 +135,7 @@ class PostgresHandler {
   async getGoogleUserByEmail(email) {
     const query = 'SELECT * FROM google_users WHERE email = $1';
 
-    const result = await this.client.query(query, [email], this.logger);
+    const result = await this.client.query(query, [email]);
     return result.rows[0];
   }
 
@@ -162,7 +149,7 @@ class PostgresHandler {
     const query =
       'UPDATE google_users SET refresh_token = $1 WHERE id = $2 RETURNING *';
 
-    const result = await this.client.query(query, [id, refresh_token], this.logger);
+    const result = await this.client.query(query, [refresh_token, id]);
     return result.rows[0];
   }
 
@@ -180,11 +167,7 @@ class PostgresHandler {
       'INSERT INTO imap_users(email, host, port, tls) ' +
       'VALUES($1, $2, $3, $4) RETURNING *';
 
-    const result = await this.client.query(
-      query,
-      [email, host, port, tls],
-      this.logger
-    );
+    const result = await this.client.query(query, [email, host, port, tls]);
 
     return result.rows[0];
   }
@@ -197,7 +180,7 @@ class PostgresHandler {
   async getImapUserByEmail(email) {
     const query = 'SELECT * FROM imap_users WHERE email = $1';
 
-    const result = await this.client.query(query, [email], this.logger);
+    const result = await this.client.query(query, [email]);
     return result.rowCount > 0 ? result.rows[0] : null;
   }
 
@@ -209,7 +192,7 @@ class PostgresHandler {
   async getImapUserById(id) {
     const query = 'SELECT * FROM imap_users WHERE id = $1';
 
-    const result = await this.client.query(query, [id], this.logger);
+    const result = await this.client.query(query, [id]);
     return result.rowCount > 0 ? result.rows[0] : null;
   }
 
@@ -223,8 +206,7 @@ class PostgresHandler {
     try {
       const result = await this.client.query(
         `SELECT * FROM ${functionName}($1)`,
-        [userid],
-        this.logger
+        [userid]
       );
       return { data: result.rows, error: null };
     } catch (error) {
