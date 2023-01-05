@@ -28,7 +28,7 @@ async function handleMessage({
     await db.store(extractedContacts, user.id);
     
     if (isLast) {
-      db.refinePersons(user.id); 
+      db.callRpcFunction(user.id, 'refined_persons'); 
     } // runs rpc function.
   }
 }

@@ -91,8 +91,8 @@ class EmailMessage {
    */
   getListId() {
     const listId = this.isList()
-    ? emailMessageHelpers.getSpecificHeader(this.header,['list-id'])
-    : null
+      ? emailMessageHelpers.getSpecificHeader(this.header,['list-id'])
+      : null;
 
     if (listId) {
       return listId[0].match(REGEX_LIST_ID)[0];
