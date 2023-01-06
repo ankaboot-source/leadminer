@@ -6,7 +6,7 @@
       class="table"
       virtual-scroll
       :virtual-scroll-sticky-size-start="48"
-      :rows-per-page-options="[10, 50, 100]"
+      :rows-per-page-options="[150-500-1000]"
       row-key="email"
       title="Mined emails"
       :loading="isLoading"
