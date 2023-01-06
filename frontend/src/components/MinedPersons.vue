@@ -118,7 +118,7 @@
       <template #body-cell-name="props">
         <q-td :props="props">
           <q-expansion-item
-            v-if="props.row.name && props.row.alternate_names.length > 1"
+            v-if="props.row.name && props.row.alternate_names?.length > 1"
             dense
             dense-toggle
             expand-icon-class="text-orange"
@@ -241,7 +241,7 @@ const columns = [
     label: "Recency",
     align: "center",
     field: "recency",
-    format: (val) => new Date(val).toISOString().slice(0, 10),
+    format: (val) => val ? new Date(val).toISOString().slice(0, 10): '',
     sortable: true,
   },
   {
