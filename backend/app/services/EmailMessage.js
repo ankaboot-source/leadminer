@@ -90,14 +90,14 @@ class EmailMessage {
    * @returns {string}
    */
   getListId() {
-    const listId = this.isList()
-      ? emailMessageHelpers.getSpecificHeader(this.header,['list-id'])
-      : null;
 
-    if (listId) {
-      return listId[0].match(REGEX_LIST_ID)[0];
+    if (!this.isList()) {
+      return ''; 
     }
-    return '';
+    const listId = emailMessageHelpers.getSpecificHeader(this.header,['list-id']);
+    const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
+    return matchId ? matchId[0] : '';
+
   }
 
   /**
