@@ -1,7 +1,11 @@
 const { expect } = require('chai');
 
-const EmailMessage  = require('../../app/services/EmailMessage')
+const EmailMessageClass  = require('../../app/services/EmailMessage')
 
+class EmailMessage extends EmailMessageClass { // Do not trigger redis
+    personsExtractedFromBody() {}
+    personsExtractedFromHeader() {}
+  }
 
 describe('EmailMessage.getListId()', () => {
     
