@@ -4,8 +4,6 @@ const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
 const dateHelpers = require('../utils/helpers/dateHelpers');
-const { redis } = require('../utils/redis');
-const redisClientForNormalMode = redis.getClient();
 const {
   newsletterHeaders,
   transactionalHeaders,
@@ -16,14 +14,18 @@ const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {
   /**
-   * EmailMessage constructor
-   * @param sequentialId - The sequential ID of the message.
-   * @param header - The header of the message.
-   * @param body - The body of the message.
-   * @param user - The user.
-
+   * Creates an instance of EmailMessage.
+   * 
+   * @param {Object} redisClientForNormalMode - The Redis client used for normal mode.
+   * @param {String} userEmail - The email address of the user.
+   * @param {String} sequentialId - The sequential ID of the message.
+   * @param {Object} header - The header of the message.
+   * @param {Object} body - The body of the message.
+   * @param {String} folder - the path of the folder where the email is located
+   * @param {boolean} isLast - True if it's last email in last folder, else false
    */
-  constructor(userEmail, sequentialId, header, body, folder, isLast) {
+  constructor(redisClientForNormalMode, userEmail, sequentialId, header, body, folder, isLast) {
+    this.redisClientForNormalMode = redisClientForNormalMode;
     this.userEmail = userEmail;
     this.sequentialId = sequentialId;
     this.header = header || {};
@@ -92,9 +94,9 @@ class EmailMessage {
   getListId() {
 
     if (!this.isList()) {
-      return ''; 
+      return '';
     }
-    const listId = emailMessageHelpers.getSpecificHeader(this.header,['list-id']);
+    const listId = emailMessageHelpers.getSpecificHeader(this.header, ['list-id']);
     const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
     return matchId ? matchId[0] : '';
 
@@ -150,13 +152,13 @@ class EmailMessage {
 
     if (fieldName === 'from') {
       if (this.isNewsletter()) {
-        tags.push({name:'newsletter', reachable:2, source:'refined'});
+        tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
       }
       if (this.isTransactional()) {
-        tags.push({name:'transactional', reachable:2, source:'refined'});
+        tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
       }
       if (this.isList()) {
-        tags.push({name:'list', reachable:2, source:'refined'});
+        tags.push({ name: 'list', reachable: 2, source: 'refined' });
       }
     }
     return tags;
@@ -176,10 +178,10 @@ class EmailMessage {
     const tags = this.getTagsField(fieldName);
 
     if (email && emailMessageHelpers.isNoReply(email.address)) {
-      tags.push({name:'no-reply', reachable:0, source:'refined'});
+      tags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
     }
     if (emailType && emailType !== '') {
-      tags.push({name:emailType.toLowerCase(), reachable:1, source:'refined'});
+      tags.push({ name: emailType.toLowerCase(), reachable: 1, source: 'refined' });
     }
 
     return tags;
@@ -244,9 +246,9 @@ class EmailMessage {
         return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
       }
 
-      redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
+      this.redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
         if (member === 0) {
-          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
+          this.redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
       });
     }
@@ -273,9 +275,9 @@ class EmailMessage {
         return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
       }
 
-      redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
+      this.redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
         if (member === 0) {
-          redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
+          this.redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
         }
       });
     }
