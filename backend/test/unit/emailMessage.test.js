@@ -94,5 +94,4 @@ describe('EmailMessage.isList()', () => {
         const message = new EmailMessage({}, '', 1, TEST_HEADERS)
         expect(message.isList()).to.be.false
     })
-
 })
