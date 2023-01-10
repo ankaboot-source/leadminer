@@ -26,7 +26,7 @@ describe('domainHelpers.checkDomainStatus(emailAddress)', () => {
       emailAddressWithValidDomain
     );
     expect(output[0]).to.be.true;
-    expect(output[1]).eq('custom');
+    expect(output[1]).eq('provider');
   });
 
   it('should return false', async () => {
