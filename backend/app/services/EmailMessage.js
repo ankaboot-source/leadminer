@@ -101,13 +101,13 @@ class EmailMessage {
   }
 
   /**
- * getDate - Returns the parsed value of the "date" property of the header or null.
- * @returns {string | null} - A valid date in the format of 'yyyy-mm-dd hh:mm' or null if the date property is not present or invalid.
+   * getDate - Returns the parsed value of the "date" property of the header or null.
+   * @returns {string | null} - A valid date in the format of 'yyyy-mm-dd hh:mm' or null if the date property is not present or invalid.
    */
   getDate() {
     if (!this.header.date) {
       return null;
-      }
+    }
     return dateHelpers.parseDate(this.header.date[0]) || this.header.date;
   }
 
