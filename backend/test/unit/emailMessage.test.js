@@ -2,25 +2,22 @@ const { expect } = require('chai');
 
 const EmailMessage = require('../../app/services/EmailMessage')
 
-describe('EmailMessage.getDate(date)', () => {
-
-    it('should return the parsed date if the date property is valid', () => {
-        const header = { date: ['Mon, 02 Jan 2021 14:30:00 +0000'] };
-        const expected = '2021-01-02 14:30';
+describe('EmailMessage.getDate()', function () {
+    it('should return the date in UTC format if date is present and valid', function () {
+        const date = new Date()
+        const header = { date: [date.toString()] };
         const message = new EmailMessage('email@email.com', 1, header)
-        expect(message.getDate()).to.equal(expected);
+        expect(message.getDate()).to.equal(date.toUTCString());
     });
 
-    it('should return the original date if the date property is not valid', () => {
-        const header = { date: ['not a valid date string'] };
-        const message = new EmailMessage('email@email.com', 1, header)
-        const parsedDate = message.getDate()
-        expect(parsedDate).to.not.be.null
-        expect(parsedDate[0]).to.equal('not a valid date string');
-    });
-
-    it('should return null if the date property is not present', () => {
+    it('should return null if the date is not present in the header', function () {
         const header = {};
+        const message = new EmailMessage('email@email.com', 1, header)
+        expect(message.getDate()).to.be.null;
+    });
+
+    it('should return null if the date is not a valid date', function () {
+        const header = { date: ['not a date'] };
         const message = new EmailMessage('email@email.com', 1, header)
         expect(message.getDate()).to.be.null;
     });
