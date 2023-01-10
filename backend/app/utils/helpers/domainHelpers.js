@@ -1,28 +1,23 @@
 const dns = require('dns');
 
-const { redis } = require('../redis');
-const redisClientForNormalMode = redis.getClient();
-
 /**
- * CheckMXStatus checks if a domain has a valid MX record. If it does, it adds it to a redis set called
- * "domainListValid". If it doesn't, it adds it to a redis set called "domainListInValid"
- * @param domain - The domain name to check.
- * @returns A promise that resolves to an array of three elements. The first element is a boolean that
- * indicates whether the domain is valid or not. The second element is a string that indicates the type
- * of domain, and finally the domain itself.
+ * Check the MX records of a domain and adds the result to the redis sets
+ * @param {Object} redisClient - The Redis client used for storing the results
+ * @param {String} domain - The domain to check MX records for.
+ * @return {Promise<[boolean,string,string]>} A promise that resolves to an array that contains [validity:boolean, type: string, name: string ]
  */
-function checkMXStatus(domain) {
+function checkMXStatus(redisClient, domain) {
   return new Promise((resolve) => {
     dns.resolveMx(domain, async (err, addresses) => {
       if (addresses && !err) {
         if (addresses.length > 0) {
           // set domain in redis valid domains list
-          await redisClientForNormalMode.sadd('domainListValid', domain);
+          await redisClient.sadd('domainListValid', domain);
           resolve([true, 'custom', domain]);
         }
       } else {
         // set domain in redis valid domains list
-        await redisClientForNormalMode.sadd('domainListInvalid', domain);
+        await redisClient.sadd('domainListInvalid', domain);
         resolve([false, '', domain]);
       }
     });
@@ -31,13 +26,14 @@ function checkMXStatus(domain) {
 
 /**
  * Checks the domain status.
+ * @param {Object} redisClient - Redis client.
  * @param emailAddress - The email address to check its domain.
  * @returns An array of three elements.
  * The first element is a boolean that indicates whether the domain is valid or not.
  * The second element is a string that indicates the type of domain.
  * The third element is the domain itself.
  */
-async function checkDomainStatus(emailAddress) {
+async function checkDomainStatus(redisClient, emailAddress) {
   const domain = emailAddress.split('@')[1];
 
   /**
@@ -53,7 +49,7 @@ async function checkDomainStatus(emailAddress) {
   ];
 
   for (const provider of providers) {
-    const exists = await redisClientForNormalMode.sismember(
+    const exists = await redisClient.sismember(
       provider.redisKey,
       domain
     );
