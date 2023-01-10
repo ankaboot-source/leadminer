@@ -1,34 +1,21 @@
 /**
- * compareDates() takes two dates as arguments and returns true if the first date is greater than the second date
- * @param date1 - The first date to compare.
- * @param date2 - The date to compare to.
- * @returns a boolean value.
- */
-function compareDates(date1, date2) {
-  const d1 = Date.parse(date1),
-    d2 = Date.parse(date2);
-
-  return d1 > d2;
-}
-
-/**
- * parseDate takes a date string, replaces the timezone with a fixed timezone, creates a date object from the
- * string, and returns the date in ISO format
- * @param date - The date string to be parsed.
- * @returns A string with the date and time in ISO format.
+ * Parses a date string in the format specified in the Internet Message Format (RFC 5322)
+ * @param {string} date - The date string, should be in the format "day-of-week, dd Mon yyyy hh:mm:ss timezone" or any valid format as per the RFC.
+ * @returns {string | null} - The date and time parts of the ISO format string, or null if the date string is not valid.
  */
 function parseDate(date) {
-  const tempDate = date
-      .replaceAll(/ CEST-(.*)| CEST/g, '+0200')
-      .replace(/ UTC-(.*)/i, ''),
-    dateFromString = new Date(tempDate);
-  /* istanbul ignore else */
+ 
+  const timezoneRegex = /(UTC|CEST)[+-]\d{4}/g;
+  const dateWithoutTimezone = date.replace(timezoneRegex, '');
 
-  if (isNaN(Date.parse(dateFromString)) === false) {
-    const ISODate = dateFromString.toISOString();
-
-    return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
+  // Use the Date.parse() method to check if the date string is valid
+  if (isNaN(Date.parse(dateWithoutTimezone))) {
+    return null;
   }
+  const dateFromString = new Date(dateWithoutTimezone);
+  const ISODate = dateFromString.toISOString();
+  // Return the date and time parts of the ISO format string
+  return `${ISODate.substring(0, 10)} ${ISODate.substring(11, 16)}`;
 }
 
-module.exports = { parseDate, compareDates };
+module.exports = { parseDate };
