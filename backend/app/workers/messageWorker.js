@@ -1,5 +1,6 @@
 const { redis } = require('../utils/redis');
 const redisClient = redis.getPubSubClient();
+const redisClientForNormalMode = redis.getClient();
 const EmailMessage = require('../services/EmailMessage');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
@@ -16,6 +17,7 @@ async function handleMessage({
   const message_id = header['message-id'] ? header['message-id'][0] : '';
   if (message_id) {
     const message = new EmailMessage(
+      redisClientForNormalMode,
       user.email,
       seqNumber,
       header,
@@ -26,9 +28,9 @@ async function handleMessage({
 
     const extractedContacts = await message.extractEmailsAddresses();
     await db.store(extractedContacts, user.id);
-    
+
     if (isLast) {
-      db.callRpcFunction(user.id, 'refined_persons'); 
+      db.callRpcFunction(user.id, 'refined_persons');
     } // runs rpc function.
   }
 }

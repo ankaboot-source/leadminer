@@ -18,12 +18,12 @@ function isNoReply(emailAddress) {
  * @returns Header value or null.
  */
 function getSpecificHeader(header, headerFields) {
-  for (const headerField of Object.keys(header)) {
-    const firstMatch = headerFields.find(
-      (current) => current.toLowerCase() === headerField.toLowerCase()
-    );
-    if (firstMatch) {
-      return header[`${firstMatch}`];
+  
+  for (const headerField of headerFields) {
+    const firstMatch = header[`${headerField}`] || header[`${headerField.toLocaleLowerCase()}`];
+
+    if (firstMatch !== undefined) {
+      return firstMatch;
     }
   }
   return null;
