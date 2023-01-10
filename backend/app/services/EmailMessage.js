@@ -231,7 +231,7 @@ class EmailMessage {
   async personsExtractedFromHeader(emails, fieldName) {
 
     for (const email of emails.filter((e) => e && this.userEmail !== e?.address)) {
-      const domain = await domainHelpers.checkDomainStatus(email.address); // get the domain status //TODO: SAVE DOMAIN STATUS IN DB
+      const domain = await domainHelpers.checkDomainStatus(this.redisClientForNormalMode, email.address);
 
       if (domain[0]) { // Valid email
 
@@ -259,7 +259,7 @@ class EmailMessage {
 
     for (const email of emails.filter((e) => e && this.userEmail !== e.address)) {
 
-      const domain = await domainHelpers.checkDomainStatus(email); // check for Domain validity
+      const domain = await domainHelpers.checkDomainStatus(this.redisClientForNormalMode, email); // check for Domain validity
 
       if (domain[0]) {
 
