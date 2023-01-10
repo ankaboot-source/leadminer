@@ -1,20 +1,21 @@
 const { expect } = require('chai');
-const dateHelpers = require('../../app/utils/helpers/dateHelpers');
+const { parseDate } = require('../../app/utils/helpers/dateHelpers');
 
-describe('dateHelpers.compareDates(date1,date2)', () => {
-  it('should return true (date1 is greater than date2)', () => {
-    const output = dateHelpers.compareDates(
-      '2014-02-28 16:03',
-      '2014-02-28 16:01'
-    );
-    expect(output).to.eql(true);
+describe('dateHelpers.parseDate', () => {
+  it('should parse the valid date string and return the date and time parts of the ISO format string', () => {
+    const validDate = 'Mon, 02 Jan 2021 14:30:00 +0000';
+    const expected = '2021-01-02 14:30';
+    expect(parseDate(validDate)).to.equal(expected);
   });
 
-  it('should return false (date2 is greater)', () => {
-    const output = dateHelpers.compareDates(
-      '2014-02-28 16:03',
-      '2014-02-30 20:50'
-    );
-    expect(output).to.eql(false);
+  it('should parse the date string with a different timezone and return the date and time parts of the ISO format string', () => {
+    const validDate = 'Mon, 02 Jan 2021 14:30:00 GMT';
+    const expected = '2021-01-02 14:30';
+    expect(parseDate(validDate)).to.equal(expected);
+  });
+
+  it('should return null when the date string is not valid', () => {
+    const invalidDate = 'not a valid date string';
+    expect(parseDate(invalidDate)).to.be.null;
   });
 });
