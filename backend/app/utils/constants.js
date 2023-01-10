@@ -1,7 +1,6 @@
-
 const headerRegex = /(?<=<|\s|^)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>)/;
 const bodyRegex = /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi;
-const listRegex = /<.*>/g;
+const listRegex = /<[^<]{1,255}>$/;
 
 module.exports = {
   REDIS_MESSAGES_CHANNEL: 'messages-channel',
