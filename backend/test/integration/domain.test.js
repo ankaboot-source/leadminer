@@ -18,7 +18,7 @@ describe('domainHelpers.checkMXStatus(domain)', () => {
   });
 });
 
-describe('domainHelpers.checkDomainStatus(emailAddress)', async () => {
+describe('domainHelpers.checkDomainStatus(emailAddress)', () => {
   it('should return true', async () => {
     const emailAddressWithValidDomain = 'leadminer@gmail.com';
     const output = await domainHelpers.checkDomainStatus(
