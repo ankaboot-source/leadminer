@@ -3,7 +3,6 @@ const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
-const dateHelpers = require('../utils/helpers/dateHelpers');
 const { redis } = require('../utils/redis');
 const redisClientForNormalMode = redis.getClient();
 const {
@@ -101,14 +100,13 @@ class EmailMessage {
   }
 
   /**
-   * getDate - Returns the parsed value of the "date" property of the header or null.
-   * @returns {string | null} - A valid date in the format of 'yyyy-mm-dd hh:mm' or null if the date property is not present or invalid.
+   * Returns the date from the header object, or null if it is not present or not a valid date
+   * @returns {(string|null)} The UTC formatted date string or null if it is not present or not a valid date.
    */
   getDate() {
-    if (!this.header.date) {
-      return null;
-    }
-    return dateHelpers.parseDate(this.header.date[0]) || this.header.date;
+    return (this.header.date && this.header.date[0] && !isNaN(Date.parse(this.header.date[0])))
+      ? new Date(this.header.date[0]).toUTCString()
+      : null;
   }
 
   /**
