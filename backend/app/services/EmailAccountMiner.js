@@ -318,7 +318,7 @@ class EmailAccountMiner {
     // call supabase function to refine data
     db.callRpcFunction(this.user.id, 'populate_refined').then((res) => {
       if (res.error) {
-        logger.error("Error from callRpcFunction(): ", res.error);
+        logger.error('Error from callRpcFunction(): ', res.error);
       }
     });
   }

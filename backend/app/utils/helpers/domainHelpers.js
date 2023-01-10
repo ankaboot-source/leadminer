@@ -60,7 +60,7 @@ async function checkDomainStatus(redisClient, emailAddress) {
   }
 
   // if not already scanned we check the MX
-  const MXStatus = await checkMXStatus(domain);
+  const MXStatus = await checkMXStatus(redisClient, domain);
   return MXStatus;
 }
 
