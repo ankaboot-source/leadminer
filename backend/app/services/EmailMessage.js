@@ -1,4 +1,3 @@
-'use-strict';
 const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
@@ -14,7 +13,7 @@ const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 class EmailMessage {
   /**
    * Creates an instance of EmailMessage.
-   * 
+   *
    * @param {Object} redisClientForNormalMode - The Redis client used for normal mode.
    * @param {String} userEmail - The email address of the user.
    * @param {String} sequentialId - The sequential ID of the message.
@@ -23,7 +22,15 @@ class EmailMessage {
    * @param {String} folder - the path of the folder where the email is located
    * @param {boolean} isLast - True if it's last email in last folder, else false
    */
-  constructor(redisClientForNormalMode, userEmail, sequentialId, header, body, folder, isLast) {
+  constructor(
+    redisClientForNormalMode,
+    userEmail,
+    sequentialId,
+    header,
+    body,
+    folder,
+    isLast
+  ) {
     this.redisClientForNormalMode = redisClientForNormalMode;
     this.userEmail = userEmail;
     this.sequentialId = sequentialId;
@@ -63,10 +70,8 @@ class EmailMessage {
    */
   isList() {
     return (
-      emailMessageHelpers.getSpecificHeader(
-        this.header,
-        mailingListHeaders
-      ) !== null
+      emailMessageHelpers.getSpecificHeader(this.header, mailingListHeaders) !==
+      null
     );
   }
 
@@ -91,14 +96,14 @@ class EmailMessage {
    * @returns {string}
    */
   getListId() {
-
     if (!this.isList()) {
       return '';
     }
-    const listId = emailMessageHelpers.getSpecificHeader(this.header, ['list-id']);
+    const listId = emailMessageHelpers.getSpecificHeader(this.header, [
+      'list-id'
+    ]);
     const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
     return matchId ? matchId[0] : '';
-
   }
 
   /**
@@ -106,7 +111,9 @@ class EmailMessage {
    * @returns {(string|null)} The UTC formatted date string or null if it is not present or not a valid date.
    */
   getDate() {
-    return (this.header.date && this.header.date[0] && !isNaN(Date.parse(this.header.date[0])))
+    return this.header.date &&
+      this.header.date[0] &&
+      !isNaN(Date.parse(this.header.date[0]))
       ? new Date(this.header.date[0]).toUTCString()
       : null;
   }
@@ -142,7 +149,6 @@ class EmailMessage {
    * @returns { [{name: string, reachable: int, source: string}] | []}
    */
   getTagsField(fieldName) {
-
     const tags = [];
 
     if (fieldName === 'from') {
@@ -166,17 +172,20 @@ class EmailMessage {
    * @param {string} emailType - The type of the email
    * @returns { [{name: string, reachable: int, source: string}] | []}
    *  An empty array if there is no tags, else returns array of objects.
-   *  
+   *
    */
   getTags(fieldName, email, emailType) {
-
     const tags = this.getTagsField(fieldName);
 
     if (email && emailMessageHelpers.isNoReply(email.address)) {
       tags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
     }
     if (emailType && emailType !== '') {
-      tags.push({ name: emailType.toLowerCase(), reachable: 1, source: 'refined' });
+      tags.push({
+        name: emailType.toLowerCase(),
+        reachable: 1,
+        source: 'refined'
+      });
     }
 
     return tags;
@@ -184,12 +193,10 @@ class EmailMessage {
 
   /**
    * extractEmailsAddresses - extracts emails from the header and body of an email, then returns an object
-   * @returns {{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}[]}}
+   * @returns {Promise<{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}}[]>}
    */
   async extractEmailsAddresses() {
-
     const extractedData = {
-
       message: {
         channel: 'imap',
         folderPath: this.folderPath,
@@ -206,7 +213,8 @@ class EmailMessage {
     const messagingFields = this.getMessagingFieldsFromHeader();
 
     for (const key of Object.keys(messagingFields)) {
-      const emails = regExHelpers.extractNameAndEmail( // extract Name and Email in case of a header
+      const emails = regExHelpers.extractNameAndEmail(
+        // extract Name and Email in case of a header
         messagingFields[`${key}`]
       );
       const persons = await this.personsExtractedFromHeader(emails, key);
@@ -217,7 +225,9 @@ class EmailMessage {
       this.body.toString('utf8')
     );
     delete this.body;
-    extractedData.persons.push(...await this.personsExtractedFromBody(emails));
+    extractedData.persons.push(
+      ...(await this.personsExtractedFromBody(emails))
+    );
 
     return extractedData;
   }
@@ -226,26 +236,41 @@ class EmailMessage {
    * personsExtractedFromHeader checks for email validty then returns a person objects with thier tags and point of contact.
    * @param {array} emails - an array of objects that contains the extracted email addresses and the names
    * @param {string} fieldName - the current extracted field name (eg: from , cc , to...)
-   * @returns {Object[]} An array of objects
+   * @returns {Promise<Object[]>} An array of objects
    */
   async personsExtractedFromHeader(emails, fieldName) {
+    for (const email of emails) {
+      if (email.address === this.userEmail) {
+        continue;
+      }
 
-    for (const email of emails.filter((e) => e && this.userEmail !== e?.address)) {
-      const domain = await domainHelpers.checkDomainStatus(this.redisClientForNormalMode, email.address);
+      const domain = await domainHelpers.checkDomainStatus(
+        this.redisClientForNormalMode,
+        email.address
+      );
 
-      if (domain[0]) { // Valid email
-
-        const emailType = emailAddressHelpers
-          .findEmailAddressType(email.address, [email?.name], domain[1]);
+      if (domain[0]) {
+        // Valid email
+        const emailType = emailAddressHelpers.findEmailAddressType(
+          email.address,
+          [email?.name],
+          domain[1]
+        );
         const tags = this.getTags(fieldName, email, emailType);
         return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
       }
 
-      this.redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
-        if (member === 0) {
-          this.redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-        }
-      });
+      const member = await this.redisClientForNormalMode.sismember(
+        'invalidDomainEmails',
+        email.address
+      );
+
+      if (member === 0) {
+        await this.redisClientForNormalMode.sadd(
+          'invalidDomainEmails',
+          email.address
+        );
+      }
     }
     return [];
   }
@@ -253,41 +278,51 @@ class EmailMessage {
   /**
    * personsExtractedFromBody checks for email validty then returns a person objects with thier tags and point of contact.
    * @param {array} emails - an array of objects that contains the extracted email addresses
-   * @returns {Object[]} An array of object.
+   * @returns {Promise<Object[]>} An array of object.
    */
-  async personsExtractedFromBody(emails) { // TODO: why takes an array of emails but don't process all of them.
-
-    for (const email of emails.filter((e) => e && this.userEmail !== e.address)) {
-
-      const domain = await domainHelpers.checkDomainStatus(this.redisClientForNormalMode, email); // check for Domain validity
+  async personsExtractedFromBody(emails) {
+    // TODO: why takes an array of emails but don't process all of them.
+    for (const email of emails) {
+      if (email?.address === this.userEmail) {
+        continue;
+      }
+      const domain = await domainHelpers.checkDomainStatus(
+        this.redisClientForNormalMode,
+        email
+      ); // check for Domain validity
 
       if (domain[0]) {
-
         const emailType = emailAddressHelpers.findEmailAddressType(
-          email, [email?.name ?? ''], domain[1]
+          email,
+          [email?.name ?? ''],
+          domain[1]
         );
         const tags = this.getTags('', email, emailType);
         return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
       }
 
-      this.redisClientForNormalMode.sismember('invalidDomainEmails', email.address).then((member) => {
-        if (member === 0) {
-          this.redisClientForNormalMode.sadd('invalidDomainEmails', email.address);
-        }
-      });
+      this.redisClientForNormalMode
+        .sismember('invalidDomainEmails', email.address)
+        .then((member) => {
+          if (member === 0) {
+            this.redisClientForNormalMode.sadd(
+              'invalidDomainEmails',
+              email.address
+            );
+          }
+        });
     }
 
     return [];
   }
 
   /**
-   * constructPersonPocTags - Constructs the person && pointofcontact objects using email, tags, fieldName 
+   * constructPersonPocTags - Constructs the person && pointofcontact objects using email, tags, fieldName
    * @param {{name: string, adddress: string, identifier: string}} email - The Email object
    * @param {[{name: string, label; string, reachable: string, type: string}] | []} tags - Array of tags
    * @param {string} fieldName - The Header field.
    */
   static constructPersonPocTags(email, tags, fieldName) {
-
     const { address, identifier, name } = email;
     return {
       person: {

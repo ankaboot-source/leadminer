@@ -82,6 +82,10 @@ class EmailAccountMiner {
         });
 
         this.connection.once('error', (error) => {
+          logger.error('Failed to get IMAP Tree', {
+            error,
+            userId: this.user.id
+          });
           result = [this.tree, error];
           resolve(result);
         });
@@ -165,7 +169,6 @@ class EmailAccountMiner {
   *mineFolder(folder) {
     // we use generator to stope function execution then we recall it with new params using next()
     yield this.connection.openBox(folder, true, (err, openedFolder) => {
-
       if (err) {
         logger.error(
           `Error occurred when opening folder for User: ${this.mailHash}`
@@ -220,7 +223,6 @@ class EmailAccountMiner {
     });
 
     fetchResult.on('message', (msg, seqNumber) => {
-
       let header = '';
       let body = '';
 
@@ -245,7 +247,8 @@ class EmailAccountMiner {
           parsedHeader,
           parsedBody,
           folderName,
-          this.isLastFolderToFetch(folderName) && seqNumber === folder.messages.total
+          this.isLastFolderToFetch(folderName) &&
+            seqNumber === folder.messages.total
         );
       });
     });
