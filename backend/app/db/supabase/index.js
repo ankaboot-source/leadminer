@@ -17,7 +17,6 @@ class SupabaseHandler {
    * @returns {promise} The inserted rows
    */
   async insertMessage(message) {
-
     const result = await this.supabaseClient
       .from('messages')
       .insert(message)
@@ -45,7 +44,6 @@ class SupabaseHandler {
    * @returns {promise} The inserted rows
    */
   async upsertPerson(person) {
-
     const result = await this.supabaseClient
       .from('persons')
       .upsert(person, { onConflict: 'email' })
