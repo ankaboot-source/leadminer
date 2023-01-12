@@ -28,7 +28,6 @@ async function handleMessage({
 
     const extractedContacts = await message.extractEmailsAddresses();
     await db.store(extractedContacts, user.id);
-    console.log(isLast);
 
     if (isLast) {
       try {
