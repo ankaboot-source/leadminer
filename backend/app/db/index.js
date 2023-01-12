@@ -77,7 +77,7 @@ const db = new handler();
   const query = table => db.client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`);
   const fields = (await Promise.all(tables.map(query))).flatMap(res => res.rows.map(row => row.column_name));
 
-  fields.map((field) => MAPPING_TABLE.set(toCamelCase(field), field));
+  fields.forEach((field) => MAPPING_TABLE.set(toCamelCase(field), field));
 })();
 
 module.exports = { db };
