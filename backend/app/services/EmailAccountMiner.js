@@ -236,13 +236,13 @@ class EmailAccountMiner {
         });
       });
 
-      msg.once('end', () => {
+      msg.once('end', async () => {
         const parsedHeader = Imap.parseHeader(header.toString('utf8'));
         const parsedBody = body.toString('utf8');
 
         this.fetchedMessagesCount++;
 
-        self.publishMessageToChannel(
+        await self.publishMessageToChannel(
           seqNumber,
           parsedHeader,
           parsedBody,
@@ -284,11 +284,11 @@ class EmailAccountMiner {
    * @param Body - The body of the email
    * @param folderName - The name of the folder that the message is in.
    */
-  publishMessageToChannel(seqNumber, header, body, folderName, isLast) {
+  async publishMessageToChannel(seqNumber, header, body, folderName, isLast) {
     this.sendMiningProgress(seqNumber);
 
     if (this.emailsProgressIndexes.includes(seqNumber)) {
-      this.sendMinedData();
+      await this.sendMinedData();
     }
 
     const message = JSON.stringify({
@@ -317,13 +317,13 @@ class EmailAccountMiner {
   /**
    * sendMinedData fires up refining worker when it's called
    */
-  sendMinedData() {
-    // call supabase function to refine data
-    db.callRpcFunction(this.user.id, 'populate_refined').then((res) => {
-      if (res.error) {
-        logger.error('Error from callRpcFunction(): ', res.error);
-      }
-    });
+  async sendMinedData() {
+    logger.info('Starting to populate refined_persons.');
+    try {
+      await db.callRpcFunction(this.user.id, 'populate_refined');
+    } catch (error) {
+      logger.error('Error from callRpcFunction(): ', error);
+    }
   }
 }
 

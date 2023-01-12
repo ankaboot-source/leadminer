@@ -28,10 +28,16 @@ async function handleMessage({
 
     const extractedContacts = await message.extractEmailsAddresses();
     await db.store(extractedContacts, user.id);
+    console.log(isLast);
 
     if (isLast) {
-      await db.callRpcFunction(user.id, 'refined_persons');
-    } // runs rpc function.
+      try {
+        await db.callRpcFunction(user.id, 'populate_refined');
+        await db.callRpcFunction(user.id, 'refined_persons');
+      } catch (error) {
+        logger.error('Failed refining persons.', { error });
+      }
+    }
   }
 }
 

@@ -276,20 +276,20 @@ class EmailMessage {
   }
 
   /**
-   * personsExtractedFromBody checks for email validty then returns a person objects with thier tags and point of contact.
-   * @param {array} emails - an array of objects that contains the extracted email addresses
-   * @returns {Promise<Object[]>} An array of object.
+   * Checks for email validity then returns a list of person objects with their tags and point of contact.
+   * @param {object[]} emails - List of extracted email addresses.
+   * @returns {Promise<object[]>} List of aggregated persons, points of contact and tags.
    */
   async personsExtractedFromBody(emails) {
-    // TODO: why takes an array of emails but don't process all of them.
     for (const email of emails) {
       if (email?.address === this.userEmail) {
         continue;
       }
+
       const domain = await domainHelpers.checkDomainStatus(
         this.redisClientForNormalMode,
         email
-      ); // check for Domain validity
+      );
 
       if (domain[0]) {
         const emailType = emailAddressHelpers.findEmailAddressType(
@@ -301,16 +301,17 @@ class EmailMessage {
         return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
       }
 
-      this.redisClientForNormalMode
-        .sismember('invalidDomainEmails', email.address)
-        .then((member) => {
-          if (member === 0) {
-            this.redisClientForNormalMode.sadd(
-              'invalidDomainEmails',
-              email.address
-            );
-          }
-        });
+      const member = await this.redisClientForNormalMode.sismember(
+        'invalidDomainEmails',
+        email.address
+      );
+
+      if (member === 0) {
+        await this.redisClientForNormalMode.sadd(
+          'invalidDomainEmails',
+          email.address
+        );
+      }
     }
 
     return [];
