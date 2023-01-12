@@ -6,10 +6,11 @@ const { hashSecret } = require('../../config/server.config');
  * @param emailAddress - The email address to hash.
  * @returns A hash of the email address.
  */
-function hashEmail(emailAddress) {
+function hashEmail(emailAddress, userId) {
+  const saltedUserId = emailAddress + userId;
   return crypto
     .createHmac('sha256', hashSecret)
-    .update(emailAddress)
+    .update(saltedUserId)
     .digest('hex');
 }
 
