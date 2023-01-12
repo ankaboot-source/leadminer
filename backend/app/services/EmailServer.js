@@ -1,6 +1,5 @@
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
-const hashHelpers = require('../utils/helpers/hashHelpers');
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 const {
   imapAuthTimeout,
@@ -17,7 +16,6 @@ class EmailServer {
   constructor(user, sse) {
     this.user = user;
     this.sse = sse;
-    this.mailHash = hashHelpers.hashEmail(user.email);
   }
   /**
    * initConnection returns an IMAP object that is used to connect to the user's email account
@@ -25,7 +23,7 @@ class EmailServer {
    */
   initConnection() {
     logger.info('Preparing IMAP connection for user.', {
-      emailHash: this.mailHash
+      user: this.user.userIdentifierHash
     });
     if (this.user.token) {
       // the user is connected using api
@@ -43,7 +41,7 @@ class EmailServer {
         keepalive: false
       });
       logger.info('API connection to IMAP server initiated for user.', {
-        emailHash: this.mailHash
+        user: this.user.userIdentifierHash
       });
     }
     if (this.user.password) {
@@ -65,7 +63,7 @@ class EmailServer {
         }
       });
       logger.info('IMAP connection to IMAP server initiated for user.', {
-        emailHash: this.mailHash
+        user:this.user.userIdentifierHash
       });
     }
   }
@@ -95,7 +93,7 @@ class EmailServer {
       this.#connection._config.xoauth2 = xoauth2Token;
     } else {
       logger.info('User connected using IMAP.', {
-        emailHash: this.mailHash,
+        user: this.user.userIdentifierHash,
         duration: performance.measure('imap connection', 'imapConn-start')
           .duration
       });

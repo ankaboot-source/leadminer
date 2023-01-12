@@ -1,5 +1,4 @@
 const imapTreeHelpers = require('../utils/helpers/imapTreeHelpers');
-const hashHelpers = require('../utils/helpers/hashHelpers');
 const inputHelpers = require('../utils/helpers/inputHelpers');
 const Imap = require('imap');
 const logger = require('../utils/logger')(module);
@@ -32,7 +31,6 @@ class EmailAccountMiner {
     this.fields = fields;
     this.folders = folders;
     this.eventEmitter = eventEmitter;
-    this.mailHash = hashHelpers.hashEmail(user.email);
     this.fetchedMessagesCount = 0;
   }
 
@@ -52,7 +50,7 @@ class EmailAccountMiner {
         this.connection = connection;
         this.connection.once('ready', () => {
           logger.info('Started mining folders tree for user.', {
-            emailHash: this.mailHash
+            user: this.user.userIdentifierHash
           });
           this.connection.getBoxes('', async (err, boxes) => {
             if (err) {
@@ -73,7 +71,7 @@ class EmailAccountMiner {
 
         this.connection.once('close', () => {
           logger.info('Finished mining folders tree for user.', {
-            emailHash: this.mailHash,
+            user: this.user.userIdentifierHash,
             duration: performance.measure('fetch folders', 'fetchBoxes-start')
               .duration
           });
@@ -128,7 +126,7 @@ class EmailAccountMiner {
     this.connection.once('ready', () => {
       performance.mark('fetching-start');
       logger.info('Started mining email messages for user.', {
-        emailHash: this.mailHash
+        user: this.user.userIdentifierHash
       });
       this.mineFolder(this.folders[0]).next();
     });
@@ -136,7 +134,7 @@ class EmailAccountMiner {
     this.eventEmitter.on('endByUser', () => {
       this.connection.end();
       logger.info('Connection to IMAP server destroyed by user.', {
-        emailHash: this.mailHash
+        user: this.user.userIdentifierHash
       });
     });
 
@@ -146,7 +144,7 @@ class EmailAccountMiner {
     });
     this.connection.once('close', () => {
       logger.info('Finished collecting emails for user.', {
-        emailHash: this.mailHash,
+        user: this.user.userIdentifierHash,
         duration: performance.measure('measure fetching', 'fetching-start')
           .duration
       });
@@ -168,7 +166,7 @@ class EmailAccountMiner {
 
       if (err) {
         logger.error(
-          `Error occurred when opening folder for User: ${this.mailHash}`
+          `Error occurred when opening folder for User: ${this.user.userIdentifierHash}`
         );
       }
       this.mineMessages(openedFolder, folder);
@@ -306,6 +304,7 @@ class EmailAccountMiner {
    */
   sendMiningProgress(seqNumber) {
     // define the progress
+    logger.debug('Sending SSE progress', {user: this.user.userIdentifierHash, messagesFetched: this.fetchedMessagesCount});
     if (this.sends.includes(seqNumber)) {
       this.sse.send(this.fetchedMessagesCount, `ScannedEmails${this.user.id}`);
     }
@@ -316,6 +315,7 @@ class EmailAccountMiner {
    */
   sendMinedData() {
     // call supabase function to refine data
+    logger.debug('Calling function populate_refined', {user: this.user.userIdentifierHash});
     db.callRpcFunction(this.user.id, 'populate_refined').then((res) => {
       if (res.error) {
         logger.error('Error from callRpcFunction(): ', res.error);

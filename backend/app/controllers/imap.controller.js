@@ -154,11 +154,11 @@ async function getImapBoxes(req, res, next) {
 
   if (error) {
     error.message = 'Unable to fetch IMAP folders.';
-    error.emailHash = hashHelpers.hashEmail(user.email);
+    error.user = hashHelpers.hashEmail(user.email, user.id);
     return next(error);
   }
   logger.info('Mining IMAP tree succeeded.', {
-    emailHash: hashHelpers.hashEmail(user.email)
+    user: hashHelpers.hashEmail(user.email, user.id)
   });
   res.status(200).send({
     message: 'IMAP folders fetched successfully!',
