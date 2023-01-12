@@ -20,7 +20,6 @@ class EmailMessage {
    * @param {Object} header - The header of the message.
    * @param {Object} body - The body of the message.
    * @param {String} folder - the path of the folder where the email is located
-   * @param {boolean} isLast - True if it's last email in last folder, else false
    */
   constructor(
     redisClientForNormalMode,
@@ -28,8 +27,7 @@ class EmailMessage {
     sequentialId,
     header,
     body,
-    folder,
-    isLast
+    folder
   ) {
     this.redisClientForNormalMode = redisClientForNormalMode;
     this.userEmail = userEmail;
@@ -37,7 +35,6 @@ class EmailMessage {
     this.header = header || {};
     this.body = body || {};
     this.folderPath = folder;
-    this.isLast = isLast;
   }
 
   /**

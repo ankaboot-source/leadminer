@@ -106,7 +106,8 @@ async function loginToAccount(req, res, next) {
         imapConnection.end();
       }
       logger.info('Account successfully logged in.', {
-        email, duration: performance.measure('measure login', 'login-start').duration
+        email,
+        duration: performance.measure('measure login', 'login-start').duration
       });
     });
     imapConnection.on('error', (err) => {
@@ -220,7 +221,6 @@ async function getEmails(req, res, next) {
     server,
     user,
     sse,
-    ['HEADER', '1'],
     req.query.boxes,
     eventEmitter
   );

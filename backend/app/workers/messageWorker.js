@@ -11,14 +11,15 @@ async function handleMessage({
   body,
   header,
   folderName,
-  user,
+  userId,
+  userEmail,
   isLast
 }) {
   const message_id = header['message-id'] ? header['message-id'][0] : '';
   if (message_id) {
     const message = new EmailMessage(
       redisClientForNormalMode,
-      user.email,
+      userEmail,
       seqNumber,
       header,
       body,
@@ -27,12 +28,14 @@ async function handleMessage({
     );
 
     const extractedContacts = await message.extractEmailsAddresses();
-    await db.store(extractedContacts, user.id);
+    await db.store(extractedContacts, userId);
 
     if (isLast) {
       try {
-        await db.callRpcFunction(user.id, 'populate_refined');
-        await db.callRpcFunction(user.id, 'refined_persons');
+        await db.callRpcFunction(userId, 'populate_refined');
+
+        logger.info('Initiating refinement process');
+        await db.callRpcFunction(userId, 'refined_persons');
       } catch (error) {
         logger.error('Failed refining persons.', { error });
       }
