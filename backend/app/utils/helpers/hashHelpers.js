@@ -2,9 +2,10 @@ const crypto = require('crypto');
 const { hashSecret } = require('../../config/server.config');
 
 /**
- * hashEmail takes an email address, runs it through a cryptographic hash function, and returns the result
- * @param emailAddress - The email address to hash.
- * @returns A hash of the email address.
+ * Hashes an email address and a user id using the sha256 algorithm
+ * @param {string} emailAddress - The email address to be hashed
+ * @param {string} userId - The user id to be used as salt
+ * @return {string} - The hashed email address and user id
  */
 function hashEmail(emailAddress, userId) {
   const saltedUserId = emailAddress + userId;
