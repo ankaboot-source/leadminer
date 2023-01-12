@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const imapUser = require('../../app/services/imapUser');
 const dataTest = require('../testData.json');
+const hashHelpers = require('../../app/utils/helpers/hashHelpers');
 
 describe('testCase for userImap class', () => {
   it('should return a non empty user object with parsed query : Case Api', () => {
@@ -12,7 +13,9 @@ describe('testCase for userImap class', () => {
         id: '123456789',
         refreshToken: '/refresh_leadminer_token_123456789',
         token: '/access_leadminer_token_123456789',
-        port: 993
+        port: 993,
+        userIdentifierHash: hashHelpers.hashEmail('leadminer','123456789'),
+
       }
     ];
     expect([output]).to.have.deep.members(expectedOutput);
@@ -27,7 +30,8 @@ describe('testCase for userImap class', () => {
         id: '123456789',
         password: '_123456789azertyuiop_',
         host: 'leadminer.io',
-        port: '993'
+        port: '993',
+        userIdentifierHash: hashHelpers.hashEmail('leadminer','123456789'),
       }
     ];
     expect([output]).to.have.deep.members(expectedOutput);
