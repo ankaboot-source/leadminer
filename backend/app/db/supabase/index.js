@@ -153,7 +153,7 @@ class SupabaseHandler {
    * @param {string} functionName - Name of the rpc function to invoke.
    * @returns {promise}
    */
-  async callRpcFunction(userid, functionName) {
+  callRpcFunction(userid, functionName) {
     return this.supabaseClient.rpc(functionName, { userid });
   }
 }
