@@ -57,8 +57,8 @@ class PostgresHandler {
     const query = `INSERT INTO messages ${parametrizeQuery(
       Object.keys(message)
     )} RETURNING *`;
-    return await this.query(query, Object.values(message));
-
+    const result = await this.query(query, Object.values(message));
+    return result
   }
 
   /**
@@ -72,10 +72,11 @@ class PostgresHandler {
       Object.keys(pointOfContact)
     )} RETURNING *`;
 
-    return await this.query(
+    const result = await this.query(
       query,
       Object.values(pointOfContact)
     );
+    return result
   }
 
   /**
@@ -89,7 +90,8 @@ class PostgresHandler {
       Object.keys(person)
     )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
 
-    return await this.query(query, Object.values(person));
+    const result = await this.query(query, Object.values(person));
+    return result
   }
 
   /**
@@ -107,7 +109,8 @@ class PostgresHandler {
       Object.keys(tags[0]).map((i) => `"${i}"`).join(', '),
       tags.map((t) => Object.values(t))
     );
-    return await this.query(query, null);
+    const result = await this.query(query, null);
+    return result
   }
 
   /**
@@ -202,7 +205,8 @@ class PostgresHandler {
    * @returns {Promise<object>}
    */
   async callRpcFunction(userid, functionName) {
-    return this.query(`SELECT * FROM ${functionName}($1)`, [userid]);
+    const result = await this.query(`SELECT * FROM ${functionName}($1)`, [userid]);
+    return result
   }
 }
 
