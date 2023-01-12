@@ -202,16 +202,8 @@ class PostgresHandler {
    * @param {string} functionName - Name of the rpc function to invoke.
    * @returns {Promise<object>}
    */
-  async callRpcFunction(userid, functionName) {
-    try {
-      const result = await this.client.query(
-        `SELECT * FROM ${functionName}($1)`,
-        [userid]
-      );
-      return { data: result.rows, error: null };
-    } catch (error) {
-      return { data: null, error };
-    }
+  callRpcFunction(userid, functionName) {
+    return this.client.query(`SELECT * FROM ${functionName}($1)`, [userid]);
   }
 }
 

@@ -30,11 +30,15 @@ async function handleMessage({
     await db.store(extractedContacts, user.id);
 
     if (isLast) {
-      db.callRpcFunction(user.id, 'refined_persons');
-    } // runs rpc function.
+      try {
+        await db.callRpcFunction(user.id, 'populate_refined');
+        await db.callRpcFunction(user.id, 'refined_persons');
+      } catch (error) {
+        logger.error('Failed refining persons.', { error });
+      }
+    }
   }
 }
-
 
 redisClient.subscribe(REDIS_MESSAGES_CHANNEL, (err) => {
   if (err) {
