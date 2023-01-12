@@ -202,10 +202,7 @@ class PostgresHandler {
    * @returns {Promise<object>}
    */
   async callRpcFunction(userid, functionName) {
-    return await this.query(
-      `SELECT * FROM ${functionName}($1)`,
-      [userid]
-    );
+    return this.query(`SELECT * FROM ${functionName}($1)`, [userid]);
   }
 }
 

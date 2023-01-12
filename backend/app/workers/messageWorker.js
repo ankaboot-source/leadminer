@@ -37,8 +37,13 @@ async function handleMessage({
 
     if (isLast) {
       logger.debug('Calling refined_persons', {...logDetails, isLast});
-      db.callRpcFunction(user.id, 'refined_persons');
-    } // runs rpc function.
+      try {
+        await db.callRpcFunction(user.id, 'populate_refined');
+        await db.callRpcFunction(user.id, 'refined_persons');
+      } catch (error) {
+        logger.error('Failed refining persons.', { error });
+      }
+    }
   }
 }
 
