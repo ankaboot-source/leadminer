@@ -259,7 +259,7 @@ class EmailAccountMiner {
       logger.error(`Fetch error: ${err}`);
     });
 
-    fetchResult.once('end', async () => {
+    fetchResult.once('end', () => {
       this.sse.send(folderName, `scannedBoxes${this.user.id}`);
 
       if (this.isLastFolderToFetch(folderName)) {
