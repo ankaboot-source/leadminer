@@ -1,7 +1,7 @@
 const { connectionType } = require('../config/supabase.config');
 const { PostgresHandler } = require('./node-postgres');
 const { SupabaseHandler } = require('./supabase');
-const { prepareContacts, logInsertionError } = require('./helpers');
+const { MAPPING_TABLE, prepareContacts, logInsertionError, toCamelCase } = require('./helpers');
 
 const handler = connectionType === 'pgrest' ? SupabaseHandler : PostgresHandler;
 
@@ -66,5 +66,18 @@ handler.prototype.store = async function (contacts, userID) {
 };
 
 const db = new handler();
+
+/**
+ * fetches and store the column names in a mapping table
+ * @async
+ */
+(async () => {
+
+  const tables = ['messages', 'persons', 'pointsofcontact', 'tags'];
+  const query = table => db.client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`);
+  const fields = (await Promise.all(tables.map(query))).flatMap(res => res.rows.map(row => row.column_name));
+
+  fields.forEach((field) => MAPPING_TABLE.set(toCamelCase(field), field));
+})();
 
 module.exports = { db };

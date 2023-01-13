@@ -1,5 +1,7 @@
 const logger = require('../utils/logger')(module);
 
+const MAPPING_TABLE = new Map();
+
 /**
  * logInsertionError - Formatting and logging insertion errors to stdout.
  * @param {*} tableName -  Name of db table.
@@ -14,16 +16,32 @@ function logInsertionError(tableName, err) {
 }
 
 /**
- * Converts object keys from camelCase to snake_case for db fields.
- * @param {object} camelCaseObject - Object with possible camleCase fields
- * @returns {object} new object with keys converted to snake_case.
- * Example:
- *  - {userId: 1} = {user_id: 1}
+ * Converts a string in snake_case to CamelCase, but leaves the "_" character at the beginning of the string unchanged.
+ * @param {string} str - The string to be converted.
+ * @returns {string} - The converted string in CamelCase.
  */
-function normalizeFields(camelCaseObject) {
-  return Object.assign({}, ...Object.keys(camelCaseObject).map(key => {
-    return { [key.replace(/(?<c>[A-Z])/g, '_$1').toLowerCase()]: camelCaseObject[key.toString()] };
-  }));
+function toCamelCase(str) {
+  const newStr = str[0] === '_' ? str.slice(1) : str;
+  
+  return newStr.replace(/_([a-z])/g, (_, capturedGroup) => {
+    return capturedGroup.toUpperCase();
+  });
+}
+
+/**
+ * Transcodes an object keys from snake_case to CamelCase
+ * @param {Object} sqlObject - The object to be transcoded
+ * @returns {Object} - The transcoded object
+ */
+function transcodeSQL(sqlObject) {
+  const newObj = {};
+  Object.keys(sqlObject).forEach(CamleCase => {
+    if (MAPPING_TABLE.has(CamleCase)) {
+      const snakeCaseField = MAPPING_TABLE.get(CamleCase);
+      newObj[`${snakeCaseField}`] = sqlObject[`${CamleCase}`];
+    }
+  });
+  return newObj;
 }
 
 /**
@@ -44,18 +62,20 @@ function prepareContacts(contacts, userID) {
     person.person._userid = userID;
     person.pointOfContact.userid = userID;
 
-    person.person = normalizeFields(person.person);
-    person.pointOfContact = normalizeFields(person.pointOfContact);
+    person.person = transcodeSQL(person.person);
+    person.pointOfContact = transcodeSQL(person.pointOfContact);
 
     for (let tag of person.tags) {
       tag.userid = userID;
-      tag = normalizeFields(tag);
+      tag = transcodeSQL(tag);
     }
   }
-  return { message: normalizeFields(message), persons };
+  return { message: transcodeSQL(message), persons };
 }
 
 module.exports = {
+  MAPPING_TABLE,
+  toCamelCase,
   prepareContacts,
   logInsertionError
 };
