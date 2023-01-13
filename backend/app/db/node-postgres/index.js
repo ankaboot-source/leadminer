@@ -23,7 +23,8 @@ function parametrizeQuery(fields) {
 class PostgresHandler {
   constructor() {
     this.client = new Pool({
-      connectionString: pgConnectionString
+      connectionString: pgConnectionString,
+      max: 1
     });
   }
 
@@ -39,7 +40,8 @@ class PostgresHandler {
       const { rows } = await this.client.query(text, params);
       const duration = performance.now() - start;
       logger.debug('Executed query time: ', {
-        text, executionTime: duration
+        text,
+        executionTime: duration
       });
       return { data: rows, error: null };
     } catch (error) {
@@ -54,7 +56,6 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertMessage(message) {
-
     const query = `INSERT INTO messages ${parametrizeQuery(
       Object.keys(message)
     )} RETURNING *`;
@@ -68,7 +69,6 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertPointOfContact(pointOfContact) {
-
     const query = `INSERT INTO pointsofcontact ${parametrizeQuery(
       Object.keys(pointOfContact)
     )} RETURNING *`;
@@ -86,7 +86,6 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted/updated row
    */
   async upsertPerson(person) {
-
     const query = `INSERT INTO persons ${parametrizeQuery(
       Object.keys(person)
     )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
@@ -101,13 +100,14 @@ class PostgresHandler {
    * @returns {Promise<void>}
    */
   async insertTags(tags) {
-
     if (tags.length === 0) {
       return { data: null, error: null };
     }
     const query = format(
       'INSERT INTO tags (%s) VALUES %L ON CONFLICT (personid, name) DO NOTHING',
-      Object.keys(tags[0]).map((i) => `"${i}"`).join(', '),
+      Object.keys(tags[0])
+        .map((i) => `"${i}"`)
+        .join(', '),
       tags.map((t) => Object.values(t))
     );
     const { data, error } = await this.query(query, null);
@@ -205,7 +205,10 @@ class PostgresHandler {
    * @returns {Promise<object>}
    */
   async callRpcFunction(userid, functionName) {
-    const { data, error } = await this.query(`SELECT * FROM ${functionName}($1)`, [userid]);
+    const { data, error } = await this.query(
+      `SELECT * FROM ${functionName}($1)`,
+      [userid]
+    );
     return { data: data && data[0], error };
   }
 }
