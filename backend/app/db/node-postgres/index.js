@@ -41,8 +41,9 @@ class PostgresHandler {
       logger.debug('Executed query time: ', {
         text, executionTime: duration
       });
-      return { data: rows[0], error: null };
+      return { data: rows, error: null };
     } catch (error) {
+      logger.error('Error in query.', { text, error });
       return { data: null, error };
     }
   }
@@ -57,8 +58,8 @@ class PostgresHandler {
     const query = `INSERT INTO messages ${parametrizeQuery(
       Object.keys(message)
     )} RETURNING *`;
-    const result = await this.query(query, Object.values(message));
-    return result
+    const { data, error } = await this.query(query, Object.values(message));
+    return { data: data && data[0], error };
   }
 
   /**
@@ -72,11 +73,11 @@ class PostgresHandler {
       Object.keys(pointOfContact)
     )} RETURNING *`;
 
-    const result = await this.query(
+    const { data, error } = await this.query(
       query,
       Object.values(pointOfContact)
     );
-    return result
+    return { data: data && data[0], error };
   }
 
   /**
@@ -90,8 +91,8 @@ class PostgresHandler {
       Object.keys(person)
     )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
 
-    const result = await this.query(query, Object.values(person));
-    return result
+    const { data, error } = await this.query(query, Object.values(person));
+    return { data: data && data[0], error };
   }
 
   /**
@@ -109,8 +110,8 @@ class PostgresHandler {
       Object.keys(tags[0]).map((i) => `"${i}"`).join(', '),
       tags.map((t) => Object.values(t))
     );
-    const result = await this.query(query, null);
-    return result
+    const { data, error } = await this.query(query, null);
+    return { data: data && data[0], error };
   }
 
   /**
@@ -126,7 +127,7 @@ class PostgresHandler {
       'VALUES($1, $2) RETURNING *';
 
     const { data } = await this.query(query, [email, refresh_token]);
-    return data;
+    return data && data[0];
   }
 
   /**
@@ -138,7 +139,7 @@ class PostgresHandler {
     const query = 'SELECT * FROM google_users WHERE email = $1';
 
     const { data } = await this.query(query, [email]);
-    return data;
+    return data && data[0];
   }
 
   /**
@@ -152,7 +153,7 @@ class PostgresHandler {
       'UPDATE google_users SET refresh_token = $1 WHERE id = $2 RETURNING *';
 
     const { data } = await this.query(query, [refresh_token, id]);
-    return data;
+    return data && data[0];
   }
 
   /**
@@ -170,8 +171,7 @@ class PostgresHandler {
       'VALUES($1, $2, $3, $4) RETURNING *';
 
     const { data } = await this.query(query, [email, host, port, tls]);
-
-    return data;
+    return data && data[0];
   }
 
   /**
@@ -183,7 +183,7 @@ class PostgresHandler {
     const query = 'SELECT * FROM imap_users WHERE email = $1';
 
     const { data } = await this.query(query, [email]);
-    return data || null;
+    return data && data[0];
   }
 
   /**
@@ -195,7 +195,7 @@ class PostgresHandler {
     const query = 'SELECT * FROM imap_users WHERE id = $1';
 
     const { data } = await this.client.query(query, [id]);
-    return data || null;
+    return data && data[0];
   }
 
   /**
@@ -205,8 +205,8 @@ class PostgresHandler {
    * @returns {Promise<object>}
    */
   async callRpcFunction(userid, functionName) {
-    const result = await this.query(`SELECT * FROM ${functionName}($1)`, [userid]);
-    return result
+    const { data, error } = await this.query(`SELECT * FROM ${functionName}($1)`, [userid]);
+    return { data: data && data[0], error };
   }
 }
 
