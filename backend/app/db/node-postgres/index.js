@@ -24,7 +24,7 @@ class PostgresHandler {
   constructor() {
     this.client = new Pool({
       connectionString: pgConnectionString,
-      max: 20
+      max: 2
     });
   }
 
