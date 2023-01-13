@@ -20,18 +20,18 @@ function extractNameAndEmailFromBody(data) {
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
+  
   const result = [];
+  const emailsArr = emails.split(',');
 
-  for (const email of emails.split(',')) {
-    let emailData = email.match(REGEX_HEADER.source);
-
+  for (const email of emailsArr) {
+    const emailData = email.match(REGEX_HEADER.source);
     if (emailData) {
-      emailData = {
-        name: email.toLowerCase().split(' ').slice(0, -1).join(' ').trim().replaceAll(/"/g, ''), // -1 to exclude email.
-        address: emailData[0].toLowerCase(),
-        identifier: emailData.groups.identifier.toLowerCase()
-      };
-      result.push(emailData);
+      result.push({
+        name: email.lastIndexOf(' ') !== -1 ? email.slice(0, email.lastIndexOf(' ')).trim().replace(/"/g, '') : '',
+        address: emailData[0].toLocaleLowerCase(),
+        identifier: emailData.groups.identifier
+      });
     }
   }
   return result;
