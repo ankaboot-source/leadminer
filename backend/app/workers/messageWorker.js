@@ -35,10 +35,16 @@ async function handleMessage({
     if (isLast) {
       try {
         await db.callRpcFunction(userId, 'populate_refined');
-        logger.info('Calling refined_persons.', { isLast, userHash: userIdentifierHash });
-        await db.callRpcFunction(userId, 'refined_persons');
+        logger.info('Calling refined_persons.', {
+          isLast,
+          userHash: userIdentifierHash
+        });
+        // await db.callRpcFunction(userId, 'refined_persons');
       } catch (error) {
-        logger.error('Failed refining persons.', { error, userHash: userIdentifierHash });
+        logger.error('Failed refining persons.', {
+          error,
+          userHash: userIdentifierHash
+        });
       }
     }
   }
