@@ -43,7 +43,7 @@ class PostgresHandler {
         text,
         executionTime: duration
       });
-      return { data: rows, error: null };
+      return { data: rows.length === 0 ? null : rows, error: null };
     } catch (error) {
       logger.error('Error in query.', { text, error });
       return { data: null, error };
@@ -58,7 +58,7 @@ class PostgresHandler {
   async insertMessage(message) {
     const query = `INSERT INTO messages ${parametrizeQuery(
       Object.keys(message)
-    )} RETURNING *`;
+    )} RETURNING id`;
     const { data, error } = await this.query(query, Object.values(message));
     return { data: data && data[0], error };
   }
@@ -71,7 +71,7 @@ class PostgresHandler {
   async insertPointOfContact(pointOfContact) {
     const query = `INSERT INTO pointsofcontact ${parametrizeQuery(
       Object.keys(pointOfContact)
-    )} RETURNING *`;
+    )} RETURNING id`;
 
     const { data, error } = await this.query(
       query,
@@ -88,7 +88,7 @@ class PostgresHandler {
   async upsertPerson(person) {
     const query = `INSERT INTO persons ${parametrizeQuery(
       Object.keys(person)
-    )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING *`;
+    )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING id`;
 
     const { data, error } = await this.query(query, Object.values(person));
     return { data: data && data[0], error };
