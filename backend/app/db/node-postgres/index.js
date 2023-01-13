@@ -43,7 +43,7 @@ class PostgresHandler {
         text,
         executionTime: duration
       });
-      return { data: rows, error: null };
+      return { data: rows.length === 0 ? null : rows, error: null };
     } catch (error) {
       logger.error('Error in query.', { text, error });
       return { data: null, error };
