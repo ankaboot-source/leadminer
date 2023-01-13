@@ -291,6 +291,7 @@ class EmailAccountMiner {
       header,
       userId: this.user.id,
       userEmail: this.user.email,
+      userIdentifierHash: this.user.userIdentifierHash,
       folderName,
       isLast
     });

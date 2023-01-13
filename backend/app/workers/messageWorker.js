@@ -13,6 +13,7 @@ async function handleMessage({
   folderName,
   userId,
   userEmail,
+  userIdentifierHash,
   isLast
 }) {
   const messageId = header['message-id'] ? header['message-id'][0] : '';
@@ -28,16 +29,16 @@ async function handleMessage({
     );
 
     const extractedContacts = await message.extractEmailsAddresses();
-    logger.debug('Inserting contacts to DB.');
+    logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
     if (isLast) {
       try {
         await db.callRpcFunction(userId, 'populate_refined');
-        logger.info('Calling refined_persons.', { isLast });
+        logger.info('Calling refined_persons.', { isLast, userHash: userIdentifierHash });
         await db.callRpcFunction(userId, 'refined_persons');
       } catch (error) {
-        logger.error('Failed refining persons.', { error });
+        logger.error('Failed refining persons.', { error, userHash: userIdentifierHash });
       }
     }
   }
@@ -56,7 +57,7 @@ redisClient.on('message', async (channel, messageFromChannel) => {
 
   logger.debug('Consuming message', {
     channel,
-    userHash: data.user.userIdentifierHash
+    userHash: data.userIdentifierHash
   });
 
   switch (channel) {
