@@ -2,11 +2,11 @@
   <div
     class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll container"
   >
-  <q-table
+    <q-table
       class="table"
       virtual-scroll
       :virtual-scroll-sticky-size-start="48"
-      :rows-per-page-options="[150,500,1000]"
+      :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
       title="Mined emails"
       :loading="isLoading"
@@ -110,7 +110,7 @@
       <template #body-cell-tags="props">
         <q-td :props="props">
           <q-badge v-for="tag in props.row.tags" :key="tag" color="teal">
-            {{ tag }}  <br />
+            {{ tag }} <br />
           </q-badge>
         </q-td>
       </template>
@@ -199,7 +199,10 @@ const isLoading = ref(false);
 const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
 
 const refreshInterval = setInterval(() => {
-  if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
+  if (
+    $store.getters["example/getRetrievedEmails"].length > rows.value.length ||
+    rows.value.some((el) => el.engagement === undefined)
+  ) {
     updateRefinedPersons();
   }
 }, 3000);
@@ -241,7 +244,7 @@ const columns = [
     label: "Recency",
     align: "center",
     field: "recency",
-    format: (val) => val ? new Date(val).toISOString().slice(0, 10): '',
+    format: (val) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
     sortable: true,
   },
   {
