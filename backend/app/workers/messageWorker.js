@@ -14,8 +14,8 @@ async function handleMessage({
   user,
   isLast
 }) {
-  const message_id = header['message-id'] ? header['message-id'][0] : '';
-  if (message_id) {
+  const messageId = header['message-id'] ? header['message-id'][0] : '';
+  if (messageId) {
     const message = new EmailMessage(
       redisClientForNormalMode,
       user.email,
@@ -25,11 +25,18 @@ async function handleMessage({
       folderName,
       isLast // If it's the last element that comes from (fetch/redis).
     );
+    const logDetails = {
+      userHash: user.userIdentifierHash,
+      messageDate: message.getDate()
+    };
 
+    logger.debug('Extracting from message', logDetails);
     const extractedContacts = await message.extractEmailsAddresses();
+    logger.debug('Inserting contacts to DB', logDetails);
     await db.store(extractedContacts, user.id);
 
     if (isLast) {
+      logger.debug('Calling refined_persons', {...logDetails, isLast});
       try {
         await db.callRpcFunction(user.id, 'populate_refined');
         await db.callRpcFunction(user.id, 'refined_persons');
@@ -49,7 +56,13 @@ redisClient.subscribe(REDIS_MESSAGES_CHANNEL, (err) => {
 });
 
 redisClient.on('message', async (channel, messageFromChannel) => {
+
   const data = JSON.parse(messageFromChannel);
+
+  logger.debug('Consuming message', {
+    channel,
+    userHash: data.user.userIdentifierHash
+  });
 
   switch (channel) {
     case REDIS_MESSAGES_CHANNEL:
