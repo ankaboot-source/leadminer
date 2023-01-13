@@ -50,7 +50,7 @@
             icon-right="archive"
             label="Export to csv"
             no-caps
-            :disable="loadingStatusDns || isExportEnabled"
+            :disable="isExportDisabled"
             @click="exportTable"
           />
         </div>
@@ -196,11 +196,12 @@ const rows = ref([]);
 const filter = ref("");
 const isLoading = ref(false);
 
-const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
-const isExportEnabled = computed(() =>
-  rows.value.some(
-    (el) => Object.values(el) === null || Object.values(el) === undefined
-  )
+const isExportDisabled = computed(
+  () =>
+    $store.state.example.loadingStatusDns ||
+    rows.value.some(
+      (el) => el.engagement === undefined || el.engagement === null
+    )
 );
 
 const refreshInterval = setInterval(() => {
