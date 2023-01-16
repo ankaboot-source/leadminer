@@ -20,20 +20,20 @@ describe('domainHelpers.checkMXStatus(domain)', () => {
 
 describe('domainHelpers.checkDomainStatus(emailAddress)', () => {
   it('should return true', async () => {
-    const emailAddressWithValidDomain = 'leadminer@gmail.com';
+    const validDomain = 'gmail.com';
     const output = await domainHelpers.checkDomainStatus(
       redisClient,
-      emailAddressWithValidDomain
+      validDomain
     );
     expect(output[0]).to.be.true;
     expect(output[1]).eq('provider');
   });
 
   it('should return false', async () => {
-    const emailAddressWithInvalidDomain = 'domain.lead@122111miner.io';
+    const invalidDomain = 'domain.lead122111miner.io';
     const output = await domainHelpers.checkDomainStatus(
       redisClient,
-      emailAddressWithInvalidDomain
+      invalidDomain
     );
     expect(output[0]).to.be.false;
     expect(output[1]).eq('');
