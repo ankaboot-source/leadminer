@@ -31,7 +31,7 @@ function extractNameAndEmail(emails) {
         name: email.lastIndexOf(' ') !== -1 ? email.slice(0, email.lastIndexOf(' ')).trim().replace(/"/g, '') : '',
         address: emailData[0].toLocaleLowerCase(),
         identifier: emailData.groups?.identifier,
-        domain: emailData.groups?.domain
+        domain: `${emailData.groups?.domain}.${emailData.groups?.tld}`
       });
     }
   }
