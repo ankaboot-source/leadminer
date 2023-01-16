@@ -21,7 +21,7 @@ function logInsertionError(tableName, err) {
  * @returns {string} - The converted string in CamelCase.
  */
 function toCamelCase(str) {
-  const underscore = str[0] === '_' ? '_'  : ''
+  const underscore = str[0] === '_' ? '_' : '';
   const newStr = str[0] === '_' ? str.slice(1) : str;  
   return underscore + newStr.replace(/_([a-z])/g, (_, capturedGroup) => {
     return capturedGroup.toUpperCase();
