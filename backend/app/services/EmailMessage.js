@@ -243,7 +243,7 @@ class EmailMessage {
 
       const domain = await domainHelpers.checkDomainStatus(
         this.redisClientForNormalMode,
-        email.address
+        email.domain
       );
 
       if (domain[0]) {
@@ -285,7 +285,7 @@ class EmailMessage {
 
       const domain = await domainHelpers.checkDomainStatus(
         this.redisClientForNormalMode,
-        email
+        email.domain
       );
 
       if (domain[0]) {
