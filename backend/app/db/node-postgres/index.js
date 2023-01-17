@@ -2,23 +2,7 @@ const format = require('pg-format');
 const { Pool } = require('pg');
 const { pgConnectionString } = require('../../config/supabase.config');
 const logger = require('../../utils/logger')(module);
-
-/**
- * Creates a parametrized query.
- * @param {string[]} fields - Array of field names
- * @returns {string}
- */
-function parametrizeQuery(fields) {
-  return `(${fields
-    .map((i) => {
-      return `"${i}"`;
-    })
-    .join(', ')}) VALUES (${fields
-    .map((_, i) => {
-      return `$${i + 1}`;
-    })
-    .join(', ')})`;
-}
+const { parametrizedInsertInto } = require('./helpers');
 
 class PostgresHandler {
   constructor() {
@@ -56,9 +40,7 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertMessage(message) {
-    const query = `INSERT INTO messages ${parametrizeQuery(
-      Object.keys(message)
-    )} RETURNING id`;
+    const query = `${parametrizedInsertInto('messages', Object.keys(message))} RETURNING id`;
     const { data, error } = await this.query(query, Object.values(message));
     return { data: data && data[0], error };
   }
@@ -69,14 +51,8 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertPointOfContact(pointOfContact) {
-    const query = `INSERT INTO pointsofcontact ${parametrizeQuery(
-      Object.keys(pointOfContact)
-    )} RETURNING id`;
-
-    const { data, error } = await this.query(
-      query,
-      Object.values(pointOfContact)
-    );
+    const query = `${parametrizedInsertInto('pointsofcontact', Object.keys(pointOfContact))} RETURNING id`;
+    const { data, error } = await this.query(query, Object.values(pointOfContact));
     return { data: data && data[0], error };
   }
 
@@ -86,10 +62,9 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted/updated row
    */
   async upsertPerson(person) {
-    const query = `INSERT INTO persons ${parametrizeQuery(
-      Object.keys(person)
-    )} ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING id`;
-
+    const query = `
+    ${parametrizedInsertInto('persons', Object.keys(person))}
+    ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING id`;
     const { data, error } = await this.query(query, Object.values(person));
     return { data: data && data[0], error };
   }
