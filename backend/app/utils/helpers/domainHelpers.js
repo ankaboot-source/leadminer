@@ -27,15 +27,13 @@ function checkMXStatus(redisClient, domain) {
 /**
  * Asynchronously checks the status of a domain associated with an email address.
  * @param {Object} redisClient - A Redis client instance.
- * @param {string} emailAddress - The email address to check its domain.
+ * @param {string} domain - Domain to check its status.
  * @returns {Promise<Array>} A promise that resolves to an array of three elements:
  * - The first element is a boolean that indicates whether the domain is valid or not.
  * - The second element is a string that indicates the type of domain: "provider", "disposable", "custom" or "".
  * - The third element is the domain string.
  */
-async function checkDomainStatus(redisClient, emailAddress) {
-  const domain = emailAddress.split('@')[1];
-
+async function checkDomainStatus(redisClient, domain) {
   /**
    * As most of domains are free providers,
    * we can reduce the execution time when check for freeproviders first.

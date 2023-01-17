@@ -10,26 +10,34 @@
     {
       "name": "",
       "address": "leadminerteam@ankaboot.fr",
-      "identifier": "leadminerTeam"},
+      "identifier": "leadminerTeam",
+      "domain": "ankaboot.fr"
+    },
 
     {
       "name": "leadminer team",
       "address": "leadminer-team@leadminer.io",
-      "identifier": "leadminer-team" },
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
+    },
     {
       "name": "لغة english عربية",
       "address": "leadminer-team@leadminer.io",
-      "identifier": "leadminer-team" },
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
+    },
 
     {
       "name": "русский язык",
       "address": "leadminer-team@leadminer.io",
-      "identifier": "leadminer-team"
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
     },
     {
       "name": "لغة عربية",
       "address": "leadminer-team@leadminer.io",
-      "identifier": "leadminer-team"
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
     }
   ],
   "minedDataExample": [
