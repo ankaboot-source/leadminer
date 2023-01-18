@@ -39,13 +39,12 @@ class PostgresHandler {
       const start = performance.now();
       const { rows } = await this.client.query(text, params);
       const duration = performance.now() - start;
-      logger.debug('Executed query time: ', {
+      logger.debug('Executed query', {
         text,
         executionTime: duration
       });
       return { data: rows.length === 0 ? null : rows, error: null };
     } catch (error) {
-      logger.error('Error in query.', { text, error });
       return { data: null, error };
     }
   }
@@ -194,7 +193,7 @@ class PostgresHandler {
   async getImapUserById(id) {
     const query = 'SELECT * FROM imap_users WHERE id = $1';
 
-    const { data } = await this.client.query(query, [id]);
+    const { data } = await this.query(query, [id]);
     return data && data[0];
   }
 
