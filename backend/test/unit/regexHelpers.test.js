@@ -50,11 +50,11 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should return array with one valid object', () => {
     // Test with all information
     const fullInformationOutput = regExHelpers.extractNameAndEmail("this is myyyyyyyyyyyyyyyy name <tester@testing.com>");
-    expect(fullInformationOutput).to.eql([{ name: 'this is myyyyyyyyyyyyyyyy name', identifier: 'tester', address: 'tester@testing.com' }]);
+    expect(fullInformationOutput).to.eql([{ name: 'this is myyyyyyyyyyyyyyyy name', identifier: 'tester', address: 'tester@testing.com', domain: 'testing.com' }]);
 
     // test only with email
     const emailOnlyOutput = regExHelpers.extractNameAndEmail("<tester@testing.com>");
-    expect(emailOnlyOutput).to.eql([{ name: '', identifier: 'tester', address: 'tester@testing.com' }]);
+    expect(emailOnlyOutput).to.eql([{ name: '', identifier: 'tester', address: 'tester@testing.com', domain: 'testing.com' }]);
 
   })
 });

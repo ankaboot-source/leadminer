@@ -241,17 +241,17 @@ class EmailMessage {
         continue;
       }
 
-      const domain = await domainHelpers.checkDomainStatus(
+      const [isValid, type] = await domainHelpers.checkDomainStatus(
         this.redisClientForNormalMode,
-        email.address
+        email.domain
       );
 
-      if (domain[0]) {
+      if (isValid) {
         // Valid email
         const emailType = emailAddressHelpers.findEmailAddressType(
           email.address,
           [email?.name],
-          domain[1]
+          type
         );
         const tags = this.getTags(fieldName, email, emailType);
         return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
@@ -283,16 +283,16 @@ class EmailMessage {
         continue;
       }
 
-      const domain = await domainHelpers.checkDomainStatus(
+      const [isValid, type] = await domainHelpers.checkDomainStatus(
         this.redisClientForNormalMode,
-        email
+        email.domain
       );
 
-      if (domain[0]) {
+      if (isValid) {
         const emailType = emailAddressHelpers.findEmailAddressType(
           email,
           [email?.name ?? ''],
-          domain[1]
+          type
         );
         const tags = this.getTags('', email, emailType);
         return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
