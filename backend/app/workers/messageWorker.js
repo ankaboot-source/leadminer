@@ -24,8 +24,7 @@ async function handleMessage({
       seqNumber,
       header,
       body,
-      folderName,
-      isLast // If it's the last message in a given folder
+      folderName
     );
 
     const extractedContacts = await message.extractEmailsAddresses();
