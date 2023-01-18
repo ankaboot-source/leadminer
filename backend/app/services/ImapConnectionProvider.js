@@ -8,6 +8,10 @@ const tokenHelpers = require('../utils/helpers/tokenHelpers');
 class ImapConnectionProvider {
   #imapConfig;
 
+  /**
+   * ImapConnectionProvider constructor.
+   * @param {string} email - User email address.
+   */
   constructor(email) {
     this.#imapConfig = {
       user: email,
@@ -47,7 +51,7 @@ class ImapConnectionProvider {
    * @param {string} refreshToken - User refresh token.
    * @param {object} sseSender - sseSender to send the new generated token.
    * @param {string} userId - User Id.
-   * @returns {ImapConnectionProvider}
+   * @returns {Promise<ImapConnectionProvider>}
    */
   async withGoogle(token, refreshToken, sseSender, userId) {
     this.#imapConfig = {
