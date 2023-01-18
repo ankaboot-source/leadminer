@@ -39,7 +39,13 @@ class ImapEmailsFetcher {
           const imapConnection =
             this.imapConnectionProvider.getImapConnection();
 
-          this.#registerImapConnectionHandlers(imapConnection);
+          imapConnection.once('error', (err) => {
+            logger.error('Imap connection error.', { error: err });
+          });
+          imapConnection.once('close', (hadError) => {
+            logger.debug('Imap connection closed.', { hadError });
+          });
+
           // We keep track of all the open imap connections so that we can close them when needed
           this.openConnections.push(imapConnection);
 
@@ -60,7 +66,7 @@ class ImapEmailsFetcher {
               this.openConnections = this.openConnections.filter(
                 (c) => c._box?.name !== folderName
               );
-              resolve();
+              return resolve();
             });
           });
 
@@ -118,16 +124,6 @@ class ImapEmailsFetcher {
       fetchResult.once('end', () => {
         resolve();
       });
-    });
-  }
-
-  #registerImapConnectionHandlers(connection) {
-    connection.once('error', (err) => {
-      logger.error('Imap connection error.', { error: err });
-    });
-
-    connection.once('close', (hadError) => {
-      logger.debug('Imap connection closed.', { hadError });
     });
   }
 }

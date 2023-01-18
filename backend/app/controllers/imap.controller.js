@@ -63,7 +63,7 @@ async function loginToAccount(req, res, next) {
 
   if (!email || !host) {
     res.status(400);
-    return next(new Error('Email and host are required for IMAP.'));
+    next(new Error('Email and host are required for IMAP.'));
   }
 
   performance.mark('login-start');
@@ -74,7 +74,7 @@ async function loginToAccount(req, res, next) {
 
   imapConnection.once('error', (err) => {
     err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
-    return next(err);
+    next(err);
   });
 
   const imapUser = await db.getImapUserByEmail(email);
@@ -83,7 +83,7 @@ async function loginToAccount(req, res, next) {
       try {
         const imapData = await db.getImapUserByEmail(email);
         if (imapData !== null) {
-          return res.status(200).send({
+          res.status(200).send({
             message: 'Your account already exists !',
             imapConnection
           });
@@ -122,7 +122,7 @@ async function loginToAccount(req, res, next) {
 async function getImapBoxes(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
-    return next(new Error('An x-imap-login header field is required.'));
+    next(new Error('An x-imap-login header field is required.'));
   }
 
   const { access_token, id, email, password } = JSON.parse(
@@ -175,7 +175,7 @@ async function getImapBoxes(req, res, next) {
 async function getEmails(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
-    return next(new Error('An x-imap-login header field is required.'));
+    next(new Error('An x-imap-login header field is required.'));
   }
 
   const { access_token, id, email, password } = JSON.parse(
