@@ -6,6 +6,14 @@ const logger = require('../utils/logger')(module);
 class ImapEmailsFetcher {
   openConnections = [];
 
+  /**
+   * ImapEmailsFetcher constructor.
+   * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
+   * @param {EventEmitter} eventEmitter - An event emitter
+   * @param {string[]} folders - List of folders to fetch.
+   * @param {string} userId - User Id.
+   * @param {string} userEmail - User email.
+   */
   constructor(
     imapConnectionProvider,
     eventEmitter,
@@ -32,6 +40,25 @@ class ImapEmailsFetcher {
     }
   }
 
+  /**
+   * A callback function to execute for each Email message.
+   * @callback emailMessageHandler
+   * @param {object} emailMessage - An email message.
+   * @param {object} emailMessage.header - Email headers.
+   * @param {object} emailMessage.body - Email body.
+   * @param {number} emailMessage.seqNumber - Email sequence number in its folder.
+   * @param {number} emailMessage.totalInFolder - Total emails in folder.
+   * @param {string} emailMessage.userId - User Id.
+   * @param {string} emailMessage.userEmail - User email address.
+   * @param {string} emailMessage.userIdentifier - Hashed user identifier
+   * @returns {Promise}
+   */
+
+  /**
+   * Fetches all email messages in the configured boxes.
+   * @param {emailMessageHandler} emailMessageHandler - A callback function to execute for each Email message.
+   * @returns {Promise}
+   */
   fetchEmailMessages(emailMessageHandler) {
     return Promise.allSettled(
       this.folders.map((folderName) => {
@@ -62,10 +89,13 @@ class ImapEmailsFetcher {
                   box.messages.total
                 );
               }
+
+              // Close the connection and remove it from the list of openConnections
               imapConnection.end();
               this.openConnections = this.openConnections.filter(
                 (c) => c._box?.name !== folderName
               );
+
               return resolve();
             });
           });
@@ -76,6 +106,14 @@ class ImapEmailsFetcher {
     );
   }
 
+  /**
+   *
+   * @param {object} connection - Open IMAP connection.
+   * @param {emailMessageHandler} callback
+   * @param {string} folderName - Name of the folder locked by the IMAP connection.
+   * @param {number} totalInFolder - Total email messages in the folder.
+   * @returns
+   */
   fetchBox(connection, callback, folderName, totalInFolder) {
     return new Promise((resolve, reject) => {
       const fetchResult = connection.seq.fetch('1:*', {

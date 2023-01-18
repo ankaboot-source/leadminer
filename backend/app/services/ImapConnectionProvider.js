@@ -19,6 +19,13 @@ class ImapConnectionProvider {
     };
   }
 
+  /**
+   * Builds the IMAP connection provider with password access.
+   * @param {string} password - Email password.
+   * @param {string} host - IMAP host.
+   * @param {number} port - IMAP Port number. Defaults to 993.
+   * @returns {ImapConnectionProvider}
+   */
   withPassword(password, host, port = 993) {
     this.#imapConfig = {
       ...this.#imapConfig,
@@ -34,6 +41,14 @@ class ImapConnectionProvider {
     return this;
   }
 
+  /**
+   * Builds the IMAP connection provider with Google API access.
+   * @param {string} token - User access token.
+   * @param {string} refreshToken - User refresh token.
+   * @param {object} sseSender - sseSender to send the new generated token.
+   * @param {string} userId - User Id.
+   * @returns {ImapConnectionProvider}
+   */
   async withGoogle(token, refreshToken, sseSender, userId) {
     this.#imapConfig = {
       ...this.#imapConfig,
@@ -58,6 +73,10 @@ class ImapConnectionProvider {
     return this;
   }
 
+  /**
+   * Creates a new Imap connection.
+   * @returns {Imap} - Imap connection object
+   */
   getImapConnection() {
     return new Imap(this.#imapConfig);
   }

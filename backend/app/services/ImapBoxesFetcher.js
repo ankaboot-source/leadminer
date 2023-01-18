@@ -32,6 +32,10 @@ class ImapBoxesFetcher {
     return Promise.allSettled(promises);
   }
 
+  /**
+   * Retrieves the IMAP tree of the email account.
+   * @returns {Promise<object>} IMAP tree.
+   */
   getTree() {
     return new Promise((resolve, reject) => {
       this.imapConnection.once('ready', () => {
