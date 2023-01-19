@@ -13,7 +13,7 @@ const MAILING_LIST_HEADERS = mailingListHeaders
 
 describe('EmailMessage.isList()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -39,7 +39,7 @@ describe('EmailMessage.isList()', () => {
 
 describe('EmailMessage.isNewletter()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -64,7 +64,7 @@ describe('EmailMessage.isNewletter()', () => {
 
 describe('EmailMessage.isTransactional()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -89,7 +89,7 @@ describe('EmailMessage.isTransactional()', () => {
 
 describe('EmailMessage.getReferences()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -113,7 +113,7 @@ describe('EmailMessage.getReferences()', () => {
 
 describe('EmailMessage.getListId()', () => {
 
-    let message
+    let message = ''
 
     const LIST_ID_FORMAT_RFC = [
         "List Header Mailing List <list-header.nisto.com>",
@@ -173,7 +173,7 @@ describe('EmailMessage.getListId()', () => {
 
 describe('EmailMessage.getDate()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -197,7 +197,7 @@ describe('EmailMessage.getDate()', () => {
 
 describe('EmailMessage.getMessagingFieldsFromHeader()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
@@ -239,7 +239,7 @@ describe('EmailMessage.getMessagingFieldsFromHeader()', () => {
 
 describe('EmailMessage.getMessageId()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
@@ -262,7 +262,7 @@ describe('EmailMessage.getMessageId()', () => {
 
 describe('EmailMessage.getTagsField()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
@@ -298,7 +298,7 @@ describe('EmailMessage.getTagsField()', () => {
 
 describe('EmailMessage.getTags()', () => {
 
-    let message
+    let message = ''
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
