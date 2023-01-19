@@ -10,8 +10,19 @@ const {
 } = require('../config/redis.config');
 
 class RedisManager {
+  /**
+   * Redis client instance
+   * @private
+   */
   #normalClient;
 
+  /**
+   * @constructor
+   * @param {string} host - Redis host
+   * @param {number} port - Redis port
+   * @param {string} [user] - Redis user
+   * @param {string} [password] - Redis password
+   */
   constructor(host, port, user, password) {
     try {
       if (user && password) {
@@ -19,8 +30,9 @@ class RedisManager {
           password,
           user
         });
+      } else {
+        this.#normalClient = new Redis(port, host);
       }
-      this.#normalClient = new Redis(port, host);
     } catch (error) {
       logger.error('Error connecting to Redis.', {
         error
@@ -29,8 +41,11 @@ class RedisManager {
     }
   }
 
+  /**
+   * Initialize the redis db with domain providers strings.
+   * @async
+   */
   async loadData() {
-    //init the redis db with domain providers strings
     const res = await this.#normalClient.exists('freeProviders');
     if (res !== 1) {
       freeProviders.forEach((domain) => {
@@ -47,11 +62,19 @@ class RedisManager {
     }
   }
 
+  /**
+   * Returns the original Redis client instance
+   * @return {object} Redis client instance
+   */
   getClient() {
     return this.#normalClient;
   }
 
-  getPubSubClient() {
+  /**
+   * Returns a duplicate of the original Redis client instance
+   * @return {object} Redis client instance
+   */
+  getDuplicatedClient() {
     return this.#normalClient.duplicate();
   }
 }
