@@ -11,7 +11,7 @@ const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 
-const redisClientForPubSubMode = redis.getPubSubClient();
+const redisStreamsPublisher = redis.getDuplicatedClient();
 
 /**
  * The callback function that will be executed for each fetched Email.
@@ -62,7 +62,8 @@ async function onEmailMessage({
     userIdentifier
   });
 
-  await redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);
+  const streamId = await redisStreamsPublisher.xadd(REDIS_MESSAGES_CHANNEL, '*', 'message', message);
+  logger.debug('Publishing message to stream', {streamId, channel:REDIS_MESSAGES_CHANNEL, user: userIdentifier});
 }
 
 /**

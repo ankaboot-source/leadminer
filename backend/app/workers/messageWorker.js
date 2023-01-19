@@ -1,10 +1,11 @@
 const { redis } = require('../utils/redis');
-const redisClient = redis.getPubSubClient();
-const redisClientForNormalMode = redis.getClient();
 const EmailMessage = require('../services/EmailMessage');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
 const { db } = require('../db');
+
+const redisStreamsConsumer = redis.getDuplicatedClient();
+const redisClientForNormalMode = redis.getClient();
 
 async function handleMessage({
   seqNumber,
@@ -49,27 +50,41 @@ async function handleMessage({
   }
 }
 
-redisClient.subscribe(REDIS_MESSAGES_CHANNEL, (err) => {
-  if (err) {
-    logger.error('Unable to subscribe to Redis.', err);
-  } else {
-    logger.info('Worker subscribed to Redis.');
-  }
-});
-
-redisClient.on('message', async (channel, messageFromChannel) => {
-  const data = JSON.parse(messageFromChannel);
-
-  logger.debug('Consuming message', {
-    channel,
-    userHash: data.userIdentifierHash
+/**
+ * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
+ * @param {Array} message - Array containing the stream message ID and the message data
+*/
+const processMessage = async (message) => {
+  const [streamMessageID, msg] = message;
+  const data = JSON.parse(msg[1]);
+  logger.debug('Processing message', {
+    streamMessageID,
+    userIdentifier: data.userIdentifier
   });
+  await handleMessage(data);
+};
 
-  switch (channel) {
-    case REDIS_MESSAGES_CHANNEL:
-      await handleMessage(data);
-      break;
-    default:
-      break;
+/**
+ * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
+ * @function consumeMessages
+*/
+(async () => {
+
+  const CONSTANT_CONDITION = true; // Bypass  lint checker
+  let lastReadId = '$';
+
+  while (CONSTANT_CONDITION) {
+    const result = await redisStreamsConsumer.xread('BLOCK', 0, 'STREAMS', REDIS_MESSAGES_CHANNEL, lastReadId);
+
+    if (result) {
+      const [channel, messages] = result[0];
+      lastReadId = messages[messages.length - 1][0];
+
+      logger.debug('Consuming messages', { channel, totalMessages: messages.length, lastMessageID: lastReadId });
+
+      messages.forEach(processMessage);
+
+    }
   }
-});
+
+})();
