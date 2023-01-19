@@ -8,7 +8,6 @@ class ImapBoxesFetcher {
   /**
    * Gets the total number of messages per folder
    * @param {{label: string, path: string}[]} folders - flat array of objects.
-   * @param {object} imapConnection - Imap connection
    * @returns {Promise}
    */
   addTotalPerFolder(folders) {
