@@ -9,9 +9,11 @@ const {
 
 const NEWS_LETTER_HEADERS = newsletterHeaders
 const TRANSACTIONAL_HEADERS = transactionalHeaders
-const MAILING_LIST_HEADERS = mailingListHeaders 
+const MAILING_LIST_HEADERS = mailingListHeaders
 
 describe('EmailMessage.isList()', () => {
+
+    let message
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -25,7 +27,7 @@ describe('EmailMessage.isList()', () => {
     })
 
     it('Should return true if any mailing list fields exists in header', () => {
-        MAILING_LIST_HEADERS.forEach((headerField) => message.header[headerField] = [''])
+        MAILING_LIST_HEADERS.forEach((headerField) => { message.header[headerField] = [''] })
         expect(message.isList()).to.be.true
     })
 
@@ -36,6 +38,8 @@ describe('EmailMessage.isList()', () => {
 
 
 describe('EmailMessage.isNewletter()', () => {
+
+    let message
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -49,7 +53,7 @@ describe('EmailMessage.isNewletter()', () => {
     })
 
     it('Should return true if any news-letter fields exists in header', () => {
-        NEWS_LETTER_HEADERS.forEach((headerField) => message.header[headerField] = [''])
+        NEWS_LETTER_HEADERS.forEach((headerField) => { message.header[headerField] = [''] })
         expect(message.isNewsletter()).to.be.true
     })
 
@@ -59,6 +63,8 @@ describe('EmailMessage.isNewletter()', () => {
 })
 
 describe('EmailMessage.isTransactional()', () => {
+
+    let message
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
@@ -72,7 +78,7 @@ describe('EmailMessage.isTransactional()', () => {
     })
 
     it('Should return true if any transactional fields exists in header', () => {
-        TRANSACTIONAL_HEADERS.forEach((headerField) => message.header[headerField] = [''])
+        TRANSACTIONAL_HEADERS.forEach((headerField) => { message.header[headerField] = [''] })
         expect(message.isTransactional()).to.be.true
     })
 
@@ -82,21 +88,23 @@ describe('EmailMessage.isTransactional()', () => {
 })
 
 describe('EmailMessage.getReferences()', () => {
-    
+
+    let message
+
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
     })
-    
+
     it('should return an empty array if no references are present in the header', () => {
         message.header = {};
         expect(message.getReferences()).to.deep.equal([]);
     });
-    
+
     it('should return an array of references if they are present in the header', () => {
         message.header = { references: ['<r1>'] };
         expect(message.getReferences()).to.deep.equal(['<r1>']);
     });
-    
+
     it('should handle spaces between references', () => {
         message.header = { references: ['<r1> <r2> <r3>'] };
         expect(message.getReferences()).to.deep.equal(['<r1>', '<r2>', '<r3>']);
@@ -104,6 +112,8 @@ describe('EmailMessage.getReferences()', () => {
 });
 
 describe('EmailMessage.getListId()', () => {
+
+    let message
 
     const LIST_ID_FORMAT_RFC = [
         "List Header Mailing List <list-header.nisto.com>",
@@ -127,7 +137,7 @@ describe('EmailMessage.getListId()', () => {
 
     LIST_ID_FORMAT_RFC.forEach((listIdHeaderField, index) => {
         it(`Should return <listID>:string for list-id header fields = ${listIdHeaderField}`, () => {
-            
+
             message.header = {
                 'list-post': [''],
                 'list-id': [listIdHeaderField]
@@ -163,6 +173,8 @@ describe('EmailMessage.getListId()', () => {
 
 describe('EmailMessage.getDate()', () => {
 
+    let message
+
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {})
     })
@@ -185,6 +197,8 @@ describe('EmailMessage.getDate()', () => {
 
 describe('EmailMessage.getMessagingFieldsFromHeader()', () => {
 
+    let message
+
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
     });
@@ -201,7 +215,7 @@ describe('EmailMessage.getMessagingFieldsFromHeader()', () => {
             cc: ['cc@example.com'],
             bcc: ['bcc@example.com']
         };
-        expect(message.getMessagingFieldsFromHeader()).to.deep.equal({ 
+        expect(message.getMessagingFieldsFromHeader()).to.deep.equal({
             to: 'test@example.com',
             from: 'sender@example.com',
             bcc: "bcc@example.com",
@@ -210,42 +224,45 @@ describe('EmailMessage.getMessagingFieldsFromHeader()', () => {
     });
 
     it('should return an object with messaging fields if they are present in the header', () => {
-        message.header = { 
+        message.header = {
             subject: ['Test Subject'],
             to: ['test@example.com'],
             from: ['sender@example.com']
         };
-        expect(message.getMessagingFieldsFromHeader()).to.deep.equal({ 
+        expect(message.getMessagingFieldsFromHeader()).to.deep.equal({
             to: 'test@example.com',
             from: 'sender@example.com'
         });
     });
 });
-    
+
 
 describe('EmailMessage.getMessageId()', () => {
+
+    let message
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
     });
 
     it('should return `message_id_unknown` if the message-id field is not present in the header', () => {
-        message.header = { date: ['01-01-2021']};
+        message.header = { date: ['01-01-2021'] };
         expect(message.getMessageId()).to.equal('message_id_unknown 01-01-2021');
     });
 
     it('should return the message-id field if it is present in the header', () => {
-        message.header = { 
+        message.header = {
             'message-id': ['<test_message_id>'],
             date: ['01-01-2021']
         };
         expect(message.getMessageId()).to.equal('<test_message_id>');
     });
 });
-    
+
 
 describe('EmailMessage.getTagsField()', () => {
 
+    let message
 
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
@@ -256,7 +273,7 @@ describe('EmailMessage.getTagsField()', () => {
         message.isNewsletter = () => true;
         message.isTransactional = () => true;
         message.isList = () => true;
-        
+
         const result = message.getTagsField('from')
         expect(result).to.be.an('array')
         expect(result).to.deep.equal([
@@ -281,6 +298,8 @@ describe('EmailMessage.getTagsField()', () => {
 
 describe('EmailMessage.getTags()', () => {
 
+    let message
+
     beforeEach(() => {
         message = new EmailMessage({}, '', 1, {});
     })
@@ -290,36 +309,36 @@ describe('EmailMessage.getTags()', () => {
         message.isNewsletter = () => true;
         message.isTransactional = () => true;
         message.isList = () => true;
-        
-        const result = message.getTags('from', {address:'support@leadminer.com'}, 'personal')
+
+        const result = message.getTags('from', { address: 'support@leadminer.com' }, 'personal')
         expect(result).to.be.an('array')
         expect(result).to.deep.equal([
             { name: 'newsletter', reachable: 2, source: 'refined' },
             { name: 'transactional', reachable: 2, source: 'refined' },
             { name: 'list', reachable: 2, source: 'refined' },
             { name: 'no-reply', reachable: 0, source: 'refined' },
-            { name: 'personal', reachable: 1, source: 'refined'}
+            { name: 'personal', reachable: 1, source: 'refined' }
         ])
     })
 
     it('should return no-reply, personal tags when field not equal "from"', () => {
-        const result = message.getTags('', {address:'support@leadminer.com'}, 'personal')
+        const result = message.getTags('', { address: 'support@leadminer.com' }, 'personal')
         expect(result).to.be.an('array')
         expect(result).to.deep.equal([
             { name: 'no-reply', reachable: 0, source: 'refined' },
-            { name: 'personal', reachable: 1, source: 'refined'}
+            { name: 'personal', reachable: 1, source: 'refined' }
         ])
     });
-    
+
     it('should return an empty array if there is no tags', () => {
-        const result = message.getTags('', {address:'leadminer@leadminer.com'}, '')
+        const result = message.getTags('', { address: 'leadminer@leadminer.com' }, '')
         expect(result).to.be.an('array')
         expect(result).to.deep.equal([])
     });
 })
 
 describe('EmailMessage.constructPersonPocTags()', () => {
- 
+
     const email = {
         address: 'test@example.com',
         identifier: 'test_identifier',
