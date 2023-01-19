@@ -64,7 +64,7 @@ class RedisManager {
 
   /**
    * Returns the original Redis client instance
-   * @return {object} Redis client instance
+   * @returns {Redis} Redis client instance
    */
   getClient() {
     return this.#normalClient;
