@@ -29,7 +29,7 @@ class ImapEmailsFetcher {
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
     this.eventEmitter.on('endByUser', () => {
-      this.openConnections.forEach((c) => c.end());
+      this.openConnections.forEach((connection) => connection.end());
     });
 
     this.fetchedMessagesCount = 0;
@@ -93,7 +93,7 @@ class ImapEmailsFetcher {
               // Close the connection and remove it from the list of openConnections
               imapConnection.end();
               this.openConnections = this.openConnections.filter(
-                (c) => c._box?.name !== folderName
+                (connection) => connection._box?.name !== folderName
               );
 
               return resolve();
