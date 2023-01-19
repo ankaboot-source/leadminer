@@ -13,6 +13,18 @@ const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 
 const redisClientForPubSubMode = redis.getPubSubClient();
 
+/**
+ * The callback function that will be executed for each fetched Email.
+ * @param {object} emailMessage - An email message.
+ * @param {object} emailMessage.header - Email headers.
+ * @param {object} emailMessage.body - Email body.
+ * @param {number} emailMessage.seqNumber - Email sequence number in its folder.
+ * @param {number} emailMessage.totalInFolder - Total emails in folder.
+ * @param {string} emailMessage.userId - User Id.
+ * @param {string} emailMessage.userEmail - User email address.
+ * @param {string} emailMessage.userIdentifier - Hashed user identifier
+ * @returns {Promise}
+ */
 async function onEmailMessage({
   body,
   header,
