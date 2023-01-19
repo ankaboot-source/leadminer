@@ -43,7 +43,7 @@ class RedisManager {
 
   /**
    * Initialize the redis db with domain providers strings.
-   * @async
+   * @returns {Promise}
    */
   async loadData() {
     const res = await this.#normalClient.exists('freeProviders');
@@ -64,7 +64,7 @@ class RedisManager {
 
   /**
    * Returns the original Redis client instance
-   * @return {object} Redis client instance
+   * @returns {Redis} Redis client instance
    */
   getClient() {
     return this.#normalClient;
