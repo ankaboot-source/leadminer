@@ -24,8 +24,7 @@ async function handleMessage({
       seqNumber,
       header,
       body,
-      folderName,
-      isLast // If it's the last element that comes from (fetch/redis).
+      folderName
     );
 
     const extractedContacts = await message.extractEmailsAddresses();

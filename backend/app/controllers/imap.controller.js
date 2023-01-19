@@ -1,81 +1,68 @@
-const Imap = require('imap');
 const logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
-const ImapUser = require('../services/imapUser');
-const EmailServer = require('../services/EmailServer');
-const EmailAccountMiner = require('../services/EmailAccountMiner');
 const { sse } = require('../middleware/sse');
 const { db } = require('../db');
+const {
+  ImapConnectionProvider
+} = require('../services/ImapConnectionProvider');
+const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
+const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
+const { redis } = require('../utils/redis');
+const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 
-function temporaryImapConnection(imapInfo, reqBody) {
-  return new Imap({
-    user: imapInfo.email,
-    password: reqBody.password,
-    host: imapInfo.host,
-    port: imapInfo.port,
-    tls: true,
-    connTimeout: 20000,
-    authTimeout: 7000,
-    tlsOptions: {
-      port: imapInfo.port,
-      host: imapInfo.host,
-      servername: imapInfo.host
-    }
-  });
-}
+const redisClientForPubSubMode = redis.getPubSubClient();
 
 /**
- *  Create imap account infos
- * @param  {} req
- * @param  {} res
+ * The callback function that will be executed for each fetched Email.
+ * @param {object} emailMessage - An email message.
+ * @param {object} emailMessage.header - Email headers.
+ * @param {object} emailMessage.body - Email body.
+ * @param {number} emailMessage.seqNumber - Email sequence number in its folder.
+ * @param {number} emailMessage.totalInFolder - Total emails in folder.
+ * @param {string} emailMessage.userId - User Id.
+ * @param {string} emailMessage.userEmail - User email address.
+ * @param {string} emailMessage.userIdentifier - Hashed user identifier
+ * @returns {Promise}
  */
-function createImapInfo(req, res, next) {
-  const { email, host, tls, port } = req.body;
+async function onEmailMessage({
+  body,
+  header,
+  folderName,
+  totalInFolder,
+  seqNumber,
+  progress,
+  userId,
+  userEmail,
+  userIdentifier
+}) {
+  sse.send(progress, `ScannedEmails${userId}`);
 
-  if (!email || !host) {
-    res.status(400);
-    next(new Error('Email and host are required for IMAP.'));
+  const isLastInFolder = seqNumber === totalInFolder;
+  // Last email in folder
+  if (isLastInFolder) {
+    try {
+      logger.debug('Calling function populate_refined', {
+        userId
+      });
+      await db.callRpcFunction(userId, 'populate_refined');
+    } catch (error) {
+      logger.error('Error from callRpcFunction(): ', error);
+    }
   }
 
-  // imapInfo object
-  const imapInfo = {
-    email,
-    host,
-    port: port || 993,
-    tls: tls ? tls : true
-  };
-
-  // initiate imap client
-  const imap = temporaryImapConnection(imapInfo, req.body);
-  imap.connect();
-
-  // if we can connect to the imap account
-  imap.once('ready', async () => {
-    try {
-      const imapData = await db.getImapUserByEmail(imapInfo.email);
-
-      if (imapData !== null) {
-        res.status(200).send({
-          message: 'Your account already exists !',
-          imap
-        });
-      } else {
-        const data = await db.createImapUser(imapInfo);
-        res.status(200).send({ imap: data });
-      }
-    } catch (error) {
-      next(error);
-    } finally {
-      imap.end();
-    }
+  const message = JSON.stringify({
+    seqNumber,
+    body,
+    header,
+    userId,
+    userEmail,
+    folderName,
+    isLast: isLastInFolder,
+    userIdentifier
   });
 
-  // The imap account does not exists or connection denied
-  imap.once('error', (err) => {
-    err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
-    next(err);
-  });
+  await redisClientForPubSubMode.publish(REDIS_MESSAGES_CHANNEL, message);
 }
 
 /**
@@ -84,93 +71,118 @@ function createImapInfo(req, res, next) {
  * @param  {} res
  */
 async function loginToAccount(req, res, next) {
-  const { email } = req.body;
+  const { email, host, tls, port, password } = req.body;
 
-  if (!email) {
+  if (!email || !host) {
     res.status(400);
-    next(new Error('Email is required to login'));
+    next(new Error('Email and host are required for IMAP.'));
   }
-  performance.mark('login-start');
-  const imap = await db.getImapUserByEmail(email);
-  if (imap === null) {
-    createImapInfo(req, res, next);
-  } else {
-    const imapConnection = temporaryImapConnection(imap, req.body);
 
-    imapConnection.connect();
-    imapConnection.once('ready', () => {
-      if (imap) {
-        res.status(200).send({
-          imap
-        });
+  performance.mark('login-start');
+
+  const imapConnection = new ImapConnectionProvider(email)
+    .withPassword(password, host)
+    .getImapConnection();
+
+  imapConnection.once('error', (err) => {
+    err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
+    next(err);
+  });
+
+  const imapUser = await db.getImapUserByEmail(email);
+  if (imapUser === null) {
+    imapConnection.once('ready', async () => {
+      try {
+        const imapData = await db.getImapUserByEmail(email);
+        if (imapData !== null) {
+          res.status(200).send({
+            message: 'Your account already exists !',
+            imapConnection
+          });
+        }
+
+        const data = await db.createImapUser({ email, host, port, tls });
+        res.status(200).send({ imap: data });
+      } catch (error) {
+        next(error);
+      } finally {
         imapConnection.end();
       }
+    });
+  } else {
+    imapConnection.once('ready', () => {
+      res.status(200).send({
+        imap: imapUser
+      });
+      imapConnection.end();
+
       logger.info('Account successfully logged in.', {
         email,
         duration: performance.measure('measure login', 'login-start').duration
       });
     });
-    imapConnection.on('error', (err) => {
-      err.message = 'Unable to connect to IMAP account.';
-      next(err);
-    });
   }
+
+  imapConnection.connect();
 }
 
 /**
  * Retrieve mailbox folders.
- * @param  {object} req - user request
- * @param  {object} res - http response to be sent
+ * @param {object} req - user request
+ * @param {object} res - http response to be sent
  */
 async function getImapBoxes(req, res, next) {
   if (!req.headers['x-imap-login']) {
     res.status(400);
-    return next(new Error('An x-imap-login header field is required.'));
+    next(new Error('An x-imap-login header field is required.'));
   }
 
-  const query = JSON.parse(req.headers['x-imap-login']);
+  const { access_token, id, email, password } = JSON.parse(
+    req.headers['x-imap-login']
+  );
 
-  if (query.access_token) {
-    const googleUser = await db.getGoogleUserByEmail(query.email);
+  let imapConnectionProvider = new ImapConnectionProvider(email);
 
-    if (googleUser) {
-      query.refresh_token = googleUser.refresh_token;
-    }
+  if (access_token) {
+    const { refresh_token } = await db.getGoogleUserByEmail(email);
+    imapConnectionProvider = await imapConnectionProvider.withGoogle(
+      access_token,
+      refresh_token,
+      sse,
+      id
+    );
   } else {
-    const imapUser = await db.getImapUserById(query.id);
-
-    if (imapUser) {
-      query.host = imapUser.host;
-      query.port = imapUser.port;
-    }
+    const { host, port } = await db.getImapUserById(id);
+    imapConnectionProvider = imapConnectionProvider.withPassword(
+      password,
+      host,
+      port
+    );
   }
-  // define user object from user request query
-  const user = new ImapUser(query).getUserConnectionDataFromQuery();
-  // initialise imap server connection
-  const server = new EmailServer(user, sse);
-  // initialise EmailAccountMiner to mine imap tree
-  const miner = new EmailAccountMiner(server, user, {}, {}, '', '', '');
-  // get tree
-  const [tree, error] = await miner.getTree();
 
-  if (error) {
+  try {
+    const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
+    const tree = await imapBoxesFetcher.getTree();
+
+    logger.info('Mining IMAP tree succeeded.', {
+      user: hashHelpers.hashEmail(email, id)
+    });
+
+    return res.status(200).send({
+      message: 'IMAP folders fetched successfully!',
+      imapFoldersTree: tree
+    });
+  } catch (error) {
     error.message = 'Unable to fetch IMAP folders.';
-    error.user = hashHelpers.hashEmail(user.email, user.id);
+    error.user = hashHelpers.hashEmail(email, id);
     return next(error);
   }
-  logger.info('Mining IMAP tree succeeded.', {
-    user: hashHelpers.hashEmail(user.email, user.id)
-  });
-  res.status(200).send({
-    message: 'IMAP folders fetched successfully!',
-    imapFoldersTree: tree
-  });
 }
 
 /**
  * Get Emails from imap server.
- * @param  {object} req - user request
- * @param  {object} res - http response to be sent
+ * @param {object} req - user request
+ * @param {object} res - http response to be sent
  */
 async function getEmails(req, res, next) {
   if (!req.headers['x-imap-login']) {
@@ -178,29 +190,30 @@ async function getEmails(req, res, next) {
     next(new Error('An x-imap-login header field is required.'));
   }
 
-  const query = JSON.parse(req.headers['x-imap-login']);
+  const { access_token, id, email, password } = JSON.parse(
+    req.headers['x-imap-login']
+  );
 
-  if (query.access_token) {
-    const googleUser = await db.getGoogleUserByEmail(query.email);
+  let imapConnectionProvider = new ImapConnectionProvider(email);
 
-    if (googleUser) {
-      query.refresh_token = googleUser.refresh_token;
-    }
+  if (access_token) {
+    const { refresh_token } = await db.getGoogleUserByEmail(email);
+    imapConnectionProvider = await imapConnectionProvider.withGoogle(
+      access_token,
+      refresh_token,
+      sse,
+      id
+    );
   } else {
-    logger.debug(query.id, query.email, 'getemails');
-    const imapUser = await db.getImapUserById(query.id);
-    if (imapUser) {
-      query.host = imapUser.host;
-      query.port = imapUser.port;
-    }
+    const { host, port } = await db.getImapUserById(id);
+    imapConnectionProvider = imapConnectionProvider.withPassword(
+      password,
+      host,
+      port
+    );
   }
-  // define user object from user request query
-  const user = new ImapUser(query).getUserConnectionDataFromQuery(),
-    // initialize imap server connection
-    server = new EmailServer(user, sse);
 
-  class MyEmitter extends EventEmitter {}
-  const eventEmitter = new MyEmitter();
+  const eventEmitter = new EventEmitter();
 
   req.on('close', () => {
     eventEmitter.emit('endByUser');
@@ -216,21 +229,23 @@ async function getEmails(req, res, next) {
     res.status(200).send();
   });
 
-  // initialize EmailAccountMiner to mine imap folder
-  const miner = new EmailAccountMiner(
-    server,
-    user,
-    sse,
-    req.query.boxes,
-    eventEmitter
+  const { boxes } = req.query;
+  const imapEmailsFetcher = new ImapEmailsFetcher(
+    imapConnectionProvider,
+    eventEmitter,
+    boxes,
+    id,
+    email
   );
 
-  await miner.mine();
+  await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
+  sse.send(true, 'data');
+  sse.send(true, `dns${id}`);
+  eventEmitter.emit('end', true);
 }
 
 module.exports = {
   getEmails,
   getImapBoxes,
-  loginToAccount,
-  createImapInfo
+  loginToAccount
 };
