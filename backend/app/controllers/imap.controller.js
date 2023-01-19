@@ -63,7 +63,7 @@ async function onEmailMessage({
   });
 
   const streamId = await redisStreamsPublisher.xadd(REDIS_MESSAGES_CHANNEL, '*', 'message', message);
-  streamId && logger.debug('Publishing message to stream', {streamId, channel:REDIS_MESSAGES_CHANNEL, user: userIdentifier});
+  logger.debug('Publishing message to stream', {streamId, channel:REDIS_MESSAGES_CHANNEL, user: userIdentifier});
 }
 
 /**
