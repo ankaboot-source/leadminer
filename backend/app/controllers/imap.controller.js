@@ -62,8 +62,12 @@ async function onEmailMessage({
     userIdentifier
   });
 
-  const streamId = await redisStreamsPublisher.xadd(REDIS_MESSAGES_CHANNEL, '*', 'message', message);
-  logger.debug('Publishing message to stream', {streamId, channel:REDIS_MESSAGES_CHANNEL, user: userIdentifier});
+  try {
+    const streamId = await redisStreamsPublisher.xadd(REDIS_MESSAGES_CHANNEL, '*', 'message', message);
+    logger.debug('Publishing message to stream', { streamId, channel: REDIS_MESSAGES_CHANNEL, user: userIdentifier });
+  } catch (error) {
+    logger.error('Error when publishing to streams', { error, channel: REDIS_MESSAGES_CHANNEL, user: userIdentifier });
+  }
 }
 
 /**
