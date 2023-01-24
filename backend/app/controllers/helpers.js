@@ -1,6 +1,6 @@
 /**
  * Extracts the x-imap-login header field and validates it
- * @param {Object} headers - an object containing all the headers
+ * @param {Object} headers - an object containing HTTP request headers.
  * @returns {{data, error}} - an object containing the extracted values and an error object if any
  */
 function getXImapHeaderField(headers) {
