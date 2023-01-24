@@ -26,11 +26,9 @@ async function refreshAccessToken(refreshToken) {
     if (token.res?.data) {
       token = token.res.data.access_token;
     }
-
-    oauth2Client.setCredentials({ token });
     return token;
   } catch (error) {
-    throw new Error(error.message);
+      throw new Error(`An error occurred while refreshing the access token: ${error.message}`);
   }
 }
 
