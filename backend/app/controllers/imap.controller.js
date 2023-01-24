@@ -138,7 +138,6 @@ async function loginToAccount(req, res, next) {
  * @param {object} res - http response to be sent
  */
 async function getImapBoxes(req, res, next) {
-
   const { data, error } = getXImapHeaderField(req.headers);
 
   if (error) {
@@ -147,14 +146,14 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const query = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
+  const userResult = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
 
-  if (query === null) {
+  if (userResult === null) {
     res.status(400);
     return next(new Error('user does not exists.'));
   }
 
-  const { host, port, refresh_token } = query;
+  const { host, port, refresh_token } = userResult;
   const imapConnectionProvider = await new ImapConnectionProvider(email)
     .initConnection({ id, password, host, port, access_token, refresh_token, sse });
 
@@ -193,14 +192,14 @@ async function getEmails(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const query = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
+  const userResult = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
 
-  if (query === null) {
+  if (userResult === null) {
     res.status(400);
     return next(new Error('user does not exists.'));
   }
 
-  const { host, port, refresh_token } = query;
+  const { host, port, refresh_token } = userResult;
 
   const imapConnectionProvider = await new ImapConnectionProvider(email)
     .initConnection({ id, password, host, port, access_token, refresh_token, sse });
