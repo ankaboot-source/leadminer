@@ -52,6 +52,9 @@ async function checkTokenValidity(accessToken) {
 /**
  * Generates an XOAuth2 token for the user to authenticate with the IMAP server.
  * @param {object} authData - An object containing the token, refresh token, and email of the user account.
+ * @param {string} authData.token - The current user access token.
+ * @param {string} authData.refreshToken - The user refresh token, used to refresh the access token when it expires.
+ * @param {string} authData.email - The email address of the user.
  * @returns {Promise<object>} An object containing the XOAuth2 token and the new token.
  */
 async function generateXOauthToken({ token, refreshToken, email }) {
