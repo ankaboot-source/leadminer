@@ -7,7 +7,7 @@ function getXImapHeaderField(headers) {
   if (!headers['x-imap-login']) {
     return { data: null, error: new Error('An x-imap-login header field is required.') };
   }
-  let login;
+  let login = null;
   try {
     login = JSON.parse(headers['x-imap-login']);
   } catch (error) {

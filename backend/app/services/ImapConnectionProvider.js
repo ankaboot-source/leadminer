@@ -45,8 +45,8 @@ class ImapConnectionProvider {
   async initConnection({ id, password, host, port = 993, access_token, refresh_token, sse }) {
 
     const connectionConfig = access_token
-      ? await this._withGoogle(this.#imapConfig.user, access_token, refresh_token, id, sse)
-      : this._withPassword(host, password, port);
+      ? await ImapConnectionProvider._withGoogle(this.#imapConfig.user, access_token, refresh_token, id, sse)
+      : ImapConnectionProvider._withPassword(host, password, port);
 
     this.#imapConfig = {
       ...this.#imapConfig,
@@ -62,7 +62,7 @@ class ImapConnectionProvider {
    * @param {string} userId - A unique identifier for the connection
    * @returns {Object} - The configuration object for the connection
   */
-  async _withGoogle(email, token, refreshToken, userId, sse) {
+  static async _withGoogle(email, token, refreshToken, userId, sse) {
     const googleConfig = {
       host: 'imap.gmail.com',
       port: 993,
@@ -88,7 +88,7 @@ class ImapConnectionProvider {
    * @param {string} password - User's password
    * @returns {Object} - The configuration object for the connection
   */
-  _withPassword(host, password, port = 993) {
+  static _withPassword(host, password, port = 993) {
     return {
       password,
       host,

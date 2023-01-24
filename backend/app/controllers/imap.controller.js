@@ -170,17 +170,18 @@ async function getImapBoxes(req, res, next) {
       message: 'IMAP folders fetched successfully!',
       imapFoldersTree: tree
     });
-  } catch (error) {
-    error.message = 'Unable to fetch IMAP folders.';
-    error.user = hashHelpers.hashEmail(email, id);
-    return next(error);
+  } catch (err) {
+    err.message = 'Unable to fetch IMAP folders.';
+    err.user = hashHelpers.hashEmail(email, id);
+    return next(err);
   }
 }
 
 /**
  * Get Emails from imap server.
- * @param {object} req - user request
- * @param {object} res - http response to be sent
+ * @param {Object} req - The user request.
+ * @param {Object} res - The http response to be sent.
+ * @param {function} next - The next middleware function in the route.
  */
 async function getEmails(req, res, next) {
 
@@ -215,10 +216,6 @@ async function getEmails(req, res, next) {
     });
   });
 
-  eventEmitter.on('end', () => {
-    res.status(200).send();
-  });
-
   const { boxes } = req.query;
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
@@ -232,7 +229,9 @@ async function getEmails(req, res, next) {
   sse.send(true, 'data');
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
+  return res.status(200).send(); 
 }
+
 
 module.exports = {
   getEmails,
