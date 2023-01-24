@@ -28,7 +28,7 @@ async function refreshAccessToken(refreshToken) {
     }
     return token;
   } catch (error) {
-      throw new Error(`An error occurred while refreshing the access token: ${error.message}`);
+    throw new Error(`An error occurred while refreshing the access token: ${error.message}`);
   }
 }
 
@@ -58,22 +58,16 @@ async function checkTokenValidity(accessToken) {
  * @returns {Promise<object>} An object containing the XOAuth2 token and the new token.
  */
 async function generateXOauthToken({ token, refreshToken, email }) {
-  let accessToken = token;
-
-  if (!await checkTokenValidity(token)) {
-    accessToken = await refreshAccessToken(refreshToken);
-  }
-
+  const tokenValidity = await checkTokenValidity(token)
+  const accessToken = tokenValidity ? token : await refreshAccessToken(refreshToken);
   const xoauth2gen = xoauth2.createXOAuth2Generator({
     user: email,
     clientId: googleClientId,
     clientSecret: googleClientSecret,
     accessToken
   });
-
   const authData = `user=${email}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`;
   const xoauth2_token = new Buffer.from(authData, 'utf-8').toString('base64');
-
   return { xoauth2Token: xoauth2_token, newToken: accessToken };
 }
 
