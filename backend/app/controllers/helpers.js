@@ -14,7 +14,7 @@ function getXImapHeaderField(headers) {
     return { data: null, error: new Error('x-imap-login header field is not in correct JSON format') };
   }
 
-  if (!login.email && !login.id) {
+  if (!login.email || !login.id) {
     return { data: null, error: new Error('x-imap-login header field is missing required fields (email, id)') };
   }
   if (!login.access_token && !login.password) {
