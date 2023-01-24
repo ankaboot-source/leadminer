@@ -9,7 +9,6 @@ class ImapConnectionProvider {
 
   /**
    * @typedef {Object} ImapConnectionProviderConfig
-   * @property {string} email - User's email address
    * @property {string} [id] - A unique identifier for the connection
    * @property {string} [password] - User's password for non-OAuth connections
    * @property {string} [host] - The host name or IP address of the mail server
@@ -24,7 +23,7 @@ class ImapConnectionProvider {
   /**
    * ImapConnectionProvider constructor.
    * @constructor
-   * @param {ImapConnectionProviderConfig} config - Configuration object for the connection
+   * @param {string} email - User email address
    */
   constructor(email) {
     this.#imapConfig = {
