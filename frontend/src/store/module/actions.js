@@ -1,7 +1,7 @@
 import { LocalStorage } from "quasar";
 
 import { createClient } from "@supabase/supabase-js";
-import { eventSource, registerEventHandlers } from "src/helpers/sse";
+import { sse } from "src/helpers/sse";
 
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
@@ -40,7 +40,8 @@ export async function getEmails({ state, commit }, { data }) {
   if (subscription) await subscription.unsubscribe();
   subscribeToRefined(user.id, commit);
 
-  registerEventHandlers(user.id, this);
+  sse.init();
+  sse.registerEventHandlers(user.id, this);
 
   try {
     const { boxes, abortController } = data;
@@ -71,7 +72,7 @@ export async function getEmails({ state, commit }, { data }) {
         ? error?.response?.data?.error
         : error.message
     );
-    eventSource.close();
+    sse.closeConnection();
   }
 }
 

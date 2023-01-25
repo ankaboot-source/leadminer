@@ -77,7 +77,7 @@
 <script setup>
 import objectScan from "object-scan";
 import { LocalStorage, useQuasar } from "quasar";
-import { eventSource } from "src/helpers/sse";
+import { sse } from "src/helpers/sse";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
@@ -125,7 +125,7 @@ const extractedEmails = computed(
 
 watch(extractedEmails, (newValue) => {
   if (newValue > 0 && newValue === totalEmails.value) {
-    eventSource.close();
+    sse.closeConnection();
   }
 });
 
