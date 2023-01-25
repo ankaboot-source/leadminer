@@ -16,17 +16,6 @@
         <div class="text-h5 text-weight-bolder q-ma-sm">{{ totalEmails }}</div>
         emails to fetch.
       </q-chip>
-
-      <q-chip :size="buttonColor" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ extractedEmails }}
-        </div>
-        emails messages extracted over
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ scannedEmails }}
-        </div>
-        emails to extract.
-      </q-chip>
     </q-banner>
   </div>
 </template>
@@ -37,7 +26,6 @@ import { computed, defineComponent } from "vue";
 export default defineComponent({
   name: "ProgressStatus",
   props: {
-    extractedEmails: Number(0),
     minedEmails: Number(0),
     scannedEmails: Number(0),
     totalEmails: Number(0),

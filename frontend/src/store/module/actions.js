@@ -1,7 +1,7 @@
 import { LocalStorage } from "quasar";
 
 import { createClient } from "@supabase/supabase-js";
-import { eventSource, registerEventHandlers } from "src/helpers/sse";
+import { registerEventHandlers } from "src/helpers/sse";
 
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
@@ -40,7 +40,13 @@ export async function getEmails({ state, commit }, { data }) {
   if (subscription) await subscription.unsubscribe();
   subscribeToRefined(user.id, commit);
 
-  registerEventHandlers(user.id, this);
+  const eventSource = new EventSource(
+    `${process.env.SERVER_ENDPOINT}/api/stream`,
+    {
+      withCredentials: true,
+    }
+  );
+  registerEventHandlers(eventSource, user.id, this);
 
   try {
     const { boxes, abortController } = data;
@@ -50,6 +56,7 @@ export async function getEmails({ state, commit }, { data }) {
       commit("SET_LOADING_DNS", false);
       commit("SET_STATUS", "");
       commit("SET_INFO_MESSAGE", "Emails fetching stopped.");
+      eventSource.close();
     });
 
     await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
@@ -60,6 +67,7 @@ export async function getEmails({ state, commit }, { data }) {
       },
     });
 
+    eventSource.close();
     commit("SET_LOADING", false);
     commit("SET_LOADING_DNS", false);
     commit("SET_STATUS", "");
