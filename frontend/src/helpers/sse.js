@@ -1,6 +1,19 @@
 import { LocalStorage } from "quasar";
 
-export function registerEventHandlers(eventSource, userId, store) {
+export let eventSource = new EventSource(
+  `${process.env.SERVER_ENDPOINT}/api/stream`,
+  {
+    withCredentials: true,
+  }
+);
+
+export function registerEventHandlers(userId, store) {
+  eventSource.close();
+
+  eventSource = new EventSource(`${process.env.SERVER_ENDPOINT}/api/stream`, {
+    withCredentials: true,
+  });
+
   eventSource.addEventListener(`minedEmails${userId}`, (message) => {
     const { data, statistics } = JSON.parse(message.data);
     store.commit("example/SET_EMAILS", data);
@@ -10,6 +23,11 @@ export function registerEventHandlers(eventSource, userId, store) {
   eventSource.addEventListener(`ScannedEmails${userId}`, ({ data }) => {
     const scanned = parseInt(data, 10);
     store.commit("example/SET_SCANNEDEMAILS", scanned);
+  });
+
+  eventSource.addEventListener(`ExtractedEmails${userId}`, ({ data }) => {
+    const extracted = parseInt(data, 10);
+    store.commit("example/SET_EXTRACTEDEMAILS", extracted);
   });
 
   eventSource.addEventListener(`scannedBoxes${userId}`, ({ data }) => {
@@ -35,6 +53,4 @@ export function registerEventHandlers(eventSource, userId, store) {
   eventSource.addEventListener(`dns${userId}`, () => {
     store.commit("example/SET_LOADING_DNS", false);
   });
-
-  return eventSource;
 }

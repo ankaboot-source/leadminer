@@ -38,6 +38,9 @@ export function SET_SESSIONID(state, newSocket) {
 export function SET_SCANNEDEMAILS(state, newValue) {
   state.progress.scannedEmails = newValue;
 }
+export function SET_EXTRACTEDEMAILS(state, newValue) {
+  state.progress.extractedEmails = newValue;
+}
 export function SET_STATISTICS(state, newValue) {
   if (newValue === "f") {
     state.progress.statistics = {};
