@@ -62,6 +62,7 @@
                 v-if="boxes"
                 :mined-emails="retrievedEmails.length"
                 :scanned-emails="scannedEmails"
+                :extracted-emails="extractedEmails"
                 :total-emails="totalEmails"
               />
             </div>
@@ -76,7 +77,8 @@
 <script setup>
 import objectScan from "object-scan";
 import { LocalStorage, useQuasar } from "quasar";
-import { computed, onMounted, ref } from "vue";
+import { eventSource } from "src/helpers/sse";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import ProgressCard from "../cards/ProgressCard.vue";
@@ -117,6 +119,16 @@ const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
 const scannedEmails = computed(
   () => $store.state.example.progress.scannedEmails
 );
+const extractedEmails = computed(
+  () => $store.state.example.progress.extractedEmails
+);
+
+watch(extractedEmails, (newValue) => {
+  if (newValue > 0 && newValue === totalEmails.value) {
+    eventSource.close();
+  }
+});
+
 const totalEmails = computed(() => {
   if (boxes.value[0]) {
     return objectScan(["**.{total}"], {
