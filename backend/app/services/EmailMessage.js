@@ -165,7 +165,7 @@ class EmailMessage {
   /**
    * Constructs tags from fieldName, email, emailType.
    * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
-   * @param {string} email  - Email address
+   * @param {{name, address ,identifier ,domain}} email  - Email object
    * @param {string} emailType - The type of the email
    * @returns { [{name: string, reachable: int, source: string}] | []}
    *  An empty array if there is no tags, else returns array of objects.
