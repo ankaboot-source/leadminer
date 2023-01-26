@@ -86,9 +86,9 @@ async function loginToAccount(req, res, next) {
 
   performance.mark('login-start');
 
-  const imapConnection = await new ImapConnectionProvider(email)
-    .initConnection({ password, host, port })
-    .getImapConnection(); 
+  const imapConnection = new ImapConnectionProvider(email)
+    .withPassword(host, password, port)
+    .getImapConnection();
 
   imapConnection.once('error', (err) => {
     err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
@@ -154,8 +154,12 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { host, port, refresh_token } = userResult;
-  const imapConnectionProvider = await new ImapConnectionProvider(email)
-    .initConnection({ id, password, host, port, access_token, refresh_token, sse });
+
+  let imapConnectionProvider = new ImapConnectionProvider(email);
+
+  imapConnectionProvider = access_token
+    ? await imapConnectionProvider.withGoogle(access_token, refresh_token, id, sse)
+    : imapConnectionProvider.withPassword(host, password, port);
 
   try {
     const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
@@ -201,8 +205,12 @@ async function getEmails(req, res, next) {
 
   const { host, port, refresh_token } = userResult;
 
-  const imapConnectionProvider = await new ImapConnectionProvider(email)
-    .initConnection({ id, password, host, port, access_token, refresh_token, sse });
+  let imapConnectionProvider = new ImapConnectionProvider(email);
+
+  imapConnectionProvider = access_token
+    ? await imapConnectionProvider.withGoogle(access_token, refresh_token, id, sse)
+    : imapConnectionProvider.withPassword(host, password, port);
+
   const eventEmitter = new EventEmitter();
 
   req.on('close', () => {
@@ -228,7 +236,7 @@ async function getEmails(req, res, next) {
   sse.send(true, 'data');
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
-  return res.status(200).send(); 
+  return res.status(200).send();
 }
 
 
