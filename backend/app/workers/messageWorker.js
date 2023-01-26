@@ -33,7 +33,10 @@ async function handleMessage({
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
-    redisPubSubClient.publish(userId, true);
+    let informedSubscribers = 0;
+    while (informedSubscribers === 0) {
+      informedSubscribers = await redisPubSubClient.publish(userId, true);
+    }
 
     if (isLast) {
       try {

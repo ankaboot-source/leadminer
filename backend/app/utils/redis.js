@@ -34,11 +34,7 @@ class RedisManager {
           }
         });
       } else {
-        this.#normalClient = new Redis(port, host, {
-          tls: {
-            rejectUnauthorized: false
-          }
-        });
+        this.#normalClient = new Redis(port, host);
       }
     } catch (error) {
       logger.error('Error connecting to Redis.', {
