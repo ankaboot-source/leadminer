@@ -10,6 +10,7 @@ const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
 const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
+const { getXImapHeaderField } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
@@ -100,7 +101,7 @@ async function loginToAccount(req, res, next) {
   performance.mark('login-start');
 
   const imapConnection = new ImapConnectionProvider(email)
-    .withPassword(password, host)
+    .withPassword(host, password, port)
     .getImapConnection();
 
   imapConnection.once('error', (err) => {
@@ -151,33 +152,28 @@ async function loginToAccount(req, res, next) {
  * @param {object} res - http response to be sent
  */
 async function getImapBoxes(req, res, next) {
-  if (!req.headers['x-imap-login']) {
+  const { data, error } = getXImapHeaderField(req.headers);
+
+  if (error) {
     res.status(400);
-    next(new Error('An x-imap-login header field is required.'));
+    return next(error);
   }
 
-  const { access_token, id, email, password } = JSON.parse(
-    req.headers['x-imap-login']
-  );
+  const { access_token, id, email, password } = data;
+  const userResult = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
+
+  if (userResult === null) {
+    res.status(400);
+    return next(new Error('user does not exists.'));
+  }
+
+  const { host, port, refresh_token } = userResult;
 
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
-  if (access_token) {
-    const { refresh_token } = await db.getGoogleUserByEmail(email);
-    imapConnectionProvider = await imapConnectionProvider.withGoogle(
-      access_token,
-      refresh_token,
-      sse,
-      id
-    );
-  } else {
-    const { host, port } = await db.getImapUserById(id);
-    imapConnectionProvider = imapConnectionProvider.withPassword(
-      password,
-      host,
-      port
-    );
-  }
+  imapConnectionProvider = access_token
+    ? await imapConnectionProvider.withGoogle(access_token, refresh_token, id, sse)
+    : imapConnectionProvider.withPassword(host, password, port);
 
   try {
     const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
@@ -191,46 +187,43 @@ async function getImapBoxes(req, res, next) {
       message: 'IMAP folders fetched successfully!',
       imapFoldersTree: tree
     });
-  } catch (error) {
-    error.message = 'Unable to fetch IMAP folders.';
-    error.user = hashHelpers.hashEmail(email, id);
-    return next(error);
+  } catch (err) {
+    err.message = 'Unable to fetch IMAP folders.';
+    err.user = hashHelpers.hashEmail(email, id);
+    return next(err);
   }
 }
 
 /**
  * Get Emails from imap server.
- * @param {object} req - user request
- * @param {object} res - http response to be sent
+ * @param {Object} req - The user request.
+ * @param {Object} res - The http response to be sent.
+ * @param {function} next - The next middleware function in the route.
  */
 async function getEmails(req, res, next) {
-  if (!req.headers['x-imap-login']) {
+
+  const { data, error } = getXImapHeaderField(req.headers);
+
+  if (error) {
     res.status(400);
-    next(new Error('An x-imap-login header field is required.'));
+    return next(error);
   }
 
-  const { access_token, id, email, password } = JSON.parse(
-    req.headers['x-imap-login']
-  );
+  const { access_token, id, email, password } = data;
+  const userResult = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
+
+  if (userResult === null) {
+    res.status(400);
+    return next(new Error('user does not exists.'));
+  }
+
+  const { host, port, refresh_token } = userResult;
 
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
-  if (access_token) {
-    const { refresh_token } = await db.getGoogleUserByEmail(email);
-    imapConnectionProvider = await imapConnectionProvider.withGoogle(
-      access_token,
-      refresh_token,
-      sse,
-      id
-    );
-  } else {
-    const { host, port } = await db.getImapUserById(id);
-    imapConnectionProvider = imapConnectionProvider.withPassword(
-      password,
-      host,
-      port
-    );
-  }
+  imapConnectionProvider = access_token
+    ? await imapConnectionProvider.withGoogle(access_token, refresh_token, id, sse)
+    : imapConnectionProvider.withPassword(host, password, port);
 
   const eventEmitter = new EventEmitter();
 
@@ -242,10 +235,6 @@ async function getEmails(req, res, next) {
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });
-  });
-
-  eventEmitter.on('end', () => {
-    res.status(200).send();
   });
 
   const { boxes } = req.query;
@@ -275,7 +264,9 @@ async function getEmails(req, res, next) {
   sse.send(true, 'data');
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
+  return res.status(200).send();
 }
+
 
 module.exports = {
   getEmails,

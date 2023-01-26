@@ -18,9 +18,10 @@ describe('Full mining flow', () => {
       password: testImapPassword,
       host: testImapHost
     });
+
     expect(loginResponse.statusCode).to.equal(200);
 
-    const loggedInUser = loginResponse.body.imap;
+    const loggedInUser = JSON.parse(loginResponse.text).imap;
     const imapLoginHeader = JSON.stringify({
       id: loggedInUser.id,
       email: loggedInUser.email,

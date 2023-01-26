@@ -58,6 +58,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
   it('Should return array with one valid object', () => {
     // Test with all information
+
     const fullInformationOutput = regExHelpers.extractNameAndEmail(
       'this is myyyyyyyyyyyyyyyy name <tester@testing.com>'
     );
