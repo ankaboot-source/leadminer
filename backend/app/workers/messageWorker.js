@@ -5,6 +5,7 @@ const logger = require('../utils/logger')(module);
 const { db } = require('../db');
 
 const redisStreamsConsumer = redis.getDuplicatedClient();
+const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
 
 async function handleMessage({
@@ -32,6 +33,8 @@ async function handleMessage({
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
+    redisPubSubClient.publish(userId, true);
+
     if (isLast) {
       try {
         await db.callRpcFunction(userId, 'populate_refined');
@@ -53,7 +56,7 @@ async function handleMessage({
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
-*/
+ */
 const processMessage = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
@@ -67,24 +70,31 @@ const processMessage = async (message) => {
 /**
  * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
  * @function consumeMessages
-*/
+ */
 (async () => {
-
   const CONSTANT_CONDITION = true; // Bypass  lint checker
   let lastReadId = '$';
 
   while (CONSTANT_CONDITION) {
-    const result = await redisStreamsConsumer.xread('BLOCK', 0, 'STREAMS', REDIS_MESSAGES_CHANNEL, lastReadId);
+    const result = await redisStreamsConsumer.xread(
+      'BLOCK',
+      0,
+      'STREAMS',
+      REDIS_MESSAGES_CHANNEL,
+      lastReadId
+    );
 
     if (result) {
       const [channel, messages] = result[0];
       lastReadId = messages[messages.length - 1][0];
 
-      logger.debug('Consuming messages', { channel, totalMessages: messages.length, lastMessageID: lastReadId });
+      logger.debug('Consuming messages', {
+        channel,
+        totalMessages: messages.length,
+        lastMessageID: lastReadId
+      });
 
       messages.forEach(processMessage);
-
     }
   }
-
 })();

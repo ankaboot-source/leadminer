@@ -13,6 +13,7 @@ const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const { getXImapHeaderField } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
+const redisPubSubClient = redis.getDuplicatedClient();
 
 /**
  * The callback function that will be executed for each fetched Email.
@@ -64,10 +65,23 @@ async function onEmailMessage({
   });
 
   try {
-    const streamId = await redisStreamsPublisher.xadd(REDIS_MESSAGES_CHANNEL, '*', 'message', message);
-    logger.debug('Publishing message to stream', { streamId, channel: REDIS_MESSAGES_CHANNEL, user: userIdentifier });
+    const streamId = await redisStreamsPublisher.xadd(
+      REDIS_MESSAGES_CHANNEL,
+      '*',
+      'message',
+      message
+    );
+    logger.debug('Publishing message to stream', {
+      streamId,
+      channel: REDIS_MESSAGES_CHANNEL,
+      user: userIdentifier
+    });
   } catch (error) {
-    logger.error('Error when publishing to streams', { error, channel: REDIS_MESSAGES_CHANNEL, user: userIdentifier });
+    logger.error('Error when publishing to streams', {
+      error,
+      channel: REDIS_MESSAGES_CHANNEL,
+      user: userIdentifier
+    });
   }
 }
 
@@ -231,6 +245,20 @@ async function getEmails(req, res, next) {
     id,
     email
   );
+
+  let extractedEmailMessages = 0;
+
+  // This channel will be used to track extracting progress
+  redisPubSubClient.subscribe(id, (err) => {
+    if (err) {
+      logger.error('Failed subscribing to Redis.');
+    }
+  });
+
+  redisPubSubClient.on('message', () => {
+    extractedEmailMessages++;
+    sse.send(extractedEmailMessages, `ExtractedEmails${id}`);
+  });
 
   await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
   sse.send(true, 'data');
