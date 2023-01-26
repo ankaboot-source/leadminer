@@ -33,32 +33,10 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
 BEGIN
-    WITH pointsofcontact_subquery AS (
-      SELECT 
-        personid,
-        name,
-        count(*) FILTER (WHERE msg.conversation) AS engagement,
-        max(msg.date) AS recency,
-        count(*) FILTER (WHERE cc OR _to OR _from OR reply_to OR bcc OR body) AS occurence
-      FROM public.pointsofcontact
-        INNER JOIN public.messages msg ON public.pointsofcontact.messageid = msg.id
-      WHERE public.pointsofcontact.userid=refined_persons.userid
-      GROUP BY personid, name
-    )
-    , alternate_names AS (
-      SELECT personid, array_agg(distinct(name)) as alternate_names
-      FROM pointsofcontact_subquery 
-      GROUP BY personid
-    )
-    UPDATE public.refinedpersons
-    SET engagement = pointsofcontact_subquery.engagement, 
-        recency = pointsofcontact_subquery.recency, 
-        occurence = pointsofcontact_subquery.occurence, 
-        alternate_names = alternate_names.alternate_names
-    FROM pointsofcontact_subquery
-    JOIN alternate_names 
-    ON pointsofcontact_subquery.personid = alternate_names.personid
-    WHERE refinedpersons.personid = pointsofcontact_subquery.personid;
+  update public.refinedpersons
+    set engagement=person.engagement, recency=person.recency, occurence=person.occurence, alternate_names=person.alternate_names
+    from public.calculated_refined_view as person
+    where refinedpersons.personid=person.personid and person.userid = refined_persons.userid;
 END;
 $function$;
 
@@ -67,11 +45,11 @@ LANGUAGE plpgsql
 AS $function$
 BEGIN
   INSERT INTO refinedpersons(personid, userid, tags, name, email)
-    SELECT id, populate_refined.userid, t.tags, name, email
-    FROM public.persons
-    INNER JOIN public.grouped_tags_by_person_view AS t ON t.personid = id
-    WHERE persons._userid=populate_refined.userid AND NOT t.tags_reachability && '{0}'
-  ON conflict(personid) do nothing;
+    select id, populate_refined.userid, t.tags, name, email
+    from public.persons
+    inner join public.grouped_tags_by_person_view as t on t.personid = id
+    where not t.tags_reachability && '{0}'
+  on conflict(personid) do nothing;
 END;
 $function$;
 
@@ -82,3 +60,16 @@ create or replace view public.grouped_tags_by_person_view as
     personid
     from tags
     group  by personid;
+    
+create or replace view public.calculated_refined_view as
+  select
+      personid,
+      pointsofcontact.userid,
+      count(*) filter (where msg.conversation) as engagement,
+      max(msg.date) as recency,
+      count(*) filter (where cc or _to or _from or reply_to or bcc or body) as occurence,
+      public.get_most_recent_name(personid) as name,
+      array_agg(distinct(name)) as alternate_names
+  from public.pointsofcontact
+  inner join messages as msg on msg.id = messageid
+  group by personid, pointsofcontact.userid;
