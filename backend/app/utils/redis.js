@@ -28,10 +28,17 @@ class RedisManager {
       if (user && password) {
         this.#normalClient = new Redis(port, host, {
           password,
-          user
+          user,
+          tls: {
+            rejectUnauthorized: false
+          }
         });
       } else {
-        this.#normalClient = new Redis(port, host);
+        this.#normalClient = new Redis(port, host, {
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
       }
     } catch (error) {
       logger.error('Error connecting to Redis.', {
