@@ -21,6 +21,7 @@ export default function () {
     errorMessage: "",
     infoMessage: "",
     progress: {
+      extractedEmails: 0,
       scannedEmails: 0,
       status: "",
       scannedBoxes: [],
