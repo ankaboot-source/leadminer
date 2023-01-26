@@ -1,5 +1,5 @@
 
-DROP VIEW IF EXISTS public.calculated_refined_view
+DROP VIEW IF EXISTS public.calculated_refined_view;
 
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void
 LANGUAGE plpgsql
