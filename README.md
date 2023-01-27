@@ -11,12 +11,7 @@ Docker is the recommended solution for self-hosting Leadminer thanks to its conv
 
 ### Run Leadminer using docker-compose
 
-1. Clone the repository
-
-```shell
- git clone https://github.com/ankaboot-source/leadminer
- cd leadminer
-```
+1. Clone the repository and enter `leadminer` folder
 
 2. Copy [.env.example](/.env.example) to `.env` and edit it depending on your environment.
 
