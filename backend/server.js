@@ -20,9 +20,7 @@ console.log(
 (async () => {
   await redis.loadData();
   // eslint-disable-next-line no-unused-vars
-  const messageWorker = new Worker('./app/workers/messageWorker.js', {
-    resourceLimits: { maxOldGenerationSizeMb: 1500 }
-  });
+  const messageWorker = new Worker('./app/workers/messageWorker.js');
   app.listen(serverPort, () => {
     logger.info(`Server is running on port ${serverPort}.`);
   });
