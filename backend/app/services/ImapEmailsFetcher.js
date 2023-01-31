@@ -35,7 +35,7 @@ class ImapEmailsFetcher {
     this.fetchedMessagesCount = 0;
 
     this.bodies = ['HEADER'];
-    if (imapFetchBody === true) {
+    if (imapFetchBody === 'true') {
       this.bodies.push('TEXT');
     }
   }
@@ -128,7 +128,7 @@ class ImapEmailsFetcher {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
               header += chunk;
-            } else if (imapFetchBody) {
+            } else if (imapFetchBody === 'true') {
               body += chunk;
             }
           });

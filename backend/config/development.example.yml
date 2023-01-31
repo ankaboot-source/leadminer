@@ -2,7 +2,7 @@ server:
   log_level: debug
   allowed_origins: 'http://localhost:8082'
   sentry:
-    enabled: false
+    enabled: 'false'
     dsn: https://sentry.io
   port: 8081
   supabase:
@@ -11,11 +11,12 @@ server:
     token:
   redis:
     host: localhost
+    tls: 'false'
     port: 6379
     expiration_timeout: 259200 # expiration timeout for redis entries
   hash_secret: dev-hash # hash secret used to hash the users emails addresses
   imap:
-    fetch_body: false
+    fetch_body: 'false'
     authentication_timeout: 10000
     connection_timeout: 90000
 google_api:

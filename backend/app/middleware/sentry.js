@@ -5,7 +5,7 @@ const logger = require('../utils/logger')(module);
 const { sentryDsn, sentryIsEnabled } = require('../config/sentry.config');
 
 function initializeSentryIfNeeded(app) {
-  if (!sentryIsEnabled) {
+  if (sentryIsEnabled === 'false') {
     return;
   }
 

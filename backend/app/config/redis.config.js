@@ -8,10 +8,12 @@ const redisPassword =
 
 const redisHost = process.env.REDIS_HOST ?? config.get('server.redis.host');
 const redisPort = process.env.REDIS_PORT ?? config.get('server.redis.port');
+const redisTls = process.env.REDIS_TLS ?? config.get('server.redis.tls');
 
 module.exports = {
   redisUsername,
   redisPassword,
   redisHost,
-  redisPort
+  redisPort,
+  redisTls
 };
