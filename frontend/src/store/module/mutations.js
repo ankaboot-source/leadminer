@@ -52,7 +52,7 @@ export function SET_SCANNEDBOXES(state, newValue) {
   if (newValue.length === 0) {
     state.progress.scannedBoxes = newValue;
   } else {
-    let boxesArray = [
+    const boxesArray = [
       newValue
         .replace('\\"', '"')
         .replaceAll('"', "")
