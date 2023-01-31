@@ -89,7 +89,7 @@ class RedisManager {
 
 const redis = new RedisManager(
   redisHost,
-  redisPort,
+  parseInt(redisPort),
   redisUsername,
   redisPassword,
   redisTls
