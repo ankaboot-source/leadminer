@@ -81,7 +81,7 @@ export async function signUp(_, { data }) {
     this.commit("example/SET_LOADING", true);
     // get imapInfo account or create one
     this.$axios
-      .post(this.$api + "/imap/signup", data)
+      .post(`${this.$api}/imap/signup`, data)
       .then((response) => {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_INFO_MESSAGE", response.data.message);
@@ -99,7 +99,7 @@ export async function signUpGoogle(_, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     this.$axios
-      .post(this.$api + "/imap/signUpGoogle", { authCode: data })
+      .post(`${this.$api}/imap/signUpGoogle`, { authCode: data })
       .then((response) => {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_GOOGLE_USER", response.data.googleUser);
@@ -118,7 +118,7 @@ export async function signIn(_, { data }) {
     this.commit("example/SET_LOADING", true);
     // get imapInfo account or create one
     this.$axios
-      .post(this.$api + "/imap/login", data)
+      .post(`${this.$api}/imap/login`, data)
       .then((response) => {
         this.commit("example/SET_LOADING", false);
         this.commit("example/SET_IMAP", response.data.imap);
