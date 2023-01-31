@@ -46,18 +46,19 @@ npm i --prefix ./backend && npm i --prefix ./frontend
 
     - **Frontend (Quasar SPA)** :
 
-      - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
+      - Leadminer API Server Host : `SERVER_ENDPOINT` (**Required**)
       - Supabase Project Url : `SUPABASE_PROJECT_URL` (**Required**)
       - Supabase Project Token : `SUPABASE_SECRET_PROJECT_TOKEN` (**Required**)
-      - Leadminer API Server Host : `SERVER_ENDPOINT` (**Required**)
+      - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
+      
 
       **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
 
     - **Backend (Express JS Server)** :
 
-      - There are several environment variables that need to be set.A template of the configuration file is provided in `/backend/config/example.yml`.
+      - There are several environment variables that need to be set. A template of the configuration file is provided in `/backend/config/example.yml`.
 
-      - To configure the application, reference **example.yml** `/backend/config/example.yaml` and create your own config file. Depending on your environment, you should name it **production.yml** if you are in production, else **default.yml**.
+      - To configure the application, reference **example.yml** `/backend/config/example.yml` and create your own config file. Depending on your environment, you should name it **production.yml** if you are in production, else **default.yml**.
 
       - _When working in production environment, don't forget to set `NODE_ENV` to `production`_.
 
