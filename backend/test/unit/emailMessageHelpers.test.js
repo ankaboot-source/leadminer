@@ -1,16 +1,16 @@
 const { expect } = require('chai');
+const {
+  EMAIL_HEADERS_NEWSLETTER,
+  EMAIL_HEADERS_TRANSACTIONAL,
+  EMAIL_HEADERS_MAILING_LIST
+} = require('../../app/utils/constants');
 
 const emailMessageHelpers = require('../../app/utils/helpers/emailMessageHelpers');
-const {
-  newsletterHeaders,
-  transactionalHeaders,
-  mailingListHeaders
-} = require('../../app/config/emailHeaders.config');
 
 const HEADER_FIELDS = [
-  ...newsletterHeaders,
-  ...transactionalHeaders,
-  ...mailingListHeaders,
+  ...EMAIL_HEADERS_NEWSLETTER,
+  ...EMAIL_HEADERS_TRANSACTIONAL,
+  ...EMAIL_HEADERS_MAILING_LIST,
   'references'
 ];
 const TEST_HEADERS = {
@@ -66,7 +66,9 @@ describe('emailMessageHepers.getSpecificHeader', () => {
   HEADER_FIELDS.forEach((el) => {
     it(`Should return value for header: ${el}`, () => {
       TEST_HEADERS[el] = ['testing'];
-      expect(emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [el])[0]).to.equal('testing')
+      expect(
+        emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [el])[0]
+      ).to.equal('testing');
       delete TEST_HEADERS[el];
     });
   });
