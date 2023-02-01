@@ -28,6 +28,13 @@ function subscribeToRefined(userId, commit) {
     .subscribe();
 }
 
+export async function refinePersons({ state, commit }) {
+  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const { data, error } = await supabase.rpc('refined_persons', { userid: user.id })
+  error && commit("SET_ERROR", error)
+  return data
+}
+
 export async function getEmails({ state, commit }, { data }) {
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
