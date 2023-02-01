@@ -63,6 +63,17 @@
             :disable="isLoading"
             @click="updateRefinedPersons"
           />
+          
+        </div>
+          <div class="q-pl-sm">
+          <q-btn
+            color="teal-5"
+            label="Refine"
+            icon="factory"
+            no-caps
+            :disable="isLoading"
+            @click="refinePersons"
+          />
         </div>
       </template>
 
@@ -281,6 +292,10 @@ function updateRefinedPersons() {
   isLoading.value = true;
   rows.value = $store.getters["example/getRetrievedEmails"];
   isLoading.value = false;
+}
+
+async function refinePersons(){
+  await $store.dispatch("example/refinePersons")
 }
 
 function exportTable() {
