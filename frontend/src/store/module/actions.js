@@ -31,7 +31,9 @@ function subscribeToRefined(userId, commit) {
 export async function refinePersons({ state, commit }) {
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
   const { data, error } = await supabase.rpc('refined_persons', { userid: user.id })
-  error && commit("SET_ERROR", error)
+  if (error) {
+    commit("SET_ERROR", error) 
+  }
   return data
 }
 
