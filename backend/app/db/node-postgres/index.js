@@ -1,13 +1,13 @@
 const format = require('pg-format');
 const { Pool } = require('pg');
-const { pgConnectionString } = require('../../config/supabase.config');
 const logger = require('../../utils/logger')(module);
 const { parametrizedInsertInto } = require('./helpers');
+const { PG_CONNECTION_STRING } = require('../../config');
 
 class PostgresHandler {
   constructor() {
     this.client = new Pool({
-      connectionString: pgConnectionString,
+      connectionString: PG_CONNECTION_STRING,
       max: 10
     });
   }
@@ -39,7 +39,10 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertMessage(message) {
-    const query = `${parametrizedInsertInto('messages', Object.keys(message))} RETURNING id`;
+    const query = `${parametrizedInsertInto(
+      'messages',
+      Object.keys(message)
+    )} RETURNING id`;
     const { data, error } = await this.query(query, Object.values(message));
     return { data: data && data[0], error };
   }
@@ -50,8 +53,14 @@ class PostgresHandler {
    * @returns {Promise<object>} The inserted row
    */
   async insertPointOfContact(pointOfContact) {
-    const query = `${parametrizedInsertInto('pointsofcontact', Object.keys(pointOfContact))} RETURNING id`;
-    const { data, error } = await this.query(query, Object.values(pointOfContact));
+    const query = `${parametrizedInsertInto(
+      'pointsofcontact',
+      Object.keys(pointOfContact)
+    )} RETURNING id`;
+    const { data, error } = await this.query(
+      query,
+      Object.values(pointOfContact)
+    );
     return { data: data && data[0], error };
   }
 

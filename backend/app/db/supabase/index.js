@@ -1,14 +1,21 @@
 const { createClient } = require('@supabase/supabase-js');
-const { supabaseToken, supabaseUrl } = require('../../config/supabase.config');
+const {
+  SUPABASE_PROJECT_URL,
+  SUPABASE_SECRET_PROJECT_TOKEN
+} = require('../../config');
 const { fetch } = require('./fetch');
 
 class SupabaseHandler {
   supabaseClient;
 
   constructor() {
-    this.supabaseClient = createClient(supabaseUrl, supabaseToken, {
-      global: { fetch: fetch.bind(globalThis) }
-    });
+    this.supabaseClient = createClient(
+      SUPABASE_PROJECT_URL,
+      SUPABASE_SECRET_PROJECT_TOKEN,
+      {
+        global: { fetch: fetch.bind(globalThis) }
+      }
+    );
   }
 
   /**

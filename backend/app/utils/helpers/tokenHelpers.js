@@ -1,20 +1,17 @@
 /* istanbul ignore file */
 const xoauth2 = require('xoauth2');
 const { OAuth2Client } = require('google-auth-library');
-const {
-  googleClientId,
-  googleClientSecret
-} = require('../../config/google.config');
+const { GOOGLE_CLIENT_ID, GOOGLE_SECRET } = require('../../config');
 
 function getOAuthClient() {
-  return new OAuth2Client(googleClientId, googleClientSecret, 'postmessage');
+  return new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_SECRET, 'postmessage');
 }
 
 /**
  * Refreshes an expired access token using a refresh token
  * @param {string} refreshToken - The stored refresh token
  * @returns {Promise<string>} The new access token
-*/
+ */
 async function refreshAccessToken(refreshToken) {
   const oauth2Client = getOAuthClient();
   oauth2Client.setCredentials({ refresh_token: refreshToken });
@@ -28,7 +25,9 @@ async function refreshAccessToken(refreshToken) {
     }
     return token;
   } catch (error) {
-    throw new Error(`An error occurred while refreshing the access token: ${error.message}`);
+    throw new Error(
+      `An error occurred while refreshing the access token: ${error.message}`
+    );
   }
 }
 
@@ -58,12 +57,14 @@ async function checkTokenValidity(accessToken) {
  * @returns {Promise<object>} An object containing the XOAuth2 token and the new token.
  */
 async function generateXOauthToken({ token, refreshToken, email }) {
-  const tokenValidity = await checkTokenValidity(token)
-  const accessToken = tokenValidity ? token : await refreshAccessToken(refreshToken);
+  const tokenValidity = await checkTokenValidity(token);
+  const accessToken = tokenValidity
+    ? token
+    : await refreshAccessToken(refreshToken);
   const xoauth2gen = xoauth2.createXOAuth2Generator({
     user: email,
-    clientId: googleClientId,
-    clientSecret: googleClientSecret,
+    clientId: GOOGLE_CLIENT_ID,
+    clientSecret: GOOGLE_SECRET,
     accessToken
   });
   const authData = `user=${email}\x01auth=Bearer ${xoauth2gen.accessToken}\x01\x01`;

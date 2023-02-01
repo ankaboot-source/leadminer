@@ -1,15 +1,12 @@
 /* istanbul ignore file */
 const { OAuth2Client } = require('google-auth-library');
+const { GOOGLE_CLIENT_ID, GOOGLE_SECRET } = require('../config');
 
-const {
-  googleClientId,
-  googleClientSecret
-} = require('../config/google.config');
 const { db } = require('../db');
 
 // returns Oauth client
 function getOAuthClient() {
-  return new OAuth2Client(googleClientId, googleClientSecret, 'postmessage');
+  return new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_SECRET, 'postmessage');
 }
 
 /**

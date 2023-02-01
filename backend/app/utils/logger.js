@@ -1,6 +1,6 @@
 const { format, transports } = require('winston');
 const winston = require('winston');
-const { logLevel } = require('../config/server.config');
+const { LEADMINER_API_LOG_LEVEL } = require('../config');
 
 function getLabel(callingModule) {
   const parts = callingModule.filename.split('/');
@@ -48,7 +48,7 @@ module.exports =
                 }>> | ${JSON.stringify(info.metadata)}`
             )
           ),
-          level: logLevel
+          level: LEADMINER_API_LOG_LEVEL
         })
       ]
     });

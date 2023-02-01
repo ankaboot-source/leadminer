@@ -3,12 +3,12 @@ const logger = require('./logger')(module);
 const freeProviders = require('./FreeProviders.json');
 const disposable = require('./Disposable.json');
 const {
-  redisUsername,
-  redisPassword,
-  redisHost,
-  redisPort,
-  redisTls
-} = require('../config/redis.config');
+  REDIS_HOST,
+  REDIS_PORT,
+  REDIS_USERNAME,
+  REDIS_PASSWORD,
+  REDIS_TLS
+} = require('../config');
 
 class RedisManager {
   /**
@@ -88,11 +88,11 @@ class RedisManager {
 }
 
 const redis = new RedisManager(
-  redisHost,
-  parseInt(redisPort),
-  redisUsername,
-  redisPassword,
-  redisTls
+  REDIS_HOST,
+  REDIS_PORT,
+  REDIS_USERNAME,
+  REDIS_PASSWORD,
+  REDIS_TLS
 );
 
 module.exports = {

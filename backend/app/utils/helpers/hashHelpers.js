@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { hashSecret } = require('../../config/server.config');
+const { LEADMINER_API_HASH_SECRET } = require('../../config');
 
 /**
  * Hashes an email address and a user id using the sha256 algorithm
@@ -10,7 +10,7 @@ const { hashSecret } = require('../../config/server.config');
 function hashEmail(emailAddress, userId) {
   const saltedUserId = emailAddress + userId;
   return crypto
-    .createHmac('sha256', hashSecret)
+    .createHmac('sha256', LEADMINER_API_HASH_SECRET)
     .update(saltedUserId)
     .digest('hex');
 }

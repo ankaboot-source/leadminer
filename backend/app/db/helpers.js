@@ -8,7 +8,6 @@ const MAPPING_TABLE = new Map();
  * @param {*} err  - Error object that comes from the query.
  */
 function logInsertionError(tableName, err) {
-
   logger.error(`Error when inserting to ${tableName} table.`, {
     error: err.message ? err.message : err.detail ? err.detail : err,
     code: err.code
@@ -21,11 +20,14 @@ function logInsertionError(tableName, err) {
  * @returns {string} - The converted string in CamelCase.
  */
 function toCamelCase(str) {
-  const underscore = str[0] === '_' ? '_'  : ''
-  const newStr = str[0] === '_' ? str.slice(1) : str;  
-  return underscore + newStr.replace(/_([a-z])/g, (_, capturedGroup) => {
-    return capturedGroup.toUpperCase();
-  });
+  const underscore = str[0] === '_' ? '_' : '';
+  const newStr = str[0] === '_' ? str.slice(1) : str;
+  return (
+    underscore +
+    newStr.replace(/_([a-z])/g, (_, capturedGroup) => {
+      return capturedGroup.toUpperCase();
+    })
+  );
 }
 
 /**
@@ -35,7 +37,7 @@ function toCamelCase(str) {
  */
 function transcodeSQL(sqlObject) {
   const newObj = {};
-  Object.keys(sqlObject).forEach(CamleCase => {
+  Object.keys(sqlObject).forEach((CamleCase) => {
     if (MAPPING_TABLE.has(CamleCase)) {
       const snakeCaseField = MAPPING_TABLE.get(CamleCase);
       newObj[`${snakeCaseField}`] = sqlObject[`${CamleCase}`];
@@ -45,20 +47,18 @@ function transcodeSQL(sqlObject) {
 }
 
 /**
- * Adds the userid to message, person, poc, tags and converts keys to DB format. 
+ * Adds the userid to message, person, poc, tags and converts keys to DB format.
  * @param {{message: object, persons: object[]}} contacts - Object contains the extracted data message, person, poc, tags
  * @param {string} userID - The id of the user
  * @returns {object}
  */
 function prepareContacts(contacts, userID) {
-
   const { message, persons } = contacts;
 
   // add userID to message, person, pocs and tags
   message.userid = userID;
 
   for (const person of persons) {
-
     person.person._userid = userID;
     person.pointOfContact.userid = userID;
 

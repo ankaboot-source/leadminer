@@ -1,8 +1,6 @@
 const Imap = require('imap');
-const {
-  imapAuthTimeout,
-  imapConnectionTimeout
-} = require('../config/server.config');
+const { IMAP_CONNECTION_TIMEOUT, IMAP_AUTH_TIMEOUT } = require('../config');
+
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
 class ImapConnectionProvider {
@@ -27,8 +25,8 @@ class ImapConnectionProvider {
   constructor(email) {
     this.#imapConfig = {
       user: email,
-      connTimeout: parseInt(imapConnectionTimeout),
-      authTimeout: parseInt(imapAuthTimeout),
+      connTimeout: IMAP_CONNECTION_TIMEOUT,
+      authTimeout: IMAP_AUTH_TIMEOUT,
       tls: true,
       keepalive: false
     };
