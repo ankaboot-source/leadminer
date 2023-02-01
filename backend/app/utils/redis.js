@@ -31,7 +31,7 @@ class RedisManager {
       port
     };
 
-    if (tls === 'true') {
+    if (tls) {
       redisOpts = {
         ...redisOpts,
         tls: {}
