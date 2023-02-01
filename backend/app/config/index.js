@@ -5,7 +5,6 @@ const {
   CONNECTION_TYPE,
   LEADMINER_API_HASH_SECRET,
   LEADMINER_API_LOG_LEVEL,
-  IMAP_FETCH_BODY,
   SENTRY_DSN,
   REDIS_USERNAME,
   REDIS_PASSWORD,
@@ -22,6 +21,8 @@ const REDIS_PORT = parseInt(process.env.REDIS_PORT);
 const SENTRY_ENABLED =
   String(process.env.SENTRY_ENABLED).toLowerCase() === 'true';
 const REDIS_TLS = String(process.env.REDIS_TLS).toLowerCase() === 'true';
+const IMAP_FETCH_BODY =
+  String(process.env.IMAP_FETCH_BODY).toLowerCase() === 'true';
 
 const ALLOWED_ORIGINS = [
   'http://localhost:8080', // For local development
