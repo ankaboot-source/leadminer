@@ -1,6 +1,6 @@
-const { imapFetchBody } = require('../config/server.config');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const Imap = require('imap');
+const { IMAP_FETCH_BODY } = require('../config');
 const logger = require('../utils/logger')(module);
 
 class ImapEmailsFetcher {
@@ -35,7 +35,7 @@ class ImapEmailsFetcher {
     this.fetchedMessagesCount = 0;
 
     this.bodies = ['HEADER'];
-    if (imapFetchBody === true) {
+    if (IMAP_FETCH_BODY) {
       this.bodies.push('TEXT');
     }
   }
@@ -128,7 +128,7 @@ class ImapEmailsFetcher {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
               header += chunk;
-            } else if (imapFetchBody) {
+            } else if (IMAP_FETCH_BODY) {
               body += chunk;
             }
           });

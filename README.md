@@ -18,7 +18,7 @@ Docker is the recommended solution for self-hosting Leadminer thanks to its conv
 3. Start docker-compose
 
 ```
- docker-compose up --build --force-recreate
+docker-compose up --build --force-recreate
 ```
 
 4. Navigate to `localhost:8080`.

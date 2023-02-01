@@ -1,12 +1,9 @@
 const Imap = require('imap');
-const {
-  imapAuthTimeout,
-  imapConnectionTimeout
-} = require('../config/server.config');
+const { IMAP_CONNECTION_TIMEOUT, IMAP_AUTH_TIMEOUT } = require('../config');
+
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
 class ImapConnectionProvider {
-
   /**
    * @typedef {Object} ImapConnectionProviderConfig
    * @property {string} [id] - A unique identifier for the connection
@@ -28,8 +25,8 @@ class ImapConnectionProvider {
   constructor(email) {
     this.#imapConfig = {
       user: email,
-      connTimeout: imapConnectionTimeout,
-      authTimeout: imapAuthTimeout,
+      connTimeout: IMAP_CONNECTION_TIMEOUT,
+      authTimeout: IMAP_AUTH_TIMEOUT,
       tls: true,
       keepalive: false
     };
@@ -42,7 +39,7 @@ class ImapConnectionProvider {
    * @param {string} refreshToken - OAuth refresh token
    * @param {string} userId - A unique identifier for the connection
    * @returns {Object} - The object for the connection
-  */
+   */
   async withGoogle(token, refreshToken, userId, sse) {
     const googleConfig = {
       host: 'imap.gmail.com',
@@ -72,7 +69,7 @@ class ImapConnectionProvider {
    * @param {string} host - The host name or IP address of the mail server
    * @param {string} password - User's password
    * @returns {Object} - The object for the connection
-  */
+   */
   withPassword(host, password, port = 993) {
     this.#imapConfig = {
       ...this.#imapConfig,
@@ -91,7 +88,7 @@ class ImapConnectionProvider {
   /**
    * Creates a new Imap connection.
    * @returns {Imap} - Imap connection object
-  */
+   */
   getImapConnection() {
     return new Imap(this.#imapConfig);
   }

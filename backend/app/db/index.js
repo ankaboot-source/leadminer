@@ -1,9 +1,15 @@
-const { connectionType } = require('../config/supabase.config');
 const { PostgresHandler } = require('./node-postgres');
 const { SupabaseHandler } = require('./supabase');
-const { MAPPING_TABLE, prepareContacts, logInsertionError, toCamelCase } = require('./helpers');
+const {
+  MAPPING_TABLE,
+  prepareContacts,
+  logInsertionError,
+  toCamelCase
+} = require('./helpers');
+const { CONNECTION_TYPE } = require('../config');
 
-const handler = connectionType === 'pgrest' ? SupabaseHandler : PostgresHandler;
+const handler =
+  CONNECTION_TYPE === 'pgrest' ? SupabaseHandler : PostgresHandler;
 
 /**
  * Inserts person, pointOfContact, tags to database.
@@ -72,10 +78,14 @@ const db = new handler();
  * @async
  */
 (async () => {
-
   const tables = ['messages', 'persons', 'pointsofcontact', 'tags'];
-  const query = table => db.client.query(`SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`);
-  const fields = (await Promise.all(tables.map(query))).flatMap(res => res.rows.map(row => row.column_name));
+  const query = (table) =>
+    db.client.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = '${table}'`
+    );
+  const fields = (await Promise.all(tables.map(query))).flatMap((res) =>
+    res.rows.map((row) => row.column_name)
+  );
 
   fields.forEach((field) => MAPPING_TABLE.set(toCamelCase(field), field));
 })();

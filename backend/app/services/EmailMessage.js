@@ -2,12 +2,12 @@ const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
-const {
-  newsletterHeaders,
-  transactionalHeaders,
-  mailingListHeaders
-} = require('../config/emailHeaders.config');
 const { REGEX_LIST_ID } = require('../utils/constants');
+const {
+  EMAIL_HEADERS_NEWSLETTER,
+  EMAIL_HEADERS_TRANSACTIONAL,
+  EMAIL_HEADERS_MAILING_LIST
+} = require('../utils/constants');
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {
@@ -43,8 +43,10 @@ class EmailMessage {
    */
   isNewsletter() {
     return (
-      emailMessageHelpers.getSpecificHeader(this.header, newsletterHeaders) !==
-      null
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        EMAIL_HEADERS_NEWSLETTER
+      ) !== null
     );
   }
 
@@ -56,7 +58,7 @@ class EmailMessage {
     return (
       emailMessageHelpers.getSpecificHeader(
         this.header,
-        transactionalHeaders
+        EMAIL_HEADERS_TRANSACTIONAL
       ) !== null
     );
   }
@@ -67,8 +69,10 @@ class EmailMessage {
    */
   isList() {
     return (
-      emailMessageHelpers.getSpecificHeader(this.header, mailingListHeaders) !==
-      null
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        EMAIL_HEADERS_MAILING_LIST
+      ) !== null
     );
   }
 

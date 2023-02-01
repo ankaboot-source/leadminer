@@ -3,11 +3,12 @@ const logger = require('./logger')(module);
 const freeProviders = require('./FreeProviders.json');
 const disposable = require('./Disposable.json');
 const {
-  redisUsername,
-  redisPassword,
-  redisHost,
-  redisPort
-} = require('../config/redis.config');
+  REDIS_HOST,
+  REDIS_PORT,
+  REDIS_USERNAME,
+  REDIS_PASSWORD,
+  REDIS_TLS
+} = require('../config');
 
 class RedisManager {
   /**
@@ -20,28 +21,32 @@ class RedisManager {
    * @constructor
    * @param {string} host - Redis host
    * @param {number} port - Redis port
-   * @param {string} [user] - Redis user
-   * @param {string} [password] - Redis password
+   * @param {string} user - Redis user
+   * @param {string} password - Redis password
+   * @param {boolean} tls - Enable tls
    */
-  constructor(host, port, user, password) {
-    try {
-      if (user && password) {
-        this.#normalClient = new Redis(port, host, {
-          password,
-          user,
-          tls: {
-            rejectUnauthorized: false
-          }
-        });
-      } else {
-        this.#normalClient = new Redis(port, host);
-      }
-    } catch (error) {
-      logger.error('Error connecting to Redis.', {
-        error
-      });
-      throw error;
+  constructor(host, port, user, password, tls) {
+    let redisOpts = {
+      host,
+      port
+    };
+
+    if (tls === 'true') {
+      redisOpts = {
+        ...redisOpts,
+        tls: {}
+      };
     }
+
+    if (user && password) {
+      redisOpts = {
+        ...redisOpts,
+        user,
+        password
+      };
+    }
+
+    this.#normalClient = new Redis(redisOpts);
   }
 
   /**
@@ -83,10 +88,11 @@ class RedisManager {
 }
 
 const redis = new RedisManager(
-  redisHost,
-  redisPort,
-  redisUsername,
-  redisPassword
+  REDIS_HOST,
+  REDIS_PORT,
+  REDIS_USERNAME,
+  REDIS_PASSWORD,
+  REDIS_TLS
 );
 
 module.exports = {
