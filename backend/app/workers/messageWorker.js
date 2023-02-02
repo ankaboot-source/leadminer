@@ -85,7 +85,7 @@ async function consumeStreamMessages(streamChannel) {
         0,
         'STREAMS',
         streamChannel,
-        processedMessageIDs.length ? processedMessageIDs[processedMessageIDs.length - 1] : '$'
+        processedMessageIDs.length ? processedMessageIDs.at(-1) : '$'
       );
 
       if (result) {
@@ -99,12 +99,10 @@ async function consumeStreamMessages(streamChannel) {
         logger.debug('Consuming messages', {
           channel,
           totalMessages: messages.length,
-          lastMessageID: processedMessageIDs[processedMessageIDs.length - 1]
+          lastMessageID: processedMessageIDs.at(-1)
         });
 
-        await Promise.all(
-          messages.map(async message => { processMessage(message); })
-        );
+        await Promise.all(messages.map(processMessage));
       }
     } catch (error) {
       logger.error(`Error while consuming messages: ${error.message}`);
