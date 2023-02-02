@@ -104,7 +104,7 @@ async function consumeStreamMessages(streamChannel) {
 
         await Promise.all(
           messages.map(async message => {
-            return await processMessage(message); 
+            return processMessage(message); 
           })
         );
       }
