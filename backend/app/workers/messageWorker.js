@@ -75,34 +75,41 @@ const processMessage = async (message) => {
  * @param {string} streamChannel - The name of the Redis stream channel to consume messages from.
 */
 async function consumeStreamMessages(streamChannel) {
-  
   const CONSTANT_CONDITION = true;
   let processedMessageIDs = [];
 
   while (CONSTANT_CONDITION) {
-    const result = await redisStreamsConsumer.xread(
-      'BLOCK',
-      0,
-      'STREAMS',
-      streamChannel,
-      processedMessageIDs.length ? processedMessageIDs[processedMessageIDs.length - 1] : '$'
-    );
+    try {
+      const result = await redisStreamsConsumer.xread(
+        'BLOCK',
+        0,
+        'STREAMS',
+        streamChannel,
+        processedMessageIDs.length ? processedMessageIDs[processedMessageIDs.length - 1] : '$'
+      );
 
-    if (result) {
-      const [channel, messages] = result[0];
+      if (result) {
+        const [channel, messages] = result[0];
 
-      processedMessageIDs = messages.map(message => message[0]);
-      if (processedMessageIDs.length) { // Delete the previous processed messages
-        await redisStreamsConsumer.xdel(streamChannel, ...processedMessageIDs);
+        processedMessageIDs = messages.map(message => message[0]);
+        if (processedMessageIDs.length > 0) { // Delete the previous processed messages
+          await redisStreamsConsumer.xdel(streamChannel, ...processedMessageIDs);
+        }
+
+        logger.debug('Consuming messages', {
+          channel,
+          totalMessages: messages.length,
+          lastMessageID: processedMessageIDs[processedMessageIDs.length - 1]
+        });
+
+        await Promise.all(
+          messages.map(async message => {
+            return await processMessage(message); 
+          })
+        );
       }
-
-      logger.debug('Consuming messages', {
-        channel,
-        totalMessages: messages.length,
-        lastMessageID: processedMessageIDs[processedMessageIDs.length - 1]
-      });
-
-      messages.forEach(processMessage);
+    } catch (error) {
+      logger.error(`Error while consuming messages: ${error.message}`);
     }
   }
 }
