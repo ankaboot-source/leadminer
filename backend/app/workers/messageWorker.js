@@ -89,7 +89,7 @@ class StreamConsumer {
   */
   async consumeStreamMessages() {
 
-    while (CONSUME_STREAM) {
+    while (this.CONSUME_STREAM) {
       try {
         const result = await redisStreamsConsumer.xread(
           'BLOCK',
