@@ -74,10 +74,10 @@ class StreamConsumer {
   /**
    * Creates an instance of StreamConsumer.
    * @param {string} streamChannel - The name of the Redis stream channel to consume messages from.
-   * @param {} streamProcessor - The function that will process the messages consumed from the stream.
+   * @param {function} processor - The function that will process the messages consumed from the stream.
   */
-  constructor(streamChannel, streamProcessor) {
-    this.STREAM_PROCESSOR = streamProcessor;
+  constructor(streamChannel, processor) {
+    this.STREAM_PROCESSOR = processor;
     this.STREAM_CHANNEL = streamChannel;
     this.CONSUME_STREAM = true; 
 
