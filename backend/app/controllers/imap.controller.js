@@ -90,12 +90,12 @@ async function onEmailMessage({
  * @param  {} req
  * @param  {} res
  */
-async function loginToAccount(req, res, next) {
+function loginToAccount(req, res, next) {
   const { email, host, tls, port, password } = req.body;
 
   if (!email || !host) {
     res.status(400);
-    return next(new Error('Email and host are required for IMAP.'));
+    next(new Error('Email and host are required for IMAP.'));
   }
 
   performance.mark('imap-login-start');
