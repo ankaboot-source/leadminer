@@ -95,10 +95,10 @@ async function loginToAccount(req, res, next) {
 
   if (!email || !host) {
     res.status(400);
-    next(new Error('Email and host are required for IMAP.'));
+    return next(new Error('Email and host are required for IMAP.'));
   }
 
-  performance.mark('login-start');
+  performance.mark('imap-login-start');
 
   const imapConnection = new ImapConnectionProvider(email)
     .withPassword(host, password, port)
@@ -109,40 +109,24 @@ async function loginToAccount(req, res, next) {
     next(err);
   });
 
-  const imapUser = await db.getImapUserByEmail(email);
-  if (imapUser === null) {
-    imapConnection.once('ready', async () => {
-      try {
-        const imapData = await db.getImapUserByEmail(email);
-        if (imapData !== null) {
-          res.status(200).send({
-            message: 'Your account already exists !',
-            imapConnection
-          });
-        }
-
-        const data = await db.createImapUser({ email, host, port, tls });
-        res.status(200).send({ imap: data });
-      } catch (error) {
-        next(error);
-      } finally {
-        imapConnection.end();
+  imapConnection.once('ready', async () => {
+    try {
+      const imapUser = await db.getImapUserByEmail(email) ?? await db.createImapUser({ email, host, port, tls });
+      const duration = performance.measure('measure login', 'imap-login-start').duration;
+      
+      if (!imapUser) {
+        throw Error('Error when creating or quering imapUser');
       }
-    });
-  } else {
-    imapConnection.once('ready', () => {
-      res.status(200).send({
-        imap: imapUser
-      });
+      
+      res.status(200).send({ imap: imapUser });
+      logger.info('Account successfully logged in.', { email, duration });
+    
+    } catch (error) {
+      next({ message: 'Failed to login using Imap', details: error.message });
+    } finally {
       imapConnection.end();
-
-      logger.info('Account successfully logged in.', {
-        email,
-        duration: performance.measure('measure login', 'login-start').duration
-      });
-    });
-  }
-
+    }
+  });
   imapConnection.connect();
 }
 
