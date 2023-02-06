@@ -118,8 +118,8 @@ function loginToAccount(req, res, next) {
         throw Error('Error when creating or quering imapUser');
       }
       
-      res.status(200).send({ imap: imapUser });
       logger.info('Account successfully logged in.', { email, duration });
+      res.status(200).send({ imap: imapUser });
     
     } catch (error) {
       next({ message: 'Failed to login using Imap', details: error.message });
