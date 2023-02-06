@@ -59,8 +59,8 @@ async function handleMessage({
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
- */
-const processMessage = async (message) => {
+*/
+const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
   logger.debug('Processing message', {
@@ -70,34 +70,75 @@ const processMessage = async (message) => {
   await handleMessage(data);
 };
 
-/**
- * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
- * @function consumeMessages
- */
-(async () => {
-  const CONSTANT_CONDITION = true; // Bypass  lint checker
-  let lastReadId = '$';
+class StreamConsumer {
+  /**
+   * Creates an instance of StreamConsumer.
+   * @param {string} streamChannel - The name of the Redis stream channel to consume messages from.
+   * @param {function} processor - The function that will process the messages consumed from the stream.
+  */
+  constructor(streamChannel, processor) {
+    this.STREAM_PROCESSOR = processor;
+    this.STREAM_CHANNEL = streamChannel;
+    this.CONSUME_STREAM = true; 
 
-  while (CONSTANT_CONDITION) {
-    const result = await redisStreamsConsumer.xread(
-      'BLOCK',
-      0,
-      'STREAMS',
-      REDIS_MESSAGES_CHANNEL,
-      lastReadId
-    );
+    this.processedMessageIDs = [];
+  }
 
-    if (result) {
-      const [channel, messages] = result[0];
-      lastReadId = messages[messages.length - 1][0];
+  /**
+   * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
+  */
+  async consumeStreamMessages() {
 
-      logger.debug('Consuming messages', {
-        channel,
-        totalMessages: messages.length,
-        lastMessageID: lastReadId
-      });
+    while (this.CONSUME_STREAM) {
+      try {
+        const result = await redisStreamsConsumer.xread(
+          'BLOCK',
+          0,
+          'STREAMS',
+          this.STREAM_CHANNEL,
+          this.processedMessageIDs.length ? this.processedMessageIDs.at(-1) : '$'
+        );
 
-      messages.forEach(processMessage);
+        if (result) {
+          const [channel, messages] = result[0];
+
+          this.processedMessageIDs = messages.map(message => message[0]);
+          if (this.processedMessageIDs.length > 0) { // Delete the previous processed messages
+            await redisStreamsConsumer.xdel(this.STREAM_CHANNEL, ...this.processedMessageIDs);
+          }
+
+          logger.debug('Consuming messages', {
+            channel,
+            totalMessages: messages.length,
+            lastMessageID: this.processedMessageIDs.at(-1)
+          });
+
+          await Promise.all(messages.map(this.STREAM_PROCESSOR));
+        }
+      } catch (error) {
+        logger.error(`Error while consuming messages: ${error.message}`);
+      }
     }
   }
+ 
+  /**
+   * Starts the stream consumer.
+  */
+  async start() {
+    this.CONSUME_STREAM = true;
+    await this.consumeStreamMessages();
+  }
+
+  /**
+  * Stops the stream consumer.
+  */
+  stop() {
+    this.CONSUME_STREAM = false;
+  }
+}
+
+const streamConsumerInstance = new StreamConsumer(REDIS_MESSAGES_CHANNEL, streamProcessor);
+
+(async () => {
+  await streamConsumerInstance.start();
 })();
