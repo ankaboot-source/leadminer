@@ -109,7 +109,10 @@ class PostgresHandler {
       'INSERT INTO google_users(email, refresh_token) ' +
       'VALUES($1, $2) RETURNING *';
 
-    const { data } = await this.query(query, [email, refresh_token]);
+    const { data, error } = await this.query(query, [email, refresh_token]);
+    if (error) {
+      logger.error(error.message, { error });
+    }
     return data && data[0];
   }
 
@@ -120,8 +123,10 @@ class PostgresHandler {
    */
   async getGoogleUserByEmail(email) {
     const query = 'SELECT * FROM google_users WHERE email = $1';
-
-    const { data } = await this.query(query, [email]);
+    const { data, error } = await this.query(query, [email]);
+    if (error) {
+      logger.error(error.message, { error });
+    }
     return data && data[0];
   }
 
@@ -135,7 +140,10 @@ class PostgresHandler {
     const query =
       'UPDATE google_users SET refresh_token = $1 WHERE id = $2 RETURNING *';
 
-    const { data } = await this.query(query, [refresh_token, id]);
+    const { data, error } = await this.query(query, [refresh_token, id]);
+    if (error) {
+      logger.error(error.message, { error });
+    }
     return data && data[0];
   }
 
@@ -153,7 +161,10 @@ class PostgresHandler {
       'INSERT INTO imap_users(email, host, port, tls) ' +
       'VALUES($1, $2, $3, $4) RETURNING *';
 
-    const { data } = await this.query(query, [email, host, port, tls]);
+    const { data, error } = await this.query(query, [email, host, port, tls]);
+    if (error) {
+      logger.error(error.message, { error });
+    }
     return data && data[0];
   }
 
@@ -164,8 +175,10 @@ class PostgresHandler {
    */
   async getImapUserByEmail(email) {
     const query = 'SELECT * FROM imap_users WHERE email = $1';
-
-    const { data } = await this.query(query, [email]);
+    const { data, error } = await this.query(query, [email]);
+    if (error) {
+      logger.error(error.message, { error });
+    }
     return data && data[0];
   }
 
@@ -176,8 +189,10 @@ class PostgresHandler {
    */
   async getImapUserById(id) {
     const query = 'SELECT * FROM imap_users WHERE id = $1';
-
-    const { data } = await this.query(query, [id]);
+    const { data, error } = await this.query(query, [id]);
+    if (error) {
+      logger.error(error.message, { error });
+    }
     return data && data[0];
   }
 

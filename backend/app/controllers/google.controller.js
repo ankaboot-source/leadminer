@@ -1,4 +1,6 @@
 /* istanbul ignore file */
+const logger = require('../utils/logger')(module);
+
 const { OAuth2Client } = require('google-auth-library');
 const { GOOGLE_CLIENT_ID, GOOGLE_SECRET } = require('../config');
 
@@ -25,6 +27,8 @@ exports.signUpWithGoogle = async (req, res, next) => {
     );
   }
 
+  performance.mark('google-login-start');
+
   const oAuth2Client = getOAuthClient();
 
   try {
@@ -34,35 +38,22 @@ exports.signUpWithGoogle = async (req, res, next) => {
     oAuth2Client.setCredentials({
       access_token
     });
-    const { exp, email } = await oAuth2Client.getTokenInfo(access_token);
 
-    const dbGoogleUser = await db.getGoogleUserByEmail(email);
+    const { exp, email } = await oAuth2Client.getTokenInfo(access_token);
+    const dbGoogleUser = await db.getGoogleUserByEmail(email) ?? await db.createGoogleUser({ email, refresh_token });
 
     if (!dbGoogleUser) {
-      const { id } = await db.createGoogleUser({
-        email,
-        refresh_token
-      });
-
-      return res.status(200).send({
-        googleUser: {
-          email,
-          id,
-          access_token,
-          token: {
-            access_token,
-            expiration: exp
-          }
-        }
-      });
+      throw Error('Failed to create or query googleUser');
     }
 
     if (dbGoogleUser.refresh_token !== refresh_token) {
       await db.updateGoogleUser(dbGoogleUser.id, refresh_token);
     }
 
+    const duration = performance.measure('measure login', 'google-login-start').duration;
+    logger.info('Account successfully logged in.', { email, duration });
+
     return res.status(200).send({
-      message: 'Your account already exists !',
       googleUser: {
         email: dbGoogleUser.email,
         id: dbGoogleUser.id,
@@ -74,7 +65,6 @@ exports.signUpWithGoogle = async (req, res, next) => {
       }
     });
   } catch (error) {
-    error.message = 'Failed to signup with Google.';
-    return next(error);
+    return next({ message: 'Error when sign up with google', details: error.message });
   }
 };
