@@ -28,12 +28,43 @@ function subscribeToRefined(userId, commit) {
     .subscribe();
 }
 
-export async function refinePersons({ state, commit }) {
-  const user = state.googleUser.id ? state.googleUser : state.imapUser;
-  const { data, error } = await supabase.rpc('refined_persons', { userid: user.id })
-  if (error) {
-    commit("SET_ERROR", error) 
+/**
+ * Fetches data from a Supabase table.
+ * @param {String} tableName - The name of the table to fetch data from.
+ * @param {Number} [pageSize=1000] - The number of rows to retrieve per request.
+ * @returns {Array | void } - An array of data from the specified table.
+ */
+async function fetchData(tableName, pageSize = 1000) {
+  const result = [];
+  let offset = 0;
+  let response = { data: [1] };
+
+  while (response.data.length > 0) {
+    response = await supabase.from(tableName)
+      .select("*")
+      .range(offset, offset + pageSize - 1);
+
+    if (response.error) {
+      console.error(response.error);
+      return [];
+    }
+
+    result.push(...response.data);
+    offset += pageSize;
   }
+
+  return result;
+}
+
+export async function fetchRefinedPersons({ state }) {
+  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
+
+  if (rpcResult.error) {
+    console.error(rpcResult.error);
+    return [];
+  }
+  const data = fetchData("refinedpersons");
   return data
 }
 
