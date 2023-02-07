@@ -43,13 +43,10 @@ async function checkDomainStatus(redisClient, domain) {
   ];
 
   for (const provider of providers) {
-    console.log('start 8')
     const exists = await redisClient.sismember(
       provider.redisKey,
       domain
     );
-
-    console.log('end 8')
 
     if (exists) {
       return [provider.isValid, provider.type, domain];
@@ -57,9 +54,7 @@ async function checkDomainStatus(redisClient, domain) {
   }
 
   // if not already scanned we check the MX
-  console.log('start 9')
   const MXStatus = await checkMXStatus(redisClient, domain);
-  console.log('end 9')
   return MXStatus;
 }
 
