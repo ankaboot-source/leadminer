@@ -5,18 +5,14 @@ const dns = require('dns');
  * @param {Object} redisClient - The Redis client used for storing the results
  * @param {String} domain - The domain to check MX records for.
  * @return {Promise<[boolean,string,string]>} A promise that resolves to an array that contains [validity:boolean, type: string, name: string ]
- */
+*/
 function checkMXStatus(redisClient, domain) {
   return new Promise((resolve) => {
     dns.resolveMx(domain, async (err, addresses) => {
-      if (addresses && !err) {
-        if (addresses.length > 0) {
-          // set domain in redis valid domains list
-          await redisClient.sadd('domainListValid', domain);
-          resolve([true, 'custom', domain]);
-        }
+      if (addresses.length > 0 && !err === null) {
+        await redisClient.sadd('domainListValid', domain);
+        resolve([true, 'custom', domain]);
       } else {
-        // set domain in redis valid domains list
         await redisClient.sadd('domainListInvalid', domain);
         resolve([false, '', domain]);
       }
@@ -47,10 +43,13 @@ async function checkDomainStatus(redisClient, domain) {
   ];
 
   for (const provider of providers) {
+    console.log('start 8')
     const exists = await redisClient.sismember(
       provider.redisKey,
       domain
     );
+
+    console.log('end 8')
 
     if (exists) {
       return [provider.isValid, provider.type, domain];
@@ -58,7 +57,9 @@ async function checkDomainStatus(redisClient, domain) {
   }
 
   // if not already scanned we check the MX
+  console.log('start 9')
   const MXStatus = await checkMXStatus(redisClient, domain);
+  console.log('end 9')
   return MXStatus;
 }
 
