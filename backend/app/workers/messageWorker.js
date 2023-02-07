@@ -33,11 +33,6 @@ async function handleMessage({
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
-    let informedSubscribers = 0;
-    while (informedSubscribers === 0) {
-      informedSubscribers = await redisPubSubClient.publish(userId, true);
-    }
-
     if (isLast) {
       try {
         await db.callRpcFunction(userId, 'populate_refined');
@@ -54,12 +49,21 @@ async function handleMessage({
       }
     }
   }
+  // We manually force the garbage collector to avoid out of memory problems
+  if (global.gc !== undefined) {
+    global.gc();
+  }
+
+  let informedSubscribers = 0;
+  while (informedSubscribers === 0) {
+    informedSubscribers = await redisPubSubClient.publish(userId, true);
+  }
 }
 
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
-*/
+ */
 const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
@@ -75,20 +79,19 @@ class StreamConsumer {
    * Creates an instance of StreamConsumer.
    * @param {string} streamChannel - The name of the Redis stream channel to consume messages from.
    * @param {function} processor - The function that will process the messages consumed from the stream.
-  */
+   */
   constructor(streamChannel, processor) {
     this.STREAM_PROCESSOR = processor;
     this.STREAM_CHANNEL = streamChannel;
-    this.CONSUME_STREAM = true; 
+    this.CONSUME_STREAM = true;
 
     this.processedMessageIDs = [];
   }
 
   /**
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
-  */
+   */
   async consumeStreamMessages() {
-
     while (this.CONSUME_STREAM) {
       try {
         const result = await redisStreamsConsumer.xread(
@@ -96,15 +99,21 @@ class StreamConsumer {
           0,
           'STREAMS',
           this.STREAM_CHANNEL,
-          this.processedMessageIDs.length ? this.processedMessageIDs.at(-1) : '$'
+          this.processedMessageIDs.length
+            ? this.processedMessageIDs.at(-1)
+            : '$'
         );
 
         if (result) {
           const [channel, messages] = result[0];
 
-          this.processedMessageIDs = messages.map(message => message[0]);
-          if (this.processedMessageIDs.length > 0) { // Delete the previous processed messages
-            await redisStreamsConsumer.xdel(this.STREAM_CHANNEL, ...this.processedMessageIDs);
+          this.processedMessageIDs = messages.map((message) => message[0]);
+          if (this.processedMessageIDs.length > 0) {
+            // Delete the previous processed messages
+            await redisStreamsConsumer.xdel(
+              this.STREAM_CHANNEL,
+              ...this.processedMessageIDs
+            );
           }
 
           logger.debug('Consuming messages', {
@@ -120,24 +129,27 @@ class StreamConsumer {
       }
     }
   }
- 
+
   /**
    * Starts the stream consumer.
-  */
+   */
   async start() {
     this.CONSUME_STREAM = true;
     await this.consumeStreamMessages();
   }
 
   /**
-  * Stops the stream consumer.
-  */
+   * Stops the stream consumer.
+   */
   stop() {
     this.CONSUME_STREAM = false;
   }
 }
 
-const streamConsumerInstance = new StreamConsumer(REDIS_MESSAGES_CHANNEL, streamProcessor);
+const streamConsumerInstance = new StreamConsumer(
+  REDIS_MESSAGES_CHANNEL,
+  streamProcessor
+);
 
 (async () => {
   await streamConsumerInstance.start();
