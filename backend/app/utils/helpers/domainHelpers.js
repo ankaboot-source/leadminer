@@ -5,7 +5,7 @@ const dns = require('dns');
  * @param {Object} redisClient - The Redis client used for storing the results
  * @param {String} domain - The domain to check MX records for.
  * @return {Promise<[boolean,string,string]>} A promise that resolves to an array that contains [validity:boolean, type: string, name: string ]
-*/
+ */
 function checkMXStatus(redisClient, domain) {
   return new Promise((resolve) => {
     dns.resolveMx(domain, async (err, addresses) => {
