@@ -9,7 +9,7 @@ const dns = require('dns');
 function checkMXStatus(redisClient, domain) {
   return new Promise((resolve) => {
     dns.resolveMx(domain, async (err, addresses) => {
-      if (addresses.length > 0 && !err === null) {
+      if ( !err === null && addresses.length > 0) {
         await redisClient.sadd('domainListValid', domain);
         resolve([true, 'custom', domain]);
       } else {
