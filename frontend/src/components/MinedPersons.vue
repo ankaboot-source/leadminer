@@ -294,8 +294,10 @@ function updateRefinedPersons() {
   isLoading.value = false;
 }
 
-async function refinePersons(){
-  await $store.dispatch("example/refinePersons")
+async function fetchRefined(){
+  isLoading .value= true;
+  rows.value = await $store.dispatch("example/fetchRefinedPersons");
+  isLoading.value = false;
 }
 
 function exportTable() {
