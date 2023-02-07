@@ -65,7 +65,7 @@ async function handleMessage({
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
  */
-const streamProcessor = async (message) => {
+const emailMessagesStreamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
   logger.debug('Processing message', {
@@ -115,5 +115,8 @@ async function consumeStreamMessages(channelName, streamProcessor) {
 }
 
 (async () => {
-  await consumeStreamMessages(REDIS_MESSAGES_CHANNEL, streamProcessor);
+  await consumeStreamMessages(
+    REDIS_MESSAGES_CHANNEL,
+    emailMessagesStreamProcessor
+  );
 })();
