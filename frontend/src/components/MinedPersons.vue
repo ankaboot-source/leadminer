@@ -68,11 +68,11 @@
           <div class="q-pl-sm">
           <q-btn
             color="teal-5"
-            label="Refine"
+            label="Fetch"
             icon="factory"
             no-caps
             :disable="isLoading"
-            @click="refinePersons"
+            @click="fetchRefined"
           />
         </div>
       </template>
