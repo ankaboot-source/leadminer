@@ -49,11 +49,6 @@ async function handleMessage({
       }
     }
   }
-  // We manually force the garbage collector to avoid out of memory problems
-  if (global.gc !== undefined) {
-    logger.debug('Invoking garbage collector');
-    global.gc();
-  }
 
   let informedSubscribers = 0;
   while (informedSubscribers === 0) {
@@ -65,7 +60,7 @@ async function handleMessage({
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
  */
-const emailMessagesStreamProcessor = async (message) => {
+const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
   logger.debug('Processing message', {
@@ -75,48 +70,84 @@ const emailMessagesStreamProcessor = async (message) => {
   await handleMessage(data);
 };
 
-/**
- * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
- */
-async function consumeStreamMessages(channelName, streamProcessor) {
-  let lastProcessedMessageId = null;
+class StreamConsumer {
+  /**
+   * Creates an instance of StreamConsumer.
+   * @param {string} streamChannel - The name of the Redis stream channel to consume messages from.
+   * @param {function} processor - The function that will process the messages consumed from the stream.
+   */
+  constructor(streamChannel, processor) {
+    this.streamProcessor = processor;
+    this.streamChannel = streamChannel;
+    this.isInterrupted = false;
+  }
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    try {
-      const result = await redisStreamsConsumer.xread(
-        'BLOCK',
-        0,
-        'COUNT',
-        1,
-        'STREAMS',
-        channelName,
-        lastProcessedMessageId ?? '$'
-      );
+  /**
+   * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
+   */
+  async consumeStreamMessages() {
+    let lastProcessedMessageId = null;
+    while (!this.isInterrupted) {
+      try {
+        const result = await redisStreamsConsumer.xread(
+          'BLOCK',
+          0,
+          'COUNT',
+          1,
+          'STREAMS',
+          this.streamChannel,
+          lastProcessedMessageId ?? '$'
+        );
 
-      if (result) {
-        const [channel, message] = result[0];
-        lastProcessedMessageId = message[0][0];
+        if (result) {
+          const [channel, message] = result[0];
+          lastProcessedMessageId = message[0][0];
 
-        logger.debug('Consuming message', {
-          channel,
-          lastProcessedMessageId
-        });
+          logger.debug('Consuming message', {
+            channel,
+            lastProcessedMessageId
+          });
 
-        await Promise.all([
-          streamProcessor(message[0]),
-          redisStreamsConsumer.xdel(channelName, lastProcessedMessageId)
-        ]);
+          await Promise.all([
+            this.streamProcessor(message[0]),
+            redisStreamsConsumer.xdel(
+              this.streamChannel,
+              lastProcessedMessageId
+            )
+          ]);
+
+          if (global.gc !== undefined) {
+            global.gc();
+            logger.debug('Invoked garbage collector');
+          }
+        }
+      } catch (error) {
+        logger.error(`Error while consuming message: ${error.message}`);
       }
-    } catch (error) {
-      logger.error(`Error while consuming messages: ${error.message}`);
     }
+  }
+
+  /**
+   * Starts the stream consumer.
+   */
+  async start() {
+    this.isInterrupted = false;
+    await this.consumeStreamMessages();
+  }
+
+  /**
+   * Stops the stream consumer.
+   */
+  stop() {
+    this.isInterrupted = true;
   }
 }
 
+const streamConsumerInstance = new StreamConsumer(
+  REDIS_MESSAGES_CHANNEL,
+  streamProcessor
+);
+
 (async () => {
-  await consumeStreamMessages(
-    REDIS_MESSAGES_CHANNEL,
-    emailMessagesStreamProcessor
-  );
+  await streamConsumerInstance.start();
 })();
