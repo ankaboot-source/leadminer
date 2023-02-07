@@ -51,6 +51,7 @@ async function handleMessage({
   }
   // We manually force the garbage collector to avoid out of memory problems
   if (global.gc !== undefined) {
+    logger.debug('Invoking garbage collector');
     global.gc();
   }
 
