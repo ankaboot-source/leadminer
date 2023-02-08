@@ -32,7 +32,7 @@ function subscribeToRefined(userId, commit) {
  * Fetches data from a Supabase table.
  * @param {String} tableName - The name of the table to fetch data from.
  * @param {Number} [pageSize=1000] - The number of rows to retrieve per request.
- * @returns {Array | void } - An array of data from the specified table.
+ * @returns {Array} - An array of data from the specified table.
  */
 async function fetchData(tableName, pageSize = 1000) {
   const result = [];
@@ -64,7 +64,7 @@ export async function fetchRefinedPersons({ state }) {
     console.error(rpcResult.error);
     return [];
   }
-  const data = fetchData("refinedpersons");
+  const data = await fetchData("refinedpersons");
   return data
 }
 
