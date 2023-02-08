@@ -125,7 +125,6 @@ class StreamConsumer {
           await redisStreamsConsumer.xack(this.streamChannel, this.consumerName, ...processedMessageIDs);
         }
       } catch (error) {
-        console.log(error)
         logger.error(`Error while consuming messages: ${error.message}`);
       }
     }
@@ -143,7 +142,7 @@ class StreamConsumer {
    * Stops the stream consumer.
    */
   stop() {
-    this.isInterrupted = false;
+    this.isInterrupted = true;
   }
 }
 
