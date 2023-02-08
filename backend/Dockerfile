@@ -5,4 +5,4 @@ RUN npm install
 COPY . .
 EXPOSE 8081
 EXPOSE 8021
-CMD ["sh", "-c", "exec node --max_old_space_size=1500 --expose-gc server.js"]
+CMD ["sh", "-c", "exec node --expose-gc server.js"]

@@ -28,7 +28,7 @@ async function handleMessage({
       body,
       folderName
     );
-
+    logger.info('Starting extractEmailsAddresses', header);
     const extractedContacts = await message.extractEmailsAddresses();
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
@@ -87,6 +87,8 @@ class StreamConsumer {
    */
   async consumeStreamMessages() {
     let lastProcessedMessageId = null;
+    let consumedMessages = 0;
+
     while (!this.isInterrupted) {
       try {
         const result = await redisStreamsConsumer.xread(
@@ -108,6 +110,8 @@ class StreamConsumer {
             lastProcessedMessageId
           });
 
+          consumedMessages++;
+
           await Promise.all([
             this.streamProcessor(message[0]),
             redisStreamsConsumer.xdel(
@@ -116,7 +120,8 @@ class StreamConsumer {
             )
           ]);
 
-          if (global.gc !== undefined) {
+          if (global.gc !== undefined && consumedMessages === 1000) {
+            consumedMessages = 0;
             global.gc();
             logger.debug('Invoked garbage collector');
           }
