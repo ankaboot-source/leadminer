@@ -35,7 +35,6 @@ export async function fetchRefinedPersons({ state, commit }) {
 
   if (rpcResult.error) {
     console.error(rpcResult.error);
-    return [];
   }
   const data = await fetchData(supabase, "refinedpersons", 1000);
   data.forEach((person) => commit("SET_EMAILS", person))
