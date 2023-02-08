@@ -294,9 +294,10 @@ function updateRefinedPersons() {
   isLoading.value = false;
 }
 
-async function fetchRefined(){
-  isLoading .value= true;
-  rows.value = await $store.dispatch("example/fetchRefinedPersons");
+async function fetchRefined() {
+  isLoading.value = true;
+  await $store.dispatch("example/fetchRefinedPersons");
+  rows.value = $store.getters["example/getRetrievedEmails"];
   isLoading.value = false;
 }
 

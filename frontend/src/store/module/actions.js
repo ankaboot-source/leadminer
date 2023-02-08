@@ -2,6 +2,7 @@ import { LocalStorage } from "quasar";
 
 import { createClient } from "@supabase/supabase-js";
 import { sse } from "src/helpers/sse";
+import { fetchData } from "src/helpers/supabase.js";
 
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
@@ -28,35 +29,7 @@ function subscribeToRefined(userId, commit) {
     .subscribe();
 }
 
-/**
- * Fetches data from a Supabase table.
- * @param {String} tableName - The name of the table to fetch data from.
- * @param {Number} [pageSize=1000] - The number of rows to retrieve per request.
- * @returns {Array} - An array of data from the specified table.
- */
-async function fetchData(tableName, pageSize = 1000) {
-  const result = [];
-  let offset = 0;
-  let response = { data: [1] };
-
-  while (response.data.length > 0) {
-    response = await supabase.from(tableName)
-      .select("*")
-      .range(offset, offset + pageSize - 1);
-
-    if (response.error) {
-      console.error(response.error);
-      return [];
-    }
-
-    result.push(...response.data);
-    offset += pageSize;
-  }
-
-  return result;
-}
-
-export async function fetchRefinedPersons({ state }) {
+export async function fetchRefinedPersons({ state, commit }) {
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
   const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
 
@@ -64,8 +37,8 @@ export async function fetchRefinedPersons({ state }) {
     console.error(rpcResult.error);
     return [];
   }
-  const data = await fetchData("refinedpersons");
-  return data
+  const data = await fetchData(supabase, "refinedpersons", 1000);
+  data.forEach((person) => commit("SET_EMAILS", person))
 }
 
 export async function getEmails({ state, commit }, { data }) {
