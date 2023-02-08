@@ -1,9 +1,12 @@
 const { redis } = require('../utils/redis');
 const EmailMessage = require('../services/EmailMessage');
-const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
 const logger = require('../utils/logger')(module);
 const { db } = require('../db');
-
+const {
+  REDIS_STREAM_NAME,
+  REDIS_CONSUMER_GROUP_NAME,
+  REDIS_CONSUMER_BATCH_SIZE
+} = require('../config/index');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
@@ -59,7 +62,7 @@ async function handleMessage({
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
-*/
+ */
 const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
@@ -73,71 +76,80 @@ const streamProcessor = async (message) => {
 class StreamConsumer {
   /**
    * Creates an instance of StreamConsumer.
-   * @param {string} streamChannel - The name of the Redis stream channel to consume messages from.
+   * @param {string} streamName - The name of the Redis stream channel to consume messages from.
+   * @param {string} consumerGroupName - The name of the Redis consumer group to add the consumer to.
+   * @param {string} consumerName - The name of this consumer.
+   * @param {number} batchSize - The number of messages to be processed in each batch.
    * @param {function} processor - The function that will process the messages consumed from the stream.
-  */
-  constructor(streamChannel, processor) {
-    this.STREAM_PROCESSOR = processor;
-    this.STREAM_CHANNEL = streamChannel;
-    this.CONSUME_STREAM = true; 
-
-    this.processedMessageIDs = [];
+   */
+  constructor(streamName, consumerGroupName, consumerName, batchSize, processor) {
+    this.streamProcessor = processor;
+    this.streamChannel = streamName;
+    this.consumerGroupName = consumerGroupName
+    this.consumerName = consumerName;
+    this.batchSize = batchSize
+    this.isInterrupted = true;
   }
 
   /**
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
-  */
+   */
   async consumeStreamMessages() {
-
-    while (this.CONSUME_STREAM) {
+    let processedMessageIDs = null
+    while (!this.isInterrupted) {
       try {
-        const result = await redisStreamsConsumer.xread(
+        const result = await redisStreamsConsumer.xreadgroup(
           'BLOCK',
           0,
+          'GROUP',
+          this.consumerGroupName,
+          this.consumerName,
+          'COUNT',
+          this.batchSize,
           'STREAMS',
-          this.STREAM_CHANNEL,
-          this.processedMessageIDs.length ? this.processedMessageIDs.at(-1) : '$'
+          this.streamChannel,
+          '>'
         );
-
+        console.log(result)
         if (result) {
           const [channel, messages] = result[0];
-
-          this.processedMessageIDs = messages.map(message => message[0]);
-          if (this.processedMessageIDs.length > 0) { // Delete the previous processed messages
-            await redisStreamsConsumer.xdel(this.STREAM_CHANNEL, ...this.processedMessageIDs);
-          }
+          processedMessageIDs = messages.map(message => message[0]);
 
           logger.debug('Consuming messages', {
             channel,
             totalMessages: messages.length,
-            lastMessageID: this.processedMessageIDs.at(-1)
+            lastMessageID: processedMessageIDs.at(-1)
           });
 
-          await Promise.all(messages.map(this.STREAM_PROCESSOR));
+          await Promise.all(messages.map(this.streamProcessor));
+          await redisStreamsConsumer.xack(this.streamChannel, this.consumerName, ...processedMessageIDs);
         }
       } catch (error) {
+        console.log(error)
         logger.error(`Error while consuming messages: ${error.message}`);
       }
     }
   }
- 
+
   /**
    * Starts the stream consumer.
-  */
+   */
   async start() {
-    this.CONSUME_STREAM = true;
+    this.isInterrupted = false;
     await this.consumeStreamMessages();
   }
 
   /**
-  * Stops the stream consumer.
-  */
+   * Stops the stream consumer.
+   */
   stop() {
-    this.CONSUME_STREAM = false;
+    this.isInterrupted = false;
   }
 }
 
-const streamConsumerInstance = new StreamConsumer(REDIS_MESSAGES_CHANNEL, streamProcessor);
+const streamConsumerInstance = new StreamConsumer(
+  REDIS_STREAM_NAME, REDIS_CONSUMER_GROUP_NAME, 'consumer-1', REDIS_CONSUMER_BATCH_SIZE, streamProcessor
+);
 
 (async () => {
   await streamConsumerInstance.start();
