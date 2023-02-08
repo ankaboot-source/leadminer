@@ -9,7 +9,7 @@ const {
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
-const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
+const { REDIS_STREAM_NAME } = require('../config/index');
 const { getXImapHeaderField } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
@@ -66,20 +66,20 @@ async function onEmailMessage({
 
   try {
     const streamId = await redisStreamsPublisher.xadd(
-      REDIS_MESSAGES_CHANNEL,
+      REDIS_STREAM_NAME,
       '*',
       'message',
       message
     );
     logger.debug('Publishing message to stream', {
       streamId,
-      channel: REDIS_MESSAGES_CHANNEL,
+      channel: REDIS_STREAM_NAME,
       user: userIdentifier
     });
   } catch (error) {
     logger.error('Error when publishing to streams', {
       error,
-      channel: REDIS_MESSAGES_CHANNEL,
+      channel: REDIS_STREAM_NAME,
       user: userIdentifier
     });
   }
