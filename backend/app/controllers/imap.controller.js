@@ -255,10 +255,6 @@ async function getEmails(req, res, next) {
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
 
-  if (global.gc !== undefined) {
-    global.gc();
-  }
-
   return res.status(200).send();
 }
 

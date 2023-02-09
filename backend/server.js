@@ -18,6 +18,21 @@ console.log(
   'font-family: monospace'
 );
 
+process.on('uncaughtException', (err) => {
+  const { heapTotal, heapUsed } = process.memoryUsage();
+  logger.error('uncaughtException', { err });
+  logger.error(
+    `Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(2)} | Heap used: ${(
+      heapUsed /
+      1024 /
+      1024 /
+      1024
+    ).toFixed(2)} `
+  );
+
+  throw err;
+});
+
 (async () => {
   await redis.loadData();
   // eslint-disable-next-line no-unused-vars

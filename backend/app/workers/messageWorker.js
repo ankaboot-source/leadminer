@@ -87,7 +87,6 @@ class StreamConsumer {
    */
   async consumeStreamMessages() {
     let lastProcessedMessageId = null;
-    let consumedMessages = 0;
 
     while (!this.isInterrupted) {
       try {
@@ -110,8 +109,6 @@ class StreamConsumer {
             lastProcessedMessageId
           });
 
-          consumedMessages++;
-
           await Promise.all([
             this.streamProcessor(message[0]),
             redisStreamsConsumer.xdel(
@@ -119,12 +116,6 @@ class StreamConsumer {
               lastProcessedMessageId
             )
           ]);
-
-          if (global.gc !== undefined && consumedMessages === 1000) {
-            consumedMessages = 0;
-            global.gc();
-            logger.debug('Invoked garbage collector');
-          }
         }
       } catch (error) {
         logger.error(`Error while consuming message: ${error.message}`);

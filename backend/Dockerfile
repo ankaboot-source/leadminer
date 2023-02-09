@@ -5,4 +5,4 @@ RUN npm install
 COPY . .
 EXPOSE 8081
 EXPOSE 8021
-CMD ["sh", "-c", "exec node --expose-gc server.js"]
+CMD ["sh", "-c", "exec node server.js"]
