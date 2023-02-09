@@ -88,11 +88,14 @@ class StreamConsumer {
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
    */
   async consumeStreamMessages() {
+    const STREAM_MESSAGES_COUNT = 100;
     while (this.CONSUME_STREAM) {
       try {
         const result = await redisStreamsConsumer.xread(
           'BLOCK',
           0,
+          'COUNT',
+          STREAM_MESSAGES_COUNT,
           'STREAMS',
           this.STREAM_CHANNEL,
           this.processedMessageIDs.length
@@ -102,15 +105,7 @@ class StreamConsumer {
 
         if (result) {
           const [channel, messages] = result[0];
-
           this.processedMessageIDs = messages.map((message) => message[0]);
-          if (this.processedMessageIDs.length > 0) {
-            // Delete the previous processed messages
-            await redisStreamsConsumer.xdel(
-              this.STREAM_CHANNEL,
-              ...this.processedMessageIDs
-            );
-          }
 
           logger.debug('Consuming messages', {
             channel,
@@ -118,7 +113,13 @@ class StreamConsumer {
             lastMessageID: this.processedMessageIDs.at(-1)
           });
 
-          await Promise.all(messages.map(this.STREAM_PROCESSOR));
+          await Promise.allSettled([
+            ...messages.map((message) => this.STREAM_PROCESSOR(message)),
+            await redisStreamsConsumer.xdel(
+              this.STREAM_CHANNEL,
+              ...this.processedMessageIDs
+            )
+          ]);
 
           const { heapTotal, heapUsed } = process.memoryUsage();
           logger.debug(
