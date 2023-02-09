@@ -56,14 +56,18 @@ class RedisManager {
   async loadData() {
     const res = await this.#normalClient.exists('freeProviders');
     if (res !== 1) {
-      freeProviders.forEach((domain) => {
-        this.#normalClient.sadd('freeProviders', domain);
-      });
+      await Promise.all(
+        freeProviders.map((domain) =>
+          this.#normalClient.sadd('freeProviders', domain)
+        )
+      );
       logger.info('Redis initialized with freeProviders ✔️');
 
-      disposable.forEach((domain) => {
-        this.#normalClient.sadd('disposable', domain);
-      });
+      await Promise.all(
+        disposable.map((domain) =>
+          this.#normalClient.sadd('disposable', domain)
+        )
+      );
       logger.info('Redis initialized with disposable ✔️');
     } else {
       logger.info('Redis is already initialized ✔️');
