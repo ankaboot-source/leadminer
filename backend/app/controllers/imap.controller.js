@@ -44,12 +44,9 @@ async function onEmailMessage({
 
   const { heapTotal, heapUsed } = process.memoryUsage();
   logger.debug(
-    `Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(2)} | Heap used: ${(
-      heapUsed /
-      1024 /
-      1024 /
-      1024
-    ).toFixed(2)} `
+    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+      2
+    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
   );
 
   const message = JSON.stringify({
