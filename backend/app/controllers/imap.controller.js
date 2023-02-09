@@ -113,21 +113,20 @@ function loginToAccount(req, res, next) {
       const imapUser =
         (await db.getImapUserByEmail(email)) ??
         (await db.createImapUser({ email, host, port, tls }));
-      const duration = performance.measure(
-        'measure login',
-        'imap-login-start'
-      ).duration;
 
       if (!imapUser) {
         throw Error('Error when creating or quering imapUser');
       }
 
-      logger.info('Account successfully logged in.', { email, duration });
+      logger.info('Account successfully logged in.', { email });
+
+      imapConnection.end();
+      imapConnection.removeAllListeners();
       res.status(200).send({ imap: imapUser });
     } catch (error) {
-      next({ message: 'Failed to login using Imap', details: error.message });
-    } finally {
       imapConnection.end();
+      imapConnection.removeAllListeners();
+      next({ message: 'Failed to login using Imap', details: error.message });
     }
   });
   imapConnection.connect();
@@ -232,6 +231,7 @@ async function getEmails(req, res, next) {
   });
 
   eventEmitter.on('error', () => {
+    eventEmitter.removeAllListeners();
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });
@@ -264,6 +264,7 @@ async function getEmails(req, res, next) {
   sse.send(true, 'data');
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
+  eventEmitter.removeAllListeners();
   return res.status(200).send();
 }
 
