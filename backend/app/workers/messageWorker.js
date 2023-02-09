@@ -145,5 +145,16 @@ const streamConsumerInstance = new StreamConsumer(
 );
 
 (async () => {
+  process.on('uncaughtException', (err) => {
+    const { heapTotal, heapUsed } = process.memoryUsage();
+    logger.error('uncaughtException', { err });
+    logger.error(
+      `Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+        2
+      )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+    );
+
+    throw err;
+  });
   await streamConsumerInstance.start();
 })();

@@ -11,14 +11,8 @@ services:
     image: leadminer-api:git
     container_name: leadminer_api
     build: backend
-    restart: always
     env_file:
       - .env
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: 1024M
     # Uncomment if you want to want to use the redis service
     depends_on:
       - redis
