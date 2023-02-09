@@ -32,7 +32,12 @@ async function handleMessage({
     const extractedContacts = await message.extractEmailsAddresses();
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
-
+    const { heapTotal, heapUsed } = process.memoryUsage();
+    logger.info(
+      `Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+        2
+      )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+    );
     if (isLast) {
       try {
         await db.callRpcFunction(userId, 'populate_refined');

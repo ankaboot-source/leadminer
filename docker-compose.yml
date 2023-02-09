@@ -1,5 +1,3 @@
-version: "3.1"
-
 services:
   # Uncomment if you want to want to use this redis service
   redis:
@@ -11,6 +9,10 @@ services:
     image: leadminer-api:git
     container_name: leadminer_api
     build: backend
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     env_file:
       - .env
     # Uncomment if you want to want to use the redis service

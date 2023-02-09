@@ -65,6 +65,12 @@ async function onEmailMessage({
       channel: REDIS_MESSAGES_CHANNEL,
       user: userIdentifier
     });
+    const { heapTotal, heapUsed } = process.memoryUsage();
+    logger.info(
+      `Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+        2
+      )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+    );
   } catch (error) {
     logger.error('Error when publishing to streams', {
       error,
@@ -95,6 +101,7 @@ function loginToAccount(req, res, next) {
 
   imapConnection.once('error', (err) => {
     err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
+    imapConnection.removeAllListeners();
     next(err);
   });
 
@@ -113,8 +120,11 @@ function loginToAccount(req, res, next) {
       }
 
       logger.info('Account successfully logged in.', { email, duration });
+      imapConnection.removeAllListeners();
+      imapConnection.end();
       res.status(200).send({ imap: imapUser });
     } catch (error) {
+      imapConnection.end();
       next({ message: 'Failed to login using Imap', details: error.message });
     } finally {
       imapConnection.end();
@@ -222,6 +232,7 @@ async function getEmails(req, res, next) {
   });
 
   eventEmitter.on('error', () => {
+    eventEmitter.removeAllListeners();
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });
@@ -255,6 +266,7 @@ async function getEmails(req, res, next) {
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
 
+  eventEmitter.removeAllListeners();
   return res.status(200).send();
 }
 

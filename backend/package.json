@@ -8,7 +8,7 @@
     "test:integration": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js --timeout 60000",
     "test": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
     "dev": "nodemon server.js",
-    "dev:limit": "node --expose-gc --inspect server.js",
+    "dev:inspect": "node --inspect server.js",
     "lint:fix": "cd app && eslint --fix .",
     "lint:report": "cd app && eslint --fix . --output-file eslint_report.json --format json",
     "prettier": "prettier --check .",
