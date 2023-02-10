@@ -113,7 +113,7 @@ class StreamConsumer {
             lastMessageID: this.processedMessageIDs.at(-1)
           });
 
-          await Promise.allSettled([
+          await Promise.all([
             ...messages.map((message) => this.STREAM_PROCESSOR(message)),
             await redisStreamsConsumer.xdel(
               this.STREAM_CHANNEL,
