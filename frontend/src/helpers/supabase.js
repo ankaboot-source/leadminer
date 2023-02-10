@@ -1,9 +1,10 @@
 /**
  * Fetches data from a Supabase table.
-*  @param {} supabaseClient - The supabase client to use.
+ * @param {Object} supabaseClient - The Supabase client to use.
+ * @param {String} userId - The userId to retrieve data for.
  * @param {String} tableName - The name of the table to fetch data from.
  * @param {Number} [pageSize=1000] - The number of rows to retrieve per request.
- * @returns {Array} - An array of data from the specified table.
+ * @returns {Array} - An array of data from the specified table filtered by userId.
  */
 export async function fetchData(supabaseClient, tableName, pageSize = 1000) {
     const result = [];
