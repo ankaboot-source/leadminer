@@ -299,7 +299,7 @@ async function refinePersons() {
 
 function exportTable() {
   if (!rows.value.length) {
-    $q.notify("Table is empty.");
+    $q.notify("There are no contacts present in the table.");
     return 0;
   }
   function downloadFile(fileData, fileName) {
