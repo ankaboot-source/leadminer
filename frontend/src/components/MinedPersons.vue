@@ -63,9 +63,8 @@
             :disable="isLoading"
             @click="updateRefinedPersons"
           />
-          
         </div>
-          <div class="q-pl-sm">
+        <div class="q-pl-sm">
           <q-btn
             color="teal-5"
             label="Refine"
@@ -195,7 +194,7 @@
 </template>
 
 <script setup>
-import exportFromJSON from "export-from-json";
+import { Parser } from "@json2csv/plainjs";
 import { useQuasar } from "quasar";
 import { computed, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
@@ -294,34 +293,69 @@ function updateRefinedPersons() {
   isLoading.value = false;
 }
 
-async function refinePersons(){
-  await $store.dispatch("example/refinePersons")
+async function refinePersons() {
+  await $store.dispatch("example/refinePersons");
 }
 
 function exportTable() {
+  if (!rows.value.length) {
+    $q.notify("Table is empty.");
+    return 0;
+  }
+  function downloadFile(fileData, fileName) {
+    const blob = new Blob([fileData], { type: "text/csv;charset=utf-8" });
+    if (navigator.msSaveBlob) {
+      navigator.msSaveBlob(blob, fileName);
+    } else {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
   const currentDatetime = new Date();
   const userEmail = $store.getters["example/getUserEmail"];
   const fileName = `leadminer-${userEmail}-${currentDatetime
     .toISOString()
     .slice(0, 10)}`;
+  const data = rows.value.map((r) => {
+    return {
+      name: r.name,
+      alternateNames: r.alternate_names.join("\n"),
+      email: r.email,
+      engagement: r.engagement,
+      recency: new Date(r.recency).toISOString().slice(0, 10),
+      tags: r.tags.join("\n"),
+    };
+  });
+  const locale = navigator.language.substring(0, 2);
+
+  let sep;
+  switch (locale) {
+    case "fr":
+    case "de":
+    case "es":
+    case "pt":
+    case "it":
+      sep = ";";
+      break;
+    default:
+      sep = ",";
+      break;
+  }
 
   try {
-    exportFromJSON({
-      data: rows.value.map((r) => {
-        return {
-          names: r.alternate_names.join("\n"),
-          email: r.email,
-          engagement: r.engagement,
-          recency: new Date(r.recency).toISOString().slice(0, 10),
-          tags: r.tags.join("\n"),
-        };
-      }),
-      fileName,
+    const opts = {
+      delimiter: sep,
       withBOM: true,
-      exportType: exportFromJSON.types.csv,
-    });
+    };
+    const parser = new Parser(opts);
+    const csv = parser.parse(data);
+    downloadFile(csv, fileName + ".csv");
     $q.notify("Successfully exported table.");
-  } catch (error) {
+  } catch (err) {
     $q.notify("Error when exporting to CSV.");
   }
 }
