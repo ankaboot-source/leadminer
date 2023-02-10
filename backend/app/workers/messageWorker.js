@@ -62,7 +62,7 @@ async function handleMessage({
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
-*/
+ */
 const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
@@ -120,8 +120,10 @@ class StreamConsumer {
             lastMessageID: processedMessageIDs.at(-1)
           });
 
-          await Promise.all(messages.map(this.streamProcessor));
-          await redisStreamsConsumer.xack(this.streamChannel, this.consumerName, ...processedMessageIDs);
+          await Promise.all(
+            messages.map(this.streamProcessor),
+            redisStreamsConsumer.xack(this.streamChannel, this.consumerName, ...processedMessageIDs)
+          );
 
           const { heapTotal, heapUsed } = process.memoryUsage();
           logger.debug(
