@@ -12,14 +12,14 @@ const {
   REDIS_STREAM_NAME,
   REDIS_CONSUMER_GROUP_NAME,
   GOOGLE_CLIENT_ID,
-  GOOGLE_SECRET,
+  GOOGLE_SECRET
 } = process.env;
 
 const LEADMINER_API_PORT = parseInt(process.env.LEADMINER_API_PORT);
 const IMAP_AUTH_TIMEOUT = parseInt(process.env.IMAP_AUTH_TIMEOUT);
 const IMAP_CONNECTION_TIMEOUT = parseInt(process.env.IMAP_CONNECTION_TIMEOUT);
 const REDIS_PORT = parseInt(process.env.REDIS_PORT);
-const REDIS_CONSUMER_BATCH_SIZE = parseInt(process.env.REDIS_PORT)
+const REDIS_CONSUMER_BATCH_SIZE = parseInt(process.env.REDIS_CONSUMER_BATCH_SIZE);
 
 const SENTRY_ENABLED =
   String(process.env.SENTRY_ENABLED).toLowerCase() === 'true';
