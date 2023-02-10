@@ -10,7 +10,6 @@ services:
     image: leadminer-api:git
     container_name: leadminer_api
     build: backend
-    restart: always
     env_file:
       - .env
     depends_on:

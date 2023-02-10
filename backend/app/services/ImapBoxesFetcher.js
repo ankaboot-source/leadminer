@@ -50,11 +50,14 @@ class ImapBoxesFetcher {
           );
 
           this.imapConnection.end();
+          this.imapConnection.removeAllListeners();
+
           resolve(tree);
         });
       });
 
       this.imapConnection.once('error', (error) => {
+        this.imapConnection.removeAllListeners();
         reject(error);
       });
 

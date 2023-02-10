@@ -1,6 +1,4 @@
 /* istanbul ignore file */
-const logger = require('../utils/logger')(module);
-
 const { OAuth2Client } = require('google-auth-library');
 const { GOOGLE_CLIENT_ID, GOOGLE_SECRET } = require('../config');
 
@@ -40,7 +38,9 @@ exports.signUpWithGoogle = async (req, res, next) => {
     });
 
     const { exp, email } = await oAuth2Client.getTokenInfo(access_token);
-    const dbGoogleUser = await db.getGoogleUserByEmail(email) ?? await db.createGoogleUser({ email, refresh_token });
+    const dbGoogleUser =
+      (await db.getGoogleUserByEmail(email)) ??
+      (await db.createGoogleUser({ email, refresh_token }));
 
     if (!dbGoogleUser) {
       throw Error('Failed to create or query googleUser');
@@ -49,9 +49,6 @@ exports.signUpWithGoogle = async (req, res, next) => {
     if (dbGoogleUser.refresh_token !== refresh_token) {
       await db.updateGoogleUser(dbGoogleUser.id, refresh_token);
     }
-
-    const duration = performance.measure('measure login', 'google-login-start').duration;
-    logger.info('Account successfully logged in.', { email, duration });
 
     return res.status(200).send({
       googleUser: {
@@ -65,6 +62,9 @@ exports.signUpWithGoogle = async (req, res, next) => {
       }
     });
   } catch (error) {
-    return next({ message: 'Error when sign up with google', details: error.message });
+    return next({
+      message: 'Error when sign up with google',
+      details: error.message
+    });
   }
 };
