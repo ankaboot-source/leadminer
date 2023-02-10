@@ -85,9 +85,9 @@ class StreamConsumer {
   constructor(streamName, consumerGroupName, consumerName, batchSize, processor) {
     this.streamProcessor = processor;
     this.streamChannel = streamName;
-    this.consumerGroupName = consumerGroupName
+    this.consumerGroupName = consumerGroupName;
     this.consumerName = consumerName;
-    this.batchSize = batchSize
+    this.batchSize = batchSize;
     this.isInterrupted = true;
   }
 
@@ -95,7 +95,7 @@ class StreamConsumer {
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
    */
   async consumeStreamMessages() {
-    let processedMessageIDs = null
+    let processedMessageIDs = null;
     while (!this.isInterrupted) {
       try {
         const result = await redisStreamsConsumer.xreadgroup(
