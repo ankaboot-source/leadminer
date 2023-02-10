@@ -110,7 +110,6 @@ class StreamConsumer {
           this.streamChannel,
           '>'
         );
-        console.log(result)
         if (result) {
           const [channel, messages] = result[0];
           processedMessageIDs = messages.map(message => message[0]);
