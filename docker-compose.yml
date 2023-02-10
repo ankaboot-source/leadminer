@@ -1,22 +1,19 @@
 version: "3.1"
 
 services:
-  # Uncomment if you want to use the provided redis container
-  # redis:
-  #   image: redis:alpine
-  #   command: --port ${REDIS_PORT}
-  #   restart: always
+  redis:
+    image: redis:alpine
+    command: --port ${REDIS_PORT}
+    restart: always
 
   leadminer-api:
     image: leadminer-api:git
     container_name: leadminer_api
     build: backend
-    restart: always
     env_file:
       - .env
-    # Uncomment if you want to use the provided redis container
-    # depends_on:
-    #   - redis
+    depends_on:
+      - redis
     ports:
       - ${LEADMINER_API_PORT}:${LEADMINER_API_PORT}
 
