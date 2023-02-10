@@ -1,6 +1,4 @@
 /* istanbul ignore file */
-const logger = require('../utils/logger')(module);
-
 const { OAuth2Client } = require('google-auth-library');
 const { GOOGLE_CLIENT_ID, GOOGLE_SECRET } = require('../config');
 
