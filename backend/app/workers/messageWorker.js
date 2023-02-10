@@ -2,11 +2,11 @@ const { redis } = require('../utils/redis');
 const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 const { db } = require('../db');
+const { REDIS_CONSUMER_BATCH_SIZE } = require('../config')
 const {
   REDIS_STREAM_NAME,
   REDIS_CONSUMER_GROUP_NAME,
-  REDIS_CONSUMER_BATCH_SIZE
-} = require('../config/index');
+} = require('../utils/constants');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();

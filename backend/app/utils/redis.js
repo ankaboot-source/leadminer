@@ -8,7 +8,7 @@ const {
   REDIS_USERNAME,
   REDIS_PASSWORD,
   REDIS_TLS
-} = require('../config/index');
+} = require('../config');
 
 class RedisManager {
   /**

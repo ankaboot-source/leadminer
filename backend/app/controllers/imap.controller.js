@@ -9,7 +9,7 @@ const {
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
-const { REDIS_STREAM_NAME } = require('../config/index');
+const { REDIS_STREAM_NAME } = require('../utils/constants');
 const { getXImapHeaderField } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
