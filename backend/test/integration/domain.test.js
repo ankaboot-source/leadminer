@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { redis } = require('../../app/utils/redis');
 const domainHelpers = require('../../app/utils/helpers/domainHelpers');
 
-const redisClient = redis.getClient()
+const redisClient = redis.getClient();
 
 describe('domainHelpers.checkMXStatus(domain)', () => {
   it('should return true', async () => {
@@ -13,7 +13,10 @@ describe('domainHelpers.checkMXStatus(domain)', () => {
 
   it('should return false', async () => {
     const invalidDomain = 'domain.lead122111miner.io';
-    const output = await domainHelpers.checkMXStatus(redisClient, invalidDomain);
+    const output = await domainHelpers.checkMXStatus(
+      redisClient,
+      invalidDomain
+    );
     expect(output[0]).to.be.false;
   });
 });
