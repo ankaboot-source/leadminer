@@ -195,7 +195,7 @@
 
 <script setup>
 import exportFromJSON from "export-from-json";
-import { localSeparator } from "src/helpers/csv-helpers";
+import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
 import { useQuasar } from "quasar";
 import { computed, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
@@ -324,7 +324,7 @@ function exportTable() {
       fileName,
       withBOM: true,
       exportType: exportFromJSON.types.csv,
-      delimiter: localSeparator(),
+      delimiter: getLocalizedCsvSeparator(),
     });
     $q.notify("Successfully exported table.");
   } catch (error) {

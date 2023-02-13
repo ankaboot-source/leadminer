@@ -1,17 +1,13 @@
-export function localSeparator() {
-  const locale = navigator.language.substring(0, 2);
-  let sep;
+export function getLocalizedCsvSeparator() {
+  const locale = navigator.languages[2].substring(0, 2);
   switch (locale) {
     case "fr":
     case "de":
     case "es":
     case "pt":
     case "it":
-      sep = ";";
-      break;
+      return ";";
     default:
-      sep = ",";
-      break;
+      return ",";
   }
-  return sep;
 }
