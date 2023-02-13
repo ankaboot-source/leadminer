@@ -13,6 +13,5 @@ export function localSeparator() {
       sep = ",";
       break;
   }
-  console.log(sep);
   return sep;
 }
