@@ -1,5 +1,5 @@
 export function localSeparator() {
-  const locale = navigator.languages[2].substring(0, 2);
+  const locale = navigator.language.substring(0, 2);
   let sep;
   switch (locale) {
     case "fr":
