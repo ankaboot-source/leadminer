@@ -141,7 +141,7 @@ export async function signIn(_, { data }) {
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error?.response.data.error);
+          this.commit("example/SET_ERROR", error?.response.data.message);
         }
         reject(error.message);
       });
