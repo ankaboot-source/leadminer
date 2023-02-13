@@ -4,7 +4,10 @@ function errorHandler(err, _, res, _next) {
   return res.status(code).send({
     message: err.message,
     code,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack, error: err })
+    ...(process.env.NODE_ENV === 'development' && {
+      stack: err.stack,
+      error: err
+    })
   });
 }
 

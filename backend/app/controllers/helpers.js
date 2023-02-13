@@ -6,7 +6,8 @@ const getImapErrorMessages = () => {
   return {
     AUTHENTICATIONFAILED: {
       code: 401,
-      message: 'Authentication failed. Please check your email and password and try again.'
+      message:
+        'Authentication failed. Please check your email and password and try again.'
     },
     ENOTFOUND: {
       code: 404,
@@ -14,7 +15,8 @@ const getImapErrorMessages = () => {
     },
     ECONNREFUSED: {
       code: 503,
-      message: 'Connection was refused by the server. Please check if the server is running and if there are no firewalls blocking the connection.'
+      message:
+        'Connection was refused by the server. Please check if the server is running and if there are no firewalls blocking the connection.'
     },
     EAI_AGAIN: {
       code: 504,
@@ -22,7 +24,8 @@ const getImapErrorMessages = () => {
     },
     EAUTH: {
       code: 401,
-      message: 'Authentication failed. Please check your username and password and try again.'
+      message:
+        'Authentication failed. Please check your username and password and try again.'
     }
   };
 };
@@ -34,20 +37,38 @@ const getImapErrorMessages = () => {
  */
 function getXImapHeaderField(headers) {
   if (!headers['x-imap-login']) {
-    return { data: null, error: new Error('An x-imap-login header field is required.') };
+    return {
+      data: null,
+      error: new Error('An x-imap-login header field is required.')
+    };
   }
   let login = null;
   try {
     login = JSON.parse(headers['x-imap-login']);
   } catch (error) {
-    return { data: null, error: new Error('x-imap-login header field is not in correct JSON format') };
+    return {
+      data: null,
+      error: new Error(
+        'x-imap-login header field is not in correct JSON format'
+      )
+    };
   }
 
   if (!login.email || !login.id) {
-    return { data: null, error: new Error('x-imap-login header field is missing required fields (email, id)') };
+    return {
+      data: null,
+      error: new Error(
+        'x-imap-login header field is missing required fields (email, id)'
+      )
+    };
   }
   if (!login.access_token && !login.password) {
-    return { data: null, error: new Error('x-imap-login header field is missing the access_token or password field') };
+    return {
+      data: null,
+      error: new Error(
+        'x-imap-login header field is missing the access_token or password field'
+      )
+    };
   }
   return { data: login, error: null };
 }

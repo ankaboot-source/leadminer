@@ -106,7 +106,8 @@ function loginToAccount(req, res, next) {
       code: 500
     };
     const errorCodes = getImapErrorMessages();
-    const {code, message} = errorCodes[err.textCode ?? err.code] ?? genericErrorMessage;
+    const { code, message } =
+      errorCodes[err.textCode ?? err.code] ?? genericErrorMessage;
 
     err.message = message;
     res.status(code);
