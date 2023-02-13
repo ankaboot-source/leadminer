@@ -1,16 +1,11 @@
 function errorHandler(err, _, res, _next) {
-  const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
-  const response = {
+  const code = res.statusCode !== 200 ? res.statusCode : 500;
+
+  return res.status(code).send({
     message: err.message,
-    statusCode
-  };
-
-  if (process.env.NODE_ENV === 'development') {
-    response.stack = err.stack;
-    response.error = err;
-  }
-
-  return res.status(statusCode).send(response);
+    code,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack, error: err })
+  });
 }
 
 module.exports = {
