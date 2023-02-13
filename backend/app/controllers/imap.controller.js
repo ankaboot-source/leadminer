@@ -104,11 +104,11 @@ function loginToAccount(req, res, next) {
     const genericErrorMessage = {
       message: 'Something went wrong on our end. Please try again later.',
       code: 500
-    }
+    };
     const errorCodes = getImapErrorMessages();
     const {code, message} = errorCodes[err.textCode ?? err.code] ?? genericErrorMessage;
 
-    err.message = message
+    err.message = message;
     res.status(code);
     next(err);
   });
