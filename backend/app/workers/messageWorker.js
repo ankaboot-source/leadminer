@@ -2,10 +2,10 @@ const { redis } = require('../utils/redis');
 const EmailMessage = require('../services/EmailMessage');
 const logger = require('../utils/logger')(module);
 const { db } = require('../db');
-const { REDIS_CONSUMER_BATCH_SIZE } = require('../config')
+const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
   REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME,
+  REDIS_CONSUMER_GROUP_NAME
 } = require('../utils/constants');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
@@ -82,7 +82,13 @@ class StreamConsumer {
    * @param {number} batchSize - The number of messages to be processed in each batch.
    * @param {function} processor - The function that will process the messages consumed from the stream.
    */
-  constructor(streamName, consumerGroupName, consumerName, batchSize, processor) {
+  constructor(
+    streamName,
+    consumerGroupName,
+    consumerName,
+    batchSize,
+    processor
+  ) {
     this.streamProcessor = processor;
     this.streamChannel = streamName;
     this.consumerGroupName = consumerGroupName;
@@ -112,7 +118,7 @@ class StreamConsumer {
         );
         if (result) {
           const [channel, messages] = result[0];
-          processedMessageIDs = messages.map(message => message[0]);
+          processedMessageIDs = messages.map((message) => message[0]);
 
           logger.debug('Consuming messages', {
             channel,
@@ -122,7 +128,11 @@ class StreamConsumer {
 
           await Promise.all(
             messages.map(this.streamProcessor),
-            redisStreamsConsumer.xack(this.streamChannel, this.consumerName, ...processedMessageIDs)
+            redisStreamsConsumer.xack(
+              this.streamChannel,
+              this.consumerName,
+              ...processedMessageIDs
+            )
           );
 
           const { heapTotal, heapUsed } = process.memoryUsage();
@@ -155,7 +165,11 @@ class StreamConsumer {
 }
 
 const streamConsumerInstance = new StreamConsumer(
-  REDIS_STREAM_NAME, REDIS_CONSUMER_GROUP_NAME, 'consumer-1', REDIS_CONSUMER_BATCH_SIZE, streamProcessor
+  REDIS_STREAM_NAME,
+  REDIS_CONSUMER_GROUP_NAME,
+  'consumer-1',
+  REDIS_CONSUMER_BATCH_SIZE,
+  streamProcessor
 );
 
 (async () => {

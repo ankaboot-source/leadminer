@@ -71,10 +71,16 @@ class RedisManager {
    */
   async initConsumerGroup(streamName, groupName) {
     try {
-      await this.#normalClient.xgroup('CREATE', streamName, groupName, '$', 'MKSTREAM');
+      await this.#normalClient.xgroup(
+        'CREATE',
+        streamName,
+        groupName,
+        '$',
+        'MKSTREAM'
+      );
       logger.info('Created consumer group ✔️', { streamName, groupName });
     } catch (error) {
-        logger.info('Consumer group already exists ✔️');
+      logger.info('Consumer group already exists ✔️');
     }
   }
 
