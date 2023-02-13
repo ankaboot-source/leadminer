@@ -195,7 +195,7 @@
 
 <script setup>
 import exportFromJSON from "export-from-json";
-import { localSeparator } from "src/helpers/csvHelpers";
+import { localSeparator } from "src/helpers/csv-helpers";
 import { useQuasar } from "quasar";
 import { computed, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
