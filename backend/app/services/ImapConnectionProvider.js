@@ -133,7 +133,7 @@ class ImapConnectionProvider {
    * Initializes a pool of IMAP connections.
    * @returns {Promise<void>}
    */
-  async #initializePool() {
+  #initializePool() {
     const factory = {
       create: () => {
         return new Imap(this.#imapConfig);
