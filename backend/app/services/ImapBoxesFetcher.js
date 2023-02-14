@@ -8,33 +8,6 @@ class ImapBoxesFetcher {
   }
 
   /**
-   * Gets the total number of messages per folder
-   * @param {{label: string, path: string}[]} folders - flat array of objects.
-   * @param {Imap} imapConnection - An IMAP connection.
-   * @returns {Promise}
-   */
-  addTotalPerFolder(folders, imapConnection) {
-    const promises = folders.map((folder) => {
-      return new Promise((resolve, reject) => {
-        imapConnection.status(folder.path, (err, box) => {
-          if (err) {
-            reject(err);
-          }
-          if (box) {
-            folder.total = box.messages.total;
-            folder.cumulativeTotal = box.messages.total;
-          } else {
-            folder.total = 0;
-            folder.cumulativeTotal = 0;
-          }
-          resolve();
-        });
-      });
-    });
-    return Promise.allSettled(promises);
-  }
-
-  /**
    * Retrieves the IMAP tree of the email account.
    * @returns {Promise<object>} IMAP tree.
    */
@@ -48,7 +21,10 @@ class ImapBoxesFetcher {
             reject(err);
           }
           const treeWithPaths = imapTreeHelpers.createFlatTreeFromImap(boxes);
-          await this.addTotalPerFolder(treeWithPaths, imapConnection);
+          await imapTreeHelpers.addTotalPerFolder(
+            treeWithPaths,
+            imapConnection
+          );
           const tree = imapTreeHelpers.buildFinalTree(
             treeWithPaths,
             imapConnection._config.user
