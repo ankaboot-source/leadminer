@@ -6,8 +6,7 @@ const IMAP_ERROR_CODES = Object.freeze({
   },
   ENOTFOUND: {
     code: 404,
-    message:
-      'Host not found. Please check the server address and try again.'
+    message: 'Host not found. Please check the server address and try again.'
   },
   ECONNREFUSED: {
     code: 503,
@@ -16,8 +15,7 @@ const IMAP_ERROR_CODES = Object.freeze({
   },
   EAI_AGAIN: {
     code: 504,
-    message:
-      'Cannot resolve. Please verify the hostname and try again.'
+    message: 'Cannot resolve. Please verify the hostname and try again.'
   },
   EAUTH: {
     code: 401,
