@@ -2,6 +2,7 @@ import { LocalStorage } from "quasar";
 
 import { createClient } from "@supabase/supabase-js";
 import { sse } from "src/helpers/sse";
+import { fetchData } from "src/helpers/supabase.js";
 
 const supabase = createClient(
   process.env.SUPABASE_PROJECT_URL,
@@ -28,13 +29,15 @@ function subscribeToRefined(userId, commit) {
     .subscribe();
 }
 
-export async function refinePersons({ state, commit }) {
+export async function fetchRefinedPersons({ state, commit }) {
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
-  const { data, error } = await supabase.rpc('refined_persons', { userid: user.id })
-  if (error) {
-    commit("SET_ERROR", error) 
+  const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
+
+  if (rpcResult.error) {
+    console.error(rpcResult.error);
   }
-  return data
+  const data = await fetchData(supabase, user.id, "refinedpersons", 1000);
+  data.forEach((person) => commit("SET_EMAILS", person));
 }
 
 export async function getEmails({ state, commit }, { data }) {

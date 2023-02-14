@@ -79,6 +79,9 @@ class ImapEmailsFetcher {
           imapConnection.once('ready', () => {
             imapConnection.openBox(folderName, true, async (err, box) => {
               if (err) {
+                imapConnection.end();
+                imapConnection.removeAllListeners();
+
                 return reject(err);
               }
               if (box.messages?.total > 0) {
@@ -92,6 +95,7 @@ class ImapEmailsFetcher {
 
               // Close the connection and remove it from the list of openConnections
               imapConnection.end();
+              imapConnection.removeAllListeners();
               this.openConnections = this.openConnections.filter(
                 (connection) => connection._box?.name !== folderName
               );
@@ -151,15 +155,18 @@ class ImapEmailsFetcher {
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier
           });
+          msg.removeAllListeners();
         });
       });
 
       fetchResult.on('error', (err) => {
         logger.error(`Fetch error: ${err}`);
+        fetchResult.removeAllListeners();
         reject(err);
       });
 
       fetchResult.once('end', () => {
+        fetchResult.removeAllListeners();
         resolve();
       });
     });

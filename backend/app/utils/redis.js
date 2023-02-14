@@ -53,20 +53,34 @@ class RedisManager {
    * Initialize the redis db with domain providers strings.
    * @returns {Promise}
    */
-  async loadData() {
-    const res = await this.#normalClient.exists('freeProviders');
-    if (res !== 1) {
-      freeProviders.forEach((domain) => {
-        this.#normalClient.sadd('freeProviders', domain);
-      });
+  async initProviders() {
+    try {
+      await this.#normalClient.sadd('freeProviders', freeProviders);
       logger.info('Redis initialized with freeProviders ✔️');
 
-      disposable.forEach((domain) => {
-        this.#normalClient.sadd('disposable', domain);
-      });
+      await this.#normalClient.sadd('disposable', disposable);
       logger.info('Redis initialized with disposable ✔️');
-    } else {
-      logger.info('Redis is already initialized ✔️');
+    } catch (error) {
+      logger.error('Failed initializing redis.', { error });
+    }
+  }
+
+  /**
+   * Create Redis Consumer Group and creates stream if not exists.
+   * @returns {Promise}
+   */
+  async initConsumerGroup(streamName, groupName) {
+    try {
+      await this.#normalClient.xgroup(
+        'CREATE',
+        streamName,
+        groupName,
+        '$',
+        'MKSTREAM'
+      );
+      logger.info('Created consumer group ✔️', { streamName, groupName });
+    } catch (error) {
+      logger.info('Consumer group already exists ✔️');
     }
   }
 

@@ -67,11 +67,11 @@
         <div class="q-pl-sm">
           <q-btn
             color="teal-5"
-            label="Refine"
+            label="Fetch"
             icon="factory"
             no-caps
             :disable="isLoading"
-            @click="refinePersons"
+            @click="fetchRefined"
           />
         </div>
       </template>
@@ -294,8 +294,11 @@ function updateRefinedPersons() {
   isLoading.value = false;
 }
 
-async function refinePersons() {
-  await $store.dispatch("example/refinePersons");
+async function fetchRefined() {
+  isLoading.value = true;
+  await $store.dispatch("example/fetchRefinedPersons");
+  rows.value = $store.getters["example/getRetrievedEmails"];
+  isLoading.value = false;
 }
 
 function exportTable() {
