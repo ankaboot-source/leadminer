@@ -86,7 +86,7 @@ async function onEmailMessage({
  * @param  {} req
  * @param  {} res
  */
-function loginToAccount(req, res, next) {
+async function loginToAccount(req, res, next) {
   const { email, host, tls, port, password } = req.body;
 
   if (!email || !host) {
@@ -94,11 +94,13 @@ function loginToAccount(req, res, next) {
     next(new Error('Email and host are required for IMAP.'));
   }
 
-  performance.mark('imap-login-start');
+  const imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
+    host,
+    password,
+    port
+  );
 
-  const imapConnection = new ImapConnectionProvider(email)
-    .withPassword(host, password, port)
-    .getImapConnection();
+  const imapConnection = await imapConnectionProvider.acquireConnection();
 
   imapConnection.once('error', (err) => {
     err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
@@ -117,12 +119,10 @@ function loginToAccount(req, res, next) {
 
       logger.info('Account successfully logged in.', { email });
 
-      imapConnection.end();
-      imapConnection.removeAllListeners();
+      await imapConnectionProvider.releaseConnection(imapConnection);
       res.status(200).send({ imap: imapUser });
     } catch (error) {
-      imapConnection.end();
-      imapConnection.removeAllListeners();
+      await imapConnectionProvider.releaseConnection(imapConnection);
       next({ message: 'Failed to login using Imap', details: error.message });
     }
   });
@@ -173,6 +173,7 @@ async function getImapBoxes(req, res, next) {
       user: hashHelpers.hashEmail(email, id)
     });
 
+    await imapConnectionProvider.cleanPool();
     return res.status(200).send({
       message: 'IMAP folders fetched successfully!',
       imapFoldersTree: tree
@@ -180,6 +181,7 @@ async function getImapBoxes(req, res, next) {
   } catch (err) {
     err.message = 'Unable to fetch IMAP folders.';
     err.user = hashHelpers.hashEmail(email, id);
+    await imapConnectionProvider.cleanPool();
     return next(err);
   }
 }
@@ -262,6 +264,7 @@ async function getEmails(req, res, next) {
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
   eventEmitter.removeAllListeners();
+  await imapConnectionProvider.cleanPool();
   return res.status(200).send();
 }
 

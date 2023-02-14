@@ -28,8 +28,8 @@ class ImapEmailsFetcher {
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
-    this.eventEmitter.on('endByUser', () => {
-      this.openConnections.forEach((connection) => connection.end());
+    this.eventEmitter.on('endByUser', async () => {
+      await this.imapConnectionProvider.cleanPool();
     });
 
     this.fetchedMessagesCount = 0;
@@ -63,48 +63,43 @@ class ImapEmailsFetcher {
     return Promise.allSettled(
       this.folders.map((folderName) => {
         return new Promise((resolve, reject) => {
-          const imapConnection =
-            this.imapConnectionProvider.getImapConnection();
+          this.imapConnectionProvider
+            .acquireConnection()
+            .then((imapConnection) => {
+              imapConnection.once('error', (err) => {
+                logger.error('Imap connection error.', { error: err });
+              });
+              imapConnection.once('close', (hadError) => {
+                logger.debug('Imap connection closed.', { hadError });
+              });
 
-          imapConnection.once('error', (err) => {
-            logger.error('Imap connection error.', { error: err });
-          });
-          imapConnection.once('close', (hadError) => {
-            logger.debug('Imap connection closed.', { hadError });
-          });
+              imapConnection.once('ready', () => {
+                imapConnection.openBox(folderName, true, async (err, box) => {
+                  if (err) {
+                    imapConnection.end();
+                    imapConnection.removeAllListeners();
 
-          // We keep track of all the open imap connections so that we can close them when needed
-          this.openConnections.push(imapConnection);
+                    return reject(err);
+                  }
+                  if (box.messages?.total > 0) {
+                    await this.fetchBox(
+                      imapConnection,
+                      emailMessageHandler,
+                      folderName,
+                      box.messages.total
+                    );
+                  }
 
-          imapConnection.once('ready', () => {
-            imapConnection.openBox(folderName, true, async (err, box) => {
-              if (err) {
-                imapConnection.end();
-                imapConnection.removeAllListeners();
+                  await this.imapConnectionProvider.releaseConnection(
+                    imapConnection
+                  );
 
-                return reject(err);
-              }
-              if (box.messages?.total > 0) {
-                await this.fetchBox(
-                  imapConnection,
-                  emailMessageHandler,
-                  folderName,
-                  box.messages.total
-                );
-              }
+                  return resolve();
+                });
+              });
 
-              // Close the connection and remove it from the list of openConnections
-              imapConnection.end();
-              imapConnection.removeAllListeners();
-              this.openConnections = this.openConnections.filter(
-                (connection) => connection._box?.name !== folderName
-              );
-
-              return resolve();
+              imapConnection.connect();
             });
-          });
-
-          imapConnection.connect();
         });
       })
     );
@@ -161,13 +156,17 @@ class ImapEmailsFetcher {
 
       fetchResult.on('error', (err) => {
         logger.error(`Fetch error: ${err}`);
-        fetchResult.removeAllListeners();
-        reject(err);
+        connection.closeBox(() => {
+          fetchResult.removeAllListeners();
+          reject(err);
+        });
       });
 
       fetchResult.once('end', () => {
-        fetchResult.removeAllListeners();
-        resolve();
+        connection.closeBox(() => {
+          fetchResult.removeAllListeners();
+          resolve();
+        });
       });
     });
   }

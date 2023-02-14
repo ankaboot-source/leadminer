@@ -1,19 +1,22 @@
 const imapTreeHelpers = require('../utils/helpers/imapTreeHelpers');
 
 class ImapBoxesFetcher {
-  constructor(imapConnectionProvider) {
-    this.imapConnection = imapConnectionProvider.getImapConnection();
+  #imapConnectionsProvider;
+
+  constructor(imapConnectionsProvider) {
+    this.#imapConnectionsProvider = imapConnectionsProvider;
   }
 
   /**
    * Gets the total number of messages per folder
    * @param {{label: string, path: string}[]} folders - flat array of objects.
+   * @param {Imap} imapConnection - An IMAP connection.
    * @returns {Promise}
    */
-  addTotalPerFolder(folders) {
+  addTotalPerFolder(folders, imapConnection) {
     const promises = folders.map((folder) => {
       return new Promise((resolve, reject) => {
-        this.imapConnection.status(folder.path, (err, box) => {
+        imapConnection.status(folder.path, (err, box) => {
           if (err) {
             reject(err);
           }
@@ -35,33 +38,33 @@ class ImapBoxesFetcher {
    * Retrieves the IMAP tree of the email account.
    * @returns {Promise<object>} IMAP tree.
    */
-  getTree() {
+  async getTree() {
+    const imapConnection =
+      await this.#imapConnectionsProvider.acquireConnection();
     return new Promise((resolve, reject) => {
-      this.imapConnection.once('ready', () => {
-        this.imapConnection.getBoxes('', async (err, boxes) => {
+      imapConnection.once('ready', () => {
+        imapConnection.getBoxes('', async (err, boxes) => {
           if (err) {
             reject(err);
           }
           const treeWithPaths = imapTreeHelpers.createFlatTreeFromImap(boxes);
-          await this.addTotalPerFolder(treeWithPaths);
+          await this.addTotalPerFolder(treeWithPaths, imapConnection);
           const tree = imapTreeHelpers.buildFinalTree(
             treeWithPaths,
-            this.imapConnection._config.user
+            imapConnection._config.user
           );
 
-          this.imapConnection.end();
-          this.imapConnection.removeAllListeners();
-
+          this.#imapConnectionsProvider.releaseConnection(imapConnection);
           resolve(tree);
         });
       });
 
-      this.imapConnection.once('error', (error) => {
-        this.imapConnection.removeAllListeners();
+      imapConnection.once('error', (error) => {
+        this.#imapConnectionsProvider.releaseConnection(imapConnection);
         reject(error);
       });
 
-      this.imapConnection.connect();
+      imapConnection.connect();
     });
   }
 }
