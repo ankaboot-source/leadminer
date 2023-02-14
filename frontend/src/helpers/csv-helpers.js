@@ -1,5 +1,5 @@
 export function getLocalizedCsvSeparator() {
-  const locale = navigator.languages[2].substring(0, 2);
+  const locale = navigator.language.substring(0, 2);
   switch (locale) {
     case "fr":
     case "de":
