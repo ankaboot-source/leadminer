@@ -63,9 +63,8 @@
             :disable="isLoading"
             @click="updateRefinedPersons"
           />
-          
         </div>
-          <div class="q-pl-sm">
+        <div class="q-pl-sm">
           <q-btn
             color="teal-5"
             label="Fetch"
