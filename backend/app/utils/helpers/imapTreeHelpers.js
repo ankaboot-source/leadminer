@@ -10,7 +10,6 @@
  * ]
  * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren", ...})
  */
-
 function createFlatTreeFromImap(imapTree, currentParent) {
   const readableTree = [];
 
@@ -33,6 +32,33 @@ function createFlatTreeFromImap(imapTree, currentParent) {
     }
   });
   return readableTree;
+}
+
+/**
+ * Gets the total number of messages per folder
+ * @param {{label: string, path: string}[]} folders - flat array of objects.
+ * @param {Imap} imapConnection - An IMAP connection.
+ * @returns {Promise}
+ */
+function addTotalPerFolder(folders, imapConnection) {
+  const promises = folders.map((folder) => {
+    return new Promise((resolve, reject) => {
+      imapConnection.status(folder.path, (err, box) => {
+        if (err) {
+          reject(err);
+        }
+        if (box) {
+          folder.total = box.messages.total;
+          folder.cumulativeTotal = box.messages.total;
+        } else {
+          folder.total = 0;
+          folder.cumulativeTotal = 0;
+        }
+        resolve();
+      });
+    });
+  });
+  return Promise.allSettled(promises);
 }
 
 /**
@@ -79,5 +105,6 @@ function buildFinalTree(flatTree, userEmail) {
 
 module.exports = {
   createFlatTreeFromImap,
-  buildFinalTree
+  buildFinalTree,
+  addTotalPerFolder
 };

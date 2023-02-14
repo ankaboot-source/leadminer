@@ -35,6 +35,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.1",
     "express-sse": "github:omgimalexis/express-sse",
+    "generic-pool": "^3.9.0",
     "google-auth-library": "^8.5.2",
     "imap": "^0.8.19",
     "ioredis": "^5.2.2",
