@@ -119,13 +119,13 @@ async function loginToAccount(req, res, next) {
 
       logger.info('Account successfully logged in.', { email });
 
-      await imapConnectionProvider.releaseConnection(imapConnection);
-      await imapConnectionProvider.cleanPool();
       res.status(200).send({ imap: imapUser });
     } catch (error) {
+      next({ message: 'Failed to login using Imap', details: error.message });
+    } finally {
+      logger.debug('Cleaning IMAP pool.');
       await imapConnectionProvider.releaseConnection(imapConnection);
       await imapConnectionProvider.cleanPool();
-      next({ message: 'Failed to login using Imap', details: error.message });
     }
   });
   imapConnection.connect();
@@ -175,7 +175,6 @@ async function getImapBoxes(req, res, next) {
       user: hashHelpers.hashEmail(email, id)
     });
 
-    await imapConnectionProvider.cleanPool();
     return res.status(200).send({
       message: 'IMAP folders fetched successfully!',
       imapFoldersTree: tree
@@ -183,8 +182,10 @@ async function getImapBoxes(req, res, next) {
   } catch (err) {
     err.message = 'Unable to fetch IMAP folders.';
     err.user = hashHelpers.hashEmail(email, id);
-    await imapConnectionProvider.cleanPool();
     return next(err);
+  } finally {
+    logger.debug('Cleaning IMAP pool.');
+    await imapConnectionProvider.cleanPool();
   }
 }
 
