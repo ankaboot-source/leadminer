@@ -1,4 +1,4 @@
-[![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml/badge.svg)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml) [![codecov](https://github.com/ankaboot-source/leadminer/branch/main/badge.svg)](https://github.com/ankaboot-source/leadminer) <img src="https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat" alt="Lines"> </a><a href="https://codeclimate.com/repos/6318a10510f06201be01345a/maintainability">
+[![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml/badge.svg)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml) <img src="https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat" alt="Lines"> </a><a href="https://codeclimate.com/repos/6318a10510f06201be01345a/maintainability">
 <img src="https://api.codeclimate.com/v1/badges/54ee3c20614d0ae8314b/maintainability" /></a>
 
 # ⛏ Leadminer
