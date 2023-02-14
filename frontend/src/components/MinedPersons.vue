@@ -328,7 +328,7 @@ function exportTable() {
   }
 }
 setTimeout(() => {
-  fetchRefined()
+  fetchRefined();
 }, 0);
 </script>
 
