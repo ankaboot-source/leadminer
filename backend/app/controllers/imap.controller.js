@@ -10,7 +10,7 @@ const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
 const { REDIS_STREAM_NAME } = require('../utils/constants');
-const { getXImapHeaderField, getImapErrorMessages } = require('./helpers');
+const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
@@ -105,9 +105,7 @@ function loginToAccount(req, res, next) {
       message: 'Something went wrong on our end. Please try again later.',
       code: 500
     };
-    const errorCodes = getImapErrorMessages();
-    const { code, message } =
-      errorCodes[err.textCode ?? err.code] ?? genericErrorMessage;
+    const {code, message} = IMAP_ERROR_CODES[err.textCode ?? err.code] ?? genericErrorMessage;
 
     err.message = message;
     res.status(code);
