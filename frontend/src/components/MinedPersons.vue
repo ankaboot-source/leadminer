@@ -196,7 +196,7 @@
 <script setup>
 import exportFromJSON from "export-from-json";
 import { useQuasar } from "quasar";
-import { computed, onUnmounted, ref } from "vue";
+import { computed, onUnmounted, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
@@ -327,9 +327,12 @@ function exportTable() {
     $q.notify("Error when exporting to CSV.");
   }
 }
-setTimeout(() => {
-  fetchRefined();
-}, 0);
+onMounted(() => {
+  setTimeout(() => {
+    fetchRefined()
+  })
+})
+
 </script>
 
 <style>
