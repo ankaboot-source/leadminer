@@ -13,7 +13,6 @@ const { REDIS_STREAM_NAME } = require('../utils/constants');
 const { getXImapHeaderField } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
-const redisPubSubClient = redis.getDuplicatedClient();
 
 /**
  * The callback function that will be executed for each fetched Email.
@@ -249,6 +248,7 @@ async function getEmails(req, res, next) {
   );
 
   let extractedEmailMessages = 0;
+  const redisPubSubClient = redis.getDuplicatedClient();
 
   // This channel will be used to track extracting progress
   redisPubSubClient.subscribe(id, (err) => {
