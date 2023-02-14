@@ -327,6 +327,9 @@ function exportTable() {
     $q.notify("Error when exporting to CSV.");
   }
 }
+setTimeout(() => {
+  fetchRefined()
+}, 0);
 </script>
 
 <style>
