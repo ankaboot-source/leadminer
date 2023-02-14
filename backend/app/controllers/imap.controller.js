@@ -120,9 +120,11 @@ async function loginToAccount(req, res, next) {
       logger.info('Account successfully logged in.', { email });
 
       await imapConnectionProvider.releaseConnection(imapConnection);
+      await imapConnectionProvider.cleanPool();
       res.status(200).send({ imap: imapUser });
     } catch (error) {
       await imapConnectionProvider.releaseConnection(imapConnection);
+      await imapConnectionProvider.cleanPool();
       next({ message: 'Failed to login using Imap', details: error.message });
     }
   });
