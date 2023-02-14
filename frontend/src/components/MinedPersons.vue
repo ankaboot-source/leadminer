@@ -329,10 +329,9 @@ function exportTable() {
 }
 onMounted(() => {
   setTimeout(() => {
-    fetchRefined()
-  })
-})
-
+    fetchRefined();
+  });
+});
 </script>
 
 <style>
