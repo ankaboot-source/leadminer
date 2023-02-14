@@ -9,7 +9,7 @@ const {
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
-const { REDIS_MESSAGES_CHANNEL } = require('../utils/constants');
+const { REDIS_STREAM_NAME } = require('../utils/constants');
 const { getXImapHeaderField } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
@@ -41,17 +41,13 @@ async function onEmailMessage({
   sse.send(progress, `ScannedEmails${userId}`);
 
   const isLastInFolder = seqNumber === totalInFolder;
-  // Last email in folder
-  if (isLastInFolder) {
-    try {
-      logger.debug('Calling function populate_refined', {
-        userId
-      });
-      await db.callRpcFunction(userId, 'populate_refined');
-    } catch (error) {
-      logger.error('Error from callRpcFunction(): ', error);
-    }
-  }
+
+  const { heapTotal, heapUsed } = process.memoryUsage();
+  logger.debug(
+    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+      2
+    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+  );
 
   const message = JSON.stringify({
     seqNumber,
@@ -66,20 +62,20 @@ async function onEmailMessage({
 
   try {
     const streamId = await redisStreamsPublisher.xadd(
-      REDIS_MESSAGES_CHANNEL,
+      REDIS_STREAM_NAME,
       '*',
       'message',
       message
     );
     logger.debug('Publishing message to stream', {
       streamId,
-      channel: REDIS_MESSAGES_CHANNEL,
+      channel: REDIS_STREAM_NAME,
       user: userIdentifier
     });
   } catch (error) {
     logger.error('Error when publishing to streams', {
       error,
-      channel: REDIS_MESSAGES_CHANNEL,
+      channel: REDIS_STREAM_NAME,
       user: userIdentifier
     });
   }
@@ -111,20 +107,23 @@ function loginToAccount(req, res, next) {
 
   imapConnection.once('ready', async () => {
     try {
-      const imapUser = await db.getImapUserByEmail(email) ?? await db.createImapUser({ email, host, port, tls });
-      const duration = performance.measure('measure login', 'imap-login-start').duration;
-      
+      const imapUser =
+        (await db.getImapUserByEmail(email)) ??
+        (await db.createImapUser({ email, host, port, tls }));
+
       if (!imapUser) {
         throw Error('Error when creating or quering imapUser');
       }
-      
-      logger.info('Account successfully logged in.', { email, duration });
-      res.status(200).send({ imap: imapUser });
-    
-    } catch (error) {
-      next({ message: 'Failed to login using Imap', details: error.message });
-    } finally {
+
+      logger.info('Account successfully logged in.', { email });
+
       imapConnection.end();
+      imapConnection.removeAllListeners();
+      res.status(200).send({ imap: imapUser });
+    } catch (error) {
+      imapConnection.end();
+      imapConnection.removeAllListeners();
+      next({ message: 'Failed to login using Imap', details: error.message });
     }
   });
   imapConnection.connect();
@@ -144,7 +143,9 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const userResult = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
+  const userResult = access_token
+    ? await db.getGoogleUserByEmail(email)
+    : await db.getImapUserById(id);
 
   if (userResult === null) {
     res.status(400);
@@ -156,7 +157,12 @@ async function getImapBoxes(req, res, next) {
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
   imapConnectionProvider = access_token
-    ? await imapConnectionProvider.withGoogle(access_token, refresh_token, id, sse)
+    ? await imapConnectionProvider.withGoogle(
+        access_token,
+        refresh_token,
+        id,
+        sse
+      )
     : imapConnectionProvider.withPassword(host, password, port);
 
   try {
@@ -185,7 +191,6 @@ async function getImapBoxes(req, res, next) {
  * @param {function} next - The next middleware function in the route.
  */
 async function getEmails(req, res, next) {
-
   const { data, error } = getXImapHeaderField(req.headers);
 
   if (error) {
@@ -194,7 +199,9 @@ async function getEmails(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const userResult = access_token ? await db.getGoogleUserByEmail(email) : await db.getImapUserById(id);
+  const userResult = access_token
+    ? await db.getGoogleUserByEmail(email)
+    : await db.getImapUserById(id);
 
   if (userResult === null) {
     res.status(400);
@@ -206,7 +213,12 @@ async function getEmails(req, res, next) {
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
   imapConnectionProvider = access_token
-    ? await imapConnectionProvider.withGoogle(access_token, refresh_token, id, sse)
+    ? await imapConnectionProvider.withGoogle(
+        access_token,
+        refresh_token,
+        id,
+        sse
+      )
     : imapConnectionProvider.withPassword(host, password, port);
 
   const eventEmitter = new EventEmitter();
@@ -216,6 +228,7 @@ async function getEmails(req, res, next) {
   });
 
   eventEmitter.on('error', () => {
+    eventEmitter.removeAllListeners();
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });
@@ -248,9 +261,9 @@ async function getEmails(req, res, next) {
   sse.send(true, 'data');
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
+  eventEmitter.removeAllListeners();
   return res.status(200).send();
 }
-
 
 module.exports = {
   getEmails,

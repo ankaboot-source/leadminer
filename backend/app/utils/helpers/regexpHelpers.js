@@ -20,7 +20,6 @@ function extractNameAndEmailFromBody(data) {
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
-  
   const result = [];
   const emailsArr = emails.split(',');
 
@@ -28,7 +27,10 @@ function extractNameAndEmail(emails) {
     const emailData = email.match(REGEX_HEADER.source);
     if (emailData) {
       result.push({
-        name: email.lastIndexOf(' ') !== -1 ? email.slice(0, email.lastIndexOf(' ')).trim().replace(/"/g, '') : '',
+        name:
+          email.lastIndexOf(' ') !== -1
+            ? email.slice(0, email.lastIndexOf(' ')).trim().replace(/"/g, '')
+            : '',
         address: emailData[0].toLocaleLowerCase(),
         identifier: emailData.groups?.identifier,
         domain: `${emailData.groups?.domain}.${emailData.groups?.tld}`

@@ -225,7 +225,6 @@ class EmailMessage {
     const emails = regExHelpers.extractNameAndEmailFromBody(
       this.body.toString('utf8')
     );
-    delete this.body;
     extractedData.persons.push(
       ...(await this.personsExtractedFromBody(emails))
     );
