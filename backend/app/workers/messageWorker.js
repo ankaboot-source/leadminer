@@ -52,10 +52,13 @@ async function handleMessage({
     }
   }
 
-  let informedSubscribers = 0;
   // Ensure that the message was delivered
-  while (informedSubscribers === 0) {
-    informedSubscribers = await redisPubSubClient.publish(userId, true);
+  let maxRetries = 0;
+  while (await redisPubSubClient.publish(userId, true) === 0) {
+    if (maxRetries > 2) {
+      break
+    }
+    maxRetries++
   }
 }
 
