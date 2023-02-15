@@ -54,11 +54,11 @@ async function handleMessage({
 
   // Ensure that the message was delivered
   let maxRetries = 0;
-  while (await redisPubSubClient.publish(userId, true) === 0) {
+  while ((await redisPubSubClient.publish(userId, true)) === 0) {
     if (maxRetries > 2) {
-      break
+      break;
     }
-    maxRetries++
+    maxRetries++;
   }
 }
 
@@ -146,7 +146,9 @@ class StreamConsumer {
           );
         }
       } catch (error) {
-        logger.error(`Error while consuming messages: ${error.message}`, { error });
+        logger.error(`Error while consuming messages: ${error.message}`, {
+          error
+        });
       }
     }
   }
