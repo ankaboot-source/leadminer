@@ -16,8 +16,11 @@ const {
 const LEADMINER_API_PORT = parseInt(process.env.LEADMINER_API_PORT);
 const IMAP_AUTH_TIMEOUT = parseInt(process.env.IMAP_AUTH_TIMEOUT);
 const IMAP_CONNECTION_TIMEOUT = parseInt(process.env.IMAP_CONNECTION_TIMEOUT);
+const IMAP_MAX_CONNECTIONS = parseInt(process.env.IMAP_MAX_CONNECTIONS);
 const REDIS_PORT = parseInt(process.env.REDIS_PORT);
-const REDIS_CONSUMER_BATCH_SIZE = parseInt(process.env.REDIS_CONSUMER_BATCH_SIZE);
+const REDIS_CONSUMER_BATCH_SIZE = parseInt(
+  process.env.REDIS_CONSUMER_BATCH_SIZE
+);
 
 const SENTRY_ENABLED =
   String(process.env.SENTRY_ENABLED).toLowerCase() === 'true';
@@ -38,6 +41,7 @@ module.exports = {
   LEADMINER_API_PORT,
   IMAP_AUTH_TIMEOUT,
   IMAP_CONNECTION_TIMEOUT,
+  IMAP_MAX_CONNECTIONS,
   LEADMINER_API_HASH_SECRET,
   LEADMINER_API_LOG_LEVEL,
   IMAP_FETCH_BODY,

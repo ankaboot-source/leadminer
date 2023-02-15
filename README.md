@@ -1,5 +1,5 @@
-[![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml/badge.svg)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml)
-<img src="https://img.shields.io/badge/Coverage-87.9%25-yellow.svg?style=flat" alt="Lines"> </a><a href="https://codeclimate.com/repos/6318a10510f06201be01345a/maintainability"><img src="https://api.codeclimate.com/v1/badges/54ee3c20614d0ae8314b/maintainability" /></a>
+[![Build & Deploy](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml/badge.svg)](https://github.com/ankaboot-source/leadminer/actions/workflows/Deploy-demo.yml) [![Coverage](https://github.com/ankaboot-source/leadminer/actions/workflows/Codecov.yml/badge.svg)](https://github.com/ankaboot-source/leadminer/actions/workflows/Codecov.yml) </a><a href="https://codeclimate.com/repos/6318a10510f06201be01345a/maintainability">
+<img src="https://api.codeclimate.com/v1/badges/54ee3c20614d0ae8314b/maintainability" /></a>
 
 # ⛏ Leadminer
 
@@ -50,7 +50,6 @@ npm i --prefix ./backend && npm i --prefix ./frontend
       - Supabase Project Url : `SUPABASE_PROJECT_URL` (**Required**)
       - Supabase Project Token : `SUPABASE_SECRET_PROJECT_TOKEN` (**Required**)
       - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
-      
 
       **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
 

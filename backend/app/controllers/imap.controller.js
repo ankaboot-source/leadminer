@@ -86,7 +86,7 @@ async function onEmailMessage({
  * @param  {} req
  * @param  {} res
  */
-function loginToAccount(req, res, next) {
+async function loginToAccount(req, res, next) {
   const { email, host, tls, port, password } = req.body;
 
   if (!email || !host) {
@@ -94,11 +94,13 @@ function loginToAccount(req, res, next) {
     next(new Error('Email and host are required for IMAP.'));
   }
 
-  performance.mark('imap-login-start');
+  const imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
+    host,
+    password,
+    port
+  );
 
-  const imapConnection = new ImapConnectionProvider(email)
-    .withPassword(host, password, port)
-    .getImapConnection();
+  const imapConnection = await imapConnectionProvider.acquireConnection();
 
   imapConnection.once('error', (err) => {
     const genericErrorMessage = {
@@ -125,13 +127,13 @@ function loginToAccount(req, res, next) {
 
       logger.info('Account successfully logged in.', { email });
 
-      imapConnection.end();
-      imapConnection.removeAllListeners();
       res.status(200).send({ imap: imapUser });
     } catch (error) {
-      imapConnection.end();
-      imapConnection.removeAllListeners();
       next({ message: 'Failed to login using Imap', details: error.message });
+    } finally {
+      logger.debug('Cleaning IMAP pool.');
+      await imapConnectionProvider.releaseConnection(imapConnection);
+      await imapConnectionProvider.cleanPool();
     }
   });
   imapConnection.connect();
@@ -189,6 +191,9 @@ async function getImapBoxes(req, res, next) {
     err.message = 'Unable to fetch IMAP folders.';
     err.user = hashHelpers.hashEmail(email, id);
     return next(err);
+  } finally {
+    logger.debug('Cleaning IMAP pool.');
+    await imapConnectionProvider.cleanPool();
   }
 }
 
@@ -270,6 +275,7 @@ async function getEmails(req, res, next) {
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
   eventEmitter.removeAllListeners();
+  await imapConnectionProvider.cleanPool();
   return res.status(200).send();
 }
 

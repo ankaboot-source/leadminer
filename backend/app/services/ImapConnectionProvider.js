@@ -1,5 +1,10 @@
 const Imap = require('imap');
-const { IMAP_CONNECTION_TIMEOUT, IMAP_AUTH_TIMEOUT } = require('../config');
+const {
+  IMAP_CONNECTION_TIMEOUT,
+  IMAP_AUTH_TIMEOUT,
+  IMAP_MAX_CONNECTIONS
+} = require('../config');
+const genericPool = require('generic-pool');
 
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
@@ -16,6 +21,8 @@ class ImapConnectionProvider {
    */
 
   #imapConfig;
+  #poolIsInitialized;
+  #connectionsPool;
 
   /**
    * ImapConnectionProvider constructor.
@@ -30,6 +37,8 @@ class ImapConnectionProvider {
       tls: true,
       keepalive: false
     };
+
+    this.#poolIsInitialized = false;
   }
 
   /**
@@ -86,11 +95,61 @@ class ImapConnectionProvider {
   }
 
   /**
-   * Creates a new Imap connection.
-   * @returns {Imap} - Imap connection object
+   * Acquires a new Imap connection.
+   * @returns {Promise<Imap>} - A promise that resolves to an Imap connection.
    */
-  getImapConnection() {
-    return new Imap(this.#imapConfig);
+  acquireConnection() {
+    if (!this.#poolIsInitialized) {
+      this.#initializePool();
+      this.#poolIsInitialized = true;
+    }
+
+    return this.#connectionsPool.acquire();
+  }
+
+  /**
+   * Shuts down and drains the allocated IMAP connections pool.
+   * @returns {Promise<void>}
+   */
+  async cleanPool() {
+    if (!this.#poolIsInitialized) {
+      return;
+    }
+    await this.#connectionsPool.drain();
+    await this.#connectionsPool.clear();
+    this.#poolIsInitialized = false;
+  }
+
+  /**
+   * Releases an IMAP connection and returns it to the pool.
+   * @param {Imap} imapConnection - An IMAP connection object.
+   * @returns {Promise<void>}
+   */
+  releaseConnection(imapConnection) {
+    return this.#connectionsPool.release(imapConnection);
+  }
+
+  /**
+   * Initializes a pool of IMAP connections.
+   * @returns {Promise<void>}
+   */
+  #initializePool() {
+    const factory = {
+      create: () => {
+        return new Imap(this.#imapConfig);
+      },
+      destroy: (connection) => {
+        connection.removeAllListeners();
+        connection.end();
+      }
+    };
+
+    const opts = {
+      max: IMAP_MAX_CONNECTIONS, // maximum size of the pool
+      min: 1 // minimum size of the pool
+    };
+
+    this.#connectionsPool = genericPool.createPool(factory, opts);
   }
 }
 

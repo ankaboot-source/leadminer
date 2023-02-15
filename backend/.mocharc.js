@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 // This is a JavaScript-based config file containing every Mocha option plus others.
 // If you need conditional logic, you might want to use this type of config,
@@ -10,12 +10,12 @@ module.exports = {
   delay: false,
   diff: true,
   exit: false,
-  package: "./package.json",
+  package: './package.json',
   parallel: false,
   recursive: true,
-  timeout: "10000", // same as "timeout: '2s'"
+  timeout: '10000', // same as "timeout: '2s'"
   // timeout: false, // same as "timeout: 0"
-  "trace-warnings": true, // node flags ok
+  'trace-warnings': true, // node flags ok
   watch: false,
-  "watch-files": ["lib/**/*.js", "test/**/*.js"],
+  'watch-files': ['lib/**/*.js', 'test/**/*.js']
 };

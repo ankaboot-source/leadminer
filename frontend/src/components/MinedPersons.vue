@@ -63,9 +63,8 @@
             :disable="isLoading"
             @click="updateRefinedPersons"
           />
-          
         </div>
-          <div class="q-pl-sm">
+        <div class="q-pl-sm">
           <q-btn
             color="teal-5"
             label="Fetch"
@@ -196,8 +195,9 @@
 
 <script setup>
 import exportFromJSON from "export-from-json";
+import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
 import { useQuasar } from "quasar";
-import { computed, onUnmounted, ref } from "vue";
+import { computed, onUnmounted, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
@@ -302,6 +302,10 @@ async function fetchRefined() {
 }
 
 function exportTable() {
+  if (!rows.value.length) {
+    $q.notify("There are no contacts present in the table.");
+    return 0;
+  }
   const currentDatetime = new Date();
   const userEmail = $store.getters["example/getUserEmail"];
   const fileName = `leadminer-${userEmail}-${currentDatetime
@@ -312,7 +316,8 @@ function exportTable() {
     exportFromJSON({
       data: rows.value.map((r) => {
         return {
-          names: r.alternate_names.join("\n"),
+          name: r.name,
+          alternateNames: r.alternate_names.join("\n"),
           email: r.email,
           engagement: r.engagement,
           recency: new Date(r.recency).toISOString().slice(0, 10),
@@ -322,12 +327,18 @@ function exportTable() {
       fileName,
       withBOM: true,
       exportType: exportFromJSON.types.csv,
+      delimiter: getLocalizedCsvSeparator(),
     });
     $q.notify("Successfully exported table.");
   } catch (error) {
     $q.notify("Error when exporting to CSV.");
   }
 }
+onMounted(() => {
+  setTimeout(() => {
+    fetchRefined();
+  });
+});
 </script>
 
 <style>

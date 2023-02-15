@@ -52,6 +52,7 @@ module.exports = configure(() => {
       env: {
         SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
         SUPABASE_PROJECT_URL: process.env.SUPABASE_PROJECT_URL,
+        SUPABASE_MAX_ROWS: process.env.SUPABASE_MAX_ROWS,
         SUPABASE_SECRET_PROJECT_TOKEN:
           process.env.SUPABASE_SECRET_PROJECT_TOKEN,
         GG_CLIENT_ID: process.env.GG_CLIENT_ID,
