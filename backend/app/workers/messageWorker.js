@@ -143,7 +143,7 @@ class StreamConsumer {
           );
         }
       } catch (error) {
-        logger.error(`Error while consuming messages: ${error.message}`);
+        logger.error(`Error while consuming messages: ${error.message}`, { error });
       }
     }
   }
