@@ -1,3 +1,29 @@
+const IMAP_ERROR_CODES = Object.freeze({
+  AUTHENTICATIONFAILED: {
+    code: 401,
+    message:
+      'Authentication failed. Please check your email and password and try again.'
+  },
+  ENOTFOUND: {
+    code: 404,
+    message: 'Host not found. Please check the server address and try again.'
+  },
+  ECONNREFUSED: {
+    code: 503,
+    message:
+      'Connection was refused by the server. Please check if the server is running and if there are no firewalls blocking the connection.'
+  },
+  EAI_AGAIN: {
+    code: 504,
+    message: 'Cannot resolve. Please verify the hostname and try again.'
+  },
+  EAUTH: {
+    code: 401,
+    message:
+      'Authentication failed. Please check your username and password and try again.'
+  }
+});
+
 /**
  * Extracts the x-imap-login header field and validates it
  * @param {Object} headers - an object containing HTTP request headers.
@@ -42,5 +68,6 @@ function getXImapHeaderField(headers) {
 }
 
 module.exports = {
+  IMAP_ERROR_CODES,
   getXImapHeaderField
 };
