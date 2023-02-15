@@ -36,7 +36,12 @@ export async function fetchRefinedPersons({ state, commit }) {
   if (rpcResult.error) {
     console.error(rpcResult.error);
   }
-  const data = await fetchData(supabase, user.id, "refinedpersons", 1000);
+  const data = await fetchData(
+    supabase,
+    user.id,
+    "refinedpersons",
+    process.env.SUPABASE_MAX_ROWS
+  );
   data.forEach((person) => commit("SET_EMAILS", person));
 }
 
