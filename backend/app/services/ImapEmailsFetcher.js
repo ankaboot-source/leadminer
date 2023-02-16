@@ -34,8 +34,12 @@ class ImapEmailsFetcher {
 
     this.fetchedMessagesCount = 0;
 
-    this.eventEmitter.on('endByUser', this.cleanup);
-    this.eventEmitter.on('end', this.cleanup);
+    this.eventEmitter.on('endByUser', async () => {
+      await this.cleanup();
+    });
+    this.eventEmitter.on('end', async () => {
+      await this.cleanup();
+    });
 
     this.bodies = ['HEADER'];
     if (IMAP_FETCH_BODY) {
@@ -142,8 +146,10 @@ class ImapEmailsFetcher {
 
           this.fetchedMessagesCount++;
 
-          const messageId = header['message-id'];
-          if (messageId !== undefined) {
+          const messageId = parsedHeader['message-id']
+            ? parsedHeader['message-id'][0]
+            : null;
+          if (messageId !== null) {
             const addedValues = await redisClient.sadd(
               this.processSetKey,
               messageId
