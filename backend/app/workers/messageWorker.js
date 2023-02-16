@@ -52,14 +52,17 @@ async function handleMessage({
       }
     }
   }
-  // Ensure message deleviry to redis subscribers,redis.publish returns the number of subscriber.
-  // if the number is 0, then will try publish again n times depending on MAX_RETRY_NUMBER.
-  let count = 0;
-  while ((await redisPubSubClient.publish(userId, true)) === 0) {
-    if (count < MAX_RETRY_NUMBER) {
+  let retriesCount = 0;
+  let informedSubscribers = 0;
+  while (informedSubscribers === 0) {
+
+    if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
+      logger.error('Failed to publish to subscribers', { user: userIdentifierHash });
       break;
     }
-    count++;
+
+    informedSubscribers = await redisPubSubClient.publish(userId, true);
+    retriesCount++;
   }
 }
 
@@ -147,7 +150,7 @@ class StreamConsumer {
           );
         }
       } catch (error) {
-        logger.error(`Error while consuming messages: ${error.message}`, {
+        logger.error('Error while consuming messages from stream.', {
           error
         });
       }
