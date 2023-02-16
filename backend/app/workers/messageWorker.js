@@ -11,7 +11,7 @@ const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
 
-const MAX_RETRY_NUMBER = 3
+const MAX_RETRY_NUMBER = 3;
 
 async function handleMessage({
   seqNumber,
