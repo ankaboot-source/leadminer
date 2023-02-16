@@ -1,7 +1,6 @@
 const logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
-const { sse } = require('../middleware/sse');
 const { db } = require('../db');
 const {
   ImapConnectionProvider
@@ -13,6 +12,7 @@ const { REDIS_STREAM_NAME } = require('../utils/constants');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
+const redisPublisher = redis.getDuplicatedClient();
 
 /**
  * The callback function that will be executed for each fetched Email.
@@ -37,8 +37,6 @@ async function onEmailMessage({
   userEmail,
   userIdentifier
 }) {
-  sse.send(progress, `ScannedEmails${userId}`);
-
   const isLastInFolder = seqNumber === totalInFolder;
 
   const { heapTotal, heapUsed } = process.memoryUsage();
@@ -60,6 +58,9 @@ async function onEmailMessage({
   });
 
   try {
+
+    await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
+
     const streamId = await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',
@@ -167,11 +168,11 @@ async function getImapBoxes(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        sse
-      )
+      access_token,
+      refresh_token,
+      id,
+      redisPublisher
+    )
     : imapConnectionProvider.withPassword(host, password, port);
 
   try {
@@ -226,11 +227,11 @@ async function getEmails(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        sse
-      )
+      access_token,
+      refresh_token,
+      id,
+      redisPublisher
+    )
     : imapConnectionProvider.withPassword(host, password, port);
 
   const eventEmitter = new EventEmitter();
@@ -255,24 +256,7 @@ async function getEmails(req, res, next) {
     email
   );
 
-  let extractedEmailMessages = 0;
-  const redisPubSubClient = redis.getDuplicatedClient();
-
-  // This channel will be used to track extracting progress
-  redisPubSubClient.subscribe(id, (err) => {
-    if (err) {
-      logger.error('Failed subscribing to Redis.');
-    }
-  });
-
-  redisPubSubClient.on('message', () => {
-    extractedEmailMessages++;
-    sse.send(extractedEmailMessages, `ExtractedEmails${id}`);
-  });
-
   await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
-  sse.send(true, 'data');
-  sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
   return res.status(200).send();
 }

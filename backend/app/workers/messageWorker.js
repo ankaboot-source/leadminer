@@ -55,7 +55,7 @@ async function handleMessage({
   let informedSubscribers = 0;
   // Ensure that the message was delivered
   while (informedSubscribers === 0) {
-    informedSubscribers = await redisPubSubClient.publish(userId, true);
+    informedSubscribers = await redisPubSubClient.publish(`extracting-${userId}`, true);
   }
 }
 
