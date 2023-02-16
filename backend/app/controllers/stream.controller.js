@@ -54,6 +54,7 @@ async function streamProgress(req, res) {
     req.on('close', () => {
         redisPubSubClient.unsubscribe(extractingChannel);
         redisPubSubClient.unsubscribe(fetchingChannel);
+        redisPubSubClient.unsubscribe(authChannel);
         res.end();
     });
 
