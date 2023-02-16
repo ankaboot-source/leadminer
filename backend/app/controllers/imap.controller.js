@@ -58,7 +58,6 @@ async function onEmailMessage({
   });
 
   try {
-
     await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
 
     const streamId = await redisStreamsPublisher.xadd(
@@ -168,11 +167,11 @@ async function getImapBoxes(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-      access_token,
-      refresh_token,
-      id,
-      redisPublisher
-    )
+        access_token,
+        refresh_token,
+        id,
+        redisPublisher
+      )
     : imapConnectionProvider.withPassword(host, password, port);
 
   try {
@@ -227,11 +226,11 @@ async function getEmails(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-      access_token,
-      refresh_token,
-      id,
-      redisPublisher
-    )
+        access_token,
+        refresh_token,
+        id,
+        redisPublisher
+      )
     : imapConnectionProvider.withPassword(host, password, port);
 
   const eventEmitter = new EventEmitter();
