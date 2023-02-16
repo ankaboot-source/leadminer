@@ -5,13 +5,12 @@ const { db } = require('../db');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
   REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME
+  REDIS_CONSUMER_GROUP_NAME,
+  MAX_REDIS_PUBLISH_RETRIES_COUNT
 } = require('../utils/constants');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
-
-const MAX_RETRY_NUMBER = 3;
 
 async function handleMessage({
   seqNumber,
