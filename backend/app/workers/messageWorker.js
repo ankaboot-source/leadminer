@@ -60,7 +60,7 @@ async function handleMessage({
     if (count < MAX_RETRY_NUMBER) {
       break;
     }
-    maxRetries++;
+    count++;
   }
 }
 
