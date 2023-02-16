@@ -11,6 +11,8 @@ const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
 
+const MAX_RETRY_NUMBER = 3
+
 async function handleMessage({
   seqNumber,
   body,
@@ -51,11 +53,11 @@ async function handleMessage({
       }
     }
   }
-
-  // Ensure that the message was delivered
-  let maxRetries = 0;
+  // Ensure message deleviry to redis subscribers,redis.publish returns the number of subscriber.
+  // if the number is 0, then will try publish again n times depending on MAX_RETRY_NUMBER.
+  let count = 0;
   while ((await redisPubSubClient.publish(userId, true)) === 0) {
-    if (maxRetries > 2) {
+    if (count < MAX_RETRY_NUMBER) {
       break;
     }
     maxRetries++;
