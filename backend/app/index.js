@@ -7,7 +7,7 @@ const { notFound } = require('./middleware/notFound');
 const { errorLogger } = require('./middleware/errorLogger');
 const { errorHandler } = require('./middleware/errorHandler');
 const imapRouter = require('./routes/imap.routes');
-const { sse, sseHeaders } = require('./middleware/sse');
+const streamRouter = require('./routes/stream.routes');
 
 const app = express();
 
@@ -41,7 +41,8 @@ app.get('/logs', (_, res, next) => {
   });
 });
 
-app.get('/api/stream', sseHeaders, sse.init);
+// Register api endpoints
+app.use('/api/stream', streamRouter);
 app.use('/api/imap', imapRouter);
 
 app.use(notFound);
