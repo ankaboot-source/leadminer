@@ -55,9 +55,10 @@ async function handleMessage({
   let retriesCount = 0;
   let informedSubscribers = 0;
   while (informedSubscribers === 0) {
-
     if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
-      logger.error('Failed to publish to subscribers', { user: userIdentifierHash });
+      logger.error('Failed to publish to subscribers', {
+        user: userIdentifierHash
+      });
       break;
     }
 
