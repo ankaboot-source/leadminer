@@ -57,7 +57,7 @@ export async function getEmails({ state, commit }, { data }) {
   if (subscription) await subscription.unsubscribe();
   subscribeToRefined(user.id, commit);
 
-  sse.init();
+  sse.init(user.id);
   sse.registerEventHandlers(user.id, this);
 
   try {
