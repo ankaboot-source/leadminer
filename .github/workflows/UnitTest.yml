@@ -5,6 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Setting up NodeJs
         uses: actions/setup-node@v2
         with:
@@ -13,10 +15,10 @@ jobs:
         run: cd backend && npm install
       - name: Run tests
         run: cd backend && npm run test:unit 
-      - name: DeepSource Code Coverage Report
-        uses: deepsourcelabs/test-coverage-action@master
-        with:
-          key: python
-          coverage-file: ./coverage/lcov.info
-          dsn: ${{ secrets.DEEPSOURCE_DSN }}
+      - name: DeepSource code coverage report 
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage/lcov.info
+        env:    
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
  
