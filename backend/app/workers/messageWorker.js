@@ -32,19 +32,21 @@ async function handleMessage({
       folderName
     );
 
+    logger.debug('MESSAGE HEADER', { header });
+    logger.debug('message.extractEmailsAddresses()');
     const extractedContacts = await message.extractEmailsAddresses();
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
     if (isLast) {
       try {
-        await db.callRpcFunction(userId, 'populate_refined');
-        logger.info('Calling refined_persons.', {
+        logger.info('Calling populate.', {
           isLast,
           userHash: userIdentifierHash
         });
+        await db.callRpcFunction(userId, 'populate_refined');
       } catch (error) {
-        logger.error('Failed refining persons.', {
+        logger.error('Failed populating refined_persons.', {
           error,
           userHash: userIdentifierHash
         });
@@ -68,11 +70,9 @@ async function handleMessage({
  */
 const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
+  logger.debug('PARSING MESSAGE');
   const data = JSON.parse(msg[1]);
-  logger.debug('Processing message', {
-    streamMessageID,
-    userIdentifier: data.userIdentifier
-  });
+  logger.debug('HANDLING MESSAGE');
   await handleMessage(data);
 };
 
