@@ -282,6 +282,13 @@ const columns = [
     label: "Status",
     align: "center",
   },
+  {
+    name: "contactability",
+    label: "Contactability",
+    field: "contactability",
+    align: "center",
+    sortable: true,
+  },
 ];
 
 function filterFn(rows, term) {
