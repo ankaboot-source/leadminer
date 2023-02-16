@@ -9,7 +9,7 @@ const redisPubSubClient = redis.getDuplicatedClient();
  * @param {Object} req - The request object.
  * @param {Object} res - The response object.
  */
-async function streamProgress(req, res) {
+function streamProgress(req, res) {
   const sse = new SSE();
   const { userid } = req.query;
 
