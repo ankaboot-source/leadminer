@@ -123,12 +123,6 @@ const extractedEmails = computed(
   () => $store.state.example.progress.extractedEmails
 );
 
-watch(extractedEmails, (newValue) => {
-  if (newValue > 0 && newValue === totalEmails.value) {
-    sse.closeConnection();
-  }
-});
-
 const totalEmails = computed(() => {
   if (boxes.value[0]) {
     return objectScan(["**.{total}"], {
