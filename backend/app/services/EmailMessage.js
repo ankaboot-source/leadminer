@@ -260,17 +260,10 @@ class EmailMessage {
         return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
       }
 
-      const member = await this.redisClientForNormalMode.sismember(
+      await this.redisClientForNormalMode.sadd(
         'invalidDomainEmails',
         email.address
       );
-
-      if (member === 0) {
-        await this.redisClientForNormalMode.sadd(
-          'invalidDomainEmails',
-          email.address
-        );
-      }
     }
     return [];
   }
@@ -301,17 +294,10 @@ class EmailMessage {
         return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
       }
 
-      const member = await this.redisClientForNormalMode.sismember(
+      await this.redisClientForNormalMode.sadd(
         'invalidDomainEmails',
         email.address
       );
-
-      if (member === 0) {
-        await this.redisClientForNormalMode.sadd(
-          'invalidDomainEmails',
-          email.address
-        );
-      }
     }
 
     return [];
