@@ -12,4 +12,11 @@ jobs:
       - name: Install dependencies
         run: cd backend && npm install
       - name: Run tests
-        run: cd backend && npm run test:unit
+        run: cd backend && npm run test:unit 
+      - name: DeepSource Code Coverage Report
+        uses: deepsourcelabs/test-coverage-action@master
+        with:
+          key: python
+          coverage-file: ./coverage/lcov.info
+          dsn: ${{ secrets.DEEPSOURCE_DSN }}
+ 
