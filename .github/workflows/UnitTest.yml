@@ -18,7 +18,7 @@ jobs:
       - name: DeepSource code coverage report 
         run: |
           curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage/lcov.info
+          ./bin/deepsource report --analyzer test-coverage --key ruby --value-file coverage/lcov.info
         env:    
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
  
