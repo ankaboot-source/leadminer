@@ -1,11 +1,12 @@
 const hashHelpers = require('../utils/helpers/hashHelpers');
+const { randomUUID } = require('crypto');
 const Imap = require('imap');
 const { IMAP_FETCH_BODY } = require('../config');
 const logger = require('../utils/logger')(module);
+const { redis } = require('../utils/redis');
+const redisClient = redis.getClient();
 
 class ImapEmailsFetcher {
-  openConnections = [];
-
   /**
    * ImapEmailsFetcher constructor.
    * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
@@ -28,11 +29,13 @@ class ImapEmailsFetcher {
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
-    this.eventEmitter.on('endByUser', async () => {
-      await this.imapConnectionProvider.cleanPool();
-    });
+    const processId = randomUUID();
+    this.processSetKey = `user:${this.userId}:process:${processId}`;
 
     this.fetchedMessagesCount = 0;
+
+    this.eventEmitter.on('endByUser', this.cleanup);
+    this.eventEmitter.on('end', this.cleanup);
 
     this.bodies = ['HEADER'];
     if (IMAP_FETCH_BODY) {
@@ -139,6 +142,18 @@ class ImapEmailsFetcher {
 
           this.fetchedMessagesCount++;
 
+          const messageId = header['message-id'];
+          if (messageId !== undefined) {
+            const addedValues = await redisClient.sadd(
+              this.processSetKey,
+              messageId
+            );
+
+            if (addedValues === 0) {
+              return;
+            }
+          }
+
           await callback({
             header: parsedHeader,
             body: parsedBody,
@@ -169,6 +184,14 @@ class ImapEmailsFetcher {
         });
       });
     });
+  }
+
+  /**
+   * Performs cleanup operations after we finished/stopped the fetching process.
+   */
+  async cleanup() {
+    await redisClient.del(this.processSetKey);
+    await this.imapConnectionProvider.cleanPool();
   }
 }
 

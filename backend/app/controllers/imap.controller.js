@@ -266,8 +266,6 @@ async function getEmails(req, res, next) {
   sse.send(true, 'data');
   sse.send(true, `dns${id}`);
   eventEmitter.emit('end', true);
-  eventEmitter.removeAllListeners();
-  await imapConnectionProvider.cleanPool();
   return res.status(200).send();
 }
 
