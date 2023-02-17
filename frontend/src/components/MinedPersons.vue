@@ -186,6 +186,17 @@
         <q-td :props="props">
           <q-badge rounded color="green">
             {{ " " }}
+            <q-tooltip class="bg-green">Valid mailbox</q-tooltip>
+          </q-badge>
+          <q-badge rounded color="orange">
+            {{ " " }}
+            <q-tooltip class="bg-orange">
+              The mailbox could not receive your emails
+            </q-tooltip>
+          </q-badge>
+          <q-badge rounded color="red">
+            {{ " " }}
+            <q-tooltip class="bg-red"> The mailbox is not valid </q-tooltip>
           </q-badge>
         </q-td>
       </template>
