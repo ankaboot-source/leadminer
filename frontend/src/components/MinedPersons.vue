@@ -48,7 +48,7 @@
           <q-btn
             color="teal-5"
             icon-right="archive"
-            label="Export to csv"
+            label="Export to CSV"
             no-caps
             :disable="isExportDisabled"
             @click="exportTable"
