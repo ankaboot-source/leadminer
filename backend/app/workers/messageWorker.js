@@ -64,7 +64,7 @@ async function handleMessage({
       break;
     }
 
-    informedSubscribers = await redisPubSubClient.publish(userId, true);
+    informedSubscribers = await redisPubSubClient.publish(`extracting-${userId}`, true);
     retriesCount++;
   }
 }
