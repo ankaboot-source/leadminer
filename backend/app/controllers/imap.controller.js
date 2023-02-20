@@ -254,9 +254,13 @@ async function getEmails(req, res, next) {
     id,
     email
   );
-
-  await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
-  eventEmitter.emit('end', true);
+  try {
+    await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
+    eventEmitter.emit('end', true);
+  } catch (err) {
+    logger.error('Error when fetching Email Messages', { error: err });
+    eventEmitter.emit('error');
+  }
   return res.status(200).send();
 }
 
