@@ -5,7 +5,8 @@ const { db } = require('../db');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
   REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME
+  REDIS_CONSUMER_GROUP_NAME,
+  MAX_REDIS_PUBLISH_RETRIES_COUNT
 } = require('../utils/constants');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
@@ -53,14 +54,18 @@ async function handleMessage({
       }
     }
   }
-
+  let retriesCount = 0;
   let informedSubscribers = 0;
-  // Ensure that the message was delivered
   while (informedSubscribers === 0) {
-    informedSubscribers = await redisPubSubClient.publish(
-      `extracting-${userId}`,
-      true
-    );
+    if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
+      logger.error('Failed to publish to subscribers', {
+        user: userIdentifierHash
+      });
+      break;
+    }
+
+    informedSubscribers = await redisPubSubClient.publish(userId, true);
+    retriesCount++;
   }
 }
 
@@ -146,7 +151,9 @@ class StreamConsumer {
           );
         }
       } catch (error) {
-        logger.error(`Error while consuming messages: ${error.message}`);
+        logger.error('Error while consuming messages from stream.', {
+          error
+        });
       }
     }
   }

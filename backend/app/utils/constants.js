@@ -5,6 +5,7 @@ const bodyRegex =
 const listRegex = /<[^<]{1,255}>$/;
 
 module.exports = {
+  MAX_REDIS_PUBLISH_RETRIES_COUNT: 3,
   REDIS_STREAM_NAME: 'imap-messages',
   REDIS_CONSUMER_GROUP_NAME: 'imap-group',
   MAX_WORKER_TIMEOUT: 600000,

@@ -17,7 +17,7 @@ BEGIN
       poc.personid,
       (array_agg(poc.name ORDER BY m.date desc))[1] AS name,
       array_agg(distinct name) as alternate_names,
-      count(m.conversation) AS engagement,
+      count(CASE WHEN m.conversation THEN 1 ELSE NULL END) AS engagement,
       max(m.date) AS recency,
       count(*) AS occurence
     FROM pointsofcontact poc
