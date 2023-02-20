@@ -108,8 +108,8 @@ class ImapEmailsFetcher {
               imapConnection.connect();
             })
             .catch((error) => {
-              logger.error('Error when acquiring connection.', { error })
-              throw new Error(error)  // This is Debugging purposes, to identify the problem.
+              logger.error('Error when acquiring connection.', { error });
+              throw new Error(error); // This is Debugging purposes, to identify the problem.
             });
         });
       })
