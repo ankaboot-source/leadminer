@@ -44,12 +44,13 @@ class ImapConnectionProvider {
   /**
    * Builds the configuration for connecting to Google using OAuth.
    * @param {string} email - User's email address
-   * @param {string} token - OAuth access token
+   * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
    * @param {string} userId - A unique identifier for the connection
+   * @param {Object} redisPubSubClient - The Redis pub/sub client instance
    * @returns {Object} - The object for the connection
    */
-  async withGoogle(token, refreshToken, userId, sse) {
+  async withGoogle(token, refreshToken, userId, redisPubInstance) {
     const googleConfig = {
       host: 'imap.gmail.com',
       port: 993,
@@ -65,7 +66,7 @@ class ImapConnectionProvider {
       email: this.#imapConfig.user
     });
     googleConfig.xoauth2 = xoauth2Token;
-    sse.send({ token: newToken }, `token${userId}`);
+    await redisPubInstance.publish(`auth-${userId}`, newToken);
     this.#imapConfig = {
       ...this.#imapConfig,
       ...googleConfig
