@@ -141,7 +141,7 @@ class ImapConnectionProvider {
         return new Promise((resolve) => {
           const imapConnection = new Imap(this.#imapConfig);
 
-          imapConnection.once('error', (err) => {
+          imapConnection.on('error', (err) => {
             logger.error('Imap connection error.', { error: err });
           });
 
