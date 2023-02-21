@@ -207,10 +207,10 @@ const $store = useStore();
 const rows = ref([]);
 const filter = ref("");
 const isLoading = ref(false);
-const initialPagination = ref({
+const initialPagination = {
   sortBy: "engagement",
   descending: true,
-});
+};
 
 const isExportDisabled = computed(
   () =>
