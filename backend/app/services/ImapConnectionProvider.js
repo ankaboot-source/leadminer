@@ -5,6 +5,7 @@ const {
   IMAP_MAX_CONNECTIONS
 } = require('../config');
 const genericPool = require('generic-pool');
+const logger = require('../utils/logger')(module);
 
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
@@ -137,11 +138,30 @@ class ImapConnectionProvider {
   #initializePool() {
     const factory = {
       create: () => {
-        return new Imap(this.#imapConfig);
+        return new Promise((resolve) => {
+          const imapConnection = new Imap(this.#imapConfig);
+
+          imapConnection.once('error', (err) => {
+            logger.error('Imap connection error.', { error: err });
+          });
+
+          imapConnection.once('close', (hadError) => {
+            logger.debug('Imap connection closed.', { hadError });
+          });
+
+          imapConnection.once('end', () => {
+            logger.debug('Imap connection ended.');
+          });
+
+          imapConnection.once('ready', () => {
+            resolve(imapConnection);
+          });
+
+          imapConnection.connect();
+        });
       },
       destroy: (connection) => {
-        connection.removeAllListeners();
-        connection.end();
+        connection.destroy();
       }
     };
 
