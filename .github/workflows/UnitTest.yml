@@ -22,14 +22,22 @@ jobs:
       - name: install lcov-total
         run: cd backend && npm install -g lcov-total
 
-      - name: parse lcov total
-        run: echo $(npx lcov-total ./backend/coverage/lcov.info) >> lcov.txt
+      - name: parse-lcov-into-badge
+        run: | 
+        
+        coverage=$(npx lcov-total ./backend/coverage/lcov.info)
+        url="https://img.shields.io/badge/Coverage-$coverage%2525-green.svg"
+        echo "::set-output name=url::$url"
 
-      - name: persist coverage file
-        uses: actions/upload-artifact@v3
-        with:
-          name: Coverage-artifact
-          path: ./lcov.txt
+      - name: Update README file
+        run: |
+          url=$(echo "${{ steps.parse-lcov-into-badge.outputs.url }}")
+          sed -i "s|https://img.shields.io/badge/Coverage-.*-green.svg|$url|g" README.md
+          git config user.name "zieddhf"
+          git config user.email "zieddhouaifi@gmail.com"
+          git add README.md
+          git commit -am "Update readme"
+          git push
 
       - name: DeepSource code coverage report 
         run: |
