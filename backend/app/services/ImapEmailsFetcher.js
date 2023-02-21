@@ -101,6 +101,9 @@ class ImapEmailsFetcher {
                     );
                   }
 
+                  imapConnection.end();
+                  imapConnection.removeAllListeners();
+
                   await this.imapConnectionProvider.releaseConnection(
                     imapConnection
                   );
