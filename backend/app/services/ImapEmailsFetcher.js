@@ -86,6 +86,10 @@ class ImapEmailsFetcher {
                     imapConnection.end();
                     imapConnection.removeAllListeners();
 
+                    await this.imapConnectionProvider.releaseConnection(
+                      imapConnection
+                    );
+
                     return reject(err);
                   }
                   if (box.messages?.total > 0) {
