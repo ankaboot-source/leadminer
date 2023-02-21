@@ -106,8 +106,10 @@ class ImapConnectionProvider {
       this.#poolIsInitialized = true;
     }
 
-    logger.debug(`Pool size: ${this.#connectionsPool.size}`)
-    logger.debug(`Pool available resources: ${this.#connectionsPool.available}`)
+    logger.debug(`Pool size: ${this.#connectionsPool.size}`);
+    logger.debug(
+      `Pool available resources: ${this.#connectionsPool.available}`
+    );
 
     return this.#connectionsPool.acquire();
   }
@@ -131,7 +133,7 @@ class ImapConnectionProvider {
    * @returns {Promise<void>}
    */
   releaseConnection(imapConnection) {
-    logger.debug('releasing connection to the pool')
+    logger.debug('releasing connection to the pool');
     return this.#connectionsPool.release(imapConnection);
   }
 

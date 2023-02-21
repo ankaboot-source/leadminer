@@ -75,7 +75,7 @@ class ImapEmailsFetcher {
             .then((imapConnection) => {
               imapConnection.once('error', (err) => {
                 logger.error('Imap connection error.', { error: err });
-                imapConnection.end()
+                imapConnection.end();
               });
               imapConnection.once('close', (hadError) => {
                 logger.debug('Imap connection closed.', { hadError });
@@ -85,19 +85,19 @@ class ImapEmailsFetcher {
               imapConnection.once('ready', () => {
                 imapConnection.openBox(folderName, true, async (err, box) => {
                   if (err) {
-                    logger.error("Error when opening box", { err })
+                    logger.error('Error when opening box', { err });
                     imapConnection.end();
 
-                    logger.debug("Error path releasing connection.")
+                    logger.debug('Error path releasing connection.');
                     await this.imapConnectionProvider.releaseConnection(
                       imapConnection
                     );
-                    logger.debug("Error path releasing connection succeeded.")
+                    logger.debug('Error path releasing connection succeeded.');
 
                     return reject(err);
                   }
 
-                  logger.debug("oppened Box: ", box)
+                  logger.debug('oppened Box: ', box);
 
                   if (box.messages?.total > 0) {
                     await this.fetchBox(
@@ -110,12 +110,11 @@ class ImapEmailsFetcher {
 
                   imapConnection.end();
 
-                  logger.debug("Happy path releasing connection.")
+                  logger.debug('Happy path releasing connection.');
                   await this.imapConnectionProvider.releaseConnection(
                     imapConnection
                   );
-                  logger.debug("Happy path releasing connection succeeded.")
-
+                  logger.debug('Happy path releasing connection succeeded.');
 
                   return resolve();
                 });
