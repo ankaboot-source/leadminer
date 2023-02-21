@@ -5,6 +5,7 @@ const {
   IMAP_MAX_CONNECTIONS
 } = require('../config');
 const genericPool = require('generic-pool');
+const logger = require('../utils/logger')(module);
 
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
@@ -105,6 +106,9 @@ class ImapConnectionProvider {
       this.#poolIsInitialized = true;
     }
 
+    logger.debug(`Pool size: ${this.#connectionsPool.size}`)
+    logger.debug(`Pool available resources: ${this.#connectionsPool.available}`)
+
     return this.#connectionsPool.acquire();
   }
 
@@ -127,6 +131,7 @@ class ImapConnectionProvider {
    * @returns {Promise<void>}
    */
   releaseConnection(imapConnection) {
+    logger.debug('releasing connection to the pool')
     return this.#connectionsPool.release(imapConnection);
   }
 
