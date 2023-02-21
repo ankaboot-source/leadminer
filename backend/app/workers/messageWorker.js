@@ -34,7 +34,6 @@ async function handleMessage({
     );
 
     logger.debug('MESSAGE HEADER', { header });
-    logger.debug('message.extractEmailsAddresses()');
     const extractedContacts = await message.extractEmailsAddresses();
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
@@ -64,7 +63,10 @@ async function handleMessage({
       break;
     }
 
-    informedSubscribers = await redisPubSubClient.publish(`extracting-${userId}`, true);
+    informedSubscribers = await redisPubSubClient.publish(
+      `extracting-${userId}`,
+      true
+    );
     retriesCount++;
   }
 }
@@ -75,9 +77,7 @@ async function handleMessage({
  */
 const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
-  logger.debug('PARSING MESSAGE');
   const data = JSON.parse(msg[1]);
-  logger.debug('HANDLING MESSAGE');
   await handleMessage(data);
 };
 

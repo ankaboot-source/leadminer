@@ -212,18 +212,14 @@ class EmailMessage {
     };
     this.message = extractedData.message;
 
-    logger.debug('getMessagingFieldsFromHeader');
     const messagingFields = this.getMessagingFieldsFromHeader();
 
     for (const key of Object.keys(messagingFields)) {
-      logger.debug('extractNameAndEmail');
       const emails = regExHelpers.extractNameAndEmail(
         // extract Name and Email in case of a header
         messagingFields[`${key}`]
       );
-      logger.debug('personsExtractedFromHeader');
       const persons = await this.personsExtractedFromHeader(emails, key);
-      logger.debug('extractedData.persons.push(...persons)');
       extractedData.persons.push(...persons);
     }
 
@@ -249,7 +245,6 @@ class EmailMessage {
         continue;
       }
 
-      logger.debug('checkDomainStatus');
       const [isValid, type] = await domainHelpers.checkDomainStatus(
         this.redisClientForNormalMode,
         email.domain
@@ -257,15 +252,12 @@ class EmailMessage {
 
       if (isValid) {
         // Valid email
-        logger.debug('findEmailAddressType');
         const emailType = emailAddressHelpers.findEmailAddressType(
           email.address,
           [email?.name],
           type
         );
-        logger.debug('getTags');
         const tags = this.getTags(fieldName, email, emailType);
-        logger.debug('constructPersonPocTags');
         return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
       }
 

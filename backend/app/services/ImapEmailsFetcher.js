@@ -75,9 +75,8 @@ class ImapEmailsFetcher {
 
           imapConnection.openBox(folderName, true, async (err, box) => {
             if (err) {
-              throw err;
-            }
-            if (box.messages?.total > 0) {
+              logger.error('Error when opening folder', err);
+            } else if (box.messages?.total > 0) {
               await this.fetchBox(
                 imapConnection,
                 emailMessageHandler,
