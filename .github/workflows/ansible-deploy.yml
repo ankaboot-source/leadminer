@@ -1,0 +1,18 @@
+name: deploy ansible
+on:
+  workflow_dispatch
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Leadminer
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.SSH_HOST}}
+          key: ${{secrets.SSH_KEY}}
+          username: ${{ secrets.SSH_USERNAME }}
+          script: |
+            sudo apt -y update
+            sudo apt -y install ansible
+            cd leadminer.io/ansible/fail2ban
+            sudo ansible-playbook playbook.yml
