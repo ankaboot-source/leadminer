@@ -114,28 +114,28 @@ async function loginToAccount(req, res, next) {
     next(err);
   });
 
-  imapConnection.once('ready', async () => {
-    try {
-      const imapUser =
-        (await db.getImapUserByEmail(email)) ??
-        (await db.createImapUser({ email, host, port, tls }));
+  try {
+    const imapUser =
+      (await db.getImapUserByEmail(email)) ??
+      (await db.createImapUser({ email, host, port, tls }));
 
-      if (!imapUser) {
-        throw Error('Error when creating or quering imapUser');
-      }
-
-      logger.info('Account successfully logged in.', { email });
-
-      res.status(200).send({ imap: imapUser });
-    } catch (error) {
-      next({ message: 'Failed to login using Imap', details: error.message });
-    } finally {
-      logger.debug('Cleaning IMAP pool.');
-      await imapConnectionProvider.releaseConnection(imapConnection);
-      await imapConnectionProvider.cleanPool();
+    if (!imapUser) {
+      throw Error('Error when creating or quering imapUser');
     }
-  });
-  imapConnection.connect();
+
+    logger.info('Account successfully logged in.', { email });
+
+    res.status(200).send({ imap: imapUser });
+  } catch (error) {
+    next({
+      message: 'Failed to login using Imap',
+      details: error.message
+    });
+  } finally {
+    logger.debug('Cleaning IMAP pool.');
+    await imapConnectionProvider.releaseConnection(imapConnection);
+    await imapConnectionProvider.cleanPool();
+  }
 }
 
 /**
@@ -240,7 +240,6 @@ async function getEmails(req, res, next) {
   });
 
   eventEmitter.on('error', () => {
-    eventEmitter.removeAllListeners();
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });

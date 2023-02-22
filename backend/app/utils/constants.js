@@ -60,5 +60,6 @@ module.exports = {
     'x-Mailgun*',
     'x-job'
   ],
-  EMAIL_HEADERS_MAILING_LIST: ['list-post']
+  EMAIL_HEADERS_MAILING_LIST: ['list-post'],
+  EXCLUDED_IMAP_FOLDERS: ['[Gmail]']
 };
