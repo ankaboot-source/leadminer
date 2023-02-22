@@ -5,6 +5,7 @@ const {
   IMAP_MAX_CONNECTIONS
 } = require('../config');
 const genericPool = require('generic-pool');
+const logger = require('../utils/logger')(module);
 
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
@@ -44,12 +45,13 @@ class ImapConnectionProvider {
   /**
    * Builds the configuration for connecting to Google using OAuth.
    * @param {string} email - User's email address
-   * @param {string} token - OAuth access token
+   * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
    * @param {string} userId - A unique identifier for the connection
+   * @param {Object} redisPubSubClient - The Redis pub/sub client instance
    * @returns {Object} - The object for the connection
    */
-  async withGoogle(token, refreshToken, userId, sse) {
+  async withGoogle(token, refreshToken, userId, redisPubInstance) {
     const googleConfig = {
       host: 'imap.gmail.com',
       port: 993,
@@ -65,7 +67,7 @@ class ImapConnectionProvider {
       email: this.#imapConfig.user
     });
     googleConfig.xoauth2 = xoauth2Token;
-    sse.send({ token: newToken }, `token${userId}`);
+    await redisPubInstance.publish(`auth-${userId}`, newToken);
     this.#imapConfig = {
       ...this.#imapConfig,
       ...googleConfig
@@ -136,11 +138,31 @@ class ImapConnectionProvider {
   #initializePool() {
     const factory = {
       create: () => {
-        return new Imap(this.#imapConfig);
+        return new Promise((resolve) => {
+          const imapConnection = new Imap(this.#imapConfig);
+
+          imapConnection.on('error', (err) => {
+            logger.error('Imap connection error.', { error: err });
+          });
+
+          imapConnection.once('close', (hadError) => {
+            logger.debug('Imap connection closed.', { hadError });
+          });
+
+          imapConnection.once('end', () => {
+            logger.debug('Imap connection ended.');
+          });
+
+          imapConnection.once('ready', () => {
+            logger.debug('imap connection ready');
+            resolve(imapConnection);
+          });
+
+          imapConnection.connect();
+        });
       },
       destroy: (connection) => {
-        connection.removeAllListeners();
-        connection.end();
+        connection.destroy();
       }
     };
 

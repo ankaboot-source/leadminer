@@ -15,9 +15,9 @@ BEGIN
   FROM (
     SELECT
       poc.personid,
-      (array_agg(poc.name ORDER BY m.date desc))[1] AS name,
-      array_agg(distinct name) as alternate_names,
-      count(m.conversation) AS engagement,
+      coalesce((array_agg(poc.name ORDER BY m.date desc) FILTER (WHERE name IS NOT NULL AND name <> ''))[1], '') AS name,
+      coalesce(array_agg(distinct name) FILTER (WHERE name IS NOT NULL AND name <> ''), '{}'::text[])  as alternate_names,
+      count(CASE WHEN m.conversation THEN 1 ELSE NULL END) AS engagement,
       max(m.date) AS recency,
       count(*) AS occurence
     FROM pointsofcontact poc

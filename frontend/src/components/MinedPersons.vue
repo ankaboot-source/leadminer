@@ -14,6 +14,7 @@
       :filter-method="filterFn"
       :rows="rows"
       :columns="columns"
+      :pagination="initialPagination"
     >
       <template #top-right="props">
         <q-input
@@ -217,6 +218,10 @@ const $store = useStore();
 const rows = ref([]);
 const filter = ref("");
 const isLoading = ref(false);
+const initialPagination = {
+  sortBy: "engagement",
+  descending: true,
+};
 
 const isExportDisabled = computed(
   () =>

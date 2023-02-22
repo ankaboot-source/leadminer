@@ -5,6 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Setting up NodeJs
         uses: actions/setup-node@v2
         with:
@@ -12,4 +14,11 @@ jobs:
       - name: Install dependencies
         run: cd backend && npm install
       - name: Run tests
-        run: cd backend && npm run test:unit
+        run: cd backend && npm run test:unit 
+      - name: DeepSource code coverage report 
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
+        env:    
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+ 

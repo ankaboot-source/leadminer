@@ -50,9 +50,9 @@ class SSE {
     this.eventSource.close();
   }
 
-  init() {
+  init(userID) {
     this.eventSource = new EventSource(
-      `${process.env.SERVER_ENDPOINT}/api/stream`,
+      `${process.env.SERVER_ENDPOINT}/api/stream/progress?userid=${userID}`,
       {
         withCredentials: true,
       }
