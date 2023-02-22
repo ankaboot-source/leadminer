@@ -1,5 +1,11 @@
 const Imap = require('imap');
-const { IMAP_CONNECTION_TIMEOUT, IMAP_AUTH_TIMEOUT } = require('../config');
+const {
+  IMAP_CONNECTION_TIMEOUT,
+  IMAP_AUTH_TIMEOUT,
+  IMAP_MAX_CONNECTIONS
+} = require('../config');
+const genericPool = require('generic-pool');
+const logger = require('../utils/logger')(module);
 
 const tokenHelpers = require('../utils/helpers/tokenHelpers');
 
@@ -16,6 +22,8 @@ class ImapConnectionProvider {
    */
 
   #imapConfig;
+  #poolIsInitialized;
+  #connectionsPool;
 
   /**
    * ImapConnectionProvider constructor.
@@ -30,17 +38,20 @@ class ImapConnectionProvider {
       tls: true,
       keepalive: false
     };
+
+    this.#poolIsInitialized = false;
   }
 
   /**
    * Builds the configuration for connecting to Google using OAuth.
    * @param {string} email - User's email address
-   * @param {string} token - OAuth access token
+   * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
    * @param {string} userId - A unique identifier for the connection
+   * @param {Object} redisPubSubClient - The Redis pub/sub client instance
    * @returns {Object} - The object for the connection
    */
-  async withGoogle(token, refreshToken, userId, sse) {
+  async withGoogle(token, refreshToken, userId, redisPubInstance) {
     const googleConfig = {
       host: 'imap.gmail.com',
       port: 993,
@@ -56,7 +67,7 @@ class ImapConnectionProvider {
       email: this.#imapConfig.user
     });
     googleConfig.xoauth2 = xoauth2Token;
-    sse.send({ token: newToken }, `token${userId}`);
+    await redisPubInstance.publish(`auth-${userId}`, newToken);
     this.#imapConfig = {
       ...this.#imapConfig,
       ...googleConfig
@@ -86,11 +97,81 @@ class ImapConnectionProvider {
   }
 
   /**
-   * Creates a new Imap connection.
-   * @returns {Imap} - Imap connection object
+   * Acquires a new Imap connection.
+   * @returns {Promise<Imap>} - A promise that resolves to an Imap connection.
    */
-  getImapConnection() {
-    return new Imap(this.#imapConfig);
+  acquireConnection() {
+    if (!this.#poolIsInitialized) {
+      this.#initializePool();
+      this.#poolIsInitialized = true;
+    }
+
+    return this.#connectionsPool.acquire();
+  }
+
+  /**
+   * Shuts down and drains the allocated IMAP connections pool.
+   * @returns {Promise<void>}
+   */
+  async cleanPool() {
+    if (!this.#poolIsInitialized) {
+      return;
+    }
+    await this.#connectionsPool.drain();
+    await this.#connectionsPool.clear();
+    this.#poolIsInitialized = false;
+  }
+
+  /**
+   * Releases an IMAP connection and returns it to the pool.
+   * @param {Imap} imapConnection - An IMAP connection object.
+   * @returns {Promise<void>}
+   */
+  releaseConnection(imapConnection) {
+    return this.#connectionsPool.release(imapConnection);
+  }
+
+  /**
+   * Initializes a pool of IMAP connections.
+   * @returns {Promise<void>}
+   */
+  #initializePool() {
+    const factory = {
+      create: () => {
+        return new Promise((resolve) => {
+          const imapConnection = new Imap(this.#imapConfig);
+
+          imapConnection.on('error', (err) => {
+            logger.error('Imap connection error.', { error: err });
+          });
+
+          imapConnection.once('close', (hadError) => {
+            logger.debug('Imap connection closed.', { hadError });
+          });
+
+          imapConnection.once('end', () => {
+            logger.debug('Imap connection ended.');
+          });
+
+          imapConnection.once('ready', () => {
+            logger.debug('imap connection ready');
+            resolve(imapConnection);
+          });
+
+          imapConnection.connect();
+        });
+      },
+      destroy: (connection) => {
+        connection.destroy();
+      }
+    };
+
+    const opts = {
+      max: IMAP_MAX_CONNECTIONS, // maximum size of the pool
+      min: 1 // minimum size of the pool
+    };
+
+    this.#connectionsPool = genericPool.createPool(factory, opts);
   }
 }
 

@@ -14,6 +14,7 @@
       :filter-method="filterFn"
       :rows="rows"
       :columns="columns"
+      :pagination="initialPagination"
     >
       <template #top-right="props">
         <q-input
@@ -197,7 +198,7 @@
 import exportFromJSON from "export-from-json";
 import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
 import { useQuasar } from "quasar";
-import { computed, onUnmounted, ref } from "vue";
+import { computed, onUnmounted, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
@@ -206,6 +207,10 @@ const $store = useStore();
 const rows = ref([]);
 const filter = ref("");
 const isLoading = ref(false);
+const initialPagination = {
+  sortBy: "engagement",
+  descending: true,
+};
 
 const isExportDisabled = computed(
   () =>
@@ -334,6 +339,11 @@ function exportTable() {
     $q.notify("Error when exporting to CSV.");
   }
 }
+onMounted(() => {
+  setTimeout(() => {
+    fetchRefined();
+  });
+});
 </script>
 
 <style>

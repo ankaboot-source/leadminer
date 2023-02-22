@@ -5,7 +5,8 @@ const { db } = require('../db');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
   REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME
+  REDIS_CONSUMER_GROUP_NAME,
+  MAX_REDIS_PUBLISH_RETRIES_COUNT
 } = require('../utils/constants');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
@@ -32,30 +33,41 @@ async function handleMessage({
       folderName
     );
 
+    logger.debug('MESSAGE HEADER', { header });
     const extractedContacts = await message.extractEmailsAddresses();
     logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
     if (isLast) {
       try {
-        await db.callRpcFunction(userId, 'populate_refined');
-        logger.info('Calling refined_persons.', {
+        logger.info('Calling populate.', {
           isLast,
           userHash: userIdentifierHash
         });
+        await db.callRpcFunction(userId, 'populate_refined');
       } catch (error) {
-        logger.error('Failed refining persons.', {
+        logger.error('Failed populating refined_persons.', {
           error,
           userHash: userIdentifierHash
         });
       }
     }
   }
-
+  let retriesCount = 0;
   let informedSubscribers = 0;
-  // Ensure that the message was delivered
   while (informedSubscribers === 0) {
-    informedSubscribers = await redisPubSubClient.publish(userId, true);
+    if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
+      logger.error('Failed to publish to subscribers', {
+        user: userIdentifierHash
+      });
+      break;
+    }
+
+    informedSubscribers = await redisPubSubClient.publish(
+      `extracting-${userId}`,
+      true
+    );
+    retriesCount++;
   }
 }
 
@@ -66,10 +78,6 @@ async function handleMessage({
 const streamProcessor = async (message) => {
   const [streamMessageID, msg] = message;
   const data = JSON.parse(msg[1]);
-  logger.debug('Processing message', {
-    streamMessageID,
-    userIdentifier: data.userIdentifier
-  });
   await handleMessage(data);
 };
 
@@ -143,7 +151,9 @@ class StreamConsumer {
           );
         }
       } catch (error) {
-        logger.error(`Error while consuming messages: ${error.message}`);
+        logger.error('Error while consuming messages from stream.', {
+          error
+        });
       }
     }
   }

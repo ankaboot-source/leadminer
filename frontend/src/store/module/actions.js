@@ -36,7 +36,12 @@ export async function fetchRefinedPersons({ state, commit }) {
   if (rpcResult.error) {
     console.error(rpcResult.error);
   }
-  const data = await fetchData(supabase, user.id, "refinedpersons", 1000);
+  const data = await fetchData(
+    supabase,
+    user.id,
+    "refinedpersons",
+    process.env.SUPABASE_MAX_ROWS
+  );
   data.forEach((person) => commit("SET_EMAILS", person));
 }
 
@@ -52,7 +57,7 @@ export async function getEmails({ state, commit }, { data }) {
   if (subscription) await subscription.unsubscribe();
   subscribeToRefined(user.id, commit);
 
-  sse.init();
+  sse.init(user.id);
   sse.registerEventHandlers(user.id, this);
 
   try {
@@ -141,7 +146,7 @@ export async function signIn(_, { data }) {
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error?.response.data.error);
+          this.commit("example/SET_ERROR", error?.response.data.message);
         }
         reject(error.message);
       });

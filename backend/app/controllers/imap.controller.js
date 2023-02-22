@@ -1,7 +1,6 @@
 const logger = require('../utils/logger')(module);
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
-const { sse } = require('../middleware/sse');
 const { db } = require('../db');
 const {
   ImapConnectionProvider
@@ -10,10 +9,10 @@ const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { redis } = require('../utils/redis');
 const { REDIS_STREAM_NAME } = require('../utils/constants');
-const { getXImapHeaderField } = require('./helpers');
+const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 
 const redisStreamsPublisher = redis.getDuplicatedClient();
-const redisPubSubClient = redis.getDuplicatedClient();
+const redisPublisher = redis.getDuplicatedClient();
 
 /**
  * The callback function that will be executed for each fetched Email.
@@ -38,8 +37,6 @@ async function onEmailMessage({
   userEmail,
   userIdentifier
 }) {
-  sse.send(progress, `ScannedEmails${userId}`);
-
   const isLastInFolder = seqNumber === totalInFolder;
 
   const { heapTotal, heapUsed } = process.memoryUsage();
@@ -61,6 +58,8 @@ async function onEmailMessage({
   });
 
   try {
+    await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
+
     const streamId = await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',
@@ -86,7 +85,7 @@ async function onEmailMessage({
  * @param  {} req
  * @param  {} res
  */
-function loginToAccount(req, res, next) {
+async function loginToAccount(req, res, next) {
   const { email, host, tls, port, password } = req.body;
 
   if (!email || !host) {
@@ -94,39 +93,49 @@ function loginToAccount(req, res, next) {
     next(new Error('Email and host are required for IMAP.'));
   }
 
-  performance.mark('imap-login-start');
+  const imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
+    host,
+    password,
+    port
+  );
 
-  const imapConnection = new ImapConnectionProvider(email)
-    .withPassword(host, password, port)
-    .getImapConnection();
+  const imapConnection = await imapConnectionProvider.acquireConnection();
 
   imapConnection.once('error', (err) => {
-    err.message = `Can't connect to imap account with email ${email} and host ${host}.`;
+    const genericErrorMessage = {
+      message: 'Something went wrong on our end. Please try again later.',
+      code: 500
+    };
+    const { code, message } =
+      IMAP_ERROR_CODES[err.textCode ?? err.code] ?? genericErrorMessage;
+
+    err.message = message;
+    res.status(code);
     next(err);
   });
 
-  imapConnection.once('ready', async () => {
-    try {
-      const imapUser =
-        (await db.getImapUserByEmail(email)) ??
-        (await db.createImapUser({ email, host, port, tls }));
+  try {
+    const imapUser =
+      (await db.getImapUserByEmail(email)) ??
+      (await db.createImapUser({ email, host, port, tls }));
 
-      if (!imapUser) {
-        throw Error('Error when creating or quering imapUser');
-      }
-
-      logger.info('Account successfully logged in.', { email });
-
-      imapConnection.end();
-      imapConnection.removeAllListeners();
-      res.status(200).send({ imap: imapUser });
-    } catch (error) {
-      imapConnection.end();
-      imapConnection.removeAllListeners();
-      next({ message: 'Failed to login using Imap', details: error.message });
+    if (!imapUser) {
+      throw Error('Error when creating or quering imapUser');
     }
-  });
-  imapConnection.connect();
+
+    logger.info('Account successfully logged in.', { email });
+
+    res.status(200).send({ imap: imapUser });
+  } catch (error) {
+    next({
+      message: 'Failed to login using Imap',
+      details: error.message
+    });
+  } finally {
+    logger.debug('Cleaning IMAP pool.');
+    await imapConnectionProvider.releaseConnection(imapConnection);
+    await imapConnectionProvider.cleanPool();
+  }
 }
 
 /**
@@ -161,7 +170,7 @@ async function getImapBoxes(req, res, next) {
         access_token,
         refresh_token,
         id,
-        sse
+        redisPublisher
       )
     : imapConnectionProvider.withPassword(host, password, port);
 
@@ -181,6 +190,9 @@ async function getImapBoxes(req, res, next) {
     err.message = 'Unable to fetch IMAP folders.';
     err.user = hashHelpers.hashEmail(email, id);
     return next(err);
+  } finally {
+    logger.debug('Cleaning IMAP pool.');
+    await imapConnectionProvider.cleanPool();
   }
 }
 
@@ -217,7 +229,7 @@ async function getEmails(req, res, next) {
         access_token,
         refresh_token,
         id,
-        sse
+        redisPublisher
       )
     : imapConnectionProvider.withPassword(host, password, port);
 
@@ -228,7 +240,6 @@ async function getEmails(req, res, next) {
   });
 
   eventEmitter.on('error', () => {
-    eventEmitter.removeAllListeners();
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });
@@ -242,26 +253,13 @@ async function getEmails(req, res, next) {
     id,
     email
   );
-
-  let extractedEmailMessages = 0;
-
-  // This channel will be used to track extracting progress
-  redisPubSubClient.subscribe(id, (err) => {
-    if (err) {
-      logger.error('Failed subscribing to Redis.');
-    }
-  });
-
-  redisPubSubClient.on('message', () => {
-    extractedEmailMessages++;
-    sse.send(extractedEmailMessages, `ExtractedEmails${id}`);
-  });
-
-  await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
-  sse.send(true, 'data');
-  sse.send(true, `dns${id}`);
-  eventEmitter.emit('end', true);
-  eventEmitter.removeAllListeners();
+  try {
+    await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
+    eventEmitter.emit('end', true);
+  } catch (err) {
+    logger.error('Error when fetching Email Messages', { error: err });
+    eventEmitter.emit('error');
+  }
   return res.status(200).send();
 }
 

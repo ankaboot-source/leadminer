@@ -1,11 +1,13 @@
 const hashHelpers = require('../utils/helpers/hashHelpers');
+const { randomUUID } = require('crypto');
 const Imap = require('imap');
 const { IMAP_FETCH_BODY } = require('../config');
 const logger = require('../utils/logger')(module);
+const { redis } = require('../utils/redis');
+const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
+const redisClient = redis.getClient();
 
 class ImapEmailsFetcher {
-  openConnections = [];
-
   /**
    * ImapEmailsFetcher constructor.
    * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
@@ -28,11 +30,17 @@ class ImapEmailsFetcher {
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
-    this.eventEmitter.on('endByUser', () => {
-      this.openConnections.forEach((connection) => connection.end());
-    });
+    const processId = randomUUID();
+    this.processSetKey = `user:${this.userId}:process:${processId}`;
 
     this.fetchedMessagesCount = 0;
+
+    this.eventEmitter.on('endByUser', async () => {
+      await this.cleanup();
+    });
+    this.eventEmitter.on('end', async () => {
+      await this.cleanup();
+    });
 
     this.bodies = ['HEADER'];
     if (IMAP_FETCH_BODY) {
@@ -61,51 +69,32 @@ class ImapEmailsFetcher {
    */
   fetchEmailMessages(emailMessageHandler) {
     return Promise.allSettled(
-      this.folders.map((folderName) => {
-        return new Promise((resolve, reject) => {
+      this.folders.map(async (folderName) => {
+        if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+          return;
+        }
+
+        try {
           const imapConnection =
-            this.imapConnectionProvider.getImapConnection();
+            await this.imapConnectionProvider.acquireConnection();
 
-          imapConnection.once('error', (err) => {
-            logger.error('Imap connection error.', { error: err });
-          });
-          imapConnection.once('close', (hadError) => {
-            logger.debug('Imap connection closed.', { hadError });
-          });
-
-          // We keep track of all the open imap connections so that we can close them when needed
-          this.openConnections.push(imapConnection);
-
-          imapConnection.once('ready', () => {
-            imapConnection.openBox(folderName, true, async (err, box) => {
-              if (err) {
-                imapConnection.end();
-                imapConnection.removeAllListeners();
-
-                return reject(err);
-              }
-              if (box.messages?.total > 0) {
-                await this.fetchBox(
-                  imapConnection,
-                  emailMessageHandler,
-                  folderName,
-                  box.messages.total
-                );
-              }
-
-              // Close the connection and remove it from the list of openConnections
-              imapConnection.end();
-              imapConnection.removeAllListeners();
-              this.openConnections = this.openConnections.filter(
-                (connection) => connection._box?.name !== folderName
+          imapConnection.openBox(folderName, true, async (err, box) => {
+            if (err) {
+              logger.error('Error when opening folder', err);
+            } else if (box.messages?.total > 0) {
+              await this.fetchBox(
+                imapConnection,
+                emailMessageHandler,
+                folderName,
+                box.messages.total
               );
+            }
 
-              return resolve();
-            });
+            await this.imapConnectionProvider.releaseConnection(imapConnection);
           });
-
-          imapConnection.connect();
-        });
+        } catch (error) {
+          logger.error('Error when acquiring connection.', { error });
+        }
       })
     );
   }
@@ -144,6 +133,20 @@ class ImapEmailsFetcher {
 
           this.fetchedMessagesCount++;
 
+          const messageId = parsedHeader['message-id']
+            ? parsedHeader['message-id'][0]
+            : null;
+          if (messageId !== null) {
+            const addedValues = await redisClient.sadd(
+              this.processSetKey,
+              messageId
+            );
+
+            if (addedValues === 0) {
+              return;
+            }
+          }
+
           await callback({
             header: parsedHeader,
             body: parsedBody,
@@ -155,21 +158,30 @@ class ImapEmailsFetcher {
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier
           });
-          msg.removeAllListeners();
         });
       });
 
-      fetchResult.on('error', (err) => {
+      fetchResult.once('error', (err) => {
         logger.error(`Fetch error: ${err}`);
-        fetchResult.removeAllListeners();
-        reject(err);
+        connection.closeBox(() => {
+          reject(err);
+        });
       });
 
       fetchResult.once('end', () => {
-        fetchResult.removeAllListeners();
-        resolve();
+        connection.closeBox(() => {
+          resolve();
+        });
       });
     });
+  }
+
+  /**
+   * Performs cleanup operations after we finished/stopped the fetching process.
+   */
+  async cleanup() {
+    await redisClient.del(this.processSetKey);
+    await this.imapConnectionProvider.cleanPool();
   }
 }
 

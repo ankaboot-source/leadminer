@@ -20,6 +20,8 @@ services:
   leadminer-server:
     image: leadminer-server:git
     container_name: nginx_server
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     build:
       context: frontend
       args:
@@ -27,6 +29,7 @@ services:
         SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
         SUPABASE_SECRET_PROJECT_TOKEN: ${SUPABASE_SECRET_PROJECT_TOKEN}
         GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+        SUPABASE_MAX_ROWS: ${SUPABASE_MAX_ROWS}
     ports:
       - 8020:80
     restart: always
