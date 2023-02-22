@@ -1,7 +1,5 @@
 const express = require('express');
 const { initializeSentryIfNeeded } = require('./middleware/sentry');
-const logger = require('./utils/logger')(module);
-const path = require('path');
 const { corsMiddleware } = require('./middleware/cors');
 const { notFound } = require('./middleware/notFound');
 const { errorLogger } = require('./middleware/errorLogger');
