@@ -185,19 +185,11 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <q-badge rounded color="green">
+          <q-badge rounded :color="mailbox_validity_current">
             {{ " " }}
-            <q-tooltip class="bg-green">Valid mailbox</q-tooltip>
-          </q-badge>
-          <q-badge rounded color="orange">
-            {{ " " }}
-            <q-tooltip class="bg-orange">
-              The mailbox could not receive your emails
-            </q-tooltip>
-          </q-badge>
-          <q-badge rounded color="red">
-            {{ " " }}
-            <q-tooltip class="bg-red"> The mailbox is not valid </q-tooltip>
+            <q-tooltip :class="'bg-' + mailbox_validity_current">{{
+              mailbox_validity[mailbox_validity_current]
+            }}</q-tooltip>
           </q-badge>
         </q-td>
       </template>
@@ -211,6 +203,12 @@ import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
 import { useQuasar } from "quasar";
 import { computed, onUnmounted, ref, onMounted } from "vue";
 import { useStore } from "vuex";
+const mailbox_validity = {
+  green: "Valid mailbox",
+  orange: "The mailbox could not receive your emails",
+  red: "The mailbox is not valid",
+};
+var mailbox_validity_current = "green";
 
 const $q = useQuasar();
 const $store = useStore();
