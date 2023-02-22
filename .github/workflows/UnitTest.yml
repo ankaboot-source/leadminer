@@ -28,23 +28,3 @@ jobs:
           ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
         env:    
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
-      
-      - name: install lcov-total
-        run: cd backend && npm install -g lcov-total
-
-      - name: parse-lcov-into-badge
-        run: | 
-        coverage=$(npx lcov-total ./backend/coverage/lcov.info)
-        url="https://img.shields.io/badge/Coverage-$coverage%2525-green.svg"
-        echo "::set-output name=url::$url"
-
-      - name: Update README file
-        run: |
-          url=$(echo "${{ steps.parse-lcov-into-badge.outputs.url }}")
-          sed -i "s|https://img.shields.io/badge/Coverage-.*-green.svg|$url|g" README.md
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
-          git commit -am "Update readme"
-          git push
-
