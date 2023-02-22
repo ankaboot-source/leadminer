@@ -15,30 +15,45 @@ function extractNameAndEmailFromBody(data) {
 }
 
 /**
+ * Returns the extracted name from a space-seperated name email input.
+ * @param {string} text - The input from which the name is extracted.
+ * @returns {string} The extracted name, or an empty string if no name is found.
+ */
+function extractName(text) {
+  return text.lastIndexOf(' ') !== -1
+    ? text.slice(0, text.lastIndexOf(' ')).trim().replace(/"/g, '')
+    : '';
+}
+
+/**
  * Extracts email addresses, identifiers and names if available using regex.
  * @param  {string} emails - can be either comma-separated emails or one email.
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
-  const result = [];
-  const emailsArr = emails.split(',');
 
-  for (const email of emailsArr) {
-    const emailData = email.match(REGEX_HEADER.source);
-    if (emailData) {
-      result.push({
-        name:
-          email.lastIndexOf(' ') !== -1
-            ? email.slice(0, email.lastIndexOf(' ')).trim().replace(/"/g, '')
-            : '',
-        address: emailData[0].toLocaleLowerCase(),
-        identifier: emailData.groups?.identifier,
-        domain: `${emailData.groups?.domain}.${emailData.groups?.tld}`
-      });
+  return emails.split(',').map((email) => {
+    const match = email.match(REGEX_HEADER.source);
+
+    if (!match) {
+      return null;
     }
-  }
-  return result;
+
+    const { identifier, domain, tld } = match.groups ?? {};
+    const address = match[0].toLocaleLowerCase();
+    const name = extractName(email);
+
+    return {
+      name: name === address ? '' : name,
+      address,
+      identifier,
+      domain: `${domain}.${tld}`
+    };
+  }).filter(Boolean);
 }
 
-exports.extractNameAndEmail = extractNameAndEmail;
-exports.extractNameAndEmailFromBody = extractNameAndEmailFromBody;
+module.exports = {
+  extractNameAndEmail,
+  extractNameAndEmailFromBody,
+  extractName
+};
