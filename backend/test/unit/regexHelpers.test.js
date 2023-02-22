@@ -60,7 +60,6 @@ describe('regExHelpers.extractName', () => {
     const name = regExHelpers.extractName('"John Doe" <john.doe@example.com>');
     expect(name).to.equal('John Doe');
   });
-
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
@@ -70,7 +69,9 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   });
 
   it('should return an array wit one object containing name, identifier, address and domain', () => {
-    const output = regExHelpers.extractNameAndEmail('this is myyyyyyyyyyyyyyyy name <tester+123@leadminer.io>');
+    const output = regExHelpers.extractNameAndEmail(
+      'this is myyyyyyyyyyyyyyyy name <tester+123@leadminer.io>'
+    );
     expect(output).to.eql([
       {
         name: 'this is myyyyyyyyyyyyyyyy name',
@@ -94,7 +95,9 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   });
 
   it('should return an empty name and valid identifier, address and domain. If name === address', () => {
-    const output = regExHelpers.extractNameAndEmail('tester@leadminer.io <tester@leadminer.io>');
+    const output = regExHelpers.extractNameAndEmail(
+      'tester@leadminer.io <tester@leadminer.io>'
+    );
     expect(output).to.eql([
       {
         name: '',
@@ -109,5 +112,4 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     const output = regExHelpers.extractNameAndEmail('');
     expect(output).to.eql([]);
   });
-
 });

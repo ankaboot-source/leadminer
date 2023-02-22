@@ -31,25 +31,27 @@ function extractName(text) {
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
+  return emails
+    .split(',')
+    .map((email) => {
+      const match = email.match(REGEX_HEADER.source);
 
-  return emails.split(',').map((email) => {
-    const match = email.match(REGEX_HEADER.source);
+      if (!match) {
+        return null;
+      }
 
-    if (!match) {
-      return null;
-    }
+      const { identifier, domain, tld } = match.groups ?? {};
+      const address = match[0].toLocaleLowerCase();
+      const name = extractName(email);
 
-    const { identifier, domain, tld } = match.groups ?? {};
-    const address = match[0].toLocaleLowerCase();
-    const name = extractName(email);
-
-    return {
-      name: name === address ? '' : name,
-      address,
-      identifier,
-      domain: `${domain}.${tld}`
-    };
-  }).filter(Boolean);
+      return {
+        name: name === address ? '' : name,
+        address,
+        identifier,
+        domain: `${domain}.${tld}`
+      };
+    })
+    .filter(Boolean);
 }
 
 module.exports = {
