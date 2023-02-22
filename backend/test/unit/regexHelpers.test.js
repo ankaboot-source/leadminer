@@ -62,31 +62,24 @@ describe('regExHelpers.extractName', () => {
   });
 
   it('should properly clean double and signle quotes if exists', () => {
-
     const input = [
       '"John Doe" <john.doe@example.com>',
-      '\'John Doe\' <john.doe@example.com>',
-      '\'John\' Doe\' <john.doe@example.com>',
+      "'John Doe' <john.doe@example.com>",
+      "'John' Doe' <john.doe@example.com>",
       '""John" Doe" <john.doe@example.com>',
-      '\'\'John\' Doe\' <john.doe@example.com>',
-
-    ]
+      "''John' Doe' <john.doe@example.com>"
+    ];
     const output = [
       'John Doe',
       'John Doe',
-      'John\' Doe',
+      "John' Doe",
       '"John" Doe',
-      '\'John\' Doe',
-    ]
+      "'John' Doe"
+    ];
     input.forEach((testInput, index) => {
-      expect(
-        regExHelpers.extractName(testInput)
-      ).to.equal(output[index]);
+      expect(regExHelpers.extractName(testInput)).to.equal(output[index]);
     });
-
-
   });
-
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {

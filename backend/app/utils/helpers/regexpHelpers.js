@@ -20,13 +20,15 @@ function extractNameAndEmailFromBody(data) {
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
 function extractName(text) {
-  let name = text.lastIndexOf(' ') !== -1
-    ? text.slice(0, text.lastIndexOf(' ')).trim() : '';
-  
+  let name =
+    text.lastIndexOf(' ') !== -1
+      ? text.slice(0, text.lastIndexOf(' ')).trim()
+      : '';
+
   if (
     (name.charAt(0) === "'" && name.charAt(name.length - 1) === "'") ||
     (name.charAt(0) === '"' && name.charAt(name.length - 1) === '"')
-   ) {
+  ) {
     name = name.substring(1, name.length - 1);
   }
   return name;
