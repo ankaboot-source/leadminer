@@ -27,20 +27,6 @@ app.get('/', (_, res) => {
   return res.json({ message: 'Welcome to leadminer application.' });
 });
 
-// Get server logs
-app.get('/logs', (_, res, next) => {
-  const filePath = path.resolve(__dirname, '..', 'logs/server.log');
-
-  res.sendFile(filePath, (err) => {
-    /* istanbul ignore if */
-    if (err) {
-      next(err);
-    } else {
-      logger.info('Sent the logs..');
-    }
-  });
-});
-
 // Register api endpoints
 app.use('/api/stream', streamRouter);
 app.use('/api/imap', imapRouter);
