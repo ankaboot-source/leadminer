@@ -154,6 +154,7 @@ class ImapConnectionProvider {
           });
 
           imapConnection.once('ready', () => {
+            logger.debug('imap connection ready');
             resolve(imapConnection);
           });
 

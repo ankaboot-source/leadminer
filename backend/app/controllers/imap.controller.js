@@ -240,7 +240,6 @@ async function getEmails(req, res, next) {
   });
 
   eventEmitter.on('error', () => {
-    eventEmitter.removeAllListeners();
     res.status(500).send({
       message: 'An error has occurred while trying to fetch emails.'
     });

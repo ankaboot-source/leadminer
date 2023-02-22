@@ -4,6 +4,7 @@ const Imap = require('imap');
 const { IMAP_FETCH_BODY } = require('../config');
 const logger = require('../utils/logger')(module);
 const { redis } = require('../utils/redis');
+const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
 const redisClient = redis.getClient();
 
 class ImapEmailsFetcher {
@@ -69,6 +70,10 @@ class ImapEmailsFetcher {
   fetchEmailMessages(emailMessageHandler) {
     return Promise.allSettled(
       this.folders.map(async (folderName) => {
+        if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+          return;
+        }
+
         try {
           const imapConnection =
             await this.imapConnectionProvider.acquireConnection();
@@ -89,7 +94,6 @@ class ImapEmailsFetcher {
           });
         } catch (error) {
           logger.error('Error when acquiring connection.', { error });
-          throw new Error(error); // This is Debugging purposes, to identify the problem.
         }
       })
     );
@@ -154,7 +158,6 @@ class ImapEmailsFetcher {
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier
           });
-          msg.removeAllListeners();
         });
       });
 
