@@ -203,12 +203,6 @@ import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
 import { useQuasar } from "quasar";
 import { computed, onUnmounted, ref, onMounted } from "vue";
 import { useStore } from "vuex";
-const mailbox_validity = {
-  green: "Valid mailbox",
-  orange: "The mailbox could not receive your emails",
-  red: "The mailbox is not valid",
-};
-var mailbox_validity_current = "green";
 
 const $q = useQuasar();
 const $store = useStore();
@@ -220,6 +214,12 @@ const initialPagination = {
   sortBy: "engagement",
   descending: true,
 };
+const mailbox_validity = {
+  green: "Valid mailbox",
+  orange: "The mailbox could not receive your emails",
+  red: "The mailbox is not valid",
+};
+var mailbox_validity_current = "green";
 
 const isExportDisabled = computed(
   () =>
