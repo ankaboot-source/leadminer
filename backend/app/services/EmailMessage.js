@@ -8,7 +8,6 @@ const {
   EMAIL_HEADERS_TRANSACTIONAL,
   EMAIL_HEADERS_MAILING_LIST
 } = require('../utils/constants');
-const logger = require('../utils/logger')(module);
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {

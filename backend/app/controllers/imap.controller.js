@@ -127,7 +127,7 @@ async function loginToAccount(req, res, next) {
 
     res.status(200).send({ imap: imapUser });
   } catch (error) {
-    return next({
+    next({
       message: 'Failed to login using Imap',
       details: error.message
     });
