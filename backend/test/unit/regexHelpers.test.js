@@ -130,6 +130,6 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
   it('should return an empty array on falsy input.', () => {
     const output = regExHelpers.extractNameAndEmail('');
-    expect(output).to.eql([]);
+    expect(output).to.be.empty;
   });
 });
