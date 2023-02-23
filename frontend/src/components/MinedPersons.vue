@@ -185,10 +185,10 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <q-badge rounded :color="mailbox_validity_current">
+          <q-badge rounded :color="mailboxValidityCurrent">
             {{ " " }}
-            <q-tooltip :class="'bg-' + mailbox_validity_current">{{
-              mailbox_validity[mailbox_validity_current]
+            <q-tooltip :class="'bg-' + mailboxValidityCurrent">{{
+              mailboxValidity[mailboxValidityCurrent]
             }}</q-tooltip>
           </q-badge>
         </q-td>
@@ -214,12 +214,12 @@ const initialPagination = {
   sortBy: "engagement",
   descending: true,
 };
-const mailbox_validity = {
+const mailboxValidity = {
   green: "Valid mailbox",
   orange: "The mailbox could not receive your emails",
   red: "The mailbox is not valid",
 };
-var mailbox_validity_current = "green";
+const mailboxValidityCurrent = "green";
 
 const isExportDisabled = computed(
   () =>
