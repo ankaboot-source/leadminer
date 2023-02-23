@@ -1,7 +1,5 @@
 const express = require('express');
 const { initializeSentryIfNeeded } = require('./middleware/sentry');
-const logger = require('./utils/logger')(module);
-const path = require('path');
 const { corsMiddleware } = require('./middleware/cors');
 const { notFound } = require('./middleware/notFound');
 const { errorLogger } = require('./middleware/errorLogger');
@@ -25,20 +23,6 @@ app.disable('x-powered-by');
 
 app.get('/', (_, res) => {
   return res.json({ message: 'Welcome to leadminer application.' });
-});
-
-// Get server logs
-app.get('/logs', (_, res, next) => {
-  const filePath = path.resolve(__dirname, '..', 'logs/server.log');
-
-  res.sendFile(filePath, (err) => {
-    /* istanbul ignore if */
-    if (err) {
-      next(err);
-    } else {
-      logger.info('Sent the logs..');
-    }
-  });
 });
 
 // Register api endpoints
