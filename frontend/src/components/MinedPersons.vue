@@ -157,7 +157,7 @@
             </template>
             <div
               v-for="name in props.row.alternate_names.filter((element) => {
-                return element != ' ';
+                return element.trim() !== '' && element !== props.row.name;
               })"
               :key="name.index"
               :bind="name.index"
@@ -331,7 +331,9 @@ function exportTable() {
       data: rows.value.map((r) => {
         return {
           name: r.name,
-          alternateNames: r.alternate_names.join("\n"),
+          alternateNames: r.alternate_names.filter((name) => {
+            return name.trim() !== '' && name !== r.name;
+          }).join("\n"),
           email: r.email,
           engagement: r.engagement,
           recency: new Date(r.recency).toISOString().slice(0, 10),
