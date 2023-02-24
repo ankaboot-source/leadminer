@@ -16,22 +16,18 @@ function extractNameAndEmailFromBody(data) {
 
 /**
  * Returns the extracted name from a space-seperated name email input.
- * @param {string} text - The input from which the name is extracted.
+ * @param {string} name - The input from which the name is extracted.
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
-function extractName(text) {
-  let name =
-    text.lastIndexOf(' ') !== -1
-      ? text.slice(0, text.lastIndexOf(' ')).trim()
-      : '';
-
+function cleanName(name) {
+  let cleanedName = name.trim();
   if (
-    (name.charAt(0) === "'" && name.charAt(name.length - 1) === "'") ||
-    (name.charAt(0) === '"' && name.charAt(name.length - 1) === '"')
+    (cleanedName.charAt(0) === "'" && cleanedName.charAt(cleanedName.length - 1) === "'") ||
+    (cleanedName.charAt(0) === '"' && cleanedName.charAt(cleanedName.length - 1) === '"')
   ) {
-    name = name.substring(1, name.length - 1);
+    cleanedName = cleanedName.substring(1, cleanedName.length - 1);
   }
-  return name;
+  return cleanedName;
 }
 
 /**
@@ -40,31 +36,22 @@ function extractName(text) {
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
-  return emails
-    .split(',')
-    .map((email) => {
-      const match = email.match(REGEX_HEADER.source);
-
-      if (!match) {
-        return null;
-      }
-
-      const { identifier, domain, tld } = match.groups ?? {};
-      const address = match[0].toLocaleLowerCase();
-      const name = extractName(email);
-
-      return {
-        name: name === address ? '' : name,
-        address,
-        identifier,
-        domain: `${domain}.${tld}`
-      };
-    })
-    .filter(Boolean);
+  const result = [...emails.matchAll(REGEX_HEADER)].map((match) => {
+    const { name, address, identifier, domain, tld } = match.groups ?? {};
+    const cleanAddress = address.toLowerCase();
+    const cleanedName = cleanName(name || '');
+    return {
+      name: cleanedName !== cleanAddress ? cleanedName : '',
+      address: cleanAddress,
+      identifier,
+      domain: `${domain}.${tld}`
+    };
+  });
+  return result;
 }
 
 module.exports = {
   extractNameAndEmail,
   extractNameAndEmailFromBody,
-  extractName
+  cleanName
 };
