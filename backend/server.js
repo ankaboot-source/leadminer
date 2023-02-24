@@ -24,6 +24,7 @@ console.log(
 );
 
 (async () => {
+  await redis.flushAll();
   await redis.initProviders();
   await redis.initConsumerGroup(REDIS_STREAM_NAME, REDIS_CONSUMER_GROUP_NAME);
   // eslint-disable-next-line no-unused-vars

@@ -85,6 +85,19 @@ class RedisManager {
   }
 
   /**
+   * Deletes all the keys of all the existing databases in redis.
+   * @returns {Promise<void>}
+   */
+  async flushAll() {
+    try {
+      const status = await this.#normalClient.flushall();
+      logger.info(`Flush status: ${status} ✔️`);
+    } catch (error) {
+      logger.error('Failed flushing Redis.');
+    }
+  }
+
+  /**
    * Returns the original Redis client instance
    * @returns {Redis} Redis client instance
    */
