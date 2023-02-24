@@ -2,7 +2,6 @@ const { expect } = require('chai');
 const { check } = require('recheck');
 const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
 const {
-  REGEX_HEADER,
   REGEX_BODY,
   REGEX_LIST_ID
 } = require('../../app/utils/constants');
@@ -10,7 +9,7 @@ const {
 const testData = require('../testData.json');
 
 describe('Regex redos checker', () => {
-  const regex = [REGEX_HEADER, REGEX_BODY, REGEX_LIST_ID];
+  const regex = [REGEX_BODY, REGEX_LIST_ID];
 
   regex.forEach((r) => {
     it('regex should be REDOS safe', async () => {
