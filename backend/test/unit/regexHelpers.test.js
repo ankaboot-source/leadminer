@@ -51,32 +51,49 @@ describe('regExHelpers.extractEmailsFromBody(text)', () => {
 
 describe('regExHelpers.extractName', () => {
   it('should return empty string if name do not exists', () => {
-    const name = regExHelpers.extractName('john.doe@example.com');
+    const name = regExHelpers.cleanName('');
     expect(name).to.equal('');
   });
 
-  it('should return the name from an email address with a quoted name', () => {
-    const name = regExHelpers.extractName('"John Doe" <john.doe@example.com>');
-    expect(name).to.equal('John Doe');
-  });
-
-  it('should properly clean double and signle quotes if exists', () => {
+  it('should properly clean double and single quotes if they exist', () => {
     const input = [
-      '"John Doe" <john.doe@example.com>',
-      "'John Doe' <john.doe@example.com>",
-      "'John' Doe' <john.doe@example.com>",
-      '""John" Doe" <john.doe@example.com>',
-      "''John' Doe' <john.doe@example.com>"
+      '"John Doe"',
+      "'John Doe'",
+      "'John' Doe'",
+      '""John" Doe"',
+      "''John' Doe'"
     ];
-    const output = [
+    const expectedOutput = [
       'John Doe',
       'John Doe',
       "John' Doe",
       '"John" Doe',
       "'John' Doe"
     ];
+
     input.forEach((testInput, index) => {
-      expect(regExHelpers.extractName(testInput)).to.equal(output[index]);
+      const actualOutput = regExHelpers.cleanName(testInput);
+      expect(actualOutput).to.equal(expectedOutput[index]);
+    });
+  });
+
+  it('should properly trim white spaces if they exist', () => {
+    const input = [
+      'John Doe', 'John Doe ', ' John Doe', ' John Doe ',
+      'John\' Doe', 'John\' Doe ', ' John\' Doe', ' John\' Doe ',
+      'John" Doe"', 'John" Doe" ', ' John" Doe"', ' John" Doe" ',
+      '\'\'\'John\' Doe\'', '\'\'\'John\' Doe\' ', ' \'\'\'John\' Doe\'', ' \'\'\'John\' Doe\' ',
+    ];
+    const expectedOutput = [
+      'John Doe', 'John Doe', 'John Doe','John Doe',
+      'John\' Doe', 'John\' Doe', 'John\' Doe', 'John\' Doe',
+      'John" Doe"', 'John" Doe"', 'John" Doe"', 'John" Doe"',
+      '\'\'John\' Doe', '\'\'John\' Doe', '\'\'John\' Doe', '\'\'John\' Doe'
+    ];
+
+    input.forEach((testInput, index) => {
+      const actualOutput = regExHelpers.cleanName(testInput);
+      expect(actualOutput).to.equal(expectedOutput[index]);
     });
   });
 });
