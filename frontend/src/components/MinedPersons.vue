@@ -120,7 +120,12 @@
       <!-- Table body slots -->
       <template #body-cell-tags="props">
         <q-td :props="props">
-          <q-badge v-for="tag in props.row.tags" :key="tag" color="teal">
+          <q-badge
+            v-for="tag in props.row.tags"
+            :key="tag"
+            color="teal-1"
+            class="q-pa-xs text-uppercase text-teal-8"
+          >
             {{ tag }} <br />
           </q-badge>
         </q-td>
