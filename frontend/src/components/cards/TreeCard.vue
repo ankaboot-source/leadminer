@@ -14,7 +14,7 @@
       <div
         class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
       >
-        <div class="col-10 text-weight-bold text-primary">
+        <div class="col-10 text-weight-bold text-primary q-pb-xs">
           {{ prop.node.label }}
           <q-badge
             v-if="!prop.expanded"

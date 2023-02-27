@@ -15,14 +15,16 @@
       :rows="rows"
       :columns="columns"
       :pagination="initialPagination"
+      bordered
+      flat
     >
       <template #top-right="props">
         <q-input
           v-model="filter"
-          rounded
           dense
           standout
-          bg-color="teal-4"
+          outlined
+          color="teal-5"
           class="q-px-sm"
           debounce="300"
           placeholder="Search"
@@ -52,11 +54,13 @@
             label="Export to CSV"
             no-caps
             :disable="isExportDisabled"
+            outline
             @click="exportTable"
           />
         </div>
         <div>
           <q-btn
+            outline
             color="teal-5"
             label="Refresh"
             icon="refresh"
@@ -67,6 +71,7 @@
         </div>
         <div class="q-pl-sm">
           <q-btn
+            outline
             color="teal-5"
             label="Fetch"
             icon="factory"

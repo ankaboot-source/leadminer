@@ -1,3 +1,9 @@
+//Import the font family
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
+
+// Set the default font-family
+$typography-font-family: "Inter", sans-serif !default;
+
 $primary: #363636;
 $secondary: #26a69a;
 $accent: #dd4b39;
@@ -8,3 +14,9 @@ $positive: #21ba45;
 $negative: #c10015;
 $info: #31ccec;
 $warning: #f2c037;
+
+//
+.q-layout__section--marginal {
+  background-color: white !important;
+  color: #fff;
+}

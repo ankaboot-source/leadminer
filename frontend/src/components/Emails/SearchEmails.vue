@@ -1,9 +1,9 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <div class="row q-pa-sm">
+      <div class="row q-pa-lg">
         <div class="q-mr-sm col-lg-5 col-md-5 q-pa-sm">
-          <q-card>
+          <q-card flat bordered>
             <q-card-section class="q-pa-sm">
               <div class="text-h6 text-bold">Preferences</div>
             </q-card-section>
