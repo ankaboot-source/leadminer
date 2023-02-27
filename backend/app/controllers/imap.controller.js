@@ -165,16 +165,22 @@ async function getImapBoxes(req, res, next) {
 
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
-  imapConnectionProvider = access_token
-    ? await imapConnectionProvider.withGoogle(
+  try {
+    if (access_token) {
+      imapConnectionProvider = await imapConnectionProvider.withGoogle(
         access_token,
         refresh_token,
         id,
         redisPublisher
-      )
-    : imapConnectionProvider.withPassword(host, password, port);
+      );
+    } else {
+      imapConnectionProvider = imapConnectionProvider.withPassword(
+        host,
+        password,
+        port
+      );
+    }
 
-  try {
     const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
     const tree = await imapBoxesFetcher.getTree();
 
@@ -187,6 +193,7 @@ async function getImapBoxes(req, res, next) {
       imapFoldersTree: tree
     });
   } catch (err) {
+    err.description = err.message;
     err.message = 'Unable to fetch IMAP folders.';
     err.user = hashHelpers.hashEmail(email, id);
     return next(err);
