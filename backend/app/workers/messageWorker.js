@@ -113,13 +113,13 @@ class StreamConsumer {
     while (!this.isInterrupted) {
       try {
         const result = await redisStreamsConsumer.xreadgroup(
-          'BLOCK',
-          0,
           'GROUP',
           this.consumerGroupName,
           this.consumerName,
           'COUNT',
           this.batchSize,
+          'BLOCK',
+          0,
           'STREAMS',
           this.streamChannel,
           '>'
@@ -138,12 +138,12 @@ class StreamConsumer {
             messages.map(this.streamProcessor),
             redisStreamsConsumer.xack(
               this.streamChannel,
-              this.consumerName,
+              this.consumerGroupName,
               ...processedMessageIDs
             )
           );
 
-          redisStreamsConsumer.xtrim(
+          await redisStreamsConsumer.xtrim(
             this.streamChannel,
             'MINID',
             lastMessageId
