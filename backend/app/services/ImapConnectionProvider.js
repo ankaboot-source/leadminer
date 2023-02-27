@@ -61,18 +61,24 @@ class ImapConnectionProvider {
         servername: 'imap.gmail.com'
       }
     };
-    const { newToken, xoauth2Token } = await tokenHelpers.generateXOauthToken({
-      token,
-      refreshToken,
-      email: this.#imapConfig.user
-    });
-    googleConfig.xoauth2 = xoauth2Token;
-    await redisPubInstance.publish(`auth-${userId}`, newToken);
-    this.#imapConfig = {
-      ...this.#imapConfig,
-      ...googleConfig
-    };
-    return this;
+    try {
+      const { newToken, xoauth2Token } = await tokenHelpers.generateXOauthToken(
+        {
+          token,
+          refreshToken,
+          email: this.#imapConfig.user
+        }
+      );
+      googleConfig.xoauth2 = xoauth2Token;
+      await redisPubInstance.publish(`auth-${userId}`, newToken);
+      this.#imapConfig = {
+        ...this.#imapConfig,
+        ...googleConfig
+      };
+      return this;
+    } catch (error) {
+      throw new Error('Failed generating XOAuthToken.');
+    }
   }
 
   /**

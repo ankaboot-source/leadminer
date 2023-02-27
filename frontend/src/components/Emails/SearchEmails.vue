@@ -77,8 +77,7 @@
 <script setup>
 import objectScan from "object-scan";
 import { LocalStorage, useQuasar } from "quasar";
-import { sse } from "src/helpers/sse";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import ProgressCard from "../cards/ProgressCard.vue";
@@ -188,7 +187,8 @@ async function getBoxes() {
     await $store.dispatch("example/getBoxes");
     showNotification($store.state.example.infoMessage, "teal-5", "check");
   } catch (_) {
-    showNotification($store.state.example.errorMessage, "red", "error");
+    LocalStorage.clear();
+    $router.replace("/");
   }
 }
 </script>
