@@ -127,11 +127,11 @@ class StreamConsumer {
         if (result) {
           const [channel, messages] = result[0];
           processedMessageIDs = messages.map((message) => message[0]);
-
+          const lastMessageId = processedMessageIDs.at(-1);
           logger.debug('Consuming messages', {
             channel,
             totalMessages: messages.length,
-            lastMessageID: processedMessageIDs.at(-1)
+            lastMessageId
           });
 
           await Promise.all(
@@ -141,6 +141,12 @@ class StreamConsumer {
               this.consumerName,
               ...processedMessageIDs
             )
+          );
+
+          redisStreamsConsumer.xtrim(
+            this.streamChannel,
+            'MINID',
+            lastMessageId
           );
 
           const { heapTotal, heapUsed } = process.memoryUsage();
