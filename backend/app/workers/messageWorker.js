@@ -113,13 +113,13 @@ class StreamConsumer {
     while (!this.isInterrupted) {
       try {
         const result = await redisStreamsConsumer.xreadgroup(
-          'BLOCK',
-          0,
           'GROUP',
           this.consumerGroupName,
           this.consumerName,
           'COUNT',
           this.batchSize,
+          'BLOCK',
+          0,
           'STREAMS',
           this.streamChannel,
           '>'
@@ -127,20 +127,26 @@ class StreamConsumer {
         if (result) {
           const [channel, messages] = result[0];
           processedMessageIDs = messages.map((message) => message[0]);
-
+          const lastMessageId = processedMessageIDs.at(-1);
           logger.debug('Consuming messages', {
             channel,
             totalMessages: messages.length,
-            lastMessageID: processedMessageIDs.at(-1)
+            lastMessageId
           });
 
           await Promise.all(
             messages.map(this.streamProcessor),
             redisStreamsConsumer.xack(
               this.streamChannel,
-              this.consumerName,
+              this.consumerGroupName,
               ...processedMessageIDs
             )
+          );
+
+          await redisStreamsConsumer.xtrim(
+            this.streamChannel,
+            'MINID',
+            lastMessageId
           );
 
           const { heapTotal, heapUsed } = process.memoryUsage();
