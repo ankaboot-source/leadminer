@@ -61,9 +61,11 @@ async function onEmailMessage({
     );
   } catch (error) {
     logger.error('Error when publishing to streams', {
-      error,
-      channel: REDIS_STREAM_NAME,
-      user: userIdentifier
+      metadata: {
+        error,
+        channel: REDIS_STREAM_NAME,
+        user: userIdentifier
+      }
     });
   }
 }
@@ -111,7 +113,7 @@ async function loginToAccount(req, res, next) {
       throw Error('Error when creating or quering imapUser');
     }
 
-    logger.info('Account successfully logged in.', { email });
+    logger.info('Account successfully logged in.', { metadata: { email } });
 
     res.status(200).send({ imap: imapUser });
   } catch (error) {
@@ -172,7 +174,9 @@ async function getImapBoxes(req, res, next) {
     const tree = await imapBoxesFetcher.getTree();
 
     logger.info('Mining IMAP tree succeeded.', {
-      user: hashHelpers.hashEmail(email, id)
+      metadata: {
+        user: hashHelpers.hashEmail(email, id)
+      }
     });
 
     return res.status(200).send({
@@ -250,7 +254,9 @@ async function getEmails(req, res, next) {
     await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
     eventEmitter.emit('end', true);
   } catch (err) {
-    logger.error('Error when fetching Email Messages', { error: err });
+    logger.error('Error when fetching Email Messages', {
+      metadata: { error: err }
+    });
     eventEmitter.emit('error');
   }
 

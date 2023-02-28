@@ -2,7 +2,9 @@ const { logger } = require('../utils/logger');
 
 function errorLogger(err, _req, _res, next) {
   logger.error(err.message, {
-    error: err
+    metadata: {
+      error: err
+    }
   });
 
   next(err);

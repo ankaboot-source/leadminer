@@ -39,14 +39,18 @@ async function handleMessage({
     if (isLast) {
       try {
         logger.info('Calling populate.', {
-          isLast,
-          userHash: userIdentifierHash
+          metadata: {
+            isLast,
+            userHash: userIdentifierHash
+          }
         });
         await db.callRpcFunction(userId, 'populate_refined');
       } catch (error) {
         logger.error('Failed populating refined_persons.', {
-          error,
-          userHash: userIdentifierHash
+          metadata: {
+            error,
+            userHash: userIdentifierHash
+          }
         });
       }
     }
@@ -56,7 +60,9 @@ async function handleMessage({
   while (informedSubscribers === 0) {
     if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
       logger.error('Failed to publish to subscribers', {
-        user: userIdentifierHash
+        metadata: {
+          user: userIdentifierHash
+        }
       });
       break;
     }
@@ -151,7 +157,9 @@ class StreamConsumer {
         }
       } catch (error) {
         logger.error('Error while consuming messages from stream.', {
-          error
+          metadata: {
+            error
+          }
         });
       }
     }

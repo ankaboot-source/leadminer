@@ -10,9 +10,11 @@ const MAPPING_TABLE = new Map();
  */
 function logInsertionError(tableName, err, metaData = null) {
   logger.error(`Error when inserting to ${tableName} table.`, {
-    error: err.message ? err.message : err.detail ? err.detail : err,
-    code: err.code,
-    ...metaData
+    metadata: {
+      error: err.message ? err.message : err.detail ? err.detail : err,
+      code: err.code,
+      ...metaData
+    }
   });
 }
 

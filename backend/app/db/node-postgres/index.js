@@ -24,8 +24,10 @@ class PostgresHandler {
       const { rows } = await this.client.query(text, params);
       const duration = performance.now() - start;
       logger.debug('Executed query', {
-        text,
-        executionTime: duration
+        metadata: {
+          text,
+          executionTime: duration
+        }
       });
       return { data: rows.length === 0 ? null : rows, error: null };
     } catch (error) {
@@ -111,7 +113,7 @@ class PostgresHandler {
 
     const { data, error } = await this.query(query, [email, refresh_token]);
     if (error) {
-      logger.error(error.message, { error });
+      logger.error(error.message, { metadata: { error } });
     }
     return data && data[0];
   }
@@ -125,7 +127,7 @@ class PostgresHandler {
     const query = 'SELECT * FROM google_users WHERE email = $1';
     const { data, error } = await this.query(query, [email]);
     if (error) {
-      logger.error(error.message, { error });
+      logger.error(error.message, { metadata: { error } });
     }
     return data && data[0];
   }
@@ -142,7 +144,7 @@ class PostgresHandler {
 
     const { data, error } = await this.query(query, [refresh_token, id]);
     if (error) {
-      logger.error(error.message, { error });
+      logger.error(error.message, { metadata: { error } });
     }
     return data && data[0];
   }
@@ -163,7 +165,7 @@ class PostgresHandler {
 
     const { data, error } = await this.query(query, [email, host, port, tls]);
     if (error) {
-      logger.error(error.message, { error });
+      logger.error(error.message, { metadata: { error } });
     }
     return data && data[0];
   }
@@ -177,7 +179,7 @@ class PostgresHandler {
     const query = 'SELECT * FROM imap_users WHERE email = $1';
     const { data, error } = await this.query(query, [email]);
     if (error) {
-      logger.error(error.message, { error });
+      logger.error(error.message, { metadata: { error } });
     }
     return data && data[0];
   }
@@ -191,7 +193,7 @@ class PostgresHandler {
     const query = 'SELECT * FROM imap_users WHERE id = $1';
     const { data, error } = await this.query(query, [id]);
     if (error) {
-      logger.error(error.message, { error });
+      logger.error(error.message, { metadata: { error } });
     }
     return data && data[0];
   }

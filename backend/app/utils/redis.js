@@ -61,7 +61,7 @@ class RedisManager {
       await this.#normalClient.sadd('disposable', disposable);
       logger.info('Redis initialized with disposable ✔️');
     } catch (error) {
-      logger.error('Failed initializing redis.', { error });
+      logger.error('Failed initializing redis.', { metadata: { error } });
     }
   }
 
@@ -78,7 +78,9 @@ class RedisManager {
         '$',
         'MKSTREAM'
       );
-      logger.info('Created consumer group ✔️', { streamName, groupName });
+      logger.info('Created consumer group ✔️', {
+        metadata: { streamName, groupName }
+      });
     } catch (error) {
       logger.info('Consumer group already exists ✔️');
     }

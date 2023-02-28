@@ -80,7 +80,7 @@ class ImapEmailsFetcher {
 
           imapConnection.openBox(folderName, true, async (err, box) => {
             if (err) {
-              logger.error('Error when opening folder', err);
+              logger.error('Error when opening folder', { metadata: { err } });
             } else if (box.messages?.total > 0) {
               await this.fetchBox(
                 imapConnection,
@@ -93,7 +93,9 @@ class ImapEmailsFetcher {
             await this.imapConnectionProvider.releaseConnection(imapConnection);
           });
         } catch (error) {
-          logger.error('Error when acquiring connection.', { error });
+          logger.error('Error when acquiring connection.', {
+            metadata: { error }
+          });
         }
       })
     );
@@ -162,7 +164,7 @@ class ImapEmailsFetcher {
       });
 
       fetchResult.once('error', (err) => {
-        logger.error(`Fetch error: ${err}`);
+        logger.error('IMAP fetch error', { metadata: { err } });
         connection.closeBox(() => {
           reject(err);
         });

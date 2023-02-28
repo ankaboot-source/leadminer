@@ -149,11 +149,13 @@ class ImapConnectionProvider {
           const imapConnection = new Imap(this.#imapConfig);
 
           imapConnection.on('error', (err) => {
-            logger.error('Imap connection error.', { error: err });
+            logger.error('Imap connection error.', {
+              metadata: { error: err }
+            });
           });
 
           imapConnection.once('close', (hadError) => {
-            logger.debug('Imap connection closed.', { hadError });
+            logger.debug('Imap connection closed.', { metadata: { hadError } });
           });
 
           imapConnection.once('end', () => {
