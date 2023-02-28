@@ -17,6 +17,7 @@
       :pagination="initialPagination"
       bordered
       flat
+      dense
     >
       <template #top-left="props">
         <q-btn
@@ -69,6 +70,9 @@
             @click="fetchRefined"
           />
         </div>
+        <q-btn flat round dense icon="more_vert" class="q-px-sm">
+          <q-tooltip>Select mailbox folders</q-tooltip>
+        </q-btn>
       </template>
 
       <!--Header tooltips -->
@@ -268,13 +272,6 @@ const columns = [
     },
   },
   {
-    name: "occurrence",
-    label: "Occurrence",
-    field: "occurence",
-    align: "center",
-    sortable: true,
-  },
-  {
     name: "recency",
     label: "Recency",
     align: "center",
@@ -298,7 +295,11 @@ const columns = [
 ];
 
 function filterFn(rows, term) {
-  return rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase()));
+  return (
+    rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase())),
+    rows.filter((r) => r.name.toLowerCase().includes(term.toLowerCase())),
+    rows.filter((r) => r.recency.includes(term.toLowerCase()))
+  );
 }
 
 function updateRefinedPersons() {

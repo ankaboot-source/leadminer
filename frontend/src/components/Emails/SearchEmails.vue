@@ -4,10 +4,6 @@
       <div class="row q-pa-lg">
         <div class="q-mr-sm col-lg-5 col-md-5 q-ma-sm">
           <q-card flat bordered>
-            <q-card-section class="q-pa-sm">
-              <div class="text-h6 text-bold">Preferences</div>
-            </q-card-section>
-
             <div class="row q-pa-sm">
               <div class="bg-grey-2 border q-pa-sm col-lg-12 col-md-6">
                 <div class="text-bold col-lg-5 col-md-5">
