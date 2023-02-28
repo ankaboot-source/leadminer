@@ -1,6 +1,6 @@
 const { redis } = require('../utils/redis');
 const EmailMessage = require('../services/EmailMessage');
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 const { db } = require('../db');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
@@ -33,22 +33,24 @@ async function handleMessage({
       folderName
     );
 
-    logger.debug('MESSAGE HEADER', { header });
     const extractedContacts = await message.extractEmailsAddresses();
-    logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
     if (isLast) {
       try {
         logger.info('Calling populate.', {
-          isLast,
-          userHash: userIdentifierHash
+          metadata: {
+            isLast,
+            userHash: userIdentifierHash
+          }
         });
         await db.callRpcFunction(userId, 'populate_refined');
       } catch (error) {
         logger.error('Failed populating refined_persons.', {
-          error,
-          userHash: userIdentifierHash
+          metadata: {
+            error,
+            userHash: userIdentifierHash
+          }
         });
       }
     }
@@ -58,7 +60,9 @@ async function handleMessage({
   while (informedSubscribers === 0) {
     if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
       logger.error('Failed to publish to subscribers', {
-        user: userIdentifierHash
+        metadata: {
+          user: userIdentifierHash
+        }
       });
       break;
     }
@@ -125,14 +129,9 @@ class StreamConsumer {
           '>'
         );
         if (result) {
-          const [channel, messages] = result[0];
+          const messages = result[0][1];
           processedMessageIDs = messages.map((message) => message[0]);
           const lastMessageId = processedMessageIDs.at(-1);
-          logger.debug('Consuming messages', {
-            channel,
-            totalMessages: messages.length,
-            lastMessageId
-          });
 
           await Promise.all(
             messages.map(this.streamProcessor),
@@ -158,7 +157,9 @@ class StreamConsumer {
         }
       } catch (error) {
         logger.error('Error while consuming messages from stream.', {
-          error
+          metadata: {
+            error
+          }
         });
       }
     }

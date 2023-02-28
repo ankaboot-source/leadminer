@@ -116,6 +116,20 @@
       </template>
 
       <!-- Table body slots -->
+      <template #body-cell-email="props">
+        <q-td :props="props">
+          <q-btn
+            flat
+            round
+            size="sm"
+            color="teal"
+            icon="content_copy"
+            @click="copyToClipboard(props.row.email)"
+          />
+          {{ props.row.email }}
+        </q-td>
+      </template>
+
       <template #body-cell-tags="props">
         <q-td :props="props">
           <q-badge
@@ -202,9 +216,9 @@
 
 <script setup>
 import exportFromJSON from "export-from-json";
+import { copyToClipboard, useQuasar } from "quasar";
 import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
-import { useQuasar } from "quasar";
-import { computed, onUnmounted, ref, onMounted } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
