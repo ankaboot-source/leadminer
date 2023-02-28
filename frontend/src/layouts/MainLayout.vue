@@ -1,15 +1,22 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header bordered>
-      <q-toolbar class="bg-white text-custom no-shadow q-pb-sm">
+      <q-toolbar class="bg-white text-custom no-shadow q-pa-sm">
         <q-chip size="xl" color="transparent" text-color="teal">
-          <q-avatar class="logo" text-color="white" size="28px">
+          <q-avatar class="logo q-mt-xs" text-color="white" size="28px">
             <img src="icons/favicon-128x128.png" />
           </q-avatar>
           Leadminer
         </q-chip>
         <q-space />
-        <q-btn @click="logout()" flat round dense icon="logout" />
+        <q-btn
+          class="q-mr-sm"
+          @click="logout()"
+          flat
+          round
+          dense
+          icon="logout"
+        />
       </q-toolbar>
     </q-header>
 

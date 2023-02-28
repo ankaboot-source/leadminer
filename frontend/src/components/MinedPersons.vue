@@ -18,7 +18,19 @@
       bordered
       flat
     >
-      <template #top-right="props">
+      <template #top-left="props">
+        <q-btn
+          flat
+          round
+          dense
+          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
+          class="q-px-sm"
+          @click="props.toggleFullscreen"
+        >
+          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
+            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
+          </q-tooltip>
+        </q-btn>
         <q-input
           v-model="filter"
           dense
@@ -33,24 +45,12 @@
             <q-icon name="search" />
           </template>
         </q-input>
-
-        <q-btn
-          flat
-          round
-          dense
-          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-          class="q-px-sm"
-          @click="props.toggleFullscreen"
-        >
-          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
-            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
-          </q-tooltip>
-        </q-btn>
-
+      </template>
+      <template #top-right>
         <div class="q-px-sm">
           <q-btn
             color="teal-5"
-            icon-right="archive"
+            icon="archive"
             label="Export to CSV"
             no-caps
             :disable="isExportDisabled"
@@ -254,6 +254,11 @@ onUnmounted(() => {
 
 const columns = [
   {
+    name: "status",
+    label: "Status",
+    align: "center",
+  },
+  {
     name: "email",
     label: "Email",
     field: "email",
@@ -297,14 +302,9 @@ const columns = [
   },
   {
     name: "tags",
-    label: "Type",
+    label: "Tags",
     align: "center",
     field: "tags",
-  },
-  {
-    name: "status",
-    label: "Status",
-    align: "center",
   },
 ];
 
@@ -395,5 +395,15 @@ thead tr:last-child th {
 
 thead tr:first-child th {
   top: 0;
+}
+
+/* 
+BUG: template #top-left is getting class as q-table-control instead of q-table__control like it should be. 
+tofix: MinedPersons (title matdhhrch) 
+*/
+.q-table-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 </style>
