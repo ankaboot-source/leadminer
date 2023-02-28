@@ -327,7 +327,11 @@ async function fetchRefined() {
 
 function exportTable() {
   if (!rows.value.length) {
-    $q.notify("There are no contacts present in the table.");
+    $q.notify({
+      message: "There are no contacts present in the table.",
+      textColor: "negative",
+      color: "red-1",
+    });
     return 0;
   }
   const currentDatetime = new Date();
@@ -357,7 +361,12 @@ function exportTable() {
       exportType: exportFromJSON.types.csv,
       delimiter: getLocalizedCsvSeparator(),
     });
-    $q.notify("Successfully exported table.");
+    $q.notify({
+      message: "Successfully exported table.",
+      textColor: "positive",
+      color: "green-1",
+      icon: "task_alt",
+    });
   } catch (error) {
     $q.notify("Error when exporting to CSV.");
   }
@@ -397,13 +406,17 @@ thead tr:first-child th {
   top: 0;
 }
 
-/* 
-BUG: template #top-left is getting class as q-table-control instead of q-table__control like it should be. 
-tofix: MinedPersons (title matdhhrch) 
+/*
+BUG: template #top-left is getting class as q-table-control instead of q-table__control like it should be.
+tofix: MinedPersons (title matdhhrch)
 */
 .q-table-control {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+}
+.q-notification {
+  border: 1px solid currentColor;
+  font-size: medium;
 }
 </style>
