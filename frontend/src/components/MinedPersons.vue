@@ -58,23 +58,12 @@
             @click="exportTable"
           />
         </div>
-        <div>
-          <q-btn
-            outline
-            color="teal-5"
-            label="Refresh"
-            icon="refresh"
-            no-caps
-            :disable="isLoading"
-            @click="updateRefinedPersons"
-          />
-        </div>
         <div class="q-pl-sm">
           <q-btn
             outline
             color="teal-5"
-            label="Fetch"
-            icon="factory"
+            label="Sync"
+            icon="sync"
             no-caps
             :disable="isLoading"
             @click="fetchRefined"
