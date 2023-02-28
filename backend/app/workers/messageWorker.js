@@ -148,7 +148,7 @@ class StreamConsumer {
           );
 
           const { heapTotal, heapUsed } = process.memoryUsage();
-          logger.info(
+          logger.debug(
             `[WORKER] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
               2
             )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
