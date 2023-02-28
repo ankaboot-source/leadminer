@@ -1,4 +1,4 @@
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
 const { db } = require('../db');
@@ -39,13 +39,6 @@ async function onEmailMessage({
 }) {
   const isLastInFolder = seqNumber === totalInFolder;
 
-  const { heapTotal, heapUsed } = process.memoryUsage();
-  logger.debug(
-    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
-      2
-    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
-  );
-
   const message = JSON.stringify({
     seqNumber,
     body,
@@ -60,22 +53,19 @@ async function onEmailMessage({
   try {
     await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
 
-    const streamId = await redisStreamsPublisher.xadd(
+    await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',
       'message',
       message
     );
-    logger.debug('Publishing message to stream', {
-      streamId,
-      channel: REDIS_STREAM_NAME,
-      user: userIdentifier
-    });
   } catch (error) {
     logger.error('Error when publishing to streams', {
-      error,
-      channel: REDIS_STREAM_NAME,
-      user: userIdentifier
+      metadata: {
+        error,
+        channel: REDIS_STREAM_NAME,
+        user: userIdentifier
+      }
     });
   }
 }
@@ -123,7 +113,7 @@ async function loginToAccount(req, res, next) {
       throw Error('Error when creating or quering imapUser');
     }
 
-    logger.info('Account successfully logged in.', { email });
+    logger.info('Account successfully logged in.', { metadata: { email } });
 
     res.status(200).send({ imap: imapUser });
   } catch (error) {
@@ -132,7 +122,6 @@ async function loginToAccount(req, res, next) {
       details: error.message
     });
   } finally {
-    logger.debug('Cleaning IMAP pool.');
     await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
   }
@@ -185,7 +174,9 @@ async function getImapBoxes(req, res, next) {
     const tree = await imapBoxesFetcher.getTree();
 
     logger.info('Mining IMAP tree succeeded.', {
-      user: hashHelpers.hashEmail(email, id)
+      metadata: {
+        user: hashHelpers.hashEmail(email, id)
+      }
     });
 
     return res.status(200).send({
@@ -198,7 +189,6 @@ async function getImapBoxes(req, res, next) {
     err.user = hashHelpers.hashEmail(email, id);
     return next(err);
   } finally {
-    logger.debug('Cleaning IMAP pool.');
     await imapConnectionProvider.cleanPool();
   }
 }
@@ -264,9 +254,19 @@ async function getEmails(req, res, next) {
     await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
     eventEmitter.emit('end', true);
   } catch (err) {
-    logger.error('Error when fetching Email Messages', { error: err });
+    logger.error('Error when fetching Email Messages', {
+      metadata: { error: err }
+    });
     eventEmitter.emit('error');
   }
+
+  const { heapTotal, heapUsed } = process.memoryUsage();
+  logger.debug(
+    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+      2
+    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+  );
+
   return res.status(200).send();
 }
 

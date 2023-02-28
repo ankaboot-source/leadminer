@@ -1,4 +1,4 @@
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 
 const MAPPING_TABLE = new Map();
 
@@ -6,11 +6,15 @@ const MAPPING_TABLE = new Map();
  * logInsertionError - Formatting and logging insertion errors to stdout.
  * @param {*} tableName -  Name of db table.
  * @param {*} err  - Error object that comes from the query.
+ * @param {*} metaData  - Additional metadata regarding the error.
  */
-function logInsertionError(tableName, err) {
+function logInsertionError(tableName, err, metaData = null) {
   logger.error(`Error when inserting to ${tableName} table.`, {
-    error: err.message ? err.message : err.detail ? err.detail : err,
-    code: err.code
+    metadata: {
+      error: err.message ? err.message : err.detail ? err.detail : err,
+      code: err.code,
+      ...metaData
+    }
   });
 }
 

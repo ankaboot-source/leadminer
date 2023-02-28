@@ -61,7 +61,7 @@ handler.prototype.store = async function (contacts, userID) {
   const { data, error } = await this.insertMessage(message);
 
   if (error !== null) {
-    logInsertionError('messages', error);
+    logInsertionError('messages', error, { messageId: message.message_id });
     return;
   }
   await Promise.allSettled(

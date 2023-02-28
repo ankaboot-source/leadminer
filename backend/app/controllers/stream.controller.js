@@ -1,6 +1,6 @@
 const { SSE } = require('express-sse');
 const { redis } = require('../utils/redis');
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 
 const redisPubSubClient = redis.getDuplicatedClient();
 
@@ -14,7 +14,7 @@ function sendSSE(sseClient, sseData, sseEvent) {
   try {
     sseClient.send(sseData, sseEvent);
   } catch (error) {
-    logger.error('Somthing happend when sending SSE', { error });
+    logger.error('Somthing happend when sending SSE', { metadata: { error } });
   }
 }
 
@@ -37,17 +37,17 @@ function streamProgress(req, res) {
   // subscribe to unique channels to track progress.
   redisPubSubClient.subscribe(extractingChannel, (err) => {
     if (err) {
-      logger.error('Failed subscribing to Redis.', { err });
+      logger.error('Failed subscribing to Redis.', { metadata: { err } });
     }
   });
   redisPubSubClient.subscribe(fetchingChannel, (err) => {
     if (err) {
-      logger.error('Failed subscribing to Redis.', { err });
+      logger.error('Failed subscribing to Redis.', { metadata: { err } });
     }
   });
   redisPubSubClient.subscribe(authChannel, (err) => {
     if (err) {
-      logger.error('Failed subscribing to Redis.', { err });
+      logger.error('Failed subscribing to Redis.', { metadata: { err } });
     }
   });
   redisPubSubClient.on('message', (channel, data) => {

@@ -2,7 +2,7 @@ const hashHelpers = require('../utils/helpers/hashHelpers');
 const { randomUUID } = require('crypto');
 const Imap = require('imap');
 const { IMAP_FETCH_BODY } = require('../config');
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
 const redisClient = redis.getClient();
@@ -80,7 +80,7 @@ class ImapEmailsFetcher {
 
           imapConnection.openBox(folderName, true, async (err, box) => {
             if (err) {
-              logger.error('Error when opening folder', err);
+              logger.error('Error when opening folder', { metadata: { err } });
             } else if (box.messages?.total > 0) {
               await this.fetchBox(
                 imapConnection,
@@ -93,7 +93,9 @@ class ImapEmailsFetcher {
             await this.imapConnectionProvider.releaseConnection(imapConnection);
           });
         } catch (error) {
-          logger.error('Error when acquiring connection.', { error });
+          logger.error('Error when acquiring connection.', {
+            metadata: { error }
+          });
         }
       })
     );
@@ -162,7 +164,7 @@ class ImapEmailsFetcher {
       });
 
       fetchResult.once('error', (err) => {
-        logger.error(`Fetch error: ${err}`);
+        logger.error('IMAP fetch error', { metadata: { err } });
         connection.closeBox(() => {
           reject(err);
         });

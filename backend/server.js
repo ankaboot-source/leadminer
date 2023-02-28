@@ -1,5 +1,5 @@
 require('dotenv').config();
-const logger = require('./app/utils/logger')(module);
+const { logger } = require('./app/utils/logger');
 const { app } = require('./app');
 const { redis } = require('./app/utils/redis');
 const { Worker } = require('worker_threads');
