@@ -123,14 +123,9 @@ class StreamConsumer {
           '>'
         );
         if (result) {
-          const [channel, messages] = result[0];
+          const messages = result[0][1];
           processedMessageIDs = messages.map((message) => message[0]);
           const lastMessageId = processedMessageIDs.at(-1);
-          logger.debug('Consuming messages', {
-            channel,
-            totalMessages: messages.length,
-            lastMessageId
-          });
 
           await Promise.all(
             messages.map(this.streamProcessor),

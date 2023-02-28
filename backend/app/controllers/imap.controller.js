@@ -53,17 +53,12 @@ async function onEmailMessage({
   try {
     await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
 
-    const streamId = await redisStreamsPublisher.xadd(
+    await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',
       'message',
       message
     );
-    logger.debug('Publishing message to stream', {
-      streamId,
-      channel: REDIS_STREAM_NAME,
-      user: userIdentifier
-    });
   } catch (error) {
     logger.error('Error when publishing to streams', {
       error,
