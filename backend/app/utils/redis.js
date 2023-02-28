@@ -1,5 +1,5 @@
 const Redis = require('ioredis');
-const logger = require('./logger')(module);
+const { logger } = require('./logger');
 const freeProviders = require('./FreeProviders.json');
 const disposable = require('./Disposable.json');
 const {

@@ -1,6 +1,6 @@
 const { redis } = require('../utils/redis');
 const EmailMessage = require('../services/EmailMessage');
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 const { db } = require('../db');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
@@ -33,9 +33,7 @@ async function handleMessage({
       folderName
     );
 
-    logger.debug('MESSAGE HEADER', { header });
     const extractedContacts = await message.extractEmailsAddresses();
-    logger.debug('Inserting contacts to DB.', { userHash: userIdentifierHash });
     await db.store(extractedContacts, userId);
 
     if (isLast) {
@@ -150,7 +148,7 @@ class StreamConsumer {
           );
 
           const { heapTotal, heapUsed } = process.memoryUsage();
-          logger.debug(
+          logger.info(
             `[WORKER] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
               2
             )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `

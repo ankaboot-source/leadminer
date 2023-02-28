@@ -1,4 +1,4 @@
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 
 const MAPPING_TABLE = new Map();
 

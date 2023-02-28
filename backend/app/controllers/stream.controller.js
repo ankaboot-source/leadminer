@@ -1,6 +1,6 @@
 const { SSE } = require('express-sse');
 const { redis } = require('../utils/redis');
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 
 const redisPubSubClient = redis.getDuplicatedClient();
 

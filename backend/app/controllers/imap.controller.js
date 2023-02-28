@@ -1,4 +1,4 @@
-const logger = require('../utils/logger')(module);
+const { logger } = require('../utils/logger');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const EventEmitter = require('node:events');
 const { db } = require('../db');
@@ -38,13 +38,6 @@ async function onEmailMessage({
   userIdentifier
 }) {
   const isLastInFolder = seqNumber === totalInFolder;
-
-  const { heapTotal, heapUsed } = process.memoryUsage();
-  logger.debug(
-    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
-      2
-    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
-  );
 
   const message = JSON.stringify({
     seqNumber,
@@ -132,7 +125,6 @@ async function loginToAccount(req, res, next) {
       details: error.message
     });
   } finally {
-    logger.debug('Cleaning IMAP pool.');
     await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
   }
@@ -198,7 +190,6 @@ async function getImapBoxes(req, res, next) {
     err.user = hashHelpers.hashEmail(email, id);
     return next(err);
   } finally {
-    logger.debug('Cleaning IMAP pool.');
     await imapConnectionProvider.cleanPool();
   }
 }
@@ -267,6 +258,14 @@ async function getEmails(req, res, next) {
     logger.error('Error when fetching Email Messages', { error: err });
     eventEmitter.emit('error');
   }
+
+  const { heapTotal, heapUsed } = process.memoryUsage();
+  logger.debug(
+    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+      2
+    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+  );
+
   return res.status(200).send();
 }
 

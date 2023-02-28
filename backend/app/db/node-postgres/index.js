@@ -1,6 +1,6 @@
 const format = require('pg-format');
 const { Pool } = require('pg');
-const logger = require('../../utils/logger')(module);
+const { logger } = require('../../utils/logger');
 const { parametrizedInsertInto } = require('./helpers');
 const { PG_CONNECTION_STRING } = require('../../config');
 
