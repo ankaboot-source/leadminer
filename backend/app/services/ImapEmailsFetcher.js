@@ -182,7 +182,7 @@ class ImapEmailsFetcher {
    * Performs cleanup operations after we finished/stopped the fetching process.
    */
   async cleanup() {
-    await redisClient.del(this.processSetKey);
+    await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool();
   }
 }
