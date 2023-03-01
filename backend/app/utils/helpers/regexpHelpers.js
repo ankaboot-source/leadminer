@@ -1,4 +1,4 @@
-const { REGEX_HEADER, REGEX_BODY } = require('../constants');
+const { REGEX_HEADER, REGEX_BODY, REGEX_REMOVE_QUOTES } = require('../constants');
 const quotedPrintable = require('quoted-printable');
 
 /**
@@ -21,12 +21,8 @@ function extractNameAndEmailFromBody(data) {
  */
 function cleanName(name) {
   let cleanedName = name.trim();
-  if (
-    (cleanedName.charAt(0) === "'" && cleanedName.charAt(cleanedName.length - 1) === "'") ||
-    (cleanedName.charAt(0) === '"' && cleanedName.charAt(cleanedName.length - 1) === '"')
-  ) {
-    cleanedName = cleanedName.substring(1, cleanedName.length - 1);
-  }
+  cleanedName = cleanedName.replace(REGEX_REMOVE_QUOTES, '$2');
+  cleanedName = cleanedName.replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"
   return cleanedName;
 }
 
@@ -36,7 +32,9 @@ function cleanName(name) {
  * @returns {Array} An array of obejcts
  */
 function extractNameAndEmail(emails) {
-  const result = [...emails.matchAll(REGEX_HEADER)].map((match) => {
+  // Adding trainling comma at the end to help identify emails
+  // Handle case when input have this format tester@leadminer.io <tester@leadminer.io>
+  const result = [...`${emails},`.matchAll(REGEX_HEADER)].map((match) => {
     const { name, address, identifier, domain, tld } = match.groups ?? {};
     const cleanAddress = address.toLowerCase();
     const cleanedName = cleanName(name || '');
