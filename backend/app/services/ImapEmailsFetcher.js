@@ -35,9 +35,6 @@ class ImapEmailsFetcher {
 
     this.fetchedMessagesCount = 0;
 
-    this.eventEmitter.on('endByUser', async () => {
-      await this.cleanup();
-    });
     this.eventEmitter.on('end', async () => {
       await this.cleanup();
     });
@@ -182,7 +179,8 @@ class ImapEmailsFetcher {
    * Performs cleanup operations after we finished/stopped the fetching process.
    */
   async cleanup() {
-    await redisClient.del(this.processSetKey);
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool();
   }
 }
