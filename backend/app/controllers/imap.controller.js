@@ -233,7 +233,7 @@ async function getEmails(req, res, next) {
   const eventEmitter = new EventEmitter();
 
   req.on('close', () => {
-    eventEmitter.emit('endByUser');
+    eventEmitter.emit('end');
   });
 
   eventEmitter.on('error', () => {
@@ -252,7 +252,6 @@ async function getEmails(req, res, next) {
   );
   try {
     await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
-    eventEmitter.emit('end', true);
   } catch (err) {
     logger.error('Error when fetching Email Messages', {
       metadata: { error: err }

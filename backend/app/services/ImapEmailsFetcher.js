@@ -35,9 +35,6 @@ class ImapEmailsFetcher {
 
     this.fetchedMessagesCount = 0;
 
-    this.eventEmitter.on('endByUser', async () => {
-      await this.cleanup();
-    });
     this.eventEmitter.on('end', async () => {
       await this.cleanup();
     });
