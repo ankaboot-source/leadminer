@@ -1,5 +1,5 @@
 const headerRegexName =
-  /(?<name>(,\b|\s|^)[\p{L}"'\w\s(),.-]{1,100})?(?<t>\s|^)/;
+  /(?<name>(,\b|\s|^)[\p{L}"'\w\s(),.-]{1,100})?(?<t>\s|^)/u;
 const headerRegexAddress =
   /<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?,/;
 const bodyRegex =
