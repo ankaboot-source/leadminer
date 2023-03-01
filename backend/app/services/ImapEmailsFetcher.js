@@ -182,6 +182,7 @@ class ImapEmailsFetcher {
    * Performs cleanup operations after we finished/stopped the fetching process.
    */
   async cleanup() {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
     await redisClient.unlink(this.processSetKey);
     await this.imapConnectionProvider.cleanPool();
   }
