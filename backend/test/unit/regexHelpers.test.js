@@ -36,7 +36,8 @@ describe('Regex redos checker', () => {
   });
 });
 
-describe('regExHelpers.extractEmailsFromBody(text)', () => { // TODO: Update unit tests for body
+describe('regExHelpers.extractEmailsFromBody(text)', () => {
+  // TODO: Update unit tests for body
   it('Should return a valid array of emails', () => {
     const output = regExHelpers.extractNameAndEmailFromBody(testData.emailBody);
     expect(output).to.eql(testData.expectedForBodyExtraction);
@@ -51,7 +52,6 @@ describe('regExHelpers.extractEmailsFromBody(text)', () => { // TODO: Update uni
 });
 
 describe('regexHelpers.cleanName', () => {
-
   it('should return empty string if name do not exists', () => {
     const name = regExHelpers.cleanName('');
     expect(name).to.equal('');
@@ -60,36 +60,41 @@ describe('regexHelpers.cleanName', () => {
   it('should properly trim white spaces if they exist', () => {
     const testCases = [
       {
-        input: ["\"\'John Doe\'\"", '\"John Doe\"', "\'John Doe\'"],
-        output: 'John Doe',
+        input: ['"\'John Doe\'"', '"John Doe"', "'John Doe'"],
+        output: 'John Doe'
       },
       {
         input: ['John Doe', 'John Doe ', ' John Doe', ' John Doe '],
         output: 'John Doe'
       },
       {
-        input: ['John\' Doe', 'John\' Doe ', ' John\' Doe', ' John\' Doe '],
-        output: 'John\' Doe',
+        input: ["John' Doe", "John' Doe ", " John' Doe", " John' Doe "],
+        output: "John' Doe"
       },
       {
         input: ['John" Doe"', 'John" Doe" ', ' John" Doe"', ' John" Doe" '],
         output: 'John" Doe"'
       },
       {
-        input: ['\'John Doe\'', '\'John Doe\' ', ' \'John Doe\'', ' \'John Doe\' '],
+        input: ["'John Doe'", "'John Doe' ", " 'John Doe'", " 'John Doe' "],
         output: 'John Doe'
       },
       {
-        input: ['\"\'John Doe\'\"', '\"\'John Doe\'\" ', ' \"\'John Doe\'\"', ' \"\'John Doe\'\" '],
+        input: [
+          '"\'John Doe\'"',
+          '"\'John Doe\'" ',
+          ' "\'John Doe\'"',
+          ' "\'John Doe\'" '
+        ],
         output: 'John Doe'
       }
     ];
 
     testCases.forEach(({ input, output }) => {
       input.forEach((name) => {
-        const functionOutput = regExHelpers.cleanName(name)
+        const functionOutput = regExHelpers.cleanName(name);
         expect(functionOutput).to.equal(output);
-      })
+      });
     });
   });
 });
@@ -102,27 +107,30 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
   it('Should return an array with one valid object', () => {
     const testCase = {
-      description: 'Case when have valid name and email.' ,
+      description: 'Case when have valid name and email.',
       input: 'this is myyyyyyyyyyyyyyyy name <tester+123@leadminer.io>',
-      output: [{
-        name: 'this is myyyyyyyyyyyyyyyy name',
-        identifier: 'tester+123',
-        address: 'tester+123@leadminer.io',
-        domain: 'leadminer.io'
-      }]
-    }
-    const { description, input, output } = testCase
-    expect(regExHelpers.extractNameAndEmail(input)).to.eql(output, description)
+      output: [
+        {
+          name: 'this is myyyyyyyyyyyyyyyy name',
+          identifier: 'tester+123',
+          address: 'tester+123@leadminer.io',
+          domain: 'leadminer.io'
+        }
+      ]
+    };
+    const { description, input, output } = testCase;
+    expect(regExHelpers.extractNameAndEmail(input)).to.eql(output, description);
   });
 
   it('Should return valid object with empty name if there is none.', () => {
-
-    const generalOutput = [{
-      name: '',
-      identifier: 'leadminer',
-      address: 'leadminer@teamankaboot.fr',
-      domain: 'Teamankaboot.fr'
-    }]
+    const generalOutput = [
+      {
+        name: '',
+        identifier: 'leadminer',
+        address: 'leadminer@teamankaboot.fr',
+        domain: 'Teamankaboot.fr'
+      }
+    ];
     const testCases = [
       {
         description: 'Case where there is no name and email without <>',
@@ -143,11 +151,11 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
         description: 'Case where name is also email and email with <>',
         input: 'leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>',
         output: generalOutput
-      },
-    ]
+      }
+    ];
 
     testCases.forEach(({ input, output, description }) => {
-      const resultOutput = regExHelpers.extractNameAndEmail(input)
+      const resultOutput = regExHelpers.extractNameAndEmail(input);
       expect(resultOutput).to.eql(output, description);
     });
   });
@@ -165,56 +173,68 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
         output: 'empty'
       },
       {
-        description: 'Case where name is also email and email is not surrounded with <>',
+        description:
+          'Case where name is also email and email is not surrounded with <>',
         input: 'leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr',
         output: 'empty'
       },
       {
-        description: 'Case where name is also email and email is surrounded with <>',
+        description:
+          'Case where name is also email and email is surrounded with <>',
         input: 'leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>',
         output: 'empty'
       },
       {
-        description: 'Case where there is a name and email is not surrounded with <>',
+        description:
+          'Case where there is a name and email is not surrounded with <>',
         input: 'Hello There leadminer@Teamankaboot.fr',
         output: 'Hello There'
       },
       {
-        description: 'Case where there is a name and email is surrounded with <>',
+        description:
+          'Case where there is a name and email is surrounded with <>',
         input: 'Hello There <leadminer@Teamankaboot.fr>',
         output: 'Hello There'
       },
       {
-        description: 'Case where there is other characters in name and email is not surrounded with <>',
+        description:
+          'Case where there is other characters in name and email is not surrounded with <>',
         input: 'Hello-There (leadminer) <leadminer@Teamankaboot.fr>',
         output: 'Hello-There (leadminer)'
       },
       {
-        description: 'Case where there is other characters in name and email is surrounded with <>',
+        description:
+          'Case where there is other characters in name and email is surrounded with <>',
         input: 'Hello-There (leadminer) leadminer@Teamankaboot.fr',
         output: 'Hello-There (leadminer)'
       },
       {
         description: 'Case where there multiple emails with name and email',
-        input: 'Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>',
+        input:
+          'Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>',
         output: 'Hello There, Hello There'
       },
       {
-        description: 'Case when multiple emails with nested formats, starting with email not surrounded with <>',
-        input: 'leadminer@Teamankaboot.fr, <leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
+        description:
+          'Case when multiple emails with nested formats, starting with email not surrounded with <>',
+        input:
+          'leadminer@Teamankaboot.fr, <leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
         output: `empty, empty, empty, empty, Hello There, Hello There, Hello-There (leadminer)`
       },
       {
-        description: 'Case when multiple emails with nested formats, starting with email surrounded with <>',
-        input: '<leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
+        description:
+          'Case when multiple emails with nested formats, starting with email surrounded with <>',
+        input:
+          '<leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
         output: `empty, empty, empty, empty, Hello There, Hello There, Hello-There (leadminer)`
       }
-    ]
+    ];
 
     testCases.forEach(({ input, output, description }) => {
-      const resultOutput = regExHelpers.extractNameAndEmail(input)
-        .map(({ name }) => name !== '' ? name : 'empty')
-        .join(', ')
+      const resultOutput = regExHelpers
+        .extractNameAndEmail(input)
+        .map(({ name }) => (name !== '' ? name : 'empty'))
+        .join(', ');
       expect(resultOutput).to.equal(output, description);
     });
   });
