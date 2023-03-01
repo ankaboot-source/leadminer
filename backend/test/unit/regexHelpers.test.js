@@ -57,16 +57,8 @@ describe('regExHelpers.extractName', () => {
   });
 
   it('should properly clean double and single quotes if they exist', () => {
-    const input = [
-      "\"\'John Doe\'\"",
-      '\"John Doe\"',
-      "\'John Doe\'",
-    ];
-    const expectedOutput = [
-      'John Doe',
-      'John Doe',
-      'John Doe',
-    ];
+    const input = ['"\'John Doe\'"', '"John Doe"', "'John Doe'"];
+    const expectedOutput = ['John Doe', 'John Doe', 'John Doe'];
 
     input.forEach((testInput, index) => {
       const actualOutput = regExHelpers.cleanName(testInput);
@@ -76,18 +68,48 @@ describe('regExHelpers.extractName', () => {
 
   it('should properly trim white spaces if they exist', () => {
     const input = [
-      'John Doe', 'John Doe ', ' John Doe', ' John Doe ',
-      'John\' Doe', 'John\' Doe ', ' John\' Doe', ' John\' Doe ',
-      'John" Doe"', 'John" Doe" ', ' John" Doe"', ' John" Doe" ',
-      '\'John Doe\'', '\'John Doe\' ', ' \'John Doe\'', ' \'John Doe\' ',
-      '\"\'John Doe\'\"', '\"\'John Doe\'\" ', ' \"\'John Doe\'\"', ' \"\'John Doe\'\" '
+      'John Doe',
+      'John Doe ',
+      ' John Doe',
+      ' John Doe ',
+      "John' Doe",
+      "John' Doe ",
+      " John' Doe",
+      " John' Doe ",
+      'John" Doe"',
+      'John" Doe" ',
+      ' John" Doe"',
+      ' John" Doe" ',
+      "'John Doe'",
+      "'John Doe' ",
+      " 'John Doe'",
+      " 'John Doe' ",
+      '"\'John Doe\'"',
+      '"\'John Doe\'" ',
+      ' "\'John Doe\'"',
+      ' "\'John Doe\'" '
     ];
     const expectedOutput = [
-      'John Doe', 'John Doe', 'John Doe','John Doe',
-      'John\' Doe', 'John\' Doe', 'John\' Doe', 'John\' Doe',
-      'John" Doe"', 'John" Doe"', 'John" Doe"', 'John" Doe"',
-      'John Doe', 'John Doe', 'John Doe', 'John Doe',
-      'John Doe', 'John Doe', 'John Doe', 'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      "John' Doe",
+      "John' Doe",
+      "John' Doe",
+      "John' Doe",
+      'John" Doe"',
+      'John" Doe"',
+      'John" Doe"',
+      'John" Doe"',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe',
+      'John Doe'
     ];
 
     input.forEach((testInput, index) => {
@@ -119,14 +141,14 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
   it('Should properly extract and return valid names', () => {
     const testCases = [
-        'leadminer@Teamankaboot.fr',
-        '<leadminer@Teamankaboot.fr>',
-        'leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr',
-        'leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>',
-        'Hello There leadminer@Teamankaboot.fr',
-        'Hello There <leadminer@Teamankaboot.fr>',
-        'Hello-There (leadminer) <leadminer@Teamankaboot.fr>',
-      ]
+      'leadminer@Teamankaboot.fr',
+      '<leadminer@Teamankaboot.fr>',
+      'leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr',
+      'leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>',
+      'Hello There leadminer@Teamankaboot.fr',
+      'Hello There <leadminer@Teamankaboot.fr>',
+      'Hello-There (leadminer) <leadminer@Teamankaboot.fr>'
+    ];
     const expectedNames = [
       '',
       '',
@@ -134,13 +156,12 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       '',
       'Hello There',
       'Hello There',
-      'Hello-There (leadminer)',
-    ]
+      'Hello-There (leadminer)'
+    ];
     testCases.forEach((testCase, index) => {
       const output = regExHelpers.extractNameAndEmail(testCase);
-        expect(output[0].name).to.equal(expectedNames[index]);
-      });
-      
+      expect(output[0].name).to.equal(expectedNames[index]);
+    });
   });
 
   it('Should return valid object with empty name if there is none.', () => {
@@ -170,13 +191,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   });
 
   it('Should return an empty array on falsy input', () => {
-    const falsyInput = [
-      '',
-      ' ',
-      '...',
-      'char',
-      'only name',
-    ]
+    const falsyInput = ['', ' ', '...', 'char', 'only name'];
     falsyInput.forEach((input) => {
       expect(regExHelpers.extractNameAndEmail(input)).to.be.empty;
     });

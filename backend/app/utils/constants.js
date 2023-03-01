@@ -1,12 +1,18 @@
-const headerRegexName = /(?<name>(,\b|\s|^)[\p{L}"'\w\s(),.-]{1,100})?(?<t>\s|^)/;
-const headerRegexAddress = /<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?,/;
-const bodyRegex = /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi;
-const listRegex = /<[^<]{1,255}>$/; 
+const headerRegexName =
+  /(?<name>(,\b|\s|^)[\p{L}"'\w\s(),.-]{1,100})?(?<t>\s|^)/;
+const headerRegexAddress =
+  /<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?,/;
+const bodyRegex =
+  /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi;
+const listRegex = /<[^<]{1,255}>$/;
 
 const RE = RegExp;
 // Used to get around this warning:  Found non-literal argument to RegExp Constructor security/detect-non-literal-regexp.
 // As we have to break headerRegex into smaller parts because the line will be too long and raise eslint error.
-const headerRegex = new RE(headerRegexName.source + headerRegexAddress.source, 'giu');
+const headerRegex = new RE(
+  headerRegexName.source + headerRegexAddress.source,
+  'giu'
+);
 
 module.exports = {
   MAX_REDIS_PUBLISH_RETRIES_COUNT: 3,

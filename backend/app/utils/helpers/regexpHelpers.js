@@ -1,4 +1,8 @@
-const { REGEX_HEADER, REGEX_BODY, REGEX_REMOVE_QUOTES } = require('../constants');
+const {
+  REGEX_HEADER,
+  REGEX_BODY,
+  REGEX_REMOVE_QUOTES
+} = require('../constants');
 const quotedPrintable = require('quoted-printable');
 
 /**
