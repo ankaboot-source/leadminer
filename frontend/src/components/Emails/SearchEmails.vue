@@ -33,7 +33,7 @@
                     :disable="loadingStatusDns"
                     no-caps
                     :color="loadingStatusDns ? 'grey-6' : 'red'"
-                    label="Start mining"
+                    label="Start"
                     @click="fetchEmails"
                   />
                   <q-btn
@@ -41,7 +41,7 @@
                     class="q-ma-md"
                     no-caps
                     :color="loadingStatusDns ? 'red' : 'grey-6'"
-                    label="Stop mining"
+                    label="Stop"
                     @click="cancelFetchEmails"
                   />
                 </div>

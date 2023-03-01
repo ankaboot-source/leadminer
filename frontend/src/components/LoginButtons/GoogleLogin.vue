@@ -4,6 +4,7 @@
       :disable="!policy"
       class="text-capitalize text-weight-regular"
       label="Start mining"
+      no-caps
       color="teal"
       @click="handleClickSignIn"
     />
