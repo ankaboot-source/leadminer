@@ -1,11 +1,9 @@
 <template>
-  <div
-    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll container"
-  >
+  <div class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg container">
     <q-table
-      class="table"
+      class="table q-pt-sm"
       virtual-scroll
-      :virtual-scroll-sticky-size-start="48"
+      virtual-scroll-slice-size="60"
       :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
       title="Mined emails"
@@ -19,26 +17,15 @@
       flat
       dense
     >
-      <template #top-left="props">
-        <q-btn
-          flat
-          round
-          dense
-          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-          class="q-px-sm"
-          @click="props.toggleFullscreen"
-        >
-          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
-            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
-          </q-tooltip>
-        </q-btn>
+      <template #top-left>
         <q-input
           v-model="filter"
           dense
           standout
           outlined
           color="teal-5"
-          class="q-px-sm"
+          class="q-pr-sm q-pl-lg"
+          style="width: 25vw"
           debounce="300"
           placeholder="Search"
         >
@@ -47,7 +34,7 @@
           </template>
         </q-input>
       </template>
-      <template #top-right>
+      <template #top-right="props">
         <div class="q-px-sm">
           <q-btn
             color="teal-5"
@@ -59,7 +46,7 @@
             @click="exportTable"
           />
         </div>
-        <div class="q-pl-sm">
+        <div class="q-px-sm">
           <q-btn
             outline
             color="teal-5"
@@ -70,8 +57,17 @@
             @click="fetchRefined"
           />
         </div>
-        <q-btn flat round dense icon="more_vert" class="q-px-sm">
-          <q-tooltip>Select mailbox folders</q-tooltip>
+        <q-btn
+          flat
+          round
+          dense
+          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
+          class="q-px-sm"
+          @click="props.toggleFullscreen"
+        >
+          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
+            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
+          </q-tooltip>
         </q-btn>
       </template>
 
@@ -121,10 +117,18 @@
           <q-btn
             flat
             round
-            size="sm"
+            size="xs"
             color="teal"
             icon="content_copy"
-            @click="copyToClipboard(props.row.email)"
+            @click="
+              copyToClipboard(props.row.email),
+                $q.notify({
+                  message: 'Email has been copied to clipboard.',
+                  textColor: 'positive',
+                  color: 'white',
+                  icon: 'content_copy',
+                })
+            "
           />
           {{ props.row.email }}
         </q-td>
@@ -241,6 +245,7 @@ const mailboxValidityCurrent = "green";
 const isExportDisabled = computed(
   () =>
     $store.state.example.loadingStatusDns ||
+    isLoading.value ||
     rows.value.some(
       (el) => el.engagement === undefined || el.engagement === null
     )
@@ -277,7 +282,7 @@ const columns = [
   },
   {
     name: "name",
-    label: "Names",
+    label: "Name",
     field: "name",
     sortable: true,
     align: "left",
@@ -311,8 +316,7 @@ const columns = [
 function filterFn(rows, term) {
   return (
     rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase())),
-    rows.filter((r) => r.name.toLowerCase().includes(term.toLowerCase())),
-    rows.filter((r) => r.recency.includes(term.toLowerCase()))
+    rows.filter((r) => r.name.toLowerCase().includes(term.toLowerCase()))
   );
 }
 
@@ -368,7 +372,7 @@ function exportTable() {
     $q.notify({
       message: "Successfully exported table.",
       textColor: "positive",
-      color: "green-1",
+      color: "white",
       icon: "task_alt",
     });
   } catch (error) {
@@ -384,7 +388,7 @@ onMounted(() => {
 
 <style>
 .container {
-  height: 50vh;
+  height: 60vh;
 }
 .table {
   height: 100%;
@@ -410,15 +414,12 @@ thead tr:first-child th {
   top: 0;
 }
 
-/*
-BUG: template #top-left is getting class as q-table-control instead of q-table__control like it should be.
-tofix: MinedPersons (title matdhhrch)
-*/
 .q-table-control {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
 }
+
 .q-notification {
   border: 1px solid currentColor;
   font-size: medium;

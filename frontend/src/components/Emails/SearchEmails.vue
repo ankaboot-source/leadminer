@@ -33,7 +33,7 @@
                     :disable="loadingStatusDns"
                     no-caps
                     :color="loadingStatusDns ? 'grey-6' : 'red'"
-                    label="Collect emails addresses"
+                    label="Start mining"
                     @click="fetchEmails"
                   />
                   <q-btn
