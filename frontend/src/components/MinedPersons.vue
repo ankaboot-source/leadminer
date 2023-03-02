@@ -1,7 +1,11 @@
 <template>
-  <div class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg container">
+  <div
+    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
+    style="height: 60vh"
+  >
     <q-table
-      class="table q-pt-sm"
+      class="q-pt-sm"
+      style="height: 100%"
       virtual-scroll
       virtual-scroll-slice-size="60"
       :rows-per-page-options="[150, 500, 1000]"
@@ -140,9 +144,9 @@
             v-for="tag in props.row.tags"
             :key="tag"
             color="teal-1"
-            class="q-pa-xs text-uppercase text-teal-8"
+            class="q-pa-xs text-uppercase text-teal-8 q-mx-xs"
           >
-            {{ tag }} <br />
+            {{ tag }}
           </q-badge>
         </q-td>
       </template>
@@ -314,9 +318,10 @@ const columns = [
 ];
 
 function filterFn(rows, term) {
-  return (
-    rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase())),
-    rows.filter((r) => r.name.toLowerCase().includes(term.toLowerCase()))
+  return rows.filter(
+    (r) =>
+      r.email.toLowerCase().includes(term.toLowerCase()) ||
+      r.name.toLowerCase().includes(term.toLowerCase())
   );
 }
 
@@ -387,12 +392,6 @@ onMounted(() => {
 </script>
 
 <style>
-.container {
-  height: 60vh;
-}
-.table {
-  height: 100%;
-}
 .q-table__top,
   .q-table__bottom,
   thead tr:first-child th /* bg color is important for th; just specify one */ {
@@ -412,16 +411,5 @@ thead tr:last-child th {
 
 thead tr:first-child th {
   top: 0;
-}
-
-.q-table-control {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.q-notification {
-  border: 1px solid currentColor;
-  font-size: medium;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header bordered>
-      <q-toolbar class="bg-white text-custom no-shadow q-pa-sm">
+    <q-header bordered class="bg-white">
+      <q-toolbar class="text-custom no-shadow q-pa-sm">
         <q-chip size="xl" color="transparent" text-color="teal">
           <q-avatar class="logo q-mt-xs" text-color="white" size="28px">
             <img src="icons/favicon-128x128.png" />

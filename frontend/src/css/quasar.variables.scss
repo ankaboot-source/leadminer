@@ -14,8 +14,14 @@ $positive: #21ba45;
 $negative: #c10015;
 $info: #31ccec;
 $warning: #f2c037;
-//
-.q-layout__section--marginal {
-  background-color: white !important;
-  color: #fff;
+//General notifcations style
+.q-notification {
+  border: 1px solid currentColor;
+  font-size: medium;
+}
+//Quasar fix
+.q-table-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }

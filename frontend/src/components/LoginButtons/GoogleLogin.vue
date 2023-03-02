@@ -2,8 +2,8 @@
   <div>
     <q-btn
       :disable="!policy"
-      class="text-capitalize text-weight-regular"
-      label="Start mining"
+      class="text-weight-regular"
+      label="Start Mining"
       no-caps
       color="teal"
       @click="handleClickSignIn"
