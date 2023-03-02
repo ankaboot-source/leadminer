@@ -46,7 +46,7 @@ module.exports = {
     'unsubscribe',
     'wordpress'
   ],
-  EMAIL_HEADERS_NEWSLETTER: ['list-unsubscribe', 'list-id','list'],
+  EMAIL_HEADERS_NEWSLETTER: ['list-unsubscribe', 'list-id', 'list'],
   EMAIL_HEADERS_TRANSACTIONAL: [
     'feedback-id',
     'x-feedback-id',
