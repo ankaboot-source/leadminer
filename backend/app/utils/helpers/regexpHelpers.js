@@ -24,11 +24,10 @@ function extractNameAndEmailFromBody(data) {
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
 function cleanName(name) {
-  let cleanedName = name.trim();
-  cleanedName = cleanedName.replace(REGEX_REMOVE_QUOTES, '$2');
-  cleanedName = cleanedName.replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"
-  return cleanedName;
-}
+  return name
+    .trim()
+    .replace(REGEX_REMOVE_QUOTES, '$2')
+    .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
 
 /**
  * Extracts email addresses, identifiers and names if available using regex.
