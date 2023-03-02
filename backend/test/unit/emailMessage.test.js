@@ -173,19 +173,20 @@ describe('EmailMessage.getListId()', () => {
 });
 
 describe('EmailMessage.getDate()', () => {
-  const message = new EmailMessage({}, '', 1, {});
-
   it('should return the date in UTC format if date is present and valid', () => {
+    const message = new EmailMessage({}, '', 1, {});
     const date = new Date();
     message.header = { date: [date.toString()] };
     expect(message.getDate()).to.equal(date.toUTCString());
   });
 
   it('should return null if the date is not present in the header', () => {
+    const message = new EmailMessage({}, '', 1, {});
     expect(message.getDate()).to.be.null;
   });
 
   it('should return null if the date is not a valid date', () => {
+    const message = new EmailMessage({}, '', 1, {});
     message.header = { date: ['not a date'] };
     expect(message.getDate()).to.be.null;
   });
