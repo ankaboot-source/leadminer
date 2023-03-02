@@ -314,9 +314,10 @@ const columns = [
 ];
 
 function filterFn(rows, term) {
-  return (
-    rows.filter((r) => 
-      r.email.toLowerCase().includes(term.toLowerCase()) || r.name.toLowerCase().includes(term.toLowerCase()))
+  return rows.filter(
+    (r) =>
+      r.email.toLowerCase().includes(term.toLowerCase()) ||
+      r.name.toLowerCase().includes(term.toLowerCase())
   );
 }
 
