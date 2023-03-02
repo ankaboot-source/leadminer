@@ -22,39 +22,37 @@ async function handleMessage({
   userIdentifierHash,
   isLast
 }) {
-  const messageId = header['message-id'] ? header['message-id'][0] : '';
-  if (messageId) {
-    const message = new EmailMessage(
-      redisClientForNormalMode,
-      userEmail,
-      seqNumber,
-      header,
-      body,
-      folderName
-    );
+  const message = new EmailMessage(
+    redisClientForNormalMode,
+    userEmail,
+    seqNumber,
+    header,
+    body,
+    folderName
+  );
 
-    const extractedContacts = await message.extractEmailsAddresses();
-    await db.store(extractedContacts, userId);
+  const extractedContacts = await message.extractEmailsAddresses();
+  await db.store(extractedContacts, userId);
 
-    if (isLast) {
-      try {
-        logger.info('Calling populate.', {
-          metadata: {
-            isLast,
-            userHash: userIdentifierHash
-          }
-        });
-        await db.callRpcFunction(userId, 'populate_refined');
-      } catch (error) {
-        logger.error('Failed populating refined_persons.', {
-          metadata: {
-            error,
-            userHash: userIdentifierHash
-          }
-        });
-      }
+  if (isLast) {
+    try {
+      logger.info('Calling populate.', {
+        metadata: {
+          isLast,
+          userHash: userIdentifierHash
+        }
+      });
+      await db.callRpcFunction(userId, 'populate_refined');
+    } catch (error) {
+      logger.error('Failed populating refined_persons.', {
+        metadata: {
+          error,
+          userHash: userIdentifierHash
+        }
+      });
     }
   }
+
   let retriesCount = 0;
   let informedSubscribers = 0;
   while (informedSubscribers === 0) {
