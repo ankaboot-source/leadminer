@@ -1,31 +1,31 @@
 import { LocalStorage } from "quasar";
 
 class SSE {
-  registerEventHandlers(userId, store) {
-    this.eventSource.addEventListener(`minedEmails${userId}`, (message) => {
+  registerEventHandlers(id, store) {
+    this.eventSource.addEventListener(`minedEmails${id}`, (message) => {
       const { data, statistics } = JSON.parse(message.data);
       store.commit("example/SET_EMAILS", data);
       store.commit("example/SET_STATISTICS", statistics);
     });
 
-    this.eventSource.addEventListener(`ScannedEmails${userId}`, ({ data }) => {
+    this.eventSource.addEventListener(`ScannedEmails${id}`, ({ data }) => {
       const scanned = parseInt(data, 10);
       store.commit("example/SET_SCANNEDEMAILS", scanned);
     });
 
     this.eventSource.addEventListener(
-      `ExtractedEmails${userId}`,
+      `ExtractedEmails${id}`,
       ({ data }) => {
         const extracted = parseInt(data, 10);
         store.commit("example/SET_EXTRACTEDEMAILS", extracted);
       }
     );
 
-    this.eventSource.addEventListener(`scannedBoxes${userId}`, ({ data }) => {
+    this.eventSource.addEventListener(`scannedBoxes${id}`, ({ data }) => {
       store.commit("example/SET_SCANNEDBOXES", data);
     });
 
-    this.eventSource.addEventListener(`token${userId}`, (message) => {
+    this.eventSource.addEventListener(`token${id}`, (message) => {
       const { email, id } = LocalStorage.getItem("googleUser");
 
       LocalStorage.remove("googleUser");
@@ -41,7 +41,7 @@ class SSE {
       store.commit("example/UPDATE_TOKEN", access_token);
     });
 
-    this.eventSource.addEventListener(`dns${userId}`, () => {
+    this.eventSource.addEventListener(`dns${id}`, () => {
       store.commit("example/SET_LOADING_DNS", false);
     });
   }
@@ -50,9 +50,9 @@ class SSE {
     this.eventSource.close();
   }
 
-  init(userID) {
+  init(progressID) {
     this.eventSource = new EventSource(
-      `${process.env.SERVER_ENDPOINT}/api/stream/progress?userid=${userID}`,
+      `${process.env.SERVER_ENDPOINT}/api/stream/progress?progress_id=${progressID}`,
       {
         withCredentials: true,
       }

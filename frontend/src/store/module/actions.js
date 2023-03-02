@@ -55,10 +55,8 @@ export async function getEmails({ state, commit }, { data }) {
   commit("SET_SCANNEDBOXES", []);
 
   if (subscription) await subscription.unsubscribe();
-  subscribeToRefined(user.id, commit);
 
-  sse.init(user.id);
-  sse.registerEventHandlers(user.id, this);
+  subscribeToRefined(user.id, commit);
 
   try {
     const { boxes, abortController } = data;
@@ -70,13 +68,18 @@ export async function getEmails({ state, commit }, { data }) {
       commit("SET_INFO_MESSAGE", "Emails fetching stopped.");
     });
 
-    await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
+    const response = await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
       signal: abortController.signal,
       headers: { "X-imap-login": JSON.stringify(user) },
       params: {
         boxes,
       },
     });
+
+    // Get processID from response and use it to subscribe to stream.
+    const { progress_id } = response.data.data
+    sse.init(progress_id);
+    sse.registerEventHandlers(progress_id, this);
 
     commit("SET_LOADING", false);
     commit("SET_LOADING_DNS", false);
