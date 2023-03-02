@@ -124,15 +124,7 @@
             size="xs"
             color="teal"
             icon="content_copy"
-            @click="
-              copyToClipboard(props.row.email),
-                $q.notify({
-                  message: 'Email has been copied to clipboard.',
-                  textColor: 'positive',
-                  color: 'white',
-                  icon: 'content_copy',
-                })
-            "
+            @click="copyValueToClipboard(props.row.email, 'Email')"
           />
           {{ props.row.email }}
         </q-td>
@@ -389,6 +381,15 @@ onMounted(() => {
     fetchRefined();
   });
 });
+function copyValueToClipboard(value, valueName) {
+  copyToClipboard(value),
+    $q.notify({
+      message: valueName + " has been copied to clipboard.",
+      textColor: "positive",
+      color: "white",
+      icon: "content_copy",
+    });
+}
 </script>
 
 <style>
