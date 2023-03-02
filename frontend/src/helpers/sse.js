@@ -23,7 +23,7 @@ class SSE {
     });
 
     this.eventSource.addEventListener(`token${id}`, (message) => {
-      const { email, id } = LocalStorage.getItem("googleUser");
+      const user = LocalStorage.getItem("googleUser");
 
       LocalStorage.remove("googleUser");
 
@@ -31,8 +31,8 @@ class SSE {
 
       LocalStorage.set("googleUser", {
         access_token,
-        email,
-        id,
+        email: user.email,
+        id: user.id,
       });
 
       store.commit("example/UPDATE_TOKEN", access_token);

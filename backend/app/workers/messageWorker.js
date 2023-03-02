@@ -78,7 +78,7 @@ async function handleMessage({
  * @param {Array} message - Array containing the stream message ID and the message data
  */
 const streamProcessor = async (message) => {
-  const [streamMessageID, msg] = message;
+  const [, msg] = message;
   const data = JSON.parse(msg[1]);
   await handleMessage(data);
 };
