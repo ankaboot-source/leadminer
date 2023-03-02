@@ -173,9 +173,7 @@ describe('EmailMessage.getListId()', () => {
 });
 
 describe('EmailMessage.getDate()', () => {
-  beforeEach(() => {
-    message = new EmailMessage({}, '', 1, {});
-  });
+  const message = new EmailMessage({}, '', 1, {});
 
   it('should return the date in UTC format if date is present and valid', () => {
     const date = new Date();
