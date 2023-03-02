@@ -33,12 +33,6 @@ async function handleMessage({
   isLast,
   progressID
 }) {
-  const messageId = header['message-id'] ? header['message-id'][0] : '';
-
-  if (messageId === '') {
-    return;
-  }
-
   const message = new EmailMessage(
     redisClientForNormalMode,
     userEmail,
@@ -69,6 +63,7 @@ async function handleMessage({
       });
     }
   }
+
   const count = await redisClient.hincrby(progressID, 'extracting', 1);
   logger.info('Incrementing progess', { progressID, count });
 }

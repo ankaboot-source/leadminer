@@ -16,7 +16,7 @@
         <div class="text-h5 text-weight-bolder q-ma-sm">{{ totalEmails }}</div>
         emails to fetch.
       </q-chip>
-
+      <br />
       <q-chip :size="buttonColor" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ extractedEmails }}
