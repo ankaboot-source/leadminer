@@ -243,21 +243,17 @@ async function getEmails(req, res, next) {
   });
 
   const { boxes } = req.query;
+  const processID = hashHelpers.generateUniqueId(id);
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
     eventEmitter,
     boxes,
     id,
-    email
+    email,
+    processID
   );
-  try {
-    await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
-  } catch (err) {
-    logger.error('Error when fetching Email Messages', {
-      metadata: { error: err }
-    });
-    eventEmitter.emit('error');
-  }
+
+  imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
   const { heapTotal, heapUsed } = process.memoryUsage();
   logger.debug(
@@ -266,7 +262,12 @@ async function getEmails(req, res, next) {
     )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
   );
 
-  return res.status(200).send();
+  return res.status(200).send({
+    error: null,
+    data: {
+      progress_id: `progress:${processID}`
+    }
+  });
 }
 
 module.exports = {
