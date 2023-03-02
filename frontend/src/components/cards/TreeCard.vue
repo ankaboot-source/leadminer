@@ -64,6 +64,10 @@ const excludedFolders = [
   "trashed",
   "trash",
   "drafts",
+  "inbox",
+  "important",
+  "sent mail",
+  "starred",
 ]; //
 export default defineComponent({
   name: "TreeCard",
