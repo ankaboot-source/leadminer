@@ -1,11 +1,13 @@
 <template>
   <div
-    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg scroll container"
+    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
+    style="height: 60vh"
   >
     <q-table
-      class="table"
+      class="q-pt-sm"
+      style="height: 100%"
       virtual-scroll
-      :virtual-scroll-sticky-size-start="48"
+      virtual-scroll-slice-size="60"
       :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
       title="Mined emails"
@@ -15,15 +17,19 @@
       :rows="rows"
       :columns="columns"
       :pagination="initialPagination"
+      bordered
+      flat
+      dense
     >
-      <template #top-right="props">
+      <template #top-left>
         <q-input
           v-model="filter"
-          rounded
           dense
           standout
-          bg-color="teal-4"
-          class="q-px-sm"
+          outlined
+          color="teal-5"
+          class="q-pr-sm q-pl-lg"
+          style="width: 25vw"
           debounce="300"
           placeholder="Search"
         >
@@ -31,7 +37,30 @@
             <q-icon name="search" />
           </template>
         </q-input>
-
+      </template>
+      <template #top-right="props">
+        <div class="q-px-sm">
+          <q-btn
+            color="teal-5"
+            icon="archive"
+            label="Export to CSV"
+            no-caps
+            :disable="isExportDisabled"
+            outline
+            @click="exportTable"
+          />
+        </div>
+        <div class="q-px-sm">
+          <q-btn
+            outline
+            color="teal-5"
+            label="Sync"
+            icon="sync"
+            no-caps
+            :disable="isLoading"
+            @click="fetchRefined"
+          />
+        </div>
         <q-btn
           flat
           round
@@ -44,37 +73,6 @@
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
           </q-tooltip>
         </q-btn>
-
-        <div class="q-px-sm">
-          <q-btn
-            color="teal-5"
-            icon-right="archive"
-            label="Export to CSV"
-            no-caps
-            :disable="isExportDisabled"
-            @click="exportTable"
-          />
-        </div>
-        <div>
-          <q-btn
-            color="teal-5"
-            label="Refresh"
-            icon="refresh"
-            no-caps
-            :disable="isLoading"
-            @click="updateRefinedPersons"
-          />
-        </div>
-        <div class="q-pl-sm">
-          <q-btn
-            color="teal-5"
-            label="Fetch"
-            icon="factory"
-            no-caps
-            :disable="isLoading"
-            @click="fetchRefined"
-          />
-        </div>
       </template>
 
       <!--Header tooltips -->
@@ -123,10 +121,10 @@
           <q-btn
             flat
             round
-            size="sm"
+            size="xs"
             color="teal"
             icon="content_copy"
-            @click="copyToClipboard(props.row.email)"
+            @click="copyValueToClipboard(props.row.email, 'Email')"
           />
           {{ props.row.email }}
         </q-td>
@@ -134,8 +132,13 @@
 
       <template #body-cell-tags="props">
         <q-td :props="props">
-          <q-badge v-for="tag in props.row.tags" :key="tag" color="teal">
-            {{ tag }} <br />
+          <q-badge
+            v-for="tag in props.row.tags"
+            :key="tag"
+            color="teal-1"
+            class="q-pa-xs text-uppercase text-teal-8 q-mx-xs"
+          >
+            {{ tag }}
           </q-badge>
         </q-td>
       </template>
@@ -238,6 +241,7 @@ const mailboxValidityCurrent = "green";
 const isExportDisabled = computed(
   () =>
     $store.state.example.loadingStatusDns ||
+    isLoading.value ||
     rows.value.some(
       (el) => el.engagement === undefined || el.engagement === null
     )
@@ -258,6 +262,11 @@ onUnmounted(() => {
 
 const columns = [
   {
+    name: "status",
+    label: "Status",
+    align: "center",
+  },
+  {
     name: "email",
     label: "Email",
     field: "email",
@@ -269,20 +278,13 @@ const columns = [
   },
   {
     name: "name",
-    label: "Names",
+    label: "Name",
     field: "name",
     sortable: true,
     align: "left",
     sort: (a, b) => {
       return b.localeCompare(a);
     },
-  },
-  {
-    name: "occurrence",
-    label: "Occurrence",
-    field: "occurence",
-    align: "center",
-    sortable: true,
   },
   {
     name: "recency",
@@ -301,19 +303,18 @@ const columns = [
   },
   {
     name: "tags",
-    label: "Type",
+    label: "Tags",
     align: "center",
     field: "tags",
-  },
-  {
-    name: "status",
-    label: "Status",
-    align: "center",
   },
 ];
 
 function filterFn(rows, term) {
-  return rows.filter((r) => r.email.toLowerCase().includes(term.toLowerCase()));
+  return rows.filter(
+    (r) =>
+      r.email.toLowerCase().includes(term.toLowerCase()) ||
+      r.name.toLowerCase().includes(term.toLowerCase())
+  );
 }
 
 function updateRefinedPersons() {
@@ -331,7 +332,11 @@ async function fetchRefined() {
 
 function exportTable() {
   if (!rows.value.length) {
-    $q.notify("There are no contacts present in the table.");
+    $q.notify({
+      message: "There are no contacts present in the table.",
+      textColor: "negative",
+      color: "red-1",
+    });
     return 0;
   }
   const currentDatetime = new Date();
@@ -361,7 +366,12 @@ function exportTable() {
       exportType: exportFromJSON.types.csv,
       delimiter: getLocalizedCsvSeparator(),
     });
-    $q.notify("Successfully exported table.");
+    $q.notify({
+      message: "Successfully exported table.",
+      textColor: "positive",
+      color: "white",
+      icon: "task_alt",
+    });
   } catch (error) {
     $q.notify("Error when exporting to CSV.");
   }
@@ -371,15 +381,18 @@ onMounted(() => {
     fetchRefined();
   });
 });
+function copyValueToClipboard(value, valueName) {
+  copyToClipboard(value),
+    $q.notify({
+      message: valueName + " has been copied to clipboard.",
+      textColor: "positive",
+      color: "white",
+      icon: "content_copy",
+    });
+}
 </script>
 
 <style>
-.container {
-  height: 50vh;
-}
-.table {
-  height: 100%;
-}
 .q-table__top,
   .q-table__bottom,
   thead tr:first-child th /* bg color is important for th; just specify one */ {

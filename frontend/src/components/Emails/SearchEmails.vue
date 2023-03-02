@@ -1,13 +1,9 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <div class="row q-pa-sm">
-        <div class="q-mr-sm col-lg-5 col-md-5 q-pa-sm">
-          <q-card>
-            <q-card-section class="q-pa-sm">
-              <div class="text-h6 text-bold">Preferences</div>
-            </q-card-section>
-
+      <div class="row q-pa-lg">
+        <div class="q-mr-sm col-lg-5 col-md-5 q-ma-sm">
+          <q-card flat bordered>
             <div class="row q-pa-sm">
               <div class="bg-grey-2 border q-pa-sm col-lg-12 col-md-6">
                 <div class="text-bold col-lg-5 col-md-5">
@@ -37,7 +33,7 @@
                     :disable="loadingStatusDns"
                     no-caps
                     :color="loadingStatusDns ? 'grey-6' : 'red'"
-                    label="Collect emails addresses"
+                    label="Start"
                     @click="fetchEmails"
                   />
                   <q-btn
@@ -45,7 +41,7 @@
                     class="q-ma-md"
                     no-caps
                     :color="loadingStatusDns ? 'red' : 'grey-6'"
-                    label="Stop mining"
+                    label="Stop"
                     @click="cancelFetchEmails"
                   />
                 </div>
@@ -54,7 +50,7 @@
           </q-card>
         </div>
 
-        <div class="bg-transparent q-md col">
+        <div class="bg-transparent q-md col q-ma-sm">
           <div class="row">
             <div class="q-md col-12"></div>
             <div class="row q-md col-12">
