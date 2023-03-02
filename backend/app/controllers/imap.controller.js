@@ -19,11 +19,13 @@ const redisPublisher = redis.getDuplicatedClient();
  * @param {object} emailMessage - An email message.
  * @param {object} emailMessage.header - Email headers.
  * @param {object} emailMessage.body - Email body.
+ * @param {string} emailMessage.folderName - Name of the folder that contains the email.
  * @param {number} emailMessage.seqNumber - Email sequence number in its folder.
- * @param {number} emailMessage.totalInFolder - Total emails in folder.
- * @param {string} emailMessage.userId - User Id.
- * @param {string} emailMessage.userEmail - User email address.
- * @param {string} emailMessage.userIdentifier - Hashed user identifier
+ * @param {number} emailMessage.totalInFolder - Total number of emails in the folder.
+ * @param {string} emailMessage.userId - User Id associated with the email.
+ * @param {string} emailMessage.userEmail - Email address of the user.
+ * @param {string} emailMessage.userIdentifier - Hashed user identifier.
+ * @param {string} emailMessage.progressID - Unique ID associated with the progress.
  * @returns {Promise}
  */
 async function onEmailMessage({
@@ -32,11 +34,11 @@ async function onEmailMessage({
   folderName,
   totalInFolder,
   seqNumber,
-  progress,
   userId,
   userEmail,
-  userIdentifier
-}) {
+  userIdentifier,
+  progressID
+  }) {
   const isLastInFolder = seqNumber === totalInFolder;
 
   const message = JSON.stringify({
@@ -47,11 +49,11 @@ async function onEmailMessage({
     userEmail,
     folderName,
     isLast: isLastInFolder,
-    userIdentifier
+    userIdentifier,
+    progressID
   });
 
   try {
-    await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
 
     await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
@@ -231,10 +233,6 @@ async function getEmails(req, res, next) {
     : imapConnectionProvider.withPassword(host, password, port);
 
   const eventEmitter = new EventEmitter();
-
-  req.on('close', () => {
-    eventEmitter.emit('end');
-  });
 
   eventEmitter.on('error', () => {
     res.status(500).send({

@@ -14,7 +14,17 @@ function hashEmail(emailAddress, userId) {
     .update(saltedUserId)
     .digest('hex');
 }
+/**
+ * Generates unique processID.
+ * @param {*} userId 
+ * @returns 
+ */
+function generateUniqueId(userId) {
+  const processId = crypto.randomUUID();
+  return `${userId}-${processId}`;
+}
 
 module.exports = {
-  hashEmail
+  hashEmail,
+  generateUniqueId
 };

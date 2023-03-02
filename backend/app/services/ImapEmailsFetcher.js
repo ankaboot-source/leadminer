@@ -1,5 +1,4 @@
 const hashHelpers = require('../utils/helpers/hashHelpers');
-const { randomUUID } = require('crypto');
 const Imap = require('imap');
 const { IMAP_FETCH_BODY } = require('../config');
 const { logger } = require('../utils/logger');
@@ -9,20 +8,23 @@ const redisClient = redis.getClient();
 
 class ImapEmailsFetcher {
   /**
-   * ImapEmailsFetcher constructor.
-   * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
-   * @param {EventEmitter} eventEmitter - An event emitter
-   * @param {string[]} folders - List of folders to fetch.
-   * @param {string} userId - User Id.
-   * @param {string} userEmail - User email.
+   * Constructs an instance of the ImapEmailsFetcher class.
+   * @constructor
+   * @param {object} imapConnectionProvider - A configured IMAP connection provider instance.
+   * @param {EventEmitter} eventEmitter - An event emitter.
+   * @param {string[]} folders - List folder names to fetch.
+   * @param {string} userId - User ID.
+   * @param {string} userEmail - Email address of the user.
+   * @param {string} processID - Unique ID associated with the process.
    */
-  constructor(
-    imapConnectionProvider,
-    eventEmitter,
-    folders,
-    userId,
-    userEmail
-  ) {
+    constructor(
+      imapConnectionProvider,
+      eventEmitter,
+      folders,
+      userId,
+      userEmail,
+      processID
+      ) {
     this.imapConnectionProvider = imapConnectionProvider;
     this.eventEmitter = eventEmitter;
     this.folders = folders;
@@ -30,10 +32,8 @@ class ImapEmailsFetcher {
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
-    const processId = randomUUID();
-    this.processSetKey = `user:${this.userId}:process:${processId}`;
-
-    this.fetchedMessagesCount = 0;
+    this.processSetKey = `caching:${processID}`;
+    this.progressProcessID = `progress:${processID}`;
 
     this.eventEmitter.on('end', async () => {
       await this.cleanup();
@@ -129,12 +129,10 @@ class ImapEmailsFetcher {
         msg.once('end', async () => {
           const parsedHeader = Imap.parseHeader(header.toString('utf8'));
           const parsedBody = body.toString('utf8');
-
-          this.fetchedMessagesCount++;
-
           const messageId = parsedHeader['message-id']
             ? parsedHeader['message-id'][0]
             : null;
+
           if (messageId !== null) {
             const addedValues = await redisClient.sadd(
               this.processSetKey,
@@ -146,16 +144,18 @@ class ImapEmailsFetcher {
             }
           }
 
+          await redisClient.hincrby(this.progressProcessID, 'fetching', 1);
+
           await callback({
             header: parsedHeader,
             body: parsedBody,
             seqNumber,
             folderName,
             totalInFolder,
-            progress: this.fetchedMessagesCount,
             userId: this.userId,
             userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier
+            userIdentifier: this.userIdentifier,
+            progressID: this.progressProcessID
           });
         });
       });

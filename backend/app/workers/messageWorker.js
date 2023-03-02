@@ -5,13 +5,23 @@ const { db } = require('../db');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const {
   REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME,
-  MAX_REDIS_PUBLISH_RETRIES_COUNT
+  REDIS_CONSUMER_GROUP_NAME
 } = require('../utils/constants');
+const redisClient = redis.getDuplicatedClient();
 const redisStreamsConsumer = redis.getDuplicatedClient();
-const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
 
+/**
+ * @param {number} seqNumber - Sequence number of the message in its folder.
+ * @param {object} body - Body of the email message.
+ * @param {object} header - Header of the email message.
+ * @param {string} folderName - Name of the folder containing the email message.
+ * @param {string} userId - User ID associated with the email message.
+ * @param {string} userEmail - Email address of the user associated with the email message.
+ * @param {string} userIdentifierHash - Hash of the user identifier associated with the email message.
+ * @param {boolean} isLast - Indicates if this is the last message in the folder.
+ * @param {string} progressID - Unique ID associated with the progress.
+*/
 async function handleMessage({
   seqNumber,
   body,
@@ -20,60 +30,50 @@ async function handleMessage({
   userId,
   userEmail,
   userIdentifierHash,
-  isLast
+  isLast,
+  progressID
 }) {
   const messageId = header['message-id'] ? header['message-id'][0] : '';
-  if (messageId) {
-    const message = new EmailMessage(
-      redisClientForNormalMode,
-      userEmail,
-      seqNumber,
-      header,
-      body,
-      folderName
-    );
 
-    const extractedContacts = await message.extractEmailsAddresses();
-    await db.store(extractedContacts, userId);
-
-    if (isLast) {
-      try {
-        logger.info('Calling populate.', {
-          metadata: {
-            isLast,
-            userHash: userIdentifierHash
-          }
-        });
-        await db.callRpcFunction(userId, 'populate_refined');
-      } catch (error) {
-        logger.error('Failed populating refined_persons.', {
-          metadata: {
-            error,
-            userHash: userIdentifierHash
-          }
-        });
-      }
-    }
+  if (messageId === '') {
+    return;
   }
-  let retriesCount = 0;
-  let informedSubscribers = 0;
-  while (informedSubscribers === 0) {
-    if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
-      logger.error('Failed to publish to subscribers', {
+
+  const message = new EmailMessage(
+    redisClientForNormalMode,
+    userEmail,
+    seqNumber,
+    header,
+    body,
+    folderName
+  );
+
+  const extractedContacts = await message.extractEmailsAddresses();
+  await db.store(extractedContacts, userId);
+
+  if (isLast) {
+    try {
+      logger.info('Calling populate.', {
         metadata: {
-          user: userIdentifierHash
+          isLast,
+          userHash: userIdentifierHash
         }
       });
-      break;
+      await db.callRpcFunction(userId, 'populate_refined');
+    } catch (error) {
+      logger.error('Failed populating refined_persons.', {
+        metadata: {
+          error,
+          userHash: userIdentifierHash
+        }
+      });
     }
-
-    informedSubscribers = await redisPubSubClient.publish(
-      `extracting-${userId}`,
-      true
-    );
-    retriesCount++;
   }
+  const count = await redisClient.hincrby(progressID, 'extracting', 1);
+  logger.info('Incrementing progess', { progressID, count });
+
 }
+
 
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
