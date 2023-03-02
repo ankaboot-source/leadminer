@@ -128,23 +128,36 @@ class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = Imap.parseHeader(header.toString('utf8'));
-          const parsedBody = body.toString('utf8');
+          const parsedBody = IMAP_FETCH_BODY ? body.toString('utf8') : '';
 
-          this.fetchedMessagesCount++;
-
-          const messageId = parsedHeader['message-id']
-            ? parsedHeader['message-id'][0]
-            : null;
-          if (messageId !== null) {
-            const addedValues = await redisClient.sadd(
-              this.processSetKey,
-              messageId
-            );
-
-            if (addedValues === 0) {
-              return;
-            }
+          let messageId = parsedHeader['message-id'];
+          if (!messageId) {
+            // We generate a pseudo message-id with the format
+            // date@return_path_domain
+            const returnPathDomain = parsedHeader['return-path'][0]
+              .split('@')[1]
+              .replace('>', '');
+            const date =
+              parsedHeader.date !== undefined
+                ? Date.parse(parsedHeader.date[0])
+                : '';
+            messageId = `UNKNOWN ${date}@${returnPathDomain}`;
+            parsedHeader['message-id'] = [messageId];
+          } else {
+            messageId = parsedHeader['message-id'][0];
           }
+
+          const addedValues = await redisClient.sadd(
+            this.processSetKey,
+            messageId
+          );
+
+          if (addedValues === 0) {
+            return;
+          }
+
+          // We only increment the count for a message if it is published in the stream
+          this.fetchedMessagesCount++;
 
           await callback({
             header: parsedHeader,

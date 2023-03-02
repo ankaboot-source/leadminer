@@ -173,23 +173,20 @@ describe('EmailMessage.getListId()', () => {
 });
 
 describe('EmailMessage.getDate()', () => {
-  let message = '';
-
-  beforeEach(() => {
-    message = new EmailMessage({}, '', 1, {});
-  });
-
   it('should return the date in UTC format if date is present and valid', () => {
+    const message = new EmailMessage({}, '', 1, {});
     const date = new Date();
     message.header = { date: [date.toString()] };
     expect(message.getDate()).to.equal(date.toUTCString());
   });
 
   it('should return null if the date is not present in the header', () => {
+    const message = new EmailMessage({}, '', 1, {});
     expect(message.getDate()).to.be.null;
   });
 
   it('should return null if the date is not a valid date', () => {
+    const message = new EmailMessage({}, '', 1, {});
     message.header = { date: ['not a date'] };
     expect(message.getDate()).to.be.null;
   });
@@ -240,11 +237,6 @@ describe('EmailMessage.getMessageId()', () => {
 
   beforeEach(() => {
     message = new EmailMessage({}, '', 1, {});
-  });
-
-  it('should return `message_id_unknown` if the message-id field is not present in the header', () => {
-    message.header = { date: ['01-01-2021'] };
-    expect(message.getMessageId()).to.equal('message_id_unknown 01-01-2021');
   });
 
   it('should return the message-id field if it is present in the header', () => {
