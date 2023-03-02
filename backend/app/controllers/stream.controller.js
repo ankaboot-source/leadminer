@@ -2,7 +2,7 @@ const { SSE } = require('express-sse');
 const { redis } = require('../utils/redis');
 const { logger } = require('../utils/logger');
 
-const redisPubSubClient = redis.getDuplicatedClient();
+const redisClient = redis.getDuplicatedClient();
 
 /**
  * Sends a Server-Sent Event (SSE) to the specified client with the given data and event name.
@@ -24,48 +24,35 @@ function sendSSE(sseClient, sseData, sseEvent) {
  * @param {Object} res - The response object.
  */
 function streamProgress(req, res) {
+  const { progress_id } = req.query;
   const sse = new SSE();
-  const { userid } = req.query;
 
-  const extractingChannel = `extracting-${userid}`;
-  const fetchingChannel = `fetching-${userid}`;
-  const authChannel = `auth-${userid}`;
+  let fetchingCounter = 0;
+  let extractingCounter = 0;
 
-  let extractedEmailMessages = 0;
   sse.init(req, res);
 
-  // subscribe to unique channels to track progress.
-  redisPubSubClient.subscribe(extractingChannel, (err) => {
-    if (err) {
-      logger.error('Failed subscribing to Redis.', { metadata: { err } });
-    }
-  });
-  redisPubSubClient.subscribe(fetchingChannel, (err) => {
-    if (err) {
-      logger.error('Failed subscribing to Redis.', { metadata: { err } });
-    }
-  });
-  redisPubSubClient.subscribe(authChannel, (err) => {
-    if (err) {
-      logger.error('Failed subscribing to Redis.', { metadata: { err } });
-    }
-  });
-  redisPubSubClient.on('message', (channel, data) => {
-    if (channel === extractingChannel) {
-      extractedEmailMessages++;
-      sendSSE(sse, extractedEmailMessages, `ExtractedEmails${userid}`);
-    } else if (channel === fetchingChannel) {
-      sendSSE(sse, parseInt(data), `ScannedEmails${userid}`);
-    } else if (channel === authChannel) {
-      sendSSE(sse, { token: data }, `token${userid}`);
-    }
-  });
+  const intervalId = setInterval(async () => {
+    const { fetching, extracting } = await redisClient.hgetall(progress_id) || {};
 
-  // When the client closes the connection, unsubscribe from Redis channels and end the response.
-  req.on('close', () => {
-    redisPubSubClient.unsubscribe(extractingChannel);
-    redisPubSubClient.unsubscribe(fetchingChannel);
-    redisPubSubClient.unsubscribe(authChannel);
+    if (fetching && extracting) {
+
+      if (fetching > fetchingCounter) {
+        sendSSE(sse, parseInt(fetching), `ScannedEmails${progress_id}`);
+      }
+
+      if (extracting > extractingCounter) {
+        sendSSE(sse, parseInt(extracting), `ExtractedEmails${progress_id}`);
+      }
+
+      fetchingCounter = fetching;
+      extractingCounter = extracting;
+    }
+
+  }, 100);
+
+  req.on('close', () => { // Cleanup everything when closing request.
+    clearInterval(intervalId);
     res.end();
   });
 }
