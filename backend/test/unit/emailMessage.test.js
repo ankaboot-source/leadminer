@@ -173,8 +173,6 @@ describe('EmailMessage.getListId()', () => {
 });
 
 describe('EmailMessage.getDate()', () => {
-  let message = '';
-
   beforeEach(() => {
     message = new EmailMessage({}, '', 1, {});
   });

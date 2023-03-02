@@ -112,9 +112,11 @@ class EmailMessage {
    * @returns {(string|null)} The UTC formatted date string or null if it is not present or not a valid date.
    */
   getDate() {
-    return this.header.date
-      ? new Date(this.header.date[0]).toUTCString()
-      : null;
+    if (!this.header.date) {
+      return null;
+    }
+    const dateStr = new Date(this.header.date[0]).toUTCString();
+    return dateStr !== 'Invalid Date' ? dateStr : null;
   }
 
   /**
