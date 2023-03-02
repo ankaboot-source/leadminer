@@ -242,11 +242,6 @@ describe('EmailMessage.getMessageId()', () => {
     message = new EmailMessage({}, '', 1, {});
   });
 
-  it('should return `message_id_unknown` if the message-id field is not present in the header', () => {
-    message.header = { date: ['01-01-2021'] };
-    expect(message.getMessageId()).to.equal('message_id_unknown 01-01-2021');
-  });
-
   it('should return the message-id field if it is present in the header', () => {
     message.header = {
       'message-id': ['<test_message_id>'],

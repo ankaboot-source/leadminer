@@ -112,9 +112,7 @@ class EmailMessage {
    * @returns {(string|null)} The UTC formatted date string or null if it is not present or not a valid date.
    */
   getDate() {
-    return this.header.date &&
-      this.header.date[0] &&
-      !isNaN(Date.parse(this.header.date[0]))
+    return this.header.date
       ? new Date(this.header.date[0]).toUTCString()
       : null;
   }
@@ -138,10 +136,7 @@ class EmailMessage {
    * @returns {string}
    */
   getMessageId() {
-    if (this.header['message-id']) {
-      return this.header['message-id'][0];
-    }
-    return `message_id_unknown ${this.header.date}`;
+    return this.header['message-id'][0];
   }
 
   /**
