@@ -17,14 +17,14 @@ class ImapEmailsFetcher {
    * @param {string} userEmail - Email address of the user.
    * @param {string} processID - Unique ID associated with the process.
    */
-    constructor(
-      imapConnectionProvider,
-      eventEmitter,
-      folders,
-      userId,
-      userEmail,
-      processID
-      ) {
+  constructor(
+    imapConnectionProvider,
+    eventEmitter,
+    folders,
+    userId,
+    userEmail,
+    processID
+  ) {
     this.imapConnectionProvider = imapConnectionProvider;
     this.eventEmitter = eventEmitter;
     this.folders = folders;

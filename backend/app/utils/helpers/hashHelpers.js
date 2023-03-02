@@ -16,8 +16,8 @@ function hashEmail(emailAddress, userId) {
 }
 /**
  * Generates unique processID.
- * @param {*} userId 
- * @returns 
+ * @param {*} userId
+ * @returns
  */
 function generateUniqueId(userId) {
   const processId = crypto.randomUUID();

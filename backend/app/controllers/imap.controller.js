@@ -38,7 +38,7 @@ async function onEmailMessage({
   userEmail,
   userIdentifier,
   progressID
-  }) {
+}) {
   const isLastInFolder = seqNumber === totalInFolder;
 
   const message = JSON.stringify({
@@ -54,7 +54,6 @@ async function onEmailMessage({
   });
 
   try {
-
     await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',

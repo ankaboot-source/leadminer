@@ -21,7 +21,7 @@ const redisClientForNormalMode = redis.getClient();
  * @param {string} userIdentifierHash - Hash of the user identifier associated with the email message.
  * @param {boolean} isLast - Indicates if this is the last message in the folder.
  * @param {string} progressID - Unique ID associated with the progress.
-*/
+ */
 async function handleMessage({
   seqNumber,
   body,
@@ -71,9 +71,7 @@ async function handleMessage({
   }
   const count = await redisClient.hincrby(progressID, 'extracting', 1);
   logger.info('Incrementing progess', { progressID, count });
-
 }
-
 
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function

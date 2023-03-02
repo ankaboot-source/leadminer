@@ -33,10 +33,10 @@ function streamProgress(req, res) {
   sse.init(req, res);
 
   const intervalId = setInterval(async () => {
-    const { fetching, extracting } = await redisClient.hgetall(progress_id) || {};
+    const { fetching, extracting } =
+      (await redisClient.hgetall(progress_id)) || {};
 
     if (fetching && extracting) {
-
       if (fetching > fetchingCounter) {
         sendSSE(sse, parseInt(fetching), `ScannedEmails${progress_id}`);
       }
@@ -48,10 +48,10 @@ function streamProgress(req, res) {
       fetchingCounter = fetching;
       extractingCounter = extracting;
     }
-
   }, 100);
 
-  req.on('close', () => { // Cleanup everything when closing request.
+  req.on('close', () => {
+    // Cleanup everything when closing request.
     clearInterval(intervalId);
     res.end();
   });

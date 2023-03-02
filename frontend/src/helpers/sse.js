@@ -13,13 +13,10 @@ class SSE {
       store.commit("example/SET_SCANNEDEMAILS", scanned);
     });
 
-    this.eventSource.addEventListener(
-      `ExtractedEmails${id}`,
-      ({ data }) => {
-        const extracted = parseInt(data, 10);
-        store.commit("example/SET_EXTRACTEDEMAILS", extracted);
-      }
-    );
+    this.eventSource.addEventListener(`ExtractedEmails${id}`, ({ data }) => {
+      const extracted = parseInt(data, 10);
+      store.commit("example/SET_EXTRACTEDEMAILS", extracted);
+    });
 
     this.eventSource.addEventListener(`scannedBoxes${id}`, ({ data }) => {
       store.commit("example/SET_SCANNEDBOXES", data);
