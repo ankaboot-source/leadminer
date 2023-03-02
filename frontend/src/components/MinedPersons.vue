@@ -241,7 +241,6 @@ const mailboxValidityCurrent = "green";
 const isExportDisabled = computed(
   () =>
     $store.state.example.loadingStatusDns ||
-    isLoading.value ||
     rows.value.some(
       (el) => el.engagement === undefined || el.engagement === null
     )
