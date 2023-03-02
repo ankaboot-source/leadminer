@@ -28,7 +28,7 @@ function cleanName(name) {
     .trim()
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
-
+}
 /**
  * Extracts email addresses, identifiers and names if available using regex.
  * @param  {string} emails - can be either comma-separated emails or one email.
