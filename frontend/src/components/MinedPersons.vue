@@ -124,7 +124,12 @@
             size="xs"
             color="teal"
             icon="content_copy"
-            @click="copyValueToClipboard(props.row.email, 'Email')"
+            @click="
+              copyValueToClipboard(
+                `${props.row.name} <${props.row.email}>`,
+                'Email'
+              )
+            "
           />
           {{ props.row.email }}
         </q-td>
