@@ -77,7 +77,7 @@ class ImapConnectionProvider {
       };
       return this;
     } catch (error) {
-      throw new Error('Failed generating XOAuthToken.');
+      throw new Error(`Failed generating XOAuthToken: ${error}`);
     }
   }
 

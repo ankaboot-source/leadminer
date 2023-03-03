@@ -1,3 +1,5 @@
+import { getDefaultState } from "./defaultState";
+
 export function SET_EMAILS(state, streamedEmail) {
   state.retrievedEmails[streamedEmail.email] = streamedEmail;
 }
@@ -77,4 +79,8 @@ export function SET_GOOGLE_USER(state, user) {
   state.googleUser.email = user.email;
   state.googleUser.id = user.id;
   state.googleUser.access_token = user.access_token;
+}
+
+export function RESET_STORE(state) {
+  Object.assign(state, getDefaultState());
 }

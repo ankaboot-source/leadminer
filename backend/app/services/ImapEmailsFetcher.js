@@ -34,6 +34,7 @@ class ImapEmailsFetcher {
     this.processSetKey = `user:${this.userId}:process:${processId}`;
 
     this.fetchedMessagesCount = 0;
+    this.fetchedIds = new Set();
 
     this.eventEmitter.on('end', async () => {
       await this.cleanup();
@@ -147,16 +148,13 @@ class ImapEmailsFetcher {
             messageId = parsedHeader['message-id'][0];
           }
 
-          const addedValues = await redisClient.sadd(
-            this.processSetKey,
-            messageId
-          );
-
-          if (addedValues === 0) {
+          if (this.fetchedIds.has(messageId)) {
             return;
           }
 
-          // We only increment the count for a message if it is published in the stream
+          this.fetchedIds.add(messageId);
+          // We only increment the count for a message if it is
+          // not duplicated and is published in the stream
           this.fetchedMessagesCount++;
 
           await callback({
