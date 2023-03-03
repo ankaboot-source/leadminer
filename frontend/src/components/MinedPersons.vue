@@ -116,16 +116,24 @@
       </template>
 
       <!-- Table body slots -->
-      <template #body-cell-email="props">
-        <q-td :props="props">
+      <template #body-cell-copy="props">
+        <q-td auto-width>
           <q-btn
             flat
             round
             size="xs"
             color="teal"
+            class="q-mr-none"
             icon="content_copy"
-            @click="copyValueToClipboard(props.row.email, 'Email')"
-          />
+            @click="
+              copyValueToClipboard(
+                `${props.row.name} <${props.row.email}>`,
+                'Contact'
+              )
+            " /></q-td
+      ></template>
+      <template #body-cell-email="props">
+        <q-td :props="props">
           {{ props.row.email }}
         </q-td>
       </template>
@@ -261,9 +269,9 @@ onUnmounted(() => {
 
 const columns = [
   {
-    name: "status",
-    label: "Status",
-    align: "center",
+    name: "copy",
+    label: "",
+    align: "left",
   },
   {
     name: "email",
@@ -305,6 +313,11 @@ const columns = [
     label: "Tags",
     align: "center",
     field: "tags",
+  },
+  {
+    name: "status",
+    label: "Status",
+    align: "center",
   },
 ];
 
