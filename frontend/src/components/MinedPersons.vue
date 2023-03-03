@@ -325,8 +325,7 @@ function filterFn(rows, term) {
   return rows.filter(
     (r) =>
       r.email.toLowerCase().includes(term.toLowerCase()) ||
-      r.name.toLowerCase().includes(term.toLowerCase()) ||
-      r.alternate_names.toString().toLowerCase().includes(term.toLowerCase())
+      r.name.toLowerCase().includes(term.toLowerCase())
   );
 }
 
