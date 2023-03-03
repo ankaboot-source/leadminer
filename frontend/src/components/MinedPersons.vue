@@ -128,7 +128,7 @@
             @click="
               copyValueToClipboard(
                 `${props.row.name} <${props.row.email}>`,
-                'Email'
+                'Contact'
               )
             " /></q-td
       ></template>
