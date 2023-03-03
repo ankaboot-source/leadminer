@@ -11,11 +11,11 @@
         <q-space />
         <q-btn
           class="q-mr-sm"
-          @click="logout()"
           flat
           round
           dense
           icon="logout"
+          @click="logout()"
         />
       </q-toolbar>
     </q-header>
@@ -27,8 +27,9 @@
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
 import { LocalStorage } from "quasar";
+import { sse } from "src/helpers/sse";
+import { defineComponent, ref } from "vue";
 
 export default defineComponent({
   name: "MainLayout",
@@ -43,6 +44,8 @@ export default defineComponent({
   methods: {
     logout() {
       LocalStorage.clear();
+      this.$store.commit("example/RESET_STORE");
+      sse.closeConnection();
       this.$router.push("/");
     },
   },
