@@ -47,10 +47,13 @@ class SSE {
   }
 
   closeConnection() {
-    this.eventSource.close();
+    if (this.eventSource && this.eventSource.readyState !== 2) {
+      this.eventSource.close();
+    }
   }
 
   init(userID) {
+    this.closeConnection();
     this.eventSource = new EventSource(
       `${process.env.SERVER_ENDPOINT}/api/stream/progress?userid=${userID}`,
       {
