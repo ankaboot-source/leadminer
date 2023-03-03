@@ -224,36 +224,36 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should pass case when names have special chars.', () => {
     const testCases = [
       {
-        description:
-          'Cases where name contains special char -',
-        input: 'Hello-There <leadminer@Teamankaboot.fr>, Hello - There <leadminer@Teamankaboot.fr>, Hello-There leadminer@Teamankaboot.fr, Hello - There leadminer@Teamankaboot.fr',
+        description: 'Cases where name contains special char -',
+        input:
+          'Hello-There <leadminer@Teamankaboot.fr>, Hello - There <leadminer@Teamankaboot.fr>, Hello-There leadminer@Teamankaboot.fr, Hello - There leadminer@Teamankaboot.fr',
         output: 'Hello-There, Hello - There, Hello-There, Hello - There'
       },
       {
-        description:
-          'Cases where name contains special chars ()',
-          input: 'Hello(There) <leadminer@Teamankaboot.fr>, Hello (There) <leadminer@Teamankaboot.fr>, Hello(There) leadminer@Teamankaboot.fr, Hello (There) leadminer@Teamankaboot.fr',
-          output: 'Hello(There), Hello (There), Hello(There), Hello (There)'
+        description: 'Cases where name contains special chars ()',
+        input:
+          'Hello(There) <leadminer@Teamankaboot.fr>, Hello (There) <leadminer@Teamankaboot.fr>, Hello(There) leadminer@Teamankaboot.fr, Hello (There) leadminer@Teamankaboot.fr',
+        output: 'Hello(There), Hello (There), Hello(There), Hello (There)'
       },
       {
-        description:
-          'Cases where name contains special chars :',
-          input: 'Hello: There <leadminer@Teamankaboot.fr>, Hello : There <leadminer@Teamankaboot.fr>, Hello: There leadminer@Teamankaboot.fr, Hello : There leadminer@Teamankaboot.fr',
+        description: 'Cases where name contains special chars :',
+        input:
+          'Hello: There <leadminer@Teamankaboot.fr>, Hello : There <leadminer@Teamankaboot.fr>, Hello: There leadminer@Teamankaboot.fr, Hello : There leadminer@Teamankaboot.fr',
         output: 'Hello: There, Hello : There, Hello: There, Hello : There'
       },
       {
-        description:
-          'Cases where name contains special chars |',
-          input: 'Hello| There <leadminer@Teamankaboot.fr>, Hello | There <leadminer@Teamankaboot.fr>, Hello| There leadminer@Teamankaboot.fr, Hello | There leadminer@Teamankaboot.fr',
+        description: 'Cases where name contains special chars |',
+        input:
+          'Hello| There <leadminer@Teamankaboot.fr>, Hello | There <leadminer@Teamankaboot.fr>, Hello| There leadminer@Teamankaboot.fr, Hello | There leadminer@Teamankaboot.fr',
         output: 'Hello| There, Hello | There, Hello| There, Hello | There'
       },
       {
-        description:
-          'Cases where name contains special chars &',
-          input: 'Hello& There <leadminer@Teamankaboot.fr>, Hello & There <leadminer@Teamankaboot.fr>, Hello& There leadminer@Teamankaboot.fr, Hello & There leadminer@Teamankaboot.fr',
+        description: 'Cases where name contains special chars &',
+        input:
+          'Hello& There <leadminer@Teamankaboot.fr>, Hello & There <leadminer@Teamankaboot.fr>, Hello& There leadminer@Teamankaboot.fr, Hello & There leadminer@Teamankaboot.fr',
         output: 'Hello& There, Hello & There, Hello& There, Hello & There'
-      },
-    ]
+      }
+    ];
     testCases.forEach(({ input, output, description }) => {
       const resultOutput = regExHelpers
         .extractNameAndEmail(input)
