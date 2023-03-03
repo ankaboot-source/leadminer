@@ -174,13 +174,13 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       },
       {
         description:
-          'Case where name is also email and email is not surrounded with <>',
-        input: 'leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr',
+          'Case where name equal email and email is not surrounded with <>',
+        input: 'leadminer@Teamankaboot.fr leadminer@Teamankaboot.fr',
         output: 'empty'
       },
       {
         description:
-          'Case where name is also email and email is surrounded with <>',
+          'Case where name equal email and email is surrounded with <>',
         input: 'leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>',
         output: 'empty'
       },
@@ -198,24 +198,6 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       },
       {
         description:
-          'Case where there is other characters in name and email is not surrounded with <>',
-        input: 'Hello-There (leadminer) <leadminer@Teamankaboot.fr>',
-        output: 'Hello-There (leadminer)'
-      },
-      {
-        description:
-          'Case where there is other characters in name and email is surrounded with <>',
-        input: 'Hello-There (leadminer) leadminer@Teamankaboot.fr',
-        output: 'Hello-There (leadminer)'
-      },
-      {
-        description: 'Case where there multiple emails with name and email',
-        input:
-          'Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>',
-        output: 'Hello There, Hello There'
-      },
-      {
-        description:
           'Case when multiple emails with nested formats, starting with email not surrounded with <>',
         input:
           'leadminer@Teamankaboot.fr, <leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
@@ -230,6 +212,48 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       }
     ];
 
+    testCases.forEach(({ input, output, description }) => {
+      const resultOutput = regExHelpers
+        .extractNameAndEmail(input)
+        .map(({ name }) => (name !== '' ? name : 'empty'))
+        .join(', ');
+      expect(resultOutput).to.equal(output, description);
+    });
+  });
+
+  it('Should pass case when names have special chars.', () => {
+    const testCases = [
+      {
+        description:
+          'Cases where name contains special char -',
+        input: 'Hello-There <leadminer@Teamankaboot.fr>, Hello - There <leadminer@Teamankaboot.fr>, Hello-There leadminer@Teamankaboot.fr, Hello - There leadminer@Teamankaboot.fr',
+        output: 'Hello-There, Hello - There, Hello-There, Hello - There'
+      },
+      {
+        description:
+          'Cases where name contains special chars ()',
+          input: 'Hello(There) <leadminer@Teamankaboot.fr>, Hello (There) <leadminer@Teamankaboot.fr>, Hello(There) leadminer@Teamankaboot.fr, Hello (There) leadminer@Teamankaboot.fr',
+          output: 'Hello(There), Hello (There), Hello(There), Hello (There)'
+      },
+      {
+        description:
+          'Cases where name contains special chars :',
+          input: 'Hello: There <leadminer@Teamankaboot.fr>, Hello : There <leadminer@Teamankaboot.fr>, Hello: There leadminer@Teamankaboot.fr, Hello : There leadminer@Teamankaboot.fr',
+        output: 'Hello: There, Hello : There, Hello: There, Hello : There'
+      },
+      {
+        description:
+          'Cases where name contains special chars |',
+          input: 'Hello| There <leadminer@Teamankaboot.fr>, Hello | There <leadminer@Teamankaboot.fr>, Hello| There leadminer@Teamankaboot.fr, Hello | There leadminer@Teamankaboot.fr',
+        output: 'Hello| There, Hello | There, Hello| There, Hello | There'
+      },
+      {
+        description:
+          'Cases where name contains special chars &',
+          input: 'Hello& There <leadminer@Teamankaboot.fr>, Hello & There <leadminer@Teamankaboot.fr>, Hello& There leadminer@Teamankaboot.fr, Hello & There leadminer@Teamankaboot.fr',
+        output: 'Hello& There, Hello & There, Hello& There, Hello & There'
+      },
+    ]
     testCases.forEach(({ input, output, description }) => {
       const resultOutput = regExHelpers
         .extractNameAndEmail(input)
