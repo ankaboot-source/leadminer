@@ -39,11 +39,10 @@ function extractNameAndEmail(emails) {
   // Handle case when input have this format tester@leadminer.io <tester@leadminer.io>
   const result = [...`${emails},`.matchAll(REGEX_HEADER)].map((match) => {
     const { name, address, identifier, domain, tld } = match.groups ?? {};
-    const cleanAddress = address.toLowerCase();
     const cleanedName = cleanName(name || '');
     return {
-      name: cleanedName !== cleanAddress ? cleanedName : '',
-      address: cleanAddress,
+      name: cleanedName !== address ? cleanedName : '',
+      address: address.toLowerCase(),
       identifier,
       domain: `${domain}.${tld}`
     };
