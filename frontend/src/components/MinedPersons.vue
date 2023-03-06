@@ -369,6 +369,7 @@ function exportTable() {
             .join("\n"),
           email: r.email,
           engagement: r.engagement,
+          occurence: r.occurence,
           recency: new Date(r.recency).toISOString().slice(0, 10),
           tags: r.tags.join("\n"),
         };
