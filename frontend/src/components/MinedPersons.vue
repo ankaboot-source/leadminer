@@ -323,7 +323,7 @@ const columns = [
 
 function filterFn(rows, term) {
   return rows.filter((r) =>
-    [r.email, r.name, r.alternate_names?.join("\n")].some((field) =>
+    [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
       field?.toLowerCase().includes(term.toLowerCase())
     )
   );
