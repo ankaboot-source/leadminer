@@ -21,7 +21,7 @@ module.exports = {
   REGEX_BODY: bodyRegex, //  Regex to extract emails from body
   REGEX_LIST_ID: listRegex, // Extracts id from header field list-id
   REGEX_REMOVE_QUOTES: /^(['"])(?<name>.*)\1$/, // Removes surrounding quotes from input. EX: "name", 'name'
-  EMAIL_HEADERS_NOREPLY: [
+  NOREPLY_EMAIL_ADDRESS_INCLUDES: [
     'accusereception',
     'alerts',
     'alert',
@@ -29,10 +29,8 @@ module.exports = {
     'donotreply',
     'do-notreply',
     'do-not-reply',
-    'FeedbackForm',
-    'mail daemon',
+    'feedbackform',
     'maildaemon',
-    'mailer daemon',
     'mailer-daemon',
     'mailermasters',
     'ne_pas_repondre',
