@@ -248,7 +248,7 @@ describe('EmailMessage.getMessageId()', () => {
   });
 });
 
-describe('EmailMessage.getTagsField()', () => {
+describe('EmailMessage.getMessageTags()', () => {
   let message = '';
 
   beforeEach(() => {
@@ -260,7 +260,7 @@ describe('EmailMessage.getTagsField()', () => {
     message.isTransactional = () => true;
     message.isList = () => true;
 
-    const result = message.getTagsField('from');
+    const result = message.getMessageTags();
     expect(result).to.be.an('array');
     expect(result).to.deep.equal([
       { name: 'newsletter', reachable: 2, source: 'refined' },
@@ -270,64 +270,7 @@ describe('EmailMessage.getTagsField()', () => {
   });
 
   it('should return an empty array if there is no tags', () => {
-    const result = message.getTagsField('from');
-    expect(result).to.be.an('array');
-    expect(result).to.deep.equal([]);
-  });
-
-  it('should return an empty array if field is not equal to "from"', () => {
-    const result = message.getTagsField('cc');
-    expect(result).to.be.an('array');
-    expect(result).to.deep.equal([]);
-  });
-});
-
-describe('EmailMessage.getTags()', () => {
-  let message = '';
-
-  beforeEach(() => {
-    message = new EmailMessage({}, '', 1, {});
-  });
-
-  it('should return tags for transactional, list, newsletter, no-reply, personal', () => {
-    message.isNewsletter = () => true;
-    message.isTransactional = () => true;
-    message.isList = () => true;
-
-    const result = message.getTags(
-      'from',
-      { address: 'support@leadminer.com' },
-      'personal'
-    );
-    expect(result).to.be.an('array');
-    expect(result).to.deep.equal([
-      { name: 'newsletter', reachable: 2, source: 'refined' },
-      { name: 'transactional', reachable: 2, source: 'refined' },
-      { name: 'list', reachable: 2, source: 'refined' },
-      { name: 'no-reply', reachable: 0, source: 'refined' },
-      { name: 'personal', reachable: 1, source: 'refined' }
-    ]);
-  });
-
-  it('should return no-reply, personal tags when field not equal "from"', () => {
-    const result = message.getTags(
-      '',
-      { address: 'support@leadminer.com' },
-      'personal'
-    );
-    expect(result).to.be.an('array');
-    expect(result).to.deep.equal([
-      { name: 'no-reply', reachable: 0, source: 'refined' },
-      { name: 'personal', reachable: 1, source: 'refined' }
-    ]);
-  });
-
-  it('should return an empty array if there is no tags', () => {
-    const result = message.getTags(
-      '',
-      { address: 'leadminer@leadminer.com' },
-      ''
-    );
+    const result = message.getMessageTags();
     expect(result).to.be.an('array');
     expect(result).to.deep.equal([]);
   });
