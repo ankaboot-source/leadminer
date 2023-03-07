@@ -162,32 +162,6 @@ class EmailMessage {
   }
 
   /**
-   * Gets tags based on email.
-   * @param {{name, address ,identifier ,domain}} email  - Email object
-   * @param {string} emailType - The type of the email
-   * @returns { [{name: string, reachable: int, source: string}] | []}
-   *  An empty array if there is no tags, else returns array of objects.
-   *
-   */
-  getTags(email, emailType) {
-    const tags = [];
-
-    if (email && emailMessageHelpers.isNoReply(email.address)) {
-      tags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
-    }
-
-    if (emailType && emailType !== '') {
-      tags.push({
-        name: emailType.toLowerCase(),
-        reachable: 1,
-        source: 'refined'
-      });
-    }
-
-    return tags;
-  }
-
-  /**
    * extractEmailsAddresses - extracts emails from the header and body of an email, then returns an object
    * @returns {Promise<{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}}[]>}
    */
