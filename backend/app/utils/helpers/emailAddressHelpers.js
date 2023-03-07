@@ -97,5 +97,7 @@ function getEmailTags(email, domainType) {
 }
 
 module.exports = {
-  getEmailTags
+  getEmailTags,
+  findEmailAddressType,
+  isNoReply
 };
