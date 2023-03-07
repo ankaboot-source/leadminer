@@ -1,3 +1,5 @@
+const { NOREPLY_EMAIL_ADDRESS_INCLUDES } = require('../constants');
+
 /**
  * getScore takes the domain and username and return a "matching score" between
  * username and email address username part
@@ -51,14 +53,49 @@ function findEmailAddressType(emailAddress, userNames, domainType) {
 
   switch (domainType) {
     case 'custom':
-      return 'Professional';
+      return 'professional';
     case 'provider':
-      return 'Personal';
+      return 'personal';
     default:
       return '';
   }
 }
 
+/**
+ * Checks if an email address can be tagged as no reply
+ * @param emailAddress - The email address to check
+ * @returns {Boolean}
+ */
+function isNoReply(emailAddress) {
+  return NOREPLY_EMAIL_ADDRESS_INCLUDES.some((word) => {
+    return emailAddress.toLowerCase().includes(word);
+  });
+}
+
+function getEmailTags(email, domainType) {
+  const emailTags = [];
+
+  const emailType = findEmailAddressType(
+    email.address,
+    [email?.name],
+    domainType
+  );
+
+  if (email && isNoReply(email.address)) {
+    emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
+  }
+
+  if (emailType !== '') {
+    emailTags.push({
+      name: emailType,
+      reachable: 1,
+      source: 'refined'
+    });
+  }
+
+  return emailTags;
+}
+
 module.exports = {
-  findEmailAddressType
+  getEmailTags
 };
