@@ -142,7 +142,7 @@ class EmailMessage {
   }
 
   /**
-   * constructs tags for header field FROM.
+   * Extracts message tags based on its header.
    * @returns { [{name: string, reachable: int, source: string}] | []}
    */
   getMessageTags() {
@@ -183,14 +183,26 @@ class EmailMessage {
     const messagingFields = this.getMessagingFieldsFromHeader();
     const messageTags = this.getMessageTags();
 
-    for (const headerKey of Object.keys(messagingFields)) {
-      const emails = regExHelpers.extractNameAndEmail(
-        // extract Name and Email in case of a header
-        messagingFields[`${headerKey}`]
-      );
-      const persons = await this.extractPersons(emails, headerKey, messageTags);
-      extractedData.persons.push(...persons);
-    }
+    const personsExtractedFromHeader = await Promise.allSettled(
+      Object.keys(messagingFields).map(async (headerKey) => {
+        const emails = regExHelpers.extractNameAndEmail(
+          // extract Name and Email in case of a header
+          messagingFields[`${headerKey}`]
+        );
+        const persons = await this.extractPersons(
+          emails,
+          headerKey,
+          messageTags
+        );
+        return persons;
+      })
+    );
+    extractedData.persons.push(
+      ...personsExtractedFromHeader
+        .filter((p) => p.status === 'fulfilled')
+        .map((p) => p.value)
+        .flat()
+    );
 
     if (this.body !== '') {
       const emails = regExHelpers.extractNameAndEmailFromBody(this.body);
@@ -203,41 +215,48 @@ class EmailMessage {
   }
 
   /**
-   * personsExtractedFromHeader checks for email validty then returns a person objects with thier tags and point of contact.
+   * personsExtractedFromHeader checks for email validity then returns a person objects with their tags and point of contact.
    * @param {Object[]} emails - an array of objects that contains the extracted email addresses and the names
    * @param {string} fieldName - the current extracted field name (eg: from , cc , to...)
+   * @param { [{name: string, reachable: int, source: string}] | []} messageTags - List of tags of the email message
    * @returns {Promise<Object[]>} An array of objects
    */
   async extractPersons(emails, fieldName, messageTags) {
-    const extractedContacts = [];
-    for (const email of emails) {
-      if (email.address === this.userEmail) {
-        continue;
-      }
+    const extractedPersons = await Promise.allSettled(
+      emails
+        .filter((email) => email.address !== this.userEmail)
+        .map(async (email) => {
+          const [domainIsValid, domainType] =
+            await domainHelpers.checkDomainStatus(
+              this.redisClientForNormalMode,
+              email.domain
+            );
 
-      const [domainIsValid, domainType] = await domainHelpers.checkDomainStatus(
-        this.redisClientForNormalMode,
-        email.domain
-      );
+          if (domainIsValid) {
+            const emailTags = emailAddressHelpers.getEmailTags(
+              email,
+              domainType
+            );
 
-      if (domainIsValid) {
-        const emailTags = emailAddressHelpers.getEmailTags(email, domainType);
+            return EmailMessage.constructPersonPocTags(
+              email,
+              fieldName === 'from' ? [...messageTags, ...emailTags] : emailTags,
+              fieldName
+            );
+          }
 
-        extractedContacts.push(
-          EmailMessage.constructPersonPocTags(
-            email,
-            fieldName === 'from' ? [...messageTags, ...emailTags] : emailTags,
-            fieldName
-          )
-        );
-      }
+          await this.redisClientForNormalMode.sadd(
+            'invalidDomainEmails',
+            email.address
+          );
 
-      await this.redisClientForNormalMode.sadd(
-        'invalidDomainEmails',
-        email.address
-      );
-    }
-    return extractedContacts;
+          return null;
+        })
+    );
+
+    return extractedPersons
+      .filter((p) => p.status === 'fulfilled' && p.value !== null)
+      .map((p) => p.value);
   }
 
   /**
