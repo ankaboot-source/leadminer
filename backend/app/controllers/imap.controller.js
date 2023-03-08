@@ -1,16 +1,18 @@
 const { logger } = require('../utils/logger');
-const hashHelpers = require('../utils/helpers/hashHelpers');
-const EventEmitter = require('node:events');
 const { db } = require('../db');
 const {
   ImapConnectionProvider
 } = require('../services/ImapConnectionProvider');
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
-const { redis } = require('../utils/redis');
-const { REDIS_STREAM_NAME } = require('../utils/constants');
+const { miningTaskManagerInstance } = require('../services/TaskManager');
+
+
+const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 
+const { redis } = require('../utils/redis');
+const { REDIS_STREAM_NAME } = require('../utils/constants');
 const redisStreamsPublisher = redis.getDuplicatedClient();
 const redisPublisher = redis.getDuplicatedClient();
 
@@ -32,10 +34,10 @@ async function onEmailMessage({
   folderName,
   totalInFolder,
   seqNumber,
-  progress,
   userId,
   userEmail,
-  userIdentifier
+  userIdentifier,
+  miningID
 }) {
   const isLastInFolder = seqNumber === totalInFolder;
 
@@ -47,12 +49,18 @@ async function onEmailMessage({
     userEmail,
     folderName,
     isLast: isLastInFolder,
-    userIdentifier
+    userIdentifier,
+    miningID
   });
 
   try {
-    await redisPublisher.publish(`fetching-${userId}`, progress); // publish progress to subscribers
 
+    const fetchingProgress = {
+      miningID,
+      progressType: 'fetching'
+    };
+
+    await redisPublisher.publish(miningID, JSON.stringify(fetchingProgress));
     await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',
@@ -199,7 +207,7 @@ async function getImapBoxes(req, res, next) {
  * @param {Object} res - The http response to be sent.
  * @param {function} next - The next middleware function in the route.
  */
-async function getEmails(req, res, next) {
+async function startMining(req, res, next) {
   const { data, error } = getXImapHeaderField(req.headers);
 
   if (error) {
@@ -223,41 +231,26 @@ async function getEmails(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        redisPublisher
-      )
+      access_token,
+      refresh_token,
+      id,
+      redisPublisher
+    )
     : imapConnectionProvider.withPassword(host, password, port);
 
-  const eventEmitter = new EventEmitter();
+  const { boxes } = req.body;
+  const miningID = miningTaskManagerInstance.generateMiningID(id);
 
-  req.on('close', () => {
-    eventEmitter.emit('end');
-  });
-
-  eventEmitter.on('error', () => {
-    res.status(500).send({
-      message: 'An error has occurred while trying to fetch emails.'
-    });
-  });
-
-  const { boxes } = req.query;
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
-    eventEmitter,
     boxes,
     id,
-    email
+    email,
+    miningID
   );
-  try {
-    await imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
-  } catch (err) {
-    logger.error('Error when fetching Email Messages', {
-      metadata: { error: err }
-    });
-    eventEmitter.emit('error');
-  }
+
+  const miningTask = miningTaskManagerInstance.createTask(miningID, id, imapEmailsFetcher);
+  imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
   const { heapTotal, heapUsed } = process.memoryUsage();
   logger.debug(
@@ -266,11 +259,37 @@ async function getEmails(req, res, next) {
     )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
   );
 
-  return res.status(200).send();
+  return res.status(201).send({
+    error: null,
+    data: miningTask
+  });
+}
+
+/**
+ * Stop mining task, using MiningID.
+ * @param {Object} req - The user request.
+ * @param {Object} res - The http response to be sent.
+ * @param {function} next - The next middleware function in the route.
+ */
+async function stopMining(req, res, next) {
+
+  const { error } = getXImapHeaderField(req.headers);
+
+  if (error) {
+    res.status(400);
+    return next(error);
+  }
+
+  const { id } = req.params;
+
+  const task = miningTaskManagerInstance.stopMining(id);
+
+  return res.status(200).send({ error: null, data: task || null });
 }
 
 module.exports = {
-  getEmails,
   getImapBoxes,
-  loginToAccount
+  loginToAccount,
+  startMining,
+  stopMining
 };
