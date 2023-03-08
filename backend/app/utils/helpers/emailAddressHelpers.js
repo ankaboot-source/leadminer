@@ -72,6 +72,12 @@ function isNoReply(emailAddress) {
   });
 }
 
+/**
+ * Tags an email address.
+ * @param {string} emailAddress  - The email address to check
+ * @param {string} domainType - The type of domain, it can be either "provider" or "custom"
+ * @returns {Boolean}
+ */
 function getEmailTags(email, domainType) {
   const emailTags = [];
 
