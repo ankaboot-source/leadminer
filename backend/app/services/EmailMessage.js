@@ -9,6 +9,7 @@ const {
   EMAIL_HEADERS_MAILING_LIST
 } = require('../utils/constants');
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+const { logger } = require('../utils/logger');
 
 class EmailMessage {
   /**
@@ -162,10 +163,10 @@ class EmailMessage {
   }
 
   /**
-   * extractEmailsAddresses - extracts emails from the header and body of an email, then returns an object
+   * Extracts emails from the header and body of an email, then returns the extracted data.
    * @returns {Promise<{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}}[]>}
    */
-  async extractEmailsAddresses() {
+  async extractEmailAddresses() {
     const extractedData = {
       message: {
         channel: 'imap',
@@ -185,23 +186,29 @@ class EmailMessage {
 
     const personsExtractedFromHeader = await Promise.allSettled(
       Object.keys(messagingFields).map(async (headerKey) => {
-        const emails = regExHelpers.extractNameAndEmail(
-          // extract Name and Email in case of a header
-          messagingFields[`${headerKey}`]
-        );
-        const persons = await this.extractPersons(
-          emails,
-          headerKey,
-          messageTags
-        );
-        return persons;
+        try {
+          const emails = regExHelpers.extractNameAndEmail(
+            messagingFields[`${headerKey}`]
+          );
+          const persons = await this.extractPersons(
+            emails,
+            headerKey,
+            messageTags
+          );
+          return persons;
+        } catch (error) {
+          logger.error('Error while extracting names and emails', {
+            metadata: {
+              error,
+              headerKey
+            }
+          });
+          return null;
+        }
       })
     );
     extractedData.persons.push(
-      ...personsExtractedFromHeader
-        .filter((p) => p.status === 'fulfilled')
-        .map((p) => p.value)
-        .flat()
+      ...personsExtractedFromHeader.map((p) => p.value).flat()
     );
 
     if (this.body !== '') {
@@ -226,37 +233,44 @@ class EmailMessage {
       emails
         .filter((email) => email.address !== this.userEmail)
         .map(async (email) => {
-          const [domainIsValid, domainType] =
-            await domainHelpers.checkDomainStatus(
-              this.redisClientForNormalMode,
-              email.domain
+          try {
+            const [domainIsValid, domainType] =
+              await domainHelpers.checkDomainStatus(
+                this.redisClientForNormalMode,
+                email.domain
+              );
+
+            if (domainIsValid) {
+              const emailTags = emailAddressHelpers.getEmailTags(
+                email,
+                domainType
+              );
+
+              return EmailMessage.constructPersonPocTags(
+                email,
+                fieldName === 'from'
+                  ? [...messageTags, ...emailTags]
+                  : emailTags,
+                fieldName
+              );
+            }
+
+            await this.redisClientForNormalMode.sadd(
+              'invalidDomainEmails',
+              email.address
             );
 
-          if (domainIsValid) {
-            const emailTags = emailAddressHelpers.getEmailTags(
-              email,
-              domainType
-            );
-
-            return EmailMessage.constructPersonPocTags(
-              email,
-              fieldName === 'from' ? [...messageTags, ...emailTags] : emailTags,
-              fieldName
-            );
+            return null;
+          } catch (error) {
+            logger.error('Error when extracting persons', {
+              metadata: { error, email }
+            });
+            return null;
           }
-
-          await this.redisClientForNormalMode.sadd(
-            'invalidDomainEmails',
-            email.address
-          );
-
-          return null;
         })
     );
 
-    return extractedPersons
-      .filter((p) => p.status === 'fulfilled' && p.value !== null)
-      .map((p) => p.value);
+    return extractedPersons.filter((p) => p.value !== null).map((p) => p.value);
   }
 
   /**

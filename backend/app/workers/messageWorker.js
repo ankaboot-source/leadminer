@@ -31,7 +31,7 @@ async function handleMessage({
     folderName
   );
 
-  const extractedContacts = await message.extractEmailsAddresses();
+  const extractedContacts = await message.extractEmailAddresses();
   await db.store(extractedContacts, userId);
 
   if (isLast) {
