@@ -80,11 +80,17 @@ async function handleMessage({
   let informedSubscribers = 0;
 
   while (informedSubscribers === 0) {
-
-    informedSubscribers = await redisPubSubClient.publish(miningID, JSON.stringify(extractingProgress));
+    informedSubscribers = await redisPubSubClient.publish(
+      miningID,
+      JSON.stringify(extractingProgress)
+    );
 
     if (retriesCount === MAX_REDIS_PUBLISH_RETRIES_COUNT) {
-      logger.debug('No subscribers litening to PubSub channel', { informedSubscribers, retriesCount, pubSubChannel: miningID });
+      logger.debug('No subscribers litening to PubSub channel', {
+        informedSubscribers,
+        retriesCount,
+        pubSubChannel: miningID
+      });
       break;
     }
 

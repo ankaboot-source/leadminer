@@ -16,13 +16,7 @@ class ImapEmailsFetcher {
    * @param {string} miningID - The id of the mining process.
 
    */
-  constructor(
-    imapConnectionProvider,
-    folders,
-    userId,
-    userEmail,
-    miningID
-  ) {
+  constructor(imapConnectionProvider, folders, userId, userEmail, miningID) {
     this.imapConnectionProvider = imapConnectionProvider;
     this.folders = folders;
     this.userId = userId;
@@ -150,7 +144,7 @@ class ImapEmailsFetcher {
           this.fetchedIds.add(messageId);
           // We only increment the count for a message if it is
           // not duplicated and is published in the stream
-          
+
           await callback({
             header: parsedHeader,
             body: parsedBody,

@@ -1,20 +1,14 @@
-
 class SSE {
-  
   registerEventHandlers(id, store) {
-    
     this.eventSource.addEventListener(`fetching-${id}`, ({ data }) => {
       const scanned = parseInt(data, 10);
       store.commit("example/SET_SCANNEDEMAILS", scanned);
     });
 
-    this.eventSource.addEventListener(
-      `extracting-${id}`,
-      ({ data }) => {
-        const extracted = parseInt(data, 10);
-        store.commit("example/SET_EXTRACTEDEMAILS", extracted);
-      }
-    );
+    this.eventSource.addEventListener(`extracting-${id}`, ({ data }) => {
+      const extracted = parseInt(data, 10);
+      store.commit("example/SET_EXTRACTEDEMAILS", extracted);
+    });
 
     this.eventSource.addEventListener(`scannedBoxes${id}`, ({ data }) => {
       store.commit("example/SET_SCANNEDBOXES", data);
@@ -22,7 +16,7 @@ class SSE {
   }
 
   //  TODO: Remove and clean this part as we don't need it.
-  // 
+  //
   //  this.eventSource.addEventListener(`minedEmails${id}`, (message) => {
   //   const { data, statistics } = JSON.parse(message.data);
   //   store.commit("example/SET_EMAILS", data);

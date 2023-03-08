@@ -7,7 +7,6 @@ const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { miningTaskManagerInstance } = require('../services/TaskManager');
 
-
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 
@@ -54,7 +53,6 @@ async function onEmailMessage({
   });
 
   try {
-
     const fetchingProgress = {
       miningID,
       progressType: 'fetching'
@@ -231,11 +229,11 @@ async function startMining(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-      access_token,
-      refresh_token,
-      id,
-      redisPublisher
-    )
+        access_token,
+        refresh_token,
+        id,
+        redisPublisher
+      )
     : imapConnectionProvider.withPassword(host, password, port);
 
   const { boxes } = req.body;
@@ -249,7 +247,11 @@ async function startMining(req, res, next) {
     miningID
   );
 
-  const miningTask = miningTaskManagerInstance.createTask(miningID, id, imapEmailsFetcher);
+  const miningTask = miningTaskManagerInstance.createTask(
+    miningID,
+    id,
+    imapEmailsFetcher
+  );
   imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
   const { heapTotal, heapUsed } = process.memoryUsage();
@@ -272,7 +274,6 @@ async function startMining(req, res, next) {
  * @param {function} next - The next middleware function in the route.
  */
 async function stopMining(req, res, next) {
-
   const { error } = getXImapHeaderField(req.headers);
 
   if (error) {

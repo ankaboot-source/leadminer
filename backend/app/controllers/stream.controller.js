@@ -7,11 +7,10 @@ const { miningTaskManagerInstance } = require('../services/TaskManager');
  * @param {Object} res - The response object.
  */
 function streamProgress(req, res) {
-  
   const { id } = req.params;
 
   const sse = new SSE();
-  
+
   sse.init(req, res);
 
   miningTaskManagerInstance.attachSSE(id, sse);
