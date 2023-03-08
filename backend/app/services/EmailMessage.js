@@ -1,6 +1,6 @@
 const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
-const emailAddressHelpers = require('../utils/helpers/minedDataHelpers');
+const emailAddressHelpers = require('../utils/helpers/emailAddressHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
 const { REGEX_LIST_ID } = require('../utils/constants');
 const {
@@ -9,6 +9,7 @@ const {
   EMAIL_HEADERS_MAILING_LIST
 } = require('../utils/constants');
 const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+const { logger } = require('../utils/logger');
 
 class EmailMessage {
   /**
@@ -33,7 +34,7 @@ class EmailMessage {
     this.userEmail = userEmail;
     this.sequentialId = sequentialId;
     this.header = header || {};
-    this.body = body || {};
+    this.body = body || '';
     this.folderPath = folder;
   }
 
@@ -142,58 +143,30 @@ class EmailMessage {
   }
 
   /**
-   * constructs tags for header field FROM.
-   * @param {string} fieldName - header field name
+   * Extracts message tags based on its header.
    * @returns { [{name: string, reachable: int, source: string}] | []}
    */
-  getTagsField(fieldName) {
+  getMessageTags() {
     const tags = [];
 
-    if (fieldName === 'from') {
-      if (this.isNewsletter()) {
-        tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
-      }
-      if (this.isTransactional()) {
-        tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
-      }
-      if (this.isList()) {
-        tags.push({ name: 'list', reachable: 2, source: 'refined' });
-      }
+    if (this.isNewsletter()) {
+      tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
     }
-    return tags;
-  }
-
-  /**
-   * Constructs tags from fieldName, email, emailType.
-   * @param {string} fieldName - Header field (TO, FROM, CC, BCC ...)
-   * @param {{name, address ,identifier ,domain}} email  - Email object
-   * @param {string} emailType - The type of the email
-   * @returns { [{name: string, reachable: int, source: string}] | []}
-   *  An empty array if there is no tags, else returns array of objects.
-   *
-   */
-  getTags(fieldName, email, emailType) {
-    const tags = this.getTagsField(fieldName);
-
-    if (email && emailMessageHelpers.isNoReply(email.address)) {
-      tags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
+    if (this.isTransactional()) {
+      tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
     }
-    if (emailType && emailType !== '') {
-      tags.push({
-        name: emailType.toLowerCase(),
-        reachable: 1,
-        source: 'refined'
-      });
+    if (this.isList()) {
+      tags.push({ name: 'list', reachable: 2, source: 'refined' });
     }
 
     return tags;
   }
 
   /**
-   * extractEmailsAddresses - extracts emails from the header and body of an email, then returns an object
+   * Extracts emails from the header and body of an email, then returns the extracted data.
    * @returns {Promise<{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}}[]>}
    */
-  async extractEmailsAddresses() {
+  async extractEmailAddresses() {
     const extractedData = {
       message: {
         channel: 'imap',
@@ -209,100 +182,100 @@ class EmailMessage {
     this.message = extractedData.message;
 
     const messagingFields = this.getMessagingFieldsFromHeader();
+    const messageTags = this.getMessageTags();
 
-    for (const key of Object.keys(messagingFields)) {
-      const emails = regExHelpers.extractNameAndEmail(
-        // extract Name and Email in case of a header
-        messagingFields[`${key}`]
-      );
-      const persons = await this.personsExtractedFromHeader(emails, key);
-      extractedData.persons.push(...persons);
-    }
-
-    const emails = regExHelpers.extractNameAndEmailFromBody(
-      this.body.toString('utf8')
+    const personsExtractedFromHeader = await Promise.allSettled(
+      Object.keys(messagingFields).map(async (headerKey) => {
+        try {
+          const emails = regExHelpers.extractNameAndEmail(
+            messagingFields[`${headerKey}`]
+          );
+          const persons = await this.extractPersons(
+            emails,
+            headerKey,
+            messageTags
+          );
+          return persons;
+        } catch (error) {
+          logger.error('Error while extracting names and emails', {
+            metadata: {
+              error,
+              headerKey
+            }
+          });
+          return null;
+        }
+      })
     );
     extractedData.persons.push(
-      ...(await this.personsExtractedFromBody(emails))
+      ...personsExtractedFromHeader.map((p) => p.value).flat()
     );
+
+    if (this.body !== '') {
+      const emails = regExHelpers.extractNameAndEmailFromBody(this.body);
+      extractedData.persons.push(
+        ...(await this.extractPersons(emails, 'body', messageTags))
+      );
+    }
 
     return extractedData;
   }
 
   /**
-   * personsExtractedFromHeader checks for email validty then returns a person objects with thier tags and point of contact.
-   * @param {array} emails - an array of objects that contains the extracted email addresses and the names
+   * personsExtractedFromHeader checks for email validity then returns a person objects with their tags and point of contact.
+   * @param {Object[]} emails - an array of objects that contains the extracted email addresses and the names
    * @param {string} fieldName - the current extracted field name (eg: from , cc , to...)
+   * @param { [{name: string, reachable: int, source: string}] | []} messageTags - List of tags of the email message
    * @returns {Promise<Object[]>} An array of objects
    */
-  async personsExtractedFromHeader(emails, fieldName) {
-    for (const email of emails) {
-      if (email.address === this.userEmail) {
-        continue;
-      }
+  async extractPersons(emails, fieldName, messageTags) {
+    const extractedPersons = await Promise.allSettled(
+      emails
+        .filter((email) => email.address !== this.userEmail)
+        .map(async (email) => {
+          try {
+            const [domainIsValid, domainType] =
+              await domainHelpers.checkDomainStatus(
+                this.redisClientForNormalMode,
+                email.domain
+              );
 
-      const [isValid, type] = await domainHelpers.checkDomainStatus(
-        this.redisClientForNormalMode,
-        email.domain
-      );
+            if (domainIsValid) {
+              const emailTags = emailAddressHelpers.getEmailTags(
+                email,
+                domainType
+              );
 
-      if (isValid) {
-        // Valid email
-        const emailType = emailAddressHelpers.findEmailAddressType(
-          email.address,
-          [email?.name],
-          type
-        );
-        const tags = this.getTags(fieldName, email, emailType);
-        return [EmailMessage.constructPersonPocTags(email, tags, fieldName)];
-      }
+              return EmailMessage.constructPersonPocTags(
+                email,
+                fieldName === 'from'
+                  ? [...messageTags, ...emailTags]
+                  : emailTags,
+                fieldName
+              );
+            }
 
-      await this.redisClientForNormalMode.sadd(
-        'invalidDomainEmails',
-        email.address
-      );
-    }
-    return [];
-  }
+            await this.redisClientForNormalMode.sadd(
+              'invalidDomainEmails',
+              email.address
+            );
 
-  /**
-   * Checks for email validity then returns a list of person objects with their tags and point of contact.
-   * @param {object[]} emails - List of extracted email addresses.
-   * @returns {Promise<object[]>} List of aggregated persons, points of contact and tags.
-   */
-  async personsExtractedFromBody(emails) {
-    for (const email of emails) {
-      if (email?.address === this.userEmail) {
-        continue;
-      }
+            return null;
+          } catch (error) {
+            logger.error('Error when extracting persons', {
+              metadata: { error, email }
+            });
+            return null;
+          }
+        })
+    );
 
-      const [isValid, type] = await domainHelpers.checkDomainStatus(
-        this.redisClientForNormalMode,
-        email.domain
-      );
-
-      if (isValid) {
-        const emailType = emailAddressHelpers.findEmailAddressType(
-          email,
-          [email?.name ?? ''],
-          type
-        );
-        const tags = this.getTags('', email, emailType);
-        return [EmailMessage.constructPersonPocTags(email, tags, 'body')];
-      }
-
-      await this.redisClientForNormalMode.sadd(
-        'invalidDomainEmails',
-        email.address
-      );
-    }
-
-    return [];
+    return extractedPersons.filter((p) => p.value !== null).map((p) => p.value);
   }
 
   /**
    * constructPersonPocTags - Constructs the person && pointofcontact objects using email, tags, fieldName
-   * @param {{name: string, adddress: string, identifier: string}} email - The Email object
+   * @param {{name: string, address: string, identifier: string}} email - The Email object
    * @param {[{name: string, label; string, reachable: string, type: string}] | []} tags - Array of tags
    * @param {string} fieldName - The Header field.
    */
