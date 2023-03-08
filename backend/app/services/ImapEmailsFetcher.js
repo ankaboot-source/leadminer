@@ -1,5 +1,4 @@
 const hashHelpers = require('../utils/helpers/hashHelpers');
-const { randomUUID } = require('crypto');
 const Imap = require('imap');
 const { IMAP_FETCH_BODY } = require('../config');
 const { logger } = require('../utils/logger');
@@ -11,34 +10,29 @@ class ImapEmailsFetcher {
   /**
    * ImapEmailsFetcher constructor.
    * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
-   * @param {EventEmitter} eventEmitter - An event emitter
    * @param {string[]} folders - List of folders to fetch.
    * @param {string} userId - User Id.
    * @param {string} userEmail - User email.
+   * @param {string} miningID - The id of the mining process.
+
    */
   constructor(
     imapConnectionProvider,
-    eventEmitter,
     folders,
     userId,
-    userEmail
+    userEmail,
+    miningID
   ) {
     this.imapConnectionProvider = imapConnectionProvider;
-    this.eventEmitter = eventEmitter;
     this.folders = folders;
     this.userId = userId;
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
-    const processId = randomUUID();
-    this.processSetKey = `user:${this.userId}:process:${processId}`;
+    this.miningID = miningID;
+    this.processSetKey = `caching:${miningID}`;
 
-    this.fetchedMessagesCount = 0;
     this.fetchedIds = new Set();
-
-    this.eventEmitter.on('end', async () => {
-      await this.cleanup();
-    });
 
     this.bodies = ['HEADER'];
     if (IMAP_FETCH_BODY) {
@@ -57,6 +51,7 @@ class ImapEmailsFetcher {
    * @param {string} emailMessage.userId - User Id.
    * @param {string} emailMessage.userEmail - User email address.
    * @param {string} emailMessage.userIdentifier - Hashed user identifier
+   * @param {string} emailMessage.miningID - The id of the mining process.
    * @returns {Promise}
    */
 
@@ -155,18 +150,17 @@ class ImapEmailsFetcher {
           this.fetchedIds.add(messageId);
           // We only increment the count for a message if it is
           // not duplicated and is published in the stream
-          this.fetchedMessagesCount++;
-
+          
           await callback({
             header: parsedHeader,
             body: parsedBody,
             seqNumber,
             folderName,
             totalInFolder,
-            progress: this.fetchedMessagesCount,
             userId: this.userId,
             userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier
+            userIdentifier: this.userIdentifier,
+            miningID: this.miningID
           });
         });
       });
