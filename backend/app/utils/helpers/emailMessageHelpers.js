@@ -34,9 +34,9 @@ function hasHeaderWithValue(header, headerField, headerValues) {
 }
 
 /**
- * Checks if a particular header field has a value from a given list of possible values
+ * Checks if a particular header field starts with one of the prefixes
  * @param {Object} Header - Header object.
- * @param {string[]} headerFieldPrefixes - A list of possible header keys.
+ * @param {string[]} headerFieldPrefixes - A list of possible header key prefixes.
  * @returns {Boolean}
  */
 function hasHeaderFieldStartsWith(header, headerFieldPrefixes) {

@@ -141,12 +141,13 @@ class StreamConsumer {
           ]);
 
           const failedExtractionResults = extractionResults.filter(
-            (result) => result.status !== 'fulfilled'
+            (extractionResult) => extractionResult.status !== 'fulfilled'
           );
-          failedExtractionResults.length > 0 &&
+          if (failedExtractionResults.length) {
             logger.error('Errors occurred while extracting', {
               metadata: failedExtractionResults
             });
+          }
 
           await redisStreamsConsumer.xtrim(
             this.streamChannel,
