@@ -8,7 +8,7 @@ const { miningTasksManager } = require('../services/TasksManager');
  */
 function streamProgress(req, res) {
   const { id } = req.params;
-  
+
   const sse = new SSE();
   sse.init(req, res);
 
@@ -18,10 +18,9 @@ function streamProgress(req, res) {
     sse.send(error.message, 'errors');
     res.end();
   }
-  
+
   req.on('close', () => {
-    miningTasksManager.deleteTask(id)
-    .catch(() => {});
+    miningTasksManager.deleteTask(id).catch(() => {});
   });
 }
 

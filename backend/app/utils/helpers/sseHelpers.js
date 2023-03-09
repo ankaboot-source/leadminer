@@ -7,13 +7,13 @@ const { logger } = require('../logger');
  * @param {string} sseEvent - The name of the event associated with the SSE.
  */
 function sendSSE(sseClient, sseData, sseEvent) {
-    try {
-      sseClient.send(sseData, sseEvent);
-    } catch (error) {
-      logger.error('Somthing happend when sending SSE', { metadata: { error } });
-    }
+  try {
+    sseClient.send(sseData, sseEvent);
+  } catch (error) {
+    logger.error('Somthing happend when sending SSE', { metadata: { error } });
+  }
 }
 
 module.exports = {
-    sendSSE
+  sendSSE
 };
