@@ -30,19 +30,6 @@ class TasksManager {
     });
   }
 
-  static #generateTaskMiningID(userId) {
-    return `${userId}-${generateUUID()}`;
-  }
-
-  /**
-   * Generates a unique mining ID for a given user.
-   * @param {string} userId - The user ID.
-   * @returns {string} - The unique mining ID.
-   */
-  generateMiningID(userId) {
-    return TasksManager.#generateTaskMiningID(userId);
-  }
-
   /**
    * Creates a new mining task for a given user.
    * @param {string} miningId - The mining ID.
@@ -138,19 +125,16 @@ class TasksManager {
    * Notifies the client of the progress of a mining task with a given mining ID.
    * @param {string} miningId - The mining ID of the task to notify progress for.
    * @param {string} progressType - The type of progress to notify ('fetching' or 'extracting').
-   * @returns {void}
-   * @throws {Error} Throws an error if the task with the given mining ID does not exist.
+   * @returns Returns null if task does not exist.
    */
   #notifyProgress(miningId, progressType) {
-    const task = this.#ACTIVE_MINING_TASKS.get(miningId) || {};
 
-    if (task === undefined) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
-    }
 
-    const { sseProgressHandler, miningProgress } = task;
+    const task = this.#ACTIVE_MINING_TASKS.get(miningId);
+    const { sseProgressHandler, miningProgress } = task || {};
 
-    if (!sseProgressHandler) {
+
+    if (task === undefined || !sseProgressHandler) {
       return null;
     }
 
@@ -167,8 +151,7 @@ class TasksManager {
    * @param {string} miningId - The mining ID of the task to update progress for.
    * @param {string} progressType - The type of progress to update ('fetching' or 'extracting').
    * @param {number} incrementBy - The amount to increment progress by.
-   * @returns {object} Returns the updated mining progress.
-   * @throws {Error} Throws an error if the task with the given mining ID does not exist or if the progress type is invalid.
+   * @returns {object || null} Returns the updated mining progress or null if task does not exist.
    */
   #updateProgress(miningId, progressType, incrementBy = 1) {
     if (!['fetching', 'extracting'].includes(progressType)) {
@@ -178,7 +161,7 @@ class TasksManager {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
+      return null;
     }
 
     const { miningProgress } = task;
