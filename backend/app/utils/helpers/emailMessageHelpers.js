@@ -28,7 +28,7 @@ function hasHeaderWithValue(header, headerField, headerValues) {
   return (
     headerValue &&
     headerValues.some((value) =>
-      headerValue.toLocaleLowerCase().includes(value)
+      headerValue[0].toLocaleLowerCase().includes(value)
     )
   );
 }
