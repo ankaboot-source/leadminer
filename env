@@ -1,0 +1,60 @@
+#### LEADMINER API ####
+
+# Used to hash user emails and data in logs while mining
+LEADMINER_API_HASH_SECRET=change_me
+# One of the syslog levels defined in RFC5424 (debug, info, notice, warning...)
+LEADMINER_API_LOG_LEVEL=debug
+LEADMINER_API_PORT=8081
+
+FRONTEND_HOST=http://localhost:8020
+LEADMINER_API_HOST=http://localhost:8081
+
+#### IMAP ####
+
+# Enable or disable fetching Email bodies
+IMAP_FETCH_BODY=false
+# Number of milliseconds to wait to be authenticated after an IMAP connection has been established
+IMAP_AUTH_TIMEOUT=10000
+# Number of milliseconds to wait for a connection to be established
+IMAP_CONNECTION_TIMEOUT=90000
+
+#### SUPABASE ####
+
+# You can create a Supabase project on https://app.supabase.com/ or use a self-hosted instance
+SUPABASE_PROJECT_URL=https://zzljfvranamklzwdmrxv.supabase.co
+SUPABASE_SECRET_PROJECT_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6bGpmdnJhbmFta2x6d2Rtcnh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzEwNDI5OTIsImV4cCI6MTk4NjYxODk5Mn0._OphYMYlFSXHSt3wHjiPy0RauTwtlYUnj5HjbofXjj8
+
+# Postgres connection string. Only needed when CONNECTION_TYPE is 'native'
+PG_CONNECTION_STRING=postgres://postgres:6zjKkIJjr7UFP97t@db.zzljfvranamklzwdmrxv.supabase.co:6543/postgres
+
+# 'native' to use native pgsql calls through node-postgres or 'pgrest' to use the REST interface
+CONNECTION_TYPE=native
+
+# This key is used in the frontend. It respects RLS rules and configured policies
+# SUPABASE_PUBLIC_PROJECT_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6bGpmdnJhbmFta2x6d2Rtcnh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzEwNDI5OTIsImV4cCI6MTk4NjYxODk5Mn0._OphYMYlFSXHSt3wHjiPy0RauTwtlYUnj5HjbofXjj8
+
+#### REDIS ####
+
+# Optional
+# REDIS_USERNAME=
+# REDIS_PASSWORD=
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_TLS=false
+
+REDIS_EXPIRATION_TIMEOUT=259200
+
+REDIS_STREAM_NAME=imap-messages
+REDIS_CONSUMER_GROUP_NAME=imap-group
+REDIS_CONSUMER_BATCH_SIZE=100
+
+# The credentials used to connect to a Google account using OAuth
+GOOGLE_CLIENT_ID=549301980101-sg76mn8crfraggcsvrbcmdmvtpf6vvf8.apps.googleusercontent.com
+GOOGLE_SECRET=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
+
+#### SENTRY ####
+
+# Make sure your provide a Sentry DSN and change the value to "true" if you want to activate Sentry for reporting and monitoring (https://docs.sentry.io/platforms/javascript/)
+SENTRY_ENABLED=false
+SENTRY_DSN=''
