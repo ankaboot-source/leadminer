@@ -4,7 +4,10 @@ const EmailMessage = require('../../app/services/EmailMessage');
 const {
   EMAIL_HEADERS_NEWSLETTER,
   EMAIL_HEADERS_TRANSACTIONAL,
-  EMAIL_HEADERS_MAILING_LIST
+  EMAIL_HEADERS_MAILING_LIST,
+  EMAIL_HEADERS_NOT_NEWSLETTER,
+  X_MAILER_TRANSACTIONAL_HEADER_VALUES,
+  EMAIL_HEADER_PREFIXES_TRANSACTIONAL
 } = require('../../app/utils/constants');
 
 describe('EmailMessage.isList()', () => {
@@ -47,6 +50,25 @@ describe('EmailMessage.isNewletter()', () => {
     });
   });
 
+  EMAIL_HEADERS_NOT_NEWSLETTER.forEach((headerField) => {
+    it(`Should return false if ${headerField} exists in header`, () => {
+      message.header[headerField] = [''];
+
+      const isNewsletter = message.isNewsletter();
+
+      expect(isNewsletter).to.be.false;
+    });
+  });
+
+  it('Should return false, when at least one header field of NOT_NEWSLETTER is present', () => {
+    message.header[EMAIL_HEADERS_NEWSLETTER[0]] = [''];
+    message.header[EMAIL_HEADERS_NOT_NEWSLETTER[0]] = [''];
+
+    const isNewsletter = message.isNewsletter();
+
+    expect(isNewsletter).to.be.false;
+  });
+
   it('Should return true if any news-letter fields exists in header', () => {
     EMAIL_HEADERS_NEWSLETTER.forEach((headerField) => {
       message.header[headerField] = [''];
@@ -82,6 +104,26 @@ describe('EmailMessage.isTransactional()', () => {
 
   it('Should return false if no transactional field exists in header', () => {
     expect(message.isTransactional()).to.be.false;
+  });
+
+  X_MAILER_TRANSACTIONAL_HEADER_VALUES.forEach((value) => {
+    it(`Should return true when x-mailer header value is ${value}`, () => {
+      message.header['x-mailer'] = [value];
+
+      const isTransactional = message.isTransactional();
+
+      expect(isTransactional).to.be.true;
+    });
+  });
+
+  EMAIL_HEADER_PREFIXES_TRANSACTIONAL.forEach((prefix) => {
+    it(`Should return true when it has a header key that starts with ${prefix}`, () => {
+      message.header[`${prefix}-test`] = [''];
+
+      const isTransactional = message.isTransactional();
+
+      expect(isTransactional).to.be.true;
+    });
   });
 });
 
