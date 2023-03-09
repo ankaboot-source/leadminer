@@ -3,6 +3,15 @@ const { sendSSE } = require('../utils/helpers/sseHelpers');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 
+/**
+ * Generates a unique mining ID for a given user.
+ * @param {string} userId - The user ID.
+ * @returns {string} - The unique mining ID.
+ */
+function generateMiningId(userId) {
+  return `${userId}-${generateUUID()}`;
+}
+
 class TasksManager {
   /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
@@ -181,4 +190,4 @@ class TasksManager {
 
 const miningTasksManager = new TasksManager(redis.getDuplicatedClient());
 
-module.exports = { miningTasksManager, TasksManager };
+module.exports = { miningTasksManager, TasksManager, generateMiningId };

@@ -5,7 +5,7 @@ const {
 } = require('../services/ImapConnectionProvider');
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
-const { miningTasksManager } = require('../services/TasksManager');
+const { miningTasksManager, generateMiningId } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 const { redis } = require('../utils/redis');
@@ -236,7 +236,7 @@ async function startMining(req, res, next) {
     : imapConnectionProvider.withPassword(host, password, port);
 
   const { boxes } = req.body;
-  const miningId = miningTasksManager.generateMiningID(id);
+  const miningId = generateMiningId(id);
 
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
