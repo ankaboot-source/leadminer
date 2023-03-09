@@ -1,4 +1,5 @@
 const { generateUUID } = require('../utils/helpers/hashHelpers');
+const { sendSSE } = require('../utils/helpers/sseHelpers');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 
@@ -85,13 +86,11 @@ class TasksManager {
    */
   attachSSE(miningId, sseProgressHandler) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
-
+  
     if (task === undefined) {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    // Removes any existing SSE instance and attaches the new one
-    task.sseProgressHandler && delete task.sseProgressHandler;
     task.sseProgressHandler = sseProgressHandler;
   }
 
@@ -111,7 +110,7 @@ class TasksManager {
     const { fetcher } = task;
 
     try {
-      (await fetcher) && fetcher.cleanup();
+      await fetcher.cleanup();
     } catch (error) {
       logger.error('Error when deleting task', { error });
     }
@@ -136,26 +135,16 @@ class TasksManager {
     }
 
     const { sseProgressHandler, miningProgress } = task;
-
-    if (sseProgressHandler) {
-      const { fetching, extracting } = miningProgress;
-
-      switch (progressType) {
-        case 'fetching':
-          return sendSSE(
-            sseProgressHandler,
-            parseInt(fetching),
-            `fetching-${miningId}`
-          );
-        case 'extracting':
-          return sendSSE(
-            sseProgressHandler,
-            parseInt(extracting),
-            `extracting-${miningId}`
-          );
-        default:
-      }
+  
+    if (!sseProgressHandler) {
+      return null;
     }
+  
+    const { fetching, extracting } = miningProgress;
+    const value = progressType === 'fetching' ? parseInt(fetching) : parseInt(extracting);
+    const eventName = `${progressType}-${miningId}`;
+  
+    return sendSSE(sseProgressHandler, value, eventName);
   }
 
   /**
