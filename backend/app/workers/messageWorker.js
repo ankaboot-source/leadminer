@@ -81,7 +81,7 @@ async function handleMessage({
 
   while (informedSubscribers === 0) {
     informedSubscribers = await redisPubSubClient.publish(
-      miningID,
+      miningId,
       JSON.stringify(extractingProgress)
     );
 
@@ -89,7 +89,7 @@ async function handleMessage({
       logger.debug('No subscribers litening to PubSub channel', {
         informedSubscribers,
         retriesCount,
-        pubSubChannel: miningID
+        pubSubChannel: miningId
       });
       break;
     }
