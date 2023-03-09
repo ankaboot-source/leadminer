@@ -2,7 +2,12 @@ const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/emailAddressHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
-const { REGEX_LIST_ID } = require('../utils/constants');
+const {
+  REGEX_LIST_ID,
+  X_MAILER_TRANSACTIONAL_HEADER_VALUES,
+  EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
+  EMAIL_HEADERS_NOT_NEWSLETTER
+} = require('../utils/constants');
 const {
   EMAIL_HEADERS_NEWSLETTER,
   EMAIL_HEADERS_TRANSACTIONAL,
@@ -47,7 +52,11 @@ class EmailMessage {
       emailMessageHelpers.getSpecificHeader(
         this.header,
         EMAIL_HEADERS_NEWSLETTER
-      ) !== null
+      ) !== null &&
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        EMAIL_HEADERS_NOT_NEWSLETTER
+      ) === null
     );
   }
 
@@ -60,7 +69,16 @@ class EmailMessage {
       emailMessageHelpers.getSpecificHeader(
         this.header,
         EMAIL_HEADERS_TRANSACTIONAL
-      ) !== null
+      ) !== null ||
+      emailMessageHelpers.hasHeaderWithValue(
+        this.header,
+        'x-mailer',
+        X_MAILER_TRANSACTIONAL_HEADER_VALUES
+      ) ||
+      emailMessageHelpers.hasHeaderFieldStartsWith(
+        this.header,
+        EMAIL_HEADER_PREFIXES_TRANSACTIONAL
+      )
     );
   }
 
@@ -248,7 +266,7 @@ class EmailMessage {
 
               return EmailMessage.constructPersonPocTags(
                 email,
-                fieldName === 'from'
+                fieldName === 'from' || fieldName === 'reply-to'
                   ? [...messageTags, ...emailTags]
                   : emailTags,
                 fieldName

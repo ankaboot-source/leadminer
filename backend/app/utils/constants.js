@@ -21,6 +21,7 @@ module.exports = {
   REGEX_BODY: bodyRegex, //  Regex to extract emails from body
   REGEX_LIST_ID: listRegex, // Extracts id from header field list-id
   REGEX_REMOVE_QUOTES: /^(['"])(?<name>.*)\1$/, // Removes surrounding quotes from input. EX: "name", 'name'
+  NEWSLETTER_EMAIL_ADDRESS_INCLUDES: ['newsletter'],
   NOREPLY_EMAIL_ADDRESS_INCLUDES: [
     'accusereception',
     'alerts',
@@ -53,19 +54,25 @@ module.exports = {
     'unsubscribe',
     'wordpress'
   ],
-  EMAIL_HEADERS_NEWSLETTER: ['list-unsubscribe', 'list-id,list'],
+  EMAIL_HEADERS_NEWSLETTER: ['list-unsubscribe', 'list-id', 'list'],
+  EMAIL_HEADERS_NOT_NEWSLETTER: ['list-post', 'x-original-from'],
   EMAIL_HEADERS_TRANSACTIONAL: [
     'feedback-id',
     'x-feedback-id',
     'x-mandrill-user',
-    'x-mailer: mailchimp *',
-    'X-LinkedIn-*',
-    'x-mailer: ec-messenger*',
-    'x-mailer: nlserver *',
     'x-marketoid',
     'x-campaignid',
-    'x-Mailgun*',
     'x-job'
+  ],
+  EMAIL_HEADER_PREFIXES_TRANSACTIONAL: [
+    'x-linkedin',
+    'x-mailgun',
+    'auto-submitted'
+  ],
+  X_MAILER_TRANSACTIONAL_HEADER_VALUES: [
+    'ec-messenger',
+    'nlserver',
+    'mailchimp'
   ],
   EMAIL_HEADERS_MAILING_LIST: ['list-post'],
   EXCLUDED_IMAP_FOLDERS: ['[Gmail]']

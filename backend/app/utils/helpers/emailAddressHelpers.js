@@ -1,4 +1,7 @@
-const { NOREPLY_EMAIL_ADDRESS_INCLUDES } = require('../constants');
+const {
+  NOREPLY_EMAIL_ADDRESS_INCLUDES,
+  NEWSLETTER_EMAIL_ADDRESS_INCLUDES
+} = require('../constants');
 
 /**
  * getScore takes the domain and username and return a "matching score" between
@@ -73,22 +76,33 @@ function isNoReply(emailAddress) {
 }
 
 /**
+ * Checks if an email address can be tagged as newsletter
+ * @param emailAddress - The email address to check
+ * @returns {Boolean}
+ */
+function isNewsletter(emailAddress) {
+  return NEWSLETTER_EMAIL_ADDRESS_INCLUDES.some((word) => {
+    return emailAddress.toLowerCase().includes(word);
+  });
+}
+
+/**
  * Tags an email address.
  * @param {string} emailAddress  - The email address to check
  * @param {string} domainType - The type of domain, it can be either "provider" or "custom"
  * @returns {Boolean}
  */
-function getEmailTags(email, domainType) {
+function getEmailTags({ address, name }, domainType) {
   const emailTags = [];
 
-  const emailType = findEmailAddressType(
-    email.address,
-    [email?.name],
-    domainType
-  );
+  const emailType = findEmailAddressType(address, [name], domainType);
 
-  if (email && isNoReply(email.address)) {
+  if (isNoReply(address)) {
     emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
+  }
+
+  if (isNewsletter(address) || (name && name.includes('newsletter'))) {
+    emailTags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
   }
 
   if (emailType !== '') {
