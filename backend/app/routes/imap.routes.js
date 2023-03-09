@@ -6,7 +6,7 @@ router.post('/signUpGoogle', googleApiController.signUpWithGoogle);
 router.post('/login', imap.loginToAccount);
 router.get('/:id/boxes', imap.getImapBoxes);
 
-router.post('/mine/', imap.startMining);
-router.post('/mine/:id/stop', imap.stopMining);
+router.post('/mine/:userid', imap.startMining);
+router.delete('/mine/:userid/:id/stop', imap.stopMining);
 
 module.exports = router;
