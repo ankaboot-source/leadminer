@@ -3,18 +3,17 @@ const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/emailAddressHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
 const {
+  EMAIL_HEADERS_NEWSLETTER,
+  EMAIL_HEADERS_TRANSACTIONAL,
+  EMAIL_HEADERS_MAILING_LIST,
   REGEX_LIST_ID,
   X_MAILER_TRANSACTIONAL_HEADER_VALUES,
   EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
   EMAIL_HEADERS_NOT_NEWSLETTER
 } = require('../utils/constants');
-const {
-  EMAIL_HEADERS_NEWSLETTER,
-  EMAIL_HEADERS_TRANSACTIONAL,
-  EMAIL_HEADERS_MAILING_LIST
-} = require('../utils/constants');
-const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 const { logger } = require('../utils/logger');
+
+const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
 
 class EmailMessage {
   /**
