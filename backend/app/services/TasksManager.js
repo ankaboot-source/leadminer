@@ -31,7 +31,7 @@ class TasksManager {
    * @returns {string} - The unique mining ID.
    */
   generateMiningID(userId) {
-    return TasksManager.#generateTaskMiningID(userId)
+    return TasksManager.#generateTaskMiningID(userId);
   }
 
   /**
