@@ -26,7 +26,7 @@ const redisClientForNormalMode = redis.getClient();
  * @param {string} options.userEmail - The email of the user who received the email message.
  * @param {string} options.userIdentifierHash - The hash of the user's identifier.
  * @param {boolean} options.isLast - Indicates whether this is the last message in a sequence of messages.
- * @param {string} options.miningID - The id of the mining process.
+ * @param {string} options.miningId - The id of the mining process.
  * @returns {Promise<void>}
  */
 async function handleMessage({
@@ -38,7 +38,7 @@ async function handleMessage({
   userEmail,
   userIdentifierHash,
   isLast,
-  miningID
+  miningId
 }) {
   const message = new EmailMessage(
     redisClientForNormalMode,
@@ -72,7 +72,7 @@ async function handleMessage({
   }
 
   const extractingProgress = {
-    miningID,
+    miningId,
     progressType: 'extracting'
   };
 
