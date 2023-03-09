@@ -86,7 +86,7 @@ async function handleMessage({
     );
 
     if (retriesCount === MAX_REDIS_PUBLISH_RETRIES_COUNT) {
-      logger.debug('No subscribers litening to PubSub channel', {
+      logger.info('No subscribers litening to PubSub channel', {
         informedSubscribers,
         retriesCount,
         pubSubChannel: miningId
