@@ -16,12 +16,13 @@ function sendSSE(sseClient, sseData, sseEvent) {
   }
 }
 
-class TaskManager {
-  /**
-   * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
-   * @type {Map<string, object>}
-   */
-  #ACTIVE_MINING_TASKS = new Map();
+class TasksManager {
+    
+    /**
+     * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
+     * @type {Map<string, object>}
+     */
+    #ACTIVE_MINING_TASKS = new Map();
 
   constructor() {
     this.progressSubscriber = redis.getDuplicatedClient();
@@ -158,6 +159,6 @@ class TaskManager {
   }
 }
 
-const miningTaskManagerInstance = new TaskManager();
+const miningTasksManager= new TasksManager();
 
-module.exports = { miningTaskManagerInstance };
+module.exports = { miningTasksManager };

@@ -5,8 +5,7 @@ const {
 } = require('../services/ImapConnectionProvider');
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
-const { miningTaskManagerInstance } = require('../services/TaskManager');
-
+const { miningTasksManager } = require('../services/TaskManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 
@@ -237,21 +236,17 @@ async function startMining(req, res, next) {
     : imapConnectionProvider.withPassword(host, password, port);
 
   const { boxes } = req.body;
-  const miningID = miningTaskManagerInstance.generateMiningID(id);
+  const miningId = miningTasksManager.generateMiningID(id);
 
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
     boxes,
     id,
     email,
-    miningID
+    miningId
   );
 
-  const miningTask = miningTaskManagerInstance.createTask(
-    miningID,
-    id,
-    imapEmailsFetcher
-  );
+  const miningTask = miningTasksManager.createTask(miningId, id, imapEmailsFetcher);
   imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
   const { heapTotal, heapUsed } = process.memoryUsage();
@@ -283,7 +278,7 @@ async function stopMining(req, res, next) {
 
   const { id } = req.params;
 
-  const task = miningTaskManagerInstance.stopMining(id);
+  const task = miningTasksManager.stopMining(id);
 
   return res.status(200).send({ error: null, data: task || null });
 }
