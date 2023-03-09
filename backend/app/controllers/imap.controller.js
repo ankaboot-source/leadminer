@@ -5,7 +5,7 @@ const {
 } = require('../services/ImapConnectionProvider');
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
-const { miningTasksManager } = require('../services/TaskManager');
+const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 const { redis } = require('../utils/redis');
@@ -278,9 +278,13 @@ async function stopMining(req, res, next) {
 
   const { id } = req.params;
 
-  const task = miningTasksManager.stopMining(id);
+  try {
+    const task = await miningTasksManager.deleteTask(id);
+    return res.status(200).send({ error: null, data: task });
+  } catch (err) {
+    return next(err);
+  }
 
-  return res.status(200).send({ error: null, data: task || null });
 }
 
 module.exports = {

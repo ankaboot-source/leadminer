@@ -1,23 +1,28 @@
 const { SSE } = require('express-sse');
-const { miningTasksManager } = require('../services/TaskManager');
+const { miningTasksManager } = require('../services/TasksManager');
 
 /**
  * Stream the progress of email extraction and scanning via Server-Sent Events (SSE).
  * @param {Object} req - The request object.
  * @param {Object} res - The response object.
  */
-function streamProgress(req, res) {
+function streamProgress(req, res, next) {
+  
   const { id } = req.params;
-
   const sse = new SSE();
 
   sse.init(req, res);
-
-  miningTasksManager.attachSSE(id, sse);
+  
+  try {
+    miningTasksManager.attachSSE(id, sse);
+  } catch (error) {
+    sse.send(error.message, 'errors');
+    return res.end();
+  }
 
   // When the client closes the connection, unsubscribe from Redis channels and end the response.
   req.on('close', () => {
-    miningTasksManager.deleteTask(id); // Stops the mining task.
+    miningTasksManager.deleteTask(id).catch(); // Stops the mining task.
   });
 }
 
