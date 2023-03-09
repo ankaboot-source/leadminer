@@ -56,8 +56,9 @@ class TasksManager {
       this.#ACTIVE_MINING_TASKS.set(miningId, miningTask);
 
       this.progressSubscriber.subscribe(miningId, (err) => {
-        err &&
+        if (err) {
           logger.error('Failed subscribing to Redis.', { metadata: { err } });
+        }
       });
 
       return miningTask;
