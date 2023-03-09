@@ -60,16 +60,14 @@ export async function getEmails({ state, commit }, { data }) {
   try {
     const { boxes } = data;
 
-    const response = await this.$axios.post(
-      `${this.$api}/imap/mine/`,
-      { boxes },
+    const response = await this.$axios.post(`${this.$api}/imap/mine/${user.id}`, { boxes },
       { headers: { "X-imap-login": JSON.stringify(user) } }
     );
 
-    const { miningID } = response.data?.data;
+    const { userId, miningId } = response.data?.data
 
-    sse.initConnection(miningID);
-    sse.registerEventHandlers(miningID, this);
+    sse.initConnection(userId, miningId);
+    sse.registerEventHandlers(miningId, this);
 
     commit("SET_LOADING", false);
     commit("SET_LOADING_DNS", false);

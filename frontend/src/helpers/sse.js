@@ -50,10 +50,10 @@ class SSE {
     }
   }
 
-  initConnection(id) {
+  initConnection(userId, miningId) {
     this.closeConnection();
     this.eventSource = new EventSource(
-      `${process.env.SERVER_ENDPOINT}/api/stream/${id}/progress/`,
+      `${process.env.SERVER_ENDPOINT}/api/imap/mine/${userId}/${miningId}/progress/`,
       {
         withCredentials: true,
       }
