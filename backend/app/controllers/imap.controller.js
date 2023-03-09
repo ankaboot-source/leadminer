@@ -8,7 +8,6 @@ const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { miningTasksManager } = require('../services/TaskManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
-
 const { redis } = require('../utils/redis');
 const { REDIS_STREAM_NAME } = require('../utils/constants');
 const redisStreamsPublisher = redis.getDuplicatedClient();
@@ -24,6 +23,7 @@ const redisPublisher = redis.getDuplicatedClient();
  * @param {string} emailMessage.userId - User Id.
  * @param {string} emailMessage.userEmail - User email address.
  * @param {string} emailMessage.userIdentifier - Hashed user identifier
+ * @param {string} emailMessage.miningId - Id of the mining process.
  * @returns {Promise}
  */
 async function onEmailMessage({
@@ -35,7 +35,7 @@ async function onEmailMessage({
   userId,
   userEmail,
   userIdentifier,
-  miningID
+  miningId
 }) {
   const isLastInFolder = seqNumber === totalInFolder;
 
@@ -48,16 +48,16 @@ async function onEmailMessage({
     folderName,
     isLast: isLastInFolder,
     userIdentifier,
-    miningID
+    miningId
   });
 
   try {
     const fetchingProgress = {
-      miningID,
+      miningId,
       progressType: 'fetching'
     };
 
-    await redisPublisher.publish(miningID, JSON.stringify(fetchingProgress));
+    await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
     await redisStreamsPublisher.xadd(
       REDIS_STREAM_NAME,
       '*',

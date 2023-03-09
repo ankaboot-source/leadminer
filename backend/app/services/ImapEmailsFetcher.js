@@ -13,18 +13,23 @@ class ImapEmailsFetcher {
    * @param {string[]} folders - List of folders to fetch.
    * @param {string} userId - User Id.
    * @param {string} userEmail - User email.
-   * @param {string} miningID - The id of the mining process.
-
+   * @param {string} miningId - The id of the mining process.
    */
-  constructor(imapConnectionProvider, folders, userId, userEmail, miningID) {
+  constructor(
+    imapConnectionProvider,
+    folders,
+    userId,
+    userEmail,
+    miningId
+  ) {
     this.imapConnectionProvider = imapConnectionProvider;
     this.folders = folders;
     this.userId = userId;
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
-    this.miningID = miningID;
-    this.processSetKey = `caching:${miningID}`;
+    this.miningId = miningId;
+    this.processSetKey = `caching:${miningId}`;
 
     this.fetchedIds = new Set();
 
@@ -45,7 +50,7 @@ class ImapEmailsFetcher {
    * @param {string} emailMessage.userId - User Id.
    * @param {string} emailMessage.userEmail - User email address.
    * @param {string} emailMessage.userIdentifier - Hashed user identifier
-   * @param {string} emailMessage.miningID - The id of the mining process.
+   * @param {string} emailMessage.miningId - The id of the mining process.
    * @returns {Promise}
    */
 
@@ -154,7 +159,7 @@ class ImapEmailsFetcher {
             userId: this.userId,
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier,
-            miningID: this.miningID
+            miningId: this.miningId
           });
         });
       });
