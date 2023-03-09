@@ -20,7 +20,9 @@ function streamProgress(req, res) {
   }
 
   req.on('close', () => {
-    miningTasksManager.deleteTask(id).catch(() => { return });
+    miningTasksManager.deleteTask(id).catch(() => {
+      return;
+    });
   });
 }
 
