@@ -15,35 +15,6 @@ class SSE {
     });
   }
 
-  //  TODO: Remove and clean this part as we don't need it.
-  //
-  //  this.eventSource.addEventListener(`minedEmails${id}`, (message) => {
-  //   const { data, statistics } = JSON.parse(message.data);
-  //   store.commit("example/SET_EMAILS", data);
-  //   store.commit("example/SET_STATISTICS", statistics);
-  //  });
-  //
-  //  this.eventSource.addEventListener(`token${userId}`, (message) => {
-  //     const { email, id } = LocalStorage.getItem("googleUser");
-
-  //     LocalStorage.remove("googleUser");
-
-  //     const access_token = JSON.parse(message.data).token;
-
-  //     LocalStorage.set("googleUser", {
-  //       access_token,
-  //       email,
-  //       id,
-  //     });
-
-  //     store.commit("example/UPDATE_TOKEN", access_token);
-  //   });
-
-  //   this.eventSource.addEventListener(`dns${userId}`, () => {
-  //     store.commit("example/SET_LOADING_DNS", false);
-  //   });
-  // }
-
   closeConnection() {
     if (this.eventSource && this.eventSource.readyState !== 2) {
       this.eventSource.close();
