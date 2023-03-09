@@ -1,16 +1,19 @@
 const { expect } = require('chai');
-const { TasksManager, generateMiningId } = require('../../app/services/TasksManager');
+const {
+  TasksManager,
+  generateMiningId
+} = require('../../app/services/TasksManager');
 
 describe('TasksManager.generateMiningId()', () => {
-    it('should generate a unique mining ID for a given user', () => {
-      const userId = '123456';
-      const miningID1 = generateMiningId(userId);
-      const miningID2 = generateMiningId(userId);
+  it('should generate a unique mining ID for a given user', () => {
+    const userId = '123456';
+    const miningID1 = generateMiningId(userId);
+    const miningID2 = generateMiningId(userId);
 
-      expect(miningID1).to.not.equal(miningID2);
-      expect(miningID1).to.have.string(userId);
-      expect(miningID2).to.have.string(userId);
-    });
+    expect(miningID1).to.not.equal(miningID2);
+    expect(miningID1).to.have.string(userId);
+    expect(miningID2).to.have.string(userId);
+  });
 });
 
 describe('TasksManager class', () => {

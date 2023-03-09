@@ -128,11 +128,8 @@ class TasksManager {
    * @returns Returns null if task does not exist.
    */
   #notifyProgress(miningId, progressType) {
-
-
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
     const { sseProgressHandler, miningProgress } = task || {};
-
 
     if (task === undefined || !sseProgressHandler) {
       return null;
