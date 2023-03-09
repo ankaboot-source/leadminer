@@ -6,22 +6,22 @@ const { miningTasksManager } = require('../services/TasksManager');
  * @param {Object} req - The request object.
  * @param {Object} res - The response object.
  */
-function streamProgress(req, res, next) {
+function streamProgress(req, res) {
   const { id } = req.params;
+  
   const sse = new SSE();
-
   sse.init(req, res);
 
   try {
     miningTasksManager.attachSSE(id, sse);
   } catch (error) {
     sse.send(error.message, 'errors');
-    return res.end();
+    res.end();
   }
-
-  // When the client closes the connection, unsubscribe from Redis channels and end the response.
+  
   req.on('close', () => {
-    miningTasksManager.deleteTask(id).catch(); // Stops the mining task.
+    miningTasksManager.deleteTask(id)
+    .catch(() => {});
   });
 }
 

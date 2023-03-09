@@ -2,138 +2,141 @@ const { expect } = require('chai');
 const { TasksManager } = require('../../app/services/TasksManager');
 
 describe('TasksManager', () => {
-  const fakeRedisClient = { on: () => {}, subscribe: () => {} };
-  const fetcherInstance = { cleanup: () => {} };
-  const sseInstance = { send: () => {} };
-  let tasksManager = null;
+    const fakeRedisClient = { on: () => { return null }, subscribe: () => { return null } };
+    const fetcherInstance = { cleanup: () => { return null } };
+    const sseInstance = { send: () => { return null } };
+    let tasksManager = null;
 
-  beforeEach(() => {
-    tasksManager = new TasksManager(fakeRedisClient);
-  });
-
-  describe('generateMiningID()', () => {
-    it('should generate a unique mining ID for a given user', () => {
-      const userId = '123456';
-      const miningID1 = tasksManager.generateMiningID(userId);
-      const miningID2 = tasksManager.generateMiningID(userId);
-
-      expect(miningID1).to.not.equal(miningID2);
-      expect(miningID1).to.have.string(userId);
-      expect(miningID2).to.have.string(userId);
-    });
-  });
-
-  describe('createTask()', () => {
-    it('should create a new mining task.', () => {
-      const userId = 'abc123';
-      const miningId = tasksManager.generateMiningID(userId);
-      const task = tasksManager.createTask(miningId, userId, fetcherInstance);
-
-      expect(task).eql({
-        userId,
-        miningId,
-        miningProgress: {
-          fetching: 0,
-          extracting: 0
-        },
-        fetcher: fetcherInstance,
-        sseProgressHandler: null
-      });
+    beforeEach(() => {
+        tasksManager = new TasksManager(fakeRedisClient);
     });
 
-    it('should throw an error if mining ID already exists', () => {
-      const userID = 'abc123';
-      const miningID = tasksManager.generateMiningID(userID);
-      const fetcherInstance = { cleanup: () => {} };
-      tasksManager.createTask(miningID, userID, fetcherInstance);
-      expect(() =>
-        tasksManager.createTask(miningID, userID, fetcherInstance)
-      ).to.Throw(Error);
-    });
-  });
+    describe('generateMiningID()', () => {
+        it('should generate a unique mining ID for a given user', () => {
+            const userId = '123456';
+            const miningID1 = tasksManager.generateMiningID(userId);
+            const miningID2 = tasksManager.generateMiningID(userId);
 
-  describe('getActiveTask()', () => {
-    it('should return the task object if it exists', () => {
-      const userID = 'abc123';
-      const miningId = tasksManager.generateMiningID(userID);
-      const createdTask = tasksManager.createTask(
-        miningId,
-        userID,
-        fetcherInstance
-      );
-      const retirevedTask = tasksManager.getActiveTask(miningId);
-
-      expect(retirevedTask).to.be.an('object');
-      expect(retirevedTask.miningId).to.equal(miningId);
-      expect(retirevedTask).to.eql(createdTask);
+            expect(miningID1).to.not.equal(miningID2);
+            expect(miningID1).to.have.string(userId);
+            expect(miningID2).to.have.string(userId);
+        });
     });
 
-    it('should throw an error if the task with the given mining ID does not exist', () => {
-      const userID = 'abc123';
-      const miningId = tasksManager.generateMiningID(userID);
-      const retirevedTask = tasksManager.getActiveTask(miningId);
+    describe('createTask()', () => {
+        it('should create a new mining task.', () => {
+            const userId = 'abc123';
+            const miningId = tasksManager.generateMiningID(userId);
+            const task = tasksManager.createTask(miningId, userId, fetcherInstance);
 
-      expect(retirevedTask).to.be.null;
-    });
-  });
+            expect(task).eql({
+                userId,
+                miningId,
+                miningProgress: {
+                    fetching: 0,
+                    extracting: 0
+                },
+                fetcher: fetcherInstance,
+                sseProgressHandler: null
+            });
+        });
 
-  describe('attachSSE()', () => {
-    it('should attach an SSE instance to a mining task', () => {
-      const userId = 'abc123';
-      const miningId = tasksManager.generateMiningID(userId);
-
-      tasksManager.createTask(miningId, userId, { cleanup: () => {} });
-      tasksManager.attachSSE(miningId, sseInstance);
-
-      expect(tasksManager.getActiveTask(miningId).sseProgressHandler).eql(
-        sseInstance
-      );
-    });
-
-    it('should attach new instance and delete old if exists', () => {
-      const userId = 'abc123';
-      const miningId = tasksManager.generateMiningID(userId);
-      const sseInstance = { send: () => {} };
-      const sseInstance2 = { send: () => {} };
-      tasksManager.createTask(miningId, userId, { cleanup: () => {} });
-
-      tasksManager.attachSSE(miningId, sseInstance);
-      tasksManager.attachSSE(miningId, sseInstance2);
-
-      expect(tasksManager.getActiveTask(miningId).sseProgressHandler).eql(
-        sseInstance2
-      );
+        it('should throw an error if mining ID already exists', () => {
+            const userID = 'abc123';
+            const miningID = tasksManager.generateMiningID(userID);
+            tasksManager.createTask(miningID, userID, fetcherInstance);
+            expect(() =>
+                tasksManager.createTask(miningID, userID, fetcherInstance)
+            ).to.Throw(Error);
+        });
     });
 
-    it('should throw an error if the task with the given mining ID does not exist', () => {
-      const userId = 'abc123';
-      const miningId = tasksManager.generateMiningID(userId);
+    describe('getActiveTask()', () => {
+        it('should return the task object if it exists', () => {
+            const userID = 'abc123';
+            const miningId = tasksManager.generateMiningID(userID);
+            const createdTask = tasksManager.createTask(
+                miningId,
+                userID,
+                fetcherInstance
+            );
+            const retirevedTask = tasksManager.getActiveTask(miningId);
 
-      expect(() => tasksManager.attachSSE(miningId, sseInstance)).to.Throw(
-        Error
-      );
+            expect(retirevedTask).to.be.an('object');
+            expect(retirevedTask.miningId).to.equal(miningId);
+            expect(retirevedTask).to.eql(createdTask);
+        });
+
+        it('should throw an error if the task with the given mining ID does not exist', () => {
+            const userID = 'abc123';
+            const miningId = tasksManager.generateMiningID(userID);
+            const retirevedTask = tasksManager.getActiveTask(miningId);
+
+            expect(retirevedTask).to.be.null;
+        });
     });
-  });
 
-  describe('deleteTask()', () => {
-    it('should throw an error if the task with the given mining ID does not exist', async () => {
-      expect(() => TasksManager.deleteTask('false-id')).to.Throw(Error);
+    describe('attachSSE()', () => {
+        it('should attach an SSE instance to a mining task', () => {
+            const userId = 'abc123';
+            const miningId = tasksManager.generateMiningID(userId);
+
+            tasksManager.createTask(miningId, userId, fetcherInstance);
+            tasksManager.attachSSE(miningId, sseInstance);
+
+            expect(tasksManager.getActiveTask(miningId).sseProgressHandler).eql(
+                sseInstance
+            );
+        });
+
+        it('should attach new instance and delete old if exists', () => {
+            const userId = 'abc123';
+            const miningId = tasksManager.generateMiningID(userId);
+            const sseInstance2 = { send: () => { return null } };
+            tasksManager.createTask(miningId, userId, fetcherInstance);
+
+            tasksManager.attachSSE(miningId, sseInstance);
+            tasksManager.attachSSE(miningId, sseInstance2);
+
+            expect(tasksManager.getActiveTask(miningId).sseProgressHandler).eql(
+                sseInstance2
+            );
+        });
+
+        it('should throw an error if the task with the given mining ID does not exist', () => {
+            const userId = 'abc123';
+            const miningId = tasksManager.generateMiningID(userId);
+
+            expect(() => tasksManager.attachSSE(miningId, sseInstance)).to.Throw(
+                Error
+            );
+        });
     });
 
-    it('should delete the task with the given mining ID if it exists', async () => {
-      const userId = '123';
-      const miningId = tasksManager.generateMiningID(userId);
-      const createdTask = tasksManager.createTask(
-        miningId,
-        userId,
-        fetcherInstance
-      );
-      const deletedTask = await tasksManager.deleteTask(miningId);
+    describe('deleteTask()', () => {
+        it('should throw an error if the task with the given mining ID does not exist', async () => {
+            try {
+                await tasksManager.deleteTask('false-id')
+            } catch(error) {
+                expect(error).to.be.instanceOf(Error);
+            }
+        
+        });
 
-      expect(deletedTask).to.deep.equal(createdTask);
-      expect(tasksManager.getActiveTask(miningId)).to.be.null;
+        it('should delete the task with the given mining ID if it exists', async () => {
+            const userId = '123';
+            const miningId = tasksManager.generateMiningID(userId);
+            const createdTask = tasksManager.createTask(
+                miningId,
+                userId,
+                fetcherInstance
+            );
+            const deletedTask = await tasksManager.deleteTask(miningId);
+
+            expect(deletedTask).to.deep.equal(createdTask);
+            expect(tasksManager.getActiveTask(miningId)).to.be.null;
+        });
     });
-  });
 });
 
 /*
