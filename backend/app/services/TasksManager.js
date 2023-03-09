@@ -21,13 +21,17 @@ class TasksManager {
     });
   }
 
+  static #generateTaskMiningID(userId) {
+    return `${userId}-${generateUUID()}`;
+  }
+
   /**
    * Generates a unique mining ID for a given user.
    * @param {string} userId - The user ID.
    * @returns {string} - The unique mining ID.
    */
   generateMiningID(userId) {
-    return `${userId}-${generateUUID()}`;
+    return TasksManager.#generateTaskMiningID(userId)
   }
 
   /**
