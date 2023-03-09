@@ -47,10 +47,7 @@ function getScore(DomainAndUserName, UserName) {
  * @returns the type of email address.
  */
 function findEmailAddressType(emailAddress, userNames, domainType) {
-  // array that contains two values, ex: [user,gmail.com] for the email user@gmail.com
-  const domainAndUserName = emailAddress.split('@')[0];
-
-  if (!userNames || getScore(domainAndUserName[0], userNames[0]) <= 40) {
+  if (!userNames || getScore(emailAddress, userNames[0]) <= 40) {
     return '';
   }
 
