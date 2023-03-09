@@ -246,7 +246,11 @@ async function startMining(req, res, next) {
     miningId
   );
 
-  const miningTask = miningTasksManager.createTask(miningId, id, imapEmailsFetcher);
+  const miningTask = miningTasksManager.createTask(
+    miningId,
+    id,
+    imapEmailsFetcher
+  );
   imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
   const { heapTotal, heapUsed } = process.memoryUsage();
@@ -284,7 +288,6 @@ async function stopMining(req, res, next) {
   } catch (err) {
     return next(err);
   }
-
 }
 
 module.exports = {

@@ -15,13 +15,7 @@ class ImapEmailsFetcher {
    * @param {string} userEmail - User email.
    * @param {string} miningId - The id of the mining process.
    */
-  constructor(
-    imapConnectionProvider,
-    folders,
-    userId,
-    userEmail,
-    miningId
-  ) {
+  constructor(imapConnectionProvider, folders, userId, userEmail, miningId) {
     this.imapConnectionProvider = imapConnectionProvider;
     this.folders = folders;
     this.userId = userId;
