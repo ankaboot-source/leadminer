@@ -18,8 +18,8 @@ function getSpecificHeader(header, headerFields) {
 
 /**
  * Checks if a particular header field has a value from a given list of possible values
- * @param {Object} Header - Header object.
- * @param {string} headerField - A list of possible header fields.
+ * @param {Object} header - Header object.
+ * @param {string} headerField - A header key.
  * @param {string[]} headerValues - A list of possible header values.
  * @returns {Boolean}
  */
@@ -35,14 +35,14 @@ function hasHeaderWithValue(header, headerField, headerValues) {
 
 /**
  * Checks if a particular header field starts with one of the prefixes
- * @param {Object} Header - Header object.
- * @param {string[]} headerFieldPrefixes - A list of possible header key prefixes.
+ * @param {Object} header - Header object.
+ * @param {string[]} prefixes - A list of possible header key prefixes.
  * @returns {Boolean}
  */
-function hasHeaderFieldStartsWith(header, headerFieldPrefixes) {
+function hasHeaderFieldStartsWith(header, prefixes) {
   const headerFields = Object.keys(header);
   return headerFields.some((field) =>
-    headerFieldPrefixes.some((prefix) => field.toLowerCase().startsWith(prefix))
+    prefixes.some((prefix) => field.toLowerCase().startsWith(prefix))
   );
 }
 

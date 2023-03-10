@@ -74,7 +74,7 @@ function isNoReply(emailAddress) {
 
 /**
  * Checks if an email address can be tagged as newsletter
- * @param emailAddress - The email address to check
+ * @param emailAddress - The email address to check.
  * @returns {Boolean}
  */
 function isNewsletter(emailAddress) {
@@ -85,9 +85,11 @@ function isNewsletter(emailAddress) {
 
 /**
  * Tags an email address.
- * @param {string} emailAddress  - The email address to check
+ * @param {Object} email - The email to check.
+ * @param {string} email.address - The email address.
+ * @param {string} email.name - The user name.
  * @param {string} domainType - The type of domain, it can be either "provider" or "custom"
- * @returns {Boolean}
+ * @returns {Object[]} List of tags
  */
 function getEmailTags({ address, name }, domainType) {
   const emailTags = [];

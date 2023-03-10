@@ -143,9 +143,9 @@ class StreamConsumer {
           const failedExtractionResults = extractionResults.filter(
             (extractionResult) => extractionResult.status !== 'fulfilled'
           );
-          if (failedExtractionResults.length) {
-            logger.error('Errors occurred while extracting', {
-              metadata: failedExtractionResults
+          if (failedExtractionResults.length > 0) {
+            logger.debug('Extraction errors', {
+              metadata: { failedExtractionResults }
             });
           }
 
