@@ -287,7 +287,7 @@ async function stopMining(req, res, next) {
 
   try {
     const task = await miningTasksManager.deleteTask(id);
-    return res.status(200).send({ error: null, data: task });
+    return res.status(200).send({ data: task });
   } catch (err) {
     return next(err);
   }
