@@ -15,6 +15,15 @@ function hashEmail(emailAddress, userId) {
     .digest('hex');
 }
 
+/**
+ * Generates a random UUID (Universally Unique Identifier) using the built-in `crypto.randomUUID()` function.
+ * @returns {string} A randomly generated UUID.
+ */
+function generateUUID() {
+  return crypto.randomUUID();
+}
+
 module.exports = {
-  hashEmail
+  hashEmail,
+  generateUUID
 };

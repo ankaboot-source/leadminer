@@ -57,26 +57,19 @@ export async function getEmails({ state, commit }, { data }) {
   if (subscription) await subscription.unsubscribe();
   subscribeToRefined(user.id, commit);
 
-  sse.init(user.id);
-  sse.registerEventHandlers(user.id, this);
-
   try {
-    const { boxes, abortController } = data;
+    const { boxes } = data;
 
-    abortController.signal.addEventListener("abort", () => {
-      commit("SET_LOADING", false);
-      commit("SET_LOADING_DNS", false);
-      commit("SET_STATUS", "");
-      commit("SET_INFO_MESSAGE", "Emails fetching stopped.");
-    });
+    const response = await this.$axios.post(
+      `${this.$api}/imap/mine/${user.id}`,
+      { boxes },
+      { headers: { "X-imap-login": JSON.stringify(user) } }
+    );
 
-    await this.$axios.get(`${this.$api}/imap/1/collectEmails`, {
-      signal: abortController.signal,
-      headers: { "X-imap-login": JSON.stringify(user) },
-      params: {
-        boxes,
-      },
-    });
+    const { userId, miningId } = response.data?.data;
+
+    sse.initConnection(userId, miningId);
+    sse.registerEventHandlers(miningId, this);
 
     commit("SET_LOADING", false);
     commit("SET_LOADING_DNS", false);

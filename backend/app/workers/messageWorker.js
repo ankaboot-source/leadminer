@@ -1,17 +1,34 @@
-const { redis } = require('../utils/redis');
-const EmailMessage = require('../services/EmailMessage');
 const { logger } = require('../utils/logger');
 const { db } = require('../db');
-const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
+const EmailMessage = require('../services/EmailMessage');
+const { redis } = require('../utils/redis');
 const {
   REDIS_STREAM_NAME,
   REDIS_CONSUMER_GROUP_NAME,
   MAX_REDIS_PUBLISH_RETRIES_COUNT
 } = require('../utils/constants');
+const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisPubSubClient = redis.getDuplicatedClient();
 const redisClientForNormalMode = redis.getClient();
 
+/**
+ * Handles incoming email message and performs necessary operations like storing contact information,
+ * populating refined_persons table and reporting progress.
+ * @async
+ * @function handleMessage
+ * @param {Object} options - The options object.
+ * @param {number} options.seqNumber - The sequence number of the email message.
+ * @param {string} options.body - The body of the email message.
+ * @param {string} options.header - The header of the email message.
+ * @param {string} options.folderName - The name of the folder containing the email message.
+ * @param {string} options.userId - The id of the user who received the email message.
+ * @param {string} options.userEmail - The email of the user who received the email message.
+ * @param {string} options.userIdentifierHash - The hash of the user's identifier.
+ * @param {boolean} options.isLast - Indicates whether this is the last message in a sequence of messages.
+ * @param {string} options.miningId - The id of the mining process.
+ * @returns {Promise<void>}
+ */
 async function handleMessage({
   seqNumber,
   body,
@@ -20,7 +37,8 @@ async function handleMessage({
   userId,
   userEmail,
   userIdentifierHash,
-  isLast
+  isLast,
+  miningId
 }) {
   const message = new EmailMessage(
     redisClientForNormalMode,
@@ -53,24 +71,33 @@ async function handleMessage({
     }
   }
 
+  const extractingProgress = {
+    miningId,
+    progressType: 'extracting'
+  };
+
   let retriesCount = 0;
   let informedSubscribers = 0;
+
   while (informedSubscribers === 0) {
-    if (retriesCount >= MAX_REDIS_PUBLISH_RETRIES_COUNT) {
-      logger.error('Failed to publish to subscribers', {
-        metadata: {
-          user: userIdentifierHash
-        }
+    informedSubscribers = await redisPubSubClient.publish(
+      miningId,
+      JSON.stringify(extractingProgress)
+    );
+
+    if (retriesCount === MAX_REDIS_PUBLISH_RETRIES_COUNT) {
+      logger.info('No subscribers litening to PubSub channel', {
+        informedSubscribers,
+        retriesCount,
+        pubSubChannel: miningId
       });
       break;
     }
 
-    informedSubscribers = await redisPubSubClient.publish(
-      `extracting-${userId}`,
-      true
-    );
     retriesCount++;
   }
+
+  logger.info('Publishing extracting progress', { extractingProgress });
 }
 
 /**
@@ -78,7 +105,7 @@ async function handleMessage({
  * @param {Array} message - Array containing the stream message ID and the message data
  */
 const streamProcessor = async (message) => {
-  const [streamMessageID, msg] = message;
+  const [, msg] = message;
   const data = JSON.parse(msg[1]);
   await handleMessage(data);
 };

@@ -5,6 +5,8 @@ const router = require('express').Router();
 router.post('/signUpGoogle', googleApiController.signUpWithGoogle);
 router.post('/login', imap.loginToAccount);
 router.get('/:id/boxes', imap.getImapBoxes);
-router.get('/:id/collectEmails', imap.getEmails);
+
+router.post('/mine/:userid', imap.startMining);
+router.delete('/mine/:userid/:id', imap.stopMining);
 
 module.exports = router;
