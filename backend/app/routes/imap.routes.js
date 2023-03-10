@@ -7,6 +7,6 @@ router.post('/login', imap.loginToAccount);
 router.get('/:id/boxes', imap.getImapBoxes);
 
 router.post('/mine/:userid', imap.startMining);
-router.delete('/mine/:userid/:id/stop', imap.stopMining);
+router.delete('/mine/:userid/:id', imap.stopMining);
 
 module.exports = router;
