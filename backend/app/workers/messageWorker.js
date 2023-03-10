@@ -131,14 +131,23 @@ class StreamConsumer {
           processedMessageIDs = messages.map((message) => message[0]);
           const lastMessageId = processedMessageIDs.at(-1);
 
-          await Promise.all(
-            messages.map(this.streamProcessor),
+          const extractionResults = await Promise.allSettled([
+            ...messages.map((message) => this.streamProcessor(message)),
             redisStreamsConsumer.xack(
               this.streamChannel,
               this.consumerGroupName,
               ...processedMessageIDs
             )
+          ]);
+
+          const failedExtractionResults = extractionResults.filter(
+            (extractionResult) => extractionResult.status !== 'fulfilled'
           );
+          if (failedExtractionResults.length > 0) {
+            logger.debug('Extraction errors', {
+              metadata: { failedExtractionResults }
+            });
+          }
 
           await redisStreamsConsumer.xtrim(
             this.streamChannel,
