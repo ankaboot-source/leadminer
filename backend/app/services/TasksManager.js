@@ -1,17 +1,7 @@
-const { generateUUID } = require('../utils/helpers/hashHelpers');
+const { flickrBase58IdGenerator } = require('../utils/helpers/hashHelpers');
 const { RealtimeSSE } = require('../utils/helpers/sseHelpers');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
-
-/**
- * Generates a unique mining ID for a given user.
- * @param {string} userId - The user ID.
- * @returns {string} - The unique mining ID.
- */
-function generateMiningId() {
-  const uuid = generateUUID().split('-');
-  return uuid.map((i) => i.slice(0, 2)).join('');
-}
 
 /**
  * Removes sensitive data from a task object.
@@ -51,6 +41,19 @@ class TasksManager {
       this.#updateProgress(miningId, progressType);
       this.#notifyProgress(miningId, progressType);
     });
+
+    this.idGenerator = flickrBase58IdGenerator();
+
+  }
+
+  /**
+   * Generates a unique mining ID for a given user.
+   * @returns {Promise<string>} A Promise that resolves to the unique mining ID.
+   */
+  async generateMiningId() {
+    const generator = await this.idGenerator;
+    const id = await generator();
+    return id;
   }
 
   /**
@@ -201,6 +204,5 @@ const miningTasksManager = new TasksManager(redis.getDuplicatedClient());
 module.exports = {
   miningTasksManager,
   TasksManager,
-  generateMiningId,
   redactSensitiveData
 };
