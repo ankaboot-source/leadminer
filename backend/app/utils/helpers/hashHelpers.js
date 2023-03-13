@@ -1,7 +1,10 @@
 const crypto = require('crypto');
 const { customAlphabet } = require('nanoid/async');
 const { FLICKR_BASE_58_CHARSET } = require('../constants');
-const { LEADMINER_API_HASH_SECRET, LEADMINER_MINING_ID_GENERATOR_LENGTH } = require('../../config');
+const {
+  LEADMINER_API_HASH_SECRET,
+  LEADMINER_MINING_ID_GENERATOR_LENGTH
+} = require('../../config');
 
 /**
  * Hashes an email address and a user id using the sha256 algorithm
@@ -22,10 +25,12 @@ function hashEmail(emailAddress, userId) {
  * @returns {Promise<string>} A Promise that resolves to a random ID string.
  */
 async function flickrBase58IdGenerator() {
-  const generator = customAlphabet(FLICKR_BASE_58_CHARSET, LEADMINER_MINING_ID_GENERATOR_LENGTH || 10);
+  const generator = customAlphabet(
+    FLICKR_BASE_58_CHARSET,
+    LEADMINER_MINING_ID_GENERATOR_LENGTH || 10
+  );
   return generator;
 }
-
 
 module.exports = {
   hashEmail,

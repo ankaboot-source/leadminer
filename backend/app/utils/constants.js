@@ -13,7 +13,8 @@ const headerRegex = new RegExp(
 );
 
 module.exports = {
-  FLICKR_BASE_58_CHARSET: '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ', // Defines the character set used in FlickrBase58 encoding.
+  FLICKR_BASE_58_CHARSET:
+    '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ', // Defines the character set used in FlickrBase58 encoding.
   MAX_REDIS_PUBLISH_RETRIES_COUNT: 3,
   REDIS_STREAM_NAME: 'imap-messages',
   REDIS_CONSUMER_GROUP_NAME: 'imap-group',

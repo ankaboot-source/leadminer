@@ -43,7 +43,6 @@ class TasksManager {
     });
 
     this.idGenerator = flickrBase58IdGenerator();
-
   }
 
   /**
