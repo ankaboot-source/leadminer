@@ -209,10 +209,11 @@ async function getImapBoxes(req, res, next) {
  */
 async function startMining(req, res, next) {
   const { data, error } = getXImapHeaderField(req.headers);
+  const { boxes } = req.body;
 
-  if (error) {
+  if (error || boxes === undefined) {
     res.status(400);
-    return next(error);
+    return next(error || new Error('Missing parameter boxes'));
   }
 
   const { access_token, id, email, password } = data;
@@ -238,7 +239,6 @@ async function startMining(req, res, next) {
       )
     : imapConnectionProvider.withPassword(host, password, port);
 
-  const { boxes } = req.body;
   const miningId = generateMiningId(id);
 
   const imapEmailsFetcher = new ImapEmailsFetcher(
