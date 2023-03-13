@@ -1,4 +1,3 @@
-const { SSE } = require('express-sse');
 const { miningTasksManager } = require('../services/TasksManager');
 const { logger } = require('../utils/logger');
 
@@ -10,13 +9,11 @@ const { logger } = require('../utils/logger');
 function streamProgress(req, res) {
   const { id } = req.params;
 
-  const sse = new SSE();
-  sse.init(req, res);
-
   try {
-    miningTasksManager.attachSSE(id, sse);
+    miningTasksManager.attachSSE(id, { req, res });
   } catch (error) {
-    sse.send(error.message, 'errors');
+    res.status(404);
+    res.send({ error: error.message });
     res.end();
   }
 

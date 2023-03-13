@@ -50,7 +50,7 @@ class TasksManager {
           extracted: 0
         },
         fetcher,
-        sseProgressHandler: null
+        progressHandlerSSE: new RealtimeSSE()
       };
 
       this.#ACTIVE_MINING_TASKS.set(miningId, miningTask);
@@ -80,19 +80,20 @@ class TasksManager {
 
   /**
    * Attaches an SSE instance to a mining task.
-   * @param {string} miningId - The mining ID.
-   * @param {object} sseProgressHandler - The SSE instance to attach.
+   * 
+   * @param {string} miningId - The ID of the mining task to attach the SSE instance to.
+   * @param {{req, res}} connection - The connection object to attach the SSE instance to.
    * @returns {void}
    * @throws {Error} If a task with the given mining ID doesn't exist.
    */
-  attachSSE(miningId, sseProgressHandler) {
+  attachSSE(miningId, connection) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    task.sseProgressHandler = sseProgressHandler;
+    task.progressHandlerSSE.subscribeSSE(connection);
   }
 
   /**
@@ -108,10 +109,11 @@ class TasksManager {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { fetcher } = task;
+    const { fetcher, progressHandlerSSE } = task;
 
     try {
       await fetcher.cleanup();
+      await progressHandlerSSE.stop();
     } catch (error) {
       logger.error('Error when deleting task', { error });
     }
@@ -124,23 +126,23 @@ class TasksManager {
   /**
    * Notifies the client of the progress of a mining task with a given mining ID.
    * @param {string} miningId - The mining ID of the task to notify progress for.
-   * @param {string} progressType - The type of progress to notify ('fetching' or 'extracting').
+   * @param {string} progressType - The type of progress to notify ('fetched' or 'extracted').
    * @returns Returns null if task does not exist.
    */
   #notifyProgress(miningId, progressType) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
-    const { sseProgressHandler, miningProgress } = task || {};
+    const { progressHandlerSSE, miningProgress } = task || {};
 
-    if (task === undefined || !sseProgressHandler) {
+    if (task === undefined || !progressHandlerSSE) {
       return null;
     }
 
-    const { fetching, extracting } = miningProgress;
+    const { fetched, extracted } = miningProgress;
     const value =
-      progressType === 'fetching' ? parseInt(fetching) : parseInt(extracting);
+      progressType === 'fetched' ? parseInt(fetched) : parseInt(extracted);
     const eventName = `${progressType}-${miningId}`;
 
-    return sendSSE(sseProgressHandler, value, eventName);
+    return progressHandlerSSE.sendSSE(value, eventName);
   }
 
   /**
