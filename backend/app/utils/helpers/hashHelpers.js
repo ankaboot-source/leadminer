@@ -24,7 +24,7 @@ function hashEmail(emailAddress, userId) {
  * Generates a random ID string using the Flickr Base58 encoding scheme.
  * @returns {Promise<string>} A Promise that resolves to a random ID string.
  */
-async function flickrBase58IdGenerator() {
+function flickrBase58IdGenerator() {
   const generator = customAlphabet(
     FLICKR_BASE_58_CHARSET,
     LEADMINER_MINING_ID_GENERATOR_LENGTH || 10
