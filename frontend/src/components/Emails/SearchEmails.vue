@@ -172,8 +172,9 @@ async function fetchEmails() {
     await $store.dispatch("example/getEmails", {
       data: { boxes: selectedBoxes.value, abortController },
     });
-    showNotification($store.state.example.infoMessage, "teal-5", "check");
+    console.log($store.state.example.infoMessage);
   } catch (error) {
+    console.error($store.state.example.errorMessage);
     showNotification($store.state.example.errorMessage, "red", "error");
   }
 }
@@ -181,7 +182,7 @@ async function fetchEmails() {
 async function getBoxes() {
   try {
     await $store.dispatch("example/getBoxes");
-    showNotification($store.state.example.infoMessage, "teal-5", "check");
+    console.log($store.state.example.infoMessage);
   } catch (_) {
     LocalStorage.clear();
     $router.replace("/");
