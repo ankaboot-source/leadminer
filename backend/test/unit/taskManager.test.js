@@ -1,18 +1,8 @@
 const { expect } = require('chai');
 const {
   TasksManager,
-  generateMiningId,
   redactSensitiveData
 } = require('../../app/services/TasksManager');
-
-describe('TasksManager.generateMiningId()', () => {
-  it('should generate a unique mining ID for a given user', () => {
-    const miningId1 = generateMiningId();
-    const miningId2 = generateMiningId();
-
-    expect(miningId1).to.not.equal(miningId2);
-  });
-});
 
 describe('TasksManager.redactSensitiveData()', () => {
   it('should redact sensetive data from task', () => {
@@ -88,10 +78,19 @@ describe('TasksManager class', () => {
     tasksManager = new TasksManager(fakeRedisClient);
   });
 
+  describe('generateMiningId()', () => {
+    it('should generate a unique mining ID for a given user', async () => {
+      const miningId1 = await tasksManager.generateMiningId();
+      const miningId2 = await tasksManager.generateMiningId();
+
+      expect(miningId1).to.not.equal(miningId2);
+    });
+  });
+
   describe('createTask()', () => {
-    it('should create a new mining task.', () => {
+    it('should create a new mining task.', async () => {
       const userId = 'abc123';
-      const miningId = generateMiningId(userId);
+      const miningId = await tasksManager.generateMiningId();
       const task = tasksManager.createTask(miningId, userId, fetcherInstance);
       const expectedOutput = {
         userId,
@@ -108,7 +107,7 @@ describe('TasksManager class', () => {
 
     it('should throw an error if mining ID already exists', () => {
       const userID = 'abc123';
-      const miningID = generateMiningId(userID);
+      const miningID = tasksManager.generateMiningId(userID);
       tasksManager.createTask(miningID, userID, fetcherInstance);
       expect(() =>
         tasksManager.createTask(miningID, userID, fetcherInstance)
@@ -117,9 +116,9 @@ describe('TasksManager class', () => {
   });
 
   describe('getActiveTask()', () => {
-    it('should return the task object if it exists', () => {
+    it('should return the task object if it exists', async () => {
       const userID = 'abc123';
-      const miningId = generateMiningId();
+      const miningId = await tasksManager.generateMiningId();
       const createdTask = tasksManager.createTask(
         miningId,
         userID,
@@ -134,16 +133,16 @@ describe('TasksManager class', () => {
 
     it('should throw an error if the task with the given mining ID does not exist', () => {
       const userID = 'abc123';
-      const miningId = generateMiningId(userID);
+      const miningId = tasksManager.generateMiningId(userID);
 
       expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
     });
   });
 
   describe('attachSSE()', () => {
-    it('should throw an error if the task with the given mining ID does not exist', () => {
+    it('should throw an error if the task with the given mining ID does not exist', async () => {
       const userId = 'abc123';
-      const miningId = generateMiningId(userId);
+      const miningId = await tasksManager.generateMiningId();
 
       expect(() => tasksManager.attachSSE(miningId, sseInstance)).to.Throw(
         Error
@@ -162,7 +161,7 @@ describe('TasksManager class', () => {
 
     it('should delete the task with the given mining ID if it exists', async () => {
       const userId = '123';
-      const miningId = generateMiningId();
+      const miningId = await tasksManager.generateMiningId();
       const createdTask = tasksManager.createTask(
         miningId,
         userId,
