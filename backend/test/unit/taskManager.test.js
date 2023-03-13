@@ -143,9 +143,7 @@ describe('TasksManager class', () => {
     it('should throw an error if the task with the given mining ID does not exist', async () => {
       const miningId = await tasksManager.generateMiningId();
 
-      expect(() => tasksManager.attachSSE(miningId, {})).to.Throw(
-        Error
-      );
+      expect(() => tasksManager.attachSSE(miningId, {})).to.Throw(Error);
     });
   });
 
