@@ -239,7 +239,7 @@ async function startMining(req, res, next) {
       )
     : imapConnectionProvider.withPassword(host, password, port);
 
-  const miningId = generateMiningId();
+  const miningId = await miningTasksManager.generateMiningId();
 
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
@@ -289,6 +289,7 @@ async function getMiningTask(req, res, next) {
     const task = await miningTasksManager.getActiveTask(id);
     return res.status(200).send({ data: task });
   } catch (err) {
+    res.status(404);
     return next(err);
   }
 }
