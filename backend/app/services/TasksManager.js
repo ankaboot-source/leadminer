@@ -46,8 +46,8 @@ class TasksManager {
         userId,
         miningId,
         miningProgress: {
-          fetching: 0,
-          extracting: 0
+          fetched: 0,
+          extracted: 0
         },
         fetcher,
         sseProgressHandler: null

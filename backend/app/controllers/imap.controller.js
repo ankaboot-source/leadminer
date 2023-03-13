@@ -57,7 +57,7 @@ async function onEmailMessage({
   try {
     const fetchingProgress = {
       miningId,
-      progressType: 'fetching'
+      progressType: 'fetched'
     };
 
     await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));

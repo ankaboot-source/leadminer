@@ -73,7 +73,7 @@ async function handleMessage({
 
   const extractingProgress = {
     miningId,
-    progressType: 'extracting'
+    progressType: 'extracted'
   };
 
   let retriesCount = 0;
