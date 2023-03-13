@@ -39,6 +39,7 @@
     "google-auth-library": "^8.5.2",
     "imap": "^0.8.19",
     "ioredis": "^5.2.2",
+    "nanoid": "^3.3.4",
     "nodemon": "^2.0.15",
     "object-scan": "^17.1.0",
     "pg": "^8.8.0",
