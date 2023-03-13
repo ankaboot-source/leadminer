@@ -239,7 +239,7 @@ async function startMining(req, res, next) {
     )
     : imapConnectionProvider.withPassword(host, password, port);
 
-  const miningId = generateMiningId(id);
+  const miningId = generateMiningId();
 
   const imapEmailsFetcher = new ImapEmailsFetcher(
     imapConnectionProvider,
