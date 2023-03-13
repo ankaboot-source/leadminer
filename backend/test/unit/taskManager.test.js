@@ -67,11 +67,6 @@ describe('TasksManager class', () => {
       return null;
     }
   };
-  const sseInstance = {
-    send: () => {
-      return null;
-    }
-  };
   let tasksManager = null;
 
   beforeEach(() => {
