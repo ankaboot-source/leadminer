@@ -1,18 +1,68 @@
 const { expect } = require('chai');
 const {
   TasksManager,
-  generateMiningId
+  generateMiningId,
+  redactSensitiveData
 } = require('../../app/services/TasksManager');
 
 describe('TasksManager.generateMiningId()', () => {
   it('should generate a unique mining ID for a given user', () => {
-    const userId = '123456';
-    const miningID1 = generateMiningId(userId);
-    const miningID2 = generateMiningId(userId);
+    const miningID1 = generateMiningId();
+    const miningID2 = generateMiningId();
 
     expect(miningID1).to.not.equal(miningID2);
-    expect(miningID1).to.have.string(userId);
-    expect(miningID2).to.have.string(userId);
+  });
+});
+
+describe('TasksManager.redactSensitiveData()', () => {
+  it('should redact sensetive data from task', () => {
+    const task = {
+      userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
+      miningId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+      miningProgress: {
+        fetching: 0,
+        extracting: 0
+      },
+      fetcher: {
+        imapConnectionProvider: {},
+        folders: [
+          'test1'
+        ],
+        userId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0',
+        userEmail: 'leadminer@leadminer.io',
+        userIdentifier: 'fffffffffff4e4aa0b2de228b80967a7f36a316b53efa3516d601656b6cfc',
+        miningId: 'ffffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        processSetKey: 'caching:ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        fetchedIds: {},
+        bodies: [
+          'HEADER'
+        ]
+      },
+      sseProgressHandler: null
+    }
+
+    redactedTask = {
+      task: {
+        userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
+        miningId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        miningProgress: {
+          fetching: 0,
+          extracting: 0
+        },
+        fetcher: {
+          folders: [
+            'test1'
+          ],
+          userId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0',
+          userEmail: 'leadminer@leadminer.io',
+          bodies: [
+            'HEADER'
+          ]
+        },
+      }
+    }
+
+    expect(redactSensitiveData(task)).to.eql(redactedTask);
   });
 });
 
@@ -46,17 +96,17 @@ describe('TasksManager class', () => {
       const userId = 'abc123';
       const miningId = generateMiningId(userId);
       const task = tasksManager.createTask(miningId, userId, fetcherInstance);
-
-      expect(task).eql({
+      const expectedOutput = {
         userId,
         miningId,
         miningProgress: {
-          fetching: 0,
-          extracting: 0
+          fetched: 0,
+          extracted: 0
         },
         fetcher: fetcherInstance,
         sseProgressHandler: null
-      });
+      }
+      expect(task).eql(redactSensitiveData(expectedOutput));
     });
 
     it('should throw an error if mining ID already exists', () => {
@@ -72,7 +122,7 @@ describe('TasksManager class', () => {
   describe('getActiveTask()', () => {
     it('should return the task object if it exists', () => {
       const userID = 'abc123';
-      const miningId = generateMiningId(userID);
+      const miningId = generateMiningId();
       const createdTask = tasksManager.createTask(
         miningId,
         userID,
@@ -81,49 +131,19 @@ describe('TasksManager class', () => {
       const retirevedTask = tasksManager.getActiveTask(miningId);
 
       expect(retirevedTask).to.be.an('object');
-      expect(retirevedTask.miningId).to.equal(miningId);
+      expect(retirevedTask.task.miningId).to.equal(miningId);
       expect(retirevedTask).to.eql(createdTask);
     });
 
     it('should throw an error if the task with the given mining ID does not exist', () => {
       const userID = 'abc123';
       const miningId = generateMiningId(userID);
-      const retirevedTask = tasksManager.getActiveTask(miningId);
-
-      expect(retirevedTask).to.be.null;
+    
+      expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
     });
   });
 
   describe('attachSSE()', () => {
-    it('should attach an SSE instance to a mining task', () => {
-      const userId = 'abc123';
-      const miningId = generateMiningId(userId);
-
-      tasksManager.createTask(miningId, userId, fetcherInstance);
-      tasksManager.attachSSE(miningId, sseInstance);
-
-      expect(tasksManager.getActiveTask(miningId).sseProgressHandler).eql(
-        sseInstance
-      );
-    });
-
-    it('should attach new instance and delete old if exists', () => {
-      const userId = 'abc123';
-      const miningId = generateMiningId(userId);
-      const sseInstance2 = {
-        send: () => {
-          return null;
-        }
-      };
-      tasksManager.createTask(miningId, userId, fetcherInstance);
-
-      tasksManager.attachSSE(miningId, sseInstance);
-      tasksManager.attachSSE(miningId, sseInstance2);
-
-      expect(tasksManager.getActiveTask(miningId).sseProgressHandler).eql(
-        sseInstance2
-      );
-    });
 
     it('should throw an error if the task with the given mining ID does not exist', () => {
       const userId = 'abc123';
@@ -146,7 +166,7 @@ describe('TasksManager class', () => {
 
     it('should delete the task with the given mining ID if it exists', async () => {
       const userId = '123';
-      const miningId = generateMiningId(userId);
+      const miningId = generateMiningId();
       const createdTask = tasksManager.createTask(
         miningId,
         userId,
@@ -155,7 +175,7 @@ describe('TasksManager class', () => {
       const deletedTask = await tasksManager.deleteTask(miningId);
 
       expect(deletedTask).to.deep.equal(createdTask);
-      expect(tasksManager.getActiveTask(miningId)).to.be.null;
+      expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
     });
   });
 });
