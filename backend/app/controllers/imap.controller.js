@@ -270,6 +270,30 @@ async function startMining(req, res, next) {
 }
 
 /**
+ * Retrieves the active mining task with the specified ID.
+ * @param {Object} req - The user request.
+ * @param {Object} res - The http response to be sent.
+ * @param {function} next - The next middleware function in the route.
+ */
+async function getMiningTask(req, res, next) {
+  const { error } = getXImapHeaderField(req.headers);
+
+  if (error) {
+    res.status(400);
+    return next(error);
+  }
+
+  const { id } = req.params;
+
+  try {
+    const task = await miningTasksManager.getActiveTask(id);
+    return res.status(200).send({ data: task });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/**
  * Stop mining task, using MiningID.
  * @param {Object} req - The user request.
  * @param {Object} res - The http response to be sent.
