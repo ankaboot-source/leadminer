@@ -232,11 +232,11 @@ async function startMining(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        redisPublisher
-      )
+      access_token,
+      refresh_token,
+      id,
+      redisPublisher
+    )
     : imapConnectionProvider.withPassword(host, password, port);
 
   const miningId = generateMiningId(id);
@@ -299,7 +299,7 @@ async function getMiningTask(req, res, next) {
  * @param {Object} res - The http response to be sent.
  * @param {function} next - The next middleware function in the route.
  */
-async function stopMining(req, res, next) {
+async function stopMiningTask(req, res, next) {
   const { error } = getXImapHeaderField(req.headers);
 
   if (error) {
@@ -321,5 +321,6 @@ module.exports = {
   getImapBoxes,
   loginToAccount,
   startMining,
-  stopMining
+  stopMiningTask,
+  getMiningTask
 };
