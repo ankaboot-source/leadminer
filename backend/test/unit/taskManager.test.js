@@ -7,10 +7,10 @@ const {
 
 describe('TasksManager.generateMiningId()', () => {
   it('should generate a unique mining ID for a given user', () => {
-    const miningID1 = generateMiningId();
-    const miningID2 = generateMiningId();
+    const miningId1 = generateMiningId();
+    const miningId2 = generateMiningId();
 
-    expect(miningID1).to.not.equal(miningID2);
+    expect(miningId1).to.not.equal(miningId2);
   });
 });
 
