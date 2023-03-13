@@ -22,7 +22,7 @@ function hashEmail(emailAddress, userId) {
  * @returns {Promise<string>} A Promise that resolves to a random ID string.
  */
 async function flickrBase58IdGenerator() {
-  const generator = customAlphabet(LEADMINER_MINING_ID_GENERATOR_LENGTH, MINING_ID_LENGTH);
+  const generator = customAlphabet(FLICKR_BASE_58_CHARSET, LEADMINER_MINING_ID_GENERATOR_LENGTH);
   return generator;
 }
 
