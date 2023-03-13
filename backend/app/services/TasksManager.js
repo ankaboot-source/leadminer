@@ -1,5 +1,5 @@
 const { generateUUID } = require('../utils/helpers/hashHelpers');
-const { sendSSE } = require('../utils/helpers/sseHelpers');
+const { RealtimeSSE } = require('../utils/helpers/sseHelpers');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 
@@ -8,8 +8,31 @@ const { redis } = require('../utils/redis');
  * @param {string} userId - The user ID.
  * @returns {string} - The unique mining ID.
  */
-function generateMiningId(userId) {
-  return `${userId}-${generateUUID()}`;
+function generateMiningId() {
+  const uuid = generateUUID().split('-');
+  return (uuid.map((i) => i.slice(0, 2))).join('');
+}
+
+/**
+ * Removes sensitive data from a task object.
+ *
+ * @param {object} task - The task object to redact sensitive data from.
+ * @returns {object} - A new task object with sensitive data removed.
+ */
+function redactSensitiveData(task) {
+  return {
+    task: {
+      userId: task.userId,
+      miningId: task.miningId,
+      miningProgress: task.miningProgress,
+      fetcher: {
+        folders: task.fetcher.folders,
+        bodies: task.fetcher.bodies,
+        userId: task.fetcher.userId,
+        userEmail: task.fetcher.userEmail
+      }
+    }
+  };
 }
 
 class TasksManager {
@@ -61,7 +84,7 @@ class TasksManager {
         }
       });
 
-      return miningTask;
+      return redactSensitiveData(miningTask);
     }
 
     throw new Error(`Task with mining ID ${miningId} already exists.`);
@@ -75,7 +98,10 @@ class TasksManager {
   getActiveTask(miningId) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
 
-    return task === undefined ? null : { ...task };
+    if (task === undefined) {
+      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
+    }
+    return redactSensitiveData(task);
   }
 
   /**
@@ -120,7 +146,7 @@ class TasksManager {
 
     this.#ACTIVE_MINING_TASKS.delete(miningId);
 
-    return task;
+    return redactSensitiveData(task);
   }
 
   /**
@@ -148,13 +174,13 @@ class TasksManager {
   /**
    * Updates the progress of a mining task with a given mining ID.
    * @param {string} miningId - The mining ID of the task to update progress for.
-   * @param {string} progressType - The type of progress to update ('fetching' or 'extracting').
+   * @param {string} progressType - The type of progress to update ('fetched' or 'extracted').
    * @param {number} incrementBy - The amount to increment progress by.
    * @returns {object || null} Returns the updated mining progress or null if task does not exist.
    */
   #updateProgress(miningId, progressType, incrementBy = 1) {
-    if (!['fetching', 'extracting'].includes(progressType)) {
-      throw Error('progressType value must be either fetching or extracting.');
+    if (!['fetched', 'extracted'].includes(progressType)) {
+      throw Error('progressType value must be either fetched or extracted.');
     }
 
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
@@ -172,4 +198,9 @@ class TasksManager {
 
 const miningTasksManager = new TasksManager(redis.getDuplicatedClient());
 
-module.exports = { miningTasksManager, TasksManager, generateMiningId };
+module.exports = {
+  miningTasksManager,
+  TasksManager,
+  generateMiningId,
+  redactSensitiveData
+};
