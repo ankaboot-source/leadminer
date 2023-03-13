@@ -232,11 +232,11 @@ async function startMining(req, res, next) {
 
   imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
-      access_token,
-      refresh_token,
-      id,
-      redisPublisher
-    )
+        access_token,
+        refresh_token,
+        id,
+        redisPublisher
+      )
     : imapConnectionProvider.withPassword(host, password, port);
 
   const miningId = generateMiningId();

@@ -6,7 +6,7 @@ const { SSE } = require('express-sse');
  * that can be used to initialize the SSE with a single object parameter,
  * a `sendSSE` method that uses the existing send method and logs errors
  * and a `stop` method to end the SSE stream.
- * 
+ *
  * @extends SSE
  */
 class RealtimeSSE extends SSE {
@@ -35,7 +35,9 @@ class RealtimeSSE extends SSE {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
-      logger.error('Somthing happend when sending SSE', { metadata: { error } });
+      logger.error('Somthing happend when sending SSE', {
+        metadata: { error }
+      });
     }
   }
 
@@ -44,9 +46,8 @@ class RealtimeSSE extends SSE {
    */
   stop() {
     this.emit('stop');
-  } 
+  }
 }
-
 
 module.exports = {
   RealtimeSSE

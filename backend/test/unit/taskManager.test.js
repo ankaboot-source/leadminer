@@ -18,49 +18,46 @@ describe('TasksManager.redactSensitiveData()', () => {
   it('should redact sensetive data from task', () => {
     const task = {
       userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
-      miningId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+      miningId:
+        'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
       miningProgress: {
         fetching: 0,
         extracting: 0
       },
       fetcher: {
         imapConnectionProvider: {},
-        folders: [
-          'test1'
-        ],
+        folders: ['test1'],
         userId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0',
         userEmail: 'leadminer@leadminer.io',
-        userIdentifier: 'fffffffffff4e4aa0b2de228b80967a7f36a316b53efa3516d601656b6cfc',
-        miningId: 'ffffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
-        processSetKey: 'caching:ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        userIdentifier:
+          'fffffffffff4e4aa0b2de228b80967a7f36a316b53efa3516d601656b6cfc',
+        miningId:
+          'ffffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        processSetKey:
+          'caching:ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
         fetchedIds: {},
-        bodies: [
-          'HEADER'
-        ]
+        bodies: ['HEADER']
       },
       sseProgressHandler: null
-    }
+    };
 
     redactedTask = {
       task: {
         userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
-        miningId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
+        miningId:
+          'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
         miningProgress: {
           fetching: 0,
           extracting: 0
         },
         fetcher: {
-          folders: [
-            'test1'
-          ],
+          folders: ['test1'],
           userId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0',
           userEmail: 'leadminer@leadminer.io',
-          bodies: [
-            'HEADER'
-          ]
-        },
+          bodies: ['HEADER']
+        }
       }
-    }
+    };
 
     expect(redactSensitiveData(task)).to.eql(redactedTask);
   });
@@ -105,7 +102,7 @@ describe('TasksManager class', () => {
         },
         fetcher: fetcherInstance,
         sseProgressHandler: null
-      }
+      };
       expect(task).eql(redactSensitiveData(expectedOutput));
     });
 
@@ -138,13 +135,12 @@ describe('TasksManager class', () => {
     it('should throw an error if the task with the given mining ID does not exist', () => {
       const userID = 'abc123';
       const miningId = generateMiningId(userID);
-    
+
       expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
     });
   });
 
   describe('attachSSE()', () => {
-
     it('should throw an error if the task with the given mining ID does not exist', () => {
       const userId = 'abc123';
       const miningId = generateMiningId(userId);

@@ -10,7 +10,7 @@ const { redis } = require('../utils/redis');
  */
 function generateMiningId() {
   const uuid = generateUUID().split('-');
-  return (uuid.map((i) => i.slice(0, 2))).join('');
+  return uuid.map((i) => i.slice(0, 2)).join('');
 }
 
 /**
@@ -106,7 +106,7 @@ class TasksManager {
 
   /**
    * Attaches an SSE instance to a mining task.
-   * 
+   *
    * @param {string} miningId - The ID of the mining task to attach the SSE instance to.
    * @param {{req, res}} connection - The connection object to attach the SSE instance to.
    * @returns {void}
