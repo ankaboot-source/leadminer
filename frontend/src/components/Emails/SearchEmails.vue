@@ -174,7 +174,7 @@ async function fetchEmails() {
     });
     console.log($store.state.example.infoMessage);
   } catch (error) {
-    console.log($store.state.example.errorMessage);
+    console.error($store.state.example.errorMessage);
     showNotification($store.state.example.errorMessage, "red", "error");
   }
 }
