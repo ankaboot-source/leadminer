@@ -41,7 +41,7 @@ describe('TasksManager.redactSensitiveData()', () => {
       sseProgressHandler: null
     };
 
-    redactedTask = {
+    const redactedTask = {
       task: {
         userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
         miningId:
