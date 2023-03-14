@@ -1,11 +1,11 @@
 class SSE {
   registerEventHandlers(id, store) {
-    this.eventSource.addEventListener(`fetching-${id}`, ({ data }) => {
+    this.eventSource.addEventListener(`fetched-${id}`, ({ data }) => {
       const scanned = parseInt(data, 10);
       store.commit("example/SET_SCANNEDEMAILS", scanned);
     });
 
-    this.eventSource.addEventListener(`extracting-${id}`, ({ data }) => {
+    this.eventSource.addEventListener(`extracted-${id}`, ({ data }) => {
       const extracted = parseInt(data, 10);
       store.commit("example/SET_EXTRACTEDEMAILS", extracted);
     });
