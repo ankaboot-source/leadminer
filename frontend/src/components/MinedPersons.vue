@@ -23,7 +23,7 @@
     >
       <template #top-left>
         <q-input
-          v-model="filter"
+          v-model="filterSearch"
           dense
           standout
           outlined
@@ -233,7 +233,8 @@ const $q = useQuasar();
 const $store = useStore();
 
 const rows = ref([]);
-const filter = ref("");
+const filterSearch = ref("");
+const filter = { filterSearch };
 const isLoading = ref(false);
 const initialPagination = {
   sortBy: "engagement",
@@ -321,11 +322,13 @@ const columns = [
   },
 ];
 
-function filterFn(rows, term) {
-  return rows.filter((r) =>
-    [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
-      field?.toLowerCase().includes(term.toLowerCase())
-    )
+function filterFn(rows, terms) {
+  return rows.filter(
+    (r) =>
+      !["newsletter", "transactional"].some((tag) => r.tags.includes(tag)) &&
+      [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
+        field?.toLowerCase().includes(terms.filterSearch.value.toLowerCase())
+      )
   );
 }
 
