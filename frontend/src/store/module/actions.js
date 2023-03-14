@@ -67,7 +67,7 @@ export async function getEmails({ state, commit }, { data }) {
     );
 
     const { task } = response.data?.data;
-    const { userId, miningId } = task
+    const { userId, miningId } = task;
 
     sse.initConnection(userId, miningId);
     sse.registerEventHandlers(miningId, this);
