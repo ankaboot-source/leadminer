@@ -16,6 +16,12 @@ const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = path.join(
   'app/utils/FreeProviders.json'
 );
 
+/**
+ * Downloads a file from a remote location and saves it to a specified location on the local machine.
+ * @param {string} remotePath - The URL of the remote file to download.
+ * @param {string} saveLocation - The saving location of the file.
+ * @returns {Promise} - A promise that resolves when the file is successfully downloaded and saved, or rejects if an error occurs during the process.
+ */
 function fetchRemoteFile(remotePath, saveLocation) {
   const file = fs.createWriteStream(saveLocation);
 
