@@ -81,13 +81,13 @@ export async function startMining({ state, commit }, { data }) {
       resolve();
     } catch (error) {
       sse.closeConnection();
+      const message =
+        error?.response?.data?.error.message || 
+        error?.response?.data?.error ||
+        error
       commit(
-        "SET_ERROR",
-        error?.response?.data?.error.message ||
-          error?.response?.data?.error ||
-          error
-      );
-      reject();
+        "SET_ERROR", message);
+      reject(message)
     }
   });
 }
@@ -109,13 +109,13 @@ export async function stopMining({ state, commit }, { data }) {
       commit("SET_INFO_MESSAGE", "Successfully stopped mining");
       resolve();
     } catch (error) {
+      const message =
+        error?.response?.data?.error.message || 
+        error?.response?.data?.error ||
+        error
       commit(
-        "SET_ERROR",
-        error?.response?.data?.error.message ||
-          error?.response?.data?.error ||
-          error
-      );
-      reject();
+        "SET_ERROR", message);
+      reject(message)
     }
   });
 }
