@@ -109,8 +109,8 @@ const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
 const retrievedEmails = computed(
   () => $store.getters["example/getRetrievedEmails"]
 );
-const activeMiningTask = computed(
-  () => $store.state.example.miningTask.miningId ? true : false
+const activeMiningTask = computed(() =>
+  $store.state.example.miningTask.miningId ? true : false
 );
 const scannedEmails = computed(
   () => $store.state.example.progress.scannedEmails
