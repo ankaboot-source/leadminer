@@ -28,7 +28,7 @@ function fetchRemoteFile(remotePath, saveLocation) {
       });
 
       stream.on('error', (error) => {
-        reject(`Failed retrieving file from remote: ${error}`);
+        reject(new Error(`Failed retrieving file from remote: ${error}`));
       });
     });
   });
