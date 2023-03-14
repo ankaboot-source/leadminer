@@ -82,7 +82,6 @@ export async function startMining({ state, commit }, { data }) {
       resolve()
 
     } catch (error) {
-      console.log(error)
       sse.closeConnection();
       commit(
         "SET_ERROR",
