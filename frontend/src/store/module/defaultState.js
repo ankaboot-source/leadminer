@@ -1,5 +1,6 @@
 export function getDefaultState() {
   return {
+    miningTask: {},
     retrievedEmails: {},
     loadingStatus: false,
     loadingStatusDns: false,

@@ -45,46 +45,86 @@ export async function fetchRefinedPersons({ state, commit }) {
   data.forEach((person) => commit("SET_EMAILS", person));
 }
 
-export async function getEmails({ state, commit }, { data }) {
-  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+export async function startMining({ state, commit }, { data }) {
+  return new Promise(async (resolve, reject) => {
 
-  commit("SET_LOADING", true);
-  commit("SET_LOADING_DNS", true);
-  commit("SET_SCANNEDEMAILS", 0);
-  commit("SET_STATISTICS", "f");
-  commit("SET_SCANNEDBOXES", []);
+    const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
-  if (subscription) await subscription.unsubscribe();
-  subscribeToRefined(user.id, commit);
+    commit("SET_LOADING", true);
+    commit("SET_LOADING_DNS", true);
+    commit("SET_SCANNEDEMAILS", 0);
+    commit("SET_STATISTICS", "f");
+    commit("SET_SCANNEDBOXES", []);
 
-  try {
-    const { boxes } = data;
+    if (subscription) await subscription.unsubscribe();
+    subscribeToRefined(user.id, commit);
 
-    const response = await this.$axios.post(
-      `${this.$api}/imap/mine/${user.id}`,
-      { boxes },
-      { headers: { "X-imap-login": JSON.stringify(user) } }
-    );
+    try {
+      const { boxes } = data;
 
-    const { task } = response.data?.data;
-    const { userId, miningId } = task
+      const response = await this.$axios.post(
+        `${this.$api}/imap/mine/${user.id}`,
+        { boxes },
+        { headers: { "X-imap-login": JSON.stringify(user) } }
+      );
 
-    sse.initConnection(userId, miningId);
-    sse.registerEventHandlers(miningId, this);
+      const { task } = response.data?.data;
+      const { userId, miningId } = task;
 
-    commit("SET_LOADING", false);
-    commit("SET_LOADING_DNS", false);
-    commit("SET_STATUS", "");
-    commit("SET_INFO_MESSAGE", "Successfully fetched emails");
-  } catch (error) {
-    commit(
-      "SET_ERROR",
-      error?.response?.data?.error
-        ? error?.response?.data?.error
-        : error.message
-    );
-    sse.closeConnection();
-  }
+      sse.initConnection(userId, miningId);
+      sse.registerEventHandlers(miningId, this);
+
+      commit("SET_MINING_TASK", task)
+      commit("SET_LOADING", false);
+      commit("SET_LOADING_DNS", false);
+      commit("SET_STATUS", "");
+      commit("SET_INFO_MESSAGE", "Successfully started mining");
+      resolve()
+
+    } catch (error) {
+      console.log(error)
+      sse.closeConnection();
+      commit(
+        "SET_ERROR",
+        error?.response?.data?.error.message ||
+        error?.response?.data?.error ||
+        error
+      );
+      reject()
+    }
+  })
+}
+
+export async function stopMining({ state, commit }, { data }) {
+  return new Promise(async (resolve, reject) => {
+
+    try {
+      const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  
+      const { miningId } = data;
+    
+      await this.$axios.delete(
+        `${this.$api}/imap/mine/${user.id}/${miningId}`,
+        { headers: { "X-imap-login": JSON.stringify(user) } }
+      )
+
+      commit("SET_MINING_TASK", {})
+      commit("SET_STATUS", "");
+      commit("SET_INFO_MESSAGE", "Successfully stopped mining");
+      resolve()
+
+    } catch (error) {
+      commit(
+        "SET_ERROR",
+        error?.response?.data?.error.message ||
+        error?.response?.data?.error ||
+        error
+      );
+      reject()
+    }
+
+  })
+
 }
 
 export async function signUp(_, { data }) {
