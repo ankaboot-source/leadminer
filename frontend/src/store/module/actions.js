@@ -66,7 +66,8 @@ export async function getEmails({ state, commit }, { data }) {
       { headers: { "X-imap-login": JSON.stringify(user) } }
     );
 
-    const { userId, miningId } = response.data?.data;
+    const { task } = response.data?.data;
+    const { userId, miningId } = task
 
     sse.initConnection(userId, miningId);
     sse.registerEventHandlers(miningId, this);
