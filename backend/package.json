@@ -13,7 +13,8 @@
     "lint:report": "cd app && eslint --fix . --output-file eslint_report.json --format json",
     "prettier": "prettier --check .",
     "prettier:fix": "prettier . --write",
-    "make-badges": "istanbul-badges-readme --readmeDir='../' --linesLabel='Coverage'"
+    "make-badges": "istanbul-badges-readme --readmeDir='../' --linesLabel='Coverage'",
+    "update-providers": "node fetchProviders.js"
   },
   "keywords": [
     "nodejs",
