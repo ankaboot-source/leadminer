@@ -30,7 +30,7 @@
                 <div class="col-6" />
                 <div class="q-mt-md q-ml-lg col-6">
                   <q-btn
-                    :disable="activeMiningTask ? true : false"
+                    :disable="activeMiningTask"
                     no-caps
                     :color="activeMiningTask ? 'grey-6' : 'red'"
                     label="Start"
@@ -109,9 +109,8 @@ const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
 const retrievedEmails = computed(
   () => $store.getters["example/getRetrievedEmails"]
 );
-const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
 const activeMiningTask = computed(
-  () => $store.state.example.miningTask.miningId
+  () => $store.state.example.miningTask.miningId ? true : false
 );
 const scannedEmails = computed(
   () => $store.state.example.progress.scannedEmails
