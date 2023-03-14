@@ -323,13 +323,12 @@ const columns = [
 ];
 
 function filterFn(rows, terms) {
-  const searchTerm = terms.filterSearch.value;
   return rows.filter(
     (r) =>
       !r.tags.includes("newsletter") &&
       !r.tags.includes("transactional") &&
       [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
-        field?.toLowerCase().includes(searchTerm.toLowerCase())
+        field?.toLowerCase().includes(terms.filterSearch.value.toLowerCase())
       )
   );
 }
