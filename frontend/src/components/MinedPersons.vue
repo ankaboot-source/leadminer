@@ -325,8 +325,7 @@ const columns = [
 function filterFn(rows, terms) {
   return rows.filter(
     (r) =>
-      !r.tags.includes("newsletter") &&
-      !r.tags.includes("transactional") &&
+      !["newsletter", "transactional"].some((tag) => r.tags.includes(tag)) &&
       [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
         field?.toLowerCase().includes(terms.filterSearch.value.toLowerCase())
       )
