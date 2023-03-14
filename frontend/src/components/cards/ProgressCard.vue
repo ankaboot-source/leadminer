@@ -27,6 +27,16 @@
         </div>
         emails to extract.
       </q-chip>
+      <div>
+        <q-linear-progress
+          :buffer="scannedEmails / totalEmails || 0"
+          :value="extractedEmails / scannedEmails || 0"
+          size="1.5rem"
+          color="teal-8"
+          track-color="teal-2"
+          class="q-card--bordered"
+        />
+      </div>
     </q-banner>
   </div>
 </template>
