@@ -47,7 +47,6 @@ export async function fetchRefinedPersons({ state, commit }) {
 
 export async function startMining({ state, commit }, { data }) {
   return new Promise(async (resolve, reject) => {
-
     const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
     commit("SET_LOADING", true);
@@ -74,56 +73,51 @@ export async function startMining({ state, commit }, { data }) {
       sse.initConnection(userId, miningId);
       sse.registerEventHandlers(miningId, this);
 
-      commit("SET_MINING_TASK", task)
+      commit("SET_MINING_TASK", task);
       commit("SET_LOADING", false);
       commit("SET_LOADING_DNS", false);
       commit("SET_STATUS", "");
       commit("SET_INFO_MESSAGE", "Successfully started mining");
-      resolve()
-
+      resolve();
     } catch (error) {
       sse.closeConnection();
       commit(
         "SET_ERROR",
         error?.response?.data?.error.message ||
-        error?.response?.data?.error ||
-        error
+          error?.response?.data?.error ||
+          error
       );
-      reject()
+      reject();
     }
-  })
+  });
 }
 
 export async function stopMining({ state, commit }, { data }) {
   return new Promise(async (resolve, reject) => {
-
     try {
       const user = state.googleUser.id ? state.googleUser : state.imapUser;
-  
+
       const { miningId } = data;
-    
+
       await this.$axios.delete(
         `${this.$api}/imap/mine/${user.id}/${miningId}`,
         { headers: { "X-imap-login": JSON.stringify(user) } }
-      )
+      );
 
-      commit("SET_MINING_TASK", {})
+      commit("SET_MINING_TASK", {});
       commit("SET_STATUS", "");
       commit("SET_INFO_MESSAGE", "Successfully stopped mining");
-      resolve()
-
+      resolve();
     } catch (error) {
       commit(
         "SET_ERROR",
         error?.response?.data?.error.message ||
-        error?.response?.data?.error ||
-        error
+          error?.response?.data?.error ||
+          error
       );
-      reject()
+      reject();
     }
-
-  })
-
+  });
 }
 
 export async function signUp(_, { data }) {

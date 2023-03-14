@@ -86,5 +86,5 @@ export function RESET_STORE(state) {
 }
 
 export function SET_MINING_TASK(state, task) {
-  state.miningTask = task
+  state.miningTask = task;
 }

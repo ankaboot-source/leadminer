@@ -29,10 +29,21 @@
               <div class="column col-lg-8">
                 <div class="col-6" />
                 <div class="q-mt-md q-ml-lg col-6">
-                  <q-btn :disable="activeMiningTask ? true : false" no-caps :color="activeMiningTask ? 'grey-6' : 'red'" label="Start"
-                    @click="startMining" />
-                  <q-btn :disable="!activeMiningTask" class="q-ma-md" no-caps :color="activeMiningTask ? 'red' : 'grey-6'"
-                    label="Stop" @click="stopMining" />
+                  <q-btn
+                    :disable="activeMiningTask ? true : false"
+                    no-caps
+                    :color="activeMiningTask ? 'grey-6' : 'red'"
+                    label="Start"
+                    @click="startMining"
+                  />
+                  <q-btn
+                    :disable="!activeMiningTask"
+                    class="q-ma-md"
+                    no-caps
+                    :color="activeMiningTask ? 'red' : 'grey-6'"
+                    label="Stop"
+                    @click="stopMining"
+                  />
                 </div>
               </div>
             </div>
@@ -99,7 +110,9 @@ const retrievedEmails = computed(
   () => $store.getters["example/getRetrievedEmails"]
 );
 const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
-const activeMiningTask = computed(() => $store.state.example.miningTask.miningId);
+const activeMiningTask = computed(
+  () => $store.state.example.miningTask.miningId
+);
 const scannedEmails = computed(
   () => $store.state.example.progress.scannedEmails
 );
@@ -144,15 +157,13 @@ function showNotification(msg, color, icon) {
 }
 
 async function stopMining() {
-
-  const miningId = $store.state.example.miningTask.miningId
+  const miningId = $store.state.example.miningTask.miningId;
   try {
-    await $store.dispatch("example/stopMining", {data: { miningId } })
+    await $store.dispatch("example/stopMining", { data: { miningId } });
     showNotification($store.state.example.infoMessage, "green", "");
   } catch (error) {
     showNotification($store.state.example.errorMessage, "red", "error");
   }
-
 }
 
 async function startMining() {
