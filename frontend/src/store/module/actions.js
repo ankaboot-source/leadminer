@@ -46,76 +46,77 @@ export async function fetchRefinedPersons({ state, commit }) {
 }
 
 export async function startMining({ state, commit }, { data }) {
-  return new Promise(async (resolve, reject) => {
-    const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
-    commit("SET_LOADING", true);
-    commit("SET_LOADING_DNS", true);
-    commit("SET_SCANNEDEMAILS", 0);
-    commit("SET_STATISTICS", "f");
-    commit("SET_SCANNEDBOXES", []);
+  const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
-    if (subscription) await subscription.unsubscribe();
-    subscribeToRefined(user.id, commit);
+  commit("SET_LOADING", true);
+  commit("SET_LOADING_DNS", true);
+  commit("SET_SCANNEDEMAILS", 0);
+  commit("SET_STATISTICS", "f");
+  commit("SET_SCANNEDBOXES", []);
 
-    try {
-      const { boxes } = data;
+  if (subscription) await subscription.unsubscribe();
+  subscribeToRefined(user.id, commit);
 
-      const response = await this.$axios.post(
-        `${this.$api}/imap/mine/${user.id}`,
-        { boxes },
-        { headers: { "X-imap-login": JSON.stringify(user) } }
-      );
+  try {
+    const { boxes } = data;
 
-      const { task } = response.data?.data;
-      const { userId, miningId } = task;
+    const response = await this.$axios.post(
+      `${this.$api}/imap/mine/${user.id}`,
+      { boxes },
+      { headers: { "X-imap-login": JSON.stringify(user) } }
+    );
 
-      sse.initConnection(userId, miningId);
-      sse.registerEventHandlers(miningId, this);
+    const { task } = response.data?.data;
+    const { userId, miningId } = task;
 
-      commit("SET_MINING_TASK", task);
-      commit("SET_LOADING", false);
-      commit("SET_LOADING_DNS", false);
-      commit("SET_STATUS", "");
-      commit("SET_INFO_MESSAGE", "Successfully started mining");
-      resolve();
-    } catch (error) {
-      sse.closeConnection();
-      const message =
-        error?.response?.data?.error.message ||
-        error?.response?.data?.error ||
-        error;
-      commit("SET_ERROR", message);
-      reject(message);
-    }
-  });
+    sse.initConnection(userId, miningId);
+    sse.registerEventHandlers(miningId, this);
+
+    commit("SET_MINING_TASK", task);
+    commit("SET_LOADING", false);
+    commit("SET_LOADING_DNS", false);
+    commit("SET_STATUS", "");
+    commit("SET_INFO_MESSAGE", "Successfully started mining");
+
+  } catch (error) {
+    sse.closeConnection();
+    const message =
+      error?.response?.data?.error.message || 
+      error?.response?.data?.error ||
+      error
+    commit(
+      "SET_ERROR", message);
+    Promise.reject(message)
+  }
 }
 
 export async function stopMining({ state, commit }, { data }) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
-      const { miningId } = data;
+  try {
+    const user = state.googleUser.id ? state.googleUser : state.imapUser;
 
-      await this.$axios.delete(
-        `${this.$api}/imap/mine/${user.id}/${miningId}`,
-        { headers: { "X-imap-login": JSON.stringify(user) } }
-      );
+    const { miningId } = data;
 
-      commit("SET_MINING_TASK", {});
-      commit("SET_STATUS", "");
-      commit("SET_INFO_MESSAGE", "Successfully stopped mining");
-      resolve();
-    } catch (error) {
-      const message =
-        error?.response?.data?.error.message ||
-        error?.response?.data?.error ||
-        error;
-      commit("SET_ERROR", message);
-      reject(message);
-    }
-  });
+    await this.$axios.delete(
+      `${this.$api}/imap/mine/${user.id}/${miningId}`,
+      { headers: { "X-imap-login": JSON.stringify(user) } }
+    );
+
+    commit("SET_MINING_TASK", {});
+    commit("SET_STATUS", "");
+    commit("SET_INFO_MESSAGE", "Successfully stopped mining");
+
+  } catch (error) {
+    const message =
+      error?.response?.data?.error.message || 
+      error?.response?.data?.error ||
+      error
+    commit(
+      "SET_ERROR", message);
+    Promise.reject(message)
+  }
+
 }
 
 export async function signUp(_, { data }) {
