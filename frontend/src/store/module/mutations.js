@@ -84,3 +84,7 @@ export function SET_GOOGLE_USER(state, user) {
 export function RESET_STORE(state) {
   Object.assign(state, getDefaultState());
 }
+
+export function SET_MINING_TASK(state, task) {
+  state.miningTask = task;
+}

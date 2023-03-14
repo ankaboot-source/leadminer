@@ -30,19 +30,19 @@
                 <div class="col-6" />
                 <div class="q-mt-md q-ml-lg col-6">
                   <q-btn
-                    :disable="loadingStatusDns"
+                    :disable="activeMiningTask"
                     no-caps
-                    :color="loadingStatusDns ? 'grey-6' : 'red'"
+                    :color="activeMiningTask ? 'grey-6' : 'red'"
                     label="Start"
-                    @click="fetchEmails"
+                    @click="startMining"
                   />
                   <q-btn
-                    :disable="!loadingStatusDns"
+                    :disable="!activeMiningTask"
                     class="q-ma-md"
                     no-caps
-                    :color="loadingStatusDns ? 'red' : 'grey-6'"
+                    :color="activeMiningTask ? 'red' : 'grey-6'"
                     label="Stop"
-                    @click="cancelFetchEmails"
+                    @click="stopMining"
                   />
                 </div>
               </div>
@@ -81,7 +81,6 @@ import TreeCard from "../cards/TreeCard.vue";
 import MinedPersons from "../MinedPersons.vue";
 
 const selectedBoxes = ref([]);
-let abortController;
 
 const $q = useQuasar();
 const $store = useStore();
@@ -110,7 +109,9 @@ const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
 const retrievedEmails = computed(
   () => $store.getters["example/getRetrievedEmails"]
 );
-const loadingStatusDns = computed(() => $store.state.example.loadingStatusDns);
+const activeMiningTask = computed(() =>
+  $store.state.example.miningTask.miningId ? true : false
+);
 const scannedEmails = computed(
   () => $store.state.example.progress.scannedEmails
 );
@@ -154,11 +155,17 @@ function showNotification(msg, color, icon) {
   });
 }
 
-function cancelFetchEmails() {
-  abortController.abort();
+async function stopMining() {
+  const miningId = $store.state.example.miningTask.miningId;
+  try {
+    await $store.dispatch("example/stopMining", { data: { miningId } });
+    showNotification($store.state.example.infoMessage, "green", "");
+  } catch (error) {
+    showNotification($store.state.example.errorMessage, "red", "error");
+  }
 }
 
-async function fetchEmails() {
+async function startMining() {
   if (selectedBoxes.value.length === 0) {
     return showNotification(
       "Select at least one folder",
@@ -168,13 +175,11 @@ async function fetchEmails() {
   }
 
   try {
-    abortController = new AbortController();
-    await $store.dispatch("example/getEmails", {
-      data: { boxes: selectedBoxes.value, abortController },
+    await $store.dispatch("example/startMining", {
+      data: { boxes: selectedBoxes.value },
     });
-    console.log($store.state.example.infoMessage);
+    showNotification($store.state.example.infoMessage, "green", "");
   } catch (error) {
-    console.error($store.state.example.errorMessage);
     showNotification($store.state.example.errorMessage, "red", "error");
   }
 }
