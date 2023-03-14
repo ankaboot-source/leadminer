@@ -323,7 +323,6 @@ const columns = [
 ];
 
 function filterFn(rows, terms) {
-  console.log(terms);
   const searchTerm = terms.filterSearch.value;
   return rows.filter(
     (r) =>
