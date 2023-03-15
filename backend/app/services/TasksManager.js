@@ -2,7 +2,6 @@ const { flickrBase58IdGenerator } = require('../utils/helpers/hashHelpers');
 const { RealtimeSSE } = require('../utils/helpers/sseHelpers');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
-const { db } = require('../db');
 
 /**
  * Removes sensitive data from a task object.
@@ -36,22 +35,11 @@ class TasksManager {
   constructor(redisClient) {
     this.progressSubscriber = redisClient;
 
-    // Set up the Redis subscriber to listen for updates
-    this.progressSubscriber.on('message', async (_, data) => {
+    this.progressSubscriber.on('message', (_, data) => {
       const { miningId, progressType } = JSON.parse(data);
 
-      const progress = this.#updateProgress(miningId, progressType);
-      const notified = this.#notifyProgress(miningId, progressType);
-
-      const { status, task } = (progress !== null && notified !== null)
-        ? await this.#hasCompleted(miningId, progress)
-        : {}
-
-      if (status === true) {
-        const { userId } = task
-        db.callRpcFunction(userId, 'refined_persons')
-      }
-
+      this.#updateProgress(miningId, progressType);
+      this.#notifyProgress(miningId, progressType);
     });
 
     this.idGenerator = flickrBase58IdGenerator();
@@ -207,21 +195,6 @@ class TasksManager {
     miningProgress[`${progressType}`] += incrementBy;
 
     return { ...miningProgress };
-  }
-
-  /**
-   * Checks whether a mining task has completed and deletes it if it has.
-   * @param {string} miningID - The ID of the mining task to check.
-   * @param {Object} progress - The extracted and fetched progress for the task.
-   * @param {number} progress.extracted - The number of items extracted.
-   * @param {number} progress.fetched - The number of items fetched.
-   * @returns {Promise<{status:boolean, taks:object}>} An object containing status & task if status === true else status
-   */
-  async #hasCompleted(miningID, { extracted, fetched }) {
-    const status = extracted === fetched;
-    const { task } = status ? await this.deleteTask(miningID) : { task: null }
-
-    return { status, task }
   }
 }
 
