@@ -98,7 +98,7 @@ export async function stopMining({ state, commit }, { data }) {
       headers: { "X-imap-login": JSON.stringify(user) },
     });
 
-    commit("DELETE_MINING_TASK");
+    commit("SET_MINING_TASK", {});
     commit("SET_STATUS", "");
     commit("SET_INFO_MESSAGE", "Successfully stopped mining");
   } catch (error) {
