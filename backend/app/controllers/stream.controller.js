@@ -13,10 +13,7 @@ function streamProgress(req, res) {
     miningTasksManager.attachSSE(id, { req, res });
   } catch (error) {
     res.status(404);
-    res.write('id: 0\n');
-    res.write('event: close\n');
-    res.write(`data: ${JSON.stringify(error.message)}\n\n`);
-    res.flushHeaders();
+    res.send({ error: error.message });
     res.end();
   }
 
