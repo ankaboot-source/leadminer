@@ -20,7 +20,7 @@ class RealtimeSSE extends SSE {
    */
   subscribeSSE({ req, res }) {
     this.on('stop', () => {
-      res.send('Server is closing connection.');
+      this.emit('data', { event: 'close', data: 'Mining completed :)' }); // notify the other party
       res.end();
     });
     this.init(req, res);
