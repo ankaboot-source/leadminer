@@ -89,6 +89,6 @@ export function SET_MINING_TASK(state, task) {
   state.miningTask = task;
 }
 
-export function DELETE_MINING_TASK(state, task) {
+export function DELETE_MINING_TASK(state) {
   state.miningTask = {};
 }
