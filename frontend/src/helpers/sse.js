@@ -10,9 +10,11 @@ class SSE {
       store.commit("example/SET_EXTRACTEDEMAILS", extracted);
     });
 
-    this.eventSource.addEventListener(`scannedBoxes${id}`, ({ data }) => {
-      store.commit("example/SET_SCANNEDBOXES", data);
-    });
+    this.eventSource.addEventListener('close', () => {
+      this.closeConnection() 
+      store.commit("example/DELETE_MINING_TASK")
+    })
+
   }
 
   closeConnection() {
@@ -23,6 +25,7 @@ class SSE {
 
   initConnection(userId, miningId) {
     this.closeConnection();
+
     this.eventSource = new EventSource(
       `${process.env.SERVER_ENDPOINT}/api/imap/mine/${userId}/${miningId}/progress/`,
       {
