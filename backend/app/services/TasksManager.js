@@ -17,6 +17,7 @@ function redactSensitiveData(task) {
       miningId: task.miningId,
       miningProgress: task.miningProgress,
       fetcher: {
+        status: task.fetcher.isCompleted === true ? 'Completed' : 'Ongoing',
         folders: task.fetcher.folders,
         bodies: task.fetcher.bodies,
         userId: task.fetcher.userId,
@@ -41,7 +42,7 @@ class TasksManager {
       const { miningId, progressType } = JSON.parse(data);
 
       const progress = this.#updateProgress(miningId, progressType);
-      const notified = this.#notifyProgress(miningId, progressType);
+      const notified = this.#notifyChanges(miningId, progressType);
 
       const { status, task } = (progress !== null && notified !== null)
         ? await this.#hasCompleted(miningId, progress)
@@ -152,7 +153,7 @@ class TasksManager {
     const { fetcher, progressHandlerSSE } = task;
 
     try {
-      await fetcher.cleanup();
+      await fetcher.stop();
       await progressHandlerSSE.stop();
     } catch (error) {
       logger.error('Error when deleting task', { error });
@@ -165,24 +166,32 @@ class TasksManager {
 
   /**
    * Notifies the client of the progress of a mining task with a given mining ID.
-   * @param {string} miningId - The mining ID of the task to notify progress for.
+   * @param {string} miningId - The ID of the mining task to notify progress for.
    * @param {string} progressType - The type of progress to notify ('fetched' or 'extracted').
-   * @returns Returns null if task does not exist.
+   * @returns Returns null if the mining task does not exist.
    */
-  #notifyProgress(miningId, progressType) {
+  #notifyChanges(miningId, progressType) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
-    const { progressHandlerSSE, miningProgress } = task || {};
 
-    if (task === undefined || !progressHandlerSSE) {
+    // If the mining task does not exist or has no progress handler, return null
+    if (!task || !task.progressHandlerSSE) {
       return null;
     }
 
+    const { fetcher, progressHandlerSSE, miningProgress } = task;
     const { fetched, extracted } = miningProgress;
-    const value =
-      progressType === 'fetched' ? parseInt(fetched) : parseInt(extracted);
-    const eventName = `${progressType}-${miningId}`;
 
-    return progressHandlerSSE.sendSSE(value, eventName);
+    const eventName = `${progressType}-${miningId}`
+
+    // If the fetching is completed, notify the clients that it has finished.
+    if (progressType === 'fetched') {
+      const event = fetcher.isCompleted ? 'fetching-finished' : eventName
+      return progressHandlerSSE.sendSSE(fetched, event);
+    }
+
+    // Send the progress to parties subscribed on SSE
+    return progressHandlerSSE.sendSSE(extracted, eventName);
+
   }
 
   /**
