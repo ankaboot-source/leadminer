@@ -41,6 +41,7 @@ describe('TasksManager.redactSensitiveData()', () => {
           extracting: 0
         },
         fetcher: {
+          status: 'running',
           folders: ['test1'],
           userId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0',
           userEmail: 'leadminer@leadminer.io',

@@ -17,7 +17,7 @@ function redactSensitiveData(task) {
       miningId: task.miningId,
       miningProgress: task.miningProgress,
       fetcher: {
-        status: task.fetcher.isCompleted === true ? 'Completed' : 'Ongoing',
+        status: task.fetcher.isCompleted === true ? 'completed' : 'running',
         folders: task.fetcher.folders,
         bodies: task.fetcher.bodies,
         userId: task.fetcher.userId,
@@ -46,11 +46,11 @@ class TasksManager {
 
       const { status, task } = (progress !== null && notified !== null)
         ? await this.#hasCompleted(miningId, progress)
-        : {}
+        : {};
 
       if (status === true) {
-        const { userId } = task
-        db.callRpcFunction(userId, 'refined_persons')
+        const { userId } = task;
+        db.callRpcFunction(userId, 'refined_persons');
       }
 
     });
@@ -181,11 +181,11 @@ class TasksManager {
     const { fetcher, progressHandlerSSE, miningProgress } = task;
     const { fetched, extracted } = miningProgress;
 
-    const eventName = `${progressType}-${miningId}`
+    const eventName = `${progressType}-${miningId}`;
 
     // If the fetching is completed, notify the clients that it has finished.
     if (progressType === 'fetched') {
-      const event = fetcher.isCompleted ? 'fetching-finished' : eventName
+      const event = fetcher.isCompleted ? 'fetching-finished' : eventName;
       return progressHandlerSSE.sendSSE(fetched, event);
     }
 
@@ -228,9 +228,9 @@ class TasksManager {
    */
   async #hasCompleted(miningID, { extracted, fetched }) {
     const status = extracted === fetched;
-    const { task } = status ? await this.deleteTask(miningID) : { task: null }
+    const { task } = status ? await this.deleteTask(miningID) : { task: null };
 
-    return { status, task }
+    return { status, task };
   }
 }
 

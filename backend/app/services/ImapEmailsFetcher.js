@@ -31,8 +31,8 @@ class ImapEmailsFetcher {
     if (IMAP_FETCH_BODY) {
       this.bodies.push('TEXT');
     }
-    this.isCompleted = false
-    this.isCanceled = false
+    this.isCompleted = false;
+    this.isCanceled = false;
   }
 
   /**
@@ -100,7 +100,7 @@ class ImapEmailsFetcher {
       .then(() => {
         this.isCompleted = true;
         logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
-      })
+      });
   }
 
   /**
@@ -173,7 +173,7 @@ class ImapEmailsFetcher {
           });
         
           if (this.isCanceled === true) {
-            return reject(`Terminating process on folder ${folderName} with ID ${this.miningId}`)
+            return reject(`Terminating process on folder ${folderName} with ID ${this.miningId}`);
           }
         });
       });
