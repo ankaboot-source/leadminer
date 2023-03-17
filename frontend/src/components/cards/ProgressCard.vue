@@ -1,23 +1,25 @@
 <template>
   <div class="text-h3 text-teal">
     <q-banner rounded>
-      <q-chip :size="buttonColor" color="transparent" text-color="blue-grey-14">
+      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ minedEmails }}
         </div>
         legit email addresses mined.
       </q-chip>
       <br />
-      <q-chip :size="buttonColor" color="transparent" text-color="blue-grey-14">
+      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ scannedEmails }}
         </div>
         emails messages fetched so far over
-        <div class="text-h5 text-weight-bolder q-ma-sm">{{ totalEmails }}</div>
+        <div class="text-h5 text-weight-bolder q-ma-sm">
+          {{ totalEmails }}
+        </div>
         emails to fetch.
       </q-chip>
       <br />
-      <q-chip :size="buttonColor" color="transparent" text-color="blue-grey-14">
+      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ extractedEmails }}
         </div>
@@ -28,47 +30,124 @@
         emails to extract.
       </q-chip>
       <div>
+        <span v-if="activeMiningTask">
+          Digging up the good stuff! Holdt tight...
+          {{ (progressValue * 100).toFixed(2) }} %
+        </span>
         <q-linear-progress
-          :buffer="scannedEmails / totalEmails || 0"
-          :value="extractedEmails / scannedEmails || 0"
+          :buffer="progressBuffer"
+          :value="progressValue"
           size="1.5rem"
           color="teal-8"
           track-color="teal-2"
-          class="q-card--bordered"
+          class="q-card--bordered q-pa-null"
+          animation-speed="500"
         />
+        Estimated
+        <span v-if="!activeMiningTask">
+          waiting time:
+          {{ timeConversion(estimatedTotalTimeRemaining).join(" ") }}
+        </span>
+        <span v-else
+          >time remaining:
+          {{
+            timeConversion(timeEstimation().estimatedTimeRemaining).join(" ")
+          }}
+          ({{ timeEstimation().elapsedTime }} seconds elapsed)</span
+        >
       </div>
     </q-banner>
   </div>
 </template>
 
-<script>
+<script setup>
+import { computed, defineProps, watch } from "vue";
+import { useStore } from "vuex";
 import { useQuasar } from "quasar";
-import { computed, defineComponent } from "vue";
-export default defineComponent({
-  name: "ProgressStatus",
-  props: {
-    extractedEmails: Number(0),
-    minedEmails: Number(0),
-    scannedEmails: Number(0),
-    totalEmails: Number(0),
-  },
-  setup() {
-    const $q = useQuasar();
-    const buttonSize = computed(() => {
-      switch (true) {
-        case $q.screen.lt.sm === true:
-          return "0.7em";
-        case $q.screen.gt.sm === true && $q.screen.lt.md === true:
-          return "2em";
 
-        case $q.screen.gt.md === true:
-          return "1.15em";
+const $q = useQuasar();
+const $store = useStore();
 
-        default:
-          return "1em";
-      }
-    });
-    return { buttonColor: buttonSize };
-  },
+const buttonSize = computed(() => {
+  switch (true) {
+    case $q.screen.lt.sm === true:
+      return "0.7em";
+    case $q.screen.gt.sm === true && $q.screen.lt.md === true:
+      return "2em";
+    case $q.screen.gt.md === true:
+      return "1.15em";
+    default:
+      return "1em";
+  }
 });
+
+var startTime;
+const activeMiningTask = computed(
+  () => !!$store.state.example.miningTask.miningId
+);
+const progressStatusProps = defineProps({
+  extractedEmails: Number(0),
+  minedEmails: Number(0),
+  scannedEmails: Number(0),
+  totalEmails: Number(0),
+});
+const progressBuffer = computed(
+  () => progressStatusProps.scannedEmails / progressStatusProps.totalEmails || 0
+);
+const progressValue = computed(
+  () =>
+    progressStatusProps.extractedEmails / progressStatusProps.scannedEmails || 0
+);
+const estimatedTotalTimeRemaining = computed(() =>
+  Math.floor(progressStatusProps.totalEmails / 14)
+);
+
+watch(activeMiningTask, (isActive) => {
+  if (isActive) {
+    startTime = performance.now();
+    console.log("Started Mining");
+  } else {
+    console.log("Stopped, time elapsed:", timeEstimation().elapsedTime);
+  }
+});
+
+function timeEstimation() {
+  const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
+  const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
+  const estimatedTimeRemaining = estimatedTime - elapsedTime;
+  return { estimatedTimeRemaining, estimatedTime, elapsedTime };
+}
+
+function timeConversion(timeInSeconds) {
+  if (!isFinite(timeInSeconds)) {
+    timeInSeconds = estimatedTotalTimeRemaining.value;
+  }
+  // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
+  if (timeInSeconds >= 60 * 63) {
+    return [
+      Math.floor(timeInSeconds / 3600),
+      "hours",
+      Math.round((timeInSeconds % 3600) / 60 / 5) * 5,
+      "minutes",
+    ];
+  }
+  // time : 58-62 minutes : (1 hour)
+  else if (timeInSeconds >= 60 * 58) {
+    return [1, "hour"];
+  }
+  // time > 10 minutes : (10m..55m (rounds by 5m))
+  else if (timeInSeconds > 60 * 10) {
+    return [Math.round(timeInSeconds / 60 / 5) * 5, "minutes"];
+  }
+  // time >= 55 seconds : (1m..10m (rounds by 1m))
+  else if (timeInSeconds >= 55) {
+    return [Math.round(timeInSeconds / 60), "minutes"];
+  }
+  // time > 5 seconds : (10s..55s (ceils by 5s))
+  else if (timeInSeconds > 5) {
+    return [Math.ceil(timeInSeconds / 5) * 5, "seconds"];
+  }
+  // time <= 5 seconds : (Almost set!)
+  else return ["Almost set!"];
+}
 </script>
