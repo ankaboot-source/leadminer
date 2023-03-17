@@ -173,19 +173,20 @@ class ImapEmailsFetcher {
           });
         
           if (this.isCanceled === true) {
-            const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`
-            return reject(new Error(message));
+            const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`;
+            reject(new Error(message));
+            return
           }
         });
       });
 
       fetchResult.once('error', (err) => {
         logger.error('IMAP fetch error', { metadata: { err } });
-        return reject(err);
+        reject(err);
       });
 
       fetchResult.once('end', () => {
-        return resolve();
+        resolve();
       });
     });
   }
