@@ -69,18 +69,18 @@ class ImapEmailsFetcher {
           return;
         }
         
-        const box = await new Promise((resolve, reject) => {
-          imapConnection.openBox(folderName, true, async (error, box) => {
+        const openedBox = await new Promise((resolve, reject) => {
+          imapConnection.openBox(folderName, true, (error, box) => {
             if (error) {
               logger.error('Error when opening folder', { metadata: { error } });
-              reject();
+              reject(new Error(error));
             }
             resolve(box);
           });
         });
         
-        if (box?.messages?.total > 0) {
-          await this.fetchBox(imapConnection, emailMessageHandler, folderName, box.messages.total);
+        if (openedBox?.messages?.total > 0) {
+          await this.fetchBox(imapConnection, emailMessageHandler, folderName, openedBox.messages.total);
         }
       
       } catch (error) {
@@ -173,18 +173,19 @@ class ImapEmailsFetcher {
           });
         
           if (this.isCanceled === true) {
-            return reject(`Terminating process on folder ${folderName} with ID ${this.miningId}`);
+            const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`
+            return reject(new Error(message));
           }
         });
       });
 
       fetchResult.once('error', (err) => {
         logger.error('IMAP fetch error', { metadata: { err } });
-        reject(err);
+        return reject(err);
       });
 
       fetchResult.once('end', () => {
-        resolve();
+        return resolve();
       });
     });
   }
