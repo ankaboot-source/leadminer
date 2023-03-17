@@ -20,8 +20,16 @@ class RealtimeSSE extends SSE {
    */
   subscribeSSE({ req, res }) {
     this.on('stop', () => {
-      this.emit('data', { event: 'close', data: 'Mining completed :)' }); // notify the other party
-      res.end();
+
+      // Make sure connection is not already closed before writing.
+      // writableEnded: https://nodejs.org/api/http.html#responsewritableended
+
+      if (res.writableEnded === false) {
+        res.write('event: close\n');
+        res.write('data: Mining completed :)\n\n');
+        res.flushHeaders();
+        res.end();
+      }
     });
     this.init(req, res);
   }

@@ -45,11 +45,11 @@ class TasksManager {
 
       const { status, task } = (progress !== null && notified !== null)
         ? await this.#hasCompleted(miningId, progress)
-        : {}
+        : {};
 
       if (status === true) {
-        const { userId } = task
-        db.callRpcFunction(userId, 'refined_persons')
+        const { userId } = task;
+        db.callRpcFunction(userId, 'refined_persons');
       }
 
     });
@@ -219,9 +219,9 @@ class TasksManager {
    */
   async #hasCompleted(miningID, { extracted, fetched }) {
     const status = extracted === fetched;
-    const { task } = status ? await this.deleteTask(miningID) : { task: null }
+    const { task } = status ? await this.deleteTask(miningID) : { task: null };
 
-    return { status, task }
+    return { status, task };
   }
 }
 
