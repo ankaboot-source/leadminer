@@ -85,29 +85,38 @@ var startTime;
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
+const fetchingFinished = computed(
+  () => !!$store.state.example.fetchingFinished
+);
 const progressStatusProps = defineProps({
   extractedEmails: Number(0),
   minedEmails: Number(0),
   scannedEmails: Number(0),
   totalEmails: Number(0),
 });
-const progressBuffer = computed(
+var progressBuffer = computed(
   () => progressStatusProps.scannedEmails / progressStatusProps.totalEmails || 0
 );
-const progressValue = computed(
+var progressValue = computed(
   () =>
-    progressStatusProps.extractedEmails / progressStatusProps.scannedEmails || 0
+    progressStatusProps.extractedEmails / progressStatusProps.totalEmails || 0
 );
 const estimatedTotalTimeRemaining = computed(() =>
   Math.floor(progressStatusProps.totalEmails / 14)
 );
+
+watch(fetchingFinished, (finished) => {
+  if (finished) {
+    console.log("Fetching completed");
+  }
+});
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
     startTime = performance.now();
     console.log("Started Mining");
   } else {
-    console.log("Stopped, time elapsed:", timeEstimation().elapsedTime);
+    console.log("Stopped, time elapsed:", timeEstimation().elapsedTime, "s");
   }
 });
 

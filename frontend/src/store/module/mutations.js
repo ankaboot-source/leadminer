@@ -92,3 +92,7 @@ export function SET_MINING_TASK(state, task) {
 export function DELETE_MINING_TASK(state) {
   state.miningTask = {};
 }
+
+export function SET_FETCHING_FINISHED(state) {
+  state.fetchingFinished = true;
+}
