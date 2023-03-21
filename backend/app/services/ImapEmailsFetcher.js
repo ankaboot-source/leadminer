@@ -84,12 +84,12 @@ class ImapEmailsFetcher {
         }
       
       } catch (error) {
-        logger.error('Error when fetching emails', { metadata: { error } });
-     
+        logger.error('Error when fetching emails', { metadata: { details: error.message } });
+
       } finally {
-        await imapConnection.closeBox(async (error) => {
+        imapConnection.closeBox(async (error) => {
           if (error) {
-            logger.error('Error when closing box', { metadata: { error } });
+            logger.error('Error when closing box', { metadata: { details: error.message } });
           }
           await this.imapConnectionProvider.releaseConnection(imapConnection);
         });
@@ -122,7 +122,7 @@ class ImapEmailsFetcher {
         let body = '';
 
         if (this.isCanceled === true) {
-          const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`;
+          const message = `Canceled process on folder ${folderName} with ID ${this.miningId}`;
           reject(new Error(message));
           return;
         }
