@@ -121,6 +121,12 @@ class ImapEmailsFetcher {
         let header = '';
         let body = '';
 
+        if (this.isCanceled === true) {
+          const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`;
+          reject(new Error(message));
+          return;
+        }
+
         msg.on('body', (stream, streamInfo) => {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
@@ -171,12 +177,6 @@ class ImapEmailsFetcher {
             userIdentifier: this.userIdentifier,
             miningId: this.miningId
           });
-        
-          if (this.isCanceled === true) {
-            const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`;
-            reject(new Error(message));
-            return
-          }
         });
       });
 
