@@ -11,8 +11,8 @@ describe('TasksManager.redactSensitiveData()', () => {
       miningId:
         'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
       miningProgress: {
-        fetching: 0,
-        extracting: 0
+        fetched: 0,
+        extracted: 0
       },
       fetcher: {
         imapConnectionProvider: {},
@@ -37,16 +37,13 @@ describe('TasksManager.redactSensitiveData()', () => {
         miningId:
           'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
         miningProgress: {
-          fetching: 0,
-          extracting: 0
+          fetched: 0,
+          extracted: 0
         },
         fetcher: {
           status: 'running',
           folders: ['test1'],
-          userId: 'ffffffff-51fd-4e0f-b3bd-325664dd51e0',
-          userEmail: 'leadminer@leadminer.io',
-          bodies: ['HEADER']
-        }
+        },
       }
     };
 
