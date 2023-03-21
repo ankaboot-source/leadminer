@@ -55,7 +55,7 @@ class ImapEmailsFetcher {
    * @param {emailMessageHandler} emailMessageHandler - A callback function to execute for each Email message.
    * @returns {Promise}
    */
-  fetchEmailMessages(emailMessageHandler) {
+  async fetchEmailMessages(emailMessageHandler) {
     const folders = this.folders.filter(folderName => !EXCLUDED_IMAP_FOLDERS.includes(folderName));
     const promises = folders.map(async (folderName) => {
       let imapConnection = {};
