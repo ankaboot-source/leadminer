@@ -11,8 +11,8 @@ describe('TasksManager.redactSensitiveData()', () => {
       miningId:
         'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
       miningProgress: {
-        fetched: 0,
-        extracted: 0
+        fetched: null,
+        extracted: null
       },
       fetcher: {
         imapConnectionProvider: {},
@@ -37,8 +37,8 @@ describe('TasksManager.redactSensitiveData()', () => {
         miningId:
           'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
         miningProgress: {
-          fetched: 0,
-          extracted: 0
+          fetched: null,
+          extracted: null
         },
         fetcher: {
           status: 'running',
@@ -89,8 +89,8 @@ describe('TasksManager class', () => {
         userId,
         miningId,
         miningProgress: {
-          fetched: 0,
-          extracted: 0
+          fetched: null,
+          extracted: null
         },
         fetcher: fetcherInstance,
         sseProgressHandler: null

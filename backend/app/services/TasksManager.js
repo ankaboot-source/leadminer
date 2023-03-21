@@ -99,8 +99,8 @@ class TasksManager {
         userId,
         miningId,
         miningProgress: {
-          fetched: 0,
-          extracted: 0
+          fetched: null,
+          extracted: null
         },
         fetcher,
         progressHandlerSSE: new RealtimeSSE()
@@ -228,7 +228,8 @@ class TasksManager {
     }
 
     const { miningProgress } = task;
-    miningProgress[`${progressType}`] += incrementBy;
+
+    miningProgress[`${progressType}`] = (miningProgress[`${progressType}`] || 0) + incrementBy;
 
     return { ...miningProgress };
   }
