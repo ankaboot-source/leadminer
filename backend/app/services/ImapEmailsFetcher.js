@@ -34,6 +34,65 @@ class ImapEmailsFetcher {
   }
 
   /**
+   * Fetches the total number of messages across the specified folders on an IMAP server.
+   * @param {string[]} folderList - An array of folder names to fetch the total messages for.
+   * @returns {Promise<number>} A Promise that resolves to the total number of messages across all folders.
+   */
+  async getTotalMessages() {
+    let imapConnection = null;
+    let error = null;
+    let total = 0;
+
+    try {
+      imapConnection = await this.imapConnectionProvider.acquireConnection();
+      
+      // Create an array of Promises that resolve to the total number of messages in each folder.
+      const folders = this.folders.filter((folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder));
+      const totalPromises = folders.map((folder) => {
+        return new Promise((resolve, reject) => {
+          // Opening a box will explicitly close the previously opened one if it exists.
+          imapConnection.openBox(folder, true, (err, box) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(box.messages.total);
+            }
+          });
+        });
+      });
+
+      // Calculate the total number of messages across all folders.
+      const totalArray = await Promise.all(totalPromises);
+      
+      for (const val of totalArray) {
+        total += val; 
+      }
+
+      // Close the last opened box.
+      await new Promise((resolve, reject) => {
+        imapConnection.closeBox(async (error) => {
+          if (error) {
+            logger.error('Error when closing box', { metadata: { details: error.message } });
+            reject();
+          }
+          resolve();
+        });
+      });
+
+    } catch (err) {
+      error = new Error(err);
+    } finally {
+      await this.imapConnectionProvider.releaseConnection(imapConnection);
+    }
+
+    if (error !== null) {
+      // If an error occurred, throw it.
+      throw error;
+    }
+    return total;
+  }
+
+  /**
    * A callback function to execute for each Email message.
    * @callback emailMessageHandler
    * @param {object} emailMessage - An email message.
