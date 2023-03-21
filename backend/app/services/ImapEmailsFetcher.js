@@ -196,9 +196,9 @@ class ImapEmailsFetcher {
  * @returns {boolean}
  */
 async stop() {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
   this.isCanceled = true;
   await this.process;
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   await redisClient.unlink(this.processSetKey);
   this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
   return this.isCompleted;
