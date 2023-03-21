@@ -69,7 +69,7 @@
           class="q-px-sm"
           @click="props.toggleFullscreen"
         >
-          <q-tooltip v-close-popup :disable="$q.platform.is.mobile">
+          <q-tooltip :disable="$q.platform.is.mobile">
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
           </q-tooltip>
         </q-btn>
