@@ -126,7 +126,6 @@ watch(fetchingFinished, (finished) => {
   if (finished) {
     fetchingIsFinished.value = true;
     console.log("Fetching completed");
-    console.log(progressBuffer, progressBuffer.value);
   }
 });
 
