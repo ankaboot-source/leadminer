@@ -73,7 +73,7 @@ class ImapEmailsFetcher {
         imapConnection.closeBox(async (error) => {
           if (error) {
             logger.error('Error when closing box', { metadata: { details: error.message } });
-            reject();
+            reject(error);
           }
           resolve();
         });
