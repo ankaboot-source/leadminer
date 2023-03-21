@@ -90,7 +90,7 @@ async function onEmailMessage({
  * const user = await getUser(params);
  * console.log(user);
  */
-async function getUser({ access_token, id, email }) {
+function getUser({ access_token, id, email }) {
 
   if (!access_token && !id && !email) {
     throw new Error('At least one parameter is required { access_token, id, email }.');
