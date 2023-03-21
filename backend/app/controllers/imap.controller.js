@@ -249,47 +249,48 @@ async function startMining(req, res, next) {
     return next(new Error('user does not exists.'));
   }
 
-  const { host, port, refresh_token } = userResult;
+  let miningTask = null;
 
-  let imapConnectionProvider = new ImapConnectionProvider(email);
+  try {
     const { host, port, refresh_token } = user;
     const imapConnectionProvider = access_token
-    ? await imapConnectionProvider.withGoogle(
+      ? await (new ImapConnectionProvider(email)).withGoogle(
         access_token,
         refresh_token,
         id,
         redisPublisher
       )
-    : imapConnectionProvider.withPassword(host, password, port);
+      : (new ImapConnectionProvider(email)).withPassword(
+        host,
+        password,
+        port
+      );
+    const miningId = await miningTasksManager.generateMiningId();
+    const imapEmailsFetcher = new ImapEmailsFetcher(
+      imapConnectionProvider,
+      boxes,
+      id,
+      email,
+      miningId
+    );
 
-  const miningId = await miningTasksManager.generateMiningId();
+    miningTask = await miningTasksManager.createTask(miningId, id, imapEmailsFetcher);
 
-  const imapEmailsFetcher = new ImapEmailsFetcher(
-    imapConnectionProvider,
-    boxes,
-    id,
-    email,
-    miningId
-  );
+    imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
-  const miningTask = miningTasksManager.createTask(
-    miningId,
-    id,
-    imapEmailsFetcher
-  );
-  imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
+    const { heapTotal, heapUsed } = process.memoryUsage();
+    logger.debug(
+      `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+        2
+      )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+    );
 
-  const { heapTotal, heapUsed } = process.memoryUsage();
-  logger.debug(
-    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
-      2
-    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
-  );
+  } catch (error) {
+    res.status(500);
+    return next(error);
+  }
 
-  return res.status(201).send({
-    error: null,
-    data: miningTask
-  });
+  return res.status(201).send({ error: null, data: miningTask });
 }
 
 /**
