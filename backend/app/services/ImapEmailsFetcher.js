@@ -63,12 +63,12 @@ class ImapEmailsFetcher {
       try {
 
         imapConnection = await this.imapConnectionProvider.acquireConnection();
-        
+
         if (this.isCanceled) { // Kill pending promises before starting.
           await this.imapConnectionProvider.releaseConnection(imapConnection);
           return;
         }
-        
+
         const openedBox = await new Promise((resolve, reject) => {
           imapConnection.openBox(folderName, true, (error, box) => {
             if (error) {
@@ -78,11 +78,11 @@ class ImapEmailsFetcher {
             resolve(box);
           });
         });
-        
+
         if (openedBox?.messages?.total > 0) {
           await this.fetchBox(imapConnection, emailMessageHandler, folderName, openedBox.messages.total);
         }
-      
+
       } catch (error) {
         logger.error('Error when fetching emails', { metadata: { details: error.message } });
 
@@ -191,18 +191,18 @@ class ImapEmailsFetcher {
     });
   }
 
-/**
- * Performs cleanup operations after the fetching process has finished or stopped.
- * @returns {boolean}
- */
-async stop() {
-  this.isCanceled = true;
-  await this.process;
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  await redisClient.unlink(this.processSetKey);
-  this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
-  return this.isCompleted;
-}
+  /**
+   * Performs cleanup operations after the fetching process has finished or stopped.
+   * @returns {boolean}
+   */
+  async stop() {
+    this.isCanceled = true;
+    await this.process;
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await redisClient.unlink(this.processSetKey);
+    this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
+    return this.isCompleted;
+  }
 
 
 }
