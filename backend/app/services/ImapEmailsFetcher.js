@@ -56,15 +56,20 @@ class ImapEmailsFetcher {
    * @returns {Promise}
    */
   async fetchEmailMessages(emailMessageHandler) {
-    const folders = this.folders.filter(folderName => !EXCLUDED_IMAP_FOLDERS.includes(folderName));
-    const promises = folders.map(async (folderName) => {
+    const promises = this.folders.map(async (folderName) => {
       let imapConnection = {};
+
+      if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+        // Skip excluded folders
+        return
+      }
 
       try {
 
         imapConnection = await this.imapConnectionProvider.acquireConnection();
 
-        if (this.isCanceled) { // Kill pending promises before starting.
+        if (this.isCanceled) {
+          // Kill pending promises before starting.
           await this.imapConnectionProvider.releaseConnection(imapConnection);
           return;
         }
@@ -87,6 +92,7 @@ class ImapEmailsFetcher {
         logger.error('Error when fetching emails', { metadata: { details: error.message } });
 
       } finally {
+        // Close the mailbox and release the connection
         imapConnection.closeBox(async (error) => {
           if (error) {
             logger.error('Error when closing box', { metadata: { details: error.message } });
@@ -96,9 +102,11 @@ class ImapEmailsFetcher {
       }
     });
 
+    // Wait for all promises to settle before resolving the main promise
     this.process = Promise.allSettled(promises);
-
     await this.process;
+
+    // Set the fetching status to completed and log message
     this.isCompleted = true;
     logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
   }
