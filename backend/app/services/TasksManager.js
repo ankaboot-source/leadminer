@@ -12,16 +12,31 @@ const { db } = require('../db');
  */
 function redactSensitiveData(task) {
   return {
+    /**
+     * The redacted task data.
+     * @type {Object}
+     * @property {string} userId - The ID of the user who the task belongs to.
+     * @property {string} miningId - The ID of the mining task associated with this task.
+     * 
+     * @property {object} miningProgress - Information about The progress associated with this task.
+     * @property {number} miningProgress.totalMessages - The total number of messages that need to be fetched/processed.
+     * @property {number} miningProgress.fetched - Indicating the fetcher progress (total fetched messages).
+     * @property {number} miningProgress.extracted - Indicating the extractor progress (total extracted messages).
+     *
+     * @property {Object} fetcher - Information about the fetcher associated with this task.
+     * @property {string} fetcher.status - The status of the fetcher, either "running" or "completed".
+     * @property {string[]} fetcher.folders - An array of folder names to be fetched.
+     */
     task: {
       userId: task.userId,
       miningId: task.miningId,
-      miningProgress: task.miningProgress,
+      miningProgress: {
+        extracted: task.miningProgress.extracted,
+        fetched: task.miningProgress.fetched
+      },
       fetcher: {
         status: task.fetcher.isCompleted === true ? 'completed' : 'running',
-        folders: task.fetcher.folders,
-        bodies: task.fetcher.bodies,
-        userId: task.fetcher.userId,
-        userEmail: task.fetcher.userEmail
+        folders: task.fetcher.folders
       }
     }
   };
