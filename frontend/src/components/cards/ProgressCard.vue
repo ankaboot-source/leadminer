@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { computed, defineProps, watch } from "vue";
+import { computed, defineProps, watch, ref } from "vue";
 import { useStore } from "vuex";
 import { useQuasar } from "quasar";
 
@@ -82,32 +82,51 @@ const buttonSize = computed(() => {
 });
 
 var startTime;
+const estimatedTotalTimeRemaining = computed(() =>
+  Math.floor(progressStatusProps.totalEmails / 14)
+);
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
 const fetchingFinished = computed(
   () => !!$store.state.example.fetchingFinished
 );
+
 const progressStatusProps = defineProps({
   extractedEmails: Number(0),
   minedEmails: Number(0),
   scannedEmails: Number(0),
   totalEmails: Number(0),
 });
-var progressBuffer = computed(
-  () => progressStatusProps.scannedEmails / progressStatusProps.totalEmails || 0
-);
-var progressValue = computed(
-  () =>
-    progressStatusProps.extractedEmails / progressStatusProps.totalEmails || 0
-);
-const estimatedTotalTimeRemaining = computed(() =>
-  Math.floor(progressStatusProps.totalEmails / 14)
-);
+const progressBuffer = computed(() => {
+  if (!fetchingIsFinished.value) {
+    return (
+      progressStatusProps.scannedEmails / progressStatusProps.totalEmails || 0
+    );
+  } else {
+    return 1;
+  }
+});
 
+const progressValue = computed(() => {
+  if (!fetchingIsFinished.value) {
+    return (
+      progressStatusProps.extractedEmails / progressStatusProps.totalEmails || 0
+    );
+  } else {
+    return (
+      progressStatusProps.extractedEmails / progressStatusProps.scannedEmails ||
+      0
+    );
+  }
+});
+
+const fetchingIsFinished = ref(false);
 watch(fetchingFinished, (finished) => {
   if (finished) {
+    fetchingIsFinished.value = true;
     console.log("Fetching completed");
+    console.log(progressBuffer, progressBuffer.value);
   }
 });
 
@@ -115,6 +134,7 @@ watch(activeMiningTask, (isActive) => {
   if (isActive) {
     startTime = performance.now();
     console.log("Started Mining");
+    fetchingIsFinished.value = false;
   } else {
     console.log("Stopped, time elapsed:", timeEstimation().elapsedTime, "s");
   }
