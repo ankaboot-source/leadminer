@@ -76,6 +76,36 @@ async function onEmailMessage({
 }
 
 /**
+ * Get a user by either their access token and email or their IMAP ID or email.
+ * 
+ * @param {Object} params - An object containing the necessary parameters to fetch a user.
+ * @param {string} params.access_token - The user's Google access token.
+ * @param {string} params.id - The user's IMAP ID.
+ * @param {string} params.email - The user's email address.
+ * @returns {Promise<Object>} - A promise that resolves with the user object, or null if not found.
+ * @throws {Error} - If at least one parameter is not provided.
+ * 
+ * @example
+ * const params = { id: '123', email: 'user@example.com' };
+ * const user = await getUser(params);
+ * console.log(user);
+ */
+async function getUser({ access_token, id, email }) {
+
+  if (!access_token && !id && !email) {
+    throw new Error('At least one parameter is required { access_token, id, email }.');
+  }
+
+  if (access_token) {
+    return await db.getGoogleUserByEmail(email);
+  } else if (id) {
+    return await db.getImapUserById(id);
+  }
+
+  return await db.getImapUserByEmail(email);
+}
+
+/**
  * Login to account
  * @param  {} req
  * @param  {} res
@@ -110,17 +140,17 @@ async function loginToAccount(req, res, next) {
   });
 
   try {
-    const imapUser =
-      (await db.getImapUserByEmail(email)) ??
+    const user =
+      (await getUser({ email })) ??
       (await db.createImapUser({ email, host, port, tls }));
 
-    if (!imapUser) {
-      throw Error('Error when creating or quering imapUser');
+    if (!user) {
+      throw Error('Error when creating or quering user');
     }
 
     logger.info('Account successfully logged in.', { metadata: { email } });
 
-    res.status(200).send({ imap: imapUser });
+    res.status(200).send({ imap: user });
   } catch (error) {
     next({
       message: 'Failed to login using Imap',
@@ -146,16 +176,14 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const userResult = access_token
-    ? await db.getGoogleUserByEmail(email)
-    : await db.getImapUserById(id);
+  const user = await getUser(data);
 
-  if (userResult === null) {
+  if (user === null) {
     res.status(400);
     return next(new Error('user does not exists.'));
   }
 
-  const { host, port, refresh_token } = userResult;
+  const { host, port, refresh_token } = user;
 
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
@@ -214,11 +242,9 @@ async function startMining(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const userResult = access_token
-    ? await db.getGoogleUserByEmail(email)
-    : await db.getImapUserById(id);
+  const user = await getUser(data);
 
-  if (userResult === null) {
+  if (user === null) {
     res.status(400);
     return next(new Error('user does not exists.'));
   }
@@ -226,8 +252,8 @@ async function startMining(req, res, next) {
   const { host, port, refresh_token } = userResult;
 
   let imapConnectionProvider = new ImapConnectionProvider(email);
-
-  imapConnectionProvider = access_token
+    const { host, port, refresh_token } = user;
+    const imapConnectionProvider = access_token
     ? await imapConnectionProvider.withGoogle(
         access_token,
         refresh_token,
