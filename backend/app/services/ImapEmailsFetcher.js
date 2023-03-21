@@ -70,10 +70,10 @@ class ImapEmailsFetcher {
 
       // Close the last opened box.
       await new Promise((resolve, reject) => {
-        imapConnection.closeBox((error) => {
-          if (error) {
-            logger.error('Error when closing box', { metadata: { details: error.message } });
-            reject(error);
+        imapConnection.closeBox((err) => {
+          if (err) {
+            logger.error('Error when closing box', { metadata: { details: err.message } });
+            reject(err);
           }
           resolve();
         });

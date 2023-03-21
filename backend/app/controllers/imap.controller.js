@@ -285,9 +285,9 @@ async function startMining(req, res, next) {
       )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
     );
 
-  } catch (error) {
+  } catch (err) {
     res.status(500);
-    return next(error);
+    return next(err);
   }
 
   return res.status(201).send({ error: null, data: miningTask });
