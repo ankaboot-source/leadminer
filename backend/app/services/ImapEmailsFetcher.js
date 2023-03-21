@@ -96,9 +96,9 @@ class ImapEmailsFetcher {
       }
     });
 
-    this.process = Promise.allSettled(promises)
+    this.process = Promise.allSettled(promises);
 
-    await this.process
+    await this.process;
     this.isCompleted = true;
     logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
   }
