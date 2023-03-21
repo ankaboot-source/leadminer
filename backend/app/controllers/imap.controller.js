@@ -97,12 +97,12 @@ async function getUser({ access_token, id, email }) {
   }
 
   if (access_token) {
-    return await db.getGoogleUserByEmail(email);
+    return db.getGoogleUserByEmail(email);
   } else if (id) {
-    return await db.getImapUserById(id);
+    return db.getImapUserById(id);
   }
 
-  return await db.getImapUserByEmail(email);
+  return db.getImapUserByEmail(email);
 }
 
 /**
