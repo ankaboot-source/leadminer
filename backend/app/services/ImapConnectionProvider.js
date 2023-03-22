@@ -124,6 +124,7 @@ class ImapConnectionProvider {
       return;
     }
     logger.debug('Cleaning IMAP Pool');
+    this.#connectionsPool.min = 0
     await this.#connectionsPool.drain();
     await this.#connectionsPool.clear();
     this.#poolIsInitialized = false;

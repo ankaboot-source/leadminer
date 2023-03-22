@@ -31,6 +31,8 @@ class ImapEmailsFetcher {
     if (IMAP_FETCH_BODY) {
       this.bodies.push('TEXT');
     }
+    this.isCompleted = false;
+    this.isCanceled = false;
   }
 
   /**
@@ -53,38 +55,60 @@ class ImapEmailsFetcher {
    * @param {emailMessageHandler} emailMessageHandler - A callback function to execute for each Email message.
    * @returns {Promise}
    */
-  fetchEmailMessages(emailMessageHandler) {
-    return Promise.allSettled(
-      this.folders.map(async (folderName) => {
-        if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+  async fetchEmailMessages(emailMessageHandler) {
+    const promises = this.folders.map(async (folderName) => {
+      let imapConnection = {};
+
+      if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+        // Skip excluded folders
+        return
+      }
+
+      try {
+
+        imapConnection = await this.imapConnectionProvider.acquireConnection();
+
+        if (this.isCanceled) {
+          // Kill pending promises before starting.
+          await this.imapConnectionProvider.releaseConnection(imapConnection);
           return;
         }
 
-        try {
-          const imapConnection =
-            await this.imapConnectionProvider.acquireConnection();
-
-          imapConnection.openBox(folderName, true, async (err, box) => {
-            if (err) {
-              logger.error('Error when opening folder', { metadata: { err } });
-            } else if (box.messages?.total > 0) {
-              await this.fetchBox(
-                imapConnection,
-                emailMessageHandler,
-                folderName,
-                box.messages.total
-              );
+        const openedBox = await new Promise((resolve, reject) => {
+          imapConnection.openBox(folderName, true, (error, box) => {
+            if (error) {
+              logger.error('Error when opening folder', { metadata: { error } });
+              reject(new Error(error));
             }
+            resolve(box);
+          });
+        });
 
-            await this.imapConnectionProvider.releaseConnection(imapConnection);
-          });
-        } catch (error) {
-          logger.error('Error when acquiring connection.', {
-            metadata: { error }
-          });
+        if (openedBox?.messages?.total > 0) {
+          await this.fetchBox(imapConnection, emailMessageHandler, folderName, openedBox.messages.total);
         }
-      })
-    );
+
+      } catch (error) {
+        logger.error('Error when fetching emails', { metadata: { details: error.message } });
+
+      } finally {
+        // Close the mailbox and release the connection
+        imapConnection.closeBox(async (error) => {
+          if (error) {
+            logger.error('Error when closing box', { metadata: { details: error.message } });
+          }
+          await this.imapConnectionProvider.releaseConnection(imapConnection);
+        });
+      }
+    });
+
+    // Wait for all promises to settle before resolving the main promise
+    this.process = Promise.allSettled(promises);
+    await this.process;
+
+    // Set the fetching status to completed and log message
+    this.isCompleted = true;
+    logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
   }
 
   /**
@@ -104,6 +128,12 @@ class ImapEmailsFetcher {
       fetchResult.on('message', (msg, seqNumber) => {
         let header = '';
         let body = '';
+
+        if (this.isCanceled === true) {
+          const message = `Canceled process on folder ${folderName} with ID ${this.miningId}`;
+          reject(new Error(message));
+          return;
+        }
 
         msg.on('body', (stream, streamInfo) => {
           stream.on('data', (chunk) => {
@@ -160,27 +190,29 @@ class ImapEmailsFetcher {
 
       fetchResult.once('error', (err) => {
         logger.error('IMAP fetch error', { metadata: { err } });
-        connection.closeBox(() => {
-          reject(err);
-        });
+        reject(err);
       });
 
       fetchResult.once('end', () => {
-        connection.closeBox(() => {
-          resolve();
-        });
+        resolve();
       });
     });
   }
 
   /**
-   * Performs cleanup operations after we finished/stopped the fetching process.
+   * Performs cleanup operations after the fetching process has finished or stopped.
+   * @returns {boolean}
    */
-  async cleanup() {
+  async stop() {
+    this.isCanceled = true;
+    await this.process;
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     await redisClient.unlink(this.processSetKey);
-    await this.imapConnectionProvider.cleanPool();
+    await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
+    return this.isCompleted;
   }
+
+
 }
 
 module.exports = {
