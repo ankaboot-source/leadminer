@@ -69,7 +69,6 @@
           :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
           class="q-px-sm"
           @click="props.toggleFullscreen"
-          @keyup.enter="props.toggleFullscreen"
         >
           <q-tooltip :disable="$q.platform.is.mobile">
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
@@ -403,11 +402,12 @@ onMounted(() => {
 });
 
 const escapeListener = (event) => {
-  if (document.getElementById("fullscreen")) {
-    console.log("found");
-    if (event.keyCode == 27) {
+  if (
+    document.getElementById("fullscreen").querySelector("i").innerHTML ==
+    "fullscreen_exit"
+  ) {
+    if (event.key == "Escape") {
       document.getElementById("fullscreen").click();
-      console.log("clicked");
       return;
     }
   }
