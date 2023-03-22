@@ -4,7 +4,7 @@
     style="height: 60vh"
   >
     <q-table
-      ref="tableRef"
+      ref="table"
       class="q-pt-sm"
       style="height: 100%"
       virtual-scroll
@@ -237,7 +237,7 @@ const rows = ref([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
-const tableRef = ref(null);
+const table = ref(null);
 
 const initialPagination = {
   sortBy: "engagement",
@@ -268,7 +268,7 @@ const refreshInterval = setInterval(() => {
 }, 3000);
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", keyListener);
+  window.removeEventListener("keydown", onKeyDown);
   clearInterval(refreshInterval);
 });
 
@@ -397,15 +397,15 @@ function exportTable() {
   }
 }
 onMounted(() => {
-  window.addEventListener("keydown", keyListener);
+  window.addEventListener("keydown", onKeyDown);
   setTimeout(() => {
     fetchRefined();
   });
 });
 
-const keyListener = (event) => {
+const onKeyDown = (event) => {
   if (event.key === "Escape") {
-    tableRef.value.exitFullscreen();
+    table.value.exitFullscreen();
   }
 };
 
