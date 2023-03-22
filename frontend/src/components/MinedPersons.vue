@@ -4,6 +4,7 @@
     style="height: 60vh"
   >
     <q-table
+      ref="tableRef"
       class="q-pt-sm"
       style="height: 100%"
       virtual-scroll
@@ -62,7 +63,6 @@
           />
         </div>
         <q-btn
-          ref="fullscreenButton"
           flat
           round
           dense
@@ -237,7 +237,7 @@ const rows = ref([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
-const fullscreenButton = ref(null);
+const tableRef = ref(null);
 
 const initialPagination = {
   sortBy: "engagement",
@@ -404,12 +404,8 @@ onMounted(() => {
 });
 
 const keyListener = (event) => {
-  if (
-    event.key === "Escape" &&
-    fullscreenButton.value?.icon === "fullscreen_exit"
-  ) {
-    fullscreenButton.value.click();
-    return;
+  if (event.key === "Escape") {
+    tableRef.value.exitFullscreen();
   }
 };
 
