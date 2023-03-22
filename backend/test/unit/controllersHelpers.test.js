@@ -59,7 +59,7 @@ describe('controllers.helpers.getXImapHeaderField', () => {
 describe('controllers.helpers.getUser', () => {
 
   const db = {
-    getGoogleUserByEmail: async (email) => {
+    getGoogleUserByEmail: (email) => {
       // Mock implementation for getting a Google user by email
       if (email === 'googleuser@example.com') {
         return {
@@ -71,7 +71,7 @@ describe('controllers.helpers.getUser', () => {
       return null
     },
 
-    getImapUserById: async (id) => {
+    getImapUserById: (id) => {
       // Mock implementation for getting an IMAP user by ID
       if (id === 2) {
         return {
@@ -83,7 +83,7 @@ describe('controllers.helpers.getUser', () => {
       return null
     },
 
-    getImapUserByEmail: async (email) => {
+    getImapUserByEmail: (email) => {
       // Mock implementation for getting an IMAP user by email
       if (email === 'imapuser@example.com') {
         return {
