@@ -25,7 +25,8 @@ function streamProgress(req, res) {
       await miningTasksManager.deleteTask(id);
     } catch (error) {
       logger.error('Error when disconnecting from the stream.', {
-        miningId: id
+        miningId: id,
+        metadata: { details: error.message }
       });
     }
   });
