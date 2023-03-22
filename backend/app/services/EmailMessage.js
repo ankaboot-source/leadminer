@@ -170,7 +170,7 @@ class EmailMessage {
     const isList = this.isList();
     const isTransactional = this.isTransactional();
 
-    if (isTransactional && !isList && isNewsletter) {
+    if (isTransactional && !isList && !isNewsletter) {
       tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
       return tags; // No further tagging needed
     }
