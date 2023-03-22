@@ -268,7 +268,7 @@ const refreshInterval = setInterval(() => {
 }, 3000);
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", escapeListener);
+  window.removeEventListener("keydown", keyListener);
   clearInterval(refreshInterval);
 });
 
@@ -397,18 +397,19 @@ function exportTable() {
   }
 }
 onMounted(() => {
-  window.addEventListener("keydown", escapeListener);
+  window.addEventListener("keydown", keyListener);
   setTimeout(() => {
     fetchRefined();
   });
 });
 
-const escapeListener = (event) => {
-  if (event.key === "Escape") {
-    if (fullscreenButton.value.$props.icon === "fullscreen_exit") {
-      fullscreenButton.value.click();
-      return;
-    }
+const keyListener = (event) => {
+  if (
+    event.key === "Escape" &&
+    fullscreenButton.value?.icon === "fullscreen_exit"
+  ) {
+    fullscreenButton.value.click();
+    return;
   }
 };
 
