@@ -7,7 +7,7 @@ const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
-const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
+const { getUser, getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 const { redis } = require('../utils/redis');
 const { REDIS_STREAM_NAME } = require('../utils/constants');
 const redisStreamsPublisher = redis.getDuplicatedClient();
@@ -76,36 +76,6 @@ async function onEmailMessage({
 }
 
 /**
- * Get a user by either their access token and email or their IMAP ID or email.
- * 
- * @param {Object} params - An object containing the necessary parameters to fetch a user.
- * @param {string} params.access_token - The user's Google access token.
- * @param {string} params.id - The user's IMAP ID.
- * @param {string} params.email - The user's email address.
- * @returns {Promise<Object>} - A promise that resolves with the user object, or null if not found.
- * @throws {Error} - If at least one parameter is not provided.
- * 
- * @example
- * const params = { id: '123', email: 'user@example.com' };
- * const user = await getUser(params);
- * console.log(user);
- */
-function getUser({ access_token, id, email }) {
-
-  if (!access_token && !id && !email) {
-    throw new Error('At least one parameter is required { access_token, id, email }.');
-  }
-
-  if (access_token) {
-    return db.getGoogleUserByEmail(email);
-  } else if (id) {
-    return db.getImapUserById(id);
-  }
-
-  return db.getImapUserByEmail(email);
-}
-
-/**
  * Login to account
  * @param  {} req
  * @param  {} res
@@ -141,7 +111,7 @@ async function loginToAccount(req, res, next) {
 
   try {
     const user =
-      (await getUser({ email })) ??
+      (await getUser({ email }, db)) ??
       (await db.createImapUser({ email, host, port, tls }));
 
     if (!user) {
@@ -176,7 +146,7 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const user = await getUser(data);
+  const user = await getUser(data, db);
 
   if (user === null) {
     res.status(400);
@@ -242,7 +212,7 @@ async function startMining(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const user = await getUser(data);
+  const user = await getUser(data, db);
 
   if (user === null) {
     res.status(400);
