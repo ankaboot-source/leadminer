@@ -69,6 +69,7 @@
           :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
           class="q-px-sm"
           @click="props.toggleFullscreen"
+          @keyup.enter="props.toggleFullscreen"
         >
           <q-tooltip :disable="$q.platform.is.mobile">
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
