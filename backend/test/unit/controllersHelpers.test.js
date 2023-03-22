@@ -61,38 +61,44 @@ describe('controllers.helpers.getUser', () => {
   const db = {
     getGoogleUserByEmail: (email) => {
       // Mock implementation for getting a Google user by email
+      let result = null
+
       if (email === 'googleuser@example.com') {
-        return {
+        result = {
           id: 1,
           email: 'googleuser@example.com',
           name: 'Google User',
         };
       }
-      return null
+      return Promise.resolve(result)
     },
 
     getImapUserById: (id) => {
       // Mock implementation for getting an IMAP user by ID
+      let result = null
+
       if (id === 2) {
-        return {
+        result = {
           id: 2,
           email: 'imapuser@example.com',
           name: 'IMAP User',
         };
       }
-      return null
+      return Promise.resolve(result)
     },
 
     getImapUserByEmail: (email) => {
       // Mock implementation for getting an IMAP user by email
+      let result = null
+
       if (email === 'imapuser@example.com') {
-        return {
+        result = {
           id: 3,
           email: 'imapuser@example.com',
           name: 'IMAP User',
         };
       }
-      return null
+      return Promise.resolve(result)
     },
   }
 
