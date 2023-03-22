@@ -62,7 +62,7 @@
           />
         </div>
         <q-btn
-          id="fullscreen"
+          ref="fullscreenButton"
           flat
           round
           dense
@@ -237,6 +237,8 @@ const rows = ref([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
+const fullscreenButton = ref(null);
+
 const initialPagination = {
   sortBy: "engagement",
   descending: true,
@@ -403,11 +405,11 @@ onMounted(() => {
 
 const escapeListener = (event) => {
   if (
-    document.getElementById("fullscreen").querySelector("i").innerHTML ==
+    fullscreenButton.value?.$el.querySelector("i").innerHTML ===
     "fullscreen_exit"
   ) {
-    if (event.key == "Escape") {
-      document.getElementById("fullscreen").click();
+    if (event.key === "Escape") {
+      fullscreenButton.value.click();
       return;
     }
   }
