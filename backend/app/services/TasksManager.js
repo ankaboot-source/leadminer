@@ -112,8 +112,8 @@ class TasksManager {
       miningId,
       miningProgress: {
         totalMessages,
-        fetched: 0,
-        extracted: 0
+        fetched: null,
+        extracted: null
       },
       fetcher,
       progressHandlerSSE: new RealtimeSSE()
@@ -207,7 +207,7 @@ class TasksManager {
     const { fetcher, progressHandlerSSE, miningProgress } = task;
 
     const eventName = `${progressType}-${miningId}`;
-    const progress = miningProgress[`${progressType}`]
+    const progress = miningProgress[`${progressType}`];
 
     // If the fetching is completed, notify the clients that it has finished.
     if (progressType === 'fetched' && fetcher.isCompleted) {

@@ -120,7 +120,7 @@ class ImapEmailsFetcher {
 
       if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
         // Skip excluded folders
-        return
+        return;
       }
 
       try {
