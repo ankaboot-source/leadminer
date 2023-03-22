@@ -65,6 +65,10 @@ describe('TasksManager class', () => {
   const fetcherInstance = {
     cleanup: () => {
       return null;
+    },
+
+    getTotalMessages: () => {
+      return 100
     }
   };
   let tasksManager = null;
@@ -86,11 +90,12 @@ describe('TasksManager class', () => {
     it('should create a new mining task.', async () => {
       const userId = 'abc123';
       const miningId = await tasksManager.generateMiningId();
-      const task = tasksManager.createTask(miningId, userId, fetcherInstance);
+      const task = await tasksManager.createTask(miningId, userId, fetcherInstance);
       const expectedOutput = {
         userId,
         miningId,
         miningProgress: {
+          totalMessages: 100,
           fetched: 0,
           extracted: 0
         },
@@ -100,13 +105,19 @@ describe('TasksManager class', () => {
       expect(task).eql(redactSensitiveData(expectedOutput));
     });
 
-    it('should throw an error if mining ID already exists', () => {
+    it('should throw an error if mining ID already exists', async () => {
       const userID = 'abc123';
-      const miningID = tasksManager.generateMiningId(userID);
-      tasksManager.createTask(miningID, userID, fetcherInstance);
-      expect(() =>
-        tasksManager.createTask(miningID, userID, fetcherInstance)
-      ).to.Throw(Error);
+      const miningID = await tasksManager.generateMiningId(userID);
+
+      await tasksManager.createTask(miningID, userID, fetcherInstance);
+
+      try {
+        await tasksManager.createTask(miningID, userID, fetcherInstance)
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+        expect(error.message).equal(`Task with mining ID ${miningID} already exists.`)
+      }
+
     });
   });
 
@@ -114,7 +125,7 @@ describe('TasksManager class', () => {
     it('should return the task object if it exists', async () => {
       const userID = 'abc123';
       const miningId = await tasksManager.generateMiningId();
-      const createdTask = tasksManager.createTask(
+      const createdTask = await tasksManager.createTask(
         miningId,
         userID,
         fetcherInstance
@@ -154,7 +165,7 @@ describe('TasksManager class', () => {
     it('should delete the task with the given mining ID if it exists', async () => {
       const userId = '123';
       const miningId = await tasksManager.generateMiningId();
-      const createdTask = tasksManager.createTask(
+      const createdTask = await tasksManager.createTask(
         miningId,
         userId,
         fetcherInstance
