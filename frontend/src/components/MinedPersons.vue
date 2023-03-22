@@ -404,11 +404,8 @@ onMounted(() => {
 });
 
 const escapeListener = (event) => {
-  if (
-    fullscreenButton.value?.$el.querySelector("i").innerHTML ===
-    "fullscreen_exit"
-  ) {
-    if (event.key === "Escape") {
+  if (event.key === "Escape") {
+    if (fullscreenButton.value.$props.icon === "fullscreen_exit") {
       fullscreenButton.value.click();
       return;
     }
