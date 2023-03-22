@@ -11,6 +11,7 @@ describe('TasksManager.redactSensitiveData()', () => {
       miningId:
         'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
       miningProgress: {
+        totalMessages: 100,
         fetched: null,
         extracted: null
       },
@@ -37,6 +38,7 @@ describe('TasksManager.redactSensitiveData()', () => {
         miningId:
           'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
         miningProgress: {
+          totalMessages: 100,
           fetched: null,
           extracted: null
         },

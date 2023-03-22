@@ -31,6 +31,7 @@ function redactSensitiveData(task) {
       userId: task.userId,
       miningId: task.miningId,
       miningProgress: {
+        totalMessages: task.miningProgress.totalMessages,
         extracted: task.miningProgress.extracted,
         fetched: task.miningProgress.fetched
       },
