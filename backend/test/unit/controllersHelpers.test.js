@@ -1,7 +1,7 @@
 const { expect } = require('chai');
-const { getXImapHeaderField } = require('../../app/controllers/helpers');
+const { getXImapHeaderField, getUser } = require('../../app/controllers/helpers');
 
-describe('getXImapHeaderField', () => {
+describe('controllers.helpers.getXImapHeaderField', () => {
   it('should return an error if the x-imap-login header is missing', () => {
     const headers = {};
     const { data, error } = getXImapHeaderField(headers);
@@ -54,3 +54,67 @@ describe('getXImapHeaderField', () => {
     });
   });
 });
+
+
+describe('controllers.helpers.getUser', () => {
+
+  const db = {
+    getGoogleUserByEmail: async (email) => {
+      // Mock implementation for getting a Google user by email
+      if (email === 'googleuser@example.com') {
+        return {
+          id: 1,
+          email: 'googleuser@example.com',
+          name: 'Google User',
+        };
+      }
+      return null
+    },
+
+    getImapUserById: async (id) => {
+      // Mock implementation for getting an IMAP user by ID
+      if (id === 2) {
+        return {
+          id: 2,
+          email: 'imapuser@example.com',
+          name: 'IMAP User',
+        };
+      }
+      return null
+    },
+
+    getImapUserByEmail: async (email) => {
+      // Mock implementation for getting an IMAP user by email
+      if (email === 'imapuser@example.com') {
+        return {
+          id: 3,
+          email: 'imapuser@example.com',
+          name: 'IMAP User',
+        };
+      }
+      return null
+    },
+  }
+
+  it('throws an error if no parameters are passed', () => {
+    const message = 'At least one parameter is required { access_token, id, email }.'
+    expect(
+      () => getUser({}, db)).to.throw(message);
+  });
+
+  it('returns a Google user by email', async () => {
+    const user = await getUser({ access_token: 'google', email: 'googleuser@example.com' }, db);
+    expect(user).to.deep.equal({ id: 1, email: 'googleuser@example.com', name: 'Google User' });
+  });
+
+  it('returns an IMAP user by ID', async () => {
+    const user = await getUser({ id: 2 }, db);
+    expect(user).to.deep.equal({ id: 2, email: 'imapuser@example.com', name: 'IMAP User' });
+  });
+
+  it('returns an IMAP user by email if no access token or ID is provided', async () => {
+    const user = await getUser({ email: 'imapuser@example.com' }, db);
+    expect(user).to.deep.equal({ id: 3, email: 'imapuser@example.com', name: 'IMAP User' });
+  });
+
+})
