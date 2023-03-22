@@ -194,18 +194,17 @@ class TasksManager {
     }
 
     const { fetcher, progressHandlerSSE, miningProgress } = task;
-    const { fetched, extracted } = miningProgress;
 
     const eventName = `${progressType}-${miningId}`;
+    const progress = miningProgress[`${progressType}`]
 
     // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched') {
-      const event = fetcher.isCompleted ? 'fetching-finished' : eventName;
-      return progressHandlerSSE.sendSSE(fetched, event);
+    if (progressType === 'fetched' && fetcher.isCompleted) {
+      progressHandlerSSE.sendSSE(progress, 'fetching-finished');
     }
 
     // Send the progress to parties subscribed on SSE
-    return progressHandlerSSE.sendSSE(extracted, eventName);
+    return progressHandlerSSE.sendSSE(progress, eventName);
 
   }
 
