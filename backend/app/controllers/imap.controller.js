@@ -7,7 +7,7 @@ const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
-const { getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
+const { getUser, getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 const { redis } = require('../utils/redis');
 const { REDIS_STREAM_NAME } = require('../utils/constants');
 const redisStreamsPublisher = redis.getDuplicatedClient();
@@ -110,17 +110,17 @@ async function loginToAccount(req, res, next) {
   });
 
   try {
-    const imapUser =
-      (await db.getImapUserByEmail(email)) ??
+    const user =
+      (await getUser({ email }, db)) ??
       (await db.createImapUser({ email, host, port, tls }));
 
-    if (!imapUser) {
-      throw Error('Error when creating or quering imapUser');
+    if (!user) {
+      throw Error('Error when creating or quering user');
     }
 
     logger.info('Account successfully logged in.', { metadata: { email } });
 
-    res.status(200).send({ imap: imapUser });
+    res.status(200).send({ imap: user });
   } catch (error) {
     next({
       message: 'Failed to login using Imap',
@@ -146,16 +146,14 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const userResult = access_token
-    ? await db.getGoogleUserByEmail(email)
-    : await db.getImapUserById(id);
+  const user = await getUser(data, db);
 
-  if (userResult === null) {
+  if (user === null) {
     res.status(400);
     return next(new Error('user does not exists.'));
   }
 
-  const { host, port, refresh_token } = userResult;
+  const { host, port, refresh_token } = user;
 
   let imapConnectionProvider = new ImapConnectionProvider(email);
 
@@ -214,56 +212,55 @@ async function startMining(req, res, next) {
   }
 
   const { access_token, id, email, password } = data;
-  const userResult = access_token
-    ? await db.getGoogleUserByEmail(email)
-    : await db.getImapUserById(id);
+  const user = await getUser(data, db);
 
-  if (userResult === null) {
+  if (user === null) {
     res.status(400);
     return next(new Error('user does not exists.'));
   }
 
-  const { host, port, refresh_token } = userResult;
+  let miningTask = null;
 
-  let imapConnectionProvider = new ImapConnectionProvider(email);
-
-  imapConnectionProvider = access_token
-    ? await imapConnectionProvider.withGoogle(
+  try {
+    const { host, port, refresh_token } = user;
+    const imapConnectionProvider = access_token
+      ? await (new ImapConnectionProvider(email)).withGoogle(
         access_token,
         refresh_token,
         id,
         redisPublisher
       )
-    : imapConnectionProvider.withPassword(host, password, port);
+      : (new ImapConnectionProvider(email)).withPassword(
+        host,
+        password,
+        port
+      );
+    const miningId = await miningTasksManager.generateMiningId();
+    const imapEmailsFetcher = new ImapEmailsFetcher(
+      imapConnectionProvider,
+      boxes,
+      id,
+      email,
+      miningId
+    );
 
-  const miningId = await miningTasksManager.generateMiningId();
+    miningTask = await miningTasksManager.createTask(miningId, id, imapEmailsFetcher);
 
-  const imapEmailsFetcher = new ImapEmailsFetcher(
-    imapConnectionProvider,
-    boxes,
-    id,
-    email,
-    miningId
-  );
+    imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
 
-  const miningTask = miningTasksManager.createTask(
-    miningId,
-    id,
-    imapEmailsFetcher
-  );
-  imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
+    const { heapTotal, heapUsed } = process.memoryUsage();
+    logger.debug(
+      `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+        2
+      )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+    );
 
-  const { heapTotal, heapUsed } = process.memoryUsage();
-  logger.debug(
-    `[MAIN PROCESS] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
-      2
-    )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
-  );
+  } catch (err) {
+    res.status(500);
+    return next(err);
+  }
 
-  return res.status(201).send({
-    error: null,
-    data: miningTask
-  });
+  return res.status(201).send({ error: null, data: miningTask });
 }
 
 /**

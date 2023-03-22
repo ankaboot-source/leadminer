@@ -31,6 +31,7 @@ function redactSensitiveData(task) {
       userId: task.userId,
       miningId: task.miningId,
       miningProgress: {
+        totalMessages: task.miningProgress.totalMessages,
         extracted: task.miningProgress.extracted,
         fetched: task.miningProgress.fetched
       },
@@ -91,33 +92,44 @@ class TasksManager {
    * @returns {object} - The new mining task.
    * @throws {Error} If a task with the same mining ID already exists.
    */
-  createTask(miningId, userId, fetcher) {
+  async createTask(miningId, userId, fetcher) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
 
-    if (task === undefined) {
-      const miningTask = {
-        userId,
-        miningId,
-        miningProgress: {
-          fetched: null,
-          extracted: null
-        },
-        fetcher,
-        progressHandlerSSE: new RealtimeSSE()
-      };
-
-      this.#ACTIVE_MINING_TASKS.set(miningId, miningTask);
-
-      this.progressSubscriber.subscribe(miningId, (err) => {
-        if (err) {
-          logger.error('Failed subscribing to Redis.', { metadata: { err } });
-        }
-      });
-
-      return redactSensitiveData(miningTask);
+    if (task !== undefined) {
+      throw new Error(`Task with mining ID ${miningId} already exists.`);
     }
 
-    throw new Error(`Task with mining ID ${miningId} already exists.`);
+    let totalMessages = null;
+
+    try {
+      totalMessages = await fetcher.getTotalMessages();
+    } catch (error) {
+      logger.error('Error when creating task', { metadata: { details: error.message } });
+      throw new Error(`${error.message}`);
+    }
+
+    const miningTask = {
+      userId,
+      miningId,
+      miningProgress: {
+        totalMessages,
+        fetched: null,
+        extracted: null
+      },
+      fetcher,
+      progressHandlerSSE: new RealtimeSSE()
+    };
+
+    this.#ACTIVE_MINING_TASKS.set(miningId, miningTask);
+
+    this.progressSubscriber.subscribe(miningId, (err) => {
+      if (err) {
+        logger.error('Failed subscribing to Redis.', { metadata: { err } });
+      }
+    });
+
+    return redactSensitiveData(miningTask);
+
   }
 
   /**
@@ -196,7 +208,7 @@ class TasksManager {
     const { fetcher, progressHandlerSSE, miningProgress } = task;
 
     const eventName = `${progressType}-${miningId}`;
-    const progress = miningProgress[`${progressType}`]
+    const progress = miningProgress[`${progressType}`];
 
     // If the fetching is completed, notify the clients that it has finished.
     if (progressType === 'fetched' && fetcher.isCompleted) {
