@@ -52,8 +52,7 @@
           >time remaining:
           {{
             timeConversion(timeEstimation().estimatedTimeRemaining).join(" ")
-          }}
-          ({{ timeEstimation().elapsedTime }} seconds elapsed)</span
+          }}</span
         >
       </div>
     </q-banner>
@@ -135,7 +134,11 @@ watch(activeMiningTask, (isActive) => {
     console.log("Started Mining");
     fetchingIsFinished.value = false;
   } else {
-    console.log("Stopped, time elapsed:", timeEstimation().elapsedTime, "s");
+    console.log(
+      "Stopped Mining, time elapsed:",
+      timeEstimation().elapsedTime,
+      "s"
+    );
   }
 });
 
