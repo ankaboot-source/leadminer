@@ -69,7 +69,8 @@ module.exports = {
   EMAIL_HEADER_PREFIXES_TRANSACTIONAL: [
     'x-linkedin',
     'x-mailgun',
-    'auto-submitted'
+    'auto-submitted',
+    'x-github'
   ],
   X_MAILER_TRANSACTIONAL_HEADER_VALUES: [
     'ec-messenger',

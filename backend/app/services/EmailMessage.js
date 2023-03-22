@@ -166,13 +166,19 @@ class EmailMessage {
   getMessageTags() {
     const tags = [];
 
-    if (this.isNewsletter()) {
+    const isNewsletter = this.isNewsletter();
+    const isList = this.isList();
+    const isTransactional = this.isTransactional();
+
+    if (isTransactional && !isList && isNewsletter) {
+      tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
+      return tags; // No further tagging needed
+    }
+
+    if (isNewsletter) {
       tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
     }
-    if (this.isTransactional()) {
-      tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
-    }
-    if (this.isList()) {
+    if (isList) {
       tags.push({ name: 'list', reachable: 2, source: 'refined' });
     }
 
@@ -225,7 +231,14 @@ class EmailMessage {
       })
     );
     extractedData.persons.push(
-      ...personsExtractedFromHeader.map((p) => p.value).flat()
+      ...personsExtractedFromHeader
+        .map((p) => p.value)
+        .flat()
+        .filter((p) => {
+          p.tags.every(
+            (tag) => tag.name !== 'transactional' || tag.name !== 'no-reply'
+          );
+        })
     );
 
     if (this.body !== '') {
