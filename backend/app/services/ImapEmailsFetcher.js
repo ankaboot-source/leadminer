@@ -55,20 +55,25 @@ class ImapEmailsFetcher {
    * @param {emailMessageHandler} emailMessageHandler - A callback function to execute for each Email message.
    * @returns {Promise}
    */
-  fetchEmailMessages(emailMessageHandler) {
-    const folders = this.folders.filter(folderName => !EXCLUDED_IMAP_FOLDERS.includes(folderName));
-    const promises = folders.map(async (folderName) => {
+  async fetchEmailMessages(emailMessageHandler) {
+    const promises = this.folders.map(async (folderName) => {
       let imapConnection = {};
+
+      if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+        // Skip excluded folders
+        return
+      }
 
       try {
 
         imapConnection = await this.imapConnectionProvider.acquireConnection();
-        
-        if (this.isCanceled) { // Kill pending promises before starting.
+
+        if (this.isCanceled) {
+          // Kill pending promises before starting.
           await this.imapConnectionProvider.releaseConnection(imapConnection);
           return;
         }
-        
+
         const openedBox = await new Promise((resolve, reject) => {
           imapConnection.openBox(folderName, true, (error, box) => {
             if (error) {
@@ -78,29 +83,32 @@ class ImapEmailsFetcher {
             resolve(box);
           });
         });
-        
+
         if (openedBox?.messages?.total > 0) {
           await this.fetchBox(imapConnection, emailMessageHandler, folderName, openedBox.messages.total);
         }
-      
+
       } catch (error) {
-        logger.error('Error when fetching emails', { metadata: { error } });
-     
+        logger.error('Error when fetching emails', { metadata: { details: error.message } });
+
       } finally {
-        await imapConnection.closeBox(async (error) => {
+        // Close the mailbox and release the connection
+        imapConnection.closeBox(async (error) => {
           if (error) {
-            logger.error('Error when closing box', { metadata: { error } });
+            logger.error('Error when closing box', { metadata: { details: error.message } });
           }
           await this.imapConnectionProvider.releaseConnection(imapConnection);
         });
       }
     });
 
-    this.process = Promise.allSettled(promises)
-      .then(() => {
-        this.isCompleted = true;
-        logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
-      });
+    // Wait for all promises to settle before resolving the main promise
+    this.process = Promise.allSettled(promises);
+    await this.process;
+
+    // Set the fetching status to completed and log message
+    this.isCompleted = true;
+    logger.info(`All fetch promises with ID ${this.miningId} are terminated.`);
   }
 
   /**
@@ -120,6 +128,12 @@ class ImapEmailsFetcher {
       fetchResult.on('message', (msg, seqNumber) => {
         let header = '';
         let body = '';
+
+        if (this.isCanceled === true) {
+          const message = `Canceled process on folder ${folderName} with ID ${this.miningId}`;
+          reject(new Error(message));
+          return;
+        }
 
         msg.on('body', (stream, streamInfo) => {
           stream.on('data', (chunk) => {
@@ -171,12 +185,6 @@ class ImapEmailsFetcher {
             userIdentifier: this.userIdentifier,
             miningId: this.miningId
           });
-        
-          if (this.isCanceled === true) {
-            const message = `Terminating process on folder ${folderName} with ID ${this.miningId}`;
-            reject(new Error(message));
-            return
-          }
         });
       });
 
@@ -191,18 +199,18 @@ class ImapEmailsFetcher {
     });
   }
 
-/**
- * Performs cleanup operations after the fetching process has finished or stopped.
- * @returns {boolean}
- */
-async stop() {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  this.isCanceled = true;
-  await this.process;
-  await redisClient.unlink(this.processSetKey);
-  this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
-  return this.isCompleted;
-}
+  /**
+   * Performs cleanup operations after the fetching process has finished or stopped.
+   * @returns {boolean}
+   */
+  async stop() {
+    this.isCanceled = true;
+    await this.process;
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    await redisClient.unlink(this.processSetKey);
+    await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
+    return this.isCompleted;
+  }
 
 
 }

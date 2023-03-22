@@ -12,16 +12,31 @@ const { db } = require('../db');
  */
 function redactSensitiveData(task) {
   return {
+    /**
+     * The redacted task data.
+     * @type {Object}
+     * @property {string} userId - The ID of the user who the task belongs to.
+     * @property {string} miningId - The ID of the mining task associated with this task.
+     * 
+     * @property {object} miningProgress - Information about The progress associated with this task.
+     * @property {number} miningProgress.totalMessages - The total number of messages that need to be fetched/processed.
+     * @property {number} miningProgress.fetched - Indicating the fetcher progress (total fetched messages).
+     * @property {number} miningProgress.extracted - Indicating the extractor progress (total extracted messages).
+     *
+     * @property {Object} fetcher - Information about the fetcher associated with this task.
+     * @property {string} fetcher.status - The status of the fetcher, either "running" or "completed".
+     * @property {string[]} fetcher.folders - An array of folder names to be fetched.
+     */
     task: {
       userId: task.userId,
       miningId: task.miningId,
-      miningProgress: task.miningProgress,
+      miningProgress: {
+        extracted: task.miningProgress.extracted,
+        fetched: task.miningProgress.fetched
+      },
       fetcher: {
         status: task.fetcher.isCompleted === true ? 'completed' : 'running',
-        folders: task.fetcher.folders,
-        bodies: task.fetcher.bodies,
-        userId: task.fetcher.userId,
-        userEmail: task.fetcher.userEmail
+        folders: task.fetcher.folders
       }
     }
   };
@@ -84,8 +99,8 @@ class TasksManager {
         userId,
         miningId,
         miningProgress: {
-          fetched: 0,
-          extracted: 0
+          fetched: null,
+          extracted: null
         },
         fetcher,
         progressHandlerSSE: new RealtimeSSE()
@@ -179,18 +194,17 @@ class TasksManager {
     }
 
     const { fetcher, progressHandlerSSE, miningProgress } = task;
-    const { fetched, extracted } = miningProgress;
 
     const eventName = `${progressType}-${miningId}`;
+    const progress = miningProgress[`${progressType}`]
 
     // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched') {
-      const event = fetcher.isCompleted ? 'fetching-finished' : eventName;
-      return progressHandlerSSE.sendSSE(fetched, event);
+    if (progressType === 'fetched' && fetcher.isCompleted) {
+      progressHandlerSSE.sendSSE(progress, 'fetching-finished');
     }
 
     // Send the progress to parties subscribed on SSE
-    return progressHandlerSSE.sendSSE(extracted, eventName);
+    return progressHandlerSSE.sendSSE(progress, eventName);
 
   }
 
@@ -213,7 +227,8 @@ class TasksManager {
     }
 
     const { miningProgress } = task;
-    miningProgress[`${progressType}`] += incrementBy;
+
+    miningProgress[`${progressType}`] = (miningProgress[`${progressType}`] || 0) + incrementBy;
 
     return { ...miningProgress };
   }
