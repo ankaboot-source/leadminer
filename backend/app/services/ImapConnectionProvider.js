@@ -124,7 +124,6 @@ class ImapConnectionProvider {
       return;
     }
     logger.debug('Cleaning IMAP Pool');
-    await this.#connectionsPool.drain();
     await this.#connectionsPool.clear();
     this.#poolIsInitialized = false;
   }
@@ -177,7 +176,7 @@ class ImapConnectionProvider {
 
     const opts = {
       max: IMAP_MAX_CONNECTIONS, // maximum size of the pool
-      min: 1 // minimum size of the pool
+      min: 0 // minimum size of the pool
     };
 
     this.#connectionsPool = genericPool.createPool(factory, opts);
