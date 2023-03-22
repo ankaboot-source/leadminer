@@ -96,8 +96,8 @@ class TasksManager {
       miningId,
       miningProgress: {
         totalMessages,
-        fetched: null,
-        extracted: null
+        fetched: 0,
+        extracted: 0
       },
       fetcher,
       progressHandlerSSE: new RealtimeSSE()
