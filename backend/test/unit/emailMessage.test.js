@@ -297,7 +297,19 @@ describe('EmailMessage.getMessageTags()', () => {
     message = new EmailMessage({}, '', 1, {});
   });
 
-  it('should return tags for transactional, list, newsletter', () => {
+  it('should tag transactional when is transactional, not newsletter and not list', () => {
+    message.isNewsletter = () => false;
+    message.isTransactional = () => true;
+    message.isList = () => false;
+
+    const result = message.getMessageTags();
+    expect(result).to.be.an('array');
+    expect(result).to.deep.equal([
+      { name: 'transactional', reachable: 2, source: 'refined' }
+    ]);
+  });
+
+  it("shouldn't tag transactional if is newsletter of is list", () => {
     message.isNewsletter = () => true;
     message.isTransactional = () => true;
     message.isList = () => true;
@@ -306,7 +318,6 @@ describe('EmailMessage.getMessageTags()', () => {
     expect(result).to.be.an('array');
     expect(result).to.deep.equal([
       { name: 'newsletter', reachable: 2, source: 'refined' },
-      { name: 'transactional', reachable: 2, source: 'refined' },
       { name: 'list', reachable: 2, source: 'refined' }
     ]);
   });
