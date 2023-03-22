@@ -62,6 +62,7 @@
           />
         </div>
         <q-btn
+          id="fullscreen"
           flat
           round
           dense
@@ -265,6 +266,7 @@ const refreshInterval = setInterval(() => {
 }, 3000);
 
 onUnmounted(() => {
+  window.removeEventListener("keydown", escapeListener);
   clearInterval(refreshInterval);
 });
 
@@ -393,10 +395,23 @@ function exportTable() {
   }
 }
 onMounted(() => {
+  window.addEventListener("keydown", escapeListener);
   setTimeout(() => {
     fetchRefined();
   });
 });
+
+const escapeListener = (event) => {
+  if (document.getElementById("fullscreen")) {
+    console.log("found");
+    if (event.keyCode == 27) {
+      document.getElementById("fullscreen").click();
+      console.log("clicked");
+      return;
+    }
+  }
+};
+
 function copyValueToClipboard(value, valueName) {
   copyToClipboard(value),
     $q.notify({
