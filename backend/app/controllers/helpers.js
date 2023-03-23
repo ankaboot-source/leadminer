@@ -67,7 +67,39 @@ function getXImapHeaderField(headers) {
   return { data: login, error: null };
 }
 
+/**
+ * Get a user by either their access token and email or their IMAP ID or email.
+ * 
+ * @param {Object} params - An object containing the necessary parameters to fetch a user.
+ * @param {string} params.access_token - The user's Google access token.
+ * @param {string} params.id - The user's IMAP ID.
+ * @param {string} params.email - The user's email address.
+ * @param {Object} db - The database object to use for fetching the user.
+ * @returns {Promise<Object>} - A promise that resolves with the user object, or null if not found.
+ * @throws {Error} - If at least one parameter is not provided.
+ * 
+ * @example
+ * const params = { id: '123', email: 'user@example.com' };
+ * const user = await getUser(params);
+ * console.log(user);
+ */
+function getUser({ access_token, id, email }, db) {
+
+  if (!access_token && !id && !email) {
+    throw new Error('At least one parameter is required { access_token, id, email }.');
+  }
+
+  if (access_token) {
+    return db.getGoogleUserByEmail(email);
+  } else if (id) {
+    return db.getImapUserById(id);
+  }
+
+  return db.getImapUserByEmail(email);
+}
+
 module.exports = {
   IMAP_ERROR_CODES,
-  getXImapHeaderField
+  getXImapHeaderField,
+  getUser
 };
