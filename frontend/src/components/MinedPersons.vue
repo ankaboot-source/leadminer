@@ -259,12 +259,15 @@ const isExportDisabled = computed(
 );
 
 const refreshInterval = setInterval(() => {
-  if (
-    $store.getters["example/getRetrievedEmails"].length > rows.value.length ||
-    rows.value.some((el) => el.engagement === undefined)
-  ) {
+  const storedEmails = $store.state.example.retrievedEmails
+  const doUpdate = $store.getters["example/getRetrievedEmails"].length > rows.value.length ||
+    rows.value.some((el) => { storedEmails[el.email].signature !== el.signature })
+
+  if (doUpdate) {
+    console.log('Updating table...')
     updateRefinedPersons();
   }
+
 }, 3000);
 
 onUnmounted(() => {

@@ -1,7 +1,12 @@
+import { generateSignature } from "src/helpers/store.helpers";
 import { getDefaultState } from "./defaultState";
 
 export function SET_EMAILS(state, streamedEmail) {
-  state.retrievedEmails[streamedEmail.email] = streamedEmail;
+  state.retrievedEmails[streamedEmail.email] = {
+    // Generate unique signature of the object, in order to identify changes
+    signature: generateSignature(streamedEmail),
+    ...streamedEmail
+  };
 }
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;
