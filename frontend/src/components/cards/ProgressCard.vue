@@ -81,9 +81,9 @@ const buttonSize = computed(() => {
 });
 
 var startTime;
-const emailsExtractedPerSecond = 14;
+const extractionRate = 14;
 const estimatedTotalTimeRemaining = computed(() =>
-  Math.round(progressStatusProps.totalEmails / emailsExtractedPerSecond)
+  Math.round(progressStatusProps.totalEmails / extractionRate)
 );
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
