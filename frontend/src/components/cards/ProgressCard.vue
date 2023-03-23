@@ -10,29 +10,36 @@
       <br />
       <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ scannedEmails }}
-        </div>
-        emails messages fetched so far over
-        <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ totalEmails }}
         </div>
         emails to fetch.
       </q-chip>
-      <br />
-      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ extractedEmails }}
-        </div>
-        emails messages extracted over
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ scannedEmails }}
-        </div>
-        emails to extract.
-      </q-chip>
-      <div>
+      <div class="q-ml-lg">
+        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
+          <div>
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ scannedEmails }}
+            </span>
+            emails messages fetched so far over
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ totalEmails }}
+            </span>
+            emails to fetch.
+          </div>
+          <div>
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ extractedEmails }}
+            </span>
+            emails messages extracted over
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ scannedEmails }}
+            </span>
+            emails to extract.
+          </div>
+        </q-tooltip>
         <span v-if="activeMiningTask">
-          Digging up the good stuff! Holdt tight...
-          {{ (progressValue * 100).toFixed(2) }} %
+          Digging up the good stuff! Hold tight...
+          {{ (progressValue * 100).toFixed() }} %
         </span>
         <q-linear-progress
           :buffer="progressBuffer"
@@ -42,6 +49,7 @@
           track-color="teal-2"
           class="q-card--bordered q-pa-null"
           animation-speed="500"
+          style="width: 30vw"
         />
         Estimated
         <span v-if="!activeMiningTask">
@@ -89,7 +97,7 @@ const progressProps = defineProps({
 });
 
 var startTime;
-const extractionRate = 14;
+const extractionRate = 55;
 const estimatedTotalTimeRemaining = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
 );
@@ -115,7 +123,11 @@ const progressValue = computed(() => {
 watch(fetchingFinished, (finished) => {
   if (finished) {
     fetchingIsFinished.value = true;
-    console.log("Fetching completed");
+    console.log(
+      "Fetching completed, time elapsed:",
+      timeEstimation().elapsedTime,
+      "s"
+    );
   }
 });
 
