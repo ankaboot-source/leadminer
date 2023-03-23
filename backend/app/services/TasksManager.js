@@ -222,10 +222,15 @@ class TasksManager {
 
   /**
    * Updates the progress of a mining task with a given mining ID.
-   * @param {string} miningId - The mining ID of the task to update progress for.
+   * @param {string} miningId - The ID of the mining task to update the progress for.
    * @param {string} progressType - The type of progress to update ('fetched' or 'extracted').
-   * @param {number} incrementBy - The amount to increment progress by.
-   * @returns {object || null} Returns the updated mining progress or null if task does not exist.
+   * @param {number} incrementBy - The amount to increment progress by (default is 1).
+   * @returns {object|null} An object containing the updated mining progress, or null if task is not found.
+   * The returned object has the following properties:
+   * - extracted (number): The updated number of messages already extracted.
+   * - fetched (number): The updated number of messages already fetched.
+   * - fetchingStatus (boolean): Indicates whether the fetching process has been completed or not.
+   * @throws {Error} Throws an error if the `progressType` parameter is not set to either 'fetched' or 'extracted'.
    */
   #updateProgress(miningId, progressType, incrementBy = 1) {
     if (!['fetched', 'extracted'].includes(progressType)) {
@@ -238,23 +243,25 @@ class TasksManager {
       return null;
     }
 
-    const { miningProgress } = task;
+    const { miningProgress, fetcher } = task;
 
     miningProgress[`${progressType}`] = (miningProgress[`${progressType}`] || 0) + incrementBy;
 
-    return { ...miningProgress };
+    return { ...miningProgress, fetchingStatus: fetcher.isCompleted };
   }
 
   /**
    * Checks whether a mining task has completed and deletes it if it has.
+   * @async
    * @param {string} miningID - The ID of the mining task to check.
-   * @param {Object} progress - The extracted and fetched progress for the task.
-   * @param {number} progress.extracted - The number of items extracted.
-   * @param {number} progress.fetched - The number of items fetched.
-   * @returns {Promise<{status:boolean, taks:object}>} An object containing status & task if status === true else status
+   * @param {Object} progress - An object containing the extracted and fetched progress for the task.
+   * @param {number} progress.extracted - The number of messages already extracted.
+   * @param {number} progress.fetched - The number of messages already fetched.
+   * @param {boolean} progress.fetchingStatus - The status of the fetching process.
+   * @returns {Promise<{status:boolean, taks:object}>} An object containing the status of the task and the task itself (if it has been deleted).
    */
-  async #hasCompleted(miningID, { extracted, fetched }) {
-    const status = extracted === fetched;
+  async #hasCompleted(miningID, { extracted, fetched, fetchingStatus }) {
+    const status = fetchingStatus && extracted === fetched;
     const { task } = status ? await this.deleteTask(miningID) : { task: null };
 
     return { status, task };
