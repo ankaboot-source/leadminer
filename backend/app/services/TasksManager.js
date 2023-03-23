@@ -17,7 +17,7 @@ function redactSensitiveData(task) {
      * @type {Object}
      * @property {string} userId - The ID of the user who the task belongs to.
      * @property {string} miningId - The ID of the mining task associated with this task.
-     * 
+     *
      * @property {object} miningProgress - Information about The progress associated with this task.
      * @property {number} miningProgress.totalMessages - The total number of messages that need to be fetched/processed.
      * @property {number} miningProgress.fetched - Indicating the fetcher progress (total fetched messages).
@@ -60,15 +60,15 @@ class TasksManager {
       const progress = this.#updateProgress(miningId, progressType);
       const notified = this.#notifyChanges(miningId, progressType);
 
-      const { status, task } = (progress !== null && notified !== null)
-        ? await this.#hasCompleted(miningId, progress)
-        : {};
+      const { status, task } =
+        progress !== null && notified !== null
+          ? await this.#hasCompleted(miningId, progress)
+          : {};
 
       if (status === true) {
         const { userId } = task;
         db.callRpcFunction(userId, 'refined_persons');
       }
-
     });
 
     this.idGenerator = flickrBase58IdGenerator();
@@ -217,7 +217,6 @@ class TasksManager {
 
     // Send the progress to parties subscribed on SSE
     return progressHandlerSSE.sendSSE(progress, eventName);
-
   }
 
   /**
@@ -245,7 +244,8 @@ class TasksManager {
 
     const { miningProgress, fetcher } = task;
 
-    miningProgress[`${progressType}`] = (miningProgress[`${progressType}`] || 0) + incrementBy;
+    miningProgress[`${progressType}`] =
+      (miningProgress[`${progressType}`] || 0) + incrementBy;
 
     return { ...miningProgress, fetchingStatus: fetcher.isCompleted };
   }

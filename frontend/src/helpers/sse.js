@@ -10,11 +10,14 @@ class SSE {
       store.commit("example/SET_EXTRACTEDEMAILS", extracted);
     });
 
-    this.eventSource.addEventListener('close', () => {
-      this.closeConnection() 
-      store.commit("example/DELETE_MINING_TASK")
-    })
+    this.eventSource.addEventListener("close", () => {
+      this.closeConnection();
+      store.commit("example/DELETE_MINING_TASK");
+    });
 
+    this.eventSource.addEventListener("fetching-finished", () => {
+      store.commit("example/SET_FETCHING_FINISHED");
+    });
   }
 
   closeConnection() {

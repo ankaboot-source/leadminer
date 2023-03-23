@@ -124,7 +124,6 @@ class ImapEmailsFetcher {
       }
 
       try {
-
         imapConnection = await this.imapConnectionProvider.acquireConnection();
 
         if (this.isCanceled) {
@@ -136,7 +135,9 @@ class ImapEmailsFetcher {
         const openedBox = await new Promise((resolve, reject) => {
           imapConnection.openBox(folderName, true, (error, box) => {
             if (error) {
-              logger.error('Error when opening folder', { metadata: { error } });
+              logger.error('Error when opening folder', {
+                metadata: { error }
+              });
               reject(new Error(error));
             }
             resolve(box);
@@ -144,17 +145,24 @@ class ImapEmailsFetcher {
         });
 
         if (openedBox?.messages?.total > 0) {
-          await this.fetchBox(imapConnection, emailMessageHandler, folderName, openedBox.messages.total);
+          await this.fetchBox(
+            imapConnection,
+            emailMessageHandler,
+            folderName,
+            openedBox.messages.total
+          );
         }
-
       } catch (error) {
-        logger.error('Error when fetching emails', { metadata: { details: error.message } });
-
+        logger.error('Error when fetching emails', {
+          metadata: { details: error.message }
+        });
       } finally {
         // Close the mailbox and release the connection
         imapConnection.closeBox(async (error) => {
           if (error) {
-            logger.error('Error when closing box', { metadata: { details: error.message } });
+            logger.error('Error when closing box', {
+              metadata: { details: error.message }
+            });
           }
           await this.imapConnectionProvider.releaseConnection(imapConnection);
         });
@@ -270,8 +278,6 @@ class ImapEmailsFetcher {
     await this.imapConnectionProvider.cleanPool(); // Do it async because it may take up to 30s to close
     return this.isCompleted;
   }
-
-
 }
 
 module.exports = {

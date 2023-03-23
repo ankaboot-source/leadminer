@@ -51,6 +51,7 @@ export async function startMining({ state, commit }, { data }) {
   commit("SET_LOADING", true);
   commit("SET_LOADING_DNS", true);
   commit("SET_SCANNEDEMAILS", 0);
+  commit("SET_EXTRACTEDEMAILS", 0);
   commit("SET_STATISTICS", "f");
   commit("SET_SCANNEDBOXES", []);
 
