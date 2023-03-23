@@ -83,7 +83,7 @@ const buttonSize = computed(() => {
 var startTime;
 const extractionRate = 14;
 const estimatedTotalTimeRemaining = computed(() =>
-  Math.round(progressStatusProps.totalEmails / extractionRate)
+  Math.round(progressProps.totalEmails / extractionRate)
 );
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
@@ -92,7 +92,7 @@ const fetchingFinished = computed(
   () => !!$store.state.example.fetchingFinished
 );
 
-const progressStatusProps = defineProps({
+const progressProps = defineProps({
   extractedEmails: Number(0),
   minedEmails: Number(0),
   scannedEmails: Number(0),
@@ -100,9 +100,7 @@ const progressStatusProps = defineProps({
 });
 const progressBuffer = computed(() => {
   if (!fetchingIsFinished.value) {
-    return (
-      progressStatusProps.scannedEmails / progressStatusProps.totalEmails || 0
-    );
+    return progressProps.scannedEmails / progressProps.totalEmails || 0;
   } else {
     return 1;
   }
@@ -110,14 +108,9 @@ const progressBuffer = computed(() => {
 
 const progressValue = computed(() => {
   if (!fetchingIsFinished.value) {
-    return (
-      progressStatusProps.extractedEmails / progressStatusProps.totalEmails || 0
-    );
+    return progressProps.extractedEmails / progressProps.totalEmails || 0;
   } else {
-    return (
-      progressStatusProps.extractedEmails / progressStatusProps.scannedEmails ||
-      0
-    );
+    return progressProps.extractedEmails / progressProps.scannedEmails || 0;
   }
 });
 
