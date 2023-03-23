@@ -66,6 +66,7 @@ import { useQuasar } from "quasar";
 
 const $q = useQuasar();
 const $store = useStore();
+const fetchingIsFinished = ref(false);
 
 const buttonSize = computed(() => {
   switch (true) {
@@ -80,6 +81,13 @@ const buttonSize = computed(() => {
   }
 });
 
+const progressProps = defineProps({
+  extractedEmails: Number(0),
+  minedEmails: Number(0),
+  scannedEmails: Number(0),
+  totalEmails: Number(0),
+});
+
 var startTime;
 const extractionRate = 14;
 const estimatedTotalTimeRemaining = computed(() =>
@@ -92,29 +100,18 @@ const fetchingFinished = computed(
   () => !!$store.state.example.fetchingFinished
 );
 
-const progressProps = defineProps({
-  extractedEmails: Number(0),
-  minedEmails: Number(0),
-  scannedEmails: Number(0),
-  totalEmails: Number(0),
-});
 const progressBuffer = computed(() => {
-  if (!fetchingIsFinished.value) {
-    return progressProps.scannedEmails / progressProps.totalEmails || 0;
-  } else {
-    return 1;
-  }
+  return !fetchingIsFinished.value
+    ? progressProps.scannedEmails / progressProps.totalEmails || 0
+    : 1;
 });
 
 const progressValue = computed(() => {
-  if (!fetchingIsFinished.value) {
-    return progressProps.extractedEmails / progressProps.totalEmails || 0;
-  } else {
-    return progressProps.extractedEmails / progressProps.scannedEmails || 0;
-  }
+  return !fetchingIsFinished.value
+    ? progressProps.extractedEmails / progressProps.totalEmails || 0
+    : progressProps.extractedEmails / progressProps.scannedEmails || 0;
 });
 
-const fetchingIsFinished = ref(false);
 watch(fetchingFinished, (finished) => {
   if (finished) {
     fetchingIsFinished.value = true;
@@ -125,8 +122,8 @@ watch(fetchingFinished, (finished) => {
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
     startTime = performance.now();
-    console.log("Started Mining");
     fetchingIsFinished.value = false;
+    console.log("Started Mining");
   } else {
     console.log(
       "Stopped Mining, time elapsed:",
