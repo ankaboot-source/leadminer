@@ -253,7 +253,7 @@ class EmailMessage {
         .flat()
         .filter((p) => {
           return p.tags.every(
-            (tag) => tag.name !== 'transactional' || tag.name !== 'no-reply'
+            (tag) => tag.name !== 'transactional' && tag.name !== 'no-reply'
           );
         })
     );
