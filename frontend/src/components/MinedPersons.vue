@@ -270,10 +270,12 @@ watch(activeMiningTask, (isActive) => {
       if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
         updateRefinedPersons();
       }
-    });
+    }, 3000);
   } else {
-    if (refreshInterval) {
-      updateRefinedPersons()
+    if (refreshInterval !== null) {
+      setTimeout(() => {
+        updateRefinedPersons()
+      }, 3000)
       clearInterval(refreshInterval);
     }
   }
