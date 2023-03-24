@@ -12,7 +12,7 @@
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ totalEmails }}
         </div>
-        emails to fetch.
+        email messages to extract from.
       </q-chip>
       <div class="q-ml-lg">
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
@@ -51,17 +51,17 @@
           animation-speed="500"
           style="width: 30vw"
         />
-        Estimated
-        <span v-if="!activeMiningTask">
-          waiting time:
-          {{ timeConversion(estimatedTotalTimeRemaining).join(" ") }}
-        </span>
-        <span v-else
-          >time remaining:
+        <span v-if="activeMiningTask"
+          >Estimated time remaining:
           {{
             timeConversion(timeEstimation().estimatedTimeRemaining).join(" ")
           }}</span
         >
+        <span v-else-if="!scannedEmails">
+          Estimated waiting time:
+          {{ timeConversion(estimatedTotalTimeRemaining).join(" ") }}
+        </span>
+        <span v-else>Finished in {{ timeEstimation().elapsedTime }}s</span>
       </div>
     </q-banner>
   </div>
@@ -109,15 +109,15 @@ const fetchingFinished = computed(
 );
 
 const progressBuffer = computed(() => {
-  return !fetchingIsFinished.value
-    ? progressProps.scannedEmails / progressProps.totalEmails || 0
-    : 1;
+  return fetchingIsFinished.value & progressProps.scannedEmails
+    ? 1
+    : progressProps.scannedEmails / progressProps.totalEmails || 0;
 });
 
 const progressValue = computed(() => {
-  return !fetchingIsFinished.value
-    ? progressProps.extractedEmails / progressProps.totalEmails || 0
-    : progressProps.extractedEmails / progressProps.scannedEmails || 0;
+  return fetchingIsFinished.value
+    ? progressProps.extractedEmails / progressProps.scannedEmails || 0
+    : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
 
 watch(fetchingFinished, (finished) => {
@@ -149,6 +149,7 @@ function timeEstimation() {
   const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
   const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
   const estimatedTimeRemaining = estimatedTime - elapsedTime;
+  console.log(progressBuffer.value);
   return { estimatedTimeRemaining, estimatedTime, elapsedTime };
 }
 

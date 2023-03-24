@@ -138,6 +138,8 @@ const totalEmails = computed(() => {
 });
 
 function updateSelectedBoxes(val) {
+  $store.commit("example/SET_SCANNEDEMAILS", 0);
+  $store.commit("example/SET_EXTRACTEDEMAILS", 0);
   selectedBoxes.value = val;
 }
 
