@@ -105,7 +105,7 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const extractionRate = 55; // Average rate of email message extraction and fetching per second.
+const extractionRate = 55; // Average rate of email messages extraction and fetching per second.
 const estimatedTotalTimeRemaining = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
 );
