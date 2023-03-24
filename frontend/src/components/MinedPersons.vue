@@ -227,7 +227,7 @@
 import exportFromJSON from "export-from-json";
 import { copyToClipboard, useQuasar } from "quasar";
 import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
@@ -258,19 +258,26 @@ const isExportDisabled = computed(
     )
 );
 
-const refreshInterval = setInterval(() => {
-  const storeContacts = $store.state.example.retrievedEmails
-  const doUpdate = $store.getters["example/getRetrievedEmails"].length > rows.value.length ||
-    rows.value.some((el) => {
-      const contact = storeContacts.get(el.email)
-      return contact && storeContacts.get(contact.signature) !== el.signature
-    })
+const activeMiningTask = computed(
+  () => !!$store.state.example.miningTask.miningId
+);
 
-  if (doUpdate) {
-    updateRefinedPersons();
+let refreshInterval = null
+
+watch(activeMiningTask, async (isActive) => {
+  if (isActive) {
+    refreshInterval = setInterval(() => {
+      if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
+        updateRefinedPersons();
+      }
+    }, 3000);
+  } else {
+    if (refreshInterval) {
+      await fetchRefined()
+      clearInterval(refreshInterval);
+    }
   }
-
-}, 3000);
+});
 
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeyDown);
