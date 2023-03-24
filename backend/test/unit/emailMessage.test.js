@@ -7,7 +7,8 @@ const {
   EMAIL_HEADERS_MAILING_LIST,
   EMAIL_HEADERS_NOT_NEWSLETTER,
   X_MAILER_TRANSACTIONAL_HEADER_VALUES,
-  EMAIL_HEADER_PREFIXES_TRANSACTIONAL
+  EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
+  EMAIL_HEADERS_GROUP
 } = require('../../app/utils/constants');
 
 describe('EmailMessage.isList()', () => {
@@ -33,6 +34,21 @@ describe('EmailMessage.isList()', () => {
 
   it('Should return false if no mailing list field exists in header', () => {
     expect(message.isList()).to.be.false;
+  });
+});
+
+describe('EmailMessage.isGroup()', () => {
+  let message = '';
+
+  beforeEach(() => {
+    message = new EmailMessage({}, '', 1, {});
+  });
+
+  EMAIL_HEADERS_GROUP.forEach((headerField) => {
+    it(`Should return true if ${headerField} exists in header`, () => {
+      message.header[headerField] = [''];
+      expect(message.isGroup()).to.be.true;
+    });
   });
 });
 

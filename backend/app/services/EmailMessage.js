@@ -9,7 +9,8 @@ const {
   REGEX_LIST_ID,
   X_MAILER_TRANSACTIONAL_HEADER_VALUES,
   EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
-  EMAIL_HEADERS_NOT_NEWSLETTER
+  EMAIL_HEADERS_NOT_NEWSLETTER,
+  EMAIL_HEADERS_GROUP
 } = require('../utils/constants');
 const { logger } = require('../utils/logger');
 
@@ -95,6 +96,19 @@ class EmailMessage {
   }
 
   /**
+   * Determines whether the email header contains any group header fields or not.
+   * @returns {boolean}
+   */
+  isGroup() {
+    return (
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        EMAIL_HEADERS_GROUP
+      ) !== null
+    );
+  }
+
+  /**
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns {string[]}
    */
@@ -123,6 +137,16 @@ class EmailMessage {
     ]);
     const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
     return matchId ? matchId[0] : '';
+  }
+
+  /**
+   * Returns the list of emails in `list-post` header field if it exists, else return an empty list.
+   * @returns {string[]}
+   */
+  getListPostEmails() {
+    const emails = emailMessageHelpers.getSpecificHeader(this.header, [
+      'list-post'
+    ]);
   }
 
   /**
@@ -168,16 +192,19 @@ class EmailMessage {
 
     const isNewsletter = this.isNewsletter();
     const isList = this.isList();
-    const isTransactional = this.isTransactional();
+    const isGroup = this.isGroup();
+    const isTransactional =
+      this.isTransactional() && !isList && !isNewsletter && !isGroup;
 
-    if (isTransactional && !isList && !isNewsletter) {
+    if (isTransactional) {
       tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
-      return tags; // No further tagging needed
+      return tags;
     }
 
     if (isNewsletter) {
       tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
     }
+
     if (isList) {
       tags.push({ name: 'list', reachable: 2, source: 'refined' });
     }
@@ -204,7 +231,7 @@ class EmailMessage {
     };
     this.message = extractedData.message;
 
-    const messagingFields = this.getMessagingFieldsFromHeader();
+    const messagingFields = [...this.getMessagingFieldsFromHeader()];
     const messageTags = this.getMessageTags();
 
     const personsExtractedFromHeader = await Promise.allSettled(
@@ -235,7 +262,7 @@ class EmailMessage {
         .map((p) => p.value)
         .flat()
         .filter((p) => {
-          p.tags.every(
+          return p.tags.every(
             (tag) => tag.name !== 'transactional' || tag.name !== 'no-reply'
           );
         })
