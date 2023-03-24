@@ -1,18 +1,15 @@
 /**
- * Returns the length of concatenated values of an object's properties.
- * @param {Object} obj - The object whose properties are to be concatenated.
- * @returns {number} - The length of concatenated values.
+ * Generates a signature for the given object by summing the ASCII codes of its string values.
+ *
+ * @param {Object} obj - The object to generate a signature for.
+ * @returns {number} The signature of the object.
  */
 function generateSignature(obj) {
-    let length = 0;
-
-    for (const value of Object.values(obj || {})) {
-        if (value) {
-            length += value.toString().length;
-        }
-    }
-
-    return length;
+    return Object.values(obj || {})
+        .filter(value => value)
+        .join('')
+        .split('')
+        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
 }
 
 module.exports = {
