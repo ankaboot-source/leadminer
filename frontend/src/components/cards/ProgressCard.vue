@@ -53,21 +53,11 @@
         />
         <span v-if="activeMiningTask">
           Estimated time remaining:
-          {{
-            computed(() => {
-              return timeConversion(
-                timeEstimation().estimatedTimeRemaining
-              ).join(" ");
-            }).value
-          }}
+          {{ estimatedTimeRemainingConverted }}
         </span>
         <span v-else-if="!scannedEmails">
           Estimated waiting time:
-          {{
-            computed(() => {
-              return timeConversion(estimatedTotalTimeRemaining).join(" ");
-            }).value
-          }}
+          {{ estimatedWaitingTimeConverted }}
         </span>
         <span v-else>Finished in {{ timeEstimation().elapsedTime }}s</span>
       </div>
@@ -126,6 +116,13 @@ const progressValue = computed(() => {
   return fetchingIsFinished.value
     ? progressProps.extractedEmails / progressProps.scannedEmails || 0
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
+});
+
+const estimatedWaitingTimeConverted = computed(() => {
+  return timeConversion(estimatedTotalTimeRemaining).join(" ");
+});
+const estimatedTimeRemainingConverted = computed(() => {
+  return timeConversion(timeEstimation().estimatedTimeRemaining).join(" ");
 });
 
 watch(fetchingFinished, (finished) => {
