@@ -54,12 +54,20 @@
         <span v-if="activeMiningTask">
           Estimated time remaining:
           {{
-            timeConversion(timeEstimation().estimatedTimeRemaining).join(" ")
+            computed(() => {
+              return timeConversion(
+                timeEstimation().estimatedTimeRemaining
+              ).join(" ");
+            }).value
           }}
         </span>
         <span v-else-if="!scannedEmails">
           Estimated waiting time:
-          {{ timeConversion(estimatedTotalTimeRemaining).join(" ") }}
+          {{
+            computed(() => {
+              return timeConversion(estimatedTotalTimeRemaining).join(" ");
+            }).value
+          }}
         </span>
         <span v-else>Finished in {{ timeEstimation().elapsedTime }}s</span>
       </div>
