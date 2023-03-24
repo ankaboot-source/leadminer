@@ -1,7 +1,7 @@
 import { getDefaultState } from "./defaultState";
 
 export function SET_EMAILS(state, streamedEmail) {
-  state.retrievedEmails[streamedEmail.email] = streamedEmail;
+  state.retrievedEmails.set(streamedEmail.email, streamedEmail)
 }
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;

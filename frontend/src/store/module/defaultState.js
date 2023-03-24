@@ -1,7 +1,7 @@
 export function getDefaultState() {
   return {
     miningTask: {},
-    retrievedEmails: {},
+    retrievedEmails: new Map(),
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,

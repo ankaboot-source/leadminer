@@ -227,7 +227,7 @@
 import exportFromJSON from "export-from-json";
 import { copyToClipboard, useQuasar } from "quasar";
 import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
 
 const $q = useQuasar();
@@ -258,14 +258,28 @@ const isExportDisabled = computed(
     )
 );
 
-const refreshInterval = setInterval(() => {
-  if (
-    $store.getters["example/getRetrievedEmails"].length > rows.value.length ||
-    rows.value.some((el) => el.engagement === undefined)
-  ) {
-    updateRefinedPersons();
+const activeMiningTask = computed(
+  () => !!$store.state.example.miningTask.miningId
+);
+
+let refreshInterval = null
+
+watch(activeMiningTask, (isActive) => {
+  if (isActive) {
+    refreshInterval = setInterval(() => {
+      if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
+        updateRefinedPersons();
+      }
+    }, 3000);
+  } else {
+    if (refreshInterval !== null) {
+      setTimeout(() => {
+        updateRefinedPersons()
+      }, 3000)
+      clearInterval(refreshInterval);
+    }
   }
-}, 3000);
+});
 
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeyDown);
