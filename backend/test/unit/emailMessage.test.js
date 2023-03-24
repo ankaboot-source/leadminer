@@ -7,7 +7,8 @@ const {
   EMAIL_HEADERS_MAILING_LIST,
   EMAIL_HEADERS_NOT_NEWSLETTER,
   X_MAILER_TRANSACTIONAL_HEADER_VALUES,
-  EMAIL_HEADER_PREFIXES_TRANSACTIONAL
+  EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
+  EMAIL_HEADERS_GROUP
 } = require('../../app/utils/constants');
 
 describe('EmailMessage.isList()', () => {
@@ -33,6 +34,21 @@ describe('EmailMessage.isList()', () => {
 
   it('Should return false if no mailing list field exists in header', () => {
     expect(message.isList()).to.be.false;
+  });
+});
+
+describe('EmailMessage.isGroup()', () => {
+  let message = '';
+
+  beforeEach(() => {
+    message = new EmailMessage({}, '', 1, {});
+  });
+
+  EMAIL_HEADERS_GROUP.forEach((headerField) => {
+    it(`Should return true if ${headerField} exists in header`, () => {
+      message.header[headerField] = [''];
+      expect(message.isGroup()).to.be.true;
+    });
   });
 });
 
@@ -297,7 +313,19 @@ describe('EmailMessage.getMessageTags()', () => {
     message = new EmailMessage({}, '', 1, {});
   });
 
-  it('should return tags for transactional, list, newsletter', () => {
+  it('should tag transactional when is transactional, not newsletter and not list', () => {
+    message.isNewsletter = () => false;
+    message.isTransactional = () => true;
+    message.isList = () => false;
+
+    const result = message.getMessageTags();
+    expect(result).to.be.an('array');
+    expect(result).to.deep.equal([
+      { name: 'transactional', reachable: 2, source: 'refined' }
+    ]);
+  });
+
+  it("shouldn't tag transactional if is newsletter of is list", () => {
     message.isNewsletter = () => true;
     message.isTransactional = () => true;
     message.isList = () => true;
@@ -306,7 +334,6 @@ describe('EmailMessage.getMessageTags()', () => {
     expect(result).to.be.an('array');
     expect(result).to.deep.equal([
       { name: 'newsletter', reachable: 2, source: 'refined' },
-      { name: 'transactional', reachable: 2, source: 'refined' },
       { name: 'list', reachable: 2, source: 'refined' }
     ]);
   });

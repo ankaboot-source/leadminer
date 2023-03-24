@@ -9,11 +9,12 @@ const {
   REGEX_LIST_ID,
   X_MAILER_TRANSACTIONAL_HEADER_VALUES,
   EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
-  EMAIL_HEADERS_NOT_NEWSLETTER
+  EMAIL_HEADERS_NOT_NEWSLETTER,
+  EMAIL_HEADERS_GROUP
 } = require('../utils/constants');
 const { logger } = require('../utils/logger');
 
-const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to', 'list-post'];
 
 class EmailMessage {
   /**
@@ -95,6 +96,19 @@ class EmailMessage {
   }
 
   /**
+   * Determines whether the email header contains any group header fields or not.
+   * @returns {boolean}
+   */
+  isGroup() {
+    return (
+      emailMessageHelpers.getSpecificHeader(
+        this.header,
+        EMAIL_HEADERS_GROUP
+      ) !== null
+    );
+  }
+
+  /**
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns {string[]}
    */
@@ -166,13 +180,22 @@ class EmailMessage {
   getMessageTags() {
     const tags = [];
 
-    if (this.isNewsletter()) {
+    const isNewsletter = this.isNewsletter();
+    const isList = this.isList();
+    const isGroup = this.isGroup();
+    const isTransactional =
+      this.isTransactional() && !isList && !isNewsletter && !isGroup;
+
+    if (isTransactional) {
+      tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
+      return tags;
+    }
+
+    if (isNewsletter) {
       tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
     }
-    if (this.isTransactional()) {
-      tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
-    }
-    if (this.isList()) {
+
+    if (isList) {
       tags.push({ name: 'list', reachable: 2, source: 'refined' });
     }
 
@@ -225,7 +248,14 @@ class EmailMessage {
       })
     );
     extractedData.persons.push(
-      ...personsExtractedFromHeader.map((p) => p.value).flat()
+      ...personsExtractedFromHeader
+        .map((p) => p.value)
+        .flat()
+        .filter((p) => {
+          return p.tags.every(
+            (tag) => !['transactional', 'no-reply'].includes(tag.name)
+          );
+        })
     );
 
     if (this.body !== '') {
@@ -263,11 +293,18 @@ class EmailMessage {
                 domainType
               );
 
+              const tags = [...emailTags];
+              if (fieldName === 'from' || fieldName === 'reply-to') {
+                tags.push(...messageTags);
+              }
+
+              if (fieldName === 'list-post') {
+                tags.push({ name: 'group', reachable: 2, source: 'refined' });
+              }
+
               return EmailMessage.constructPersonPocTags(
                 email,
-                fieldName === 'from' || fieldName === 'reply-to'
-                  ? [...messageTags, ...emailTags]
-                  : emailTags,
+                tags,
                 fieldName
               );
             }

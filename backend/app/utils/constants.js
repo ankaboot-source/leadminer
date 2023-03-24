@@ -58,6 +58,7 @@ module.exports = {
   ],
   EMAIL_HEADERS_NEWSLETTER: ['list-unsubscribe', 'list-id', 'list'],
   EMAIL_HEADERS_NOT_NEWSLETTER: ['list-post', 'x-original-from'],
+  EMAIL_HEADERS_GROUP: ['list-post'],
   EMAIL_HEADERS_TRANSACTIONAL: [
     'feedback-id',
     'x-feedback-id',
@@ -69,7 +70,8 @@ module.exports = {
   EMAIL_HEADER_PREFIXES_TRANSACTIONAL: [
     'x-linkedin',
     'x-mailgun',
-    'auto-submitted'
+    'auto-submitted',
+    'x-github'
   ],
   X_MAILER_TRANSACTIONAL_HEADER_VALUES: [
     'ec-messenger',
