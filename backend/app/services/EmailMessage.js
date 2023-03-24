@@ -14,7 +14,7 @@ const {
 } = require('../utils/constants');
 const { logger } = require('../utils/logger');
 
-const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to'];
+const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to', 'list-post'];
 
 class EmailMessage {
   /**
@@ -140,16 +140,6 @@ class EmailMessage {
   }
 
   /**
-   * Returns the list of emails in `list-post` header field if it exists, else return an empty list.
-   * @returns {string[]}
-   */
-  getListPostEmails() {
-    const emails = emailMessageHelpers.getSpecificHeader(this.header, [
-      'list-post'
-    ]);
-  }
-
-  /**
    * Returns the date from the header object, or null if it is not present or not a valid date
    * @returns {(string|null)} The UTC formatted date string or null if it is not present or not a valid date.
    */
@@ -231,7 +221,7 @@ class EmailMessage {
     };
     this.message = extractedData.message;
 
-    const messagingFields = [...this.getMessagingFieldsFromHeader()];
+    const messagingFields = this.getMessagingFieldsFromHeader();
     const messageTags = this.getMessageTags();
 
     const personsExtractedFromHeader = await Promise.allSettled(
@@ -303,11 +293,18 @@ class EmailMessage {
                 domainType
               );
 
+              const tags = [...emailTags];
+              if (fieldName === 'from' || fieldName === 'reply-to') {
+                tags.push(...messageTags);
+              }
+
+              if (fieldName === 'list-post') {
+                tags.push({ name: 'group', reachable: 2, source: 'refined' });
+              }
+
               return EmailMessage.constructPersonPocTags(
                 email,
-                fieldName === 'from' || fieldName === 'reply-to'
-                  ? [...messageTags, ...emailTags]
-                  : emailTags,
+                tags,
                 fieldName
               );
             }
