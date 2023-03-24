@@ -96,7 +96,7 @@ const progressProps = defineProps({
   totalEmails: Number(0),
 });
 
-const startTime = ref();
+let startTime;
 const extractionRate = 55; // Average rate of email message extraction and fetching per second.
 const estimatedTotalTimeRemaining = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
@@ -133,7 +133,7 @@ watch(fetchingFinished, (finished) => {
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
-    startTime.value = performance.now();
+    startTime = performance.now();
     fetchingIsFinished.value = false;
     console.log("Started Mining");
   } else {
@@ -146,9 +146,7 @@ watch(activeMiningTask, (isActive) => {
 });
 
 function timeEstimation() {
-  const elapsedTime = Math.floor(
-    ((performance.now() - startTime.value) | 0) / 1000
-  );
+  const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
   const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
   const estimatedTimeRemaining = estimatedTime - elapsedTime;
   return { estimatedTimeRemaining, estimatedTime, elapsedTime };
