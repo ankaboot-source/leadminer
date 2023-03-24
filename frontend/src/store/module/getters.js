@@ -1,5 +1,5 @@
 export function getRetrievedEmails(state) {
-  return Object.values(state.retrievedEmails);
+  return Array.from(state.retrievedEmails.values())
 }
 export function getBoxes(state) {
   return state.boxes;

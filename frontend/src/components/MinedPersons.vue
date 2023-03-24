@@ -259,12 +259,14 @@ const isExportDisabled = computed(
 );
 
 const refreshInterval = setInterval(() => {
-  const storedEmails = $store.state.example.retrievedEmails
+  const storeContacts = $store.state.example.retrievedEmails
   const doUpdate = $store.getters["example/getRetrievedEmails"].length > rows.value.length ||
-    rows.value.some((el) => storedEmails[el.email].signature !== el.signature )
+    rows.value.some((el) => {
+      const contact = storeContacts.get(el.email)
+      return contact && storeContacts.get(contact.signature) !== el.signature
+    })
 
   if (doUpdate) {
-    console.log('Updating table...')
     updateRefinedPersons();
   }
 
