@@ -77,5 +77,5 @@ module.exports = {
     'mailchimp'
   ],
   EMAIL_HEADERS_MAILING_LIST: ['list-post'],
-  EXCLUDED_IMAP_FOLDERS: ['[Gmail]']
+  EXCLUDED_IMAP_FOLDERS: ['[Gmail]', '[Mailspring]']
 };
