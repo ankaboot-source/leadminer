@@ -51,12 +51,12 @@
           animation-speed="500"
           style="width: 30vw"
         />
-        <span v-if="activeMiningTask"
-          >Estimated time remaining:
+        <span v-if="activeMiningTask">
+          Estimated time remaining:
           {{
             timeConversion(timeEstimation().estimatedTimeRemaining).join(" ")
-          }}</span
-        >
+          }}
+        </span>
         <span v-else-if="!scannedEmails">
           Estimated waiting time:
           {{ timeConversion(estimatedTotalTimeRemaining).join(" ") }}
