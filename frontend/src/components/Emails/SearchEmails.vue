@@ -21,6 +21,7 @@
                   v-if="boxes.length > 0"
                   :boxes="boxes"
                   :scanned-boxes="scannedBoxes"
+                  :class="{ disabled: activeMiningTask }"
                   @selected-boxes="updateSelectedBoxes"
                 />
                 <q-spinner-tail v-else color="teal" size="4em" />
@@ -196,3 +197,8 @@ async function getBoxes() {
   }
 }
 </script>
+<style>
+.q-tree.disabled {
+  pointer-events: none;
+}
+</style>
