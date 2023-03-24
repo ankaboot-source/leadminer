@@ -149,7 +149,6 @@ function timeEstimation() {
   const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
   const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
   const estimatedTimeRemaining = estimatedTime - elapsedTime;
-  console.log(progressBuffer.value);
   return { estimatedTimeRemaining, estimatedTime, elapsedTime };
 }
 
