@@ -264,16 +264,16 @@ const activeMiningTask = computed(
 
 let refreshInterval = null
 
-watch(activeMiningTask, async (isActive) => {
+watch(activeMiningTask, (isActive) => {
   if (isActive) {
     refreshInterval = setInterval(() => {
       if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
         updateRefinedPersons();
       }
-    }, 3000);
+    });
   } else {
     if (refreshInterval) {
-      await fetchRefined()
+      updateRefinedPersons()
       clearInterval(refreshInterval);
     }
   }
