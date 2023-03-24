@@ -10,29 +10,36 @@
       <br />
       <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ scannedEmails }}
-        </div>
-        emails messages fetched so far over
-        <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ totalEmails }}
         </div>
-        emails to fetch.
+        email messages to extract from.
       </q-chip>
-      <br />
-      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ extractedEmails }}
-        </div>
-        emails messages extracted over
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ scannedEmails }}
-        </div>
-        emails to extract.
-      </q-chip>
-      <div>
+      <div class="q-ml-lg">
+        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
+          <div>
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ scannedEmails }}
+            </span>
+            emails messages fetched so far over
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ totalEmails }}
+            </span>
+            emails to fetch.
+          </div>
+          <div>
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ extractedEmails }}
+            </span>
+            emails messages extracted over
+            <span class="text-h5 text-weight-bolder q-ma-sm">
+              {{ scannedEmails }}
+            </span>
+            emails to extract.
+          </div>
+        </q-tooltip>
         <span v-if="activeMiningTask">
-          Digging up the good stuff! Holdt tight...
-          {{ (progressValue * 100).toFixed(2) }} %
+          Digging up the good stuff! Hold tight...
+          {{ (progressValue * 100).toFixed() }} %
         </span>
         <q-linear-progress
           :buffer="progressBuffer"
@@ -42,18 +49,17 @@
           track-color="teal-2"
           class="q-card--bordered q-pa-null"
           animation-speed="500"
+          style="width: 30vw"
         />
-        Estimated
-        <span v-if="!activeMiningTask">
-          waiting time:
-          {{ timeConversion(estimatedTotalTimeRemaining).join(" ") }}
+        <span v-if="activeMiningTask">
+          Estimated time remaining:
+          {{ estimatedTimeRemainingConverted }}
         </span>
-        <span v-else
-          >time remaining:
-          {{
-            timeConversion(timeEstimation().estimatedTimeRemaining).join(" ")
-          }}</span
-        >
+        <span v-else-if="!scannedEmails">
+          Estimated waiting time:
+          {{ estimatedWaitingTimeConverted }}
+        </span>
+        <span v-else>Finished in {{ timeEstimation().elapsedTime }}s</span>
       </div>
     </q-banner>
   </div>
@@ -88,8 +94,8 @@ const progressProps = defineProps({
   totalEmails: Number(0),
 });
 
-var startTime;
-const extractionRate = 14;
+let startTime;
+const extractionRate = 55; // Average rate of email messages extraction and fetching per second.
 const estimatedTotalTimeRemaining = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
 );
@@ -101,21 +107,32 @@ const fetchingFinished = computed(
 );
 
 const progressBuffer = computed(() => {
-  return !fetchingIsFinished.value
-    ? progressProps.scannedEmails / progressProps.totalEmails || 0
-    : 1;
+  return fetchingIsFinished.value & progressProps.scannedEmails
+    ? 1
+    : progressProps.scannedEmails / progressProps.totalEmails || 0;
 });
 
 const progressValue = computed(() => {
-  return !fetchingIsFinished.value
-    ? progressProps.extractedEmails / progressProps.totalEmails || 0
-    : progressProps.extractedEmails / progressProps.scannedEmails || 0;
+  return fetchingIsFinished.value
+    ? progressProps.extractedEmails / progressProps.scannedEmails || 0
+    : progressProps.extractedEmails / progressProps.totalEmails || 0;
+});
+
+const estimatedWaitingTimeConverted = computed(() => {
+  return timeConversion(estimatedTotalTimeRemaining).join(" ");
+});
+const estimatedTimeRemainingConverted = computed(() => {
+  return timeConversion(timeEstimation().estimatedTimeRemaining).join(" ");
 });
 
 watch(fetchingFinished, (finished) => {
   if (finished) {
     fetchingIsFinished.value = true;
-    console.log("Fetching completed");
+    console.log(
+      "Fetching completed, time elapsed:",
+      timeEstimation().elapsedTime,
+      "s"
+    );
   }
 });
 
