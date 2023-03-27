@@ -107,7 +107,7 @@ const fetchingFinished = computed(
 );
 
 const progressBuffer = computed(() => {
-  return fetchingIsFinished.value & progressProps.scannedEmails
+  return fetchingIsFinished.value && progressProps.scannedEmails
     ? 1
     : progressProps.scannedEmails / progressProps.totalEmails || 0;
 });
