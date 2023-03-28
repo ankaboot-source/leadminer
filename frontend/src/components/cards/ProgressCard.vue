@@ -12,29 +12,23 @@
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ totalEmails }}
         </div>
-        email messages to extract from.
+        email messages selected.
       </q-chip>
       <div class="q-ml-lg">
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-          <div>
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ scannedEmails }}
-            </span>
-            emails messages fetched so far over
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ totalEmails }}
-            </span>
-            emails to fetch.
-          </div>
-          <div>
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ extractedEmails }}
-            </span>
-            emails messages extracted over
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ scannedEmails }}
-            </span>
-            emails to extract.
+          <div class="text-center">
+            <div v-if="!fetchingIsFinished">
+              <span class="text-h7 text-weight-bolder">
+                {{ scannedEmails }}/{{ totalEmails }}
+              </span>
+              unique emails fetched / emails selected
+            </div>
+            <div>
+              <span class="text-h7 text-weight-bolder">
+                {{ extractedEmails }}/{{ scannedEmails }}
+              </span>
+              emails extracted
+            </div>
           </div>
         </q-tooltip>
         <span v-if="activeMiningTask">
@@ -48,8 +42,7 @@
           color="teal-8"
           track-color="teal-2"
           class="q-card--bordered q-pa-null"
-          animation-speed="500"
-          style="width: 30vw"
+          animation-speed="0"
         />
         <span v-if="activeMiningTask">
           Estimated time remaining:
@@ -59,7 +52,9 @@
           Estimated waiting time:
           {{ estimatedWaitingTimeConverted }}
         </span>
-        <span v-else>Finished in {{ timeEstimation().elapsedTime }}s</span>
+        <span v-else>
+          Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
+        </span>
       </div>
     </q-banner>
   </div>
@@ -95,7 +90,7 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const extractionRate = 55; // Average rate of email messages extraction and fetching per second.
+const extractionRate = 130; // Average rate of email messages extraction and fetching per second.
 const estimatedTotalTimeRemaining = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
 );
@@ -119,10 +114,12 @@ const progressValue = computed(() => {
 });
 
 const estimatedWaitingTimeConverted = computed(() => {
-  return timeConversion(estimatedTotalTimeRemaining).join(" ");
+  return timeConversionRounded(estimatedTotalTimeRemaining).join(" ");
 });
 const estimatedTimeRemainingConverted = computed(() => {
-  return timeConversion(timeEstimation().estimatedTimeRemaining).join(" ");
+  return timeConversionRounded(timeEstimation().estimatedTimeRemaining).join(
+    " "
+  );
 });
 
 watch(fetchingFinished, (finished) => {
@@ -157,7 +154,7 @@ function timeEstimation() {
   return { estimatedTimeRemaining, estimatedTime, elapsedTime };
 }
 
-function timeConversion(timeInSeconds) {
+function timeConversionRounded(timeInSeconds) {
   if (!isFinite(timeInSeconds)) {
     timeInSeconds = estimatedTotalTimeRemaining.value;
   }
@@ -188,5 +185,26 @@ function timeConversion(timeInSeconds) {
   }
   // time <= 5 seconds : (Almost set!)
   else return ["Almost set!"];
+}
+function timeConversion(timeInSeconds) {
+  if (timeInSeconds >= 3600) {
+    return [
+      Math.floor(timeInSeconds / 3600),
+      "hours",
+      Math.round((timeInSeconds % 3600) / 60),
+      "minutes",
+      Math.round((timeInSeconds % 3600) % 60),
+      "seconds",
+    ].join(" ");
+  } else if (timeInSeconds >= 60) {
+    return [
+      Math.round((timeInSeconds % 3600) / 60),
+      "minutes",
+      Math.round((timeInSeconds % 3600) % 60),
+      "seconds",
+    ].join(" ");
+  } else {
+    return [Math.round((timeInSeconds % 3600) % 60), "seconds"].join(" ");
+  }
 }
 </script>

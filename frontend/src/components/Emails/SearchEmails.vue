@@ -51,19 +51,14 @@
           </q-card>
         </div>
 
-        <div class="bg-transparent q-md col q-ma-sm">
-          <div class="row">
-            <div class="q-md col-12"></div>
-            <div class="row q-md col-12">
-              <ProgressCard
-                v-if="boxes"
-                :mined-emails="retrievedEmails.length"
-                :scanned-emails="scannedEmails"
-                :extracted-emails="extractedEmails"
-                :total-emails="totalEmails"
-              />
-            </div>
-          </div>
+        <div class="bg-transparent col q-ma-sm">
+          <ProgressCard
+            v-if="boxes"
+            :mined-emails="retrievedEmails.length"
+            :scanned-emails="scannedEmails"
+            :extracted-emails="extractedEmails"
+            :total-emails="totalEmails"
+          />
         </div>
       </div>
       <MinedPersons />
