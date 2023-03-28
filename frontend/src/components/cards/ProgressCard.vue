@@ -18,13 +18,13 @@
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
           <div class="text-center">
             <div v-if="!fetchingIsFinished">
-              <span class="text-h7 text-weight-bolder">
+              <span class="text-h6 text-weight-bolder">
                 {{ scannedEmails }}/{{ totalEmails }}
               </span>
               unique emails fetched / emails selected
             </div>
             <div>
-              <span class="text-h7 text-weight-bolder">
+              <span class="text-h6 text-weight-bolder">
                 {{ extractedEmails }}/{{ scannedEmails }}
               </span>
               emails extracted
