@@ -97,9 +97,7 @@ const estimatedTotalTimeRemaining = computed(() =>
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
-const fetchingFinished = computed(
-  () => !!$store.state.example.fetchingFinished
-);
+const fetchingFinished = computed(() => $store.state.example.fetchingFinished);
 
 const progressBuffer = computed(() => {
   return fetchingIsFinished.value && progressProps.scannedEmails
