@@ -26,7 +26,6 @@
                 />
                 <q-spinner-tail v-else color="teal" size="4em" />
               </div>
-
               <div class="column col-lg-8">
                 <div class="col-6" />
                 <div class="q-mt-md q-ml-lg col-6">
@@ -50,7 +49,6 @@
             </div>
           </q-card>
         </div>
-
         <div class="bg-transparent col q-ma-sm">
           <ProgressCard
             v-if="boxes"
