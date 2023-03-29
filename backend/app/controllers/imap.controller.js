@@ -8,6 +8,7 @@ const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getUser, getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 const { redis } = require('../utils/redis');
+const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
 const redisPublisher = redis.getDuplicatedClient();
 
 /**
@@ -171,7 +172,10 @@ async function startMining(req, res, next) {
         port
       );
 
-    miningTask = await miningTasksManager.createTask(id, { imapConnectionProvider, boxes, id, email });
+    const batchSize = LEADMINER_FETCH_BATCH_SIZE;
+    const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
+
+    miningTask = await miningTasksManager.createTask(id, imapEmailsFetcherOptions);
 
     const { heapTotal, heapUsed } = process.memoryUsage();
     logger.debug(

@@ -61,30 +61,43 @@ async function publishEmailMessage(streamName, fetchedMessagesCount, emailMessag
 
 class ImapEmailsFetcher {
   /**
-   * ImapEmailsFetcher constructor.
-   * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
+   * Constructor for ImapEmailsFetcher.
+   * @param {object} imapConnectionProvider - An instance of a configured IMAP connection provider.
    * @param {string[]} folders - List of folders to fetch.
-   * @param {string} userId - User Id.
-   * @param {string} userEmail - User email.
-   * @param {string} miningId - The id of the mining process.
+   * @param {string} userId - The unique identifier of the user.
+   * @param {string} userEmail - The email address of the user.
+   * @param {string} miningId - The unique identifier of the mining process.
+   * @param {string} streamName - The name of the stream to write fetched emails.
+   * @param {number} [batchSize=50] - A Number To send notification every x emails processed
    */
-  constructor(imapConnectionProvider, folders, userId, userEmail, miningId, streamName) {
+  constructor(imapConnectionProvider, folders, userId, userEmail, miningId, streamName, batchSize = 50) {
+
+    // Used to send notification every x emails processed
+    this.batchSize = batchSize;
+
+    // Set the IMAP connection provider instance.
     this.imapConnectionProvider = imapConnectionProvider;
+
+    // Set the list of folders to fetch.
     this.folders = folders;
+
+    // Set the user details. Generate a unique identifier for the user.
     this.userId = userId;
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
+
     this.streamName = streamName;
-
     this.miningId = miningId;
-    this.processSetKey = `caching:${miningId}`;
 
+    // Set the key for the process set. used for caching.
+    this.processSetKey = `caching:${miningId}`;
     this.fetchedIds = new Set();
 
     // Fetcher inner-state for total fetched messages.
     this.totalFetched = 0;
 
     this.bodies = ['HEADER'];
+
     if (IMAP_FETCH_BODY) {
       this.bodies.push('TEXT');
     }
@@ -288,7 +301,7 @@ class ImapEmailsFetcher {
           const isLastMessage = seqNumber === totalInFolder;
           let fetchedMessagesCountBatch = null;
 
-          if (fetchedMessageCount === 100 || isLastMessage) {
+          if (fetchedMessageCount === this.batchSize || isLastMessage) {
             // If we have fetched a full batch or this is the last message, set the fetched count
             // Reset the count for the next batch.
             fetchedMessagesCountBatch = fetchedMessageCount;

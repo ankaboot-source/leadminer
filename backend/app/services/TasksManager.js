@@ -108,8 +108,6 @@ class TasksManager {
     const streamName = `stream-${miningId}`;
     const consumerGroupName = `group-${miningId}`;
 
-    await redis.initConsumerGroup(streamName, consumerGroupName);
-
     return {
       miningId,
       stream: {
@@ -134,8 +132,10 @@ class TasksManager {
    * @param {object} fetcherOptions - An object containing the fetcherOptions for the fetcher.
    * @param {string} fetcherOptions.email - The email address of the account to connect to.
    * @param {string} fetcherOptions.userId - The ID of the email account to connect to.
-   * @param {object} fetcherOptions.imapConnectionProvider - An object containing fetcherOptions for the email connection provider.
+   * @param {number} fetcherOptions.batchSize - A Number To send notification every x emails processed
    * @param {string[]} fetcherOptions.boxes - An array of strings specifying the email boxes to mine.
+   * @param {object} fetcherOptions.imapConnectionProvider - An object containing fetcherOptions for the email connection provider.
+   * 
    * 
    * @returns {object} - The new mining task.
    * 
@@ -147,7 +147,7 @@ class TasksManager {
     const miningTask = { userId, ...await this.generateTaskInformation() };
     const { miningId, stream } = miningTask;
     const { streamName } = stream;
-    const { imapConnectionProvider, email, boxes } = fetcherOptions;
+    const { imapConnectionProvider, email, boxes, batchSize } = fetcherOptions;
 
     try {
 
@@ -157,7 +157,8 @@ class TasksManager {
         userId,
         email,
         miningId,
-        streamName
+        streamName,
+        batchSize
       );
       const progressHandlerSSE = new this.RealtimeSSE();
 
@@ -166,7 +167,7 @@ class TasksManager {
       miningTask.progress.totalMessages = await fetcher.getTotalMessages();
 
       fetcher.start(); // start the fetching process
-      await this.#pubsubSendMessage(miningId, 'register', { ...stream });
+      await this.#pubsubSendMessage(miningId, 'REGISTER', { ...stream });
 
     } catch (error) {
       logger.error('Error when creating task', { metadata: { details: error.message } });
@@ -232,16 +233,16 @@ class TasksManager {
 
     const { fetcher, progressHandlerSSE, stream } = task;
 
+    this.#ACTIVE_MINING_TASKS.delete(miningId);
+
     try {
       await fetcher.stop();
       await progressHandlerSSE.stop();
-      await this.#pubsubSendMessage(miningId, 'delete', { ...stream });
+      await this.#pubsubSendMessage(miningId, 'DELETE', { ...stream });
 
     } catch (error) {
-      logger.error('Error when deleting task', { error });
+      logger.error('Error when deleting task', { metadata: { details: error.message } });
     }
-
-    this.#ACTIVE_MINING_TASKS.delete(miningId);
 
     return redactSensitiveData(task);
   }
@@ -333,8 +334,23 @@ class TasksManager {
    * @throws {Error} Throws an error if an invalid command is provided.
    */
   async #pubsubSendMessage(miningId, command, { streamName, consumerGroupName }) {
-    if (!['register', 'delete'].includes(command)) {
-      throw new Error(`Invalid command '${command}', expected 'register' or 'delete'.`);
+    if (!['REGISTER', 'DELETE'].includes(command)) {
+      throw new Error(`Invalid command '${command}', expected 'REGISTER' or 'DELETE'.`);
+    }
+
+    switch (command) {
+      case 'REGISTER': {
+        // Create consumer group and empty stream.
+        await this.redisPublisher.xgroup('CREATE', streamName, consumerGroupName, '$', 'MKSTREAM');
+        break;
+      }
+      case 'DELETE': {
+        // Delete the stream and consumer groups.  
+        await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroupName);
+        await this.redisPublisher.del(streamName);
+        break;
+      }
+      default:
     }
 
     const message = { miningId, command, streamName, consumerGroupName };
