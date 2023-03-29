@@ -69,26 +69,23 @@ describe('TasksManager class', () => {
     }
   };
 
-  class EmailFetcherClass {
-
-    getTotalMessages() {
-      return 100
+  function EmailFetcherClass() {
+    this.getTotalMessages = function () {
+      return this;
     };
-
-    start() {
-      return null
+    this.start = function () {
+      return this;
     };
 
   }
 
-  class SSEBroadcasterClass {
-    send() {
-      return null
-    }
-
-    stop() {
-      return null
-    }
+  function SSEBroadcasterClass() {
+    this.send = function () {
+      return this;
+    };
+    this.stop = function () {
+      return this;
+    };
   }
 
   let tasksManager = null;
