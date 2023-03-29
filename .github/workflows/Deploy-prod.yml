@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Deploy Leadminer Prod
 on:
   workflow_dispatch
 jobs:
@@ -6,9 +6,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Leadminer
-        uses: appleboy/ssh-action@v0.1.2
+        uses: appleboy/ssh-action@master
         with:
           host: ${{secrets.SSH_HOST}} # IP address of the server
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{ secrets.SSH_USERNAME }} # User of the server
-          script: ./leadminer.io/deploy-leadminer.sh prod
+          script: |
+            TARGET=prod
+            ( cd leadminer_$TARGET; docker-compose down; git pull)
+            ( cd leadminer.io; . .env.$TARGET ; psql \
+                -Atx "$PG_CONNECTION_STRING" \
+                -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
+              git pull
+            )
+            cp leadminer.io/.env.$TARGET leadminer_$TARGET/.env
+            cp leadminer.io/docker-compose.yml leadminer_$TARGET
+            cd leadminer_$TARGET
+
+            eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
+            eval "docker rm $(docker ps -a -q)"
+            docker-compose -d up \
+              --env-file .env \
+              --build \
+              --force-recreate
