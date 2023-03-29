@@ -27,6 +27,5 @@ jobs:
             docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
             docker ps -a -q | xargs -n 1 docker rm
             docker-compose up -d \
-              --env-file .env \
               --build \
               --force-recreate

@@ -26,6 +26,5 @@ jobs:
             eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
             eval "docker rm $(docker ps -a -q)"
             docker-compose -d up \
-              --env-file .env \
               --build \
               --force-recreate
