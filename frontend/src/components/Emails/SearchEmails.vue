@@ -26,7 +26,6 @@
                 />
                 <q-spinner-tail v-else color="teal" size="4em" />
               </div>
-
               <div class="column col-lg-8">
                 <div class="col-6" />
                 <div class="q-mt-md q-ml-lg col-6">
@@ -50,20 +49,14 @@
             </div>
           </q-card>
         </div>
-
-        <div class="bg-transparent q-md col q-ma-sm">
-          <div class="row">
-            <div class="q-md col-12"></div>
-            <div class="row q-md col-12">
-              <ProgressCard
-                v-if="boxes"
-                :mined-emails="retrievedEmails.length"
-                :scanned-emails="scannedEmails"
-                :extracted-emails="extractedEmails"
-                :total-emails="totalEmails"
-              />
-            </div>
-          </div>
+        <div class="bg-transparent col q-ma-sm">
+          <ProgressCard
+            v-if="boxes"
+            :mined-emails="minedEmails"
+            :scanned-emails="scannedEmails"
+            :extracted-emails="extractedEmails"
+            :total-emails="totalEmails"
+          />
         </div>
       </div>
       <MinedPersons />
@@ -107,8 +100,8 @@ onMounted(async () => {
 const boxes = computed(() => $store.state.example.boxes);
 
 const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
-const retrievedEmails = computed(
-  () => $store.getters["example/getRetrievedEmails"]
+const minedEmails = computed(
+  () => $store.getters["example/getRetrievedEmails"].length
 );
 const activeMiningTask = computed(() =>
   $store.state.example.miningTask.miningId ? true : false

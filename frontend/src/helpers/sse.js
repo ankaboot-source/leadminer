@@ -15,8 +15,9 @@ class SSE {
       store.commit("example/DELETE_MINING_TASK");
     });
 
-    this.eventSource.addEventListener("fetching-finished", () => {
-      store.commit("example/SET_FETCHING_FINISHED");
+    this.eventSource.addEventListener("fetching-finished", ({ data }) => {
+      const totalFetchedEmails = parseInt(data, 10);
+      store.commit("example/SET_FETCHING_FINISHED", totalFetchedEmails);
     });
   }
 

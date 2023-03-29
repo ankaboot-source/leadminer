@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Deploy Leadminer Demo
 on:
   push:
     branches: [main]
@@ -12,4 +12,19 @@ jobs:
           host: ${{secrets.SSH_HOST}} # IP address of the server
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{ secrets.SSH_USERNAME }} # User of the server
-          script: ./leadminer.io/deploy-leadminer.sh demo
+          script: |
+            TARGET=demo
+            ( cd leadminer_$TARGET; docker-compose down; git pull)
+            ( cd leadminer.io; . .env.$TARGET; git pull; psql \
+                -Atx "$PG_CONNECTION_STRING" \
+                -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
+            )
+            cp leadminer.io/.env.$TARGET leadminer_$TARGET/.env
+            cp leadminer.io/docker-compose.yml leadminer_$TARGET
+            cd leadminer_$TARGET
+
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
+            docker ps -a -q | xargs -n 1 docker rm
+            docker-compose up -d \
+              --build \
+              --force-recreate

@@ -12,29 +12,23 @@
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ totalEmails }}
         </div>
-        email messages to extract from.
+        email messages selected.
       </q-chip>
       <div class="q-ml-lg">
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-          <div>
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ scannedEmails }}
-            </span>
-            emails messages fetched so far over
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ totalEmails }}
-            </span>
-            emails to fetch.
-          </div>
-          <div>
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ extractedEmails }}
-            </span>
-            emails messages extracted over
-            <span class="text-h5 text-weight-bolder q-ma-sm">
-              {{ scannedEmails }}
-            </span>
-            emails to extract.
+          <div class="text-center">
+            <div v-if="!fetchingFinished">
+              <span class="text-h6 text-weight-bolder">
+                {{ scannedEmails }}/{{ totalEmails }}
+              </span>
+              unique emails fetched / emails selected
+            </div>
+            <div>
+              <span class="text-h6 text-weight-bolder">
+                {{ extractedEmails }}/{{ scannedEmails }}
+              </span>
+              emails extracted
+            </div>
           </div>
         </q-tooltip>
         <span v-if="activeMiningTask">
@@ -48,8 +42,7 @@
           color="teal-8"
           track-color="teal-2"
           class="q-card--bordered q-pa-null"
-          animation-speed="500"
-          style="width: 30vw"
+          animation-speed="0"
         />
         <span v-if="activeMiningTask">
           Estimated time remaining:
@@ -59,20 +52,22 @@
           Estimated waiting time:
           {{ estimatedWaitingTimeConverted }}
         </span>
-        <span v-else>Finished in {{ timeEstimation().elapsedTime }}s</span>
+        <span v-else>
+          Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
+        </span>
       </div>
     </q-banner>
   </div>
 </template>
 
 <script setup>
-import { computed, defineProps, watch, ref } from "vue";
+import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
 import { useQuasar } from "quasar";
+import { timeConversion } from "src/helpers/time-helpers";
 
 const $q = useQuasar();
 const $store = useStore();
-const fetchingIsFinished = ref(false);
 
 const buttonSize = computed(() => {
   switch (true) {
@@ -95,7 +90,7 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const extractionRate = 55; // Average rate of email messages extraction and fetching per second.
+const extractionRate = 130; // Average rate of email messages extraction and fetching per second.
 const estimatedTotalTimeRemaining = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
 );
@@ -107,27 +102,28 @@ const fetchingFinished = computed(
 );
 
 const progressBuffer = computed(() => {
-  return fetchingIsFinished.value & progressProps.scannedEmails
+  return fetchingFinished.value && progressProps.scannedEmails
     ? 1
     : progressProps.scannedEmails / progressProps.totalEmails || 0;
 });
 
 const progressValue = computed(() => {
-  return fetchingIsFinished.value
+  return fetchingFinished.value
     ? progressProps.extractedEmails / progressProps.scannedEmails || 0
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
 
 const estimatedWaitingTimeConverted = computed(() => {
-  return timeConversion(estimatedTotalTimeRemaining).join(" ");
+  return timeConversionRounded(estimatedTotalTimeRemaining).join(" ");
 });
 const estimatedTimeRemainingConverted = computed(() => {
-  return timeConversion(timeEstimation().estimatedTimeRemaining).join(" ");
+  return timeConversionRounded(timeEstimation().estimatedTimeRemaining).join(
+    " "
+  );
 });
 
 watch(fetchingFinished, (finished) => {
   if (finished) {
-    fetchingIsFinished.value = true;
     console.log(
       "Fetching completed, time elapsed:",
       timeEstimation().elapsedTime,
@@ -138,8 +134,8 @@ watch(fetchingFinished, (finished) => {
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
+    $store.commit("example/SET_FETCHING_FINISHED", 0);
     startTime = performance.now();
-    fetchingIsFinished.value = false;
     console.log("Started Mining");
   } else {
     console.log(
@@ -157,7 +153,7 @@ function timeEstimation() {
   return { estimatedTimeRemaining, estimatedTime, elapsedTime };
 }
 
-function timeConversion(timeInSeconds) {
+function timeConversionRounded(timeInSeconds) {
   if (!isFinite(timeInSeconds)) {
     timeInSeconds = estimatedTotalTimeRemaining.value;
   }

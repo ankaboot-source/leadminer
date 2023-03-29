@@ -1,7 +1,7 @@
 import { getDefaultState } from "./defaultState";
 
 export function SET_EMAILS(state, streamedEmail) {
-  state.retrievedEmails.set(streamedEmail.email, streamedEmail)
+  state.retrievedEmails.set(streamedEmail.email, streamedEmail);
 }
 export function SET_LOADING(state, newLoadingStatus) {
   state.loadingStatus = newLoadingStatus;
@@ -93,6 +93,6 @@ export function DELETE_MINING_TASK(state) {
   state.miningTask = {};
 }
 
-export function SET_FETCHING_FINISHED(state) {
-  state.fetchingFinished = true;
+export function SET_FETCHING_FINISHED(state, totalFetchedEmails) {
+  state.fetchingFinished = totalFetchedEmails;
 }
