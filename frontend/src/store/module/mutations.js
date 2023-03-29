@@ -93,6 +93,6 @@ export function DELETE_MINING_TASK(state) {
   state.miningTask = {};
 }
 
-export function SET_FETCHING_FINISHED(state, newNumber) {
-  state.fetchingFinished = newNumber;
+export function SET_FETCHING_FINISHED(state, totalFetchedEmails) {
+  state.fetchingFinished = totalFetchedEmails;
 }

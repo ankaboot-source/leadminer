@@ -17,7 +17,7 @@
       <div class="q-ml-lg">
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
           <div class="text-center">
-            <div v-if="!fetchingIsFinished">
+            <div v-if="!fetchingFinished">
               <span class="text-h6 text-weight-bolder">
                 {{ scannedEmails }}/{{ totalEmails }}
               </span>
@@ -61,14 +61,13 @@
 </template>
 
 <script setup>
-import { computed, defineProps, watch, ref } from "vue";
+import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
 import { useQuasar } from "quasar";
 import { timeConversion } from "src/helpers/time-helpers";
 
 const $q = useQuasar();
 const $store = useStore();
-const fetchingIsFinished = ref(false);
 
 const buttonSize = computed(() => {
   switch (true) {
@@ -98,16 +97,18 @@ const estimatedTotalTimeRemaining = computed(() =>
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
-const fetchingFinished = computed(() => $store.state.example.fetchingFinished);
+const fetchingFinished = computed(
+  () => !!$store.state.example.fetchingFinished
+);
 
 const progressBuffer = computed(() => {
-  return fetchingIsFinished.value && progressProps.scannedEmails
+  return fetchingFinished.value && progressProps.scannedEmails
     ? 1
     : progressProps.scannedEmails / progressProps.totalEmails || 0;
 });
 
 const progressValue = computed(() => {
-  return fetchingIsFinished.value
+  return fetchingFinished.value
     ? progressProps.extractedEmails / progressProps.scannedEmails || 0
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
@@ -123,7 +124,6 @@ const estimatedTimeRemainingConverted = computed(() => {
 
 watch(fetchingFinished, (finished) => {
   if (finished) {
-    fetchingIsFinished.value = true;
     console.log(
       "Fetching completed, time elapsed:",
       timeEstimation().elapsedTime,
@@ -134,8 +134,8 @@ watch(fetchingFinished, (finished) => {
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
+    $store.commit("example/SET_FETCHING_FINISHED", 0);
     startTime = performance.now();
-    fetchingIsFinished.value = false;
     console.log("Started Mining");
   } else {
     console.log(
