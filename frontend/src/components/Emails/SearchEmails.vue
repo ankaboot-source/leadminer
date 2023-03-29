@@ -52,7 +52,7 @@
         <div class="bg-transparent col q-ma-sm">
           <ProgressCard
             v-if="boxes"
-            :mined-emails="retrievedEmails.length"
+            :mined-emails="minedEmails"
             :scanned-emails="scannedEmails"
             :extracted-emails="extractedEmails"
             :total-emails="totalEmails"
@@ -100,8 +100,8 @@ onMounted(async () => {
 const boxes = computed(() => $store.state.example.boxes);
 
 const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
-const retrievedEmails = computed(
-  () => $store.getters["example/getRetrievedEmails"]
+const minedEmails = computed(
+  () => $store.getters["example/getRetrievedEmails"].length
 );
 const activeMiningTask = computed(() =>
   $store.state.example.miningTask.miningId ? true : false
