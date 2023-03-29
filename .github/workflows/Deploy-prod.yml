@@ -14,17 +14,17 @@ jobs:
           script: |
             TARGET=prod
             ( cd leadminer_$TARGET; docker-compose down; git pull)
-            ( cd leadminer.io; . .env.$TARGET ; psql \
+            ( cd leadminer.io; . .env.$TARGET; git pull; psql \
                 -Atx "$PG_CONNECTION_STRING" \
                 -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
-              git pull
             )
             cp leadminer.io/.env.$TARGET leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
             cd leadminer_$TARGET
 
             eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
-            eval "docker rm $(docker ps -a -q)"
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
+            docker ps -a -q | xargs -n 1 docker rm
             docker-compose -d up \
               --build \
               --force-recreate
