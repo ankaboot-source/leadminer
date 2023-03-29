@@ -1,8 +1,10 @@
+const { HasHeaderField } = require('./conditions/HasHeaderField');
 const {
-  HasHeaderFieldStartsWith,
-  HasHeaderWithValues,
-  HasSpecificHeaderField
-} = require('./rules');
+  HasHeaderFieldStartsWith
+} = require('./conditions/HasHeaderFieldStartsWith');
+const {
+  HasHeaderWithValues
+} = require('./conditions/HasHeaderFieldWithValues');
 
 const transactionalEmailMessage = {
   tag: {
@@ -26,7 +28,7 @@ const transactionalEmailMessage = {
           'nlserver',
           'mailchimp'
         ]),
-        new HasSpecificHeaderField([
+        new HasHeaderField([
           'x-linkedin',
           'x-mailgun',
           'auto-submitted',

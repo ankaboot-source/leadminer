@@ -1,4 +1,4 @@
-const { HasSpecificHeaderField } = require('./rules');
+const { HasHeaderField } = require('./conditions/HasHeaderField');
 
 const groupEmailMessage = {
   tag: {
@@ -8,7 +8,7 @@ const groupEmailMessage = {
   rulesToApply: [
     {
       fields: ['to', 'from'],
-      conditions: [new HasSpecificHeaderField(['list-post', 'x-original-from'])]
+      conditions: [new HasHeaderField(['list-post', 'x-original-from'])]
     }
   ]
 };

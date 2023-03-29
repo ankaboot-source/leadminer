@@ -1,4 +1,4 @@
-const { HasSpecificHeaderField } = require('./rules');
+const { HasHeaderField } = require('./conditions/HasHeaderField');
 
 const newsletterEmailMessage = {
   tag: {
@@ -8,9 +8,7 @@ const newsletterEmailMessage = {
   rulesToApply: [
     {
       fields: ['from', 'reply-to'],
-      conditions: [
-        new HasSpecificHeaderField(['list-unsubscribe', 'list-id', 'list'])
-      ]
+      conditions: [new HasHeaderField(['list-unsubscribe', 'list-id', 'list'])]
     }
   ]
 };
