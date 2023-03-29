@@ -85,7 +85,7 @@ class StreamConsumer {
       );
 
       if (result === null) {
-        return;
+        return Promise.resolve(null);
       }
 
       const messages = result[0][1];
@@ -149,13 +149,14 @@ class StreamConsumer {
           2
         )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
       );
+      return Promise.resolve(extractionResults);
     } catch (error) {
       logger.error('Error while consuming messages from stream.', {
         metadata: {
           details: error.message
         }
       });
-      throw error;
+      return Promise.reject(error);
     }
   }
 
