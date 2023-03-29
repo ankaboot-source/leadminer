@@ -10,7 +10,7 @@ describe('TasksManager.redactSensitiveData()', () => {
       userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
       miningId:
         'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
-      miningProgress: {
+      progress: {
         totalMessages: 100,
         fetched: null,
         extracted: null
@@ -37,7 +37,7 @@ describe('TasksManager.redactSensitiveData()', () => {
         userId: 'fffffffff-51fd-4e0f-b3bd-325664dd51e0',
         miningId:
           'ffffffff-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
-        miningProgress: {
+        progress: {
           totalMessages: 100,
           fetched: null,
           extracted: null
@@ -60,21 +60,44 @@ describe('TasksManager class', () => {
     },
     subscribe: () => {
       return null;
-    }
-  };
-  const fetcherInstance = {
-    cleanup: () => {
-      return null;
     },
-
-    getTotalMessages: () => {
-      return 100
+    publish: () => {
+      return null
     }
   };
+
+  class EmailFetcherClass {
+
+    getTotalMessages() {
+      return 100
+    };
+
+    start() {
+      return null
+    };
+
+  }
+
+  class SSEBroadcasterClass {
+    send() {
+      return null
+    }
+
+    stop() {
+      return null
+    }
+  }
+
   let tasksManager = null;
 
   beforeEach(() => {
-    tasksManager = new TasksManager(fakeRedisClient);
+    tasksManager = new TasksManager(
+      'STREAM',
+      fakeRedisClient,
+      fakeRedisClient,
+      EmailFetcherClass,
+      SSEBroadcasterClass
+    );
   });
 
   describe('generateMiningId()', () => {
@@ -89,33 +112,32 @@ describe('TasksManager class', () => {
   describe('createTask()', () => {
     it('should create a new mining task.', async () => {
       const userId = 'abc123';
-      const miningId = await tasksManager.generateMiningId();
-      const task = await tasksManager.createTask(miningId, userId, fetcherInstance);
-      const expectedOutput = {
-        userId,
-        miningId,
-        miningProgress: {
-          totalMessages: 100,
-          fetched: null,
-          extracted: null
-        },
-        fetcher: fetcherInstance,
-        sseProgressHandler: null
-      };
-      expect(task).eql(redactSensitiveData(expectedOutput));
+      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} }
+      const { task } = await tasksManager.createTask(userId, fetcherOptions);
+
+      expect(task).to.have.all.keys(
+        'miningId',
+        'userId',
+        'progress',
+        'fetcher',
+      );
+
+      expect(task.progress).to.have.all.keys('totalMessages', 'extracted', 'fetched')
+      expect(task.fetcher).to.have.all.keys('status', 'folders')
+
     });
 
     it('should throw an error if mining ID already exists', async () => {
-      const userID = 'abc123';
-      const miningID = await tasksManager.generateMiningId(userID);
+      const userId = 'abc123';
+      const miningId = await tasksManager.generateMiningId(userId);
 
-      await tasksManager.createTask(miningID, userID, fetcherInstance);
+      await tasksManager.createTask(miningId, { email: '', userId, imapConnectionProvider: {} });
 
       try {
-        await tasksManager.createTask(miningID, userID, fetcherInstance)
+        await tasksManager.createTask(miningId, { email: '', userId, imapConnectionProvider: {} })
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
-        expect(error.message).equal(`Task with mining ID ${miningID} already exists.`)
+        expect(error.message).equal(`Task with mining ID ${miningId} already exists.`)
       }
 
     });
@@ -123,23 +145,20 @@ describe('TasksManager class', () => {
 
   describe('getActiveTask()', () => {
     it('should return the task object if it exists', async () => {
-      const userID = 'abc123';
-      const miningId = await tasksManager.generateMiningId();
-      const createdTask = await tasksManager.createTask(
-        miningId,
-        userID,
-        fetcherInstance
-      );
-      const retirevedTask = tasksManager.getActiveTask(miningId);
+      const userId = 'abc123';
+      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} };
 
-      expect(retirevedTask).to.be.an('object');
-      expect(retirevedTask.task.miningId).to.equal(miningId);
-      expect(retirevedTask).to.eql(createdTask);
+      // Create a new task and retrieve it from the tasksManager
+      const createdTask = await tasksManager.createTask(userId, fetcherOptions);
+      const retrievedTask = tasksManager.getActiveTask(createdTask.task.miningId);
+
+      expect(retrievedTask).to.be.an('object');
+      expect(retrievedTask.task.miningId).to.equal(createdTask.task.miningId);
+      expect(retrievedTask).to.eql(createdTask);
     });
 
     it('should throw an error if the task with the given mining ID does not exist', () => {
-      const userID = 'abc123';
-      const miningId = tasksManager.generateMiningId(userID);
+      const miningId = tasksManager.generateMiningId();
 
       expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
     });
@@ -164,15 +183,12 @@ describe('TasksManager class', () => {
 
     it('should delete the task with the given mining ID if it exists', async () => {
       const userId = '123';
+      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} }
       const miningId = await tasksManager.generateMiningId();
-      const createdTask = await tasksManager.createTask(
-        miningId,
-        userId,
-        fetcherInstance
-      );
-      const deletedTask = await tasksManager.deleteTask(miningId);
+      const createdTask = await tasksManager.createTask(userId, fetcherOptions);
+      const deletedTask = await tasksManager.deleteTask(createdTask.task.miningId);
 
-      expect(deletedTask).to.deep.equal(createdTask);
+      expect(deletedTask).to.eql(createdTask);
       expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
     });
   });
@@ -185,25 +201,11 @@ TODO:
     - Test Private methods logic
 
 
-Cases:
-    expect(redis.getDuplicatedClient).toHaveBeenCalled();
-    expect(tasksManager.progressSubscriber.subscribe).toHaveBeenCalledWith(miningID, expect.any(Function))
-    expect(redis.getDuplicatedClient).toHaveBeenCalledTimes(1);
-
-describe('#notifyProgress()', () => {
-
-    it('should throw an error if the task with the given mining ID does not exist', () => {
-        expect(() => TasksManager.notifyProgress('false-id', 'fetching')).to.Throw(Error);
-        expect(() => TasksManager.notifyProgress('false-id', 'extracting')).to.Throw(Error);   
-    });
-});
-
-describe('#updateProgress()', () => {
-
-    it('should throw an error if the task with the given mining ID does not exist', () => {     
-        expect(() => TasksManager.updateProgress('false-id', 'fetching')).to.Throw(Error);
-        expect(() => TasksManager.updateProgress('false-id', 'extracting')).to.Throw(Error);    
-    });
-});
+METHODS:
+  - generateTaskInformation()
+  - #notifyChanges()
+  - #updateProgress()
+  - #hasCompleted()
+  - #pubsubSendMessage()
 
  */
