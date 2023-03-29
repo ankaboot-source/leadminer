@@ -63,6 +63,9 @@ describe('TasksManager class', () => {
     },
     publish: () => {
       return null
+    },
+    xgroup: () => {
+      return null
     }
   };
 
@@ -106,6 +109,28 @@ describe('TasksManager class', () => {
       const miningId2 = await tasksManager.generateMiningId();
 
       expect(miningId1).to.not.equal(miningId2);
+    });
+  });
+
+  describe('generateTaskInformation', () => {
+    it('should generate task information with valid object', async () => {
+      const task = await tasksManager.generateTaskInformation();
+
+      expect(task).to.have.property('miningId');
+      expect(task).to.have.property('stream');
+      expect(task.stream).to.have.property('streamName');
+      expect(task.stream).to.have.property('consumerGroupName');
+      expect(task).to.have.property('progress');
+      expect(task.progress).to.have.property('totalMessages');
+      expect(task.progress.totalMessages).to.be.null;
+      expect(task.progress).to.have.property('fetched');
+      expect(task.progress.fetched).to.be.null;
+      expect(task.progress).to.have.property('extracted');
+      expect(task.progress.extracted).to.be.null;
+      expect(task).to.have.property('fetcher');
+      expect(task.fetcher).to.be.null;
+      expect(task).to.have.property('progressHandlerSSE');
+      expect(task.progressHandlerSSE).to.be.null;
     });
   });
 
