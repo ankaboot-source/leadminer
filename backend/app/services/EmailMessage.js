@@ -2,21 +2,21 @@ const regExHelpers = require('../utils/helpers/regexpHelpers');
 const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
 const emailAddressHelpers = require('../utils/helpers/emailAddressHelpers');
 const domainHelpers = require('../utils/helpers/domainHelpers');
-const {
-  EMAIL_HEADERS_NEWSLETTER,
-  EMAIL_HEADERS_TRANSACTIONAL,
-  EMAIL_HEADERS_MAILING_LIST,
-  REGEX_LIST_ID,
-  X_MAILER_TRANSACTIONAL_HEADER_VALUES,
-  EMAIL_HEADER_PREFIXES_TRANSACTIONAL,
-  EMAIL_HEADERS_NOT_NEWSLETTER,
-  EMAIL_HEADERS_GROUP
-} = require('../utils/constants');
+const { REGEX_LIST_ID } = require('../utils/constants');
 const { logger } = require('../utils/logger');
-
-const FIELDS = ['to', 'from', 'cc', 'bcc', 'reply-to', 'list-post'];
+const { messageTaggingRules } = require('./tagging');
 
 class EmailMessage {
+  static #MESSAGING_FIELDS = [
+    'to',
+    'from',
+    'cc',
+    'bcc',
+    'reply-to',
+    'list-post'
+  ];
+  static #IGNORED_MESSAGE_TAGS = ['transactional', 'no-reply'];
+
   /**
    * Creates an instance of EmailMessage.
    *
@@ -38,81 +38,23 @@ class EmailMessage {
     this.redisClientForNormalMode = redisClientForNormalMode;
     this.userEmail = userEmail;
     this.sequentialId = sequentialId;
-    this.header = header || {};
+    this.header = header;
     this.body = body || '';
     this.folderPath = folder;
-  }
 
-  /**
-   * Determines whether the email header contains any newsletter header fields or not.
-   * @returns True or False
-   */
-  isNewsletter() {
-    return (
-      emailMessageHelpers.getSpecificHeader(
-        this.header,
-        EMAIL_HEADERS_NEWSLETTER
-      ) !== null &&
-      emailMessageHelpers.getSpecificHeader(
-        this.header,
-        EMAIL_HEADERS_NOT_NEWSLETTER
-      ) === null
-    );
-  }
-
-  /**
-   * Determines whether the email header contains any transactional header fields or not.
-   * @returns {boolean}
-   */
-  isTransactional() {
-    return (
-      emailMessageHelpers.getSpecificHeader(
-        this.header,
-        EMAIL_HEADERS_TRANSACTIONAL
-      ) !== null ||
-      emailMessageHelpers.hasHeaderWithValue(
-        this.header,
-        'x-mailer',
-        X_MAILER_TRANSACTIONAL_HEADER_VALUES
-      ) ||
-      emailMessageHelpers.hasHeaderFieldStartsWith(
-        this.header,
-        EMAIL_HEADER_PREFIXES_TRANSACTIONAL
-      )
-    );
-  }
-
-  /**
-   * Determines whether the email header contains any List header fields or not.
-   * @returns {boolean}
-   */
-  isList() {
-    return (
-      emailMessageHelpers.getSpecificHeader(
-        this.header,
-        EMAIL_HEADERS_MAILING_LIST
-      ) !== null
-    );
-  }
-
-  /**
-   * Determines whether the email header contains any group header fields or not.
-   * @returns {boolean}
-   */
-  isGroup() {
-    return (
-      emailMessageHelpers.getSpecificHeader(
-        this.header,
-        EMAIL_HEADERS_GROUP
-      ) !== null
-    );
+    this.messageId = this.#getMessageId();
+    this.messagingFields = this.#getMessagingValues();
+    this.date = this.#getDate();
+    this.listId = this.#getListId();
+    this.references = this.#getReferences();
+    this.messageTags = this.#getMessageTags();
   }
 
   /**
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns {string[]}
    */
-  getReferences() {
+  #getReferences() {
     const references = emailMessageHelpers.getSpecificHeader(this.header, [
       'references'
     ]);
@@ -128,13 +70,15 @@ class EmailMessage {
    * Gets the `list-id` header field if the email is in a mailing list otherwise returns an empty string.
    * @returns {string}
    */
-  getListId() {
-    if (!this.isList()) {
-      return '';
-    }
+  #getListId() {
     const listId = emailMessageHelpers.getSpecificHeader(this.header, [
       'list-id'
     ]);
+
+    if (listId === null) {
+      return '';
+    }
+
     const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
     return matchId ? matchId[0] : '';
   }
@@ -143,7 +87,7 @@ class EmailMessage {
    * Returns the date from the header object, or null if it is not present or not a valid date
    * @returns {(string|null)} The UTC formatted date string or null if it is not present or not a valid date.
    */
-  getDate() {
+  #getDate() {
     if (!this.header.date) {
       return null;
     }
@@ -155,13 +99,16 @@ class EmailMessage {
    * Extracts messaging fields from the email header.
    * @returns {object}
    */
-  getMessagingFieldsFromHeader() {
+  #getMessagingValues() {
     const messagingProps = {};
-    Object.keys(this.header).forEach((key) => {
-      if (FIELDS.includes(key)) {
-        messagingProps[`${key}`] = this.header[`${key}`][0];
+
+    for (const key of EmailMessage.#MESSAGING_FIELDS) {
+      const value = this.header[`${key}`];
+      if (value !== undefined) {
+        messagingProps[`${key}`] = value[0];
       }
-    });
+    }
+
     return messagingProps;
   }
 
@@ -169,7 +116,7 @@ class EmailMessage {
    * Gets the `message-id` header field of the email.
    * @returns {string}
    */
-  getMessageId() {
+  #getMessageId() {
     return this.header['message-id'][0];
   }
 
@@ -177,26 +124,28 @@ class EmailMessage {
    * Extracts message tags based on its header.
    * @returns { [{name: string, reachable: int, source: string}] | []}
    */
-  getMessageTags() {
+  #getMessageTags() {
     const tags = [];
 
-    const isNewsletter = this.isNewsletter();
-    const isList = this.isList();
-    const isGroup = this.isGroup();
-    const isTransactional =
-      this.isTransactional() && !isList && !isNewsletter && !isGroup;
+    for (const taggingRule of messageTaggingRules) {
+      const { rulesToApply, tag } = taggingRule;
+      let isTagged = false;
 
-    if (isTransactional) {
-      tags.push({ name: 'transactional', reachable: 2, source: 'refined' });
-      return tags;
-    }
+      for (const rule of rulesToApply) {
+        if (isTagged) {
+          break;
+        }
 
-    if (isNewsletter) {
-      tags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
-    }
+        const { conditions, fields } = rule;
+        for (const condition of conditions) {
+          isTagged = condition.checkRule({ header: this.header });
 
-    if (isList) {
-      tags.push({ name: 'list', reachable: 2, source: 'refined' });
+          if (isTagged) {
+            tags.push({ ...tag, source: 'refined', fields });
+            break;
+          }
+        }
+      }
     }
 
     return tags;
@@ -211,30 +160,23 @@ class EmailMessage {
       message: {
         channel: 'imap',
         folderPath: this.folderPath,
-        date: this.getDate(),
-        messageId: this.getMessageId(),
-        references: this.getReferences(),
-        listId: this.getListId(),
-        conversation: this.getReferences().length > 0
+        date: this.date,
+        messageId: this.messageId,
+        references: this.references,
+        listId: this.listId,
+        conversation: this.references.length > 0
       },
       persons: []
     };
     this.message = extractedData.message;
 
-    const messagingFields = this.getMessagingFieldsFromHeader();
-    const messageTags = this.getMessageTags();
-
     const personsExtractedFromHeader = await Promise.allSettled(
-      Object.keys(messagingFields).map(async (headerKey) => {
+      Object.keys(this.messagingFields).map(async (headerKey) => {
         try {
           const emails = regExHelpers.extractNameAndEmail(
-            messagingFields[`${headerKey}`]
+            this.messagingFields[`${headerKey}`]
           );
-          const persons = await this.extractPersons(
-            emails,
-            headerKey,
-            messageTags
-          );
+          const persons = await this.extractPersons(emails, headerKey);
           return persons;
         } catch (error) {
           logger.error('Error while extracting names and emails', {
@@ -253,7 +195,7 @@ class EmailMessage {
         .flat()
         .filter((p) => {
           return p.tags.every(
-            (tag) => !['transactional', 'no-reply'].includes(tag.name)
+            (tag) => !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
           );
         })
     );
@@ -261,7 +203,7 @@ class EmailMessage {
     if (this.body !== '') {
       const emails = regExHelpers.extractNameAndEmailFromBody(this.body);
       extractedData.persons.push(
-        ...(await this.extractPersons(emails, 'body', messageTags))
+        ...(await this.extractPersons(emails, 'body', this.messageTags))
       );
     }
 
@@ -272,10 +214,13 @@ class EmailMessage {
    * personsExtractedFromHeader checks for email validity then returns a person objects with their tags and point of contact.
    * @param {Object[]} emails - an array of objects that contains the extracted email addresses and the names
    * @param {string} fieldName - the current extracted field name (eg: from , cc , to...)
-   * @param { [{name: string, reachable: int, source: string}] | []} messageTags - List of tags of the email message
    * @returns {Promise<Object[]>} An array of objects
    */
-  async extractPersons(emails, fieldName, messageTags) {
+  async extractPersons(emails, fieldName) {
+    const applicableMessageTags = this.messageTags.filter((t) =>
+      t.fields.includes(fieldName)
+    );
+
     const extractedPersons = await Promise.allSettled(
       emails
         .filter((email) => email.address !== this.userEmail)
@@ -293,14 +238,7 @@ class EmailMessage {
                 domainType
               );
 
-              const tags = [...emailTags];
-              if (fieldName === 'from' || fieldName === 'reply-to') {
-                tags.push(...messageTags);
-              }
-
-              if (fieldName === 'list-post') {
-                tags.push({ name: 'group', reachable: 2, source: 'refined' });
-              }
+              const tags = [...emailTags, ...applicableMessageTags];
 
               return EmailMessage.constructPersonPocTags(
                 email,
