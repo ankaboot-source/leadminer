@@ -64,6 +64,7 @@
 import { computed, defineProps, watch, ref } from "vue";
 import { useStore } from "vuex";
 import { useQuasar } from "quasar";
+import { timeConversion } from "src/helpers/time-helpers";
 
 const $q = useQuasar();
 const $store = useStore();
@@ -183,26 +184,5 @@ function timeConversionRounded(timeInSeconds) {
   }
   // time <= 5 seconds : (Almost set!)
   else return ["Almost set!"];
-}
-function timeConversion(timeInSeconds) {
-  if (timeInSeconds >= 3600) {
-    return [
-      Math.floor(timeInSeconds / 3600),
-      "hours",
-      Math.round((timeInSeconds % 3600) / 60),
-      "minutes",
-      Math.round((timeInSeconds % 3600) % 60),
-      "seconds",
-    ].join(" ");
-  } else if (timeInSeconds >= 60) {
-    return [
-      Math.round((timeInSeconds % 3600) / 60),
-      "minutes",
-      Math.round((timeInSeconds % 3600) % 60),
-      "seconds",
-    ].join(" ");
-  } else {
-    return [Math.round((timeInSeconds % 3600) % 60), "seconds"].join(" ");
-  }
 }
 </script>
