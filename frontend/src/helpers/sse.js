@@ -16,8 +16,8 @@ class SSE {
     });
 
     this.eventSource.addEventListener("fetching-finished", ({ data }) => {
-      const scanned = parseInt(data, 10);
-      store.commit("example/SET_FETCHING_FINISHED", scanned);
+      const totalFetchedEmails = parseInt(data, 10);
+      store.commit("example/SET_FETCHING_FINISHED", totalFetchedEmails);
     });
   }
 
