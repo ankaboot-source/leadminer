@@ -22,11 +22,11 @@ jobs:
             )
             cp leadminer.io/.env.$TARGET leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
-            cd ../leadminer_$TARGET
+            cd leadminer_$TARGET
 
-            eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
-            eval "docker rm $(docker ps -a -q)"
-            docker-compose -d up \
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
+            docker ps -a -q | xargs -n 1 docker rm
+            docker-compose up -d \
               --env-file .env \
               --build \
               --force-recreate
