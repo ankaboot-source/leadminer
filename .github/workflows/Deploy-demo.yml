@@ -22,7 +22,7 @@ jobs:
             )
             cp leadminer.io/.env.$TARGET leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
-            cd leadminer_$TARGET
+            cd ../leadminer_$TARGET
 
             eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
             eval "docker rm $(docker ps -a -q)"
