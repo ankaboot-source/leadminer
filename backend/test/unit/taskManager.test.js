@@ -69,23 +69,36 @@ describe('TasksManager class', () => {
     }
   };
 
-  function EmailFetcherClass() {
-    this.getTotalMessages = function () {
-      return this;
-    };
-    this.start = function () {
-      return this;
-    };
+  const emailFetcherFactory = {
 
+    create: () => {
+      return {
+   
+        getTotalMessages: () => {
+          return 100;
+        },
+
+        start: () => {
+          return null
+        }
+      }
+    }
   }
 
-  function SSEBroadcasterClass() {
-    this.send = function () {
-      return this;
-    };
-    this.stop = function () {
-      return this;
-    };
+  const sseBroadcasterFactory = {
+
+    create: () => {
+      return {
+
+        send: () => {
+          return null;
+        },
+
+        stop: () => {
+          return null;
+        }
+      }
+    }
   }
 
   let tasksManager = null;
@@ -95,8 +108,8 @@ describe('TasksManager class', () => {
       'STREAM',
       fakeRedisClient,
       fakeRedisClient,
-      EmailFetcherClass,
-      SSEBroadcasterClass
+      emailFetcherFactory,
+      sseBroadcasterFactory
     );
   });
 

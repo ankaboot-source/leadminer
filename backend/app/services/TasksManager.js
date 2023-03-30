@@ -57,16 +57,16 @@ class TasksManager {
    * @param {object} pubsubCommunicationChannel - Used to communicate with other processes.
    * @param {object} redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
    * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
-   * @param {function} EmailFetcherClass - The class to use for fetching emails.
-   * @param {function} SSEBroadcasterClass - The class to use for managing server-sent events and broadcasting updates.
+   * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
+   * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
    */
-  constructor(pubsubCommunicationChannel, redisSubscriber, redisPublisher, EmailFetcherClass, SSEBroadcasterClass) {
+  constructor(pubsubCommunicationChannel, redisSubscriber, redisPublisher, emailFetcherFactory, sseBroadcasterFactory) {
     this.pubsubCommunicationChannel = pubsubCommunicationChannel;
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
 
-    this.EmailFetcherClass = EmailFetcherClass;
-    this.RealtimeSSE = SSEBroadcasterClass;
+    this.emailFetcherFactory = emailFetcherFactory;
+    this.sseBroadcasterFactory = sseBroadcasterFactory;
 
     // Set up the Redis subscriber to listen for updates
     this.redisSubscriber.on('message', async (_, data) => {
@@ -125,18 +125,14 @@ class TasksManager {
   }
 
   /**
-   * Creates a new mining task for a given user.
-   * 
+   * Creates a new mining task for a given user with the specified options.
    * @param {string} userId - The ID of the user for whom the task is being created.
-   * 
-   * @param {object} fetcherOptions - An object containing the fetcherOptions for the fetcher.
-   * @param {string} fetcherOptions.email - The email address of the account to connect to.
-   * @param {string} fetcherOptions.userId - The ID of the email account to connect to.
-   * @param {number} fetcherOptions.batchSize - A Number To send notification every x emails processed
+   * @param {object} fetcherOptions - An object containing the options for the email fetcher.
+   * @param {string} fetcherOptions.email - The email address to connect to.
+   * @param {string} fetcherOptions.userId - The ID of the user.
+   * @param {number} fetcherOptions.batchSize - The number of emails to process before sending a notification.
    * @param {string[]} fetcherOptions.boxes - An array of strings specifying the email boxes to mine.
-   * @param {object} fetcherOptions.imapConnectionProvider - An object containing fetcherOptions for the email connection provider.
-   * 
-   * 
+   * @param {object} fetcherOptions.imapConnectionProvider - A configured email connection provider object.
    * @returns {object} - The new mining task.
    * 
    * @throws {Error} If a task with the same mining ID already exists.
@@ -151,7 +147,7 @@ class TasksManager {
 
     try {
 
-      const fetcher = new this.EmailFetcherClass(
+      const fetcher = this.emailFetcherFactory.create(
         imapConnectionProvider,
         boxes,
         userId,
@@ -160,7 +156,7 @@ class TasksManager {
         streamName,
         batchSize
       );
-      const progressHandlerSSE = new this.RealtimeSSE();
+      const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
       miningTask.fetcher = fetcher;
       miningTask.progressHandlerSSE = progressHandlerSSE;
@@ -358,12 +354,45 @@ class TasksManager {
   }
 }
 
+/**
+ * A factory for creating EmailFetcher instances.
+ */
+class EmailFetcherFactory {
+  /**
+   * Creates a new EmailFetcher instance.
+   * @param {object} options - An object containing the options for the email fetcher.
+   * @param {string} options.email - The email address to connect to.
+   * @param {string} options.userId - The ID of the user.
+   * @param {number} options.batchSize - The number of emails to process before sending a notification.
+   * @param {string[]} options.boxes - An array of strings specifying the email boxes to mine.
+   * @param {object} options.imapConnectionProvider - A configured email connection provider object.
+   * @returns {ImapEmailsFetcher} A new instance of `ImapEmailsFetcher`.
+   */
+  create(options) {
+    const { email, userId, batchSize, boxes, imapConnectionProvider } = options;
+    return new ImapEmailsFetcher(email, userId, batchSize, boxes, imapConnectionProvider);
+  }
+}
+
+/**
+ * A factory for creating SSEBroadcasterFactory instances.
+ */
+class SSEBroadcasterFactory {
+  /**
+   * Creates a new instance of `SSEBroadcasterClass`.
+   * @returns {RealtimeSSE} - A new instance of `RealtimeSSE`.
+   */
+  create() {
+    return new RealtimeSSE();
+  }
+}
+
 const miningTasksManager = new TasksManager(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   redis.getDuplicatedClient(),
   redis.getDuplicatedClient(),
-  ImapEmailsFetcher,
-  RealtimeSSE
+  EmailFetcherFactory,
+  SSEBroadcasterFactory
 );
 
 module.exports = {
