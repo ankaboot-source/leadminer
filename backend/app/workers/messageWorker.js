@@ -40,11 +40,9 @@ class StreamConsumer {
       }
     });
 
-    // Listen for messages on the Redis channel.
     redisSubscriber.on('message', (_, data) => {
       const { miningId, command, streamName, consumerGroupName } = JSON.parse(data);
 
-      // Add stream to registry when command is "register" otherwise delete it if exists. 
       if (command === 'REGISTER') {
         this.streamsRegistry.set(miningId, { streamName, consumerGroupName });
       } else {

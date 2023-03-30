@@ -337,7 +337,7 @@ class ImapEmailsFetcher {
   }
 
   /**
-   * Starts fetching email messages and executes the given callback per fetched message.
+   * Starts fetching email messages.
    * @returns {Object} This instance of the EmailFetcher class.
    */
   start() {
