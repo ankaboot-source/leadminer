@@ -1,81 +1,79 @@
 <template>
-  <div class="text-h3 text-teal">
-    <q-banner rounded class="q-pa-none">
-      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ minedEmails }}
-        </div>
-        legit email addresses mined.
-      </q-chip>
-      <br />
-      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ totalEmails }}
-        </div>
-        email messages to mine.
-      </q-chip>
-      <q-card class="q-ml-lg" flat bordered>
-        <div class="row justify-between q-ma-sm">
-          <div class="col-auto">
-            <div
-              v-show="activeMiningTask"
-              class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm q-ml-md"
-            >
-              {{ Math.floor(progressValue * 100) }}%
-            </div>
-          </div>
-
-          <div class="col-auto text-h6">
-            <div v-show="activeMiningTask">
-              Digging up the good stuff! Hold tight...
-            </div>
-          </div>
-
+  <q-banner rounded class="q-pa-none">
+    <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
+      <div class="text-h5 text-weight-bolder q-ma-sm">
+        {{ minedEmails }}
+      </div>
+      legit email addresses mined.
+    </q-chip>
+    <br />
+    <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
+      <div class="text-h5 text-weight-bolder q-ma-sm">
+        {{ totalEmails }}
+      </div>
+      email messages to mine.
+    </q-chip>
+    <q-card class="q-ml-lg" flat bordered>
+      <div class="row justify-between q-ma-sm">
+        <div class="col-auto">
           <div
-            class="col-auto text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
+            v-show="activeMiningTask"
+            class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm q-ml-md"
           >
-            <div v-if="activeMiningTask">
-              Estimated time remaining:
-              {{ estimatedTimeRemainingConverted }}
-            </div>
-            <div v-else-if="!scannedEmails">
-              Estimated mining time:
-              {{ estimatedTotalTimeRemainingConverted }}
-            </div>
-            <div v-else>
-              Finished in {{ timeConversion(timeEstimation().elapsedTime) }}.
-            </div>
+            {{ Math.floor(progressValue * 100) }}%
           </div>
         </div>
-        <q-linear-progress
-          :buffer="progressBuffer"
-          :value="progressValue"
-          size="1.5rem"
-          color="teal-8"
-          track-color="teal-2"
-          class="q-card--bordered q-pa-null"
-          stripe
-          animation-speed="0"
-        />
-        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-          <div class="text-center">
-            <div v-if="!fetchingFinished">
-              Unique fetched emails:
-              <span class="text-weight-bolder">
-                {{ scannedEmails }}/{{ totalEmails }}
-              </span>
-            </div>
-            <div>
-              Extracted emails:
-              <span class="text-weight-bolder">
-                {{ extractedEmails }}/{{ scannedEmails }}
-              </span>
-            </div>
+
+        <div class="col-auto text-h6">
+          <div v-show="activeMiningTask">
+            Digging up the good stuff! Hold tight...
           </div>
-        </q-tooltip>
-      </q-card>
-    </q-banner>
-  </div>
+        </div>
+
+        <div
+          class="col-auto text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
+        >
+          <div v-if="activeMiningTask">
+            Estimated time remaining:
+            {{ estimatedTimeRemainingConverted }}
+          </div>
+          <div v-else-if="!scannedEmails">
+            Estimated mining time:
+            {{ estimatedTotalTimeRemainingConverted }}
+          </div>
+          <div v-else>
+            Finished in {{ timeConversion(timeEstimation().elapsedTime) }}.
+          </div>
+        </div>
+      </div>
+      <q-linear-progress
+        :buffer="progressBuffer"
+        :value="progressValue"
+        size="1.5rem"
+        color="teal-8"
+        track-color="teal-2"
+        class="q-card--bordered q-pa-null"
+        stripe
+        animation-speed="0"
+      />
+      <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
+        <div class="text-center">
+          <div v-if="!fetchingFinished">
+            Unique fetched emails:
+            <span class="text-weight-bolder">
+              {{ scannedEmails }}/{{ totalEmails }}
+            </span>
+          </div>
+          <div>
+            Extracted emails:
+            <span class="text-weight-bolder">
+              {{ extractedEmails }}/{{ scannedEmails }}
+            </span>
+          </div>
+        </div>
+      </q-tooltip>
+    </q-card>
+  </q-banner>
 </template>
 
 <script setup>
