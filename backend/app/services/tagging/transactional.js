@@ -1,4 +1,3 @@
-const { HasHeaderField } = require('./conditions/HasHeaderField');
 const {
   HasHeaderFieldStartsWith
 } = require('./conditions/HasHeaderFieldStartsWith');
