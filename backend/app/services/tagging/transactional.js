@@ -9,11 +9,11 @@ const {
 const transactionalEmailMessage = {
   tag: {
     name: 'transactional',
-    reachability: 2
+    reachable: 2
   },
   rulesToApply: [
     {
-      fields: ['from', 'reply-to'],
+      fields: ['from', 'reply-to', 'reply_to'],
       conditions: [
         new HasHeaderFieldStartsWith([
           'feedback-id',
@@ -21,19 +21,18 @@ const transactionalEmailMessage = {
           'x-mandrill-user',
           'x-marketoid',
           'x-campaignid',
-          'x-job'
+          'x-job',
+          'x-linkedin',
+          'x-mailgun',
+          'x-github',
+          'x-gnd-status'
         ]),
         new HasHeaderWithValues('x-mailer', [
           'ec-messenger',
           'nlserver',
           'mailchimp'
         ]),
-        new HasHeaderField([
-          'x-linkedin',
-          'x-mailgun',
-          'auto-submitted',
-          'x-github'
-        ])
+        new HasHeaderWithValues('auto-submitted', ['auto-generated'])
       ]
     }
   ]

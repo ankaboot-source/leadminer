@@ -13,7 +13,8 @@ class EmailMessage {
     'cc',
     'bcc',
     'reply-to',
-    'list-post'
+    'list-post',
+    'reply_to'
   ];
   static #IGNORED_MESSAGE_TAGS = ['transactional', 'no-reply'];
 
@@ -102,10 +103,10 @@ class EmailMessage {
   #getMessagingValues() {
     const messagingProps = {};
 
-    for (const key of EmailMessage.#MESSAGING_FIELDS) {
-      const value = this.header[`${key}`];
-      if (value !== undefined) {
-        messagingProps[`${key}`] = value[0];
+    for (const key of Object.keys(this.header)) {
+      const lowerCaseKey = key.toLocaleLowerCase();
+      if (EmailMessage.#MESSAGING_FIELDS.includes(lowerCaseKey)) {
+        messagingProps[`${lowerCaseKey}`] = this.header[`${key}`][0];
       }
     }
 
@@ -189,6 +190,7 @@ class EmailMessage {
         }
       })
     );
+
     extractedData.persons.push(
       ...personsExtractedFromHeader
         .map((p) => p.value)
@@ -238,7 +240,16 @@ class EmailMessage {
                 domainType
               );
 
-              const tags = [...emailTags, ...applicableMessageTags];
+              const tags = [
+                ...emailTags,
+                ...applicableMessageTags.map((t) => {
+                  return {
+                    name: t.name,
+                    reachable: t.reachable,
+                    source: 'refined'
+                  };
+                })
+              ];
 
               return EmailMessage.constructPersonPocTags(
                 email,
