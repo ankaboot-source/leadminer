@@ -21,7 +21,7 @@
               v-show="activeMiningTask"
               class="bg-teal-1 text-teal-8 border q-px-sm"
             >
-              {{ (progressValue * 100).toFixed() }} %
+              {{ Math.floor(progressValue * 100) }} %
             </div>
           </div>
 
