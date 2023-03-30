@@ -28,14 +28,25 @@ function subscribeToRefined(userId, commit) {
     )
     .subscribe();
 }
+export async function syncRefinedPersons({ state, commit }) {
 
-export async function fetchRefinedPersons({ state, commit }) {
+  if (subscription) { 
+    // Unsubscribe from real-time updates if currently subscribed
+    // to avoid getting update twice, from supabase query and realtime updates.
+    await subscription.unsubscribe();
+  }
+  
+  // Determine user based on Google or IMAP credentials
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  
+  // Call refined_persons stored procedure using Supabase client
   const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
-
+  
   if (rpcResult.error) {
     console.error(rpcResult.error);
   }
+  
+  // Fetch data from Supabase for current user and update store with email addresses
   const data = await fetchData(
     supabase,
     user.id,
@@ -43,6 +54,9 @@ export async function fetchRefinedPersons({ state, commit }) {
     process.env.SUPABASE_MAX_ROWS
   );
   data.forEach((person) => commit("SET_EMAILS", person));
+  
+  // Subscribe to real-time updates for current user
+  subscribeToRefined(user.id, commit);
 }
 
 export async function startMining({ state, commit }, { data }) {

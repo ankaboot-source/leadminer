@@ -59,7 +59,7 @@
             icon="sync"
             no-caps
             :disable="isLoading"
-            @click="fetchRefined"
+            @click="syncTable"
           />
         </div>
         <q-btn
@@ -264,20 +264,19 @@ const activeMiningTask = computed(
 
 let refreshInterval = null
 
-watch(activeMiningTask, (isActive) => {
+watch(activeMiningTask, async (isActive) => {
+  
   if (isActive) {
+    
+    // If mining is active, update refined persons every 3 seconds
     refreshInterval = setInterval(() => {
-      if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
-        updateRefinedPersons();
-      }
-    }, 3000);
+      // Call the refreshTable function
+      refreshTable()
+    }, 3000)
+  
   } else {
-    if (refreshInterval !== null) {
-      setTimeout(() => {
-        updateRefinedPersons()
-      }, 3000)
-      clearInterval(refreshInterval);
-    }
+    clearInterval(refreshInterval)
+    await syncTable()
   }
 });
 
@@ -348,15 +347,25 @@ function filterFn(rows, terms) {
   );
 }
 
-function updateRefinedPersons() {
-  isLoading.value = true;
-  rows.value = $store.getters["example/getRetrievedEmails"];
-  isLoading.value = false;
+function refreshTable() {
+  
+  const contactStoreLength = $store.getters["example/getRetrievedEmails"].length
+  const contactTableLength = rows.value.length
+  
+  const hasNewContacts = 
+    contactStoreLength > contactTableLength &&
+    ( contactStoreLength !== 0 && contactTableLength !== 0 )
+
+  if (hasNewContacts) {
+    isLoading.value = true;
+    rows.value = $store.getters["example/getRetrievedEmails"];
+    isLoading.value = false;
+  }
 }
 
-async function fetchRefined() {
+async function syncTable() {
   isLoading.value = true;
-  await $store.dispatch("example/fetchRefinedPersons");
+  await $store.dispatch("example/syncRefinedPersons");
   rows.value = $store.getters["example/getRetrievedEmails"];
   isLoading.value = false;
 }
@@ -411,7 +420,7 @@ function exportTable() {
 onMounted(() => {
   window.addEventListener("keydown", onKeyDown);
   setTimeout(() => {
-    fetchRefined();
+    syncTable();
   });
 });
 
@@ -434,8 +443,11 @@ function copyValueToClipboard(value, valueName) {
 
 <style>
 .q-table__top,
-  .q-table__bottom,
-  thead tr:first-child th /* bg color is important for th; just specify one */ {
+.q-table__bottom,
+thead tr:first-child th
+
+/* bg color is important for th; just specify one */
+  {
   background-color: #fff;
 }
 
