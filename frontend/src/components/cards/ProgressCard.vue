@@ -12,29 +12,40 @@
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ totalEmails }}
         </div>
-        email messages selected.
+        email messages to mine.
       </q-chip>
-      <div class="q-ml-lg">
-        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-          <div class="text-center">
-            <div v-if="!fetchingFinished">
-              <span class="text-h6 text-weight-bolder">
-                {{ scannedEmails }}/{{ totalEmails }}
-              </span>
-              unique emails fetched / emails selected
-            </div>
-            <div>
-              <span class="text-h6 text-weight-bolder">
-                {{ extractedEmails }}/{{ scannedEmails }}
-              </span>
-              emails extracted
+      <q-card class="q-ml-lg" flat bordered>
+        <div class="row justify-between q-ma-sm">
+          <div class="col-auto text-h6 text-weight-bold">
+            <div
+              v-show="activeMiningTask"
+              class="bg-teal-1 text-teal-8 border q-px-sm"
+            >
+              {{ (progressValue * 100).toFixed() }} %
             </div>
           </div>
-        </q-tooltip>
-        <span v-if="activeMiningTask">
-          Digging up the good stuff! Hold tight...
-          {{ (progressValue * 100).toFixed() }} %
-        </span>
+
+          <div
+            v-show="activeMiningTask"
+            class="col-auto text-h6 text-weight-medium"
+          >
+            <div>Digging up the good stuff! Hold tight...</div>
+          </div>
+
+          <div class="col-auto text-weight-regular text-blue-grey-14">
+            <span v-if="activeMiningTask">
+              Estimated time remaining:
+              {{ estimatedTimeRemainingConverted }}
+            </span>
+            <span v-else-if="!scannedEmails">
+              Estimated mining time:
+              {{ estimatedTotalTimeRemainingConverted }}
+            </span>
+            <span v-else>
+              Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
+            </span>
+          </div>
+        </div>
         <q-linear-progress
           :buffer="progressBuffer"
           :value="progressValue"
@@ -44,18 +55,23 @@
           class="q-card--bordered q-pa-null"
           animation-speed="0"
         />
-        <span v-if="activeMiningTask">
-          Estimated time remaining:
-          {{ estimatedTimeRemainingConverted }}
-        </span>
-        <span v-else-if="!scannedEmails">
-          Estimated waiting time:
-          {{ estimatedWaitingTimeConverted }}
-        </span>
-        <span v-else>
-          Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
-        </span>
-      </div>
+        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
+          <div class="text-center">
+            <div v-if="!fetchingFinished">
+              Unique fetched emails:
+              <span class="text-weight-bolder">
+                {{ scannedEmails }}/{{ totalEmails }}
+              </span>
+            </div>
+            <div>
+              Extracted emails:
+              <span class="text-weight-bolder">
+                {{ extractedEmails }}/{{ scannedEmails }}
+              </span>
+            </div>
+          </div>
+        </q-tooltip>
+      </q-card>
     </q-banner>
   </div>
 </template>
@@ -113,7 +129,7 @@ const progressValue = computed(() => {
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
 
-const estimatedWaitingTimeConverted = computed(() => {
+const estimatedTotalTimeRemainingConverted = computed(() => {
   return timeConversionRounded(estimatedTotalTimeRemaining).join(" ");
 });
 const estimatedTimeRemainingConverted = computed(() => {
