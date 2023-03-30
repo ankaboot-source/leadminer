@@ -1,6 +1,6 @@
 <template>
   <div class="text-h3 text-teal">
-    <q-banner rounded>
+    <q-banner rounded class="q-pa-none">
       <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
         <div class="text-h5 text-weight-bolder q-ma-sm">
           {{ minedEmails }}
@@ -16,16 +16,16 @@
       </q-chip>
       <q-card class="q-ml-lg" flat bordered>
         <div class="row justify-between q-ma-sm">
-          <div class="col-auto text-h6 text-weight-bold">
+          <div class="col-auto">
             <div
               v-show="activeMiningTask"
-              class="bg-teal-1 text-teal-8 border q-px-sm q-ml-md"
+              class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm q-ml-md"
             >
               {{ Math.floor(progressValue * 100) }}%
             </div>
           </div>
 
-          <div class="col-auto text-h6 text-weight-medium">
+          <div class="col-auto text-h6">
             <div v-show="activeMiningTask">
               Digging up the good stuff! Hold tight...
             </div>
@@ -43,7 +43,7 @@
               {{ estimatedTotalTimeRemainingConverted }}
             </div>
             <div v-else>
-              Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
+              Finished in {{ timeConversion(timeEstimation().elapsedTime) }}.
             </div>
           </div>
         </div>
