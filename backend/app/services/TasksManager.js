@@ -147,7 +147,7 @@ class TasksManager {
 
     try {
 
-      const fetcher = this.emailFetcherFactory.create(
+      const fetcher = this.emailFetcherFactory.create({
         imapConnectionProvider,
         boxes,
         userId,
@@ -155,7 +155,7 @@ class TasksManager {
         miningId,
         streamName,
         batchSize
-      );
+      });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
       miningTask.fetcher = fetcher;
@@ -366,11 +366,28 @@ class EmailFetcherFactory {
    * @param {number} options.batchSize - The number of emails to process before sending a notification.
    * @param {string[]} options.boxes - An array of strings specifying the email boxes to mine.
    * @param {object} options.imapConnectionProvider - A configured email connection provider object.
+   * @param {string} options.miningId - The ID of the mining task.
+   * @param {string} options.streamName - The name of the stream to publish mining events to.
    * @returns {ImapEmailsFetcher} A new instance of `ImapEmailsFetcher`.
    */
-  create(options) {
-    const { email, userId, batchSize, boxes, imapConnectionProvider } = options;
-    return new ImapEmailsFetcher(email, userId, batchSize, boxes, imapConnectionProvider);
+  create({
+    imapConnectionProvider,
+    boxes,
+    userId,
+    email,
+    miningId,
+    streamName,
+    batchSize
+  }) {
+    return new ImapEmailsFetcher(
+      imapConnectionProvider,
+      boxes,
+      userId,
+      email,
+      miningId,
+      streamName,
+      batchSize
+    );
   }
 }
 
@@ -391,8 +408,8 @@ const miningTasksManager = new TasksManager(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   redis.getDuplicatedClient(),
   redis.getDuplicatedClient(),
-  EmailFetcherFactory,
-  SSEBroadcasterFactory
+  new EmailFetcherFactory(),
+  new SSEBroadcasterFactory()
 );
 
 module.exports = {
