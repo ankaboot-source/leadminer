@@ -19,31 +19,32 @@
           <div class="col-auto text-h6 text-weight-bold">
             <div
               v-show="activeMiningTask"
-              class="bg-teal-1 text-teal-8 border q-px-sm"
+              class="bg-teal-1 text-teal-8 border q-px-sm q-ml-md"
             >
-              {{ Math.floor(progressValue * 100) }} %
+              {{ Math.floor(progressValue * 100) }}%
+            </div>
+          </div>
+
+          <div class="col-auto text-h6 text-weight-medium">
+            <div v-show="activeMiningTask">
+              Digging up the good stuff! Hold tight...
             </div>
           </div>
 
           <div
-            v-show="activeMiningTask"
-            class="col-auto text-h6 text-weight-medium"
+            class="col-auto text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
           >
-            <div>Digging up the good stuff! Hold tight...</div>
-          </div>
-
-          <div class="col-auto text-weight-regular text-blue-grey-14">
-            <span v-if="activeMiningTask">
+            <div v-if="activeMiningTask">
               Estimated time remaining:
               {{ estimatedTimeRemainingConverted }}
-            </span>
-            <span v-else-if="!scannedEmails">
+            </div>
+            <div v-else-if="!scannedEmails">
               Estimated mining time:
               {{ estimatedTotalTimeRemainingConverted }}
-            </span>
-            <span v-else>
+            </div>
+            <div v-else>
               Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
-            </span>
+            </div>
           </div>
         </div>
         <q-linear-progress
@@ -53,6 +54,7 @@
           color="teal-8"
           track-color="teal-2"
           class="q-card--bordered q-pa-null"
+          stripe
           animation-speed="0"
         />
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
