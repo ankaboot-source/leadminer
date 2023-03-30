@@ -14,18 +14,18 @@
       email messages to mine.
     </q-chip>
     <q-card class="q-ml-lg" flat bordered>
-      <div class="row justify-between q-ma-sm">
+      <div class="row justify-between q-ma-sm q-mx-md">
         <div class="col-auto">
           <div
             v-show="activeMiningTask"
-            class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm q-ml-md"
+            class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm"
           >
             {{ Math.floor(progressValue * 100) }}%
           </div>
         </div>
 
-        <div class="col-auto text-h6">
-          <div v-show="activeMiningTask">
+        <div class="col-auto">
+          <div v-show="activeMiningTask" class="text-h6 text-teal-8">
             Digging up the good stuff! Hold tight...
           </div>
         </div>
@@ -55,23 +55,24 @@
         class="q-card--bordered q-pa-null"
         stripe
         animation-speed="0"
-      />
-      <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-        <div class="text-center">
-          <div v-if="!fetchingFinished">
-            Unique fetched emails:
-            <span class="text-weight-bolder">
-              {{ scannedEmails }}/{{ totalEmails }}
-            </span>
+      >
+        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
+          <div class="text-center">
+            <div v-if="!fetchingFinished">
+              Unique fetched emails:
+              <span class="text-weight-bolder">
+                {{ scannedEmails }}/{{ totalEmails }}
+              </span>
+            </div>
+            <div>
+              Extracted emails:
+              <span class="text-weight-bolder">
+                {{ extractedEmails }}/{{ scannedEmails }}
+              </span>
+            </div>
           </div>
-          <div>
-            Extracted emails:
-            <span class="text-weight-bolder">
-              {{ extractedEmails }}/{{ scannedEmails }}
-            </span>
-          </div>
-        </div>
-      </q-tooltip>
+        </q-tooltip>
+      </q-linear-progress>
     </q-card>
   </q-banner>
 </template>
