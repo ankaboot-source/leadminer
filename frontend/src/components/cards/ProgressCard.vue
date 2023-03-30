@@ -15,7 +15,12 @@
     </q-chip>
     <q-card class="q-ml-lg" flat bordered>
       <div class="row justify-between q-ma-sm q-mx-md">
-        <div class="col-auto">
+        <div class="col-5 text-left">
+          <div v-show="activeMiningTask" class="text-h6 text-teal-8">
+            Digging up the good stuff! Hold tight...
+          </div>
+        </div>
+        <div class="col-auto text-center">
           <div
             v-show="activeMiningTask"
             class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm"
@@ -23,19 +28,14 @@
             {{ Math.floor(progressValue * 100) }}%
           </div>
         </div>
-
-        <div class="col-auto">
-          <div v-show="activeMiningTask" class="text-h6 text-teal-8">
-            Digging up the good stuff! Hold tight...
-          </div>
-        </div>
-
         <div
-          class="col-auto text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
+          class="col-5 text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
         >
           <div v-if="activeMiningTask">
-            Estimated time remaining:
             {{ estimatedTimeRemainingConverted }}
+            <span v-if="estimatedTimeRemainingConverted != 'Almost set!'"
+              >left</span
+            >
           </div>
           <div v-else-if="!scannedEmails">
             Estimated mining time:
