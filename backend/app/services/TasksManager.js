@@ -357,29 +357,21 @@ class TasksManager {
 /**
  * A factory for creating EmailFetcher instances.
  */
-class EmailFetcherFactory {
-  /**
-   * Creates a new EmailFetcher instance.
-   * @param {object} options - An object containing the options for the email fetcher.
-   * @param {string} options.email - The email address to connect to.
-   * @param {string} options.userId - The ID of the user.
-   * @param {number} options.batchSize - The number of emails to process before sending a notification.
-   * @param {string[]} options.boxes - An array of strings specifying the email boxes to mine.
-   * @param {object} options.imapConnectionProvider - A configured email connection provider object.
-   * @param {string} options.miningId - The ID of the mining task.
-   * @param {string} options.streamName - The name of the stream to publish mining events to.
-   * @returns {ImapEmailsFetcher} A new instance of `ImapEmailsFetcher`.
-   */
-  create({
-    imapConnectionProvider,
-    boxes,
-    userId,
-    email,
-    miningId,
-    streamName,
-    batchSize
-  }) {
-    return new ImapEmailsFetcher(
+const EmailFetcherFactory = function () {
+  return {
+    /**
+     * Creates a new EmailFetcher instance.
+     * @param {object} options - An object containing the options for the email fetcher.
+     * @param {string} options.email - The email address to connect to.
+     * @param {string} options.userId - The ID of the user.
+     * @param {number} options.batchSize - The number of emails to process before sending a notification.
+     * @param {string[]} options.boxes - An array of strings specifying the email boxes to mine.
+     * @param {object} options.imapConnectionProvider - A configured email connection provider object.
+     * @param {string} options.miningId - The ID of the mining task.
+     * @param {string} options.streamName - The name of the stream to publish mining events to.
+     * @returns {ImapEmailsFetcher} A new instance of `ImapEmailsFetcher`.
+     */
+    create: ({
       imapConnectionProvider,
       boxes,
       userId,
@@ -387,20 +379,32 @@ class EmailFetcherFactory {
       miningId,
       streamName,
       batchSize
-    );
+    }) => {
+      return new ImapEmailsFetcher(
+        imapConnectionProvider,
+        boxes,
+        userId,
+        email,
+        miningId,
+        streamName,
+        batchSize
+      );
+    }
   }
 }
 
 /**
  * A factory for creating SSEBroadcasterFactory instances.
  */
-class SSEBroadcasterFactory {
-  /**
-   * Creates a new instance of `SSEBroadcasterClass`.
-   * @returns {RealtimeSSE} - A new instance of `RealtimeSSE`.
-   */
-  create() {
-    return new RealtimeSSE();
+const SSEBroadcasterFactory = function () {
+  return {
+    /**
+     * Creates a new instance of `SSEBroadcasterClass`.
+     * @returns {RealtimeSSE} - A new instance of `RealtimeSSE`.
+     */
+    create: () => {
+      return new RealtimeSSE();
+    }
   }
 }
 

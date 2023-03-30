@@ -66,36 +66,45 @@ describe('TasksManager class', () => {
     },
     xgroup: () => {
       return null
+    },
+    del: () => {
+      return null
     }
   };
 
-  const emailFetcherFactory = {
+  const emailFetcherFactory = function () {
+    return {
+      create: () => {
+        return {
 
-    create: () => {
-      return {
-   
-        getTotalMessages: () => {
-          return 100;
-        },
+          getTotalMessages: () => {
+            return 100;
+          },
 
-        start: () => {
-          return null
+          start: () => {
+            return null
+          },
+
+          stop: () => {
+            return null
+          }
         }
       }
     }
   }
 
-  const sseBroadcasterFactory = {
+  const sseBroadcasterFactory = function () {
+    return {
+      create: () => {
+        return {
 
-    create: () => {
-      return {
+          send: () => {
+            return null;
+          },
 
-        send: () => {
-          return null;
-        },
-
-        stop: () => {
-          return null;
+          stop: () => {
+            return null;
+          }
         }
       }
     }
@@ -108,8 +117,8 @@ describe('TasksManager class', () => {
       'STREAM',
       fakeRedisClient,
       fakeRedisClient,
-      emailFetcherFactory,
-      sseBroadcasterFactory
+      new emailFetcherFactory(),
+      new sseBroadcasterFactory()
     );
   });
 
