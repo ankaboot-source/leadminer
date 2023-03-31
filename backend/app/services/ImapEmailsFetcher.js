@@ -301,10 +301,10 @@ class ImapEmailsFetcher {
           const isLastMessage = seqNumber === totalInFolder;
           let fetchedMessagesCountBatch = null;
 
-          if (fetchedMessageCount === this.batchSize || isLastMessage) {
+          if (fetchedMessageCount % this.batchSize === 0 || isLastMessage) {
             // If we have fetched a full batch or this is the last message, set the fetched count
             // Reset the count for the next batch.
-            fetchedMessagesCountBatch = fetchedMessageCount;
+            fetchedMessagesCountBatch = isLastMessage ? fetchedMessageCount : this.batchSize
             fetchedMessageCount = 0;
           }
 
