@@ -2,13 +2,6 @@
   <q-banner rounded class="q-pa-none">
     <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
       <div class="text-h5 text-weight-bolder q-ma-sm">
-        {{ minedEmails }}
-      </div>
-      legit email addresses mined.
-    </q-chip>
-    <br />
-    <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-      <div class="text-h5 text-weight-bolder q-ma-sm">
         {{ totalEmails }}
       </div>
       email messages to mine.
@@ -17,7 +10,7 @@
       <div class="row justify-between q-ma-sm q-mx-md">
         <div class="col-5 text-left">
           <div v-show="activeMiningTask" class="text-h6 text-teal-8">
-            Digging up the good stuff! Hold tight...
+            We're deep in the mines now... extracting contacts!
           </div>
         </div>
         <div class="col-auto text-center">
@@ -33,9 +26,9 @@
         >
           <div v-if="activeMiningTask">
             {{ estimatedTimeRemainingConverted }}
-            <span v-if="estimatedTimeRemainingConverted != 'Almost set!'"
-              >left</span
-            >
+            <span v-if="estimatedTimeRemainingConverted != 'Almost set!'">
+              left
+            </span>
           </div>
           <div v-else-if="!scannedEmails">
             Estimated mining time:
@@ -59,7 +52,7 @@
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
           <div class="text-center">
             <div v-if="!fetchingFinished">
-              Unique fetched emails:
+              Fetched emails:
               <span class="text-weight-bolder">
                 {{ scannedEmails }}/{{ totalEmails }}
               </span>
@@ -74,6 +67,12 @@
         </q-tooltip>
       </q-linear-progress>
     </q-card>
+    <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
+      <div class="text-h5 text-weight-bolder q-ma-sm">
+        {{ minedEmails }}
+      </div>
+      legit email addresses mined.
+    </q-chip>
   </q-banner>
 </template>
 
