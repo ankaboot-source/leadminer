@@ -396,12 +396,6 @@ describe('Email Message', () => {
 
         expect(message.messageTags).to.deep.equal([
           {
-            name: 'transactional',
-            reachable: 2,
-            source: 'refined',
-            fields: ['from', 'reply-to', 'reply_to']
-          },
-          {
             name: 'linkedin',
             reachable: 2,
             source: 'refined',
