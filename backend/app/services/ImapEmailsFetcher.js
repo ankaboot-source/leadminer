@@ -34,10 +34,8 @@ async function publishEmailMessage(streamName, fetchedMessagesCount, emailMessag
 
   try {
 
-    if (fetchedMessagesCount) {
-      // Publish progress to pubsub channel.
-      await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
-    }
+    // Publish progress to pubsub channel.
+    await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
 
     // Add the email message to the Redis stream.
     await redisPublisher.xadd(
@@ -245,8 +243,6 @@ class ImapEmailsFetcher {
         bodies: this.bodies
       });
 
-      let fetchedMessageCount = 0;
-
       fetchResult.on('message', (msg, seqNumber) => {
         let header = '';
         let body = '';
@@ -295,15 +291,11 @@ class ImapEmailsFetcher {
           // Add the message ID to the set of fetched IDs and increment counters.
           this.fetchedIds.add(messageId);
           this.totalFetched++;
-          fetchedMessageCount++;
 
           // Check if it's the last message in the current folder.
           const isLastMessage = seqNumber === totalInFolder;
-          const shouldSendProgress = fetchedMessageCount % this.batchSize === 0 || isLastMessage
-          const progress = isLastMessage ? fetchedMessageCount % this.batchSize : this.batchSize
 
-          await publishEmailMessage(this.streamName,
-            shouldSendProgress ? progress : null,
+          await publishEmailMessage(this.streamName, null,
             {
               header: parsedHeader,
               body: parsedBody,
