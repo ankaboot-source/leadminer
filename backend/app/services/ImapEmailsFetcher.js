@@ -299,17 +299,11 @@ class ImapEmailsFetcher {
 
           // Check if it's the last message in the current folder.
           const isLastMessage = seqNumber === totalInFolder;
-          let fetchedMessagesCountBatch = null;
-
-          if (fetchedMessageCount % this.batchSize === 0 || isLastMessage) {
-            // If we have fetched a full batch or this is the last message, set the fetched count
-            // Reset the count for the next batch.
-            fetchedMessagesCountBatch = isLastMessage ? fetchedMessageCount : this.batchSize
-            fetchedMessageCount = 0;
-          }
+          const shouldSendProgress = fetchedMessageCount % this.batchSize === 0 || isLastMessage
+          const progress = isLastMessage ? fetchedMessageCount % this.batchSize : this.batchSize
 
           await publishEmailMessage(this.streamName,
-            fetchedMessagesCountBatch,
+            shouldSendProgress ? progress : null,
             {
               header: parsedHeader,
               body: parsedBody,
