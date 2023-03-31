@@ -190,9 +190,9 @@ class StreamConsumer {
 
     }
 
-    setImmediate(() => {
+    setTimeout(() => {
       this.consumeStreams();
-    });
+    }, 1000);
   }
 
   /**
