@@ -348,13 +348,9 @@ function filterFn(rows, terms) {
 }
 
 function refreshTable() {
-  
   const contactStoreLength = $store.getters["example/getRetrievedEmails"].length
   const contactTableLength = rows.value.length
-  
-  const hasNewContacts = 
-    contactStoreLength > contactTableLength &&
-    ( contactStoreLength !== 0 && contactTableLength !== 0 )
+  const hasNewContacts = parseInt(contactStoreLength) > parseInt(contactTableLength)
 
   if (hasNewContacts) {
     isLoading.value = true;
