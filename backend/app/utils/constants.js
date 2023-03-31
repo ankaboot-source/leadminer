@@ -16,8 +16,7 @@ module.exports = {
   FLICKR_BASE_58_CHARSET:
     '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ', // Defines the character set used in FlickrBase58 encoding.
   MAX_REDIS_PUBLISH_RETRIES_COUNT: 3,
-  REDIS_STREAM_NAME: 'imap-messages',
-  REDIS_CONSUMER_GROUP_NAME: 'imap-group',
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL: 'stream-management', // Used as redis PubSub channel name.
   MAX_WORKER_TIMEOUT: 600000,
   REGEX_HEADER: headerRegex, // Regex to extract emails from header fields (FROM, TO, CC, BCC)
   REGEX_BODY: bodyRegex, //  Regex to extract emails from body
