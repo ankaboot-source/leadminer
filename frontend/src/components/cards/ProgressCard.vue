@@ -1,28 +1,30 @@
 <template>
   <q-banner rounded class="q-pa-none">
-    <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-      <div class="text-h5 text-weight-bolder q-ma-sm">
-        {{ totalEmails }}
-      </div>
-      email messages to mine.
-    </q-chip>
     <q-card class="q-ml-lg" flat bordered>
       <div class="row justify-between q-ma-sm q-mx-md">
-        <div class="col-5 text-left">
-          <div v-show="activeMiningTask" class="text-h6 text-teal-8">
+        <div
+          v-if="activeMiningTask"
+          class="col-1 bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm text-center"
+        >
+          {{ Math.floor(progressValue * 100) }}%
+        </div>
+        <div v-else class="col-5 text-blue-grey-14 text-body1">
+          <span class="text-h5 text-weight-bolder q-ma-sm">
+            {{ totalEmails }}
+          </span>
+          email messages to mine.
+        </div>
+
+        <div
+          v-if="activeMiningTask"
+          class="col-7 text-body1 text-weight-medium text-right"
+        >
+          <div class="text-teal-8 q-pt-sm">
             We're deep in the mines now... extracting contacts!
           </div>
         </div>
-        <div class="col-auto text-center">
-          <div
-            v-show="activeMiningTask"
-            class="bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm"
-          >
-            {{ Math.floor(progressValue * 100) }}%
-          </div>
-        </div>
         <div
-          class="col-5 text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
+          class="col-4 text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
         >
           <div v-if="activeMiningTask">
             {{ estimatedTimeRemainingConverted }}
