@@ -1,14 +1,14 @@
 <template>
   <q-banner rounded class="q-pa-none">
-    <q-card class="q-ml-lg" flat bordered>
+    <q-card flat bordered>
       <div class="row justify-between q-ma-sm q-mx-md">
         <div
           v-if="activeMiningTask"
-          class="col-1 bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm text-center"
+          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm text-center"
         >
           {{ Math.floor(progressValue * 100) }}%
         </div>
-        <div v-else class="col-5 text-blue-grey-14 text-body1">
+        <div v-else class="col-auto text-blue-grey-14 text-body1">
           <span class="text-h5 text-weight-bolder q-ma-sm">
             {{ totalEmails }}
           </span>
@@ -16,15 +16,15 @@
         </div>
 
         <div
-          v-if="activeMiningTask"
-          class="col-7 text-body1 text-weight-medium text-right"
+          v-show="activeMiningTask"
+          class="text-h6 text-weight-medium text-center absolute-full flex flex-center q-pb-lg"
         >
-          <div class="text-teal-8 q-pt-sm">
+          <div class="text-teal-8">
             We're deep in the mines now... extracting contacts!
           </div>
         </div>
         <div
-          class="col-4 text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
+          class="col-auto text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
         >
           <div v-if="activeMiningTask">
             {{ estimatedTimeRemainingConverted }}
@@ -69,12 +69,6 @@
         </q-tooltip>
       </q-linear-progress>
     </q-card>
-    <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-      <div class="text-h5 text-weight-bolder q-ma-sm">
-        {{ minedEmails }}
-      </div>
-      legit email addresses mined.
-    </q-chip>
   </q-banner>
 </template>
 

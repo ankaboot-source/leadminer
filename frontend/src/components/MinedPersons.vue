@@ -38,6 +38,12 @@
             <q-icon name="search" />
           </template>
         </q-input>
+        <div class="text-blue-grey-14 text-body1">
+          <span class="text-h5 text-weight-bolder q-ma-sm">
+            {{ minedEmails }}
+          </span>
+          contacts mined
+        </div>
       </template>
       <template #top-right="props">
         <div class="q-px-sm">
@@ -239,6 +245,10 @@ const filter = { filterSearch };
 const isLoading = ref(false);
 const table = ref(null);
 
+const minedEmails = computed(
+  () => $store.getters["example/getRetrievedEmails"].length
+);
+
 const initialPagination = {
   sortBy: "engagement",
   descending: true,
@@ -262,20 +272,22 @@ const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
 
-let refreshInterval = null
+let refreshInterval = null;
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
     refreshInterval = setInterval(() => {
-      if ($store.getters["example/getRetrievedEmails"].length > rows.value.length) {
+      if (
+        $store.getters["example/getRetrievedEmails"].length > rows.value.length
+      ) {
         updateRefinedPersons();
       }
     }, 3000);
   } else {
     if (refreshInterval !== null) {
       setTimeout(() => {
-        updateRefinedPersons()
-      }, 3000)
+        updateRefinedPersons();
+      }, 3000);
       clearInterval(refreshInterval);
     }
   }
