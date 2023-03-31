@@ -1,6 +1,14 @@
 const { expect } = require('chai');
 
 const EmailMessage = require('../../app/services/EmailMessage');
+const { groupEmailMessage } = require('../../app/services/tagging/group');
+const { linkedinEmailMessage } = require('../../app/services/tagging/linkedin');
+const {
+  newsletterEmailMessage
+} = require('../../app/services/tagging/newsletter');
+const {
+  transactionalEmailMessage
+} = require('../../app/services/tagging/transactional');
 
 describe('Email Message', () => {
   describe('references', () => {
@@ -268,11 +276,158 @@ describe('Email Message', () => {
   });
 
   describe('messageTags', () => {
-    it('should tag transactional when is transactional, not newsletter and not list', () => {});
+    const [transactionalRules] = transactionalEmailMessage.rulesToApply;
+    const [groupRules] = groupEmailMessage.rulesToApply;
+    const [linkedinRules] = linkedinEmailMessage.rulesToApply;
+    const [newsletterRules] = newsletterEmailMessage.rulesToApply;
 
-    it("shouldn't tag transactional if is newsletter of is list", () => {});
+    let header = {};
+    beforeEach(() => {
+      header = {
+        'message-id': ['<test_message_id>'],
+        subject: ['Test Subject'],
+        to: ['test@example.com'],
+        from: ['sender@example.com']
+      };
+    });
 
-    it('should return an empty array if there is no tags', () => {});
+    transactionalRules.conditions[0].possibleHeaderPrefixes.forEach(
+      (prefix) => {
+        it(`Should include transactional if it has a header field with "${prefix}" as prefix`, () => {
+          header[`${prefix}-test`] = ['test'];
+          const message = new EmailMessage({}, '', 1, header, {}, '');
+
+          expect(message.messageTags).to.deep.equal([
+            {
+              name: 'transactional',
+              reachable: 2,
+              source: 'refined',
+              fields: transactionalRules.fields
+            }
+          ]);
+        });
+      }
+    );
+
+    transactionalRules.conditions[1].values.forEach((value) => {
+      it(`Should include transactional if it has an "x-mailer" field with "${value}" as value`, () => {
+        header['x-mailer'] = [value];
+        const message = new EmailMessage({}, '', 1, header, {}, '');
+
+        expect(message.messageTags).to.deep.equal([
+          {
+            name: 'transactional',
+            reachable: 2,
+            source: 'refined',
+            fields: transactionalRules.fields
+          }
+        ]);
+      });
+    });
+
+    transactionalRules.conditions[2].values.forEach((value) => {
+      it(`Should include transactional if it has an "auto-submitted" field with "${value}" as value`, () => {
+        header['auto-submitted'] = [value];
+        const message = new EmailMessage({}, '', 1, header, {}, '');
+
+        expect(message.messageTags).to.deep.equal([
+          {
+            name: 'transactional',
+            reachable: 2,
+            source: 'refined',
+            fields: transactionalRules.fields
+          }
+        ]);
+      });
+    });
+
+    groupRules.conditions[0].possibleHeaderFields.forEach((field) => {
+      it(`Should include group if it has a "${field}" header field`, () => {
+        header[field] = ['test'];
+        const message = new EmailMessage({}, '', 1, header, {}, '');
+
+        expect(message.messageTags).to.deep.equal([
+          {
+            name: 'group',
+            reachable: 2,
+            source: 'refined',
+            fields: groupRules.fields
+          }
+        ]);
+      });
+    });
+
+    newsletterRules.conditions[0].possibleHeaderFields.forEach((field) => {
+      it(`Should include newsletter if it has a "${field}" header field`, () => {
+        header[field] = ['test'];
+        const message = new EmailMessage({}, '', 1, header, {}, '');
+
+        expect(message.messageTags).to.deep.equal([
+          {
+            name: 'newsletter',
+            reachable: 2,
+            source: 'refined',
+            fields: newsletterRules.fields
+          }
+        ]);
+      });
+    });
+
+    groupRules.conditions[1].values.forEach((value) => {
+      it(`Should include group if it has a "precedence" field with "${value}" as value`, () => {
+        header['Precedence'] = [value];
+        const message = new EmailMessage({}, '', 1, header, {}, '');
+
+        expect(message.messageTags).to.deep.equal([
+          {
+            name: 'group',
+            reachable: 2,
+            source: 'refined',
+            fields: groupRules.fields
+          }
+        ]);
+      });
+    });
+
+    linkedinRules.conditions[0].values.forEach((value) => {
+      it(`Should include linkedin if it has a "x-linkedin-class" field with "${value}" as value`, () => {
+        header['x-linkedin-class'] = [value];
+        const message = new EmailMessage({}, '', 1, header, {}, '');
+
+        expect(message.messageTags).to.deep.equal([
+          {
+            name: 'transactional',
+            reachable: 2,
+            source: 'refined',
+            fields: ['from', 'reply-to', 'reply_to']
+          },
+          {
+            name: 'linkedin',
+            reachable: 2,
+            source: 'refined',
+            fields: linkedinRules.fields
+          }
+        ]);
+      });
+    });
+
+    it('Should be empty if there are no tags', () => {
+      const message = new EmailMessage(
+        {},
+        '',
+        1,
+        {
+          'message-id': ['<test_message_id>'],
+          subject: ['Test Subject'],
+          to: ['test@example.com'],
+          from: ['sender@example.com']
+        },
+        {},
+        ''
+      );
+
+      expect(message.messageTags).to.be.empty;
+    });
   });
 });
 

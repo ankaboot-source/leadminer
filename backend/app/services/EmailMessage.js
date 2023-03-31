@@ -196,8 +196,14 @@ class EmailMessage {
         .map((p) => p.value)
         .flat()
         .filter((p) => {
-          return p.tags.every(
-            (tag) => !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
+          return (
+            p.tags.every(
+              (tag) => !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
+            ) ||
+            (p.tags.length > 1 &&
+              p.tags.some((tag) =>
+                EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
+              ))
           );
         })
     );
