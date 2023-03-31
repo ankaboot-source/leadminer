@@ -4,76 +4,12 @@ const {
   ImapConnectionProvider
 } = require('../services/ImapConnectionProvider');
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
-const { ImapEmailsFetcher } = require('../services/ImapEmailsFetcher');
 const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
 const { getUser, getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
 const { redis } = require('../utils/redis');
-const { REDIS_STREAM_NAME } = require('../utils/constants');
-const redisStreamsPublisher = redis.getDuplicatedClient();
+const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
 const redisPublisher = redis.getDuplicatedClient();
-
-/**
- * The callback function that will be executed for each fetched Email.
- * @param {object} emailMessage - An email message.
- * @param {object} emailMessage.header - Email headers.
- * @param {object} emailMessage.body - Email body.
- * @param {number} emailMessage.seqNumber - Email sequence number in its folder.
- * @param {number} emailMessage.totalInFolder - Total emails in folder.
- * @param {string} emailMessage.userId - User Id.
- * @param {string} emailMessage.userEmail - User email address.
- * @param {string} emailMessage.userIdentifier - Hashed user identifier
- * @param {string} emailMessage.miningId - Id of the mining process.
- * @returns {Promise}
- */
-async function onEmailMessage({
-  body,
-  header,
-  folderName,
-  totalInFolder,
-  seqNumber,
-  userId,
-  userEmail,
-  userIdentifier,
-  miningId
-}) {
-  const isLastInFolder = seqNumber === totalInFolder;
-
-  const message = JSON.stringify({
-    seqNumber,
-    body,
-    header,
-    userId,
-    userEmail,
-    folderName,
-    isLast: isLastInFolder,
-    userIdentifier,
-    miningId
-  });
-
-  try {
-    const fetchingProgress = {
-      miningId,
-      progressType: 'fetched'
-    };
-
-    await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
-    await redisStreamsPublisher.xadd(
-      REDIS_STREAM_NAME,
-      '*',
-      'message',
-      message
-    );
-  } catch (error) {
-    logger.error('Error when publishing to streams', {
-      metadata: {
-        error,
-        channel: REDIS_STREAM_NAME,
-        user: userIdentifier
-      }
-    });
-  }
-}
 
 /**
  * Login to account
@@ -235,18 +171,11 @@ async function startMining(req, res, next) {
         password,
         port
       );
-    const miningId = await miningTasksManager.generateMiningId();
-    const imapEmailsFetcher = new ImapEmailsFetcher(
-      imapConnectionProvider,
-      boxes,
-      id,
-      email,
-      miningId
-    );
 
-    miningTask = await miningTasksManager.createTask(miningId, id, imapEmailsFetcher);
+    const batchSize = LEADMINER_FETCH_BATCH_SIZE;
+    const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
 
-    imapEmailsFetcher.fetchEmailMessages(onEmailMessage);
+    miningTask = await miningTasksManager.createTask(id, imapEmailsFetcherOptions);
 
     const { heapTotal, heapUsed } = process.memoryUsage();
     logger.debug(

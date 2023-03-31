@@ -5,32 +5,103 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
 const redisClient = redis.getClient();
+const redisPublisher = redis.getDuplicatedClient();
+
+/**
+ * Publishes an email message to a Redis stream.
+ * @param {string} streamName - The name of the Redis stream to publish to.
+ * @param {number | null} fetchedMessagesCount - The number of messages fetched from the stream so far.
+ * @param {object} emailMessage - The email message to publish.
+ * @param {object} emailMessage.header - The email headers.
+ * @param {object} emailMessage.body - The email body.
+ * @param {number} emailMessage.seqNumber - The sequence number of the email in its folder.
+ * @param {boolean} emailMessage.isLast - Whether this is the last message in the folder.
+ * @param {string} emailMessage.userId - The user ID.
+ * @param {string} emailMessage.userEmail - The user's email address.
+ * @param {string} emailMessage.userIdentifier - The hashed user identifier.
+ * @param {string} emailMessage.miningId - The ID of the mining process.
+ * @returns {Promise<void>} A promise that resolves when the message is successfully published.
+ */
+async function publishEmailMessage(streamName, fetchedMessagesCount, emailMessage) {
+  const { userIdentifier, miningId } = emailMessage;
+
+  // Create a progress object to indicate that the message has been fetched.
+  const fetchingProgress = {
+    miningId,
+    count: fetchedMessagesCount,
+    progressType: 'fetched'
+  };
+
+  try {
+
+    if (fetchedMessagesCount) {
+      // Publish progress to pubsub channel.
+      await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
+    }
+
+    // Add the email message to the Redis stream.
+    await redisPublisher.xadd(
+      streamName,
+      '*',
+      'message',
+      JSON.stringify(emailMessage)
+    );
+
+  } catch (error) {
+    logger.error('Error when publishing email message to stream', {
+      metadata: {
+        error,
+        channel: streamName,
+        user: userIdentifier
+      }
+    });
+    throw error;
+  }
+}
 
 class ImapEmailsFetcher {
   /**
-   * ImapEmailsFetcher constructor.
-   * @param {object} imapConnectionProvider - A configured IMAP connection provider instance
+   * Constructor for ImapEmailsFetcher.
+   * @param {object} imapConnectionProvider - An instance of a configured IMAP connection provider.
    * @param {string[]} folders - List of folders to fetch.
-   * @param {string} userId - User Id.
-   * @param {string} userEmail - User email.
-   * @param {string} miningId - The id of the mining process.
+   * @param {string} userId - The unique identifier of the user.
+   * @param {string} userEmail - The email address of the user.
+   * @param {string} miningId - The unique identifier of the mining process.
+   * @param {string} streamName - The name of the stream to write fetched emails.
+   * @param {number} [batchSize=50] - A Number To send notification every x emails processed
    */
-  constructor(imapConnectionProvider, folders, userId, userEmail, miningId) {
+  constructor(imapConnectionProvider, folders, userId, userEmail, miningId, streamName, batchSize = 50) {
+
+    // Used to send notification every x emails processed
+    this.batchSize = batchSize;
+
+    // Set the IMAP connection provider instance.
     this.imapConnectionProvider = imapConnectionProvider;
+
+    // Set the list of folders to fetch.
     this.folders = folders;
+
+    // Set the user details. Generate a unique identifier for the user.
     this.userId = userId;
     this.userEmail = userEmail;
     this.userIdentifier = hashHelpers.hashEmail(userEmail, userId);
 
+    this.streamName = streamName;
     this.miningId = miningId;
-    this.processSetKey = `caching:${miningId}`;
 
+    // Set the key for the process set. used for caching.
+    this.processSetKey = `caching:${miningId}`;
     this.fetchedIds = new Set();
 
+    // Fetcher inner-state for total fetched messages.
+    this.totalFetched = 0;
+
     this.bodies = ['HEADER'];
+
     if (IMAP_FETCH_BODY) {
       this.bodies.push('TEXT');
     }
+
     this.isCompleted = false;
     this.isCanceled = false;
   }
@@ -47,7 +118,7 @@ class ImapEmailsFetcher {
 
     try {
       imapConnection = await this.imapConnectionProvider.acquireConnection();
-      
+
       // Create an array of Promises that resolve to the total number of messages in each folder.
       const folders = this.folders.filter((folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder));
       const totalPromises = folders.map((folder) => {
@@ -65,9 +136,9 @@ class ImapEmailsFetcher {
 
       // Calculate the total number of messages across all folders.
       const totalArray = await Promise.all(totalPromises);
-      
+
       for (const val of totalArray) {
-        total += val; 
+        total += val;
       }
 
       // Close the last opened box.
@@ -95,26 +166,10 @@ class ImapEmailsFetcher {
   }
 
   /**
-   * A callback function to execute for each Email message.
-   * @callback emailMessageHandler
-   * @param {object} emailMessage - An email message.
-   * @param {object} emailMessage.header - Email headers.
-   * @param {object} emailMessage.body - Email body.
-   * @param {number} emailMessage.seqNumber - Email sequence number in its folder.
-   * @param {number} emailMessage.totalInFolder - Total emails in folder.
-   * @param {string} emailMessage.userId - User Id.
-   * @param {string} emailMessage.userEmail - User email address.
-   * @param {string} emailMessage.userIdentifier - Hashed user identifier
-   * @param {string} emailMessage.miningId - The id of the mining process.
-   * @returns {Promise}
-   */
-
-  /**
    * Fetches all email messages in the configured boxes.
-   * @param {emailMessageHandler} emailMessageHandler - A callback function to execute for each Email message.
    * @returns {Promise}
    */
-  async fetchEmailMessages(emailMessageHandler) {
+  async fetchEmailMessages() {
     const promises = this.folders.map(async (folderName) => {
       let imapConnection = {};
 
@@ -147,7 +202,6 @@ class ImapEmailsFetcher {
         if (openedBox?.messages?.total > 0) {
           await this.fetchBox(
             imapConnection,
-            emailMessageHandler,
             folderName,
             openedBox.messages.total
           );
@@ -181,16 +235,17 @@ class ImapEmailsFetcher {
   /**
    *
    * @param {object} connection - Open IMAP connection.
-   * @param {emailMessageHandler} callback
    * @param {string} folderName - Name of the folder locked by the IMAP connection.
    * @param {number} totalInFolder - Total email messages in the folder.
    * @returns
    */
-  fetchBox(connection, callback, folderName, totalInFolder) {
+  fetchBox(connection, folderName, totalInFolder) {
     return new Promise((resolve, reject) => {
       const fetchResult = connection.seq.fetch('1:*', {
         bodies: this.bodies
       });
+
+      let fetchedMessageCount = 0;
 
       fetchResult.on('message', (msg, seqNumber) => {
         let header = '';
@@ -237,21 +292,36 @@ class ImapEmailsFetcher {
             return;
           }
 
+          // Add the message ID to the set of fetched IDs and increment counters.
           this.fetchedIds.add(messageId);
-          // We only increment the count for a message if it is
-          // not duplicated and is published in the stream
+          this.totalFetched++;
+          fetchedMessageCount++;
 
-          await callback({
-            header: parsedHeader,
-            body: parsedBody,
-            seqNumber,
-            folderName,
-            totalInFolder,
-            userId: this.userId,
-            userEmail: this.userEmail,
-            userIdentifier: this.userIdentifier,
-            miningId: this.miningId
-          });
+          // Check if it's the last message in the current folder.
+          const isLastMessage = seqNumber === totalInFolder;
+          let fetchedMessagesCountBatch = null;
+
+          if (fetchedMessageCount === this.batchSize || isLastMessage) {
+            // If we have fetched a full batch or this is the last message, set the fetched count
+            // Reset the count for the next batch.
+            fetchedMessagesCountBatch = fetchedMessageCount;
+            fetchedMessageCount = 0;
+          }
+
+          await publishEmailMessage(this.streamName,
+            fetchedMessagesCountBatch,
+            {
+              header: parsedHeader,
+              body: parsedBody,
+              seqNumber,
+              folderName,
+              isLast: isLastMessage,
+              userId: this.userId,
+              userEmail: this.userEmail,
+              userIdentifier: this.userIdentifier,
+              miningId: this.miningId
+            }
+          );
         });
       });
 
@@ -264,6 +334,14 @@ class ImapEmailsFetcher {
         resolve();
       });
     });
+  }
+
+  /**
+   * Starts fetching email messages.
+   * @returns {Object} This instance of the EmailFetcher class.
+   */
+  start() {
+    return this.fetchEmailMessages();
   }
 
   /**

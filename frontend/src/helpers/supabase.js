@@ -12,25 +12,32 @@ export async function fetchData(
   tableName,
   pageSize = 1000
 ) {
-  const result = [];
-  let offset = 0;
-  let response = { data: [1] };
+  if (!supabaseClient || !userId || !tableName) {
+    throw new Error("Invalid parameters");
+  }
 
-  while (response.data.length > 0) {
-    response = await supabaseClient
+  const contacts = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabaseClient
       .from(tableName)
       .select("*")
       .eq("userid", userId)
-      .range(offset, offset + pageSize - 1);
+      .range(offset, parseInt(offset) + parseInt(pageSize - 1));
 
-    if (response.error) {
-      console.error(response.error);
+    if (error) {
+      console.error(error);
       return [];
     }
 
-    result.push(...response.data);
-    offset += pageSize;
+    contacts.push(...data);
+    offset = Number(pageSize);
+
+    if (data.length === 0) {
+      break;
+    }
   }
 
-  return result;
+  return contacts;
 }

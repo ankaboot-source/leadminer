@@ -3,6 +3,8 @@ const { RealtimeSSE } = require('../utils/helpers/sseHelpers');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { db } = require('../db');
+const { ImapEmailsFetcher } = require('./ImapEmailsFetcher');
+const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
 
 /**
  * Removes sensitive data from a task object.
@@ -18,10 +20,10 @@ function redactSensitiveData(task) {
      * @property {string} userId - The ID of the user who the task belongs to.
      * @property {string} miningId - The ID of the mining task associated with this task.
      *
-     * @property {object} miningProgress - Information about The progress associated with this task.
-     * @property {number} miningProgress.totalMessages - The total number of messages that need to be fetched/processed.
-     * @property {number} miningProgress.fetched - Indicating the fetcher progress (total fetched messages).
-     * @property {number} miningProgress.extracted - Indicating the extractor progress (total extracted messages).
+     * @property {object} progress - Information about The progress associated with this task.
+     * @property {number} progress.totalMessages - The total number of messages that need to be fetched/processed.
+     * @property {number} progress.fetched - Indicating the fetcher progress (total fetched messages).
+     * @property {number} progress.extracted - Indicating the extractor progress (total extracted messages).
      *
      * @property {Object} fetcher - Information about the fetcher associated with this task.
      * @property {string} fetcher.status - The status of the fetcher, either "running" or "completed".
@@ -30,10 +32,10 @@ function redactSensitiveData(task) {
     task: {
       userId: task.userId,
       miningId: task.miningId,
-      miningProgress: {
-        totalMessages: task.miningProgress.totalMessages,
-        extracted: task.miningProgress.extracted,
-        fetched: task.miningProgress.fetched
+      progress: {
+        totalMessages: task.progress.totalMessages,
+        extracted: task.progress.extracted,
+        fetched: task.progress.fetched
       },
       fetcher: {
         status: task.fetcher.isCompleted === true ? 'completed' : 'running',
@@ -50,14 +52,27 @@ class TasksManager {
    */
   #ACTIVE_MINING_TASKS = new Map();
 
-  constructor(redisClient) {
-    this.progressSubscriber = redisClient;
+  /**
+   * Creates a new MiningTaskManager instance.
+   * @param {object} pubsubCommunicationChannel - Used to communicate with other processes.
+   * @param {object} redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
+   * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
+   * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
+   * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
+   */
+  constructor(pubsubCommunicationChannel, redisSubscriber, redisPublisher, emailFetcherFactory, sseBroadcasterFactory) {
+    this.pubsubCommunicationChannel = pubsubCommunicationChannel;
+    this.redisSubscriber = redisSubscriber;
+    this.redisPublisher = redisPublisher;
+
+    this.emailFetcherFactory = emailFetcherFactory;
+    this.sseBroadcasterFactory = sseBroadcasterFactory;
 
     // Set up the Redis subscriber to listen for updates
-    this.progressSubscriber.on('message', async (_, data) => {
-      const { miningId, progressType } = JSON.parse(data);
+    this.redisSubscriber.on('message', async (_, data) => {
+      const { miningId, progressType, count } = JSON.parse(data);
 
-      const progress = this.#updateProgress(miningId, progressType);
+      const progress = this.#updateProgress(miningId, progressType, count || 1);
       const notified = this.#notifyChanges(miningId, progressType);
 
       const { status, task } =
@@ -85,44 +100,79 @@ class TasksManager {
   }
 
   /**
-   * Creates a new mining task for a given user.
-   * @param {string} miningId - The mining ID.
-   * @param {string} userId - The user ID.
-   * @param {object} fetcher - The fetcher instance used for mining.
-   * @returns {object} - The new mining task.
-   * @throws {Error} If a task with the same mining ID already exists.
+   * Generates a unique mining ID and stream name for a mining task.
+   * @returns {Promise<object>} A Promise that resolves to an object containing the unique mining ID and stream name.
    */
-  async createTask(miningId, userId, fetcher) {
-    const task = this.#ACTIVE_MINING_TASKS.get(miningId);
+  async generateTaskInformation() {
+    const miningId = await this.generateMiningId();
+    const streamName = `stream-${miningId}`;
+    const consumerGroupName = `group-${miningId}`;
 
-    if (task !== undefined) {
-      throw new Error(`Task with mining ID ${miningId} already exists.`);
-    }
+    return {
+      miningId,
+      stream: {
+        streamName,
+        consumerGroupName
+      },
+      progress: {
+        totalMessages: null,
+        fetched: null,
+        extracted: null
+      },
+      fetcher: null,
+      progressHandlerSSE: null
+    };
+  }
 
-    let totalMessages = null;
+  /**
+   * Creates a new mining task for a given user with the specified options.
+   * @param {string} userId - The ID of the user for whom the task is being created.
+   * @param {object} fetcherOptions - An object containing the options for the email fetcher.
+   * @param {string} fetcherOptions.email - The email address to connect to.
+   * @param {string} fetcherOptions.userId - The ID of the user.
+   * @param {number} fetcherOptions.batchSize - The number of emails to process before sending a notification.
+   * @param {string[]} fetcherOptions.boxes - An array of strings specifying the email boxes to mine.
+   * @param {object} fetcherOptions.imapConnectionProvider - A configured email connection provider object.
+   * @returns {object} - The new mining task.
+   * 
+   * @throws {Error} If a task with the same mining ID already exists.
+   * @throws {Error} If there is an error when creating the task.
+   */
+  async createTask(userId, fetcherOptions) {
+
+    const miningTask = { userId, ...await this.generateTaskInformation() };
+    const { miningId, stream } = miningTask;
+    const { streamName } = stream;
+    const { imapConnectionProvider, email, boxes, batchSize } = fetcherOptions;
 
     try {
-      totalMessages = await fetcher.getTotalMessages();
+
+      const fetcher = this.emailFetcherFactory.create({
+        imapConnectionProvider,
+        boxes,
+        userId,
+        email,
+        miningId,
+        streamName,
+        batchSize
+      });
+      const progressHandlerSSE = this.sseBroadcasterFactory.create();
+
+      miningTask.fetcher = fetcher;
+      miningTask.progressHandlerSSE = progressHandlerSSE;
+      miningTask.progress.totalMessages = await fetcher.getTotalMessages();
+
+      fetcher.start(); // start the fetching process
+      await this.#pubsubSendMessage(miningId, 'REGISTER', { ...stream });
+
     } catch (error) {
       logger.error('Error when creating task', { metadata: { details: error.message } });
       throw new Error(`${error.message}`);
     }
 
-    const miningTask = {
-      userId,
-      miningId,
-      miningProgress: {
-        totalMessages,
-        fetched: null,
-        extracted: null
-      },
-      fetcher,
-      progressHandlerSSE: new RealtimeSSE()
-    };
-
     this.#ACTIVE_MINING_TASKS.set(miningId, miningTask);
 
-    this.progressSubscriber.subscribe(miningId, (err) => {
+    this.redisSubscriber.subscribe(miningId, (err) => {
       if (err) {
         logger.error('Failed subscribing to Redis.', { metadata: { err } });
       }
@@ -177,16 +227,18 @@ class TasksManager {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { fetcher, progressHandlerSSE } = task;
+    const { fetcher, progressHandlerSSE, stream } = task;
+
+    this.#ACTIVE_MINING_TASKS.delete(miningId);
 
     try {
       await fetcher.stop();
       await progressHandlerSSE.stop();
-    } catch (error) {
-      logger.error('Error when deleting task', { error });
-    }
+      await this.#pubsubSendMessage(miningId, 'DELETE', { ...stream });
 
-    this.#ACTIVE_MINING_TASKS.delete(miningId);
+    } catch (error) {
+      logger.error('Error when deleting task', { metadata: { details: error.message } });
+    }
 
     return redactSensitiveData(task);
   }
@@ -205,18 +257,18 @@ class TasksManager {
       return null;
     }
 
-    const { fetcher, progressHandlerSSE, miningProgress } = task;
+    const { fetcher, progressHandlerSSE, progress } = task;
 
     const eventName = `${progressType}-${miningId}`;
-    const progress = miningProgress[`${progressType}`];
+    const value = progress[`${progressType}`];
 
     // If the fetching is completed, notify the clients that it has finished.
     if (progressType === 'fetched' && fetcher.isCompleted) {
-      progressHandlerSSE.sendSSE(progress, 'fetching-finished');
+      progressHandlerSSE.sendSSE(value, 'fetching-finished');
     }
 
     // Send the progress to parties subscribed on SSE
-    return progressHandlerSSE.sendSSE(progress, eventName);
+    return progressHandlerSSE.sendSSE(value, eventName);
   }
 
   /**
@@ -242,12 +294,12 @@ class TasksManager {
       return null;
     }
 
-    const { miningProgress, fetcher } = task;
+    const { progress, fetcher } = task;
 
-    miningProgress[`${progressType}`] =
-      (miningProgress[`${progressType}`] || 0) + incrementBy;
+    progress[`${progressType}`] =
+      (progress[`${progressType}`] || 0) + incrementBy;
 
-    return { ...miningProgress, fetchingStatus: fetcher.isCompleted };
+    return { ...progress, fetchingStatus: fetcher.isCompleted };
   }
 
   /**
@@ -266,9 +318,103 @@ class TasksManager {
 
     return { status, task };
   }
+
+  /**
+   * Sends a message to the Pub/Sub system for managing streams.
+   *
+   * @param {string} miningId - The ID of the mining operation.
+   * @param {string} command - The command to execute. Valid options are 'register' or 'delete'.
+   * @param {object} streamInfo - An object conatining Stream name and consumer group name.
+   * @param {string} streamInfo.streamName - The name of the stream.
+   * @param {string} streamInfo.consumerGroupName - The name of the consumer group.
+   * @throws {Error} Throws an error if an invalid command is provided.
+   */
+  async #pubsubSendMessage(miningId, command, { streamName, consumerGroupName }) {
+    if (!['REGISTER', 'DELETE'].includes(command)) {
+      throw new Error(`Invalid command '${command}', expected 'REGISTER' or 'DELETE'.`);
+    }
+
+    switch (command) {
+      case 'REGISTER': {
+        // Create consumer group and empty stream.
+        await this.redisPublisher.xgroup('CREATE', streamName, consumerGroupName, '$', 'MKSTREAM');
+        break;
+      }
+      case 'DELETE': {
+        // Delete the stream and consumer groups.  
+        await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroupName);
+        await this.redisPublisher.del(streamName);
+        break;
+      }
+      default:
+    }
+
+    const message = { miningId, command, streamName, consumerGroupName };
+    await this.redisPublisher.publish(this.pubsubCommunicationChannel, JSON.stringify(message));
+  }
 }
 
-const miningTasksManager = new TasksManager(redis.getDuplicatedClient());
+/**
+ * A factory for creating EmailFetcher instances.
+ */
+const EmailFetcherFactory = function () {
+  return {
+    /**
+     * Creates a new EmailFetcher instance.
+     * @param {object} options - An object containing the options for the email fetcher.
+     * @param {string} options.email - The email address to connect to.
+     * @param {string} options.userId - The ID of the user.
+     * @param {number} options.batchSize - The number of emails to process before sending a notification.
+     * @param {string[]} options.boxes - An array of strings specifying the email boxes to mine.
+     * @param {object} options.imapConnectionProvider - A configured email connection provider object.
+     * @param {string} options.miningId - The ID of the mining task.
+     * @param {string} options.streamName - The name of the stream to publish mining events to.
+     * @returns {ImapEmailsFetcher} A new instance of `ImapEmailsFetcher`.
+     */
+    create: ({
+      imapConnectionProvider,
+      boxes,
+      userId,
+      email,
+      miningId,
+      streamName,
+      batchSize
+    }) => {
+      return new ImapEmailsFetcher(
+        imapConnectionProvider,
+        boxes,
+        userId,
+        email,
+        miningId,
+        streamName,
+        batchSize
+      );
+    }
+  }
+}
+
+/**
+ * A factory for creating SSEBroadcasterFactory instances.
+ */
+const SSEBroadcasterFactory = function () {
+  return {
+    /**
+     * Creates a new instance of `SSEBroadcasterClass`.
+     * @returns {RealtimeSSE} - A new instance of `RealtimeSSE`.
+     */
+    create: () => {
+      return new RealtimeSSE();
+    }
+  }
+}
+
+const miningTasksManager = new TasksManager(
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+  redis.getDuplicatedClient(),
+  redis.getDuplicatedClient(),
+  new EmailFetcherFactory(),
+  new SSEBroadcasterFactory()
+);
 
 module.exports = {
   miningTasksManager,

@@ -1,210 +1,206 @@
 const { logger } = require('../utils/logger');
-const { db } = require('../db');
-const EmailMessage = require('../services/EmailMessage');
 const { redis } = require('../utils/redis');
-const {
-  REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME,
-  MAX_REDIS_PUBLISH_RETRIES_COUNT
-} = require('../utils/constants');
+const { processStreamData } = require('./handlers');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
 const redisStreamsConsumer = redis.getDuplicatedClient();
-const redisPubSubClient = redis.getDuplicatedClient();
-const redisClientForNormalMode = redis.getClient();
+const redisSubscriber = redis.getDuplicatedClient();
+const publisher = redis.getDuplicatedClient();
 
-/**
- * Handles incoming email message and performs necessary operations like storing contact information,
- * populating refined_persons table and reporting progress.
- * @async
- * @function handleMessage
- * @param {Object} options - The options object.
- * @param {number} options.seqNumber - The sequence number of the email message.
- * @param {string} options.body - The body of the email message.
- * @param {string} options.header - The header of the email message.
- * @param {string} options.folderName - The name of the folder containing the email message.
- * @param {string} options.userId - The id of the user who received the email message.
- * @param {string} options.userEmail - The email of the user who received the email message.
- * @param {string} options.userIdentifierHash - The hash of the user's identifier.
- * @param {boolean} options.isLast - Indicates whether this is the last message in a sequence of messages.
- * @param {string} options.miningId - The id of the mining process.
- * @returns {Promise<void>}
- */
-async function handleMessage({
-  seqNumber,
-  body,
-  header,
-  folderName,
-  userId,
-  userEmail,
-  userIdentifierHash,
-  isLast,
-  miningId
-}) {
-  const message = new EmailMessage(
-    redisClientForNormalMode,
-    userEmail,
-    seqNumber,
-    header,
-    body,
-    folderName
-  );
-
-  const extractedContacts = await message.extractEmailAddresses();
-  await db.store(extractedContacts, userId);
-
-  if (isLast) {
-    try {
-      logger.info('Calling populate.', {
-        metadata: {
-          isLast,
-          userHash: userIdentifierHash
-        }
-      });
-      await db.callRpcFunction(userId, 'populate_refined');
-    } catch (error) {
-      logger.error('Failed populating refined_persons.', {
-        metadata: {
-          error,
-          userHash: userIdentifierHash
-        }
-      });
-    }
-  }
-
-  const extractingProgress = {
-    miningId,
-    progressType: 'extracted'
-  };
-
-  let retriesCount = 0;
-  let informedSubscribers = 0;
-
-  while (informedSubscribers === 0) {
-    informedSubscribers = await redisPubSubClient.publish(
-      miningId,
-      JSON.stringify(extractingProgress)
-    );
-
-    if (retriesCount === MAX_REDIS_PUBLISH_RETRIES_COUNT) {
-      logger.info('No subscribers litening to PubSub channel', {
-        informedSubscribers,
-        retriesCount,
-        pubSubChannel: miningId
-      });
-      break;
-    }
-
-    retriesCount++;
-  }
-
-  logger.info('Publishing extracting progress', { extractingProgress });
-}
-
-/**
- * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
- * @param {Array} message - Array containing the stream message ID and the message data
- */
-const streamProcessor = async (message) => {
-  const [, msg] = message;
-  const data = JSON.parse(msg[1]);
-  await handleMessage(data);
-};
+const {
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL
+} = require('../utils/constants');
 
 class StreamConsumer {
+
   /**
    * Creates an instance of StreamConsumer.
-   * @param {string} streamName - The name of the Redis stream channel to consume messages from.
-   * @param {string} consumerGroupName - The name of the Redis consumer group to add the consumer to.
+   * @param {string} pubsubCommunicationChannel - Redis pub/sub channel used for receiving configuration and commands.
    * @param {string} consumerName - The name of this consumer.
    * @param {number} batchSize - The number of messages to be processed in each batch.
-   * @param {function} processor - The function that will process the messages consumed from the stream.
+   * @param {function} messageProcessor - The function that will process the messages consumed from the stream.
    */
   constructor(
-    streamName,
-    consumerGroupName,
+    pubsubCommunicationChannel,
     consumerName,
     batchSize,
-    processor
+    messageProcessor
   ) {
-    this.streamProcessor = processor;
-    this.streamChannel = streamName;
-    this.consumerGroupName = consumerGroupName;
+    this.pubsubCommunicationChannel = pubsubCommunicationChannel;
+    this.messageProcessor = messageProcessor;
     this.consumerName = consumerName;
     this.batchSize = batchSize;
     this.isInterrupted = true;
+
+    this.streamsRegistry = new Map();
+
+    // Subscribe to the Redis channel for stream management.
+    redisSubscriber.subscribe(pubsubCommunicationChannel, (err) => {
+      if (err) {
+        logger.error('Failed subscribing to Redis.', { metadata: { err } });
+      }
+    });
+
+    redisSubscriber.on('message', (_, data) => {
+      const { miningId, command, streamName, consumerGroupName } = JSON.parse(data);
+
+      if (command === 'REGISTER') {
+        this.streamsRegistry.set(miningId, { streamName, consumerGroupName });
+      } else {
+        this.streamsRegistry.delete(miningId);
+      }
+
+      // Log the received PubSub signal for debugging purposes.
+      logger.debug('Received PubSub signal.', {
+        metadata: {
+          miningId,
+          command,
+          streamName,
+          consumerGroupName
+        }
+      });
+    });
   }
 
   /**
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
+   * @param {string} streamName - The name of the Redis stream to consume messages from
+   * @param {string} consumerGroupName - The name of the Redis consumer group to read from
+   * @returns {Promise} - A Promise that resolves when the stream is consumed successfully, or rejects with an error
    */
-  async consumeStreamMessages() {
-    let processedMessageIDs = null;
-    while (!this.isInterrupted) {
-      try {
-        const result = await redisStreamsConsumer.xreadgroup(
-          'GROUP',
-          this.consumerGroupName,
-          this.consumerName,
-          'COUNT',
-          this.batchSize,
-          'BLOCK',
-          0,
-          'STREAMS',
-          this.streamChannel,
-          '>'
-        );
-        if (result) {
-          const messages = result[0][1];
-          processedMessageIDs = messages.map((message) => message[0]);
-          const lastMessageId = processedMessageIDs.at(-1);
+  async consumeSingleStream(streamName, consumerGroupName) {
+    try {
+      const result = await redisStreamsConsumer.xreadgroup(
+        'GROUP',
+        consumerGroupName,
+        this.consumerName,
+        'COUNT',
+        this.batchSize,
+        'BLOCK',
+        1,
+        'STREAMS',
+        streamName,
+        '>'
+      );
 
-          const extractionResults = await Promise.allSettled([
-            ...messages.map((message) => this.streamProcessor(message)),
-            redisStreamsConsumer.xack(
-              this.streamChannel,
-              this.consumerGroupName,
-              ...processedMessageIDs
-            )
-          ]);
+      if (result === null) {
+        return Promise.resolve(null);
+      }
 
-          const failedExtractionResults = extractionResults.filter(
-            (extractionResult) => extractionResult.status !== 'fulfilled'
-          );
-          if (failedExtractionResults.length > 0) {
-            logger.debug('Extraction errors', {
-              metadata: { failedExtractionResults }
-            });
+      const messages = result[0][1];
+      const processedMessageIDs = messages.map((message) => message[0]);
+      const lastMessageId = processedMessageIDs.slice(-1)[0];
+
+      const extractionResults = await Promise.allSettled([
+        ...messages.map((message) => this.messageProcessor(message))
+      ]);
+
+      const failedExtractionResults = extractionResults.filter(
+        (extractionResult) => extractionResult.status !== 'fulfilled'
+      );
+
+      if (failedExtractionResults.length > 0) {
+        logger.debug('Extraction errors', {
+          metadata: { failedExtractionResults }
+        });
+      }
+
+      const miningId = extractionResults[0].value;
+      const progress = { miningId, progressType: 'extracted', count: extractionResults.length };
+
+      logger.debug('Publishing progress from worker', {
+        metadata:
+        {
+          details:
+          {
+            pubsubChannel: streamName,
+            consumerGroupName,
+            consumerName: this.consumerName,
+            progress
           }
-
-          await redisStreamsConsumer.xtrim(
-            this.streamChannel,
-            'MINID',
-            lastMessageId
-          );
-
-          const { heapTotal, heapUsed } = process.memoryUsage();
-          logger.debug(
-            `[WORKER] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
-              2
-            )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
-          );
         }
+      });
+
+      await publisher.publish(
+        // Publish the progress object as a JSON string to the Redis pub/sub channel.
+        miningId,
+        JSON.stringify(progress)
+      );
+
+      await redisStreamsConsumer.xack(
+        // This marks the specified messages as processed and removes them
+        // from the pending list of the consumer group.
+        streamName,
+        consumerGroupName,
+        ...processedMessageIDs
+      );
+
+      await redisStreamsConsumer.xtrim(
+        // Trim the stream channel to remove messages that have already been processed.
+        streamName,
+        'MINID',
+        lastMessageId
+      );
+
+      const { heapTotal, heapUsed } = process.memoryUsage();
+      logger.debug(
+        `[WORKER] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
+          2
+        )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
+      );
+      return Promise.resolve(extractionResults);
+    } catch (error) {
+      logger.error('Error while consuming messages from stream.', {
+        metadata: {
+          details: error.message
+        }
+      });
+      return Promise.reject(error);
+    }
+  }
+
+  /**
+   * Continuously consumes messages from all streams in the registry.
+   *
+   * @returns {Promise<void>} A promise that resolves when consumption is complete.
+   */
+  async consumeStreams() {
+
+    if (this.isInterrupted) {
+      return;
+    }
+
+    const streams = Array.from(this.streamsRegistry.values());
+
+    if (streams.length > 0) {
+      // Consume messages from each registered stream.
+      const consumePromises = streams.map(({ streamName, consumerGroupName }) => {
+        return this.consumeSingleStream(streamName, consumerGroupName);
+      });
+
+      try {
+        // Wait for all consumption promises to settle.
+        await Promise.allSettled(consumePromises);
       } catch (error) {
-        logger.error('Error while consuming messages from stream.', {
+        logger.error('An error occurred while consuming streams:', {
           metadata: {
-            error
+            details: error.message
           }
         });
       }
+
     }
+
+    setImmediate(() => {
+      this.consumeStreams();
+    });
   }
 
   /**
    * Starts the stream consumer.
    */
-  async start() {
+  start() {
     this.isInterrupted = false;
-    await this.consumeStreamMessages();
+    this.consumeStreams();
   }
 
   /**
@@ -216,13 +212,12 @@ class StreamConsumer {
 }
 
 const streamConsumerInstance = new StreamConsumer(
-  REDIS_STREAM_NAME,
-  REDIS_CONSUMER_GROUP_NAME,
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   'consumer-1',
   REDIS_CONSUMER_BATCH_SIZE,
-  streamProcessor
+  processStreamData
 );
 
-(async () => {
-  await streamConsumerInstance.start();
+(() => {
+  streamConsumerInstance.start();
 })();
