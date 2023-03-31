@@ -130,6 +130,11 @@ class EmailMessage {
 
     for (const taggingRule of messageTaggingRules) {
       const { rulesToApply, tag } = taggingRule;
+      // A special case to avoid tagging emails as transactional
+      // if they already have other useful tags
+      if (tag.name === 'transactional' && tags.length > 0) {
+        break;
+      }
       let isTagged = false;
 
       for (const rule of rulesToApply) {
@@ -195,17 +200,11 @@ class EmailMessage {
       ...personsExtractedFromHeader
         .map((p) => p.value)
         .flat()
-        .filter((p) => {
-          return (
-            p.tags.every(
-              (tag) => !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
-            ) ||
-            (p.tags.length > 1 &&
-              p.tags.some((tag) =>
-                EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
-              ))
-          );
-        })
+        .filter((contact) =>
+          contact.tags.every(
+            (tag) => !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
+          )
+        )
     );
 
     if (this.body !== '') {

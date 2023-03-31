@@ -6,8 +6,8 @@ const { transactionalEmailMessage } = require('./transactional');
 const messageTaggingRules = [
   newsletterEmailMessage,
   groupEmailMessage,
-  transactionalEmailMessage,
-  linkedinEmailMessage
+  linkedinEmailMessage,
+  transactionalEmailMessage // Always keep transactional as the last rule to check
 ];
 
 module.exports = {
