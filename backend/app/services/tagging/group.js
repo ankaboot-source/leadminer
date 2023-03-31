@@ -13,7 +13,7 @@ const groupEmailMessage = {
       fields: ['list-post'],
       conditions: [
         new HasHeaderField(['list-post', 'x-original-from']),
-        new HasHeaderWithValues('Precedence', ['list'])
+        new HasHeaderWithValues('precedence', ['list'])
       ]
     }
   ]

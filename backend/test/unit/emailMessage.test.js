@@ -375,7 +375,7 @@ describe('Email Message', () => {
 
     groupRules.conditions[1].values.forEach((value) => {
       it(`Should include group if it has a "precedence" field with "${value}" as value`, () => {
-        header['Precedence'] = [value];
+        header.precedence = [value];
         const message = new EmailMessage({}, '', 1, header, {}, '');
 
         expect(message.messageTags).to.deep.equal([
