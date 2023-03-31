@@ -9,7 +9,7 @@
           {{ Math.floor(progressValue * 100) }}%
         </div>
         <div v-else class="col-auto text-blue-grey-14 text-body1">
-          <span class="text-h5 text-weight-bolder q-ma-sm">
+          <span class="text-h6 text-weight-bolder q-ma-sm">
             {{ totalEmails }}
           </span>
           email messages to mine.

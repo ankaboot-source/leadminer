@@ -1,7 +1,7 @@
 <template>
   <div
     class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
-    style="height: 60vh"
+    style="height: 50vh"
   >
     <q-table
       ref="table"
@@ -39,7 +39,7 @@
           </template>
         </q-input>
         <div class="text-blue-grey-14 text-body1">
-          <span class="text-h5 text-weight-bolder q-ma-sm">
+          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
             {{ minedEmails }}
           </span>
           contacts mined
