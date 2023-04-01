@@ -23,6 +23,14 @@
       dense
     >
       <template #top-left>
+        <div class="text-blue-grey-14 text-body1">
+          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
+            {{ minedEmails }}
+          </span>
+          contacts mined
+        </div>
+      </template>
+      <template #top-right="props">
         <q-input
           v-model="filterSearch"
           dense
@@ -38,14 +46,6 @@
             <q-icon name="search" />
           </template>
         </q-input>
-        <div class="text-blue-grey-14 text-body1">
-          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
-            {{ minedEmails }}
-          </span>
-          contacts mined
-        </div>
-      </template>
-      <template #top-right="props">
         <div class="q-px-sm">
           <q-btn
             color="teal-5"
