@@ -35,7 +35,7 @@
             </div>
           </div>
           <q-dialog v-model="mailbox">
-            <div class="bg-grey-2 border q-pa-sm col-lg-12 col-md-6">
+            <div class="bg-grey-2 border q-pa-lg">
               <div class="text-bold col-lg-5 col-md-5">
                 Select mailbox folders
                 <q-btn
