@@ -35,28 +35,33 @@
             </div>
           </div>
           <q-dialog v-model="mailbox">
-            <div class="bg-grey-2 border q-pa-lg">
-              <div class="text-bold col-lg-5 col-md-5">
-                Select mailbox folders
+            <q-card class="bg-grey-2 border">
+              <q-card-section class="row items-center q-pb-none">
+                <div class="text-h6">Select mailbox folders</div>
                 <q-btn
                   outline
                   round
                   size="sm"
                   color="orange-5"
                   icon="refresh"
+                  class="q-ml-sm"
                   @click="getBoxes"
                 />
-              </div>
-              <TreeCard
-                v-if="boxes.length > 0"
-                :boxes="boxes"
-                :scanned-boxes="scannedBoxes"
-                :class="{ disabled: activeMiningTask }"
-                @selected-boxes="updateSelectedBoxes"
-                default-expand-all
-              />
-              <q-spinner-tail v-else color="teal" size="4em" />
-            </div>
+                <q-space />
+                <q-btn icon="close" flat round dense v-close-popup />
+              </q-card-section>
+              <q-card-section class="q-pa-lg">
+                <TreeCard
+                  v-if="boxes.length > 0"
+                  :boxes="boxes"
+                  :scanned-boxes="scannedBoxes"
+                  :class="{ disabled: activeMiningTask }"
+                  @selected-boxes="updateSelectedBoxes"
+                  default-expand-all
+                />
+                <q-spinner-tail v-else color="teal" size="4em" />
+              </q-card-section>
+            </q-card>
           </q-dialog>
         </q-card>
         <div class="bg-transparent col q-ma-sm">
