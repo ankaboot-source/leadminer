@@ -55,28 +55,5 @@ module.exports = {
     'unsubscribe',
     'wordpress'
   ],
-  EMAIL_HEADERS_NEWSLETTER: ['list-unsubscribe', 'list-id', 'list'],
-  EMAIL_HEADERS_NOT_NEWSLETTER: ['list-post', 'x-original-from'],
-  EMAIL_HEADERS_GROUP: ['list-post'],
-  EMAIL_HEADERS_TRANSACTIONAL: [
-    'feedback-id',
-    'x-feedback-id',
-    'x-mandrill-user',
-    'x-marketoid',
-    'x-campaignid',
-    'x-job'
-  ],
-  EMAIL_HEADER_PREFIXES_TRANSACTIONAL: [
-    'x-linkedin',
-    'x-mailgun',
-    'auto-submitted',
-    'x-github'
-  ],
-  X_MAILER_TRANSACTIONAL_HEADER_VALUES: [
-    'ec-messenger',
-    'nlserver',
-    'mailchimp'
-  ],
-  EMAIL_HEADERS_MAILING_LIST: ['list-post'],
   EXCLUDED_IMAP_FOLDERS: ['[Gmail]', '[Mailspring]']
 };
