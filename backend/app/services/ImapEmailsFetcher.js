@@ -297,7 +297,7 @@ class ImapEmailsFetcher {
           const shouldPublish = reachedBatchSize || isLastMessage;
           const progressToSend = shouldPublish ? messageCounter + 1 : null;
 
-          // Increment the message counter or reset it to 1 if batch size has been reached.
+          // Increment the message counter or reset it to 0 if batch size has been reached.
           messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
 
           await publishEmailMessage(this.streamName, progressToSend,
