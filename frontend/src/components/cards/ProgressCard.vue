@@ -49,7 +49,7 @@
         track-color="teal-2"
         class="q-card--bordered q-pa-null"
         stripe
-        animation-speed="0"
+        animation-speed="1200"
       >
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
           <div class="text-center">
