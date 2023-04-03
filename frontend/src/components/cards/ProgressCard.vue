@@ -27,14 +27,16 @@
           class="col-auto text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
         >
           <div v-if="activeMiningTask">
-            {{ estimatedTimeRemainingConverted }}
-            <span v-if="estimatedTimeRemainingConverted != 'Almost set!'">
+            {{ estimatedDynamicRemainingTimeConverted }}
+            <span
+              v-if="estimatedDynamicRemainingTimeConverted != 'Almost set!'"
+            >
               left
             </span>
           </div>
           <div v-else-if="!scannedEmails">
             Estimated mining time:
-            {{ estimatedTotalTimeRemainingConverted }}
+            {{ estimatedSimpleRemainingTimeConverted }}
           </div>
           <div v-else>
             Finished in {{ timeConversion(timeEstimation().elapsedTime) }}.
@@ -103,7 +105,7 @@ const progressProps = defineProps({
 
 let startTime;
 const extractionRate = 130; // Average rate of email messages extraction and fetching per second.
-const estimatedTotalTimeRemaining = computed(() =>
+const estimatedSimpleRemainingTime = computed(() =>
   Math.round(progressProps.totalEmails / extractionRate)
 );
 const activeMiningTask = computed(
@@ -125,13 +127,13 @@ const progressValue = computed(() => {
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
 
-const estimatedTotalTimeRemainingConverted = computed(() => {
-  return timeConversionRounded(estimatedTotalTimeRemaining).join(" ");
+const estimatedSimpleRemainingTimeConverted = computed(() => {
+  return timeConversionRounded(estimatedSimpleRemainingTime).join(" ");
 });
-const estimatedTimeRemainingConverted = computed(() => {
-  return timeConversionRounded(timeEstimation().estimatedTimeRemaining).join(
-    " "
-  );
+const estimatedDynamicRemainingTimeConverted = computed(() => {
+  return timeConversionRounded(
+    timeEstimation().estimatedDynamicRemainingTime
+  ).join(" ");
 });
 
 const progressValuePercent = computed(() => {
@@ -165,13 +167,13 @@ watch(activeMiningTask, (isActive) => {
 function timeEstimation() {
   const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
   const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
-  const estimatedTimeRemaining = estimatedTime - elapsedTime;
-  return { estimatedTimeRemaining, estimatedTime, elapsedTime };
+  const estimatedDynamicRemainingTime = estimatedTime - elapsedTime;
+  return { estimatedDynamicRemainingTime, estimatedTime, elapsedTime };
 }
 
 function timeConversionRounded(timeInSeconds) {
   if (!isFinite(timeInSeconds)) {
-    timeInSeconds = estimatedTotalTimeRemaining.value;
+    timeInSeconds = estimatedSimpleRemainingTime.value;
   }
   // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
   if (timeInSeconds >= 60 * 63) {
