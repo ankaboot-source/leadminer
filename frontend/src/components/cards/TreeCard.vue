@@ -19,7 +19,7 @@
           <q-badge
             v-if="!prop.expanded"
             color="orange"
-            class="q-ml-lg"
+            class="q-ml-lg text-weight-medium"
             rounded
             floating
             transparent

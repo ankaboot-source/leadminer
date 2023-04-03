@@ -12,7 +12,17 @@
                 @click="startMining"
                 no-caps
                 unelevated
-              />
+                :loading="!(boxes.length > 0)"
+                size="lg"
+              >
+                <template v-slot:loading>
+                  <q-spinner-box class="on-left" />
+                  Loading...
+                  <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
+                    Loading mailboxes...
+                  </q-tooltip>
+                </template>
+              </q-btn>
               <q-btn
                 :disable="!activeMiningTask"
                 :color="activeMiningTask ? 'red' : 'grey-6'"
@@ -79,7 +89,6 @@
                     :scanned-boxes="scannedBoxes"
                     :class="{ disabled: activeMiningTask }"
                     @selected-boxes="updateSelectedBoxes"
-                    default-expand-all
                   />
                   <q-spinner-tail v-else color="teal" size="4em" />
                 </q-card-section>
