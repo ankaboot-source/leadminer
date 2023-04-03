@@ -25,27 +25,21 @@ const redisPublisher = redis.getDuplicatedClient();
 async function publishEmailMessage(streamName, fetchedMessagesCount, emailMessage) {
   const { userIdentifier, miningId } = emailMessage;
 
-  // Create a progress object to indicate that the message has been fetched.
-  const fetchingProgress = {
-    miningId,
-    count: fetchedMessagesCount,
-    progressType: 'fetched'
-  };
-
   try {
+    if (fetchedMessagesCount) { // Publish a progress with how many messages we fetched.
+      await redisPublisher.publish(miningId, JSON.stringify(
+        {
+          miningId,
+          count: fetchedMessagesCount,
+          progressType: 'fetched'
+        }
+      ));
+    }
 
-    // Publish progress to pubsub channel.
-    await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
-
-    // Add the email message to the Redis stream.
-    await redisPublisher.xadd(
-      streamName,
-      '*',
-      'message',
-      JSON.stringify(emailMessage)
-    );
-
+    // Publish  email message to the Redis stream.
+    await redisPublisher.xadd(streamName, '*', 'message', JSON.stringify(emailMessage));
   } catch (error) {
+    // Log an error and rethrow it if publishing fails.
     logger.error('Error when publishing email message to stream', {
       metadata: {
         error,
@@ -243,6 +237,8 @@ class ImapEmailsFetcher {
         bodies: this.bodies
       });
 
+      let messageCounter = 0
+
       fetchResult.on('message', (msg, seqNumber) => {
         let header = '';
         let body = '';
@@ -284,7 +280,12 @@ class ImapEmailsFetcher {
             messageId = parsedHeader['message-id'][0];
           }
 
-          if (this.fetchedIds.has(messageId)) {
+          // Check if the message is the last one in the current folder
+          const isLastMessage = seqNumber === totalInFolder;
+
+          // Check if the message has already been fetched and whether it's the last one.
+          // se we dont lose progress if it is last message and duplicate.
+          if (this.fetchedIds.has(messageId) && !isLastMessage) {
             return;
           }
 
@@ -292,10 +293,14 @@ class ImapEmailsFetcher {
           this.fetchedIds.add(messageId);
           this.totalFetched++;
 
-          // Check if it's the last message in the current folder.
-          const isLastMessage = seqNumber === totalInFolder;
+          const reachedBatchSize = messageCounter === this.batchSize;
+          const shouldPublish = reachedBatchSize || isLastMessage;
+          const progressToSend = shouldPublish ? messageCounter + 1 : null;
 
-          await publishEmailMessage(this.streamName, null,
+          // Increment the message counter or reset it to 1 if batch size has been reached.
+          messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
+
+          await publishEmailMessage(this.streamName, progressToSend,
             {
               header: parsedHeader,
               body: parsedBody,
