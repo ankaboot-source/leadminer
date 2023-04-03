@@ -6,7 +6,7 @@
           v-if="activeMiningTask"
           class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm text-center"
         >
-          {{ Math.floor(progressValue * 100) }}%
+          {{ progressValuePercent }}
         </div>
         <div v-else class="col-auto text-blue-grey-14 text-body1">
           <span class="text-h6 text-weight-bolder q-ma-sm">
@@ -132,6 +132,10 @@ const estimatedTimeRemainingConverted = computed(() => {
   return timeConversionRounded(timeEstimation().estimatedTimeRemaining).join(
     " "
   );
+});
+
+const progressValuePercent = computed(() => {
+  return `${Math.floor(progressValue.value * 100)}%`;
 });
 
 watch(fetchingFinished, (finished) => {
