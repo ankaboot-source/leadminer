@@ -47,8 +47,8 @@
         size="1.5rem"
         color="teal-8"
         track-color="teal-2"
-        class="q-card--bordered q-pa-null"
         stripe
+        style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
         animation-speed="1200"
       >
         <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
