@@ -128,28 +128,19 @@ class EmailMessage {
   #getMessageTags() {
     const tags = [];
 
-    for (const taggingRule of messageTaggingRules) {
-      const { rulesToApply, tag } = taggingRule;
-      // A special case to avoid tagging emails as transactional
-      // if they already have other useful tags
+    for (const { rulesToApply, tag } of messageTaggingRules) {
       if (tag.name === 'transactional' && tags.length > 0) {
-        break;
+        return tags;
       }
-      let isTagged = false;
 
-      for (const rule of rulesToApply) {
-        if (isTagged) {
+      for (const { conditions, fields } of rulesToApply) {
+        if (
+          conditions.some((condition) =>
+            condition.checkRule({ header: this.header })
+          )
+        ) {
+          tags.push({ ...tag, source: 'refined', fields });
           break;
-        }
-
-        const { conditions, fields } = rule;
-        for (const condition of conditions) {
-          isTagged = condition.checkRule({ header: this.header });
-
-          if (isTagged) {
-            tags.push({ ...tag, source: 'refined', fields });
-            break;
-          }
         }
       }
     }
@@ -198,12 +189,12 @@ class EmailMessage {
 
     extractedData.persons.push(
       ...personsExtractedFromHeader
-        .map((p) => p.value)
-        .flat()
-        .filter((contact) =>
-          contact.tags.every(
-            (tag) => !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(tag.name)
-          )
+        .flatMap((p) => p.value)
+        .filter(
+          ({ tags }) =>
+            !tags.some(({ name }) =>
+              EmailMessage.#IGNORED_MESSAGE_TAGS.includes(name)
+            )
         )
     );
 
@@ -224,8 +215,8 @@ class EmailMessage {
    * @returns {Promise<Object[]>} An array of objects
    */
   async extractPersons(emails, fieldName) {
-    const applicableMessageTags = this.messageTags.filter((t) =>
-      t.fields.includes(fieldName)
+    const applicableMessageTags = this.messageTags.filter(({ fields }) =>
+      fields.includes(fieldName)
     );
 
     const extractedPersons = await Promise.allSettled(
@@ -247,10 +238,10 @@ class EmailMessage {
 
               const tags = [
                 ...emailTags,
-                ...applicableMessageTags.map((t) => {
+                ...applicableMessageTags.map(({ name, reachable }) => {
                   return {
-                    name: t.name,
-                    reachable: t.reachable,
+                    name,
+                    reachable,
                     source: 'refined'
                   };
                 })
