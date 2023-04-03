@@ -390,8 +390,8 @@ const EmailFetcherFactory = function () {
         batchSize
       );
     }
-  }
-}
+  };
+};
 
 /**
  * A factory for creating SSEBroadcasterFactory instances.
@@ -405,8 +405,8 @@ const SSEBroadcasterFactory = function () {
     create: () => {
       return new RealtimeSSE();
     }
-  }
-}
+  };
+};
 
 const miningTasksManager = new TasksManager(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
