@@ -284,7 +284,7 @@ class ImapEmailsFetcher {
           const isLastMessage = seqNumber === totalInFolder;
 
           // Check if the message has already been fetched and whether it's the last one.
-          // se we dont lose progress if it is last message and duplicate.
+          // in order to not lose progress if the last message is a duplicate.
           if (this.fetchedIds.has(messageId) && !isLastMessage) {
             return;
           }
