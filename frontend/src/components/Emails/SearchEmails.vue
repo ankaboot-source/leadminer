@@ -34,35 +34,58 @@
               </a>
             </div>
           </div>
-          <q-dialog v-model="mailbox">
-            <q-card class="bg-grey-2 border">
-              <q-card-section class="row items-center q-pb-none">
-                <div class="text-h6">Select mailbox folders</div>
-                <q-btn
-                  outline
-                  round
-                  size="sm"
-                  color="orange-5"
-                  icon="refresh"
-                  class="q-ml-sm"
-                  @click="getBoxes"
-                />
-                <q-space />
-                <q-btn icon="close" flat round dense v-close-popup />
-              </q-card-section>
-              <q-card-section class="q-pa-lg">
-                <TreeCard
-                  v-if="boxes.length > 0"
-                  :boxes="boxes"
-                  :scanned-boxes="scannedBoxes"
-                  :class="{ disabled: activeMiningTask }"
-                  @selected-boxes="updateSelectedBoxes"
-                  default-expand-all
-                />
-                <q-spinner-tail v-else color="teal" size="4em" />
-              </q-card-section>
-            </q-card>
-          </q-dialog>
+          <div
+            v-show="mailbox"
+            role="dialog"
+            aria-modal="true"
+            class="q-dialog fullscreen no-pointer-events q-dialog--modal"
+          >
+            <div
+              class="q-dialog__backdrop fixed-full"
+              aria-hidden="true"
+              tabindex="-1"
+              @click="mailbox = false"
+            ></div>
+            <div
+              class="q-dialog__inner flex no-pointer-events q-dialog__inner--minimized q-dialog__inner--standard fixed-full flex-center"
+              tabindex="-1"
+            >
+              <q-card class="bg-grey-2 border">
+                <q-card-section class="row items-center q-pb-none">
+                  <div class="text-h6">Select mailbox folders</div>
+                  <q-btn
+                    outline
+                    round
+                    size="sm"
+                    color="orange-5"
+                    icon="refresh"
+                    class="q-ml-sm"
+                    @click="getBoxes"
+                    :disable="activeMiningTask"
+                  />
+                  <q-space />
+                  <q-btn
+                    icon="close"
+                    flat
+                    round
+                    dense
+                    @click="mailbox = false"
+                  />
+                </q-card-section>
+                <q-card-section class="q-pa-lg">
+                  <TreeCard
+                    v-if="boxes.length > 0"
+                    :boxes="boxes"
+                    :scanned-boxes="scannedBoxes"
+                    :class="{ disabled: activeMiningTask }"
+                    @selected-boxes="updateSelectedBoxes"
+                    default-expand-all
+                  />
+                  <q-spinner-tail v-else color="teal" size="4em" />
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
         </q-card>
         <div class="bg-transparent col q-ma-sm">
           <ProgressCard
@@ -95,8 +118,9 @@ const $q = useQuasar();
 const $store = useStore();
 const $router = useRouter();
 const mailbox = ref(false);
-
 onMounted(async () => {
+  window.addEventListener("keydown", onKeyDown);
+
   const googleUser = LocalStorage.getItem("googleUser");
   const imapUser = LocalStorage.getItem("imapUser");
 
@@ -112,6 +136,12 @@ onMounted(async () => {
 
   await getBoxes();
 });
+
+const onKeyDown = (event) => {
+  if (event.key === "Escape" && mailbox.value) {
+    mailbox.value = false;
+  }
+};
 
 const boxes = computed(() => $store.state.example.boxes);
 
