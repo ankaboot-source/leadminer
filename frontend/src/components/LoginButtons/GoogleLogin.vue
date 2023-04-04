@@ -1,12 +1,14 @@
 <template>
-  <q-btn
-    :disable="disable"
-    class="text-weight-regular"
-    label="Start Mining"
-    no-caps
-    color="teal"
-    @click="handleClickSignIn"
-  />
+  <div>
+    <q-btn
+      :disable="!policy"
+      class="text-weight-regular"
+      label="Start Mining"
+      no-caps
+      color="teal"
+      @click="handleClickSignIn"
+    />
+  </div>
 </template>
 
 <script>
@@ -15,7 +17,8 @@ import { googleSdkLoaded } from "vue3-google-login";
 export default {
   name: "GoogleSignin",
   props: {
-    disable: Boolean,
+    msg: String,
+    policyChecked: Boolean,
   },
 
   data() {
@@ -23,6 +26,10 @@ export default {
       user: "",
       quasar: useQuasar(),
     };
+  },
+
+  computed: {
+    policy: (p) => p.policyChecked,
   },
 
   methods: {

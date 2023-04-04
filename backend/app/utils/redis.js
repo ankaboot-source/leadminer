@@ -66,6 +66,27 @@ class RedisManager {
   }
 
   /**
+   * Create Redis Consumer Group and creates stream if not exists.
+   * @returns {Promise}
+   */
+  async initConsumerGroup(streamName, groupName) {
+    try {
+      await this.#normalClient.xgroup(
+        'CREATE',
+        streamName,
+        groupName,
+        '$',
+        'MKSTREAM'
+      );
+      logger.info('Created consumer group ✔️', {
+        metadata: { streamName, groupName }
+      });
+    } catch (error) {
+      logger.info('Consumer group already exists ✔️');
+    }
+  }
+
+  /**
    * Deletes all the keys of all the existing databases in redis.
    * @returns {Promise<void>}
    */
