@@ -29,23 +29,22 @@ function subscribeToRefined(userId, commit) {
     .subscribe();
 }
 export async function syncRefinedPersons({ state, commit }) {
-
-  if (subscription) { 
+  if (subscription) {
     // Unsubscribe from real-time updates if currently subscribed
     // to avoid getting update twice, from supabase query and realtime updates.
     await subscription.unsubscribe();
   }
-  
+
   // Determine user based on Google or IMAP credentials
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
-  
+
   // Call refined_persons stored procedure using Supabase client
   const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
-  
+
   if (rpcResult.error) {
     console.error(rpcResult.error);
   }
-  
+
   // Fetch data from Supabase for current user and update store with email addresses
   const data = await fetchData(
     supabase,
@@ -54,7 +53,7 @@ export async function syncRefinedPersons({ state, commit }) {
     process.env.SUPABASE_MAX_ROWS
   );
   data.forEach((person) => commit("SET_EMAILS", person));
-  
+
   // Subscribe to real-time updates for current user
   subscribeToRefined(user.id, commit);
 }
@@ -163,27 +162,22 @@ export async function signUpGoogle(_, { data }) {
       });
   });
 }
-export async function signIn(_, { data }) {
-  return new Promise((resolve, reject) => {
-    this.commit("example/SET_LOADING", true);
-    // get imapInfo account or create one
-    this.$axios
-      .post(`${this.$api}/imap/login`, data)
-      .then((response) => {
-        this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_IMAP", response.data.imap);
-        const imapUser = this.state.example.imapUser;
-        imapUser.password = data.password;
-        LocalStorage.set("imapUser", imapUser);
-        resolve(response.data);
-      })
-      .catch((error) => {
-        if (error) {
-          this.commit("example/SET_ERROR", error?.response.data.message);
-        }
-        reject(error.message);
-      });
-  });
+export async function signIn({ state, commit }, { data }) {
+  try {
+    commit("SET_LOADING", true);
+    const response = await this.$axios.post(`${this.$api}/imap/login`, data);
+    commit("SET_LOADING", false);
+
+    commit("SET_IMAP", response.data.imap);
+    const imapUser = state.imapUser;
+    imapUser.password = data.password;
+    LocalStorage.set("imapUser", imapUser);
+
+    return response.data;
+  } catch (error) {
+    this.commit("example/SET_ERROR", error?.response.data.message);
+    throw new Error(error.message);
+  }
 }
 
 export async function getBoxes({ state, commit }) {
