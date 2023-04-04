@@ -27,19 +27,18 @@
           class="col-auto text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
         >
           <div v-if="activeMiningTask">
-            {{ estimatedDynamicRemainingTimeConverted }}
-            <span
-              v-if="estimatedDynamicRemainingTimeConverted != 'Almost set!'"
-            >
+            {{ estimatedRemainingTimeConverted }}
+            <span v-if="estimatedRemainingTimeConverted != 'Almost set!'">
               left
             </span>
           </div>
           <div v-else-if="!scannedEmails">
             Estimated mining time:
-            {{ estimatedSimpleRemainingTimeConverted }}
+            {{ estimatedRemainingTimeConverted }}
           </div>
           <div v-else>
-            Finished in {{ timeConversion(timeEstimation().elapsedTime) }}.
+            Finished in
+            {{ timeConversion(estimatedRemainingTime().elapsedTime) }}.
           </div>
         </div>
       </div>
@@ -77,24 +76,9 @@
 <script setup>
 import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
-import { useQuasar } from "quasar";
 import { timeConversion } from "src/helpers/time-helpers";
 
-const $q = useQuasar();
 const $store = useStore();
-
-const buttonSize = computed(() => {
-  switch (true) {
-    case $q.screen.lt.sm === true:
-      return "0.7em";
-    case $q.screen.gt.sm === true && $q.screen.lt.md === true:
-      return "2em";
-    case $q.screen.gt.md === true:
-      return "1.15em";
-    default:
-      return "1em";
-  }
-});
 
 const progressProps = defineProps({
   extractedEmails: Number(0),
@@ -104,10 +88,8 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const extractionRate = 130; // Average rate of email messages extraction and fetching per second.
-const estimatedSimpleRemainingTime = computed(() =>
-  Math.round(progressProps.totalEmails / extractionRate)
-);
+const extractionRate = 30; // Average rate of email messages extraction and fetching per second.
+
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
@@ -127,12 +109,9 @@ const progressValue = computed(() => {
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
 
-const estimatedSimpleRemainingTimeConverted = computed(() => {
-  return timeConversionRounded(estimatedSimpleRemainingTime).join(" ");
-});
-const estimatedDynamicRemainingTimeConverted = computed(() => {
+const estimatedRemainingTimeConverted = computed(() => {
   return timeConversionRounded(
-    timeEstimation().estimatedDynamicRemainingTime
+    estimatedRemainingTime().estimatedRemainingTime
   ).join(" ");
 });
 
@@ -144,7 +123,7 @@ watch(fetchingFinished, (finished) => {
   if (finished) {
     console.log(
       "Fetching completed, time elapsed:",
-      timeEstimation().elapsedTime,
+      estimatedRemainingTime().elapsedTime,
       "s"
     );
   }
@@ -158,22 +137,34 @@ watch(activeMiningTask, (isActive) => {
   } else {
     console.log(
       "Stopped Mining, time elapsed:",
-      timeEstimation().elapsedTime,
+      estimatedRemainingTime().elapsedTime,
       "s"
     );
   }
 });
 
-function timeEstimation() {
+function estimatedRemainingTime() {
   const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
-  const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
-  const estimatedDynamicRemainingTime = estimatedTime - elapsedTime;
-  return { estimatedDynamicRemainingTime, estimatedTime, elapsedTime };
+  // estimatedRemainingTime = started extracting ? Dynamic calculation : Static calculation
+  const estimatedRemainingTime =
+    progressValue.value != 0
+      ? Math.floor((1 / progressValue.value) * elapsedTime) - elapsedTime
+      : Math.round(progressProps.totalEmails / extractionRate);
+  if (progressValue.value != 0) {
+    console.log("dynamic");
+  } else {
+    console.log("static");
+  }
+  console.log(estimatedRemainingTime);
+  return {
+    estimatedRemainingTime,
+    elapsedTime,
+  };
 }
 
 function timeConversionRounded(timeInSeconds) {
   if (!isFinite(timeInSeconds)) {
-    timeInSeconds = estimatedSimpleRemainingTime.value;
+    timeInSeconds = estimatedRemainingTime().estimatedRemainingTime;
   }
   // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
   if (timeInSeconds >= 60 * 63) {
