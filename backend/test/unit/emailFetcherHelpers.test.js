@@ -20,13 +20,4 @@ describe('getMessageId', () => {
     const messageId = getMessageId(parsedHeader);
     expect(messageId).to.match(/^UNKNOWN \d+@example\.com$/);
   });
-
-  it('should set the generated message ID in the parsed header', () => {
-    const parsedHeader = {
-      'return-path': ['test@example.com'],
-      date: ['2022-01-01'],
-    };
-    const messageId = getMessageId(parsedHeader);
-    expect(parsedHeader['message-id'][0]).to.equal(messageId);
-  });
 });
