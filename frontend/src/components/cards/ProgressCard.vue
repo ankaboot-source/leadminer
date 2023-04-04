@@ -150,12 +150,6 @@ function estimatedRemainingTime() {
     progressValue.value != 0
       ? Math.floor((1 / progressValue.value) * elapsedTime) - elapsedTime
       : Math.round(progressProps.totalEmails / extractionRate);
-  if (progressValue.value != 0) {
-    console.log("dynamic");
-  } else {
-    console.log("static");
-  }
-  console.log(estimatedRemainingTime);
   return {
     estimatedRemainingTime,
     elapsedTime,
