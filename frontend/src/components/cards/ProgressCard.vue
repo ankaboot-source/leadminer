@@ -4,25 +4,51 @@
       <div class="row justify-between q-ma-sm q-mx-md">
         <div
           v-if="activeMiningTask"
-          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm text-center"
+          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
         >
           {{ progressPercentage }}
+          <q-tooltip
+            class="text-center text-body2 bg-teal-1 text-teal-8 bordered"
+            anchor="top middle"
+            self="bottom middle"
+          >
+            <div v-if="!fetchingFinished">
+              Fetched emails:
+              <span class="text-weight-bolder">
+                {{ scannedEmails.toLocaleString() }}/{{
+                  totalEmails.toLocaleString()
+                }}
+              </span>
+            </div>
+            <div>
+              Extracted emails:
+              <span class="text-weight-bolder">
+                {{ extractedEmails.toLocaleString() }}/{{
+                  scannedEmails.toLocaleString()
+                }}
+              </span>
+            </div>
+          </q-tooltip>
         </div>
-        <div v-else class="col-auto text-blue-grey-14 text-body1">
-          <span class="text-h6 text-weight-bolder q-ma-sm">
+        <template v-else>
+          <div
+            class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
+          >
             {{ totalEmails.toLocaleString() }}
-          </span>
-          email messages to mine.
-        </div>
+          </div>
+          <div class="col-auto q-pt-sm q-ml-sm text-blue-grey-14 text-body1">
+            email messages to mine.
+          </div>
+        </template>
+        <q-space />
 
         <div
+          class="text-h6 text-weight-medium text-center absolute-center q-pb-lg text-blue-grey-14"
           v-show="activeMiningTask"
-          class="text-h6 text-weight-medium text-center absolute-full flex flex-center q-pb-lg"
         >
-          <div class="text-teal-8">
-            We're deep in the mines now... extracting contacts!
-          </div>
+          We're deep in the mines now... extracting contacts!
         </div>
+
         <div
           class="col-auto text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
         >
@@ -52,20 +78,24 @@
         style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
         animation-speed="1200"
       >
-        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-          <div class="text-center">
-            <div v-if="!fetchingFinished">
-              Fetched emails:
-              <span class="text-weight-bolder">
-                {{ scannedEmails }}/{{ totalEmails }}
-              </span>
-            </div>
-            <div>
-              Extracted emails:
-              <span class="text-weight-bolder">
-                {{ extractedEmails }}/{{ scannedEmails }}
-              </span>
-            </div>
+        <q-tooltip
+          class="text-center text-body2 bg-teal-1 text-teal-8 bordered"
+        >
+          <div v-if="!fetchingFinished">
+            Fetched emails:
+            <span class="text-weight-bolder">
+              {{ scannedEmails.toLocaleString() }}/{{
+                totalEmails.toLocaleString()
+              }}
+            </span>
+          </div>
+          <div>
+            Extracted emails:
+            <span class="text-weight-bolder">
+              {{ extractedEmails.toLocaleString() }}/{{
+                scannedEmails.toLocaleString()
+              }}
+            </span>
           </div>
         </q-tooltip>
       </q-linear-progress>
