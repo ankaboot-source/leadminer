@@ -1,7 +1,7 @@
 <template>
   <div
     class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
-    style="height: 60vh"
+    style="height: 50vh"
   >
     <q-table
       ref="table"
@@ -23,6 +23,14 @@
       dense
     >
       <template #top-left>
+        <div class="text-blue-grey-14 text-body1">
+          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
+            {{ minedEmails.toLocaleString() }}
+          </span>
+          contacts mined
+        </div>
+      </template>
+      <template #top-right="props">
         <q-input
           v-model="filterSearch"
           dense
@@ -38,8 +46,6 @@
             <q-icon name="search" />
           </template>
         </q-input>
-      </template>
-      <template #top-right="props">
         <div class="q-px-sm">
           <q-btn
             color="teal-5"
@@ -239,6 +245,10 @@ const filter = { filterSearch };
 const isLoading = ref(false);
 const table = ref(null);
 
+const minedEmails = computed(
+  () => $store.getters["example/getRetrievedEmails"].length
+);
+
 const initialPagination = {
   sortBy: "engagement",
   descending: true,
@@ -262,21 +272,18 @@ const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
 
-let refreshInterval = null
+let refreshInterval = null;
 
 watch(activeMiningTask, async (isActive) => {
-  
   if (isActive) {
-    
     // If mining is active, update refined persons every 3 seconds
     refreshInterval = setInterval(() => {
       // Call the refreshTable function
-      refreshTable()
-    }, 3000)
-  
+      refreshTable();
+    }, 3000);
   } else {
-    clearInterval(refreshInterval)
-    await syncTable()
+    clearInterval(refreshInterval);
+    await syncTable();
   }
 });
 
@@ -348,9 +355,11 @@ function filterFn(rows, terms) {
 }
 
 function refreshTable() {
-  const contactStoreLength = $store.getters["example/getRetrievedEmails"].length
-  const contactTableLength = rows.value.length
-  const hasNewContacts = parseInt(contactStoreLength) > parseInt(contactTableLength)
+  const contactStoreLength =
+    $store.getters["example/getRetrievedEmails"].length;
+  const contactTableLength = rows.value.length;
+  const hasNewContacts =
+    parseInt(contactStoreLength) > parseInt(contactTableLength);
 
   if (hasNewContacts) {
     isLoading.value = true;
@@ -442,8 +451,7 @@ function copyValueToClipboard(value, valueName) {
 .q-table__bottom,
 thead tr:first-child th
 
-/* bg color is important for th; just specify one */
-  {
+/* bg color is important for th; just specify one */ {
   background-color: #fff;
 }
 
