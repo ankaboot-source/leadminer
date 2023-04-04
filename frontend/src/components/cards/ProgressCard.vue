@@ -30,16 +30,20 @@
             </div>
           </q-tooltip>
         </div>
-        <template v-else>
-          <div
-            class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
+        <div
+          v-else
+          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
+        >
+          {{ totalEmails.toLocaleString() }}
+          <q-icon name="mail" class="q-mb-xs" />
+          <q-tooltip
+            class="text-body2 bg-teal-1 text-teal-8 bordered"
+            anchor="top middle"
+            self="bottom middle"
           >
-            {{ totalEmails.toLocaleString() }}
-          </div>
-          <div class="col-auto q-pt-sm q-ml-sm text-blue-grey-14 text-body1">
-            email messages to mine.
-          </div>
-        </template>
+            email messages selected to mine.
+          </q-tooltip>
+        </div>
         <q-space />
 
         <div
