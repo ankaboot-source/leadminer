@@ -44,11 +44,9 @@
             email messages selected to mine.
           </q-tooltip>
         </div>
-        <q-space />
-
         <div
-          class="text-h6 text-weight-medium text-center absolute-center q-pb-lg text-blue-grey-14"
-          v-show="activeMiningTask"
+          class="text-h6 text-weight-medium text-center text-blue-grey-14"
+          :class="[responsiveCenteredLabel]"
         >
           We're deep in the mines now... extracting contacts!
         </div>
@@ -111,8 +109,14 @@
 import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
 import { timeConversion } from "src/helpers/time-helpers";
+import { useQuasar } from "quasar";
 
+const $q = useQuasar();
 const $store = useStore();
+
+const responsiveCenteredLabel = computed(() => {
+  return $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg";
+});
 
 const progressProps = defineProps({
   extractedEmails: Number(0),
