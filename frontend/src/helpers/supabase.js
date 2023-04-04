@@ -1,16 +1,18 @@
 /**
- * Fetches data from a Supabase table.
- * @param {Object} supabaseClient - The Supabase client to use.
- * @param {String} userId - The userId to retrieve data for.
- * @param {String} tableName - The name of the table to fetch data from.
- * @param {Number} [pageSize=1000] - The number of rows to retrieve per request.
+ * Fetches data from a Supabase table for a specific user.
+ * 
+ * @param {import('@supabase/supabase-js').createClient} supabaseClient - The Supabase client to use for fetching data.
+ * @param {string} userId - The unique ID of the user whose data will be retrieved.
+ * @param {string} tableName - The name of the table to fetch data from.
+ * @param {number} [maxRows=1000] - The maximum number of rows to retrieve per request.
+ * @throws {Error} - If any of the parameters are missing or invalid.
  * @returns {Array} - An array of data from the specified table filtered by userId.
  */
 export async function fetchData(
   supabaseClient,
   userId,
   tableName,
-  pageSize = 1000
+  maxRows = 1000
 ) {
   if (!supabaseClient || !userId || !tableName) {
     throw new Error("Invalid parameters");
@@ -24,7 +26,7 @@ export async function fetchData(
       .from(tableName)
       .select("*")
       .eq("userid", userId)
-      .range(offset, parseInt(offset) + parseInt(pageSize - 1));
+      .range(offset, offset + maxRows - 1);
 
     if (error) {
       console.error(error);
@@ -32,7 +34,7 @@ export async function fetchData(
     }
 
     contacts.push(...data);
-    offset = Number(pageSize);
+    offset += maxRows;
 
     if (data.length === 0) {
       break;
