@@ -215,3 +215,8 @@ function timeConversionRounded(timeInSeconds) {
   else return ["< 5 seconds"];
 }
 </script>
+<style>
+.q-linear-progress__track--with-transition {
+  transition: transform 0ms;
+}
+</style>
