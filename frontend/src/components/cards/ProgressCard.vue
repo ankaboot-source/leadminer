@@ -45,6 +45,7 @@
           </q-tooltip>
         </div>
         <div
+          v-show="activeMiningTask"
           class="text-h6 text-weight-medium text-center text-blue-grey-14"
           :class="[responsiveCenteredLabel]"
         >
