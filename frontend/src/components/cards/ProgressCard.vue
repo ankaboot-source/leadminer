@@ -145,9 +145,9 @@ watch(activeMiningTask, (isActive) => {
 
 function estimatedRemainingTime() {
   const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
-  // estimatedRemainingTime = started extracting ? Dynamic calculation : Static calculation
+  const miningInProgress = progressValue.value !== 0;
   const estimatedRemainingTime =
-    progressValue.value != 0
+    miningInProgress
       ? Math.floor((1 / progressValue.value) * elapsedTime) - elapsedTime
       : Math.round(progressProps.totalEmails / extractionRate);
   return {
