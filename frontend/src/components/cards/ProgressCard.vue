@@ -6,7 +6,7 @@
           v-if="activeMiningTask"
           class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bold border q-px-sm text-center"
         >
-          {{ progressValuePercent }}
+          {{ progressPercentage }}
         </div>
         <div v-else class="col-auto text-blue-grey-14 text-body1">
           <span class="text-h6 text-weight-bolder q-ma-sm">
@@ -38,7 +38,7 @@
           </div>
           <div v-else>
             Finished in
-            {{ timeConversion(estimatedRemainingTime().elapsedTime) }}.
+            {{ timeConversion(getElapsedTime()) }}.
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const extractionRate = 30; // Average rate of email messages extraction and fetching per second.
+const averageExtractionRate = 130; // Average rate of email messages extraction and fetching per second.
 
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
@@ -110,22 +110,16 @@ const progressValue = computed(() => {
 });
 
 const estimatedRemainingTimeConverted = computed(() => {
-  return timeConversionRounded(
-    estimatedRemainingTime().estimatedRemainingTime
-  ).join(" ");
+  return timeConversionRounded(getEstimatedRemainingTime()).join(" ");
 });
 
-const progressValuePercent = computed(() => {
+const progressPercentage = computed(() => {
   return `${Math.floor(progressValue.value * 100)}%`;
 });
 
 watch(fetchingFinished, (finished) => {
   if (finished) {
-    console.log(
-      "Fetching completed, time elapsed:",
-      estimatedRemainingTime().elapsedTime,
-      "s"
-    );
+    console.log("Fetching completed, time elapsed:", getElapsedTime(), "s");
   }
 });
 
@@ -135,30 +129,26 @@ watch(activeMiningTask, (isActive) => {
     startTime = performance.now();
     console.log("Started Mining");
   } else {
-    console.log(
-      "Stopped Mining, time elapsed:",
-      estimatedRemainingTime().elapsedTime,
-      "s"
-    );
+    console.log("Stopped Mining, time elapsed:", getElapsedTime(), "s");
   }
 });
 
-function estimatedRemainingTime() {
-  const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
+function getElapsedTime() {
+  return Math.floor(((performance.now() - startTime) | 0) / 1000);
+}
+
+function getEstimatedRemainingTime() {
+  const elapsedTime = getElapsedTime();
   const miningInProgress = progressValue.value !== 0;
-  const estimatedRemainingTime =
-    miningInProgress
-      ? Math.floor((1 / progressValue.value) * elapsedTime) - elapsedTime
-      : Math.round(progressProps.totalEmails / extractionRate);
-  return {
-    estimatedRemainingTime,
-    elapsedTime,
-  };
+  const estimatedRemainingTime = miningInProgress
+    ? Math.floor((1 / progressValue.value) * elapsedTime) - elapsedTime
+    : Math.round(progressProps.totalEmails / averageExtractionRate);
+  return estimatedRemainingTime;
 }
 
 function timeConversionRounded(timeInSeconds) {
   if (!isFinite(timeInSeconds)) {
-    timeInSeconds = estimatedRemainingTime().estimatedRemainingTime;
+    timeInSeconds = getEstimatedRemainingTime();
   }
   // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
   if (timeInSeconds >= 60 * 63) {
