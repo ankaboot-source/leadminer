@@ -10,7 +10,7 @@
         </div>
         <div v-else class="col-auto text-blue-grey-14 text-body1">
           <span class="text-h6 text-weight-bolder q-ma-sm">
-            {{ totalEmails }}
+            {{ totalEmails.toLocaleString() }}
           </span>
           email messages to mine.
         </div>
@@ -147,9 +147,6 @@ function getEstimatedRemainingTime() {
 }
 
 function timeConversionRounded(timeInSeconds) {
-  if (!isFinite(timeInSeconds)) {
-    timeInSeconds = getEstimatedRemainingTime();
-  }
   // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
   if (timeInSeconds >= 60 * 63) {
     return [
@@ -175,7 +172,7 @@ function timeConversionRounded(timeInSeconds) {
   else if (timeInSeconds > 5) {
     return [Math.ceil(timeInSeconds / 5) * 5, "seconds"];
   }
-  // time <= 5 seconds : (Almost set!)
-  else return ["Almost set!"];
+  // time <= 5 seconds : (< 5 seconds)
+  else return ["< 5 seconds"];
 }
 </script>
