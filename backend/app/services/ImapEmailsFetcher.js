@@ -266,6 +266,9 @@ class ImapEmailsFetcher {
 
           const messageId = getMessageId(parsedHeader);
 
+          // Reassign the same ID or the generated pseudo ID if exists.
+          parsedHeader['message-id'] = messageId;
+        
           // Check if the message is the last one in the current folder
           const isLastMessage = seqNumber === totalInFolder;
 
