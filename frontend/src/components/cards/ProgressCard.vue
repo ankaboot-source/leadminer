@@ -41,7 +41,7 @@
             anchor="top middle"
             self="bottom middle"
           >
-            email messages selected to mine.
+            email messages to mine.
           </q-tooltip>
         </div>
         <div
