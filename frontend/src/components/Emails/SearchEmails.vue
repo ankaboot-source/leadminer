@@ -1,7 +1,7 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <div class="row q-pa-lg">
+      <div class="row q-pt-lg q-px-lg">
         <div class="q-mr-sm col-lg-5 col-md-5 q-ma-sm">
           <q-card flat bordered>
             <div class="row q-pa-sm">
@@ -49,15 +49,15 @@
             </div>
           </q-card>
         </div>
-        <div class="bg-transparent col q-ma-sm">
-          <ProgressCard
-            v-if="boxes"
-            :mined-emails="minedEmails"
-            :scanned-emails="scannedEmails"
-            :extracted-emails="extractedEmails"
-            :total-emails="totalEmails"
-          />
-        </div>
+      </div>
+      <div class="bg-transparent q-ma-sm q-pa-lg">
+        <ProgressCard
+          v-if="boxes"
+          :mined-emails="minedEmails"
+          :scanned-emails="scannedEmails"
+          :extracted-emails="extractedEmails"
+          :total-emails="totalEmails"
+        />
       </div>
       <MinedPersons />
     </div>

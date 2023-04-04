@@ -1,85 +1,122 @@
 <template>
-  <div class="text-h3 text-teal">
-    <q-banner rounded>
-      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ minedEmails }}
-        </div>
-        legit email addresses mined.
-      </q-chip>
-      <br />
-      <q-chip :size="buttonSize" color="transparent" text-color="blue-grey-14">
-        <div class="text-h5 text-weight-bolder q-ma-sm">
-          {{ totalEmails }}
-        </div>
-        email messages selected.
-      </q-chip>
-      <div class="q-ml-lg">
-        <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-          <div class="text-center">
+  <q-banner rounded class="q-pa-none">
+    <q-card flat bordered>
+      <div class="row justify-between q-ma-sm q-mx-md">
+        <div
+          v-if="activeMiningTask"
+          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
+        >
+          {{ progressPercentage }}
+          <q-tooltip
+            class="text-center text-body2 bg-teal-1 text-teal-8 bordered"
+            anchor="top middle"
+            self="bottom middle"
+          >
             <div v-if="!fetchingFinished">
-              <span class="text-h6 text-weight-bolder">
-                {{ scannedEmails }}/{{ totalEmails }}
+              Fetched emails:
+              <span class="text-weight-bolder">
+                {{ scannedEmails.toLocaleString() }}/{{
+                  totalEmails.toLocaleString()
+                }}
               </span>
-              unique emails fetched / emails selected
             </div>
             <div>
-              <span class="text-h6 text-weight-bolder">
-                {{ extractedEmails }}/{{ scannedEmails }}
+              Extracted emails:
+              <span class="text-weight-bolder">
+                {{ extractedEmails.toLocaleString() }}/{{
+                  scannedEmails.toLocaleString()
+                }}
               </span>
-              emails extracted
             </div>
+          </q-tooltip>
+        </div>
+        <div
+          v-else
+          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
+        >
+          {{ totalEmails.toLocaleString() }}
+          <q-icon name="mail" class="q-mb-xs" />
+          <q-tooltip
+            class="text-body2 bg-teal-1 text-teal-8 bordered"
+            anchor="top middle"
+            self="bottom middle"
+          >
+            email messages to mine.
+          </q-tooltip>
+        </div>
+        <div
+          v-show="activeMiningTask"
+          class="text-h6 text-weight-medium text-center text-blue-grey-14"
+          :class="[responsiveCenteredLabel]"
+        >
+          We're deep in the mines now... extracting contacts!
+        </div>
+
+        <div
+          class="col-auto text-right text-weight-regular text-blue-grey-14 q-pt-sm q-pb-xs"
+        >
+          <div v-if="activeMiningTask">
+            {{ estimatedRemainingTimeConverted }}
+            <span v-if="estimatedRemainingTimeConverted != 'Almost set!'">
+              left
+            </span>
+          </div>
+          <div v-else-if="!scannedEmails">
+            Estimated mining time:
+            {{ estimatedRemainingTimeConverted }}
+          </div>
+          <div v-else>
+            Finished in
+            {{ timeConversion(getElapsedTime()) }}.
+          </div>
+        </div>
+      </div>
+      <q-linear-progress
+        :buffer="progressBuffer"
+        :value="progressValue"
+        size="1.5rem"
+        color="teal-8"
+        track-color="teal-2"
+        stripe
+        style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
+        animation-speed="1200"
+      >
+        <q-tooltip
+          class="text-center text-body2 bg-teal-1 text-teal-8 bordered"
+        >
+          <div v-if="!fetchingFinished">
+            Fetched emails:
+            <span class="text-weight-bolder">
+              {{ scannedEmails.toLocaleString() }}/{{
+                totalEmails.toLocaleString()
+              }}
+            </span>
+          </div>
+          <div>
+            Extracted emails:
+            <span class="text-weight-bolder">
+              {{ extractedEmails.toLocaleString() }}/{{
+                scannedEmails.toLocaleString()
+              }}
+            </span>
           </div>
         </q-tooltip>
-        <span v-if="activeMiningTask">
-          Digging up the good stuff! Hold tight...
-          {{ (progressValue * 100).toFixed() }} %
-        </span>
-        <q-linear-progress
-          :buffer="progressBuffer"
-          :value="progressValue"
-          size="1.5rem"
-          color="teal-8"
-          track-color="teal-2"
-          class="q-card--bordered q-pa-null"
-          animation-speed="0"
-        />
-        <span v-if="activeMiningTask">
-          Estimated time remaining:
-          {{ estimatedTimeRemainingConverted }}
-        </span>
-        <span v-else-if="!scannedEmails">
-          Estimated waiting time:
-          {{ estimatedWaitingTimeConverted }}
-        </span>
-        <span v-else>
-          Finished in {{ timeConversion(timeEstimation().elapsedTime) }}
-        </span>
-      </div>
-    </q-banner>
-  </div>
+      </q-linear-progress>
+    </q-card>
+  </q-banner>
 </template>
 
 <script setup>
 import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
-import { useQuasar } from "quasar";
 import { timeConversion } from "src/helpers/time-helpers";
+import { useQuasar } from "quasar";
 
 const $q = useQuasar();
 const $store = useStore();
 
-const buttonSize = computed(() => {
-  switch (true) {
-    case $q.screen.lt.sm === true:
-      return "0.7em";
-    case $q.screen.gt.sm === true && $q.screen.lt.md === true:
-      return "2em";
-    case $q.screen.gt.md === true:
-      return "1.15em";
-    default:
-      return "1em";
-  }
+const responsiveCenteredLabel = computed(() => {
+  return $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg";
 });
 
 const progressProps = defineProps({
@@ -90,10 +127,8 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const extractionRate = 130; // Average rate of email messages extraction and fetching per second.
-const estimatedTotalTimeRemaining = computed(() =>
-  Math.round(progressProps.totalEmails / extractionRate)
-);
+const averageExtractionRate = 130; // Average rate of email messages extraction and fetching per second.
+
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
 );
@@ -113,22 +148,17 @@ const progressValue = computed(() => {
     : progressProps.extractedEmails / progressProps.totalEmails || 0;
 });
 
-const estimatedWaitingTimeConverted = computed(() => {
-  return timeConversionRounded(estimatedTotalTimeRemaining).join(" ");
+const estimatedRemainingTimeConverted = computed(() => {
+  return timeConversionRounded(getEstimatedRemainingTime()).join(" ");
 });
-const estimatedTimeRemainingConverted = computed(() => {
-  return timeConversionRounded(timeEstimation().estimatedTimeRemaining).join(
-    " "
-  );
+
+const progressPercentage = computed(() => {
+  return `${Math.floor(progressValue.value * 100)}%`;
 });
 
 watch(fetchingFinished, (finished) => {
   if (finished) {
-    console.log(
-      "Fetching completed, time elapsed:",
-      timeEstimation().elapsedTime,
-      "s"
-    );
+    console.log("Fetching completed, time elapsed:", getElapsedTime(), "s");
   }
 });
 
@@ -138,25 +168,24 @@ watch(activeMiningTask, (isActive) => {
     startTime = performance.now();
     console.log("Started Mining");
   } else {
-    console.log(
-      "Stopped Mining, time elapsed:",
-      timeEstimation().elapsedTime,
-      "s"
-    );
+    console.log("Stopped Mining, time elapsed:", getElapsedTime(), "s");
   }
 });
 
-function timeEstimation() {
-  const elapsedTime = Math.floor(((performance.now() - startTime) | 0) / 1000);
-  const estimatedTime = Math.floor((1 / progressValue.value) * elapsedTime);
-  const estimatedTimeRemaining = estimatedTime - elapsedTime;
-  return { estimatedTimeRemaining, estimatedTime, elapsedTime };
+function getElapsedTime() {
+  return Math.floor(((performance.now() - startTime) | 0) / 1000);
+}
+
+function getEstimatedRemainingTime() {
+  const elapsedTime = getElapsedTime();
+  const miningInProgress = progressValue.value !== 0;
+  const estimatedRemainingTime = miningInProgress
+    ? Math.floor((1 / progressValue.value) * elapsedTime) - elapsedTime
+    : Math.round(progressProps.totalEmails / averageExtractionRate);
+  return estimatedRemainingTime;
 }
 
 function timeConversionRounded(timeInSeconds) {
-  if (!isFinite(timeInSeconds)) {
-    timeInSeconds = estimatedTotalTimeRemaining.value;
-  }
   // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
   if (timeInSeconds >= 60 * 63) {
     return [
@@ -182,7 +211,12 @@ function timeConversionRounded(timeInSeconds) {
   else if (timeInSeconds > 5) {
     return [Math.ceil(timeInSeconds / 5) * 5, "seconds"];
   }
-  // time <= 5 seconds : (Almost set!)
-  else return ["Almost set!"];
+  // time <= 5 seconds : (< 5 seconds)
+  else return ["< 5 seconds"];
 }
 </script>
+<style>
+.q-linear-progress__track--with-transition {
+  transition: transform 0ms;
+}
+</style>
