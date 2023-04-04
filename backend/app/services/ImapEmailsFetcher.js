@@ -4,6 +4,7 @@ const { IMAP_FETCH_BODY } = require('../config');
 const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
+const { getMessageId } = require('../utils/helpers/emailFetcherHelpers');
 const redisClient = redis.getClient();
 const redisPublisher = redis.getDuplicatedClient();
 
@@ -237,7 +238,7 @@ class ImapEmailsFetcher {
         bodies: this.bodies
       });
 
-      let messageCounter = 0
+      let messageCounter = 0;
 
       fetchResult.on('message', (msg, seqNumber) => {
         let header = '';
@@ -263,22 +264,7 @@ class ImapEmailsFetcher {
           const parsedHeader = Imap.parseHeader(header.toString('utf8'));
           const parsedBody = IMAP_FETCH_BODY ? body.toString('utf8') : '';
 
-          let messageId = parsedHeader['message-id'];
-          if (!messageId) {
-            // We generate a pseudo message-id with the format
-            // date@return_path_domain
-            const returnPathDomain = parsedHeader['return-path'][0]
-              .split('@')[1]
-              .replace('>', '');
-            const date =
-              parsedHeader.date !== undefined
-                ? Date.parse(parsedHeader.date[0])
-                : '';
-            messageId = `UNKNOWN ${date}@${returnPathDomain}`;
-            parsedHeader['message-id'] = [messageId];
-          } else {
-            messageId = parsedHeader['message-id'][0];
-          }
+          const messageId = getMessageId(parsedHeader);
 
           // Check if the message is the last one in the current folder
           const isLastMessage = seqNumber === totalInFolder;
