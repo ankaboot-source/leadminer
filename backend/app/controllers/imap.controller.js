@@ -160,22 +160,27 @@ async function startMining(req, res, next) {
   try {
     const { host, port, refresh_token } = user;
     const imapConnectionProvider = access_token
-      ? await (new ImapConnectionProvider(email)).withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        redisPublisher
-      )
-      : (new ImapConnectionProvider(email)).withPassword(
-        host,
-        password,
-        port
-      );
+      ? await new ImapConnectionProvider(email).withGoogle(
+          access_token,
+          refresh_token,
+          id,
+          redisPublisher
+        )
+      : new ImapConnectionProvider(email).withPassword(host, password, port);
 
     const batchSize = LEADMINER_FETCH_BATCH_SIZE;
-    const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
+    const imapEmailsFetcherOptions = {
+      imapConnectionProvider,
+      boxes,
+      id,
+      email,
+      batchSize
+    };
 
-    miningTask = await miningTasksManager.createTask(id, imapEmailsFetcherOptions);
+    miningTask = await miningTasksManager.createTask(
+      id,
+      imapEmailsFetcherOptions
+    );
 
     const { heapTotal, heapUsed } = process.memoryUsage();
     logger.debug(
@@ -183,7 +188,6 @@ async function startMining(req, res, next) {
         2
       )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
     );
-
   } catch (err) {
     res.status(500);
     return next(err);

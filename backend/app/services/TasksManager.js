@@ -60,7 +60,13 @@ class TasksManager {
    * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
    */
-  constructor(pubsubCommunicationChannel, redisSubscriber, redisPublisher, emailFetcherFactory, sseBroadcasterFactory) {
+  constructor(
+    pubsubCommunicationChannel,
+    redisSubscriber,
+    redisPublisher,
+    emailFetcherFactory,
+    sseBroadcasterFactory
+  ) {
     this.pubsubCommunicationChannel = pubsubCommunicationChannel;
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
@@ -134,19 +140,17 @@ class TasksManager {
    * @param {string[]} fetcherOptions.boxes - An array of strings specifying the email boxes to mine.
    * @param {object} fetcherOptions.imapConnectionProvider - A configured email connection provider object.
    * @returns {object} - The new mining task.
-   * 
+   *
    * @throws {Error} If a task with the same mining ID already exists.
    * @throws {Error} If there is an error when creating the task.
    */
   async createTask(userId, fetcherOptions) {
-
-    const miningTask = { userId, ...await this.generateTaskInformation() };
+    const miningTask = { userId, ...(await this.generateTaskInformation()) };
     const { miningId, stream } = miningTask;
     const { streamName } = stream;
     const { imapConnectionProvider, email, boxes, batchSize } = fetcherOptions;
 
     try {
-
       const fetcher = this.emailFetcherFactory.create({
         imapConnectionProvider,
         boxes,
@@ -164,9 +168,10 @@ class TasksManager {
 
       fetcher.start(); // start the fetching process
       await this.#pubsubSendMessage(miningId, 'REGISTER', { ...stream });
-
     } catch (error) {
-      logger.error('Error when creating task', { metadata: { details: error.message } });
+      logger.error('Error when creating task', {
+        metadata: { details: error.message }
+      });
       throw new Error(`${error.message}`);
     }
 
@@ -179,7 +184,6 @@ class TasksManager {
     });
 
     return redactSensitiveData(miningTask);
-
   }
 
   /**
@@ -235,9 +239,10 @@ class TasksManager {
       await fetcher.stop();
       await progressHandlerSSE.stop();
       await this.#pubsubSendMessage(miningId, 'DELETE', { ...stream });
-
     } catch (error) {
-      logger.error('Error when deleting task', { metadata: { details: error.message } });
+      logger.error('Error when deleting task', {
+        metadata: { details: error.message }
+      });
     }
 
     return redactSensitiveData(task);
@@ -329,20 +334,36 @@ class TasksManager {
    * @param {string} streamInfo.consumerGroupName - The name of the consumer group.
    * @throws {Error} Throws an error if an invalid command is provided.
    */
-  async #pubsubSendMessage(miningId, command, { streamName, consumerGroupName }) {
+  async #pubsubSendMessage(
+    miningId,
+    command,
+    { streamName, consumerGroupName }
+  ) {
     if (!['REGISTER', 'DELETE'].includes(command)) {
-      throw new Error(`Invalid command '${command}', expected 'REGISTER' or 'DELETE'.`);
+      throw new Error(
+        `Invalid command '${command}', expected 'REGISTER' or 'DELETE'.`
+      );
     }
 
     switch (command) {
       case 'REGISTER': {
         // Create consumer group and empty stream.
-        await this.redisPublisher.xgroup('CREATE', streamName, consumerGroupName, '$', 'MKSTREAM');
+        await this.redisPublisher.xgroup(
+          'CREATE',
+          streamName,
+          consumerGroupName,
+          '$',
+          'MKSTREAM'
+        );
         break;
       }
       case 'DELETE': {
-        // Delete the stream and consumer groups.  
-        await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroupName);
+        // Delete the stream and consumer groups.
+        await this.redisPublisher.xgroup(
+          'DESTROY',
+          streamName,
+          consumerGroupName
+        );
         await this.redisPublisher.del(streamName);
         break;
       }
@@ -350,7 +371,10 @@ class TasksManager {
     }
 
     const message = { miningId, command, streamName, consumerGroupName };
-    await this.redisPublisher.publish(this.pubsubCommunicationChannel, JSON.stringify(message));
+    await this.redisPublisher.publish(
+      this.pubsubCommunicationChannel,
+      JSON.stringify(message)
+    );
   }
 }
 

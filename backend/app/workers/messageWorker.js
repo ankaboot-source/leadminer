@@ -6,12 +6,9 @@ const redisStreamsConsumer = redis.getDuplicatedClient();
 const redisSubscriber = redis.getDuplicatedClient();
 const publisher = redis.getDuplicatedClient();
 
-const {
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
-} = require('../utils/constants');
+const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
 
 class StreamConsumer {
-
   /**
    * Creates an instance of StreamConsumer.
    * @param {string} pubsubCommunicationChannel - Redis pub/sub channel used for receiving configuration and commands.
@@ -41,7 +38,8 @@ class StreamConsumer {
     });
 
     redisSubscriber.on('message', (_, data) => {
-      const { miningId, command, streamName, consumerGroupName } = JSON.parse(data);
+      const { miningId, command, streamName, consumerGroupName } =
+        JSON.parse(data);
 
       if (command === 'REGISTER') {
         this.streamsRegistry.set(miningId, { streamName, consumerGroupName });
@@ -105,13 +103,15 @@ class StreamConsumer {
       }
 
       const miningId = extractionResults[0].value;
-      const progress = { miningId, progressType: 'extracted', count: extractionResults.length };
+      const progress = {
+        miningId,
+        progressType: 'extracted',
+        count: extractionResults.length
+      };
 
       logger.debug('Publishing progress from worker', {
-        metadata:
-        {
-          details:
-          {
+        metadata: {
+          details: {
             pubsubChannel: streamName,
             consumerGroupName,
             consumerName: this.consumerName,
@@ -164,7 +164,6 @@ class StreamConsumer {
    * @returns {Promise<void>} A promise that resolves when consumption is complete.
    */
   async consumeStreams() {
-
     if (this.isInterrupted) {
       return;
     }
@@ -173,9 +172,11 @@ class StreamConsumer {
 
     if (streams.length > 0) {
       // Consume messages from each registered stream.
-      const consumePromises = streams.map(({ streamName, consumerGroupName }) => {
-        return this.consumeSingleStream(streamName, consumerGroupName);
-      });
+      const consumePromises = streams.map(
+        ({ streamName, consumerGroupName }) => {
+          return this.consumeSingleStream(streamName, consumerGroupName);
+        }
+      );
 
       try {
         // Wait for all consumption promises to settle.
@@ -187,7 +188,6 @@ class StreamConsumer {
           }
         });
       }
-
     }
 
     setTimeout(() => {
