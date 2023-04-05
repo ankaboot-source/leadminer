@@ -6,7 +6,7 @@ const {
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
-const { getUser, getXImapHeaderField, IMAP_ERROR_CODES } = require('./helpers');
+const { getUser, getXImapHeaderField, generateErrorObjectFromImapError } = require('./helpers');
 const { redis } = require('../utils/redis');
 const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
 const redisPublisher = redis.getDuplicatedClient();
@@ -36,32 +36,32 @@ async function loginToAccount(req, res, next) {
     password,
     port
   );
-  let imapConnection = null;
 
   try {
-    imapConnection = await imapConnectionProvider.connect();
+    await imapConnectionProvider.connect();
+
+    const user =
+      (await getUser({ email }, db)) ??
+      (await db.createImapUser({ email, host, port, tls }));
+
+    if (!user) {
+      logger.error('Somthing happend whe creating or quering user');
+      throw new Error(genericErrorMessage);
+    }
+
+    logger.info('IMAP login successful', { metadata: { email } });
+    return res.status(200).send({ imap: user });
+
   } catch (error) {
-    const newError = IMAP_ERROR_CODES[error.code ?? error.textCode] || error
+    const newError = generateErrorObjectFromImapError(error);
 
     logger.error('Failed to log in using IMAP', {
       metadata: { email, message: newError.message, newError }
     });
 
-    res.status(newError.code || 401);
+    res.status(newError.code);
     return next({ message: newError.message });
   }
-
-  const user =
-    (await getUser({ email }, db)) ??
-    (await db.createImapUser({ email, host, port, tls }));
-
-  if (!user) {
-    logger.error('Somthing happend whe creating or quering user');
-    return next(genericErrorMessage);
-  }
-
-  logger.info('IMAP login successful', { metadata: { email } });
-  return res.status(200).send({ imap: user });
 }
 
 /**
@@ -169,7 +169,7 @@ async function startMining(req, res, next) {
       );
 
     // Connect to validate connection before creating the pool.
-    await imapConnectionProvider.connect()
+    await imapConnectionProvider.connect();
 
     const batchSize = LEADMINER_FETCH_BATCH_SIZE;
     const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
