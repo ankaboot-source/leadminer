@@ -25,24 +25,11 @@ const redisPublisher = redis.getDuplicatedClient();
  */
 async function publishEmailMessage(
   streamName,
-  fetchedMessagesCount,
   emailMessage
 ) {
-  const { userIdentifier, miningId } = emailMessage;
+  const { userIdentifier } = emailMessage;
 
   try {
-    if (fetchedMessagesCount) {
-      // Publish a progress with how many messages we fetched.
-      await redisPublisher.publish(
-        miningId,
-        JSON.stringify({
-          miningId,
-          count: fetchedMessagesCount,
-          progressType: 'fetched'
-        })
-      );
-    }
-
     await redisPublisher.xadd(
       streamName,
       '*',
@@ -59,6 +46,24 @@ async function publishEmailMessage(
     });
     throw error;
   }
+}
+
+/**
+ * Publishes the fetching progress for a mining task to redis PubSub.
+ * @param {string} miningId - The ID of the mining job.
+ * @param {number} fetchedMessagesCount - The number of messages fetched so far.
+ * @returns {Promise<void>} - A Promise that resolves when the progress has been published.
+ */
+async function publishFetchingProgress(miningId, fetchedMessagesCount) {
+
+  const progress = {
+    miningId,
+    count: fetchedMessagesCount,
+    progressType: 'fetched'
+  }
+
+  // Publish a progress with how many messages we fetched.
+  await redisPublisher.publish(miningId, JSON.stringify(progress));
 }
 
 class ImapEmailsFetcher {
@@ -300,14 +305,15 @@ class ImapEmailsFetcher {
           const reachedBatchSize = messageCounter === this.batchSize;
           const shouldPublishProgress =
             reachedBatchSize || isLastMessageInFolder;
-          const progressToSend = shouldPublishProgress
-            ? messageCounter + 1
-            : null;
-
+          const progressToSend = messageCounter + 1
           // Increment the message counter or reset it to 0 if batch size has been reached.
           messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
 
-          await publishEmailMessage(this.streamName, progressToSend, {
+          if (shouldPublishProgress) {
+            await publishFetchingProgress(this.miningId, progressToSend)
+          }
+
+          await publishEmailMessage(this.streamName, {
             header: parsedHeader,
             body: parsedBody,
             seqNumber,
