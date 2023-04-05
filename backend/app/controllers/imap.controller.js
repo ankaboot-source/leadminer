@@ -12,60 +12,56 @@ const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
 const redisPublisher = redis.getDuplicatedClient();
 
 /**
- * Login to account
- * @param  {} req
- * @param  {} res
+ * Logs into an IMAP account.
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ * @param {Function} next - The next middleware function.
+ * @returns {Promise<void>}
  */
 async function loginToAccount(req, res, next) {
   const { email, host, tls, port, password } = req.body;
 
   if (!email || !host) {
     res.status(400);
-    next(new Error('Email and host are required for IMAP.'));
+    return next(new Error('Email and host are required for IMAP.'));
   }
+
+  const genericErrorMessage = {
+    message: 'Something went wrong on our end. Please try again later.',
+    code: 500
+  };
 
   const imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
     host,
     password,
     port
   );
-
-  const imapConnection = await imapConnectionProvider.acquireConnection();
-
-  imapConnection.once('error', (err) => {
-    const genericErrorMessage = {
-      message: 'Something went wrong on our end. Please try again later.',
-      code: 500
-    };
-    const { code, message } =
-      IMAP_ERROR_CODES[err.textCode ?? err.code] ?? genericErrorMessage;
-
-    err.message = message;
-    res.status(code);
-    next(err);
-  });
+  let imapConnection = null;
 
   try {
-    const user =
-      (await getUser({ email }, db)) ??
-      (await db.createImapUser({ email, host, port, tls }));
-
-    if (!user) {
-      throw Error('Error when creating or quering user');
-    }
-
-    logger.info('Account successfully logged in.', { metadata: { email } });
-
-    res.status(200).send({ imap: user });
+    imapConnection = await imapConnectionProvider.connect();
   } catch (error) {
-    next({
-      message: 'Failed to login using Imap',
-      details: error.message
+    const newError = IMAP_ERROR_CODES[error.code ?? error.textCode] || error
+
+    logger.error('Failed to log in using IMAP', {
+      metadata: { email, message: newError.message, newError }
     });
-  } finally {
-    await imapConnectionProvider.releaseConnection(imapConnection);
-    await imapConnectionProvider.cleanPool();
+
+    res.status(newError.code || 401);
+    return next({ message: newError.message });
   }
+
+  const user =
+    (await getUser({ email }, db)) ??
+    (await db.createImapUser({ email, host, port, tls }));
+
+  if (!user) {
+    logger.error('Somthing happend whe creating or quering user');
+    return next(genericErrorMessage);
+  }
+
+  logger.info('IMAP login successful', { metadata: { email } });
+  return res.status(200).send({ imap: user });
 }
 
 /**
@@ -171,6 +167,9 @@ async function startMining(req, res, next) {
         password,
         port
       );
+
+    // Connect to validate connection before creating the pool.
+    await imapConnectionProvider.connect()
 
     const batchSize = LEADMINER_FETCH_BATCH_SIZE;
     const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
