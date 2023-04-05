@@ -1,27 +1,35 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col">
-      <div class="row q-pt-lg">
-        <q-card flat bordered class="q-pa-md">
+      <div class="col q-pt-lg">
+        <q-card flat class="q-px-md q-pt-xl q-pb-lg bg-amber-1">
           <div class="row">
-            <div>
-              <div class="q-mb-md">
+            <div class="col-6 text-center q-mb-md">
+              <div class="row justify-center q-pb-lg">
+                <div class="col-8 text-h4 text-weight-medium">
+                  Mine the riches of your social network and discover your
+                  hidden treasures!
+                </div>
+              </div>
+              <div class="col justify-center">
                 <q-btn
                   :disable="activeMiningTask"
-                  :color="activeMiningTask ? 'grey-6' : 'teal'"
-                  label="Get To Mining!"
+                  :color="activeMiningTask ? 'grey-6' : 'amber-13'"
+                  label="Mine My Mailbox"
                   no-caps
                   unelevated
+                  icon-right="mail"
                   :loading="!(boxes.length > 0)"
-                  size="lg"
-                  class="q-mr-md"
+                  size="xl"
+                  class="q-mr-md text-black"
+                  style="border: 2px solid black !important"
                   @click="startMining"
                 >
                   <template #loading>
                     <q-spinner-box class="on-left" />
                     Loading...
                     <q-tooltip
-                      class="text-body2 bg-teal-1 text-teal-8 bordered"
+                      class="text-body2 bg-amber-14 text-black bordered"
                     >
                       Retrieving mailboxes...
                     </q-tooltip>
@@ -35,16 +43,79 @@
                   outline
                   @click="stopMining"
                 />
+                <q-btn
+                  icon="more_vert"
+                  :disable="activeMiningTask"
+                  flat
+                  round
+                  dense
+                  size="lg"
+                  @click="mailbox = true"
+                >
+                  <q-tooltip class="text-body2 bg-amber-14 text-black bordered"
+                    >Advanced options</q-tooltip
+                  >
+                </q-btn>
               </div>
-              <a
-                label="Advanced options"
-                :disable="activeMiningTask"
-                class="cursor-pointer q-hoverable text-teal-6"
-                style="text-decoration: underline"
-                @click="mailbox = true"
-              >
-                Advanced options
-              </a>
+            </div>
+            <div class="col-6 text-center q-mb-md">
+              <div class="row justify-center text-amber-13">
+                <i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 1vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 3vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 6vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 8vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 10vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 8vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 6vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 3vw"
+                  >monetization_on</i
+                ><i
+                  class="q-icon notranslate material-icons"
+                  aria-hidden="true"
+                  role="img"
+                  style="font-size: 1vw"
+                  >monetization_on</i
+                >
+              </div>
             </div>
           </div>
           <div
