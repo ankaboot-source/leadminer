@@ -65,55 +65,55 @@
                   aria-hidden="true"
                   role="img"
                   style="font-size: 1vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 3vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 6vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 8vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 10vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 8vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 6vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 3vw"
-                  >monetization_on</i
+                  >paid</i
                 ><i
                   class="q-icon notranslate material-icons"
                   aria-hidden="true"
                   role="img"
                   style="font-size: 1vw"
-                  >monetization_on</i
+                  >paid</i
                 >
               </div>
             </div>
