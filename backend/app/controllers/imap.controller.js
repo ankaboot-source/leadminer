@@ -6,7 +6,11 @@ const {
 const { ImapBoxesFetcher } = require('../services/ImapBoxesFetcher');
 const { miningTasksManager } = require('../services/TasksManager');
 const hashHelpers = require('../utils/helpers/hashHelpers');
-const { getUser, getXImapHeaderField, generateErrorObjectFromImapError } = require('./helpers');
+const {
+  getUser,
+  getXImapHeaderField,
+  generateErrorObjectFromImapError
+} = require('./helpers');
 const { redis } = require('../utils/redis');
 const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
 const redisPublisher = redis.getDuplicatedClient();
@@ -51,7 +55,6 @@ async function loginToAccount(req, res, next) {
 
     logger.info('IMAP login successful', { metadata: { email } });
     return res.status(200).send({ imap: user });
-
   } catch (error) {
     const newError = generateErrorObjectFromImapError(error);
 
