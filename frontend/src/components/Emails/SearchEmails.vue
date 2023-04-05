@@ -1,8 +1,12 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col">
-      <div class="col q-pt-lg">
-        <q-card flat class="q-px-md q-pt-xl q-pb-lg bg-amber-1">
+      <div class="col q-mt-lg">
+        <q-card
+          flat
+          class="q-px-md q-pt-xl q-pb-lg"
+          style="background: linear-gradient(270deg, rgba(255,252,210,0.5) 0%, rgba(255,215,0,0.3) 100%);"
+        >
           <div class="row">
             <div class="col-6 text-center q-mb-md">
               <div class="row justify-center q-pb-lg">
@@ -21,7 +25,7 @@
                   icon-right="mail"
                   :loading="!(boxes.length > 0)"
                   size="xl"
-                  class="q-mr-md text-black"
+                  class="text-black shadow-10"
                   style="border: 2px solid black !important"
                   @click="startMining"
                 >
@@ -36,13 +40,17 @@
                   </template>
                 </q-btn>
                 <q-btn
+                  v-show="activeMiningTask"
                   :disable="!activeMiningTask"
                   :color="activeMiningTask ? 'red' : 'grey-6'"
+                  class="q-ml-md"
                   label="Have a rest"
+                  size="md"
                   no-caps
                   outline
                   @click="stopMining"
                 />
+
                 <q-btn
                   icon="more_vert"
                   :disable="activeMiningTask"
