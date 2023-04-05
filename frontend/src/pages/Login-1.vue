@@ -154,12 +154,12 @@ onMounted(() => {
   if (!googleUser && !imapUser) return;
 
   if (googleUser) {
-    this.$store.commit("example/SET_GOOGLE_USER", googleUser);
+    $store.commit("example/SET_GOOGLE_USER", googleUser);
   } else if (imapUser) {
-    this.$store.commit("example/SET_IMAP", imapUser);
+    $store.commit("example/SET_IMAP", imapUser);
   }
 
-  this.$router.push("/dashboard");
+  $router.push("/dashboard");
 });
 
 const loginDisabled = computed(() => {
