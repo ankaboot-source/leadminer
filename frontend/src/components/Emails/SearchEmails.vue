@@ -1,9 +1,9 @@
 <template>
   <div class="row q-col-gutter-sm">
-    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <div class="row q-pa-lg">
-        <q-card flat bordered class="q-mr-sm q-ma-sm">
-          <div class="row q-pa-sm q-pt-md q-pl-lg">
+    <div class="col">
+      <div class="row q-pt-lg">
+        <q-card flat bordered class="q-pa-md">
+          <div class="row">
             <div>
               <q-btn
                 :disable="activeMiningTask"
@@ -97,7 +97,7 @@
           </div>
         </q-card>
       </div>
-      <div class="bg-transparent col q-mx-lg">
+      <div class="bg-transparent col q-py-lg">
         <ProgressCard
           v-if="boxes"
           :mined-emails="minedEmails"
