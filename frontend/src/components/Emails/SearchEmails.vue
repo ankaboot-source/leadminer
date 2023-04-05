@@ -9,13 +9,13 @@
                 :disable="activeMiningTask"
                 :color="activeMiningTask ? 'grey-6' : 'teal'"
                 label="Get To Mining!"
-                @click="startMining"
                 no-caps
                 unelevated
                 :loading="!(boxes.length > 0)"
                 size="lg"
+                @click="startMining"
               >
-                <template v-slot:loading>
+                <template #loading>
                   <q-spinner-box class="on-left" />
                   Loading...
                   <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
@@ -27,18 +27,18 @@
                 :disable="!activeMiningTask"
                 :color="activeMiningTask ? 'red' : 'grey-6'"
                 label="Have a rest"
-                @click="stopMining"
                 no-caps
                 outline
                 class="q-ma-md"
+                @click="stopMining"
               />
               <br />
               <a
                 label="Advanced options"
-                @click="mailbox = true"
                 :disable="activeMiningTask"
                 class="cursor-pointer q-hoverable text-teal-6"
                 style="text-decoration: underline"
+                @click="mailbox = true"
               >
                 Advanced options
               </a>
@@ -70,8 +70,8 @@
                     color="orange-5"
                     icon="refresh"
                     class="q-ml-sm"
-                    @click="getBoxes"
                     :disable="activeMiningTask"
+                    @click="getBoxes"
                   />
                   <q-space />
                   <q-btn
@@ -96,15 +96,15 @@
             </div>
           </div>
         </q-card>
-        <div class="bg-transparent col q-ma-sm">
-          <ProgressCard
-            v-if="boxes"
-            :mined-emails="minedEmails"
-            :scanned-emails="scannedEmails"
-            :extracted-emails="extractedEmails"
-            :total-emails="totalEmails"
-          />
-        </div>
+      </div>
+      <div class="bg-transparent col q-mx-lg">
+        <ProgressCard
+          v-if="boxes"
+          :mined-emails="minedEmails"
+          :scanned-emails="scannedEmails"
+          :extracted-emails="extractedEmails"
+          :total-emails="totalEmails"
+        />
       </div>
       <MinedPersons />
     </div>
