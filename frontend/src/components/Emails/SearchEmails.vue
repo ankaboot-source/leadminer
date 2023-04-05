@@ -5,34 +5,37 @@
         <q-card flat bordered class="q-pa-md">
           <div class="row">
             <div>
-              <q-btn
-                :disable="activeMiningTask"
-                :color="activeMiningTask ? 'grey-6' : 'teal'"
-                label="Get To Mining!"
-                no-caps
-                unelevated
-                :loading="!(boxes.length > 0)"
-                size="lg"
-                @click="startMining"
-              >
-                <template #loading>
-                  <q-spinner-box class="on-left" />
-                  Loading...
-                  <q-tooltip class="text-body2 bg-teal-1 text-teal-8 bordered">
-                    Retrieving mailboxes...
-                  </q-tooltip>
-                </template>
-              </q-btn>
-              <q-btn
-                :disable="!activeMiningTask"
-                :color="activeMiningTask ? 'red' : 'grey-6'"
-                label="Have a rest"
-                no-caps
-                outline
-                class="q-ma-md"
-                @click="stopMining"
-              />
-              <br />
+              <div class="q-mb-md">
+                <q-btn
+                  :disable="activeMiningTask"
+                  :color="activeMiningTask ? 'grey-6' : 'teal'"
+                  label="Get To Mining!"
+                  no-caps
+                  unelevated
+                  :loading="!(boxes.length > 0)"
+                  size="lg"
+                  class="q-mr-md"
+                  @click="startMining"
+                >
+                  <template #loading>
+                    <q-spinner-box class="on-left" />
+                    Loading...
+                    <q-tooltip
+                      class="text-body2 bg-teal-1 text-teal-8 bordered"
+                    >
+                      Retrieving mailboxes...
+                    </q-tooltip>
+                  </template>
+                </q-btn>
+                <q-btn
+                  :disable="!activeMiningTask"
+                  :color="activeMiningTask ? 'red' : 'grey-6'"
+                  label="Have a rest"
+                  no-caps
+                  outline
+                  @click="stopMining"
+                />
+              </div>
               <a
                 label="Advanced options"
                 :disable="activeMiningTask"
