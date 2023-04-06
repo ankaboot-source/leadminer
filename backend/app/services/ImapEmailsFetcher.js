@@ -5,7 +5,6 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
 const redisClient = redis.getClient();
-const redisPublisher = redis.getDuplicatedClient();
 
 /**
  * Publishes an email message to a Redis stream.
@@ -22,7 +21,11 @@ const redisPublisher = redis.getDuplicatedClient();
  * @param {string} emailMessage.miningId - The ID of the mining process.
  * @returns {Promise<void>} A promise that resolves when the message is successfully published.
  */
-async function publishEmailMessage(streamName, fetchedMessagesCount, emailMessage) {
+async function publishEmailMessage(
+  streamName,
+  fetchedMessagesCount,
+  emailMessage
+) {
   const { userIdentifier, miningId } = emailMessage;
 
   // Create a progress object to indicate that the message has been fetched.
@@ -33,18 +36,16 @@ async function publishEmailMessage(streamName, fetchedMessagesCount, emailMessag
   };
 
   try {
-
     // Publish progress to pubsub channel.
-    await redisPublisher.publish(miningId, JSON.stringify(fetchingProgress));
+    await redisClient.publish(miningId, JSON.stringify(fetchingProgress));
 
     // Add the email message to the Redis stream.
-    await redisPublisher.xadd(
+    await redisClient.xadd(
       streamName,
       '*',
       'message',
       JSON.stringify(emailMessage)
     );
-
   } catch (error) {
     logger.error('Error when publishing email message to stream', {
       metadata: {
@@ -68,8 +69,15 @@ class ImapEmailsFetcher {
    * @param {string} streamName - The name of the stream to write fetched emails.
    * @param {number} [batchSize=50] - A Number To send notification every x emails processed
    */
-  constructor(imapConnectionProvider, folders, userId, userEmail, miningId, streamName, batchSize = 50) {
-
+  constructor(
+    imapConnectionProvider,
+    folders,
+    userId,
+    userEmail,
+    miningId,
+    streamName,
+    batchSize = 50
+  ) {
     // Used to send notification every x emails processed
     this.batchSize = batchSize;
 
@@ -118,7 +126,9 @@ class ImapEmailsFetcher {
       imapConnection = await this.imapConnectionProvider.acquireConnection();
 
       // Create an array of Promises that resolve to the total number of messages in each folder.
-      const folders = this.folders.filter((folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder));
+      const folders = this.folders.filter(
+        (folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder)
+      );
       const totalPromises = folders.map((folder) => {
         return new Promise((resolve, reject) => {
           // Opening a box will explicitly close the previously opened one if it exists.
@@ -143,13 +153,14 @@ class ImapEmailsFetcher {
       await new Promise((resolve, reject) => {
         imapConnection.closeBox((err) => {
           if (err) {
-            logger.error('Error when closing box', { metadata: { details: err.message } });
+            logger.error('Error when closing box', {
+              metadata: { details: err.message }
+            });
             reject(err);
           }
           resolve();
         });
       });
-
     } catch (err) {
       error = new Error(err);
     } finally {
@@ -295,19 +306,17 @@ class ImapEmailsFetcher {
           // Check if it's the last message in the current folder.
           const isLastMessage = seqNumber === totalInFolder;
 
-          await publishEmailMessage(this.streamName, null,
-            {
-              header: parsedHeader,
-              body: parsedBody,
-              seqNumber,
-              folderName,
-              isLast: isLastMessage,
-              userId: this.userId,
-              userEmail: this.userEmail,
-              userIdentifier: this.userIdentifier,
-              miningId: this.miningId
-            }
-          );
+          await publishEmailMessage(this.streamName, null, {
+            header: parsedHeader,
+            body: parsedBody,
+            seqNumber,
+            folderName,
+            isLast: isLastMessage,
+            userId: this.userId,
+            userEmail: this.userEmail,
+            userIdentifier: this.userIdentifier,
+            miningId: this.miningId
+          });
         });
       });
 
