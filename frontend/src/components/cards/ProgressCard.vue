@@ -30,26 +30,19 @@
             </div>
           </q-tooltip>
         </div>
+        <div v-else></div>
         <div
-          v-else
-          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
-        >
-          {{ totalEmails.toLocaleString() }}
-          <q-icon name="mail" class="q-mb-xs" />
-          <q-tooltip
-            class="text-body2 bg-teal-1 text-teal-8 bordered"
-            anchor="top middle"
-            self="bottom middle"
-          >
-            email messages to mine.
-          </q-tooltip>
-        </div>
-        <div
-          v-show="activeMiningTask"
+          v-if="activeMiningTask"
           class="text-h6 text-weight-medium text-center text-blue-grey-14"
           :class="[responsiveCenteredLabel]"
         >
           We're deep in the mines now... extracting contacts!
+        </div>
+        <div v-else class="col-auto text-blue-grey-14 text-body1">
+          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
+            {{ totalEmails.toLocaleString() }}
+          </span>
+          email messages to mine.
         </div>
 
         <div
