@@ -29,7 +29,7 @@ async function publishEmailMessage(
   const { userIdentifier } = emailMessage;
 
   try {
-    await redisPublisher.xadd(
+    await redisClient.xadd(
 
       streamName,
       '*',
@@ -63,7 +63,7 @@ async function publishFetchingProgress(miningId, fetchedMessagesCount) {
   };
 
   // Publish a progress with how many messages we fetched.
-  await redisPublisher.publish(miningId, JSON.stringify(progress));
+  await redisClient.publish(miningId, JSON.stringify(progress));
 }
 
 class ImapEmailsFetcher {
