@@ -117,7 +117,6 @@ class ImapConnectionProvider {
         connection.connect();
       });
 
-      // Set up event listeners to log when the connection is closed or ended
       imapConnection.once('close', (hadError) => {
         logger.debug('Imap connection closed.', { metadata: { hadError } });
       });

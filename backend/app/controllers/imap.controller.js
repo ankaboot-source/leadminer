@@ -30,7 +30,7 @@ async function loginToAccount(req, res, next) {
     return next(new Error('Email and host are required for IMAP.'));
   }
 
-  const genericErrorMessage = {
+  const genericErrorResponse = {
     message: 'Something went wrong on our end. Please try again later.',
     code: 500
   };
@@ -49,8 +49,7 @@ async function loginToAccount(req, res, next) {
       (await db.createImapUser({ email, host, port, tls }));
 
     if (!user) {
-      logger.error('Somthing happend whe creating or quering user');
-      throw new Error(genericErrorMessage);
+      throw new Error(genericErrorResponse);
     }
 
     logger.info('IMAP login successful', { metadata: { email } });
@@ -58,12 +57,8 @@ async function loginToAccount(req, res, next) {
   } catch (error) {
     const newError = generateErrorObjectFromImapError(error);
 
-    logger.error('Failed to log in using IMAP', {
-      metadata: { email, message: newError.message, newError }
-    });
-
     res.status(newError.code);
-    return next({ message: newError.message });
+    return next(new Error(newError.message));
   }
 }
 
