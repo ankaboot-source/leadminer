@@ -5,7 +5,7 @@
         <q-card
           flat
           class="q-px-md q-pt-xl q-pb-lg"
-          style="background: linear-gradient(270deg, rgba(255,252,210,0.5) 0%, rgba(255,215,0,0.3) 100%);"
+          style="background: linear-gradient(135deg,  rgba(255, 230, 149,0.5) 0%,rgba(255, 248, 225,0.5) 100%);"
         >
           <div class="row">
             <div class="col-6 text-center q-mb-md">
@@ -25,7 +25,7 @@
                   icon-right="mail"
                   :loading="!(boxes.length > 0)"
                   size="xl"
-                  class="text-black shadow-10"
+                  class="text-black shadow-7"
                   style="border: 2px solid black !important"
                   @click="startMining"
                 >
