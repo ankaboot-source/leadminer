@@ -41,7 +41,7 @@ async function loginToAccount(req, res, next) {
     port
   );
   let imapConnection = null;
-  let user = null
+  let user = null;
 
   try {
     imapConnection = await imapConnectionProvider.acquireConnection();

@@ -185,15 +185,15 @@ class ImapConnectionProvider {
     const factory = {
       create: async () => {
         try {
-          return await this.#connect()
+          return await this.#connect();
         } catch (err) {
           logger.error('Failed to create pool resources', {
             metadata: {
               message: err.message,
               details: err
             }
-          })
-          throw err
+          });
+          throw err;
         }
       },
       destroy: (connection) => {
