@@ -1,21 +1,18 @@
 <template>
   <div class="row q-col-gutter-sm">
     <div class="col">
-      <div class="col q-mt-lg">
-        <q-card
-          flat
-          class="q-px-md q-pt-xl q-pb-lg"
-          style="background: linear-gradient(135deg,  rgba(255, 230, 149,0.5) 0%,rgba(255, 248, 225,0.5) 100%);"
-        >
-          <div class="row">
-            <div class="col-6 text-center q-mb-md">
+      <div class="col">
+        <q-card flat class="q-px-md bg-amber-1">
+          <!--style="background: linear-gradient(135deg,  rgba(255, 230, 149,0.5) 0%,rgba(255, 248, 225,0.5) 100%);"-->
+          <div class="row justify-around">
+            <div class="col-6 text-center self-center q-pb-md q-pt-xl">
               <div class="row justify-center q-pb-lg">
                 <div class="col-8 text-h4 text-weight-medium">
                   Mine the riches of your social network and discover your
                   hidden treasures!
                 </div>
               </div>
-              <div class="col justify-center">
+              <div class="row justify-center">
                 <q-btn
                   :disable="activeMiningTask"
                   :color="activeMiningTask ? 'grey-6' : 'amber-13'"
@@ -40,18 +37,6 @@
                   </template>
                 </q-btn>
                 <q-btn
-                  v-show="activeMiningTask"
-                  :disable="!activeMiningTask"
-                  :color="activeMiningTask ? 'red' : 'grey-6'"
-                  class="q-ml-md"
-                  label="Have a rest"
-                  size="md"
-                  no-caps
-                  outline
-                  @click="stopMining"
-                />
-
-                <q-btn
                   icon="more_vert"
                   :disable="activeMiningTask"
                   flat
@@ -65,65 +50,27 @@
                   >
                 </q-btn>
               </div>
-            </div>
-            <div class="col-6 text-center q-mb-md">
-              <div class="row justify-center text-amber-13">
-                <i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 1vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 3vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 6vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 8vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 10vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 8vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 6vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 3vw"
-                  >paid</i
-                ><i
-                  class="q-icon notranslate material-icons"
-                  aria-hidden="true"
-                  role="img"
-                  style="font-size: 1vw"
-                  >paid</i
-                >
+              <div class="row justify-center">
+                <q-btn
+                  :disable="!activeMiningTask"
+                  :color="activeMiningTask ? 'red' : 'grey-6'"
+                  class="q-mr-xl q-mt-sm"
+                  :class="!activeMiningTask ? 'invisible' : ''"
+                  label="Have a rest"
+                  size="md"
+                  no-caps
+                  outline
+                  @click="stopMining"
+                />
               </div>
+            </div>
+            <div class="col-6 self-center">
+              <q-img
+                src="https://www.pngall.com/wp-content/uploads/2016/05/Gold-Free-Download-PNG.png"
+                spinner-color="amber"
+                fit="contain"
+                height="14vw"
+              />
             </div>
           </div>
           <div
