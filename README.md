@@ -48,7 +48,9 @@ npm i --prefix ./backend && npm i --prefix ./frontend
       - Leadminer API Server Host : `SERVER_ENDPOINT` (**Required**)
       - Supabase Project Url : `SUPABASE_PROJECT_URL` (**Required**)
       - Supabase Project Token : `SUPABASE_SECRET_PROJECT_TOKEN` (**Required**)
+      - Supabase Max Rows : `SUPABASE_MAX_ROWS` (**Required**)
       - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
+      - Average Extraction Rate : `AVERAGE_EXTRACTION_RATE` (**Required**)
 
       **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
 

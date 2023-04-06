@@ -13,7 +13,7 @@ const {
 } = require('./helpers');
 const { redis } = require('../utils/redis');
 const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
-const redisPublisher = redis.getDuplicatedClient();
+const redisClient = redis.getClient();
 
 /**
  * Logs into an IMAP account.
@@ -94,7 +94,7 @@ async function getImapBoxes(req, res, next) {
       access_token,
       refresh_token,
       id,
-      redisPublisher
+      redisClient
     )
     : (new ImapConnectionProvider(email)).withPassword(
       host,
@@ -156,29 +156,33 @@ async function startMining(req, res, next) {
   const { host, port, refresh_token } = user;
 
   const imapConnectionProvider = access_token
-    ? await (new ImapConnectionProvider(email)).withGoogle(
+    ? await new ImapConnectionProvider(email).withGoogle(
       access_token,
       refresh_token,
       id,
-      redisPublisher
+      redisClient
     )
-    : (new ImapConnectionProvider(email)).withPassword(
-      host,
-      password,
-      port
-    );
+    : new ImapConnectionProvider(email).withPassword(host, password, port);
+
   let imapConnection = null;
   let miningTask = null;
 
   try {
-
     // Connect to validate connection before creating the pool.
     imapConnection = await imapConnectionProvider.acquireConnection();
-
     const batchSize = LEADMINER_FETCH_BATCH_SIZE;
-    const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
+    const imapEmailsFetcherOptions = {
+      imapConnectionProvider,
+      boxes,
+      id,
+      email,
+      batchSize
+    };
 
-    miningTask = await miningTasksManager.createTask(id, imapEmailsFetcherOptions);
+    miningTask = await miningTasksManager.createTask(
+      id,
+      imapEmailsFetcherOptions
+    );
 
     const { heapTotal, heapUsed } = process.memoryUsage();
     logger.debug(
@@ -186,7 +190,6 @@ async function startMining(req, res, next) {
         2
       )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
     );
-
   } catch (err) {
     const newError = generateErrorObjectFromImapError(err);
 
