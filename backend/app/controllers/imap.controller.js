@@ -41,29 +41,30 @@ async function loginToAccount(req, res, next) {
     port
   );
   let imapConnection = null;
+  let user = null
 
   try {
     imapConnection = await imapConnectionProvider.acquireConnection();
 
-    const user =
+    user =
       (await getUser({ email }, db)) ??
       (await db.createImapUser({ email, host, port, tls }));
 
     if (!user) {
       throw new Error(genericErrorResponse);
     }
-
-    logger.info('IMAP login successful', { metadata: { email } });
-    return res.status(200).send({ imap: user });
   } catch (error) {
     const newError = generateErrorObjectFromImapError(error);
 
     res.status(newError.code);
-    next(new Error(newError.message));
+    return next(new Error(newError.message));
   } finally {
     await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
   }
+
+  logger.info('IMAP login successful', { metadata: { email } });
+  return res.status(200).send({ imap: user });
 }
 
 /**
@@ -101,31 +102,32 @@ async function getImapBoxes(req, res, next) {
       port
     );
   let imapConnection = null;
+  let tree = null;
 
   try {
     imapConnection = await imapConnectionProvider.acquireConnection();
     const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
-    const tree = await imapBoxesFetcher.getTree();
+    tree = await imapBoxesFetcher.getTree();
 
     logger.info('Mining IMAP tree succeeded.', {
       metadata: {
         user: hashHelpers.hashEmail(email, id)
       }
     });
-
-    return res.status(200).send({
-      message: 'IMAP folders fetched successfully!',
-      imapFoldersTree: tree
-    });
   } catch (err) {
     const newError = generateErrorObjectFromImapError(err);
 
     res.status(newError.code);
-    next(new Error(newError.message));
+    return next(new Error(newError.message));
   } finally {
     await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
   }
+
+  return res.status(200).send({
+    message: 'IMAP folders fetched successfully!',
+    imapFoldersTree: tree
+  });
 }
 
 /**
