@@ -56,6 +56,7 @@ module.exports = configure(() => {
         SUPABASE_SECRET_PROJECT_TOKEN:
           process.env.SUPABASE_SECRET_PROJECT_TOKEN,
         GG_CLIENT_ID: process.env.GG_CLIENT_ID,
+        AVERAGE_EXTRACTION_RATE: parseInt(process.env.AVERAGE_EXTRACTION_RATE),
       },
       // transpile: false,
 
