@@ -49,6 +49,7 @@ npm i --prefix ./backend && npm i --prefix ./frontend
       - Supabase Project Url : `SUPABASE_PROJECT_URL` (**Required**)
       - Supabase Project Token : `SUPABASE_SECRET_PROJECT_TOKEN` (**Required**)
       - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
+      - Average Extraction Rate : `AVERAGE_EXTRACTION_RATE` (**Required**)
 
       **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
 
