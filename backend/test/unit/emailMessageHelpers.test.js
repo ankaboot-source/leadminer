@@ -68,4 +68,13 @@ describe('emailMessageHelpers.getMessageId', () => {
     const messageId = emailMessageHelpers.getMessageId(parsedHeader);
     expect(messageId).to.match(/^UNKNOWN \d+@example\.com$/);
   });
+
+  it('should generate a pseudo message ID if the parsed header and return-path does not exist', () => {
+    const parsedHeader = {
+      date: ['2022-01-01']
+    };
+    const messageId = emailMessageHelpers.getMessageId(parsedHeader);
+    console.log(messageId)
+    expect(messageId).to.match(/^UNKNOWN \d+@NO-RETURN-PATH$/);
+  });
 });

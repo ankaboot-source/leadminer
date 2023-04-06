@@ -60,7 +60,7 @@ async function publishFetchingProgress(miningId, fetchedMessagesCount) {
     miningId,
     count: fetchedMessagesCount,
     progressType: 'fetched'
-  }
+  };
 
   // Publish a progress with how many messages we fetched.
   await redisPublisher.publish(miningId, JSON.stringify(progress));
@@ -305,12 +305,12 @@ class ImapEmailsFetcher {
           const reachedBatchSize = messageCounter === this.batchSize;
           const shouldPublishProgress =
             reachedBatchSize || isLastMessageInFolder;
-          const progressToSend = messageCounter + 1
+          const progressToSend = messageCounter + 1;
           // Increment the message counter or reset it to 0 if batch size has been reached.
           messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
 
           if (shouldPublishProgress) {
-            await publishFetchingProgress(this.miningId, progressToSend)
+            await publishFetchingProgress(this.miningId, progressToSend);
           }
 
           await publishEmailMessage(this.streamName, {
