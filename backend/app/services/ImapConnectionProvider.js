@@ -183,12 +183,18 @@ class ImapConnectionProvider {
    */
   #initializePool() {
     const factory = {
-      create: () => {
-        return new Promise((resolve, reject) => {
-          this.#connect()
-            .then((connection) => resolve(connection))
-            .catch((error) => reject(error));
-        });
+      create: async () => {
+        try {
+          return await this.#connect()
+        } catch (err) {
+          logger.error('Failed to create pool resources', {
+            metadata: {
+              message: err.message,
+              details: err
+            }
+          })
+          throw err
+        }
       },
       destroy: (connection) => {
         connection.destroy();
