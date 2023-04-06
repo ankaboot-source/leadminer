@@ -107,7 +107,7 @@ class ImapConnectionProvider {
    * @returns {Promise<Imap>} - A Promise that resolves to the Imap object upon successful connection.
    * @throws {Error} - If the connection fails for any reason.
    */
-  async connect() {
+  async #connect() {
     try {
       const imapConnection = await new Promise((resolve, reject) => {
         const connection = new Imap(this.#imapConfig);
@@ -134,11 +134,17 @@ class ImapConnectionProvider {
   }
 
   /**
-   * Acquires a new Imap connection.
-   * @returns {Promise<Imap>} - A promise that resolves to an Imap connection.
+   * Acquires a new Imap connection from the connection pool.
+   * If the connection pool is not yet initialized, it initializes the pool before acquiring a connection.
+   *
+   * @returns {Promise<Imap>} A Promise that resolves to an Imap connection.
+   * @throws {Error} If the connection pool initialization fails due to connection error.
    */
-  acquireConnection() {
+  async acquireConnection() {
     if (!this.#poolIsInitialized) {
+      // Should throw an error, if wrong creds and prevents pool from getting initialized.
+      const connection = await this.#connect();
+      connection.destroy();
       this.#initializePool();
       this.#poolIsInitialized = true;
     }
@@ -165,7 +171,10 @@ class ImapConnectionProvider {
    * @returns {Promise<void>}
    */
   releaseConnection(imapConnection) {
-    return this.#connectionsPool.release(imapConnection);
+    if (!this.#poolIsInitialized) {
+      return;
+    }
+    this.#connectionsPool.release(imapConnection);
   }
 
   /**
@@ -176,7 +185,7 @@ class ImapConnectionProvider {
     const factory = {
       create: () => {
         return new Promise((resolve, reject) => {
-          this.connect()
+          this.#connect()
             .then((connection) => resolve(connection))
             .catch((error) => reject(error));
         });

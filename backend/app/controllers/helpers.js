@@ -111,7 +111,7 @@ function generateErrorObjectFromImapError(error) {
   }
 
   if (!errorMessage) {
-    return error;
+    return !error.code ? { ...error, code: 500 } : error;
   }
 
   const newError = new Error(errorMessage.message);

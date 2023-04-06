@@ -40,9 +40,10 @@ async function loginToAccount(req, res, next) {
     password,
     port
   );
+  let imapConnection = null;
 
   try {
-    await imapConnectionProvider.connect();
+    imapConnection = await imapConnectionProvider.acquireConnection();
 
     const user =
       (await getUser({ email }, db)) ??
@@ -58,7 +59,10 @@ async function loginToAccount(req, res, next) {
     const newError = generateErrorObjectFromImapError(error);
 
     res.status(newError.code);
-    return next(new Error(newError.message));
+    next(new Error(newError.message));
+  } finally {
+    await imapConnectionProvider.releaseConnection(imapConnection);
+    await imapConnectionProvider.cleanPool();
   }
 }
 
@@ -84,25 +88,22 @@ async function getImapBoxes(req, res, next) {
   }
 
   const { host, port, refresh_token } = user;
-
-  let imapConnectionProvider = new ImapConnectionProvider(email);
+  const imapConnectionProvider = access_token
+    ? await (new ImapConnectionProvider(email)).withGoogle(
+      access_token,
+      refresh_token,
+      id,
+      redisPublisher
+    )
+    : (new ImapConnectionProvider(email)).withPassword(
+      host,
+      password,
+      port
+    );
+  let imapConnection = null;
 
   try {
-    if (access_token) {
-      imapConnectionProvider = await imapConnectionProvider.withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        redisPublisher
-      );
-    } else {
-      imapConnectionProvider = imapConnectionProvider.withPassword(
-        host,
-        password,
-        port
-      );
-    }
-
+    imapConnection = await imapConnectionProvider.acquireConnection();
     const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
     const tree = await imapBoxesFetcher.getTree();
 
@@ -117,11 +118,12 @@ async function getImapBoxes(req, res, next) {
       imapFoldersTree: tree
     });
   } catch (err) {
-    err.description = err.message;
-    err.message = 'Unable to fetch IMAP folders.';
-    err.user = hashHelpers.hashEmail(email, id);
-    return next(err);
+    const newError = generateErrorObjectFromImapError(err);
+
+    res.status(newError.code);
+    next(new Error(newError.message));
   } finally {
+    await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
   }
 }
@@ -149,25 +151,27 @@ async function startMining(req, res, next) {
     return next(new Error('user does not exists.'));
   }
 
+  const { host, port, refresh_token } = user;
+
+  const imapConnectionProvider = access_token
+    ? await (new ImapConnectionProvider(email)).withGoogle(
+      access_token,
+      refresh_token,
+      id,
+      redisPublisher
+    )
+    : (new ImapConnectionProvider(email)).withPassword(
+      host,
+      password,
+      port
+    );
+  let imapConnection = null;
   let miningTask = null;
 
   try {
-    const { host, port, refresh_token } = user;
-    const imapConnectionProvider = access_token
-      ? await (new ImapConnectionProvider(email)).withGoogle(
-        access_token,
-        refresh_token,
-        id,
-        redisPublisher
-      )
-      : (new ImapConnectionProvider(email)).withPassword(
-        host,
-        password,
-        port
-      );
 
     // Connect to validate connection before creating the pool.
-    await imapConnectionProvider.connect();
+    imapConnection = await imapConnectionProvider.acquireConnection();
 
     const batchSize = LEADMINER_FETCH_BATCH_SIZE;
     const imapEmailsFetcherOptions = { imapConnectionProvider, boxes, id, email, batchSize };
@@ -182,8 +186,12 @@ async function startMining(req, res, next) {
     );
 
   } catch (err) {
-    res.status(500);
-    return next(err);
+    const newError = generateErrorObjectFromImapError(err);
+
+    await imapConnectionProvider.releaseConnection(imapConnection);
+    await imapConnectionProvider.cleanPool();
+    res.status(newError.code);
+    return next(new Error(newError.message));
   }
 
   return res.status(201).send({ error: null, data: miningTask });
