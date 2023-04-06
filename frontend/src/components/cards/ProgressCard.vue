@@ -127,7 +127,7 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE; // Average rate of email messages extraction and fetching per second.
+const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE;
 
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
