@@ -22,45 +22,45 @@ const { logger } = require('../utils/logger');
  * @returns {Promise<void>}
  */
 async function handleMessage({
-    seqNumber,
-    body,
-    header,
-    folderName,
-    userId,
-    userEmail,
-    userIdentifierHash,
-    isLast
+  seqNumber,
+  body,
+  header,
+  folderName,
+  userId,
+  userEmail,
+  userIdentifierHash,
+  isLast
 }) {
-    const message = new EmailMessage(
-        redisClientForNormalMode,
-        userEmail,
-        seqNumber,
-        header,
-        body,
-        folderName
-    );
+  const message = new EmailMessage(
+    redisClientForNormalMode,
+    userEmail,
+    seqNumber,
+    header,
+    body,
+    folderName
+  );
 
-    const extractedContacts = await message.extractEmailAddresses();
-    await db.store(extractedContacts, userId);
+  const extractedContacts = await message.extractEmailAddresses();
+  await db.store(extractedContacts, userId);
 
-    if (isLast) {
-        try {
-            logger.info('Calling populate.', {
-                metadata: {
-                    isLast,
-                    userHash: userIdentifierHash
-                }
-            });
-            await db.callRpcFunction(userId, 'populate_refined');
-        } catch (error) {
-            logger.error('Failed populating refined_persons.', {
-                metadata: {
-                    error,
-                    userHash: userIdentifierHash
-                }
-            });
+  if (isLast) {
+    try {
+      logger.info('Calling populate.', {
+        metadata: {
+          isLast,
+          userHash: userIdentifierHash
         }
+      });
+      await db.callRpcFunction(userId, 'populate_refined');
+    } catch (error) {
+      logger.error('Failed populating refined_persons.', {
+        metadata: {
+          error,
+          userHash: userIdentifierHash
+        }
+      });
     }
+  }
 }
 
 /**
@@ -68,15 +68,15 @@ async function handleMessage({
  * @param {Array} message - Array containing the stream message ID and the message data
  */
 const processStreamData = async (message) => {
-    const [, msg] = message;
-    const data = JSON.parse(msg[1]);
-    const { miningId } = data;
+  const [, msg] = message;
+  const data = JSON.parse(msg[1]);
+  const { miningId } = data;
 
-    await handleMessage(data);
-    return miningId;
+  await handleMessage(data);
+  return miningId;
 };
 
 module.exports = {
-    processStreamData,
-    handleMessage
+  processStreamData,
+  handleMessage
 };
