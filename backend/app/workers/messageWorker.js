@@ -2,7 +2,7 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { processStreamData } = require('./handlers');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
-const redisSubscriber = redis.getDuplicatedClient();
+const redisSubscriber = redis.getSubscriberClient();
 const redisClient = redis.getClient();
 
 const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');

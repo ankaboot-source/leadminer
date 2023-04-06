@@ -79,7 +79,9 @@ class RedisManager {
   }
 
   /**
-   * Returns the original Redis client instance
+   * Returns Redis client instance.
+   * Don't use this client to subscribe to pub/sub channels.
+   * Instead, you should use `getSubscriberClient` for subscribing.
    * @returns {Redis} Redis client instance
    */
   getClient() {
@@ -87,10 +89,11 @@ class RedisManager {
   }
 
   /**
-   * Returns a duplicate of the original Redis client instance
+   * Returns a duplicate of the Redis client instance that can be used
+   * as a pub/sub subscriber.
    * @return {object} Redis client instance
    */
-  getDuplicatedClient() {
+  getSubscriberClient() {
     return this.#normalClient.duplicate();
   }
 }

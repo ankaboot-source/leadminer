@@ -434,7 +434,7 @@ const SSEBroadcasterFactory = function () {
 
 const miningTasksManager = new TasksManager(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-  redis.getDuplicatedClient(),
+  redis.getSubscriberClient(),
   redis.getClient(),
   new EmailFetcherFactory(),
   new SSEBroadcasterFactory()
