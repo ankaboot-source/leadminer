@@ -318,7 +318,7 @@ class TasksManager {
    * @returns {Promise<{status:boolean, taks:object}>} An object containing the status of the task and the task itself (if it has been deleted).
    */
   async #hasCompleted(miningID, { extracted, fetched, fetchingStatus }) {
-    const status = fetchingStatus && extracted === fetched;
+    const status = fetchingStatus && extracted >= fetched;
     const { task } = status ? await this.deleteTask(miningID) : { task: null };
 
     return { status, task };
@@ -434,8 +434,8 @@ const SSEBroadcasterFactory = function () {
 
 const miningTasksManager = new TasksManager(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-  redis.getDuplicatedClient(),
-  redis.getDuplicatedClient(),
+  redis.getSubscriberClient(),
+  redis.getClient(),
   new EmailFetcherFactory(),
   new SSEBroadcasterFactory()
 );

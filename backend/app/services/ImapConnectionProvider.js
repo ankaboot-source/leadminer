@@ -103,11 +103,48 @@ class ImapConnectionProvider {
   }
 
   /**
-   * Acquires a new Imap connection.
-   * @returns {Promise<Imap>} - A promise that resolves to an Imap connection.
+   * Establishes a connection to an IMAP server and returns the connection object.
+   * @returns {Promise<Imap>} - A Promise that resolves to the Imap object upon successful connection.
+   * @throws {Error} - If the connection fails for any reason.
    */
-  acquireConnection() {
+  async #connect() {
+    try {
+      const imapConnection = await new Promise((resolve, reject) => {
+        const connection = new Imap(this.#imapConfig);
+
+        connection.on('error', (err) => reject(err));
+        connection.once('ready', () => resolve(connection));
+        connection.connect();
+      });
+
+      imapConnection.once('close', (hadError) => {
+        logger.debug('Imap connection closed.', { metadata: { hadError } });
+      });
+      imapConnection.once('end', () => {
+        logger.debug('Imap connection ended.');
+      });
+
+      return imapConnection;
+    } catch (error) {
+      logger.error('Imap connection error', {
+        metadata: { message: error.message, details: error }
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Acquires a new Imap connection from the connection pool.
+   * If the connection pool is not yet initialized, it initializes the pool before acquiring a connection.
+   *
+   * @returns {Promise<Imap>} A Promise that resolves to an Imap connection.
+   * @throws {Error} If the connection pool initialization fails due to connection error.
+   */
+  async acquireConnection() {
     if (!this.#poolIsInitialized) {
+      // Should throw an error, if wrong creds and prevents pool from getting initialized.
+      const connection = await this.#connect();
+      connection.destroy();
       this.#initializePool();
       this.#poolIsInitialized = true;
     }
@@ -134,7 +171,10 @@ class ImapConnectionProvider {
    * @returns {Promise<void>}
    */
   releaseConnection(imapConnection) {
-    return this.#connectionsPool.release(imapConnection);
+    if (!this.#poolIsInitialized) {
+      return;
+    }
+    this.#connectionsPool.release(imapConnection);
   }
 
   /**
@@ -143,31 +183,18 @@ class ImapConnectionProvider {
    */
   #initializePool() {
     const factory = {
-      create: () => {
-        return new Promise((resolve) => {
-          const imapConnection = new Imap(this.#imapConfig);
-
-          imapConnection.on('error', (err) => {
-            logger.error('Imap connection error.', {
-              metadata: { error: err }
-            });
+      create: async () => {
+        try {
+          return await this.#connect();
+        } catch (err) {
+          logger.error('Failed to create pool resources', {
+            metadata: {
+              message: err.message,
+              details: err
+            }
           });
-
-          imapConnection.once('close', (hadError) => {
-            logger.debug('Imap connection closed.', { metadata: { hadError } });
-          });
-
-          imapConnection.once('end', () => {
-            logger.debug('Imap connection ended.');
-          });
-
-          imapConnection.once('ready', () => {
-            logger.debug('imap connection ready');
-            resolve(imapConnection);
-          });
-
-          imapConnection.connect();
-        });
+          throw err;
+        }
       },
       destroy: (connection) => {
         connection.destroy();
@@ -180,6 +207,13 @@ class ImapConnectionProvider {
     };
 
     this.#connectionsPool = genericPool.createPool(factory, opts);
+
+    // Set up an event listener for factory create errors
+    this.#connectionsPool.on('factoryCreateError', (err) => {
+      logger.error('Error creating IMAP connection pool resource', {
+        metadata: { message: err.message, details: err }
+      });
+    });
   }
 }
 

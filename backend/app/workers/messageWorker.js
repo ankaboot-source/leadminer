@@ -2,9 +2,8 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { processStreamData } = require('./handlers');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
-const redisStreamsConsumer = redis.getDuplicatedClient();
-const redisSubscriber = redis.getDuplicatedClient();
-const publisher = redis.getDuplicatedClient();
+const redisSubscriber = redis.getSubscriberClient();
+const redisClient = redis.getClient();
 
 const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
 
@@ -67,14 +66,14 @@ class StreamConsumer {
    */
   async consumeSingleStream(streamName, consumerGroupName) {
     try {
-      const result = await redisStreamsConsumer.xreadgroup(
+      const result = await redisClient.xreadgroup(
         'GROUP',
         consumerGroupName,
         this.consumerName,
         'COUNT',
         this.batchSize,
         'BLOCK',
-        1,
+        2000,
         'STREAMS',
         streamName,
         '>'
@@ -88,9 +87,17 @@ class StreamConsumer {
       const processedMessageIDs = messages.map((message) => message[0]);
       const lastMessageId = processedMessageIDs.slice(-1)[0];
 
+      const startTime = performance.now();
       const extractionResults = await Promise.allSettled([
-        ...messages.map((message) => this.messageProcessor(message))
+        ...messages.map((message) => this.messageProcessor(message)),
+        redisClient.xack(streamName, consumerGroupName, ...processedMessageIDs)
       ]);
+      const endTime = performance.now();
+      logger.debug(
+        `Extraction of ${processedMessageIDs.length} took ${
+          endTime - startTime
+        }ms`
+      );
 
       const failedExtractionResults = extractionResults.filter(
         (extractionResult) => extractionResult.status !== 'fulfilled'
@@ -120,26 +127,9 @@ class StreamConsumer {
         }
       });
 
-      await publisher.publish(
-        // Publish the progress object as a JSON string to the Redis pub/sub channel.
-        miningId,
-        JSON.stringify(progress)
-      );
+      redisClient.publish(miningId, JSON.stringify(progress));
 
-      await redisStreamsConsumer.xack(
-        // This marks the specified messages as processed and removes them
-        // from the pending list of the consumer group.
-        streamName,
-        consumerGroupName,
-        ...processedMessageIDs
-      );
-
-      await redisStreamsConsumer.xtrim(
-        // Trim the stream channel to remove messages that have already been processed.
-        streamName,
-        'MINID',
-        lastMessageId
-      );
+      redisClient.xtrim(streamName, 'MINID', lastMessageId);
 
       const { heapTotal, heapUsed } = process.memoryUsage();
       logger.debug(
@@ -192,7 +182,7 @@ class StreamConsumer {
 
     setTimeout(() => {
       this.consumeStreams();
-    }, 1000);
+    }, 0);
   }
 
   /**

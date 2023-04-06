@@ -6,7 +6,6 @@ const { redis } = require('../utils/redis');
 const { EXCLUDED_IMAP_FOLDERS } = require('../utils/constants');
 const { getMessageId } = require('../utils/helpers/emailMessageHelpers');
 const redisClient = redis.getClient();
-const redisPublisher = redis.getDuplicatedClient();
 
 /**
  * Publishes an email message to a Redis stream.
@@ -31,6 +30,7 @@ async function publishEmailMessage(
 
   try {
     await redisPublisher.xadd(
+
       streamName,
       '*',
       'message',

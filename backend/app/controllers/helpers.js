@@ -99,8 +99,30 @@ function getUser({ access_token, id, email }, db) {
   return db.getImapUserByEmail(email);
 }
 
+/**
+ * Generates a new error object from a given IMAP error code or text code.
+ * @param {object} error - The IMAP error object.
+ * @returns {object} - The new error object with the corresponding error message, or the original error object.
+ */
+function generateErrorObjectFromImapError(error) {
+  let errorMessage = IMAP_ERROR_CODES[`${error.code ?? error.textCode}`];
+
+  if (error.message.startsWith('LOGIN') && !(error.code ?? error.textCode)) {
+    errorMessage = IMAP_ERROR_CODES.AUTHENTICATIONFAILED;
+  }
+
+  if (!errorMessage) {
+    return !error.code ? { ...error, code: 500 } : error;
+  }
+
+  const newError = new Error(errorMessage.message);
+  newError.code = errorMessage.code;
+  newError.source = error.source;
+  return newError;
+}
+
 module.exports = {
-  IMAP_ERROR_CODES,
+  generateErrorObjectFromImapError,
   getXImapHeaderField,
   getUser
 };
