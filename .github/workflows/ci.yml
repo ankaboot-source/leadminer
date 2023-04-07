@@ -41,7 +41,7 @@ jobs:
       - name: Check linting
         run: cd backend && npm run lint
       - name: Check formatting
-      - run: cd backend && npm run prettier
+        run: cd backend && npm run prettier
       - name: Run unit tests
         run: cd backend && npm run test:unit
       - name: Generate DeepSource code coverage report
