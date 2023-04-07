@@ -24,7 +24,7 @@
           </q-card-section>
 
           <q-card-section>
-            <q-form class="q-gutter-md" @submit="login">
+            <q-form class="q-gutter-md" greedy @submit="login">
               <q-input
                 v-model="email"
                 outlined
@@ -32,6 +32,7 @@
                 :rules="[isValidEmail]"
                 label="Email address"
                 placeholder="example@company.com"
+                :debounce="700"
               >
                 <template #prepend>
                   <q-icon name="mail" />
@@ -42,6 +43,7 @@
                 v-model="password"
                 outlined
                 placeholder="Email password"
+                :rules="[isValidPassword]"
                 dense
                 :type="isPwd ? 'password' : 'text'"
                 hint="We do not store passwords, you must enter them each time you use leadminer"
@@ -64,8 +66,7 @@
                 :dense="true"
                 label="IMAP host"
                 placeholder="imap.host.com"
-                lazy-rules
-                required
+                :rules="[isValidImapHost]"
               >
                 <template #prepend>
                   <q-icon name="dns" />
@@ -75,7 +76,6 @@
                 v-if="shouldShowImapFields"
                 v-model="port"
                 outlined
-                required
                 dense
                 label="IMAP Port"
               >
@@ -163,18 +163,26 @@ onMounted(() => {
 });
 
 const loginDisabled = computed(() => {
-  return !policyChecked.value || !isValidEmail(email.value);
+  return !policyChecked.value || isValidEmail(email.value) !== true;
 });
 
 const shouldShowImapFields = computed(() => {
   return (
-    isValidEmail(email.value) &&
+    isValidEmail(email.value) === true &&
     (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
   );
 });
 
 function isValidEmail(email) {
-  return emailPattern.test(email);
+  return emailPattern.test(email) || "Please insert a valid email";
+}
+
+function isValidPassword(password) {
+  return password !== "" || "Please insert your IMAP password";
+}
+
+function isValidImapHost(imapHost) {
+  return imapHost !== "" || "Please insert your IMAP host";
 }
 
 async function login() {
