@@ -10,7 +10,9 @@ const linkedinEmailMessage = {
   rulesToApply: [
     {
       fields: ['reply-to', 'reply_to'],
-      conditions: [new HasHeaderWithValues('x-linkedin-class', ['inmail'])]
+      conditions: [
+        new HasHeaderWithValues('x-linkedin-class', ['inmail', 'email-default'])
+      ]
     }
   ]
 };

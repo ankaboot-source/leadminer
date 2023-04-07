@@ -2,16 +2,12 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { processStreamData } = require('./handlers');
 const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
-const redisStreamsConsumer = redis.getDuplicatedClient();
-const redisSubscriber = redis.getDuplicatedClient();
-const publisher = redis.getDuplicatedClient();
+const redisSubscriber = redis.getSubscriberClient();
+const redisClient = redis.getClient();
 
-const {
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
-} = require('../utils/constants');
+const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
 
 class StreamConsumer {
-
   /**
    * Creates an instance of StreamConsumer.
    * @param {string} pubsubCommunicationChannel - Redis pub/sub channel used for receiving configuration and commands.
@@ -41,7 +37,8 @@ class StreamConsumer {
     });
 
     redisSubscriber.on('message', (_, data) => {
-      const { miningId, command, streamName, consumerGroupName } = JSON.parse(data);
+      const { miningId, command, streamName, consumerGroupName } =
+        JSON.parse(data);
 
       if (command === 'REGISTER') {
         this.streamsRegistry.set(miningId, { streamName, consumerGroupName });
@@ -69,14 +66,14 @@ class StreamConsumer {
    */
   async consumeSingleStream(streamName, consumerGroupName) {
     try {
-      const result = await redisStreamsConsumer.xreadgroup(
+      const result = await redisClient.xreadgroup(
         'GROUP',
         consumerGroupName,
         this.consumerName,
         'COUNT',
         this.batchSize,
         'BLOCK',
-        1,
+        2000,
         'STREAMS',
         streamName,
         '>'
@@ -90,9 +87,17 @@ class StreamConsumer {
       const processedMessageIDs = messages.map((message) => message[0]);
       const lastMessageId = processedMessageIDs.slice(-1)[0];
 
+      const startTime = performance.now();
       const extractionResults = await Promise.allSettled([
-        ...messages.map((message) => this.messageProcessor(message))
+        ...messages.map((message) => this.messageProcessor(message)),
+        redisClient.xack(streamName, consumerGroupName, ...processedMessageIDs)
       ]);
+      const endTime = performance.now();
+      logger.debug(
+        `Extraction of ${processedMessageIDs.length} took ${
+          endTime - startTime
+        }ms`
+      );
 
       const failedExtractionResults = extractionResults.filter(
         (extractionResult) => extractionResult.status !== 'fulfilled'
@@ -105,13 +110,15 @@ class StreamConsumer {
       }
 
       const miningId = extractionResults[0].value;
-      const progress = { miningId, progressType: 'extracted', count: extractionResults.length };
+      const progress = {
+        miningId,
+        progressType: 'extracted',
+        count: extractionResults.length
+      };
 
       logger.debug('Publishing progress from worker', {
-        metadata:
-        {
-          details:
-          {
+        metadata: {
+          details: {
             pubsubChannel: streamName,
             consumerGroupName,
             consumerName: this.consumerName,
@@ -120,26 +127,9 @@ class StreamConsumer {
         }
       });
 
-      await publisher.publish(
-        // Publish the progress object as a JSON string to the Redis pub/sub channel.
-        miningId,
-        JSON.stringify(progress)
-      );
+      redisClient.publish(miningId, JSON.stringify(progress));
 
-      await redisStreamsConsumer.xack(
-        // This marks the specified messages as processed and removes them
-        // from the pending list of the consumer group.
-        streamName,
-        consumerGroupName,
-        ...processedMessageIDs
-      );
-
-      await redisStreamsConsumer.xtrim(
-        // Trim the stream channel to remove messages that have already been processed.
-        streamName,
-        'MINID',
-        lastMessageId
-      );
+      redisClient.xtrim(streamName, 'MINID', lastMessageId);
 
       const { heapTotal, heapUsed } = process.memoryUsage();
       logger.debug(
@@ -164,7 +154,6 @@ class StreamConsumer {
    * @returns {Promise<void>} A promise that resolves when consumption is complete.
    */
   async consumeStreams() {
-
     if (this.isInterrupted) {
       return;
     }
@@ -173,9 +162,11 @@ class StreamConsumer {
 
     if (streams.length > 0) {
       // Consume messages from each registered stream.
-      const consumePromises = streams.map(({ streamName, consumerGroupName }) => {
-        return this.consumeSingleStream(streamName, consumerGroupName);
-      });
+      const consumePromises = streams.map(
+        ({ streamName, consumerGroupName }) => {
+          return this.consumeSingleStream(streamName, consumerGroupName);
+        }
+      );
 
       try {
         // Wait for all consumption promises to settle.
@@ -187,12 +178,11 @@ class StreamConsumer {
           }
         });
       }
-
     }
 
     setTimeout(() => {
       this.consumeStreams();
-    }, 1000);
+    }, 0);
   }
 
   /**

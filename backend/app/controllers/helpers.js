@@ -69,7 +69,7 @@ function getXImapHeaderField(headers) {
 
 /**
  * Get a user by either their access token and email or their IMAP ID or email.
- * 
+ *
  * @param {Object} params - An object containing the necessary parameters to fetch a user.
  * @param {string} params.access_token - The user's Google access token.
  * @param {string} params.id - The user's IMAP ID.
@@ -77,16 +77,17 @@ function getXImapHeaderField(headers) {
  * @param {Object} db - The database object to use for fetching the user.
  * @returns {Promise<Object>} - A promise that resolves with the user object, or null if not found.
  * @throws {Error} - If at least one parameter is not provided.
- * 
+ *
  * @example
  * const params = { id: '123', email: 'user@example.com' };
  * const user = await getUser(params);
  * console.log(user);
  */
 function getUser({ access_token, id, email }, db) {
-
   if (!access_token && !id && !email) {
-    throw new Error('At least one parameter is required { access_token, id, email }.');
+    throw new Error(
+      'At least one parameter is required { access_token, id, email }.'
+    );
   }
 
   if (access_token) {
@@ -98,8 +99,30 @@ function getUser({ access_token, id, email }, db) {
   return db.getImapUserByEmail(email);
 }
 
+/**
+ * Generates a new error object from a given IMAP error code or text code.
+ * @param {object} error - The IMAP error object.
+ * @returns {object} - The new error object with the corresponding error message, or the original error object.
+ */
+function generateErrorObjectFromImapError(error) {
+  let errorMessage = IMAP_ERROR_CODES[`${error.code ?? error.textCode}`];
+
+  if (error.message.startsWith('LOGIN') && !(error.code ?? error.textCode)) {
+    errorMessage = IMAP_ERROR_CODES.AUTHENTICATIONFAILED;
+  }
+
+  if (!errorMessage) {
+    return !error.code ? { ...error, code: 500 } : error;
+  }
+
+  const newError = new Error(errorMessage.message);
+  newError.code = errorMessage.code;
+  newError.source = error.source;
+  return newError;
+}
+
 module.exports = {
-  IMAP_ERROR_CODES,
+  generateErrorObjectFromImapError,
   getXImapHeaderField,
   getUser
 };

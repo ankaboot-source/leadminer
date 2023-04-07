@@ -20,7 +20,6 @@ class RealtimeSSE extends SSE {
    */
   subscribeSSE({ req, res }) {
     this.on('stop', () => {
-
       // Make sure connection is not already closed before writing.
       // writableEnded: https://nodejs.org/api/http.html#responsewritableended
 

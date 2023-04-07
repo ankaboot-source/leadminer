@@ -44,8 +44,8 @@ describe('TasksManager.redactSensitiveData()', () => {
         },
         fetcher: {
           status: 'running',
-          folders: ['test1'],
-        },
+          folders: ['test1']
+        }
       }
     };
 
@@ -62,13 +62,13 @@ describe('TasksManager class', () => {
       return null;
     },
     publish: () => {
-      return null
+      return null;
     },
     xgroup: () => {
-      return null
+      return null;
     },
     del: () => {
-      return null
+      return null;
     }
   };
 
@@ -76,28 +76,26 @@ describe('TasksManager class', () => {
     return {
       create: () => {
         return {
-
           getTotalMessages: () => {
             return 100;
           },
 
           start: () => {
-            return null
+            return null;
           },
 
           stop: () => {
-            return null
+            return null;
           }
-        }
+        };
       }
-    }
-  }
+    };
+  };
 
   const sseBroadcasterFactory = function () {
     return {
       create: () => {
         return {
-
           send: () => {
             return null;
           },
@@ -105,10 +103,10 @@ describe('TasksManager class', () => {
           stop: () => {
             return null;
           }
-        }
+        };
       }
-    }
-  }
+    };
+  };
 
   let tasksManager = null;
 
@@ -156,34 +154,46 @@ describe('TasksManager class', () => {
   describe('createTask()', () => {
     it('should create a new mining task.', async () => {
       const userId = 'abc123';
-      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} }
+      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} };
       const { task } = await tasksManager.createTask(userId, fetcherOptions);
 
       expect(task).to.have.all.keys(
         'miningId',
         'userId',
         'progress',
-        'fetcher',
+        'fetcher'
       );
 
-      expect(task.progress).to.have.all.keys('totalMessages', 'extracted', 'fetched')
-      expect(task.fetcher).to.have.all.keys('status', 'folders')
-
+      expect(task.progress).to.have.all.keys(
+        'totalMessages',
+        'extracted',
+        'fetched'
+      );
+      expect(task.fetcher).to.have.all.keys('status', 'folders');
     });
 
     it('should throw an error if mining ID already exists', async () => {
       const userId = 'abc123';
       const miningId = await tasksManager.generateMiningId(userId);
 
-      await tasksManager.createTask(miningId, { email: '', userId, imapConnectionProvider: {} });
+      await tasksManager.createTask(miningId, {
+        email: '',
+        userId,
+        imapConnectionProvider: {}
+      });
 
       try {
-        await tasksManager.createTask(miningId, { email: '', userId, imapConnectionProvider: {} })
+        await tasksManager.createTask(miningId, {
+          email: '',
+          userId,
+          imapConnectionProvider: {}
+        });
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
-        expect(error.message).equal(`Task with mining ID ${miningId} already exists.`)
+        expect(error.message).equal(
+          `Task with mining ID ${miningId} already exists.`
+        );
       }
-
     });
   });
 
@@ -194,7 +204,9 @@ describe('TasksManager class', () => {
 
       // Create a new task and retrieve it from the tasksManager
       const createdTask = await tasksManager.createTask(userId, fetcherOptions);
-      const retrievedTask = tasksManager.getActiveTask(createdTask.task.miningId);
+      const retrievedTask = tasksManager.getActiveTask(
+        createdTask.task.miningId
+      );
 
       expect(retrievedTask).to.be.an('object');
       expect(retrievedTask.task.miningId).to.equal(createdTask.task.miningId);
@@ -227,10 +239,12 @@ describe('TasksManager class', () => {
 
     it('should delete the task with the given mining ID if it exists', async () => {
       const userId = '123';
-      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} }
+      const fetcherOptions = { email: '', userId, imapConnectionProvider: {} };
       const miningId = await tasksManager.generateMiningId();
       const createdTask = await tasksManager.createTask(userId, fetcherOptions);
-      const deletedTask = await tasksManager.deleteTask(createdTask.task.miningId);
+      const deletedTask = await tasksManager.deleteTask(
+        createdTask.task.miningId
+      );
 
       expect(deletedTask).to.eql(createdTask);
       expect(() => tasksManager.getActiveTask(miningId)).to.throw(Error);
