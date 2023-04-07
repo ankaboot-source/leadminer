@@ -65,6 +65,6 @@ jobs:
       - name: Check linting
         run: cd frontend && npm run lint
       - name: Check formatting
-      - run: cd frontend && npm run prettier
+        run: cd frontend && npm run prettier
       # - name: Run unit tests (One day)
       #   run: cd frontend && npm run test:unit
