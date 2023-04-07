@@ -80,7 +80,7 @@ export async function startMining({ state, commit }, { data }) {
       { headers: { "X-imap-login": JSON.stringify(user) } }
     );
 
-    const { task } = response.data?.data;
+    const task = response.data?.data?.task;
     const { userId, miningId } = task;
 
     sse.initConnection(userId, miningId);

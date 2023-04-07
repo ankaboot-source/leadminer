@@ -85,6 +85,7 @@ export default defineComponent({
       },
     },
   },
+  emits: ["selected-boxes"],
   data() {
     return {
       selected: ref([]),
@@ -96,7 +97,7 @@ export default defineComponent({
       const selectedB = [];
       objectScan(["**.path"], {
         joined: true,
-        filterFn: ({ parent, gparent, property, value, context }) => {
+        filterFn: ({ value }) => {
           if (
             !excludedFolders.includes(
               value.slice(value.lastIndexOf("/") + 1).toLowerCase()
@@ -108,6 +109,8 @@ export default defineComponent({
       })(this.boxes);
 
       if (selectedB.length > 0) {
+        // TODO : Rework this
+        // eslint-disable-next-line vue/no-side-effects-in-computed-properties
         this.selected = selectedB;
       }
       return [...this.boxes];
@@ -122,11 +125,11 @@ export default defineComponent({
     },
   },
   methods: {
-    Ticked(e) {
+    Ticked() {
       setTimeout(() => {
         objectScan(["**.path"], {
           joined: true,
-          filterFn: ({ parent, gparent, property, value, context }) => {
+          filterFn: ({ value }) => {
             if (
               this.$refs.tree.isTicked(value) &&
               !this.selected.includes(value)
