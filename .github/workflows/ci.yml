@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  filter:
+  changes:
     runs-on: ubuntu-latest
     # Required permissions
     permissions:
