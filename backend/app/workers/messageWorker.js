@@ -60,11 +60,11 @@ class StreamConsumer {
 
   /**
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
-   * @param {string} streamName - The name of the Redis stream to consume messages from
+   * @param {string[]} streams - The name of the Redis stream to consume messages from
    * @param {string} consumerGroupName - The name of the Redis consumer group to read from
    * @returns {Promise} - A Promise that resolves when the stream is consumed successfully, or rejects with an error
    */
-  async consumeSingleStream(streamName, consumerGroupName) {
+  async consumeFromStreams(streams, consumerGroupName) {
     try {
       const result = await redisClient.xreadgroup(
         'GROUP',
@@ -75,76 +75,82 @@ class StreamConsumer {
         'BLOCK',
         2000,
         'STREAMS',
-        streamName,
-        '>'
+        [...streams.map((name) => name)],
+        [...streams.map(() => '>')]
       );
 
       if (result === null) {
-        return Promise.resolve(null);
+        return null;
       }
 
-      const messages = result[0][1];
-      const processedMessageIDs = messages.map((message) => message[0]);
-      const lastMessageId = processedMessageIDs.slice(-1)[0];
+      const processedData = await Promise.allSettled(result.map(async ([streamName, streamMessages]) => {
+        /**
+         * This code processes messages from multiple streams in parallel. 
+         * For each stream, it executes the messageProcessor functions on each message in parallel.
+         * It then acknowledges the messages that were processed and publishes the extraction progress.
+         * Finally, it trims the stream to remove the processed messages.
+         *  
+         * Returns:
+         * - An array of Promises that resolve to the processed messages for each stream
+         */
+        const messageIds = streamMessages.map(([id]) => id);
+        const lastMessageId = messageIds.slice(-1)[0];
+        try {
+          const startTime = performance.now();
+          const promises = await Promise.allSettled(streamMessages.map((message) => this.messageProcessor(message)));
+          const endTime = performance.now();
+          const miningId = promises[0].value;
+          const extractionProgress = {
+            miningId,
+            progressType: 'extracted',
+            count: promises.length
+          };
 
-      const startTime = performance.now();
-      const extractionResults = await Promise.allSettled([
-        ...messages.map((message) => this.messageProcessor(message)),
-        redisClient.xack(streamName, consumerGroupName, ...processedMessageIDs)
-      ]);
-      const endTime = performance.now();
-      logger.debug(
-        `Extraction of ${processedMessageIDs.length} took ${
-          endTime - startTime
-        }ms`
-      );
+          // Logs the time taken for extraction
+          logger.debug(`Extraction of ${messageIds.length} messages took ${endTime - startTime}ms`);
 
-      const failedExtractionResults = extractionResults.filter(
-        (extractionResult) => extractionResult.status !== 'fulfilled'
-      );
+          // Acknowledges the messages that were processed
+          redisClient.xack(streamName, consumerGroupName, ...messageIds);
 
-      if (failedExtractionResults.length > 0) {
-        logger.debug('Extraction errors', {
-          metadata: { failedExtractionResults }
-        });
-      }
+          // Publishes the extraction progress
+          redisClient.publish(miningId, JSON.stringify(extractionProgress));
 
-      const miningId = extractionResults[0].value;
-      const progress = {
-        miningId,
-        progressType: 'extracted',
-        count: extractionResults.length
-      };
+          // Logs the progress being published
+          logger.debug('Publishing progress from worker', {
+            metadata: {
+              details: {
+                miningId,
+                pubsubChannel: streamName,
+                consumerGroupName,
+                consumerName: this.consumerName,
+                extractionProgress
+              }
+            }
+          });
 
-      logger.debug('Publishing progress from worker', {
-        metadata: {
-          details: {
-            pubsubChannel: streamName,
-            consumerGroupName,
-            consumerName: this.consumerName,
-            progress
-          }
+          // Trims the stream to remove the processed messages
+          redisClient.xtrim(streamName, 'MINID', lastMessageId);
+
+          return Promise.resolve(promises);
+        } catch (err) {
+          return Promise.reject(err);
         }
-      });
+      }));
 
-      redisClient.publish(miningId, JSON.stringify(progress));
+      const failedExtractions = processedData.filter(p => p.status === 'rejected');
 
-      redisClient.xtrim(streamName, 'MINID', lastMessageId);
+      if (failedExtractions.length > 0) {
+        logger.debug('Extraction errors', { metadata: { failedExtractions } });
+      }
 
       const { heapTotal, heapUsed } = process.memoryUsage();
-      logger.debug(
-        `[WORKER] Heap total: ${(heapTotal / 1024 / 1024 / 1024).toFixed(
-          2
-        )} | Heap used: ${(heapUsed / 1024 / 1024 / 1024).toFixed(2)} `
-      );
-      return Promise.resolve(extractionResults);
+      const totalAvailableHeap = (heapTotal / 1024 / 1024 / 1024).toFixed(2);
+      const totalUsedHeap = (heapUsed / 1024 / 1024 / 1024).toFixed(2);
+
+      logger.debug(`[WORKER] Heap total: ${totalAvailableHeap} | Heap used: ${totalUsedHeap}`);
+      return processedData;
     } catch (error) {
-      logger.error('Error while consuming messages from stream.', {
-        metadata: {
-          details: error.message
-        }
-      });
-      return Promise.reject(error);
+      logger.error('Error while consuming messages from stream.', { metadata: { error } });
     }
   }
 
@@ -153,24 +159,23 @@ class StreamConsumer {
    *
    * @returns {Promise<void>} A promise that resolves when consumption is complete.
    */
-  async consumeStreams() {
+  async consumer() {
     if (this.isInterrupted) {
       return;
     }
 
-    const streams = Array.from(this.streamsRegistry.values());
+    const registry = Array.from(this.streamsRegistry.values());
+    const [{ consumerGroupName } = {}] = registry;
+    const streams = registry.map(({ streamName }) => streamName).filter(Boolean);
 
-    if (streams.length > 0) {
-      // Consume messages from each registered stream.
-      const consumePromises = streams.map(
-        ({ streamName, consumerGroupName }) => {
-          return this.consumeSingleStream(streamName, consumerGroupName);
-        }
-      );
-
+    if (registry.length > 0) {
       try {
-        // Wait for all consumption promises to settle.
-        await Promise.allSettled(consumePromises);
+
+        if (!consumerGroupName || streams.length === 0) {
+          throw new Error('Incomplete data from the stream.');
+        }
+
+        await this.consumeFromStreams(streams, consumerGroupName);
       } catch (error) {
         logger.error('An error occurred while consuming streams:', {
           metadata: {
@@ -181,7 +186,7 @@ class StreamConsumer {
     }
 
     setTimeout(() => {
-      this.consumeStreams();
+      this.consumer();
     }, 0);
   }
 
@@ -190,7 +195,7 @@ class StreamConsumer {
    */
   start() {
     this.isInterrupted = false;
-    this.consumeStreams();
+    this.consumer();
   }
 
   /**
