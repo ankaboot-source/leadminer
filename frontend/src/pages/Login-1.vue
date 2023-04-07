@@ -178,11 +178,11 @@ function isValidEmail(email) {
 }
 
 function isValidPassword(password) {
-  return password !== "" || "Please add you IMAP password";
+  return password !== "" || "Please insert your IMAP password";
 }
 
 function isValidImapHost(imapHost) {
-  return imapHost !== "" || "Please add you IMAP host";
+  return imapHost !== "" || "Please insert your IMAP host";
 }
 
 async function login() {
