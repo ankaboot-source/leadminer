@@ -7,6 +7,7 @@
     :nodes="Boxes"
     node-key="path"
     color="teal"
+    text-color="blue-grey-10"
     tick-strategy="leaf"
     @update:ticked="Ticked"
   >
@@ -14,7 +15,7 @@
       <div
         class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
       >
-        <div class="col-10 text-weight-bold text-primary q-pb-xs">
+        <div class="col-10 text-weight-bold q-pb-xs">
           {{ prop.node.label }}
           <q-badge
             v-if="!prop.expanded"

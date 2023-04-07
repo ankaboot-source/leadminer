@@ -43,11 +43,11 @@
                   round
                   dense
                   size="lg"
-                  @click="mailbox = true"
+                  @click="advancedOptions = true"
                 >
-                  <q-tooltip class="text-body2 bg-amber-14 text-black bordered"
-                    >Advanced options</q-tooltip
-                  >
+                  <q-tooltip class="text-body2 bg-amber-14 text-black bordered">
+                    Advanced options
+                  </q-tooltip>
                 </q-btn>
               </div>
               <div class="row justify-center">
@@ -73,57 +73,102 @@
               />
             </div>
           </div>
-          <div
-            v-show="mailbox"
-            role="dialog"
-            aria-modal="true"
-            class="q-dialog fullscreen no-pointer-events q-dialog--modal"
+
+          <q-dialog
+            v-model="advancedOptions"
+            :maximized="maximizedToggle"
+            transition-show="slide-up"
+            transition-hide="slide-down"
           >
-            <div
-              class="q-dialog__backdrop fixed-full"
-              aria-hidden="true"
-              tabindex="-1"
-              @click="mailbox = false"
-            ></div>
-            <div
-              class="q-dialog__inner flex no-pointer-events q-dialog__inner--minimized q-dialog__inner--standard fixed-full flex-center"
-              tabindex="-1"
+            <q-layout
+              view="hHh Lpr lff"
+              container
+              class="shadow-2 rounded-borders bg-white"
+              style="min-width: 1000px"
             >
-              <q-card class="bg-grey-2 border">
-                <q-card-section class="row items-center q-pb-none">
-                  <div class="text-h6">Select mailbox folders</div>
-                  <q-btn
-                    outline
-                    round
-                    size="sm"
-                    color="orange-5"
-                    icon="refresh"
-                    class="q-ml-sm"
-                    :disable="activeMiningTask"
-                    @click="getBoxes"
-                  />
+              <q-header class="bg-teal">
+                <q-toolbar>
+                  <q-toolbar-title>Advanced Options</q-toolbar-title>
                   <q-space />
                   <q-btn
-                    icon="close"
-                    flat
-                    round
                     dense
-                    @click="mailbox = false"
-                  />
-                </q-card-section>
-                <q-card-section class="q-pa-lg">
-                  <TreeCard
-                    v-if="boxes.length > 0"
-                    :boxes="boxes"
-                    :scanned-boxes="scannedBoxes"
-                    :class="{ disabled: activeMiningTask }"
-                    @selected-boxes="updateSelectedBoxes"
-                  />
-                  <q-spinner-tail v-else color="teal" size="4em" />
-                </q-card-section>
-              </q-card>
-            </div>
-          </div>
+                    flat
+                    :icon="maximizedToggle ? 'fullscreen_exit' : 'crop_square'"
+                    @click="maximizedToggle = !maximizedToggle"
+                  >
+                    <q-tooltip class="bg-white text-primary">
+                      {{ maximizedToggle ? "Minimize" : "Maximize" }}
+                    </q-tooltip>
+                  </q-btn>
+                  <q-btn v-close-popup dense flat icon="close">
+                    <q-tooltip class="bg-white text-primary">Close</q-tooltip>
+                  </q-btn>
+                </q-toolbar>
+              </q-header>
+              <q-drawer
+                v-model="drawer"
+                show-if-above
+                :width="200"
+                :breakpoint="500"
+                bordered
+                class="bg-grey-2"
+              >
+                <q-scroll-area class="fit">
+                  <q-list>
+                    <template
+                      v-for="(menuItem, index) in menuList"
+                      :key="index"
+                    >
+                      <q-item
+                        v-ripple
+                        clickable
+                        :active="menuItem.label === 'Mailbox folders'"
+                      >
+                        <q-item-section avatar>
+                          <q-icon :name="menuItem.icon" />
+                        </q-item-section>
+                        <q-item-section>
+                          {{ menuItem.label }}
+                        </q-item-section>
+                      </q-item>
+                      <q-separator
+                        v-if="menuItem.separator"
+                        :key="'sep' + index"
+                      />
+                    </template>
+                  </q-list>
+                </q-scroll-area>
+              </q-drawer>
+              <q-page-container>
+                <q-card class="border no-shadow">
+                  <q-card-section class="row items-center">
+                    <div class="text-h6">Select mailbox folders</div>
+                    <q-btn
+                      outline
+                      round
+                      size="sm"
+                      color="orange-5"
+                      icon="refresh"
+                      class="q-ml-sm"
+                      :disable="activeMiningTask"
+                      @click="getBoxes"
+                    />
+                    <q-space />
+                  </q-card-section>
+                  <q-card-section class="bg-grey-1 text-blue-grey-10">
+                    <TreeCard
+                      v-if="boxes.length > 0"
+                      :boxes="boxes"
+                      :scanned-boxes="scannedBoxes"
+                      :class="{ disabled: activeMiningTask }"
+                      @selected-boxes="updateSelectedBoxes"
+                    />
+                    <q-linear-progress v-else indeterminate color="teal" />
+                  </q-card-section>
+                </q-card>
+              </q-page-container>
+            </q-layout>
+          </q-dialog>
         </q-card>
       </div>
       <div class="bg-transparent col q-py-lg">
@@ -156,6 +201,22 @@ const $q = useQuasar();
 const $store = useStore();
 const $router = useRouter();
 const mailbox = ref(false);
+const advancedOptions = ref(false);
+const maximizedToggle = ref(false);
+const drawer = ref(false);
+const menuList = [
+  {
+    icon: "all_inbox",
+    label: "Mailbox folders",
+    separator: true,
+  },
+  {
+    icon: "send",
+    label: "Outbox",
+    separator: false,
+  },
+];
+
 onMounted(async () => {
   window.addEventListener("keydown", onKeyDown);
 
