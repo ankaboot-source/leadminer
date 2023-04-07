@@ -18,6 +18,7 @@
       :rows="rows"
       :columns="columns"
       :pagination="initialPagination"
+      binary-state-sort
       bordered
       flat
       dense
