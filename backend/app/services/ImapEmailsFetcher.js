@@ -22,15 +22,11 @@ const redisClient = redis.getClient();
  * @param {string} emailMessage.miningId - The ID of the mining process.
  * @returns {Promise<void>} A promise that resolves when the message is successfully published.
  */
-async function publishEmailMessage(
-  streamName,
-  emailMessage
-) {
+async function publishEmailMessage(streamName, emailMessage) {
   const { userIdentifier } = emailMessage;
 
   try {
     await redisClient.xadd(
-
       streamName,
       '*',
       'message',
@@ -55,7 +51,6 @@ async function publishEmailMessage(
  * @returns {Promise<void>} - A Promise that resolves when the progress has been published.
  */
 async function publishFetchingProgress(miningId, fetchedMessagesCount) {
-
   const progress = {
     miningId,
     count: fetchedMessagesCount,

@@ -16,6 +16,7 @@ node_modules
 docker-data/
 *.test.js
 out/
+.nyc_output
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml

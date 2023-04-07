@@ -23,6 +23,7 @@ const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = path.join(
  * @returns {Promise} - A promise that resolves when the file is successfully downloaded and saved, or rejects if an error occurs during the process.
  */
 function fetchRemoteFile(remotePath, saveLocation) {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
   const file = fs.createWriteStream(saveLocation);
 
   return new Promise((resolve, reject) => {

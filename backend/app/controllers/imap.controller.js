@@ -90,17 +90,13 @@ async function getImapBoxes(req, res, next) {
 
   const { host, port, refresh_token } = user;
   const imapConnectionProvider = access_token
-    ? await (new ImapConnectionProvider(email)).withGoogle(
-      access_token,
-      refresh_token,
-      id,
-      redisClient
-    )
-    : (new ImapConnectionProvider(email)).withPassword(
-      host,
-      password,
-      port
-    );
+    ? await new ImapConnectionProvider(email).withGoogle(
+        access_token,
+        refresh_token,
+        id,
+        redisClient
+      )
+    : new ImapConnectionProvider(email).withPassword(host, password, port);
   let imapConnection = null;
   let tree = null;
 
@@ -157,11 +153,11 @@ async function startMining(req, res, next) {
 
   const imapConnectionProvider = access_token
     ? await new ImapConnectionProvider(email).withGoogle(
-      access_token,
-      refresh_token,
-      id,
-      redisClient
-    )
+        access_token,
+        refresh_token,
+        id,
+        redisClient
+      )
     : new ImapConnectionProvider(email).withPassword(host, password, port);
 
   let imapConnection = null;
