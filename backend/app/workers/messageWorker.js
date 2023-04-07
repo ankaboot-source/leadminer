@@ -148,8 +148,9 @@ class StreamConsumer {
 
       logger.debug(`[WORKER] Heap total: ${totalAvailableHeap} | Heap used: ${totalUsedHeap}`);
       return processedData;
-    } catch (error) {
-      logger.error('Error while consuming messages from stream.', { metadata: { error } });
+    } catch (err) {
+      logger.error('Error while consuming messages from stream.', { metadata: { err } });
+      throw err
     }
   }
 
