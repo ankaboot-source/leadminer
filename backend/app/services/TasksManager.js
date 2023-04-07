@@ -4,7 +4,7 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { db } = require('../db');
 const { ImapEmailsFetcher } = require('./ImapEmailsFetcher');
-const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
+const { REDIS_PUBSUB_COMMUNICATION_CHANNEL, REDIS_STREAMS_CONSUMER_GROUP } = require('../utils/constants');
 
 /**
  * Removes sensitive data from a task object.
@@ -55,6 +55,7 @@ class TasksManager {
   /**
    * Creates a new MiningTaskManager instance.
    * @param {object} pubsubCommunicationChannel - Used to communicate with other processes.
+   * @param {string} redisConsumerGroupName - The name of the Redis consumer group. Used for reading from mining streams.
    * @param {object} redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
    * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
    * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
@@ -62,12 +63,14 @@ class TasksManager {
    */
   constructor(
     pubsubCommunicationChannel,
+    redisConsumerGroupName,
     redisSubscriber,
     redisPublisher,
     emailFetcherFactory,
     sseBroadcasterFactory
   ) {
     this.pubsubCommunicationChannel = pubsubCommunicationChannel;
+    this.redisConsumerGroupName = redisConsumerGroupName;
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
 
@@ -112,7 +115,7 @@ class TasksManager {
   async generateTaskInformation() {
     const miningId = await this.generateMiningId();
     const streamName = `stream-${miningId}`;
-    const consumerGroupName = `group-${miningId}`;
+    const consumerGroupName = this.redisConsumerGroupName;
 
     return {
       miningId,
@@ -434,6 +437,7 @@ const SSEBroadcasterFactory = function () {
 
 const miningTasksManager = new TasksManager(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+  REDIS_STREAMS_CONSUMER_GROUP,
   redis.getSubscriberClient(),
   redis.getClient(),
   new EmailFetcherFactory(),
