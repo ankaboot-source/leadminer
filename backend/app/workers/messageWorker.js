@@ -150,7 +150,7 @@ class StreamConsumer {
       return processedData;
     } catch (err) {
       logger.error('Error while consuming messages from stream.', { metadata: { err } });
-      throw err
+      throw err;
     }
   }
 
