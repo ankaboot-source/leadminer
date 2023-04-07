@@ -95,10 +95,9 @@ class StreamConsumer {
          */
         const messageIds = streamMessages.map(([id]) => id);
         const lastMessageId = messageIds.slice(-1)[0];
-        let promises = null;
         try {
           const startTime = performance.now();
-          promises = await Promise.allSettled(streamMessages.map((message) => this.messageProcessor(message)));
+          const promises = await Promise.allSettled(streamMessages.map((message) => this.messageProcessor(message)));
           const endTime = performance.now();
           const miningId = promises[0].value;
           const extractionProgress = {
@@ -131,10 +130,10 @@ class StreamConsumer {
 
           // Trims the stream to remove the processed messages
           redisClient.xtrim(streamName, 'MINID', lastMessageId);
+          return promises;
         } catch (err) {
           return Promise.reject(err);
         }
-        return Promise.resolve(promises);
       }));
 
       const failedExtractions = processedData.filter(p => p.status === 'rejected');
