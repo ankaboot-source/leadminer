@@ -15,5 +15,5 @@ name = "docker"
 [[analyzers]]
 name = "javascript"
 
-  [analyzers.meta]
-  plugins = ["vue"]
+[analyzers.meta]
+plugins = ["vue"]

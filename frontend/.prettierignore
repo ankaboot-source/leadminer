@@ -12,6 +12,7 @@ docker-data/
 out/
 dist
 .quasar
+public
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml
