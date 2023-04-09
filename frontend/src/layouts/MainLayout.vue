@@ -1,6 +1,8 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header class="bg-white">
+    <q-header
+      style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(7px)"
+    >
       <q-toolbar class="text-custom q-pa-sm">
         <q-chip size="xl" color="transparent" text-color="teal">
           <q-avatar class="logo q-mt-xs" text-color="white" size="28px">

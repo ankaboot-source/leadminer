@@ -29,9 +29,7 @@
                   <template #loading>
                     <q-spinner-box class="on-left" />
                     Loading...
-                    <q-tooltip class="bg-amber-14 text-black bordered">
-                      Retrieving mailboxes...
-                    </q-tooltip>
+                    <q-tooltip> Retrieving mailboxes... </q-tooltip>
                   </template>
                 </q-btn>
                 <q-btn
@@ -46,9 +44,7 @@
                     scrollDisable();
                   "
                 >
-                  <q-tooltip class="bg-amber-14 text-black bordered">
-                    Advanced options
-                  </q-tooltip>
+                  <q-tooltip> Advanced options </q-tooltip>
                 </q-btn>
               </div>
               <div class="row justify-center">
@@ -97,7 +93,6 @@
                     flat
                     @click="drawer = !drawer"
                   />
-
                   <q-toolbar-title>Advanced Options</q-toolbar-title>
                   <q-space />
                   <q-btn
@@ -179,6 +174,17 @@
                         :disable="activeMiningTask"
                         @click="getBoxes"
                       />
+                      <q-space />
+                      <q-badge
+                        color="orange"
+                        class="text-weight-medium text-body1"
+                        rounded
+                        transparent
+                      >
+                        {{ totalEmails.toLocaleString() }}
+                        <q-icon name="mail" class="q-ml-xs" />
+                        <q-tooltip> email messages selected </q-tooltip>
+                      </q-badge>
                     </div>
                     <div class="bg-grey-1 text-blue-grey-10">
                       <TreeCard
@@ -188,7 +194,12 @@
                         :class="{ disabled: activeMiningTask }"
                         @selected-boxes="updateSelectedBoxes"
                       />
-                      <q-linear-progress v-else indeterminate color="teal" />
+                      <q-linear-progress
+                        v-else
+                        indeterminate
+                        color="teal"
+                        class="q-mt-sm"
+                      />
                     </div>
                   </q-tab-panel>
 
