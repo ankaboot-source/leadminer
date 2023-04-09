@@ -156,32 +156,29 @@
                   transition-next="jump-up"
                 >
                   <q-tab-panel name="Mailbox folders">
-                    <q-card class="no-shadow">
-                      <q-card-section class="row items-center">
-                        <div class="text-h6">Select mailbox folders</div>
-                        <q-btn
-                          outline
-                          round
-                          size="sm"
-                          color="orange-5"
-                          icon="refresh"
-                          class="q-ml-sm"
-                          :disable="activeMiningTask"
-                          @click="getBoxes"
-                        />
-                      </q-card-section>
-
-                      <q-card-section class="bg-grey-1 text-blue-grey-10">
-                        <TreeCard
-                          v-if="boxes.length > 0"
-                          :boxes="boxes"
-                          :scanned-boxes="scannedBoxes"
-                          :class="{ disabled: activeMiningTask }"
-                          @selected-boxes="updateSelectedBoxes"
-                        />
-                        <q-linear-progress v-else indeterminate color="teal" />
-                      </q-card-section>
-                    </q-card>
+                    <div class="row items-center">
+                      <div class="text-h6">Select mailbox folders</div>
+                      <q-btn
+                        outline
+                        round
+                        size="sm"
+                        color="orange-5"
+                        icon="refresh"
+                        class="q-ml-sm"
+                        :disable="activeMiningTask"
+                        @click="getBoxes"
+                      />
+                    </div>
+                    <div class="bg-grey-1 text-blue-grey-10">
+                      <TreeCard
+                        v-if="boxes.length > 0"
+                        :boxes="boxes"
+                        :scanned-boxes="scannedBoxes"
+                        :class="{ disabled: activeMiningTask }"
+                        @selected-boxes="updateSelectedBoxes"
+                      />
+                      <q-linear-progress v-else indeterminate color="teal" />
+                    </div>
                   </q-tab-panel>
 
                   <q-tab-panel name="movies">
@@ -223,11 +220,11 @@ import ProgressCard from "../cards/ProgressCard.vue";
 import TreeCard from "../cards/TreeCard.vue";
 import MinedPersons from "../MinedPersons.vue";
 
-const selectedBoxes = ref([]);
-
 const $q = useQuasar();
 const $store = useStore();
 const $router = useRouter();
+
+const selectedBoxes = ref([]);
 const advancedOptions = ref(true);
 const advancedOptionsShow = ref(false);
 const maximizedToggle = ref(false);
