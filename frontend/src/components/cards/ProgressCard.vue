@@ -38,8 +38,12 @@
         >
           We're deep in the mines now... extracting contacts!
         </div>
-        <div v-else class="col-auto text-blue-grey-14 text-body1">
-          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
+        <div
+          v-else
+          :class="[responsiveCenteredLabel]"
+          class="text-blue-grey-14 text-center text-h6 text-weight-medium"
+        >
+          <span class="text-weight-bolder q-mr-xs">
             {{ totalEmails.toLocaleString() }}
           </span>
           email messages to mine.

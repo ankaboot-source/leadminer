@@ -26,6 +26,9 @@
             transparent
           >
             {{ prop.node.path ? prop.node.cumulativeTotal : prop.node.total }}
+            <q-tooltip v-if="prop.node.total && !prop.node.cumulativeTotal">
+              Total email messages
+            </q-tooltip>
           </q-badge>
           <q-badge
             v-else

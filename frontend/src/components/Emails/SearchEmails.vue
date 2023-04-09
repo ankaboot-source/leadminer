@@ -183,7 +183,7 @@
                       >
                         {{ totalEmails.toLocaleString() }}
                         <q-icon name="mail" class="q-ml-xs" />
-                        <q-tooltip> email messages selected </q-tooltip>
+                        <q-tooltip> Email messages selected </q-tooltip>
                       </q-badge>
                     </div>
                     <div class="bg-grey-1 text-blue-grey-10">
