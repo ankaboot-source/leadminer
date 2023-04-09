@@ -29,9 +29,7 @@
                   <template #loading>
                     <q-spinner-box class="on-left" />
                     Loading...
-                    <q-tooltip
-                      class="text-body2 bg-amber-14 text-black bordered"
-                    >
+                    <q-tooltip class="bg-amber-14 text-black bordered">
                       Retrieving mailboxes...
                     </q-tooltip>
                   </template>
@@ -43,9 +41,12 @@
                   round
                   dense
                   size="lg"
-                  @click="advancedOptionsShow = true"
+                  @click="
+                    advancedOptionsShow = true;
+                    scrollDisable();
+                  "
                 >
-                  <q-tooltip class="text-body2 bg-amber-14 text-black bordered">
+                  <q-tooltip class="bg-amber-14 text-black bordered">
                     Advanced options
                   </q-tooltip>
                 </q-btn>
@@ -86,10 +87,17 @@
               view="hHh Lpr lff"
               container
               class="shadow-2 rounded-borders bg-white"
-              style="min-width: 1000px"
             >
               <q-header class="bg-teal">
                 <q-toolbar>
+                  <q-btn
+                    round
+                    dense
+                    icon="menu"
+                    flat
+                    @click="drawer = !drawer"
+                  />
+
                   <q-toolbar-title>Advanced Options</q-toolbar-title>
                   <q-space />
                   <q-btn
@@ -106,7 +114,10 @@
                     dense
                     flat
                     icon="close"
-                    @click="advancedOptionsShow = false"
+                    @click="
+                      advancedOptionsShow = false;
+                      scrollDisable(false);
+                    "
                   >
                     <q-tooltip class="bg-white text-primary">Close</q-tooltip>
                   </q-btn>
@@ -243,6 +254,9 @@ const menuList = [
 
 onMounted(async () => {
   window.addEventListener("keydown", onKeyDown);
+  setTimeout(() => {
+    scrollDisable(false);
+  });
 
   const googleUser = LocalStorage.getItem("googleUser");
   const imapUser = LocalStorage.getItem("imapUser");
@@ -263,6 +277,7 @@ onMounted(async () => {
 const onKeyDown = (event) => {
   if (event.key === "Escape" && advancedOptionsShow.value) {
     advancedOptionsShow.value = false;
+    scrollDisable(false);
   }
 };
 
@@ -369,9 +384,21 @@ async function getBoxes() {
     $router.replace("/");
   }
 }
+
+function scrollDisable(Disable = true) {
+  const body = document.body;
+  if (Disable) {
+    body.classList.add("q-body--prevent-scroll");
+  } else {
+    body.classList.remove("q-body--prevent-scroll");
+  }
+}
 </script>
 <style>
 .q-tree.disabled {
   pointer-events: none;
+}
+.q-dialog__inner--minimized > div {
+  max-width: 1000px;
 }
 </style>
