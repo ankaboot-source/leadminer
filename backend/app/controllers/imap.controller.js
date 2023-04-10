@@ -9,7 +9,8 @@ const hashHelpers = require('../utils/helpers/hashHelpers');
 const {
   getUser,
   getXImapHeaderField,
-  generateErrorObjectFromImapError
+  generateErrorObjectFromImapError,
+  getImapParametersFromBody
 } = require('./helpers');
 const { redis } = require('../utils/redis');
 const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
@@ -23,27 +24,20 @@ const redisClient = redis.getClient();
  * @returns {Promise<void>}
  */
 async function loginToAccount(req, res, next) {
-  const { email, host, tls, port, password } = req.body;
-
-  if (!email || !host) {
-    res.status(400);
-    return next(new Error('Email and host are required for IMAP.'));
-  }
-
-  const genericErrorResponse = {
-    message: 'Something went wrong on our end. Please try again later.',
-    code: 500
-  };
-
-  const imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
-    host,
-    password,
-    port
-  );
+  let imapConnectionProvider = null;
   let imapConnection = null;
   let user = null;
 
   try {
+    const { email, host, tls, port, password } = getImapParametersFromBody(
+      req.body
+    );
+
+    imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
+      host,
+      password,
+      parseInt(port)
+    );
     imapConnection = await imapConnectionProvider.acquireConnection();
 
     user =
@@ -51,19 +45,22 @@ async function loginToAccount(req, res, next) {
       (await db.createImapUser({ email, host, port, tls }));
 
     if (!user) {
+      const genericErrorResponse = {
+        message: 'Something went wrong on our end. Please try again later.',
+        code: 500
+      };
       throw new Error(genericErrorResponse);
     }
   } catch (error) {
     const newError = generateErrorObjectFromImapError(error);
-
     res.status(newError.code);
     return next(new Error(newError.message));
   } finally {
-    await imapConnectionProvider.releaseConnection(imapConnection);
-    await imapConnectionProvider.cleanPool();
+    await imapConnectionProvider?.releaseConnection(imapConnection);
+    await imapConnectionProvider?.cleanPool();
   }
 
-  logger.info('IMAP login successful', { metadata: { email } });
+  logger.info('IMAP login successful', { metadata: { email: user.email } });
   return res.status(200).send({ imap: user });
 }
 
