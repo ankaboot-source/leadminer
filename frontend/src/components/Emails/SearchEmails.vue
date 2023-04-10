@@ -34,7 +34,6 @@
                 </q-btn>
                 <q-btn
                   icon="more_vert"
-                  :disable="activeMiningTask"
                   flat
                   round
                   dense
@@ -202,16 +201,6 @@
                       />
                     </div>
                   </q-tab-panel>
-
-                  <q-tab-panel name="movies">
-                    <div class="text-h6">Movies</div>
-                    <p>
-                      Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                      Quis praesentium cumque magnam odio iure quidem, quod
-                      illum numquam possimus obcaecati commodi minima assumenda
-                      consectetur culpa fuga nulla ullam. In, libero.
-                    </p>
-                  </q-tab-panel>
                 </q-tab-panels>
               </q-page-container>
             </q-layout>
@@ -256,10 +245,6 @@ const menuList = [
   {
     icon: "all_inbox",
     label: "Mailbox folders",
-  },
-  {
-    icon: "movie",
-    label: "movies",
   },
 ];
 
