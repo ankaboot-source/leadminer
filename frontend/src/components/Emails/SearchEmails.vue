@@ -234,8 +234,7 @@ const $q = useQuasar();
 const $store = useStore();
 const $router = useRouter();
 
-const imgUrl =
-  "https://www.freepnglogos.com/uploads/coins-png/pile-coins-png-clip-art-14.png";
+const imgUrl = process.env.BANNER_IMAGE_URL;
 const selectedBoxes = ref([]);
 const advancedOptions = ref(true);
 const advancedOptionsShow = ref(false);
