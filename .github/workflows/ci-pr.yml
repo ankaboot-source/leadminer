@@ -1,10 +1,33 @@
-name: Run CI checks
+name: Run CI checks (Pull Request Verification)
 on:
-  push:
-    branches: [main]
+  pull_request:
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      actions: ${{ steps.filter.outputs.actions }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            actions: 
+              - '.github/workflows/**'
+
   backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.actions == 'true'  }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -19,6 +42,10 @@ jobs:
         run: cd backend && npm run prettier
       - name: Run unit tests
         run: cd backend && npm run test-ci:unit
+      - uses: jgillick/test-coverage-reporter@main
+        with:
+          coverage-file: backend/coverage/coverage-summary.json
+          access-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Update DeepSource code coverage
         run: |
           curl https://deepsource.io/cli | sh
