@@ -7,15 +7,14 @@
             <div class="col text-center self-center q-pb-md q-pt-xl">
               <div class="row justify-center q-pb-lg">
                 <div class="col-8 text-h4 text-weight-medium">
-                  Mine the riches of your social network and discover your
-                  hidden treasures!
+                  Discover hidden gems in your social network
                 </div>
               </div>
               <div class="row justify-center">
                 <q-btn
                   :disable="activeMiningTask"
                   :color="activeMiningTask ? 'grey-6' : 'amber-13'"
-                  label="Mine My Mailbox"
+                  label="Start mining now!"
                   no-caps
                   unelevated
                   icon-right="mail"
