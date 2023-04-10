@@ -5,7 +5,7 @@
         <q-card flat class="q-px-md bg-amber-1">
           <!--style="background: linear-gradient(135deg,  rgba(255, 230, 149,0.5) 0%,rgba(255, 248, 225,0.5) 100%);"-->
           <div class="row justify-around">
-            <div class="col-6 text-center self-center q-pb-md q-pt-xl">
+            <div class="col text-center self-center q-pb-md q-pt-xl">
               <div class="row justify-center q-pb-lg">
                 <div class="col-8 text-h4 text-weight-medium">
                   Mine the riches of your social network and discover your
@@ -60,7 +60,7 @@
                 />
               </div>
             </div>
-            <div class="col-6 self-center">
+            <div class="col-6 self-center gt-sm">
               <q-img
                 src="https://www.pngall.com/wp-content/uploads/2016/05/Gold-Free-Download-PNG.png"
                 spinner-color="amber"
