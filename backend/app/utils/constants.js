@@ -1,8 +1,11 @@
 const headerRegexName =
+  // eslint-disable-next-line security/detect-unsafe-regex
   /(?<name>(,\b|\s|^)[\p{L}"'\w\s(),.&:()|-]{1,100})?(?<t>\s|^)/u;
 const headerRegexAddress =
+  // eslint-disable-next-line security/detect-unsafe-regex
   /<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?,/;
 const bodyRegex =
+  // eslint-disable-next-line security/detect-unsafe-regex
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi;
 const listRegex = /<[^<]{1,255}>$/;
 

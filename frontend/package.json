@@ -8,8 +8,10 @@
     "preinstall": "npx npm-force-resolutions",
     "build": "quasar build",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "eslint --ext .vue --ext .js src/",
-    "format": "prettier .  --write",
+    "lint": "eslint --ext .vue,.js .",
+    "lint:fix": "eslint --ext .vue,.js .",
+    "prettier": "prettier . --check",
+    "prettier:fix": "prettier . --write",
     "dev": "quasar dev",
     "test": "echo \"No test specified\" && exit 0"
   },
@@ -37,9 +39,10 @@
     "dotenv": "^16.0.3",
     "ejs": "3.1.8",
     "eslint": "^8.10.0",
-    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-vue": "^8.5.0",
-    "minimist": "^1.2.6"
+    "minimist": "^1.2.6",
+    "prettier": "^2.8.7"
   },
   "overrides": {
     "ouch": "^2.0.1",

@@ -1,9 +1,3 @@
-out/
-coverage/
-./config/
-logs/
-./supabase
-
 .DS_Store
 node_modules
 /build

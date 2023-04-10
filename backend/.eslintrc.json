@@ -13,7 +13,6 @@
   "parserOptions": {
     "ecmaVersion": "latest"
   },
-  "ignorePatterns": ["*.test.js", "out/"],
   "rules": {
     "complexity": ["warn", 7],
     "no-undef": "error",
