@@ -4,9 +4,9 @@
   "description": "leadminer.io app",
   "main": "server.js",
   "scripts": {
-    "test:unit": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha test/unit/*.test.js --config .mocharc.js",
-    "test:integration": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js --timeout 60000",
-    "test": "nyc --reporter=text --reporter=json-summary --reporter=lcov mocha -r dotenv/config test/**/*.test.js --config .mocharc.js --exit",
+    "test:unit": " mocha test/unit/*.test.js --config .mocharc.js",
+    "test:integration": "mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js --timeout 60000",
+    "test-ci:unit": "nyc --reporter=json-summary npm run test:unit",
     "dev": "nodemon server.js",
     "dev:inspect": "node --inspect server.js",
     "lint": "eslint --ext .js .",
