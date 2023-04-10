@@ -52,6 +52,7 @@
 
 <script>
 import objectScan from "object-scan";
+import { filterDefaultSelectedFolders } from "src/helpers/treeCardHelpers";
 import { defineComponent, ref } from "vue";
 
 const excludedFolders = [
@@ -94,19 +95,7 @@ export default defineComponent({
 
   computed: {
     Boxes() {
-      const selectedB = [];
-      objectScan(["**.path"], {
-        joined: true,
-        filterFn: ({ value }) => {
-          if (
-            !excludedFolders.includes(
-              value.slice(value.lastIndexOf("/") + 1).toLowerCase()
-            )
-          ) {
-            selectedB.push(value);
-          }
-        },
-      })(this.boxes);
+      const selectedB = filterDefaultSelectedFolders(this.boxes);
 
       if (selectedB.length > 0) {
         // TODO : Rework this
