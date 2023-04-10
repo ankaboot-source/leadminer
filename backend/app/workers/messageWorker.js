@@ -75,8 +75,8 @@ class StreamConsumer {
         'BLOCK',
         2000,
         'STREAMS',
-        [...streams.map((name) => name)],
-        [...streams.map(() => '>')]
+        [...streams],
+        new Array(streams.length).fill('>')
       );
 
       if (result === null) {
