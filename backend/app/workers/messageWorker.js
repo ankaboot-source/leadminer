@@ -177,7 +177,7 @@ class StreamConsumer {
    */
   start() {
     this.isInterrupted = false;
-    this.consumer();
+    this.consume();
   }
 
   /**
