@@ -2,7 +2,6 @@ version = 1
 
 [[analyzers]]
 name = "test-coverage"
-enabled = false
 
 [[analyzers]]
 name = "sql"
