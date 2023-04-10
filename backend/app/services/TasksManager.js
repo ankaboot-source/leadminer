@@ -4,7 +4,10 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { db } = require('../db');
 const { ImapEmailsFetcher } = require('./ImapEmailsFetcher');
-const { REDIS_PUBSUB_COMMUNICATION_CHANNEL, REDIS_STREAMS_CONSUMER_GROUP } = require('../utils/constants');
+const {
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+  REDIS_STREAMS_CONSUMER_GROUP
+} = require('../utils/constants');
 
 /**
  * Removes sensitive data from a task object.

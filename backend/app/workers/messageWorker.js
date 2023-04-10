@@ -83,42 +83,52 @@ class StreamConsumer {
         return null;
       }
 
-      const processedData = await Promise.allSettled(result.map(async ([streamName, streamMessages]) => {
-        const messageIds = streamMessages.map(([id]) => id);
-        const lastMessageId = messageIds.slice(-1)[0];
-        try {
-          const startTime = performance.now();
-          const promises = await Promise.allSettled(streamMessages.map((message) => this.messageProcessor(message)));
-          const endTime = performance.now();
-          const miningId = promises[0].value;
-          const extractionProgress = {
-            miningId,
-            progressType: 'extracted',
-            count: promises.length
-          };
+      const processedData = await Promise.allSettled(
+        result.map(async ([streamName, streamMessages]) => {
+          const messageIds = streamMessages.map(([id]) => id);
+          const lastMessageId = messageIds.slice(-1)[0];
+          try {
+            const startTime = performance.now();
+            const promises = await Promise.allSettled(
+              streamMessages.map((message) => this.messageProcessor(message))
+            );
+            const endTime = performance.now();
+            const miningId = promises[0].value;
+            const extractionProgress = {
+              miningId,
+              progressType: 'extracted',
+              count: promises.length
+            };
 
-          logger.debug(`Extraction of ${messageIds.length} messages took ${endTime - startTime}ms`);
-          redisClient.xack(streamName, consumerGroupName, ...messageIds);
-          redisClient.publish(miningId, JSON.stringify(extractionProgress));
-          logger.debug('Publishing progress from worker', {
-            metadata: {
-              details: {
-                miningId,
-                pubsubChannel: streamName,
-                consumerGroupName,
-                consumerName: this.consumerName,
-                extractionProgress
+            logger.debug(
+              `Extraction of ${messageIds.length} messages took ${
+                endTime - startTime
+              }ms`
+            );
+            redisClient.xack(streamName, consumerGroupName, ...messageIds);
+            redisClient.publish(miningId, JSON.stringify(extractionProgress));
+            logger.debug('Publishing progress from worker', {
+              metadata: {
+                details: {
+                  miningId,
+                  pubsubChannel: streamName,
+                  consumerGroupName,
+                  consumerName: this.consumerName,
+                  extractionProgress
+                }
               }
-            }
-          });
-          redisClient.xtrim(streamName, 'MINID', lastMessageId);
-          return promises;
-        } catch (err) {
-          return Promise.reject(err);
-        }
-      }));
+            });
+            redisClient.xtrim(streamName, 'MINID', lastMessageId);
+            return promises;
+          } catch (err) {
+            return Promise.reject(err);
+          }
+        })
+      );
 
-      const failedExtractions = processedData.filter(p => p.status === 'rejected');
+      const failedExtractions = processedData.filter(
+        (p) => p.status === 'rejected'
+      );
 
       if (failedExtractions.length > 0) {
         logger.debug('Extraction errors', { metadata: { failedExtractions } });
@@ -128,10 +138,14 @@ class StreamConsumer {
       const totalAvailableHeap = (heapTotal / 1024 / 1024 / 1024).toFixed(2);
       const totalUsedHeap = (heapUsed / 1024 / 1024 / 1024).toFixed(2);
 
-      logger.debug(`[WORKER] Heap total: ${totalAvailableHeap} | Heap used: ${totalUsedHeap}`);
+      logger.debug(
+        `[WORKER] Heap total: ${totalAvailableHeap} | Heap used: ${totalUsedHeap}`
+      );
       return processedData;
     } catch (err) {
-      logger.error('Error while consuming messages from stream.', { metadata: { err } });
+      logger.error('Error while consuming messages from stream.', {
+        metadata: { err }
+      });
       throw err;
     }
   }
@@ -148,11 +162,12 @@ class StreamConsumer {
 
     const registry = Array.from(this.streamsRegistry.values());
     const [{ consumerGroupName } = {}] = registry;
-    const streams = registry.map(({ streamName }) => streamName).filter(Boolean);
+    const streams = registry
+      .map(({ streamName }) => streamName)
+      .filter(Boolean);
 
     if (registry.length > 0) {
       try {
-
         if (!consumerGroupName || streams.length === 0) {
           throw new Error('Incomplete data from the stream.');
         }
