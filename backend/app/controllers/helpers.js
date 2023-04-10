@@ -112,7 +112,10 @@ function generateErrorObjectFromImapError(error) {
   }
 
   if (!errorMessage) {
-    return !error.code ? { ...error, code: 500 } : error;
+    if (!error.code) {
+      error.code = 500;
+    }
+    return error;
   }
 
   const newError = new Error(errorMessage.message);
@@ -121,8 +124,29 @@ function generateErrorObjectFromImapError(error) {
   return newError;
 }
 
+/**
+ * Extracts IMAP parameters from the request body.
+ * @param {object} body - The request body containing the email, host, tls, port, and password.
+ * @returns {object} An object containing the extracted parameters.
+ * @throws {Error} If any required parameter is missing.
+ */
+function getImapParametersFromBody(body) {
+  const { email, host, tls, port, password } = body;
+
+  if (!email || !host || !tls || !port || !password) {
+    const error = new Error(
+      'Missing required parameters for IMAP (email, host, tls, port, password).'
+    );
+    error.code = 400;
+    throw error;
+  }
+
+  return { email, host, tls, port, password };
+}
+
 module.exports = {
   generateErrorObjectFromImapError,
   getXImapHeaderField,
-  getUser
+  getUser,
+  getImapParametersFromBody
 };
