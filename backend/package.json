@@ -6,7 +6,7 @@
   "scripts": {
     "test:unit": " mocha test/unit/**/*.test.js --config .mocharc.js",
     "test:integration": "mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js --timeout 60000",
-    "test-ci:unit": "nyc --reporter=json-summary npm run test:unit",
+    "test-ci:unit": "nyc --reporter=json-summary --reporter=lcov npm run test:unit",
     "dev": "nodemon server.js",
     "dev:inspect": "node --inspect server.js",
     "lint": "eslint --ext .js .",
