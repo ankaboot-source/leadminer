@@ -44,7 +44,6 @@ jobs:
         run: cd backend && npm run prettier
       - name: Run unit tests
         run: cd backend && npm run test-ci:unit
-      - name: Generate code coverage stats
       - uses: jgillick/test-coverage-reporter@v1
         with:
           coverage-file: backend/coverage/coverage-summary.json
