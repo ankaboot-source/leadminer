@@ -127,9 +127,7 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const averageExtractionRate = isNaN(process.env.AVERAGE_EXTRACTION_RATE)
-  ? 130
-  : process.env.AVERAGE_EXTRACTION_RATE ?? 130;
+const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE ? process.env.AVERAGE_EXTRACTION_RATE : 130;
 
 const activeMiningTask = computed(
   () => !!$store.state.example.miningTask.miningId
