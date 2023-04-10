@@ -84,15 +84,6 @@ class StreamConsumer {
       }
 
       const processedData = await Promise.allSettled(result.map(async ([streamName, streamMessages]) => {
-        /**
-         * This code processes messages from multiple streams in parallel. 
-         * For each stream, it executes the messageProcessor functions on each message in parallel.
-         * It then acknowledges the messages that were processed and publishes the extraction progress.
-         * Finally, it trims the stream to remove the processed messages.
-         *  
-         * Returns:
-         * - An array of Promises that resolve to the processed messages for each stream
-         */
         const messageIds = streamMessages.map(([id]) => id);
         const lastMessageId = messageIds.slice(-1)[0];
         try {
@@ -106,16 +97,9 @@ class StreamConsumer {
             count: promises.length
           };
 
-          // Logs the time taken for extraction
           logger.debug(`Extraction of ${messageIds.length} messages took ${endTime - startTime}ms`);
-
-          // Acknowledges the messages that were processed
           redisClient.xack(streamName, consumerGroupName, ...messageIds);
-
-          // Publishes the extraction progress
           redisClient.publish(miningId, JSON.stringify(extractionProgress));
-
-          // Logs the progress being published
           logger.debug('Publishing progress from worker', {
             metadata: {
               details: {
@@ -127,8 +111,6 @@ class StreamConsumer {
               }
             }
           });
-
-          // Trims the stream to remove the processed messages
           redisClient.xtrim(streamName, 'MINID', lastMessageId);
           return promises;
         } catch (err) {
