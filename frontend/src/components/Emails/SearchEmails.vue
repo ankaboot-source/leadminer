@@ -36,10 +36,7 @@
                   round
                   dense
                   size="lg"
-                  @click="
-                    advancedOptionsShow = true;
-                    scrollDisable();
-                  "
+                  @click="toggleAdvancedOptions"
                 >
                   <q-tooltip> Advanced options </q-tooltip>
                 </q-btn>
@@ -70,9 +67,9 @@
 
           <q-dialog
             v-model="advancedOptions"
-            :class="!advancedOptionsShow ? 'invisible' : ''"
+            :class="!advancedOptionsVisible ? 'invisible' : ''"
             persistent
-            :maximized="maximizedToggle"
+            :maximized="isFullScreen"
             transition-show="slide-up"
             transition-hide="slide-down"
           >
@@ -83,34 +80,20 @@
             >
               <q-header class="bg-teal">
                 <q-toolbar>
-                  <q-btn
-                    round
-                    dense
-                    icon="menu"
-                    flat
-                    @click="drawer = !drawer"
-                  />
+                  <q-btn round dense icon="menu" flat @click="toggleDrawer" />
                   <q-toolbar-title>Advanced Options</q-toolbar-title>
                   <q-space />
                   <q-btn
                     dense
                     flat
-                    :icon="maximizedToggle ? 'fullscreen_exit' : 'crop_square'"
-                    @click="maximizedToggle = !maximizedToggle"
+                    :icon="isFullScreen ? 'fullscreen_exit' : 'crop_square'"
+                    @click="toggleFullScreen"
                   >
                     <q-tooltip class="bg-white text-primary">
-                      {{ maximizedToggle ? "Minimize" : "Maximize" }}
+                      {{ isFullScreen ? "Minimize" : "Maximize" }}
                     </q-tooltip>
                   </q-btn>
-                  <q-btn
-                    dense
-                    flat
-                    icon="close"
-                    @click="
-                      advancedOptionsShow = false;
-                      scrollDisable(false);
-                    "
-                  >
+                  <q-btn dense flat icon="close" @click="toggleAdvancedOptions">
                     <q-tooltip class="bg-white text-primary">Close</q-tooltip>
                   </q-btn>
                 </q-toolbar>
@@ -151,7 +134,7 @@
 
               <q-page-container>
                 <q-tab-panels
-                  v-model="tab"
+                  v-model="currentTab"
                   animated
                   swipeable
                   vertical
@@ -236,10 +219,10 @@ const $router = useRouter();
 const imgUrl = process.env.BANNER_IMAGE_URL;
 const selectedBoxes = ref([]);
 const advancedOptions = ref(true);
-const advancedOptionsShow = ref(false);
-const maximizedToggle = ref(false);
+const advancedOptionsVisible = ref(false);
+const isFullScreen = ref(false);
 const drawer = ref(false);
-const tab = ref("Mailbox folders");
+const currentTab = ref("Mailbox folders");
 const menuList = [
   {
     icon: "all_inbox",
@@ -250,7 +233,7 @@ const menuList = [
 onMounted(async () => {
   window.addEventListener("keydown", onKeyDown);
   setTimeout(() => {
-    scrollDisable(false);
+    enableScrolling();
   });
 
   const googleUser = LocalStorage.getItem("googleUser");
@@ -270,9 +253,9 @@ onMounted(async () => {
 });
 
 const onKeyDown = (event) => {
-  if (event.key === "Escape" && advancedOptionsShow.value) {
-    advancedOptionsShow.value = false;
-    scrollDisable(false);
+  if (event.key === "Escape" && advancedOptionsVisible.value) {
+    advancedOptionsVisible.value = false;
+    enableScrolling();
   }
 };
 
@@ -311,10 +294,10 @@ const totalEmails = computed(() => {
 });
 
 function itemClicked(label) {
-  this.menuList.forEach((menuItem) => {
+  menuList.forEach((menuItem) => {
     if (menuItem.label === label) {
       menuItem.active = true;
-      this.tab = label;
+      currentTab.value = label;
     } else {
       menuItem.active = false;
     }
@@ -380,13 +363,27 @@ async function getBoxes() {
   }
 }
 
-function scrollDisable(Disable = true) {
+function enableScrolling() {
   const body = document.body;
-  if (Disable) {
-    body.classList.add("q-body--prevent-scroll");
-  } else {
-    body.classList.remove("q-body--prevent-scroll");
-  }
+  body.classList.remove("q-body--prevent-scroll");
+}
+
+function disableScrolling() {
+  const body = document.body;
+  body.classList.add("q-body--prevent-scroll");
+}
+
+function toggleDrawer() {
+  drawer.value = !drawer.value;
+}
+
+function toggleAdvancedOptions() {
+  advancedOptionsVisible.value = !advancedOptionsVisible.value;
+  advancedOptionsVisible.value ? disableScrolling() : enableScrolling();
+}
+
+function toggleFullScreen() {
+  isFullScreen.value = !isFullScreen.value;
 }
 </script>
 <style>
