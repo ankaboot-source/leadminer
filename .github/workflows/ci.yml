@@ -1,7 +1,8 @@
 name: Run CI checks
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   backend:
@@ -27,8 +28,6 @@ jobs:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
   frontend:
-    needs: changes
-    if: ${{ needs.changes.outputs.frontend == 'true' || needs.changes.outputs.actions == 'true'  }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
