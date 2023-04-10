@@ -80,7 +80,7 @@ export async function startMining({ state, commit }, { data }) {
       { headers: { "X-imap-login": JSON.stringify(user) } }
     );
 
-    const { task } = response.data?.data;
+    const task = response.data?.data?.task;
     const { userId, miningId } = task;
 
     sse.initConnection(userId, miningId);
@@ -125,7 +125,7 @@ export async function stopMining({ state, commit }, { data }) {
   }
 }
 
-export async function signUp(_, { data }) {
+export function signUp(_, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     // get imapInfo account or create one
@@ -144,7 +144,7 @@ export async function signUp(_, { data }) {
       });
   });
 }
-export async function signUpGoogle(_, { data }) {
+export function signUpGoogle(_, { data }) {
   return new Promise((resolve, reject) => {
     this.commit("example/SET_LOADING", true);
     this.$axios

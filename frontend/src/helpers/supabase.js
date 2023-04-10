@@ -1,6 +1,6 @@
 /**
  * Fetches data from a Supabase table for a specific user.
- * 
+ *
  * @param {import('@supabase/supabase-js').createClient} supabaseClient - The Supabase client to use for fetching data.
  * @param {string} userId - The unique ID of the user whose data will be retrieved.
  * @param {string} tableName - The name of the table to fetch data from.
@@ -20,8 +20,9 @@ export async function fetchData(
 
   const contacts = [];
   let offset = 0;
+  let isFetching = true;
 
-  while (true) {
+  while (isFetching) {
     const { data, error } = await supabaseClient
       .from(tableName)
       .select("*")
@@ -37,7 +38,7 @@ export async function fetchData(
     offset += maxRows;
 
     if (data.length === 0) {
-      break;
+      isFetching = false;
     }
   }
 

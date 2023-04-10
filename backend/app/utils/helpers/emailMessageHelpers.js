@@ -61,7 +61,8 @@ function getMessageId(parsedHeader) {
   // We generate a pseudo message-id with the format
   // date@return_path_domain
   const { date: [date] = '', 'return-path': [returnPath] = [] } = parsedHeader;
-  const returnPathDomain = returnPath?.split('@')[1]?.replace('>', '') || 'NO-RETURN-PATH';
+  const returnPathDomain =
+    returnPath?.split('@')[1]?.replace('>', '') || 'NO-RETURN-PATH';
   const unknownId = `UNKNOWN ${Date.parse(date)}@${returnPathDomain}`;
   return unknownId;
 }

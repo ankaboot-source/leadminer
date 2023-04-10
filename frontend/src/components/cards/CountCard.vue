@@ -9,7 +9,7 @@
             class="col-md-3 col-sm-12 col-xs-12"
           >
             <q-item-section
-              v-if="icon_position === 'left'"
+              v-if="iconPosition === 'left'"
               side
               :style="`background-color: ${item.color2}`"
               class="q-pa-md border q-ma-sm text-teal"
@@ -23,7 +23,7 @@
               <q-item-label>{{ item.title }}</q-item-label>
             </q-item-section>
             <q-item-section
-              v-if="icon_position === 'right'"
+              v-if="iconPosition === 'right'"
               side
               class="q-mr-md text-white"
             >
@@ -42,9 +42,10 @@ import { defineComponent } from "vue";
 export default defineComponent({
   name: "CountCard",
   props: {
-    icon_position: {
+    iconPosition: {
       required: false,
       default: "left",
+      type: String,
     },
     minedEmails: Number(0),
   },

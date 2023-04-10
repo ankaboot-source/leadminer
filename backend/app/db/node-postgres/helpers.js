@@ -10,6 +10,7 @@ function parametrizedInsertInto(tableName, fields) {
   let values = '';
 
   for (let i = 0; i < fieldsCount + 1; i++) {
+    // eslint-disable-next-line security/detect-object-injection
     query += `"${fields[i]}"${i !== fieldsCount ? ',' : ') VALUES('}`;
     values += `$${i + 1}${i !== fieldsCount ? ',' : ')'}`;
   }
