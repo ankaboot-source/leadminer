@@ -11,7 +11,11 @@ const linkedinEmailMessage = {
     {
       fields: ['reply-to', 'reply_to'],
       conditions: [
-        new HasHeaderWithValues('x-linkedin-class', ['inmail', 'email-default'])
+        new HasHeaderWithValues('x-linkedin-class', [
+          'inmail',
+          'email-default',
+          'mbr-to-mbr'
+        ])
       ]
     }
   ]
