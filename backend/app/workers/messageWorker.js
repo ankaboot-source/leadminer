@@ -159,7 +159,7 @@ class StreamConsumer {
    *
    * @returns {Promise<void>} A promise that resolves when consumption is complete.
    */
-  async consumer() {
+  async consume() {
     if (this.isInterrupted) {
       return;
     }
