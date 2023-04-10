@@ -55,21 +55,6 @@ import objectScan from "object-scan";
 import { filterDefaultSelectedFolders } from "src/helpers/treeCardHelpers";
 import { defineComponent, ref } from "vue";
 
-const excludedFolders = [
-  "junk",
-  "mailspring",
-  "spam",
-  "corbeille",
-  "brouillons",
-  "draft",
-  "trashed",
-  "trash",
-  "drafts",
-  "inbox",
-  "important",
-  "sent mail",
-  "starred",
-]; //
 export default defineComponent({
   name: "TreeCard",
   props: {
