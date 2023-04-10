@@ -191,6 +191,7 @@ async function login() {
     password: password.value,
     host: host.value,
     port: port.value,
+    tls: true,
   };
   try {
     await $store.dispatch("example/signIn", { data });
