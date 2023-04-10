@@ -186,7 +186,7 @@ class StreamConsumer {
     }
 
     setTimeout(() => {
-      this.consumer();
+      this.consume();
     }, 0);
   }
 
