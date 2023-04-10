@@ -110,24 +110,21 @@
               >
                 <q-scroll-area class="fit">
                   <q-list separator>
-                    <template
+                    <q-item
                       v-for="(menuItem, index) in menuList"
                       :key="index"
+                      v-ripple
+                      clickable
+                      :active="menuItem.label === currentTab"
+                      @click="itemClicked(menuItem.label)"
                     >
-                      <q-item
-                        v-ripple
-                        clickable
-                        :active="menuItem.label === tab"
-                        @click="itemClicked(menuItem.label)"
-                      >
-                        <q-item-section avatar>
-                          <q-icon :name="menuItem.icon" />
-                        </q-item-section>
-                        <q-item-section>
-                          {{ menuItem.label }}
-                        </q-item-section>
-                      </q-item>
-                    </template>
+                      <q-item-section avatar>
+                        <q-icon :name="menuItem.icon" />
+                      </q-item-section>
+                      <q-item-section>
+                        {{ menuItem.label }}
+                      </q-item-section>
+                    </q-item>
                   </q-list>
                 </q-scroll-area>
               </q-drawer>
