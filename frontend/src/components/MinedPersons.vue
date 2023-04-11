@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="bg-transparent q-mr-sm q-ml-sm col-12 q-pl-lg q-pr-lg"
-    style="height: 50vh"
-  >
+  <div class="bg-transparent col" style="height: 50vh">
     <q-table
       ref="table"
       class="q-pt-sm"

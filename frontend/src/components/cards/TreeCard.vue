@@ -7,6 +7,7 @@
     :nodes="Boxes"
     node-key="path"
     color="teal"
+    control-color="teal"
     tick-strategy="leaf"
     @update:ticked="Ticked"
   >
@@ -14,17 +15,20 @@
       <div
         class="full-width row inline no-wrap justify-between items-end content-center borderForBoxes"
       >
-        <div class="col-10 text-weight-bold text-primary q-pb-xs">
+        <div class="col-10 text-weight-bold text-blue-grey-10 q-pb-xs">
           {{ prop.node.label }}
           <q-badge
             v-if="!prop.expanded"
             color="orange"
-            class="q-ml-lg"
+            class="q-ml-lg text-weight-medium"
             rounded
             floating
             transparent
           >
             {{ prop.node.path ? prop.node.cumulativeTotal : prop.node.total }}
+            <q-tooltip v-if="prop.node.total && !prop.node.cumulativeTotal">
+              Total email messages
+            </q-tooltip>
           </q-badge>
           <q-badge
             v-else

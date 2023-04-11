@@ -1,57 +1,192 @@
 <template>
   <div class="row q-col-gutter-sm">
-    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-      <div class="row q-pt-lg q-px-lg">
-        <div class="q-mr-sm col-lg-5 col-md-5 q-ma-sm">
-          <q-card flat bordered>
-            <div class="row q-pa-sm">
-              <div class="bg-grey-2 border q-pa-sm col-lg-12 col-md-6">
-                <div class="text-bold col-lg-5 col-md-5">
-                  Select mailbox folders
-                  <q-btn
-                    outline
-                    round
-                    size="sm"
-                    color="orange-5"
-                    icon="refresh"
-                    @click="getBoxes"
-                  />
+    <div class="col">
+      <div class="col">
+        <q-card flat class="q-px-md bg-banner-color">
+          <div class="row justify-around">
+            <div class="col text-center self-center q-pb-md q-pt-xl">
+              <div class="row justify-center q-pb-lg">
+                <div class="col-8 text-h4 text-weight-medium">
+                  Discover hidden gems in your social network
                 </div>
-                <TreeCard
-                  v-if="boxes.length > 0"
-                  :boxes="boxes"
-                  :scanned-boxes="scannedBoxes"
-                  :class="{ disabled: activeMiningTask }"
-                  @selected-boxes="updateSelectedBoxes"
-                />
-                <q-spinner-tail v-else color="teal" size="4em" />
               </div>
-              <div class="column col-lg-8">
-                <div class="col-6" />
-                <div class="q-mt-md q-ml-lg col-6">
-                  <q-btn
-                    :disable="activeMiningTask || isLoadingStartMining"
-                    no-caps
-                    :color="activeMiningTask ? 'grey-6' : 'red'"
-                    label="Start"
-                    :loading="isLoadingStartMining"
-                    @click="startMining"
-                  />
-                  <q-btn
-                    :disable="!activeMiningTask || isLoadingStopMining"
-                    class="q-ma-md"
-                    no-caps
-                    :color="activeMiningTask ? 'red' : 'grey-6'"
-                    label="Stop"
-                    @click="stopMining"
-                  />
-                </div>
+              <div class="row justify-center">
+                <q-btn
+                  :disable="activeMiningTask || isLoadingStartMining"
+                  :color="activeMiningTask ? 'grey-6' : 'amber-13'"
+                  label="Start mining now!"
+                  no-caps
+                  unelevated
+                  icon-right="mail"
+                  :loading="isLoadingStartMining"
+                  size="xl"
+                  class="text-black shadow-7"
+                  style="border: 2px solid black !important"
+                  @click="startMining"
+                >
+                  <template #loading>
+                    <q-spinner-box class="on-left" />
+                    Loading...
+                    <q-tooltip> Retrieving mailboxes... </q-tooltip>
+                  </template>
+                </q-btn>
+                <q-btn
+                  icon="more_vert"
+                  flat
+                  round
+                  dense
+                  size="lg"
+                  @click="toggleAdvancedOptions"
+                >
+                  <q-tooltip> Advanced options </q-tooltip>
+                </q-btn>
+              </div>
+              <div class="row justify-center">
+                <q-btn
+                  :disable="!activeMiningTask || isLoadingStopMining"
+                  :color="activeMiningTask ? 'red' : 'grey-6'"
+                  class="q-mr-xl q-mt-sm"
+                  :class="!activeMiningTask ? 'invisible' : ''"
+                  label="Have a rest"
+                  size="md"
+                  no-caps
+                  outline
+                  :loading="isLoadingStopMining"
+                  @click="stopMining"
+                />
               </div>
             </div>
-          </q-card>
-        </div>
+            <div class="col-6 self-center gt-sm">
+              <q-img
+                :src="imgUrl"
+                spinner-color="amber"
+                fit="contain"
+                height="14vw"
+              />
+            </div>
+          </div>
+
+          <q-dialog
+            v-model="advancedOptions"
+            :class="!advancedOptionsVisible ? 'invisible' : ''"
+            persistent
+            :maximized="isFullScreen"
+            transition-show="slide-up"
+            transition-hide="slide-down"
+          >
+            <q-layout
+              view="hHh Lpr lff"
+              container
+              class="shadow-2 rounded-borders bg-white"
+            >
+              <q-header class="bg-teal">
+                <q-toolbar>
+                  <q-btn round dense icon="menu" flat @click="toggleDrawer" />
+                  <q-toolbar-title>Advanced Options</q-toolbar-title>
+                  <q-space />
+                  <q-btn
+                    dense
+                    flat
+                    :icon="isFullScreen ? 'fullscreen_exit' : 'crop_square'"
+                    @click="toggleFullScreen"
+                  >
+                    <q-tooltip class="bg-white text-primary">
+                      {{ isFullScreen ? "Minimize" : "Maximize" }}
+                    </q-tooltip>
+                  </q-btn>
+                  <q-btn dense flat icon="close" @click="toggleAdvancedOptions">
+                    <q-tooltip class="bg-white text-primary">Close</q-tooltip>
+                  </q-btn>
+                </q-toolbar>
+              </q-header>
+
+              <q-drawer
+                v-model="drawer"
+                vertical
+                class="text-blue-grey-10 bg-grey-2"
+                show-if-above
+                :width="200"
+                :breakpoint="500"
+                bordered
+              >
+                <q-scroll-area class="fit">
+                  <q-list separator>
+                    <q-item
+                      v-for="(menuItem, index) in menuList"
+                      :key="index"
+                      v-ripple
+                      clickable
+                      :active="menuItem.label === currentTab"
+                      @click="itemClicked(menuItem.label)"
+                    >
+                      <q-item-section avatar>
+                        <q-icon :name="menuItem.icon" />
+                      </q-item-section>
+                      <q-item-section>
+                        {{ menuItem.label }}
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-scroll-area>
+              </q-drawer>
+
+              <q-page-container>
+                <q-tab-panels
+                  v-model="currentTab"
+                  animated
+                  swipeable
+                  vertical
+                  transition-prev="jump-up"
+                  transition-next="jump-up"
+                >
+                  <q-tab-panel name="Mailbox folders">
+                    <div class="row items-center">
+                      <div class="text-h6">Select mailbox folders</div>
+                      <q-btn
+                        outline
+                        round
+                        size="sm"
+                        color="orange-5"
+                        icon="refresh"
+                        class="q-ml-sm"
+                        :disable="activeMiningTask"
+                        @click="getBoxes"
+                      />
+                      <q-space />
+                      <q-badge
+                        color="orange"
+                        class="text-weight-medium text-body1"
+                        rounded
+                        transparent
+                      >
+                        {{ totalEmails.toLocaleString() }}
+                        <q-icon name="mail" class="q-ml-xs" />
+                        <q-tooltip> Email messages selected </q-tooltip>
+                      </q-badge>
+                    </div>
+                    <div class="bg-grey-1 text-blue-grey-10">
+                      <TreeCard
+                        v-if="boxes.length > 0"
+                        :boxes="boxes"
+                        :scanned-boxes="scannedBoxes"
+                        :class="{ disabled: activeMiningTask }"
+                        @selected-boxes="updateSelectedBoxes"
+                      />
+                      <q-linear-progress
+                        v-else
+                        indeterminate
+                        color="teal"
+                        class="q-mt-sm"
+                      />
+                    </div>
+                  </q-tab-panel>
+                </q-tab-panels>
+              </q-page-container>
+            </q-layout>
+          </q-dialog>
+        </q-card>
       </div>
-      <div class="bg-transparent q-ma-sm q-pa-lg">
+      <div class="bg-transparent col q-py-lg">
         <ProgressCard
           v-if="boxes"
           :mined-emails="minedEmails"
@@ -75,15 +210,32 @@ import MinedPersons from "../MinedPersons.vue";
 import ProgressCard from "../cards/ProgressCard.vue";
 import TreeCard from "../cards/TreeCard.vue";
 
-const selectedBoxes = ref([]);
-const isLoadingStartMining = ref(false);
-const isLoadingStopMining = ref(false);
-
 const $q = useQuasar();
 const $store = useStore();
 const $router = useRouter();
 
+const imgUrl = process.env.BANNER_IMAGE_URL;
+const isLoadingStartMining = ref(false);
+const isLoadingStopMining = ref(false);
+const selectedBoxes = ref([]);
+const advancedOptions = ref(true);
+const advancedOptionsVisible = ref(false);
+const isFullScreen = ref(false);
+const drawer = ref(false);
+const currentTab = ref("Mailbox folders");
+const menuList = [
+  {
+    icon: "all_inbox",
+    label: "Mailbox folders",
+  },
+];
+
 onMounted(async () => {
+  window.addEventListener("keydown", onKeyDown);
+  setTimeout(() => {
+    enableScrolling();
+  });
+
   const googleUser = LocalStorage.getItem("googleUser");
   const imapUser = LocalStorage.getItem("imapUser");
 
@@ -99,6 +251,13 @@ onMounted(async () => {
 
   await getBoxes();
 });
+
+const onKeyDown = (event) => {
+  if (event.key === "Escape" && advancedOptionsVisible.value) {
+    advancedOptionsVisible.value = false;
+    enableScrolling();
+  }
+};
 
 const boxes = computed(() => $store.state.example.boxes);
 
@@ -133,6 +292,17 @@ const totalEmails = computed(() => {
   }
   return 0;
 });
+
+function itemClicked(label) {
+  menuList.forEach((menuItem) => {
+    if (menuItem.label === label) {
+      menuItem.active = true;
+      currentTab.value = label;
+    } else {
+      menuItem.active = false;
+    }
+  });
+}
 
 function updateSelectedBoxes(val) {
   $store.commit("example/SET_SCANNEDEMAILS", 0);
@@ -202,9 +372,42 @@ async function getBoxes() {
     $router.replace("/");
   }
 }
+
+function enableScrolling() {
+  const body = document.body;
+  body.classList.remove("q-body--prevent-scroll");
+}
+
+function disableScrolling() {
+  const body = document.body;
+  body.classList.add("q-body--prevent-scroll");
+}
+
+function toggleDrawer() {
+  drawer.value = !drawer.value;
+}
+
+function toggleAdvancedOptions() {
+  advancedOptionsVisible.value = !advancedOptionsVisible.value;
+  advancedOptionsVisible.value ? disableScrolling() : enableScrolling();
+}
+
+function toggleFullScreen() {
+  isFullScreen.value = !isFullScreen.value;
+}
 </script>
 <style>
 .q-tree.disabled {
   pointer-events: none;
+}
+.q-dialog__inner--minimized > div {
+  max-width: 1000px;
+}
+.bg-banner-color {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 230, 149, 0.5) 0%,
+    rgba(255, 248, 225, 0.5) 100%
+  );
 }
 </style>
