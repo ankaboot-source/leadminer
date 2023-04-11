@@ -1,10 +1,11 @@
 <template>
   <q-btn
-    :disable="disable"
+    :disable="disable || isLoading"
     class="text-weight-regular"
     label="Start Mining"
     no-caps
     color="teal"
+    :loading="isLoading"
     @click="handleClickSignIn"
   />
 </template>
@@ -22,15 +23,18 @@ export default {
     return {
       user: "",
       quasar: useQuasar(),
+      isLoading: false,
     };
   },
 
   methods: {
     handleClickSignIn() {
+      this.isLoading = true;
       const googleUser = LocalStorage.getItem("googleUser");
 
       if (googleUser) {
-        this.$store.commit("example/SET_GOOGLE_USER", googleUser);
+        this.$store.commit("leadminer/SET_GOOGLE_USER", googleUser);
+        this.isLoading = false;
         this.$router.push("/dashboard");
       } else {
         googleSdkLoaded((google) => {
@@ -45,13 +49,14 @@ export default {
                 const authCode = response.code;
                 if (authCode) {
                   this.$store
-                    .dispatch("example/signUpGoogle", { data: authCode })
+                    .dispatch("leadminer/signUpGoogle", { data: authCode })
                     .then(() => {
                       LocalStorage.set(
                         "googleUser",
-                        this.$store.state.example.googleUser
+                        this.$store.state.leadminer.googleUser
                       );
-                      if (this.$store.state.example.googleUser) {
+                      this.isLoading = false;
+                      if (this.$store.state.leadminer.googleUser) {
                         this.$router.push("/dashboard");
                       }
                     });

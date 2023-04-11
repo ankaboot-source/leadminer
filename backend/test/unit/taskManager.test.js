@@ -112,7 +112,6 @@ describe('TasksManager class', () => {
 
   beforeEach(() => {
     tasksManager = new TasksManager(
-      'STREAM',
       fakeRedisClient,
       fakeRedisClient,
       new emailFetcherFactory(),

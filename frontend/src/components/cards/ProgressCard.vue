@@ -30,26 +30,23 @@
             </div>
           </q-tooltip>
         </div>
+        <div v-else></div>
         <div
-          v-else
-          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
-        >
-          {{ totalEmails.toLocaleString() }}
-          <q-icon name="mail" class="q-mb-xs" />
-          <q-tooltip
-            class="text-body2 bg-teal-1 text-teal-8 bordered"
-            anchor="top middle"
-            self="bottom middle"
-          >
-            email messages to mine.
-          </q-tooltip>
-        </div>
-        <div
-          v-show="activeMiningTask"
+          v-if="activeMiningTask"
           class="text-h6 text-weight-medium text-center text-blue-grey-14"
           :class="[responsiveCenteredLabel]"
         >
           We're deep in the mines now... extracting contacts!
+        </div>
+        <div
+          v-else
+          :class="[responsiveCenteredLabel]"
+          class="text-blue-grey-14 text-center text-h6 text-weight-medium"
+        >
+          <span class="text-weight-bolder q-mr-xs">
+            {{ totalEmails.toLocaleString() }}
+          </span>
+          email messages to mine.
         </div>
 
         <div
@@ -107,10 +104,10 @@
 </template>
 
 <script setup>
+import { useQuasar } from "quasar";
+import { timeConversion } from "src/helpers/time-helpers";
 import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
-import { timeConversion } from "src/helpers/time-helpers";
-import { useQuasar } from "quasar";
 
 const $q = useQuasar();
 const $store = useStore();
@@ -127,13 +124,15 @@ const progressProps = defineProps({
 });
 
 let startTime;
-const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE;
+const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
+  ? process.env.AVERAGE_EXTRACTION_RATE
+  : 130;
 
 const activeMiningTask = computed(
-  () => !!$store.state.example.miningTask.miningId
+  () => !!$store.state.leadminer.miningTask.miningId
 );
 const fetchingFinished = computed(
-  () => !!$store.state.example.fetchingFinished
+  () => !!$store.state.leadminer.fetchingFinished
 );
 
 const progressBuffer = computed(() => {
@@ -164,7 +163,7 @@ watch(fetchingFinished, (finished) => {
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
-    $store.commit("example/SET_FETCHING_FINISHED", 0);
+    $store.commit("leadminer/SET_FETCHING_FINISHED", 0);
     startTime = performance.now();
     console.log("Started Mining");
   } else {

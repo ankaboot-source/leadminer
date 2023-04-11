@@ -74,8 +74,10 @@
               </q-input>
               <q-input
                 v-if="shouldShowImapFields"
-                v-model="port"
+                v-model.number="port"
                 outlined
+                type="number"
+                :rules="[isValidPort]"
                 dense
                 label="IMAP Port"
               >
@@ -109,11 +111,12 @@
                 <div class="q-mt-md q-ml-lg col-12 text-center">
                   <q-btn
                     v-if="shouldShowImapFields"
-                    :disable="loginDisabled"
+                    :disable="loginDisabled || isLoading"
                     class="text-capitalize text-weight-regular"
                     label="Start mining"
                     type="submit"
                     color="teal"
+                    :loading="isLoading"
                   />
                   <GoogleButton v-else :disable="loginDisabled" />
                 </div>
@@ -146,6 +149,7 @@ const host = ref("");
 const port = ref(993);
 const isPwd = ref(true);
 const policyChecked = ref(false);
+const isLoading = ref(false);
 
 onMounted(() => {
   const googleUser = LocalStorage.getItem("googleUser");
@@ -154,9 +158,9 @@ onMounted(() => {
   if (!googleUser && !imapUser) return;
 
   if (googleUser) {
-    $store.commit("example/SET_GOOGLE_USER", googleUser);
+    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
   } else if (imapUser) {
-    $store.commit("example/SET_IMAP", imapUser);
+    $store.commit("leadminer/SET_IMAP", imapUser);
   }
 
   $router.push("/dashboard");
@@ -185,7 +189,15 @@ function isValidImapHost(imapHost) {
   return imapHost !== "" || "Please insert your IMAP host";
 }
 
+function isValidPort(imapPort) {
+  return (
+    (imapPort >= 0 && imapPort <= 65536) ||
+    "Please insert a valid IMAP port number"
+  );
+}
+
 async function login() {
+  isLoading.value = true;
   const data = {
     email: email.value,
     password: password.value,
@@ -194,11 +206,11 @@ async function login() {
     tls: true,
   };
   try {
-    await $store.dispatch("example/signIn", { data });
+    await $store.dispatch("leadminer/signIn", { data });
     $router.push("/dashboard");
   } catch (error) {
     $quasar.notify({
-      message: $store.getters["example/getStates"].errorMessage,
+      message: $store.getters["leadminer/getStates"].errorMessage,
       color: "red",
       icon: "error",
       actions: [
@@ -208,6 +220,8 @@ async function login() {
         },
       ],
     });
+  } finally {
+    isLoading.value = false;
   }
 }
 </script>

@@ -1,7 +1,7 @@
 import { store } from "quasar/wrappers";
 import { createStore } from "vuex";
 
-import example from "./module/index";
+import leadminer from "./module/index";
 
 /*
  * If not building with SSR mode, you can
@@ -15,11 +15,12 @@ import example from "./module/index";
 export default store((/* { ssrContext } */) => {
   const Store = createStore({
     modules: {
-      example: example,
+      leadminer,
     },
+
     // enable strict mode (adds overhead!)
     // for dev mode and --debug builds only
-    //strict: process.env.DEBUGGING
+    strict: process.env.DEBUGGING,
   });
 
   return Store;
