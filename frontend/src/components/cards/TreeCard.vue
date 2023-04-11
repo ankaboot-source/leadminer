@@ -64,14 +64,10 @@ const EMAIL_EXCLUDED_FOLDERS = [
   "trashed",
   "trash",
   "drafts",
-  "important",
-  "sent mail",
-  "starred",
   "deleted",
   "outbox",
+  "all mail"
 ];
-const GMAIL_EXCLUDED_FOLDERS = ["inbox", ...EMAIL_EXCLUDED_FOLDERS];
-const OUTLOOK_EXCLUDED_FOLDERS = [...EMAIL_EXCLUDED_FOLDERS];
 
 /**
  * Filters out default selected folders from the input boxes based on email service
@@ -79,18 +75,13 @@ const OUTLOOK_EXCLUDED_FOLDERS = [...EMAIL_EXCLUDED_FOLDERS];
  * @returns {Array} - The filtered array of boxes
  */
  function filterDefaultSelectedFolders(boxes) {
-  const email = boxes[0].label;
-  const excludedFolders = email.includes("gmail")
-    ? GMAIL_EXCLUDED_FOLDERS
-    : OUTLOOK_EXCLUDED_FOLDERS;
-
   const filteredBoxes = [];
 
   objectScan(["**.path"], {
     joined: true,
     filterFn: ({ value }) => {
       const folderName = value.slice(value.lastIndexOf("/") + 1).toLowerCase();
-      if (!excludedFolders.includes(folderName)) {
+      if (!EMAIL_EXCLUDED_FOLDERS.includes(folderName)) {
         filteredBoxes.push(value);
       }
     },
