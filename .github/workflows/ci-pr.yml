@@ -5,12 +5,34 @@ on:
       - main
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      actions: ${{ steps.filter.outputs.actions }}
+    steps:
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            actions: 
+              - '.github/workflows/**'
+
   backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.actions == 'true'  }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v2
         with:
           node-version: "16.x"
@@ -26,15 +48,16 @@ jobs:
         with:
           coverage-file: backend/coverage/coverage-summary.json
           access-token: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ github.event_name == 'pull_request' }}
-      - name: Update DeepSource code coverage
-        run: |
-          curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
-        env:
-          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+      # - name: Update DeepSource code coverage
+      #   run: |
+      #     curl https://deepsource.io/cli | sh
+      #     ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
+      #   env:
+      #     DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
   frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' || needs.changes.outputs.actions == 'true'  }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
