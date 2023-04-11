@@ -126,17 +126,43 @@ function generateErrorObjectFromImapError(error) {
 
 /**
  * Extracts IMAP parameters from the request body.
- * @param {object} body - The request body containing the email, host, tls, port, and password.
+ *
+ * @param {object} body - The request body object containing the email, host, tls, port, and password.
+ * @param {string} body.host - The host parameter.
+ * @param {string} body.email - The email parameter.
+ * @param {string} body.password - The password parameter.
+ * @param {boolean} body.tls - The tls parameter.
+ * @param {number} body.port - The port parameter.
+ *
  * @returns {object} An object containing the extracted parameters.
- * @throws {Error} If any required parameter is missing.
+ * @throws {Error} If any required parameter is missing or invalid.
  */
-function getImapParametersFromBody(body) {
-  const { email, host, tls, port, password } = body;
+function getImapParametersFromBody({ host, email, password, tls, port }) {
+  if (!host) {
+    const error = new Error('Host parameter is missing');
+    error.code = 400;
+    throw error;
+  }
 
-  if (!email || !host || !tls || !port || !password) {
-    const error = new Error(
-      'Missing required parameters for IMAP (email, host, tls, port, password).'
-    );
+  if (!email) {
+    const error = new Error('Email parameter is missing');
+    error.code = 400;
+    throw error;
+  }
+  if (!password) {
+    const error = new Error('Password parameter is missing');
+    error.code = 400;
+    throw error;
+  }
+
+  if (typeof tls !== 'boolean') {
+    const error = new Error('TLS parameter is missing or invalid');
+    error.code = 400;
+    throw error;
+  }
+
+  if (!port || isNaN(port)) {
+    const error = new Error('Port parameter is missing or invalid');
     error.code = 400;
     throw error;
   }
