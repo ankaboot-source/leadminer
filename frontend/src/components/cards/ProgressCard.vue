@@ -107,10 +107,10 @@
 </template>
 
 <script setup>
+import { useQuasar } from "quasar";
+import { timeConversion } from "src/helpers/time-helpers";
 import { computed, defineProps, watch } from "vue";
 import { useStore } from "vuex";
-import { timeConversion } from "src/helpers/time-helpers";
-import { useQuasar } from "quasar";
 
 const $q = useQuasar();
 const $store = useStore();
@@ -132,10 +132,10 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
   : 130;
 
 const activeMiningTask = computed(
-  () => !!$store.state.example.miningTask.miningId
+  () => !!$store.state.leadminer.miningTask.miningId
 );
 const fetchingFinished = computed(
-  () => !!$store.state.example.fetchingFinished
+  () => !!$store.state.leadminer.fetchingFinished
 );
 
 const progressBuffer = computed(() => {
@@ -166,7 +166,7 @@ watch(fetchingFinished, (finished) => {
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
-    $store.commit("example/SET_FETCHING_FINISHED", 0);
+    $store.commit("leadminer/SET_FETCHING_FINISHED", 0);
     startTime = performance.now();
     console.log("Started Mining");
   } else {
