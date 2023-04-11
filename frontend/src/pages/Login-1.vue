@@ -154,9 +154,9 @@ onMounted(() => {
   if (!googleUser && !imapUser) return;
 
   if (googleUser) {
-    $store.commit("example/SET_GOOGLE_USER", googleUser);
+    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
   } else if (imapUser) {
-    $store.commit("example/SET_IMAP", imapUser);
+    $store.commit("leadminer/SET_IMAP", imapUser);
   }
 
   $router.push("/dashboard");
@@ -193,11 +193,11 @@ async function login() {
     port: port.value,
   };
   try {
-    await $store.dispatch("example/signIn", { data });
+    await $store.dispatch("leadminer/signIn", { data });
     $router.push("/dashboard");
   } catch (error) {
     $quasar.notify({
-      message: $store.getters["example/getStates"].errorMessage,
+      message: $store.getters["leadminer/getStates"].errorMessage,
       color: "red",
       icon: "error",
       actions: [
