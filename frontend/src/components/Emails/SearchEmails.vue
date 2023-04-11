@@ -12,13 +12,13 @@
               </div>
               <div class="row justify-center">
                 <q-btn
-                  :disable="activeMiningTask"
+                  :disable="activeMiningTask || isLoadingStartMining"
                   :color="activeMiningTask ? 'grey-6' : 'amber-13'"
                   label="Start mining now!"
                   no-caps
                   unelevated
                   icon-right="mail"
-                  :loading="!(boxes.length > 0)"
+                  :loading="isLoadingStartMining"
                   size="xl"
                   class="text-black shadow-7"
                   style="border: 2px solid black !important"
@@ -43,7 +43,7 @@
               </div>
               <div class="row justify-center">
                 <q-btn
-                  :disable="!activeMiningTask"
+                  :disable="!activeMiningTask || isLoadingStopMining"
                   :color="activeMiningTask ? 'red' : 'grey-6'"
                   class="q-mr-xl q-mt-sm"
                   :class="!activeMiningTask ? 'invisible' : ''"
@@ -51,6 +51,7 @@
                   size="md"
                   no-caps
                   outline
+                  :loading="isLoadingStopMining"
                   @click="stopMining"
                 />
               </div>
@@ -214,6 +215,8 @@ const $store = useStore();
 const $router = useRouter();
 
 const imgUrl = process.env.BANNER_IMAGE_URL;
+const isLoadingStartMining = ref(false);
+const isLoadingStopMining = ref(false);
 const selectedBoxes = ref([]);
 const advancedOptions = ref(true);
 const advancedOptionsVisible = ref(false);
@@ -324,16 +327,20 @@ function showNotification(msg, color, icon) {
 }
 
 async function stopMining() {
+  isLoadingStopMining.value = true;
   const miningId = $store.state.leadminer.miningTask.miningId;
   try {
     await $store.dispatch("leadminer/stopMining", { data: { miningId } });
     showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
     showNotification($store.state.leadminer.errorMessage, "red", "error");
+  } finally {
+    isLoadingStopMining.value = false;
   }
 }
 
 async function startMining() {
+  isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
     return showNotification(
       "Select at least one folder",
@@ -349,16 +356,21 @@ async function startMining() {
     showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
     showNotification($store.state.leadminer.errorMessage, "red", "error");
+  } finally {
+    isLoadingStartMining.value = false;
   }
 }
 
 async function getBoxes() {
   try {
+    isLoadingStartMining.value = true;
     await $store.dispatch("leadminer/getBoxes");
     console.log($store.state.leadminer.infoMessage);
   } catch (_) {
     LocalStorage.clear();
     $router.replace("/");
+  } finally {
+    isLoadingStartMining.value = false;
   }
 }
 
