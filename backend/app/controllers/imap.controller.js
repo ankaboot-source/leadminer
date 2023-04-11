@@ -51,6 +51,7 @@ async function loginToAccount(req, res, next) {
       };
       throw new Error(genericErrorResponse);
     }
+    logger.info('IMAP login successful', { metadata: { email } });
   } catch (error) {
     const newError = generateErrorObjectFromImapError(error);
     res.status(newError.code);
@@ -60,7 +61,6 @@ async function loginToAccount(req, res, next) {
     await imapConnectionProvider?.cleanPool();
   }
 
-  logger.info('IMAP login successful', { metadata: { email: user.email } });
   return res.status(200).send({ imap: user });
 }
 
