@@ -58,7 +58,7 @@
 import objectScan from "object-scan";
 import { defineComponent, ref } from "vue";
 
-const excludedFolders = [
+const EMAIL_EXCLUDED_FOLDERS = [
   "junk",
   "mailspring",
   "spam",
@@ -68,11 +68,32 @@ const excludedFolders = [
   "trashed",
   "trash",
   "drafts",
-  "inbox",
-  "important",
-  "sent mail",
-  "starred",
-]; //
+  "deleted",
+  "outbox",
+  "all mail",
+];
+
+/**
+ * Filters out default selected folders from the input boxes based on email service
+ * @param {Array} boxes - The array of folder names to filter
+ * @returns {Array} - The filtered array of boxes
+ */
+function filterDefaultSelectedFolders(boxes) {
+  const filteredBoxes = [];
+
+  objectScan(["**.path"], {
+    joined: true,
+    filterFn: ({ value }) => {
+      const folderName = value.slice(value.lastIndexOf("/") + 1).toLowerCase();
+      if (!EMAIL_EXCLUDED_FOLDERS.includes(folderName)) {
+        filteredBoxes.push(value);
+      }
+    },
+  })(boxes);
+
+  return filteredBoxes;
+}
+
 export default defineComponent({
   name: "TreeCard",
   props: {
@@ -98,19 +119,7 @@ export default defineComponent({
 
   computed: {
     Boxes() {
-      const selectedB = [];
-      objectScan(["**.path"], {
-        joined: true,
-        filterFn: ({ value }) => {
-          if (
-            !excludedFolders.includes(
-              value.slice(value.lastIndexOf("/") + 1).toLowerCase()
-            )
-          ) {
-            selectedB.push(value);
-          }
-        },
-      })(this.boxes);
+      const selectedB = filterDefaultSelectedFolders(this.boxes);
 
       if (selectedB.length > 0) {
         // TODO : Rework this
