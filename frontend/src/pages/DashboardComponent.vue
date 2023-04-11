@@ -1,5 +1,5 @@
 <template>
-  <q-page class="q-pa-sm">
+  <q-page class="q-pb-sm q-px-xl">
     <find-emails />
   </q-page>
 </template>

@@ -4,7 +4,10 @@ const { logger } = require('../utils/logger');
 const { redis } = require('../utils/redis');
 const { db } = require('../db');
 const { ImapEmailsFetcher } = require('./ImapEmailsFetcher');
-const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
+const {
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+  REDIS_STREAMS_CONSUMER_GROUP
+} = require('../utils/constants');
 
 /**
  * Removes sensitive data from a task object.
@@ -47,6 +50,12 @@ function redactSensitiveData(task) {
 
 class TasksManager {
   /**
+   * The Redis Pub/Sub communication channel and Redis Streams consumer group name for the task manager.
+   * @type {string}
+   */
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL = REDIS_PUBSUB_COMMUNICATION_CHANNEL;
+  REDIS_STREAMS_CONSUMER_GROUP_NAME = REDIS_STREAMS_CONSUMER_GROUP;
+  /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
    * @type {Map<string, object>}
    */
@@ -54,20 +63,17 @@ class TasksManager {
 
   /**
    * Creates a new MiningTaskManager instance.
-   * @param {object} pubsubCommunicationChannel - Used to communicate with other processes.
    * @param {object} redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
    * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
    * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
    */
   constructor(
-    pubsubCommunicationChannel,
     redisSubscriber,
     redisPublisher,
     emailFetcherFactory,
     sseBroadcasterFactory
   ) {
-    this.pubsubCommunicationChannel = pubsubCommunicationChannel;
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
 
@@ -112,7 +118,7 @@ class TasksManager {
   async generateTaskInformation() {
     const miningId = await this.generateMiningId();
     const streamName = `stream-${miningId}`;
-    const consumerGroupName = `group-${miningId}`;
+    const consumerGroupName = this.REDIS_STREAMS_CONSUMER_GROUP_NAME;
 
     return {
       miningId,
@@ -372,7 +378,7 @@ class TasksManager {
 
     const message = { miningId, command, streamName, consumerGroupName };
     await this.redisPublisher.publish(
-      this.pubsubCommunicationChannel,
+      this.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
       JSON.stringify(message)
     );
   }
@@ -433,7 +439,6 @@ const SSEBroadcasterFactory = function () {
 };
 
 const miningTasksManager = new TasksManager(
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   redis.getSubscriberClient(),
   redis.getClient(),
   new EmailFetcherFactory(),
