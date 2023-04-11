@@ -109,11 +109,12 @@
                 <div class="q-mt-md q-ml-lg col-12 text-center">
                   <q-btn
                     v-if="shouldShowImapFields"
-                    :disable="loginDisabled"
+                    :disable="loginDisabled || isLoading"
                     class="text-capitalize text-weight-regular"
                     label="Start mining"
                     type="submit"
                     color="teal"
+                    :loading="isLoading"
                   />
                   <GoogleButton v-else :disable="loginDisabled" />
                 </div>
@@ -146,6 +147,7 @@ const host = ref("");
 const port = ref(993);
 const isPwd = ref(true);
 const policyChecked = ref(false);
+const isLoading = ref(false);
 
 onMounted(() => {
   const googleUser = LocalStorage.getItem("googleUser");
@@ -186,6 +188,7 @@ function isValidImapHost(imapHost) {
 }
 
 async function login() {
+  isLoading.value = true;
   const data = {
     email: email.value,
     password: password.value,
@@ -194,6 +197,7 @@ async function login() {
   };
   try {
     await $store.dispatch("example/signIn", { data });
+    isLoading.value = false;
     $router.push("/dashboard");
   } catch (error) {
     $quasar.notify({
@@ -207,6 +211,7 @@ async function login() {
         },
       ],
     });
+    isLoading.value = false;
   }
 }
 </script>

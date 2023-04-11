@@ -30,14 +30,15 @@
                 <div class="col-6" />
                 <div class="q-mt-md q-ml-lg col-6">
                   <q-btn
-                    :disable="activeMiningTask"
+                    :disable="activeMiningTask || isLoadingStartMining"
                     no-caps
                     :color="activeMiningTask ? 'grey-6' : 'red'"
                     label="Start"
+                    :loading="isLoadingStartMining"
                     @click="startMining"
                   />
                   <q-btn
-                    :disable="!activeMiningTask"
+                    :disable="!activeMiningTask || isLoadingStopMining"
                     class="q-ma-md"
                     no-caps
                     :color="activeMiningTask ? 'red' : 'grey-6'"
@@ -70,11 +71,13 @@ import { LocalStorage, useQuasar } from "quasar";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
+import MinedPersons from "../MinedPersons.vue";
 import ProgressCard from "../cards/ProgressCard.vue";
 import TreeCard from "../cards/TreeCard.vue";
-import MinedPersons from "../MinedPersons.vue";
 
 const selectedBoxes = ref([]);
+const isLoadingStartMining = ref(false);
+const isLoadingStopMining = ref(false);
 
 const $q = useQuasar();
 const $store = useStore();
@@ -152,16 +155,21 @@ function showNotification(msg, color, icon) {
 }
 
 async function stopMining() {
+  isLoadingStopMining.value = true;
   const miningId = $store.state.example.miningTask.miningId;
   try {
     await $store.dispatch("example/stopMining", { data: { miningId } });
+    isLoadingStartMining.value = false;
+    isLoadingStopMining.value = false;
     showNotification($store.state.example.infoMessage, "green", "");
   } catch (error) {
     showNotification($store.state.example.errorMessage, "red", "error");
+    isLoadingStopMining.value = false;
   }
 }
 
 async function startMining() {
+  isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
     return showNotification(
       "Select at least one folder",
@@ -175,16 +183,21 @@ async function startMining() {
       data: { boxes: selectedBoxes.value },
     });
     showNotification($store.state.example.infoMessage, "green", "");
+    isLoadingStartMining.value = false;
   } catch (error) {
     showNotification($store.state.example.errorMessage, "red", "error");
+    isLoadingStartMining.value = false;
   }
 }
 
 async function getBoxes() {
   try {
+    isLoadingStartMining.value = true;
     await $store.dispatch("example/getBoxes");
     console.log($store.state.example.infoMessage);
+    isLoadingStartMining.value = false;
   } catch (_) {
+    isLoadingStartMining.value = false;
     LocalStorage.clear();
     $router.replace("/");
   }
