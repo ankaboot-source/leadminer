@@ -2,22 +2,22 @@ class SSE {
   registerEventHandlers(id, store) {
     this.eventSource.addEventListener(`fetched-${id}`, ({ data }) => {
       const scanned = parseInt(data, 10);
-      store.commit("example/SET_SCANNEDEMAILS", scanned);
+      store.commit("leadminer/SET_SCANNEDEMAILS", scanned);
     });
 
     this.eventSource.addEventListener(`extracted-${id}`, ({ data }) => {
       const extracted = parseInt(data, 10);
-      store.commit("example/SET_EXTRACTEDEMAILS", extracted);
+      store.commit("leadminer/SET_EXTRACTEDEMAILS", extracted);
     });
 
     this.eventSource.addEventListener("close", () => {
       this.closeConnection();
-      store.commit("example/DELETE_MINING_TASK");
+      store.commit("leadminer/DELETE_MINING_TASK");
     });
 
     this.eventSource.addEventListener("fetching-finished", ({ data }) => {
       const totalFetchedEmails = parseInt(data, 10);
-      store.commit("example/SET_FETCHING_FINISHED", totalFetchedEmails);
+      store.commit("leadminer/SET_FETCHING_FINISHED", totalFetchedEmails);
     });
   }
 

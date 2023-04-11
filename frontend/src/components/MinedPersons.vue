@@ -244,7 +244,7 @@ const isLoading = ref(false);
 const table = ref(null);
 
 const minedEmails = computed(
-  () => $store.getters["example/getRetrievedEmails"].length
+  () => $store.getters["leadminer/getRetrievedEmails"].length
 );
 
 const initialPagination = {
@@ -260,14 +260,14 @@ const mailboxValidityCurrent = "green";
 
 const isExportDisabled = computed(
   () =>
-    $store.state.example.loadingStatusDns ||
+    $store.state.leadminer.loadingStatusDns ||
     rows.value.some(
       (el) => el.engagement === undefined || el.engagement === null
     )
 );
 
 const activeMiningTask = computed(
-  () => !!$store.state.example.miningTask.miningId
+  () => !!$store.state.leadminer.miningTask.miningId
 );
 
 let refreshInterval = null;
@@ -354,22 +354,22 @@ function filterFn(rows, terms) {
 
 function refreshTable() {
   const contactStoreLength =
-    $store.getters["example/getRetrievedEmails"].length;
+    $store.getters["leadminer/getRetrievedEmails"].length;
   const contactTableLength = rows.value.length;
   const hasNewContacts =
     parseInt(contactStoreLength) > parseInt(contactTableLength);
 
   if (hasNewContacts) {
     isLoading.value = true;
-    rows.value = $store.getters["example/getRetrievedEmails"];
+    rows.value = $store.getters["leadminer/getRetrievedEmails"];
     isLoading.value = false;
   }
 }
 
 async function syncTable() {
   isLoading.value = true;
-  await $store.dispatch("example/syncRefinedPersons");
-  rows.value = $store.getters["example/getRetrievedEmails"];
+  await $store.dispatch("leadminer/syncRefinedPersons");
+  rows.value = $store.getters["leadminer/getRetrievedEmails"];
   isLoading.value = false;
 }
 
@@ -383,7 +383,7 @@ function exportTable() {
     return 0;
   }
   const currentDatetime = new Date();
-  const userEmail = $store.getters["example/getUserEmail"];
+  const userEmail = $store.getters["leadminer/getUserEmail"];
   const fileName = `leadminer-${userEmail}-${currentDatetime
     .toISOString()
     .slice(0, 10)}`;

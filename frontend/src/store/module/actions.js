@@ -125,38 +125,38 @@ export async function stopMining({ state, commit }, { data }) {
   }
 }
 
-export function signUp(_, { data }) {
+export function signUp({ commit }, { data }) {
   return new Promise((resolve, reject) => {
-    this.commit("example/SET_LOADING", true);
+    commit("SET_LOADING", true);
     // get imapInfo account or create one
     this.$axios
       .post(`${this.$api}/imap/signup`, data)
       .then((response) => {
-        this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_INFO_MESSAGE", response.data.message);
+        commit("SET_LOADING", false);
+        commit("SET_INFO_MESSAGE", response.data.message);
         resolve(response);
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error?.response.data.error);
+          commit("SET_ERROR", error?.response.data.error);
         }
         reject(error.message);
       });
   });
 }
-export function signUpGoogle(_, { data }) {
+export function signUpGoogle({ commit }, { data }) {
   return new Promise((resolve, reject) => {
-    this.commit("example/SET_LOADING", true);
+    commit("SET_LOADING", true);
     this.$axios
       .post(`${this.$api}/imap/signUpGoogle`, { authCode: data })
       .then((response) => {
-        this.commit("example/SET_LOADING", false);
-        this.commit("example/SET_GOOGLE_USER", response.data.googleUser);
+        commit("SET_LOADING", false);
+        commit("SET_GOOGLE_USER", response.data.googleUser);
         resolve(response);
       })
       .catch((error) => {
         if (error) {
-          this.commit("example/SET_ERROR", error?.response.data.error);
+          commit("SET_ERROR", error?.response.data.error);
         }
         reject(error.message);
       });
@@ -175,7 +175,7 @@ export async function signIn({ state, commit }, { data }) {
 
     return response.data;
   } catch (error) {
-    this.commit("example/SET_ERROR", error?.response.data.error.message);
+    commit("SET_ERROR", error?.response.data.error.message);
     throw new Error(error.message);
   }
 }
