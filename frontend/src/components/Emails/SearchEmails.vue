@@ -367,7 +367,6 @@ async function getBoxes() {
     await $store.dispatch("leadminer/getBoxes");
     console.log($store.state.leadminer.infoMessage);
   } catch (_) {
-    isLoadingStartMining.value = false;
     LocalStorage.clear();
     $router.replace("/");
   } finally {
