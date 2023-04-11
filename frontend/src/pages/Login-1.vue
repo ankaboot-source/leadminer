@@ -188,7 +188,10 @@ function isValidImapHost(imapHost) {
 }
 
 function isValidPort(imapPort) {
-  return !!imapPort || "Please insert a valid IMAP port number";
+  return (
+    (imapPort >= 0 && imapPort <= 65536) ||
+    "Please insert a valid IMAP port number"
+  );
 }
 
 async function login() {
