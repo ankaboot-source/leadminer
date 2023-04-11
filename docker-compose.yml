@@ -31,6 +31,7 @@ services:
         GG_CLIENT_ID: ${GOOGLE_CLIENT_ID}
         SUPABASE_MAX_ROWS: ${SUPABASE_MAX_ROWS}
         AVERAGE_EXTRACTION_RATE: ${AVERAGE_EXTRACTION_RATE}
+        BANNER_IMAGE_URL: ${BANNER_IMAGE_URL}
     ports:
       - 8020:80
     restart: always
