@@ -327,12 +327,15 @@ function showNotification(msg, color, icon) {
 }
 
 async function stopMining() {
+  isLoadingStopMining.value = true;
   const miningId = $store.state.leadminer.miningTask.miningId;
   try {
     await $store.dispatch("leadminer/stopMining", { data: { miningId } });
     showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
     showNotification($store.state.leadminer.errorMessage, "red", "error");
+  } finally {
+    isLoadingStopMining.value = false;
   }
 }
 
@@ -353,17 +356,22 @@ async function startMining() {
     showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
     showNotification($store.state.leadminer.errorMessage, "red", "error");
+  } finally {
+    isLoadingStartMining.value = false;
   }
 }
 
 async function getBoxes() {
   try {
+    isLoadingStartMining.value = true;
     await $store.dispatch("leadminer/getBoxes");
     console.log($store.state.leadminer.infoMessage);
   } catch (_) {
     isLoadingStartMining.value = false;
     LocalStorage.clear();
     $router.replace("/");
+  } finally {
+    isLoadingStartMining.value = false;
   }
 }
 

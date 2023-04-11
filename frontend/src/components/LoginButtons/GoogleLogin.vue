@@ -34,6 +34,7 @@ export default {
 
       if (googleUser) {
         this.$store.commit("leadminer/SET_GOOGLE_USER", googleUser);
+        this.isLoading = false;
         this.$router.push("/dashboard");
       } else {
         googleSdkLoaded((google) => {
@@ -54,6 +55,7 @@ export default {
                         "googleUser",
                         this.$store.state.leadminer.googleUser
                       );
+                      this.isLoading = false;
                       if (this.$store.state.leadminer.googleUser) {
                         this.$router.push("/dashboard");
                       }

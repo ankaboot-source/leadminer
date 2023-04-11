@@ -219,6 +219,7 @@ async function login() {
         },
       ],
     });
+  } finally {
     isLoading.value = false;
   }
 }
