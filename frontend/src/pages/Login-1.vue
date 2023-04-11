@@ -74,8 +74,10 @@
               </q-input>
               <q-input
                 v-if="shouldShowImapFields"
-                v-model="port"
+                v-model.number="port"
                 outlined
+                type="number"
+                :rules="[isValidPort]"
                 dense
                 label="IMAP Port"
               >
@@ -183,6 +185,13 @@ function isValidPassword(password) {
 
 function isValidImapHost(imapHost) {
   return imapHost !== "" || "Please insert your IMAP host";
+}
+
+function isValidPort(imapPort) {
+  return (
+    (imapPort >= 0 && imapPort <= 65536) ||
+    "Please insert a valid IMAP port number"
+  );
 }
 
 async function login() {
