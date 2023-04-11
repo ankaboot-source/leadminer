@@ -66,7 +66,7 @@ const EMAIL_EXCLUDED_FOLDERS = [
   "drafts",
   "deleted",
   "outbox",
-  "all mail"
+  "all mail",
 ];
 
 /**
@@ -74,7 +74,7 @@ const EMAIL_EXCLUDED_FOLDERS = [
  * @param {Array} boxes - The array of folder names to filter
  * @returns {Array} - The filtered array of boxes
  */
- function filterDefaultSelectedFolders(boxes) {
+function filterDefaultSelectedFolders(boxes) {
   const filteredBoxes = [];
 
   objectScan(["**.path"], {
@@ -89,7 +89,6 @@ const EMAIL_EXCLUDED_FOLDERS = [
 
   return filteredBoxes;
 }
-
 
 export default defineComponent({
   name: "TreeCard",
