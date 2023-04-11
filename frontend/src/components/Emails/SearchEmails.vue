@@ -244,9 +244,9 @@ onMounted(async () => {
   }
 
   if (googleUser) {
-    $store.commit("example/SET_GOOGLE_USER", googleUser);
+    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
   } else if (imapUser) {
-    $store.commit("example/SET_IMAP", imapUser);
+    $store.commit("leadminer/SET_IMAP", imapUser);
   }
 
   await getBoxes();
@@ -259,20 +259,22 @@ const onKeyDown = (event) => {
   }
 };
 
-const boxes = computed(() => $store.state.example.boxes);
+const boxes = computed(() => $store.state.leadminer.boxes);
 
-const scannedBoxes = computed(() => $store.state.example.progress.scannedBoxes);
+const scannedBoxes = computed(
+  () => $store.state.leadminer.progress.scannedBoxes
+);
 const minedEmails = computed(
-  () => $store.getters["example/getRetrievedEmails"].length
+  () => $store.getters["leadminer/getRetrievedEmails"].length
 );
 const activeMiningTask = computed(() =>
-  $store.state.example.miningTask.miningId ? true : false
+  $store.state.leadminer.miningTask.miningId ? true : false
 );
 const scannedEmails = computed(
-  () => $store.state.example.progress.scannedEmails
+  () => $store.state.leadminer.progress.scannedEmails
 );
 const extractedEmails = computed(
-  () => $store.state.example.progress.extractedEmails
+  () => $store.state.leadminer.progress.extractedEmails
 );
 
 const totalEmails = computed(() => {
@@ -305,8 +307,8 @@ function itemClicked(label) {
 }
 
 function updateSelectedBoxes(val) {
-  $store.commit("example/SET_SCANNEDEMAILS", 0);
-  $store.commit("example/SET_EXTRACTEDEMAILS", 0);
+  $store.commit("leadminer/SET_SCANNEDEMAILS", 0);
+  $store.commit("leadminer/SET_EXTRACTEDEMAILS", 0);
   selectedBoxes.value = val;
 }
 
@@ -325,16 +327,12 @@ function showNotification(msg, color, icon) {
 }
 
 async function stopMining() {
-  isLoadingStopMining.value = true;
-  const miningId = $store.state.example.miningTask.miningId;
+  const miningId = $store.state.leadminer.miningTask.miningId;
   try {
-    await $store.dispatch("example/stopMining", { data: { miningId } });
-    isLoadingStartMining.value = false;
-    isLoadingStopMining.value = false;
-    showNotification($store.state.example.infoMessage, "green", "");
+    await $store.dispatch("leadminer/stopMining", { data: { miningId } });
+    showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
-    showNotification($store.state.example.errorMessage, "red", "error");
-    isLoadingStopMining.value = false;
+    showNotification($store.state.leadminer.errorMessage, "red", "error");
   }
 }
 
@@ -349,23 +347,19 @@ async function startMining() {
   }
 
   try {
-    await $store.dispatch("example/startMining", {
+    await $store.dispatch("leadminer/startMining", {
       data: { boxes: selectedBoxes.value },
     });
-    showNotification($store.state.example.infoMessage, "green", "");
-    isLoadingStartMining.value = false;
+    showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
-    showNotification($store.state.example.errorMessage, "red", "error");
-    isLoadingStartMining.value = false;
+    showNotification($store.state.leadminer.errorMessage, "red", "error");
   }
 }
 
 async function getBoxes() {
   try {
-    isLoadingStartMining.value = true;
-    await $store.dispatch("example/getBoxes");
-    console.log($store.state.example.infoMessage);
-    isLoadingStartMining.value = false;
+    await $store.dispatch("leadminer/getBoxes");
+    console.log($store.state.leadminer.infoMessage);
   } catch (_) {
     isLoadingStartMining.value = false;
     LocalStorage.clear();

@@ -33,8 +33,7 @@ export default {
       const googleUser = LocalStorage.getItem("googleUser");
 
       if (googleUser) {
-        this.$store.commit("example/SET_GOOGLE_USER", googleUser);
-        this.isLoading = false;
+        this.$store.commit("leadminer/SET_GOOGLE_USER", googleUser);
         this.$router.push("/dashboard");
       } else {
         googleSdkLoaded((google) => {
@@ -49,14 +48,13 @@ export default {
                 const authCode = response.code;
                 if (authCode) {
                   this.$store
-                    .dispatch("example/signUpGoogle", { data: authCode })
+                    .dispatch("leadminer/signUpGoogle", { data: authCode })
                     .then(() => {
                       LocalStorage.set(
                         "googleUser",
-                        this.$store.state.example.googleUser
+                        this.$store.state.leadminer.googleUser
                       );
-                      this.isLoading = false;
-                      if (this.$store.state.example.googleUser) {
+                      if (this.$store.state.leadminer.googleUser) {
                         this.$router.push("/dashboard");
                       }
                     });

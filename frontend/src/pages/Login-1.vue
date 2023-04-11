@@ -74,8 +74,10 @@
               </q-input>
               <q-input
                 v-if="shouldShowImapFields"
-                v-model="port"
+                v-model.number="port"
                 outlined
+                type="number"
+                :rules="[isValidPort]"
                 dense
                 label="IMAP Port"
               >
@@ -156,9 +158,9 @@ onMounted(() => {
   if (!googleUser && !imapUser) return;
 
   if (googleUser) {
-    $store.commit("example/SET_GOOGLE_USER", googleUser);
+    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
   } else if (imapUser) {
-    $store.commit("example/SET_IMAP", imapUser);
+    $store.commit("leadminer/SET_IMAP", imapUser);
   }
 
   $router.push("/dashboard");
@@ -187,6 +189,13 @@ function isValidImapHost(imapHost) {
   return imapHost !== "" || "Please insert your IMAP host";
 }
 
+function isValidPort(imapPort) {
+  return (
+    (imapPort >= 0 && imapPort <= 65536) ||
+    "Please insert a valid IMAP port number"
+  );
+}
+
 async function login() {
   isLoading.value = true;
   const data = {
@@ -196,12 +205,11 @@ async function login() {
     port: port.value,
   };
   try {
-    await $store.dispatch("example/signIn", { data });
-    isLoading.value = false;
+    await $store.dispatch("leadminer/signIn", { data });
     $router.push("/dashboard");
   } catch (error) {
     $quasar.notify({
-      message: $store.getters["example/getStates"].errorMessage,
+      message: $store.getters["leadminer/getStates"].errorMessage,
       color: "red",
       icon: "error",
       actions: [

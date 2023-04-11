@@ -46,7 +46,7 @@ export default defineComponent({
   methods: {
     logout() {
       LocalStorage.clear();
-      this.$store.commit("example/RESET_STORE");
+      this.$store.commit("leadminer/RESET_STORE");
       sse.closeConnection();
       this.$router.push("/");
     },
