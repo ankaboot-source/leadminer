@@ -256,7 +256,7 @@ const onKeyDown = (event) => {
   }
 };
 
-const boxes = computed(() => $store.state.example.boxes);
+const boxes = computed(() => $store.state.leadminer.boxes);
 
 const scannedBoxes = computed(
   () => $store.state.leadminer.progress.scannedBoxes
