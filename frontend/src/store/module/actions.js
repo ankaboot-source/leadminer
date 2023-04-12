@@ -90,7 +90,7 @@ export async function startMining({ state, commit }, { data }) {
     commit("SET_LOADING", false);
     commit("SET_LOADING_DNS", false);
     commit("SET_STATUS", "");
-    commit("SET_INFO_MESSAGE", "Successfully started mining");
+    commit("SET_INFO_MESSAGE", "Mining started");
   } catch (error) {
     sse.closeConnection();
     const message =
@@ -114,7 +114,7 @@ export async function stopMining({ state, commit }, { data }) {
 
     commit("DELETE_MINING_TASK");
     commit("SET_STATUS", "");
-    commit("SET_INFO_MESSAGE", "Successfully stopped mining");
+    commit("SET_INFO_MESSAGE", "Mining stopped");
   } catch (error) {
     const message =
       error?.response?.data?.error.message ||
