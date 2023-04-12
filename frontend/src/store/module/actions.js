@@ -170,7 +170,6 @@ export async function signIn({ state, commit }, { data }) {
 
     commit("SET_IMAP", response.data.imap);
     const imapUser = { ...state.imapUser, password: data.password };
-    imapUser.password = data.password;
     LocalStorage.set("imapUser", imapUser);
 
     return response.data;
