@@ -112,7 +112,10 @@ function generateErrorObjectFromImapError(error) {
   }
 
   if (!errorMessage) {
-    return !error.code ? { ...error, code: 500 } : error;
+    if (!error.code) {
+      error.code = 500;
+    }
+    return error;
   }
 
   const newError = new Error(errorMessage.message);
@@ -121,8 +124,55 @@ function generateErrorObjectFromImapError(error) {
   return newError;
 }
 
+/**
+ * Extracts IMAP parameters from the request body.
+ *
+ * @param {object} body - The request body object containing the email, host, tls, port, and password.
+ * @param {string} body.host - The host parameter.
+ * @param {string} body.email - The email parameter.
+ * @param {string} body.password - The password parameter.
+ * @param {boolean} body.tls - The tls parameter.
+ * @param {number} body.port - The port parameter.
+ *
+ * @returns {object} An object containing the extracted parameters.
+ * @throws {Error} If any required parameter is missing or invalid.
+ */
+function getImapParametersFromBody({ host, email, password, tls, port }) {
+  if (!host) {
+    const error = new Error('Host parameter is missing');
+    error.code = 400;
+    throw error;
+  }
+
+  if (!email) {
+    const error = new Error('Email parameter is missing');
+    error.code = 400;
+    throw error;
+  }
+  if (!password) {
+    const error = new Error('Password parameter is missing');
+    error.code = 400;
+    throw error;
+  }
+
+  if (typeof tls !== 'boolean') {
+    const error = new Error('TLS parameter is missing or invalid');
+    error.code = 400;
+    throw error;
+  }
+
+  if (!port || isNaN(port)) {
+    const error = new Error('Port parameter is missing or invalid');
+    error.code = 400;
+    throw error;
+  }
+
+  return { email, host, tls, port, password };
+}
+
 module.exports = {
   generateErrorObjectFromImapError,
   getXImapHeaderField,
-  getUser
+  getUser,
+  getImapParametersFromBody
 };

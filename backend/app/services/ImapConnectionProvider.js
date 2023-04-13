@@ -85,9 +85,17 @@ class ImapConnectionProvider {
    * Builds the configuration for connecting to a mail server using a username and password.
    * @param {string} host - The host name or IP address of the mail server
    * @param {string} password - User's password
+   * @param {number} [port=993] - The port number to connect to the server on (optional, defaults to 993)
    * @returns {Object} - The object for the connection
+   * @throws {TypeError} - If any parameter is invalid
    */
   withPassword(host, password, port = 993) {
+    if (!host || !password || typeof port !== 'number') {
+      throw new TypeError(
+        'Invalid parameters. Host and password must be non-empty strings and port must be a number.'
+      );
+    }
+
     this.#imapConfig = {
       ...this.#imapConfig,
       password,
