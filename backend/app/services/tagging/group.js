@@ -10,7 +10,7 @@ const groupEmailMessage = {
   },
   rulesToApply: [
     {
-      fields: ['list-post'],
+      fields: ['list-post', 'reply-to', 'reply_to'],
       conditions: [
         new HasHeaderField(['list-post', 'x-original-from']),
         new HasHeaderWithValues('precedence', ['list'])
