@@ -15,7 +15,7 @@ BEGIN
   FROM (
     SELECT
       poc.personid,
-      nrm.recent_name AS name,
+      COALESCE(nrm.recent_name, ''::text) AS name,
       COALESCE(array_agg(DISTINCT gn.alternate_name)
         FILTER (
           WHERE nrm.recent_name IS NOT NULL
@@ -29,7 +29,7 @@ BEGIN
     JOIN messages m ON poc.messageid = m.id
     LEFT JOIN (
       SELECT
-        COALESCE((array_agg(name ORDER BY m.date DESC) )[1], '') AS recent_name,
+        ( array_agg(name ORDER BY m.date DESC) )[1] AS recent_name,
         personid
       FROM pointsofcontact poc
         JOIN messages m ON poc.messageid = m.id
