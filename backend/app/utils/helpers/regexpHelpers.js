@@ -1,7 +1,8 @@
 const {
   REGEX_HEADER,
   REGEX_BODY,
-  REGEX_REMOVE_QUOTES
+  REGEX_REMOVE_QUOTES,
+  REGEX_HEADER_EMAIL_SPLIT_PATTERN
 } = require('../constants');
 const quotedPrintable = require('quoted-printable');
 
@@ -29,25 +30,43 @@ function cleanName(name) {
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
 }
+
 /**
- * Extracts email addresses, identifiers and names if available using regex.
- * @param  {string} emails - can be either comma-separated emails or one email.
- * @returns {Array} An array of obejcts
+ * Extracts name and email addresses from a string of emails.
+ * @param {string} emails - String of emails to extract from.
+ * @returns {Object[]} An array of objects containing the name and email address of each email.
  */
 function extractNameAndEmail(emails) {
-  // Adding trainling comma at the end to help identify emails
-  // Handle case when input have this format tester@leadminer.io <tester@leadminer.io>
-  const result = [...`${emails},`.matchAll(REGEX_HEADER)].map((match) => {
-    const { name, address, identifier, domain, tld } = match.groups ?? {};
-    const cleanedName = cleanName(name || '');
-    return {
-      name: cleanedName !== address ? cleanedName : '',
-      address: address.toLowerCase(),
-      identifier,
-      domain: `${domain}.${tld}`
-    };
-  });
-  return result;
+  return emails
+    .split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)
+    .map((emailString) => {
+      if (emailString === undefined || emailString.trim() === '') {
+        return null;
+      }
+
+      const match = emailString.match(REGEX_HEADER);
+
+      if (!match) {
+        return null;
+      }
+
+      const {
+        name = '',
+        address,
+        identifier,
+        domain,
+        tld
+      } = match.groups || {};
+      const cleanedName = cleanName(name);
+      const nameToAdd = cleanedName !== address ? cleanedName : '';
+      return {
+        name: nameToAdd,
+        address: address.toLowerCase(),
+        identifier,
+        domain: `${domain}.${tld}`
+      };
+    })
+    .filter((result) => result !== null);
 }
 
 module.exports = {

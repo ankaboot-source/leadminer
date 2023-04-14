@@ -1,9 +1,12 @@
 const headerRegexName =
   // eslint-disable-next-line security/detect-unsafe-regex
-  /(?<name>(,\b|\s|^)[\p{L}"'\w\s(),.&:()|-]{1,100})?(?<t>\s|^)/u;
+  /(?<name>^(?:[^<]{1,50}))?/;
 const headerRegexAddress =
   // eslint-disable-next-line security/detect-unsafe-regex
-  /<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?,/;
+  /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?/;
+const headerRegexEmailSplitPattern =
+  // eslint-disable-next-line security/detect-unsafe-regex
+  /([\s\S]*?[^<,]+(?:<[^>]*>)?)\s*(?:,|$)/g;
 const bodyRegex =
   // eslint-disable-next-line security/detect-unsafe-regex
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi;
@@ -12,7 +15,7 @@ const listRegex = /<[^<]{1,255}>$/;
 // eslint-disable-next-line
 const headerRegex = new RegExp(
   headerRegexName.source + headerRegexAddress.source,
-  'giu'
+  'iu'
 );
 
 module.exports = {
@@ -22,6 +25,7 @@ module.exports = {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL: 'stream-management', // Used as redis PubSub channel name.
   REDIS_STREAMS_CONSUMER_GROUP: 'imap-consumers-group', // Name of the consumer group, used to manage consumers processing messages from streams.
   MAX_WORKER_TIMEOUT: 600000,
+  REGEX_HEADER_EMAIL_SPLIT_PATTERN: headerRegexEmailSplitPattern, // // Regular expression pattern to split a comma-seperated email addresses string.
   REGEX_HEADER: headerRegex, // Regex to extract emails from header fields (FROM, TO, CC, BCC)
   REGEX_BODY: bodyRegex, //  Regex to extract emails from body
   REGEX_LIST_ID: listRegex, // Extracts id from header field list-id
