@@ -37,7 +37,7 @@ function cleanName(name) {
  * @returns {Object[]} An array of objects containing the name and email address of each email.
  */
 function extractNameAndEmail(emails) {
-  return `${emails}`
+  return emails
     .split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)
     .filter((email) => email && email.trim() !== '')
     .map((emailString) => {
