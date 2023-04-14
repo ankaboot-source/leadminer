@@ -9,7 +9,7 @@ const headerRegexEmailSplitPattern =
   /([\s\S]*?[^<,]+(?:<[^>]*>)?)\s*(?:,|$)/g;
 const bodyRegex =
   // eslint-disable-next-line security/detect-unsafe-regex
-  /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?)(?=$|\s|>|")/gi;
+  /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18})(?=$|\s|>|")/gi;
 const listRegex = /<[^<]{1,255}>$/;
 
 // eslint-disable-next-line
