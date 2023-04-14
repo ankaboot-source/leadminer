@@ -1,4 +1,4 @@
-name: Deploy Leadminer Demo
+name: Deploy Leadminer
 on:
   push:
     branches: [main]
@@ -14,7 +14,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }} # User of the server
           script: |
             TARGET=demo
-            ( cd leadminer_$TARGET; docker-compose down; git pull)
+            ( cd leadminer_$TARGET; docker-compose down; git restore docker-compose.yml; git pull)
             ( cd leadminer.io; . .env.$TARGET; git pull; psql \
                 -Atx "$PG_CONNECTION_STRING" \
                 -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"

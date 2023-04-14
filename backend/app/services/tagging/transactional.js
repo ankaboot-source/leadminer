@@ -29,7 +29,8 @@ const transactionalEmailMessage = {
         new HasHeaderWithValues('x-mailer', [
           'ec-messenger',
           'nlserver',
-          'mailchimp'
+          'mailchimp',
+          'nodemailer'
         ]),
         new HasHeaderWithValues('auto-submitted', ['auto-generated'])
       ]
