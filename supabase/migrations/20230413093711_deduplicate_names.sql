@@ -1,6 +1,8 @@
 CREATE EXTENSION IF NOT EXISTS fuzzystrmatch WITH SCHEMA extensions;
 -- https://github.com/supabase/postgrest-js/issues/168#issuecomment-1257689491
-GRANT EXECUTE ON function extensions.levenshtein(text, text) TO anon, authenticated, service_role;
+GRANT EXECUTE
+  ON FUNCTION extensions.levenshtein(text, text)
+  TO anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void
 LANGUAGE plpgsql
