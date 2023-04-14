@@ -341,6 +341,38 @@ describe('Email Message', () => {
       });
     });
 
+    transactionalRules.conditions[3].values.forEach((value) => {
+        it(`Should include transactional if it has an "x-gnd-status" field with "${value}" as value`, () => {
+          header['x-gnd-status'] = [value];
+          const message = new EmailMessage({}, '', 1, header, {}, '');
+  
+          expect(message.messageTags).to.deep.equal([
+            {
+              name: 'transactional',
+              reachable: 2,
+              source: 'refined',
+              fields: transactionalRules.fields
+            }
+          ]);
+        });
+      });
+
+      transactionalRules.conditions[4].values.forEach((value) => {
+        it(`Should include transactional if it has an "x-spam-flag" field with "${value}" as value`, () => {
+          header['x-spam-flag'] = [value];
+          const message = new EmailMessage({}, '', 1, header, {}, '');
+  
+          expect(message.messageTags).to.deep.equal([
+            {
+              name: 'transactional',
+              reachable: 2,
+              source: 'refined',
+              fields: transactionalRules.fields
+            }
+          ]);
+        });
+      });
+
     groupRules.conditions[0].possibleHeaderFields.forEach((field) => {
       it(`Should include group if it has a "${field}" header field`, () => {
         header[field] = ['test'];

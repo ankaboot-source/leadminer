@@ -23,8 +23,7 @@ const transactionalEmailMessage = {
           'x-job',
           'x-linkedin',
           'x-mailgun',
-          'x-github',
-          'x-gnd-status'
+          'x-github'
         ]),
         new HasHeaderWithValues('x-mailer', [
           'ec-messenger',
@@ -32,7 +31,21 @@ const transactionalEmailMessage = {
           'mailchimp',
           'nodemailer'
         ]),
-        new HasHeaderWithValues('auto-submitted', ['auto-generated'])
+        new HasHeaderWithValues('auto-submitted', ['auto-generated']),
+        new HasHeaderWithValues('x-gnd-status', [
+          'pce',
+          'mce',
+          'spam',
+          'social',
+          'purchase',
+          'account',
+          'travel',
+          'finance',
+          'alerting',
+          'bounce',
+          'suspect'
+        ]),
+        new HasHeaderWithValues('x-spam-flag', ['true'])
       ]
     }
   ]
