@@ -1,4 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS fuzzystrmatch WITH SCHEMA extensions;
+-- https://github.com/supabase/postgrest-js/issues/168#issuecomment-1257689491
+GRANT EXECUTE ON function extensions.levenshtein(text, text) TO anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void
 LANGUAGE plpgsql
@@ -20,7 +22,7 @@ BEGIN
         FILTER (
           WHERE nrm.recent_name IS NOT NULL
                 AND nrm.recent_name <> ''
-                AND levenshtein(nrm.recent_name, gn.alternate_name) > 2),
+                AND extensions.levenshtein(nrm.recent_name, gn.alternate_name) > 2),
         '{}'::text[]) AS alternate_names,
       COUNT(CASE WHEN m.conversation THEN 1 END) AS engagement,
       MAX(m.date) AS recency,
