@@ -25,7 +25,7 @@ module.exports = {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL: 'stream-management', // Used as redis PubSub channel name.
   REDIS_STREAMS_CONSUMER_GROUP: 'imap-consumers-group', // Name of the consumer group, used to manage consumers processing messages from streams.
   MAX_WORKER_TIMEOUT: 600000,
-  REGEX_HEADER_EMAIL_SPLIT_PATTERN: headerRegexEmailSplitPattern, // // Regular expression pattern to split an email addresses.
+  REGEX_HEADER_EMAIL_SPLIT_PATTERN: headerRegexEmailSplitPattern, // // Regular expression pattern to split a comma-seperated email addresses string.
   REGEX_HEADER: headerRegex, // Regex to extract emails from header fields (FROM, TO, CC, BCC)
   REGEX_BODY: bodyRegex, //  Regex to extract emails from body
   REGEX_LIST_ID: listRegex, // Extracts id from header field list-id
