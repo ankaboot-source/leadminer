@@ -39,8 +39,11 @@ function cleanName(name) {
 function extractNameAndEmail(emails) {
   return emails
     .split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)
-    .filter((email) => email && email.trim() !== '')
     .map((emailString) => {
+      if (emailString === undefined || emailString.trim() === '') {
+        return null;
+      }
+
       const match = emailString.match(REGEX_HEADER);
 
       if (!match) {
