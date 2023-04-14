@@ -37,7 +37,8 @@ function cleanName(name) {
  * @returns {Object[]} An array of objects containing the name and email address of each email.
  */
 function extractNameAndEmail(emails) {
-  return `${emails}`.split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)
+  return `${emails}`
+    .split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)
     .filter((email) => email && email.trim() !== '')
     .map((emailString) => {
       const match = emailString.match(REGEX_HEADER);
@@ -46,7 +47,13 @@ function extractNameAndEmail(emails) {
         return null;
       }
 
-      const { name = '', address, identifier, domain, tld } = match.groups || {};
+      const {
+        name = '',
+        address,
+        identifier,
+        domain,
+        tld
+      } = match.groups || {};
       const cleanedName = cleanName(name);
       const nameToAdd = cleanedName !== address ? cleanedName : '';
       return {
@@ -58,7 +65,6 @@ function extractNameAndEmail(emails) {
     })
     .filter((result) => result !== null);
 }
-
 
 module.exports = {
   extractNameAndEmail,
