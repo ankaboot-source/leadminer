@@ -3,7 +3,7 @@ const headerRegexName =
   /(?<name>^(?:[^<]{1,50}))?/;
 const headerRegexAddress =
   // eslint-disable-next-line security/detect-unsafe-regex
-  /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}?))>?/;
+  /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}))>?/;
 const headerRegexEmailSplitPattern =
   // eslint-disable-next-line security/detect-unsafe-regex
   /([\s\S]*?[^<,]+(?:<[^>]*>)?)\s*(?:,|$)/g;
