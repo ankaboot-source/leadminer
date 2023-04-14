@@ -58,7 +58,8 @@ function extractNameAndEmail(emails) {
         tld
       } = match.groups || {};
       const cleanedName = cleanName(name);
-      const nameToAdd = cleanedName !== address ? cleanedName : '';
+      const haveSimilarity = cleanedName.toLowerCase() !== address.toLowerCase()
+      const nameToAdd = haveSimilarity ? cleanedName : '';
       return {
         name: nameToAdd,
         address: address.toLowerCase(),
