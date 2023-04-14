@@ -12,7 +12,7 @@ const transactionalEmailMessage = {
   },
   rulesToApply: [
     {
-      fields: ['from', 'reply-to', 'reply_to'],
+      fields: ['from'],
       conditions: [
         new HasHeaderFieldStartsWith([
           'feedback-id',
