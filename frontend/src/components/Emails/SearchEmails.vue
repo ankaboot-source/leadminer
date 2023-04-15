@@ -75,7 +75,7 @@
             transition-hide="slide-down"
           >
             <q-layout
-              view="hHh Lpr lff"
+              view="hHh Lpr lFf"
               container
               class="shadow-2 rounded-borders bg-white"
             >
@@ -182,6 +182,16 @@
                   </q-tab-panel>
                 </q-tab-panels>
               </q-page-container>
+
+              <q-footer bordered class="bg-white">
+                <q-toolbar>
+                  <q-space/>
+                  <q-btn             
+                  color="teal-5"
+                  label="Done"
+                  @click="toggleAdvancedOptions"/>
+                </q-toolbar>
+              </q-footer>
             </q-layout>
           </q-dialog>
         </q-card>
