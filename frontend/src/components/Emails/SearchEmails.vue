@@ -141,7 +141,7 @@
                 >
                   <q-tab-panel name="Mailbox folders">
                     <div class="row items-center">
-                      <div class="text-h6">Select mailbox folders</div>
+                      <div class="text-h6">Select folders to mine</div>
                       <q-btn
                         outline
                         round
