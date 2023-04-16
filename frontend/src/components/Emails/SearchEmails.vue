@@ -75,7 +75,7 @@
             transition-hide="slide-down"
           >
             <q-layout
-              view="hHh Lpr lFf"
+              view="hHh Lpr lFF"
               container
               class="shadow-2 rounded-borders bg-white"
             >
