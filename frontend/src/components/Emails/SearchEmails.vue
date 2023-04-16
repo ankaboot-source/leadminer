@@ -189,6 +189,7 @@
                   <q-btn             
                   color="teal-5"
                   label="Done"
+                  no-caps
                   @click="toggleAdvancedOptions"/>
                 </q-toolbar>
               </q-footer>
