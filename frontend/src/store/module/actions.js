@@ -174,7 +174,7 @@ export async function signIn({ state, commit }, { data }) {
 
     return response.data;
   } catch (error) {
-    const err = (error?.response?.data?.error?.message || error?.message)
+    const err = error?.response?.data?.error?.message || error?.message;
     commit("SET_ERROR", err);
     throw new Error(err.message);
   }
