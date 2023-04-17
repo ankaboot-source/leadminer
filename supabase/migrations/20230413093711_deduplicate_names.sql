@@ -20,7 +20,7 @@ BEGIN
         FILTER (
           WHERE nrm.recent_name IS NOT NULL
                 AND nrm.recent_name <> ''
-                AND levenshtein(nrm.recent_name, gn.alternate_name) > 2),
+                AND levenshtein(lower(nrm.recent_name), lower(gn.alternate_name)) > 2),
         '{}'::text[]) AS alternate_names,
       COUNT(CASE WHEN m.conversation THEN 1 END) AS engagement,
       MAX(m.date) AS recency,
