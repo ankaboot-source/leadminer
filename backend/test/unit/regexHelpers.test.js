@@ -221,20 +221,43 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     });
   });
 
-  it('Should pass case when names have special chars.', () => {
-    const specialChars = ['-', '()', ':', '|', '&', '@']
+  it('should pass cases when names have special chars', () => {
+    const specialChars = ['-', '()', ':', '|', '&', '@', ',']
+    const email = 'leadminer@Teamankaboot.fr'
+
     const testCases = specialChars.map((char) => {
-      return {
-        description: `Cases where name contains special char ${char}`,
-        input: `Hello${char}There <leadminer@Teamankaboot.fr>, Hello ${char} There <leadminer@Teamankaboot.fr>, Hello${char}There leadminer@Teamankaboot.fr, Hello ${char} There leadminer@Teamankaboot.fr`,
-        output: `Hello${char}There, Hello ${char} There, Hello${char}There, Hello ${char} There`
-      }
-    });
+      const testStrings = [
+        { input: `${email}`, output: 'EMPTY' },
+        { input: `<${email}>`, output: 'EMPTY' },
+        { input: `Hello${char}There <${email}>`, output: `Hello${char}There` },
+        { input: `Hello${char}There ${email}`, output: `Hello${char}There` },
+        { input: `Hello ${char} There <${email}>`, output: `Hello ${char} There` },
+        { input: `Hello ${char} There ${email}`, output: `Hello ${char} There` },
+        { input: `Hello ${char}There <${email}>`, output: `Hello ${char}There` },
+        { input: `Hello ${char}There ${email}`, output: `Hello ${char}There` }
+      ]
+
+      return [
+        {
+          description: `Cases where multiple emails and name contains special char ${char}`,
+          input: testStrings.map(({ input }) => input).join(', '),
+          output: testStrings.map(({ output }) => output).join(', ')
+        },
+        ...testStrings.map((testCase) => {
+          return {
+            description: `Cases where single email and name contains special char ${char}`,
+            input: testCase.input,
+            output: testCase.output
+          }
+        })
+      ]
+    }).flat();
+
 
     testCases.forEach(({ input, output, description }) => {
       const resultOutput = regExHelpers
         .extractNameAndEmail(input)
-        .map(({ name }) => (name !== '' ? name : 'empty'))
+        .map(({ name }) => (name !== '' ? name : 'EMPTY'))
         .join(', ');
       expect(resultOutput).to.equal(output, description);
     });
@@ -247,3 +270,6 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     });
   });
 });
+
+
+
