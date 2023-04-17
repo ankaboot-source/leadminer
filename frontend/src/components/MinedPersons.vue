@@ -411,13 +411,13 @@ function exportTable() {
       delimiter: getLocalizedCsvSeparator(),
     });
     $q.notify({
-      message: "Successfully exported table.",
+      message: "Emails exported successfully",
       textColor: "positive",
       color: "white",
       icon: "task_alt",
     });
   } catch (error) {
-    $q.notify("Error when exporting to CSV.");
+    $q.notify("Error when exporting to CSV");
   }
 }
 onMounted(() => {
@@ -436,7 +436,7 @@ const onKeyDown = (event) => {
 function copyValueToClipboard(value, valueName) {
   copyToClipboard(value),
     $q.notify({
-      message: valueName + " has been copied to clipboard.",
+      message: valueName + " copied to clipboard",
       textColor: "positive",
       color: "white",
       icon: "content_copy",
