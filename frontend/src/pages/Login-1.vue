@@ -201,7 +201,7 @@ async function login() {
   const data = {
     email: email.value,
     password: password.value,
-    host: host.value,
+    host: host.value.trim(),
     port: port.value,
     tls: true,
   };
