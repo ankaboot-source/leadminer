@@ -6,7 +6,7 @@ const headerRegexAddress =
   /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}))>?/;
 const headerRegexEmailSplitPattern =
   // eslint-disable-next-line security/detect-unsafe-regex
-  /([\s\S]*?[^<,]+(?:<[^>]*>)?)\s*(?:,|$)/g;
+  /(?<=\S+@\S+\.\S+),\s/g;
 const bodyRegex =
   // eslint-disable-next-line security/detect-unsafe-regex
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18})(?=$|\s|>|")/gi;
