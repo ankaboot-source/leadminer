@@ -37,7 +37,7 @@
           color="teal-5"
           class="q-pr-sm q-pl-lg"
           style="width: 25vw"
-          debounce="300"
+          debounce="700"
           placeholder="Search"
         >
           <template #append>
