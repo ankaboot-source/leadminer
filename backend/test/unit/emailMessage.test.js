@@ -277,7 +277,7 @@ describe('Email Message', () => {
 
   describe('messageTags', () => {
     const [transactionalRules] = transactionalEmailMessage.rulesToApply;
-    const [groupRules] = groupEmailMessage.rulesToApply;
+    const groupRules = groupEmailMessage.rulesToApply;
     const [linkedinRules] = linkedinEmailMessage.rulesToApply;
     const [newsletterRules] = newsletterEmailMessage.rulesToApply;
 
@@ -373,7 +373,7 @@ describe('Email Message', () => {
         });
       });
 
-    groupRules.conditions[0].possibleHeaderFields.forEach((field) => {
+    groupRules[0].conditions[0].possibleHeaderFields.forEach((field) => {
       it(`Should include group if it has a "${field}" header field`, () => {
         header[field] = ['test'];
         const message = new EmailMessage({}, '', 1, header, {}, '');
@@ -383,11 +383,27 @@ describe('Email Message', () => {
             name: 'group',
             reachable: 2,
             source: 'refined',
-            fields: groupRules.fields
+            fields: groupRules[0].fields
           }
         ]);
       });
     });
+
+    groupRules[1].conditions[0].possibleHeaderFields.forEach((field) => {
+        it(`Should include group if it has a "${field}" header field`, () => {
+          header[field] = ['test'];
+          const message = new EmailMessage({}, '', 1, header, {}, '');
+  
+          expect(message.messageTags).to.deep.equal([
+            {
+              name: 'group',
+              reachable: 2,
+              source: 'refined',
+              fields: groupRules[1].fields
+            }
+          ]);
+        });
+      });
 
     newsletterRules.conditions[0].possibleHeaderFields.forEach((field) => {
       it(`Should include newsletter if it has a "${field}" header field`, () => {
@@ -405,7 +421,7 @@ describe('Email Message', () => {
       });
     });
 
-    groupRules.conditions[1].values.forEach((value) => {
+    groupRules[0].conditions[1].values.forEach((value) => {
       it(`Should include group if it has a "precedence" field with "${value}" as value`, () => {
         header.precedence = [value];
         const message = new EmailMessage({}, '', 1, header, {}, '');
@@ -415,7 +431,7 @@ describe('Email Message', () => {
             name: 'group',
             reachable: 2,
             source: 'refined',
-            fields: groupRules.fields
+            fields: groupRules[0].fields
           }
         ]);
       });
