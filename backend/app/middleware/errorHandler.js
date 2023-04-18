@@ -1,9 +1,9 @@
 function errorHandler(err, _, res, _next) {
-  const code = res.statusCode !== 200 ? res.statusCode : 500;
   const response = {
     data: null,
     error: {
-      message: err.message
+      message: err.message,
+      errors: err.errors
     }
   };
 
@@ -11,7 +11,7 @@ function errorHandler(err, _, res, _next) {
     response.error.stack = err.stack;
     response.error.message = err;
   }
-  return res.status(code).send(response);
+  return res.status(err.code ?? 500).send(response);
 }
 
 module.exports = {
