@@ -63,9 +63,7 @@ const EMAIL_EXCLUDED_FOLDERS = [
   "outbox",
   "\\all",
   "\\drafts",
-  "\\important",
   "\\junk",
-  "\\flagged",
   "\\trash",
 ];
 
