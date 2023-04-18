@@ -5,19 +5,21 @@ const dataTest = require('../testData.json');
 describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const { imapTreeExample } = dataTest;
   const expectedOutput = [
-    { label: 'Brouillons', path: 'Brouillons', parent: null },
-    { label: 'INBOX', path: 'INBOX', parent: null },
+    { label: 'Brouillons', path: 'Brouillons', parent: null, specialUseAttrib: '\\drafts' },
+    { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
     {
       label: 'mars',
       path: 'INBOX/mars',
-      parent: { label: 'INBOX', path: 'INBOX', parent: null }
+      parent: { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
+      specialUseAttrib: '\\junk'
     },
     {
       label: 'Administratif',
       path: 'INBOX/Administratif',
-      parent: { label: 'INBOX', path: 'INBOX', parent: null }
+      parent: { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
+      specialUseAttrib: '\\junk'
     },
-    { label: 'Spam', path: 'Spam', parent: null }
+    { label: 'Spam', path: 'Spam', parent: null, specialUseAttrib: '\\junk' }
   ];
 
   it('should return valid flat array', () => {
