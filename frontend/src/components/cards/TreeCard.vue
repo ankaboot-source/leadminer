@@ -59,18 +59,14 @@ import objectScan from "object-scan";
 import { defineComponent, ref } from "vue";
 
 const EMAIL_EXCLUDED_FOLDERS = [
-  "junk",
   "mailspring",
-  "spam",
-  "corbeille",
-  "brouillons",
-  "draft",
-  "trashed",
-  "trash",
-  "drafts",
-  "deleted",
   "outbox",
-  "all mail",
+  "\\all",
+  "\\drafts",
+  "\\important",
+  "\\junk",
+  "\\flagged",
+  "\\trash",
 ];
 
 /**
@@ -83,10 +79,12 @@ function filterDefaultSelectedFolders(boxes) {
 
   objectScan(["**.path"], {
     joined: true,
-    filterFn: ({ value }) => {
-      const folderName = value.slice(value.lastIndexOf("/") + 1).toLowerCase();
+    filterFn: ({ parent }) => {
+      const { path, specialUseAttrib } = parent;
+      const folderName =
+        specialUseAttrib ?? path.slice(path.lastIndexOf("/") + 1).toLowerCase();
       if (!EMAIL_EXCLUDED_FOLDERS.includes(folderName)) {
-        filteredBoxes.push(value);
+        filteredBoxes.push(path);
       }
     },
   })(boxes);
