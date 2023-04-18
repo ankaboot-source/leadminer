@@ -185,12 +185,13 @@
 
               <q-footer bordered class="bg-white">
                 <q-toolbar>
-                  <q-space/>
-                  <q-btn             
-                  color="teal-5"
-                  label="Done"
-                  no-caps
-                  @click="toggleAdvancedOptions"/>
+                  <q-space />
+                  <q-btn
+                    color="teal-5"
+                    label="Done"
+                    no-caps
+                    @click="toggleAdvancedOptions"
+                  />
                 </q-toolbar>
               </q-footer>
             </q-layout>
