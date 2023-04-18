@@ -270,6 +270,3 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     });
   });
 });
-
-
-
