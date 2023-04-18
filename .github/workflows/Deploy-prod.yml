@@ -24,7 +24,8 @@ jobs:
 
             eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
             docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
-            docker ps -a -q | xargs -n 1 docker rm
             docker-compose -d up \
               --build \
               --force-recreate
+
+            docker image prune -a -f     
