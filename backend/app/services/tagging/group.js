@@ -10,11 +10,15 @@ const groupEmailMessage = {
   },
   rulesToApply: [
     {
-      fields: ['list-post', 'reply-to', 'reply_to'],
+      fields: ['list-post'],
       conditions: [
         new HasHeaderField(['list-post', 'x-original-from']),
         new HasHeaderWithValues('precedence', ['list'])
       ]
+    },
+    {
+      fields: ['reply-to', 'reply_to'],
+      conditions: [new HasHeaderField(['mailing-list'])] // For Yahoo
     }
   ]
 };
