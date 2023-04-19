@@ -138,10 +138,11 @@
 
 <script setup>
 import { LocalStorage, useQuasar } from "quasar";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, onBeforeMount } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import GoogleButton from "../components/LoginButtons/GoogleLogin";
+import { store } from "quasar/wrappers";
 
 const emailPattern =
   /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/;
@@ -172,6 +173,10 @@ onMounted(() => {
 
   $router.push("/dashboard");
 });
+
+onBeforeMount(() => {
+  $store.commit('leadminer/SET_ERRORS', [])
+})
 
 const loginDisabled = computed(() => {
   return !policyChecked.value || isValidEmail(email.value) !== true;

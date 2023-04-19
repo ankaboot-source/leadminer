@@ -100,7 +100,7 @@ export function SET_FETCHING_FINISHED(state, totalFetchedEmails) {
 export function SET_ERRORS(state, errors) {
   const result = {};
 
-  if (errors) {
+  if (errors.length > 0) {
     errors.forEach(({ fields, message }) => {
       fields.forEach((field) => {
         result[field] = message;
