@@ -211,7 +211,7 @@ function validateAndExtractImapParametersFromBody({
 
   const errors = validationRules
     .filter(({ value, validation }) => !validation(value))
-    .map(({ field, message }) => ({ field, message }));
+    .map(({ fields, message }) => ({ field, message }));
 
   if (errors.length > 0) {
     const err = new Error('Validation errors');
