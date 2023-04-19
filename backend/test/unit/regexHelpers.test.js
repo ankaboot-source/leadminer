@@ -88,6 +88,10 @@ describe('regexHelpers.cleanName', () => {
           'John&#32Doe' // &#32 HTML-Entities for space
         ],
         output: 'John Doe'
+      },
+      {
+        input: ['L&#39ENCLUME'],
+        output: 'L\'ENCLUME'
       }
     ];
 
