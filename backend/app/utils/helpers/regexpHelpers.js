@@ -5,6 +5,7 @@ const {
   REGEX_HEADER_EMAIL_SPLIT_PATTERN
 } = require('../constants');
 const quotedPrintable = require('quoted-printable');
+const { decode } = require('html-entities');
 
 /**
  * Extract Emails from body.
@@ -25,10 +26,11 @@ function extractNameAndEmailFromBody(data) {
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
 function cleanName(name) {
-  return name
+  const cleanedName = name
     .trim()
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
+  return decode(cleanedName);
 }
 
 /**
