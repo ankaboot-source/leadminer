@@ -117,10 +117,12 @@ function generateErrorObjectFromImapError(error) {
 
   if (errorMessage) {
     const newError = new Error('Imap connection error.');
-    newError.errors = [{
-      fields: errorMessage.fields,
-      message: errorMessage.message
-    }];
+    newError.errors = [
+      {
+        fields: errorMessage.fields,
+        message: errorMessage.message
+      }
+    ];
     newError.source = error.source;
     return newError;
   }

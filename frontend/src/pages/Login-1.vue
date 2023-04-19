@@ -175,8 +175,8 @@ onMounted(() => {
 });
 
 onBeforeMount(() => {
-  $store.commit('leadminer/SET_ERRORS', [])
-})
+  $store.commit("leadminer/SET_ERRORS", []);
+});
 
 const loginDisabled = computed(() => {
   return !policyChecked.value || isValidEmail(email.value) !== true;
