@@ -75,7 +75,7 @@
             transition-hide="slide-down"
           >
             <q-layout
-              view="hHh Lpr lff"
+              view="hHh Lpr lFF"
               container
               class="shadow-2 rounded-borders bg-white"
             >
@@ -141,7 +141,7 @@
                 >
                   <q-tab-panel name="Mailbox folders">
                     <div class="row items-center">
-                      <div class="text-h6">Select mailbox folders</div>
+                      <div class="text-h6">Select folders to mine</div>
                       <q-btn
                         outline
                         round
@@ -182,6 +182,18 @@
                   </q-tab-panel>
                 </q-tab-panels>
               </q-page-container>
+
+              <q-footer bordered class="bg-white">
+                <q-toolbar>
+                  <q-space />
+                  <q-btn
+                    color="teal-5"
+                    label="Done"
+                    no-caps
+                    @click="toggleAdvancedOptions"
+                  />
+                </q-toolbar>
+              </q-footer>
             </q-layout>
           </q-dialog>
         </q-card>
