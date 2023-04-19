@@ -185,27 +185,27 @@ const shouldShowImapFields = computed(() => {
 });
 
 const formErrors = computed(() => {
-  return $store.getters['leadminer/getFormErrors']
-})
+  return $store.getters["leadminer/getFormErrors"];
+});
 
 const emailFieldError = computed(() => {
-  return hasInputFormError('email')
-})
+  return hasInputFormError("email");
+});
 
 const passwordFieldError = computed(() => {
-  return hasInputFormError('password')
-})
+  return hasInputFormError("password");
+});
 
 const hostFieldError = computed(() => {
-  return hasInputFormError('host')
-})
+  return hasInputFormError("host");
+});
 
 const portFieldError = computed(() => {
-  return hasInputFormError('port')
-})
+  return hasInputFormError("port");
+});
 
 function hasInputFormError(field) {
-  return Object.keys(formErrors.value).includes(field)
+  return Object.keys(formErrors.value).includes(field);
 }
 
 function isValidEmail(email) {

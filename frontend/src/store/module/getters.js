@@ -13,5 +13,5 @@ export function getUserEmail(state) {
 }
 
 export function getFormErrors(state) {
-  return state.errors
+  return state.errors;
 }

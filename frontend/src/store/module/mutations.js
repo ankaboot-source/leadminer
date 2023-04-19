@@ -98,18 +98,18 @@ export function SET_FETCHING_FINISHED(state, totalFetchedEmails) {
 }
 
 export function SET_ERRORS(state, errors) {
-  const result = {}
-  
+  const result = {};
+
   if (errors) {
-    errors.forEach(({fields, message}) => {
+    errors.forEach(({ fields, message }) => {
       fields.forEach((field) => {
-        result[field] = message
-      })
-    })
+        result[field] = message;
+      });
+    });
   }
-  state.errors = result
+  state.errors = result;
 }
 
 export function RESET_ERRORS(state, errors) {
-  state.errors = []
+  state.errors = [];
 }
