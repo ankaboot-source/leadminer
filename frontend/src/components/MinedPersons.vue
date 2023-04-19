@@ -230,10 +230,7 @@
 <script setup>
 import exportFromJSON from "export-from-json";
 import { copyToClipboard, useQuasar } from "quasar";
-import {
-  getLocalizedCsvSeparator,
-  decodeHTMLEntities,
-} from "src/helpers/csv-helpers";
+import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "vuex";
 
@@ -395,12 +392,11 @@ function exportTable() {
     exportFromJSON({
       data: rows.value.map((r) => {
         return {
-          name: decodeHTMLEntities(r.name),
+          name: r.name,
           alternateNames: r.alternate_names
             .filter((name) => {
               return name.trim() !== "" && name !== r.name;
             })
-            .map((name) => decodeHTMLEntities(name))
             .join("\n"),
           email: r.email,
           engagement: r.engagement,
