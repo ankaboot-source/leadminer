@@ -227,7 +227,7 @@ class EmailMessage {
             const [domainIsValid, domainType] =
               await domainHelpers.checkDomainStatus(
                 this.redisClientForNormalMode,
-                email.domain
+                email.domain.toLowerCase()
               );
 
             if (domainIsValid) {
