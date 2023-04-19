@@ -19,7 +19,7 @@ export function getLocalizedCsvSeparator() {
  * @returns {string} The decoded string.
  */
 export function decodeHTMLEntities(text) {
-  var textArea = document.createElement("textarea");
+  const textArea = document.createElement("textarea");
   textArea.innerHTML = text;
   return textArea.value;
 }
