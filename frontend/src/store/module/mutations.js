@@ -109,7 +109,3 @@ export function SET_ERRORS(state, errors) {
   }
   state.errors = result;
 }
-
-export function RESET_ERRORS(state, errors) {
-  state.errors = [];
-}
