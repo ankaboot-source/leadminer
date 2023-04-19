@@ -4,9 +4,14 @@ const {
 
 const IMAP_ERROR_CODES = Object.freeze({
   AUTHENTICATIONFAILED: {
-    fields: ['username', 'password'],
+    fields: ['email', 'password'],
     message:
       'Authentication failed. Please check your email and password and try again.'
+  },
+  EAUTH: {
+    fields: ['email', 'password'],
+    message:
+      'Authentication failed. Please check your username and password and try again.'
   },
   ENOTFOUND: {
     fields: ['host'],
@@ -20,11 +25,6 @@ const IMAP_ERROR_CODES = Object.freeze({
   EAI_AGAIN: {
     fields: ['host'],
     message: 'Cannot resolve. Please verify the hostname and try again.'
-  },
-  EAUTH: {
-    fields: ['username', 'password'],
-    message:
-      'Authentication failed. Please check your username and password and try again.'
   }
 });
 
@@ -178,31 +178,31 @@ function validateAndExtractImapParametersFromBody({
 }) {
   const validationRules = [
     {
-      field: 'host',
+      fields: ['host'],
       message: 'Host parameter is missing or invalid',
       value: host,
       validation: (value) => typeof value === 'string'
     },
     {
-      field: 'email',
+      fields: ['email'],
       message: 'Email parameter is missing or invalid',
       value: email,
       validation: (value) => typeof value === 'string'
     },
     {
-      field: 'password',
+      fields: ['password'],
       message: 'Password parameter is missing or invalid',
       value: password,
       validation: (value) => typeof value === 'string'
     },
     {
-      field: 'tls',
+      fields: ['tls'],
       message: 'TLS parameter is missing or invalid',
       value: tls,
       validation: (value) => typeof value === 'boolean'
     },
     {
-      field: 'port',
+      fields: ['port'],
       message: 'Port parameter is missing or invalid',
       value: port,
       validation: (value) => !isNaN(value)
