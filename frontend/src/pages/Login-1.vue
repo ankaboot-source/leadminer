@@ -33,6 +33,7 @@
                 label="Email address"
                 placeholder="example@company.com"
                 :debounce="700"
+                :error="emailFieldError"
               >
                 <template #prepend>
                   <q-icon name="mail" />
@@ -47,6 +48,8 @@
                 dense
                 :type="isPwd ? 'password' : 'text'"
                 hint="We do not store passwords, you must enter them each time you use leadminer"
+                :error="passwordFieldError"
+                :error-message="formErrors.password"
               >
                 <template #append>
                   <q-icon
@@ -67,6 +70,8 @@
                 label="IMAP host"
                 placeholder="imap.host.com"
                 :rules="[isValidImapHost]"
+                :error="hostFieldError"
+                :error-message="formErrors.host"
               >
                 <template #prepend>
                   <q-icon name="dns" />
@@ -80,6 +85,8 @@
                 :rules="[isValidPort]"
                 dense
                 label="IMAP Port"
+                :error="portFieldError"
+                :error-message="formErrors.port"
               >
                 <template #prepend>
                   <q-icon name="public" />
@@ -176,6 +183,30 @@ const shouldShowImapFields = computed(() => {
     (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
   );
 });
+
+const formErrors = computed(() => {
+  return $store.getters['leadminer/getFormErrors']
+})
+
+const emailFieldError = computed(() => {
+  return hasInputFormError('email')
+})
+
+const passwordFieldError = computed(() => {
+  return hasInputFormError('password')
+})
+
+const hostFieldError = computed(() => {
+  return hasInputFormError('host')
+})
+
+const portFieldError = computed(() => {
+  return hasInputFormError('port')
+})
+
+function hasInputFormError(field) {
+  return Object.keys(formErrors.value).includes(field)
+}
 
 function isValidEmail(email) {
   return emailPattern.test(email) || "Please insert a valid email";

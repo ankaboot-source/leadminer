@@ -28,5 +28,6 @@ export function getDefaultState() {
       scannedBoxes: [],
       statistics: {},
     },
+    errors: {}
   };
 }
