@@ -5,7 +5,7 @@ const {
   REGEX_HEADER_EMAIL_SPLIT_PATTERN
 } = require('../constants');
 const quotedPrintable = require('quoted-printable');
-const he = require('he');
+const { decode } = require('html-entities');
 
 /**
  * Extract Emails from body.
@@ -30,7 +30,7 @@ function cleanName(name) {
     .trim()
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
-  return he.decode(cleanedName);
+  return decode(cleanedName);
 }
 
 /**
