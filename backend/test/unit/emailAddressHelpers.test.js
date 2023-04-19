@@ -7,25 +7,17 @@ const {
 
 describe('emailAddressHelpers.findEmailAddressType()', () => {
   it('should return "Professional" for custom domain type', () => {
-    const type = findEmailAddressType(
-      'leadminer@leadminer.io',
-      ['leadminer'],
-      'custom'
-    );
+    const type = findEmailAddressType('custom');
     expect(type).to.equal('professional');
   });
 
   it('should return "Personal" for provider domain type', () => {
-    const type = findEmailAddressType(
-      'leadminer@gmail.com',
-      ['leadminer'],
-      'provider'
-    );
+    const type = findEmailAddressType('provider');
     expect(type).to.equal('personal');
   });
 
-  it('should return an empty string for invalid input or low matching score', () => {
-    const type = findEmailAddressType('sam@gmail.com', '', 'provider');
+  it('should return an empty string for invalid input', () => {
+    const type = findEmailAddressType('invalid-provider');
     expect(type).to.equal('');
   });
 });
