@@ -12,3 +12,7 @@ export function getStates(state: any) {
 export function getUserEmail(state: any) {
   return state.imapUser.email ? state.imapUser.email : state.googleUser.email;
 }
+
+export function getFormErrors(state: any) {
+  return state.errors;
+}

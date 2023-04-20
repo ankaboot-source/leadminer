@@ -100,3 +100,16 @@ export function DELETE_MINING_TASK(state: any) {
 export function SET_FETCHING_FINISHED(state: any, totalFetchedEmails: number) {
   state.fetchingFinished = totalFetchedEmails;
 }
+
+export function SET_ERRORS(state, errors) {
+  const result = {};
+
+  if (errors.length > 0) {
+    errors.forEach(({ fields, message }) => {
+      fields.forEach((field) => {
+        result[field] = message;
+      });
+    });
+  }
+  state.errors = result;
+}

@@ -33,6 +33,7 @@
                 label="Email address"
                 placeholder="example@company.com"
                 :debounce="700"
+                :error="emailFieldError"
               >
                 <template #prepend>
                   <q-icon name="mail" />
@@ -47,6 +48,8 @@
                 dense
                 :type="isPwd ? 'password' : 'text'"
                 hint="We do not store passwords, you must enter them each time you use leadminer"
+                :error="passwordFieldError"
+                :error-message="formErrors.password"
               >
                 <template #append>
                   <q-icon
@@ -67,6 +70,8 @@
                 label="IMAP host"
                 placeholder="imap.host.com"
                 :rules="[isValidImapHost]"
+                :error="hostFieldError"
+                :error-message="formErrors.host"
               >
                 <template #prepend>
                   <q-icon name="dns" />
@@ -80,6 +85,8 @@
                 :rules="[isValidPort]"
                 dense
                 label="IMAP Port"
+                :error="portFieldError"
+                :error-message="formErrors.port"
               >
                 <template #prepend>
                   <q-icon name="public" />
@@ -131,7 +138,7 @@
 
 <script setup lang="ts">
 import { LocalStorage, useQuasar } from "quasar";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, onBeforeMount } from "vue";
 import { useRouter } from "vue-router";
 
 import GoogleLogin from "src/components/LoginButtons/GoogleLogin.vue";
@@ -166,6 +173,24 @@ onMounted(() => {
 
   $router.push("/dashboard");
 });
+
+onBeforeMount(() => {
+  $store.commit("leadminer/SET_ERRORS", []);
+});
+
+const formErrors = computed(() => $store.getters["leadminer/getFormErrors"]);
+
+function hasInputFormError(field: string) {
+  return Object.keys(formErrors.value).includes(field);
+}
+
+const emailFieldError = computed(() => hasInputFormError("email"));
+
+const passwordFieldError = computed(() => hasInputFormError("password"));
+
+const hostFieldError = computed(() => hasInputFormError("host"));
+
+const portFieldError = computed(() => hasInputFormError("port"));
 
 function isValidEmail(emailStr: string) {
   return emailPattern.test(emailStr) || "Please insert a valid email";

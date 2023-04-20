@@ -10,7 +10,8 @@ const {
   getUser,
   getXImapHeaderField,
   generateErrorObjectFromImapError,
-  getImapParametersFromBody
+  validateAndExtractImapParametersFromBody,
+  validateImapCredentials
 } = require('./helpers');
 const { redis } = require('../utils/redis');
 const { LEADMINER_FETCH_BATCH_SIZE } = require('../config');
@@ -24,44 +25,30 @@ const redisClient = redis.getClient();
  * @returns {Promise<void>}
  */
 async function loginToAccount(req, res, next) {
-  let imapConnectionProvider = null;
-  let imapConnection = null;
-  let user = null;
-
   try {
-    const { email, host, tls, port, password } = getImapParametersFromBody(
-      req.body
-    );
+    const { email, host, tls, port, password } =
+      validateAndExtractImapParametersFromBody(req.body);
 
-    imapConnectionProvider = new ImapConnectionProvider(email).withPassword(
-      host,
-      password,
-      parseInt(port)
-    );
-    imapConnection = await imapConnectionProvider.acquireConnection();
+    await validateImapCredentials(host, email, password, port);
 
-    user =
+    const user =
       (await getUser({ email }, db)) ??
       (await db.createImapUser({ email, host, port, tls }));
 
     if (!user) {
-      const genericErrorResponse = {
-        message: 'Something went wrong on our end. Please try again later.',
-        code: 500
-      };
-      throw new Error(genericErrorResponse);
+      throw new Error(
+        'Something went wrong on our end. Please try again later.'
+      );
     }
-    logger.info('IMAP login successful', { metadata: { email } });
-  } catch (error) {
-    const newError = generateErrorObjectFromImapError(error);
-    res.status(newError.code);
-    return next(new Error(newError.message));
-  } finally {
-    await imapConnectionProvider?.releaseConnection(imapConnection);
-    await imapConnectionProvider?.cleanPool();
-  }
 
-  return res.status(200).send({ imap: user });
+    logger.info('IMAP login successful', { metadata: { email } });
+    return res.status(200).send({ imap: user });
+  } catch (err) {
+    const errorResponse = new Error(err.message);
+    errorResponse.errors = err.errors;
+    res.status(err.errors ? 400 : 500);
+    return next(errorResponse);
+  }
 }
 
 /**

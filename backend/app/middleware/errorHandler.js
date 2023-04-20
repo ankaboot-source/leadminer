@@ -3,7 +3,8 @@ function errorHandler(err, _, res, _next) {
   const response = {
     data: null,
     error: {
-      message: err.message
+      message: err.message,
+      errors: err.errors
     }
   };
 
