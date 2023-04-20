@@ -144,17 +144,21 @@ async function validateImapCredentials(host, email, password, port) {
     throw new TypeError('Invalid parameters.');
   }
 
+  let connection = null;
+  let connectionProvider = null;
+
   try {
-    const connectionProvider = new ImapConnectionProvider(email).withPassword(
+    connectionProvider = new ImapConnectionProvider(email).withPassword(
       host,
       password,
       parseInt(port)
     );
-    const connection = await connectionProvider.acquireConnection();
-    await connectionProvider.releaseConnection(connection);
-    await connectionProvider.cleanPool();
+    connection = await connectionProvider.acquireConnection();
   } catch (err) {
     throw generateErrorObjectFromImapError(err);
+  } finally {
+    await connectionProvider?.releaseConnection(connection);
+    await connectionProvider?.cleanPool();
   }
 }
 
