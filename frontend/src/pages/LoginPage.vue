@@ -118,7 +118,7 @@
                     color="teal"
                     :loading="isLoading"
                   />
-                  <GoogleButton v-else :disable="loginDisabled" />
+                  <GoogleLogin v-else :disable="loginDisabled" />
                 </div>
               </div>
             </q-form>
@@ -129,12 +129,13 @@
   </q-layout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { LocalStorage, useQuasar } from "quasar";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
-import GoogleButton from "../components/LoginButtons/GoogleLogin";
+
+import GoogleLogin from "src/components/LoginButtons/GoogleLogin.vue";
+import { useStore } from "../store/index";
 
 const emailPattern =
   /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/;
@@ -166,35 +167,34 @@ onMounted(() => {
   $router.push("/dashboard");
 });
 
-const loginDisabled = computed(() => {
-  return !policyChecked.value || isValidEmail(email.value) !== true;
-});
-
-const shouldShowImapFields = computed(() => {
-  return (
-    isValidEmail(email.value) === true &&
-    (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
-  );
-});
-
-function isValidEmail(email) {
-  return emailPattern.test(email) || "Please insert a valid email";
+function isValidEmail(emailStr: string) {
+  return emailPattern.test(emailStr) || "Please insert a valid email";
 }
 
-function isValidPassword(password) {
-  return password !== "" || "Please insert your IMAP password";
+function isValidPassword(passwordStr: string) {
+  return passwordStr !== "" || "Please insert your IMAP password";
 }
 
-function isValidImapHost(imapHost) {
-  return imapHost !== "" || "Please insert your IMAP host";
+function isValidImapHost(imapHostStr: string) {
+  return imapHostStr !== "" || "Please insert your IMAP host";
 }
 
-function isValidPort(imapPort) {
+function isValidPort(imapPort: number) {
   return (
     (imapPort > 0 && imapPort <= 65536) ||
     "Please insert a valid IMAP port number"
   );
 }
+
+const loginDisabled = computed(
+  () => !policyChecked.value || isValidEmail(email.value) !== true
+);
+
+const shouldShowImapFields = computed(
+  () =>
+    isValidEmail(email.value) === true &&
+    (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
+);
 
 async function login() {
   isLoading.value = true;

@@ -2,8 +2,8 @@
   <q-card class="bg-transparent no-shadow no-border">
     <q-card-section class="q-pa-none">
       <div class="row q-col-gutter-sm">
-        <q-item class="q-pa-none border"
-          ><div
+        <q-item class="q-pa-none border">
+          <div
             v-for="(item, index) in items"
             :key="index"
             class="col-md-3 col-sm-12 col-xs-12"
@@ -36,7 +36,7 @@
   </q-card>
 </template>
 
-<script>
+<script lang="ts">
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -47,10 +47,14 @@ export default defineComponent({
       default: "left",
       type: String,
     },
-    minedEmails: Number(0),
+    minedEmails: {
+      required: true,
+      type: Number,
+      default: 0,
+    },
   },
   computed: {
-    items: function () {
+    items() {
       return [
         {
           title: "Legit email address",

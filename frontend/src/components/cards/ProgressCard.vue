@@ -30,7 +30,7 @@
             </div>
           </q-tooltip>
         </div>
-        <div v-else></div>
+        <div v-else />
         <div
           v-if="activeMiningTask"
           class="text-h6 text-weight-medium text-center text-blue-grey-14"
@@ -64,7 +64,7 @@
           </div>
           <div v-else>
             Finished in
-            {{ timeConversion(getElapsedTime()) }}.
+            {{ convertSeconds(getElapsedTime()) }}.
           </div>
         </div>
       </div>
@@ -103,27 +103,32 @@
   </q-banner>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useQuasar } from "quasar";
-import { timeConversion } from "src/helpers/time-helpers";
+import { convertSeconds, timeConversionRounded } from "src/helpers/time";
 import { computed, defineProps, watch } from "vue";
-import { useStore } from "vuex";
+import { useStore } from "../../store/index";
 
 const $q = useQuasar();
 const $store = useStore();
 
-const responsiveCenteredLabel = computed(() => {
-  return $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg";
-});
+const responsiveCenteredLabel = computed(() =>
+  $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg"
+);
 
 const progressProps = defineProps({
-  extractedEmails: Number(0),
-  minedEmails: Number(0),
-  scannedEmails: Number(0),
-  totalEmails: Number(0),
+  extractedEmails: { type: Number, default: 0 },
+  minedEmails: { type: Number, default: 0 },
+  scannedEmails: { type: Number, default: 0 },
+  totalEmails: { type: Number, default: 0 },
 });
 
-let startTime;
+let startTime: number;
+
+function getElapsedTime() {
+  return Math.floor((performance.now() - startTime || 0) / 1000);
+}
+
 const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
   ? process.env.AVERAGE_EXTRACTION_RATE
   : 130;
@@ -135,45 +140,17 @@ const fetchingFinished = computed(
   () => !!$store.state.leadminer.fetchingFinished
 );
 
-const progressBuffer = computed(() => {
-  return fetchingFinished.value && progressProps.scannedEmails
+const progressBuffer = computed(() =>
+  fetchingFinished.value && progressProps.scannedEmails
     ? 1
-    : progressProps.scannedEmails / progressProps.totalEmails || 0;
-});
+    : progressProps.scannedEmails / progressProps.totalEmails || 0
+);
 
-const progressValue = computed(() => {
-  return fetchingFinished.value
+const progressValue = computed(() =>
+  fetchingFinished.value
     ? progressProps.extractedEmails / progressProps.scannedEmails || 0
-    : progressProps.extractedEmails / progressProps.totalEmails || 0;
-});
-
-const estimatedRemainingTimeConverted = computed(() => {
-  return timeConversionRounded(getEstimatedRemainingTime()).join(" ");
-});
-
-const progressPercentage = computed(() => {
-  return `${Math.floor(progressValue.value * 100)}%`;
-});
-
-watch(fetchingFinished, (finished) => {
-  if (finished) {
-    console.log("Fetching completed, time elapsed:", getElapsedTime(), "s");
-  }
-});
-
-watch(activeMiningTask, (isActive) => {
-  if (isActive) {
-    $store.commit("leadminer/SET_FETCHING_FINISHED", 0);
-    startTime = performance.now();
-    console.log("Started Mining");
-  } else {
-    console.log("Stopped Mining, time elapsed:", getElapsedTime(), "s");
-  }
-});
-
-function getElapsedTime() {
-  return Math.floor(((performance.now() - startTime) | 0) / 1000);
-}
+    : progressProps.extractedEmails / progressProps.totalEmails || 0
+);
 
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
@@ -184,35 +161,32 @@ function getEstimatedRemainingTime() {
   return estimatedRemainingTime;
 }
 
-function timeConversionRounded(timeInSeconds) {
-  // time >= 63 minutes  :(1 hours (floored) 5 minutes (rounds by 5m)..)
-  if (timeInSeconds >= 60 * 63) {
-    return [
-      Math.floor(timeInSeconds / 3600),
-      "hours",
-      Math.round((timeInSeconds % 3600) / 60 / 5) * 5,
-      "minutes",
-    ];
+const estimatedRemainingTimeConverted = computed(() =>
+  timeConversionRounded(getEstimatedRemainingTime()).join(" ")
+);
+
+const progressPercentage = computed(
+  () => `${Math.floor(progressValue.value * 100)}%`
+);
+
+watch(fetchingFinished, (finished) => {
+  if (finished) {
+    // eslint-disable-next-line no-console
+    console.log("Fetching completed, time elapsed:", getElapsedTime(), "s");
   }
-  // time : 58-62 minutes : (1 hour)
-  else if (timeInSeconds >= 60 * 58) {
-    return [1, "hour"];
+});
+
+watch(activeMiningTask, (isActive) => {
+  if (isActive) {
+    $store.commit("leadminer/SET_FETCHING_FINISHED", 0);
+    startTime = performance.now();
+    // eslint-disable-next-line no-console
+    console.log("Started Mining");
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("Stopped Mining, time elapsed:", getElapsedTime(), "s");
   }
-  // time > 10 minutes : (10m..55m (rounds by 5m))
-  else if (timeInSeconds > 60 * 10) {
-    return [Math.round(timeInSeconds / 60 / 5) * 5, "minutes"];
-  }
-  // time >= 55 seconds : (1m..10m (rounds by 1m))
-  else if (timeInSeconds >= 55) {
-    return [Math.round(timeInSeconds / 60), "minutes"];
-  }
-  // time > 5 seconds : (10s..55s (ceils by 5s))
-  else if (timeInSeconds > 5) {
-    return [Math.ceil(timeInSeconds / 5) * 5, "seconds"];
-  }
-  // time <= 5 seconds : (< 5 seconds)
-  else return ["< 5 seconds"];
-}
+});
 </script>
 <style>
 .q-linear-progress__track--with-transition {

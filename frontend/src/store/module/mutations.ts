@@ -1,56 +1,60 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getDefaultState } from "./defaultState";
 
-export function SET_EMAILS(state, streamedEmail) {
+export function SET_EMAILS(state: any, streamedEmail: any) {
   state.retrievedEmails.set(streamedEmail.email, streamedEmail);
 }
-export function SET_LOADING(state, newLoadingStatus) {
+export function SET_LOADING(state: any, newLoadingStatus: any) {
   state.loadingStatus = newLoadingStatus;
 }
-export function SET_LOADING_DNS(state, newLoadingStatusDns) {
+export function SET_LOADING_DNS(state: any, newLoadingStatusDns: any) {
   state.loadingStatusDns = newLoadingStatusDns;
 }
-export function SET_USERID(state, id) {
+export function SET_USERID(state: any, id: string) {
   state.userId = id;
 }
-export function SET_LOADINGBOX(state, newLoadingStatusbox) {
+export function SET_LOADINGBOX(state: any, newLoadingStatusbox: any) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
-export function SET_IMAP(state, newImap) {
+export function SET_IMAP(state: any, newImap: any) {
   state.imapUser.id = newImap.id;
   state.imapUser.email = newImap.email;
   state.imapUser.password = newImap.password;
   state.imapUser.host = newImap.host;
   state.imapUser.port = newImap.port;
 }
-export function SET_PASSWORD(state, newPassword) {
+export function SET_PASSWORD(state: any, newPassword: string) {
   state.imapUser.password = newPassword;
 }
-export function SET_BOXES(state, newBoxes) {
+export function SET_BOXES(state: any, newBoxes: any) {
   state.boxes = [...newBoxes];
 }
-export function SET_ERROR(state, newError) {
+export function SET_ERROR(state: any, newError: any) {
   state.errorMessage = newError;
 }
-export function SET_INFO_MESSAGE(state, newMessage) {
+export function SET_INFO_MESSAGE(state: any, newMessage: string) {
   state.infoMessage = newMessage;
 }
-export function SET_SESSIONID(state, newSocket) {
+export function SET_SESSIONID(state: any, newSocket: any) {
   state.socketId = newSocket;
 }
-export function SET_SCANNEDEMAILS(state, newValue) {
+export function SET_SCANNEDEMAILS(state: any, newValue: any) {
   state.progress.scannedEmails = newValue;
 }
-export function SET_EXTRACTEDEMAILS(state, newValue) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function SET_EXTRACTEDEMAILS(state: any, newValue: any) {
   state.progress.extractedEmails = newValue;
 }
-export function SET_STATISTICS(state, newValue) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function SET_STATISTICS(state: any, newValue: any) {
   if (newValue === "f") {
     state.progress.statistics = {};
   } else {
     state.progress.statistics = newValue;
   }
 }
-export function SET_SCANNEDBOXES(state, newValue) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function SET_SCANNEDBOXES(state: any, newValue: any) {
   if (newValue.length === 0) {
     state.progress.scannedBoxes = newValue;
   } else {
@@ -66,33 +70,33 @@ export function SET_SCANNEDBOXES(state, newValue) {
   }
 }
 
-export function SET_STATUS(state, newStatus) {
+export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
 }
-export function UPDATE_TOKEN(state, newToken) {
+export function UPDATE_TOKEN(state: any, newToken: any) {
   if (state.googleUser.access_token.access_token !== newToken.access_token) {
     state.googleUser.access_token = newToken;
   }
 }
 
-export function SET_GOOGLE_USER(state, user) {
+export function SET_GOOGLE_USER(state: any, user: any) {
   state.googleUser.email = user.email;
   state.googleUser.id = user.id;
   state.googleUser.access_token = user.access_token;
 }
 
-export function RESET_STORE(state) {
+export function RESET_STORE(state: any) {
   Object.assign(state, getDefaultState());
 }
 
-export function SET_MINING_TASK(state, task) {
+export function SET_MINING_TASK(state: any, task: any) {
   state.miningTask = task;
 }
 
-export function DELETE_MINING_TASK(state) {
+export function DELETE_MINING_TASK(state: any) {
   state.miningTask = {};
 }
 
-export function SET_FETCHING_FINISHED(state, totalFetchedEmails) {
+export function SET_FETCHING_FINISHED(state: any, totalFetchedEmails: number) {
   state.fetchingFinished = totalFetchedEmails;
 }

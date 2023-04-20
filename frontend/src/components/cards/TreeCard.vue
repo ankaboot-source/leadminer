@@ -149,7 +149,7 @@ export default defineComponent({
               !this.$refs.tree.isTicked(value) &&
               this.selected.includes(value)
             ) {
-              let index = this.selected.indexOf(value);
+              const index = this.selected.indexOf(value);
               if (index !== -1) {
                 this.selected.splice(index, 1);
               }

@@ -8,12 +8,12 @@
       virtual-scroll-slice-size="60"
       :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
+      :columns="columns"
       title="Mined emails"
       :loading="isLoading"
       :filter="filter"
       :filter-method="filterFn"
       :rows="rows"
-      :columns="columns"
       :pagination="initialPagination"
       binary-state-sort
       bordered
@@ -135,8 +135,10 @@
                 `${props.row.name} <${props.row.email}>`,
                 'Contact'
               )
-            " /></q-td
-      ></template>
+            "
+          />
+        </q-td>
+      </template>
       <template #body-cell-email="props">
         <q-td :props="props">
           {{ props.row.email }}
@@ -180,13 +182,14 @@
                     outline
                     color="orange"
                     transparent
-                    >+{{ props.row.alternate_names.length - 1 }}
+                  >
+                    +{{ props.row.alternate_names.length - 1 }}
                   </q-badge>
                 </div>
               </q-item-section>
             </template>
             <div
-              v-for="name in props.row.alternate_names.filter((element) => {
+              v-for="name in props.row.alternate_names.filter((element: string) => {
                 return element.trim() !== '' && element !== props.row.name;
               })"
               :key="name.index"
@@ -217,9 +220,9 @@
         <q-td :props="props">
           <q-badge rounded :color="mailboxValidityCurrent">
             {{ " " }}
-            <q-tooltip :class="'bg-' + mailboxValidityCurrent">{{
-              mailboxValidity[mailboxValidityCurrent]
-            }}</q-tooltip>
+            <q-tooltip :class="'bg-' + mailboxValidityCurrent">
+              {{ mailboxValidity[mailboxValidityCurrent] }}
+            </q-tooltip>
           </q-badge>
         </q-td>
       </template>
@@ -227,21 +230,23 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import exportFromJSON from "export-from-json";
 import { copyToClipboard, useQuasar } from "quasar";
-import { getLocalizedCsvSeparator } from "src/helpers/csv-helpers";
+import { getLocalizedCsvSeparator } from "src/helpers/csv";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useStore } from "vuex";
+import { useStore } from "../store/index";
 
 const $q = useQuasar();
 const $store = useStore();
 
-const rows = ref([]);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const rows = ref<any>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
-const table = ref(null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const table = ref<any>(null);
 
 const minedEmails = computed(
   () => $store.getters["leadminer/getRetrievedEmails"].length
@@ -256,13 +261,14 @@ const mailboxValidity = {
   orange: "The mailbox could not receive your emails",
   red: "The mailbox is not valid",
 };
-const mailboxValidityCurrent = "green";
+const mailboxValidityCurrent: "green" | "orange" | "red" = "green";
 
 const isExportDisabled = computed(
   () =>
     $store.state.leadminer.loadingStatusDns ||
     rows.value.some(
-      (el) => el.engagement === undefined || el.engagement === null
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (el: any) => el.engagement === undefined || el.engagement === null
     )
 );
 
@@ -270,7 +276,28 @@ const activeMiningTask = computed(
   () => !!$store.state.leadminer.miningTask.miningId
 );
 
-let refreshInterval = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let refreshInterval: any = null;
+function refreshTable() {
+  const contactStoreLength =
+    $store.getters["leadminer/getRetrievedEmails"].length;
+  const contactTableLength = rows.value.length;
+  const hasNewContacts =
+    parseInt(contactStoreLength, 10) > parseInt(contactTableLength, 10);
+
+  if (hasNewContacts) {
+    isLoading.value = true;
+    rows.value = $store.getters["leadminer/getRetrievedEmails"];
+    isLoading.value = false;
+  }
+}
+
+async function syncTable() {
+  isLoading.value = true;
+  await $store.dispatch("leadminer/syncRefinedPersons");
+  rows.value = $store.getters["leadminer/getRetrievedEmails"];
+  isLoading.value = false;
+}
 
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
@@ -285,16 +312,13 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
-onUnmounted(() => {
-  window.removeEventListener("keydown", onKeyDown);
-  clearInterval(refreshInterval);
-});
-
-const columns = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const columns: any = [
   {
     name: "copy",
     label: "",
     align: "left",
+    field: "",
   },
   {
     name: "email",
@@ -302,9 +326,8 @@ const columns = [
     field: "email",
     sortable: true,
     align: "left",
-    sort: (a, b) => {
-      return a.localeCompare(b);
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sort: (a: any, b: any) => a.localeCompare(b),
   },
   {
     name: "name",
@@ -312,16 +335,16 @@ const columns = [
     field: "name",
     sortable: true,
     align: "left",
-    sort: (a, b) => {
-      return b.localeCompare(a);
-    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sort: (a: any, b: any) => b.localeCompare(a),
   },
   {
     name: "recency",
     label: "Recency",
     align: "center",
     field: "recency",
-    format: (val) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    format: (val: any) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
     sortable: true,
   },
   {
@@ -341,36 +364,17 @@ const columns = [
     name: "status",
     label: "Status",
     align: "center",
+    field: "",
   },
 ];
 
-function filterFn(rows, terms) {
-  return rows.filter((r) =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function filterFn(rowsToFilter: readonly any[], terms: any) {
+  return rowsToFilter.filter((r) =>
     [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
       field?.toLowerCase().includes(terms.filterSearch.value.toLowerCase())
     )
   );
-}
-
-function refreshTable() {
-  const contactStoreLength =
-    $store.getters["leadminer/getRetrievedEmails"].length;
-  const contactTableLength = rows.value.length;
-  const hasNewContacts =
-    parseInt(contactStoreLength) > parseInt(contactTableLength);
-
-  if (hasNewContacts) {
-    isLoading.value = true;
-    rows.value = $store.getters["leadminer/getRetrievedEmails"];
-    isLoading.value = false;
-  }
-}
-
-async function syncTable() {
-  isLoading.value = true;
-  await $store.dispatch("leadminer/syncRefinedPersons");
-  rows.value = $store.getters["leadminer/getRetrievedEmails"];
-  isLoading.value = false;
 }
 
 function exportTable() {
@@ -380,7 +384,7 @@ function exportTable() {
       textColor: "negative",
       color: "red-1",
     });
-    return 0;
+    return;
   }
   const currentDatetime = new Date();
   const userEmail = $store.getters["leadminer/getUserEmail"];
@@ -390,21 +394,18 @@ function exportTable() {
 
   try {
     exportFromJSON({
-      data: rows.value.map((r) => {
-        return {
-          name: r.name,
-          alternateNames: r.alternate_names
-            .filter((name) => {
-              return name.trim() !== "" && name !== r.name;
-            })
-            .join("\n"),
-          email: r.email,
-          engagement: r.engagement,
-          occurence: r.occurence,
-          recency: new Date(r.recency).toISOString().slice(0, 10),
-          tags: r.tags.join("\n"),
-        };
-      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: rows.value.map((r: any) => ({
+        name: r.name,
+        alternateNames: r.alternate_names
+          .filter((name: string) => name.trim() !== "" && name !== r.name)
+          .join("\n"),
+        email: r.email,
+        engagement: r.engagement,
+        occurence: r.occurence,
+        recency: new Date(r.recency).toISOString().slice(0, 10),
+        tags: r.tags.join("\n"),
+      })),
       fileName,
       withBOM: true,
       exportType: exportFromJSON.types.csv,
@@ -420,6 +421,13 @@ function exportTable() {
     $q.notify("Error when exporting to CSV");
   }
 }
+
+const onKeyDown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") {
+    table.value.exitFullscreen();
+  }
+};
+
 onMounted(() => {
   window.addEventListener("keydown", onKeyDown);
   setTimeout(() => {
@@ -427,20 +435,20 @@ onMounted(() => {
   });
 });
 
-const onKeyDown = (event) => {
-  if (event.key === "Escape") {
-    table.value.exitFullscreen();
-  }
-};
+onUnmounted(() => {
+  window.removeEventListener("keydown", onKeyDown);
+  clearInterval(refreshInterval);
+});
 
-function copyValueToClipboard(value, valueName) {
-  copyToClipboard(value),
-    $q.notify({
-      message: valueName + " copied to clipboard",
-      textColor: "positive",
-      color: "white",
-      icon: "content_copy",
-    });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function copyValueToClipboard(value: any, valueName: any) {
+  await copyToClipboard(value);
+  $q.notify({
+    message: `${valueName} copied to clipboard`,
+    textColor: "positive",
+    color: "white",
+    icon: "content_copy",
+  });
 }
 </script>
 
