@@ -45,8 +45,8 @@ async function loginToAccount(req, res, next) {
     return res.status(200).send({ imap: user });
   } catch (err) {
     const errorResponse = new Error(err.message);
-    errorResponse.code = err.errors ? 400 : 500;
     errorResponse.errors = err.errors;
+    res.status(err.errors ? 400 : 500);
     return next(errorResponse);
   }
 }
