@@ -28,7 +28,7 @@
   </q-layout>
 </template>
 
-<script>
+<script lang="ts">
 import { LocalStorage } from "quasar";
 import { sse } from "src/helpers/sse";
 import { defineComponent, ref } from "vue";

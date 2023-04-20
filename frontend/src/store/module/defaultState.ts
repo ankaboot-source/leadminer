@@ -1,7 +1,8 @@
 export function getDefaultState() {
   return {
     miningTask: {},
-    retrievedEmails: new Map(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    retrievedEmails: new Map<string, any>(),
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,
