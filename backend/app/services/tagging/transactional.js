@@ -23,7 +23,8 @@ const transactionalEmailMessage = {
           'x-job',
           'x-linkedin',
           'x-mailgun',
-          'x-github'
+          'x-github',
+          'x-msfbl'
         ]),
         new HasHeaderWithValues('x-mailer', [
           'ec-messenger',
