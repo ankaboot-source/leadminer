@@ -29,8 +29,7 @@ async function loginToAccount(req, res, next) {
     const { email, host, tls, port, password } =
       validateAndExtractImapParametersFromBody(req.body);
 
-    // Throws an error if somthing happens when trying to connect.
-    await validateImapCredentials(host, email, password, port);
+      await validateImapCredentials(host, email, password, port);
 
     const user =
       (await getUser({ email }, db)) ??
