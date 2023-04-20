@@ -178,40 +178,20 @@ onBeforeMount(() => {
   $store.commit("leadminer/SET_ERRORS", []);
 });
 
-const loginDisabled = computed(() => {
-  return !policyChecked.value || isValidEmail(email.value) !== true;
-});
-
-const shouldShowImapFields = computed(() => {
-  return (
-    isValidEmail(email.value) === true &&
-    (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
-  );
-});
-
-const formErrors = computed(() => {
-  return $store.getters["leadminer/getFormErrors"];
-});
-
-const emailFieldError = computed(() => {
-  return hasInputFormError("email");
-});
-
-const passwordFieldError = computed(() => {
-  return hasInputFormError("password");
-});
-
-const hostFieldError = computed(() => {
-  return hasInputFormError("host");
-});
-
-const portFieldError = computed(() => {
-  return hasInputFormError("port");
-});
+const formErrors = computed(() => $store.getters["leadminer/getFormErrors"]);
 
 function hasInputFormError(field: string) {
   return Object.keys(formErrors.value).includes(field);
 }
+
+const emailFieldError = computed(() => hasInputFormError("email"));
+
+const passwordFieldError = computed(() => hasInputFormError("password"));
+
+const hostFieldError = computed(() => hasInputFormError("host"));
+
+const portFieldError = computed(() => hasInputFormError("port"));
+
 
 function isValidEmail(emailStr: string) {
   return emailPattern.test(emailStr) || "Please insert a valid email";
@@ -231,6 +211,13 @@ function isValidPort(imapPort: number) {
     "Please insert a valid IMAP port number"
   );
 }
+
+const loginDisabled = computed(() => !policyChecked.value || isValidEmail(email.value) !== true);
+
+const shouldShowImapFields = computed(() => (
+    isValidEmail(email.value) === true &&
+    (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
+  ));
 
 async function login() {
   isLoading.value = true;
