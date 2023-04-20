@@ -1,21 +1,24 @@
 class SSE {
-  registerEventHandlers(id, store) {
-    this.eventSource.addEventListener(`fetched-${id}`, ({ data }) => {
+  private eventSource: EventSource | undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  registerEventHandlers(id: string, store: any) {
+    this.eventSource?.addEventListener(`fetched-${id}`, ({ data }) => {
       const scanned = parseInt(data, 10);
       store.commit("leadminer/SET_SCANNEDEMAILS", scanned);
     });
 
-    this.eventSource.addEventListener(`extracted-${id}`, ({ data }) => {
+    this.eventSource?.addEventListener(`extracted-${id}`, ({ data }) => {
       const extracted = parseInt(data, 10);
       store.commit("leadminer/SET_EXTRACTEDEMAILS", extracted);
     });
 
-    this.eventSource.addEventListener("close", () => {
+    this.eventSource?.addEventListener("close", () => {
       this.closeConnection();
       store.commit("leadminer/DELETE_MINING_TASK");
     });
 
-    this.eventSource.addEventListener("fetching-finished", ({ data }) => {
+    this.eventSource?.addEventListener("fetching-finished", ({ data }) => {
       const totalFetchedEmails = parseInt(data, 10);
       store.commit("leadminer/SET_FETCHING_FINISHED", totalFetchedEmails);
     });
@@ -27,7 +30,7 @@ class SSE {
     }
   }
 
-  initConnection(userId, miningId) {
+  initConnection(userId: string, miningId: string) {
     this.closeConnection();
 
     this.eventSource = new EventSource(

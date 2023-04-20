@@ -10,11 +10,12 @@
   />
 </template>
 
-<script>
+<script lang="ts">
 import { LocalStorage, useQuasar } from "quasar";
 import { googleSdkLoaded } from "vue3-google-login";
+
 export default {
-  name: "GoogleSignin",
+  name: "GoogleLogin",
   props: {
     disable: Boolean,
   },
@@ -43,8 +44,6 @@ export default {
               client_id: process.env.GG_CLIENT_ID,
               scope:
                 "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-              prompt: "consent",
-              fetch_basic_profile: false,
               callback: (response) => {
                 const authCode = response.code;
                 if (authCode) {

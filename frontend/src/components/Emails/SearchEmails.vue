@@ -212,12 +212,13 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
+// @ts-expect-error "No type definitions"
 import objectScan from "object-scan";
 import { LocalStorage, useQuasar } from "quasar";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
+import { useStore } from "../../store/index";
 import MinedPersons from "../MinedPersons.vue";
 import ProgressCard from "../cards/ProgressCard.vue";
 import TreeCard from "../cards/TreeCard.vue";
@@ -229,7 +230,8 @@ const $router = useRouter();
 const imgUrl = process.env.BANNER_IMAGE_URL;
 const isLoadingStartMining = ref(false);
 const isLoadingStopMining = ref(false);
-const selectedBoxes = ref([]);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const selectedBoxes = ref<any>([]);
 const advancedOptions = ref(true);
 const advancedOptionsVisible = ref(false);
 const isFullScreen = ref(false);
@@ -239,10 +241,56 @@ const menuList = [
   {
     icon: "all_inbox",
     label: "Mailbox folders",
+    active: true,
   },
 ];
 
-onMounted(async () => {
+function enableScrolling() {
+  const { body } = document;
+  body.classList.remove("q-body--prevent-scroll");
+}
+
+function disableScrolling() {
+  const { body } = document;
+  body.classList.add("q-body--prevent-scroll");
+}
+
+function toggleDrawer() {
+  drawer.value = !drawer.value;
+}
+
+function toggleAdvancedOptions() {
+  advancedOptionsVisible.value = !advancedOptionsVisible.value;
+  // eslint-disable-next-line no-unused-expressions
+  advancedOptionsVisible.value ? disableScrolling() : enableScrolling();
+}
+
+function toggleFullScreen() {
+  isFullScreen.value = !isFullScreen.value;
+}
+
+const onKeyDown = (event: KeyboardEvent) => {
+  if (event.key === "Escape" && advancedOptionsVisible.value) {
+    advancedOptionsVisible.value = false;
+    enableScrolling();
+  }
+};
+
+async function getBoxes() {
+  try {
+    isLoadingStartMining.value = true;
+    await $store.dispatch("leadminer/getBoxes");
+    // eslint-disable-next-line no-console
+    console.log($store.state.leadminer.infoMessage);
+  } catch (_) {
+    LocalStorage.clear();
+    $router.replace("/");
+  } finally {
+    isLoadingStartMining.value = false;
+  }
+}
+
+onMounted(async (): Promise<void> => {
   window.addEventListener("keydown", onKeyDown);
   setTimeout(() => {
     enableScrolling();
@@ -252,7 +300,8 @@ onMounted(async () => {
   const imapUser = LocalStorage.getItem("imapUser");
 
   if (!googleUser && !imapUser) {
-    return $router.push("/");
+    $router.push("/");
+    return;
   }
 
   if (googleUser) {
@@ -264,13 +313,6 @@ onMounted(async () => {
   await getBoxes();
 });
 
-const onKeyDown = (event) => {
-  if (event.key === "Escape" && advancedOptionsVisible.value) {
-    advancedOptionsVisible.value = false;
-    enableScrolling();
-  }
-};
-
 const boxes = computed(() => $store.state.leadminer.boxes);
 
 const scannedBoxes = computed(
@@ -279,8 +321,8 @@ const scannedBoxes = computed(
 const minedEmails = computed(
   () => $store.getters["leadminer/getRetrievedEmails"].length
 );
-const activeMiningTask = computed(() =>
-  $store.state.leadminer.miningTask.miningId ? true : false
+const activeMiningTask = computed(
+  () => !!$store.state.leadminer.miningTask.miningId
 );
 const scannedEmails = computed(
   () => $store.state.leadminer.progress.scannedEmails
@@ -293,9 +335,10 @@ const totalEmails = computed(() => {
   if (boxes.value[0]) {
     return objectScan(["**.{total}"], {
       joined: true,
-      filterFn: ({ parent, property, value, context }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      filterFn: ({ parent, property, value, context }: any) => {
         if (
-          property == "total" &&
+          property === "total" &&
           parent.path &&
           selectedBoxes.value.includes(parent.path)
         ) {
@@ -307,7 +350,7 @@ const totalEmails = computed(() => {
   return 0;
 });
 
-function itemClicked(label) {
+function itemClicked(label: string) {
   menuList.forEach((menuItem) => {
     if (menuItem.label === label) {
       menuItem.active = true;
@@ -318,17 +361,18 @@ function itemClicked(label) {
   });
 }
 
-function updateSelectedBoxes(val) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function updateSelectedBoxes(val: any) {
   $store.commit("leadminer/SET_SCANNEDEMAILS", 0);
   $store.commit("leadminer/SET_EXTRACTEDEMAILS", 0);
   selectedBoxes.value = val;
 }
 
-function showNotification(msg, color, icon) {
+function showNotification(msg: string, color: string, icon: string) {
   $q.notify({
     message: msg,
-    color: color,
-    icon: icon,
+    color,
+    icon,
     actions: [
       {
         label: "ok",
@@ -340,7 +384,7 @@ function showNotification(msg, color, icon) {
 
 async function stopMining() {
   isLoadingStopMining.value = true;
-  const miningId = $store.state.leadminer.miningTask.miningId;
+  const { miningId } = $store.state.leadminer.miningTask;
   try {
     await $store.dispatch("leadminer/stopMining", { data: { miningId } });
     showNotification($store.state.leadminer.infoMessage, "green", "");
@@ -351,6 +395,7 @@ async function stopMining() {
   }
 }
 
+// eslint-disable-next-line consistent-return
 async function startMining() {
   isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
@@ -371,42 +416,6 @@ async function startMining() {
   } finally {
     isLoadingStartMining.value = false;
   }
-}
-
-async function getBoxes() {
-  try {
-    isLoadingStartMining.value = true;
-    await $store.dispatch("leadminer/getBoxes");
-    console.log($store.state.leadminer.infoMessage);
-  } catch (_) {
-    LocalStorage.clear();
-    $router.replace("/");
-  } finally {
-    isLoadingStartMining.value = false;
-  }
-}
-
-function enableScrolling() {
-  const body = document.body;
-  body.classList.remove("q-body--prevent-scroll");
-}
-
-function disableScrolling() {
-  const body = document.body;
-  body.classList.add("q-body--prevent-scroll");
-}
-
-function toggleDrawer() {
-  drawer.value = !drawer.value;
-}
-
-function toggleAdvancedOptions() {
-  advancedOptionsVisible.value = !advancedOptionsVisible.value;
-  advancedOptionsVisible.value ? disableScrolling() : enableScrolling();
-}
-
-function toggleFullScreen() {
-  isFullScreen.value = !isFullScreen.value;
 }
 </script>
 <style>
