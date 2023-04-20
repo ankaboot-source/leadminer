@@ -106,7 +106,7 @@
 <script setup lang="ts">
 import { useQuasar } from "quasar";
 import { convertSeconds, timeConversionRounded } from "src/helpers/time";
-import { computed, defineProps, watch } from "vue";
+import { computed, watch } from "vue";
 import { useStore } from "../../store/index";
 
 const $q = useQuasar();
