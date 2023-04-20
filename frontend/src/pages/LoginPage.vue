@@ -192,7 +192,6 @@ const hostFieldError = computed(() => hasInputFormError("host"));
 
 const portFieldError = computed(() => hasInputFormError("port"));
 
-
 function isValidEmail(emailStr: string) {
   return emailPattern.test(emailStr) || "Please insert a valid email";
 }
@@ -212,12 +211,15 @@ function isValidPort(imapPort: number) {
   );
 }
 
-const loginDisabled = computed(() => !policyChecked.value || isValidEmail(email.value) !== true);
+const loginDisabled = computed(
+  () => !policyChecked.value || isValidEmail(email.value) !== true
+);
 
-const shouldShowImapFields = computed(() => (
+const shouldShowImapFields = computed(
+  () =>
     isValidEmail(email.value) === true &&
     (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
-  ));
+);
 
 async function login() {
   isLoading.value = true;
