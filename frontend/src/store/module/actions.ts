@@ -171,20 +171,36 @@ export function signUpGoogle({ commit }: any, { data }: any) {
 }
 export async function signIn({ state, commit }: any, { data }: any) {
   try {
-    commit("SET_LOADING", true);
     const response = await api.post("/imap/login", data);
-    commit("SET_LOADING", false);
-
     commit("SET_IMAP", response.data.imap);
+
     const imapUser = { ...state.imapUser, password: data.password };
     LocalStorage.set("imapUser", imapUser);
 
+    commit("SET_LOADING", false);
     return response.data;
   } catch (error: any) {
-    const err = error?.response?.data?.error?.message || error?.message;
-    commit("SET_ERROR", err);
-    commit("SET_ERRORS", error?.response?.data?.error?.errors);
-    throw new Error(err.message);
+    const fieldErrors = error?.response?.data?.error?.errors;
+    const err = new Error(
+      error?.response?.data?.error?.message ||
+        error?.response?.data?.error ||
+        error?.message
+    );
+
+    if (fieldErrors) {
+      commit("SET_ERRORS", fieldErrors);
+      commit("SET_ERROR", null);
+    } else {
+      if (err.message.toLowerCase() === "network error") {
+        err.message =
+          "Oops! Something went wrong. Please check your internet connection and try again later.";
+      }
+      commit("SET_ERROR", err.message);
+      commit("SET_ERRORS", {});
+    }
+
+    commit("SET_LOADING", false);
+    throw new Error(error);
   }
 }
 
