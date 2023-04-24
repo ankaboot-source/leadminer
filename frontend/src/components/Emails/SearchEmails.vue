@@ -61,12 +61,12 @@
                 :src="imgUrl"
                 spinner-color="amber"
                 fit="contain"
-                height="14vw"
+                height="10vw"
               />
             </div>
           </div>
 
-          <div class="bg-transparent col q-py-lg">
+          <div class="bg-transparent col q-pb-lg">
             <ProgressCard
               v-if="boxes"
               :mined-emails="minedEmails"

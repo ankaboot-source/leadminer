@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-transparent col" style="height: 50vh">
+  <div class="bg-transparent col" style="height: 60vh">
     <q-table
       ref="table"
       class="q-pt-sm"
