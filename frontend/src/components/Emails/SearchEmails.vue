@@ -4,32 +4,46 @@
       <div class="col">
         <q-card flat class="q-px-md bg-banner-color">
           <div class="row justify-around">
-            <div class="col text-center self-center q-pb-md q-pt-xl">
+            <div class="col text-center self-center q-py-lg">
               <div class="row justify-center q-pb-lg">
-                <div class="col-8 text-h4 text-weight-medium">
+                <div class="col-8 text-h6 text-weight-medium">
                   Discover hidden gems in your social network
                 </div>
               </div>
               <div class="row justify-center">
                 <q-btn
+                  v-if="!activeMiningTask"
                   :disable="activeMiningTask || isLoadingStartMining"
-                  :color="activeMiningTask ? 'grey-6' : 'amber-13'"
+                  color="amber-13"
                   label="Start mining now!"
                   no-caps
                   unelevated
                   icon-right="mail"
                   :loading="isLoadingStartMining"
-                  size="xl"
-                  class="text-black shadow-7"
+                  size="lg"
+                  class="text-black shadow-7 q-mr-none"
                   style="border: 2px solid black !important"
                   @click="startMining"
                 >
                   <template #loading>
-                    <q-spinner-box class="on-left" />
-                    Loading...
+                    Start mining now!
+                    <q-spinner class="on-right" />
                     <q-tooltip> Retrieving mailboxes... </q-tooltip>
                   </template>
                 </q-btn>
+                <q-btn
+                  v-else
+                  color="amber-13"
+                  label="Halt mining"
+                  no-caps
+                  unelevated
+                  icon-right="stop"
+                  :loading="isLoadingStartMining"
+                  size="lg"
+                  class="text-black shadow-7 q-mr-none"
+                  style="border: 2px solid black !important"
+                  @click="stopMining"
+                />
                 <q-btn
                   icon="more_vert"
                   flat
@@ -41,29 +55,25 @@
                   <q-tooltip> Advanced options </q-tooltip>
                 </q-btn>
               </div>
-              <div class="row justify-center">
-                <q-btn
-                  :disable="!activeMiningTask || isLoadingStopMining"
-                  :color="activeMiningTask ? 'red' : 'grey-6'"
-                  class="q-mr-xl q-mt-sm"
-                  :class="!activeMiningTask ? 'invisible' : ''"
-                  label="Have a rest"
-                  size="md"
-                  no-caps
-                  outline
-                  :loading="isLoadingStopMining"
-                  @click="stopMining"
-                />
-              </div>
             </div>
             <div class="col-6 self-center gt-sm">
               <q-img
                 :src="imgUrl"
                 spinner-color="amber"
                 fit="contain"
-                height="14vw"
+                height="10vw"
               />
             </div>
+          </div>
+
+          <div class="bg-transparent col q-pb-lg">
+            <ProgressCard
+              v-if="boxes"
+              :mined-emails="minedEmails"
+              :scanned-emails="scannedEmails"
+              :extracted-emails="extractedEmails"
+              :total-emails="totalEmails"
+            />
           </div>
 
           <q-dialog
@@ -197,15 +207,6 @@
             </q-layout>
           </q-dialog>
         </q-card>
-      </div>
-      <div class="bg-transparent col q-py-lg">
-        <ProgressCard
-          v-if="boxes"
-          :mined-emails="minedEmails"
-          :scanned-emails="scannedEmails"
-          :extracted-emails="extractedEmails"
-          :total-emails="totalEmails"
-        />
       </div>
       <MinedPersons />
     </div>
