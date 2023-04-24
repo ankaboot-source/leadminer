@@ -1,10 +1,14 @@
 <template>
-  <q-banner rounded class="q-pa-none">
-    <q-card flat bordered>
-      <div class="row justify-between q-ma-sm q-mx-md">
+  <q-banner
+    rounded
+    class="q-pa-none shadow-3"
+    style="background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(7px)"
+  >
+    <q-card flat class="bg-transparent">
+      <div class="row justify-between q-pa-sm q-mx-md">
         <div
           v-if="activeMiningTask"
-          class="col-auto bg-teal-1 text-teal-8 text-h6 text-weight-bolder border q-px-sm text-center"
+          class="col-auto text-amber-1 bg-amber-8 text-h6 text-weight-bolder border q-px-sm text-center"
         >
           {{ progressPercentage }}
           <q-tooltip
@@ -72,8 +76,8 @@
         :buffer="progressBuffer"
         :value="progressValue"
         size="1.5rem"
-        color="teal-8"
-        track-color="teal-2"
+        color="yellow-8"
+        track-color="amber-2"
         stripe
         style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
         animation-speed="1200"

@@ -66,6 +66,16 @@
             </div>
           </div>
 
+          <div class="bg-transparent col q-py-lg">
+            <ProgressCard
+              v-if="boxes"
+              :mined-emails="minedEmails"
+              :scanned-emails="scannedEmails"
+              :extracted-emails="extractedEmails"
+              :total-emails="totalEmails"
+            />
+          </div>
+
           <q-dialog
             v-model="advancedOptions"
             :class="!advancedOptionsVisible ? 'invisible' : ''"
@@ -197,15 +207,6 @@
             </q-layout>
           </q-dialog>
         </q-card>
-      </div>
-      <div class="bg-transparent col q-py-lg">
-        <ProgressCard
-          v-if="boxes"
-          :mined-emails="minedEmails"
-          :scanned-emails="scannedEmails"
-          :extracted-emails="extractedEmails"
-          :total-emails="totalEmails"
-        />
       </div>
       <MinedPersons />
     </div>
