@@ -28,7 +28,7 @@ const IMAP_ERROR_CODES = Object.freeze({
   },
   CONNECTION_TIMEOUT: {
     fields: ['host', 'port'],
-    message: 'Timed out while connecting to server. Please verify hostname and port.'
+    message: 'Timed out while connecting to server.'
   }
 });
 
