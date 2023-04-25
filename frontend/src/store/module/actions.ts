@@ -171,6 +171,7 @@ export function signUpGoogle({ commit }: any, { data }: any) {
 }
 export async function signIn({ state, commit }: any, { data }: any) {
   try {
+    commit("SET_LOADING", true);
     const response = await api.post("/imap/login", data);
     commit("SET_IMAP", response.data.imap);
 
