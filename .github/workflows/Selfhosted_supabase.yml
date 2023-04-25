@@ -1,5 +1,7 @@
 name: Self hosted Supabase migrations
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -14,7 +16,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - uses: supabase/setup-cli@v1
+        with:
+          version: 1.50.13
 
-      - run: |
-          cd ./supabase/migrations
-          supabase db push --db_url $SUPABASE_DB_URL
+      - run: supabase db push --db-url $SUPABASE_DB_URL --debug
