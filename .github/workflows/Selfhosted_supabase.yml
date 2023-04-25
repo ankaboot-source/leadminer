@@ -1,0 +1,20 @@
+name: Self hosted Supabase migrations
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - uses: supabase/setup-cli@v1
+
+      - run: |
+          cd ./supabase/migrations
+          supabase db push --db_url $SUPABASE_DB_URL
