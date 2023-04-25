@@ -1,0 +1,56 @@
+const {
+  HasHeaderFieldStartsWith
+} = require('./conditions/HasHeaderFieldStartsWith');
+const { HasHeaderWithValues } =
+  require('./conditions/HasHeaderFieldWithValues').default;
+
+const transactionalEmailMessage = {
+  tag: {
+    name: 'transactional',
+    reachable: 2
+  },
+  rulesToApply: [
+    {
+      fields: ['from'],
+      conditions: [
+        new HasHeaderFieldStartsWith([
+          'feedback-id',
+          'x-feedback-id',
+          'x-mandrill-user',
+          'x-marketoid',
+          'x-campaignid',
+          'x-job',
+          'x-linkedin',
+          'x-mailgun',
+          'x-github',
+          'x-msfbl'
+        ]),
+        new HasHeaderWithValues('x-mailer', [
+          'ec-messenger',
+          'nlserver',
+          'mailchimp',
+          'nodemailer'
+        ]),
+        new HasHeaderWithValues('auto-submitted', ['auto-generated']),
+        new HasHeaderWithValues('x-gnd-status', [
+          'pce',
+          'mce',
+          'spam',
+          'social',
+          'purchase',
+          'account',
+          'travel',
+          'finance',
+          'alerting',
+          'bounce',
+          'suspect'
+        ]),
+        new HasHeaderWithValues('x-spam-flag', ['true'])
+      ]
+    }
+  ]
+};
+
+module.exports = {
+  transactionalEmailMessage
+};

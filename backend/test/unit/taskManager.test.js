@@ -55,56 +55,32 @@ describe('TasksManager.redactSensitiveData()', () => {
 
 describe('TasksManager class', () => {
   const fakeRedisClient = {
-    on: () => {
-      return null;
-    },
-    subscribe: () => {
-      return null;
-    },
-    publish: () => {
-      return null;
-    },
-    xgroup: () => {
-      return null;
-    },
-    del: () => {
-      return null;
-    }
+    on: () => null,
+    subscribe: () => null,
+    publish: () => null,
+    xgroup: () => null,
+    del: () => null
   };
 
   const emailFetcherFactory = function () {
     return {
-      create: () => {
-        return {
-          getTotalMessages: () => {
-            return 100;
-          },
+      create: () => ({
+          getTotalMessages: () => 100,
 
-          start: () => {
-            return null;
-          },
+          start: () => null,
 
-          stop: () => {
-            return null;
-          }
-        };
-      }
+          stop: () => null
+        })
     };
   };
 
   const sseBroadcasterFactory = function () {
     return {
-      create: () => {
-        return {
-          send: () => {
-            return null;
-          },
+      create: () => ({
+          send: () => null,
 
-          stop: () => {
-            return null;
-          }
-        };
-      }
+          stop: () => null
+        })
     };
   };
 

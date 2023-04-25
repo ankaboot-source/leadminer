@@ -23,12 +23,10 @@ describe('Regex redos checker', () => {
 
       if (status === 'vulnerable') {
         // Constructs helpful error message
-        const vulParts = hotspot.map((i) => {
-          return ` index(${i.start}, ${i.end}): ${r.source.slice(
+        const vulParts = hotspot.map((i) => ` index(${i.start}, ${i.end}): ${r.source.slice(
             i.start,
             i.end
-          )}`;
-        });
+          )}`);
         messageError += ` \n\t- Complixity: ${complexity.type} \n\t- Attack string: ${attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`;
       }
       expect(status, messageError).to.eq('safe');
@@ -248,13 +246,11 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
           input: testStrings.map(({ input }) => input).join(', '),
           output: testStrings.map(({ output }) => output).join(', ')
         },
-        ...testStrings.map((testCase) => {
-          return {
+        ...testStrings.map((testCase) => ({
             description: `Cases where single email and name contains special char ${char}`,
             input: testCase.input,
             output: testCase.output
-          }
-        })
+          }))
       ]
     }).flat();
 

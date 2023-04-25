@@ -1,8 +1,8 @@
+const { expect } = require('chai');
 const { toCamelCase } = require('../../app/db/helpers');
 const {
   parametrizedInsertInto
 } = require('../../app/db/node-postgres/helpers');
-const { expect } = require('chai');
 
 describe('db.helpers.toCamelCase()', () => {
   it('should convert snake_case to CamelCase, but leave "_" at the beginning of the string', () => {
