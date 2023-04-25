@@ -1,6 +1,8 @@
 name: Self hosted Supabase migrations
 on:
-  workflow_dispatch:
+  push:
+    branches: [deploy]
+  #workflow_dispatch:
 
 jobs:
   release:
@@ -17,4 +19,4 @@ jobs:
 
       - run: |
           cd ./supabase/migrations
-          supabase db push --db_url $SUPABASE_DB_URL
+          supabase db push --db-url $SUPABASE_DB_URL
