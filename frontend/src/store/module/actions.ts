@@ -171,14 +171,12 @@ export function signUpGoogle({ commit }: any, { data }: any) {
 }
 export async function signIn({ state, commit }: any, { data }: any) {
   try {
-    commit("SET_LOADING", true);
     const response = await api.post("/imap/login", data);
-    commit("SET_IMAP", response.data.imap);
-
     const imapUser = { ...state.imapUser, password: data.password };
+
+    commit("SET_IMAP", response.data.imap);
     LocalStorage.set("imapUser", imapUser);
 
-    commit("SET_LOADING", false);
     return response.data;
   } catch (error: any) {
     const fieldErrors = error?.response?.data?.error?.errors;
@@ -200,7 +198,6 @@ export async function signIn({ state, commit }: any, { data }: any) {
       commit("SET_ERRORS", {});
     }
 
-    commit("SET_LOADING", false);
     throw new Error(error);
   }
 }
