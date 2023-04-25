@@ -21,5 +21,5 @@ jobs:
 
       - run: |
           cd ./supabase/migrations
-          supabase init
+          supabase db init --db-url $SUPABASE_DB_URL --debug
           supabase db push --db-url $SUPABASE_DB_URL --debug
