@@ -2,7 +2,7 @@
 import { OAuth2Client } from 'google-auth-library';
 import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../config';
 
-import { db } from '../db';
+import db from '../db';
 
 // returns Oauth client
 function getOAuthClient() {

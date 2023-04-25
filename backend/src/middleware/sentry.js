@@ -1,7 +1,7 @@
 import { Handlers, Integrations, init } from '@sentry/node';
-import { Integrations as _Integrations } from '@sentry/tracing';
+import { Integrations as TracingIntegrations } from '@sentry/tracing';
 import { SENTRY_DSN, SENTRY_ENABLED } from '../config';
-import { info } from '../utils/logger';
+import logger from '../utils/logger';
 
 function initializeSentryIfNeeded(app) {
   if (!SENTRY_ENABLED) {
@@ -12,7 +12,7 @@ function initializeSentryIfNeeded(app) {
     dsn: SENTRY_DSN,
     integrations: [
       new Integrations.Http({ tracing: true }),
-      new _Integrations.Express({ app })
+      new TracingIntegrations.Express({ app })
     ],
     tracesSampleRate: 1.0,
     tracesSampler: (samplingContext) => {
@@ -30,7 +30,7 @@ function initializeSentryIfNeeded(app) {
   // TracingHandler creates a trace for every incoming request
   app.use(Handlers.tracingHandler());
 
-  info('Sentry integrated to the server ✔️.');
+  logger.info('Sentry integrated to the server ✔️.');
 }
 
 export default initializeSentryIfNeeded;

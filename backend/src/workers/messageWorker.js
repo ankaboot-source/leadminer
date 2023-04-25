@@ -1,7 +1,7 @@
 import { REDIS_CONSUMER_BATCH_SIZE } from '../config';
 import { REDIS_PUBSUB_COMMUNICATION_CHANNEL } from '../utils/constants';
-import { logger } from '../utils/logger';
-import { redis } from '../utils/redis';
+import logger from '../utils/logger';
+import redis from '../utils/redis';
 import { processStreamData } from './handlers';
 
 const redisSubscriber = redis.getSubscriberClient();
