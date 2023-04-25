@@ -19,7 +19,4 @@ jobs:
         with:
           version: 1.42.0
 
-      - run: |
-#          supabase db init --db-url $SUPABASE_DB_URL
-#          cd ./supabase/migrations
-          supabase db push --db-url $SUPABASE_DB_URL --debug
+      - run: supabase db push --db-url $SUPABASE_DB_URL --debug
