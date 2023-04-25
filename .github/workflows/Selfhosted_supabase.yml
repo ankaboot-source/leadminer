@@ -17,10 +17,8 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: 1.42.0
+          version: 1.50.13
 
       - run: |
           cd ./supabase/migrations
-          supabase db init --db-url $SUPABASE_DB_URL --debug
-          supabase migrate --db-url $SUPABASE_DB_URL --debug
           supabase db push --db-url $SUPABASE_DB_URL --debug
