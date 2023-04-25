@@ -61,9 +61,6 @@ import { defineComponent, ref } from "vue";
 const EMAIL_EXCLUDED_FOLDERS = [
   "mailspring",
   "outbox",
-  "drafts",
-  "junk",
-  "trash",
   "\\all",
   "\\drafts",
   "\\junk",
