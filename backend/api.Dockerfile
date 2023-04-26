@@ -2,7 +2,7 @@
 FROM node:lts-alpine as build-stage
 WORKDIR /leadminer-api
 COPY package*.json ./
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 COPY src ./src
 RUN npm install
 RUN npm run update-providers

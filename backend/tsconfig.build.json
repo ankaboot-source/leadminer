@@ -2,11 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "sourceMap": false,
-    "strict": true,
-    "skipLibCheck": true
+    "sourceMap": false
   },
   "include": ["src/**/*"]
 }
