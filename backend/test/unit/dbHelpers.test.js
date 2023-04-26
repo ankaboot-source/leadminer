@@ -41,6 +41,6 @@ describe('db.node-postgres.helpers.parametrizedInsertInto()', () => {
   });
   it('should handle single field', () => {
     const result = parametrizedInsertInto('users', ['name']);
-    expect(result).toBe(`INSERT INTO users("name") VALUES($1)`);
+    expect(result).toBe('INSERT INTO users("name") VALUES($1)');
   });
 });

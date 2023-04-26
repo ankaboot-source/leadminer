@@ -16,6 +16,7 @@ node_modules
 docker-data/
 out/
 .nyc_output
+dist
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml

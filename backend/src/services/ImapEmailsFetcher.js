@@ -356,6 +356,4 @@ class ImapEmailsFetcher {
   }
 }
 
-export default {
-  ImapEmailsFetcher
-};
+export default ImapEmailsFetcher;

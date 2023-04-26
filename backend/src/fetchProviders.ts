@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
+import { createWriteStream } from 'fs';
+import { get } from 'https';
+import { join } from 'path';
 
-const DISPOSABLE_EMAIL_PROVIDERS_SAVE_LOCATION = path.join(
+const DISPOSABLE_EMAIL_PROVIDERS_SAVE_LOCATION = join(
   __dirname,
   'app/utils/Disposable.json'
 );
@@ -11,7 +11,7 @@ const DISPOSABLE_EMAIL_PROVIDERS_REMOTE_PATH =
 
 const PUBLIC_EMAIL_PROVIDERS_REMOTE_PATH =
   'https://raw.githubusercontent.com/ankaboot-source/open-data/main/public-email-providers.json';
-const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = path.join(
+const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = join(
   __dirname,
   'app/utils/FreeProviders.json'
 );
@@ -22,16 +22,15 @@ const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = path.join(
  * @param {string} saveLocation - The saving location of the file.
  * @returns {Promise} - A promise that resolves when the file is successfully downloaded and saved, or rejects if an error occurs during the process.
  */
-function fetchRemoteFile(remotePath, saveLocation) {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  const file = fs.createWriteStream(saveLocation);
+function fetchRemoteFile(remotePath: string, saveLocation: string) {
+  const file = createWriteStream(saveLocation);
 
   return new Promise((resolve, reject) => {
-    https.get(remotePath, (response) => {
+    get(remotePath, (response) => {
       const stream = response.pipe(file);
 
       stream.on('finish', () => {
-        resolve();
+        resolve(true);
       });
 
       stream.on('error', (error) => {

@@ -1,13 +1,29 @@
-const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
-const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
-const logger = require('../utils/logger');
-const redis = require('../utils/redis');
-const { processStreamData } = require('./handlers');
+import './env';
+
+import { REDIS_CONSUMER_BATCH_SIZE } from './config';
+import { REDIS_PUBSUB_COMMUNICATION_CHANNEL } from './utils/constants';
+import logger from './utils/logger';
+import redis from './utils/redis';
+import { processStreamData } from './workers/handlers';
 
 const redisSubscriber = redis.getSubscriberClient();
 const redisClient = redis.getClient();
 
+type StreamEntry = { streamName: string; consumerGroupName: string };
+
 class StreamConsumer {
+  isInterrupted: boolean;
+
+  pubsubCommunicationChannel: string;
+
+  messageProcessor: any;
+
+  consumerName: string;
+
+  batchSize: number;
+
+  streamsRegistry: Map<string, StreamEntry>;
+
   /**
    * Creates an instance of StreamConsumer.
    * @param {string} pubsubCommunicationChannel - Redis pub/sub channel used for receiving configuration and commands.
@@ -16,10 +32,10 @@ class StreamConsumer {
    * @param {function} messageProcessor - The function that will process the messages consumed from the stream.
    */
   constructor(
-    pubsubCommunicationChannel,
-    consumerName,
-    batchSize,
-    messageProcessor
+    pubsubCommunicationChannel: string,
+    consumerName: string,
+    batchSize: number,
+    messageProcessor: any
   ) {
     this.pubsubCommunicationChannel = pubsubCommunicationChannel;
     this.messageProcessor = messageProcessor;
@@ -33,7 +49,9 @@ class StreamConsumer {
     redisSubscriber.subscribe(pubsubCommunicationChannel, (err) => {
       if (err) {
         logger.error('Failed subscribing to Redis.', { metadata: { err } });
+        return;
       }
+      logger.info('Subscribed to redis channel');
     });
 
     redisSubscriber.on('message', (_, data) => {
@@ -60,11 +78,11 @@ class StreamConsumer {
 
   /**
    * Continuously consumes messages from a Redis stream, processes them and updates the last read message ID
-   * @param {string[]} streams - The name of the Redis stream to consume messages from
-   * @param {string} consumerGroupName - The name of the Redis consumer group to read from
-   * @returns {Promise} - A Promise that resolves when the stream is consumed successfully, or rejects with an error
+   * @param streams - The name of the Redis stream to consume messages from
+   * @param consumerGroupName - The name of the Redis consumer group to read from
+   * @returns A Promise that resolves when the stream is consumed successfully, or rejects with an error
    */
-  async consumeFromStreams(streams, consumerGroupName) {
+  async consumeFromStreams(streams: string[], consumerGroupName: string) {
     try {
       const result = await redisClient.xreadgroup(
         'GROUP',
@@ -75,8 +93,8 @@ class StreamConsumer {
         'BLOCK',
         2000,
         'STREAMS',
-        [...streams],
-        new Array(streams.length).fill('>')
+        ...streams,
+        ...new Array(streams.length).fill('>')
       );
 
       if (result === null) {
@@ -84,13 +102,15 @@ class StreamConsumer {
       }
 
       const processedData = await Promise.allSettled(
-        result.map(async ([streamName, streamMessages]) => {
-          const messageIds = streamMessages.map(([id]) => id);
+        result.map(async ([streamName, streamMessages]: any) => {
+          const messageIds = streamMessages.map(([id]: any) => id);
           const lastMessageId = messageIds.slice(-1)[0];
           try {
             const startTime = performance.now();
-            const promises = await Promise.allSettled(
-              streamMessages.map((message) => this.messageProcessor(message))
+            const promises: any = await Promise.allSettled(
+              streamMessages.map((message: any) =>
+                this.messageProcessor(message)
+              )
             );
             const endTime = performance.now();
             const miningId = promises[0].value;
@@ -152,28 +172,29 @@ class StreamConsumer {
 
   /**
    * Continuously consumes messages from all streams in the registry.
-   *
-   * @returns {Promise<void>} A promise that resolves when consumption is complete.
+   * @returns A promise that resolves when consumption is complete.
    */
   async consume() {
     if (this.isInterrupted) {
       return;
     }
 
+    logger.info('Consuming messages');
     const registry = Array.from(this.streamsRegistry.values());
-    const [{ consumerGroupName } = {}] = registry;
     const streams = registry
       .map(({ streamName }) => streamName)
       .filter(Boolean);
 
     if (registry.length > 0) {
       try {
+        const [{ consumerGroupName }] = registry;
+
         if (!consumerGroupName || streams.length === 0) {
           throw new Error('Incomplete data from the stream.');
         }
 
         await this.consumeFromStreams(streams, consumerGroupName);
-      } catch (error) {
+      } catch (error: any) {
         logger.error('An error occurred while consuming streams:', {
           metadata: {
             details: error.message
