@@ -25,7 +25,9 @@ function findEmailAddressType(domainType) {
  * @returns {Boolean}
  */
 function isNoReply(emailAddress) {
-  return NOREPLY_EMAIL_ADDRESS_INCLUDES.some((word) => emailAddress.toLowerCase().includes(word));
+  return NOREPLY_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
 }
 
 /**
@@ -34,7 +36,9 @@ function isNoReply(emailAddress) {
  * @returns {Boolean}
  */
 function isNewsletter(emailAddress) {
-  return NEWSLETTER_EMAIL_ADDRESS_INCLUDES.some((word) => emailAddress.toLowerCase().includes(word));
+  return NEWSLETTER_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
 }
 
 /**

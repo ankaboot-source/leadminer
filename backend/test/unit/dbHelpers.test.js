@@ -1,7 +1,7 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it } from '@jest/globals';
 
-import { toCamelCase } from "../../src/db/helpers";
-import parametrizedInsertInto from "../../src/db/node-postgres/helpers";
+import { toCamelCase } from '../../src/db/helpers';
+import parametrizedInsertInto from '../../src/db/node-postgres/helpers';
 
 describe('db.helpers.toCamelCase()', () => {
   it('should convert snake_case to CamelCase, but leave "_" at the beginning of the string', () => {

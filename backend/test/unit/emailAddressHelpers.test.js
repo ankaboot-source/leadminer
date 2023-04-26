@@ -1,6 +1,9 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it } from '@jest/globals';
 
-import { findEmailAddressType, isNoReply } from '../../src/utils/helpers/emailAddressHelpers';
+import {
+  findEmailAddressType,
+  isNoReply
+} from '../../src/utils/helpers/emailAddressHelpers';
 
 describe('emailAddressHelpers.findEmailAddressType()', () => {
   it('should return "Professional" for custom domain type', () => {
