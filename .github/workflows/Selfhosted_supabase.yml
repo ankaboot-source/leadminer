@@ -19,5 +19,5 @@ jobs:
         with:
           version: 1.50.13
       
-      - run: supabase db reset --db-url $SUPABASE_DB_URL --debug
+      - run: supabase db drop --db-url $SUPABASE_DB_URL --debug
     #  - run: supabase db push --db-url $SUPABASE_DB_URL --debug
