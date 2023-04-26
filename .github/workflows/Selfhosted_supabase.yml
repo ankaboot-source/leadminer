@@ -1,8 +1,8 @@
 name: Self hosted Supabase migrations
 on:
   push:
-    branches: [deploy]
-  #workflow_dispatch:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   release:
