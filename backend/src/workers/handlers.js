@@ -1,7 +1,7 @@
-import { db } from '../db';
+import db from '../db';
 import EmailMessage from '../services/EmailMessage';
-import { logger } from '../utils/logger';
-import { redis } from '../utils/redis';
+import logger from '../utils/logger';
+import redis from '../utils/redis';
 
 const redisClientForNormalMode = redis.getClient();
 

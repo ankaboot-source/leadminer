@@ -1,7 +1,7 @@
 import { LEADMINER_FETCH_BATCH_SIZE } from '../config';
 import db from '../db';
 import { ImapBoxesFetcher } from '../services/ImapBoxesFetcher';
-import { ImapConnectionProvider } from '../services/ImapConnectionProvider';
+import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { miningTasksManager } from '../services/TasksManager';
 import { hashEmail } from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';

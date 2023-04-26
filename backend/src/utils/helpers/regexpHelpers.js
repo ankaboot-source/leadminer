@@ -1,19 +1,19 @@
-const quotedPrintable = require('quoted-printable');
-const { decode } = require('html-entities');
-const {
-  REGEX_HEADER,
+import { decode } from 'html-entities';
+import { decode as _decode } from 'quoted-printable';
+import {
   REGEX_BODY,
-  REGEX_REMOVE_QUOTES,
-  REGEX_HEADER_EMAIL_SPLIT_PATTERN
-} = require('../constants');
+  REGEX_HEADER,
+  REGEX_HEADER_EMAIL_SPLIT_PATTERN,
+  REGEX_REMOVE_QUOTES
+} from '../constants';
 
 /**
  * Extract Emails from body.
  * @param  {string} data A string that represents the mail body
  * @returns {Array} array of strings
  */
-function extractNameAndEmailFromBody(data) {
-  const reg = quotedPrintable.decode(data).match(REGEX_BODY);
+export function extractNameAndEmailFromBody(data) {
+  const reg = _decode(data).match(REGEX_BODY);
   if (reg) {
     return [...new Set(reg)];
   }
@@ -25,7 +25,7 @@ function extractNameAndEmailFromBody(data) {
  * @param {string} name - The input from which the name is extracted.
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
-function cleanName(name) {
+export function cleanName(name) {
   const cleanedName = name
     .trim()
     .replace(REGEX_REMOVE_QUOTES, '$2')
@@ -38,7 +38,7 @@ function cleanName(name) {
  * @param {string} emails - String of emails to extract from.
  * @returns {Object[]} An array of objects containing the name and email address of each email.
  */
-function extractNameAndEmail(emails) {
+export function extractNameAndEmail(emails) {
   return emails
     .split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)
     .map((emailString) => {
@@ -72,9 +72,3 @@ function extractNameAndEmail(emails) {
     })
     .filter((result) => result !== null);
 }
-
-module.exports = {
-  extractNameAndEmail,
-  extractNameAndEmailFromBody,
-  cleanName
-};

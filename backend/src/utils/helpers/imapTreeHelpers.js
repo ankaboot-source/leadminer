@@ -10,7 +10,7 @@
  * ]
  * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren", ...})
  */
-function createFlatTreeFromImap(imapTree, currentParent) {
+export function createFlatTreeFromImap(imapTree, currentParent) {
   const readableTree = [];
 
   Object.entries(imapTree).forEach(([folderLabel, folderDetails]) => {
@@ -41,22 +41,29 @@ function createFlatTreeFromImap(imapTree, currentParent) {
  * @param {Imap} imapConnection - An IMAP connection.
  * @returns {Promise}
  */
-function addTotalPerFolder(folders, imapConnection) {
-  const promises = folders.map((folder) => new Promise((resolve, reject) => {
-      imapConnection.status(folder.path, (err, box) => {
-        if (err) {
-          reject(err);
-        }
-        if (box) {
-          folder.total = box.messages.total;
-          folder.cumulativeTotal = box.messages.total;
-        } else {
-          folder.total = 0;
-          folder.cumulativeTotal = 0;
-        }
-        resolve();
-      });
-    }));
+export function addTotalPerFolder(folders, imapConnection) {
+  const promises = folders.map(
+    (folder) =>
+      new Promise((resolve, reject) => {
+        imapConnection.status(folder.path, (err, box) => {
+          if (err) {
+            reject(err);
+          }
+          if (box) {
+            // eslint-disable-next-line no-param-reassign
+            folder.total = box.messages.total;
+            // eslint-disable-next-line no-param-reassign
+            folder.cumulativeTotal = box.messages.total;
+          } else {
+            // eslint-disable-next-line no-param-reassign
+            folder.total = 0;
+            // eslint-disable-next-line no-param-reassign
+            folder.cumulativeTotal = 0;
+          }
+          resolve();
+        });
+      })
+  );
   return Promise.allSettled(promises);
 }
 
@@ -78,7 +85,7 @@ function addTotalPerFolder(folders, imapConnection) {
  * ]
  */
 
-function buildFinalTree(flatTree, userEmail) {
+export function buildFinalTree(flatTree, userEmail) {
   const readableTree = [];
   let totalInEmail = 0;
 
@@ -101,9 +108,3 @@ function buildFinalTree(flatTree, userEmail) {
     { label: userEmail, children: [...readableTree], total: totalInEmail }
   ];
 }
-
-module.exports = {
-  createFlatTreeFromImap,
-  buildFinalTree,
-  addTotalPerFolder
-};

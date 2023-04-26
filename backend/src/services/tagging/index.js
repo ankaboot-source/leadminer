@@ -1,7 +1,7 @@
-const { groupEmailMessage } = require('./group');
-const { linkedinEmailMessage } = require('./linkedin');
-const { newsletterEmailMessage } = require('./newsletter');
-const { transactionalEmailMessage } = require('./transactional');
+import groupEmailMessage from './group';
+import linkedinEmailMessage from './linkedin';
+import newsletterEmailMessage from './newsletter';
+import transactionalEmailMessage from './transactional';
 
 const messageTaggingRules = [
   newsletterEmailMessage,
@@ -10,6 +10,4 @@ const messageTaggingRules = [
   transactionalEmailMessage // Always keep transactional as the last rule to check
 ];
 
-module.exports = {
-  messageTaggingRules
-};
+export default messageTaggingRules;

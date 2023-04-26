@@ -1,6 +1,5 @@
-const { HasHeaderField } = require('./conditions/HasHeaderField').default;
-const { HasHeaderWithValues } =
-  require('./conditions/HasHeaderFieldWithValues').default;
+import HasHeaderField from './conditions/HasHeaderField';
+import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
 
 const groupEmailMessage = {
   tag: {
@@ -22,6 +21,4 @@ const groupEmailMessage = {
   ]
 };
 
-module.exports = {
-  groupEmailMessage
-};
+export default groupEmailMessage;

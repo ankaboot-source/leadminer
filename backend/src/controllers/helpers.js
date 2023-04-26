@@ -1,4 +1,4 @@
-import { ImapConnectionProvider } from '../services/ImapConnectionProvider';
+import ImapConnectionProvider from '../services/ImapConnectionProvider';
 
 const IMAP_ERROR_CODES = Object.freeze({
   AUTHENTICATIONFAILED: {
@@ -105,7 +105,7 @@ export function getUser({ access_token, id, email }, db) {
 /**
  * Generates a new error object from a given IMAP error code or text code.
  * @param {object} error - The IMAP error object.
- * @returns {object} - The new error object with the corresponding error message, or the original error object.
+ * @returns {Error} - The new error object with the corresponding error message, or the original error object.
  */
 export function generateErrorObjectFromImapError(error) {
   let errorMessage = IMAP_ERROR_CODES[`${error.code ?? error.textCode}`];

@@ -1,5 +1,4 @@
-const { HasHeaderWithValues } =
-  require('./conditions/HasHeaderFieldWithValues').default;
+import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
 
 const linkedinEmailMessage = {
   tag: {
@@ -20,6 +19,4 @@ const linkedinEmailMessage = {
   ]
 };
 
-module.exports = {
-  linkedinEmailMessage
-};
+export default linkedinEmailMessage;

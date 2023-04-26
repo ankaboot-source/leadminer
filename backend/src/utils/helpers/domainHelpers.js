@@ -6,7 +6,7 @@ const dns = require('dns');
  * @param {String} domain - The domain to check MX records for.
  * @return {Promise<[boolean,string,string]>} A promise that resolves to an array that contains [validity:boolean, type: string, name: string ]
  */
-function checkMXStatus(redisClient, domain) {
+export function checkMXStatus(redisClient, domain) {
   return new Promise((resolve) => {
     dns.resolveMx(domain, (err, addresses) => {
       if (err === null && addresses.length > 0) {
@@ -29,7 +29,7 @@ function checkMXStatus(redisClient, domain) {
  * - The second element is a string that indicates the type of domain: "provider", "disposable", "custom" or "".
  * - The third element is the domain string.
  */
-async function checkDomainStatus(redisClient, domain) {
+export async function checkDomainStatus(redisClient, domain) {
   /**
    * As most of domains are free providers,
    * we can reduce the execution time when check for freeproviders first.
@@ -43,6 +43,7 @@ async function checkDomainStatus(redisClient, domain) {
   ];
 
   for (const provider of providers) {
+    // eslint-disable-next-line no-await-in-loop
     const exists = await redisClient.sismember(provider.redisKey, domain);
 
     if (exists) {
@@ -54,8 +55,3 @@ async function checkDomainStatus(redisClient, domain) {
   const MXStatus = await checkMXStatus(redisClient, domain);
   return MXStatus;
 }
-
-module.exports = {
-  checkDomainStatus,
-  checkMXStatus
-};

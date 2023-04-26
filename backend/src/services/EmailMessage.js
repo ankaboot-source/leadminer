@@ -1,10 +1,13 @@
-const regExHelpers = require('../utils/helpers/regexpHelpers');
-const emailMessageHelpers = require('../utils/helpers/emailMessageHelpers');
-const emailAddressHelpers = require('../utils/helpers/emailAddressHelpers');
-const domainHelpers = require('../utils/helpers/domainHelpers');
-const { REGEX_LIST_ID } = require('../utils/constants');
-const { logger } = require('../utils/logger').default;
-const { messageTaggingRules } = require('./tagging');
+import { REGEX_LIST_ID } from '../utils/constants';
+import { checkDomainStatus } from '../utils/helpers/domainHelpers';
+import { getEmailTags } from '../utils/helpers/emailAddressHelpers';
+import { getSpecificHeader } from '../utils/helpers/emailMessageHelpers';
+import {
+  extractNameAndEmail,
+  extractNameAndEmailFromBody
+} from '../utils/helpers/regexpHelpers';
+import logger from '../utils/logger';
+import messageTaggingRules from './tagging';
 
 class EmailMessage {
   static #MESSAGING_FIELDS = [
@@ -57,9 +60,7 @@ class EmailMessage {
    * @returns {string[]}
    */
   #getReferences() {
-    const references = emailMessageHelpers.getSpecificHeader(this.header, [
-      'references'
-    ]);
+    const references = getSpecificHeader(this.header, ['references']);
 
     if (references) {
       return references[0].split(' ').filter((ref) => ref !== ''); // references in header comes as ["<r1> <r2> <r3> ..."]
@@ -73,9 +74,7 @@ class EmailMessage {
    * @returns {string}
    */
   #getListId() {
-    const listId = emailMessageHelpers.getSpecificHeader(this.header, [
-      'list-id'
-    ]);
+    const listId = getSpecificHeader(this.header, ['list-id']);
 
     if (listId === null) {
       return '';
@@ -107,7 +106,8 @@ class EmailMessage {
     for (const key of Object.keys(this.header)) {
       const lowerCaseKey = key.toLocaleLowerCase();
       if (EmailMessage.#MESSAGING_FIELDS.includes(lowerCaseKey)) {
-        messagingProps[`${lowerCaseKey}`] = this.header[`${key}`][0];
+        const [value] = this.header[`${key}`];
+        messagingProps[`${lowerCaseKey}`] = value;
       }
     }
 
@@ -171,7 +171,7 @@ class EmailMessage {
     const personsExtractedFromHeader = await Promise.allSettled(
       Object.keys(this.messagingFields).map(async (headerKey) => {
         try {
-          const emails = regExHelpers.extractNameAndEmail(
+          const emails = extractNameAndEmail(
             this.messagingFields[`${headerKey}`]
           );
           const persons = await this.extractPersons(emails, headerKey);
@@ -200,7 +200,7 @@ class EmailMessage {
     );
 
     if (this.body !== '') {
-      const emails = regExHelpers.extractNameAndEmailFromBody(this.body);
+      const emails = extractNameAndEmailFromBody(this.body);
       extractedData.persons.push(
         ...(await this.extractPersons(emails, 'body', this.messageTags))
       );
@@ -225,17 +225,13 @@ class EmailMessage {
         .filter((email) => email.address !== this.userEmail)
         .map(async (email) => {
           try {
-            const [domainIsValid, domainType] =
-              await domainHelpers.checkDomainStatus(
-                this.redisClientForNormalMode,
-                email.domain.toLowerCase()
-              );
+            const [domainIsValid, domainType] = await checkDomainStatus(
+              this.redisClientForNormalMode,
+              email.domain.toLowerCase()
+            );
 
             if (domainIsValid) {
-              const emailTags = emailAddressHelpers.getEmailTags(
-                email,
-                domainType
-              );
+              const emailTags = getEmailTags(email, domainType);
 
               const tags = [
                 ...emailTags,
@@ -309,4 +305,4 @@ class EmailMessage {
   }
 }
 
-module.exports = EmailMessage;
+export default EmailMessage;

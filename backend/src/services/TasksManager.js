@@ -230,7 +230,7 @@ export class TasksManager {
   /**
    * Deletes a mining task with a given mining ID.
    * @param {string} miningId - The mining ID of the task to delete.
-   * @returns {object} Returns the deleted task.
+   * @returns {Promise<object>} Returns the deleted task.
    * @throws {Error} Throws an error if the task with the given mining ID does not exist.
    */
   async deleteTask(miningId) {

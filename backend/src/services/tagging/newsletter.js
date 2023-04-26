@@ -1,4 +1,4 @@
-const { HasHeaderField } = require('./conditions/HasHeaderField').default;
+import HasHeaderField from './conditions/HasHeaderField';
 
 const newsletterEmailMessage = {
   tag: {
@@ -13,6 +13,4 @@ const newsletterEmailMessage = {
   ]
 };
 
-module.exports = {
-  newsletterEmailMessage
-};
+export default newsletterEmailMessage;

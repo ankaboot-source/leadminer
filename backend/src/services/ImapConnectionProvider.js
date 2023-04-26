@@ -7,7 +7,7 @@ import {
 } from '../config';
 import logger from '../utils/logger';
 
-import { generateXOauthToken } from '../utils/helpers/tokenHelpers';
+import generateXOauthToken from '../utils/helpers/tokenHelpers';
 
 class ImapConnectionProvider {
   /**
@@ -225,6 +225,4 @@ class ImapConnectionProvider {
   }
 }
 
-export default {
-  ImapConnectionProvider
-};
+export default ImapConnectionProvider;

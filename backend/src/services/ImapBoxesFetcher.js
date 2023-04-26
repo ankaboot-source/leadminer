@@ -24,6 +24,7 @@ class ImapBoxesFetcher {
         await imapTreeHelpers.addTotalPerFolder(treeWithPaths, imapConnection);
         const tree = imapTreeHelpers.buildFinalTree(
           treeWithPaths,
+          // eslint-disable-next-line no-underscore-dangle
           imapConnection._config.user
         );
 

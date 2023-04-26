@@ -1,8 +1,5 @@
-const {
-  HasHeaderFieldStartsWith
-} = require('./conditions/HasHeaderFieldStartsWith');
-const { HasHeaderWithValues } =
-  require('./conditions/HasHeaderFieldWithValues').default;
+import HasHeaderFieldStartsWith from './conditions/HasHeaderFieldStartsWith';
+import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
 
 const transactionalEmailMessage = {
   tag: {
@@ -51,6 +48,4 @@ const transactionalEmailMessage = {
   ]
 };
 
-module.exports = {
-  transactionalEmailMessage
-};
+export default transactionalEmailMessage;

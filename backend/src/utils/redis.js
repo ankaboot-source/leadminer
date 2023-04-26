@@ -91,7 +91,7 @@ class RedisManager {
   /**
    * Returns a duplicate of the Redis client instance that can be used
    * as a pub/sub subscriber.
-   * @return {object} Redis client instance
+   * @return Redis client instance
    */
   getSubscriberClient() {
     return this.#normalClient.duplicate();

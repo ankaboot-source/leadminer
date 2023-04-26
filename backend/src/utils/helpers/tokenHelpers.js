@@ -55,7 +55,11 @@ async function checkTokenValidity(accessToken) {
  * @param {string} authData.email - The email address of the user.
  * @returns {Promise<object>} An object containing the XOAuth2 token and the new token.
  */
-async function generateXOauthToken({ token, refreshToken, email }) {
+export default async function generateXOauthToken({
+  token,
+  refreshToken,
+  email
+}) {
   const tokenValidity = await checkTokenValidity(token);
   const accessToken = tokenValidity
     ? token
@@ -70,7 +74,3 @@ async function generateXOauthToken({ token, refreshToken, email }) {
   const xoauth2Token = Buffer.from(authData, 'utf-8').toString('base64');
   return { xoauth2Token, newToken: accessToken };
 }
-
-export default {
-  generateXOauthToken
-};

@@ -4,7 +4,7 @@
  * @param {string[]} headerFields - A list of possible header fields.
  * @returns Header value or null.
  */
-function getSpecificHeader(header, headerFields) {
+export function getSpecificHeader(header, headerFields) {
   for (const headerField of headerFields) {
     const firstMatch =
       header[`${headerField}`] || header[`${headerField.toLocaleLowerCase()}`];
@@ -23,7 +23,7 @@ function getSpecificHeader(header, headerFields) {
  * @param {string[]} headerValues - A list of possible header values.
  * @returns {Boolean}
  */
-function hasHeaderWithValue(header, headerField, headerValues) {
+export function hasHeaderWithValue(header, headerField, headerValues) {
   const headerValue = getSpecificHeader(header, [headerField]);
   return (
     headerValue &&
@@ -39,7 +39,7 @@ function hasHeaderWithValue(header, headerField, headerValues) {
  * @param {string[]} prefixes - A list of possible header key prefixes.
  * @returns {Boolean}
  */
-function hasHeaderFieldStartsWith(header, prefixes) {
+export function hasHeaderFieldStartsWith(header, prefixes) {
   const headerFields = Object.keys(header);
   return headerFields.some((field) =>
     prefixes.some((prefix) => field.toLowerCase().startsWith(prefix))
@@ -53,7 +53,7 @@ function hasHeaderFieldStartsWith(header, prefixes) {
  * @param {Object} parsedHeader - The parsed header object.
  * @returns {string} The message ID.
  */
-function getMessageId(parsedHeader) {
+export function getMessageId(parsedHeader) {
   const [messageId] = parsedHeader['message-id'] || [];
   if (messageId) {
     return messageId;
@@ -66,10 +66,3 @@ function getMessageId(parsedHeader) {
   const unknownId = `UNKNOWN ${Date.parse(date)}@${returnPathDomain}`;
   return unknownId;
 }
-
-module.exports = {
-  getSpecificHeader,
-  hasHeaderWithValue,
-  hasHeaderFieldStartsWith,
-  getMessageId
-};

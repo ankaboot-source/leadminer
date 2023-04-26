@@ -1,8 +1,8 @@
-import { REDIS_CONSUMER_BATCH_SIZE } from '../config';
-import { REDIS_PUBSUB_COMMUNICATION_CHANNEL } from '../utils/constants';
-import logger from '../utils/logger';
-import redis from '../utils/redis';
-import { processStreamData } from './handlers';
+const { REDIS_CONSUMER_BATCH_SIZE } = require('../config');
+const { REDIS_PUBSUB_COMMUNICATION_CHANNEL } = require('../utils/constants');
+const logger = require('../utils/logger');
+const redis = require('../utils/redis');
+const { processStreamData } = require('./handlers');
 
 const redisSubscriber = redis.getSubscriberClient();
 const redisClient = redis.getClient();

@@ -4,12 +4,11 @@
   "description": "leadminer.io app",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "test:unit": " mocha test/unit/**/*.test.js --config .mocharc.js",
-    "test:integration": "mocha -r dotenv/config test/integration/*.test.js --config .mocharc.js --timeout 60000",
+    "test:unit": " jest ./test/unit/**.test.js",
+    "test:integration": "jest ./test/integration/**.test.js",
     "test-ci:unit": "nyc --reporter=json-summary --reporter=lcov npm run test:unit",
     "dev": "nodemon src/server.ts",
-    "dev:inspect": "node --inspect server.js",
+    "dev:inspect": "ts-node --inspect src/server.ts",
     "lint": "eslint src test",
     "lint:fix": "eslint --fix src test",
     "prettier": "prettier --check .",
@@ -49,6 +48,7 @@
     "xoauth2": "^1.2.0"
   },
   "devDependencies": {
+    "@jest/globals": "^29.5.0",
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
     "@types/node": "^18.16.0",
@@ -63,11 +63,12 @@
     "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
-    "mocha": "^10.1.0",
+    "jest": "^29.5.0",
     "nyc": "^15.1.0",
     "prettier": "2.7.1",
     "recheck": "^4.4.1",
     "supertest": "^6.3.1",
+    "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
