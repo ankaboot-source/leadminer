@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "leadminer.io app",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --build tsconfig.build.json",
     "test:unit": "jest ./test/unit",
     "test:integration": "jest ./test/integration",
     "test-ci:unit": "jest ./test/unit --coverage",
