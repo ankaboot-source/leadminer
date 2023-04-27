@@ -4,7 +4,7 @@ import { join } from 'path';
 
 const DISPOSABLE_EMAIL_PROVIDERS_SAVE_LOCATION = join(
   __dirname,
-  'app/utils/Disposable.json'
+  'utils/Disposable.json'
 );
 const DISPOSABLE_EMAIL_PROVIDERS_REMOTE_PATH =
   'https://raw.githubusercontent.com/ankaboot-source/open-data/main/disposable-email-domains.json';
@@ -13,7 +13,7 @@ const PUBLIC_EMAIL_PROVIDERS_REMOTE_PATH =
   'https://raw.githubusercontent.com/ankaboot-source/open-data/main/public-email-providers.json';
 const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = join(
   __dirname,
-  'app/utils/FreeProviders.json'
+  'utils/FreeProviders.json'
 );
 
 /**

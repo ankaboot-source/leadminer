@@ -16,7 +16,8 @@ ENV SUPABASE_MAX_ROWS ${SUPABASE_MAX_ROWS}
 ENV AVERAGE_EXTRACTION_RATE ${AVERAGE_EXTRACTION_RATE}
 ENV BANNER_IMAGE_URL ${BANNER_IMAGE_URL}
 
-RUN npm install && npm run build
+RUN npm install 
+RUN npm run build
 
 FROM nginx:stable-alpine as production-stage
 COPY --from=build-stage /frontend/dist/spa /usr/share/nginx/html
