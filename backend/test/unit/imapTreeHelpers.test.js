@@ -1,33 +1,48 @@
-const { expect } = require('chai');
-const imapTreeHelpers = require('../../app/utils/helpers/imapTreeHelpers');
-const dataTest = require('../testData.json');
+import { describe, expect, it } from '@jest/globals';
+import {
+  buildFinalTree,
+  createFlatTreeFromImap
+} from '../../src/utils/helpers/imapTreeHelpers';
+import dataTest from '../testData.json';
 
 describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const { imapTreeExample } = dataTest;
   const expectedOutput = [
-    { label: 'Brouillons', path: 'Brouillons', parent: null, specialUseAttrib: '\\drafts' },
+    {
+      label: 'Brouillons',
+      path: 'Brouillons',
+      parent: null,
+      specialUseAttrib: '\\drafts'
+    },
     { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
     {
       label: 'mars',
       path: 'INBOX/mars',
-      parent: { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
+      parent: {
+        label: 'INBOX',
+        path: 'INBOX',
+        parent: null,
+        specialUseAttrib: null
+      },
       specialUseAttrib: '\\junk'
     },
     {
       label: 'Administratif',
       path: 'INBOX/Administratif',
-      parent: { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
+      parent: {
+        label: 'INBOX',
+        path: 'INBOX',
+        parent: null,
+        specialUseAttrib: null
+      },
       specialUseAttrib: '\\junk'
     },
     { label: 'Spam', path: 'Spam', parent: null, specialUseAttrib: '\\junk' }
   ];
 
   it('should return valid flat array', () => {
-    const output = imapTreeHelpers.createFlatTreeFromImap(
-      imapTreeExample,
-      null
-    );
-    expect(output).to.eql(expectedOutput);
+    const output = createFlatTreeFromImap(imapTreeExample, null);
+    expect(output).toEqual(expectedOutput);
   });
 });
 
@@ -103,7 +118,7 @@ describe.skip('imapTreeHelpers.buildFinalTree(foldersFlatArray, userEmail)', () 
         total: 3
       }
     ];
-    const output = imapTreeHelpers.buildFinalTree(input, 'email@example.com');
-    expect(output).to.eql(expectedOutput);
+    const output = buildFinalTree(input, 'email@example.com');
+    expect(output).toEqual(expectedOutput);
   });
 });

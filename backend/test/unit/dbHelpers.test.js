@@ -1,27 +1,26 @@
-const { toCamelCase } = require('../../app/db/helpers');
-const {
-  parametrizedInsertInto
-} = require('../../app/db/node-postgres/helpers');
-const { expect } = require('chai');
+import { describe, expect, it } from '@jest/globals';
+
+import { toCamelCase } from '../../src/db/helpers';
+import parametrizedInsertInto from '../../src/db/node-postgres/helpers';
 
 describe('db.helpers.toCamelCase()', () => {
   it('should convert snake_case to CamelCase, but leave "_" at the beginning of the string', () => {
-    expect(toCamelCase('_hello_world')).to.equal('_helloWorld');
+    expect(toCamelCase('_hello_world')).toBe('_helloWorld');
   });
 
   it('should convert snake_case to CamelCase', () => {
-    expect(toCamelCase('hello_world')).to.equal('helloWorld');
+    expect(toCamelCase('hello_world')).toBe('helloWorld');
   });
 
   it('should return the same input if cant be converted to CamelCase', () => {
-    expect(toCamelCase('helloworld')).to.equal('helloworld');
-    expect(toCamelCase('_helloworld')).to.equal('_helloworld');
+    expect(toCamelCase('helloworld')).toBe('helloworld');
+    expect(toCamelCase('_helloworld')).toBe('_helloworld');
   });
 
   it('should return the same string if the input is not in snake_case', () => {
-    expect(toCamelCase('helloWorld')).to.equal('helloWorld');
-    expect(toCamelCase('HelloWorld')).to.equal('HelloWorld');
-    expect(toCamelCase('')).to.equal('');
+    expect(toCamelCase('helloWorld')).toBe('helloWorld');
+    expect(toCamelCase('HelloWorld')).toBe('HelloWorld');
+    expect(toCamelCase('')).toBe('');
   });
 });
 
@@ -32,16 +31,16 @@ describe('db.node-postgres.helpers.parametrizedInsertInto()', () => {
       'email',
       'password'
     ]);
-    expect(result).to.equal(
+    expect(result).toBe(
       'INSERT INTO users("name","email","password") VALUES($1,$2,$3)'
     );
   });
   it('should handle empty fields array', () => {
     const result = parametrizedInsertInto('users', []);
-    expect(result).to.equal('');
+    expect(result).toBe('');
   });
   it('should handle single field', () => {
     const result = parametrizedInsertInto('users', ['name']);
-    expect(result).to.equal(`INSERT INTO users("name") VALUES($1)`);
+    expect(result).toBe('INSERT INTO users("name") VALUES($1)');
   });
 });

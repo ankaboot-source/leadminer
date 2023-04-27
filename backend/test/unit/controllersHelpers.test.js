@@ -1,24 +1,21 @@
-const { expect } = require('chai');
-const {
-  getXImapHeaderField,
-  getUser
-} = require('../../app/controllers/helpers');
+import { describe, expect, it } from '@jest/globals';
+import { getUser, getXImapHeaderField } from '../../src/controllers/helpers';
 
 describe('controllers.helpers.getXImapHeaderField', () => {
   it('should return an error if the x-imap-login header is missing', () => {
     const headers = {};
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).to.be.null;
-    expect(error).to.be.an.instanceOf(Error);
-    expect(error.message).to.equal('An x-imap-login header field is required.');
+    expect(data).toBeNull();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe('An x-imap-login header field is required.');
   });
 
   it('should return an error if the x-imap-login header is not in correct JSON format', () => {
     const headers = { 'x-imap-login': 'invalid json' };
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).to.be.null;
-    expect(error).to.be.an.instanceOf(Error);
-    expect(error.message).to.equal(
+    expect(data).toBeNull();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe(
       'x-imap-login header field is not in correct JSON format'
     );
   });
@@ -26,9 +23,9 @@ describe('controllers.helpers.getXImapHeaderField', () => {
   it('should return an error if the x-imap-login header is missing required fields', () => {
     const headers = { 'x-imap-login': '{"id": "123"}' };
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).to.be.null;
-    expect(error).to.be.an.instanceOf(Error);
-    expect(error.message).to.equal(
+    expect(data).toBeNull();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe(
       'x-imap-login header field is missing required fields (email, id)'
     );
   });
@@ -37,9 +34,9 @@ describe('controllers.helpers.getXImapHeaderField', () => {
       'x-imap-login': '{"email": "test@gmail.com","id": "123"}'
     };
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).to.be.null;
-    expect(error).to.be.an.instanceOf(Error);
-    expect(error.message).to.equal(
+    expect(data).toBeNull();
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe(
       'x-imap-login header field is missing the access_token or password field'
     );
   });
@@ -49,8 +46,8 @@ describe('controllers.helpers.getXImapHeaderField', () => {
         '{"email": "test@gmail.com","id": "123","access_token":"access_token"}'
     };
     const { data, error } = getXImapHeaderField(headers);
-    expect(error).to.be.null;
-    expect(data).to.deep.equal({
+    expect(error).toBeNull();
+    expect(data).toEqual({
       email: 'test@gmail.com',
       id: '123',
       access_token: 'access_token'
@@ -106,7 +103,7 @@ describe('controllers.helpers.getUser', () => {
   it('throws an error if no parameters are passed', () => {
     const message =
       'At least one parameter is required { access_token, id, email }.';
-    expect(() => getUser({}, db)).to.throw(message);
+    expect(() => getUser({}, db)).toThrowError(new Error(message));
   });
 
   it('returns a Google user by email', async () => {
@@ -114,7 +111,7 @@ describe('controllers.helpers.getUser', () => {
       { access_token: 'google', email: 'googleuser@example.com' },
       db
     );
-    expect(user).to.deep.equal({
+    expect(user).toEqual({
       id: 1,
       email: 'googleuser@example.com',
       name: 'Google User'
@@ -123,7 +120,7 @@ describe('controllers.helpers.getUser', () => {
 
   it('returns an IMAP user by ID', async () => {
     const user = await getUser({ id: 2 }, db);
-    expect(user).to.deep.equal({
+    expect(user).toEqual({
       id: 2,
       email: 'imapuser@example.com',
       name: 'IMAP User'
@@ -132,7 +129,7 @@ describe('controllers.helpers.getUser', () => {
 
   it('returns an IMAP user by email if no access token or ID is provided', async () => {
     const user = await getUser({ email: 'imapuser@example.com' }, db);
-    expect(user).to.deep.equal({
+    expect(user).toEqual({
       id: 3,
       email: 'imapuser@example.com',
       name: 'IMAP User'

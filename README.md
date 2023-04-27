@@ -55,7 +55,8 @@ npm run dev:supabase
 docker-compose -f docker-compose.dev.yml up
 
 # Start the backend in development mode
-npm run dev:backend
+npm run dev:backend-api
+npm run dev:backend-worker
 
 # Start the frontend in development mode
 npm run dev:frontend

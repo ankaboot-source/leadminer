@@ -1,6 +1,8 @@
-const { expect } = require('chai');
-
-const emailMessageHelpers = require('../../app/utils/helpers/emailMessageHelpers');
+import { describe, expect, it } from '@jest/globals';
+import {
+  getMessageId,
+  getSpecificHeader
+} from '../../src/utils/helpers/emailMessageHelpers';
 
 describe('emailMessageHelpers.getSpecificHeader', () => {
   const TEST_HEADERS = {
@@ -32,19 +34,14 @@ describe('emailMessageHelpers.getSpecificHeader', () => {
 
   it('Should return null when headers not present', () => {
     expect(
-      emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [
-        'x-missing',
-        'x-missing-2'
-      ])
-    ).to.be.null;
+      getSpecificHeader(TEST_HEADERS, ['x-missing', 'x-missing-2'])
+    ).toBeNull();
   });
 
   Object.keys(TEST_HEADERS).forEach((key) => {
     it(`Should return value for existing header: ${key}`, () => {
       TEST_HEADERS[key] = ['testing'];
-      expect(
-        emailMessageHelpers.getSpecificHeader(TEST_HEADERS, [key])[0]
-      ).to.equal('testing');
+      expect(getSpecificHeader(TEST_HEADERS, [key])[0]).toBe('testing');
     });
   });
 });
@@ -56,8 +53,8 @@ describe('emailMessageHelpers.getMessageId', () => {
       'return-path': ['test@example.com'],
       date: ['2022-01-01']
     };
-    const messageId = emailMessageHelpers.getMessageId(parsedHeader);
-    expect(messageId).to.equal('12345');
+    const messageId = getMessageId(parsedHeader);
+    expect(messageId).toBe('12345');
   });
 
   it('should generate a pseudo message ID if the parsed header does not have one', () => {
@@ -65,16 +62,15 @@ describe('emailMessageHelpers.getMessageId', () => {
       'return-path': ['test@example.com'],
       date: ['2022-01-01']
     };
-    const messageId = emailMessageHelpers.getMessageId(parsedHeader);
-    expect(messageId).to.match(/^UNKNOWN \d+@example\.com$/);
+    const messageId = getMessageId(parsedHeader);
+    expect(messageId).toMatch(/^UNKNOWN \d+@example\.com$/);
   });
 
   it('should generate a pseudo message ID if the parsed header and return-path does not exist', () => {
     const parsedHeader = {
       date: ['2022-01-01']
     };
-    const messageId = emailMessageHelpers.getMessageId(parsedHeader);
-    console.log(messageId)
-    expect(messageId).to.match(/^UNKNOWN \d+@NO-RETURN-PATH$/);
+    const messageId = getMessageId(parsedHeader);
+    expect(messageId).toMatch(/^UNKNOWN \d+@NO-RETURN-PATH$/);
   });
 });
