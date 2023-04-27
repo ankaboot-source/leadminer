@@ -234,17 +234,20 @@ async function login() {
     await $store.dispatch("leadminer/signIn", { data });
     $router.push("/dashboard");
   } catch (error) {
-    $quasar.notify({
-      message: $store.getters["leadminer/getStates"].errorMessage,
-      color: "red",
-      icon: "error",
-      actions: [
-        {
-          label: "ok",
-          color: "white",
-        },
-      ],
-    });
+    const message = $store.getters["leadminer/getStates"].errorMessage;
+    if (message !== null) {
+      $quasar.notify({
+        message,
+        color: "red",
+        icon: "error",
+        actions: [
+          {
+            label: "ok",
+            color: "white",
+          },
+        ],
+      });
+    }
   } finally {
     isLoading.value = false;
   }
