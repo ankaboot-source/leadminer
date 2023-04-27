@@ -12,7 +12,7 @@
         >
           {{ progressPercentage }}
           <q-tooltip
-            class="text-center text-body2 bg-teal-1 text-teal-8 bordered"
+            class="text-center text-body2 bordered"
             anchor="top middle"
             self="bottom middle"
           >
@@ -82,9 +82,7 @@
         style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
         animation-speed="1200"
       >
-        <q-tooltip
-          class="text-center text-body2 bg-teal-1 text-teal-8 bordered"
-        >
+        <q-tooltip class="text-center text-body2 bordered">
           <div v-if="!fetchingFinished">
             Fetched emails:
             <span class="text-weight-bolder">
