@@ -6,68 +6,31 @@ Leadminer is a tool to mine and transmute raw and passive contacts from your own
 
 ## Self-hosting and running Leadminer
 
-Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use. You can also run Leadminer without using Docker containers.
+Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
 
 ### Run Leadminer using docker-compose
 
 1. Clone the repository and enter `leadminer` folder
 
-2. Copy [.env.example](/.env.example) to `.env` and edit it depending on your environment.
+1. Copy/Rename [.env.example](/.env.example) to `.env` and add the missing required environment variables:
 
-3. Start docker-compose
+   - Supabase project url : `SUPABASE_PROJECT_URL`
+   - Supabase project token : `SUPABASE_SECRET_PROJECT_TOKEN`
+   - Postgres connection string : `PG_CONNECTION_STRING`
+   - Google client Id : `GOOGLE_CLIENT_ID`
+   - Google secret: `GOOGLE_SECRET`
 
+```sh
+cp .env.example .env
 ```
+
+3. Start docker-compose:
+
+```sh
 docker-compose up --build --force-recreate
 ```
 
 4. Navigate to `localhost:8080`.
-
-### Run Leadminer locally
-
-1. Install and configure the following dependencies:
-
-   - Node JS (version 14 or higher)
-   - [Postgres](https://www.postgresql.org/docs/current/tutorial-start.html)
-   - Redis
-
-2. Clone the repository and install the required node modules.
-
-```sh
-# Clone the repository
-git clone https://github.com/ankaboot-source/leadminer
-cd leadminer
-
-# Install the required node modules.
-npm i --prefix ./backend && npm i --prefix ./frontend
-```
-
-3.  Set the required environment variables:
-
-    - **Frontend (Quasar SPA)** :
-
-      - Leadminer API Server Host : `SERVER_ENDPOINT` (**Required**)
-      - Supabase Project Url : `SUPABASE_PROJECT_URL` (**Required**)
-      - Supabase Project Token : `SUPABASE_SECRET_PROJECT_TOKEN` (**Required**)
-      - Supabase Max Rows : `SUPABASE_MAX_ROWS` (**Required**)
-      - Google Client Id : `GG_CLIENT_ID` (**Required if using Google API**)
-      - Average Extraction Rate : `AVERAGE_EXTRACTION_RATE` (**Required**)
-      - BANNER IMAGE URL : `BANNER_IMAGE_URL` (**Optional**)
-
-      **You can configure these variables by copying `/frontend/.env.example` to `frontend/.env` and adding the missing values.**
-
-    - **Backend (Express JS Server)** :
-
-      - There are several environment variables that need to be set. A template of the configuration file is provided in `/backend/config/example.yml`.
-
-      - To configure the application, reference **example.yml** `/backend/config/example.yml` and create your own config file. Depending on your environment, you should name it **production.yml** if you are in production, else **default.yml**.
-
-      - _When working in production environment, don't forget to set `NODE_ENV` to `production`_.
-
-4.  Start the API Server and the Frontend
-
-```sh
- npm start --prefix ./backend & npm start --prefix ./frontend
-```
 
 ### Run Leadminer in development mode
 
@@ -79,7 +42,7 @@ You can easily get started with development mode by following theses steps:
 npm run install-deps
 ```
 
-2. Copy `/backend/config/development.example.yml` and `/frontend/.env.example` to `/backend/config/development.yml` and `/frontend/.env` respectively, then add the missing configurations (Google client Id and secret -- You can set the `SUPABASE_SECRET_PROJECT_TOKEN` after starting supabase services).
+2. Copy/Rename `/frontend/.env.example` to `/frontend/.env` and `/backend/.env.example` to `/backend/.env` respectively and set the missing required variables -- You can set the `SUPABASE_SECRET_PROJECT_TOKEN` after starting local supabase services.
 
 3. Start your environment by running the following commands:
 
@@ -88,7 +51,7 @@ npm run install-deps
 npm run dev:supabase
 # Make sure to update SUPABASE_SECRET_PROJECT_TOKEN using the provided anon_key in both frontend and backend
 
-# Start required services (Redis) -- You can skip this step if you want to use your local instances
+# Start the Redis container  -- You can skip this step if you want to use your local instance
 docker-compose -f docker-compose.dev.yml up
 
 # Start the backend in development mode
@@ -121,7 +84,7 @@ This app is provided for free as such with no guarantee nor support. For any kin
 ## Roadmap
 
 - [ ] New sources : LinkedIn, Instagram, Facebook Messenger
-- [ ] Enrich data : Get more relevant and actionable informations about your contacts
+- [ ] Enrich data : Get more relevant and actionable information about your contacts
 - [ ] Marketing automation : send emails directly from LeadMiner with personalized templates
 
 For any requests concerning the roadmap, you could either have a look on issues or for any specific request contact [ankaboot professional services](contact@ankaboot.fr).
