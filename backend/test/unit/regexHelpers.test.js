@@ -1,13 +1,16 @@
-const { expect } = require('chai');
-const { check } = require('recheck');
-const regExHelpers = require('../../app/utils/helpers/regexpHelpers');
-const {
+import { describe, expect, it } from '@jest/globals';
+import { check } from 'recheck';
+import {
   REGEX_BODY,
   REGEX_LIST_ID,
   REGEX_REMOVE_QUOTES
-} = require('../../app/utils/constants');
-
-const testData = require('../testData.json');
+} from '../../src/utils/constants';
+import {
+  cleanName,
+  extractNameAndEmail,
+  extractNameAndEmailFromBody
+} from '../../src/utils/helpers/regexpHelpers';
+import testData from '../testData.json';
 
 describe('Regex redos checker', () => {
   const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
@@ -23,15 +26,13 @@ describe('Regex redos checker', () => {
 
       if (status === 'vulnerable') {
         // Constructs helpful error message
-        const vulParts = hotspot.map((i) => {
-          return ` index(${i.start}, ${i.end}): ${r.source.slice(
-            i.start,
-            i.end
-          )}`;
-        });
+        const vulParts = hotspot.map(
+          (i) =>
+            ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}`
+        );
         messageError += ` \n\t- Complixity: ${complexity.type} \n\t- Attack string: ${attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`;
       }
-      expect(status, messageError).to.eq('safe');
+      expect(status).toBe('safe', messageError);
     });
   });
 });
@@ -39,22 +40,20 @@ describe('Regex redos checker', () => {
 describe('regExHelpers.extractEmailsFromBody(text)', () => {
   // TODO: Update unit tests for body
   it('Should return a valid array of emails', () => {
-    const output = regExHelpers.extractNameAndEmailFromBody(testData.emailBody);
-    expect(output).to.eql(testData.expectedForBodyExtraction);
+    const output = extractNameAndEmailFromBody(testData.emailBody);
+    expect(output).toEqual(testData.expectedForBodyExtraction);
   });
 
   it('Should return only valid emails', () => {
-    const output = regExHelpers.extractNameAndEmailFromBody(
-      testData.randomEmails
-    );
-    expect(output).to.eql(testData.validrandomEmails.split(' '));
+    const output = extractNameAndEmailFromBody(testData.randomEmails);
+    expect(output).toEqual(testData.validrandomEmails.split(' '));
   });
 });
 
 describe('regexHelpers.cleanName', () => {
   it('should return empty string if name do not exists', () => {
-    const name = regExHelpers.cleanName('');
-    expect(name).to.equal('');
+    const name = cleanName('');
+    expect(name).toBe('');
   });
 
   it('should properly trim white spaces if they exist', () => {
@@ -91,14 +90,14 @@ describe('regexHelpers.cleanName', () => {
       },
       {
         input: ['L&#39ENCLUME'],
-        output: 'L\'ENCLUME'
+        output: "L'ENCLUME"
       }
     ];
 
     testCases.forEach(({ input, output }) => {
       input.forEach((name) => {
-        const functionOutput = regExHelpers.cleanName(name);
-        expect(functionOutput).to.equal(output);
+        const functionOutput = cleanName(name);
+        expect(functionOutput).toBe(output);
       });
     });
   });
@@ -106,8 +105,8 @@ describe('regexHelpers.cleanName', () => {
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should return an array of valid objects ', () => {
-    const output = regExHelpers.extractNameAndEmail(testData.EmailNameTest[0]);
-    expect(output).to.eql(testData.expectedEmailNameAddress);
+    const output = extractNameAndEmail(testData.EmailNameTest[0]);
+    expect(output).toEqual(testData.expectedEmailNameAddress);
   });
 
   it('Should return an array with one valid object', () => {
@@ -124,7 +123,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       ]
     };
     const { description, input, output } = testCase;
-    expect(regExHelpers.extractNameAndEmail(input)).to.eql(output, description);
+    expect(extractNameAndEmail(input)).toEqual(output, description);
   });
 
   it('Should return valid object with empty name if there is none.', () => {
@@ -160,8 +159,8 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     ];
 
     testCases.forEach(({ input, output, description }) => {
-      const resultOutput = regExHelpers.extractNameAndEmail(input);
-      expect(resultOutput).to.eql(output, description);
+      const resultOutput = extractNameAndEmail(input);
+      expect(resultOutput).toEqual(output, description);
     });
   });
 
@@ -206,72 +205,83 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
           'Case when multiple emails with nested formats, starting with email not surrounded with <>',
         input:
           'leadminer@Teamankaboot.fr, <leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
-        output: 'empty, empty, leadminer@Teamankaboot.fr, empty, Hello There, Hello There, Hello-There (leadminer)'
+        output:
+          'empty, empty, leadminer@Teamankaboot.fr, empty, Hello There, Hello There, Hello-There (leadminer)'
       },
       {
         description:
           'Case when multiple emails with nested formats, starting with email surrounded with <>',
         input:
           '<leadminer@Teamankaboot.fr>, leadminer@Teamankaboot.fr, leadminer@Teamankaboot.fr leadminerTeam@ankaboot.fr, leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>, Hello There leadminer@Teamankaboot.fr, Hello There <leadminer@Teamankaboot.fr>, Hello-There (leadminer) leadminer@Teamankaboot.fr',
-        output: 'empty, empty, leadminer@Teamankaboot.fr, empty, Hello There, Hello There, Hello-There (leadminer)'
+        output:
+          'empty, empty, leadminer@Teamankaboot.fr, empty, Hello There, Hello There, Hello-There (leadminer)'
       }
     ];
 
     testCases.forEach(({ input, output, description }) => {
-      const resultOutput = regExHelpers
-        .extractNameAndEmail(input)
+      const resultOutput = extractNameAndEmail(input)
         .map(({ name }) => (name !== '' ? name : 'empty'))
         .join(', ');
-      expect(resultOutput).to.equal(output, description);
+      expect(resultOutput).toEqual(output, description);
     });
   });
 
   it('should pass cases when names have special chars', () => {
-    const specialChars = ['-', '()', ':', '|', '&', '@', ',']
-    const email = 'leadminer@Teamankaboot.fr'
+    const specialChars = ['-', '()', ':', '|', '&', '@', ','];
+    const email = 'leadminer@Teamankaboot.fr';
 
-    const testCases = specialChars.map((char) => {
-      const testStrings = [
-        { input: `${email}`, output: 'EMPTY' },
-        { input: `<${email}>`, output: 'EMPTY' },
-        { input: `Hello${char}There <${email}>`, output: `Hello${char}There` },
-        { input: `Hello${char}There ${email}`, output: `Hello${char}There` },
-        { input: `Hello ${char} There <${email}>`, output: `Hello ${char} There` },
-        { input: `Hello ${char} There ${email}`, output: `Hello ${char} There` },
-        { input: `Hello ${char}There <${email}>`, output: `Hello ${char}There` },
-        { input: `Hello ${char}There ${email}`, output: `Hello ${char}There` }
-      ]
+    const testCases = specialChars
+      .map((char) => {
+        const testStrings = [
+          { input: `${email}`, output: 'EMPTY' },
+          { input: `<${email}>`, output: 'EMPTY' },
+          {
+            input: `Hello${char}There <${email}>`,
+            output: `Hello${char}There`
+          },
+          { input: `Hello${char}There ${email}`, output: `Hello${char}There` },
+          {
+            input: `Hello ${char} There <${email}>`,
+            output: `Hello ${char} There`
+          },
+          {
+            input: `Hello ${char} There ${email}`,
+            output: `Hello ${char} There`
+          },
+          {
+            input: `Hello ${char}There <${email}>`,
+            output: `Hello ${char}There`
+          },
+          { input: `Hello ${char}There ${email}`, output: `Hello ${char}There` }
+        ];
 
-      return [
-        {
-          description: `Cases where multiple emails and name contains special char ${char}`,
-          input: testStrings.map(({ input }) => input).join(', '),
-          output: testStrings.map(({ output }) => output).join(', ')
-        },
-        ...testStrings.map((testCase) => {
-          return {
+        return [
+          {
+            description: `Cases where multiple emails and name contains special char ${char}`,
+            input: testStrings.map(({ input }) => input).join(', '),
+            output: testStrings.map(({ output }) => output).join(', ')
+          },
+          ...testStrings.map((testCase) => ({
             description: `Cases where single email and name contains special char ${char}`,
             input: testCase.input,
             output: testCase.output
-          }
-        })
-      ]
-    }).flat();
-
+          }))
+        ];
+      })
+      .flat();
 
     testCases.forEach(({ input, output, description }) => {
-      const resultOutput = regExHelpers
-        .extractNameAndEmail(input)
+      const resultOutput = extractNameAndEmail(input)
         .map(({ name }) => (name !== '' ? name : 'EMPTY'))
         .join(', ');
-      expect(resultOutput).to.equal(output, description);
+      expect(resultOutput).toEqual(output, description);
     });
   });
 
   it('Should return an empty array on falsy input', () => {
     const falsyInput = ['', ' ', '...', 'char', 'only name'];
     falsyInput.forEach((input) => {
-      expect(regExHelpers.extractNameAndEmail(input)).to.be.empty;
+      expect(extractNameAndEmail(input)).toHaveLength(0);
     });
   });
 });

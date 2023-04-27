@@ -9,7 +9,8 @@
     "install-deps:frontend": "npm i --prefix ./frontend",
     "dev:supabase": "supabase start",
     "dev:frontend": "npm run dev --prefix ./frontend",
-    "dev:backend": "npm run dev --prefix ./backend"
+    "dev:backend-api": "npm run dev-api --prefix ./backend",
+    "dev:backend-worker": "npm run dev-worker --prefix ./backend"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",
