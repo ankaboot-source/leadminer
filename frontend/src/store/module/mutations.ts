@@ -73,11 +73,6 @@ export function SET_SCANNEDBOXES(state: any, newValue: any) {
 export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
 }
-export function UPDATE_OAUTH_TOKEN(state: any, newToken: any) {
-  if (state.oauthUser.accessToken.accessToken !== newToken.accessToken) {
-    state.oauthUser.accessToken = newToken;
-  }
-}
 
 export function SET_OAUTH_USER(state: any, user: any) {
   state.oauthUser.email = user.email;
