@@ -73,16 +73,16 @@ export function SET_SCANNEDBOXES(state: any, newValue: any) {
 export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
 }
-export function UPDATE_TOKEN(state: any, newToken: any) {
-  if (state.googleUser.accessToken.accessToken !== newToken.accessToken) {
-    state.googleUser.accessToken = newToken;
+export function UPDATE_OAUTH_TOKEN(state: any, newToken: any) {
+  if (state.oauthUser.accessToken.accessToken !== newToken.accessToken) {
+    state.oauthUser.accessToken = newToken;
   }
 }
 
-export function SET_GOOGLE_USER(state: any, user: any) {
-  state.googleUser.email = user.email;
-  state.googleUser.id = user.id;
-  state.googleUser.accessToken = user.accessToken;
+export function SET_OAUTH_USER(state: any, user: any) {
+  state.oauthUser.email = user.email;
+  state.oauthUser.id = user.id;
+  state.oauthUser.accessToken = user.accessToken;
 }
 
 export function RESET_STORE(state: any) {
@@ -100,12 +100,15 @@ export function DELETE_MINING_TASK(state: any) {
 export function SET_FETCHING_FINISHED(state: any, totalFetchedEmails: number) {
   state.fetchingFinished = totalFetchedEmails;
 }
-
-export function SET_ERRORS(state, errors) {
-  const result = {};
+interface LoginFormError {
+  fields: Array<string>;
+  message: string;
+}
+export function SET_ERRORS(state: any, errors: Array<LoginFormError>) {
+  const result: Record<string, string> = {};
 
   if (errors.length > 0) {
-    errors.forEach(({ fields, message }) => {
+    errors.forEach(({ fields, message }: LoginFormError) => {
       fields.forEach((field) => {
         result[field] = message;
       });

@@ -14,7 +14,7 @@ export function getDefaultState() {
       host: "",
       port: "",
     },
-    googleUser: {
+    oauthUser: {
       email: "",
       accessToken: "",
       id: "",

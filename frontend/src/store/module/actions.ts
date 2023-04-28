@@ -38,7 +38,7 @@ export async function syncRefinedPersons({ state, commit }: any) {
   }
 
   // Determine user based on Google or IMAP credentials
-  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const user = state.oauthUser.id ? state.oauthUser : state.imapUser;
 
   // Call refined_persons stored procedure using Supabase client
   const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
@@ -66,7 +66,7 @@ export async function startMining(
   { state, commit }: any,
   { data }: any
 ) {
-  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const user = state.oauthUser.id ? state.oauthUser : state.imapUser;
 
   commit("SET_LOADING", true);
   commit("SET_LOADING_DNS", true);
@@ -111,7 +111,7 @@ export async function startMining(
 
 export async function stopMining({ state, commit }: any, { data }: any) {
   try {
-    const user = state.googleUser.id ? state.googleUser : state.imapUser;
+    const user = state.oauthUser.id ? state.oauthUser : state.imapUser;
 
     const { miningId } = data;
 
@@ -158,7 +158,7 @@ export function signUpGoogle({ commit }: any, { data }: any) {
       .post("/imap/signUpGoogle", { authCode: data })
       .then((response) => {
         commit("SET_LOADING", false);
-        commit("SET_GOOGLE_USER", response.data.googleUser);
+        commit("SET_OAUTH_USER", response.data.oauthUser);
         resolve(response);
       })
       .catch((error) => {
@@ -192,8 +192,8 @@ export async function getBoxes({ state, commit }: any) {
   commit("SET_LOADINGBOX", true);
 
   const user =
-    state.googleUser.accessToken === "" ? state.imapUser : state.googleUser;
-  
+    state.oauthUser.accessToken === "" ? state.imapUser : state.oauthUser;
+
   commit("SET_USERID", user.id);
 
   try {
