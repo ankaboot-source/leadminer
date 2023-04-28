@@ -179,7 +179,6 @@ class StreamConsumer {
       return;
     }
 
-    logger.info('Consuming messages');
     const registry = Array.from(this.streamsRegistry.values());
     const streams = registry
       .map(({ streamName }) => streamName)
