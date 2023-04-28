@@ -125,7 +125,11 @@
                     color="teal"
                     :loading="isLoading"
                   />
-                  <GoogleLogin v-else :disable="loginDisabled" />
+                  <OauthLogin
+                    v-else
+                    :disable="loginDisabled"
+                    :oauth-provider="getOauthEmailURL"
+                  />
                 </div>
               </div>
             </q-form>
@@ -141,7 +145,7 @@ import { LocalStorage, useQuasar } from "quasar";
 import { computed, onMounted, ref, onBeforeMount } from "vue";
 import { useRouter } from "vue-router";
 
-import GoogleLogin from "src/components/LoginButtons/GoogleLogin.vue";
+import OauthLogin from "src/components/LoginButtons/OauthLogin.vue";
 import { useStore } from "../store/index";
 
 const emailPattern =
@@ -160,13 +164,13 @@ const policyChecked = ref(false);
 const isLoading = ref(false);
 
 onMounted(() => {
-  const googleUser = LocalStorage.getItem("googleUser");
+  const oauthUser = LocalStorage.getItem("oauthUser");
   const imapUser = LocalStorage.getItem("imapUser");
 
-  if (!googleUser && !imapUser) return;
+  if (!oauthUser && !imapUser) return;
 
-  if (googleUser) {
-    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
+  if (oauthUser) {
+    $store.commit("leadminer/SET_OAUTH_USER", oauthUser);
   } else if (imapUser) {
     $store.commit("leadminer/SET_IMAP", imapUser);
   }
@@ -211,15 +215,35 @@ function isValidPort(imapPort: number) {
   );
 }
 
+const getOauthEmailURL = computed(() => {
+  const providers = [
+    {
+      name: "google",
+      domains: ["gmail"],
+    },
+    {
+      name: "outlook",
+      domains: ["hotmail", "outlook"],
+    },
+  ];
+
+  const emailValue = email.value.trim().toLowerCase();
+  const emailDomain = emailValue.split("@")[1]?.split(".")[0];
+
+  const provider = providers.find(
+    ({ domains }) => domains.includes(emailDomain) && process.env.GG_CLIENT_ID
+  );
+
+  return provider?.name || "";
+});
+
 const loginDisabled = computed(
   () => !policyChecked.value || isValidEmail(email.value) !== true
 );
 
-const shouldShowImapFields = computed(
-  () =>
-    isValidEmail(email.value) === true &&
-    (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
-);
+const shouldShowImapFields = computed(() => {
+  return isValidEmail(email.value) === true && getOauthEmailURL.value === "";
+});
 
 async function login() {
   isLoading.value = true;

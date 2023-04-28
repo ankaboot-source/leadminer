@@ -12,12 +12,13 @@
 
 <script lang="ts">
 import { LocalStorage, useQuasar } from "quasar";
-import { googleSdkLoaded } from "vue3-google-login";
+import { api } from "src/boot/axios";
 
 export default {
   name: "GoogleLogin",
   props: {
     disable: Boolean,
+    oauthProvider: {type: String, required: true},
   },
 
   data() {
@@ -38,32 +39,9 @@ export default {
         this.isLoading = false;
         this.$router.push("/dashboard");
       } else {
-        googleSdkLoaded((google) => {
-          google.accounts.oauth2
-            .initCodeClient({
-              client_id: process.env.GG_CLIENT_ID,
-              scope:
-                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-              callback: (response) => {
-                const authCode = response.code;
-                if (authCode) {
-                  this.$store
-                    .dispatch("leadminer/signUpGoogle", { data: authCode })
-                    .then(() => {
-                      LocalStorage.set(
-                        "googleUser",
-                        this.$store.state.leadminer.googleUser
-                      );
-                      this.isLoading = false;
-                      if (this.$store.state.leadminer.googleUser) {
-                        this.$router.push("/dashboard");
-                      }
-                    });
-                }
-              },
-            })
-            .requestCode();
-        });
+        window.location.assign(
+          `${api.getUri()}/imap/auth/${this.oauthProvider}`
+        );
       }
     },
   },
