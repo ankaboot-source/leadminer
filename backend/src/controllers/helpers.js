@@ -58,11 +58,11 @@ export function getXImapHeaderField(headers) {
       )
     };
   }
-  if (!login.access_token && !login.password) {
+  if (!login.accessToken && !login.password) {
     return {
       data: null,
       error: new Error(
-        'x-imap-login header field is missing the access_token or password field'
+        'x-imap-login header field is missing the accessToken or password field'
       )
     };
   }
@@ -73,7 +73,7 @@ export function getXImapHeaderField(headers) {
  * Get a user by either their access token and email or their IMAP ID or email.
  *
  * @param {Object} params - An object containing the necessary parameters to fetch a user.
- * @param {string} params.access_token - The user's Google access token.
+ * @param {string} params.accessToken - The user's Google access token.
  * @param {string} params.id - The user's IMAP ID.
  * @param {string} params.email - The user's email address.
  * @param {Object} db - The database object to use for fetching the user.
@@ -85,14 +85,14 @@ export function getXImapHeaderField(headers) {
  * const user = await getUser(params);
  * console.log(user);
  */
-export function getUser({ access_token, id, email }, db) {
-  if (!access_token && !id && !email) {
+export function getUser({ accessToken, id, email }, db) {
+  if (!accessToken && !id && !email) {
     throw new Error(
-      'At least one parameter is required { access_token, id, email }.'
+      'At least one parameter is required { accessToken, id, email }.'
     );
   }
 
-  if (access_token) {
+  if (accessToken) {
     return db.getGoogleUserByEmail(email);
   }
   if (id) {

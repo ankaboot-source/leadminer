@@ -64,7 +64,7 @@ export async function getImapBoxes(req, res, next) {
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { access_token, id, email, password } = data;
+  const { accessToken, id, email, password } = data;
   const user = await getUser(data, db);
 
   if (user === null) {
@@ -74,9 +74,9 @@ export async function getImapBoxes(req, res, next) {
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const { host, port, refresh_token } = user;
-  const imapConnectionProvider = access_token
+  const imapConnectionProvider = accessToken
     ? await new ImapConnectionProvider(email).withGoogle(
-        access_token,
+        accessToken,
         refresh_token,
         id,
         redisClient
@@ -127,7 +127,7 @@ export async function startMining(req, res, next) {
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { access_token, id, email, password } = data;
+  const { accessToken, id, email, password } = data;
   const user = await getUser(data, db);
 
   if (user === null) {
@@ -138,9 +138,9 @@ export async function startMining(req, res, next) {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const { host, port, refresh_token } = user;
 
-  const imapConnectionProvider = access_token
+  const imapConnectionProvider = accessToken
     ? await new ImapConnectionProvider(email).withGoogle(
-        access_token,
+        accessToken,
         refresh_token,
         id,
         redisClient
@@ -234,3 +234,13 @@ export async function stopMiningTask(req, res, next) {
     return next(err);
   }
 }
+
+// // Serialize the user for the session
+// passport.serializeUser((user, done) => {
+//   done(null, user);
+// });
+
+// // Deserialize the user from the session
+// passport.deserializeUser((user, done) => {
+//   done(null, user);
+// });
