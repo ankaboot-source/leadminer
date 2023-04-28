@@ -234,13 +234,3 @@ export async function stopMiningTask(req, res, next) {
     return next(err);
   }
 }
-
-// // Serialize the user for the session
-// passport.serializeUser((user, done) => {
-//   done(null, user);
-// });
-
-// // Deserialize the user from the session
-// passport.deserializeUser((user, done) => {
-//   done(null, user);
-// });
