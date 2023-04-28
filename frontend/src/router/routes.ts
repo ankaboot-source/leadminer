@@ -20,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import("pages/ErrorNotFound.vue"),
   },
   {
-    path: '/login/callback',
+    path: "/login/callback",
     component: () => import("src/pages/LoginCallback.vue"),
   },
 ];
