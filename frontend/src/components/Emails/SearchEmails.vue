@@ -297,16 +297,16 @@ onMounted(async (): Promise<void> => {
     enableScrolling();
   });
 
-  const googleUser: string | null = LocalStorage.getItem("googleUser");
-  const imapUser : string | null = LocalStorage.getItem("imapUser");
+  const oauthUser: string | null = LocalStorage.getItem("oauthUser");
+  const imapUser: string | null = LocalStorage.getItem("imapUser");
 
-  if (!googleUser && !imapUser) {
+  if (!oauthUser && !imapUser) {
     $router.push("/");
     return;
   }
 
-  if (googleUser) {
-    $store.commit("leadminer/SET_GOOGLE_USER", JSON.parse(googleUser));
+  if (oauthUser) {
+    $store.commit("leadminer/SET_OAUTH_USER", JSON.parse(oauthUser));
   } else if (imapUser) {
     $store.commit("leadminer/SET_IMAP", JSON.parse(imapUser));
   }
