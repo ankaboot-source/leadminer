@@ -297,8 +297,8 @@ onMounted(async (): Promise<void> => {
     enableScrolling();
   });
 
-  const googleUser = LocalStorage.getItem("googleUser");
-  const imapUser = LocalStorage.getItem("imapUser");
+  const googleUser: string | null = LocalStorage.getItem("googleUser");
+  const imapUser : string | null = LocalStorage.getItem("imapUser");
 
   if (!googleUser && !imapUser) {
     $router.push("/");
@@ -306,9 +306,9 @@ onMounted(async (): Promise<void> => {
   }
 
   if (googleUser) {
-    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
+    $store.commit("leadminer/SET_GOOGLE_USER", JSON.parse(googleUser));
   } else if (imapUser) {
-    $store.commit("leadminer/SET_IMAP", imapUser);
+    $store.commit("leadminer/SET_IMAP", JSON.parse(imapUser));
   }
 
   await getBoxes();
