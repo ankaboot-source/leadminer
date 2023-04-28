@@ -74,15 +74,15 @@ export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
 }
 export function UPDATE_TOKEN(state: any, newToken: any) {
-  if (state.googleUser.access_token.access_token !== newToken.access_token) {
-    state.googleUser.access_token = newToken;
+  if (state.googleUser.accessToken.accessToken !== newToken.accessToken) {
+    state.googleUser.accessToken = newToken;
   }
 }
 
 export function SET_GOOGLE_USER(state: any, user: any) {
   state.googleUser.email = user.email;
   state.googleUser.id = user.id;
-  state.googleUser.access_token = user.access_token;
+  state.googleUser.accessToken = user.accessToken;
 }
 
 export function RESET_STORE(state: any) {

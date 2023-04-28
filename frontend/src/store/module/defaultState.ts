@@ -16,7 +16,7 @@ export function getDefaultState() {
     },
     googleUser: {
       email: "",
-      access_token: "",
+      accessToken: "",
       id: "",
     },
     boxes: [],

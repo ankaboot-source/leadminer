@@ -192,8 +192,8 @@ export async function getBoxes({ state, commit }: any) {
   commit("SET_LOADINGBOX", true);
 
   const user =
-    state.googleUser.access_token === "" ? state.imapUser : state.googleUser;
-
+    state.googleUser.accessToken === "" ? state.imapUser : state.googleUser;
+  
   commit("SET_USERID", user.id);
 
   try {
