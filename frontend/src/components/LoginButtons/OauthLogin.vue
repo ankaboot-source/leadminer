@@ -15,7 +15,7 @@ import { LocalStorage, useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 
 export default {
-  name: "GoogleLogin",
+  name: "OauthLogin",
   props: {
     disable: Boolean,
     oauthProvider: {type: String, required: true},
