@@ -74,11 +74,6 @@ export function SET_SCANNEDBOXES(state: any, newValue: any) {
 export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
 }
-export function UPDATE_TOKEN(state: any, newToken: any) {
-  if (state.googleUser.access_token.access_token !== newToken.access_token) {
-    state.googleUser.access_token = newToken;
-  }
-}
 
 export function SET_GOOGLE_USER(state: any, user: any) {
   state.googleUser = {

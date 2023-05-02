@@ -41,7 +41,7 @@ export async function syncRefinedPersons({ state, commit, getters }: any) {
     await subscription.unsubscribe();
   }
 
-  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const user = state.googleUser ? state.googleUser : state.imapUser;
   const { error } = await supabase.rpc("refined_persons", { userid: user.id });
 
   if (error) {
@@ -68,7 +68,7 @@ export async function startMining(
   { state, commit }: any,
   { data }: any
 ) {
-  const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const user = state.googleUser ? state.googleUser : state.imapUser;
 
   commit("SET_LOADING", true);
   commit("SET_LOADING_DNS", true);
@@ -113,7 +113,7 @@ export async function startMining(
 
 export async function stopMining({ state, commit }: any, { data }: any) {
   try {
-    const user = state.googleUser.id ? state.googleUser : state.imapUser;
+    const user = state.googleUser ? state.googleUser : state.imapUser;
 
     const { miningId } = data;
 
@@ -134,25 +134,6 @@ export async function stopMining({ state, commit }: any, { data }: any) {
   }
 }
 
-export function signUp({ commit }: any, { data }: any) {
-  return new Promise((resolve, reject) => {
-    commit("SET_LOADING", true);
-    // get imapInfo account or create one
-    api
-      .post("/imap/signup", data)
-      .then((response) => {
-        commit("SET_LOADING", false);
-        commit("SET_INFO_MESSAGE", response.data.message);
-        resolve(response);
-      })
-      .catch((error) => {
-        if (error) {
-          commit("SET_ERROR", error?.response.data.error);
-        }
-        reject(error.message);
-      });
-  });
-}
 export function signUpGoogle({ commit }: any, { data }: any) {
   return new Promise((resolve, reject) => {
     commit("SET_LOADING", true);
@@ -204,11 +185,13 @@ export async function signIn({ commit }: any, { data }: any) {
   }
 }
 
-export async function getBoxes({ state, commit }: any) {
+export async function getBoxes({ state, commit, getters }: any) {
+  if (!getters.isLoggedIn) {
+    return;
+  }
   commit("SET_LOADINGBOX", true);
 
-  const user =
-    state.googleUser.access_token === "" ? state.imapUser : state.googleUser;
+  const user = state.imapUser ? state.imapUser : state.googleUser;
 
   commit("SET_USERID", user.id);
 

@@ -291,8 +291,6 @@ async function getBoxes() {
 onMounted(async () => {
   const isLoggedIn = $store.getters["leadminer/isLoggedIn"];
 
-  console.log(isLoggedIn);
-
   if (!isLoggedIn) {
     $router.push("/");
     return;
