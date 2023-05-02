@@ -80,6 +80,10 @@
         </q-btn>
       </template>
 
+      <template #loading>
+        <q-inner-loading showing color="teal" />
+      </template>
+
       <!--Header tooltips -->
       <template #header-cell-recency="props">
         <q-th :props="props">
@@ -428,11 +432,9 @@ const onKeyDown = (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener("keydown", onKeyDown);
-  setTimeout(() => {
-    syncTable();
-  });
+  await syncTable();
 });
 
 onUnmounted(() => {

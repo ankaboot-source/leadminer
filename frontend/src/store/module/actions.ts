@@ -25,7 +25,7 @@ function subscribeToRefined(userId: string, commit: any) {
         filter: `userid=eq.${userId}`,
       },
       (payload) => {
-        commit("SET_EMAILS", payload.new);
+        commit("ADD_EMAIL", payload.new);
       }
     )
     .subscribe();
@@ -55,10 +55,11 @@ export async function syncRefinedPersons({ state, commit }: any) {
     "refinedpersons",
     process.env.SUPABASE_MAX_ROWS
   );
-  data.forEach((person) => commit("SET_EMAILS", person));
 
-  // Subscribe to real-time updates for current user
-  subscribeToRefined(user.id, commit);
+  commit(
+    "SET_EMAILS",
+    new Map(data.map((contact) => [contact.email, contact]))
+  );
 }
 
 export async function startMining(
