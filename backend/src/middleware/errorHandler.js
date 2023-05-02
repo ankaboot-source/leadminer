@@ -13,5 +13,5 @@ export default function errorHandler(err, _, res, next) {
     response.error.message = err;
   }
   res.status(code).send(response);
-  next(err)
+  next(err);
 }
