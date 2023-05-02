@@ -30,26 +30,27 @@ function subscribeToRefined(userId: string, commit: any) {
     )
     .subscribe();
 }
-export async function syncRefinedPersons({ state, commit }: any) {
+export async function syncRefinedPersons({ state, commit, getters }: any) {
+  if (!getters.isLoggedIn) {
+    return;
+  }
+
   if (subscription) {
     // Unsubscribe from real-time updates if currently subscribed
     // to avoid getting update twice, from supabase query and realtime updates.
     await subscription.unsubscribe();
   }
 
-  // Determine user based on Google or IMAP credentials
   const user = state.googleUser.id ? state.googleUser : state.imapUser;
+  const { error } = await supabase.rpc("refined_persons", { userid: user.id });
 
-  // Call refined_persons stored procedure using Supabase client
-  const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
-
-  if (rpcResult.error) {
+  if (error) {
     // eslint-disable-next-line no-console
-    console.error(rpcResult.error);
+    console.error(error);
   }
 
   // Fetch data from Supabase for current user and update store with email addresses
-  const data = await fetchData(
+  const contacts = await fetchData(
     supabase,
     user.id,
     "refinedpersons",
@@ -58,7 +59,7 @@ export async function syncRefinedPersons({ state, commit }: any) {
 
   commit(
     "SET_EMAILS",
-    new Map(data.map((contact) => [contact.email, contact]))
+    new Map(contacts.map((contact) => [contact.email, contact]))
   );
 }
 

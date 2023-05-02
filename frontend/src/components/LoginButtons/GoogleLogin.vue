@@ -31,40 +31,32 @@ export default {
   methods: {
     handleClickSignIn() {
       this.isLoading = true;
-      const googleUser = LocalStorage.getItem("googleUser");
-
-      if (googleUser) {
-        this.$store.commit("leadminer/SET_GOOGLE_USER", googleUser);
-        this.isLoading = false;
-        this.$router.push("/dashboard");
-      } else {
-        googleSdkLoaded((google) => {
-          google.accounts.oauth2
-            .initCodeClient({
-              client_id: process.env.GG_CLIENT_ID,
-              scope:
-                "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
-              callback: (response) => {
-                const authCode = response.code;
-                if (authCode) {
-                  this.$store
-                    .dispatch("leadminer/signUpGoogle", { data: authCode })
-                    .then(() => {
-                      LocalStorage.set(
-                        "googleUser",
-                        this.$store.state.leadminer.googleUser
-                      );
-                      this.isLoading = false;
-                      if (this.$store.state.leadminer.googleUser) {
-                        this.$router.push("/dashboard");
-                      }
-                    });
-                }
-              },
-            })
-            .requestCode();
-        });
-      }
+      googleSdkLoaded((google) => {
+        google.accounts.oauth2
+          .initCodeClient({
+            client_id: process.env.GG_CLIENT_ID,
+            scope:
+              "https://mail.google.com/ https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+            callback: (response) => {
+              const authCode = response.code;
+              if (authCode) {
+                this.$store
+                  .dispatch("leadminer/signUpGoogle", { data: authCode })
+                  .then(() => {
+                    LocalStorage.set(
+                      "googleUser",
+                      this.$store.state.leadminer.googleUser
+                    );
+                    this.isLoading = false;
+                    if (this.$store.state.leadminer.googleUser) {
+                      this.$router.push("/dashboard");
+                    }
+                  });
+              }
+            },
+          })
+          .requestCode();
+      });
     },
   },
 };

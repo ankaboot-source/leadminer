@@ -22,15 +22,11 @@ export function SET_LOADINGBOX(state: any, newLoadingStatusbox: any) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
 export function SET_IMAP(state: any, newImap: any) {
-  state.imapUser.id = newImap.id;
-  state.imapUser.email = newImap.email;
-  state.imapUser.password = newImap.password;
-  state.imapUser.host = newImap.host;
-  state.imapUser.port = newImap.port;
+  state.imapUser = {
+    ...newImap,
+  };
 }
-export function SET_PASSWORD(state: any, newPassword: string) {
-  state.imapUser.password = newPassword;
-}
+
 export function SET_BOXES(state: any, newBoxes: any) {
   state.boxes = [...newBoxes];
 }
@@ -85,9 +81,9 @@ export function UPDATE_TOKEN(state: any, newToken: any) {
 }
 
 export function SET_GOOGLE_USER(state: any, user: any) {
-  state.googleUser.email = user.email;
-  state.googleUser.id = user.id;
-  state.googleUser.access_token = user.access_token;
+  state.googleUser = {
+    ...user,
+  };
 }
 
 export function RESET_STORE(state: any) {

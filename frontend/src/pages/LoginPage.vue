@@ -137,8 +137,8 @@
 </template>
 
 <script setup lang="ts">
-import { LocalStorage, useQuasar } from "quasar";
-import { computed, onMounted, ref, onBeforeMount } from "vue";
+import { useQuasar } from "quasar";
+import { computed, onBeforeMount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import GoogleLogin from "src/components/LoginButtons/GoogleLogin.vue";
@@ -160,18 +160,9 @@ const policyChecked = ref(false);
 const isLoading = ref(false);
 
 onMounted(() => {
-  const googleUser = LocalStorage.getItem("googleUser");
-  const imapUser = LocalStorage.getItem("imapUser");
-
-  if (!googleUser && !imapUser) return;
-
-  if (googleUser) {
-    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
-  } else if (imapUser) {
-    $store.commit("leadminer/SET_IMAP", imapUser);
+  if ($store.getters["leadminer/isLoggedIn"]) {
+    $router.push("/dashboard");
   }
-
-  $router.push("/dashboard");
 });
 
 onBeforeMount(() => {

@@ -288,26 +288,18 @@ async function getBoxes() {
   }
 }
 
-onMounted(async (): Promise<void> => {
-  window.addEventListener("keydown", onKeyDown);
-  setTimeout(() => {
-    enableScrolling();
-  });
+onMounted(async () => {
+  const isLoggedIn = $store.getters["leadminer/isLoggedIn"];
 
-  const googleUser = LocalStorage.getItem("googleUser");
-  const imapUser = LocalStorage.getItem("imapUser");
+  console.log(isLoggedIn);
 
-  if (!googleUser && !imapUser) {
+  if (!isLoggedIn) {
     $router.push("/");
     return;
   }
 
-  if (googleUser) {
-    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
-  } else if (imapUser) {
-    $store.commit("leadminer/SET_IMAP", imapUser);
-  }
-
+  window.addEventListener("keydown", onKeyDown);
+  enableScrolling();
   await getBoxes();
 });
 
