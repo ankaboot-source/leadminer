@@ -173,7 +173,7 @@ export async function signIn({ commit }: any, { data }: any) {
   try {
     const response = await api.post("/imap/login", data);
     const imapUser = { ...response.data.imap, password: data.password };
-    
+
     LocalStorage.set("imapUser", imapUser);
     commit("SET_IMAP", imapUser);
 
