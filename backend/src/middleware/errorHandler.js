@@ -1,4 +1,4 @@
-export default function errorHandler(err, _, res) {
+export default function errorHandler(err, _, res, next) {
   const code = res.statusCode !== 200 ? res.statusCode : 500;
   const response = {
     data: null,
@@ -12,5 +12,6 @@ export default function errorHandler(err, _, res) {
     response.error.stack = err.stack;
     response.error.message = err;
   }
-  return res.status(code).send(response);
+  res.status(code).send(response);
+  next(err)
 }
