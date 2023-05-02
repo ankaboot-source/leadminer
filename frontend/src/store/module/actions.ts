@@ -169,13 +169,13 @@ export function signUpGoogle({ commit }: any, { data }: any) {
       });
   });
 }
-export async function signIn({ state, commit }: any, { data }: any) {
+export async function signIn({ commit }: any, { data }: any) {
   try {
     const response = await api.post("/imap/login", data);
-    const imapUser = { ...state.imapUser, password: data.password };
+    const imapUser = { ...response.data.imap, password: data.password };
 
-    commit("SET_IMAP", response.data.imap);
     LocalStorage.set("imapUser", imapUser);
+    commit("SET_IMAP", imapUser);
 
     return response.data;
   } catch (error: any) {
