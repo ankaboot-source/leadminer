@@ -153,13 +153,13 @@
                     <div class="row items-center">
                       <div class="text-h6">Select folders to mine</div>
                       <q-btn
-                        outline
                         round
                         size="sm"
                         color="orange-5"
                         icon="refresh"
                         class="q-ml-sm"
                         :disable="activeMiningTask"
+                        :loading="isLoadingBoxes"
                         @click="getBoxes"
                       />
                       <q-space />
@@ -176,17 +176,11 @@
                     </div>
                     <div class="bg-grey-1 text-blue-grey-10">
                       <TreeCard
-                        v-if="boxes.length > 0"
+                        v-if="shouldShowTreeCard"
                         :boxes="boxes"
                         :scanned-boxes="scannedBoxes"
                         :class="{ disabled: activeMiningTask }"
                         @selected-boxes="updateSelectedBoxes"
-                      />
-                      <q-linear-progress
-                        v-else
-                        indeterminate
-                        color="teal"
-                        class="q-mt-sm"
                       />
                     </div>
                   </q-tab-panel>
@@ -231,6 +225,7 @@ const $router = useRouter();
 const imgUrl = process.env.BANNER_IMAGE_URL;
 const isLoadingStartMining = ref(false);
 const isLoadingStopMining = ref(false);
+const isLoadingBoxes = ref(false);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const selectedBoxes = ref<any>([]);
 const advancedOptions = ref(true);
@@ -279,42 +274,39 @@ const onKeyDown = (event: KeyboardEvent) => {
 
 async function getBoxes() {
   try {
+    isLoadingBoxes.value = true;
     isLoadingStartMining.value = true;
     await $store.dispatch("leadminer/getBoxes");
     // eslint-disable-next-line no-console
     console.log($store.state.leadminer.infoMessage);
   } catch (_) {
     LocalStorage.clear();
+    $store.commit("leadminer/RESET_STORE");
     $router.replace("/");
   } finally {
+    isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;
   }
 }
 
-onMounted(async (): Promise<void> => {
-  window.addEventListener("keydown", onKeyDown);
-  setTimeout(() => {
-    enableScrolling();
-  });
+onMounted(async () => {
+  const isLoggedIn = $store.getters["leadminer/isLoggedIn"];
 
-  const googleUser = LocalStorage.getItem("googleUser");
-  const imapUser = LocalStorage.getItem("imapUser");
-
-  if (!googleUser && !imapUser) {
+  if (!isLoggedIn) {
     $router.push("/");
     return;
   }
 
-  if (googleUser) {
-    $store.commit("leadminer/SET_GOOGLE_USER", googleUser);
-  } else if (imapUser) {
-    $store.commit("leadminer/SET_IMAP", imapUser);
-  }
-
+  window.addEventListener("keydown", onKeyDown);
+  enableScrolling();
   await getBoxes();
 });
 
 const boxes = computed(() => $store.state.leadminer.boxes);
+
+const shouldShowTreeCard = computed(
+  () => boxes.value.length > 0 && !isLoadingBoxes.value
+);
 
 const scannedBoxes = computed(
   () => $store.state.leadminer.progress.scannedBoxes

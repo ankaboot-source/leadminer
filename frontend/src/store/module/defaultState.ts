@@ -1,3 +1,5 @@
+import { LocalStorage } from "quasar";
+
 export function getDefaultState() {
   return {
     miningTask: {},
@@ -7,18 +9,8 @@ export function getDefaultState() {
     loadingStatusDns: false,
     loadingStatusbox: false,
     userId: "",
-    imapUser: {
-      id: "",
-      email: "",
-      password: "",
-      host: "",
-      port: "",
-    },
-    googleUser: {
-      email: "",
-      access_token: "",
-      id: "",
-    },
+    imapUser: LocalStorage.getItem("imapUser"),
+    googleUser: LocalStorage.getItem("googleUser"),
     boxes: [],
     errorMessage: "",
     infoMessage: "",

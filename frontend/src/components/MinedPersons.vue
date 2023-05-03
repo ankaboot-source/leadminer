@@ -23,7 +23,7 @@
       <template #top-left>
         <div class="text-blue-grey-14 text-body1">
           <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
-            {{ minedEmails.toLocaleString() }}
+            {{ minedEmails }}
           </span>
           contacts mined
         </div>
@@ -55,17 +55,6 @@
             @click="exportTable"
           />
         </div>
-        <div class="q-px-sm">
-          <q-btn
-            outline
-            color="teal-5"
-            label="Sync"
-            icon="sync"
-            no-caps
-            :disable="isLoading"
-            @click="syncTable"
-          />
-        </div>
         <q-btn
           flat
           round
@@ -78,6 +67,10 @@
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
           </q-tooltip>
         </q-btn>
+      </template>
+
+      <template #loading>
+        <q-inner-loading showing color="teal" />
       </template>
 
       <!--Header tooltips -->
@@ -428,11 +421,9 @@ const onKeyDown = (event: KeyboardEvent) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener("keydown", onKeyDown);
-  setTimeout(() => {
-    syncTable();
-  });
+  await syncTable();
 });
 
 onUnmounted(() => {

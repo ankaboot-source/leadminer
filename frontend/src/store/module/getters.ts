@@ -10,7 +10,11 @@ export function getStates(state: any) {
 }
 
 export function getUserEmail(state: any) {
-  return state.imapUser.email ? state.imapUser.email : state.googleUser.email;
+  return state.imapUser ? state.imapUser.email : state.googleUser.email;
+}
+
+export function isLoggedIn(state: any) {
+  return state.imapUser !== null || state.googleUser !== null;
 }
 
 export function getFormErrors(state: any) {
