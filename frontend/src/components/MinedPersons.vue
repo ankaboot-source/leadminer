@@ -55,17 +55,6 @@
             @click="exportTable"
           />
         </div>
-        <div class="q-px-sm">
-          <q-btn
-            outline
-            color="teal-5"
-            label="Sync"
-            icon="sync"
-            no-caps
-            :disable="isLoading"
-            @click="syncTable"
-          />
-        </div>
         <q-btn
           flat
           round
