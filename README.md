@@ -58,7 +58,7 @@ You can easily get started with development mode by following theses steps:
 npm run install-deps
 ```
 
-1. Start supabase services and take not of the supabase project token to use it in the next step.
+1. Start supabase services and take note of the supabase project token to use it in the next step.
 
 ```sh
 # Start supabase services
