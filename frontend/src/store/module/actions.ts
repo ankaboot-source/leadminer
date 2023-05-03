@@ -185,14 +185,9 @@ export async function signIn({ commit }: any, { data }: any) {
   }
 }
 
-export async function getBoxes({ state, commit, getters }: any) {
-  if (!getters.isLoggedIn) {
-    return;
-  }
+export async function getBoxes({ state, commit }: any) {
   commit("SET_LOADINGBOX", true);
-
   const user = state.imapUser ? state.imapUser : state.googleUser;
-
   commit("SET_USERID", user.id);
 
   try {

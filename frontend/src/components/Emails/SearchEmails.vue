@@ -281,6 +281,7 @@ async function getBoxes() {
     console.log($store.state.leadminer.infoMessage);
   } catch (_) {
     LocalStorage.clear();
+    $store.commit("leadminer/RESET_STORE");
     $router.replace("/");
   } finally {
     isLoadingBoxes.value = false;

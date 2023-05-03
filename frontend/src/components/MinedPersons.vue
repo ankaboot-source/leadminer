@@ -23,7 +23,7 @@
       <template #top-left>
         <div class="text-blue-grey-14 text-body1">
           <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
-            {{ minedEmails.toLocaleString() }}
+            {{ minedEmails }}
           </span>
           contacts mined
         </div>
