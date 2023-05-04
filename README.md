@@ -12,7 +12,7 @@ Docker is the recommended solution for self-hosting Leadminer thanks to its conv
 
 1. Clone the repository and enter `leadminer` folder
 
-1. Copy/Rename [.env.example](/.env.example) to `.env` and add the missing required environment variables:
+1. Copy [.env.example](/.env.example) to `.env` and add the missing required environment variables:
 
    - Supabase project url : `SUPABASE_PROJECT_URL`
    - Supabase project token : `SUPABASE_SECRET_PROJECT_TOKEN`
@@ -32,49 +32,6 @@ docker-compose up --build --force-recreate
 
 4. Navigate to `localhost:8080`.
 
-### Run Leadminer in development mode
-
-You can easily get started with development mode by following theses steps:
-
-1. Install the required dependencies
-
-```sh
-npm run install-deps
-```
-
-2. Copy/Rename `/frontend/.env.example` to `/frontend/.env` and `/backend/.env.example` to `/backend/.env` respectively and set the missing required variables -- You can set the `SUPABASE_SECRET_PROJECT_TOKEN` after starting local supabase services.
-
-3. Start your environment by running the following commands:
-
-```sh
-# Start supabase services
-npm run dev:supabase
-# Make sure to update SUPABASE_SECRET_PROJECT_TOKEN using the provided anon_key in both frontend and backend
-
-# Start the Redis container  -- You can skip this step if you want to use your local instance
-docker-compose -f docker-compose.dev.yml up
-
-# Start the backend in development mode
-npm run dev:backend-api
-npm run dev:backend-worker
-
-# Start the frontend in development mode
-npm run dev:frontend
-```
-
-- When altering the database schema or creating new tables, functions..., make sure to run these commands (While supabase services are up):
-
-```sh
-# List the changes that you made
-npx supabase db diff --use-migra
-
-# Create a migration for the changes that you have made
-npx supabase db diff --use-migra -f <name_of_migration>
-
-# Stop supabase services once you're done
-npx supabase stop
-```
-
 ## Support
 
 If you have any trouble, check the [issues tab](https://github.com/ankaboot-source/leadminer/issues). We might already have reported/fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
@@ -90,6 +47,61 @@ This app is provided for free as such with no guarantee nor support. For any kin
 For any requests concerning the roadmap, you could either have a look on issues or for any specific request contact [ankaboot professional services](contact@ankaboot.fr).
 
 ## Contributing
+
+### Run Leadminer locally
+
+You can easily get started with development mode by following theses steps:
+
+1. Install the required dependencies
+
+```sh
+npm run install-deps
+```
+
+1. Start supabase services and take note of the supabase project token to use it in the next step.
+
+```sh
+# Start supabase services
+npm run dev:supabase
+```
+
+2. Copy `/frontend/.env.example` to `/frontend/.env` and `/backend/.env.example` to `/backend/.env` respectively and set the missing required variables
+
+1. Start your environment by running the following commands:
+
+```sh
+# Start the Redis container  -- You can skip this step if you want to use your local instance
+docker-compose -f docker-compose.dev.yml up
+
+# Start the backend in development mode
+npm run dev:backend-api
+npm run dev:backend-worker
+
+# Start the frontend in development mode
+npm run dev:frontend
+```
+
+### Generating a new migration for schema changes
+
+- When altering the database schema or creating new tables, functions..., make sure to run these commands (While supabase services are up):
+
+```sh
+# Start supabase services
+npx supabase start
+
+# Make your changes from supabase studio
+
+# List the changes that you made
+npx supabase db diff --use-migra
+
+# Create a migration for the changes that you have made
+npx supabase db diff --use-migra -f <name_of_migration>
+
+# Stop supabase services once you're done
+npx supabase stop
+```
+
+### General guidelines
 
 Please feel free to contribute. Pull requests are welcome.
 
