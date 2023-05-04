@@ -42,7 +42,7 @@
     "ioredis": "^5.3.1",
     "nanoid": "^3.3.4",
     "nodemon": "^2.0.22",
-    "pg": "^8.8.0",
+    "pg": "^8.10.0",
     "pg-format": "^1.0.4",
     "quoted-printable": "^1.0.1",
     "winston": "^3.6.0",
