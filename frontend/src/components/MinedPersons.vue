@@ -289,9 +289,7 @@ function refreshTable() {
 
 let subscription: RealtimeChannel;
 function setupSubscription() {
-  const user = $store.state.leadminer.googleUser
-    ? $store.state.leadminer.googleUser
-    : $store.state.leadminer.imapUser;
+  const user = $store.getters["leadminer/getCurrentUser"];
   subscription = supabaseClient.channel("*").on(
     "postgres_changes",
     {
