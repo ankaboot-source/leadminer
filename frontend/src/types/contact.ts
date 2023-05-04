@@ -7,7 +7,7 @@ export interface Contact {
   engagement?: number;
   name?: string;
   occurence?: number;
-  persondid?: string;
+  personid?: string;
   recency?: Date;
   alternate_names?: string[];
   tags?: Tag[];
