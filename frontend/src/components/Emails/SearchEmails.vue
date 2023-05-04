@@ -69,7 +69,6 @@
           <div class="bg-transparent col q-pb-lg">
             <ProgressCard
               v-if="boxes"
-              :mined-emails="minedEmails"
               :scanned-emails="scannedEmails"
               :extracted-emails="extractedEmails"
               :total-emails="totalEmails"
@@ -311,9 +310,7 @@ const shouldShowTreeCard = computed(
 const scannedBoxes = computed(
   () => $store.state.leadminer.progress.scannedBoxes
 );
-const minedEmails = computed(
-  () => $store.getters["leadminer/getRetrievedEmails"].length
-);
+
 const activeMiningTask = computed(
   () => !!$store.state.leadminer.miningTask.miningId
 );

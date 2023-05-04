@@ -1,67 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LocalStorage } from "quasar";
 
-import { RealtimeChannel, createClient } from "@supabase/supabase-js";
 import { api } from "src/boot/axios";
 import { sse } from "src/helpers/sse";
-import { fetchData } from "src/helpers/supabase.js";
-
-const supabase = createClient(
-  process.env.SUPABASE_PROJECT_URL,
-  process.env.SUPABASE_SECRET_PROJECT_TOKEN
-);
-
-let subscription: RealtimeChannel;
-
-function subscribeToRefined(userId: string, commit: any) {
-  subscription = supabase
-    .channel("*")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "refinedpersons",
-        filter: `userid=eq.${userId}`,
-      },
-      (payload) => {
-        commit("ADD_EMAIL", payload.new);
-      }
-    )
-    .subscribe();
-}
-export async function syncRefinedPersons({ state, commit, getters }: any) {
-  if (!getters.isLoggedIn) {
-    return;
-  }
-
-  if (subscription) {
-    // Unsubscribe from real-time updates if currently subscribed
-    // to avoid getting update twice, from supabase query and realtime updates.
-    await subscription.unsubscribe();
-  }
-
-  const user = state.googleUser ? state.googleUser : state.imapUser;
-  const { error } = await supabase.rpc("refined_persons", { userid: user.id });
-
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-  }
-
-  // Fetch data from Supabase for current user and update store with email addresses
-  const contacts = await fetchData(
-    supabase,
-    user.id,
-    "refinedpersons",
-    process.env.SUPABASE_MAX_ROWS
-  );
-
-  commit(
-    "SET_EMAILS",
-    new Map(contacts.map((contact) => [contact.email, contact]))
-  );
-}
 
 export async function startMining(
   this: any,
@@ -76,9 +17,6 @@ export async function startMining(
   commit("SET_EXTRACTEDEMAILS", 0);
   commit("SET_STATISTICS", "f");
   commit("SET_SCANNEDBOXES", []);
-
-  if (subscription) await subscription.unsubscribe();
-  subscribeToRefined(user.id, commit);
 
   try {
     const { boxes } = data;
