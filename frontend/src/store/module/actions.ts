@@ -6,10 +6,10 @@ import { sse } from "src/helpers/sse";
 
 export async function startMining(
   this: any,
-  { state, commit }: any,
+  { getters, commit }: any,
   { data }: any
 ) {
-  const user = state.googleUser ? state.googleUser : state.imapUser;
+  const user = getters.getCurrentUser;
 
   commit("SET_LOADING", true);
   commit("SET_LOADING_DNS", true);
@@ -49,9 +49,9 @@ export async function startMining(
   }
 }
 
-export async function stopMining({ state, commit }: any, { data }: any) {
+export async function stopMining({ commit, getters }: any, { data }: any) {
   try {
-    const user = state.googleUser ? state.googleUser : state.imapUser;
+    const user = getters.getCurrentUser;
 
     const { miningId } = data;
 
@@ -123,9 +123,9 @@ export async function signIn({ commit }: any, { data }: any) {
   }
 }
 
-export async function getBoxes({ state, commit }: any) {
+export async function getBoxes({ getters, commit }: any) {
   commit("SET_LOADINGBOX", true);
-  const user = state.imapUser ? state.imapUser : state.googleUser;
+  const user = getters.getCurrentUser;
   commit("SET_USERID", user.id);
 
   try {

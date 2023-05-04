@@ -11,7 +11,7 @@ export function getCurrentUser(state: any) {
 }
 
 export function isLoggedIn(state: any) {
-  return !!getCurrentUser(state);
+  return state.imapUser || state.googleUser;
 }
 
 export function getFormErrors(state: any) {

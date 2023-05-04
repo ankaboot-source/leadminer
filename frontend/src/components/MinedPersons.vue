@@ -246,7 +246,7 @@ const isLoading = ref(false);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = ref<QTable>();
 
-const contactsCache = new Map<string, Contact>();
+let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
 
@@ -292,7 +292,7 @@ function setupSubscription() {
   const user = $store.state.leadminer.googleUser
     ? $store.state.leadminer.googleUser
     : $store.state.leadminer.imapUser;
-  supabaseClient.channel("*").on(
+  subscription = supabaseClient.channel("*").on(
     "postgres_changes",
     {
       event: "*",
@@ -330,9 +330,7 @@ async function getContacts(userId: string) {
 
 async function syncTable() {
   isLoading.value = true;
-  const { id } = $store.state.leadminer.googleUser
-    ? $store.state.leadminer.googleUser
-    : $store.state.leadminer.imapUser;
+  const { id } = $store.getters["leadminer/getCurrentUser"];
   await refineContacts(id);
   const contacts = await getContacts(id);
   rows.value = contacts;
@@ -344,6 +342,9 @@ watch(activeMiningTask, async (isActive) => {
     // If mining is active, update refined persons every 3 seconds
     setupSubscription();
     subscription.subscribe();
+    if (rows.value.length > 0) {
+      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
+    }
     refreshInterval = window.setInterval(() => {
       refreshTable();
     }, 3000);
@@ -352,6 +353,7 @@ watch(activeMiningTask, async (isActive) => {
       subscription.unsubscribe();
     }
     clearInterval(refreshInterval);
+    contactsCache.clear();
     await syncTable();
   }
 });
