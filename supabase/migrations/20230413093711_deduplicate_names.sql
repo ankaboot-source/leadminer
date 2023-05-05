@@ -24,7 +24,7 @@ BEGIN
         FILTER (
           WHERE nrm.recent_name IS NOT NULL
                 AND nrm.recent_name <> ''
-                AND extensions.similarity(lower(nrm.recent_name), lower(gn.alternate_name)) < 0.8),
+                AND extensions.similarity(lower(nrm.recent_name), lower(gn.alternate_name)) < 0.7),
         '{}'::text[]) AS alternate_names,
       COUNT(CASE WHEN m.conversation THEN 1 END) AS engagement,
       MAX(m.date) AS recency,
