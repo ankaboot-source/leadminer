@@ -26,11 +26,12 @@ export function extractNameAndEmailFromBody(data) {
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
 export function cleanName(name) {
-  const cleanedName = name
+  const cleanedName = decode(name)
     .trim()
+    .replace(/\\"/g, '')
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
-  return decode(cleanedName);
+  return cleanedName;
 }
 
 /**

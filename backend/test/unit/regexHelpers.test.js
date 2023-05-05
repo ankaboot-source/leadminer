@@ -84,7 +84,8 @@ describe('regexHelpers.cleanName', () => {
           '"\'John Doe\'" ',
           ' "\'John Doe\'"',
           ' "\'John Doe\'" ',
-          'John&#32Doe' // &#32 HTML-Entities for space
+          'John&#32Doe', // &#32 HTML-Entities for space
+          '\\"John Doe\\"'
         ],
         output: 'John Doe'
       },
