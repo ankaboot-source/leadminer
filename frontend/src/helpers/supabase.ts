@@ -1,22 +1,25 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseClient = createClient(
+  process.env.SUPABASE_PROJECT_URL,
+  process.env.SUPABASE_SECRET_PROJECT_TOKEN
+);
 
 /**
  * Fetches data from a Supabase table for a specific user.
  *
- * @param supabaseClient - The Supabase client to use for fetching data.
  * @param userId - The unique ID of the user whose data will be retrieved.
  * @param tableName - The name of the table to fetch data from.
  * @param maxRows - The maximum number of rows to retrieve per request.
  * @throws {Error}  If any of the parameters are missing or invalid.
  * @returns An array of data from the specified table filtered by userId.
  */
-export async function fetchData(
-  supabaseClient: SupabaseClient,
+export async function fetchData<T>(
   userId: string,
   tableName: string,
   maxRows = 1000
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any[]> {
+): Promise<T[]> {
   if (!supabaseClient || !userId || !tableName) {
     throw new Error("Invalid parameters");
   }
