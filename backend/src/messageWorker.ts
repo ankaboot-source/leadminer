@@ -3,6 +3,7 @@ import './env';
 import { REDIS_CONSUMER_BATCH_SIZE } from './config';
 import { REDIS_PUBSUB_COMMUNICATION_CHANNEL } from './utils/constants';
 import logger from './utils/logger';
+import logMemoryStats from './utils/profiling/memory';
 import redis from './utils/redis';
 import { processStreamData } from './workers/handlers';
 
@@ -92,6 +93,7 @@ class StreamConsumer {
         this.batchSize,
         'BLOCK',
         2000,
+        'NOACK',
         'STREAMS',
         ...streams,
         ...new Array(streams.length).fill('>')
@@ -106,13 +108,11 @@ class StreamConsumer {
           const messageIds = streamMessages.map(([id]: any) => id);
           const lastMessageId = messageIds.slice(-1)[0];
           try {
-            const startTime = performance.now();
             const promises: any = await Promise.allSettled(
               streamMessages.map((message: any) =>
                 this.messageProcessor(message)
               )
             );
-            const endTime = performance.now();
             const miningId = promises[0].value;
             const extractionProgress = {
               miningId,
@@ -120,24 +120,8 @@ class StreamConsumer {
               count: promises.length
             };
 
-            logger.debug(
-              `Extraction of ${messageIds.length} messages took ${
-                endTime - startTime
-              }ms`
-            );
-            redisClient.xack(streamName, consumerGroupName, ...messageIds);
             redisClient.publish(miningId, JSON.stringify(extractionProgress));
-            logger.debug('Publishing progress from worker', {
-              metadata: {
-                details: {
-                  miningId,
-                  pubsubChannel: streamName,
-                  consumerGroupName,
-                  consumerName: this.consumerName,
-                  extractionProgress
-                }
-              }
-            });
+
             redisClient.xtrim(streamName, 'MINID', lastMessageId);
             return promises;
           } catch (err) {
@@ -154,13 +138,7 @@ class StreamConsumer {
         logger.debug('Extraction errors', { metadata: { failedExtractions } });
       }
 
-      const { heapTotal, heapUsed } = process.memoryUsage();
-      const totalAvailableHeap = (heapTotal / 1024 / 1024 / 1024).toFixed(2);
-      const totalUsedHeap = (heapUsed / 1024 / 1024 / 1024).toFixed(2);
-
-      logger.debug(
-        `[WORKER] Heap total: ${totalAvailableHeap} | Heap used: ${totalUsedHeap}`
-      );
+      logMemoryStats(logger, 'worker');
       return processedData;
     } catch (err) {
       logger.error('Error while consuming messages from stream.', {
