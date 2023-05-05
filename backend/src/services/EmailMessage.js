@@ -249,11 +249,6 @@ class EmailMessage {
               );
             }
 
-            await this.redisClientForNormalMode.sadd(
-              'invalidDomainEmails',
-              email.address
-            );
-
             return null;
           } catch (error) {
             logger.error('Error when extracting persons', {

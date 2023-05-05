@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import Redis, { RedisOptions } from 'ioredis';
 import {
   REDIS_HOST,
   REDIS_PASSWORD,
@@ -19,14 +19,20 @@ class RedisManager {
 
   /**
    * @constructor
-   * @param {string} host - Redis host
-   * @param {number} port - Redis port
-   * @param {string} user - Redis user
-   * @param {string} password - Redis password
-   * @param {boolean} tls - Enable tls
+   * @param host - Redis host
+   * @param port - Redis port
+   * @param user - Redis user
+   * @param password - Redis password
+   * @param  tls - Enable tls
    */
-  constructor(host, port, user, password, tls) {
-    let redisOpts = {
+  constructor(
+    host: string,
+    port: number,
+    user: string,
+    password: string,
+    tls: boolean
+  ) {
+    let redisOpts: RedisOptions = {
       host,
       port
     };
@@ -41,7 +47,7 @@ class RedisManager {
     if (user && password) {
       redisOpts = {
         ...redisOpts,
-        user,
+        username: user,
         password
       };
     }
@@ -82,7 +88,7 @@ class RedisManager {
    * Returns Redis client instance.
    * Don't use this client to subscribe to pub/sub channels.
    * Instead, you should use `getSubscriberClient` for subscribing.
-   * @returns {Redis} Redis client instance
+   * @returns Redis client instance
    */
   getClient() {
     return this.#normalClient;
@@ -99,10 +105,10 @@ class RedisManager {
 }
 
 const redis = new RedisManager(
-  REDIS_HOST,
+  REDIS_HOST!,
   REDIS_PORT,
-  REDIS_USERNAME,
-  REDIS_PASSWORD,
+  REDIS_USERNAME!,
+  REDIS_PASSWORD!,
   REDIS_TLS
 );
 
