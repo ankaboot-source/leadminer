@@ -224,26 +224,31 @@
 </template>
 
 <script setup lang="ts">
+import {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
 import exportFromJSON from "export-from-json";
-import { copyToClipboard, useQuasar } from "quasar";
+import { QTable, copyToClipboard, useQuasar } from "quasar";
 import { getLocalizedCsvSeparator } from "src/helpers/csv";
+import { fetchData, supabaseClient } from "src/helpers/supabase";
+import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "../store/index";
 
 const $q = useQuasar();
 const $store = useStore();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const rows = ref<any>([]);
+const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const table = ref<any>(null);
+const table = ref<QTable>();
 
-const minedEmails = computed(
-  () => $store.getters["leadminer/getRetrievedEmails"].length
-);
+let contactsCache = new Map<string, Contact>();
+
+const minedEmails = computed(() => rows.value.length);
 
 const initialPagination = {
   sortBy: "engagement",
@@ -269,38 +274,84 @@ const activeMiningTask = computed(
   () => !!$store.state.leadminer.miningTask.miningId
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let refreshInterval: any = null;
+let refreshInterval: number;
 function refreshTable() {
-  const contactStoreLength =
-    $store.getters["leadminer/getRetrievedEmails"].length;
+  const contactCacheLength = contactsCache.size;
   const contactTableLength = rows.value.length;
-  const hasNewContacts =
-    parseInt(contactStoreLength, 10) > parseInt(contactTableLength, 10);
+  const hasNewContacts = contactCacheLength > contactTableLength;
 
   if (hasNewContacts) {
     isLoading.value = true;
-    rows.value = $store.getters["leadminer/getRetrievedEmails"];
+    rows.value = Array.from(contactsCache.values());
     isLoading.value = false;
   }
 }
 
+let subscription: RealtimeChannel;
+function setupSubscription() {
+  const user = $store.getters["leadminer/getCurrentUser"];
+  subscription = supabaseClient.channel("*").on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "refinedpersons",
+      filter: `userid=eq.${user.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
+}
+
+async function refineContacts(userId: string) {
+  const { error } = await supabaseClient.rpc("refined_persons", {
+    userid: userId,
+  });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+  }
+}
+
+async function getContacts(userId: string) {
+  const contacts = await fetchData<Contact>(
+    userId,
+    "refinedpersons",
+    process.env.SUPABASE_MAX_ROWS
+  );
+
+  return contacts;
+}
+
 async function syncTable() {
   isLoading.value = true;
-  await $store.dispatch("leadminer/syncRefinedPersons");
-  rows.value = $store.getters["leadminer/getRetrievedEmails"];
+  const { id } = $store.getters["leadminer/getCurrentUser"];
+  await refineContacts(id);
+  const contacts = await getContacts(id);
+  rows.value = contacts;
   isLoading.value = false;
 }
 
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     // If mining is active, update refined persons every 3 seconds
-    refreshInterval = setInterval(() => {
-      // Call the refreshTable function
+    setupSubscription();
+    subscription.subscribe();
+    if (rows.value.length > 0) {
+      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
+    }
+    refreshInterval = window.setInterval(() => {
       refreshTable();
     }, 3000);
   } else {
+    if (subscription) {
+      subscription.unsubscribe();
+    }
     clearInterval(refreshInterval);
+    contactsCache.clear();
     await syncTable();
   }
 });
@@ -380,8 +431,8 @@ function exportTable() {
     return;
   }
   const currentDatetime = new Date();
-  const userEmail = $store.getters["leadminer/getUserEmail"];
-  const fileName = `leadminer-${userEmail}-${currentDatetime
+  const { email } = $store.getters["leadminer/getCurrentUser"];
+  const fileName = `leadminer-${email}-${currentDatetime
     .toISOString()
     .slice(0, 10)}`;
 
@@ -417,11 +468,14 @@ function exportTable() {
 
 const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === "Escape") {
-    table.value.exitFullscreen();
+    table.value?.exitFullscreen();
   }
 };
 
 onMounted(async () => {
+  if (!$store.getters["leadminer/isLoggedIn"]) {
+    return;
+  }
   window.addEventListener("keydown", onKeyDown);
   await syncTable();
 });
