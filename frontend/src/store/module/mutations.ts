@@ -1,14 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getDefaultState } from "./defaultState";
 
-export function ADD_EMAIL(state: any, streamedEmail: any) {
-  state.retrievedEmails.set(streamedEmail.email, streamedEmail);
-}
-
-export function SET_EMAILS(state: any, emails: any) {
-  state.retrievedEmails = emails;
-}
-
 export function SET_LOADING(state: any, newLoadingStatus: any) {
   state.loadingStatus = newLoadingStatus;
 }

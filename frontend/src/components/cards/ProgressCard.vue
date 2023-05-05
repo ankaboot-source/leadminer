@@ -120,7 +120,6 @@ const responsiveCenteredLabel = computed(() =>
 
 const progressProps = defineProps({
   extractedEmails: { type: Number, default: 0 },
-  minedEmails: { type: Number, default: 0 },
   scannedEmails: { type: Number, default: 0 },
   totalEmails: { type: Number, default: 0 },
 });
