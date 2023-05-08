@@ -203,7 +203,7 @@ class StreamConsumer {
 
 const streamConsumerInstance = new StreamConsumer(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-  'consumer-1',
+  `consumer-${process.env.HOSTNAME}`,
   REDIS_CONSUMER_BATCH_SIZE,
   processStreamData
 );

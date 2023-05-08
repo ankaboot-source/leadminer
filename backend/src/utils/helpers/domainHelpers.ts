@@ -1,5 +1,7 @@
 import dns from 'dns/promises';
 import { Redis } from 'ioredis';
+import { MX_RESOLVER_TIMEOUT_MS } from '../constants';
+import rejectAfter from '../profiling/timeout';
 
 /**
  * Check the MX records of a domain and adds the result to the redis sets
@@ -11,15 +13,24 @@ export async function checkMXStatus(
   domain: string
 ): Promise<[boolean, 'custom' | '', string]> {
   try {
-    const addresses = await dns.resolveMx(domain);
-    if (addresses.length === 0) {
-      redisClient.sadd('domainListInvalid', domain);
+    const result = await Promise.race([
+      dns.resolveMx(domain),
+      rejectAfter(MX_RESOLVER_TIMEOUT_MS)
+    ]);
+
+    const hasNoMxRecords =
+      result && result instanceof Array && result.length === 0;
+
+    if (hasNoMxRecords) {
+      await redisClient.sadd('domainListInvalid', domain);
       return [false, '', domain];
     }
-    redisClient.sadd('domainListValid', domain);
+
+    await redisClient.sadd('domainListValid', domain);
     return [true, 'custom', domain];
   } catch (error) {
-    redisClient.sadd('domainListInvalid', domain);
+    // Has timed out or threw an error
+    await redisClient.sadd('domainListInvalid', domain);
     return [false, '', domain];
   }
 }
