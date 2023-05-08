@@ -28,8 +28,8 @@
   "license": "GNU AGPL v3",
   "dependencies": {
     "@sentry/tracing": "^7.47.0",
+    "@supabase/supabase-js": "^2.20.0",
     "@sentry/node": "^7.48.0",
-    "@supabase/supabase-js": "^2.15.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
