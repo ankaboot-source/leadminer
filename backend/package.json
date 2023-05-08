@@ -28,8 +28,8 @@
   "license": "GNU AGPL v3",
   "dependencies": {
     "@sentry/tracing": "^7.47.0",
-    "@sentry/node": "^7.47.0",
     "@supabase/supabase-js": "^2.20.0",
+    "@sentry/node": "^7.48.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
@@ -39,7 +39,7 @@
     "google-auth-library": "^8.7.0",
     "html-entities": "^2.3.3",
     "imap": "^0.8.19",
-    "ioredis": "^5.3.1",
+    "ioredis": "^5.3.2",
     "nanoid": "^3.3.6",
     "nodemon": "^2.0.22",
     "pg": "^8.10.0",
