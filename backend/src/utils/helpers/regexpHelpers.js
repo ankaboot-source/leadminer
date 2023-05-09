@@ -47,11 +47,14 @@ export function extractNameAndEmail(emails) {
         return null;
       }
 
+      let cleanedEmailString = emailString;
+
       // For emails with format <mailto:email@example.com> found in List-Post headers
-      const cleanedEmailString = emailString.replaceAll('<mailto:', '');
+      if (emailString.startsWith('<mailto:')) {
+        cleanedEmailString = emailString.replace('<mailto:', '');
+      }
 
       const match = cleanedEmailString.match(REGEX_HEADER);
-
       if (!match) {
         return null;
       }
