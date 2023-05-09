@@ -29,7 +29,10 @@ export async function checkMXStatus(
     await redisClient.sadd('domainListValid', domain);
     return [true, 'custom', domain];
   } catch (error) {
-    // Has timed out or threw an error
+    if (error instanceof Error && error.message === 'timeout') {
+      await redisClient.sadd('domainListValid', domain);
+      return [true, 'custom', domain];
+    }
     await redisClient.sadd('domainListInvalid', domain);
     return [false, '', domain];
   }
