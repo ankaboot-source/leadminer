@@ -285,4 +285,19 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       expect(extractNameAndEmail(input)).toHaveLength(0);
     });
   });
+
+  it('Should return the correct email object for a list-post header format', () => {
+    const input = '<mailto:ga_montreuil_info@lists.riseup.net>';
+    const expectedEmail = {
+      name: '',
+      address: 'ga_montreuil_info@lists.riseup.net',
+      identifier: 'ga_montreuil_info',
+      domain: 'lists.riseup.net'
+    };
+
+    const result = extractNameAndEmail(input);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(expectedEmail);
+  });
 });
