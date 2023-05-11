@@ -1,7 +1,7 @@
-const {
-  NOREPLY_EMAIL_ADDRESS_INCLUDES,
-  NEWSLETTER_EMAIL_ADDRESS_INCLUDES
-} = require('../constants');
+import {
+  NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
+  NOREPLY_EMAIL_ADDRESS_INCLUDES
+} from '../constants';
 
 /**
  * Returns the type type of the email address based on its domain type.
@@ -73,7 +73,7 @@ function getEmailTags({ address, name }, domainType) {
   return emailTags;
 }
 
-module.exports = {
+export default {
   getEmailTags,
   findEmailAddressType,
   isNoReply

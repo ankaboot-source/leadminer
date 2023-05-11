@@ -8,18 +8,9 @@ import {
 } from '../utils/helpers/regexpHelpers';
 import logger from '../utils/logger';
 import messageTaggingRules from './tagging';
+import { MESSAGING_FIELDS } from './tagging/types';
 
 class EmailMessage {
-  static #MESSAGING_FIELDS = [
-    'to',
-    'from',
-    'cc',
-    'bcc',
-    'reply-to',
-    'list-post',
-    'reply_to'
-  ];
-
   static #IGNORED_MESSAGE_TAGS = ['transactional', 'no-reply'];
 
   /**
@@ -105,7 +96,7 @@ class EmailMessage {
 
     for (const key of Object.keys(this.header)) {
       const lowerCaseKey = key.toLocaleLowerCase();
-      if (EmailMessage.#MESSAGING_FIELDS.includes(lowerCaseKey)) {
+      if (MESSAGING_FIELDS.includes(lowerCaseKey)) {
         const [value] = this.header[`${key}`];
         messagingProps[`${lowerCaseKey}`] = value;
       }
@@ -129,15 +120,16 @@ class EmailMessage {
   #getMessageTags() {
     const tags = [];
 
-    for (const { rulesToApply, tag } of messageTaggingRules) {
+    for (const { rulesToCheck, tag } of messageTaggingRules) {
+      // If the email message was already tagged differently, transactional tag no longer applies
       if (tag.name === 'transactional' && tags.length > 0) {
         return tags;
       }
 
-      for (const { conditions, fields } of rulesToApply) {
+      for (const { conditions, fields } of rulesToCheck) {
         if (
           conditions.some((condition) =>
-            condition.checkRule({ header: this.header })
+            condition.checkCondition({ header: this.header })
           )
         ) {
           tags.push({ ...tag, source: 'refined', fields });

@@ -271,10 +271,10 @@ describe('Email Message', () => {
   });
 
   describe('messageTags', () => {
-    const [transactionalRules] = transactionalEmailMessage.rulesToApply;
-    const groupRules = groupEmailMessage.rulesToApply;
-    const [linkedinRules] = linkedinEmailMessage.rulesToApply;
-    const [newsletterRules] = newsletterEmailMessage.rulesToApply;
+    const [transactionalRules] = transactionalEmailMessage.rulesToCheck;
+    const groupRules = groupEmailMessage.rulesToCheck;
+    const [linkedinRules] = linkedinEmailMessage.rulesToCheck;
+    const [newsletterRules] = newsletterEmailMessage.rulesToCheck;
 
     let header = {};
     beforeEach(() => {
