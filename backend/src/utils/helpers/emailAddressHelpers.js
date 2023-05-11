@@ -8,7 +8,7 @@ import {
  * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"
  * @returns the type of email address.
  */
-function findEmailAddressType(domainType) {
+export function findEmailAddressType(domainType) {
   switch (domainType) {
     case 'custom':
       return 'professional';
@@ -24,7 +24,7 @@ function findEmailAddressType(domainType) {
  * @param emailAddress - The email address to check
  * @returns {Boolean}
  */
-function isNoReply(emailAddress) {
+export function isNoReply(emailAddress) {
   return NOREPLY_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
@@ -35,7 +35,7 @@ function isNoReply(emailAddress) {
  * @param emailAddress - The email address to check.
  * @returns {Boolean}
  */
-function isNewsletter(emailAddress) {
+export function isNewsletter(emailAddress) {
   return NEWSLETTER_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
@@ -49,7 +49,7 @@ function isNewsletter(emailAddress) {
  * @param {string} domainType - The type of domain, it can be either "provider" or "custom"
  * @returns {Object[]} List of tags
  */
-function getEmailTags({ address, name }, domainType) {
+export function getEmailTags({ address, name }, domainType) {
   const emailTags = [];
 
   const emailType = findEmailAddressType(domainType);
@@ -72,9 +72,3 @@ function getEmailTags({ address, name }, domainType) {
 
   return emailTags;
 }
-
-export default {
-  getEmailTags,
-  findEmailAddressType,
-  isNoReply
-};
