@@ -132,7 +132,7 @@ class EmailMessage {
 
       if (requiredConditions) {
         const isMissingRequiredCondition = requiredConditions.some(
-          (c) => !c.checkCondition()
+          (c) => !c.checkCondition({ header: this.header })
         );
 
         if (isMissingRequiredCondition) {
