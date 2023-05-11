@@ -120,10 +120,25 @@ class EmailMessage {
   #getMessageTags() {
     const tags = [];
 
-    for (const { rulesToCheck, tag } of messageTaggingRules) {
+    for (const {
+      rulesToCheck,
+      tag,
+      requiredConditions
+    } of messageTaggingRules) {
       // If the email message was already tagged differently, transactional tag no longer applies
       if (tag.name === 'transactional' && tags.length > 0) {
         return tags;
+      }
+
+      if (requiredConditions) {
+        const isMissingRequiredCondition = requiredConditions.some(
+          (c) => !c.checkCondition()
+        );
+
+        if (isMissingRequiredCondition) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
       }
 
       for (const { conditions, fields } of rulesToCheck) {

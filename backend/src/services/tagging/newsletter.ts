@@ -1,4 +1,5 @@
 import HasHeaderField from './conditions/HasHeaderField';
+import HasNoHeaderField from './conditions/HasNoHeaderField';
 import { EmailMessageTagExtractor } from './types';
 
 const newsletterEmailMessage: EmailMessageTagExtractor = {
@@ -6,6 +7,7 @@ const newsletterEmailMessage: EmailMessageTagExtractor = {
     name: 'newsletter',
     reachable: 1
   },
+  requiredConditions: [new HasNoHeaderField(['list-post'])],
   rulesToCheck: [
     {
       fields: ['from'],

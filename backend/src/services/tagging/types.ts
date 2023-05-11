@@ -41,7 +41,7 @@ export interface EmailMessageTagExtractor {
   tag: Tag;
   requiredConditions?: TaggingCondition[];
   /**
-   * If any of the following rules is true, this tag applies to the email message for the given fields.
+   * If any of the following rules is true, this tag applies to contacts extracted from the given fields.
    */
   rulesToCheck: TaggingRule[];
 }

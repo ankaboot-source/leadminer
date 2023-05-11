@@ -19,8 +19,7 @@ const groupEmailMessage: EmailMessageTagExtractor = {
       fields: ['reply-to', 'reply_to'],
       conditions: [new HasHeaderField(['mailing-list'])] // For Yahoo
     }
-  ],
-  requiredConditions: []
+  ]
 };
 
 export default groupEmailMessage;
