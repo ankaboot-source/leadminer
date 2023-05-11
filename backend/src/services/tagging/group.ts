@@ -5,9 +5,8 @@ import { EmailMessageTagExtractor } from './types';
 const groupEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'group',
-    reachable: 3
+    reachable: 2
   },
-  requiredConditions: [],
   rulesToCheck: [
     {
       fields: ['list-post'],
@@ -20,7 +19,8 @@ const groupEmailMessage: EmailMessageTagExtractor = {
       fields: ['reply-to', 'reply_to'],
       conditions: [new HasHeaderField(['mailing-list'])] // For Yahoo
     }
-  ]
+  ],
+  requiredConditions: []
 };
 
 export default groupEmailMessage;

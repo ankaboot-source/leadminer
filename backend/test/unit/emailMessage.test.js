@@ -408,7 +408,7 @@ describe('Email Message', () => {
         expect(message.messageTags).toEqual([
           {
             name: 'newsletter',
-            reachable: 2,
+            reachable: 1,
             source: 'refined',
             fields: newsletterRules.fields
           }
