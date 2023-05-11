@@ -2,7 +2,7 @@ import { hasHeaderFieldStartsWith } from '../../../utils/helpers/emailMessageHel
 import { EmailMessageContent, TaggingCondition } from '../types';
 
 export default class HasHeaderFieldStartsWith implements TaggingCondition {
-  possibleHeaderPrefixes: string[];
+  private readonly possibleHeaderPrefixes: string[];
 
   constructor(possibleHeaderPrefixes: string[]) {
     this.possibleHeaderPrefixes = possibleHeaderPrefixes;

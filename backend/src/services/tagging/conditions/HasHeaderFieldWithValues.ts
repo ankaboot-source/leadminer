@@ -2,9 +2,9 @@ import { hasHeaderWithValue } from '../../../utils/helpers/emailMessageHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
 export default class HasHeaderWithValues implements TaggingCondition {
-  private field: string;
+  private readonly field: string;
 
-  private values: string[];
+  private readonly values: string[];
 
   constructor(field: string, values: string[]) {
     this.field = field;
