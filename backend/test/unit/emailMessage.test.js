@@ -465,6 +465,37 @@ describe('Email Message', () => {
 
       expect(message.messageTags).toHaveLength(0);
     });
+
+    it("Shouldn't include newsletter tag if header has list-post", () => {
+      header['list-post'] = 'test';
+      header['list-id'] = 'test';
+
+      const message = new EmailMessage({}, '', 1, header, {}, '');
+
+      expect(message.messageTags).toEqual([
+        {
+          name: 'group',
+          reachable: 2,
+          source: 'refined',
+          fields: ['list-post']
+        }
+      ]);
+    });
+
+    it('Should include newsletter tag if header has no list-post', () => {
+      header['list-id'] = 'test';
+
+      const message = new EmailMessage({}, '', 1, header, {}, '');
+
+      expect(message.messageTags).toEqual([
+        {
+          name: 'newsletter',
+          reachable: 1,
+          source: 'refined',
+          fields: ['from']
+        }
+      ]);
+    });
   });
 });
 
