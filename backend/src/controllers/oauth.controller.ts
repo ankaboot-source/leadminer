@@ -67,7 +67,7 @@ export async function oauthHandler(req: Request, res: Response, next: NextFuncti
         const redirectURL = req.query.redirect_to
         const { nosignup, provider, scopes } = req.query;
 
-        if (provider === undefined || typeof provider !== 'string') {
+        if (typeof provider !== 'string') {
             throw new Error('Missing or Invalid provider.');
         }
 
@@ -75,8 +75,12 @@ export async function oauthHandler(req: Request, res: Response, next: NextFuncti
             provider: provider as string,
         };
 
-        if (scopes) {
-            authorizationParams.scopes = scopes as string
+        if (typeof scopes === 'string') {
+            authorizationParams.scopes = scopes
+        }
+        
+        if (typeof redirectURL === 'string') {
+            authorizationParams.redirect_to = redirectURL
         }
 
         if (nosignup === 'true') {
@@ -88,10 +92,6 @@ export async function oauthHandler(req: Request, res: Response, next: NextFuncti
             authorizationParams.state = encodeJwt(stateParams)
         }
         
-        if (redirectURL) {
-            authorizationParams.redirect_to = redirectURL as string
-        }
-
         const queryParams = new URLSearchParams(authorizationParams as Record<string, any>);
         const authorizationURL = `${AUTH_SERVER_URL}/authorize?${queryParams.toString()}`;
 
