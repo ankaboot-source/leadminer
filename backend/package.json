@@ -27,7 +27,7 @@
   "author": "ankaboot",
   "license": "GNU AGPL v3",
   "dependencies": {
-    "@sentry/tracing": "^7.48.0",
+    "@sentry/tracing": "^7.49.0",
     "@supabase/supabase-js": "^2.20.0",
     "@sentry/node": "^7.48.0",
     "cookie-parser": "^1.4.6",
