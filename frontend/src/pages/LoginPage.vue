@@ -141,8 +141,8 @@
 </template>
 
 <script setup lang="ts">
-import { LocalStorage, useQuasar } from "quasar";
-import { computed, onMounted, ref, onBeforeMount } from "vue";
+import { useQuasar } from "quasar";
+import { computed, onBeforeMount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import OauthLogin from "src/components/LoginButtons/OauthLogin.vue";
@@ -164,18 +164,9 @@ const policyChecked = ref(false);
 const isLoading = ref(false);
 
 onMounted(() => {
-  const oauthUser = LocalStorage.getItem("oauthUser");
-  const imapUser = LocalStorage.getItem("imapUser");
-
-  if (!oauthUser && !imapUser) return;
-
-  if (oauthUser) {
-    $store.commit("leadminer/SET_OAUTH_USER", oauthUser);
-  } else if (imapUser) {
-    $store.commit("leadminer/SET_IMAP", imapUser);
+  if ($store.getters["leadminer/isLoggedIn"]) {
+    $router.push("/dashboard");
   }
-
-  $router.push("/dashboard");
 });
 
 onBeforeMount(() => {
@@ -258,17 +249,20 @@ async function login() {
     await $store.dispatch("leadminer/signIn", { data });
     $router.push("/dashboard");
   } catch (error) {
-    $quasar.notify({
-      message: $store.getters["leadminer/getStates"].errorMessage,
-      color: "red",
-      icon: "error",
-      actions: [
-        {
-          label: "ok",
-          color: "white",
-        },
-      ],
-    });
+    const message = $store.getters["leadminer/getStates"].errorMessage;
+    if (message !== null) {
+      $quasar.notify({
+        message,
+        color: "red",
+        icon: "error",
+        actions: [
+          {
+            label: "ok",
+            color: "white",
+          },
+        ],
+      });
+    }
   } finally {
     isLoading.value = false;
   }

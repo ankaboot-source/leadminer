@@ -1,72 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LocalStorage } from "quasar";
 
-import { RealtimeChannel, createClient } from "@supabase/supabase-js";
 import { api } from "src/boot/axios";
 import { sse } from "src/helpers/sse";
-import { fetchData } from "src/helpers/supabase.js";
-
-const supabase = createClient(
-  process.env.SUPABASE_PROJECT_URL,
-  process.env.SUPABASE_SECRET_PROJECT_TOKEN
-);
-
-let subscription: RealtimeChannel;
-
-function subscribeToRefined(userId: string, commit: any) {
-  subscription = supabase
-    .channel("*")
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "refinedpersons",
-        filter: `userid=eq.${userId}`,
-      },
-      (payload) => {
-        commit("SET_EMAILS", payload.new);
-      }
-    )
-    .subscribe();
-}
-export async function syncRefinedPersons({ state, commit }: any) {
-  if (subscription) {
-    // Unsubscribe from real-time updates if currently subscribed
-    // to avoid getting update twice, from supabase query and realtime updates.
-    await subscription.unsubscribe();
-  }
-
-  // Determine user based on Google or IMAP credentials
-  const user = state.oauthUser.id ? state.oauthUser : state.imapUser;
-
-  // Call refined_persons stored procedure using Supabase client
-  const rpcResult = await supabase.rpc("refined_persons", { userid: user.id });
-
-  if (rpcResult.error) {
-    // eslint-disable-next-line no-console
-    console.error(rpcResult.error);
-  }
-
-  // Fetch data from Supabase for current user and update store with email addresses
-  const data = await fetchData(
-    supabase,
-    user.id,
-    "refinedpersons",
-    process.env.SUPABASE_MAX_ROWS
-  );
-  data.forEach((person) => commit("SET_EMAILS", person));
-
-  // Subscribe to real-time updates for current user
-  subscribeToRefined(user.id, commit);
-}
 
 export async function startMining(
   this: any,
-  { state, commit }: any,
+  { getters, commit }: any,
   { data }: any
 ) {
-  const user = state.oauthUser.id ? state.oauthUser : state.imapUser;
+  const user = getters.getCurrentUser;
 
   commit("SET_LOADING", true);
   commit("SET_LOADING_DNS", true);
@@ -74,9 +17,6 @@ export async function startMining(
   commit("SET_EXTRACTEDEMAILS", 0);
   commit("SET_STATISTICS", "f");
   commit("SET_SCANNEDBOXES", []);
-
-  if (subscription) await subscription.unsubscribe();
-  subscribeToRefined(user.id, commit);
 
   try {
     const { boxes } = data;
@@ -109,9 +49,9 @@ export async function startMining(
   }
 }
 
-export async function stopMining({ state, commit }: any, { data }: any) {
+export async function stopMining({ commit, getters }: any, { data }: any) {
   try {
-    const user = state.oauthUser.id ? state.oauthUser : state.imapUser;
+    const user = getters.getCurrentUser;
 
     const { miningId } = data;
 
@@ -132,25 +72,6 @@ export async function stopMining({ state, commit }: any, { data }: any) {
   }
 }
 
-export function signUp({ commit }: any, { data }: any) {
-  return new Promise((resolve, reject) => {
-    commit("SET_LOADING", true);
-    // get imapInfo account or create one
-    api
-      .post("/imap/signup", data)
-      .then((response) => {
-        commit("SET_LOADING", false);
-        commit("SET_INFO_MESSAGE", response.data.message);
-        resolve(response);
-      })
-      .catch((error) => {
-        if (error) {
-          commit("SET_ERROR", error?.response.data.error);
-        }
-        reject(error.message);
-      });
-  });
-}
 export function signUpGoogle({ commit }: any, { data }: any) {
   return new Promise((resolve, reject) => {
     commit("SET_LOADING", true);
@@ -169,31 +90,42 @@ export function signUpGoogle({ commit }: any, { data }: any) {
       });
   });
 }
-export async function signIn({ state, commit }: any, { data }: any) {
+export async function signIn({ commit }: any, { data }: any) {
   try {
-    commit("SET_LOADING", true);
     const response = await api.post("/imap/login", data);
-    commit("SET_LOADING", false);
+    const imapUser = { ...response.data.imap, password: data.password };
 
-    commit("SET_IMAP", response.data.imap);
-    const imapUser = { ...state.imapUser, password: data.password };
     LocalStorage.set("imapUser", imapUser);
+    commit("SET_IMAP", imapUser);
 
     return response.data;
   } catch (error: any) {
-    const err = error?.response?.data?.error?.message || error?.message;
-    commit("SET_ERROR", err);
-    commit("SET_ERRORS", error?.response?.data?.error?.errors);
-    throw new Error(err.message);
+    const fieldErrors = error?.response?.data?.error?.errors;
+    const err = new Error(
+      error?.response?.data?.error?.message ||
+        error?.response?.data?.error ||
+        error?.message
+    );
+
+    if (fieldErrors) {
+      commit("SET_ERRORS", fieldErrors);
+      commit("SET_ERROR", null);
+    } else {
+      if (err.message.toLowerCase() === "network error") {
+        err.message =
+          "Oops! Something went wrong. Please check your internet connection and try again later.";
+      }
+      commit("SET_ERROR", err.message);
+      commit("SET_ERRORS", {});
+    }
+
+    throw new Error(error);
   }
 }
 
-export async function getBoxes({ state, commit }: any) {
+export async function getBoxes({ getters, commit }: any) {
   commit("SET_LOADINGBOX", true);
-
-  const user =
-    state.oauthUser.accessToken === "" ? state.imapUser : state.oauthUser;
-
+  const user = getters.getCurrentUser;
   commit("SET_USERID", user.id);
 
   try {

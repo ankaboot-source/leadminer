@@ -23,6 +23,10 @@ const IMAP_ERROR_CODES = Object.freeze({
   EAI_AGAIN: {
     fields: ['host'],
     message: 'Cannot resolve. Please verify the hostname and try again.'
+  },
+  CONNECTION_TIMEOUT: {
+    fields: ['host', 'port'],
+    message: 'Timed out while connecting to server.'
   }
 });
 
@@ -112,6 +116,10 @@ export function generateErrorObjectFromImapError(error) {
 
   if (error.message.startsWith('LOGIN') && !(error.code ?? error.textCode)) {
     errorMessage = IMAP_ERROR_CODES.AUTHENTICATIONFAILED;
+  }
+
+  if (error.source === 'timeout') {
+    errorMessage = IMAP_ERROR_CODES.CONNECTION_TIMEOUT;
   }
 
   if (errorMessage) {

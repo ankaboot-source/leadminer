@@ -26,11 +26,12 @@ export function extractNameAndEmailFromBody(data) {
  * @returns {string} The extracted name, or an empty string if no name is found.
  */
 export function cleanName(name) {
-  const cleanedName = name
+  const cleanedName = decode(name)
     .trim()
+    .replace(/\\"/g, '')
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
-  return decode(cleanedName);
+  return cleanedName;
 }
 
 /**
@@ -46,8 +47,14 @@ export function extractNameAndEmail(emails) {
         return null;
       }
 
-      const match = emailString.match(REGEX_HEADER);
+      let cleanedEmailString = emailString;
 
+      // For emails with format <mailto:email@example.com> found in List-Post headers
+      if (emailString.startsWith('<mailto:')) {
+        cleanedEmailString = emailString.replace('<mailto:', '');
+      }
+
+      const match = cleanedEmailString.match(REGEX_HEADER);
       if (!match) {
         return null;
       }

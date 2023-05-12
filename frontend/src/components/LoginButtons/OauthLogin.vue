@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { LocalStorage, useQuasar } from "quasar";
+import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 
 export default {
@@ -32,17 +32,10 @@ export default {
   methods: {
     handleClickSignIn() {
       this.isLoading = true;
-      const googleUser = LocalStorage.getItem("googleUser");
 
-      if (googleUser) {
-        this.$store.commit("leadminer/SET_GOOGLE_USER", googleUser);
-        this.isLoading = false;
-        this.$router.push("/dashboard");
-      } else {
-        window.location.assign(
-          `${api.getUri()}/imap/auth/${this.oauthProvider}`
-        );
-      }
+      window.location.assign(
+        `${api.getUri()}/imap/auth/${this.oauthProvider}`
+      );
     },
   },
 };

@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getDefaultState } from "./defaultState";
 
-export function SET_EMAILS(state: any, streamedEmail: any) {
-  state.retrievedEmails.set(streamedEmail.email, streamedEmail);
-}
 export function SET_LOADING(state: any, newLoadingStatus: any) {
   state.loadingStatus = newLoadingStatus;
 }
@@ -17,15 +14,11 @@ export function SET_LOADINGBOX(state: any, newLoadingStatusbox: any) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
 export function SET_IMAP(state: any, newImap: any) {
-  state.imapUser.id = newImap.id;
-  state.imapUser.email = newImap.email;
-  state.imapUser.password = newImap.password;
-  state.imapUser.host = newImap.host;
-  state.imapUser.port = newImap.port;
+  state.imapUser = {
+    ...newImap,
+  };
 }
-export function SET_PASSWORD(state: any, newPassword: string) {
-  state.imapUser.password = newPassword;
-}
+
 export function SET_BOXES(state: any, newBoxes: any) {
   state.boxes = [...newBoxes];
 }
@@ -74,10 +67,10 @@ export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
 }
 
-export function SET_OAUTH_USER(state: any, user: any) {
-  state.oauthUser.email = user.email;
-  state.oauthUser.id = user.id;
-  state.oauthUser.accessToken = user.accessToken;
+export function SET_GOOGLE_USER(state: any, user: any) {
+  state.googleUser = {
+    ...user,
+  };
 }
 
 export function RESET_STORE(state: any) {

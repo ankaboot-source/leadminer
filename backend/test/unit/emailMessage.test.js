@@ -271,10 +271,10 @@ describe('Email Message', () => {
   });
 
   describe('messageTags', () => {
-    const [transactionalRules] = transactionalEmailMessage.rulesToApply;
-    const groupRules = groupEmailMessage.rulesToApply;
-    const [linkedinRules] = linkedinEmailMessage.rulesToApply;
-    const [newsletterRules] = newsletterEmailMessage.rulesToApply;
+    const [transactionalRules] = transactionalEmailMessage.rulesToCheck;
+    const groupRules = groupEmailMessage.rulesToCheck;
+    const [linkedinRules] = linkedinEmailMessage.rulesToCheck;
+    const [newsletterRules] = newsletterEmailMessage.rulesToCheck;
 
     let header = {};
     beforeEach(() => {
@@ -408,7 +408,7 @@ describe('Email Message', () => {
         expect(message.messageTags).toEqual([
           {
             name: 'newsletter',
-            reachable: 2,
+            reachable: 1,
             source: 'refined',
             fields: newsletterRules.fields
           }
@@ -464,6 +464,37 @@ describe('Email Message', () => {
       );
 
       expect(message.messageTags).toHaveLength(0);
+    });
+
+    it("Shouldn't include newsletter tag if header has list-post", () => {
+      header['list-post'] = 'test';
+      header['list-id'] = 'test';
+
+      const message = new EmailMessage({}, '', 1, header, {}, '');
+
+      expect(message.messageTags).toEqual([
+        {
+          name: 'group',
+          reachable: 2,
+          source: 'refined',
+          fields: ['list-post']
+        }
+      ]);
+    });
+
+    it('Should include newsletter tag if header has no list-post', () => {
+      header['list-id'] = 'test';
+
+      const message = new EmailMessage({}, '', 1, header, {}, '');
+
+      expect(message.messageTags).toEqual([
+        {
+          name: 'newsletter',
+          reachable: 1,
+          source: 'refined',
+          fields: ['from']
+        }
+      ]);
     });
   });
 });

@@ -1,4 +1,5 @@
-export default function errorHandler(err, _, res) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function errorHandler(err, req, res, next) {
   const code = res.statusCode !== 200 ? res.statusCode : 500;
   const response = {
     data: null,
