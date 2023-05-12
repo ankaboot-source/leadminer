@@ -33,9 +33,9 @@ export const OAUTH_PROVIDERS = [
     authorizationURL: `${process.env.GOOGLE_AUTHORIZATION_URL}`,
     tokenURL: `${process.env.GOOGLE_TOKEN_URL}`,
     clientID: `${process.env.GOOGLE_CLIENT_ID}`,
-    clientSecret: `${process.env. GOOGLE_SECRET}`,
+    clientSecret: `${process.env.GOOGLE_SECRET}`
   }
-]
+];
 
 export const {
   AUTH_SERVER_URL,
