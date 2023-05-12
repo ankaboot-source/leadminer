@@ -86,8 +86,10 @@ export function decodeJwt(token: string): JwtState | Record<string, any> {
 /**
  * Creates an OAuth2 strategy based on the specified provider name.
  * @param {string} providerName - The name of the OAuth provider.
- * @returns {OAuth2Strategy} - The configured OAuth2 strategy.
- * @throws {Error} - If the provider is not supported.
+ * @param {OauthProvider[]} providersList - The list of supported OAuth providers.
+ * @param {string} callbackURL - The callback URL to redirect to for tokens.
+ * @returns {OAuth2Strategy} The configured OAuth2 strategy.
+ * @throws {Error} If the provider is not supported.
  */
 export function createOAuthStrategy(providerName: string, providersList: OauthProvider[], callbackURL: string): OAuth2Strategy {
     const provider = providersList.find(({ name }) => name === providerName);
@@ -111,7 +113,7 @@ export function createOAuthStrategy(providerName: string, providersList: OauthPr
             _: Profile,
             cb: any
         ) => {
-            const oauthUserDetails: OauthUser = { accessToken, refreshToken }
+            const oauthUserDetails: OauthUser = { accessToken, refreshToken };
             return cb(null, oauthUserDetails);
         }
     );

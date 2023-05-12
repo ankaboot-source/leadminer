@@ -10,19 +10,22 @@ import { createOAuthStrategy, buildEndpointURL, buildRedirectUrl, encodeJwt, dec
  * @param {Request} req - The Express request object.
  * @param {Response} res - The Express response object.
  * @param {NextFunction} next - The Express next middleware function.
+ * @throws {Error} If the required parameters are missing or invalid.
  */
 export function oauthCallbackHandler(req: Request, res: Response, next: NextFunction) {
     const { state } = req.query;
 
     try {
+        // Decode the state parameter from a JWT token.
         const { nosignup, provider, redirectURL } = decodeJwt(state as string) as JwtState | Record<string, any>
 
 
-        if (provider === undefined || typeof provider !== 'string') {
+        if (typeof provider !== 'string') {
             throw new Error('Missing or Invalid provider.');
         }
 
         if (nosignup === undefined || nosignup === false) {
+            // Redirect to the callback URL with the query parameters to external auth server to handle signup.
             const redirectionURL = buildRedirectUrl(AUTH_SERVER_CALLBACK as string, { ...req.query });
             return res.redirect(redirectionURL);
         }
