@@ -6,6 +6,7 @@ import notFound from './middleware/notFound';
 import initializeSentryIfNeeded from './middleware/sentry';
 import imapRouter from './routes/imap.routes';
 import streamRouter from './routes/stream.routes';
+import oauthRouter from './routes/oauth.routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/', (_, res) =>
 );
 
 // Register api endpoints
+app.use('/api', oauthRouter);
 app.use('/api/imap', streamRouter);
 app.use('/api/imap', imapRouter);
 
