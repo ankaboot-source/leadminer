@@ -130,7 +130,7 @@ class EmailMessage {
         return tags;
       }
 
-      if (requiredConditions) {
+      if (requiredConditions && requiredConditions.length > 0) {
         const isMissingRequiredCondition = requiredConditions.some(
           (c) => !c.checkCondition({ header: this.header })
         );
