@@ -27,7 +27,19 @@ export const ALLOWED_ORIGINS = [
   process.env.FRONTEND_HOST
 ];
 
+export const OAUTH_PROVIDERS = [
+  {
+    name: 'google',
+    authorizationURL: `${process.env.GOOGLE_AUTHORIZATION_URL}`,
+    tokenURL: `${process.env.GOOGLE_TOKEN_URL}`,
+    clientID: `${process.env.GOOGLE_CLIENT_ID}`,
+    clientSecret: `${process.env. GOOGLE_SECRET}`,
+  }
+]
+
 export const {
+  AUTH_SERVER_URL,
+  AUTH_SERVER_CALLBACK,
   SUPABASE_PROJECT_URL,
   SUPABASE_SECRET_PROJECT_TOKEN,
   PG_CONNECTION_STRING,
