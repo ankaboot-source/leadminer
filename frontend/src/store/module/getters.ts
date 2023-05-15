@@ -7,11 +7,11 @@ export function getStates(state: any) {
 }
 
 export function getCurrentUser(state: any) {
-  return state.imapUser ? state.imapUser : state.googleUser;
+  return state.user;
 }
 
 export function isLoggedIn(state: any) {
-  return state.imapUser || state.googleUser;
+  return state.user;
 }
 
 export function getFormErrors(state: any) {

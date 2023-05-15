@@ -19,6 +19,18 @@ export function SET_IMAP(state: any, newImap: any) {
   };
 }
 
+export function SET_GOOGLE_USER(state: any, user: any) {
+  state.googleUser = {
+    ...user,
+  };
+}
+
+export function SET_USER_CREDENTIALS(state: any, user: any) {
+  state.user = {
+    ...user
+  }
+}
+
 export function SET_BOXES(state: any, newBoxes: any) {
   state.boxes = [...newBoxes];
 }
@@ -65,12 +77,6 @@ export function SET_SCANNEDBOXES(state: any, newValue: any) {
 
 export function SET_STATUS(state: any, newStatus: any) {
   state.progress.status = newStatus;
-}
-
-export function SET_GOOGLE_USER(state: any, user: any) {
-  state.googleUser = {
-    ...user,
-  };
 }
 
 export function RESET_STORE(state: any) {
