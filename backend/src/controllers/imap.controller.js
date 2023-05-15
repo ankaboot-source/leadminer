@@ -96,10 +96,10 @@ export async function getImapBoxes(req, res, next) {
       }
     });
   } catch (err) {
-    const newError = generateErrorObjectFromImapError(err);
-
-    res.status(newError.code);
-    return next(new Error(newError.message));
+    const generatedError = generateErrorObjectFromImapError(err)
+    const newError = new Error(generatedError.message);
+    newError.errors = generatedError.errors
+    return next(newError);
   } finally {
     await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
