@@ -14,7 +14,7 @@ import {
   decodeJwt,
   JwtState,
   AuthorizationParams,
-  OauthUser
+  UserDetails
 } from '../utils/helpers/oauthHelpers';
 
 /**
@@ -52,24 +52,28 @@ export function oauthCallbackHandler(
     const strategy = createOAuthStrategy(
       provider,
       OAUTH_PROVIDERS,
-      buildEndpointURL(req, '/api/oauth/callback')
+      buildEndpointURL(req, '/api/oauth/callback'),
     );
 
-    return passport.authenticate(strategy, (err: any, user: OauthUser) => {
-      if (err) {
-        return next(err);
-      }
-      if (!user) {
-        return res.redirect('/signin');
-      }
+    return passport.authenticate(
+      strategy,
+      (err: any, user: UserDetails) => {
 
-      if (redirectURL) {
-        const redirectionURL = buildRedirectUrl(redirectURL, user);
-        return res.redirect(redirectionURL);
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          return res.redirect('/signin');
+        }
+
+        if (redirectURL) {
+          const redirectionURL = buildRedirectUrl(redirectURL, user);
+          return res.redirect(redirectionURL);
+        }
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).send({ error: null, data: user });
       }
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(200).send({ error: null, data: user });
-    })(req, res, next);
+    )(req, res, next);
   } catch (err) {
     return next(err);
   }
@@ -113,7 +117,9 @@ export async function oauthHandler(
         provider,
         redirectURL
       };
+
       authorizationParams.state = encodeJwt(stateParams);
+      authorizationParams.access_type = 'offline'; // to get refresh_token when doing exchange using oauth code/
     }
 
     const queryParams = new URLSearchParams(

@@ -2,6 +2,8 @@ import { Request } from 'express';
 import { Strategy as OAuth2Strategy } from 'passport-oauth2';
 import { Profile } from 'passport';
 import jwt from 'jsonwebtoken';
+import db from '../../db';
+
 
 export interface OauthProvider {
   name: string;
@@ -9,12 +11,14 @@ export interface OauthProvider {
   tokenURL: string;
   clientID: string;
   clientSecret: string;
+  scopes?: string[];
 }
 
 export interface JwtState {
+  provider: string;
   nosignup?: boolean;
-  provider?: string;
   redirectURL?: string;
+  scopes: string | string[]
 }
 
 export interface AuthorizationParams {
@@ -22,11 +26,13 @@ export interface AuthorizationParams {
   provider: string;
   state?: string;
   scopes?: string;
+  access_type?: string;
 }
 
-export interface OauthUser {
+export interface UserDetails {
+  id: string;
+  email: string;
   accessToken: string;
-  refreshToken: string;
 }
 
 /**
@@ -87,6 +93,35 @@ export function decodeJwt(token: string): JwtState | Record<string, any> {
 }
 
 /**
+ * Finds or creates a user record using the provided email.
+ * @param {string} email - The email address of the Google user.
+ * @param {string} refreshToken - The refresh token of the Google user.
+ * @throws {Error} If it fails to create or query the Google user.
+ * @returns {Object} The Google user record that was found or created.
+ */
+async function findOrCreateOne(email: string, refreshToken: string) {
+  /**
+   * Temporary implementation: This function serves as a temporary solution until the application starts using the Gotrue user tables.
+   * It finds or creates a user based on the provided email and registres all account under the same table as a google user.
+   */
+  const account: Record<string, any> =
+    (await db.getGoogleUserByEmail(email)) ??
+    (await db.createGoogleUser({ email, refresh_token: refreshToken }));
+
+  if (!account) {
+    throw Error('Failed to create or query googleUser');
+  }
+
+  if (refreshToken && account.refresh_token !== refreshToken) {
+    await db.updateGoogleUser(account.id, refreshToken);
+  }
+
+  return {
+    ...account
+  };
+}
+
+/**
  * Creates an OAuth2 strategy based on the specified provider name.
  * @param {string} providerName - The name of the OAuth provider.
  * @param {OauthProvider[]} providersList - The list of supported OAuth providers.
@@ -112,11 +147,32 @@ export function createOAuthStrategy(
       tokenURL,
       clientID,
       clientSecret,
-      callbackURL
+      callbackURL,
     },
-    (accessToken: string, refreshToken: string, _: Profile, cb: any) => {
-      const oauthUserDetails: OauthUser = { accessToken, refreshToken };
-      return cb(null, oauthUserDetails);
+    async (accessToken: string, refreshToken: string, params, _, cb) => {
+      /**
+       * Temporary implementation: the original code we only return the tokens.
+       * 
+       * In this temporary implementation, we decode the JWT ID token to extract user info,
+       * find or create a user based on the email and refresh token, and return the user
+       * account details.
+       * 
+       * This implementation is subject to change when we start using the Gotrue use tables.
+       */
+      const userInfo: Record<string, any> = decodeJwt(params.id_token);
+
+      try {
+        const user = await findOrCreateOne(userInfo.email, refreshToken);
+        const account: UserDetails = {
+          id: user.id,
+          email: user.email,
+          accessToken
+        };
+
+        return cb(null, account);
+      } catch (error: any) {
+        return cb(error);
+      }
     }
   );
 
