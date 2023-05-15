@@ -2,12 +2,17 @@
 export default {
   name: "LoginCallback",
   created() {
-    const { id, email, accessToken } = this.$route.query;
 
-    this.$store.commit("leadminer/SET_OAUTH_USER", { id, email, accessToken });
+    const fragmentIdentifier = window.location.hash.split('#')[1];
+    const params = fragmentIdentifier 
+      ? new URLSearchParams(fragmentIdentifier)
+      : this.$route.query
+    const { id, email, accessToken } = params
+
+    this.$store.commit("leadminer/SET_USER_CREDENTIALS", { id, email, accessToken });
     localStorage.setItem(
-      "oauthUser",
-      JSON.stringify(this.$store.state.leadminer.oauthUser)
+      "user",
+      JSON.stringify(this.$store.state.leadminer.user)
     );
 
     this.$router.push("/dashboard");
