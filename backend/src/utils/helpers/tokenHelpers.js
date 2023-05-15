@@ -41,7 +41,7 @@ async function checkTokenValidity(accessToken) {
     const oauth2Client = getOAuthClient();
     const tokenInfo = await oauth2Client.getTokenInfo(accessToken);
     const now = new Date().getTime() / 1000;
-    return tokenInfo.expires_at > now;
+    return tokenInfo.exp > now;
   } catch (err) {
     return false;
   }
