@@ -24,8 +24,6 @@ const redisClient = redis.getClient();
  * @returns {Promise<void>} A promise that resolves when the message is successfully published.
  */
 async function publishEmailMessage(streamName, emailMessage) {
-  const { userIdentifier } = emailMessage;
-
   try {
     await redisClient.xadd(
       streamName,
@@ -34,13 +32,10 @@ async function publishEmailMessage(streamName, emailMessage) {
       JSON.stringify(emailMessage)
     );
   } catch (error) {
-    logger.error('Error when publishing email message to stream', {
-      metadata: {
-        error,
-        channel: streamName,
-        user: userIdentifier
-      }
-    });
+    logger.error(
+      `Error when publishing email message to stream ${streamName}`,
+      error
+    );
     throw error;
   }
 }
@@ -158,9 +153,7 @@ class ImapEmailsFetcher {
       await new Promise((resolve, reject) => {
         imapConnection.closeBox((err) => {
           if (err) {
-            logger.error('Error when closing box', {
-              metadata: { details: err.message }
-            });
+            logger.error('Error when closing box', error);
             reject(err);
           }
           resolve();
@@ -204,9 +197,7 @@ class ImapEmailsFetcher {
         const openedBox = await new Promise((resolve, reject) => {
           imapConnection.openBox(folderName, true, (error, box) => {
             if (error) {
-              logger.error('Error when opening folder', {
-                metadata: { error }
-              });
+              logger.error('Error when opening folder', error);
               reject(new Error(error));
             }
             resolve(box);
@@ -221,16 +212,12 @@ class ImapEmailsFetcher {
           );
         }
       } catch (error) {
-        logger.error('Error when fetching emails', {
-          metadata: { details: error.message }
-        });
+        logger.error('Error when fetching emails', error);
       } finally {
         // Close the mailbox and release the connection
         imapConnection.closeBox(async (error) => {
           if (error) {
-            logger.error('Error when closing box', {
-              metadata: { details: error.message }
-            });
+            logger.error('Error when closing box', error);
           }
           await this.imapConnectionProvider.releaseConnection(imapConnection);
         });
@@ -325,7 +312,7 @@ class ImapEmailsFetcher {
       });
 
       fetchResult.once('error', (err) => {
-        logger.error('IMAP fetch error', { metadata: { err } });
+        logger.error('IMAP fetch error', err);
         reject(err);
       });
 

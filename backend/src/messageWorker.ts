@@ -49,7 +49,7 @@ class StreamConsumer {
     // Subscribe to the Redis channel for stream management.
     redisSubscriber.subscribe(pubsubCommunicationChannel, (err) => {
       if (err) {
-        logger.error('Failed subscribing to Redis.', { metadata: { err } });
+        logger.error('Failed subscribing to Redis.', err);
         return;
       }
       logger.info('Subscribed to redis channel');
@@ -141,9 +141,7 @@ class StreamConsumer {
       logMemoryStats(logger, 'worker');
       return processedData;
     } catch (err) {
-      logger.error('Error while consuming messages from stream.', {
-        metadata: { err }
-      });
+      logger.error('Error while consuming messages from stream.', err);
       throw err;
     }
   }
@@ -172,11 +170,7 @@ class StreamConsumer {
 
         await this.consumeFromStreams(streams, consumerGroupName);
       } catch (error: any) {
-        logger.error('An error occurred while consuming streams:', {
-          metadata: {
-            details: error.message
-          }
-        });
+        logger.error('An error occurred while consuming streams:', error);
       }
     }
 

@@ -54,12 +54,11 @@ export async function handleMessage({
       });
       await db.callRpcFunction(userId, 'populate_refined');
     } catch (error) {
-      logger.error('Failed populating refined_persons.', {
-        metadata: {
-          error,
-          userHash: userIdentifierHash
-        }
-      });
+      logger.error(
+        'Failed populating refined_persons.',
+        error,
+        userIdentifierHash
+      );
     }
   }
 }
