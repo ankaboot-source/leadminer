@@ -23,7 +23,11 @@ function initLogger() {
         new LokiTransport({
           host: GRAFANA_LOKI_HOST,
           labels: { app: 'leadminer' },
-          format: format.combine(commonFormat, format.json())
+          json: true,
+          replaceTimestamp: true,
+          format: format.combine(commonFormat, format.json()),
+          // eslint-disable-next-line no-console
+          onConnectionError: (err) => console.error(err)
         })
       ]
     });
