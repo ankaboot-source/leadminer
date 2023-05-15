@@ -9,14 +9,7 @@ export const MAPPING_TABLE = new Map();
  * @param {*} metaData  - Additional metadata regarding the error.
  */
 export function logInsertionError(tableName, err, metaData = null) {
-  logger.error(`Error when inserting to ${tableName} table.`, {
-    metadata: {
-      // eslint-disable-next-line no-nested-ternary
-      error: err.message ? err.message : err.detail ? err.detail : err,
-      code: err.code,
-      ...metaData
-    }
-  });
+  logger.error(`Error when inserting to ${tableName} table.`, err, metaData);
 }
 
 /**

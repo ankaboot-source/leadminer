@@ -42,9 +42,7 @@ class RealtimeSSE extends SSE {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
-      logger.error('Somthing happend when sending SSE', {
-        metadata: { error }
-      });
+      logger.error('Somthing happend when sending SSE', error);
     }
   }
 
