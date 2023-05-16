@@ -67,7 +67,7 @@ class RedisManager {
       await this.#normalClient.sadd('disposable', disposable);
       logger.info('Redis initialized with disposable ✔️');
     } catch (error) {
-      logger.error('Failed initializing redis.', { metadata: { error } });
+      logger.error('Failed initializing redis.', error);
     }
   }
 
@@ -80,7 +80,7 @@ class RedisManager {
       const status = await this.#normalClient.flushall();
       logger.info(`Flush status: ${status} ✔️`);
     } catch (error) {
-      logger.error('Failed flushing Redis.');
+      logger.error('Failed flushing Redis.', error);
     }
   }
 

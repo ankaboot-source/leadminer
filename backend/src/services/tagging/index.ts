@@ -2,8 +2,9 @@ import groupEmailMessage from './group';
 import linkedinEmailMessage from './linkedin';
 import newsletterEmailMessage from './newsletter';
 import transactionalEmailMessage from './transactional';
+import { EmailMessageTagExtractor } from './types';
 
-const messageTaggingRules = [
+const messageTaggingRules: EmailMessageTagExtractor[] = [
   newsletterEmailMessage,
   groupEmailMessage,
   linkedinEmailMessage,

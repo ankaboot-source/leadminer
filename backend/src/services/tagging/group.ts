@@ -1,12 +1,13 @@
 import HasHeaderField from './conditions/HasHeaderField';
 import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
+import { EmailMessageTagExtractor } from './types';
 
-const groupEmailMessage = {
+const groupEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'group',
     reachable: 2
   },
-  rulesToApply: [
+  rulesToCheck: [
     {
       fields: ['list-post'],
       conditions: [

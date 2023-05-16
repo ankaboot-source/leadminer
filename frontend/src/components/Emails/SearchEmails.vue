@@ -297,7 +297,9 @@ onMounted(async () => {
   }
 
   window.addEventListener("keydown", onKeyDown);
-  enableScrolling();
+  setTimeout(() => {
+    enableScrolling();
+  }, 100);
   await getBoxes();
 });
 
