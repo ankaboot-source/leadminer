@@ -1,12 +1,13 @@
 import HasHeaderFieldStartsWith from './conditions/HasHeaderFieldStartsWith';
 import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
+import { EmailMessageTagExtractor } from './types';
 
-const transactionalEmailMessage = {
+const transactionalEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'transactional',
     reachable: 2
   },
-  rulesToApply: [
+  rulesToCheck: [
     {
       fields: ['from'],
       conditions: [

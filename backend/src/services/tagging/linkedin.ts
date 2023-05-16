@@ -1,11 +1,12 @@
 import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
+import { EmailMessageTagExtractor } from './types';
 
-const linkedinEmailMessage = {
+const linkedinEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'linkedin',
     reachable: 2
   },
-  rulesToApply: [
+  rulesToCheck: [
     {
       fields: ['reply-to', 'reply_to'],
       conditions: [
