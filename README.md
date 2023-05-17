@@ -92,7 +92,7 @@ The following environment variables are used to configure the Leadminer API
 
 ```js
 LEADMINER_API_HASH_SECRET='Used to hash user emails and data in logs while mining. '
-LEADMINER_MINING_ID_GENERATOR_LENGTH='The length of the generated ID for mining. The default value is 10.''
+LEADMINER_MINING_ID_GENERATOR_LENGTH='The length of the generated ID for mining. The default value is 10.'
 LEADMINER_API_LOG_LEVEL='One of the syslog levels defined in RFC5424 (debug, info, notice, warning...). default is "debug".'
 LEADMINER_API_PORT='The port number for the LEADMINER API. The default value is 8081.'
 ```
@@ -102,10 +102,10 @@ LEADMINER_API_PORT='The port number for the LEADMINER API. The default value is 
 The following environment variables are related to IMAP configuration:
 
 ```js
-IMAP_FETCH_BODY='Enable or disable fetching Email bodies. The default value is false.''
+IMAP_FETCH_BODY='Enable or disable fetching Email bodies. The default value is false.'
 IMAP_AUTH_TIMEOUT='Time in milliseconds to wait for authentication after establishing an IMAP connection. Default is 10000.'
 IMAP_CONNECTION_TIMEOUT='Number of milliseconds to wait for a connection to be established. The default value is 10000.'
-IMAP_MAX_CONNECTIONS='Maximum number of simultaneous IMAP connections allowed. It is recommended to set between 1 and 15.''
+IMAP_MAX_CONNECTIONS='Maximum number of simultaneous IMAP connections allowed. It is recommended to set between 1 and 15.'
 
 ```
 
@@ -117,7 +117,7 @@ The following environment variables are used to configure Supabase
 SUPABASE_PROJECT_URL='The URL of your Supabase project.'
 SUPABASE_SECRET_PROJECT_TOKEN:='The secret project token for your Supabase project.'
 PG_CONNECTION_STRING='The Postgres connection string. Only needed when CONNECTION_TYPE is "native".'
-CONNECTION_TYPE='Set to "native" to use native pgsql calls through node-postgres or "pgrest" to use the REST interface.
+CONNECTION_TYPE='Set to "native" to use native pgsql calls through node-postgres or "pgrest" to use the REST interface.'
 ```
 
 **REDIS environment variables:**
@@ -137,7 +137,7 @@ REDIS_CONSUMER_BATCH_SIZE='The batch size for Redis consumers. The default value
 The following environment variables are used to configure provider-specific settings:
 
 ```js
-GOOGLE_AUTHORIZATION_URL='The authorization URL for Google.''
+GOOGLE_AUTHORIZATION_URL='The authorization URL for Google.'
 GOOGLE_TOKEN_URL='The token URL for Google.'
 GOOGLE_ISSUER_URL='The issuer URL for Google.'
 GOOGLE_USERINFO_URL= 'The userinfo URL for Google.'
