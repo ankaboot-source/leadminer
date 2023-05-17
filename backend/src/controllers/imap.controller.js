@@ -75,7 +75,7 @@ export async function getImapBoxes(req, res, next) {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   const { host, port, refresh_token } = user;
   const imapConnectionProvider = accessToken
-    ? await new ImapConnectionProvider(email).withGoogle(
+    ? await new ImapConnectionProvider(email).withOauth(
         accessToken,
         refresh_token,
         id,
@@ -96,9 +96,9 @@ export async function getImapBoxes(req, res, next) {
       }
     });
   } catch (err) {
-    const generatedError = generateErrorObjectFromImapError(err)
+    const generatedError = generateErrorObjectFromImapError(err);
     const newError = new Error(generatedError.message);
-    newError.errors = generatedError.errors
+    newError.errors = generatedError.errors;
     return next(newError);
   } finally {
     await imapConnectionProvider.releaseConnection(imapConnection);
@@ -139,7 +139,7 @@ export async function startMining(req, res, next) {
   const { host, port, refresh_token } = user;
 
   const imapConnectionProvider = accessToken
-    ? await new ImapConnectionProvider(email).withGoogle(
+    ? await new ImapConnectionProvider(email).withOauth(
         accessToken,
         refresh_token,
         id,
