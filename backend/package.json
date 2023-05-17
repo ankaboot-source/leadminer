@@ -27,8 +27,8 @@
   "author": "ankaboot",
   "license": "GNU AGPL v3",
   "dependencies": {
-    "@sentry/tracing": "^7.49.0",
     "@sentry/node": "^7.49.0",
+    "@sentry/tracing": "^7.49.0",
     "@supabase/supabase-js": "^2.21.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -57,7 +57,6 @@
     "@types/express": "^4.17.17",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^18.16.12",
-    "@types/passport-oauth2": "^1.4.12",
     "@types/pg": "^8.6.6",
     "@types/pg-format": "^1.0.2",
     "@types/supertest": "^2.0.12",
