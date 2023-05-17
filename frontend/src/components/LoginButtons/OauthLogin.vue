@@ -38,23 +38,24 @@ export default {
         provider: this.oauthProvider,
         redirect_to: frontendCallbackURL,
         nosignup: true, // Set to false when integrating gotrue auth table.
-      }
-      const backendAuthorizationURL = `${api.getUri()}/oauth/authorize?${new URLSearchParams(params).toString()}`;
-
+      };
+      const backendAuthorizationURL = `${api.getUri()}/oauth/authorize?${new URLSearchParams(
+        params
+      ).toString()}`;
 
       try {
         api.get(backendAuthorizationURL).then((response) => {
           const { data, error } = response.data;
           if (error) {
-            throw error
+            throw error;
           }
 
-          const { authorizationURL } = data
+          const { authorizationURL } = data;
 
           window.location.assign(authorizationURL);
         });
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
     },
   },

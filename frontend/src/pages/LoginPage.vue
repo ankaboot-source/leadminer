@@ -232,7 +232,9 @@ const loginDisabled = computed(
   () => !policyChecked.value || isValidEmail(email.value) !== true
 );
 
-const shouldShowImapFields = computed(() => isValidEmail(email.value) === true && getOauthEmailURL.value === "");
+const shouldShowImapFields = computed(
+  () => isValidEmail(email.value) === true && getOauthEmailURL.value === ""
+);
 
 async function login() {
   isLoading.value = true;

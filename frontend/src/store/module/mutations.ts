@@ -27,8 +27,8 @@ export function SET_GOOGLE_USER(state: any, user: any) {
 
 export function SET_USER_CREDENTIALS(state: any, user: any) {
   state.user = {
-    ...user
-  }
+    ...user,
+  };
 }
 
 export function SET_BOXES(state: any, newBoxes: any) {
