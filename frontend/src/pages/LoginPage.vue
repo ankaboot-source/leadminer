@@ -213,7 +213,7 @@ const getOauthEmailURL = computed(() => {
       domains: ["gmail"],
     },
     {
-      name: "outlook",
+      name: "azure",
       domains: ["hotmail", "outlook"],
     },
   ];

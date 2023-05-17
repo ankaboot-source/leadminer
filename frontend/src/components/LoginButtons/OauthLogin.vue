@@ -18,7 +18,7 @@ export default {
   name: "OauthLogin",
   props: {
     disable: Boolean,
-    oauthProvider: {type: String, required: true},
+    oauthProvider: { type: String, required: true },
   },
 
   data() {
@@ -33,9 +33,29 @@ export default {
     handleClickSignIn() {
       this.isLoading = true;
 
-      window.location.assign(
-        `${api.getUri()}/imap/auth/${this.oauthProvider}`
-      );
+      const frontendCallbackURL = `${window.location.origin}/login/callback`;
+      const params: Record<string, any> = {
+        provider: this.oauthProvider,
+        redirect_to: frontendCallbackURL,
+        nosignup: true, // Set to false when integrating gotrue auth table.
+      }
+      const backendAuthorizationURL = `${api.getUri()}/oauth/authorize?${new URLSearchParams(params).toString()}`;
+
+
+      try {
+        api.get(backendAuthorizationURL).then((response) => {
+          const { data, error } = response.data;
+          if (error) {
+            throw error
+          }
+
+          const { authorizationURL } = data
+
+          window.location.assign(authorizationURL);
+        });
+      } catch (error) {
+        console.error(error)
+      }
     },
   },
 };
