@@ -8,82 +8,65 @@ Leadminer is a tool to mine and transmute raw and passive contacts from your own
 
 Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
 
-### Run Leadminer using docker-compose
+### Run using docker-compose
 
 1. Clone the repository and enter `leadminer` folder
 
-1. Copy [.env.example](/.env.example) to `.env` and add the missing required environment variables:
+1. Copy [.env.example](/.env.example) to `.env` and add the missing required environment variables
 
-   - Supabase project url : `SUPABASE_PROJECT_URL`
-   - Supabase project token : `SUPABASE_SECRET_PROJECT_TOKEN`
-   - Postgres connection string : `PG_CONNECTION_STRING`
-   - Google client Id : `GOOGLE_CLIENT_ID`
-   - Google secret: `GOOGLE_SECRET`
-
-```sh
-cp .env.example .env
-```
+   ```sh
+   cp .env.example .env
+   ```
 
 3. Start docker-compose:
 
-```sh
-docker-compose up --build --force-recreate
-```
+   ```sh
+   docker-compose up --build --force-recreate
+   ```
 
 4. Navigate to `localhost:8080`.
 
-## Support
+### Running the Project Locally
 
-If you have any trouble, check the [issues tab](https://github.com/ankaboot-source/leadminer/issues). We might already have reported/fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
+To run the project in your local environment, follow the steps below:
 
-This app is provided for free as such with no guarantee nor support. For any kind of support, feel free to reach [ankaboot professional services](contact@ankaboot.fr).
+1. Install the required dependencies by running the following command:
 
-## Roadmap
+   ```sh
+   npm run install-deps
+   ```
 
-- [ ] New sources : LinkedIn, Instagram, Facebook Messenger
-- [ ] Enrich data : Get more relevant and actionable information about your contacts
-- [ ] Marketing automation : send emails directly from LeadMiner with personalized templates
+2. Start the Supabase services and take note of the Supabase project token for the next step. Run the following command:
 
-For any requests concerning the roadmap, you could either have a look on issues or for any specific request contact [ankaboot professional services](contact@ankaboot.fr).
+   ```sh
+   npm run dev:supabase
+   ```
 
-## Contributing
+3. Create the `.env` files by executing the command below.
 
-### Run Leadminer locally
+   > This will create `.env` files in the `/frontend` and `/backend` directories. Make sure to set the missing required variables in these files.
 
-You can easily get started with development mode by following theses steps:
+   ```sh
+   cp /frontend/.env.example /frontend/.env && cp /backend/.env.example /backend/.env
+   ```
 
-1. Install the required dependencies
+3. Start your environment by running the following commands:
 
-```sh
-npm run install-deps
-```
+   ```sh
+   # Start the Redis container (You can skip this step if you want to use your local instance)
+   docker-compose -f docker-compose.dev.yml up
+   
+   # Start the backend in development mode
+   npm run dev:backend-api
+   npm run dev:backend-worker
+   
+   # Start the frontend in development mode
+   npm run dev:frontend
+   ```
 
-1. Start supabase services and take note of the supabase project token to use it in the next step.
+**Generating a new migration for schema changes:**
 
-```sh
-# Start supabase services
-npm run dev:supabase
-```
-
-2. Copy `/frontend/.env.example` to `/frontend/.env` and `/backend/.env.example` to `/backend/.env` respectively and set the missing required variables
-
-1. Start your environment by running the following commands:
-
-```sh
-# Start the Redis container  -- You can skip this step if you want to use your local instance
-docker-compose -f docker-compose.dev.yml up
-
-# Start the backend in development mode
-npm run dev:backend-api
-npm run dev:backend-worker
-
-# Start the frontend in development mode
-npm run dev:frontend
-```
-
-### Generating a new migration for schema changes
-
-- When altering the database schema or creating new tables, functions..., make sure to run these commands (While supabase services are up):
+If you need to alter the database schema or create new tables or functions, follow these steps (while Supabase services are up):
 
 ```sh
 # Start supabase services
@@ -101,20 +84,143 @@ npx supabase db diff --use-migra -f <name_of_migration>
 npx supabase stop
 ```
 
-### General guidelines
+### Environment variables
 
-Please feel free to contribute. Pull requests are welcome.
+**LEADMINER API environment variables:**
+
+The following environment variables are used to configure the Leadminer API
+
+- LEADMINER_API_HASH_SECRET: Used to hash user emails and data in logs while mining. Replace "change_me" with a secret string.
+
+- LEADMINER_MINING_ID_GENERATOR_LENGTH: The length of the generated ID for mining. The default value is 10.
+
+- LEADMINER_API_LOG_LEVEL: One of the syslog levels defined in RFC5424 (debug, info, notice, warning...). The default value is "debug".
+
+- LEADMINER_API_PORT: The port number for the LEADMINER API. The default value is 8081.
+
+**IMAP environment variables:**
+
+The following environment variables are related to IMAP configuration:
+
+- IMAP_FETCH_BODY: Enable or disable fetching Email bodies. The default value is false.
+
+- IMAP_AUTH_TIMEOUT: Number of milliseconds to wait to be authenticated after an IMAP connection has been established. The default value is 10000.
+
+- IMAP_CONNECTION_TIMEOUT: Number of milliseconds to wait for a connection to be established. The default value is 10000.
+
+- IMAP_MAX_CONNECTIONS: Maximum number of simultaneous IMAP connections allowed. It is recommended to keep this value between 1 and 15.
+
+**SUPABASE environment variables:**
+
+The following environment variables are used to configure Supabase
+
+- SUPABASE_PROJECT_URL: The URL of your Supabase project.
+
+- SUPABASE_SECRET_PROJECT_TOKEN: The secret project token for your Supabase project.
+
+- PG_CONNECTION_STRING: The Postgres connection string. Only needed when CONNECTION_TYPE is 'native'.
+
+- CONNECTION_TYPE: Set to 'native' to use native pgsql calls through node-postgres or 'pgrest' to use the REST interface.
+
+**REDIS environment variables:**
+
+The following environment variables are related to Redis configuration:
+
+- REDIS_HOST: The Redis host. The default value is "localhost".
+
+- REDIS_PORT: The Redis port. The default value is 6379.
+
+- REDIS_TLS: Enable or disable Redis TLS. The default value is false.
+
+- REDIS_EXPIRATION_TIMEOUT: Expiration timeout for Redis entries. The default value is 259200.
+
+- REDIS_CONSUMER_BATCH_SIZE: The batch size for Redis consumers. The default value is 100.
+
+**PROVIDERS environment variables:**
+
+The following environment variables are used to configure provider-specific settings:
+
+- GOOGLE_AUTHORIZATION_URL: The authorization URL for Google.
+
+- GOOGLE_TOKEN_URL: The token URL for Google.
+
+- GOOGLE_ISSUER_URL: The issuer URL for Google.
+
+- GOOGLE_USERINFO_URL: The userinfo URL for Google.
+
+- GOOGLE_JWK_URI: The JWK URI for Google.
+
+- GOOGLE_CLIENT_ID: The client ID for Google.
+
+- GOOGLE_SECRET: The client secret for Google.
+
+- GOOGLE_IMAP_SERVER: The IMAP server for Google.
+
+- AZURE_AUTHORIZATION_URL: The authorization URL for Microsoft Azure.
+
+- AZURE_TOKEN_URL: The token URL for Microsoft Azure.
+
+- AZURE_ISSUER_URL: The issuer URL for Microsoft Azure.
+
+- AZURE_USERINFO_URL: The userinfo URL for Microsoft Azure.
+
+- AZURE_JWK_URI: The JWK URI for Microsoft Azure.
+
+- AZURE_CLIENT_ID: The client ID for Microsoft Azure.
+
+- AZURE_SECRET: The client secret for Microsoft Azure.
+
+- MICROSOFT_IMAP_SERVER: The IMAP server for Microsoft.
+
+References
+
+- [Google OpenID Configuration](https://accounts.google.com/.well-known/openid-configuration)
+- [Google OAuth2](https://developers.google.com/identity/protocols/oauth2)
+- [Google Gmail IMAP/SMTP](https://developers.google.com/gmail/imap/imap-smtp)
+
+- [Microsoft Azure OpenID Configuration](https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration)
+- [Microsoft Azure OAuth2](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow)
+- [Microsoft POP, IMAP, and SMTP settings](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-8361e398-8af4-4e97-b147-6c6c4ac95353)
+
+**SENTRY environment variables:**
+
+The following environment variables are used to configure Sentry for reporting and monitoring:
+
+- SENTRY_ENABLED: Set to "true" to activate Sentry for reporting and monitoring. The default value is false.
+
+- SENTRY_DSN: Your Sentry DSN. Make sure to provide a valid value.
+
+## Contributing
+
+Thank you for considering contributing to this project! Pull requests are welcome and encouraged. To contribute, please follow the guidelines below:
+
+### General Guidelines
 
 1. Fork this [repository](https://github.com/ankaboot-source/leadminer)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
+2. Create a branch for your feature or bug fix (`git checkout -b feature/fooBar`)
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
 5. Create a new Pull Request
 
-For major changes, please open an issue first to discuss what you would like to change.
+For major changes or new features, it is recommended to open an issue first to discuss and get feedback from the maintainers and the community.
 
-_Make sure to update/create tests as appropriate._
+_Make sure to update or create tests as appropriate to maintain the code quality and ensure that the project functions as expected._
+
+## Roadmap
+
+- [ ] New sources : LinkedIn, Instagram, Facebook Messenger
+- [ ] Enrich data : Get more relevant and actionable information about your contacts
+- [ ] Marketing automation : send emails directly from Leadminer with personalized templates
+
+For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates. 
+
+## Support
+
+If you encounter any issues, please check the [issues tab](https://github.com/ankaboot-source/leadminer/issues) to see if it has already been reported and resolved. Ensure that you are using the latest version before reporting an issue. If the problem persists, feel free to open a new issue.
+
+Please note that this app is provided for free and without any guarantee or official support. If you require additional assistance, you can contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) for help.
 
 ## License
 
 This software is [dual-licensed](DUAL-LICENSE.md) under [GNU AGPL v3](LICENSE).
+
