@@ -1,4 +1,3 @@
-import passport = require('passport');
 import { Request, Response, NextFunction } from 'express';
 import {
   OAUTH_PROVIDERS,
@@ -7,14 +6,15 @@ import {
 } from '../config';
 
 import {
-  createOAuthStrategy,
   buildEndpointURL,
   buildRedirectUrl,
   encodeJwt,
   decodeJwt,
   JwtState,
   AuthorizationParams,
-  UserDetails
+  UserDetails,
+  createOAuthClient,
+  findOrCreateOne
 } from '../utils/helpers/oauthHelpers';
 
 /**
@@ -24,56 +24,85 @@ import {
  * @param {NextFunction} next - The Express next middleware function.
  * @throws {Error} If the required parameters are missing or invalid.
  */
-export function oauthCallbackHandler(
+export async function oauthCallbackHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<any>{
   const { state } = req.query;
 
   try {
-    // Decode the state parameter from a JWT token.
-    const { nosignup, provider, redirectURL } = decodeJwt(state as string) as
-      | JwtState
-      | Record<string, any>;
+    const { nosignup, provider, redirectURL } = decodeJwt(
+      state as string
+    ) as JwtState;
 
     if (typeof provider !== 'string') {
-      throw new Error('Missing or Invalid provider.');
+      throw new Error('Missing or invalid provider.');
     }
 
-    if (nosignup === undefined || nosignup === false) {
-      // Redirect to the callback URL with the query parameters to external auth server to handle signup.
+    if (!nosignup) {
       const redirectionURL = buildRedirectUrl(AUTH_SERVER_CALLBACK as string, {
         ...req.query
       });
       return res.redirect(redirectionURL);
     }
 
-    const strategy = createOAuthStrategy(
-      provider,
-      OAUTH_PROVIDERS,
-      buildEndpointURL(req, '/api/oauth/callback'),
+    const oauthProvider = OAUTH_PROVIDERS.find(({ name }) => name === provider);
+
+    if (!oauthProvider) {
+      throw new Error('Provider not supported.');
+    }
+
+    const client = createOAuthClient(
+      oauthProvider,
+      buildEndpointURL(req, '/api/oauth/callback')
     );
 
-    return passport.authenticate(
-      strategy,
-      (err: any, user: UserDetails) => {
+    const tokenSet = await client.callback(
+      buildEndpointURL(req, '/api/oauth/callback'),
+      req.query,
+      { state: state as string }
+    );
 
-        if (err) {
-          return next(err);
-        }
-        if (!user) {
-          return res.redirect('/signin');
-        }
+    /**
+     *  Original code.
+     *
+     *     if (redirectURL) {
+     *        const redirectionURL = buildRedirectUrl(redirectURL, tokens);
+     *        return res.redirect(redirectionURL);
+     *      }
+     *
+     *      res.setHeader('Content-Type', 'application/json');
+     *      return res.status(200).send({ error: null, data: tokens });
+     *
+     *  ----------------------------------------------------------------------
+     * Temporary implementation: Decode the JWT ID token to extract user info,
+     * find or create a user based on the email and refresh token, and return the
+     * user account details.
+     *
+     * This implementation is subject to change when using the Gotrue user tables.
+     */
 
-        if (redirectURL) {
-          const redirectionURL = buildRedirectUrl(redirectURL, user);
-          return res.redirect(redirectionURL);
-        }
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send({ error: null, data: user });
-      }
-    )(req, res, next);
+    const userInfo = decodeJwt(tokenSet.id_token as string) as Record<
+      string,
+      any
+    >;
+    const user = await findOrCreateOne(
+      userInfo.email,
+      tokenSet.refresh_token as string
+    );
+    const account: UserDetails = {
+      id: user.id,
+      email: user.email,
+      accessToken: tokenSet.access_token as string
+    };
+
+    if (redirectURL) {
+      const redirectionURL = buildRedirectUrl(redirectURL, account);
+      return res.redirect(redirectionURL);
+    }
+
+    return res.status(200).json({ error: null, data: account });
   } catch (err) {
     return next(err);
   }
@@ -90,21 +119,29 @@ export async function oauthHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<any> {
   try {
-    const redirectURL = req.query.redirect_to;
     const { nosignup, provider, scopes } = req.query;
 
     if (typeof provider !== 'string') {
-      throw new Error('Missing or Invalid provider.');
+      throw new Error('Missing or invalid provider.');
     }
 
+    const oauthProvider = OAUTH_PROVIDERS.find(({ name }) => name === provider);
+
+    if (!oauthProvider) {
+      return next(new Error('Requested provider not supported.'));
+    }
+
+    const redirectURL = req.query.redirect_to;
+
     const authorizationParams: AuthorizationParams = {
-      provider: provider as string
+      provider,
+      scopes: oauthProvider.scopes
     };
 
     if (typeof scopes === 'string') {
-      authorizationParams.scopes = scopes;
+      authorizationParams.scopes?.push(scopes);
     }
 
     if (typeof redirectURL === 'string') {
@@ -119,7 +156,7 @@ export async function oauthHandler(
       };
 
       authorizationParams.state = encodeJwt(stateParams);
-      authorizationParams.access_type = 'offline'; // to get refresh_token when doing exchange using oauth code/
+      authorizationParams.access_type = 'offline';
     }
 
     const queryParams = new URLSearchParams(
@@ -128,9 +165,7 @@ export async function oauthHandler(
     const authorizationURL = `${AUTH_SERVER_URL}/authorize?${queryParams.toString()}`;
 
     // Redirect the user to the authorization URL
-    return res
-      .status(200)
-      .send({ error: null, data: { authorizationURL, provider } });
+    return res.status(200).json({ error: null, data: { authorizationURL, provider } });
   } catch (error) {
     return next(error);
   }
