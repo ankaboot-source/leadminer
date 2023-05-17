@@ -90,87 +90,70 @@ npx supabase stop
 
 The following environment variables are used to configure the Leadminer API
 
-- LEADMINER_API_HASH_SECRET: Used to hash user emails and data in logs while mining. Replace "change_me" with a secret string.
-
-- LEADMINER_MINING_ID_GENERATOR_LENGTH: The length of the generated ID for mining. The default value is 10.
-
-- LEADMINER_API_LOG_LEVEL: One of the syslog levels defined in RFC5424 (debug, info, notice, warning...). The default value is "debug".
-
-- LEADMINER_API_PORT: The port number for the LEADMINER API. The default value is 8081.
+```js
+LEADMINER_API_HASH_SECRET='Used to hash user emails and data in logs while mining. '
+LEADMINER_MINING_ID_GENERATOR_LENGTH='The length of the generated ID for mining. The default value is 10.''
+LEADMINER_API_LOG_LEVEL='One of the syslog levels defined in RFC5424 (debug, info, notice, warning...). default is "debug".'
+LEADMINER_API_PORT='The port number for the LEADMINER API. The default value is 8081.'
+```
 
 **IMAP environment variables:**
 
 The following environment variables are related to IMAP configuration:
 
-- IMAP_FETCH_BODY: Enable or disable fetching Email bodies. The default value is false.
+```js
+IMAP_FETCH_BODY='Enable or disable fetching Email bodies. The default value is false.''
+IMAP_AUTH_TIMEOUT='Time in milliseconds to wait for authentication after establishing an IMAP connection. Default is 10000.'
+IMAP_CONNECTION_TIMEOUT='Number of milliseconds to wait for a connection to be established. The default value is 10000.'
+IMAP_MAX_CONNECTIONS='Maximum number of simultaneous IMAP connections allowed. It is recommended to set between 1 and 15.''
 
-- IMAP_AUTH_TIMEOUT: Number of milliseconds to wait to be authenticated after an IMAP connection has been established. The default value is 10000.
-
-- IMAP_CONNECTION_TIMEOUT: Number of milliseconds to wait for a connection to be established. The default value is 10000.
-
-- IMAP_MAX_CONNECTIONS: Maximum number of simultaneous IMAP connections allowed. It is recommended to keep this value between 1 and 15.
+```
 
 **SUPABASE environment variables:**
 
 The following environment variables are used to configure Supabase
 
-- SUPABASE_PROJECT_URL: The URL of your Supabase project.
-
-- SUPABASE_SECRET_PROJECT_TOKEN: The secret project token for your Supabase project.
-
-- PG_CONNECTION_STRING: The Postgres connection string. Only needed when CONNECTION_TYPE is 'native'.
-
-- CONNECTION_TYPE: Set to 'native' to use native pgsql calls through node-postgres or 'pgrest' to use the REST interface.
+```js
+SUPABASE_PROJECT_URL='The URL of your Supabase project.'
+SUPABASE_SECRET_PROJECT_TOKEN:='The secret project token for your Supabase project.'
+PG_CONNECTION_STRING='The Postgres connection string. Only needed when CONNECTION_TYPE is "native".'
+CONNECTION_TYPE='Set to "native" to use native pgsql calls through node-postgres or "pgrest" to use the REST interface.
+```
 
 **REDIS environment variables:**
 
 The following environment variables are related to Redis configuration:
 
-- REDIS_HOST: The Redis host. The default value is "localhost".
-
-- REDIS_PORT: The Redis port. The default value is 6379.
-
-- REDIS_TLS: Enable or disable Redis TLS. The default value is false.
-
-- REDIS_EXPIRATION_TIMEOUT: Expiration timeout for Redis entries. The default value is 259200.
-
-- REDIS_CONSUMER_BATCH_SIZE: The batch size for Redis consumers. The default value is 100.
+```js
+REDIS_HOST='The Redis host. The default value is "localhost".'
+REDIS_PORT='The Redis port. The default value is 6379.'
+REDIS_TLS='Enable or disable Redis TLS. The default value is false.'
+REDIS_EXPIRATION_TIMEOUT='Expiration timeout for Redis entries. The default value is 259200.'
+REDIS_CONSUMER_BATCH_SIZE='The batch size for Redis consumers. The default value is 100.'
+```
 
 **PROVIDERS environment variables:**
 
 The following environment variables are used to configure provider-specific settings:
 
-- GOOGLE_AUTHORIZATION_URL: The authorization URL for Google.
-
-- GOOGLE_TOKEN_URL: The token URL for Google.
-
-- GOOGLE_ISSUER_URL: The issuer URL for Google.
-
-- GOOGLE_USERINFO_URL: The userinfo URL for Google.
-
-- GOOGLE_JWK_URI: The JWK URI for Google.
-
-- GOOGLE_CLIENT_ID: The client ID for Google.
-
-- GOOGLE_SECRET: The client secret for Google.
-
-- GOOGLE_IMAP_SERVER: The IMAP server for Google.
-
-- AZURE_AUTHORIZATION_URL: The authorization URL for Microsoft Azure.
-
-- AZURE_TOKEN_URL: The token URL for Microsoft Azure.
-
-- AZURE_ISSUER_URL: The issuer URL for Microsoft Azure.
-
-- AZURE_USERINFO_URL: The userinfo URL for Microsoft Azure.
-
-- AZURE_JWK_URI: The JWK URI for Microsoft Azure.
-
-- AZURE_CLIENT_ID: The client ID for Microsoft Azure.
-
-- AZURE_SECRET: The client secret for Microsoft Azure.
-
-- MICROSOFT_IMAP_SERVER: The IMAP server for Microsoft.
+```js
+GOOGLE_AUTHORIZATION_URL='The authorization URL for Google.''
+GOOGLE_TOKEN_URL='The token URL for Google.'
+GOOGLE_ISSUER_URL='The issuer URL for Google.'
+GOOGLE_USERINFO_URL= 'The userinfo URL for Google.'
+GOOGLE_JWK_URI='The JWK URI for Google.'
+GOOGLE_CLIENT_ID='The client ID for Google.'
+GOOGLE_SECRET='The client secret for Google.'
+GOOGLE_IMAP_SERVER='The IMAP server for Google.'
+AZURE_AUTHORIZATION_URL='The authorization URL for Microsoft Azure.'
+AZURE_TOKEN_URL='The token URL for Microsoft Azure.'
+AZURE_ISSUER_URL='The issuer URL for Microsoft Azure.'
+AZURE_USERINFO_URL='The userinfo URL for Microsoft Azure.'
+AZURE_JWK_URI='The JWK URI for Microsoft Azure.'
+AZURE_CLIENT_ID='The client ID for Microsoft Azure.'
+AZURE_SECRET='The client secret for Microsoft Azure.'
+MICROSOFT_IMAP_SERVER='The IMAP server for Microsoft.'
+```
 
 References
 
@@ -186,9 +169,10 @@ References
 
 The following environment variables are used to configure Sentry for reporting and monitoring:
 
-- SENTRY_ENABLED: Set to "true" to activate Sentry for reporting and monitoring. The default value is false.
-
-- SENTRY_DSN: Your Sentry DSN. Make sure to provide a valid value.
+```js
+SENTRY_ENABLED='Set to "true" to activate Sentry for reporting and monitoring. The default value is false.''
+SENTRY_DSN='Your Sentry DSN. Make sure to provide a valid value.''
+```
 
 ## Contributing
 
