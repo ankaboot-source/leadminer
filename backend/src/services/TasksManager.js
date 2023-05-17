@@ -178,9 +178,7 @@ export class TasksManager {
       fetcher.start(); // start the fetching process
       await this.#pubsubSendMessage(miningId, 'REGISTER', { ...stream });
     } catch (error) {
-      logger.error('Error when creating task', {
-        metadata: { details: error.message }
-      });
+      logger.error('Error when creating task', error);
       throw new Error(`${error.message}`);
     }
 
@@ -188,7 +186,7 @@ export class TasksManager {
 
     this.redisSubscriber.subscribe(miningId, (err) => {
       if (err) {
-        logger.error('Failed subscribing to Redis.', { metadata: { err } });
+        logger.error('Failed subscribing to Redis.', err);
       }
     });
 
@@ -249,9 +247,7 @@ export class TasksManager {
       await progressHandlerSSE.stop();
       await this.#pubsubSendMessage(miningId, 'DELETE', { ...stream });
     } catch (error) {
-      logger.error('Error when deleting task', {
-        metadata: { details: error.message }
-      });
+      logger.error('Error when deleting task', error);
     }
 
     return redactSensitiveData(task);

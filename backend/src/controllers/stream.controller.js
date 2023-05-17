@@ -24,10 +24,10 @@ export default function streamProgress(req, res) {
     try {
       await miningTasksManager.deleteTask(id);
     } catch (error) {
-      logger.error('Error when disconnecting from the stream.', {
-        miningId: id,
-        metadata: { details: error.message }
-      });
+      logger.error(
+        `Error when disconnecting from the stream with miningId ${id}`,
+        error
+      );
     }
   });
 }

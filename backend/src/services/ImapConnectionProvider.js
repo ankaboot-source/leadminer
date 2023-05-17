@@ -163,9 +163,7 @@ class ImapConnectionProvider {
 
       return imapConnection;
     } catch (error) {
-      logger.error('Imap connection error', {
-        metadata: { message: error.message, details: error }
-      });
+      logger.error('Imap connection error', error);
       throw error;
     }
   }
@@ -224,12 +222,7 @@ class ImapConnectionProvider {
         try {
           return await this.#connect();
         } catch (err) {
-          logger.error('Failed to create pool resources', {
-            metadata: {
-              message: err.message,
-              details: err
-            }
-          });
+          logger.error('Failed to create pool resources', err);
           throw err;
         }
       },
@@ -247,9 +240,7 @@ class ImapConnectionProvider {
 
     // Set up an event listener for factory create errors
     this.#connectionsPool.on('factoryCreateError', (err) => {
-      logger.error('Error creating IMAP connection pool resource', {
-        metadata: { message: err.message, details: err }
-      });
+      logger.error('Error creating IMAP connection pool resource', err);
     });
   }
 }

@@ -184,12 +184,11 @@ class EmailMessage {
           const persons = await this.extractPersons(emails, headerKey);
           return persons;
         } catch (error) {
-          logger.error('Error while extracting names and emails', {
-            metadata: {
-              error,
-              headerKey
-            }
-          });
+          logger.error(
+            'Error while extracting names and emails',
+            error,
+            headerKey
+          );
           return null;
         }
       })
@@ -258,9 +257,7 @@ class EmailMessage {
 
             return null;
           } catch (error) {
-            logger.error('Error when extracting persons', {
-              metadata: { error, email }
-            });
+            logger.error('Error when extracting persons', error, email);
             return null;
           }
         })
