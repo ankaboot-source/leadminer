@@ -33,7 +33,37 @@ export const OAUTH_PROVIDERS = [
     authorizationURL: `${process.env.GOOGLE_AUTHORIZATION_URL}`,
     tokenURL: `${process.env.GOOGLE_TOKEN_URL}`,
     clientID: `${process.env.GOOGLE_CLIENT_ID}`,
-    clientSecret: `${process.env.GOOGLE_SECRET}`
+    clientSecret: `${process.env.GOOGLE_SECRET}`,
+    issuerURL: `${process.env.GOOGLE_ISSUER_URL}`,
+    userInfoURL: `${process.env.GOOGLE_USERINFO_URL}`,
+    jwkURI: `${process.env.GOOGLE_JWK_URI}`,
+    scopes: ['https://mail.google.com/']
+  },
+  {
+    name: 'azure',
+    authorizationURL: `${process.env.AZURE_AUTHORIZATION_URL}`,
+    tokenURL: `${process.env.AZURE_TOKEN_URL}`,
+    clientID: `${process.env.AZURE_CLIENT_ID}`,
+    clientSecret: `${process.env.AZURE_SECRET}`,
+    issuerURL: `${process.env.AZURE_ISSUER_URL}`,
+    userInfoURL: `${process.env.AZURE_USERINFO_URL}`,
+    jwkURI: `${process.env.AZURE_JWK_URI}`,
+    scopes: ['https://outlook.office.com/mail.read', 'offline_access']
+  }
+];
+
+export const IMAP_PROVIDERS = [
+  {
+    name: 'google',
+    host: `${process.env.GOOGLE_IMAP_SERVER}`,
+    port: 993,
+    domains: ['gmail']
+  },
+  {
+    name: 'azure',
+    host: `${process.env.MICROSOFT_IMAP_SERVER}`,
+    port: 993,
+    domains: ['outlook', 'hotmail']
   }
 ];
 
