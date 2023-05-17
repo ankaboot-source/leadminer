@@ -28,7 +28,7 @@ export async function oauthCallbackHandler(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<any>{
+): Promise<any> {
   const { state } = req.query;
 
   try {
@@ -165,7 +165,9 @@ export async function oauthHandler(
     const authorizationURL = `${AUTH_SERVER_URL}/authorize?${queryParams.toString()}`;
 
     // Redirect the user to the authorization URL
-    return res.status(200).json({ error: null, data: { authorizationURL, provider } });
+    return res
+      .status(200)
+      .json({ error: null, data: { authorizationURL, provider } });
   } catch (error) {
     return next(error);
   }
