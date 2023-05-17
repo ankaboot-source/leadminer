@@ -29,7 +29,7 @@ describe('controllers.helpers.getXImapHeaderField', () => {
       'x-imap-login header field is missing required fields (email, id)'
     );
   });
-  it('should return an error if the x-imap-login header is missing the access_token or password field', () => {
+  it('should return an error if the x-imap-login header is missing the accessToken or password field', () => {
     const headers = {
       'x-imap-login': '{"email": "test@gmail.com","id": "123"}'
     };
@@ -37,20 +37,20 @@ describe('controllers.helpers.getXImapHeaderField', () => {
     expect(data).toBeNull();
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toBe(
-      'x-imap-login header field is missing the access_token or password field'
+      'x-imap-login header field is missing the accessToken or password field'
     );
   });
   it('should return data if the x-imap-login header is valid', () => {
     const headers = {
       'x-imap-login':
-        '{"email": "test@gmail.com","id": "123","access_token":"access_token"}'
+        '{"email": "test@gmail.com","id": "123","accessToken":"accessToken"}'
     };
     const { data, error } = getXImapHeaderField(headers);
     expect(error).toBeNull();
     expect(data).toEqual({
       email: 'test@gmail.com',
       id: '123',
-      access_token: 'access_token'
+      accessToken: 'accessToken'
     });
   });
 });
@@ -102,13 +102,13 @@ describe('controllers.helpers.getUser', () => {
 
   it('throws an error if no parameters are passed', () => {
     const message =
-      'At least one parameter is required { access_token, id, email }.';
+      'At least one parameter is required { accessToken, id, email }.';
     expect(() => getUser({}, db)).toThrowError(new Error(message));
   });
 
   it('returns a Google user by email', async () => {
     const user = await getUser(
-      { access_token: 'google', email: 'googleuser@example.com' },
+      { accessToken: 'google', email: 'googleuser@example.com' },
       db
     );
     expect(user).toEqual({
