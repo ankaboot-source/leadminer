@@ -1,7 +1,6 @@
 import { Client, TokenSet } from 'openid-client';
 import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../../config';
-
-const { createXOAuth2Generator } = require('xoauth2');
+import { createXOAuth2Generator } from 'xoauth2'
 
 /**
  * Validates an access token using a custom verification function.

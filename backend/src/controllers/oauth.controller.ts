@@ -115,11 +115,11 @@ export async function oauthCallbackHandler(
  * @param {NextFunction} next - The Express next middleware function.
  * @throws {Error} If the required parameters are missing or invalid.
  */
-export async function oauthHandler(
+export function oauthHandler(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<any> {
+): void {
   try {
     const { nosignup, provider, scopes } = req.query;
 
