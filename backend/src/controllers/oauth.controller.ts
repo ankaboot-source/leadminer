@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import {
   OAUTH_PROVIDERS,
   AUTH_SERVER_URL,
-  AUTH_SERVER_CALLBACK
+  AUTH_SERVER_CALLBACK,
+  IMAP_PROVIDERS
 } from '../config';
 
 import {
@@ -15,6 +16,18 @@ import {
   createOAuthClient,
   findOrCreateOne
 } from '../utils/helpers/oauthHelpers';
+
+
+/**
+ * Retrieves the available providers information.
+ * @param {Request} _ - The request object (unused).
+ * @param {Response} res - The response object.
+ * @returns {Response} The response containing the OAuth providers and their domains.
+ */
+export function GetOauthProviders(_: Request, res: Response) {
+  const providers = IMAP_PROVIDERS.map(({ name, domains }) => { return { name, domains }})
+  return res.status(200).json(providers)
+}
 
 /**
  * Handles the OAuth callback and redirects the user based on the callback result.
