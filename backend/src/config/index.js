@@ -57,13 +57,13 @@ export const IMAP_PROVIDERS = [
     name: 'google',
     host: `${process.env.GOOGLE_IMAP_SERVER}`,
     port: 993,
-    domains: ['gmail']
+    domains: ['gmail', 'googlemail.com', 'google.com']
   },
   {
     name: 'azure',
     host: `${process.env.MICROSOFT_IMAP_SERVER}`,
     port: 993,
-    domains: ['outlook', 'hotmail']
+    domains: ['outlook', 'hotmail', 'live', 'msn']
   }
 ];
 
