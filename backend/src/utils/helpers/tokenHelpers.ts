@@ -1,4 +1,5 @@
 import { Client, TokenSet } from 'openid-client';
+// @ts-ignore
 import { createXOAuth2Generator } from 'xoauth2';
 import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../../config';
 
