@@ -144,7 +144,7 @@
 import { useQuasar } from "quasar";
 import { computed, onBeforeMount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-
+import { providers } from "app/src/boot/providers"
 import OauthLogin from "src/components/LoginButtons/OauthLogin.vue";
 import { useStore } from "../store/index";
 
@@ -207,16 +207,6 @@ function isValidPort(imapPort: number) {
 }
 
 const getOauthEmailURL = computed(() => {
-  const providers = [
-    {
-      name: "google",
-      domains: ["gmail"],
-    },
-    {
-      name: "azure",
-      domains: ["hotmail", "outlook"],
-    },
-  ];
 
   const emailAddress = email.value.trim().toLowerCase();
   const emailDomain = emailAddress.split("@")[1]?.split(".")[0];
