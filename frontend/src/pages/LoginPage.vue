@@ -218,11 +218,11 @@ const getOauthEmailURL = computed(() => {
     },
   ];
 
-  const emailValue = email.value.trim().toLowerCase();
-  const emailDomain = emailValue.split("@")[1]?.split(".")[0];
+  const emailAddress = email.value.trim().toLowerCase();
+  const emailDomain = emailAddress.split("@")[1]?.split(".")[0];
 
   const provider = providers.find(
-    ({ domains }) => domains.includes(emailDomain) && process.env.GG_CLIENT_ID
+    ({ domains }) => domains.includes(emailDomain)
   );
 
   return provider?.name || "";
