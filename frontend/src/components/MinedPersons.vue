@@ -305,9 +305,10 @@ function setupSubscription() {
   );
 }
 
-async function refineContacts(userId: string) {
+async function refineContacts() {
+  const { id } = $store.getters["leadminer/getCurrentUser"];
   const { error } = await supabaseClient.rpc("refined_persons", {
-    userid: userId,
+    userid: id,
   });
 
   if (error) {
@@ -329,7 +330,6 @@ async function getContacts(userId: string) {
 async function syncTable() {
   isLoading.value = true;
   const { id } = $store.getters["leadminer/getCurrentUser"];
-  await refineContacts(id);
   const contacts = await getContacts(id);
   rows.value = contacts;
   isLoading.value = false;
@@ -477,6 +477,7 @@ onMounted(async () => {
     return;
   }
   window.addEventListener("keydown", onKeyDown);
+  await refineContacts();
   await syncTable();
 });
 
