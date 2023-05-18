@@ -9,5 +9,5 @@ const router = Router();
 
 router.get('/oauth/authorize', oauthHandler);
 router.get('/oauth/callback', oauthCallbackHandler);
-router.get('/oauth/providers', GetOauthProviders)
+router.get('/oauth/providers', GetOauthProviders);
 export default router;

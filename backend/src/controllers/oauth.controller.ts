@@ -17,16 +17,18 @@ import {
   findOrCreateOne
 } from '../utils/helpers/oauthHelpers';
 
-
 /**
- * Retrieves the available providers information.
+ * Retrieves the available providers and their associated domains.
  * @param {Request} _ - The request object (unused).
  * @param {Response} res - The response object.
  * @returns {Response} The response containing the OAuth providers and their domains.
  */
 export function GetOauthProviders(_: Request, res: Response) {
-  const providers = IMAP_PROVIDERS.map(({ name, domains }) => { return { name, domains }})
-  return res.status(200).json(providers)
+  const providers = IMAP_PROVIDERS.map(({ name, domains }) => ({
+    name,
+    domains
+  }));
+  return res.status(200).json(providers);
 }
 
 /**
