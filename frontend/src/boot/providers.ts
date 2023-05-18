@@ -8,10 +8,12 @@ declare module "@vue/runtime-core" {
 }
 
 async function loadProviders() {
-    const response= await axios.get(`${process.env.SERVER_ENDPOINT}/api/oauth/providers`)
-    return  response.data
+  const response = await axios.get(
+    `${process.env.SERVER_ENDPOINT}/api/oauth/providers`
+  );
+  return response.data;
 }
 
-const providers: [{name: string, domains: string[]}] = await loadProviders()
+const providers: [{ name: string; domains: string[] }] = await loadProviders();
 
 export { providers };
