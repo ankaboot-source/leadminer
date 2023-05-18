@@ -221,8 +221,8 @@ const getOauthEmailURL = computed(() => {
   const emailAddress = email.value.trim().toLowerCase();
   const emailDomain = emailAddress.split("@")[1]?.split(".")[0];
 
-  const provider = providers.find(
-    ({ domains }) => domains.includes(emailDomain)
+  const provider = providers.find(({ domains }) =>
+    domains.includes(emailDomain)
   );
 
   return provider?.name || "";
