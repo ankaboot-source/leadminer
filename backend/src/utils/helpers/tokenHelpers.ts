@@ -1,6 +1,6 @@
 import { Client, TokenSet } from 'openid-client';
+import { createXOAuth2Generator } from 'xoauth2';
 import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../../config';
-import { createXOAuth2Generator } from 'xoauth2'
 
 /**
  * Validates an access token using a custom verification function.
@@ -32,11 +32,7 @@ async function refreshAccessToken(
   client: Client,
   refreshToken: string
 ): Promise<TokenSet> {
-  try {
-    return await client.refresh(refreshToken);
-  } catch (err: any) {
-    throw new Error(err);
-  }
+  return client.refresh(refreshToken);
 }
 
 /**

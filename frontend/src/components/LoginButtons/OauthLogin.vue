@@ -34,10 +34,10 @@ export default {
       this.isLoading = true;
 
       const frontendCallbackURL = `${window.location.origin}/login/callback`;
-      const params: Record<string, any> = {
+      const params: Record<string, string> = {
         provider: this.oauthProvider,
         redirect_to: frontendCallbackURL,
-        nosignup: true, // Set to false when integrating gotrue auth table.
+        nosignup: 'true', // Set to false when integrating gotrue auth table.
       };
       const backendAuthorizationURL = `${api.getUri()}/oauth/authorize?${new URLSearchParams(
         params

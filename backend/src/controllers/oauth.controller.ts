@@ -12,7 +12,6 @@ import {
   decodeJwt,
   JwtState,
   AuthorizationParams,
-  UserDetails,
   createOAuthClient,
   findOrCreateOne
 } from '../utils/helpers/oauthHelpers';
@@ -28,7 +27,7 @@ export async function oauthCallbackHandler(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<any> {
+): Promise<void | Response> {
   const { state } = req.query;
 
   try {
@@ -41,9 +40,12 @@ export async function oauthCallbackHandler(
     }
 
     if (!nosignup) {
-      const redirectionURL = buildRedirectUrl(AUTH_SERVER_CALLBACK as string, {
-        ...req.query
-      });
+      const redirectionURL = buildRedirectUrl(
+        AUTH_SERVER_CALLBACK as string,
+        {
+          ...req.query
+        } as Record<string, string>
+      );
       return res.redirect(redirectionURL);
     }
 
@@ -64,6 +66,10 @@ export async function oauthCallbackHandler(
       { state: state as string }
     );
 
+    const credentials: { id?: string; email?: string; accessToken: string } = {
+      accessToken: tokenSet.access_token as string
+    };
+
     /**
      *  Original code.
      *
@@ -83,26 +89,23 @@ export async function oauthCallbackHandler(
      * This implementation is subject to change when using the Gotrue user tables.
      */
 
-    const userInfo = decodeJwt(tokenSet.id_token as string) as Record<
-      string,
-      any
-    >;
+    const userInfo = decodeJwt(tokenSet.id_token as string);
     const user = await findOrCreateOne(
       userInfo.email,
       tokenSet.refresh_token as string
     );
-    const account: UserDetails = {
-      id: user.id,
-      email: user.email,
-      accessToken: tokenSet.access_token as string
-    };
+
+    if (user) {
+      credentials.id = user.id;
+      credentials.email = user.email;
+    }
 
     if (redirectURL) {
-      const redirectionURL = buildRedirectUrl(redirectURL, account);
+      const redirectionURL = buildRedirectUrl(redirectURL, credentials);
       return res.redirect(redirectionURL);
     }
 
-    return res.status(200).json({ error: null, data: account });
+    return res.status(200).json({ error: null, data: credentials });
   } catch (err) {
     return next(err);
   }
@@ -119,7 +122,7 @@ export function oauthHandler(
   req: Request,
   res: Response,
   next: NextFunction
-): void {
+): void | Response {
   try {
     const { nosignup, provider, scopes } = req.query;
 
@@ -160,7 +163,7 @@ export function oauthHandler(
     }
 
     const queryParams = new URLSearchParams(
-      authorizationParams as Record<string, any>
+      authorizationParams as unknown as Record<string, string>
     );
     const authorizationURL = `${AUTH_SERVER_URL}/authorize?${queryParams.toString()}`;
 

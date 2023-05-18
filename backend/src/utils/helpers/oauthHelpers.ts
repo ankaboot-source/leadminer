@@ -30,10 +30,10 @@ export interface AuthorizationParams {
   access_type?: string;
 }
 
-export interface UserDetails {
+export interface OauthUser {
   id: string;
   email: string;
-  accessToken: string;
+  refresh_token: string;
 }
 
 /**
@@ -58,7 +58,7 @@ export function buildEndpointURL(req: Request, endpointPath: string): string {
  */
 export function buildRedirectUrl(
   redirectURL: string,
-  params: Record<string, any>
+  params: Record<string, string>
 ): string {
   try {
     const url = new URL(redirectURL);
@@ -82,11 +82,11 @@ export function encodeJwt(payload: object): string {
 /**
  * Decodes the provided JWT without verifying its authenticity.
  * @param {string} token - The JWT to be decoded.
- * @returns {JwtState | Record<string, any>} The decoded payload if the token is valid.
+ * @returns {jwt.JwtPayload} The decoded payload if the token is valid.
  * @throws {Error} If the token is invalid or decoding fails.
  */
-export function decodeJwt(token: string): JwtState | Record<string, any> {
-  const decodedPayload = jwt.decode(token) as JwtState;
+export function decodeJwt(token: string): jwt.JwtPayload {
+  const decodedPayload = jwt.decode(token) as jwt.JwtPayload;
   if (!decodedPayload) {
     throw new Error('Invalid token: payload not found');
   }
@@ -103,15 +103,17 @@ export function decodeJwt(token: string): JwtState | Record<string, any> {
 export async function findOrCreateOne(
   email: string,
   refreshToken: string
-): Promise<Record<string, any>> {
+): Promise<OauthUser | null> {
   /**
    * Temporary implementation: This function serves as a temporary solution until
    * the application starts using the Gotrue user tables. It finds or creates a user
    * based on the provided email and registres all account under the same table as a google user.
    */
-  const account: Record<string, any> =
-    (await db.getGoogleUserByEmail(email)) ??
-    (await db.createGoogleUser({ email, refresh_token: refreshToken }));
+  const account = ((await db.getGoogleUserByEmail(email)) ??
+    (await db.createGoogleUser({
+      email,
+      refresh_token: refreshToken
+    }))) as OauthUser;
 
   if (!account) {
     throw Error('Failed to create or query googleUser');
@@ -121,9 +123,7 @@ export async function findOrCreateOne(
     await db.updateGoogleUser(account.id, refreshToken);
   }
 
-  return {
-    ...account
-  };
+  return account;
 }
 
 /**
