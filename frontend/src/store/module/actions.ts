@@ -72,31 +72,13 @@ export async function stopMining({ commit, getters }: any, { data }: any) {
   }
 }
 
-export function signUpGoogle({ commit }: any, { data }: any) {
-  return new Promise((resolve, reject) => {
-    commit("SET_LOADING", true);
-    api
-      .post("/imap/signUpGoogle", { authCode: data })
-      .then((response) => {
-        commit("SET_LOADING", false);
-        commit("SET_OAUTH_USER", response.data.oauthUser);
-        resolve(response);
-      })
-      .catch((error) => {
-        if (error) {
-          commit("SET_ERROR", error?.response.data.error);
-        }
-        reject(error.message);
-      });
-  });
-}
 export async function signIn({ commit }: any, { data }: any) {
   try {
     const response = await api.post("/imap/login", data);
     const imapUser = { ...response.data.imap, password: data.password };
 
-    LocalStorage.set("imapUser", imapUser);
-    commit("SET_IMAP", imapUser);
+    LocalStorage.set("user", imapUser);
+    commit("SET_USER_CREDENTIALS", imapUser);
 
     return response.data;
   } catch (error: any) {
