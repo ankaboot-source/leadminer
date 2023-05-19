@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { LoginFormError } from "src/types/mutations";
 import { getDefaultState } from "./defaultState";
 
 export function SET_LOADING(state: any, newLoadingStatus: any) {
@@ -81,10 +82,7 @@ export function DELETE_MINING_TASK(state: any) {
 export function SET_FETCHING_FINISHED(state: any, totalFetchedEmails: number) {
   state.fetchingFinished = totalFetchedEmails;
 }
-interface LoginFormError {
-  fields: Array<string>;
-  message: string;
-}
+
 export function SET_ERRORS(state: any, errors: Array<LoginFormError>) {
   const result: Record<string, string> = {};
 
