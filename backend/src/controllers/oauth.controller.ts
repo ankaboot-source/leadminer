@@ -155,7 +155,6 @@ export function oauthHandler(
 
     const authorizationParams: AuthorizationParams = {
       provider,
-      scopes: oauthProvider.scopes
     };
 
     if (typeof scopes === 'string') {
@@ -173,6 +172,7 @@ export function oauthHandler(
         redirectURL
       };
 
+      authorizationParams.scopes = oauthProvider.scopes
       authorizationParams.state = encodeJwt(stateParams);
       authorizationParams.access_type = 'offline';
     }
