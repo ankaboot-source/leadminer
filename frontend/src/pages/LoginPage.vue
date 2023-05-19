@@ -164,23 +164,23 @@ const policyChecked = ref(false);
 const isLoading = ref(false);
 
 onMounted(() => {
-
   const fragmentIdentifier = window.location.hash.split("#")[1];
-  const parameters = new URLSearchParams(fragmentIdentifier || window.location.search)
+  const parameters = new URLSearchParams(
+    fragmentIdentifier || window.location.search
+  );
 
   if (parameters) {
-
     const params = {
-      id: parameters.get('id'),
-      email: parameters.get('email'),
-      accessToken: parameters.get('accessToken'),
-    }
+      id: parameters.get("id"),
+      email: parameters.get("email"),
+      accessToken: parameters.get("accessToken"),
+    };
 
-    const { id, accessToken } = params
+    const { id, accessToken } = params;
 
     if (id && accessToken && params.email) {
       $store.commit("leadminer/SET_USER_CREDENTIALS", params);
-      localStorage.setItem("user", JSON.stringify($store.state.leadminer.user)); 
+      localStorage.setItem("user", JSON.stringify($store.state.leadminer.user));
     }
   }
 
@@ -231,7 +231,7 @@ const getOauthEmailURL = computed(() => {
   const emailDomain = emailAddress.split("@")[1]?.split(".")[0];
 
   const provider = oauthProviders.find(({ domains }) =>
-  domains.includes(emailDomain)
+    domains.includes(emailDomain)
   );
 
   return provider?.name || "";

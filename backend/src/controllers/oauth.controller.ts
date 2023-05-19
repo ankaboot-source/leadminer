@@ -154,7 +154,7 @@ export function oauthHandler(
     const redirectURL = req.query.redirect_to;
 
     const authorizationParams: AuthorizationParams = {
-      provider,
+      provider
     };
 
     if (typeof scopes === 'string') {
@@ -172,7 +172,7 @@ export function oauthHandler(
         redirectURL
       };
 
-      authorizationParams.scopes = oauthProvider.scopes
+      authorizationParams.scopes = oauthProvider.scopes;
       authorizationParams.state = encodeJwt(stateParams);
       authorizationParams.access_type = 'offline';
     }
