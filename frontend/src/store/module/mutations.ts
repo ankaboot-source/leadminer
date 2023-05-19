@@ -13,24 +13,11 @@ export function SET_USERID(state: any, id: string) {
 export function SET_LOADINGBOX(state: any, newLoadingStatusbox: any) {
   state.loadingStatusbox = newLoadingStatusbox;
 }
-export function SET_IMAP(state: any, newImap: any) {
-  state.imapUser = {
-    ...newImap,
-  };
-}
-
-export function SET_GOOGLE_USER(state: any, user: any) {
-  state.googleUser = {
-    ...user,
-  };
-}
-
 export function SET_USER_CREDENTIALS(state: any, user: any) {
   state.user = {
     ...user,
   };
 }
-
 export function SET_BOXES(state: any, newBoxes: any) {
   state.boxes = [...newBoxes];
 }
