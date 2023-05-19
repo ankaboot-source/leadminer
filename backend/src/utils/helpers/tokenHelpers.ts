@@ -1,5 +1,5 @@
 import { Client, TokenSet } from 'openid-client';
-// @ts-ignore
+// @ts-ignore - until we add the module to types
 import { createXOAuth2Generator } from 'xoauth2';
 import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../../config';
 
@@ -33,7 +33,7 @@ async function refreshAccessToken(
   client: Client,
   refreshToken: string
 ): Promise<TokenSet> {
-  return client.refresh(refreshToken);
+  return await client.refresh(refreshToken);
 }
 
 /**
