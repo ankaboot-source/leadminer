@@ -27,7 +27,7 @@ app.get('/', (_, res) =>
 );
 
 // Register api endpoints
-app.use('/api', oauthRouter);
+app.use('/api/oauth', oauthRouter);
 app.use('/api/imap', streamRouter);
 app.use('/api/imap', imapRouter);
 
