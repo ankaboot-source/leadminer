@@ -164,26 +164,6 @@ const policyChecked = ref(false);
 const isLoading = ref(false);
 
 onMounted(() => {
-  const fragmentIdentifier = window.location.hash.split("#")[1];
-  const parameters = new URLSearchParams(
-    fragmentIdentifier || window.location.search
-  );
-
-  if (parameters) {
-    const params = {
-      id: parameters.get("id"),
-      email: parameters.get("email"),
-      accessToken: parameters.get("accessToken"),
-    };
-
-    const { id, accessToken } = params;
-
-    if (id && accessToken && params.email) {
-      $store.commit("leadminer/SET_USER_CREDENTIALS", params);
-      localStorage.setItem("user", JSON.stringify($store.state.leadminer.user));
-    }
-  }
-
   if ($store.getters["leadminer/isLoggedIn"]) {
     $router.push("/dashboard");
   }

@@ -33,7 +33,7 @@ export default {
     handleClickSignIn() {
       this.isLoading = true;
 
-      const frontendCallbackURL = `${window.location.origin}/`;
+      const frontendCallbackURL = `${window.location.origin}/dashboard`;
       const params: Record<string, string> = {
         provider: this.oauthProvider,
         redirect_to: frontendCallbackURL,
