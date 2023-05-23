@@ -34,7 +34,7 @@ async function refreshAccessToken(
   refreshToken: string
 ): Promise<TokenSet> {
   const tokenSet = await client.refresh(refreshToken);
-  return tokenSet
+  return tokenSet;
 }
 
 /**
