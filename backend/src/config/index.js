@@ -47,7 +47,7 @@ export const providersConfigs = [
       host: 'imap.gmail.com',
       port: 993
     },
-    domains: ['gmail', 'googlemail.com', 'google.com']
+    domains: ['gmail', 'googlemail', 'google']
   },
   {
     name: 'azure',
