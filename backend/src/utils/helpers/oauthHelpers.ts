@@ -1,19 +1,6 @@
 import { Request } from 'express';
 import jwt from 'jsonwebtoken';
-import { Issuer, Client } from 'openid-client';
 import db from '../../db';
-
-export interface OauthProvider {
-  name: string;
-  authorizationURL: string;
-  tokenURL: string;
-  clientID: string;
-  clientSecret: string;
-  scopes?: string[];
-  issuerURL: string;
-  userInfoURL: string;
-  jwkURI: string;
-}
 
 export interface JwtState {
   provider: string;
@@ -124,43 +111,4 @@ export async function findOrCreateOne(
   }
 
   return account;
-}
-
-/**
- * Creates an OAuth2 strategy based on the specified provider name.
- * @param {OauthProvider} provider - The OAuth provider config.
- * @param {string} callbackURL - The callback URL to redirect to for tokens.
- * @returns {Client} The configured OAuth2 strategy.
- * @throws {Error} If the provider is not supported.
- */
-export function createOAuthClient(
-  provider: OauthProvider,
-  callbackURL: string
-): Client {
-  const {
-    authorizationURL,
-    tokenURL,
-    issuerURL,
-    userInfoURL,
-    jwkURI,
-    clientID,
-    clientSecret
-  } = provider;
-
-  const issuer = new Issuer({
-    issuer: issuerURL,
-    authorization_endpoint: authorizationURL,
-    token_endpoint: tokenURL,
-    userinfo_endpoint: userInfoURL,
-    jwks_uri: jwkURI
-  });
-
-  const client = new issuer.Client({
-    client_id: clientID,
-    client_secret: clientSecret,
-    redirect_uris: [callbackURL],
-    response_types: ['code']
-  });
-
-  return client;
 }

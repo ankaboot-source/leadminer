@@ -1,9 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import {
-  OAUTH_PROVIDERS,
   AUTH_SERVER_URL,
   AUTH_SERVER_CALLBACK,
-  IMAP_PROVIDERS
+  PROVIDER_POOL
 } from '../config';
 
 import {
@@ -13,7 +12,6 @@ import {
   decodeJwt,
   JwtState,
   AuthorizationParams,
-  createOAuthClient,
   findOrCreateOne
 } from '../utils/helpers/oauthHelpers';
 
@@ -24,10 +22,7 @@ import {
  * @returns {Response} The response containing the OAuth providers and their domains.
  */
 export function GetOauthProviders(_: Request, res: Response) {
-  const providers = IMAP_PROVIDERS.map(({ name, domains }) => ({
-    name,
-    domains
-  }));
+  const providers = PROVIDER_POOL.supportedProviders();
   return res.status(200).json(providers);
 }
 
@@ -64,16 +59,7 @@ export async function oauthCallbackHandler(
       return res.redirect(redirectionURL);
     }
 
-    const oauthProvider = OAUTH_PROVIDERS.find(({ name }) => name === provider);
-
-    if (!oauthProvider) {
-      throw new Error('Provider not supported.');
-    }
-
-    const client = createOAuthClient(
-      oauthProvider,
-      buildEndpointURL(req, '/api/oauth/callback')
-    );
+    const client = PROVIDER_POOL.oauthClientFor({ name: provider });
 
     const tokenSet = await client.callback(
       buildEndpointURL(req, '/api/oauth/callback'),
@@ -145,16 +131,17 @@ export function oauthHandler(
       throw new Error('Missing or invalid provider.');
     }
 
-    const oauthProvider = OAUTH_PROVIDERS.find(({ name }) => name === provider);
+    const { oauthConfig } = PROVIDER_POOL.getProviderConfig({ name: provider });
 
-    if (!oauthProvider) {
+    if (!oauthConfig) {
       return next(new Error('Requested provider not supported.'));
     }
 
     const redirectURL = req.query.redirect_to;
 
     const authorizationParams: AuthorizationParams = {
-      provider
+      provider,
+      scopes: []
     };
 
     if (typeof scopes === 'string') {
@@ -172,7 +159,10 @@ export function oauthHandler(
         redirectURL
       };
 
-      authorizationParams.scopes = oauthProvider.scopes;
+      if (oauthConfig.scopes) {
+        authorizationParams.scopes?.push(...oauthConfig.scopes);
+      }
+
       authorizationParams.state = encodeJwt(stateParams);
       authorizationParams.access_type = 'offline';
     }

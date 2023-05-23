@@ -4,13 +4,11 @@ import {
   IMAP_AUTH_TIMEOUT,
   IMAP_CONNECTION_TIMEOUT,
   IMAP_MAX_CONNECTIONS,
-  IMAP_PROVIDERS,
-  OAUTH_PROVIDERS
+  PROVIDER_POOL
 } from '../config';
 import logger from '../utils/logger';
 
 import generateXOauthToken from '../utils/helpers/tokenHelpers';
-import { createOAuthClient } from '../utils/helpers/oauthHelpers';
 
 class ImapConnectionProvider {
   /**
@@ -58,38 +56,14 @@ class ImapConnectionProvider {
    */
   async withOauth(token, refreshToken, userId, redisPubInstance) {
     try {
-      const emailDomain = this.#imapConfig.user.split('@')[1]?.split('.')[0];
-      const imapProvider = IMAP_PROVIDERS.find(({ domains }) =>
-        domains.includes(emailDomain)
-      );
+      const { imapConfig } = PROVIDER_POOL.getProviderConfig({
+        email: this.#imapConfig.user
+      });
+      const oauthClient = PROVIDER_POOL.oauthClientFor({
+        email: this.#imapConfig.user
+      });
 
-      if (imapProvider === undefined) {
-        throw new Error(
-          `Imap provider for domain "${emailDomain}" is not supported.`
-        );
-      }
-
-      const { host, port } = imapProvider;
-      const config = {
-        host,
-        port,
-        tlsOptions: {
-          host,
-          port,
-          servername: host
-        }
-      };
-
-      const provider = OAUTH_PROVIDERS.find(
-        ({ name }) => name === imapProvider.name
-      );
-
-      if (provider === undefined) {
-        throw new Error(`Provider "${imapProvider.name}" not supported.`);
-      }
-
-      // Create Oauth stratetgy based on the used oauth provider.
-      const oauthClient = createOAuthClient(provider, '');
+      const { host, port } = imapConfig;
 
       const { newToken, xoauth2Token } = await generateXOauthToken(
         oauthClient,
@@ -98,11 +72,14 @@ class ImapConnectionProvider {
         this.#imapConfig.user
       );
 
-      config.xoauth2 = xoauth2Token;
       await redisPubInstance.publish(`auth-${userId}`, newToken); // TODO: to be removed
+
       this.#imapConfig = {
-        ...this.#imapConfig,
-        ...config
+        host,
+        port,
+        tlsOptions: { host, port, servername: host },
+        xoauth2: xoauth2Token,
+        ...this.#imapConfig
       };
       return this;
     } catch (error) {
