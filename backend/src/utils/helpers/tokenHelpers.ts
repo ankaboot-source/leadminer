@@ -33,7 +33,8 @@ async function refreshAccessToken(
   client: Client,
   refreshToken: string
 ): Promise<TokenSet> {
-  return client.refresh(refreshToken);
+  const tokenSet = await client.refresh(refreshToken);
+  return tokenSet
 }
 
 /**
