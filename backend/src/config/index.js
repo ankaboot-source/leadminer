@@ -29,7 +29,7 @@ export const ALLOWED_ORIGINS = [
   process.env.FRONTEND_HOST
 ];
 
-export const providersConfigs = [
+const providersConfigs = [
   {
     name: 'google',
     oauthConfig: {
