@@ -1,6 +1,5 @@
 import { Redis } from 'ioredis';
 import { Logger } from 'winston';
-import logMemoryStats from '../utils/profiling/memory';
 
 type StreamEntry = { streamName: string; consumerGroupName: string };
 
@@ -130,7 +129,6 @@ export default class StreamConsumer {
         });
       }
 
-      logMemoryStats(this.logger, 'worker');
       return processedData;
     } catch (err) {
       this.logger.error('Error while consuming messages from stream.', err);

@@ -44,11 +44,8 @@ export default class PgContacts implements Contacts {
   }
 
   async create({ message, persons }: Contact, userId: string) {
-    const client = await this.pool.connect();
-
     try {
-      await client.query('BEGIN');
-      const { rows } = await client.query(PgContacts.INSERT_MESSAGE_SQL, [
+      const { rows } = await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
         message.date,
@@ -63,7 +60,7 @@ export default class PgContacts implements Contacts {
 
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        const personInsertionResult = await client.query(
+        const personInsertionResult = await this.pool.query(
           PgContacts.UPSERT_PERSON_SQL,
           [
             person.name,
@@ -90,29 +87,24 @@ export default class PgContacts implements Contacts {
         ]);
 
         // eslint-disable-next-line no-await-in-loop
-        await client.query(format(PgContacts.INSERT_TAGS_SQL, tagValues));
-
-        // eslint-disable-next-line no-await-in-loop
-        await client.query(PgContacts.INSERT_POC_SQL, [
-          messageId,
-          pointOfContact.name,
-          pointOfContact.from,
-          pointOfContact.replyTo,
-          pointOfContact.to,
-          pointOfContact.cc,
-          pointOfContact.bcc,
-          pointOfContact.body,
-          personId,
-          userId
+        await Promise.allSettled([
+          this.pool.query(format(PgContacts.INSERT_TAGS_SQL, tagValues)),
+          this.pool.query(PgContacts.INSERT_POC_SQL, [
+            messageId,
+            pointOfContact.name,
+            pointOfContact.from,
+            pointOfContact.replyTo,
+            pointOfContact.to,
+            pointOfContact.cc,
+            pointOfContact.bcc,
+            pointOfContact.body,
+            personId,
+            userId
+          ])
         ]);
       }
-
-      await client.query('COMMIT');
     } catch (e) {
-      await client.query('ROLLBACK');
       this.logger.error('Error when inserting contact', e);
-    } finally {
-      client.release();
     }
   }
 
