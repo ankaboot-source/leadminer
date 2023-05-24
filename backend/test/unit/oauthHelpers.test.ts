@@ -5,13 +5,14 @@ import {
   encodeJwt,
   decodeJwt
 } from '../../src/utils/helpers/oauthHelpers';
+import { Request } from 'express';
 
 describe('buildEndpointURL', () => {
   it('should construct the full callback URL correctly', () => {
     const req = {
       protocol: 'http',
       get: jest.fn().mockReturnValue('example.com')
-    };
+    } as unknown as Request
     const result = buildEndpointURL(req, '/api/callback');
 
     expect(result).toBe('http://example.com/api/callback');

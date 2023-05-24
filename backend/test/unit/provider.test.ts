@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import ProviderPool from '../../src/services/Provider';
+import ProviderPool, { ProviderConfig, ProviderName } from '../../src/services/Provider';
 
 describe('ProviderPool', () => {
   const mockOAuthConfig = {
@@ -18,15 +18,18 @@ describe('ProviderPool', () => {
     port: 993
   };
 
-  const providersConfig = [
+  const google: ProviderName = 'google'
+  const azure: ProviderName = 'azure'
+
+  const providersConfig: ProviderConfig[] = [
     {
-      name: 'Provider1',
+      name: google,
       oauthConfig: mockOAuthConfig,
       imapConfig: mockImapConfig,
       domains: ['domain1', 'domain2']
     },
     {
-      name: 'Provider2',
+      name: azure,
       oauthConfig: mockOAuthConfig,
       imapConfig: mockImapConfig,
       domains: ['domain3']
@@ -36,7 +39,7 @@ describe('ProviderPool', () => {
   describe('oauthClientFor', () => {
     it('should return an instance of OAuthClient for valid provider name', () => {
       const pool = new ProviderPool(providersConfig);
-      const client = pool.oauthClientFor({ name: 'Provider1' });
+      const client = pool.oauthClientFor({ name: 'google' });
 
       expect(client).toBeDefined();
     });
@@ -68,13 +71,12 @@ describe('ProviderPool', () => {
   describe('getProviderConfig', () => {
     it('should return the configurations for a valid provider name', () => {
       const pool = new ProviderPool(providersConfig);
-      const config = pool.getProviderConfig({ name: 'Provider2' });
+      const config = pool.getProviderConfig({ name: 'azure' });
 
       expect(config).toEqual({
         oauthConfig: expect.any(Object),
         imapConfig: expect.any(Object)
       });
-      // Add more assertions for the configurations if needed
     });
 
     it('returns the configurations for a valid email domain', () => {
@@ -85,7 +87,6 @@ describe('ProviderPool', () => {
         oauthConfig: expect.any(Object),
         imapConfig: expect.any(Object)
       });
-      // Add more assertions for the configurations if needed
     });
 
     it('throws an error for invalid provider name', () => {
@@ -111,8 +112,8 @@ describe('ProviderPool', () => {
       const supportedProviders = pool.supportedProviders();
 
       expect(supportedProviders).toEqual({
-        Provider1: ['domain1', 'domain2'],
-        Provider2: ['domain3']
+        google: ['domain1', 'domain2'],
+        azure: ['domain3']
       });
     });
 
