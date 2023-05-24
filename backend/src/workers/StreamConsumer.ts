@@ -7,7 +7,7 @@ type StreamEntry = { streamName: string; consumerGroupName: string };
 export default class StreamConsumer {
   private isInterrupted: boolean;
 
-  private readonly streamsRegistry: Map<String, StreamEntry>;
+  private readonly streamsRegistry: Map<string, StreamEntry>;
 
   /**
    * Creates an instance of StreamConsumer.

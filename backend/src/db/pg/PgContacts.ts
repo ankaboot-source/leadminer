@@ -5,9 +5,11 @@ import { Contacts } from '../Contacts';
 import { Contact } from '../types';
 
 export default class PgContacts implements Contacts {
-  private static readonly REFINE_CONTACTS_SQL = `SELECT * FROM refined_persons($1)`;
+  private static readonly REFINE_CONTACTS_SQL =
+    'SELECT * FROM refined_persons($1)';
 
-  private static readonly POPULATE_REFINED_SQL = `SELECT * FROM populate_refined($1)`;
+  private static readonly POPULATE_REFINED_SQL =
+    'SELECT * FROM populate_refined($1)';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","userid") 

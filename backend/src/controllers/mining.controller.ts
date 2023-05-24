@@ -102,7 +102,7 @@ export default function initializeMiningController(
       }
     },
 
-    async getMiningTask(req: Request, res: Response, next: NextFunction) {
+    getMiningTask(req: Request, res: Response, next: NextFunction) {
       const { error } = getXImapHeaderField(req.headers);
 
       if (error) {
