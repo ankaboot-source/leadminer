@@ -9,7 +9,7 @@ import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../../config';
  * @param {string} token - The access token to validate.
  * @returns {Promise<boolean>} - A promise that resolves to a boolean indicating whether the token is valid.
  */
-async function validateToken(
+export async function validateToken(
   verify: CallableFunction,
   token: string
 ): Promise<boolean> {
