@@ -98,8 +98,7 @@ export async function getImapBoxes(req, res, next) {
   } catch (err) {
     const generatedError = generateErrorObjectFromImapError(err);
     const newError = new Error(generatedError.message);
-    newError.errors = generatedError.errors;
-    return next(newError);
+    return next({ ...newError, errors: generatedError.errors });
   } finally {
     await imapConnectionProvider.releaseConnection(imapConnection);
     await imapConnectionProvider.cleanPool();
