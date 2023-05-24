@@ -1,5 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
-import ProviderPool, { ProviderConfig, ProviderName } from '../../src/services/Provider';
+import ProviderPool, {
+  ProviderConfig,
+  ProviderName
+} from '../../src/services/Provider';
 
 describe('ProviderPool', () => {
   const mockOAuthConfig = {
@@ -18,8 +21,8 @@ describe('ProviderPool', () => {
     port: 993
   };
 
-  const google: ProviderName = 'google'
-  const azure: ProviderName = 'azure'
+  const google: ProviderName = 'google';
+  const azure: ProviderName = 'azure';
 
   const providersConfig: ProviderConfig[] = [
     {

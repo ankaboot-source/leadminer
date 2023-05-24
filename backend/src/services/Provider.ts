@@ -31,7 +31,7 @@ interface IMAPConfig {
 /**
  * Enum representing provider names.
  */
-export type ProviderName = 'google' | 'azure'
+export type ProviderName = 'google' | 'azure';
 
 export interface ProviderConfig {
   name: ProviderName;
