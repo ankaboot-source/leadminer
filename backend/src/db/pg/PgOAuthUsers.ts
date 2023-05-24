@@ -4,7 +4,7 @@ import { OAuthUser, OAuthUsers } from '../OAuthUsers';
 
 export default class PgOAuthUsers implements OAuthUsers {
   private static readonly INSERT_SQL = `
-    INSERT INTO google_users(email, refresh_token)
+    INSERT INTO google_users("email", "refresh_token")
     VALUES($1, $2) RETURNING *`;
 
   private static readonly GET_BY_EMAIL_SQL = `

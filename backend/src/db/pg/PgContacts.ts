@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import format from 'pg-format';
 import { Logger } from 'winston';
 import { Contacts } from '../Contacts';
 import { Contact } from '../types';
@@ -9,22 +10,22 @@ export default class PgContacts implements Contacts {
   private static readonly POPULATE_REFINED_SQL = `SELECT * FROM populate_refined($1)`;
 
   private static readonly INSERT_MESSAGE_SQL = `
-    INSERT INTO messages(channel,folder_path,date,message_id,references,list_id,conversation,userid)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING id`;
+    INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","userid") 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
+    RETURNING id;`;
 
   private static readonly INSERT_POC_SQL = `
-    INSERT INTO pointsofcontact(messageid,name,_from,reply_to,_to,cc,bcc,body,personid,userid)
+    INSERT INTO pointsofcontact("messageid","name","_from","reply_to","_to","cc","bcc","body","personid","userid")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-    returning id`;
+    RETURNING id`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons (name,email,url,image,address,same_as,given_name,family_name,job_title,identifiers,_userid)
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","_userid")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
     ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING id`;
 
   private static readonly INSERT_TAGS_SQL = `
-    INSERT INTO tags(name,reachable,source,userid,personid)
+    INSERT INTO tags("name","reachable","source","userid","personid")
     VALUES %L
     ON CONFLICT(personid, name) DO NOTHING`;
 
@@ -64,6 +65,7 @@ export default class PgContacts implements Contacts {
           PgContacts.UPSERT_PERSON_SQL,
           [
             person.name,
+            person.email,
             person.url,
             person.image,
             person.address,
@@ -86,27 +88,27 @@ export default class PgContacts implements Contacts {
         ]);
 
         // eslint-disable-next-line no-await-in-loop
-        await Promise.allSettled([
-          client.query(PgContacts.INSERT_POC_SQL, [
-            messageId,
-            pointOfContact.name,
-            pointOfContact.from,
-            pointOfContact.replyTo,
-            pointOfContact.to,
-            pointOfContact.cc,
-            pointOfContact.bcc,
-            pointOfContact.body,
-            personId,
-            userId
-          ]),
-          client.query(PgContacts.INSERT_TAGS_SQL, tagValues)
+        await client.query(format(PgContacts.INSERT_TAGS_SQL, tagValues));
+
+        // eslint-disable-next-line no-await-in-loop
+        await client.query(PgContacts.INSERT_POC_SQL, [
+          messageId,
+          pointOfContact.name,
+          pointOfContact.from,
+          pointOfContact.replyTo,
+          pointOfContact.to,
+          pointOfContact.cc,
+          pointOfContact.bcc,
+          pointOfContact.body,
+          personId,
+          userId
         ]);
       }
 
       await client.query('COMMIT');
     } catch (e) {
       await client.query('ROLLBACK');
-      throw e;
+      this.logger.error('Error when inserting contact', e);
     } finally {
       client.release();
     }

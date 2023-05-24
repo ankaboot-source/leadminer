@@ -3,18 +3,18 @@ import { Logger } from 'winston';
 import { ImapUser, ImapUsers } from '../ImapUsers';
 
 export default class PgImapUsers implements ImapUsers {
-  private static readonly GET_BY_EMAIL_QUERY = `
+  private static readonly GET_BY_EMAIL_SQL = `
     SELECT * FROM imap_users
     WHERE email = $1
     LIMIT 1`;
 
-  private static readonly GET_BY_ID_QUERY = `
+  private static readonly GET_BY_ID_SQL = `
     SELECT * FROM imap_users
     WHERE id = $1
     LIMIT 1`;
 
-  private static readonly INSERT_QUERY = `
-    INSERT INTO imap_users(email, host, port, tls)
+  private static readonly INSERT_SQL = `
+    INSERT INTO imap_users("email", "host", "port", "tls")
     VALUES($1, $2, $3, $4)
     RETURNING *`;
 
@@ -32,7 +32,7 @@ export default class PgImapUsers implements ImapUsers {
     tls: boolean;
   }) {
     try {
-      const { rows } = await this.client.query(PgImapUsers.INSERT_QUERY, [
+      const { rows } = await this.client.query(PgImapUsers.INSERT_SQL, [
         email,
         host,
         port,
@@ -52,7 +52,7 @@ export default class PgImapUsers implements ImapUsers {
 
   async getByEmail(email: string) {
     try {
-      const { rows } = await this.client.query(PgImapUsers.GET_BY_EMAIL_QUERY, [
+      const { rows } = await this.client.query(PgImapUsers.GET_BY_EMAIL_SQL, [
         email
       ]);
 
@@ -69,9 +69,7 @@ export default class PgImapUsers implements ImapUsers {
 
   async getById(id: string) {
     try {
-      const { rows } = await this.client.query(PgImapUsers.GET_BY_ID_QUERY, [
-        id
-      ]);
+      const { rows } = await this.client.query(PgImapUsers.GET_BY_ID_SQL, [id]);
 
       if (rows.length > 0) {
         return rows[0] as ImapUser;
