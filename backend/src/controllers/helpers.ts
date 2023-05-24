@@ -1,41 +1,62 @@
+import { IncomingHttpHeaders } from 'http';
+import { ImapUsers } from '../db/ImapUsers';
+import { OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 
-const IMAP_ERROR_CODES = Object.freeze({
-  AUTHENTICATIONFAILED: {
-    fields: ['email', 'password'],
-    message:
-      'Authentication failed. Please check your email and password and try again.'
-  },
-  EAUTH: {
-    fields: ['email', 'password'],
-    message:
-      'Authentication failed. Please check your username and password and try again.'
-  },
-  ENOTFOUND: {
-    fields: ['host'],
-    message: 'Host not found. Please check the server address and try again.'
-  },
-  ECONNREFUSED: {
-    fields: ['host', 'port'],
-    message:
-      'Connection was refused by the server. Please check if the server is running and if there are no firewalls blocking the connection.'
-  },
-  EAI_AGAIN: {
-    fields: ['host'],
-    message: 'Cannot resolve. Please verify the hostname and try again.'
-  },
-  CONNECTION_TIMEOUT: {
-    fields: ['host', 'port'],
-    message: 'Timed out while connecting to server.'
-  }
-});
+const IMAP_ERROR_CODES = new Map([
+  [
+    'AUTHENTICATIONFAILED',
+    {
+      fields: ['email', 'password'],
+      message:
+        'Authentication failed. Please check your email and password and try again.'
+    }
+  ],
+  [
+    'EAUTH',
+    {
+      fields: ['email', 'password'],
+      message:
+        'Authentication failed. Please check your username and password and try again.'
+    }
+  ],
+  [
+    'ENOTFOUND',
+    {
+      fields: ['host'],
+      message: 'Host not found. Please check the server address and try again.'
+    }
+  ],
+  [
+    'ECONNREFUSED',
+    {
+      fields: ['host', 'port'],
+      message:
+        'Connection was refused by the server. Please check if the server is running and if there are no firewalls blocking the connection.'
+    }
+  ],
+  [
+    'EAI_AGAIN',
+    {
+      fields: ['host'],
+      message: 'Cannot resolve. Please verify the hostname and try again.'
+    }
+  ],
+  [
+    'CONNECTION_TIMEOUT',
+    {
+      fields: ['host', 'port'],
+      message: 'Timed out while connecting to server.'
+    }
+  ]
+]);
 
 /**
  * Extracts the x-imap-login header field and validates it
- * @param {Object} headers - an object containing HTTP request headers.
- * @returns {{data, error}} - an object containing the extracted values and an error object if any
+ * @param headers - an object containing HTTP request headers.
+ * @returns an object containing the extracted values and an error object if any
  */
-export function getXImapHeaderField(headers) {
+export function getXImapHeaderField(headers: IncomingHttpHeaders) {
   if (!headers['x-imap-login']) {
     return {
       data: null,
@@ -44,7 +65,7 @@ export function getXImapHeaderField(headers) {
   }
   let login = null;
   try {
-    login = JSON.parse(headers['x-imap-login']);
+    login = JSON.parse(headers['x-imap-login'] as string);
   } catch (error) {
     return {
       data: null,
@@ -75,13 +96,6 @@ export function getXImapHeaderField(headers) {
 
 /**
  * Get a user by either their access token and email or their IMAP ID or email.
- *
- * @param {Object} params - An object containing the necessary parameters to fetch a user.
- * @param {string} params.access_token - The user's Google access token.
- * @param {string} params.id - The user's IMAP ID.
- * @param {string} params.email - The user's email address.
- * @param {Object} db - The database object to use for fetching the user.
- * @returns {Promise<Object>} - A promise that resolves with the user object, or null if not found.
  * @throws {Error} - If at least one parameter is not provided.
  *
  * @example
@@ -89,7 +103,19 @@ export function getXImapHeaderField(headers) {
  * const user = await getUser(params);
  * console.log(user);
  */
-export function getUser({ access_token, id, email }, db) {
+export function getUser(
+  {
+    access_token,
+    id,
+    email
+  }: {
+    access_token: string;
+    id: string;
+    email: string;
+  },
+  imapUsers: ImapUsers,
+  oAuthUsers: OAuthUsers
+) {
   if (!access_token && !id && !email) {
     throw new Error(
       'At least one parameter is required { access_token, id, email }.'
@@ -97,33 +123,33 @@ export function getUser({ access_token, id, email }, db) {
   }
 
   if (access_token) {
-    return db.getGoogleUserByEmail(email);
+    return oAuthUsers.getByEmail(email);
   }
   if (id) {
-    return db.getImapUserById(id);
+    return imapUsers.getById(id);
   }
 
-  return db.getImapUserByEmail(email);
+  return imapUsers.getByEmail(email);
 }
 
 /**
  * Generates a new error object from a given IMAP error code or text code.
- * @param {object} error - The IMAP error object.
- * @returns {Error} - The new error object with the corresponding error message, or the original error object.
+ * @param error - The IMAP error object.
+ * @returns - The new error object with the corresponding error message, or the original error object.
  */
-export function generateErrorObjectFromImapError(error) {
-  let errorMessage = IMAP_ERROR_CODES[`${error.code ?? error.textCode}`];
+export function generateErrorObjectFromImapError(error: any) {
+  let errorMessage = IMAP_ERROR_CODES.get(`${error.code ?? error.textCode}`);
 
   if (error.message.startsWith('LOGIN') && !(error.code ?? error.textCode)) {
-    errorMessage = IMAP_ERROR_CODES.AUTHENTICATIONFAILED;
+    errorMessage = IMAP_ERROR_CODES.get('AUTHENTICATIONFAILED');
   }
 
   if (error.source === 'timeout') {
-    errorMessage = IMAP_ERROR_CODES.CONNECTION_TIMEOUT;
+    errorMessage = IMAP_ERROR_CODES.get('CONNECTION_TIMEOUT');
   }
 
   if (errorMessage) {
-    const newError = new Error('Imap connection error.');
+    const newError: any = new Error('Imap connection error.');
     newError.errors = [
       {
         fields: errorMessage.fields,
@@ -139,20 +165,24 @@ export function generateErrorObjectFromImapError(error) {
 
 /**
  * Checks if the given IMAP credentials are valid by attempting to connect to the server.
- * @param {string} host - The IMAP server hostname.
- * @param {string} email - The email address to log in with.
- * @param {string} password - The password to use for authentication.
- * @param {boolean} tls - Whether or not to use TLS for the connection.
- * @param {number} port - The port number to connect to.
+ * @param host - The IMAP server hostname.
+ * @param email - The email address to log in with.
+ * @param password - The password to use for authentication.
+ * @param port - The port number to connect to.
  * @throws {Error} - If there was an error connecting to the server or authenticating with the given credentials.
  */
-export async function validateImapCredentials(host, email, password, port) {
+export async function validateImapCredentials(
+  host: string,
+  email: string,
+  password: string,
+  port: string
+) {
   if ([host, email, password, port].some((param) => param === undefined)) {
     throw new TypeError('Invalid parameters.');
   }
 
   let connection = null;
-  let connectionProvider = null;
+  let connectionProvider: ImapConnectionProvider | null = null;
 
   try {
     connectionProvider = new ImapConnectionProvider(email).withPassword(
@@ -173,13 +203,6 @@ export async function validateImapCredentials(host, email, password, port) {
  * Validates and extracts IMAP parameters from the request body.
  *
  * @param {object} body - The request body object containing the email, host, tls, port, and password.
- * @param {string} body.host - The host parameter.
- * @param {string} body.email - The email parameter.
- * @param {string} body.password - The password parameter.
- * @param {boolean} body.tls - The tls parameter.
- * @param {number} body.port - The port parameter.
- *
- * @returns {object} An object containing the extracted parameters.
  * @throws {Error} If any required parameter is missing or invalid, or if there is an error connecting to the IMAP server.
  */
 export function validateAndExtractImapParametersFromBody({
@@ -188,37 +211,43 @@ export function validateAndExtractImapParametersFromBody({
   password,
   tls,
   port
+}: {
+  host: string;
+  email: string;
+  password: string;
+  tls: boolean;
+  port: string;
 }) {
   const validationRules = [
     {
       fields: ['host'],
       message: 'Host parameter is missing or invalid',
       value: host,
-      validation: (value) => typeof value === 'string'
+      validation: (value: any) => typeof value === 'string'
     },
     {
       fields: ['email'],
       message: 'Email parameter is missing or invalid',
       value: email,
-      validation: (value) => typeof value === 'string'
+      validation: (value: any) => typeof value === 'string'
     },
     {
       fields: ['password'],
       message: 'Password parameter is missing or invalid',
       value: password,
-      validation: (value) => typeof value === 'string'
+      validation: (value: any) => typeof value === 'string'
     },
     {
       fields: ['tls'],
       message: 'TLS parameter is missing or invalid',
       value: tls,
-      validation: (value) => typeof value === 'boolean'
+      validation: (value: any) => typeof value === 'boolean'
     },
     {
       fields: ['port'],
       message: 'Port parameter is missing or invalid',
       value: port,
-      validation: (value) => !Number.isNaN(value)
+      validation: (value: any) => !Number.isNaN(value)
     }
   ];
 
@@ -227,7 +256,7 @@ export function validateAndExtractImapParametersFromBody({
     .map(({ fields, message }) => ({ fields, message }));
 
   if (errors.length > 0) {
-    const err = new Error('Validation errors');
+    const err: any = new Error('Validation errors');
     err.errors = errors;
     err.code = 400;
     throw err;

@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { PG_CONNECTION_STRING } from '../config';
+import { PG_CONNECTION_STRING } from '../../config';
 
 const pool = new Pool({
   connectionString: PG_CONNECTION_STRING,

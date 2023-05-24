@@ -1,10 +1,12 @@
 import { Pool } from 'pg';
 import { Logger } from 'winston';
-import { Contacts } from './Contacts';
-import { Contact } from './types';
+import { Contacts } from '../Contacts';
+import { Contact } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL = `SELECT * FROM refined_persons($1)`;
+
+  private static readonly POPULATE_REFINED_SQL = `SELECT * FROM populate_refined($1)`;
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages(channel,folder_path,date,message_id,references,list_id,conversation,userid)
@@ -28,7 +30,17 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
-  async create({ message, persons }: Contact, userId: string): Promise<void> {
+  async populate(userId: string) {
+    try {
+      await this.pool.query(PgContacts.POPULATE_REFINED_SQL, [userId]);
+      return true;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
+
+  async create({ message, persons }: Contact, userId: string) {
     const client = await this.pool.connect();
 
     try {

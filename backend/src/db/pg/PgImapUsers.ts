@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { Logger } from 'winston';
-import { ImapUser, ImapUsers } from './ImapUsers';
+import { ImapUser, ImapUsers } from '../ImapUsers';
 
 export default class PgImapUsers implements ImapUsers {
   private static readonly GET_BY_EMAIL_QUERY = `
