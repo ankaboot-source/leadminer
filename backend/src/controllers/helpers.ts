@@ -109,9 +109,9 @@ export function getUser(
     id,
     email
   }: {
-    access_token: string;
-    id: string;
-    email: string;
+    access_token?: string;
+    id?: string;
+    email?: string;
   },
   imapUsers: ImapUsers,
   oAuthUsers: OAuthUsers
@@ -123,13 +123,14 @@ export function getUser(
   }
 
   if (access_token) {
-    return oAuthUsers.getByEmail(email);
+    return oAuthUsers.getByEmail(email!);
   }
+
   if (id) {
     return imapUsers.getById(id);
   }
 
-  return imapUsers.getByEmail(email);
+  return imapUsers.getByEmail(email!);
 }
 
 /**
