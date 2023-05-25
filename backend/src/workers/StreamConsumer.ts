@@ -159,8 +159,11 @@ export default class StreamConsumer {
         }
 
         await this.consumeFromStreams(streams, consumerGroupName);
-      } catch (error: any) {
-        this.logger.error('An error occurred while consuming streams:', error);
+      } catch (error) {
+        this.logger.error(
+          'An error occurred while consuming streams:',
+          error as Error
+        );
       }
     }
 

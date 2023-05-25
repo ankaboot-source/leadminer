@@ -12,11 +12,11 @@ export default function initializeStreamController(tasksManager: TasksManager) {
 
       try {
         tasksManager.attachSSE(id, { req, res });
-      } catch (error: any) {
+      } catch (error) {
         res.status(404);
         res.write('id: 0\n');
         res.write('event: close\n');
-        res.write(`data: ${JSON.stringify(error.message)}\n\n`);
+        res.write(`data: ${JSON.stringify((error as Error).message)}\n\n`);
         res.flushHeaders();
         res.end();
       }

@@ -67,10 +67,10 @@ export default function initializeGoogleController(oAuthUsers: OAuthUsers) {
             }
           }
         });
-      } catch (error: any) {
+      } catch (error) {
         return next({
           message: 'Error when sign up with google',
-          details: error.message
+          details: (error as Error).message
         });
       }
     }

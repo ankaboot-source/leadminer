@@ -59,7 +59,7 @@ export default function initializeMiningController(
         // Connect to validate connection before creating the pool.
         imapConnection = await imapConnectionProvider.acquireConnection();
         const batchSize = LEADMINER_FETCH_BATCH_SIZE;
-        const imapEmailsFetcherOptions: any = {
+        const imapEmailsFetcherOptions = {
           imapConnectionProvider,
           boxes,
           id,
