@@ -1,4 +1,3 @@
-import db from '../db';
 import EmailMessage from '../services/EmailMessage';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
@@ -20,18 +19,22 @@ const redisClientForNormalMode = redis.getClient();
  * @param {string} options.userIdentifierHash - The hash of the user's identifier.
  * @param {boolean} options.isLast - Indicates whether this is the last message in a sequence of messages.
  * @param {string} options.miningId - The id of the mining process.
+ * @param {import('../db/Contacts').Contacts} contacts - The contacts db accessor.
  * @returns {Promise<void>}
  */
-export async function handleMessage({
-  seqNumber,
-  body,
-  header,
-  folderName,
-  userId,
-  userEmail,
-  userIdentifierHash,
-  isLast
-}) {
+async function handleMessage(
+  {
+    seqNumber,
+    body,
+    header,
+    folderName,
+    userId,
+    userEmail,
+    userIdentifierHash,
+    isLast
+  },
+  contacts
+) {
   const message = new EmailMessage(
     redisClientForNormalMode,
     userEmail,
@@ -42,7 +45,7 @@ export async function handleMessage({
   );
 
   const extractedContacts = await message.extractEmailAddresses();
-  await db.store(extractedContacts, userId);
+  await contacts.create(extractedContacts, userId);
 
   if (isLast) {
     try {
@@ -52,7 +55,7 @@ export async function handleMessage({
           userHash: userIdentifierHash
         }
       });
-      await db.callRpcFunction(userId, 'populate_refined');
+      await contacts.populate(userId);
     } catch (error) {
       logger.error(
         'Failed populating refined_persons.',
@@ -67,11 +70,15 @@ export async function handleMessage({
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  * @param {Array} message - Array containing the stream message ID and the message data
  */
-export const processStreamData = async (message) => {
-  const [, msg] = message;
-  const data = JSON.parse(msg[1]);
-  const { miningId } = data;
+export default function initializeMessageProcessor(contacts) {
+  return {
+    processStreamData: async (message) => {
+      const [, msg] = message;
+      const data = JSON.parse(msg[1]);
+      const { miningId } = data;
 
-  await handleMessage(data);
-  return miningId;
-};
+      await handleMessage(data, contacts);
+      return miningId;
+    }
+  };
+}
