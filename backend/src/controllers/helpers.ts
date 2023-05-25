@@ -96,12 +96,10 @@ export function getXImapHeaderField(headers: IncomingHttpHeaders) {
 
 /**
  * Get a user by either their access token and email or their IMAP ID or email.
+ * @param params - User data params.
+ * @param imapUsers - Imap users db accessor.
+ * @param oAuthUsers - OAuth users db accessor.
  * @throws {Error} - If at least one parameter is not provided.
- *
- * @example
- * const params = { id: '123', email: 'user@example.com' };
- * const user = await getUser(params);
- * console.log(user);
  */
 export function getUser(
   {
@@ -176,7 +174,7 @@ export async function validateImapCredentials(
   host: string,
   email: string,
   password: string,
-  port: string
+  port: number
 ) {
   if ([host, email, password, port].some((param) => param === undefined)) {
     throw new TypeError('Invalid parameters.');
@@ -189,7 +187,7 @@ export async function validateImapCredentials(
     connectionProvider = new ImapConnectionProvider(email).withPassword(
       host,
       password,
-      parseInt(port)
+      port
     );
     connection = await connectionProvider.acquireConnection();
   } catch (err) {
@@ -217,7 +215,7 @@ export function validateAndExtractImapParametersFromBody({
   email: string;
   password: string;
   tls: boolean;
-  port: string;
+  port: number;
 }) {
   const validationRules = [
     {

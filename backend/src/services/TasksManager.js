@@ -66,7 +66,7 @@ export class TasksManager {
    * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
    * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
-   * @param {import('../db/Contacts').Contacts} contacts - The factory to use for creating SSE broadcaster instances.
+   * @param {import('../db/Contacts').Contacts} contacts - Contacts db accessor.
    */
   constructor(
     redisSubscriber,

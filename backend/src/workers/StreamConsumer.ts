@@ -19,7 +19,7 @@ export default class StreamConsumer {
     private readonly pubsubCommunicationChannel: string,
     private readonly consumerName: string,
     private readonly batchSize: number,
-    private readonly messageProcessor: any,
+    private readonly messageProcessor: CallableFunction,
     private readonly redisSubscriber: Redis,
     private readonly redisClient: Redis,
     private readonly logger: Logger

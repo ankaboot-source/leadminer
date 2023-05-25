@@ -33,8 +33,7 @@ export default function initializeImapController(
             { email, access_token: '', id: '' },
             imapUsers,
             oAuthUsers
-          )) ??
-          (await imapUsers.create({ email, host, port: parseInt(port), tls }));
+          )) ?? (await imapUsers.create({ email, host, port, tls }));
 
         if (!user) {
           throw new Error(
