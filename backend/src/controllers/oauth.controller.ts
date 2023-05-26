@@ -4,7 +4,8 @@ import {
   AUTH_SERVER_URL,
   AUTH_SERVER_CALLBACK,
   PROVIDER_POOL,
-  LEADMINER_API_HASH_SECRET
+  LEADMINER_API_HASH_SECRET,
+  LEADMINER_API_HOST
 } from '../config';
 import {
   buildEndpointURL,
@@ -66,10 +67,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
 
         const client = PROVIDER_POOL.oAuthClientFor({ name: provider });
         const tokenSet = await client.callback(
-          buildEndpointURL(
-            `${req.protocol}://${req.get('host')}`,
-            '/api/oauth/callback'
-          ),
+          buildEndpointURL(LEADMINER_API_HOST as string, '/api/oauth/callback'),
           req.query,
           { state: state as string }
         );
