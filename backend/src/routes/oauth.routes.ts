@@ -4,10 +4,10 @@ import { OAuthUsers } from '../db/OAuthUsers';
 
 export default function initializeOAuthRoutes(oAuthUsers: OAuthUsers) {
   const router = Router();
-  const { oauthHandler, oauthCallbackHandler, GetOauthProviders } =
+  const { oAuthHandler, oAuthCallbackHandler, GetOAuthProviders } =
     initializeOAuthController(oAuthUsers);
-  router.get('/authorize', oauthHandler);
-  router.get('/callback', oauthCallbackHandler);
-  router.get('/providers', GetOauthProviders);
+  router.get('/authorize', oAuthHandler);
+  router.get('/callback', oAuthCallbackHandler);
+  router.get('/providers', GetOAuthProviders);
   return router;
 }

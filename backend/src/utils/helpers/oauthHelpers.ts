@@ -1,5 +1,3 @@
-import jwt from 'jsonwebtoken';
-
 export interface JwtState {
   provider: string;
   nosignup?: boolean;
@@ -47,18 +45,4 @@ export function buildRedirectUrl(
   } catch (error) {
     throw new Error('Invalid redirectURL: Not a valid URL');
   }
-}
-
-/**
- * Decodes the provided JWT without verifying its authenticity.
- * @param token - The JWT to be decoded.
- * @returns The decoded payload if the token is valid.
- * @throws If the token is invalid or decoding fails.
- */
-export function decodeJwt(token: string): jwt.JwtPayload {
-  const decodedPayload = jwt.decode(token) as jwt.JwtPayload;
-  if (!decodedPayload) {
-    throw new Error('Invalid token: payload not found');
-  }
-  return decodedPayload;
 }

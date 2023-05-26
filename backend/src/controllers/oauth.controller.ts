@@ -13,8 +13,7 @@ import {
   AuthorizationParams
 } from '../utils/helpers/oauthHelpers';
 
-import findOrCreateOne from '../db/helpers';
-import { OAuthUser, OAuthUsers } from '../db/OAuthUsers';
+import { OAuthUsers } from '../db/OAuthUsers';
 
 export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
   return {
@@ -24,7 +23,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
      * @param res - The response object.
      * @returns The response containing the OAuth providers and their domains.
      */
-    GetOauthProviders(_: Request, res: Response) {
+    GetOAuthProviders(_: Request, res: Response) {
       const providers = PROVIDER_POOL.supportedProviders();
       return res.status(200).json(providers);
     },
@@ -36,7 +35,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
      * @param next - The Express next middleware function.
      * @throws If the required parameters are missing or invalid.
      */
-    async oauthCallbackHandler(
+    async oAuthCallbackHandler(
       req: Request,
       res: Response,
       next: NextFunction
@@ -110,8 +109,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           throw new Error('Invalid token: payload not found');
         }
 
-        const user: OAuthUser | null = await findOrCreateOne(
-          oAuthUsers,
+        const user = await oAuthUsers.findOrCreateOne(
           userInfo.email,
           tokenSet.refresh_token as string
         );
@@ -139,7 +137,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
      * @param next - The Express next middleware function.
      * @throws If the required parameters are missing or invalid.
      */
-    oauthHandler(req: Request, res: Response, next: NextFunction) {
+    oAuthHandler(req: Request, res: Response, next: NextFunction) {
       try {
         const { nosignup, provider, scopes } = req.query;
 
@@ -195,9 +193,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         const authorizationURL = `${AUTH_SERVER_URL}/authorize?${queryParams.toString()}`;
 
         // Redirect the user to the authorization URL
-        return res
-          .status(200)
-          .json({ error: null, data: { authorizationURL, provider } });
+        return res.status(200).json({ data: { authorizationURL, provider } });
       } catch (error) {
         return next(error);
       }
