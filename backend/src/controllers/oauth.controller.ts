@@ -9,7 +9,6 @@ import {
 import {
   buildEndpointURL,
   buildRedirectUrl,
-  decodeJwt,
   JwtState,
   AuthorizationParams
 } from '../utils/helpers/oauthHelpers';
@@ -45,9 +44,12 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
       const { state } = req.query;
 
       try {
-        const { nosignup, provider, redirectURL } = decodeJwt(
-          state as string
-        ) as JwtState;
+        const decodedState = jwt.decode(state as string);
+
+        if (!decodedState) {
+          throw new Error('Invalid token: payload not found');
+        }
+        const { nosignup, provider, redirectURL } = decodedState as JwtState;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
@@ -65,7 +67,10 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
 
         const client = PROVIDER_POOL.oAuthClientFor({ name: provider });
         const tokenSet = await client.callback(
-          buildEndpointURL(req, '/api/oauth/callback'),
+          buildEndpointURL(
+            `${req.protocol}://${req.get('host')}`,
+            '/api/oauth/callback'
+          ),
           req.query,
           { state: state as string }
         );
@@ -97,7 +102,14 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
          * This implementation is subject to change when using the Gotrue user tables.
          */
 
-        const userInfo = decodeJwt(tokenSet.id_token as string);
+        const userInfo = jwt.decode(
+          tokenSet.id_token as string
+        ) as jwt.JwtPayload;
+
+        if (!userInfo) {
+          throw new Error('Invalid token: payload not found');
+        }
+
         const user: OAuthUser | null = await findOrCreateOne(
           oAuthUsers,
           userInfo.email,

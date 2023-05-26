@@ -1,4 +1,3 @@
-import { Request } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface JwtState {
@@ -18,12 +17,14 @@ export interface AuthorizationParams {
 
 /**
  * Constructs the full callback URL for an endpoint, based on the incoming request.
- * @param req - The incoming HTTP request.
+ * @param baseURL - The baseUrl protocol + host.
  * @param endpointPath - The path of the endpoint to build the URL for.
  * @returns The fully-constructed URL.
  */
-export function buildEndpointURL(req: Request, endpointPath: string): string {
-  const baseURL = `${req.protocol}://${req.get('host')}`;
+export function buildEndpointURL(
+  baseURL: string,
+  endpointPath: string
+): string {
   const url = new URL(endpointPath, baseURL);
 
   return url.href;

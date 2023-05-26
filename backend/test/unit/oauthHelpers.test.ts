@@ -1,5 +1,4 @@
 import { jest, describe, expect, it } from '@jest/globals';
-import { Request } from 'express';
 import {
   buildEndpointURL,
   buildRedirectUrl
@@ -10,8 +9,11 @@ describe('buildEndpointURL', () => {
     const req = {
       protocol: 'http',
       get: jest.fn().mockReturnValue('example.com')
-    } as unknown as Request;
-    const result = buildEndpointURL(req, '/api/callback');
+    };
+    const result = buildEndpointURL(
+      `${req.protocol}://${req.get('host')}`,
+      '/api/callback'
+    );
 
     expect(result).toBe('http://example.com/api/callback');
     expect(req.get).toHaveBeenCalledWith('host');
