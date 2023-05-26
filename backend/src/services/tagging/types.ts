@@ -12,9 +12,11 @@ export interface TaggingRule {
   conditions: TaggingCondition[];
 }
 
+export type TagSource = 'refined';
 export interface Tag {
   name: ContactTag;
   reachable: number;
+  source?: TagSource;
 }
 
 export const MESSAGING_FIELDS = [
@@ -34,8 +36,15 @@ export type EmailMessageTag =
   | 'newsletter'
   | 'group'
   | 'linkedin';
-export type EmailAddressTag = 'no-reply' | 'newsletter';
+export type EmailAddressTag =
+  | 'no-reply'
+  | 'newsletter'
+  | 'professional'
+  | 'personal'
+  | 'transactional';
 export type ContactTag = EmailMessageTag | EmailAddressTag;
+
+export type DomainType = 'provider' | 'custom';
 
 export interface EmailMessageTagExtractor {
   tag: Tag;

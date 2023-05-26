@@ -25,9 +25,9 @@ export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = ['newsletter'];
+export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = ['reply.github'];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
-  'alerts',
   'alert',
   'auto-confirm',
   'donotreply',
@@ -54,7 +54,6 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'send-as-noreply',
   'support',
   'systemalert',
-  'unsubscribe',
-  'wordpress'
+  'unsubscribe'
 ];
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
