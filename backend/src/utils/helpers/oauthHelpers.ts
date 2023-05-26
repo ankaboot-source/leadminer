@@ -1,6 +1,5 @@
 import { Request } from 'express';
 import jwt from 'jsonwebtoken';
-import db from '../../db';
 
 export interface JwtState {
   provider: string;
@@ -15,12 +14,6 @@ export interface AuthorizationParams {
   state?: string;
   scopes?: string[];
   access_type?: string;
-}
-
-export interface OAuthUser {
-  id: string;
-  email: string;
-  refresh_token: string;
 }
 
 /**
@@ -67,37 +60,4 @@ export function decodeJwt(token: string): jwt.JwtPayload {
     throw new Error('Invalid token: payload not found');
   }
   return decodedPayload;
-}
-
-/**
- * Finds or creates a user record using the provided email.
- * @param email - The email address of the Google user.
- * @param refreshToken - The refresh token of the Google user.
- * @throws If it fails to create or query the Google user.
- * @returns The Google user record that was found or created.
- */
-export async function findOrCreateOne(
-  email: string,
-  refreshToken: string
-): Promise<OAuthUser | null> {
-  /**
-   * Temporary implementation: This function serves as a temporary solution until
-   * the application starts using the Gotrue user tables. It finds or creates a user
-   * based on the provided email and registres all account under the same table as a google user.
-   */
-  const account = ((await db.getGoogleUserByEmail(email)) ??
-    (await db.createGoogleUser({
-      email,
-      refresh_token: refreshToken
-    }))) as OAuthUser;
-
-  if (!account) {
-    throw Error('Failed to create or query googleUser');
-  }
-
-  if (refreshToken && account.refresh_token !== refreshToken) {
-    await db.updateGoogleUser(account.id, refreshToken);
-  }
-
-  return account;
 }

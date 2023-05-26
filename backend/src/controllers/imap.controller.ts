@@ -5,7 +5,6 @@ import { ImapBoxesFetcher } from '../services/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { hashEmail } from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
-import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
   getUser,
@@ -13,8 +12,6 @@ import {
   validateAndExtractImapParametersFromBody,
   validateImapCredentials
 } from './helpers';
-
-const redisClient = redis.getClient();
 
 export default function initializeImapController(
   oAuthUsers: OAuthUsers,
@@ -69,11 +66,9 @@ export default function initializeImapController(
 
       // eslint-disable-next-line @typescript-eslint/naming-convention
       const imapConnectionProvider = access_token
-        ? await new ImapConnectionProvider(email).withGoogle(
+        ? await new ImapConnectionProvider(email).withOauth(
             access_token,
-            (user as OAuthUser).refresh_token,
-            id,
-            redisClient
+            (user as OAuthUser).refresh_token
           )
         : new ImapConnectionProvider(email).withPassword(
             (user as ImapUser).host,
@@ -95,10 +90,9 @@ export default function initializeImapController(
           }
         });
       } catch (err) {
-        const newError = generateErrorObjectFromImapError(err);
-
-        res.status(newError.code);
-        return next(new Error(newError.message));
+        const generatedError = generateErrorObjectFromImapError(err);
+        const newError = new Error(generatedError.message);
+        return next({ ...newError, errors: generatedError.errors });
       } finally {
         await imapConnectionProvider.releaseConnection(imapConnection);
         await imapConnectionProvider.cleanPool();

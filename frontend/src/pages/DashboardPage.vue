@@ -21,7 +21,7 @@ onMounted(() => {
     const params = {
       id: parameters.get("id"),
       email: parameters.get("email"),
-      accessToken: parameters.get("accessToken"),
+      accessToken: parameters.get("access_token"),
     };
 
     const { id, accessToken } = params;

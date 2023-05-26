@@ -47,7 +47,6 @@ class ImapConnectionProvider {
 
   /**
    * Builds the configuration for connecting to Google using OAuth.
-   * @param {string} email - User's email address
    * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
    * @returns {ImapConnectionProvider} - The object for the connection

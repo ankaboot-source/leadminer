@@ -12,6 +12,7 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import { TasksManager } from './services/TasksManager';
+import initializeOAuthRoutes from './routes/oauth.routes';
 
 export default function initializeApp(
   imapUsers: ImapUsers,
@@ -44,6 +45,7 @@ export default function initializeApp(
     initializeImapRoutes(imapUsers, oAuthUsers),
     initializeMiningRoutes(oAuthUsers, imapUsers, tasksManager)
   );
+  app.use('/api/oauth', initializeOAuthRoutes(oAuthUsers));
 
   if (SENTRY_ENABLED) {
     app.use(Sentry.Handlers.errorHandler());

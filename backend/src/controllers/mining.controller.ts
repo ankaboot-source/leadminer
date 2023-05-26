@@ -4,7 +4,6 @@ import { ImapUser, ImapUsers } from '../db/ImapUsers';
 import { OAuthUser, OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { TasksManager } from '../services/TasksManager';
-import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
   getUser,
@@ -40,11 +39,9 @@ export default function initializeMiningController(
       }
 
       const imapConnectionProvider = access_token
-        ? await new ImapConnectionProvider(email).withGoogle(
+        ? await new ImapConnectionProvider(email).withOauth(
             access_token,
-            (user as OAuthUser).refresh_token,
-            id,
-            redis.getClient()
+            (user as OAuthUser).refresh_token
           )
         : new ImapConnectionProvider(email).withPassword(
             (user as ImapUser).host,

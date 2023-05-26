@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import {
-  oauthCallbackHandler,
-  GetOauthProviders,
-  oauthHandler
-} from '../controllers/oauth.controller';
+import initializeOAuthController from '../controllers/oauth.controller';
+import { OAuthUsers } from '../db/OAuthUsers';
 
-const router = Router();
-
-router.get('/authorize', oauthHandler);
-router.get('/callback', oauthCallbackHandler);
-router.get('/providers', GetOauthProviders);
-export default router;
+export default function initializeOAuthRoutes(oAuthUsers: OAuthUsers) {
+  const router = Router();
+  const { oauthHandler, oauthCallbackHandler, GetOauthProviders } =
+    initializeOAuthController(oAuthUsers);
+  router.get('/authorize', oauthHandler);
+  router.get('/callback', oauthCallbackHandler);
+  router.get('/providers', GetOauthProviders);
+  return router;
+}

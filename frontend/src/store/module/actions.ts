@@ -20,11 +20,18 @@ export async function startMining(
 
   try {
     const { boxes } = data;
-
+    const params = {
+      id: user.id,
+      email: user.email,
+      access_token: user.accessToken,
+      host: user.host,
+      password: user.password,
+      port: user.port,
+    };
     const response = await api.post(
       `/imap/mine/${user.id}`,
       { boxes },
-      { headers: { "X-imap-login": JSON.stringify(user) } }
+      { headers: { "X-imap-login": JSON.stringify(params) } }
     );
 
     const task = response.data?.data?.task;
@@ -52,11 +59,17 @@ export async function startMining(
 export async function stopMining({ commit, getters }: any, { data }: any) {
   try {
     const user = getters.getCurrentUser;
-
     const { miningId } = data;
-
+    const params = {
+      id: user.id,
+      email: user.email,
+      access_token: user.accessToken,
+      host: user.host,
+      password: user.password,
+      port: user.port,
+    };
     await api.delete(`/imap/mine/${user.id}/${miningId}`, {
-      headers: { "X-imap-login": JSON.stringify(user) },
+      headers: { "X-imap-login": JSON.stringify(params) },
     });
 
     commit("DELETE_MINING_TASK");
@@ -111,8 +124,16 @@ export async function getBoxes({ getters, commit }: any) {
   commit("SET_USERID", user.id);
 
   try {
+    const params = {
+      id: user.id,
+      email: user.email,
+      access_token: user.accessToken,
+      host: user.host,
+      password: user.password,
+      port: user.port,
+    };
     const { data } = await api.get("/imap/1/boxes", {
-      headers: { "X-imap-login": JSON.stringify(user) },
+      headers: { "X-imap-login": JSON.stringify(params) },
     });
 
     commit("SET_LOADINGBOX", false);

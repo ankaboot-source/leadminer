@@ -17,8 +17,14 @@ export default async function generateXOauthToken(
   refreshToken: string,
   email: string
 ): Promise<{ xoauth2Token: string; newToken: string }> {
-  const validated = await oauthClient.userinfo(accessToken);
-  const tokenSet: TokenSet | string = validated.error
+  let validated = {};
+
+  try {
+    validated = await oauthClient.userinfo(accessToken);
+  } catch (err) {
+    validated = false;
+  }
+  const tokenSet: TokenSet | string = validated
     ? await oauthClient.refresh(refreshToken)
     : accessToken;
   const xoauth2gen = createXOAuth2Generator({
