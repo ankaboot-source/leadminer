@@ -18,11 +18,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/:catchAll(.*)*",
     component: () => import("pages/ErrorNotFound.vue"),
-  },
-  {
-    path: "/login/callback",
-    component: () => import("src/pages/LoginCallback.vue"),
-  },
+  }
 ];
 
 export default routes;
