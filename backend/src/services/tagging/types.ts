@@ -40,8 +40,11 @@ export type EmailAddressTag =
   | 'no-reply'
   | 'newsletter'
   | 'professional'
-  | 'personal';
+  | 'personal'
+  | 'transactional';
 export type ContactTag = EmailMessageTag | EmailAddressTag;
+
+export type DomainType = 'provider' | 'custom';
 
 export interface EmailMessageTagExtractor {
   tag: Tag;

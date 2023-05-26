@@ -1,7 +1,8 @@
-import { Tag } from '../../services/tagging/types';
+import { DomainType, Tag } from '../../services/tagging/types';
 import {
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
-  NOREPLY_EMAIL_ADDRESS_INCLUDES
+  NOREPLY_EMAIL_ADDRESS_INCLUDES,
+  TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../constants';
 
 /**
@@ -9,7 +10,7 @@ import {
  * @param domainType - This is the type of domain, it can be either "provider" or "custom"
  * @returns the type of email address.
  */
-export function findEmailAddressType(domainType: string) {
+export function findEmailAddressType(domainType: DomainType) {
   switch (domainType) {
     case 'custom':
       return 'professional';
@@ -27,6 +28,17 @@ export function findEmailAddressType(domainType: string) {
  */
 export function isNoReply(emailAddress: string) {
   return NOREPLY_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
+ * Checks if an email address can be tagged as no transactional
+ * @param emailAddress - The email address to check
+ * @returns
+ */
+export function isTransactional(emailAddress: string) {
+  return TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
 }
@@ -52,7 +64,7 @@ export function isNewsletter(emailAddress: string) {
  */
 export function getEmailTags(
   { address, name }: { address: string; name: string },
-  domainType: 'provider' | 'custom'
+  domainType: DomainType
 ): Tag[] {
   const emailTags: Tag[] = [];
 
@@ -60,6 +72,14 @@ export function getEmailTags(
 
   if (isNoReply(address)) {
     emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
+  }
+
+  if (isTransactional(address)) {
+    emailTags.push({
+      name: 'transactional',
+      reachable: 0,
+      source: 'refined'
+    });
   }
 
   if (isNewsletter(address) || name?.includes('newsletter')) {
