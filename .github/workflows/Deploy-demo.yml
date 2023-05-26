@@ -8,10 +8,25 @@ jobs:
     steps:
       - name: Deploy Leadminer
         uses: appleboy/ssh-action@master
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_SECRET: ${{ secrets.AZURE_SECRET }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PG_CONNECTION_STRING: ${{ secrets.PG_CONNECTION_STRING }}
+          LEADMINER_API_HASH_SECRET: ${{ secrets.LEADMINER_API_HASH_SECRET }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          SAAS_SUPABASE_PG_CONNECTION_STRING: ${{ secrets.SAAS_SUPABASE_PG_CONNECTION_STRING }}
+          SAAS_SUPABASE_SECRET_PROJECT_TOKEN: ${{ secrets.SAAS_SUPABASE_SECRET_PROJECT_TOKEN }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
         with:
           host: ${{secrets.SSH_HOST}} # IP address of the server
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{ secrets.SSH_USERNAME }} # User of the server
+          envs: GOOGLE_CLIENT_ID,GOOGLE_SECRET,AZURE_CLIENT_ID,AZURE_SECRET,SUPABASE_SERVICE_ROLE_KEY,PG_CONNECTION_STRING,LEADMINER_API_HASH_SECRET,REDIS_HOST,REDIS_PASSWORD,SAAS_SUPABASE_PG_CONNECTION_STRING,SAAS_SUPABASE_SECRET_PROJECT_TOKEN,AZURE_TENANT_ID
           script: |
             TARGET=demo
             ( cd leadminer_$TARGET; docker-compose down; git restore docker-compose.yml; git pull)
@@ -19,7 +34,22 @@ jobs:
                 -Atx "$PG_CONNECTION_STRING" \
                 -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
             )
-            cp leadminer.io/.env.$TARGET leadminer_$TARGET/.env
+            
+            export GOOGLE_SECRET
+            export GOOGLE_CLIENT_ID
+            export AZURE_SECRET
+            export AZURE_CLIENT_ID
+            export SUPABASE_SERVICE_ROLE_KEY
+            export PG_CONNECTION_STRING
+            export LEADMINER_API_HASH_SECRET
+            export REDIS_HOST
+            export REDIS_PASSWORD
+            export SAAS_SUPABASE_PG_CONNECTION_STRING
+            export SAAS_SUPABASE_SECRET_PROJECT_TOKEN
+            export AZURE_TENANT_ID
+
+
+            envsubst < leadminer.io/.env.$TARGET > leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
             cd leadminer_$TARGET
 
