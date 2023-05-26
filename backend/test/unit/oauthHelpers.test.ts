@@ -6,7 +6,7 @@ import {
 
 describe('buildEndpointURL', () => {
   it('should construct the full callback URL correctly', () => {
-    const result = buildEndpointURL(`http://example.com'`, '/api/callback');
+    const result = buildEndpointURL('http://example.com', '/api/callback');
 
     expect(result).toBe('http://example.com/api/callback');
   });
