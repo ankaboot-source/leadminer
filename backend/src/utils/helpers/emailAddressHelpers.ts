@@ -1,3 +1,4 @@
+import { Tag } from '../../services/tagging/types';
 import {
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES
@@ -5,10 +6,10 @@ import {
 
 /**
  * Returns the type type of the email address based on its domain type.
- * @param {String} domainType - This is the type of domain, it can be either "provider" or "custom"
+ * @param domainType - This is the type of domain, it can be either "provider" or "custom"
  * @returns the type of email address.
  */
-export function findEmailAddressType(domainType) {
+export function findEmailAddressType(domainType: string) {
   switch (domainType) {
     case 'custom':
       return 'professional';
@@ -22,9 +23,9 @@ export function findEmailAddressType(domainType) {
 /**
  * Checks if an email address can be tagged as no reply
  * @param emailAddress - The email address to check
- * @returns {Boolean}
+ * @returns
  */
-export function isNoReply(emailAddress) {
+export function isNoReply(emailAddress: string) {
   return NOREPLY_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
@@ -33,9 +34,9 @@ export function isNoReply(emailAddress) {
 /**
  * Checks if an email address can be tagged as newsletter
  * @param emailAddress - The email address to check.
- * @returns {Boolean}
+ * @returns
  */
-export function isNewsletter(emailAddress) {
+export function isNewsletter(emailAddress: string) {
   return NEWSLETTER_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
@@ -43,14 +44,17 @@ export function isNewsletter(emailAddress) {
 
 /**
  * Tags an email address.
- * @param {Object} email - The email to check.
- * @param {string} email.address - The email address.
- * @param {string} email.name - The user name.
- * @param {string} domainType - The type of domain, it can be either "provider" or "custom"
- * @returns {Object[]} List of tags
+ * @param email - The email to check.
+ * @param email.address - The email address.
+ * @param email.name - The user name.
+ * @param domainType - The type of domain, it can be either "provider" or "custom"
+ * @returns List of tags
  */
-export function getEmailTags({ address, name }, domainType) {
-  const emailTags = [];
+export function getEmailTags(
+  { address, name }: { address: string; name: string },
+  domainType: 'provider' | 'custom'
+): Tag[] {
+  const emailTags: Tag[] = [];
 
   const emailType = findEmailAddressType(domainType);
 
