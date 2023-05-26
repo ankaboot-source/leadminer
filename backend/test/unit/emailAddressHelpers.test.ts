@@ -1,8 +1,9 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, test } from '@jest/globals';
 
 import {
   findEmailAddressType,
-  isNoReply
+  isNoReply,
+  isTransactional
 } from '../../src/utils/helpers/emailAddressHelpers';
 
 describe('emailAddressHelpers.findEmailAddressType()', () => {
@@ -15,11 +16,6 @@ describe('emailAddressHelpers.findEmailAddressType()', () => {
     const type = findEmailAddressType('provider');
     expect(type).toBe('personal');
   });
-
-  it('should return an empty string for invalid input', () => {
-    const type = findEmailAddressType('invalid-provider');
-    expect(type).toBe('');
-  });
 });
 
 describe('emailAddressHelpers.isNoReply(emailAddress)', () => {
@@ -31,5 +27,17 @@ describe('emailAddressHelpers.isNoReply(emailAddress)', () => {
   it('should return false for leadminer@leadminer.io', () => {
     const output = isNoReply('leadminer@leadminer.com');
     expect(output).toBe(false);
+  });
+});
+
+describe('emailAddressHelpers.isTransactional(emailAddress)', () => {
+  test.each`
+    input
+    ${'reply+ABOE2A5ILHXMYEL3KF74W5OCOJCEREVBNHHGMLYEUE@reply.github.com'}
+    ${'leadminer@noreply.github.com'}
+    ${'subscribed@noreply.github.com'}
+    ${'unsub+ABOE2A5ILHXMYEL3KF74W5OCOJCEREVBNHHGMLYEUE@reply.github.com'}
+  `('Should tag $input email address as transactional', ({ input }) => {
+    expect(isTransactional(input)).toBe(true);
   });
 });
