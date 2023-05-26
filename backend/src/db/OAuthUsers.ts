@@ -18,4 +18,8 @@ export interface OAuthUsers {
     id: string,
     refreshToken: string
   ): Promise<OAuthUser | null>;
+  findOrCreateOne(
+    email: string,
+    refreshToken: string
+  ): Promise<OAuthUser | null>;
 }

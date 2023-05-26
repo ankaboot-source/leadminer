@@ -3,7 +3,8 @@ import Imap from 'imap';
 import {
   IMAP_AUTH_TIMEOUT,
   IMAP_CONNECTION_TIMEOUT,
-  IMAP_MAX_CONNECTIONS
+  IMAP_MAX_CONNECTIONS,
+  PROVIDER_POOL
 } from '../config';
 import logger from '../utils/logger';
 
@@ -46,34 +47,34 @@ class ImapConnectionProvider {
 
   /**
    * Builds the configuration for connecting to Google using OAuth.
-   * @param {string} email - User's email address
    * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
-   * @param {string} userId - A unique identifier for the connection
-   * @param {Object} redisPubSubClient - The Redis pub/sub client instance
    * @returns {ImapConnectionProvider} - The object for the connection
    */
-  async withGoogle(token, refreshToken, userId, redisPubInstance) {
-    const googleConfig = {
-      host: 'imap.gmail.com',
-      port: 993,
-      tlsOptions: {
-        host: 'imap.gmail.com',
-        port: 993,
-        servername: 'imap.gmail.com'
-      }
-    };
+  async withOauth(token, refreshToken) {
     try {
-      const { newToken, xoauth2Token } = await generateXOauthToken({
-        token,
-        refreshToken,
+      const { imapConfig } = PROVIDER_POOL.getProviderConfig({
         email: this.#imapConfig.user
       });
-      googleConfig.xoauth2 = xoauth2Token;
-      await redisPubInstance.publish(`auth-${userId}`, newToken);
+      const oauthClient = PROVIDER_POOL.oAuthClientFor({
+        email: this.#imapConfig.user
+      });
+
+      const { host, port } = imapConfig;
+
+      const { xoauth2Token } = await generateXOauthToken(
+        oauthClient,
+        token,
+        refreshToken,
+        this.#imapConfig.user
+      );
+
       this.#imapConfig = {
-        ...this.#imapConfig,
-        ...googleConfig
+        host,
+        port,
+        tlsOptions: { host, port, servername: host },
+        xoauth2: xoauth2Token,
+        ...this.#imapConfig
       };
       return this;
     } catch (error) {

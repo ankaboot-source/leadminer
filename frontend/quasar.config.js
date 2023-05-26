@@ -76,7 +76,6 @@ module.exports = configure((/* ctx */) => ({
       SUPABASE_PROJECT_URL: process.env.SUPABASE_PROJECT_URL,
       SUPABASE_MAX_ROWS: parseInt(process.env.SUPABASE_MAX_ROWS),
       SUPABASE_SECRET_PROJECT_TOKEN: process.env.SUPABASE_SECRET_PROJECT_TOKEN,
-      GG_CLIENT_ID: process.env.GG_CLIENT_ID,
       AVERAGE_EXTRACTION_RATE: parseInt(process.env.AVERAGE_EXTRACTION_RATE),
       BANNER_IMAGE_URL: process.env.BANNER_IMAGE_URL,
     },

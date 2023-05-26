@@ -125,7 +125,11 @@
                     color="teal"
                     :loading="isLoading"
                   />
-                  <GoogleLogin v-else :disable="loginDisabled" />
+                  <OAuthLogin
+                    v-else
+                    :disable="loginDisabled"
+                    :oauth-provider="getOauthEmailURL"
+                  />
                 </div>
               </div>
             </q-form>
@@ -140,8 +144,8 @@
 import { useQuasar } from "quasar";
 import { computed, onBeforeMount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-
-import GoogleLogin from "src/components/LoginButtons/GoogleLogin.vue";
+import { oAuthProviders } from "app/src/constants";
+import OAuthLogin from "src/components/LoginButtons/OAuthLogin.vue";
 import { useStore } from "../store/index";
 
 const emailPattern =
@@ -202,14 +206,23 @@ function isValidPort(imapPort: number) {
   );
 }
 
+const getOauthEmailURL = computed(() => {
+  const emailAddress = email.value.trim().toLowerCase();
+  const emailDomain = emailAddress.split("@")[1]?.split(".")[0];
+
+  const provider = oAuthProviders.find(({ domains }) =>
+    domains.includes(emailDomain)
+  );
+
+  return provider?.name || "";
+});
+
 const loginDisabled = computed(
   () => !policyChecked.value || isValidEmail(email.value) !== true
 );
 
 const shouldShowImapFields = computed(
-  () =>
-    isValidEmail(email.value) === true &&
-    (!email.value.endsWith("@gmail.com") || !process.env.GG_CLIENT_ID)
+  () => isValidEmail(email.value) === true && getOauthEmailURL.value === ""
 );
 
 async function login() {

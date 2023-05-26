@@ -48,4 +48,14 @@ export default class InMemoryOAuthUsers implements OAuthUsers {
     }
     return Promise.resolve(null);
   }
+
+  findOrCreateOne(
+    email: string,
+    refreshToken: string
+  ): Promise<OAuthUser | null> {
+    const user =
+      this.users.find((u) => u.email === email) ||
+      this.create({ email, refreshToken });
+    return Promise.resolve(user);
+  }
 }

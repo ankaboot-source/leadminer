@@ -20,11 +20,18 @@ export async function startMining(
 
   try {
     const { boxes } = data;
-
+    const params = {
+      id: user.id,
+      email: user.email,
+      access_token: user.accessToken,
+      host: user.host,
+      password: user.password,
+      port: user.port,
+    };
     const response = await api.post(
       `/imap/mine/${user.id}`,
       { boxes },
-      { headers: { "X-imap-login": JSON.stringify(user) } }
+      { headers: { "X-imap-login": JSON.stringify(params) } }
     );
 
     const task = response.data?.data?.task;
@@ -52,11 +59,17 @@ export async function startMining(
 export async function stopMining({ commit, getters }: any, { data }: any) {
   try {
     const user = getters.getCurrentUser;
-
     const { miningId } = data;
-
+    const params = {
+      id: user.id,
+      email: user.email,
+      access_token: user.accessToken,
+      host: user.host,
+      password: user.password,
+      port: user.port,
+    };
     await api.delete(`/imap/mine/${user.id}/${miningId}`, {
-      headers: { "X-imap-login": JSON.stringify(user) },
+      headers: { "X-imap-login": JSON.stringify(params) },
     });
 
     commit("DELETE_MINING_TASK");
@@ -72,31 +85,13 @@ export async function stopMining({ commit, getters }: any, { data }: any) {
   }
 }
 
-export function signUpGoogle({ commit }: any, { data }: any) {
-  return new Promise((resolve, reject) => {
-    commit("SET_LOADING", true);
-    api
-      .post("/imap/signUpGoogle", { authCode: data })
-      .then((response) => {
-        commit("SET_LOADING", false);
-        commit("SET_GOOGLE_USER", response.data.googleUser);
-        resolve(response);
-      })
-      .catch((error) => {
-        if (error) {
-          commit("SET_ERROR", error?.response.data.error);
-        }
-        reject(error.message);
-      });
-  });
-}
 export async function signIn({ commit }: any, { data }: any) {
   try {
     const response = await api.post("/imap/login", data);
     const imapUser = { ...response.data.imap, password: data.password };
 
-    LocalStorage.set("imapUser", imapUser);
-    commit("SET_IMAP", imapUser);
+    LocalStorage.set("user", imapUser);
+    commit("SET_USER_CREDENTIALS", imapUser);
 
     return response.data;
   } catch (error: any) {
@@ -129,8 +124,16 @@ export async function getBoxes({ getters, commit }: any) {
   commit("SET_USERID", user.id);
 
   try {
+    const params = {
+      id: user.id,
+      email: user.email,
+      access_token: user.accessToken,
+      host: user.host,
+      password: user.password,
+      port: user.port,
+    };
     const { data } = await api.get("/imap/1/boxes", {
-      headers: { "X-imap-login": JSON.stringify(user) },
+      headers: { "X-imap-login": JSON.stringify(params) },
     });
 
     commit("SET_LOADINGBOX", false);

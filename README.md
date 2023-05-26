@@ -8,82 +8,65 @@ Leadminer is a tool to mine and transmute raw and passive contacts from your own
 
 Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
 
-### Run Leadminer using docker-compose
+### Run using docker-compose
 
 1. Clone the repository and enter `leadminer` folder
 
-1. Copy [.env.example](/.env.example) to `.env` and add the missing required environment variables:
+1. Copy [.env.example](/.env.example) to `.env` and add the missing required environment variables
 
-   - Supabase project url : `SUPABASE_PROJECT_URL`
-   - Supabase project token : `SUPABASE_SECRET_PROJECT_TOKEN`
-   - Postgres connection string : `PG_CONNECTION_STRING`
-   - Google client Id : `GOOGLE_CLIENT_ID`
-   - Google secret: `GOOGLE_SECRET`
-
-```sh
-cp .env.example .env
-```
+   ```sh
+   cp .env.example .env
+   ```
 
 3. Start docker-compose:
 
-```sh
-docker-compose up --build --force-recreate
-```
+   ```sh
+   docker-compose up --build --force-recreate
+   ```
 
 4. Navigate to `localhost:8080`.
 
-## Support
+### Running the Project Locally (Dev mode)
 
-If you have any trouble, check the [issues tab](https://github.com/ankaboot-source/leadminer/issues). We might already have reported/fixed the problem. Make sure you're on the latest version. If your problem persists, feel free to open a new issue.
+To run the project in your local environment, follow the steps below:
 
-This app is provided for free as such with no guarantee nor support. For any kind of support, feel free to reach [ankaboot professional services](contact@ankaboot.fr).
+1. Install the required dependencies by running the following command:
 
-## Roadmap
+   ```sh
+   npm run install-deps
+   ```
 
-- [ ] New sources : LinkedIn, Instagram, Facebook Messenger
-- [ ] Enrich data : Get more relevant and actionable information about your contacts
-- [ ] Marketing automation : send emails directly from LeadMiner with personalized templates
+2. Start the Supabase services and take note of the Supabase project token for the next step. Run the following command:
 
-For any requests concerning the roadmap, you could either have a look on issues or for any specific request contact [ankaboot professional services](contact@ankaboot.fr).
+   ```sh
+   npm run dev:supabase
+   ```
 
-## Contributing
+3. Create the `.env` files by executing the command below.
 
-### Run Leadminer locally
+   > This will create `.env` files in the `/frontend` and `/backend` directories. Make sure to set the missing required variables in these files.
 
-You can easily get started with development mode by following theses steps:
+   ```sh
+   cp /frontend/.env.example /frontend/.env && cp /backend/.env.example /backend/.env
+   ```
 
-1. Install the required dependencies
+3. Start your environment by running the following commands:
 
-```sh
-npm run install-deps
-```
+   ```sh
+   # Start the Redis container (You can skip this step if you want to use your local instance)
+   docker-compose -f docker-compose.dev.yml up
+   
+   # Start the backend in development mode
+   npm run dev:backend-api
+   npm run dev:backend-worker
+   
+   # Start the frontend in development mode
+   npm run dev:frontend
+   ```
 
-1. Start supabase services and take note of the supabase project token to use it in the next step.
+**Generating a new migration for schema changes:**
 
-```sh
-# Start supabase services
-npm run dev:supabase
-```
-
-2. Copy `/frontend/.env.example` to `/frontend/.env` and `/backend/.env.example` to `/backend/.env` respectively and set the missing required variables
-
-1. Start your environment by running the following commands:
-
-```sh
-# Start the Redis container  -- You can skip this step if you want to use your local instance
-docker-compose -f docker-compose.dev.yml up
-
-# Start the backend in development mode
-npm run dev:backend-api
-npm run dev:backend-worker
-
-# Start the frontend in development mode
-npm run dev:frontend
-```
-
-### Generating a new migration for schema changes
-
-- When altering the database schema or creating new tables, functions..., make sure to run these commands (While supabase services are up):
+If you need to alter the database schema or create new tables or functions, follow these steps (while Supabase services are up):
 
 ```sh
 # Start supabase services
@@ -101,20 +84,35 @@ npx supabase db diff --use-migra -f <name_of_migration>
 npx supabase stop
 ```
 
-### General guidelines
+## Contributing
 
-Please feel free to contribute. Pull requests are welcome.
+Thank you for considering contributing to this project! Pull requests are welcome and encouraged. To contribute, please follow the guidelines below:
+
+### General Guidelines
 
 1. Fork this [repository](https://github.com/ankaboot-source/leadminer)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
+2. Create a branch for your feature or bug fix (`git checkout -b feature/fooBar`)
 3. Commit your changes (`git commit -am 'Add some fooBar'`)
 4. Push to the branch (`git push origin feature/fooBar`)
 5. Create a new Pull Request
 
-For major changes, please open an issue first to discuss what you would like to change.
+For major changes or new features, it is recommended to open an issue first to discuss and get feedback from the maintainers and the community. Also make sure to update or create tests as appropriate to maintain the code quality and ensure that the project functions as expected.
 
-_Make sure to update/create tests as appropriate._
+## Roadmap
+
+- [ ] New sources : LinkedIn, Instagram, Facebook Messenger
+- [ ] Enrich data : Get more relevant and actionable information about your contacts
+- [ ] Marketing automation : send emails directly from Leadminer with personalized templates
+
+For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates. 
+
+## Support
+
+If you encounter any issues, please check the [issues tab](https://github.com/ankaboot-source/leadminer/issues) to see if it has already been reported and resolved. Ensure that you are using the latest version before reporting an issue. If the problem persists, feel free to open a new issue.
+
+Please note that this app is provided for free and without any guarantee or official support. If you require additional assistance, you can contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) for help.
 
 ## License
 
 This software is [dual-licensed](DUAL-LICENSE.md) under [GNU AGPL v3](LICENSE).
+
