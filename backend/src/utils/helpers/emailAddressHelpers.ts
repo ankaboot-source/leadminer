@@ -62,7 +62,7 @@ export function getEmailTags(
     emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
   }
 
-  if (isNewsletter(address) || (name && name.includes('newsletter'))) {
+  if (isNewsletter(address) || name?.includes('newsletter')) {
     emailTags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
   }
 
