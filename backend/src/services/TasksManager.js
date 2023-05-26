@@ -1,14 +1,10 @@
 // eslint-disable-next-line max-classes-per-file
-import db from '../db';
 import {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP
 } from '../utils/constants';
 import { flickrBase58IdGenerator } from '../utils/helpers/hashHelpers';
-import { RealtimeSSE } from '../utils/helpers/sseHelpers';
 import logger from '../utils/logger';
-import redis from '../utils/redis';
-import ImapEmailsFetcher from './ImapEmailsFetcher';
 
 /**
  * Removes sensitive data from a task object.
@@ -70,15 +66,18 @@ export class TasksManager {
    * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
    * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
+   * @param {import('../db/Contacts').Contacts} contacts - Contacts db accessor.
    */
   constructor(
     redisSubscriber,
     redisPublisher,
     emailFetcherFactory,
-    sseBroadcasterFactory
+    sseBroadcasterFactory,
+    contacts
   ) {
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
+    this.contacts = contacts;
 
     this.emailFetcherFactory = emailFetcherFactory;
     this.sseBroadcasterFactory = sseBroadcasterFactory;
@@ -97,7 +96,7 @@ export class TasksManager {
 
       if (status === true) {
         const { userId } = task;
-        db.callRpcFunction(userId, 'refined_persons');
+        await this.contacts.refine(userId);
       }
     });
 
@@ -382,56 +381,3 @@ export class TasksManager {
     );
   }
 }
-
-class EmailFetcherFactory {
-  /**
-   * Creates a new EmailFetcher instance.
-   * @param {object} options - An object containing the options for the email fetcher.
-   * @param {string} options.email - The email address to connect to.
-   * @param {string} options.userId - The ID of the user.
-   * @param {number} options.batchSize - The number of emails to process before sending a notification.
-   * @param {string[]} options.boxes - An array of strings specifying the email boxes to mine.
-   * @param {object} options.imapConnectionProvider - A configured email connection provider object.
-   * @param {string} options.miningId - The ID of the mining task.
-   * @param {string} options.streamName - The name of the stream to publish mining events to.
-   * @returns {ImapEmailsFetcher} A new instance of `ImapEmailsFetcher`.
-   */
-  // eslint-disable-next-line class-methods-use-this
-  create({
-    imapConnectionProvider,
-    boxes,
-    userId,
-    email,
-    miningId,
-    streamName,
-    batchSize
-  }) {
-    return new ImapEmailsFetcher(
-      imapConnectionProvider,
-      boxes,
-      userId,
-      email,
-      miningId,
-      streamName,
-      batchSize
-    );
-  }
-}
-
-class SSEBroadcasterFactory {
-  /**
-   * Creates a new instance of `SSEBroadcasterClass`.
-   * @returns {RealtimeSSE} - A new instance of `RealtimeSSE`.
-   */
-  // eslint-disable-next-line class-methods-use-this
-  create() {
-    return new RealtimeSSE();
-  }
-}
-
-export const miningTasksManager = new TasksManager(
-  redis.getSubscriberClient(),
-  redis.getClient(),
-  new EmailFetcherFactory(),
-  new SSEBroadcasterFactory()
-);

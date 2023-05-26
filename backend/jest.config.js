@@ -3,5 +3,6 @@ module.exports = {
   preset: 'ts-jest/presets/js-with-ts-esm',
   testEnvironment: 'node',
   testPathIgnorePatterns: ['dist/', 'src/'],
-  coverageReporters: ['lcov']
+  coverageReporters: ['json-summary'],
+  collectCoverageFrom: ['<rootDir>/src/**/*.ts']
 };

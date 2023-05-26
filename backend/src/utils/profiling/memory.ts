@@ -6,6 +6,8 @@ export default function logMemoryStats(logger: Logger, context: string) {
   const totalUsedHeap = (heapUsed / 1024 / 1024 / 1024).toFixed(2);
 
   logger.debug('Memory usage', {
-    metadata: { totalAvailableHeap, totalUsedHeap, context }
+    totalAvailableHeap,
+    totalUsedHeap,
+    context
   });
 }

@@ -50,7 +50,7 @@ class ImapConnectionProvider {
    * @param {string} email - User's email address
    * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
-   * @returns {Object} - The object for the connection
+   * @returns {ImapConnectionProvider} - The object for the connection
    */
   async withOauth(token, refreshToken) {
     try {
@@ -88,7 +88,7 @@ class ImapConnectionProvider {
    * @param {string} host - The host name or IP address of the mail server
    * @param {string} password - User's password
    * @param {number} [port=993] - The port number to connect to the server on (optional, defaults to 993)
-   * @returns {Object} - The object for the connection
+   * @returns {ImapConnectionProvider} - The object for the connection
    * @throws {TypeError} - If any parameter is invalid
    */
   withPassword(host, password, port = 993) {
