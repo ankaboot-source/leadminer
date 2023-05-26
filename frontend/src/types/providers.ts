@@ -1,6 +1,6 @@
-export type providerName = "google" | "azure";
+export type ProviderName = "google" | "azure";
 
-export interface provider {
-  name: providerName;
+export interface Provider {
+  name: ProviderName;
   domains: string[];
 }

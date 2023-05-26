@@ -50,29 +50,25 @@ class ImapConnectionProvider {
    * @param {string} email - User's email address
    * @param {string} accessToken - OAuth access token
    * @param {string} refreshToken - OAuth refresh token
-   * @param {string} userId - A unique identifier for the connection
-   * @param {Object} redisPubSubClient - The Redis pub/sub client instance
    * @returns {Object} - The object for the connection
    */
-  async withOauth(token, refreshToken, userId, redisPubInstance) {
+  async withOauth(token, refreshToken) {
     try {
       const { imapConfig } = PROVIDER_POOL.getProviderConfig({
         email: this.#imapConfig.user
       });
-      const oauthClient = PROVIDER_POOL.oauthClientFor({
+      const oauthClient = PROVIDER_POOL.oAuthClientFor({
         email: this.#imapConfig.user
       });
 
       const { host, port } = imapConfig;
 
-      const { newToken, xoauth2Token } = await generateXOauthToken(
+      const { xoauth2Token } = await generateXOauthToken(
         oauthClient,
         token,
         refreshToken,
         this.#imapConfig.user
       );
-
-      await redisPubInstance.publish(`auth-${userId}`, newToken); // TODO: to be removed
 
       this.#imapConfig = {
         host,

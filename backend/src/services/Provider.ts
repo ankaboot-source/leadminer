@@ -41,9 +41,9 @@ export interface ProviderConfig {
 }
 
 export default class ProviderPool {
-  #PROVIDERS = new Map();
+  private readonly PROVIDERS = new Map();
 
-  #PROVIDER_DOMAINS = new Map();
+  private readonly PROVIDER_DOMAINS = new Map();
 
   /**
    * Creates a new instance of a Provider.
@@ -55,9 +55,9 @@ export default class ProviderPool {
   constructor(providersConfig: ProviderConfig[]) {
     for (const { name, oauthConfig, imapConfig, domains } of providersConfig) {
       domains.forEach((domain) => {
-        this.#PROVIDER_DOMAINS.set(domain, name);
+        this.PROVIDER_DOMAINS.set(domain, name);
       });
-      this.#PROVIDERS.set(name, { oauthConfig, imapConfig });
+      this.PROVIDERS.set(name, { oauthConfig, imapConfig });
     }
   }
 
@@ -70,22 +70,22 @@ export default class ProviderPool {
    * @returns An instance of OAuthClient if the email's domain is supported or the provider name is valid, or null otherwise.
    * @throws Error if the provider name or provider is not found.
    */
-  oauthClientFor(
+  oAuthClientFor(
     { email, name }: { email?: string; name?: string },
     callbackURL?: string
   ): Client {
     let provider = null;
 
     if (name) {
-      provider = this.#PROVIDERS.get(name);
+      provider = this.PROVIDERS.get(name);
     } else if (email) {
       const emailDomain = getDomainFromEmail(email);
-      const providerName = this.#PROVIDER_DOMAINS.get(emailDomain);
-      provider = this.#PROVIDERS.get(providerName);
+      const providerName = this.PROVIDER_DOMAINS.get(emailDomain);
+      provider = this.PROVIDERS.get(providerName);
     }
 
     if (provider === null || provider === undefined) {
-      throw new Error(`Provider not found using lookup=${{ name, email }}`);
+      throw new Error(`Provider not found using lookup=${name || email}`);
     }
 
     const { oauthConfig } = provider;
@@ -137,15 +137,15 @@ export default class ProviderPool {
     let provider = null;
 
     if (name) {
-      provider = this.#PROVIDERS.get(name);
+      provider = this.PROVIDERS.get(name);
     } else if (email) {
       const domain = getDomainFromEmail(email);
-      const lookup = this.#PROVIDER_DOMAINS.get(domain);
-      provider = this.#PROVIDERS.get(lookup);
+      const lookup = this.PROVIDER_DOMAINS.get(domain);
+      provider = this.PROVIDERS.get(lookup);
     }
 
-    if (!provider) {
-      throw new Error(`Provider not found using lookup=${{ name, email }}`);
+    if (provider === null || provider === undefined) {
+      throw new Error(`Provider not found using lookup=${name || email}`);
     }
 
     const { oauthConfig, imapConfig } = provider;
@@ -157,7 +157,7 @@ export default class ProviderPool {
    * @returns A JSON string representation of the supported providers and their domains.
    */
   supportedProviders(): Record<string, string[]> {
-    const availableProviders = this.#PROVIDER_DOMAINS.entries();
+    const availableProviders = this.PROVIDER_DOMAINS.entries();
 
     if (availableProviders.next().done) {
       return {};
@@ -165,7 +165,7 @@ export default class ProviderPool {
 
     const providers: Record<string, string[]> = {};
 
-    for (const [key, value] of this.#PROVIDER_DOMAINS.entries()) {
+    for (const [key, value] of this.PROVIDER_DOMAINS.entries()) {
       if (providers[value]) {
         providers[value].push(key);
       } else {

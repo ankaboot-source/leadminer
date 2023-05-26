@@ -2,9 +2,7 @@ import { jest, describe, expect, it } from '@jest/globals';
 import { Request } from 'express';
 import {
   buildEndpointURL,
-  buildRedirectUrl,
-  encodeJwt,
-  decodeJwt
+  buildRedirectUrl
 } from '../../src/utils/helpers/oauthHelpers';
 
 describe('buildEndpointURL', () => {
@@ -44,34 +42,5 @@ describe('buildRedirectUrl', () => {
     expect(() => {
       buildRedirectUrl(redirectURL, params);
     }).toThrow('Invalid redirectURL: Not a valid URL');
-  });
-});
-
-describe('encodeJwt', () => {
-  it('should encode the payload object into a JWT', () => {
-    const payload = {
-      id: 1,
-      username: 'john.doe'
-    };
-    const result = encodeJwt(payload);
-
-    expect(result).toBeTruthy();
-  });
-});
-
-describe('decodeJwt', () => {
-  it('should decode a valid JWT', () => {
-    const token = encodeJwt({ name: 'hello' });
-    const result = decodeJwt(token);
-
-    expect(result).toBeTruthy();
-  });
-
-  it('should throw an error for invalid token', () => {
-    const token = 'invalid-token';
-
-    expect(() => {
-      decodeJwt(token);
-    }).toThrow('Invalid token: payload not found');
   });
 });

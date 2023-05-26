@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import {
   AUTH_SERVER_URL,
   AUTH_SERVER_CALLBACK,
-  PROVIDER_POOL
+  PROVIDER_POOL,
+  LEADMINER_API_HASH_SECRET
 } from '../config';
-
 import {
   buildEndpointURL,
   buildRedirectUrl,
-  encodeJwt,
   decodeJwt,
   JwtState,
   AuthorizationParams,
@@ -17,9 +17,9 @@ import {
 
 /**
  * Retrieves the available providers and their associated domains.
- * @param {Request} _ - The request object (unused).
- * @param {Response} res - The response object.
- * @returns {Response} The response containing the OAuth providers and their domains.
+ * @param _ - The request object (unused).
+ * @param res - The response object.
+ * @returns The response containing the OAuth providers and their domains.
  */
 export function GetOauthProviders(_: Request, res: Response) {
   const providers = PROVIDER_POOL.supportedProviders();
@@ -28,16 +28,16 @@ export function GetOauthProviders(_: Request, res: Response) {
 
 /**
  * Handles the OAuth callback and redirects the user based on the callback result.
- * @param {Request} req - The Express request object.
- * @param {Response} res - The Express response object.
- * @param {NextFunction} next - The Express next middleware function.
- * @throws {Error} If the required parameters are missing or invalid.
+ * @param req - The Express request object.
+ * @param res - The Express response object.
+ * @param next - The Express next middleware function.
+ * @throws If the required parameters are missing or invalid.
  */
 export async function oauthCallbackHandler(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void | Response> {
+) {
   const { state } = req.query;
 
   try {
@@ -59,7 +59,7 @@ export async function oauthCallbackHandler(
       return res.redirect(redirectionURL);
     }
 
-    const client = PROVIDER_POOL.oauthClientFor({ name: provider });
+    const client = PROVIDER_POOL.oAuthClientFor({ name: provider });
 
     const tokenSet = await client.callback(
       buildEndpointURL(req, '/api/oauth/callback'),
@@ -106,7 +106,7 @@ export async function oauthCallbackHandler(
       return res.redirect(redirectionURL);
     }
 
-    return res.status(200).json({ error: null, data: credentials });
+    return res.status(200).json({ data: credentials });
   } catch (err) {
     return next(err);
   }
@@ -114,16 +114,12 @@ export async function oauthCallbackHandler(
 
 /**
  * Handles the OAuth flow and redirects the user to the authorization URL.
- * @param {Request} req - The Express request object.
- * @param {Response} res - The Express response object.
- * @param {NextFunction} next - The Express next middleware function.
- * @throws {Error} If the required parameters are missing or invalid.
+ * @param req - The Express request object.
+ * @param res - The Express response object.
+ * @param next - The Express next middleware function.
+ * @throws If the required parameters are missing or invalid.
  */
-export function oauthHandler(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void | Response {
+export function oauthHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const { nosignup, provider, scopes } = req.query;
 
@@ -163,7 +159,11 @@ export function oauthHandler(
         authorizationParams.scopes?.push(...oauthConfig.scopes);
       }
 
-      authorizationParams.state = encodeJwt(stateParams);
+      authorizationParams.state = jwt.sign(
+        JSON.stringify(stateParams),
+        LEADMINER_API_HASH_SECRET as string,
+        {}
+      );
       authorizationParams.access_type = 'offline';
     }
 

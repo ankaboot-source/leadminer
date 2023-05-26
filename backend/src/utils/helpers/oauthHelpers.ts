@@ -17,7 +17,7 @@ export interface AuthorizationParams {
   access_type?: string;
 }
 
-export interface OauthUser {
+export interface OAuthUser {
   id: string;
   email: string;
   refresh_token: string;
@@ -25,9 +25,9 @@ export interface OauthUser {
 
 /**
  * Constructs the full callback URL for an endpoint, based on the incoming request.
- * @param {express.Request} req - The incoming HTTP request.
- * @param {string} endpointPath - The path of the endpoint to build the URL for.
- * @returns {string} The fully-constructed URL.
+ * @param req - The incoming HTTP request.
+ * @param endpointPath - The path of the endpoint to build the URL for.
+ * @returns The fully-constructed URL.
  */
 export function buildEndpointURL(req: Request, endpointPath: string): string {
   const baseURL = `${req.protocol}://${req.get('host')}`;
@@ -56,21 +56,10 @@ export function buildRedirectUrl(
 }
 
 /**
- * Encodes the provided payload object into a JWT.
- * @param {object} payload - The payload object to be encoded.
- * @returns {string} The encoded JWT.
- */
-export function encodeJwt(payload: object): string {
-  const secret = 'your-secret-key';
-  const encodedToken = jwt.sign(JSON.stringify(payload), secret, {});
-  return encodedToken;
-}
-
-/**
  * Decodes the provided JWT without verifying its authenticity.
- * @param {string} token - The JWT to be decoded.
- * @returns {jwt.JwtPayload} The decoded payload if the token is valid.
- * @throws {Error} If the token is invalid or decoding fails.
+ * @param token - The JWT to be decoded.
+ * @returns The decoded payload if the token is valid.
+ * @throws If the token is invalid or decoding fails.
  */
 export function decodeJwt(token: string): jwt.JwtPayload {
   const decodedPayload = jwt.decode(token) as jwt.JwtPayload;
@@ -82,15 +71,15 @@ export function decodeJwt(token: string): jwt.JwtPayload {
 
 /**
  * Finds or creates a user record using the provided email.
- * @param {string} email - The email address of the Google user.
- * @param {string} refreshToken - The refresh token of the Google user.
- * @throws {Error} If it fails to create or query the Google user.
- * @returns {Promise<Record<string, any>>} The Google user record that was found or created.
+ * @param email - The email address of the Google user.
+ * @param refreshToken - The refresh token of the Google user.
+ * @throws If it fails to create or query the Google user.
+ * @returns The Google user record that was found or created.
  */
 export async function findOrCreateOne(
   email: string,
   refreshToken: string
-): Promise<OauthUser | null> {
+): Promise<OAuthUser | null> {
   /**
    * Temporary implementation: This function serves as a temporary solution until
    * the application starts using the Gotrue user tables. It finds or creates a user
@@ -100,7 +89,7 @@ export async function findOrCreateOne(
     (await db.createGoogleUser({
       email,
       refresh_token: refreshToken
-    }))) as OauthUser;
+    }))) as OAuthUser;
 
   if (!account) {
     throw Error('Failed to create or query googleUser');

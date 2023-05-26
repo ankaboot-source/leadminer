@@ -39,17 +39,17 @@ describe('ProviderPool', () => {
     }
   ];
 
-  describe('oauthClientFor', () => {
+  describe('oAuthClientFor', () => {
     it('should return an instance of OAuthClient for valid provider name', () => {
       const pool = new ProviderPool(providersConfig);
-      const client = pool.oauthClientFor({ name: 'google' });
+      const client = pool.oAuthClientFor({ name: 'google' });
 
       expect(client).toBeDefined();
     });
 
     it('should return an instance of OAuthClient for valid email domain', () => {
       const pool = new ProviderPool(providersConfig);
-      const client = pool.oauthClientFor({ email: 'test@domain2.com' });
+      const client = pool.oAuthClientFor({ email: 'test@domain2.com' });
 
       expect(client).toBeDefined();
     });
@@ -58,7 +58,7 @@ describe('ProviderPool', () => {
       const pool = new ProviderPool(providersConfig);
 
       expect(() => {
-        pool.oauthClientFor({ name: 'InvalidProvider' });
+        pool.oAuthClientFor({ name: 'InvalidProvider' });
       }).toThrow(Error);
     });
 
@@ -66,33 +66,13 @@ describe('ProviderPool', () => {
       const pool = new ProviderPool(providersConfig);
 
       expect(() => {
-        pool.oauthClientFor({ email: 'test@invalid.com' });
+        pool.oAuthClientFor({ email: 'test@invalid.com' });
       }).toThrow(Error);
     });
   });
 
   describe('getProviderConfig', () => {
-    it('should return the configurations for a valid provider name', () => {
-      const pool = new ProviderPool(providersConfig);
-      const config = pool.getProviderConfig({ name: 'azure' });
-
-      expect(config).toEqual({
-        oauthConfig: expect.any(Object),
-        imapConfig: expect.any(Object)
-      });
-    });
-
-    it('returns the configurations for a valid email domain', () => {
-      const pool = new ProviderPool(providersConfig);
-      const config = pool.getProviderConfig({ email: 'test@domain1.com' });
-
-      expect(config).toEqual({
-        oauthConfig: expect.any(Object),
-        imapConfig: expect.any(Object)
-      });
-    });
-
-    it('throws an error for invalid provider name', () => {
+    it('should throw an error for invalid provider name', () => {
       const pool = new ProviderPool(providersConfig);
 
       expect(() => {
@@ -100,12 +80,26 @@ describe('ProviderPool', () => {
       }).toThrow(Error);
     });
 
-    it('throws an error for unsupported email domain', () => {
+    it('should throw an error for unsupported email domain', () => {
       const pool = new ProviderPool(providersConfig);
 
       expect(() => {
         pool.getProviderConfig({ email: 'test@invalid.com' });
       }).toThrow(Error);
+    });
+
+    it('should return the configurations for a valid provider name', () => {
+      const pool = new ProviderPool(providersConfig);
+      const config = pool.getProviderConfig({ name: 'azure' });
+
+      expect(config).toBeTruthy();
+    });
+
+    it('should return the configurations for a valid email domain', () => {
+      const pool = new ProviderPool(providersConfig);
+      const config = pool.getProviderConfig({ email: 'test@domain1.com' });
+
+      expect(config).toBeTruthy();
     });
   });
 

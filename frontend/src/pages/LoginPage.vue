@@ -125,7 +125,7 @@
                     color="teal"
                     :loading="isLoading"
                   />
-                  <OauthLogin
+                  <OAuthLogin
                     v-else
                     :disable="loginDisabled"
                     :oauth-provider="getOauthEmailURL"
@@ -144,8 +144,8 @@
 import { useQuasar } from "quasar";
 import { computed, onBeforeMount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { oauthProviders } from "app/src/constants";
-import OauthLogin from "src/components/LoginButtons/OauthLogin.vue";
+import { oAuthProviders } from "app/src/constants";
+import OAuthLogin from "src/components/LoginButtons/OAuthLogin.vue";
 import { useStore } from "../store/index";
 
 const emailPattern =
@@ -210,7 +210,7 @@ const getOauthEmailURL = computed(() => {
   const emailAddress = email.value.trim().toLowerCase();
   const emailDomain = emailAddress.split("@")[1]?.split(".")[0];
 
-  const provider = oauthProviders.find(({ domains }) =>
+  const provider = oAuthProviders.find(({ domains }) =>
     domains.includes(emailDomain)
   );
 

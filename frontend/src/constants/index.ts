@@ -1,6 +1,6 @@
-import { provider } from "src/types/providers";
+import { Provider } from "src/types/providers";
 
-export const oauthProviders: provider[] = [
+export const oAuthProviders: Provider[] = [
   {
     name: "google",
     domains: ["gmail", "googlemail.com", "google.com"],
