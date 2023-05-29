@@ -19,8 +19,9 @@ export default class PgOAuthUsers implements OAuthUsers {
 
   private static readonly UPDATE_TOKEN_SQL = `
     UPDATE google_users 
-    SET refresh_token = $1 
-    WHERE id = $2 RETURNING *`;
+    SET refresh_token = $2 
+    WHERE id = $1
+    RETURNING *`;
 
   constructor(private readonly client: Pool, private readonly logger: Logger) {}
 
