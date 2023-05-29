@@ -52,7 +52,8 @@ const providersConfigs = [
   {
     name: 'azure',
     oauthConfig: {
-      issuerURL: `${process.env.AZURE_ISSUER_URL}`,
+      issuerURL:
+        'https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0',
       authorizationURL:
         'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
       userInfoURL: 'https://graph.microsoft.com/oidc/userinfo',
@@ -60,7 +61,11 @@ const providersConfigs = [
       tokenURL: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
       clientID: `${process.env.AZURE_CLIENT_ID}`,
       clientSecret: `${process.env.AZURE_SECRET}`,
-      scopes: ['https://outlook.office.com/mail.read', 'offline_access']
+      scopes: [
+        'https://outlook.office.com/IMAP.AccessAsUser.All',
+        'email',
+        'offline_access'
+      ]
     },
     imapConfig: {
       name: 'azure',
