@@ -6,10 +6,14 @@
 
 <script setup lang="ts">
 import { onMounted } from "vue";
+import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 import SearchEmails from "src/components/Emails/SearchEmails.vue";
 import { useStore } from "../store/index";
 
 const $store = useStore();
+const $quasar = useQuasar();
+const $router = useRouter();
 
 onMounted(() => {
   const fragmentIdentifier = window.location.hash.split("#")[1];
@@ -18,16 +22,32 @@ onMounted(() => {
   );
 
   if (parameters) {
-    const params = {
-      id: parameters.get("id"),
-      email: parameters.get("email"),
-      accessToken: parameters.get("access_token"),
-    };
+    const {
+      id,
+      email,
+      access_token: accessToken,
+      error,
+    } = Object.fromEntries(parameters);
 
-    const { id, accessToken } = params;
-
-    if (id && accessToken && params.email) {
-      $store.commit("leadminer/SET_USER_CREDENTIALS", params);
+    if (error) {
+      $quasar.notify({
+        message: error,
+        color: "red",
+        icon: "error",
+        actions: [
+          {
+            label: "OK",
+            color: "white",
+          },
+        ],
+      });
+      $router.push("/");
+    } else if (id && email && accessToken) {
+      $store.commit("leadminer/SET_USER_CREDENTIALS", {
+        id,
+        email,
+        accessToken,
+      });
       localStorage.setItem("user", JSON.stringify($store.state.leadminer.user));
     }
   }
