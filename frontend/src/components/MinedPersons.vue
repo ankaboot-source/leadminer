@@ -436,20 +436,21 @@ function exportTable() {
     .toISOString()
     .slice(0, 10)}`;
 
+  const data = rows.value.map((r) => ({
+    name: r.name?.trim(),
+    alternateNames: r.alternate_names
+      ?.filter((name: string) => name.trim() !== "" && name !== r.name)
+      .join("\n"),
+    email: r.email,
+    engagement: r.engagement,
+    occurence: r.occurence,
+    recency: new Date(r.recency ?? "").toISOString().slice(0, 10),
+    tags: r.tags?.join("\n"),
+  }));
+
   try {
     exportFromJSON({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: rows.value.map((r: any) => ({
-        name: r.name,
-        alternateNames: r.alternate_names
-          .filter((name: string) => name.trim() !== "" && name !== r.name)
-          .join("\n"),
-        email: r.email,
-        engagement: r.engagement,
-        occurence: r.occurence,
-        recency: new Date(r.recency).toISOString().slice(0, 10),
-        tags: r.tags.join("\n"),
-      })),
+      data,
       fileName,
       withBOM: true,
       exportType: exportFromJSON.types.csv,

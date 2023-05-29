@@ -300,4 +300,18 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual(expectedEmail);
   });
+
+  it.each([{ char: ',' }, { char: ';' }])(
+    'Should not include names with trailing $char',
+    ({ char }) => {
+      const startsWithInput = `userName${char} user@email.com`;
+      const endsWithInput = `${char}userName user@email.com`;
+
+      const startsWithResult = extractNameAndEmail(startsWithInput);
+      const endsWithResult = extractNameAndEmail(endsWithInput);
+
+      expect(startsWithResult[0].name).toBe('userName');
+      expect(endsWithResult[0].name).toBe('userName');
+    }
+  );
 });

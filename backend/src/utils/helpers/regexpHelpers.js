@@ -30,7 +30,10 @@ export function cleanName(name) {
     .trim()
     .replace(/\\"/g, '')
     .replace(REGEX_REMOVE_QUOTES, '$2')
-    .replace(REGEX_REMOVE_QUOTES, '$2'); // In case Some inputs have nested quotes like this "'word'"}
+    .replace(REGEX_REMOVE_QUOTES, '$2') // In case Some inputs have nested quotes like this "'word'"}
+    .replace(/[,;]+$/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
+    .replace(/^[,;]+/, ''); // Remove trailing ; and , to not cause errors later when exporting to csv
+
   return cleanedName;
 }
 
