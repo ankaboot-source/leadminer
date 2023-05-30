@@ -19,7 +19,7 @@
     "axios": "^1.4.0",
     "export-from-json": "^1.7.2",
     "object-scan": "^18.5.1",
-    "quasar": "^2.6.0",
+    "quasar": "^2.12.0",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0",
     "vuex": "^4.0.1"
