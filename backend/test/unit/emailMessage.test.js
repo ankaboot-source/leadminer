@@ -518,8 +518,8 @@ describe('EmailMessage.constructPersonPocTags()', () => {
     const result = EmailMessage.constructPersonPocTags(email, [], 'to');
     expect(result).toHaveProperty('pointOfContact');
     expect(result.pointOfContact).toHaveProperty('name', 'Test Name');
-    expect(result.pointOfContact).toHaveProperty('_to', true);
-    expect(result.pointOfContact).toHaveProperty('_from', false);
+    expect(result.pointOfContact).toHaveProperty('to', true);
+    expect(result.pointOfContact).toHaveProperty('from', false);
   });
 
   it('should return a tags array', () => {
