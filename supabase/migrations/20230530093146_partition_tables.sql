@@ -205,10 +205,11 @@ END;
 $function$;
 
 -- UPDATE GROUPED_TAGS_BY_PERSON_VIEW VIEW
-CREATE OR REPLACE VIEW public.grouped_tags_by_person_view as
-    SELECT array_agg(name) as tags, 
-        array_agg(reachable) as tags_reachability, 
-        person_email
+CREATE OR REPLACE VIEW public.grouped_tags_by_person_view AS
+    SELECT
+        person_email,
+        array_agg(name) AS tags,
+        array_agg(reachable) AS tags_reachability
     FROM tags
     GROUP BY person_email;
 
