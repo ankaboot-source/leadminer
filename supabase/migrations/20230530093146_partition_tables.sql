@@ -16,16 +16,13 @@ CREATE TABLE "public"."messages" (
 ) PARTITION by hash(user_id);
 
 CREATE TABLE "public"."messages_0" PARTITION OF "public"."messages" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 0);
+VALUES WITH (MODULUS 3, REMAINDER 0);
 
 CREATE TABLE "public"."messages_1" PARTITION OF "public"."messages" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 1);
+VALUES WITH (MODULUS 3, REMAINDER 1);
 
 CREATE TABLE "public"."messages_2" PARTITION OF "public"."messages" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 2);
+VALUES WITH (MODULUS 3, REMAINDER 2);
 
 DROP TABLE "public"."persons" CASCADE;
 
@@ -50,20 +47,17 @@ CREATE TABLE "public"."persons" (
 ) PARTITION by hash(user_id);
 
 CREATE TRIGGER handle_updated_at BEFORE
-UPDATE
-    ON public.persons FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
+UPDATE ON public.persons FOR EACH 
+ROW EXECUTE FUNCTION moddatetime('updated_at');
 
 CREATE TABLE "public"."persons_0" PARTITION OF "public"."persons" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 0);
+VALUES WITH (MODULUS 3, REMAINDER 0);
 
 CREATE TABLE "public"."persons_1" PARTITION OF "public"."persons" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 1);
+VALUES WITH (MODULUS 3, REMAINDER 1);
 
 CREATE TABLE "public"."persons_2" PARTITION OF "public"."persons" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 2);
+VALUES WITH (MODULUS 3, REMAINDER 2);
 
 DROP TABLE "public"."pointsofcontact" CASCADE;
 
@@ -83,16 +77,13 @@ CREATE TABLE "public"."pointsofcontact" (
 ) PARTITION by hash(user_id);
 
 CREATE TABLE "public"."pointsofcontact_0" PARTITION OF "public"."pointsofcontact" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 0);
+VALUES WITH (MODULUS 3, REMAINDER 0);
 
 CREATE TABLE "public"."pointsofcontact_1" PARTITION OF "public"."pointsofcontact" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 1);
+VALUES WITH (MODULUS 3, REMAINDER 1);
 
 CREATE TABLE "public"."pointsofcontact_2" PARTITION OF "public"."pointsofcontact" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 2);
+VALUES WITH (MODULUS 3, REMAINDER 2);
 
 DROP TABLE "public"."tags" CASCADE;
 
@@ -106,20 +97,17 @@ CREATE TABLE "public"."tags" (
 ) PARTITION by hash(user_id);
 
 CREATE TABLE "public"."tags_0" PARTITION OF "public"."tags" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 0);
+VALUES WITH (MODULUS 3, REMAINDER 0);
 
 CREATE TABLE "public"."tags_1" PARTITION OF "public"."tags" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 1);
+VALUES WITH (MODULUS 3, REMAINDER 1);
 
 CREATE TABLE "public"."tags_2" PARTITION OF "public"."tags" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 2);
+VALUES WITH (MODULUS 3, REMAINDER 2);
 
 DROP TABLE "public"."refinedpersons" CASCADE;
 
-create table "public"."refinedpersons" (
+CREATE TABLE "public"."refinedpersons" (
     "userid" uuid,
     "engagement" integer,
     "occurence" integer,
@@ -131,35 +119,27 @@ create table "public"."refinedpersons" (
     PRIMARY KEY (email, userid)
 ) PARTITION by hash(userid);
 
-alter publication supabase_realtime add table public.refinedpersons; -- Enable realtime
+ALTER PUBLICATION supabase_realtime 
+ADD TABLE public.refinedpersons; -- Enable realtime
 
 CREATE TABLE "public"."refinedpersons_0" PARTITION OF "public"."refinedpersons" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 0);
+VALUES WITH (MODULUS 3, REMAINDER 0);
 
 CREATE TABLE "public"."refinedpersons_1" PARTITION OF "public"."refinedpersons" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 1);
+VALUES WITH (MODULUS 3, REMAINDER 1);
 
 CREATE TABLE "public"."refinedpersons_2" PARTITION OF "public"."refinedpersons" FOR
-VALUES
-    WITH (MODULUS 3, REMAINDER 2);
+VALUES WITH (MODULUS 3, REMAINDER 2);
 
 -- MAKE TABLES UNLOGGED
-ALTER TABLE
-    "public"."pointsofcontact"
-SET
-    unlogged;
+ALTER TABLE "public"."pointsofcontact"
+SET unlogged;
 
-ALTER TABLE
-    "public"."messages"
-SET
-    unlogged;
+ALTER TABLE "public"."messages"
+SET unlogged;
 
-ALTER TABLE
-    "public"."tags"
-SET
-    unlogged;
+ALTER TABLE "public"."tags"
+SET unlogged;
 
 -- UPDATE REFINED_PERSONS FUNCTION
 CREATE
@@ -225,10 +205,12 @@ END;
 $function$;
 
 -- UPDATE GROUPED_TAGS_BY_PERSON_VIEW VIEW
-create or replace view public.grouped_tags_by_person_view as
-    select array_agg(name) as tags, array_agg(reachable) as tags_reachability, person_email
-    from tags
-    group by person_email;
+CREATE OR REPLACE VIEW public.grouped_tags_by_person_view as
+    SELECT array_agg(name) as tags, 
+        array_agg(reachable) as tags_reachability, 
+        person_email
+    FROM tags
+    GROUP BY person_email;
 
 -- UPDATE POPULATE FUNCTION
 DROP FUNCTION public.populate_refined;
@@ -244,4 +226,5 @@ BEGIN
     ON conflict(email, userid) do nothing;
 END;
 $function$;
+
 
