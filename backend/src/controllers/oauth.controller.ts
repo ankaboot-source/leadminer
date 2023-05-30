@@ -16,17 +16,6 @@ import {
 
 import { OAuthUsers } from '../db/OAuthUsers';
 
-interface APICallbackResponse {
-  status?: number;
-  redirectURL?: string;
-  data?: {
-    id?: string;
-    email?: string;
-    access_token?: string;
-  };
-  error?: string;
-}
-
 export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
   return {
     /**
@@ -47,8 +36,12 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
      * @param next - The Express next middleware function.
      * @throws If the required parameters are missing or invalid.
      */
-    async oAuthCallbackHandler(req: Request, res: Response) {
-      const apiResponse: APICallbackResponse = {};
+    async oAuthCallbackHandler(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) {
+      let redirectTo = null;
       const { state } = req.query;
 
       try {
@@ -60,7 +53,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         const { nosignup, provider, redirectURL } = decodedState as JwtState;
 
         // If redirection URL is provided, the request will be redirected instead of responding with json.
-        apiResponse.redirectURL = redirectURL;
+        redirectTo = redirectURL;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
@@ -95,54 +88,61 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         });
 
         if (!hasGrantedAllScopes) {
-          apiResponse.status = 401;
-          apiResponse.error =
+          const error =
             'Insufficient Permissions: All required permissions must be granted.';
-        } else {
-          apiResponse.status = 200;
-          apiResponse.data = { access_token: tokenSet.access_token };
-          /**
-           *
-           * Temporary implementation: Decode the JWT ID token to extract user info,
-           * find or create a user based on the email and refresh token, and return the
-           * user account details.
-           *
-           * This implementation is subject to change when using the Gotrue user tables.
-           *
-           */
-          const userInfo = jwt.decode(
-            tokenSet.id_token as string
-          ) as jwt.JwtPayload;
 
-          if (!userInfo) {
-            throw new Error('Invalid token: payload not found');
+          if (redirectTo) {
+            const redirectionURL = buildRedirectUrl(redirectTo, { error });
+            return res.redirect(redirectionURL);
           }
-
-          const user = await oAuthUsers.findOrCreateOne(
-            userInfo.email,
-            tokenSet.refresh_token as string
-          );
-
-          if (user) {
-            apiResponse.data.id = user.id;
-            apiResponse.data.email = user.email;
-          }
+          return res.status(401).json({ error });
         }
-      } catch (err: any) {
-        apiResponse.status = 500;
-        apiResponse.error = err.message;
-      }
+        const data: { access_token?: string; email?: string; id?: string } = {
+          access_token: tokenSet.access_token as string
+        };
+        /**
+         *
+         * Temporary implementation: Decode the JWT ID token to extract user info,
+         * find or create a user based on the email and refresh token, and return the
+         * user account details.
+         *
+         * This implementation is subject to change when using the Gotrue user tables.
+         *
+         */
+        const userInfo = jwt.decode(
+          tokenSet.id_token as string
+        ) as jwt.JwtPayload;
 
-      const { redirectURL, data, error, status } = apiResponse;
-      if (redirectURL) {
-        const redirectionURL = buildRedirectUrl(
-          redirectURL,
-          (data as Record<string, string>) || { error }
+        if (!userInfo) {
+          throw new Error('Invalid token: payload not found');
+        }
+
+        const user = await oAuthUsers.findOrCreateOne(
+          userInfo.email,
+          tokenSet.refresh_token as string
         );
-        return res.redirect(redirectionURL);
-      }
 
-      return res.status(status).json({ ...apiResponse });
+        if (user) {
+          data.id = user.id;
+          data.email = user.email;
+        }
+
+        if (redirectURL) {
+          const redirectionURL = buildRedirectUrl(
+            redirectURL,
+            data as Record<string, string>
+          );
+          return res.redirect(redirectionURL);
+        }
+        return res.status(200).json({ data });
+      } catch (err: any) {
+        if (redirectTo) {
+          return res.redirect(
+            buildRedirectUrl(redirectTo, { error: err.message })
+          );
+        }
+        return next(new Error(err.message));
+      }
     },
 
     /**

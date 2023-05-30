@@ -21,35 +21,38 @@ onMounted(() => {
     fragmentIdentifier || window.location.search
   );
 
-  if (parameters) {
-    const {
+  if (!parameters) {
+    return;
+  }
+  const {
+    id,
+    email,
+    access_token: accessToken,
+    error,
+  } = Object.fromEntries(parameters);
+
+  if (id && email && accessToken) {
+    $store.commit("leadminer/SET_USER_CREDENTIALS", {
       id,
       email,
-      access_token: accessToken,
-      error,
-    } = Object.fromEntries(parameters);
+      accessToken,
+    });
+    localStorage.setItem("user", JSON.stringify($store.state.leadminer.user));
+  }
 
-    if (error) {
-      $quasar.notify({
-        message: error,
-        color: "red",
-        icon: "error",
-        actions: [
-          {
-            label: "OK",
-            color: "white",
-          },
-        ],
-      });
-      $router.push("/");
-    } else if (id && email && accessToken) {
-      $store.commit("leadminer/SET_USER_CREDENTIALS", {
-        id,
-        email,
-        accessToken,
-      });
-      localStorage.setItem("user", JSON.stringify($store.state.leadminer.user));
-    }
+  if (error) {
+    $quasar.notify({
+      message: error,
+      color: "red",
+      icon: "error",
+      actions: [
+        {
+          label: "OK",
+          color: "white",
+        },
+      ],
+    });
+    $router.push("/");
   }
 });
 </script>
