@@ -1,3 +1,5 @@
+-- DROP TABLES AND RECREATE THEM WITH PARTITIONS
+
 DROP TABLE "public"."messages" CASCADE;
 
 CREATE TABLE "public"."messages" (
@@ -95,12 +97,12 @@ VALUES
 DROP TABLE "public"."tags" CASCADE;
 
 CREATE TABLE "public"."tags" (
-    "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
     "person_email" text,
     "user_id" uuid,
     "name" text,
     "reachable" integer,
-    PRIMARY KEY (id, user_id)
+    "source" text,
+    PRIMARY KEY (person_email, name, user_id)
 ) PARTITION by hash(user_id);
 
 CREATE TABLE "public"."tags_0" PARTITION OF "public"."tags" FOR
@@ -112,6 +114,34 @@ VALUES
     WITH (MODULUS 3, REMAINDER 1);
 
 CREATE TABLE "public"."tags_2" PARTITION OF "public"."tags" FOR
+VALUES
+    WITH (MODULUS 3, REMAINDER 2);
+
+DROP TABLE "public"."refinedpersons" CASCADE;
+
+create table "public"."refinedpersons" (
+    "userid" uuid,
+    "engagement" integer,
+    "occurence" integer,
+    "tags" text[],
+    "name" text,
+    "alternate_names" text[],
+    "email" text,
+	"recency" timestamp with time zone,
+    PRIMARY KEY (email, userid)
+) PARTITION by hash(userid);
+
+alter publication supabase_realtime add table public.refinedpersons; -- Enable realtime
+
+CREATE TABLE "public"."refinedpersons_0" PARTITION OF "public"."refinedpersons" FOR
+VALUES
+    WITH (MODULUS 3, REMAINDER 0);
+
+CREATE TABLE "public"."refinedpersons_1" PARTITION OF "public"."refinedpersons" FOR
+VALUES
+    WITH (MODULUS 3, REMAINDER 1);
+
+CREATE TABLE "public"."refinedpersons_2" PARTITION OF "public"."refinedpersons" FOR
 VALUES
     WITH (MODULUS 3, REMAINDER 2);
 
@@ -130,3 +160,88 @@ ALTER TABLE
     "public"."tags"
 SET
     unlogged;
+
+-- UPDATE REFINED_PERSONS FUNCTION
+CREATE
+OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void 
+LANGUAGE plpgsql 
+AS $function$ 
+DECLARE 
+BEGIN
+    UPDATE
+        public.refinedpersons rp
+    SET
+        engagement = sub_query.engagement,
+        recency = sub_query.recency,
+        occurence = sub_query.occurrence,
+        alternate_names = sub_query.alternate_names,
+        name = sub_query.name
+    FROM (
+        SELECT
+            poc.person_email,
+            COALESCE(nrm.recent_name, '' :: text) AS name,
+            COALESCE(
+                array_agg(DISTINCT gn.alternate_name) FILTER (
+                    WHERE
+                        nrm.recent_name IS NOT NULL
+                        AND nrm.recent_name <> ''
+                        AND extensions.similarity(lower(nrm.recent_name), lower(gn.alternate_name)) < 0.7
+                ),
+                '{}' :: text []
+            ) AS alternate_names,
+            COUNT(
+                CASE
+                    WHEN m.conversation THEN 1
+                END
+            ) AS engagement,
+            MAX(m.date) AS recency,
+            COUNT(*) AS occurrence
+        FROM pointsofcontact poc
+        JOIN messages m ON poc.message_id = m.message_id
+        LEFT JOIN (
+            SELECT
+                ( array_agg(name ORDER BY m.date DESC)) [1] AS recent_name,
+                person_email
+            FROM pointsofcontact poc
+            JOIN messages m ON poc.message_id = m.message_id
+            WHERE name <> ''
+                AND name IS NOT NULL
+                AND poc.user_id = refined_persons.userid
+            GROUP BY person_email
+        ) nrm ON poc.person_email = nrm.person_email
+        LEFT JOIN (
+            SELECT (array_agg(name)) [1] AS alternate_name, person_email
+            FROM pointsofcontact poc
+            WHERE name <> ''
+                AND name IS NOT NULL
+                AND poc.user_id = refined_persons.userid
+            GROUP BY person_email, lower(name)
+        ) gn ON poc.person_email = gn.person_email
+        WHERE poc.user_id = refined_persons.userid
+        GROUP BY poc.person_email, nrm.recent_name
+    ) sub_query
+    WHERE rp.email = sub_query.person_email;
+END;
+$function$;
+
+-- UPDATE GROUPED_TAGS_BY_PERSON_VIEW VIEW
+create or replace view public.grouped_tags_by_person_view as
+    select array_agg(name) as tags, array_agg(reachable) as tags_reachability, person_email
+    from tags
+    group by person_email;
+
+-- UPDATE POPULATE FUNCTION
+DROP FUNCTION public.populate_refined;
+CREATE OR REPLACE FUNCTION public.populate_refined(_userid uuid) RETURNS void
+LANGUAGE plpgsql
+AS $function$
+BEGIN
+  INSERT INTO refinedpersons(userid, tags, name, email)
+    SELECT populate_refined._userid, t.tags, name, email
+    FROM public.persons p
+    INNER JOIN public.grouped_tags_by_person_view AS t ON t.person_email = email
+    WHERE p.user_id=populate_refined._userid AND NOT t.tags_reachability && '{0}'
+    ON conflict(email, userid) do nothing;
+END;
+$function$;
+

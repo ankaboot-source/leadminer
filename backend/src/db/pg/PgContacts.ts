@@ -12,24 +12,23 @@ export default class PgContacts implements Contacts {
     'SELECT * FROM populate_refined($1)';
 
   private static readonly INSERT_MESSAGE_SQL = `
-    INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","userid") 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) 
-    RETURNING id;`;
+    INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8);`;
 
   private static readonly INSERT_POC_SQL = `
-    INSERT INTO pointsofcontact("messageid","name","_from","reply_to","_to","cc","bcc","body","personid","userid")
+    INSERT INTO pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","user_id")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-    RETURNING id`;
+    RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","_userid")
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-    ON CONFLICT (email) DO UPDATE SET name=excluded.name RETURNING id`;
+    ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
 
   private static readonly INSERT_TAGS_SQL = `
-    INSERT INTO tags("name","reachable","source","userid","personid")
+    INSERT INTO tags("name","reachable","source","user_id","person_email")
     VALUES %L
-    ON CONFLICT(personid, name) DO NOTHING`;
+    ON CONFLICT(person_email, name, user_id) DO NOTHING;`;
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
@@ -45,7 +44,7 @@ export default class PgContacts implements Contacts {
 
   async create({ message, persons }: Contact, userId: string) {
     try {
-      const { rows } = await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
+      await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
         message.date,
@@ -56,41 +55,35 @@ export default class PgContacts implements Contacts {
         userId
       ]);
 
-      const messageId = rows[0].id;
-
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        const personInsertionResult = await this.pool.query(
-          PgContacts.UPSERT_PERSON_SQL,
-          [
-            person.name,
-            person.email,
-            person.url,
-            person.image,
-            person.address,
-            person.sameAs,
-            person.givenName,
-            person.familyName,
-            person.jobTitle,
-            person.identifiers,
-            userId
-          ]
-        );
+        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+          person.name,
+          person.email,
+          person.url,
+          person.image,
+          person.address,
+          person.sameAs,
+          person.givenName,
+          person.familyName,
+          person.jobTitle,
+          person.identifiers,
+          userId
+        ]);
 
-        const personId = personInsertionResult.rows[0].id;
         const tagValues = tags.map((tag) => [
           tag.name,
           tag.reachable,
           tag.source,
           userId,
-          personId
+          person.email
         ]);
 
         // eslint-disable-next-line no-await-in-loop
         await Promise.allSettled([
           this.pool.query(format(PgContacts.INSERT_TAGS_SQL, tagValues)),
           this.pool.query(PgContacts.INSERT_POC_SQL, [
-            messageId,
+            message.messageId,
             pointOfContact.name,
             pointOfContact.from,
             pointOfContact.replyTo,
@@ -98,7 +91,7 @@ export default class PgContacts implements Contacts {
             pointOfContact.cc,
             pointOfContact.bcc,
             pointOfContact.body,
-            personId,
+            person.email,
             userId
           ])
         ]);

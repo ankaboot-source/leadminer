@@ -291,9 +291,9 @@ class EmailMessage {
       pointOfContact: {
         messageid: '',
         name: name ?? '',
-        _from: fieldName === 'from',
+        from: fieldName === 'from',
         replyTo: fieldName === 'reply-to' || fieldName === 'reply_to',
-        _to: fieldName === 'to',
+        to: fieldName === 'to',
         cc: fieldName === 'cc',
         bcc: fieldName === 'bcc',
         body: fieldName === 'body',
