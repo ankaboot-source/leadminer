@@ -227,5 +227,3 @@ BEGIN
     ON conflict(email, userid) do nothing;
 END;
 $function$;
-
-
