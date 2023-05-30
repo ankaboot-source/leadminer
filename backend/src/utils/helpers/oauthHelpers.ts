@@ -1,10 +1,3 @@
-export interface JwtState {
-  provider: string;
-  nosignup?: boolean;
-  redirectURL?: string;
-  scopes: string | string[];
-}
-
 export interface AuthorizationParams {
   redirect_to?: string;
   provider: string;

@@ -10,7 +10,6 @@ import {
 import {
   buildEndpointURL,
   buildRedirectUrl,
-  JwtState,
   AuthorizationParams
 } from '../utils/helpers/oauthHelpers';
 
@@ -47,17 +46,18 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
       try {
         const decodedState = jwt.decode(state as string);
 
-        if (!decodedState) {
+        if (!decodedState || typeof decodedState !== 'object') {
           throw new Error('Invalid token: payload not found');
         }
-        const { nosignup, provider, redirectURL } = decodedState as JwtState;
 
-        // If redirection URL is provided, the request will be redirected instead of responding with json.
-        redirectTo = redirectURL;
+        const { nosignup, provider, redirectURL } = decodedState;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
         }
+
+        // If redirection URL is provided, the request will be redirected instead of responding with json.
+        redirectTo = redirectURL;
 
         if (!nosignup) {
           const redirectionURL = buildRedirectUrl(
