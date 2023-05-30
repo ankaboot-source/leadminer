@@ -10,7 +10,6 @@ import {
 import {
   buildEndpointURL,
   buildRedirectUrl,
-  JwtState,
   AuthorizationParams
 } from '../utils/helpers/oauthHelpers';
 
@@ -41,19 +40,24 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
       res: Response,
       next: NextFunction
     ) {
+      let redirectTo = null;
       const { state } = req.query;
 
       try {
         const decodedState = jwt.decode(state as string);
 
-        if (!decodedState) {
+        if (!decodedState || typeof decodedState !== 'object') {
           throw new Error('Invalid token: payload not found');
         }
-        const { nosignup, provider, redirectURL } = decodedState as JwtState;
+
+        const { nosignup, provider, redirectURL } = decodedState;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
         }
+
+        // If redirection URL is provided, the request will be redirected instead of responding with json.
+        redirectTo = redirectURL;
 
         if (!nosignup) {
           const redirectionURL = buildRedirectUrl(
@@ -65,40 +69,46 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           return res.redirect(redirectionURL);
         }
 
+        const { oauthConfig } = PROVIDER_POOL.getProviderConfig({
+          name: provider
+        });
         const client = PROVIDER_POOL.oAuthClientFor({ name: provider });
+
         const tokenSet = await client.callback(
           buildEndpointURL(LEADMINER_API_HOST as string, '/api/oauth/callback'),
           req.query,
           { state: state as string }
         );
 
-        const credentials: {
-          id?: string;
-          email?: string;
-          access_token: string;
-        } = {
+        const hasGrantedAllScopes = oauthConfig.scopes?.every((scope) => {
+          if (scope.startsWith('https')) {
+            return tokenSet.scope?.includes(scope);
+          }
+          return true;
+        });
+
+        if (!hasGrantedAllScopes) {
+          const error =
+            'Insufficient Permissions: All required permissions must be granted.';
+
+          if (redirectTo) {
+            const redirectionURL = buildRedirectUrl(redirectTo, { error });
+            return res.redirect(redirectionURL);
+          }
+          return res.status(401).json({ error });
+        }
+        const data: { access_token?: string; email?: string; id?: string } = {
           access_token: tokenSet.access_token as string
         };
-
         /**
-         *  Original code.
          *
-         *     if (redirectURL) {
-         *        const redirectionURL = buildRedirectUrl(redirectURL, tokens);
-         *        return res.redirect(redirectionURL);
-         *      }
-         *
-         *      res.setHeader('Content-Type', 'application/json');
-         *      return res.status(200).send({ error: null, data: tokens });
-         *
-         *  ----------------------------------------------------------------------
          * Temporary implementation: Decode the JWT ID token to extract user info,
          * find or create a user based on the email and refresh token, and return the
          * user account details.
          *
          * This implementation is subject to change when using the Gotrue user tables.
+         *
          */
-
         const userInfo = jwt.decode(
           tokenSet.id_token as string
         ) as jwt.JwtPayload;
@@ -113,18 +123,25 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         );
 
         if (user) {
-          credentials.id = user.id;
-          credentials.email = user.email;
+          data.id = user.id;
+          data.email = user.email;
         }
 
         if (redirectURL) {
-          const redirectionURL = buildRedirectUrl(redirectURL, credentials);
+          const redirectionURL = buildRedirectUrl(
+            redirectURL,
+            data as Record<string, string>
+          );
           return res.redirect(redirectionURL);
         }
-
-        return res.status(200).json({ data: credentials });
-      } catch (err) {
-        return next(err);
+        return res.status(200).json({ data });
+      } catch (err: any) {
+        if (redirectTo) {
+          return res.redirect(
+            buildRedirectUrl(redirectTo, { error: err.message })
+          );
+        }
+        return next(new Error(err.message));
       }
     },
 
