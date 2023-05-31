@@ -21,7 +21,8 @@ const transactionalEmailMessage: EmailMessageTagExtractor = {
           'x-linkedin',
           'x-mailgun',
           'x-github',
-          'x-msfbl'
+          'x-msfbl',
+          'x-netsuite'
         ]),
         new HasHeaderWithValues('x-mailer', [
           'ec-messenger',
