@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import ENV from '../config';
 
 export default function errorHandler(
   error: Error,
@@ -11,10 +12,10 @@ export default function errorHandler(
     error
   };
 
-  //   if (ENV.NODE_ENV === 'development') {
-  //     response.error.stack = error.stack;
-  //     response.error.message = error.message;
-  //   }
+  if (ENV.NODE_ENV === 'development') {
+    response.error.stack = error.stack;
+    response.error.message = error.message;
+  }
 
   return res.status(code).send(response);
 }

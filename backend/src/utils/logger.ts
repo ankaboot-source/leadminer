@@ -16,7 +16,7 @@ function initLogger() {
     handleRejections: true
   };
 
-  if (ENV.GRAFANA_LOKI_HOST && ENV.GRAFANA_LOKI_HOST !== '') {
+  if (ENV.GRAFANA_LOKI_HOST) {
     return createLogger({
       ...loggerConfiguration,
       transports: [

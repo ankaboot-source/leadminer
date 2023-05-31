@@ -262,7 +262,7 @@ class ImapEmailsFetcher {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
               header += chunk;
-            } else if (IMAP_FETCH_BODY) {
+            } else if (ENV.IMAP_FETCH_BODY) {
               body += chunk;
             }
           });
@@ -270,7 +270,7 @@ class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header.toString('utf8'));
-          const parsedBody = IMAP_FETCH_BODY ? body.toString('utf8') : '';
+          const parsedBody = ENV.IMAP_FETCH_BODY ? body.toString('utf8') : '';
 
           const messageId = getMessageId(parsedHeader);
 

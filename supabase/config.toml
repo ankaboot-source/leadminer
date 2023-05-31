@@ -61,9 +61,9 @@ enable_confirmations = false
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `twitch`, `twitter`, `slack`, `spotify`.
 [auth.external.google]
-enabled = true
-client_id = "750504341697-pp8kvb01q0cv49t7mhqoqth0odh24ke3.apps.googleusercontent.com"
-secret = "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"
+enabled = false
+client_id = ""
+secret = ""
 # Overrides the default auth redirectUrl.
 redirect_uri = "http://localhost:8081/api/oauth/callback"
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
