@@ -1,19 +1,21 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 export default function errorHandler(
   error: Error,
   _req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
   const code = res.statusCode !== 200 ? res.statusCode : 500;
-  const response = {
+  const response: { data?: any, error: { message: string, stack?: string } } = {
     data: null,
-    error
+    error: { message: error.message }
   };
 
   if (process.env.NODE_ENV === 'development') {
-    response.error.stack = error.stack;
-    response.error.message = error.message;
+    if (error.stack) {
+      response.error.stack = error.stack;
+    }
   }
 
   return res.status(code).send(response);
