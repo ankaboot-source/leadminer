@@ -13,6 +13,7 @@
 <script setup lang="ts">
 import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
+import { GENERIC_ERROR_MESSAGE_NETWORK_ERROR } from "src/constants";
 import { ref } from "vue";
 
 const props = defineProps({
@@ -48,9 +49,14 @@ async function handleClickSignIn() {
     const { authorizationURL } = data;
 
     window.location.assign(authorizationURL);
-  } catch (error: any) {
+  } catch (err: any) {
+    const message =
+      err.message.toLowerCase() === "network error"
+        ? GENERIC_ERROR_MESSAGE_NETWORK_ERROR
+        : err.message;
+
     $quasar.notify({
-      message: error.message,
+      message,
       color: "red",
       icon: "error",
       actions: [
