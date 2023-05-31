@@ -54,6 +54,7 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'send-as-noreply',
   'support',
   'systemalert',
-  'unsubscribe'
+  'unsubscribe',
+  'no-response'
 ];
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
