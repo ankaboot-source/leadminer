@@ -4,11 +4,51 @@
 
 Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionable and qualified leads.
 
-## Self-hosting and running Leadminer
+## How to Run?
 
-Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
+Before running the project, make sure to complete the following steps to enable and configure OAuth functionality:
+
+### Enabling and Configuring OAuth
+
+1. Create a Provider cloud app following the instructions provided in the `.env.example` file.
+
+2. Update the relevant settings in the OAuth Provider cloud console. In the "Allowed redirect URI" section, add the following two redirect URIs:
+
+   - `http://<Your supabase api>/auth/v1/callback`
+   - `http://<Your backend api>/api/oauth/callback`
+
+3. For each enabled provider, update the following fields:
+
+   - If you're using the Supabase CLI, update the corresponding variables in the `config.toml` file.
+   - If you're self-hosting GoTrue, ensure you change the `redirect_uri` for each provider.
+
+    The fields to be updated:
+
+   - `enable`: Set to `true` to enable the provider or `false` to disable it.
+   - `client_id`: Update with the appropriate client ID for OAuth.
+   - `secret`: Update with the corresponding secret for OAuth.
+   - `redirect_uri`: Ensure it points to `http://<Your backend api>/api/oauth/callback`.
+
+4. Add the remaining required provider environment variables according to the `.env.example` file.
+
+**References**: 
+
+These resources can provide you with more insights and guidance on the  topics related to OAuth, email protocols, and Supabase authentication.
+
+- [Gmail IMAP and SMTP](https://developers.google.com/gmail/imap/imap-smtp)
+- [Google OpenID Configuration](https://accounts.google.com/.well-known/openid-configuration)
+- [Google OAuth2 Documentation](https://developers.google.com/identity/protocols/oauth2)
+
+- [Microsoft POP, IMAP, and SMTP Settings](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-8361e398-8af4-4e97-b147-6c6c4ac95353)
+- [Microsoft OpenID Configuration](https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration)
+- [Microsoft OAuth2 Authorization Code Flow](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow)
+
+- [Supabase CLI Reference](https://supabase.com/docs/reference/cli/introduction)
+- [Supabase Auth with GoTrue](https://supabase.com/docs/learn/auth-deep-dive/auth-gotrue)
 
 ### Run using docker-compose
+
+Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
 
 1. Clone the repository and enter `leadminer` folder
 
@@ -25,6 +65,20 @@ Docker is the recommended solution for self-hosting Leadminer thanks to its conv
    ```
 
 4. Navigate to `localhost:8080`.
+
+## Contributing
+
+Thank you for considering contributing to this project! Pull requests are welcome and encouraged. To contribute, please follow the guidelines below:
+
+### General Guidelines
+
+1. Fork this [repository](https://github.com/ankaboot-source/leadminer)
+2. Create a branch for your feature or bug fix (`git checkout -b feature/fooBar`)
+3. Commit your changes (`git commit -am 'Add some fooBar'`)
+4. Push to the branch (`git push origin feature/fooBar`)
+5. Create a new Pull Request
+
+For major changes or new features, it is recommended to open an issue first to discuss and get feedback from the maintainers and the community. Also make sure to update or create tests as appropriate to maintain the code quality and ensure that the project functions as expected.
 
 ### Running the Project Locally (Dev mode)
 
@@ -50,7 +104,7 @@ To run the project in your local environment, follow the steps below:
    cp /frontend/.env.example /frontend/.env && cp /backend/.env.example /backend/.env
    ```
 
-3. Start your environment by running the following commands:
+4. Start your environment by running the following commands:
 
    ```sh
    # Start the Redis container (You can skip this step if you want to use your local instance)
@@ -83,20 +137,6 @@ npx supabase db diff --use-migra -f <name_of_migration>
 # Stop supabase services once you're done
 npx supabase stop
 ```
-
-## Contributing
-
-Thank you for considering contributing to this project! Pull requests are welcome and encouraged. To contribute, please follow the guidelines below:
-
-### General Guidelines
-
-1. Fork this [repository](https://github.com/ankaboot-source/leadminer)
-2. Create a branch for your feature or bug fix (`git checkout -b feature/fooBar`)
-3. Commit your changes (`git commit -am 'Add some fooBar'`)
-4. Push to the branch (`git push origin feature/fooBar`)
-5. Create a new Pull Request
-
-For major changes or new features, it is recommended to open an issue first to discuss and get feedback from the maintainers and the community. Also make sure to update or create tests as appropriate to maintain the code quality and ensure that the project functions as expected.
 
 ## Roadmap
 
