@@ -211,7 +211,7 @@ $function$;
 
 -- UPDATE GROUPED_TAGS_BY_PERSON_VIEW VIEW
 CREATE OR REPLACE VIEW public.grouped_tags_by_person_view AS
-SELECT 
+SELECT
     person_email,
     array_agg(name) AS tags,
     array_agg(reachable) AS tags_reachability
