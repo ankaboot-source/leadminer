@@ -13,7 +13,8 @@ CREATE TABLE "public"."messages" (
     "references" text [],
     "conversation" boolean,
     PRIMARY KEY (message_id, user_id)
-) PARTITION by hash(user_id);
+)
+PARTITION by hash(user_id);
 
 CREATE TABLE "public"."messages_0" PARTITION OF "public"."messages" FOR
 VALUES WITH (MODULUS 3, REMAINDER 0);
@@ -44,7 +45,8 @@ CREATE TABLE "public"."persons" (
     "created_at" timestamp without time zone NOT NULL DEFAULT NOW(),
     "updated_at" timestamp without time zone NOT NULL DEFAULT NOW(),
     PRIMARY KEY (email, user_id)
-) PARTITION by hash(user_id);
+)
+PARTITION by hash(user_id);
 
 CREATE TRIGGER handle_updated_at BEFORE
 UPDATE ON public.persons FOR EACH 
@@ -74,7 +76,8 @@ CREATE TABLE "public"."pointsofcontact" (
     "body" boolean,
     "person_email" text,
     PRIMARY KEY (id, user_id)
-) PARTITION by hash(user_id);
+)
+PARTITION by hash(user_id);
 
 CREATE TABLE "public"."pointsofcontact_0" PARTITION OF "public"."pointsofcontact" FOR
 VALUES WITH (MODULUS 3, REMAINDER 0);
@@ -94,7 +97,8 @@ CREATE TABLE "public"."tags" (
     "reachable" integer,
     "source" text,
     PRIMARY KEY (person_email, name, user_id)
-) PARTITION by hash(user_id);
+)
+PARTITION by hash(user_id);
 
 CREATE TABLE "public"."tags_0" PARTITION OF "public"."tags" FOR
 VALUES WITH (MODULUS 3, REMAINDER 0);
@@ -117,7 +121,8 @@ CREATE TABLE "public"."refinedpersons" (
     "email" text,
 	"recency" timestamp with time zone,
     PRIMARY KEY (email, userid)
-) PARTITION by hash(userid);
+)
+PARTITION by hash(userid);
 
 ALTER PUBLICATION supabase_realtime 
 ADD TABLE public.refinedpersons; -- Enable realtime
@@ -206,12 +211,11 @@ $function$;
 
 -- UPDATE GROUPED_TAGS_BY_PERSON_VIEW VIEW
 CREATE OR REPLACE VIEW public.grouped_tags_by_person_view AS
-    SELECT
-        person_email,
-        array_agg(name) AS tags,
-        array_agg(reachable) AS tags_reachability
-    FROM tags
-    GROUP BY person_email;
+SELECT person_email,
+array_agg(name) AS tags, 
+array_agg(reachable) AS tags_reachability
+FROM tags
+GROUP BY person_email;
 
 -- UPDATE POPULATE FUNCTION
 DROP FUNCTION public.populate_refined;
