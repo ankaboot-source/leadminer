@@ -11,10 +11,10 @@ export default function errorHandler(
     error
   };
 
-  if (process.env.NODE_ENV === 'development') {
-    response.error.stack = error.stack;
-    response.error.message = error.message;
-  }
+  //   if (ENV.NODE_ENV === 'development') {
+  //     response.error.stack = error.stack;
+  //     response.error.message = error.message;
+  //   }
 
   return res.status(code).send(response);
 }

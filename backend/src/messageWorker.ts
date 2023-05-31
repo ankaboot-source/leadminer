@@ -1,6 +1,6 @@
 import './env';
 
-import { REDIS_CONSUMER_BATCH_SIZE } from './config';
+import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import { REDIS_PUBSUB_COMMUNICATION_CHANNEL } from './utils/constants';
@@ -19,7 +19,7 @@ const { processStreamData } = initializeMessageProcessor(contacts);
 const streamConsumerInstance = new StreamConsumer(
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   `consumer-${process.env.HOSTNAME}`,
-  REDIS_CONSUMER_BATCH_SIZE,
+  ENV.REDIS_CONSUMER_BATCH_SIZE,
   processStreamData,
   redisSubscriber,
   redisClient,

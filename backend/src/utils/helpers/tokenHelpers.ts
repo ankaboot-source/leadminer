@@ -1,7 +1,7 @@
 import { Client, TokenSet } from 'openid-client';
 // @ts-ignore - until we add the module to types
 import { createXOAuth2Generator } from 'xoauth2';
-import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../../config';
+import ENV from '../../config';
 
 /**
  * Generates an XOAuth2 token for the user to authenticate with the IMAP server.
@@ -29,8 +29,8 @@ export default async function generateXOauthToken(
     : accessToken;
   const xoauth2gen = createXOAuth2Generator({
     user: email,
-    clientId: GOOGLE_CLIENT_ID,
-    clientSecret: GOOGLE_SECRET,
+    clientId: ENV.GOOGLE_CLIENT_ID,
+    clientSecret: ENV.GOOGLE_SECRET,
     accessToken: typeof tokenSet === 'string' ? tokenSet : tokenSet.access_token
   });
 

@@ -1,6 +1,6 @@
 import { createLogger, format, transports } from 'winston';
 import LokiTransport from 'winston-loki';
-import { GRAFANA_LOKI_HOST, LEADMINER_API_LOG_LEVEL } from '../config';
+import ENV from '../config';
 
 function initLogger() {
   const commonFormat = format.combine(
@@ -11,17 +11,17 @@ function initLogger() {
   );
 
   const loggerConfiguration = {
-    level: LEADMINER_API_LOG_LEVEL,
+    level: ENV.LEADMINER_API_LOG_LEVEL,
     handleExceptions: true,
     handleRejections: true
   };
 
-  if (GRAFANA_LOKI_HOST && GRAFANA_LOKI_HOST !== '') {
+  if (ENV.GRAFANA_LOKI_HOST && ENV.GRAFANA_LOKI_HOST !== '') {
     return createLogger({
       ...loggerConfiguration,
       transports: [
         new LokiTransport({
-          host: GRAFANA_LOKI_HOST,
+          host: ENV.GRAFANA_LOKI_HOST,
           labels: { app: 'leadminer' },
           json: true,
           replaceTimestamp: true,

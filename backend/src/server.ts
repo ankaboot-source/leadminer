@@ -4,7 +4,7 @@ import logger from './utils/logger';
 import redis from './utils/redis';
 
 import initializeApp from './app';
-import { LEADMINER_API_PORT } from './config';
+import ENV from './config';
 import pool from './db/pg';
 import PgImapUsers from './db/pg/PgImapUsers';
 import PgOAuthUsers from './db/pg/PgOAuthUsers';
@@ -32,7 +32,7 @@ console.log(
 
   const app = initializeApp(imapUsers, oAuthUsers, tasksManager);
 
-  app.listen(LEADMINER_API_PORT, () => {
-    logger.info(`Server is running on port ${LEADMINER_API_PORT}.`);
+  app.listen(ENV.LEADMINER_API_PORT, () => {
+    logger.info(`Server is running on port ${ENV.LEADMINER_API_PORT}.`);
   });
 })();

@@ -1,14 +1,9 @@
 import { createPool } from 'generic-pool';
 import Imap from 'imap';
-import {
-  IMAP_AUTH_TIMEOUT,
-  IMAP_CONNECTION_TIMEOUT,
-  IMAP_MAX_CONNECTIONS,
-  PROVIDER_POOL
-} from '../config';
-import logger from '../utils/logger';
-
+import ENV from '../config';
 import generateXOauthToken from '../utils/helpers/tokenHelpers';
+import logger from '../utils/logger';
+import PROVIDER_POOL from './auth/ProviderPool';
 
 class ImapConnectionProvider {
   /**
@@ -36,8 +31,8 @@ class ImapConnectionProvider {
   constructor(email) {
     this.#imapConfig = {
       user: email,
-      connTimeout: IMAP_CONNECTION_TIMEOUT,
-      authTimeout: IMAP_AUTH_TIMEOUT,
+      connTimeout: ENV.IMAP_CONNECTION_TIMEOUT,
+      authTimeout: ENV.IMAP_AUTH_TIMEOUT,
       tls: true,
       keepalive: false
     };
@@ -204,7 +199,7 @@ class ImapConnectionProvider {
     };
 
     const opts = {
-      max: IMAP_MAX_CONNECTIONS, // maximum size of the pool
+      max: ENV.IMAP_MAX_CONNECTIONS, // maximum size of the pool
       min: 0 // minimum size of the pool
     };
 

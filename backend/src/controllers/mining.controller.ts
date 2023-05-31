@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { LEADMINER_FETCH_BATCH_SIZE } from '../config';
+import ENV from '../config';
 import { ImapUser, ImapUsers } from '../db/ImapUsers';
 import { OAuthUser, OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
@@ -55,7 +55,7 @@ export default function initializeMiningController(
       try {
         // Connect to validate connection before creating the pool.
         imapConnection = await imapConnectionProvider.acquireConnection();
-        const batchSize = LEADMINER_FETCH_BATCH_SIZE;
+        const batchSize = ENV.LEADMINER_FETCH_BATCH_SIZE;
         const imapEmailsFetcherOptions: any = {
           imapConnectionProvider,
           boxes,

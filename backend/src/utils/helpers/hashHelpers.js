@@ -1,9 +1,7 @@
 import { createHmac } from 'crypto';
 import { customAlphabet } from 'nanoid/async';
-import {
-  LEADMINER_API_HASH_SECRET,
-  LEADMINER_MINING_ID_GENERATOR_LENGTH
-} from '../../config';
+
+import ENV from '../../config';
 import { FLICKR_BASE_58_CHARSET } from '../constants';
 
 /**
@@ -14,7 +12,7 @@ import { FLICKR_BASE_58_CHARSET } from '../constants';
  */
 export function hashEmail(emailAddress, userId) {
   const saltedUserId = emailAddress + userId;
-  return createHmac('sha256', LEADMINER_API_HASH_SECRET)
+  return createHmac('sha256', ENV.LEADMINER_API_HASH_SECRET)
     .update(saltedUserId)
     .digest('hex');
 }
@@ -26,7 +24,7 @@ export function hashEmail(emailAddress, userId) {
 export function flickrBase58IdGenerator() {
   const generator = customAlphabet(
     FLICKR_BASE_58_CHARSET,
-    LEADMINER_MINING_ID_GENERATOR_LENGTH || 10
+    ENV.LEADMINER_MINING_ID_GENERATOR_LENGTH
   );
   return generator;
 }
