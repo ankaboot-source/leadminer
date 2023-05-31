@@ -7,7 +7,7 @@ export default function errorHandler(
   next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
   const code = res.statusCode !== 200 ? res.statusCode : 500;
-  const response: { data?: any, error: { message: string, stack?: string } } = {
+  const response: { data: null, error: { message: string, stack?: string } } = {
     data: null,
     error: { message: error.message }
   };
