@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
-import { SENTRY_ENABLED } from './config';
+import ENV from './config';
 import { ImapUsers } from './db/ImapUsers';
 import { OAuthUsers } from './db/OAuthUsers';
 import corsMiddleware from './middleware/cors';
@@ -10,9 +10,9 @@ import notFound from './middleware/notFound';
 import initializeSentry from './middleware/sentry';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
+import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import { TasksManager } from './services/TasksManager';
-import initializeOAuthRoutes from './routes/oauth.routes';
 
 export default function initializeApp(
   imapUsers: ImapUsers,
@@ -21,8 +21,8 @@ export default function initializeApp(
 ) {
   const app = express();
 
-  if (SENTRY_ENABLED) {
-    initializeSentry(app);
+  if (ENV.SENTRY_DSN) {
+    initializeSentry(app, ENV.SENTRY_DSN);
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
   }
@@ -47,7 +47,7 @@ export default function initializeApp(
   );
   app.use('/api/oauth', initializeOAuthRoutes(oAuthUsers));
 
-  if (SENTRY_ENABLED) {
+  if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());
   }
 

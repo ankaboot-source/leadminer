@@ -1,5 +1,5 @@
 import { parseHeader } from 'imap';
-import { IMAP_FETCH_BODY } from '../config';
+import ENV from '../config';
 import { EXCLUDED_IMAP_FOLDERS } from '../utils/constants';
 import { getMessageId } from '../utils/helpers/emailMessageHelpers';
 import { hashEmail } from '../utils/helpers/hashHelpers';
@@ -103,7 +103,7 @@ class ImapEmailsFetcher {
 
     this.bodies = ['HEADER'];
 
-    if (IMAP_FETCH_BODY) {
+    if (ENV.IMAP_FETCH_BODY) {
       this.bodies.push('TEXT');
     }
 
@@ -262,7 +262,7 @@ class ImapEmailsFetcher {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
               header += chunk;
-            } else if (IMAP_FETCH_BODY) {
+            } else if (ENV.IMAP_FETCH_BODY) {
               body += chunk;
             }
           });
@@ -270,7 +270,7 @@ class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header.toString('utf8'));
-          const parsedBody = IMAP_FETCH_BODY ? body.toString('utf8') : '';
+          const parsedBody = ENV.IMAP_FETCH_BODY ? body.toString('utf8') : '';
 
           const messageId = getMessageId(parsedHeader);
 

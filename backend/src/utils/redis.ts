@@ -1,21 +1,11 @@
 import Redis, { RedisOptions } from 'ioredis';
-import {
-  REDIS_HOST,
-  REDIS_PASSWORD,
-  REDIS_PORT,
-  REDIS_TLS,
-  REDIS_USERNAME
-} from '../config';
+import ENV from '../config';
 import disposable from './Disposable.json';
 import freeProviders from './FreeProviders.json';
 import logger from './logger';
 
 class RedisManager {
-  /**
-   * Redis client instance
-   * @private
-   */
-  #normalClient;
+  private readonly normalClient;
 
   /**
    * @constructor
@@ -28,8 +18,8 @@ class RedisManager {
   constructor(
     host: string,
     port: number,
-    user: string,
-    password: string,
+    user: string | undefined,
+    password: string | undefined,
     tls: boolean
   ) {
     let redisOpts: RedisOptions = {
@@ -52,19 +42,18 @@ class RedisManager {
       };
     }
 
-    this.#normalClient = new Redis(redisOpts);
+    this.normalClient = new Redis(redisOpts);
   }
 
   /**
    * Initialize the redis db with domain providers strings.
-   * @returns {Promise}
    */
   async initProviders() {
     try {
-      await this.#normalClient.sadd('freeProviders', freeProviders);
+      await this.normalClient.sadd('freeProviders', freeProviders);
       logger.info('Redis initialized with freeProviders ✔️');
 
-      await this.#normalClient.sadd('disposable', disposable);
+      await this.normalClient.sadd('disposable', disposable);
       logger.info('Redis initialized with disposable ✔️');
     } catch (error) {
       logger.error('Failed initializing redis.', error);
@@ -73,11 +62,10 @@ class RedisManager {
 
   /**
    * Deletes all the keys of all the existing databases in redis.
-   * @returns {Promise<void>}
    */
   async flushAll() {
     try {
-      const status = await this.#normalClient.flushall();
+      const status = await this.normalClient.flushall();
       logger.info(`Flush status: ${status} ✔️`);
     } catch (error) {
       logger.error('Failed flushing Redis.', error);
@@ -91,7 +79,7 @@ class RedisManager {
    * @returns Redis client instance
    */
   getClient() {
-    return this.#normalClient;
+    return this.normalClient;
   }
 
   /**
@@ -100,16 +88,16 @@ class RedisManager {
    * @return Redis client instance
    */
   getSubscriberClient() {
-    return this.#normalClient.duplicate();
+    return this.normalClient.duplicate();
   }
 }
 
 const redis = new RedisManager(
-  REDIS_HOST!,
-  REDIS_PORT,
-  REDIS_USERNAME!,
-  REDIS_PASSWORD!,
-  REDIS_TLS
+  ENV.REDIS_HOST,
+  ENV.REDIS_PORT,
+  ENV.REDIS_USERNAME,
+  ENV.REDIS_PASSWORD,
+  ENV.REDIS_TLS
 );
 
 export default redis;

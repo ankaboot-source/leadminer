@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import ENV from '../config';
 
 export default function errorHandler(
   error: Error,
@@ -11,9 +12,9 @@ export default function errorHandler(
     error: { message: error.message }
   };
 
-  if (process.env.NODE_ENV === 'development') {
+  if (ENV.NODE_ENV === 'development') {
     if (error.stack) {
-      response.error.stack = error.stack;
+        response.error.stack = error.stack;
     }
   }
 

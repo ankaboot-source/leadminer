@@ -1,19 +1,13 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import {
-  AUTH_SERVER_URL,
-  AUTH_SERVER_CALLBACK,
-  PROVIDER_POOL,
-  LEADMINER_API_HASH_SECRET,
-  LEADMINER_API_HOST
-} from '../config';
-import {
-  buildEndpointURL,
-  buildRedirectUrl,
-  AuthorizationParams
-} from '../utils/helpers/oauthHelpers';
-
+import ENV from '../config';
 import { OAuthUsers } from '../db/OAuthUsers';
+import PROVIDER_POOL from '../services/auth/ProviderPool';
+import {
+  AuthorizationParams,
+  buildEndpointURL,
+  buildRedirectUrl
+} from '../utils/helpers/oauthHelpers';
 
 export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
   return {
@@ -60,12 +54,9 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         redirectTo = redirectURL;
 
         if (!nosignup) {
-          const redirectionURL = buildRedirectUrl(
-            AUTH_SERVER_CALLBACK as string,
-            {
-              ...req.query
-            } as Record<string, string>
-          );
+          const redirectionURL = buildRedirectUrl(ENV.AUTH_SERVER_CALLBACK, {
+            ...req.query
+          } as Record<string, string>);
           return res.redirect(redirectionURL);
         }
 
@@ -75,7 +66,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         const client = PROVIDER_POOL.oAuthClientFor({ name: provider });
 
         const tokenSet = await client.callback(
-          buildEndpointURL(LEADMINER_API_HOST as string, '/api/oauth/callback'),
+          buildEndpointURL(ENV.LEADMINER_API_HOST, '/api/oauth/callback'),
           req.query,
           { state: state as string }
         );
@@ -196,7 +187,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
 
           authorizationParams.state = jwt.sign(
             JSON.stringify(stateParams),
-            LEADMINER_API_HASH_SECRET as string,
+            ENV.LEADMINER_API_HASH_SECRET,
             {}
           );
           authorizationParams.access_type = 'offline';
@@ -205,7 +196,9 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         const queryParams = new URLSearchParams(
           authorizationParams as unknown as Record<string, string>
         );
-        const authorizationURL = `${AUTH_SERVER_URL}/authorize?${queryParams.toString()}`;
+        const authorizationURL = `${
+          ENV.AUTH_SERVER_URL
+        }/authorize?${queryParams.toString()}`;
 
         // Redirect the user to the authorization URL
         return res.status(200).json({ data: { authorizationURL, provider } });

@@ -1,8 +1,10 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import ProviderPool, {
   ProviderConfig,
   ProviderName
-} from '../../src/services/Provider';
+} from '../../src/services/auth/Provider';
+
+jest.mock('../../src/config', () => {});
 
 describe('ProviderPool', () => {
   const mockOAuthConfig = {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import { check } from 'recheck';
 import {
   REGEX_BODY,
@@ -11,6 +11,8 @@ import {
   extractNameAndEmailFromBody
 } from '../../src/utils/helpers/regexpHelpers';
 import testData from '../testData.json';
+
+jest.mock('../../src/config', () => {});
 
 describe('Regex redos checker', () => {
   const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
