@@ -14,7 +14,7 @@ export default function errorHandler(
 
   if (ENV.NODE_ENV === 'development') {
     if (error.stack) {
-        response.error.stack = error.stack;
+      response.error.stack = error.stack;
     }
   }
 
