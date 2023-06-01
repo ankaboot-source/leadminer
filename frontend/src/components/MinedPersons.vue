@@ -228,9 +228,8 @@ import {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from "@supabase/supabase-js";
-import exportFromJSON from "export-from-json";
-import { QTable, copyToClipboard, useQuasar } from "quasar";
-import { getLocalizedCsvSeparator } from "src/helpers/csv";
+import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
+import { getCsvStr } from "src/helpers/csv";
 import { fetchData, supabaseClient } from "src/helpers/supabase";
 import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -421,7 +420,7 @@ function filterFn(rowsToFilter: readonly any[], terms: any) {
   );
 }
 
-function exportTable() {
+async function exportTable() {
   if (!rows.value.length) {
     $q.notify({
       message: "There are no contacts present in the table.",
@@ -449,13 +448,30 @@ function exportTable() {
   }));
 
   try {
-    exportFromJSON({
-      data,
-      fileName,
-      withBOM: true,
-      exportType: exportFromJSON.types.csv,
-      delimiter: getLocalizedCsvSeparator(),
-    });
+    const csvStr = await getCsvStr(
+      [
+        { key: "name", header: "Name" },
+        { key: "alternateNames", header: "Alternate Names" },
+        { key: "email", header: "Email" },
+        { key: "engagement", header: "Engagement" },
+        { key: "occurence", header: "Occurrence" },
+        { key: "recency", header: "Recency" },
+        { key: "tags", header: "Tags" },
+      ],
+      data
+    );
+
+    const status = exportFile(fileName, csvStr, "text/csv");
+
+    if (status !== true) {
+      $q.notify({
+        message: "Browser denied file download...",
+        color: "negative",
+        icon: "warning",
+      });
+      return;
+    }
+
     $q.notify({
       message: "Emails exported successfully",
       textColor: "positive",
