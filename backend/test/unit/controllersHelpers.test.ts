@@ -1,7 +1,11 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import { getUser, getXImapHeaderField } from '../../src/controllers/helpers';
 import InMemoryImapUsers from '../fakes/db/InMemoryImapUsers';
 import InMemoryOAuthUsers from '../fakes/db/InMemoryOAuthUsers';
+
+jest.mock('../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'error'
+}));
 
 describe('controllers.helpers.getXImapHeaderField', () => {
   it('should return an error if the x-imap-login header is missing', () => {

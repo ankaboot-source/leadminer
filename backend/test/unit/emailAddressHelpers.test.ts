@@ -1,10 +1,12 @@
-import { describe, expect, it, test } from '@jest/globals';
+import { describe, expect, it, jest, test } from '@jest/globals';
 
 import {
   findEmailAddressType,
   isNoReply,
   isTransactional
 } from '../../src/utils/helpers/emailAddressHelpers';
+
+jest.mock('../../src/config', () => {});
 
 describe('emailAddressHelpers.findEmailAddressType()', () => {
   it('should return "Professional" for custom domain type', () => {

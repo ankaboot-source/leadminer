@@ -1,9 +1,13 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import EmailMessage from '../../src/services/EmailMessage';
 import groupEmailMessage from '../../src/services/tagging/group';
 import linkedinEmailMessage from '../../src/services/tagging/linkedin';
 import newsletterEmailMessage from '../../src/services/tagging/newsletter';
 import transactionalEmailMessage from '../../src/services/tagging/transactional';
+
+jest.mock('../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'error'
+}));
 
 describe('Email Message', () => {
   describe('references', () => {
