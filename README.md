@@ -4,7 +4,7 @@
 
 Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionable and qualified leads.
 
-## How to Run?
+## How to run?
 
 Before running the project, make sure to complete the following steps to enable and configure OAuth functionality:
 
