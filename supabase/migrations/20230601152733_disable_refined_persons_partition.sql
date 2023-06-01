@@ -14,7 +14,7 @@ CREATE TABLE "public"."refinedpersons" (
     "email" text,
     "recency" timestamp with time zone,
     PRIMARY KEY (email, userid)
-);
+    );
 
-ALTER PUBLICATION supabase_realtime 
+ALTER PUBLICATION supabase_realtime
 ADD TABLE public.refinedpersons; -- Enable realtime
