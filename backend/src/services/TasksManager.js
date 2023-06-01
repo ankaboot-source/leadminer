@@ -66,18 +66,15 @@ export class TasksManager {
    * @param {object} redisPublisher - The Redis publisher instance to use for publishing mining events.
    * @param {EmailFetcherFactory} emailFetcherFactory - The factory to use for creating email fetcher instances.
    * @param {SSEBroadcasterFactory} sseBroadcasterFactory - The factory to use for creating SSE broadcaster instances.
-   * @param {import('../db/Contacts').Contacts} contacts - Contacts db accessor.
    */
   constructor(
     redisSubscriber,
     redisPublisher,
     emailFetcherFactory,
-    sseBroadcasterFactory,
-    contacts
+    sseBroadcasterFactory
   ) {
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
-    this.contacts = contacts;
 
     this.emailFetcherFactory = emailFetcherFactory;
     this.sseBroadcasterFactory = sseBroadcasterFactory;
@@ -89,14 +86,8 @@ export class TasksManager {
       const progress = this.#updateProgress(miningId, progressType, count || 1);
       const notified = this.#notifyChanges(miningId, progressType);
 
-      const { status, task } =
-        progress !== null && notified !== null
-          ? await this.#hasCompleted(miningId, progress)
-          : {};
-
-      if (status === true) {
-        const { userId } = task;
-        await this.contacts.refine(userId);
+      if (progress !== null && notified !== null) {
+        await this.#hasCompleted(miningId, progress);
       }
     });
 
