@@ -10,3 +10,6 @@ export const oAuthProviders: Provider[] = [
     domains: ["outlook", "hotmail", "live", "msn"],
   },
 ];
+
+export const GENERIC_ERROR_MESSAGE_NETWORK_ERROR =
+  "Unable to access server. Please retry again or contact your service provider.";

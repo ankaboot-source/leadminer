@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { AxiosError } from "axios";
 import { LocalStorage } from "quasar";
 
 import { api } from "src/boot/axios";
+import { GENERIC_ERROR_MESSAGE_NETWORK_ERROR } from "src/constants";
 import { sse } from "src/helpers/sse";
 
 export async function startMining(
@@ -44,15 +46,22 @@ export async function startMining(
     commit("SET_LOADING", false);
     commit("SET_LOADING_DNS", false);
     commit("SET_STATUS", "");
-    commit("SET_INFO_MESSAGE", "Mining started");
-  } catch (error: any) {
+    commit("SET_INFO_MESSAGE", "Mining has started");
+  } catch (err) {
     sse.closeConnection();
-    const message =
-      error?.response?.data?.error.message ||
-      error?.response?.data?.error ||
-      error;
-    commit("SET_ERROR", message);
-    Promise.reject(message);
+    if (err !== null && err instanceof AxiosError) {
+      let message = null;
+      const error = err.response?.data?.error || err;
+
+      if (error.message?.toLowerCase() === "network error") {
+        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+      } else {
+        message = error.message;
+      }
+
+      commit("SET_ERROR", message);
+    }
+    throw err;
   }
 }
 
@@ -74,14 +83,21 @@ export async function stopMining({ commit, getters }: any, { data }: any) {
 
     commit("DELETE_MINING_TASK");
     commit("SET_STATUS", "");
-    commit("SET_INFO_MESSAGE", "Mining stopped");
-  } catch (error: any) {
-    const message =
-      error?.response?.data?.error.message ||
-      error?.response?.data?.error ||
-      error;
-    commit("SET_ERROR", message);
-    Promise.reject(message);
+    commit("SET_INFO_MESSAGE", "Mining has stopped");
+  } catch (err) {
+    if (err !== null && err instanceof AxiosError) {
+      let message = null;
+      const error = err.response?.data?.error || err;
+
+      if (error.message?.toLowerCase() === "network error") {
+        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+      } else {
+        message = error.message;
+      }
+
+      commit("SET_ERROR", message);
+    }
+    throw err;
   }
 }
 
@@ -94,27 +110,28 @@ export async function signIn({ commit }: any, { data }: any) {
     commit("SET_USER_CREDENTIALS", imapUser);
 
     return response.data;
-  } catch (error: any) {
-    const fieldErrors = error?.response?.data?.error?.errors;
-    const err = new Error(
-      error?.response?.data?.error?.message ||
-        error?.response?.data?.error ||
-        error?.message
-    );
+  } catch (err) {
+    if (err !== null && err instanceof AxiosError) {
+      let message = null;
+      const error = err.response?.data?.error || err;
+      const fieldErrors = error.errors;
 
-    if (fieldErrors) {
-      commit("SET_ERRORS", fieldErrors);
-      commit("SET_ERROR", null);
-    } else {
-      if (err.message.toLowerCase() === "network error") {
-        err.message =
-          "Oops! Something went wrong. Please check your internet connection and try again later.";
+      if (error.message?.toLowerCase() === "network error") {
+        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+      } else {
+        message = error.message;
       }
-      commit("SET_ERROR", err.message);
-      commit("SET_ERRORS", {});
+
+      if (fieldErrors) {
+        commit("SET_ERRORS", fieldErrors);
+        commit("SET_ERROR", null);
+      } else {
+        commit("SET_ERROR", message);
+        commit("SET_ERRORS", {});
+      }
     }
 
-    throw new Error(error);
+    throw err;
   }
 }
 
@@ -139,13 +156,19 @@ export async function getBoxes({ getters, commit }: any) {
     commit("SET_LOADINGBOX", false);
     commit("SET_BOXES", data.imapFoldersTree);
     commit("SET_INFO_MESSAGE", "Successfully retrieved IMAP boxes.");
-  } catch (error: any) {
-    commit(
-      "SET_ERROR",
-      error?.response?.data?.error
-        ? error?.response?.data?.error
-        : error.message
-    );
-    throw error;
+  } catch (err) {
+    if (err !== null && err instanceof AxiosError) {
+      let message = null;
+      const error = err.response?.data?.error || err;
+
+      if (error.message?.toLowerCase() === "network error") {
+        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+      } else {
+        message = error.message;
+      }
+
+      commit("SET_ERROR", message);
+    }
+    throw err;
   }
 }

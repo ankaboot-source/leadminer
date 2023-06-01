@@ -13,7 +13,9 @@
 <script setup lang="ts">
 import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
+import { GENERIC_ERROR_MESSAGE_NETWORK_ERROR } from "src/constants";
 import { ref } from "vue";
+import { AxiosError } from "axios";
 
 const props = defineProps({
   oauthProvider: {
@@ -46,20 +48,30 @@ async function handleClickSignIn() {
     }
 
     const { authorizationURL } = data;
-
     window.location.assign(authorizationURL);
-  } catch (error: any) {
-    $quasar.notify({
-      message: error.message,
-      color: "red",
-      icon: "error",
-      actions: [
-        {
-          label: "ok",
-          color: "white",
-        },
-      ],
-    });
+  } catch (err) {
+    if (err !== null && err instanceof AxiosError) {
+      let message = null;
+      const error = err.response?.data?.error || err;
+
+      if (error.message?.toLowerCase() === "network error") {
+        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+      } else {
+        message = error.message;
+      }
+
+      $quasar.notify({
+        message,
+        color: "red",
+        icon: "error",
+        actions: [
+          {
+            label: "ok",
+            color: "white",
+          },
+        ],
+      });
+    }
   }
   isLoading.value = false;
 }
