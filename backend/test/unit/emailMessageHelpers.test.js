@@ -1,8 +1,10 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import {
   getMessageId,
   getSpecificHeader
 } from '../../src/utils/helpers/emailMessageHelpers';
+
+jest.mock('../../src/config', () => {});
 
 describe('emailMessageHelpers.getSpecificHeader', () => {
   const TEST_HEADERS = {

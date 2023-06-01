@@ -1,5 +1,5 @@
 const { SSE } = require('express-sse');
-const { logger } = require('../logger').default;
+const logger = require('../logger');
 
 /**
  * RealtimeSSE extends SSE class and adds an `initSSE` method

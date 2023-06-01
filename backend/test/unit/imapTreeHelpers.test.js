@@ -1,9 +1,11 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, jest } from '@jest/globals';
 import {
   buildFinalTree,
   createFlatTreeFromImap
 } from '../../src/utils/helpers/imapTreeHelpers';
 import dataTest from '../testData.json';
+
+jest.mock('../../src/config', () => {});
 
 describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const { imapTreeExample } = dataTest;

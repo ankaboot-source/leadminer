@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
-import { PG_CONNECTION_STRING } from '../../config';
+import ENV from '../../config';
 
 const pool = new Pool({
-  connectionString: PG_CONNECTION_STRING,
+  connectionString: ENV.PG_CONNECTION_STRING,
   max: 10
 });
 

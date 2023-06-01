@@ -1,7 +1,6 @@
-/* istanbul ignore file */
 import { NextFunction, Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
-import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from '../config';
+import ENV from '../config';
 import { OAuthUsers } from '../db/OAuthUsers';
 
 export default function initializeGoogleController(oAuthUsers: OAuthUsers) {
@@ -21,8 +20,8 @@ export default function initializeGoogleController(oAuthUsers: OAuthUsers) {
       }
 
       const oAuth2Client = new OAuth2Client(
-        GOOGLE_CLIENT_ID,
-        GOOGLE_SECRET,
+        ENV.GOOGLE_CLIENT_ID,
+        ENV.GOOGLE_SECRET,
         'postmessage'
       );
 

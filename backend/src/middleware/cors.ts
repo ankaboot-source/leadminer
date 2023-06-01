@@ -1,8 +1,8 @@
 import cors, { CorsOptions } from 'cors';
-import { ALLOWED_ORIGINS } from '../config';
+import ENV from '../config';
 
 const corsOptions: CorsOptions = {
-  origin: ALLOWED_ORIGINS as string[],
+  origin: [ENV.FRONTEND_HOST],
   methods: 'GET, POST, OPTIONS, PUT, PATCH, DELETE',
   allowedHeaders: 'X-Requested-With,Content-type,X-imap-login',
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
