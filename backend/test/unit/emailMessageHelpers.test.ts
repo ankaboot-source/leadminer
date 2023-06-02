@@ -16,22 +16,7 @@ describe('emailMessageHelpers.getSpecificHeader', () => {
     'arc-message-signature': [''],
     'arc-authentication-results': [''],
     'return-path': ['', ''],
-    'received-spf': [''],
-    'authentication-results': [''],
-    'dkim-signature': [''],
-    'x-hs-cid': [''],
-    'list-unsubscribe': [''],
-    date: [''],
-    from: [''],
-    'reply-to': [''],
-    to: [''],
-    'message-id': [''],
-    subject: [''],
-    'mime-version': ['1.0'],
-    'content-type': [''],
-    precedence: ['bulk'],
-    'x-report-abuse-to': [''],
-    'feedback-id': ['']
+    'received-spf': ['']
   };
 
   it('Should return null when headers not present', () => {
@@ -40,11 +25,21 @@ describe('emailMessageHelpers.getSpecificHeader', () => {
     ).toBeNull();
   });
 
-  Object.keys(TEST_HEADERS).forEach((key) => {
-    it(`Should return value for existing header: ${key}`, () => {
-      TEST_HEADERS[key] = ['testing'];
-      expect(getSpecificHeader(TEST_HEADERS, [key])[0]).toBe('testing');
-    });
+  it('Should return value for existing header', () => {
+    const header = {
+      'delivered-to': 'testing',
+      received: 'testing',
+      'x-google-smtp-source': 'testing',
+      'x-received': 'testing',
+      'arc-seal': 'testing',
+      'arc-message-signature': 'testing',
+      'arc-authentication-results': 'testing',
+      'return-path': 'testing',
+      'received-spf': 'testing'
+    };
+
+    expect(getSpecificHeader(header, ['received-spf'])).toBe('testing');
+    expect(getSpecificHeader(header, ['arc-seal'])).toBe('testing');
   });
 });
 

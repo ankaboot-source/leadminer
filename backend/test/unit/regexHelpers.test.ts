@@ -21,20 +21,18 @@ describe('Regex redos checker', () => {
     it('regex should be REDOS safe', async () => {
       let messageError = 'Regex is vulnerable !';
 
-      const { attack, complexity, hotspot, status } = await check(
-        r.source,
-        r.flags
-      );
+      const diagnostics = await check(r.source, r.flags);
 
-      if (status === 'vulnerable') {
-        // Constructs helpful error message
-        const vulParts = hotspot.map(
+      if (diagnostics.status === 'vulnerable') {
+        const vulParts = diagnostics.hotspot.map(
           (i) =>
             ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}`
         );
-        messageError += ` \n\t- Complixity: ${complexity.type} \n\t- Attack string: ${attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`;
+        messageError += ` \n\t- Complixity: ${diagnostics.complexity.type} \n\t- Attack string: ${diagnostics.attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`;
+        // eslint-disable-next-line no-console
+        console.error(messageError);
       }
-      expect(status).toBe('safe', messageError);
+      expect(diagnostics.status).toBe('safe');
     });
   });
 });
@@ -125,8 +123,8 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
         }
       ]
     };
-    const { description, input, output } = testCase;
-    expect(extractNameAndEmail(input)).toEqual(output, description);
+    const { input, output } = testCase;
+    expect(extractNameAndEmail(input)).toEqual(output);
   });
 
   it('Should return valid object with empty name if there is none.', () => {
@@ -161,9 +159,9 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       }
     ];
 
-    testCases.forEach(({ input, output, description }) => {
+    testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input);
-      expect(resultOutput).toEqual(output, description);
+      expect(resultOutput).toEqual(output);
     });
   });
 
@@ -221,11 +219,11 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       }
     ];
 
-    testCases.forEach(({ input, output, description }) => {
+    testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input)
         .map(({ name }) => (name !== '' ? name : 'empty'))
         .join(', ');
-      expect(resultOutput).toEqual(output, description);
+      expect(resultOutput).toEqual(output);
     });
   });
 
@@ -273,11 +271,11 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       })
       .flat();
 
-    testCases.forEach(({ input, output, description }) => {
+    testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input)
         .map(({ name }) => (name !== '' ? name : 'EMPTY'))
         .join(', ');
-      expect(resultOutput).toEqual(output, description);
+      expect(resultOutput).toEqual(output);
     });
   });
 
