@@ -1,5 +1,6 @@
-const { SSE } = require('express-sse');
-const logger = require('../logger');
+import { Request, Response } from 'express';
+import { SSE } from 'express-sse';
+import logger from '../logger';
 
 /**
  * RealtimeSSE extends SSE class and adds an `initSSE` method
@@ -9,16 +10,13 @@ const logger = require('../logger');
  *
  * @extends SSE
  */
-class RealtimeSSE extends SSE {
+export default class RealtimeSSE extends SSE {
   /**
    * Initializes the SSE stream with a single object parameter
    * containing the request and response objects.
    *
-   * @param {Object} connection - Object containing the request and response objects
-   * @param {Object} connection.req - The request object
-   * @param {Object} connection.res - The response object
    */
-  subscribeSSE({ req, res }) {
+  subscribeSSE({ req, res }: { req: Request; res: Response }) {
     this.on('stop', () => {
       // Make sure connection is not already closed before writing.
       // writableEnded: https://nodejs.org/api/http.html#responsewritableended
@@ -35,10 +33,10 @@ class RealtimeSSE extends SSE {
 
   /**
    * Sends a Server-Sent Event (SSE) to the specified client with the given data and event name.
-   * @param {string} sseData - The data to be sent as part of the SSE.
-   * @param {string} sseEvent - The name of the event associated with the SSE.
+   * @param sseData - The data to be sent as part of the SSE.
+   * @param sseEvent - The name of the event associated with the SSE.
    */
-  sendSSE(sseData, sseEvent) {
+  sendSSE(sseData: string, sseEvent: string) {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
@@ -53,7 +51,3 @@ class RealtimeSSE extends SSE {
     this.emit('stop');
   }
 }
-
-module.exports = {
-  RealtimeSSE
-};

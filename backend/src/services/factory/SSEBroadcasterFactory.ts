@@ -1,4 +1,4 @@
-import { RealtimeSSE } from '../../utils/helpers/sseHelpers';
+import RealtimeSSE from '../../utils/helpers/sseHelpers';
 
 export default class SSEBroadcasterFactory {
   /**
