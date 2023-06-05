@@ -11,7 +11,7 @@ export function getCurrentUser(state: any) {
 }
 
 export function isLoggedIn(state: any) {
-  return state.user;
+  return !!state.user;
 }
 
 export function getFormErrors(state: any) {

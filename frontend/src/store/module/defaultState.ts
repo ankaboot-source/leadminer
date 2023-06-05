@@ -7,7 +7,7 @@ export function getDefaultState() {
     loadingStatusDns: false,
     loadingStatusbox: false,
     userId: "",
-    user: JSON.parse(LocalStorage.getItem("user") as string),
+    user: LocalStorage.has("user") ? LocalStorage.getItem("user") : null,
     boxes: [],
     errorMessage: "",
     infoMessage: "",
