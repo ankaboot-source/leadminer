@@ -322,11 +322,9 @@ async function getContacts(userId: string) {
 }
 
 async function syncTable() {
-  isLoading.value = true;
   const { id } = $store.getters["leadminer/getCurrentUser"];
   const contacts = await getContacts(id);
   rows.value = contacts;
-  isLoading.value = false;
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -346,8 +344,10 @@ watch(activeMiningTask, async (isActive) => {
     }
     clearInterval(refreshInterval);
     contactsCache.clear();
+    isLoading.value = true;
     await refineContacts();
     await syncTable();
+    isLoading.value = false;
   }
 });
 
@@ -439,7 +439,7 @@ async function exportTable() {
     email: r.email,
     engagement: r.engagement,
     occurence: r.occurence,
-    recency: new Date(r.recency ?? "").toISOString().slice(0, 10),
+    recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     tags: r.tags?.join("\n"),
   }));
 
@@ -490,8 +490,10 @@ onMounted(async () => {
     return;
   }
   window.addEventListener("keydown", onKeyDown);
+  isLoading.value = true;
   await refineContacts();
   await syncTable();
+  isLoading.value = false;
 });
 
 onUnmounted(() => {
