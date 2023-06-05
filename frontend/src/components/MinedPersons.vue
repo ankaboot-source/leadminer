@@ -261,12 +261,7 @@ const mailboxValidity = {
 const mailboxValidityCurrent: "green" | "orange" | "red" = "green";
 
 const isExportDisabled = computed(
-  () =>
-    $store.state.leadminer.loadingStatusDns ||
-    rows.value.some(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (el: any) => el.engagement === undefined || el.engagement === null
-    )
+  () => $store.state.leadminer.loadingStatusDns
 );
 
 const activeMiningTask = computed(
