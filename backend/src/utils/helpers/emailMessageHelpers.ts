@@ -1,10 +1,10 @@
 /**
  * Gets the first matching header value from a list of header fields if it exists.
- * @param {Object} Header - Header object.
- * @param {string[]} headerFields - A list of possible header fields.
+ * @param header - Header object.
+ * @param headerFields - A list of possible header fields.
  * @returns Header value or null.
  */
-export function getSpecificHeader(header, headerFields) {
+export function getSpecificHeader(header: any, headerFields: string[]) {
   for (const headerField of headerFields) {
     const firstMatch =
       header[`${headerField}`] || header[`${headerField.toLocaleLowerCase()}`];
@@ -18,12 +18,16 @@ export function getSpecificHeader(header, headerFields) {
 
 /**
  * Checks if a particular header field has a value from a given list of possible values
- * @param {Object} header - Header object.
- * @param {string} headerField - A header key.
- * @param {string[]} headerValues - A list of possible header values.
- * @returns {Boolean}
+ * @param header - Header object.
+ * @param headerField - A header key.
+ * @param headerValues - A list of possible header values.
+ * @returns
  */
-export function hasHeaderWithValue(header, headerField, headerValues) {
+export function hasHeaderWithValue(
+  header: any,
+  headerField: string,
+  headerValues: string[]
+) {
   const headerValue = getSpecificHeader(header, [headerField]);
   return (
     headerValue &&
@@ -35,11 +39,11 @@ export function hasHeaderWithValue(header, headerField, headerValues) {
 
 /**
  * Checks if a particular header field starts with one of the prefixes
- * @param {Object} header - Header object.
- * @param {string[]} prefixes - A list of possible header key prefixes.
- * @returns {Boolean}
+ * @param header - Header object.
+ * @param prefixes - A list of possible header key prefixes.
+ * @returns
  */
-export function hasHeaderFieldStartsWith(header, prefixes) {
+export function hasHeaderFieldStartsWith(header: any, prefixes: string[]) {
   const headerFields = Object.keys(header);
   return headerFields.some((field) =>
     prefixes.some((prefix) => field.toLowerCase().startsWith(prefix))
@@ -50,10 +54,10 @@ export function hasHeaderFieldStartsWith(header, prefixes) {
  * Gets the message ID from a parsed IMAP header. If the header does not contain a message ID,
  * a generated ID will be returned.
  *
- * @param {Object} parsedHeader - The parsed header object.
- * @returns {string} The message ID.
+ * @param parsedHeader - The parsed header object.
+ * @returns The message ID.
  */
-export function getMessageId(parsedHeader) {
+export function getMessageId(parsedHeader: any) {
   const [messageId] = parsedHeader['message-id'] || [];
   if (messageId) {
     return messageId;

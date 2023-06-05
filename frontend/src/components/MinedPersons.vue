@@ -351,6 +351,7 @@ watch(activeMiningTask, async (isActive) => {
     }
     clearInterval(refreshInterval);
     contactsCache.clear();
+    await refineContacts();
     await syncTable();
   }
 });

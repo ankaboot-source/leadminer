@@ -19,7 +19,7 @@ const schema = z.object({
   IMAP_FETCH_BODY: boolean(),
 
   /* REDIS */
-  REDIS_HOST: z.string().url().or(z.string().startsWith('localhost')),
+  REDIS_HOST: z.string().nonempty(),
   REDIS_PASSWORD: z.string().nonempty().optional(),
   REDIS_USERNAME: z.string().nonempty().optional(),
   REDIS_PORT: number(),
