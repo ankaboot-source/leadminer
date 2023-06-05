@@ -5,10 +5,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useQuasar } from "quasar";
-import { useRouter } from "vue-router";
+import { LocalStorage, useQuasar } from "quasar";
 import SearchEmails from "src/components/Emails/SearchEmails.vue";
+import { onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useStore } from "../store/index";
 
 const $store = useStore();
@@ -37,7 +37,7 @@ onMounted(() => {
       email,
       accessToken,
     });
-    localStorage.setItem("user", JSON.stringify($store.state.leadminer.user));
+    LocalStorage.set("user", $store.state.leadminer.user);
   }
 
   if (error) {
