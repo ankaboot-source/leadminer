@@ -1,17 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
 
-class CustomError extends Error {
+interface CustomError extends Error {
   errors?: Record<string, string>;
-
-  constructor(message: string, errors?: Record<string, string>) {
-    super(message);
-    this.errors = errors;
-  }
 }
 
 export default function errorHandler(
-  error: Error,
+  error: CustomError,
   _req: Request,
   res: Response,
   next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -23,7 +18,7 @@ export default function errorHandler(
     error: { message: error.message }
   };
 
-  if (error instanceof CustomError && error.errors) {
+  if (error.errors) {
     response.error.errors = error.errors;
   }
 
