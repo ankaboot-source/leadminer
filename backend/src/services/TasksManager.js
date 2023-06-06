@@ -162,6 +162,7 @@ export class TasksManager {
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
       miningTask.fetcher = fetcher;
+      miningTask.startedAt = performance.now();
       miningTask.progressHandlerSSE = progressHandlerSSE;
       miningTask.progress.totalMessages = await fetcher.getTotalMessages();
 
@@ -228,7 +229,7 @@ export class TasksManager {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { fetcher, progressHandlerSSE, stream } = task;
+    const { fetcher, progressHandlerSSE, stream, startedAt, progress } = task;
 
     this.#ACTIVE_MINING_TASKS.delete(miningId);
 
@@ -240,6 +241,12 @@ export class TasksManager {
       logger.error('Error when deleting task', error);
     }
 
+    logger.info(
+      `Mining task took ${((performance.now() - startedAt) / 1000).toFixed(
+        2
+      )} seconds`,
+      progress
+    );
     return redactSensitiveData(task);
   }
 
