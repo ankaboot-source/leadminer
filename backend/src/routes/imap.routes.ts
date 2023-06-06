@@ -12,7 +12,7 @@ export default function initializeImapRoutes(
     initializeImapController(supabaseRestClient);
 
   router.post('/login', signinImap);
-  router.get('/:id/boxes', verifyJWT, getImapBoxes);
+  router.get('/:userid/boxes', verifyJWT, getImapBoxes);
 
   return router;
 }

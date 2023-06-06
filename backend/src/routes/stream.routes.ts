@@ -13,7 +13,7 @@ export default function initializeStreamRouter(
   const { verifyJWTCookie } = initializeAuthMiddleware(supabaseRestClient);
   const { streamProgress } = initializeStreamController(tasksManager);
 
-  router.get('/mine/:id/progress/', verifyJWTCookie, streamProgress);
+  router.get('/mine/:userid/:id/progress/', verifyJWTCookie, streamProgress);
 
   return router;
 }

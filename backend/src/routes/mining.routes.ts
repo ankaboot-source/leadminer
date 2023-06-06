@@ -14,9 +14,9 @@ export default function initializeMiningRoutes(
   const { startMining, stopMiningTask, getMiningTask } =
     initializeMiningController(tasksManager);
 
-  router.post('/mine/', verifyJWT, startMining);
-  router.get('/mine/:id', verifyJWT, getMiningTask);
-  router.delete('/mine/:id', verifyJWT, stopMiningTask);
+  router.post('/mine/:userid', verifyJWT, startMining);
+  router.get('/mine/:userid/:id', verifyJWT, getMiningTask);
+  router.delete('/mine/:userid/:id', verifyJWT, stopMiningTask);
 
   return router;
 }
