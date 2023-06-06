@@ -33,11 +33,7 @@ const providersConfigs: ProviderConfig[] = [
       tokenURL: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
       clientID: ENV.AZURE_CLIENT_ID,
       clientSecret: ENV.AZURE_SECRET,
-      scopes: [
-        'https://outlook.office.com/IMAP.AccessAsUser.All',
-        'email',
-        'offline_access'
-      ]
+      scopes: []
     },
     imapConfig: {
       name: 'azure',
