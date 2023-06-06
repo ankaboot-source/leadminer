@@ -75,20 +75,11 @@ export function getXImapHeaderField(headers: IncomingHttpHeaders) {
     };
   }
 
-  if (!login.access_token) {
-    return {
-      data: null,
-      error: new Error(
-        'x-imap-credentials header field is missing the access_token'
-      )
-    };
-  }
-
   if (!login.access_token && (!login.host || !login.email || !login.password)) {
     return {
       data: null,
       error: new Error(
-        'x-imap-credentials header is missing a required field, check (host, email, password)'
+        'x-imap-credentials header is missing required field. Check (host, email, password) OR (access_token)'
       )
     };
   }

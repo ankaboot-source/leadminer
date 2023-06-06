@@ -77,8 +77,7 @@ const connectWithOAuthPopup = async (
     const intervalId = setInterval(() => {
       try {
         const successfulCallback =
-          popup?.location.href.includes("access_token") ||
-          popup?.location.href.includes("provider_token");
+          popup?.location.href.includes("dashboard")
 
         if (!popup) {
           clearInterval(intervalId);
@@ -158,7 +157,7 @@ onMounted(async () => {
 
   if (error) {
     $quasar.notify({
-      message: `${error}: ${errorDescription}`,
+      message: `${error} ${errorDescription || ''}`,
       color: "red",
       icon: "error",
       actions: [
@@ -169,15 +168,15 @@ onMounted(async () => {
       ],
     });
     
-    // Clean URL from callback parameters
     $router.push("/");
   }
-
+  
   const hasImapCredentials = !!$store.state.leadminer.imapCredentials;
   hasProviderTokenOrIMAP.value =
-    !!$store.state.leadminer.user.providerToken || hasImapCredentials;
+  !!$store.state.leadminer.user.providerToken || hasImapCredentials;
   showPopup.value = !hasProviderTokenOrIMAP.value;
-
+  
+  // Clean URL from callback parameters
   $router.replace({ query: undefined })
 
 });
