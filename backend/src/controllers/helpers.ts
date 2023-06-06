@@ -83,8 +83,8 @@ export function getXImapHeaderField(headers: IncomingHttpHeaders) {
       )
     };
   }
-  
-  if (!login.host || !login.email || !login.password) {
+
+  if (!login.access_token && (!login.host || !login.email || !login.password)) {
     return {
       data: null,
       error: new Error(
@@ -92,7 +92,7 @@ export function getXImapHeaderField(headers: IncomingHttpHeaders) {
       )
     };
   }
-  
+
   return { data: login, error: null };
 }
 
