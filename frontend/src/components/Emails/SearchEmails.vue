@@ -209,13 +209,13 @@
 <script lang="ts" setup>
 // @ts-expect-error "No type definitions"
 import objectScan from "object-scan";
-import { LocalStorage, useQuasar } from "quasar";
+import { useQuasar } from "quasar";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "../../store/index";
-import MinedPersons from "../MinedPersons.vue";
-import ProgressCard from "../cards/ProgressCard.vue";
 import TreeCard from "../cards/TreeCard.vue";
+import ProgressCard from "../cards/ProgressCard.vue";
+import MinedPersons from "../MinedPersons.vue";
 
 const $q = useQuasar();
 const $store = useStore();
@@ -264,6 +264,20 @@ function toggleFullScreen() {
   isFullScreen.value = !isFullScreen.value;
 }
 
+function showNotification(msg: string, color: string, icon: string) {
+  $q.notify({
+    message: msg,
+    color,
+    icon,
+    actions: [
+      {
+        label: "ok",
+        color: "white",
+      },
+    ],
+  });
+}
+
 const onKeyDown = (event: KeyboardEvent) => {
   if (event.key === "Escape" && advancedOptionsVisible.value) {
     advancedOptionsVisible.value = false;
@@ -277,11 +291,9 @@ async function getBoxes() {
     isLoadingStartMining.value = true;
     await $store.dispatch("leadminer/getBoxes");
     // eslint-disable-next-line no-console
-    console.log($store.state.leadminer.infoMessage);
+    showNotification($store.state.leadminer.infoMessage, "green", "");
   } catch (_) {
-    LocalStorage.clear();
-    $store.commit("leadminer/RESET_STORE");
-    $router.replace("/");
+    showNotification($store.state.leadminer.errorMessage, "red", "error");
   } finally {
     isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;
@@ -358,20 +370,6 @@ function updateSelectedBoxes(val: any) {
   $store.commit("leadminer/SET_SCANNEDEMAILS", 0);
   $store.commit("leadminer/SET_EXTRACTEDEMAILS", 0);
   selectedBoxes.value = val;
-}
-
-function showNotification(msg: string, color: string, icon: string) {
-  $q.notify({
-    message: msg,
-    color,
-    icon,
-    actions: [
-      {
-        label: "ok",
-        color: "white",
-      },
-    ],
-  });
 }
 
 async function stopMining() {
