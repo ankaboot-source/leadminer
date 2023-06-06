@@ -10,12 +10,14 @@
         </p>
         <div class="oauth-buttons">
           <button
-class="oauth-button outlook" @click="
-            connectWithOAuthPopup(
-              'azure',
-              'offline_access https://outlook.office.com/IMAP.AccessAsUser.All'
-            )
-            ">
+            class="oauth-button outlook"
+            @click="
+              connectWithOAuthPopup(
+                'azure',
+                'offline_access https://outlook.office.com/IMAP.AccessAsUser.All'
+              )
+            "
+          >
             <i class="fab fa-microsoft"></i>
             Connect with Outlook
           </button>
@@ -76,8 +78,7 @@ const connectWithOAuthPopup = async (
 
     const intervalId = setInterval(() => {
       try {
-        const successfulCallback =
-          popup?.location.href.includes("dashboard")
+        const successfulCallback = popup?.location.href.includes("dashboard");
 
         if (!popup) {
           clearInterval(intervalId);
@@ -157,7 +158,7 @@ onMounted(async () => {
 
   if (error) {
     $quasar.notify({
-      message: `${error} ${errorDescription || ''}`,
+      message: `${error} ${errorDescription || ""}`,
       color: "red",
       icon: "error",
       actions: [
@@ -167,18 +168,17 @@ onMounted(async () => {
         },
       ],
     });
-    
+
     $router.push("/");
   }
-  
+
   const hasImapCredentials = !!$store.state.leadminer.imapCredentials;
   hasProviderTokenOrIMAP.value =
-  !!$store.state.leadminer.user.providerToken || hasImapCredentials;
+    !!$store.state.leadminer.user.providerToken || hasImapCredentials;
   showPopup.value = !hasProviderTokenOrIMAP.value;
-  
-  // Clean URL from callback parameters
-  $router.replace({ query: undefined })
 
+  // Clean URL from callback parameters
+  $router.replace({ query: undefined });
 });
 </script>
 
