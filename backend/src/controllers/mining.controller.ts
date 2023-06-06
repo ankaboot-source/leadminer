@@ -3,6 +3,7 @@ import ENV from '../config';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { TasksManager } from '../services/TasksManager';
 import { generateErrorObjectFromImapError } from './helpers';
+import { Task } from '../services/singleton/TasksManagerSingleton';
 
 export default function initializeMiningController(tasksManager: TasksManager) {
   return {
@@ -69,7 +70,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
 
       try {
         // TODO: convert TaskManager to ts also add permission management.
-        const task = tasksManager.getActiveTask(taskId) as Record<string, any>;
+        const task = tasksManager.getActiveTask(taskId) as Task;
 
         if (task.userId !== user.taskId) {
           return res
@@ -97,10 +98,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
 
       try {
         // TODO: convert TaskManager to ts also add permission management.
-        const { task } = tasksManager.getActiveTask(taskId) as Record<
-          string,
-          any
-        >;
+        const task = tasksManager.getActiveTask(taskId) as Task;
 
         if (user.id !== task.userId) {
           return res

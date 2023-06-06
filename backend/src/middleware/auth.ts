@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-function cookieParser(cookieString: string): Record<string, any> | null {
+function cookieParser(cookieString: string) {
   const cookies: { [name: string]: string } = {};
 
   if (!cookieString) {
