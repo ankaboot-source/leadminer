@@ -13,19 +13,19 @@ const tasksManager = new TasksManager(
 );
 
 export interface Task {
-  userId: string,
-  miningId: string,
+  userId: string;
+  miningId: string;
   stream: {
-    streamName: string,
-    consumerGroupName: string
-  },
+    streamName: string;
+    consumerGroupName: string;
+  };
   progress: {
-    totalMessages: number,
-    fetched: number,
-    extracted: number
-  },
-  fetcher: ImapEmailsFetcher,
-  progressHandlerSSE: RealtimeSSE
-};
+    totalMessages: number;
+    fetched: number;
+    extracted: number;
+  };
+  fetcher: ImapEmailsFetcher;
+  progressHandlerSSE: RealtimeSSE;
+}
 
 export default tasksManager;
