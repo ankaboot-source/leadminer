@@ -1,8 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Disable auto callback url detecion
+// https://supabase.com/docs/reference/javascript/initializing
+const options = {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false,
+  },
+};
 export const supabaseClient = createClient(
   process.env.SUPABASE_PROJECT_URL,
-  process.env.SUPABASE_SECRET_PROJECT_TOKEN
+  process.env.SUPABASE_SECRET_PROJECT_TOKEN,
+  options
 );
 
 /**
