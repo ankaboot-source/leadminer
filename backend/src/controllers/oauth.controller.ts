@@ -1,15 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { SupabaseClient } from '@supabase/supabase-js';
 import ENV from '../config';
-import { OAuthUsers } from '../db/OAuthUsers';
 import PROVIDER_POOL from '../services/auth/ProviderPool';
 import {
-  AuthorizationParams,
   buildEndpointURL,
   buildRedirectUrl
 } from '../utils/helpers/oauthHelpers';
+import { ProviderName } from '../services/auth/Provider';
 
-export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
+export default function initializeOAuthController(
+  supabaseRestClient: SupabaseClient
+) {
   return {
     /**
      * Retrieves the available providers and their associated domains.
@@ -88,35 +90,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           }
           return res.status(401).json({ error });
         }
-        const data: { access_token?: string; email?: string; id?: string } = {
-          access_token: tokenSet.access_token as string
-        };
-        /**
-         *
-         * Temporary implementation: Decode the JWT ID token to extract user info,
-         * find or create a user based on the email and refresh token, and return the
-         * user account details.
-         *
-         * This implementation is subject to change when using the Gotrue user tables.
-         *
-         */
-        const userInfo = jwt.decode(
-          tokenSet.id_token as string
-        ) as jwt.JwtPayload;
-
-        if (!userInfo) {
-          throw new Error('Invalid token: payload not found');
-        }
-
-        const user = await oAuthUsers.findOrCreateOne(
-          userInfo.email,
-          tokenSet.refresh_token as string
-        );
-
-        if (user) {
-          data.id = user.id;
-          data.email = user.email;
-        }
+        const data = { provider_token: tokenSet.access_token };
 
         if (redirectURL) {
           const redirectionURL = buildRedirectUrl(
@@ -143,7 +117,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
      * @param next - The Express next middleware function.
      * @throws If the required parameters are missing or invalid.
      */
-    oAuthHandler(req: Request, res: Response, next: NextFunction) {
+    async oAuthHandler(req: Request, res: Response, next: NextFunction) {
       try {
         const { nosignup, provider, scopes } = req.query;
 
@@ -159,49 +133,55 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           return next(new Error('Requested provider not supported.'));
         }
 
+        let mystate: string | undefined;
+        const requestedScopes = [];
         const redirectURL = req.query.redirect_to;
 
-        const authorizationParams: AuthorizationParams = {
-          provider,
-          scopes: []
-        };
-
         if (typeof scopes === 'string') {
-          authorizationParams.scopes?.push(scopes);
+          requestedScopes.push(scopes);
         }
 
-        if (typeof redirectURL === 'string') {
-          authorizationParams.redirect_to = redirectURL;
+        if (oauthConfig.scopes) {
+          requestedScopes.push(...oauthConfig.scopes);
         }
 
         if (nosignup === 'true') {
-          const stateParams = {
-            nosignup: true,
+          const stateObject = {
+            nosignup: 'true',
             provider,
-            redirectURL
+            redirectURL: redirectURL as string
           };
 
-          if (oauthConfig.scopes) {
-            authorizationParams.scopes?.push(...oauthConfig.scopes);
-          }
-
-          authorizationParams.state = jwt.sign(
-            JSON.stringify(stateParams),
+          mystate = jwt.sign(
+            JSON.stringify(stateObject),
             ENV.LEADMINER_API_HASH_SECRET,
             {}
           );
-          authorizationParams.access_type = 'offline';
         }
 
-        const queryParams = new URLSearchParams(
-          authorizationParams as unknown as Record<string, string>
-        );
-        const authorizationURL = `${
-          ENV.AUTH_SERVER_URL
-        }/authorize?${queryParams.toString()}`;
+        const options = {
+          scopes: requestedScopes.join(' '),
+          redirectTo: redirectURL as string,
+          queryParams: {}
+        };
+
+        if (mystate) {
+          options.queryParams = { state: mystate };
+        }
+
+        const { data, error } = await supabaseRestClient.auth.signInWithOAuth({
+          provider: provider as ProviderName,
+          options
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        const { url } = data;
 
         // Redirect the user to the authorization URL
-        return res.status(200).json({ data: { authorizationURL, provider } });
+        return res.status(200).json({ data: { url, provider } });
       } catch (error) {
         return next(error);
       }

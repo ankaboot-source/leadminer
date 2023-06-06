@@ -8,10 +8,28 @@ export default function initializeStreamController(tasksManager: TasksManager) {
      * Stream the progress of email extraction and scanning via Server-Sent Events (SSE).
      */
     streamProgress: (req: Request, res: Response) => {
-      const { id } = req.params;
+      const { user } = res.locals;
+
+      if (!user) {
+        res.status(404).json({ error: { message: 'User not found.' } });
+        return;
+      }
+
+      const { id: taskId } = req.params;
 
       try {
-        tasksManager.attachSSE(id, { req, res });
+        // TODO: convert TaskManager to ts also add permission management.
+        const { task } = tasksManager.getActiveTask(taskId) as Record<
+          string,
+          any
+        >;
+
+        if (user.id !== task.userId) {
+          res.status(401).json({ error: { message: 'User not authorized.' } });
+          return;
+        }
+
+        tasksManager.attachSSE(taskId, { req, res });
       } catch (error) {
         res.status(404);
         res.write('id: 0\n');
@@ -23,10 +41,10 @@ export default function initializeStreamController(tasksManager: TasksManager) {
 
       req.on('close', async () => {
         try {
-          await tasksManager.deleteTask(id);
+          await tasksManager.deleteTask(taskId);
         } catch (error) {
           logger.error(
-            `Error when disconnecting from the stream with miningId ${id}`,
+            `Error when disconnecting from the stream with miningId ${taskId}`,
             error
           );
         }

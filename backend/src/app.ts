@@ -1,8 +1,7 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
+import { SupabaseClient } from '@supabase/supabase-js';
 import ENV from './config';
-import { ImapUsers } from './db/ImapUsers';
-import { OAuthUsers } from './db/OAuthUsers';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
@@ -15,8 +14,7 @@ import initializeStreamRouter from './routes/stream.routes';
 import { TasksManager } from './services/TasksManager';
 
 export default function initializeApp(
-  imapUsers: ImapUsers,
-  oAuthUsers: OAuthUsers,
+  supabaseRestClient: SupabaseClient,
   tasksManager: TasksManager
 ) {
   const app = express();
@@ -41,11 +39,11 @@ export default function initializeApp(
   // Register api endpoints
   app.use(
     '/api/imap',
-    initializeStreamRouter(tasksManager),
-    initializeImapRoutes(imapUsers, oAuthUsers),
-    initializeMiningRoutes(oAuthUsers, imapUsers, tasksManager)
+    initializeImapRoutes(supabaseRestClient),
+    initializeStreamRouter(supabaseRestClient, tasksManager),
+    initializeMiningRoutes(supabaseRestClient, tasksManager)
   );
-  app.use('/api/oauth', initializeOAuthRoutes(oAuthUsers));
+  app.use('/api/oauth', initializeOAuthRoutes(supabaseRestClient));
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

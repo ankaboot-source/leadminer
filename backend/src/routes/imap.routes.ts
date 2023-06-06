@@ -1,24 +1,18 @@
 import { Router } from 'express';
-import initializeGoogleController from '../controllers/google.controller';
+import { SupabaseClient } from '@supabase/supabase-js';
+import initializeAuthMiddleware from '../middleware/auth';
 import initializeImapController from '../controllers/imap.controller';
-import { ImapUsers } from '../db/ImapUsers';
-import { OAuthUsers } from '../db/OAuthUsers';
 
 export default function initializeImapRoutes(
-  imapUsers: ImapUsers,
-  oAuthUsers: OAuthUsers
+  supabaseRestClient: SupabaseClient
 ) {
   const router = Router();
+  const { verifyJWT } = initializeAuthMiddleware(supabaseRestClient);
+  const { getImapBoxes, signinImap } =
+    initializeImapController(supabaseRestClient);
 
-  const { signUpWithGoogle } = initializeGoogleController(oAuthUsers);
-  const { getImapBoxes, loginToAccount } = initializeImapController(
-    oAuthUsers,
-    imapUsers
-  );
-
-  router.post('/signUpGoogle', signUpWithGoogle);
-  router.post('/login', loginToAccount);
-  router.get('/:id/boxes', getImapBoxes);
+  router.post('/login', signinImap);
+  router.get('/:id/boxes', verifyJWT, getImapBoxes);
 
   return router;
 }

@@ -1,53 +1,30 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
-import { ImapUser, ImapUsers } from '../db/ImapUsers';
-import { OAuthUser, OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { TasksManager } from '../services/TasksManager';
-import {
-  generateErrorObjectFromImapError,
-  getUser,
-  getXImapHeaderField
-} from './helpers';
+import { generateErrorObjectFromImapError } from './helpers';
 
-export default function initializeMiningController(
-  oAuthUsers: OAuthUsers,
-  imapUsers: ImapUsers,
-  tasksManager: TasksManager
-) {
+export default function initializeMiningController(tasksManager: TasksManager) {
   return {
     async startMining(req: Request, res: Response, next: NextFunction) {
-      const { data, error } = getXImapHeaderField(req.headers);
-      const { boxes } = req.body;
+      const { user } = res.locals;
+      const { id: userid, email } = user;
+      const {
+        access_token: accessToken,
+        host,
+        password,
+        port,
+        boxes
+      } = req.body;
 
-      if (error || boxes === undefined) {
-        res.status(400);
-        return next(error || new Error('Missing parameter boxes'));
-      }
-
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { access_token, id, email, password } = data;
-      const user = await getUser(
-        { access_token, id, email },
-        imapUsers,
-        oAuthUsers
-      );
-
-      if (user === null) {
+      if (!user) {
         res.status(400);
         return next(new Error('user does not exists.'));
       }
 
-      const imapConnectionProvider = access_token
-        ? await new ImapConnectionProvider(email).withOauth(
-            access_token,
-            (user as OAuthUser).refresh_token
-          )
-        : new ImapConnectionProvider(email).withPassword(
-            (user as ImapUser).host,
-            password,
-            (user as ImapUser).port
-          );
+      const imapConnectionProvider = accessToken
+        ? await new ImapConnectionProvider(email).withOauth(accessToken)
+        : new ImapConnectionProvider(email).withPassword(host, password, port);
 
       let imapConnection = null;
       let miningTask = null;
@@ -59,13 +36,13 @@ export default function initializeMiningController(
         const imapEmailsFetcherOptions: any = {
           imapConnectionProvider,
           boxes,
-          id,
+          id: userid,
           email,
           batchSize
         };
 
         miningTask = await tasksManager.createTask(
-          id,
+          userid,
           imapEmailsFetcherOptions
         );
       } catch (err) {
@@ -73,7 +50,7 @@ export default function initializeMiningController(
 
         await imapConnectionProvider.releaseConnection(imapConnection);
         await imapConnectionProvider.cleanPool();
-        res.status(newError.code);
+        res.status(500);
         return next(new Error(newError.message));
       }
 
@@ -81,17 +58,26 @@ export default function initializeMiningController(
     },
 
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {
-      const { error } = getXImapHeaderField(req.headers);
+      const { user } = res.locals;
 
-      if (error) {
-        res.status(400);
-        return next(error);
+      if (!user) {
+        res.status(404);
+        return next(new Error('user does not exists.'));
       }
 
-      const { id } = req.params;
+      const { id: taskId } = req.params;
 
       try {
-        const task = await tasksManager.deleteTask(id);
+        // TODO: convert TaskManager to ts also add permission management.
+        const task = tasksManager.getActiveTask(taskId) as Record<string, any>;
+
+        if (task.userId !== user.taskId) {
+          return res
+            .status(401)
+            .json({ error: { message: 'User not authorized.' } });
+        }
+
+        await tasksManager.deleteTask(taskId);
         return res.status(200).send({ data: task });
       } catch (err) {
         res.status(404);
@@ -100,17 +86,28 @@ export default function initializeMiningController(
     },
 
     getMiningTask(req: Request, res: Response, next: NextFunction) {
-      const { error } = getXImapHeaderField(req.headers);
+      const { user } = res.locals;
 
-      if (error) {
-        res.status(400);
-        return next(error);
+      if (!user) {
+        res.status(404);
+        return next(new Error('user does not exists.'));
       }
 
-      const { id } = req.params;
+      const { id: taskId } = req.params;
 
       try {
-        const task = tasksManager.getActiveTask(id);
+        // TODO: convert TaskManager to ts also add permission management.
+        const { task } = tasksManager.getActiveTask(taskId) as Record<
+          string,
+          any
+        >;
+
+        if (user.id !== task.userId) {
+          return res
+            .status(401)
+            .json({ error: { message: 'User not authorized.' } });
+        }
+
         return res.status(200).send({ data: task });
       } catch (err) {
         res.status(404);

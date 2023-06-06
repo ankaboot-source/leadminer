@@ -1,22 +1,22 @@
 import { Router } from 'express';
+import { SupabaseClient } from '@supabase/supabase-js';
 import initializeMiningController from '../controllers/mining.controller';
-import { ImapUsers } from '../db/ImapUsers';
-import { OAuthUsers } from '../db/OAuthUsers';
 import { TasksManager } from '../services/TasksManager';
+import initializeAuthMiddleware from '../middleware/auth';
 
 export default function initializeMiningRoutes(
-  oAuthUsers: OAuthUsers,
-  imapUsers: ImapUsers,
+  supabaseRestClient: SupabaseClient,
   tasksManager: TasksManager
 ) {
   const router = Router();
 
+  const { verifyJWT } = initializeAuthMiddleware(supabaseRestClient);
   const { startMining, stopMiningTask, getMiningTask } =
-    initializeMiningController(oAuthUsers, imapUsers, tasksManager);
+    initializeMiningController(tasksManager);
 
-  router.post('/mine/:userid', startMining);
-  router.get('/mine/:userid/:id', getMiningTask);
-  router.delete('/mine/:userid/:id', stopMiningTask);
+  router.post('/mine/', verifyJWT, startMining);
+  router.get('/mine/:id', verifyJWT, getMiningTask);
+  router.delete('/mine/:id', verifyJWT, stopMiningTask);
 
   return router;
 }

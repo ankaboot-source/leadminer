@@ -1,11 +1,3 @@
-export interface AuthorizationParams {
-  redirect_to?: string;
-  provider: string;
-  state?: string;
-  scopes?: string[];
-  access_type?: string;
-}
-
 /**
  * Constructs the full callback URL for an endpoint, based on the incoming request.
  * @param baseURL - The baseUrl protocol + host.
