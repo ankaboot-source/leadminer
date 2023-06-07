@@ -429,7 +429,7 @@ async function exportTable() {
   const { email } = $store.getters["leadminer/getCurrentUser"];
   const fileName = `leadminer-${email}-${currentDatetime
     .toISOString()
-    .slice(0, 10)}`;
+    .slice(0, 10)}.csv`;
 
   const data = rows.value.map((r) => ({
     name: r.name?.trim(),
