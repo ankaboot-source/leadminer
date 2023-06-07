@@ -1,8 +1,8 @@
 DROP VIEW public.grouped_tags_by_person_view;
 
 CREATE OR REPLACE FUNCTION public.get_grouped_tags_by_person(_userid uuid) 
-    RETURNS table(email text, tags text[], tags_reachability integer[])
-    LANGUAGE plpgsql AS 
+RETURNS table(email text, tags text[], tags_reachability integer[])
+LANGUAGE plpgsql AS 
 $function$
 BEGIN
   RETURN QUERY
