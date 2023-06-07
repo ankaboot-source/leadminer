@@ -12,11 +12,35 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
     steps:
+      - name: Setup doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Save droplet id
+        id: droplet_id
+        run: |
+          doctl compute firewall list | awk '/supabase-firewall/{print $1}'
+
+      - name: Save firewall state
+        id: initial_firewall_state
+        run: doctl compute firewall list | awk '/supabase-firewall/{for (i=5; i<=NF; i++) printf "%s ", $i; printf "\n"}'
+
+      - name: Allow this runner through firewall
+        run: |
+          ip="$(curl -s https://ipinfo.io/ip)"
+          echo ${{ steps.initial_firewall_state.outputs.output_variable }} |
+            sed "s/5432/5432,adress:${ip}/" > updated_firewall
+          xargs doctl compute firewall update ${{ steps.droplet_id.outputs.output_variable }} --name supabase-firewall --inbound-rules "$(cat updated_firewall)"
 
       - uses: actions/checkout@v3
-
       - uses: supabase/setup-cli@v1
         with:
           version: 1.50.13
-
       - run: supabase db push --db-url $SUPABASE_DB_URL --debug
+
+      - name: Firewall back to initial state
+        run: |
+          echo ${{ steps.initial_firewall_state.outputs.output_variable }} |
+            doctl compute firewall update ${{ steps.droplet_id.outputs.output_variable }} --name supabase-firewall --inbound-rules ${{ secrets.droplet}}
