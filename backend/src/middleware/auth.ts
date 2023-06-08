@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { AuthClient } from '../db/AuthClient';
 
-function cookieParser(cookieString: string) {
-  const cookies: { [name: string]: string } = {};
+function parseCookies(cookieString: string) {
+  const cookies: Record<string, string> = {};
 
   if (!cookieString) {
     return null;
@@ -17,30 +17,36 @@ function cookieParser(cookieString: string) {
   return cookies;
 }
 
-export default function initializeAuthMiddleware(
-  supabaseRestClient: SupabaseClient
-) {
+export default function initializeAuthMiddleware(authClient: AuthClient) {
+  /**
+   * Verifies the access token and returns the user object.
+   * @param token - The access token.
+   * @returns A promise that resolves to the user object if verified.
+   * @throws {Error} If there is an error during token verification.
+   */
+  async function verify(token: string, res: Response, next: NextFunction) {
+    try {
+      const { user, error } = await authClient.getUser(token);
+
+      if (error) {
+        return res.status(401).json({ error });
+      }
+
+      res.locals.user = user;
+
+      return next();
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   return {
-    /**
-     * Middleware function to verify JSON Web Token (JWT) in the request and attaches user to res.locals.
-     * @param req - The request object.
-     * @param res - The response object.
-     * @param next - The next middleware function.
-     * @returns Promise that resolves when the middleware completes.
-     */
     verifyJWT: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        let accessToken = null;
-        const authHeader = req.header('Authorization');
-
-        if (authHeader) {
-          accessToken = authHeader?.replace('Bearer ', '').trim();
-        } else if (req.headers.cookie) {
-          const parsedCookie = cookieParser(req.headers.cookie);
-          accessToken = parsedCookie
-            ? parsedCookie['sb-access-token']
-            : accessToken;
-        }
+        const accessToken = req
+          .header('Authorization')
+          ?.replace('Bearer ', '')
+          .trim();
 
         if (!accessToken) {
           return res
@@ -48,33 +54,14 @@ export default function initializeAuthMiddleware(
             .json({ message: 'No token found, authorization denied' });
         }
 
-        const { data, error } = await supabaseRestClient.auth.getUser(
-          accessToken
-        );
-
-        if (error) {
-          return res.status(401).json({ error });
-        }
-
-        const { user } = data;
-        const { id, email, role } = user;
-        res.locals.user = { id, email, role };
-        return next();
+        return await verify(accessToken, res, next);
       } catch (error) {
         return res
           .status(500)
-          .json({ error: { message: 'Oops ! something wrong happend.' } });
+          .json({ error: { message: 'Oops! Something went wrong.' } });
       }
     },
 
-    /**
-     * Middleware function to verify JSON Web Token (JWT) stored in the request header cookie.
-     *
-     * @param req - The request object.
-     * @param res - The response object.
-     * @param next - The next middleware function.
-     * @returns Promise that resolves when the middleware completes.
-     */
     verifyJWTCookie: async (
       req: Request,
       res: Response,
@@ -86,7 +73,7 @@ export default function initializeAuthMiddleware(
           return res.status(404).json({ error });
         }
 
-        const parsedCookie = cookieParser(req.headers.cookie);
+        const parsedCookie = parseCookies(req.headers.cookie);
         const accessToken = parsedCookie
           ? parsedCookie['sb-access-token']
           : null;
@@ -97,22 +84,11 @@ export default function initializeAuthMiddleware(
             .json({ message: 'No token found, authorization denied' });
         }
 
-        const { data, error } = await supabaseRestClient.auth.getUser(
-          accessToken
-        );
-
-        if (error) {
-          return res.status(401).json({ error });
-        }
-
-        const { user } = data;
-        const { id, email, role } = user;
-        res.locals.user = { id, email, role };
-        return next();
+        return await verify(accessToken, res, next);
       } catch (error) {
         return res
           .status(500)
-          .json({ error: { message: 'Oops ! something wrong happend.' } });
+          .json({ error: { message: 'Oops! Something went wrong.' } });
       }
     }
   };
