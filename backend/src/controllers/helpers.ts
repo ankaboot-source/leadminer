@@ -2,6 +2,7 @@ import { IncomingHttpHeaders } from 'http';
 import { ImapUsers } from '../db/ImapUsers';
 import { OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
+import { ImapAuthError } from '../utils/errors';
 
 const IMAP_ERROR_CODES = new Map([
   [
@@ -59,7 +60,6 @@ const IMAP_ERROR_CODES = new Map([
 export function getXImapHeaderField(headers: IncomingHttpHeaders) {
   if (!headers['x-imap-credentials']) {
     return {
-      data: null,
       error: new Error('An x-imap-credentials header field is required.')
     };
   }
@@ -68,7 +68,6 @@ export function getXImapHeaderField(headers: IncomingHttpHeaders) {
     login = JSON.parse(headers['x-imap-credentials'] as string);
   } catch (error) {
     return {
-      data: null,
       error: new Error(
         'x-imap-credentials header field is not in correct JSON format'
       )
@@ -77,7 +76,6 @@ export function getXImapHeaderField(headers: IncomingHttpHeaders) {
 
   if (!login.access_token && (!login.host || !login.email || !login.password)) {
     return {
-      data: null,
       error: new Error(
         'x-imap-credentials header is missing required field. Check (host, email, password) OR (access_token)'
       )
@@ -141,14 +139,11 @@ export function generateErrorObjectFromImapError(error: any) {
   }
 
   if (errorMessage) {
-    const newError: any = new Error('Imap connection error.');
-    newError.errors = [
-      {
-        fields: errorMessage.fields,
-        message: errorMessage.message
-      }
-    ];
-    newError.source = error.source;
+    const fieldError = {
+      fields: errorMessage.fields,
+      message: errorMessage.message
+    };
+    const newError = new ImapAuthError('Imap connection error', fieldError);
     return newError;
   }
 
