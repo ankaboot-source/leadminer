@@ -1,3 +1,5 @@
+import { ProviderName } from '../services/auth/Provider';
+
 export interface Contact {
   message: Message;
   persons: PersonWithPocAndTag[];
@@ -48,3 +50,28 @@ export interface Tag {
   reachable: number;
   source: string;
 }
+
+export interface OAuthSigninOptions {
+  provider: ProviderName;
+  options: {
+    scopes?: string;
+    redirectTo?: string;
+    queryParams?: {};
+  };
+}
+
+interface AuthUser {
+  id: string | undefined;
+  email: string | undefined;
+  role: string | undefined;
+}
+
+interface AuthError extends Error {
+  status?: number | undefined;
+}
+
+export type AuthResopnse = {
+  url?: string | null;
+  user?: AuthUser | null;
+  error?: AuthError | null;
+};
