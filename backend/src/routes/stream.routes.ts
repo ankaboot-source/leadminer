@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import initializeStreamController from '../controllers/stream.controller';
-import { TasksManager } from '../services/TasksManager';
+import { TasksManager } from '../services/task-manager/TasksManager';
 import initializeAuthMiddleware from '../middleware/auth';
-import { AuthClient } from '../db/AuthClient';
+import { AuthenticationResolver } from '../services/auth/types';
 
 export default function initializeStreamRouter(
-  authClient: AuthClient,
+  authResolver: AuthenticationResolver,
   tasksManager: TasksManager
 ) {
   const router = Router();
 
-  const { verifyJWTCookie } = initializeAuthMiddleware(authClient);
+  const { verifyJWTCookie } = initializeAuthMiddleware(authResolver);
   const { streamProgress } = initializeStreamController(tasksManager);
 
   router.get('/mine/:userId/:id/progress/', verifyJWTCookie, streamProgress);

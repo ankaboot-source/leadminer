@@ -1,17 +1,19 @@
-import { SupabaseAuthClient } from '@supabase/supabase-js/dist/module/lib/SupabaseAuthClient';
 import { Logger } from 'winston';
-import { AuthClient } from '../AuthClient';
-import { OAuthSigninOptions } from '../types';
+import {
+  AuthenticationClient,
+  AuthenticationResolver,
+  OAuthSigninOptions
+} from './types';
 
-export default class SupabaseAuthService implements AuthClient {
+export default class AuthResolver implements AuthenticationResolver {
   constructor(
-    private readonly authClient: SupabaseAuthClient,
+    private readonly client: AuthenticationClient,
     private readonly logger: Logger
   ) {}
 
-  async getUser(accessToken?: string) {
+  async getUser(accessToken: string) {
     try {
-      const { data, error } = await this.authClient.getUser(accessToken);
+      const { data, error } = await this.client.getUser(accessToken);
 
       if (error) {
         return { error };
@@ -26,7 +28,7 @@ export default class SupabaseAuthService implements AuthClient {
 
   async loginWithOneTimePasswordEmail(email: string) {
     try {
-      const { error } = await this.authClient.signInWithOtp({ email });
+      const { error } = await this.client.signInWithOtp({ email });
 
       if (error) {
         return { error };
@@ -41,7 +43,7 @@ export default class SupabaseAuthService implements AuthClient {
 
   async signInWithOAuth(options: OAuthSigninOptions) {
     try {
-      const { data, error } = await this.authClient.signInWithOAuth(options);
+      const { data, error } = await this.client.signInWithOAuth(options);
 
       if (error) {
         throw new Error(error.message);

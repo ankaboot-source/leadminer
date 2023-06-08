@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthClient } from '../db/AuthClient';
+import { AuthenticationResolver } from '../services/auth/types';
 
 function parseCookies(cookieString: string) {
   const cookies: Record<string, string> = {};
@@ -17,7 +17,9 @@ function parseCookies(cookieString: string) {
   return cookies;
 }
 
-export default function initializeAuthMiddleware(authClient: AuthClient) {
+export default function initializeAuthMiddleware(
+  authResolver: AuthenticationResolver
+) {
   /**
    * Verifies the access token and returns the user object.
    * @param token - The access token.
@@ -26,7 +28,7 @@ export default function initializeAuthMiddleware(authClient: AuthClient) {
    */
   async function verify(token: string, res: Response, next: NextFunction) {
     try {
-      const { user, error } = await authClient.getUser(token);
+      const { user, error } = await authResolver.getUser(token);
 
       if (error) {
         return res.status(401).json({ error });

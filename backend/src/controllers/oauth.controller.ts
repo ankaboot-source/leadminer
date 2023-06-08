@@ -1,15 +1,16 @@
-import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
-import PROVIDER_POOL from '../services/auth/ProviderPool';
 import {
   buildEndpointURL,
   buildRedirectUrl
 } from '../utils/helpers/oauthHelpers';
-import { ProviderName } from '../services/auth/Provider';
-import { AuthClient } from '../db/AuthClient';
+import PROVIDER_POOL from '../services/auth/Provider';
+import { ProviderName, AuthenticationResolver } from '../services/auth/types';
 
-export default function initializeOAuthController(authClient: AuthClient) {
+export default function initializeOAuthController(
+  authResolver: AuthenticationResolver
+) {
   return {
     /**
      * Retrieves the available providers and their associated domains.
@@ -155,7 +156,7 @@ export default function initializeOAuthController(authClient: AuthClient) {
           options.queryParams = { state: JwtEncodedState };
         }
 
-        const { url, error } = await authClient.signInWithOAuth({
+        const { url, error } = await authResolver.signInWithOAuth({
           provider: provider as ProviderName,
           options
         });

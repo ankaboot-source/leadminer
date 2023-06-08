@@ -10,11 +10,11 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
-import { TasksManager } from './services/TasksManager';
-import { AuthClient } from './db/AuthClient';
+import { TasksManager } from './services/task-manager/TasksManager';
+import { AuthenticationResolver } from './services/auth/types';
 
 export default function initializeApp(
-  authClient: AuthClient,
+  authResolver: AuthenticationResolver,
   tasksManager: TasksManager
 ) {
   const app = express();
@@ -39,11 +39,11 @@ export default function initializeApp(
   // Register api endpoints
   app.use(
     '/api/imap',
-    initializeImapRoutes(authClient),
-    initializeStreamRouter(authClient, tasksManager),
-    initializeMiningRoutes(authClient, tasksManager)
+    initializeImapRoutes(authResolver),
+    initializeStreamRouter(authResolver, tasksManager),
+    initializeMiningRoutes(authResolver, tasksManager)
   );
-  app.use('/api/oauth', initializeOAuthRoutes(authClient));
+  app.use('/api/oauth', initializeOAuthRoutes(authResolver));
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

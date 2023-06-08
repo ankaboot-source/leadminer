@@ -1,9 +1,9 @@
-import { createPool } from 'generic-pool';
 import Imap from 'imap';
+import { createPool } from 'generic-pool';
 import ENV from '../config';
-import generateXOauthToken from '../utils/helpers/tokenHelpers';
 import logger from '../utils/logger';
-import PROVIDER_POOL from './auth/ProviderPool';
+import generateXOauthToken from '../utils/helpers/tokenHelpers';
+import PROVIDER_POOL from './auth/Provider';
 
 class ImapConnectionProvider {
   /**

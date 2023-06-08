@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
-import { TasksManager } from '../services/TasksManager';
+import { TasksManager } from '../services/task-manager/TasksManager';
 import initializeAuthMiddleware from '../middleware/auth';
-import { AuthClient } from '../db/AuthClient';
+import { AuthenticationResolver } from '../services/auth/types';
 
 export default function initializeMiningRoutes(
-  authClient: AuthClient,
+  authResolver: AuthenticationResolver,
   tasksManager: TasksManager
 ) {
   const router = Router();
 
-  const { verifyJWT } = initializeAuthMiddleware(authClient);
+  const { verifyJWT } = initializeAuthMiddleware(authResolver);
   const { startMining, stopMiningTask, getMiningTask } =
     initializeMiningController(tasksManager);
 

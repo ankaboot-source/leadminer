@@ -10,9 +10,11 @@ import {
   validateImapCredentials
 } from './helpers';
 import { ImapAuthError } from '../utils/errors';
-import { AuthClient } from '../db/AuthClient';
+import { AuthenticationResolver } from '../services/auth/types';
 
-export default function initializeImapController(authClient: AuthClient) {
+export default function initializeImapController(
+  authResolver: AuthenticationResolver
+) {
   return {
     async signinImap(req: Request, res: Response, next: NextFunction) {
       try {
@@ -21,7 +23,9 @@ export default function initializeImapController(authClient: AuthClient) {
 
         await validateImapCredentials(host, email, password, port);
 
-        const response = await authClient.loginWithOneTimePasswordEmail(email);
+        const response = await authResolver.loginWithOneTimePasswordEmail(
+          email
+        );
 
         if (response.error) {
           throw new Error(response.error.message);

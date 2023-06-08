@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import ENV from '../../config';
+import ENV from '../config';
 
-const restClient = createClient(
+const supabaseClient = createClient(
   ENV.SUPABASE_PROJECT_URL,
   ENV.SUPABASE_SECRET_PROJECT_TOKEN,
   {
@@ -12,6 +12,6 @@ const restClient = createClient(
     }
   }
 );
-const authClient = restClient.auth;
+const supabaseAuthClient = supabaseClient.auth;
 
-export default authClient;
+export default supabaseAuthClient;
