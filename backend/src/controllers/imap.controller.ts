@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import { SupabaseClient } from '@supabase/supabase-js';
 import { ImapBoxesFetcher } from '../services/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { hashEmail } from '../utils/helpers/hashHelpers';
@@ -10,10 +9,10 @@ import {
   validateAndExtractImapParametersFromBody,
   validateImapCredentials
 } from './helpers';
+import { ImapAuthError } from '../utils/errors';
+import { AuthClient } from '../db/AuthClient';
 
-export default function initializeImapController(
-  supabaseRestClient: SupabaseClient
-) {
+export default function initializeImapController(authClient: AuthClient) {
   return {
     async signinImap(req: Request, res: Response, next: NextFunction) {
       try {
@@ -22,7 +21,7 @@ export default function initializeImapController(
 
         await validateImapCredentials(host, email, password, port);
 
-        const response = await supabaseRestClient.auth.signInWithOtp({ email });
+        const response = await authClient.loginWithOneTimePasswordEmail(email);
 
         if (response.error) {
           throw new Error(response.error.message);
@@ -32,14 +31,9 @@ export default function initializeImapController(
         logger.info('IMAP sign-in was successful', { metadata: { email } });
 
         return res.status(200).send({ data: { message } });
-      } catch (err: any) {
-        if (err.errors) {
-          res.status(400);
-          return next({ message: err.message, errors: err.errors });
-        }
-
-        res.status(500);
-        return next(new Error(err.message));
+      } catch (err) {
+        res.status(err instanceof ImapAuthError ? 400 : 500);
+        return next(err);
       }
     },
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
@@ -79,11 +73,7 @@ export default function initializeImapController(
         });
       } catch (err) {
         const generatedError = generateErrorObjectFromImapError(err);
-        const newError = {
-          message: generatedError.message,
-          errors: generatedError.errors
-        };
-        return next(newError);
+        return next(generatedError);
       } finally {
         await imapConnectionProvider.releaseConnection(imapConnection);
         await imapConnectionProvider.cleanPool();

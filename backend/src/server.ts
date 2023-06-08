@@ -6,7 +6,8 @@ import redis from './utils/redis';
 import initializeApp from './app';
 import ENV from './config';
 import tasksManager from './services/singleton/TasksManagerSingleton';
-import supabaseClient from './db/rest';
+import SupabaseAuthService from './db/rest/auth';
+import restClient from './db/rest';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -25,7 +26,9 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
-  const app = initializeApp(supabaseClient, tasksManager);
+  const authClient = new SupabaseAuthService(restClient, logger);
+
+  const app = initializeApp(authClient, tasksManager);
 
   app.listen(ENV.LEADMINER_API_PORT, () => {
     logger.info(`Server is running on port ${ENV.LEADMINER_API_PORT}.`);

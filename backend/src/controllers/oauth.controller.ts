@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { SupabaseClient } from '@supabase/supabase-js';
 import ENV from '../config';
 import PROVIDER_POOL from '../services/auth/ProviderPool';
 import {
@@ -8,10 +7,9 @@ import {
   buildRedirectUrl
 } from '../utils/helpers/oauthHelpers';
 import { ProviderName } from '../services/auth/Provider';
+import { AuthClient } from '../db/AuthClient';
 
-export default function initializeOAuthController(
-  supabaseRestClient: SupabaseClient
-) {
+export default function initializeOAuthController(authClient: AuthClient) {
   return {
     /**
      * Retrieves the available providers and their associated domains.
@@ -46,7 +44,7 @@ export default function initializeOAuthController(
           throw new Error('Invalid token: payload not found');
         }
 
-        const { nosignup, provider, redirectURL } = decodedState;
+        const { no_signup: noSignup, provider, redirectURL } = decodedState;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
@@ -55,7 +53,7 @@ export default function initializeOAuthController(
         // If redirection URL is provided, the request will be redirected instead of responding with json.
         redirectTo = redirectURL;
 
-        if (!nosignup) {
+        if (!noSignup) {
           const redirectionURL = buildRedirectUrl(ENV.AUTH_SERVER_CALLBACK, {
             ...req.query
           } as Record<string, string>);
@@ -90,16 +88,13 @@ export default function initializeOAuthController(
           }
           return res.status(401).json({ error });
         }
-        const data = { provider_token: tokenSet.access_token };
+        const parameters = { provider_token: tokenSet.access_token as string };
 
         if (redirectURL) {
-          const redirectionURL = buildRedirectUrl(
-            redirectURL,
-            data as Record<string, string>
-          );
+          const redirectionURL = buildRedirectUrl(redirectURL, parameters);
           return res.redirect(redirectionURL);
         }
-        return res.status(200).json({ data });
+        return res.status(200).json({ data: parameters });
       } catch (err: any) {
         if (redirectTo) {
           return res.redirect(
@@ -119,10 +114,16 @@ export default function initializeOAuthController(
      */
     async oAuthHandler(req: Request, res: Response, next: NextFunction) {
       try {
-        const { nosignup, provider, scopes } = req.query;
+        const { no_signup: noSignup, provider, scopes } = req.query;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
+        }
+
+        if (scopes && typeof scopes !== 'string') {
+          throw new Error(
+            'Invalid parmeter: Type of param scopes should a string.'
+          );
         }
 
         const { oauthConfig } = PROVIDER_POOL.getProviderConfig({
@@ -133,43 +134,28 @@ export default function initializeOAuthController(
           return next(new Error('Requested provider not supported.'));
         }
 
-        let mystate: string | undefined;
-        const requestedScopes = [];
-        const redirectURL = req.query.redirect_to;
-
-        if (typeof scopes === 'string') {
-          requestedScopes.push(scopes);
-        }
-
-        if (oauthConfig.scopes) {
-          requestedScopes.push(...oauthConfig.scopes);
-        }
-
-        if (nosignup === 'true') {
-          const stateObject = {
-            nosignup: 'true',
-            provider,
-            redirectURL: redirectURL as string
-          };
-
-          mystate = jwt.sign(
-            JSON.stringify(stateObject),
-            ENV.LEADMINER_API_HASH_SECRET,
-            {}
-          );
-        }
+        const redirectURL = req.query.redirect_to as string;
+        const scopesString = [scopes, ...(oauthConfig.scopes ?? [])]
+          .filter(Boolean)
+          .join(' ');
 
         const options = {
-          scopes: requestedScopes.join(' '),
-          redirectTo: redirectURL as string,
+          scopes: scopesString,
+          redirectTo: redirectURL,
           queryParams: {}
         };
 
-        if (mystate) {
-          options.queryParams = { state: mystate };
+        if (noSignup === 'true') {
+          const requestState = { no_signup: noSignup, provider, redirectURL };
+          const JwtEncodedState = jwt.sign(
+            requestState,
+            ENV.LEADMINER_API_HASH_SECRET
+          );
+
+          options.queryParams = { state: JwtEncodedState };
         }
 
-        const { data, error } = await supabaseRestClient.auth.signInWithOAuth({
+        const { url, error } = await authClient.signInWithOAuth({
           provider: provider as ProviderName,
           options
         });
@@ -177,8 +163,6 @@ export default function initializeOAuthController(
         if (error) {
           throw new Error(error.message);
         }
-
-        const { url } = data;
 
         // Redirect the user to the authorization URL
         return res.status(200).json({ data: { url, provider } });

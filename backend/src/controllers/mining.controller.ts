@@ -3,7 +3,6 @@ import ENV from '../config';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { TasksManager } from '../services/TasksManager';
 import { generateErrorObjectFromImapError } from './helpers';
-import { Task } from '../services/singleton/TasksManagerSingleton';
 
 export default function initializeMiningController(tasksManager: TasksManager) {
   return {
@@ -24,7 +23,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       }
 
       const imapConnectionProvider = accessToken
-        ? await new ImapConnectionProvider(email).withOauth(accessToken)
+        ? new ImapConnectionProvider(email).withOauth(accessToken)
         : new ImapConnectionProvider(email).withPassword(host, password, port);
 
       let imapConnection = null;
@@ -69,8 +68,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       const { id: taskId } = req.params;
 
       try {
-        // TODO: convert TaskManager to ts also add permission management.
-        const task = tasksManager.getActiveTask(taskId) as Task;
+        const task = tasksManager.getActiveTask(taskId);
 
         if (task.userId !== user.taskId) {
           return res
@@ -97,8 +95,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       const { id: taskId } = req.params;
 
       try {
-        // TODO: convert TaskManager to ts also add permission management.
-        const task = tasksManager.getActiveTask(taskId) as Task;
+        const task = tasksManager.getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res

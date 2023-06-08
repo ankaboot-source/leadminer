@@ -1,18 +1,15 @@
 import { Router } from 'express';
-import { SupabaseClient } from '@supabase/supabase-js';
 import initializeAuthMiddleware from '../middleware/auth';
 import initializeImapController from '../controllers/imap.controller';
+import { AuthClient } from '../db/AuthClient';
 
-export default function initializeImapRoutes(
-  supabaseRestClient: SupabaseClient
-) {
+export default function initializeImapRoutes(authClient: AuthClient) {
   const router = Router();
-  const { verifyJWT } = initializeAuthMiddleware(supabaseRestClient);
-  const { getImapBoxes, signinImap } =
-    initializeImapController(supabaseRestClient);
+  const { verifyJWT } = initializeAuthMiddleware(authClient);
+  const { getImapBoxes, signinImap } = initializeImapController(authClient);
 
   router.post('/login', signinImap);
-  router.get('/:userid/boxes', verifyJWT, getImapBoxes);
+  router.get('/:userId/boxes', verifyJWT, getImapBoxes);
 
   return router;
 }
