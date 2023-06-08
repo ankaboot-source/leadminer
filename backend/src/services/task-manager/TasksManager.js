@@ -2,9 +2,9 @@
 import {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP
-} from '../utils/constants';
-import { flickrBase58IdGenerator } from '../utils/helpers/hashHelpers';
-import logger from '../utils/logger';
+} from '../../utils/constants';
+import { flickrBase58IdGenerator } from '../../utils/helpers/hashHelpers';
+import logger from '../../utils/logger';
 
 /**
  * Removes sensitive data from a task object.
@@ -186,7 +186,7 @@ export class TasksManager {
   /**
    * Retrieves the task with the specified mining ID.
    * @param {string} miningId - The mining ID of the task to retrieve.
-   * @returns {import('./singleton/TasksManagerSingleton').Task} Returns the task object if it exists, otherwise null.
+   * @returns {import('.').Task} Returns the task object if it exists, otherwise null.
    */
   getActiveTask(miningId) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
