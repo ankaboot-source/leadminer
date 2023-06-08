@@ -186,7 +186,7 @@ export class TasksManager {
   /**
    * Retrieves the task with the specified mining ID.
    * @param {string} miningId - The mining ID of the task to retrieve.
-   * @returns {Object|null} Returns the task object if it exists, otherwise null.
+   * @returns {import('./singleton/TasksManagerSingleton').Task} Returns the task object if it exists, otherwise null.
    */
   getActiveTask(miningId) {
     const task = this.#ACTIVE_MINING_TASKS.get(miningId);
