@@ -42,18 +42,7 @@ const providersConfigs: ProviderConfig[] = [
       host: 'outlook.office365.com',
       port: 993
     },
-    domains: ['outlook', 'hotmail', 'live', 'windowslive', 'dbmail']
-  },
-  {
-    // Microsoft MSN configuration
-    name: 'azure',
-    oauthConfig: AZURE_OAUTH_CONFIG,
-    imapConfig: {
-      name: 'azure',
-      host: 'mail.outlook.com',
-      port: 993
-    },
-    domains: ['msn']
+    domains: ['outlook', 'hotmail', 'live', 'windowslive', 'dbmail', 'msn']
   }
 ];
 
