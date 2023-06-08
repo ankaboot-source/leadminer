@@ -6,13 +6,13 @@ function getDomainFromEmail(email: string) {
   return email.split('@')[1]?.split('.')[0];
 }
 
-class Provider {
+export class ConfigurationPool {
   private readonly PROVIDERS = new Map();
 
   private readonly PROVIDER_DOMAINS = new Map();
 
   /**
-   * Creates a new instance of a Provider.
+   * Creates a new instance of a ConfigurationPool.
    * @param name The name of the provider.
    * @param oauthConfig The OAuth configuration.
    * @param imapConfig The IMAP configuration.
@@ -187,6 +187,6 @@ const providersConfigs: ProviderConfig[] = [
   }
 ];
 
-const PROVIDER_POOL = new Provider(providersConfigs);
+const PROVIDER_POOL = new ConfigurationPool(providersConfigs);
 
 export default PROVIDER_POOL;
