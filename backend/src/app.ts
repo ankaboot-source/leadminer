@@ -30,7 +30,7 @@ export default function initializeApp(
 
   app.use(json());
   app.use(urlencoded({ extended: true }));
-  app.use(cookieParser())
+  app.use(cookieParser());
 
   app.disable('x-powered-by');
 
