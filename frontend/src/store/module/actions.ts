@@ -10,25 +10,22 @@ export async function signIn({ commit }: any, { data }: any) {
   try {
     const response = await api.post("/imap/login", data);
 
-    LocalStorage.set("imapCredentials", data);
-    commit("SET_IMAP_CREDENTIALS", data);
+    LocalStorage.set("user", data);
+    commit("SET_USER_CREDENTIALS", data);
     commit("SET_INFO_MESSAGE", response.data.data.message);
   } catch (err) {
     if (err !== null && err instanceof AxiosError) {
-      let message = null;
       const error = err.response?.data?.error || err;
-      const fieldErrors = error.errors;
 
-      if (error.message?.toLowerCase() === "network error") {
-        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
-      } else {
-        message = error.message;
-      }
-
-      if (fieldErrors) {
-        commit("SET_ERRORS", fieldErrors);
+      if (error.details) {
+        commit("SET_ERRORS", [error.details]);
         commit("SET_ERROR", null);
       } else {
+        const message =
+          error.message?.toLowerCase() === "network error"
+            ? GENERIC_ERROR_MESSAGE_NETWORK_ERROR
+            : error.message;
+
         commit("SET_ERROR", message);
         commit("SET_ERRORS", {});
       }

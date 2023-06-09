@@ -16,12 +16,8 @@ export function SET_LOADINGBOX(state: any, newLoadingStatusbox: any) {
 }
 export function SET_USER_CREDENTIALS(state: any, user: any) {
   state.user = {
+    ...state.user,
     ...user,
-  };
-}
-export function SET_IMAP_CREDENTIALS(state: any, credentials: any) {
-  state.imapCredentials = {
-    ...credentials,
   };
 }
 export function SET_BOXES(state: any, newBoxes: any) {
