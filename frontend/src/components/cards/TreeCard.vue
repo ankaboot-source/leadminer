@@ -79,26 +79,26 @@ function filterDefaultSelectedFolders(boxes) {
   const filteredBoxes = [];
 
   objectScan(["**.path"], {
-  joined: true,
-  filterFn: ({ parent }) => {
-    const { path, specialUseAttrib } = parent;
+    joined: true,
+    filterFn: ({ parent }) => {
+      const { path, specialUseAttrib } = parent;
 
-    const folder = path.split('/');
-    const folderName = folder.pop();
-    const folderParent = folder.pop();
+      const folder = path.split("/");
+      const folderName = folder.pop();
+      const folderParent = folder.pop();
 
-    const isExcluded = [specialUseAttrib, folderName, folderParent]
-      .filter(Boolean)
-      .map(name => name.toLowerCase())
-      .some(name => EMAIL_EXCLUDED_FOLDERS.includes(name));
+      const isExcluded = [specialUseAttrib, folderName, folderParent]
+        .filter(Boolean)
+        .map((name) => name.toLowerCase())
+        .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
 
-    if (!isExcluded) {
-      filteredBoxes.push(path);
-    }
-  },
-})(boxes);
+      if (!isExcluded) {
+        filteredBoxes.push(path);
+      }
+    },
+  })(boxes);
 
-return filteredBoxes;
+  return filteredBoxes;
 }
 
 export default defineComponent({

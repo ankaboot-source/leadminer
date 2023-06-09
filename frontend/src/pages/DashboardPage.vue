@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, ref, computed } from "vue";
+import { onBeforeMount, computed } from "vue";
 import { LocalStorage, useQuasar } from "quasar";
 import SearchEmails from "src/components/Emails/SearchEmails.vue";
 import { supabaseClient } from "src/helpers/supabase";
@@ -21,15 +21,21 @@ const $store = useStore();
 const $quasar = useQuasar();
 
 const authenticatedUser = computed(() => {
-  const { accessToken, refreshToken } = $store.state.leadminer.user || {}
-  return accessToken && refreshToken
-})
+  const { accessToken, refreshToken } = $store.state.leadminer.user || {};
+  return accessToken && refreshToken;
+});
 
 const shouldShowDialogue = computed(() => {
-  const { providerToken: pToken, email, host, password } = $store.state.leadminer.user || {}
-  const needsRequiredToken = pToken === undefined && !(email && host && password)
-  return needsRequiredToken
-})
+  const {
+    providerToken: pToken,
+    email,
+    host,
+    password,
+  } = $store.state.leadminer.user || {};
+  const needsRequiredToken =
+    pToken === undefined && !(email && host && password);
+  return needsRequiredToken;
+});
 
 onBeforeMount(async () => {
   const fragmentIdentifier = window.location.hash.split("#")[1];
@@ -42,7 +48,11 @@ onBeforeMount(async () => {
   }
 
   // Remove query params from URL
-  window.history.replaceState({}, document.title, window.location.href.split('#')[0]);
+  window.history.replaceState(
+    {},
+    document.title,
+    window.location.href.split("#")[0]
+  );
 
   const {
     access_token: accessToken,
