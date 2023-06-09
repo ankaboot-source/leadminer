@@ -11,10 +11,10 @@ import initializeMiningRoutes from './routes/mining.routes';
 import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import { TasksManager } from './services/task-manager/TasksManager';
-import { AuthenticationResolver } from './services/auth/types';
+import { AuthResolver } from './services/auth/types';
 
 export default function initializeApp(
-  authResolver: AuthenticationResolver,
+  authResolver: AuthResolver,
   tasksManager: TasksManager
 ) {
   const app = express();

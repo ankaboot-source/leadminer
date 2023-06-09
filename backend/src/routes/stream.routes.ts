@@ -2,10 +2,10 @@ import { Router } from 'express';
 import initializeStreamController from '../controllers/stream.controller';
 import { TasksManager } from '../services/task-manager/TasksManager';
 import initializeAuthMiddleware from '../middleware/auth';
-import { AuthenticationResolver } from '../services/auth/types';
+import { AuthResolver } from '../services/auth/types';
 
 export default function initializeStreamRouter(
-  authResolver: AuthenticationResolver,
+  authResolver: AuthResolver,
   tasksManager: TasksManager
 ) {
   const router = Router();

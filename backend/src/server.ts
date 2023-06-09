@@ -4,7 +4,7 @@ import redis from './utils/redis';
 import initializeApp from './app';
 import ENV from './config';
 import tasksManager from './services/task-manager';
-import AuthResolver from './services/auth/Authentication';
+import SupabaseAuthResolver from './services/auth/Authentication';
 import supabaseAuthClient from './utils/supabase';
 
 // eslint-disable-next-line no-console
@@ -24,7 +24,7 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
-  const authenticationResolver = new AuthResolver(supabaseAuthClient, logger);
+  const authenticationResolver = new SupabaseAuthResolver(supabaseAuthClient, logger);
 
   const app = initializeApp(authenticationResolver, tasksManager);
 

@@ -2,10 +2,10 @@ import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
 import { TasksManager } from '../services/task-manager/TasksManager';
 import initializeAuthMiddleware from '../middleware/auth';
-import { AuthenticationResolver } from '../services/auth/types';
+import { AuthResolver } from '../services/auth/types';
 
 export default function initializeMiningRoutes(
-  authResolver: AuthenticationResolver,
+  authResolver: AuthResolver,
   tasksManager: TasksManager
 ) {
   const router = Router();

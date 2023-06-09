@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthenticationResolver } from '../services/auth/types';
+import { AuthResolver } from '../services/auth/types';
 
 function parseCookies(cookieString: string) {
   const cookies: Record<string, string> = {};
@@ -18,7 +18,7 @@ function parseCookies(cookieString: string) {
 }
 
 export default function initializeAuthMiddleware(
-  authResolver: AuthenticationResolver
+  authResolver: AuthResolver
 ) {
   /**
    * Verifies the access token and returns the user object.

@@ -6,10 +6,10 @@ import {
   buildRedirectUrl
 } from '../utils/helpers/oauthHelpers';
 import PROVIDER_POOL from '../services/auth/Provider';
-import { ProviderName, AuthenticationResolver } from '../services/auth/types';
+import { ProviderName, AuthResolver } from '../services/auth/types';
 
 export default function initializeOAuthController(
-  authResolver: AuthenticationResolver
+  authResolver: AuthResolver
 ) {
   return {
     /**

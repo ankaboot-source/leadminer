@@ -10,10 +10,10 @@ import {
   validateImapCredentials
 } from './helpers';
 import { ImapAuthError } from '../utils/errors';
-import { AuthenticationResolver } from '../services/auth/types';
+import { AuthResolver } from '../services/auth/types';
 
 export default function initializeImapController(
-  authResolver: AuthenticationResolver
+  authResolver: AuthResolver
 ) {
   return {
     async signinImap(req: Request, res: Response, next: NextFunction) {

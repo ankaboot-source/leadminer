@@ -68,7 +68,7 @@ export type AuthenticationClient = SupabaseAuthClient;
 /**
  * Represents an authentication resolver that provides methods for authentication operations.
  */
-export interface AuthenticationResolver {
+export interface AuthResolver {
   /**
    * Retrieves user information based on the provided access token.
    * @param accessToken The access token for authentication.

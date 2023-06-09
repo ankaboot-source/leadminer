@@ -1,11 +1,11 @@
 import { Logger } from 'winston';
 import {
   AuthenticationClient,
-  AuthenticationResolver,
+  AuthResolver,
   OAuthSigninOptions
 } from './types';
 
-export default class AuthResolver implements AuthenticationResolver {
+export default class SupabaseAuthResolver implements AuthResolver {
   constructor(
     private readonly client: AuthenticationClient,
     private readonly logger: Logger
