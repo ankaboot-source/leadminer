@@ -85,6 +85,8 @@ onBeforeMount(async () => {
       });
 
       LocalStorage.set("user", $store.state.leadminer.user);
+      $quasar.cookies.remove("sb-access-token");
+      $quasar.cookies.set("sb-access-token", accessToken);
     }
   } else if (providerToken) {
     $store.commit("leadminer/SET_USER_CREDENTIALS", {
