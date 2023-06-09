@@ -60,7 +60,7 @@ export class TasksManager {
    */
   #ACTIVE_MINING_TASKS = new Map();
 
-  static #instance
+  static #instance;
 
   /**
    * Creates a new MiningTaskManager instance.
@@ -75,12 +75,13 @@ export class TasksManager {
     emailFetcherFactory,
     sseBroadcasterFactory
   ) {
-
     if (TasksManager.#instance) {
-      throw new Error("TasksManager class cannot be instantiated more than once.");
+      throw new Error(
+        'TasksManager class cannot be instantiated more than once.'
+      );
     }
 
-    TasksManager.#instance = this
+    TasksManager.#instance = this;
 
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
