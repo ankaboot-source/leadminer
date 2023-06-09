@@ -30,7 +30,7 @@ jobs:
         run: |
           ip="$(curl -s https://ipinfo.io/ip)"
           echo ${{ steps.initial_firewall_state.outputs.output_variable }} |
-            sed "s/5432/5432,adress:${ip}/" > updated_firewall
+            sed "s/5432/5432,adress:${ip}/" > updated_firewall |
           xargs doctl compute firewall update ${{ steps.droplet_id.outputs.output_variable }} --name supabase-firewall --inbound-rules "$(cat updated_firewall)"
 
       - uses: actions/checkout@v3
