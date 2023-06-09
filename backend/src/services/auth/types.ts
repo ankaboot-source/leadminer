@@ -22,7 +22,7 @@ export interface OAuthSigninOptions {
   options: {
     scopes?: string;
     redirectTo?: string;
-    queryParams?: Record<string, unknown>;
+    queryParams?: Record<string, string>;
   };
 }
 export type AuthResponse = {
