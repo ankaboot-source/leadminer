@@ -12,7 +12,7 @@ interface AuthUser {
  * Represents an authentication error.
  */
 interface AuthError extends Error {
-  status?: number | undefined;
+  status?: number;
 }
 /**
  * Represents the options for OAuth signin.
@@ -22,7 +22,7 @@ export interface OAuthSigninOptions {
   options: {
     scopes?: string;
     redirectTo?: string;
-    queryParams?: {};
+    queryParams?: Record<string, unknown>;
   };
 }
 export type AuthResponse = {

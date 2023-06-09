@@ -310,8 +310,8 @@ const scannedBoxes = computed(
   () => $store.state.leadminer.progress.scannedBoxes
 );
 
-const activeMiningTask = computed(
-  () => Boolean($store.state.leadminer.miningTask.miningId)
+const activeMiningTask = computed(() =>
+  Boolean($store.state.leadminer.miningTask.miningId)
 );
 const scannedEmails = computed(
   () => $store.state.leadminer.progress.scannedEmails
