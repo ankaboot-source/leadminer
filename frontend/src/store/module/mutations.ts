@@ -16,6 +16,7 @@ export function SET_LOADINGBOX(state: any, newLoadingStatusbox: any) {
 }
 export function SET_USER_CREDENTIALS(state: any, user: any) {
   state.user = {
+    ...state.user,
     ...user,
   };
 }

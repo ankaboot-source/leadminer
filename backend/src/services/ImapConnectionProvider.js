@@ -1,9 +1,9 @@
-import { createPool } from 'generic-pool';
 import Imap from 'imap';
+import { createPool } from 'generic-pool';
 import ENV from '../config';
-import generateXOauthToken from '../utils/helpers/tokenHelpers';
 import logger from '../utils/logger';
-import PROVIDER_POOL from './auth/ProviderPool';
+import generateXOauthToken from '../utils/helpers/tokenHelpers';
+import PROVIDER_POOL from './auth/Provider';
 
 class ImapConnectionProvider {
   /**
@@ -43,31 +43,22 @@ class ImapConnectionProvider {
   /**
    * Builds the configuration for connecting to Google using OAuth.
    * @param {string} accessToken - OAuth access token
-   * @param {string} refreshToken - OAuth refresh token
    * @returns {ImapConnectionProvider} - The object for the connection
    */
-  async withOauth(token, refreshToken) {
+  withOauth(token) {
     try {
-      const { imapConfig } = PROVIDER_POOL.getProviderConfig({
-        email: this.#imapConfig.user
-      });
-      const oauthClient = PROVIDER_POOL.oAuthClientFor({
-        email: this.#imapConfig.user
-      });
+      const email = this.#imapConfig.user;
+      const xoauth2Token = generateXOauthToken(token, email);
 
-      const { host, port } = imapConfig;
-
-      const { xoauth2Token } = await generateXOauthToken(
-        oauthClient,
-        token,
-        refreshToken,
-        this.#imapConfig.user
-      );
+      const { host, port } = PROVIDER_POOL.getProviderConfig({
+        email
+      }).imapConfig;
+      const tlsOptions = { host, port, servername: host };
 
       this.#imapConfig = {
         host,
         port,
-        tlsOptions: { host, port, servername: host },
+        tlsOptions,
         xoauth2: xoauth2Token,
         ...this.#imapConfig
       };

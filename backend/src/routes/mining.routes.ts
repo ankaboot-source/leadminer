@@ -1,22 +1,22 @@
 import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
-import { ImapUsers } from '../db/ImapUsers';
-import { OAuthUsers } from '../db/OAuthUsers';
-import { TasksManager } from '../services/TasksManager';
+import { TasksManager } from '../services/tasks-manager/TasksManager';
+import initializeAuthMiddleware from '../middleware/auth';
+import { AuthResolver } from '../services/auth/types';
 
 export default function initializeMiningRoutes(
-  oAuthUsers: OAuthUsers,
-  imapUsers: ImapUsers,
+  authResolver: AuthResolver,
   tasksManager: TasksManager
 ) {
   const router = Router();
 
+  const { verifyJWT } = initializeAuthMiddleware(authResolver);
   const { startMining, stopMiningTask, getMiningTask } =
-    initializeMiningController(oAuthUsers, imapUsers, tasksManager);
+    initializeMiningController(tasksManager);
 
-  router.post('/mine/:userid', startMining);
-  router.get('/mine/:userid/:id', getMiningTask);
-  router.delete('/mine/:userid/:id', stopMiningTask);
+  router.post('/mine/:userId', verifyJWT, startMining);
+  router.get('/mine/:userId/:id', verifyJWT, getMiningTask);
+  router.delete('/mine/:userId/:id', verifyJWT, stopMiningTask);
 
   return router;
 }

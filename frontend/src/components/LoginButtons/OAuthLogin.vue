@@ -33,7 +33,6 @@ async function handleClickSignIn() {
   const params: Record<string, string> = {
     provider: props.oauthProvider as string,
     redirect_to: frontendCallbackURL,
-    nosignup: "true", // Set to false when integrating gotrue auth table.
   };
   const backendAuthorizationURL = `${api.getUri()}/oauth/authorize?${new URLSearchParams(
     params
@@ -47,8 +46,8 @@ async function handleClickSignIn() {
       throw error;
     }
 
-    const { authorizationURL } = data;
-    window.location.assign(authorizationURL);
+    const { url } = data;
+    window.location.assign(url);
   } catch (err) {
     if (err !== null && err instanceof AxiosError) {
       let message = null;

@@ -1,15 +1,14 @@
-import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
-import { OAuthUsers } from '../db/OAuthUsers';
-import PROVIDER_POOL from '../services/auth/ProviderPool';
 import {
-  AuthorizationParams,
   buildEndpointURL,
   buildRedirectUrl
 } from '../utils/helpers/oauthHelpers';
+import PROVIDER_POOL from '../services/auth/Provider';
+import { ProviderName, AuthResolver } from '../services/auth/types';
 
-export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
+export default function initializeOAuthController(authResolver: AuthResolver) {
   return {
     /**
      * Retrieves the available providers and their associated domains.
@@ -44,7 +43,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           throw new Error('Invalid token: payload not found');
         }
 
-        const { nosignup, provider, redirectURL } = decodedState;
+        const { no_signup: noSignup, provider, redirectURL } = decodedState;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
@@ -53,7 +52,7 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
         // If redirection URL is provided, the request will be redirected instead of responding with json.
         redirectTo = redirectURL;
 
-        if (!nosignup) {
+        if (!noSignup) {
           const redirectionURL = buildRedirectUrl(ENV.AUTH_SERVER_CALLBACK, {
             ...req.query
           } as Record<string, string>);
@@ -88,44 +87,13 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           }
           return res.status(401).json({ error });
         }
-        const data: { access_token?: string; email?: string; id?: string } = {
-          access_token: tokenSet.access_token as string
-        };
-        /**
-         *
-         * Temporary implementation: Decode the JWT ID token to extract user info,
-         * find or create a user based on the email and refresh token, and return the
-         * user account details.
-         *
-         * This implementation is subject to change when using the Gotrue user tables.
-         *
-         */
-        const userInfo = jwt.decode(
-          tokenSet.id_token as string
-        ) as jwt.JwtPayload;
-
-        if (!userInfo) {
-          throw new Error('Invalid token: payload not found');
-        }
-
-        const user = await oAuthUsers.findOrCreateOne(
-          userInfo.email,
-          tokenSet.refresh_token as string
-        );
-
-        if (user) {
-          data.id = user.id;
-          data.email = user.email;
-        }
+        const parameters = { provider_token: tokenSet.access_token as string };
 
         if (redirectURL) {
-          const redirectionURL = buildRedirectUrl(
-            redirectURL,
-            data as Record<string, string>
-          );
+          const redirectionURL = buildRedirectUrl(redirectURL, parameters, '#');
           return res.redirect(redirectionURL);
         }
-        return res.status(200).json({ data });
+        return res.status(200).json({ data: parameters });
       } catch (err: any) {
         if (redirectTo) {
           return res.redirect(
@@ -143,12 +111,18 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
      * @param next - The Express next middleware function.
      * @throws If the required parameters are missing or invalid.
      */
-    oAuthHandler(req: Request, res: Response, next: NextFunction) {
+    async oAuthHandler(req: Request, res: Response, next: NextFunction) {
       try {
-        const { nosignup, provider, scopes } = req.query;
+        const { no_signup: noSignup, provider, scopes } = req.query;
 
         if (typeof provider !== 'string') {
           throw new Error('Missing or invalid provider.');
+        }
+
+        if (scopes && typeof scopes !== 'string') {
+          throw new Error(
+            'Invalid parmeter: Type of param scopes should a string.'
+          );
         }
 
         const { oauthConfig } = PROVIDER_POOL.getProviderConfig({
@@ -159,49 +133,38 @@ export default function initializeOAuthController(oAuthUsers: OAuthUsers) {
           return next(new Error('Requested provider not supported.'));
         }
 
-        const redirectURL = req.query.redirect_to;
+        const redirectURL = req.query.redirect_to as string;
+        const scopesString = [scopes, ...(oauthConfig.scopes ?? [])]
+          .filter(Boolean)
+          .join(' ');
 
-        const authorizationParams: AuthorizationParams = {
-          provider,
-          scopes: []
+        const options = {
+          scopes: scopesString,
+          redirectTo: redirectURL,
+          queryParams: {}
         };
 
-        if (typeof scopes === 'string') {
-          authorizationParams.scopes?.push(scopes);
-        }
-
-        if (typeof redirectURL === 'string') {
-          authorizationParams.redirect_to = redirectURL;
-        }
-
-        if (nosignup === 'true') {
-          const stateParams = {
-            nosignup: true,
-            provider,
-            redirectURL
-          };
-
-          if (oauthConfig.scopes) {
-            authorizationParams.scopes?.push(...oauthConfig.scopes);
-          }
-
-          authorizationParams.state = jwt.sign(
-            JSON.stringify(stateParams),
-            ENV.LEADMINER_API_HASH_SECRET,
-            {}
+        if (noSignup === 'true') {
+          const requestState = { no_signup: noSignup, provider, redirectURL };
+          const JwtEncodedState = jwt.sign(
+            requestState,
+            ENV.LEADMINER_API_HASH_SECRET
           );
-          authorizationParams.access_type = 'offline';
+
+          options.queryParams = { state: JwtEncodedState };
         }
 
-        const queryParams = new URLSearchParams(
-          authorizationParams as unknown as Record<string, string>
-        );
-        const authorizationURL = `${
-          ENV.AUTH_SERVER_URL
-        }/authorize?${queryParams.toString()}`;
+        const { url, error } = await authResolver.signInWithOAuth({
+          provider: provider as ProviderName,
+          options
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
 
         // Redirect the user to the authorization URL
-        return res.status(200).json({ data: { authorizationURL, provider } });
+        return res.status(200).json({ data: { url, provider } });
       } catch (error) {
         return next(error);
       }

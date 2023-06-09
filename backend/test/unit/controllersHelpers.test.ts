@@ -8,55 +8,58 @@ jest.mock('../../src/config', () => ({
 }));
 
 describe('controllers.helpers.getXImapHeaderField', () => {
-  it('should return an error if the x-imap-login header is missing', () => {
+  it('should return an error if the x-imap-credentials header is missing', () => {
     const headers = {};
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeNull();
-    expect(error).toBeInstanceOf(Error);
-    expect(error!.message).toBe('An x-imap-login header field is required.');
-  });
-
-  it('should return an error if the x-imap-login header is not in correct JSON format', () => {
-    const headers = { 'x-imap-login': 'invalid json' };
-    const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeNull();
+    expect(data).toBeUndefined();
     expect(error).toBeInstanceOf(Error);
     expect(error!.message).toBe(
-      'x-imap-login header field is not in correct JSON format'
+      'An x-imap-credentials header field is required.'
     );
   });
 
-  it('should return an error if the x-imap-login header is missing required fields', () => {
-    const headers = { 'x-imap-login': '{"id": "123"}' };
+  it('should return an error if the x-imap-credentials header is not in correct JSON format', () => {
+    const headers = { 'x-imap-credentials': 'invalid json' };
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeNull();
+    expect(data).toBeUndefined();
     expect(error).toBeInstanceOf(Error);
     expect(error!.message).toBe(
-      'x-imap-login header field is missing required fields (email, id)'
+      'x-imap-credentials header field is not in correct JSON format'
     );
   });
-  it('should return an error if the x-imap-login header is missing the access_token or password field', () => {
-    const headers = {
-      'x-imap-login': '{"email": "test@gmail.com","id": "123"}'
-    };
+
+  it('should return an error if the x-imap-credentials header is missing required fields', () => {
+    const headers = { 'x-imap-credentials': '{"id": "123"}' };
     const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeNull();
+    expect(data).toBeUndefined();
     expect(error).toBeInstanceOf(Error);
     expect(error!.message).toBe(
-      'x-imap-login header field is missing the access_token or password field'
+      'x-imap-credentials header is missing required field. Check (host, email, password) OR (access_token)'
     );
   });
-  it('should return data if the x-imap-login header is valid', () => {
+
+  it('should return data when passing (email, host, password) to x-imap-credentials', () => {
     const headers = {
-      'x-imap-login':
-        '{"email": "test@gmail.com","id": "123","access_token":"access_token"}'
+      'x-imap-credentials':
+        '{"email": "test@gmail.com","host": "123","password":"testing"}'
     };
     const { data, error } = getXImapHeaderField(headers);
     expect(error).toBeNull();
     expect(data).toEqual({
       email: 'test@gmail.com',
-      id: '123',
-      access_token: 'access_token'
+      host: '123',
+      password: 'testing'
+    });
+  });
+
+  it('should return data when passing (access_token) to x-imap-credentials', () => {
+    const headers = {
+      'x-imap-credentials': '{"access_token": "test@gmail.com"}'
+    };
+    const { data, error } = getXImapHeaderField(headers);
+    expect(error).toBeNull();
+    expect(data).toEqual({
+      access_token: 'test@gmail.com'
     });
   });
 });

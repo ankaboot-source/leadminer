@@ -1,24 +1,15 @@
 import { Router } from 'express';
-import initializeGoogleController from '../controllers/google.controller';
+import initializeAuthMiddleware from '../middleware/auth';
 import initializeImapController from '../controllers/imap.controller';
-import { ImapUsers } from '../db/ImapUsers';
-import { OAuthUsers } from '../db/OAuthUsers';
+import { AuthResolver } from '../services/auth/types';
 
-export default function initializeImapRoutes(
-  imapUsers: ImapUsers,
-  oAuthUsers: OAuthUsers
-) {
+export default function initializeImapRoutes(authResolver: AuthResolver) {
   const router = Router();
+  const { verifyJWT } = initializeAuthMiddleware(authResolver);
+  const { getImapBoxes, signinImap } = initializeImapController(authResolver);
 
-  const { signUpWithGoogle } = initializeGoogleController(oAuthUsers);
-  const { getImapBoxes, loginToAccount } = initializeImapController(
-    oAuthUsers,
-    imapUsers
-  );
-
-  router.post('/signUpGoogle', signUpWithGoogle);
-  router.post('/login', loginToAccount);
-  router.get('/:id/boxes', getImapBoxes);
+  router.post('/login', signinImap);
+  router.get('/:userId/boxes', verifyJWT, getImapBoxes);
 
   return router;
 }

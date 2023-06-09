@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
+import { ErrorResponse, ImapAuthError } from '../utils/errors';
 
 export default function errorHandler(
   error: Error,
@@ -8,15 +9,20 @@ export default function errorHandler(
   next: NextFunction // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
   const code = res.statusCode !== 200 ? res.statusCode : 500;
-  const response: { error: { message: string; stack?: string } } = {
-    error: { message: error.message }
+
+  const response: ErrorResponse = {
+    message: error.message
   };
 
   if (ENV.NODE_ENV === 'development') {
     if (error.stack) {
-      response.error.stack = error.stack;
+      response.stack = error.stack;
     }
   }
 
-  return res.status(code).send(response);
+  if (error instanceof ImapAuthError && error.fieldErrors) {
+    response.details = error.fieldErrors;
+  }
+
+  return res.status(code).send({ error: response });
 }

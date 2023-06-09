@@ -1,11 +1,3 @@
-export interface AuthorizationParams {
-  redirect_to?: string;
-  provider: string;
-  state?: string;
-  scopes?: string[];
-  access_type?: string;
-}
-
 /**
  * Constructs the full callback URL for an endpoint, based on the incoming request.
  * @param baseURL - The baseUrl protocol + host.
@@ -23,18 +15,21 @@ export function buildEndpointURL(
 
 /**
  * Builds a redirect URL with query parameters.
- * @param {string} redirectURL - The base URL for the redirect.
- * @param {Record<string, any>} params - The query parameters as an object.
- * @returns {string} The constructed redirect URL.
+ * @param redirectURL - The base URL for the redirect.
+ * @param params - The query parameters as an object.
+ * @param separator - The separator between the base URL and the query parameters. Default is '?'.
+ * @returns The constructed redirect URL.
  * @throws {Error} If the redirectURL is not a valid URL.
  */
 export function buildRedirectUrl(
   redirectURL: string,
-  params: Record<string, string>
+  params: Record<string, string>,
+  separator = '?'
 ): string {
   try {
     const url = new URL(redirectURL);
-    return `${url.href}?${new URLSearchParams(params).toString()}`;
+    const queryParams = new URLSearchParams(params).toString();
+    return `${url.href}${separator}${queryParams}`;
   } catch (error) {
     throw new Error('Invalid redirectURL: Not a valid URL');
   }

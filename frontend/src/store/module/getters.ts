@@ -7,7 +7,7 @@ export function getStates(state: any) {
 }
 
 export function getCurrentUser(state: any) {
-  return state.user;
+  return { ...state.user, ...state.imapCredentials };
 }
 
 export function isLoggedIn(state: any) {

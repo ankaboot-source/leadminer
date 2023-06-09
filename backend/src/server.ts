@@ -1,14 +1,11 @@
 import './env';
-
 import logger from './utils/logger';
 import redis from './utils/redis';
-
 import initializeApp from './app';
 import ENV from './config';
-import pool from './db/pg';
-import PgImapUsers from './db/pg/PgImapUsers';
-import PgOAuthUsers from './db/pg/PgOAuthUsers';
-import tasksManager from './services/singleton/TasksManagerSingleton';
+import tasksManager from './services/tasks-manager';
+import SupabaseAuthResolver from './services/auth/Authentication';
+import supabaseAuthClient from './utils/supabase';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -27,10 +24,12 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
-  const oAuthUsers = new PgOAuthUsers(pool, logger);
-  const imapUsers = new PgImapUsers(pool, logger);
+  const authenticationResolver = new SupabaseAuthResolver(
+    supabaseAuthClient,
+    logger
+  );
 
-  const app = initializeApp(imapUsers, oAuthUsers, tasksManager);
+  const app = initializeApp(authenticationResolver, tasksManager);
 
   app.listen(ENV.LEADMINER_API_PORT, () => {
     logger.info(`Server is running on port ${ENV.LEADMINER_API_PORT}.`);

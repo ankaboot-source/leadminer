@@ -1,8 +1,7 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
+import cookieParser from 'cookie-parser';
 import ENV from './config';
-import { ImapUsers } from './db/ImapUsers';
-import { OAuthUsers } from './db/OAuthUsers';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
@@ -12,11 +11,11 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
-import { TasksManager } from './services/TasksManager';
+import { TasksManager } from './services/tasks-manager/TasksManager';
+import { AuthResolver } from './services/auth/types';
 
 export default function initializeApp(
-  imapUsers: ImapUsers,
-  oAuthUsers: OAuthUsers,
+  authResolver: AuthResolver,
   tasksManager: TasksManager
 ) {
   const app = express();
@@ -31,6 +30,7 @@ export default function initializeApp(
 
   app.use(json());
   app.use(urlencoded({ extended: true }));
+  app.use(cookieParser());
 
   app.disable('x-powered-by');
 
@@ -41,11 +41,11 @@ export default function initializeApp(
   // Register api endpoints
   app.use(
     '/api/imap',
-    initializeStreamRouter(tasksManager),
-    initializeImapRoutes(imapUsers, oAuthUsers),
-    initializeMiningRoutes(oAuthUsers, imapUsers, tasksManager)
+    initializeImapRoutes(authResolver),
+    initializeStreamRouter(authResolver, tasksManager),
+    initializeMiningRoutes(authResolver, tasksManager)
   );
-  app.use('/api/oauth', initializeOAuthRoutes(oAuthUsers));
+  app.use('/api/oauth', initializeOAuthRoutes(authResolver));
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

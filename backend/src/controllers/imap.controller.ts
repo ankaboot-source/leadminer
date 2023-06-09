@@ -1,53 +1,51 @@
 import { NextFunction, Request, Response } from 'express';
-import { ImapUser, ImapUsers } from '../db/ImapUsers';
-import { OAuthUser, OAuthUsers } from '../db/OAuthUsers';
 import { ImapBoxesFetcher } from '../services/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
 import { hashEmail } from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import {
   generateErrorObjectFromImapError,
-  getUser,
   getXImapHeaderField,
   validateAndExtractImapParametersFromBody,
   validateImapCredentials
 } from './helpers';
+import { ImapAuthError } from '../utils/errors';
+import { AuthResolver } from '../services/auth/types';
 
-export default function initializeImapController(
-  oAuthUsers: OAuthUsers,
-  imapUsers: ImapUsers
-) {
+export default function initializeImapController(authResolver: AuthResolver) {
   return {
-    async loginToAccount(req: Request, res: Response, next: NextFunction) {
+    async signinImap(req: Request, res: Response, next: NextFunction) {
       try {
-        const { email, host, tls, port, password } =
+        const { email, host, port, password } =
           validateAndExtractImapParametersFromBody(req.body);
 
         await validateImapCredentials(host, email, password, port);
 
-        const user =
-          (await getUser(
-            { email, access_token: '', id: '' },
-            imapUsers,
-            oAuthUsers
-          )) ?? (await imapUsers.create({ email, host, port, tls }));
+        const response = await authResolver.loginWithOneTimePasswordEmail(
+          email
+        );
 
-        if (!user) {
-          throw new Error(
-            'Something went wrong on our end. Please try again later.'
-          );
+        if (response.error) {
+          throw new Error(response.error.message);
         }
 
-        logger.info('IMAP login successful', { metadata: { email } });
-        return res.status(200).send({ imap: user });
-      } catch (err: any) {
-        const errorResponse: any = new Error(err.message);
-        errorResponse.errors = err.errors;
-        res.status(err.errors ? 400 : 500);
-        return next(errorResponse);
+        const message = `Your IMAP sign-in was successful. We've sent a link to ${email}.`;
+        logger.info('IMAP sign-in was successful', { metadata: { email } });
+
+        return res.status(200).send({ data: { message } });
+      } catch (err) {
+        res.status(err instanceof ImapAuthError ? 400 : 500);
+        return next(err);
       }
     },
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
+      const { user } = res.locals;
+
+      if (!user) {
+        res.status(400);
+        return next(new Error('user does not exists.'));
+      }
+
       const { data, error } = getXImapHeaderField(req.headers);
 
       if (error) {
@@ -55,26 +53,12 @@ export default function initializeImapController(
         return next(error);
       }
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { access_token, id, email, password } = data;
-      const user = await getUser(data, imapUsers, oAuthUsers);
+      const { id } = user;
+      const { access_token: accessToken, email, host, password, port } = data;
 
-      if (user === null) {
-        res.status(400);
-        return next(new Error('user does not exists.'));
-      }
-
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const imapConnectionProvider = access_token
-        ? await new ImapConnectionProvider(email).withOauth(
-            access_token,
-            (user as OAuthUser).refresh_token
-          )
-        : new ImapConnectionProvider(email).withPassword(
-            (user as ImapUser).host,
-            password,
-            (user as ImapUser).port
-          );
+      const imapConnectionProvider = accessToken
+        ? new ImapConnectionProvider(user.email).withOauth(accessToken)
+        : new ImapConnectionProvider(email).withPassword(host, password, port);
 
       let imapConnection = null;
       let tree = null;
@@ -91,16 +75,14 @@ export default function initializeImapController(
         });
       } catch (err) {
         const generatedError = generateErrorObjectFromImapError(err);
-        const newError = new Error(generatedError.message);
-        return next({ ...newError, errors: generatedError.errors });
+        return next(generatedError);
       } finally {
         await imapConnectionProvider.releaseConnection(imapConnection);
         await imapConnectionProvider.cleanPool();
       }
 
       return res.status(200).send({
-        message: 'IMAP folders fetched successfully!',
-        imapFoldersTree: tree
+        data: { message: 'IMAP folders fetched successfully!', folders: tree }
       });
     }
   };

@@ -6,7 +6,9 @@ export function getDefaultState() {
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,
-    userId: "",
+    imapCredentials: LocalStorage.has("imapCredentials")
+      ? LocalStorage.getItem("imapCredentials")
+      : null,
     user: LocalStorage.has("user") ? LocalStorage.getItem("user") : null,
     boxes: [],
     errorMessage: "",
