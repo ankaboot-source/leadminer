@@ -92,7 +92,7 @@ export default function initializeOAuthController(
         const parameters = { provider_token: tokenSet.access_token as string };
 
         if (redirectURL) {
-          const redirectionURL = buildRedirectUrl(redirectURL, parameters);
+          const redirectionURL = buildRedirectUrl(redirectURL, parameters, '#');
           return res.redirect(redirectionURL);
         }
         return res.status(200).json({ data: parameters });
