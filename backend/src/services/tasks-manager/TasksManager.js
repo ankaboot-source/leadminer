@@ -60,6 +60,8 @@ export class TasksManager {
    */
   #ACTIVE_MINING_TASKS = new Map();
 
+  static #instance
+
   /**
    * Creates a new MiningTaskManager instance.
    * @param {object} redisSubscriber - The Redis subscriber instance to use for subscribing to mining events.
@@ -73,6 +75,13 @@ export class TasksManager {
     emailFetcherFactory,
     sseBroadcasterFactory
   ) {
+
+    if (TasksManager.#instance) {
+      throw new Error("TasksManager class cannot be instantiated more than once.");
+    }
+
+    TasksManager.#instance = this
+
     this.redisSubscriber = redisSubscriber;
     this.redisPublisher = redisPublisher;
 
