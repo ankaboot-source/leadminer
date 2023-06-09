@@ -13,7 +13,12 @@
             color="primary"
             icon="fab fa-microsoft"
             label="Connect with outlook"
-            @click.prevent="redirectToOAuth('azure', 'offline_access https://outlook.office.com/IMAP.AccessAsUser.All')"
+            @click.prevent="
+              redirectToOAuth(
+                'azure',
+                'offline_access https://outlook.office.com/IMAP.AccessAsUser.All'
+              )
+            "
           />
         </div>
       </q-card-section>
@@ -23,15 +28,13 @@
 
 <script setup lang="ts">
 import { api } from "src/boot/axios";
+import { showNotification } from "src/helpers/notification";
 import { ProviderName } from "src/types/providers";
 import { ref } from "vue";
 
 const show = ref(true);
 
-async function redirectToOAuth(
-  provider: ProviderName,
-  optionalScope?: string
-) {
+async function redirectToOAuth(provider: ProviderName, optionalScope?: string) {
   try {
     const params: {
       provider: ProviderName;
@@ -53,7 +56,9 @@ async function redirectToOAuth(
 
     window.location.href = url;
   } catch (error) {
-    console.error(error);
+    if (error instanceof Error) {
+      showNotification(error.message, 'red', 'error');
+    }
   }
 }
 </script>
