@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
 import ImapConnectionProvider from '../services/ImapConnectionProvider';
-import { TasksManager } from '../services/task-manager/TasksManager';
+import { TasksManager } from '../services/tasks-manager/TasksManager';
 import { generateErrorObjectFromImapError } from './helpers';
 
 export default function initializeMiningController(tasksManager: TasksManager) {

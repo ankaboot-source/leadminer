@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
-import { TasksManager } from '../services/task-manager/TasksManager';
+import { TasksManager } from '../services/tasks-manager/TasksManager';
 import initializeAuthMiddleware from '../middleware/auth';
 import { AuthResolver } from '../services/auth/types';
 

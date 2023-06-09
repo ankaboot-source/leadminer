@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   TasksManager,
   redactSensitiveData
-} from '../../src/services/task-manager/TasksManager';
+} from '../../src/services/tasks-manager/TasksManager';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'

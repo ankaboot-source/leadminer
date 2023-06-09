@@ -10,7 +10,7 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
-import { TasksManager } from './services/task-manager/TasksManager';
+import { TasksManager } from './services/tasks-manager/TasksManager';
 import { AuthResolver } from './services/auth/types';
 
 export default function initializeApp(

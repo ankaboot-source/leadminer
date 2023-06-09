@@ -3,7 +3,7 @@ import logger from './utils/logger';
 import redis from './utils/redis';
 import initializeApp from './app';
 import ENV from './config';
-import tasksManager from './services/task-manager';
+import tasksManager from './services/tasks-manager';
 import SupabaseAuthResolver from './services/auth/Authentication';
 import supabaseAuthClient from './utils/supabase';
 

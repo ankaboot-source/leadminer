@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { TasksManager } from '../services/task-manager/TasksManager';
+import { TasksManager } from '../services/tasks-manager/TasksManager';
 import logger from '../utils/logger';
 
 export default function initializeStreamController(tasksManager: TasksManager) {
