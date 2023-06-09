@@ -57,7 +57,7 @@ async function redirectToOAuth(provider: ProviderName, optionalScope?: string) {
     window.location.href = url;
   } catch (error) {
     if (error instanceof Error) {
-      showNotification(error.message, 'red', 'error');
+      showNotification(error.message, "red", "error");
     }
   }
 }

@@ -8,7 +8,7 @@ import { sse } from "src/helpers/sse";
 
 export async function signIn({ commit }: any, { data }: any) {
   commit("SET_ERRORS", {});
-  
+
   try {
     const response = await api.post("/imap/login", data);
 
