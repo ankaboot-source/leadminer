@@ -33,7 +33,6 @@ async function handleClickSignIn() {
   const params: Record<string, string> = {
     provider: props.oauthProvider as string,
     redirect_to: frontendCallbackURL,
-    nosignup: "false", // Set to false when integrating gotrue auth table.
   };
   const backendAuthorizationURL = `${api.getUri()}/oauth/authorize?${new URLSearchParams(
     params
