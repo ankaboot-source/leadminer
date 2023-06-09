@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/dashboard",
     component: () => import("layouts/MainLayout.vue"),
-    beforeEnter: (to) => LocalStorage.has("user") || !!to.hash || "/",
+    beforeEnter: (to) => LocalStorage.has("user") || Boolean(to.hash) || "/",
     children: [
       { path: "", component: () => import("src/pages/DashboardPage.vue") },
     ],

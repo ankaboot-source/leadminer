@@ -24,7 +24,7 @@ export function buildEndpointURL(
 export function buildRedirectUrl(
   redirectURL: string,
   params: Record<string, string>,
-  separator: string = '?'
+  separator = '?'
 ): string {
   try {
     const url = new URL(redirectURL);

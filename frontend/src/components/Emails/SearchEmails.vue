@@ -311,7 +311,7 @@ const scannedBoxes = computed(
 );
 
 const activeMiningTask = computed(
-  () => !!$store.state.leadminer.miningTask.miningId
+  () => Boolean($store.state.leadminer.miningTask.miningId)
 );
 const scannedEmails = computed(
   () => $store.state.leadminer.progress.scannedEmails
