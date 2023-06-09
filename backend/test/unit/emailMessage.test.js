@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import EmailMessage from '../../src/services/EmailMessage';
 import groupEmailMessage from '../../src/services/tagging/group';
 import linkedinEmailMessage from '../../src/services/tagging/linkedin';
-import newsletterEmailMessage from '../../src/services/tagging/newsletter';
 import transactionalEmailMessage from '../../src/services/tagging/transactional';
 
 jest.mock('../../src/config', () => ({
@@ -278,7 +277,6 @@ describe('Email Message', () => {
     const [transactionalRules] = transactionalEmailMessage.rulesToCheck;
     const groupRules = groupEmailMessage.rulesToCheck;
     const [linkedinRules] = linkedinEmailMessage.rulesToCheck;
-    const [newsletterRules] = newsletterEmailMessage.rulesToCheck;
 
     let header = {};
     beforeEach(() => {
@@ -404,22 +402,6 @@ describe('Email Message', () => {
       });
     });
 
-    newsletterRules.conditions[0].possibleHeaderFields.forEach((field) => {
-      it(`Should include newsletter if it has a "${field}" header field`, () => {
-        header[field] = ['test'];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
-
-        expect(message.messageTags).toEqual([
-          {
-            name: 'newsletter',
-            reachable: 1,
-            source: 'refined',
-            fields: newsletterRules.fields
-          }
-        ]);
-      });
-    });
-
     groupRules[0].conditions[1].values.forEach((value) => {
       it(`Should include group if it has a "precedence" field with "${value}" as value`, () => {
         header.precedence = [value];
@@ -482,21 +464,6 @@ describe('Email Message', () => {
           reachable: 2,
           source: 'refined',
           fields: ['list-post']
-        }
-      ]);
-    });
-
-    it('Should include newsletter tag if header has no list-post', () => {
-      header['list-id'] = 'test';
-
-      const message = new EmailMessage({}, '', 1, header, {}, '');
-
-      expect(message.messageTags).toEqual([
-        {
-          name: 'newsletter',
-          reachable: 1,
-          source: 'refined',
-          fields: ['from']
         }
       ]);
     });

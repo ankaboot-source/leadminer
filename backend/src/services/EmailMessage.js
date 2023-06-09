@@ -227,40 +227,38 @@ class EmailMessage {
     );
 
     const extractedPersons = await Promise.allSettled(
-      emails
-        .filter((email) => email.address !== this.userEmail)
-        .map(async (email) => {
-          try {
-            const [domainIsValid, domainType] = await checkDomainStatus(
-              this.redisClientForNormalMode,
-              email.domain.toLowerCase()
-            );
+      emails.map(async (email) => {
+        if (email.address === this.userEmail) {
+          return null;
+        }
 
-            if (domainIsValid) {
-              const emailTags = getEmailTags(email, domainType);
+        try {
+          const [domainIsValid, domainType] = await checkDomainStatus(
+            this.redisClientForNormalMode,
+            email.domain.toLowerCase()
+          );
 
-              const tags = [
-                ...emailTags,
-                ...applicableMessageTags.map(({ name, reachable }) => ({
-                  name,
-                  reachable,
-                  source: 'refined'
-                }))
-              ];
+          if (domainIsValid) {
+            const emailTags = getEmailTags(email, domainType);
 
-              return EmailMessage.constructPersonPocTags(
-                email,
-                tags,
-                fieldName
-              );
-            }
+            const tags = [
+              ...emailTags,
+              ...applicableMessageTags.map(({ name, reachable }) => ({
+                name,
+                reachable,
+                source: 'refined'
+              }))
+            ];
 
-            return null;
-          } catch (error) {
-            logger.error('Error when extracting persons', error, email);
-            return null;
+            return EmailMessage.constructPersonPocTags(email, tags, fieldName);
           }
-        })
+
+          return null;
+        } catch (error) {
+          logger.error('Error when extracting persons', error, email);
+          return null;
+        }
+      })
     );
 
     return extractedPersons.filter((p) => p.value !== null).map((p) => p.value);
