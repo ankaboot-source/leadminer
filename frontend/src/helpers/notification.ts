@@ -1,9 +1,12 @@
-import { useQuasar } from "quasar";
+import { QVueGlobals } from "quasar";
 
-const $q = useQuasar();
-
-export function showNotification(msg: string, color: string, icon: string) {
-  $q.notify({
+export function showNotification(
+  quasarInstance: QVueGlobals,
+  msg: string,
+  color: string,
+  icon: string
+) {
+  quasarInstance.notify({
     message: msg,
     color,
     icon,

@@ -27,12 +27,14 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { showNotification } from "src/helpers/notification";
 import { ProviderName } from "src/types/providers";
 import { ref } from "vue";
 
 const show = ref(true);
+const $quasar = useQuasar();
 
 async function redirectToOAuth(provider: ProviderName, optionalScope?: string) {
   try {
@@ -57,7 +59,7 @@ async function redirectToOAuth(provider: ProviderName, optionalScope?: string) {
     window.location.href = url;
   } catch (error) {
     if (error instanceof Error) {
-      showNotification(error.message, "red", "error");
+      showNotification($quasar, error.message, "red", "error");
     }
   }
 }
