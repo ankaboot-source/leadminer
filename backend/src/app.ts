@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
+import cookieParser from 'cookie-parser';
 import ENV from './config';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
@@ -12,7 +13,6 @@ import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import { TasksManager } from './services/tasks-manager/TasksManager';
 import { AuthResolver } from './services/auth/types';
-import cookieParser from 'cookie-parser';
 
 export default function initializeApp(
   authResolver: AuthResolver,
