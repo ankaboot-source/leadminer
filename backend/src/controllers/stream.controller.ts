@@ -8,20 +8,20 @@ export default function initializeStreamController(tasksManager: TasksManager) {
      * Stream the progress of email extraction and scanning via Server-Sent Events (SSE).
      */
     streamProgress: (req: Request, res: Response) => {
-      const { user } = res.locals;
+      // const { user } = res.locals;
 
-      if (!user) {
-        res.status(404).json({ error: { message: 'User not found.' } });
-        return;
-      }
+      // if (!user) {
+      //   res.status(404).json({ error: { message: 'User not found.' } });
+      //   return;
+      // }
 
-      const { id: taskId } = req.params;
+      const { userId, id: taskId } = req.params;
 
       try {
         // TODO: convert TaskManager to ts also add permission management.
         const { task } = tasksManager.getActiveTask(taskId);
 
-        if (user.id !== task.userId) {
+        if (userId !== task.userId) {
           res.status(401).json({ error: { message: 'User not authorized.' } });
           return;
         }

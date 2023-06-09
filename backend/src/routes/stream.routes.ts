@@ -10,10 +10,10 @@ export default function initializeStreamRouter(
 ) {
   const router = Router();
 
-  const { verifyJWTCookie } = initializeAuthMiddleware(authResolver);
+  // const { verifyJWTCookie } = initializeAuthMiddleware(authResolver);
   const { streamProgress } = initializeStreamController(tasksManager);
 
-  router.get('/mine/:userId/:id/progress/', verifyJWTCookie, streamProgress);
+  router.get('/mine/:userId/:id/progress/', streamProgress);
 
   return router;
 }
