@@ -1,22 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthResolver } from '../services/auth/types';
 
-function parseCookies(cookieString: string) {
-  const cookies: Record<string, string> = {};
-
-  if (!cookieString) {
-    return null;
-  }
-
-  cookieString.split(';').forEach((cookie) => {
-    const parts = cookie.split('=');
-    const name = parts[0].trim();
-    const value = parts[1].trim();
-    cookies[name] = value;
-  });
-  return cookies;
-}
-
 export default function initializeAuthMiddleware(authResolver: AuthResolver) {
   /**
    * Verifies the access token and returns the user object.
@@ -73,10 +57,7 @@ export default function initializeAuthMiddleware(authResolver: AuthResolver) {
           return res.status(404).json({ error });
         }
 
-        const parsedCookie = parseCookies(req.headers.cookie);
-        const accessToken = parsedCookie
-          ? parsedCookie['sb-access-token']
-          : null;
+        const accessToken = req.cookies['sb-access-token'] || null;
 
         if (!accessToken) {
           return res

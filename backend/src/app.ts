@@ -12,6 +12,7 @@ import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import { TasksManager } from './services/tasks-manager/TasksManager';
 import { AuthResolver } from './services/auth/types';
+import cookieParser from 'cookie-parser';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -29,6 +30,7 @@ export default function initializeApp(
 
   app.use(json());
   app.use(urlencoded({ extended: true }));
+  app.use(cookieParser())
 
   app.disable('x-powered-by');
 
