@@ -212,6 +212,7 @@ import objectScan from "object-scan";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { showNotification } from "src/helpers/notification";
+import { useQuasar } from "quasar";
 import { useStore } from "../../store/index";
 import TreeCard from "../cards/TreeCard.vue";
 import ProgressCard from "../cards/ProgressCard.vue";
@@ -219,7 +220,7 @@ import MinedPersons from "../MinedPersons.vue";
 
 const $store = useStore();
 const $router = useRouter();
-
+const $quasar = useQuasar();
 const imgUrl = process.env.BANNER_IMAGE_URL;
 const isLoadingStartMining = ref(false);
 const isLoadingStopMining = ref(false);
@@ -276,9 +277,14 @@ async function getBoxes() {
     isLoadingStartMining.value = true;
     await $store.dispatch("leadminer/getBoxes");
     // eslint-disable-next-line no-console
-    showNotification($store.state.leadminer.infoMessage, "green", "");
+    showNotification($quasar, $store.state.leadminer.infoMessage, "green", "");
   } catch (_) {
-    showNotification($store.state.leadminer.errorMessage, "red", "error");
+    showNotification(
+      $quasar,
+      $store.state.leadminer.errorMessage,
+      "red",
+      "error"
+    );
   } finally {
     isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;
@@ -362,9 +368,14 @@ async function stopMining() {
   const { miningId } = $store.state.leadminer.miningTask;
   try {
     await $store.dispatch("leadminer/stopMining", { data: { miningId } });
-    showNotification($store.state.leadminer.infoMessage, "green", "");
+    showNotification($quasar, $store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
-    showNotification($store.state.leadminer.errorMessage, "red", "error");
+    showNotification(
+      $quasar,
+      $store.state.leadminer.errorMessage,
+      "red",
+      "error"
+    );
   } finally {
     isLoadingStopMining.value = false;
   }
@@ -375,6 +386,7 @@ async function startMining() {
   isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
     return showNotification(
+      $quasar,
       "Select at least one folder",
       "orange-5",
       "warning"
@@ -385,9 +397,14 @@ async function startMining() {
     await $store.dispatch("leadminer/startMining", {
       data: { boxes: selectedBoxes.value },
     });
-    showNotification($store.state.leadminer.infoMessage, "green", "");
+    showNotification($quasar, $store.state.leadminer.infoMessage, "green", "");
   } catch (error) {
-    showNotification($store.state.leadminer.errorMessage, "red", "error");
+    showNotification(
+      $quasar,
+      $store.state.leadminer.errorMessage,
+      "red",
+      "error"
+    );
   } finally {
     isLoadingStartMining.value = false;
   }

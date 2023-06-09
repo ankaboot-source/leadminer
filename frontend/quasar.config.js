@@ -121,6 +121,7 @@ module.exports = configure((/* ctx */) => ({
       "Notify",
       "SessionStorage",
       "LocalStorage",
+      "Cookies",
     ],
   },
 
