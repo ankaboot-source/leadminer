@@ -97,7 +97,7 @@ export default function initializeOAuthController(authResolver: AuthResolver) {
       } catch (err: any) {
         if (redirectTo) {
           return res.redirect(
-            buildRedirectUrl(redirectTo, { error: err.message })
+            buildRedirectUrl(redirectTo, { error: err.message }, '#')
           );
         }
         return next(new Error(err.message));
