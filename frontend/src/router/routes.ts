@@ -1,24 +1,19 @@
 import { LocalStorage } from "quasar";
-import { RouteLocationNormalized, RouteRecordRaw } from "vue-router";
+import { RouteRecordRaw } from "vue-router";
 
-function authGuard(to: RouteLocationNormalized) {
-  if (!LocalStorage.has("user") && !to.hash) {
-    return "/";
-  }
-  return true;
-}
 
 const routes: RouteRecordRaw[] = [
   {
     path: "/dashboard",
     component: () => import("layouts/MainLayout.vue"),
-    beforeEnter: authGuard,
+    beforeEnter: (to) => (LocalStorage.has("user") || !!to.hash) || '/',
     children: [
       { path: "", component: () => import("src/pages/DashboardPage.vue") },
     ],
   },
   {
     path: "/",
+    beforeEnter: () => !LocalStorage.has('user') || '/dashboard',
     component: () => import("src/pages/LoginPage.vue"),
   },
 
