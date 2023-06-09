@@ -209,15 +209,14 @@
 <script lang="ts" setup>
 // @ts-expect-error "No type definitions"
 import objectScan from "object-scan";
-import { useQuasar } from "quasar";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { showNotification } from "src/helpers/notification";
 import { useStore } from "../../store/index";
 import TreeCard from "../cards/TreeCard.vue";
 import ProgressCard from "../cards/ProgressCard.vue";
 import MinedPersons from "../MinedPersons.vue";
 
-const $q = useQuasar();
 const $store = useStore();
 const $router = useRouter();
 
@@ -262,20 +261,6 @@ function toggleAdvancedOptions() {
 
 function toggleFullScreen() {
   isFullScreen.value = !isFullScreen.value;
-}
-
-function showNotification(msg: string, color: string, icon: string) {
-  $q.notify({
-    message: msg,
-    color,
-    icon,
-    actions: [
-      {
-        label: "ok",
-        color: "white",
-      },
-    ],
-  });
 }
 
 const onKeyDown = (event: KeyboardEvent) => {
