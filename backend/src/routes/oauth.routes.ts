@@ -2,9 +2,7 @@ import { Router } from 'express';
 import initializeOAuthController from '../controllers/oauth.controller';
 import { AuthResolver } from '../services/auth/types';
 
-export default function initializeOAuthRoutes(
-  authResolver: AuthResolver
-) {
+export default function initializeOAuthRoutes(authResolver: AuthResolver) {
   const router = Router();
   const { oAuthHandler, oAuthCallbackHandler, GetOAuthProviders } =
     initializeOAuthController(authResolver);

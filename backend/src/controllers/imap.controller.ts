@@ -12,9 +12,7 @@ import {
 import { ImapAuthError } from '../utils/errors';
 import { AuthResolver } from '../services/auth/types';
 
-export default function initializeImapController(
-  authResolver: AuthResolver
-) {
+export default function initializeImapController(authResolver: AuthResolver) {
   return {
     async signinImap(req: Request, res: Response, next: NextFunction) {
       try {

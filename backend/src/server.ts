@@ -24,7 +24,10 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
-  const authenticationResolver = new SupabaseAuthResolver(supabaseAuthClient, logger);
+  const authenticationResolver = new SupabaseAuthResolver(
+    supabaseAuthClient,
+    logger
+  );
 
   const app = initializeApp(authenticationResolver, tasksManager);
 

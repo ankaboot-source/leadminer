@@ -8,9 +8,7 @@ import {
 import PROVIDER_POOL from '../services/auth/Provider';
 import { ProviderName, AuthResolver } from '../services/auth/types';
 
-export default function initializeOAuthController(
-  authResolver: AuthResolver
-) {
+export default function initializeOAuthController(authResolver: AuthResolver) {
   return {
     /**
      * Retrieves the available providers and their associated domains.

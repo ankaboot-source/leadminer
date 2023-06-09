@@ -17,9 +17,7 @@ function parseCookies(cookieString: string) {
   return cookies;
 }
 
-export default function initializeAuthMiddleware(
-  authResolver: AuthResolver
-) {
+export default function initializeAuthMiddleware(authResolver: AuthResolver) {
   /**
    * Verifies the access token and returns the user object.
    * @param token - The access token.
