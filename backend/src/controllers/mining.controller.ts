@@ -68,9 +68,9 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       const { id: taskId } = req.params;
 
       try {
-        const task = tasksManager.getActiveTask(taskId);
+        const { task } = tasksManager.getActiveTask(taskId);
 
-        if (task.userId !== user.taskId) {
+        if (user.id !== task.userId) {
           return res
             .status(401)
             .json({ error: { message: 'User not authorized.' } });
@@ -95,7 +95,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       const { id: taskId } = req.params;
 
       try {
-        const task = tasksManager.getActiveTask(taskId);
+        const { task } = tasksManager.getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res

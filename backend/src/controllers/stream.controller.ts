@@ -19,7 +19,8 @@ export default function initializeStreamController(tasksManager: TasksManager) {
 
       try {
         // TODO: convert TaskManager to ts also add permission management.
-        const task = tasksManager.getActiveTask(taskId);
+        const { task } = tasksManager.getActiveTask(taskId);
+
         if (user.id !== task.userId) {
           res.status(401).json({ error: { message: 'User not authorized.' } });
           return;
