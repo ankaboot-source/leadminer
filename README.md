@@ -4,11 +4,16 @@
 
 Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionable and qualified leads.
 
+## Features
+- ⛏️📧 Contacts extracting from your mailbox
+- 🧹💌 Email list cleaning
+- 🧑🏾‍🔬💎 Enrich your contact list
+
 ## How to run?
 
 Before running the project, make sure to complete the following steps to enable and configure OAuth functionality:
 
-### Enabling and Configuring OAuth
+### Configuration
 
 1. Create a Provider cloud app following the instructions provided in the `.env.example` file.
 
@@ -19,8 +24,8 @@ Before running the project, make sure to complete the following steps to enable 
 
 3. For each enabled provider, update the following fields:
 
-   - If you're using the Supabase CLI, update the corresponding variables in the `config.toml` file.
-   - If you're self-hosting GoTrue, ensure you change the `redirect_uri` for each provider.
+   - Update the corresponding variables in the `config.toml` file.
+   - Ensure you change the `redirect_uri` for each provider.
 
     The fields to be updated:
 
@@ -30,21 +35,6 @@ Before running the project, make sure to complete the following steps to enable 
    - `redirect_uri`: Ensure it points to `http://<Your backend api>/api/oauth/callback`.
 
 4. Add the remaining required provider environment variables according to the `.env.example` file.
-
-**References**: 
-
-These resources can provide you with more insights and guidance on the  topics related to OAuth, email protocols, and Supabase authentication.
-
-- [Gmail IMAP and SMTP](https://developers.google.com/gmail/imap/imap-smtp)
-- [Google OpenID Configuration](https://accounts.google.com/.well-known/openid-configuration)
-- [Google OAuth2 Documentation](https://developers.google.com/identity/protocols/oauth2)
-
-- [Microsoft POP, IMAP, and SMTP Settings](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-8361e398-8af4-4e97-b147-6c6c4ac95353)
-- [Microsoft OpenID Configuration](https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration)
-- [Microsoft OAuth2 Authorization Code Flow](https://learn.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow)
-
-- [Supabase CLI Reference](https://supabase.com/docs/reference/cli/introduction)
-- [Supabase Auth with GoTrue](https://supabase.com/docs/learn/auth-deep-dive/auth-gotrue)
 
 ### Run using docker-compose
 
