@@ -14,9 +14,9 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
       label: 'Brouillons',
       path: 'Brouillons',
       parent: null,
-      specialUseAttrib: '\\drafts'
+      attribs: ['\\Drafts', '\\HasNoChildren']
     },
-    { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
+    { label: 'INBOX', path: 'INBOX', parent: null, attribs: ['\\HasChildren'] },
     {
       label: 'mars',
       path: 'INBOX/mars',
@@ -24,9 +24,9 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
         label: 'INBOX',
         path: 'INBOX',
         parent: null,
-        specialUseAttrib: null
+        attribs: ['\\HasChildren']
       },
-      specialUseAttrib: '\\junk'
+      attribs: ['\\Junk', '\\HasNoChildren']
     },
     {
       label: 'Administratif',
@@ -35,11 +35,16 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
         label: 'INBOX',
         path: 'INBOX',
         parent: null,
-        specialUseAttrib: null
+        attribs: ['\\HasChildren']
       },
-      specialUseAttrib: '\\junk'
+      attribs: ['\\Junk', '\\HasNoChildren']
     },
-    { label: 'Spam', path: 'Spam', parent: null, specialUseAttrib: '\\junk' }
+    {
+      label: 'Spam',
+      path: 'Spam',
+      parent: null,
+      attribs: ['\\Junk', '\\HasNoChildren']
+    }
   ];
 
   it('should return valid flat array', () => {
