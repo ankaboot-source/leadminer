@@ -13,17 +13,15 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
     {
       label: 'Brouillons',
       path: 'Brouillons',
-      parent: null,
       attribs: ['\\Drafts', '\\HasNoChildren']
     },
-    { label: 'INBOX', path: 'INBOX', parent: null, attribs: ['\\HasChildren'] },
+    { label: 'INBOX', path: 'INBOX', attribs: ['\\HasChildren'] },
     {
       label: 'mars',
       path: 'INBOX/mars',
       parent: {
         label: 'INBOX',
         path: 'INBOX',
-        parent: null,
         attribs: ['\\HasChildren']
       },
       attribs: ['\\Junk', '\\HasNoChildren']
@@ -34,7 +32,6 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
       parent: {
         label: 'INBOX',
         path: 'INBOX',
-        parent: null,
         attribs: ['\\HasChildren']
       },
       attribs: ['\\Junk', '\\HasNoChildren']
@@ -42,13 +39,14 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
     {
       label: 'Spam',
       path: 'Spam',
-      parent: null,
       attribs: ['\\Junk', '\\HasNoChildren']
     }
   ];
 
   it('should return valid flat array', () => {
-    const output = createFlatTreeFromImap(imapTreeExample, null);
+    // There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
+    // @ts-expect-error
+    const output = createFlatTreeFromImap(imapTreeExample);
     expect(output).toEqual(expectedOutput);
   });
 });

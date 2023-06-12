@@ -126,8 +126,7 @@
       "attribs": ["\\Drafts", "\\HasNoChildren"],
       "delimiter": "/",
       "children": null,
-      "parent": null,
-      "special_use_attrib": "\\Drafts"
+      "parent": null
     },
     "INBOX": {
       "attribs": ["\\HasChildren"],
@@ -137,15 +136,13 @@
           "attribs": ["\\Junk", "\\HasNoChildren"],
           "delimiter": "/",
           "children": null,
-          "parent": null,
-          "special_use_attrib": "\\Junk"
+          "parent": null
         },
         "Administratif": {
           "attribs": ["\\Junk", "\\HasNoChildren"],
           "delimiter": "/",
           "children": null,
-          "parent": null,
-          "special_use_attrib": "\\Junk"
+          "parent": null
         }
       },
       "parent": null
@@ -154,8 +151,7 @@
       "attribs": ["\\Junk", "\\HasNoChildren"],
       "delimiter": "/",
       "children": null,
-      "parent": null,
-      "special_use_attrib": "\\Junk"
+      "parent": null
     }
   },
   "emailsHash": [
