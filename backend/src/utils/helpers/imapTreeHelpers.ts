@@ -1,17 +1,15 @@
+import Connection, { MailBoxes } from 'imap';
+import { FlatTree } from '../../services/imap/types';
+
 /**
  * createFlatTreeFromImap - creates a readable flat array from tree object
- * @param  {object[]} imapTree - native imap tree
- * @return {{label: string, path: string, parent: object}[]} Array of objects
- * @example
- * // returns
- * [
- *  {label : INBOX, path: 'INBOX', parent: {}},
- *  ...
- * ]
- * getBoxesAll({NAME:"INBOX",attribs:"\\HasChildren", ...})
+ * @param imapTree - native imap tree
  */
-export function createFlatTreeFromImap(imapTree, currentParent) {
-  const readableTree = [];
+export function createFlatTreeFromImap(
+  imapTree: MailBoxes,
+  currentParent?: FlatTree
+) {
+  const readableTree: FlatTree[] = [];
 
   Object.entries(imapTree).forEach(([folderLabel, folderDetails]) => {
     const folder = {
@@ -20,7 +18,7 @@ export function createFlatTreeFromImap(imapTree, currentParent) {
         ? `${currentParent.path}/${folderLabel}`
         : folderLabel,
       parent: currentParent,
-      specialUseAttrib: folderDetails.special_use_attrib?.toLowerCase() ?? null
+      attribs: folderDetails.attribs
     };
 
     if (imapTree[`${folderLabel}`].children) {
@@ -37,11 +35,13 @@ export function createFlatTreeFromImap(imapTree, currentParent) {
 
 /**
  * Gets the total number of messages per folder
- * @param {{label: string, path: string}[]} folders - flat array of objects.
- * @param {Imap} imapConnection - An IMAP connection.
- * @returns {Promise}
+ * @param folders - flat array of objects.
+ * @param imapConnection - An IMAP connection.
  */
-export function addTotalPerFolder(folders, imapConnection) {
+export function addTotalPerFolder(
+  folders: FlatTree[],
+  imapConnection: Connection
+) {
   const promises = folders.map(
     (folder) =>
       new Promise((resolve, reject) => {
@@ -60,7 +60,7 @@ export function addTotalPerFolder(folders, imapConnection) {
             // eslint-disable-next-line no-param-reassign
             folder.cumulativeTotal = 0;
           }
-          resolve();
+          resolve(true);
         });
       })
   );
@@ -68,24 +68,11 @@ export function addTotalPerFolder(folders, imapConnection) {
 }
 
 /**
- * BuildFinaltTree() takes a flat array of objects and a userEmail. Then builds the flat array to a Tree object
- * and returns an array with a single object that has a label of the userEmail, a children array of the Tree, and a total.
- * @param {{label: string, path: string, parent: object, total: number}[]} flatTree - A flat array of objects to build a tree.
- * @param {string} userEmail - The email address of the user you want to get the data for.
- * @returns {label: string, children: object[], total: number} an array with one object.
- *
- * @example
- * // returns
- * [
- *  {
- *    label: 'email@example.com',
- *    children: [ [Object], [Object] ],
- *    total: 0
- *  }
- * ]
+ * @param flatTree - A flat array of objects to build a tree.
+ * @param userEmail - The email address of the user you want to get the data for.
  */
 
-export function buildFinalTree(flatTree, userEmail) {
+export function buildFinalTree(flatTree: FlatTree[], userEmail: string) {
   const readableTree = [];
   let totalInEmail = 0;
 
@@ -96,11 +83,11 @@ export function buildFinalTree(flatTree, userEmail) {
       } else {
         box.parent.children = [box];
       }
-      box.parent.cumulativeTotal += box.total;
+      box.parent.cumulativeTotal! += box.total!;
     } else {
       readableTree.push(box);
     }
-    totalInEmail += box.total;
+    totalInEmail += box.total!;
     delete box.parent;
   }
 

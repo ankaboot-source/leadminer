@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { ImapBoxesFetcher } from '../services/ImapBoxesFetcher';
-import ImapConnectionProvider from '../services/ImapConnectionProvider';
+import { AuthResolver } from '../services/auth/types';
+import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
+import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
+import { ImapAuthError } from '../utils/errors';
 import { hashEmail } from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import {
@@ -9,8 +11,6 @@ import {
   validateAndExtractImapParametersFromBody,
   validateImapCredentials
 } from './helpers';
-import { ImapAuthError } from '../utils/errors';
-import { AuthResolver } from '../services/auth/types';
 
 export default function initializeImapController(authResolver: AuthResolver) {
   return {
@@ -55,10 +55,15 @@ export default function initializeImapController(authResolver: AuthResolver) {
 
       const { id } = user;
       const { access_token: accessToken, email, host, password, port } = data;
+      const userEmail = user.email ?? email;
 
       const imapConnectionProvider = accessToken
-        ? new ImapConnectionProvider(user.email).withOauth(accessToken)
-        : new ImapConnectionProvider(email).withPassword(host, password, port);
+        ? new ImapConnectionProvider(userEmail).withOauth(accessToken)
+        : new ImapConnectionProvider(userEmail).withPassword(
+            host,
+            password,
+            port
+          );
 
       let imapConnection = null;
       let tree = null;
@@ -66,18 +71,20 @@ export default function initializeImapController(authResolver: AuthResolver) {
       try {
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
-        tree = await imapBoxesFetcher.getTree();
+        tree = await imapBoxesFetcher.getTree(userEmail);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {
-            user: hashEmail(email, id)
+            user: hashEmail(userEmail, id)
           }
         });
       } catch (err) {
         const generatedError = generateErrorObjectFromImapError(err);
         return next(generatedError);
       } finally {
-        await imapConnectionProvider.releaseConnection(imapConnection);
+        if (imapConnection) {
+          await imapConnectionProvider.releaseConnection(imapConnection);
+        }
         await imapConnectionProvider.cleanPool();
       }
 

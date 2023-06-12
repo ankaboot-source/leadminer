@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
-import ImapConnectionProvider from '../services/ImapConnectionProvider';
+import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { TasksManager } from '../services/tasks-manager/TasksManager';
 import { generateErrorObjectFromImapError } from './helpers';
 
@@ -48,7 +48,9 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       } catch (err) {
         const newError = generateErrorObjectFromImapError(err);
 
-        await imapConnectionProvider.releaseConnection(imapConnection);
+        if (imapConnection) {
+          await imapConnectionProvider.releaseConnection(imapConnection);
+        }
         await imapConnectionProvider.cleanPool();
         res.status(500);
         return next(new Error(newError.message));

@@ -1,4 +1,4 @@
-import ImapConnectionProvider from '../ImapConnectionProvider';
+import ImapConnectionProvider from '../imap/ImapConnectionProvider';
 import ImapEmailsFetcher from '../ImapEmailsFetcher';
 
 interface Options {
