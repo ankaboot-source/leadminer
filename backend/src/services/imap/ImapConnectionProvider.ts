@@ -36,7 +36,7 @@ class ImapConnectionProvider {
    */
   withOauth(token: string) {
     try {
-      const email = this.imapConfig.user!;
+      const email = this.imapConfig.user;
       const xoauth2Token = generateXOauthToken(token, email);
 
       const { host, port } = PROVIDER_POOL.getProviderConfig({
@@ -171,8 +171,9 @@ class ImapConnectionProvider {
           throw err;
         }
       },
-      destroy: async (connection) => {
-        Promise.resolve(connection.destroy());
+      destroy: (connection) => {
+        connection.destroy();
+        return Promise.resolve();
       }
     };
 
