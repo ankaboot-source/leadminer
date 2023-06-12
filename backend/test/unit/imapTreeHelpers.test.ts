@@ -44,8 +44,7 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   ];
 
   it('should return valid flat array', () => {
-    // There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
-    // @ts-expect-error
+    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
     const output = createFlatTreeFromImap(imapTreeExample);
     expect(output).toEqual(expectedOutput);
   });
