@@ -1,5 +1,4 @@
 import Connection, { Box, parseHeader } from 'imap';
-import ENV from '../../config';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailMessageHelpers';
 import { hashEmail } from '../../utils/helpers/hashHelpers';
@@ -90,7 +89,7 @@ export default class ImapEmailsFetcher {
     private readonly userEmail: string,
     private readonly miningId: string,
     private readonly streamName: string,
-    fetchEmailBody = false,
+    private readonly fetchEmailBody = false,
     private readonly batchSize = 50
   ) {
     // Generate a unique identifier for the user.
@@ -98,7 +97,7 @@ export default class ImapEmailsFetcher {
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
 
-    if (fetchEmailBody) {
+    if (this.fetchEmailBody) {
       this.bodies.push('TEXT');
     }
   }
@@ -250,7 +249,7 @@ export default class ImapEmailsFetcher {
           stream.on('data', (chunk) => {
             if (streamInfo.which.includes('HEADER')) {
               header += chunk;
-            } else if (ENV.IMAP_FETCH_BODY) {
+            } else if (this.fetchEmailBody) {
               body += chunk;
             }
           });
@@ -258,7 +257,7 @@ export default class ImapEmailsFetcher {
 
         msg.once('end', async () => {
           const parsedHeader = parseHeader(header);
-          const parsedBody = ENV.IMAP_FETCH_BODY ? body : '';
+          const parsedBody = this.fetchEmailBody ? body : '';
 
           const messageId = getMessageId(parsedHeader);
 
