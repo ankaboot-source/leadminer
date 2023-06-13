@@ -26,7 +26,7 @@ jobs:
             doctl compute firewall list --no-header --format Name,InboundRules |
               awk '/supabase-firewall/{
                 for (i=2; i<=NF; i++)
-                  printf "%s ", $i
+                  printf "%s ", $i;
                 printf $NF
               }'
           )'" >> "$GITHUB_OUTPUT"
@@ -35,7 +35,7 @@ jobs:
             doctl compute firewall list --no-header --format Name,OutboundRules |
               awk '/supabase-firewall/{
                 for (i=2; i<=NF-1; i++)
-                  printf "%s ", $i
+                  printf "%s ", $i;
                 print $NF
               }'
           )'" >> "$GITHUB_OUTPUT"
