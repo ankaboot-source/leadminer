@@ -11,34 +11,34 @@ jobs:
       firewall_id: ${{ steps.firewall_id.outputs.output }}
       droplet_id: ${{ steps.droplet_id.outputs.output }}
       inbound_rules: ${{ steps.inbound_rules.outputs.output }}
-      outbound_rules: ${{ steps.inbound_rules.outputs.output }}
+      outbound_rules: ${{ steps.outbound_rules.outputs.output }}
     steps:
       - name: Setup doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - id: firewall_id
-        run: echo "output='$(doctl compute firewall list --no-header --format Name,ID | awk '/supabase-firewall/{print $2}')'" >> "$GITHUB_OUTPUT"
+        run: echo "output=$(doctl compute firewall list --no-header --format Name,ID | awk '/supabase-firewall/{print $2}')" >> "$GITHUB_OUTPUT"
       - id: droplet_id
-        run: echo "output='$(doctl compute firewall list --no-header --format Name,DropletIDs | awk '/supabase-firewall/{print $2}')'" >> "$GITHUB_OUTPUT"
+        run: echo "output=$(doctl compute firewall list --no-header --format Name,DropletIDs | awk '/supabase-firewall/{print $2}')" >> "$GITHUB_OUTPUT"
       - id: inbound_rules
-        run: echo "output='$(
+        run: echo "output=$(
             doctl compute firewall list --no-header --format Name,InboundRules |
               awk '/supabase-firewall/{
-                for (i=2; i<=NF; i++)
+                for (i=2; i<=NF-1; i++)
                   printf "%s ", $i;
                 printf $NF
               }'
-          )'" >> "$GITHUB_OUTPUT"
+          )" >> "$GITHUB_OUTPUT"
       - id: outbound_rules
-        run: echo "output='$(
+        run: echo "output=$(
             doctl compute firewall list --no-header --format Name,OutboundRules |
               awk '/supabase-firewall/{
                 for (i=2; i<=NF-1; i++)
                   printf "%s ", $i;
                 print $NF
               }'
-          )'" >> "$GITHUB_OUTPUT"
+          )" >> "$GITHUB_OUTPUT"
 
   release:
     runs-on: ubuntu-latest
@@ -56,10 +56,10 @@ jobs:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - name: Allow through firewall
         run: |
-          RUNNER_IP="$(hostname -I | awk '{print $1}')"
-          echo "Current IP: $INBOUND_RULES"
+          RUNNER_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
           NEW_INBOUND="$(echo $INBOUND_RULES | sed "s/5432/5432,address:${RUNNER_IP}/g")"
-          echo doctl compute firewall update $FIREWALL_ID --name supabase-firewall --inbound-rules $NEW_INBOUND --outbound-rules $OUTBOUND_RULES --droplet-ids $DROPLET_ID
+          doctl compute firewall update $FIREWALL_ID --name supabase-firewall --inbound-rules "$NEW_INBOUND" --outbound-rules "$OUTBOUND_RULES" --droplet-ids $DROPLET_ID
+          sleep 5
 
       - uses: actions/checkout@v3
       - uses: supabase/setup-cli@v1
@@ -68,4 +68,4 @@ jobs:
       - name: Push Supabase DB Migrations
         run: |
           supabase db push --db-url $SUPABASE_DB_URL --debug
-          doctl compute firewall update $FIREWALL_ID --name supabase-firewall --inbound-rules $INBOUND_RULES --outbound-rules $OUTBOUND_RULES --droplet-ids $DROPLET_ID
+          doctl compute firewall update $FIREWALL_ID --name supabase-firewall --inbound-rules "$INBOUND_RULES" --outbound-rules "$OUTBOUND_RULES" --droplet-ids $DROPLET_ID
