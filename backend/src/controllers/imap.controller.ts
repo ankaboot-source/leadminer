@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import Connection from 'imap';
 import { AuthResolver } from '../services/auth/types';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
@@ -55,7 +56,7 @@ export default function initializeImapController(authResolver: AuthResolver) {
 
       const { id } = user;
       const { access_token: accessToken, email, host, password, port } = data;
-      const userEmail = user.email ?? email;
+      const userEmail = email ?? user.email;
 
       const imapConnectionProvider = accessToken
         ? new ImapConnectionProvider(userEmail).withOauth(accessToken)
@@ -65,18 +66,21 @@ export default function initializeImapController(authResolver: AuthResolver) {
             port
           );
 
-      let imapConnection = null;
-      let tree = null;
+      let imapConnection: Connection | null = null;
 
       try {
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
-        tree = await imapBoxesFetcher.getTree(userEmail);
+        const tree = await imapBoxesFetcher.getTree(userEmail);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {
             user: hashEmail(userEmail, id)
           }
+        });
+
+        return res.status(200).send({
+          data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (err) {
         const generatedError = generateErrorObjectFromImapError(err);
@@ -87,10 +91,6 @@ export default function initializeImapController(authResolver: AuthResolver) {
         }
         await imapConnectionProvider.cleanPool();
       }
-
-      return res.status(200).send({
-        data: { message: 'IMAP folders fetched successfully!', folders: tree }
-      });
     }
   };
 }

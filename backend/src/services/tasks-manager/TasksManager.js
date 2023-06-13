@@ -148,7 +148,7 @@ export class TasksManager {
    * @param {number} fetcherOptions.batchSize - The number of emails to process before sending a notification.
    * @param {string[]} fetcherOptions.boxes - An array of strings specifying the email boxes to mine.
    * @param {object} fetcherOptions.imapConnectionProvider - A configured email connection provider object.
-   * @returns {object} - The new mining task.
+   * @returns {Promise<object>} - The new mining task.
    *
    * @throws {Error} If a task with the same mining ID already exists.
    * @throws {Error} If there is an error when creating the task.
@@ -157,7 +157,8 @@ export class TasksManager {
     const miningTask = { userId, ...(await this.generateTaskInformation()) };
     const { miningId, stream } = miningTask;
     const { streamName } = stream;
-    const { imapConnectionProvider, email, boxes, batchSize } = fetcherOptions;
+    const { imapConnectionProvider, email, boxes, batchSize, fetchEmailBody } =
+      fetcherOptions;
 
     try {
       const fetcher = this.emailFetcherFactory.create({
@@ -167,7 +168,8 @@ export class TasksManager {
         email,
         miningId,
         streamName,
-        batchSize
+        batchSize,
+        fetchEmailBody
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 

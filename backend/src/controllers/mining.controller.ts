@@ -38,7 +38,8 @@ export default function initializeMiningController(tasksManager: TasksManager) {
           boxes,
           id: userid,
           email,
-          batchSize
+          batchSize,
+          fetchEmailBody: ENV.IMAP_FETCH_BODY
         };
 
         miningTask = await tasksManager.createTask(

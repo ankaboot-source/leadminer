@@ -1,5 +1,5 @@
 import ImapConnectionProvider from '../imap/ImapConnectionProvider';
-import ImapEmailsFetcher from '../ImapEmailsFetcher';
+import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
 interface Options {
   email: string;
@@ -9,6 +9,7 @@ interface Options {
   imapConnectionProvider: ImapConnectionProvider;
   miningId: string;
   streamName: string;
+  fetchEmailBody: boolean;
 }
 
 export default class EmailFetcherFactory {
@@ -23,6 +24,7 @@ export default class EmailFetcherFactory {
     email,
     miningId,
     streamName,
+    fetchEmailBody,
     batchSize
   }: Options) {
     return new ImapEmailsFetcher(
@@ -32,6 +34,7 @@ export default class EmailFetcherFactory {
       email,
       miningId,
       streamName,
+      fetchEmailBody,
       batchSize
     );
   }

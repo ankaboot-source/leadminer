@@ -1,29 +1,25 @@
-import { parseHeader } from 'imap';
-import ENV from '../config';
-import { EXCLUDED_IMAP_FOLDERS } from '../utils/constants';
-import { getMessageId } from '../utils/helpers/emailMessageHelpers';
-import { hashEmail } from '../utils/helpers/hashHelpers';
-import logger from '../utils/logger';
-import redis from '../utils/redis';
+import Connection, { Box, parseHeader } from 'imap';
+import ENV from '../../config';
+import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
+import { getMessageId } from '../../utils/helpers/emailMessageHelpers';
+import { hashEmail } from '../../utils/helpers/hashHelpers';
+import logger from '../../utils/logger';
+import redis from '../../utils/redis';
+import ImapConnectionProvider from './ImapConnectionProvider';
+import { EmailMessage } from './types';
 
 const redisClient = redis.getClient();
 
 /**
  * Publishes an email message to a Redis stream.
- * @param {string} streamName - The name of the Redis stream to publish to.
- * @param {number | null} fetchedMessagesCount - The number of messages fetched from the stream so far.
- * @param {object} emailMessage - The email message to publish.
- * @param {object} emailMessage.header - The email headers.
- * @param {object} emailMessage.body - The email body.
- * @param {number} emailMessage.seqNumber - The sequence number of the email in its folder.
- * @param {boolean} emailMessage.isLast - Whether this is the last message in the folder.
- * @param {string} emailMessage.userId - The user ID.
- * @param {string} emailMessage.userEmail - The user's email address.
- * @param {string} emailMessage.userIdentifier - The hashed user identifier.
- * @param {string} emailMessage.miningId - The ID of the mining process.
- * @returns {Promise<void>} A promise that resolves when the message is successfully published.
+ * @param streamName - The name of the Redis stream to publish to.
+ * @param emailMessage - The email message to publish.
+ * @returns A promise that resolves when the message is successfully published.
  */
-async function publishEmailMessage(streamName, emailMessage) {
+async function publishEmailMessage(
+  streamName: string,
+  emailMessage: EmailMessage
+) {
   try {
     await redisClient.xadd(
       streamName,
@@ -42,11 +38,13 @@ async function publishEmailMessage(streamName, emailMessage) {
 
 /**
  * Publishes the fetching progress for a mining task to redis PubSub.
- * @param {string} miningId - The ID of the mining job.
- * @param {number} fetchedMessagesCount - The number of messages fetched so far.
- * @returns {Promise<void>} - A Promise that resolves when the progress has been published.
+ * @param miningId - The ID of the mining job.
+ * @param fetchedMessagesCount - The number of messages fetched so far.
  */
-async function publishFetchingProgress(miningId, fetchedMessagesCount) {
+async function publishFetchingProgress(
+  miningId: string,
+  fetchedMessagesCount: number
+) {
   const progress = {
     miningId,
     count: fetchedMessagesCount,
@@ -57,68 +55,59 @@ async function publishFetchingProgress(miningId, fetchedMessagesCount) {
   await redisClient.publish(miningId, JSON.stringify(progress));
 }
 
-class ImapEmailsFetcher {
+export default class ImapEmailsFetcher {
+  private readonly userIdentifier: string;
+
+  private readonly processSetKey: string;
+
+  private readonly fetchedIds = new Set<string>();
+
+  private totalFetched = 0;
+
+  private isCompleted = false;
+
+  private isCanceled = false;
+
+  private readonly bodies = ['HEADER'];
+
+  private process?: Promise<PromiseSettledResult<void>[]>;
+
   /**
    * Constructor for ImapEmailsFetcher.
-   * @param {object} imapConnectionProvider - An instance of a configured IMAP connection provider.
-   * @param {string[]} folders - List of folders to fetch.
-   * @param {string} userId - The unique identifier of the user.
-   * @param {string} userEmail - The email address of the user.
-   * @param {string} miningId - The unique identifier of the mining process.
-   * @param {string} streamName - The name of the stream to write fetched emails.
-   * @param {number} [batchSize=50] - A Number To send notification every x emails processed
+   * @param imapConnectionProvider - An instance of a configured IMAP connection provider.
+   * @param folders - List of folders to fetch.
+   * @param userId - The unique identifier of the user.
+   * @param userEmail - The email address of the user.
+   * @param miningId - The unique identifier of the mining process.
+   * @param streamName - The name of the stream to write fetched emails.
+   * @param fetchEmailBody - Whether to fetch email body or not.
+   * @param [batchSize=50] - A Number To send notification every x emails processed
    */
   constructor(
-    imapConnectionProvider,
-    folders,
-    userId,
-    userEmail,
-    miningId,
-    streamName,
-    batchSize = 50
+    private readonly imapConnectionProvider: ImapConnectionProvider,
+    private readonly folders: string[],
+    private readonly userId: string,
+    private readonly userEmail: string,
+    private readonly miningId: string,
+    private readonly streamName: string,
+    fetchEmailBody: boolean = false,
+    private readonly batchSize = 50
   ) {
-    // Used to send notification every x emails processed
-    this.batchSize = batchSize;
-
-    // Set the IMAP connection provider instance.
-    this.imapConnectionProvider = imapConnectionProvider;
-
-    // Set the list of folders to fetch.
-    this.folders = folders;
-
-    // Set the user details. Generate a unique identifier for the user.
-    this.userId = userId;
-    this.userEmail = userEmail;
+    // Generate a unique identifier for the user.
     this.userIdentifier = hashEmail(userEmail, userId);
-
-    this.streamName = streamName;
-    this.miningId = miningId;
-
     // Set the key for the process set. used for caching.
     this.processSetKey = `caching:${miningId}`;
-    this.fetchedIds = new Set();
 
-    // Fetcher inner-state for total fetched messages.
-    this.totalFetched = 0;
-
-    this.bodies = ['HEADER'];
-
-    if (ENV.IMAP_FETCH_BODY) {
+    if (fetchEmailBody) {
       this.bodies.push('TEXT');
     }
-
-    this.isCompleted = false;
-    this.isCanceled = false;
   }
 
   /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
-   * @param {string[]} folderList - An array of folder names to fetch the total messages for.
-   * @returns {Promise<number>} A Promise that resolves to the total number of messages across all folders.
    */
   async getTotalMessages() {
-    let imapConnection = null;
-    let error = null;
+    let imapConnection: Connection | null = null;
     let total = 0;
 
     try {
@@ -130,9 +119,9 @@ class ImapEmailsFetcher {
       );
       const totalPromises = folders.map(
         (folder) =>
-          new Promise((resolve, reject) => {
+          new Promise<number>((resolve, reject) => {
             // Opening a box will explicitly close the previously opened one if it exists.
-            imapConnection.openBox(folder, true, (err, box) => {
+            imapConnection?.openBox(folder, true, (err, box) => {
               if (err) {
                 reject(err);
               } else {
@@ -151,34 +140,31 @@ class ImapEmailsFetcher {
 
       // Close the last opened box.
       await new Promise((resolve, reject) => {
-        imapConnection.closeBox((err) => {
+        imapConnection?.closeBox((err: Error) => {
           if (err) {
-            logger.error('Error when closing box', error);
+            logger.error('Error when closing box', err);
             reject(err);
           }
-          resolve();
+          resolve(true);
         });
       });
     } catch (err) {
-      error = new Error(err);
+      logger.error('Failed fetching total messages', err);
+      throw err;
     } finally {
-      await this.imapConnectionProvider.releaseConnection(imapConnection);
-    }
-
-    if (error !== null) {
-      // If an error occurred, throw it.
-      throw error;
+      if (imapConnection) {
+        await this.imapConnectionProvider.releaseConnection(imapConnection);
+      }
     }
     return total;
   }
 
   /**
    * Fetches all email messages in the configured boxes.
-   * @returns {Promise}
    */
   async fetchEmailMessages() {
     const promises = this.folders.map(async (folderName) => {
-      let imapConnection = {};
+      let imapConnection: Connection | null = null;
 
       if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
         // Skip excluded folders
@@ -194,11 +180,11 @@ class ImapEmailsFetcher {
           return;
         }
 
-        const openedBox = await new Promise((resolve, reject) => {
-          imapConnection.openBox(folderName, true, (error, box) => {
+        const openedBox = await new Promise<Box>((resolve, reject) => {
+          imapConnection?.openBox(folderName, true, (error, box) => {
             if (error) {
               logger.error('Error when opening folder', error);
-              reject(new Error(error));
+              reject(error);
             }
             resolve(box);
           });
@@ -215,11 +201,13 @@ class ImapEmailsFetcher {
         logger.error('Error when fetching emails', error);
       } finally {
         // Close the mailbox and release the connection
-        imapConnection.closeBox(async (error) => {
+        imapConnection?.closeBox(async (error) => {
           if (error) {
             logger.error('Error when closing box', error);
           }
-          await this.imapConnectionProvider.releaseConnection(imapConnection);
+          if (imapConnection) {
+            await this.imapConnectionProvider.releaseConnection(imapConnection);
+          }
         });
       }
     });
@@ -235,12 +223,12 @@ class ImapEmailsFetcher {
 
   /**
    *
-   * @param {object} connection - Open IMAP connection.
-   * @param {string} folderName - Name of the folder locked by the IMAP connection.
-   * @param {number} totalInFolder - Total email messages in the folder.
+   * @param connection - Open IMAP connection.
+   * @param folderName - Name of the folder locked by the IMAP connection.
+   * @param totalInFolder - Total email messages in the folder.
    * @returns
    */
-  fetchBox(connection, folderName, totalInFolder) {
+  fetchBox(connection: Connection, folderName: string, totalInFolder: number) {
     return new Promise((resolve, reject) => {
       const fetchResult = connection.seq.fetch('1:*', {
         bodies: this.bodies
@@ -269,8 +257,8 @@ class ImapEmailsFetcher {
         });
 
         msg.once('end', async () => {
-          const parsedHeader = parseHeader(header.toString('utf8'));
-          const parsedBody = ENV.IMAP_FETCH_BODY ? body.toString('utf8') : '';
+          const parsedHeader = parseHeader(header);
+          const parsedBody = ENV.IMAP_FETCH_BODY ? body : '';
 
           const messageId = getMessageId(parsedHeader);
 
@@ -317,14 +305,13 @@ class ImapEmailsFetcher {
       });
 
       fetchResult.once('end', () => {
-        resolve();
+        resolve(true);
       });
     });
   }
 
   /**
    * Starts fetching email messages.
-   * @returns {Object} This instance of the EmailFetcher class.
    */
   start() {
     return this.fetchEmailMessages();
@@ -332,7 +319,6 @@ class ImapEmailsFetcher {
 
   /**
    * Performs cleanup operations after the fetching process has finished or stopped.
-   * @returns {boolean}
    */
   async stop() {
     this.isCanceled = true;
@@ -342,5 +328,3 @@ class ImapEmailsFetcher {
     return this.isCompleted;
   }
 }
-
-export default ImapEmailsFetcher;

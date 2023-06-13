@@ -1,5 +1,5 @@
-import ImapEmailsFetcher from '../ImapEmailsFetcher';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
+import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
 /**
  * Represents a mining task.
