@@ -56,7 +56,7 @@ jobs:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - name: Allow through firewall
         run: |
-          RUNNER_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
+          RUNNER_IP="$(hostname -I | awk '{print $1}')"
           NEW_INBOUND="$(echo $INBOUND_RULES | sed "s/5432/5432,address:${RUNNER_IP}/g")"
           doctl compute firewall update $FIREWALL_ID --name supabase-firewall --inbound-rules $NEW_INBOUND --outbound-rules $OUTBOUND_RULES --droplet-ids $DROPLET_ID
 
