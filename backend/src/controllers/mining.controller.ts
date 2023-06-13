@@ -10,7 +10,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
     async startMining(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
 
-      if (!user || !user.email || !user.id) {
+      if (!user?.email || !user?.id) {
         res.status(400);
         return next(new Error('user does not exists.'));
       }

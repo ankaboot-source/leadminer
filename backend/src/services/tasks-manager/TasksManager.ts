@@ -233,7 +233,7 @@ export default class TasksManager {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     // If the mining task does not exist or has no progress handler, return null
-    if (!task || !task.progressHandlerSSE) {
+    if (!task?.progressHandlerSSE) {
       return null;
     }
 

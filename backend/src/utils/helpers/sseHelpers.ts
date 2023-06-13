@@ -40,7 +40,7 @@ export default class RealtimeSSE extends SSE {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
-      logger.error('Somthing happend when sending SSE', error);
+      logger.error('Something happened when sending SSE', error);
     }
   }
 
