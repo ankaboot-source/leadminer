@@ -1,7 +1,7 @@
 import { IncomingHttpHeaders } from 'http';
 import { ImapUsers } from '../db/ImapUsers';
 import { OAuthUsers } from '../db/OAuthUsers';
-import ImapConnectionProvider from '../services/ImapConnectionProvider';
+import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 
 const IMAP_ERROR_CODES = new Map([
@@ -181,7 +181,9 @@ export async function validateImapCredentials(
   } catch (err) {
     throw generateErrorObjectFromImapError(err);
   } finally {
-    await connectionProvider?.releaseConnection(connection);
+    if (connection) {
+      await connectionProvider?.releaseConnection(connection);
+    }
     await connectionProvider?.cleanPool();
   }
 }

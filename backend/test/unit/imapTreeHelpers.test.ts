@@ -13,20 +13,18 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
     {
       label: 'Brouillons',
       path: 'Brouillons',
-      parent: null,
-      specialUseAttrib: '\\drafts'
+      attribs: ['\\Drafts', '\\HasNoChildren']
     },
-    { label: 'INBOX', path: 'INBOX', parent: null, specialUseAttrib: null },
+    { label: 'INBOX', path: 'INBOX', attribs: ['\\HasChildren'] },
     {
       label: 'mars',
       path: 'INBOX/mars',
       parent: {
         label: 'INBOX',
         path: 'INBOX',
-        parent: null,
-        specialUseAttrib: null
+        attribs: ['\\HasChildren']
       },
-      specialUseAttrib: '\\junk'
+      attribs: ['\\Junk', '\\HasNoChildren']
     },
     {
       label: 'Administratif',
@@ -34,16 +32,20 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
       parent: {
         label: 'INBOX',
         path: 'INBOX',
-        parent: null,
-        specialUseAttrib: null
+        attribs: ['\\HasChildren']
       },
-      specialUseAttrib: '\\junk'
+      attribs: ['\\Junk', '\\HasNoChildren']
     },
-    { label: 'Spam', path: 'Spam', parent: null, specialUseAttrib: '\\junk' }
+    {
+      label: 'Spam',
+      path: 'Spam',
+      attribs: ['\\Junk', '\\HasNoChildren']
+    }
   ];
 
   it('should return valid flat array', () => {
-    const output = createFlatTreeFromImap(imapTreeExample, null);
+    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
+    const output = createFlatTreeFromImap(imapTreeExample);
     expect(output).toEqual(expectedOutput);
   });
 });
