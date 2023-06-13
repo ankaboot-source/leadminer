@@ -90,7 +90,7 @@ export default class ImapEmailsFetcher {
     private readonly userEmail: string,
     private readonly miningId: string,
     private readonly streamName: string,
-    fetchEmailBody: boolean = false,
+    fetchEmailBody = false,
     private readonly batchSize = 50
   ) {
     // Generate a unique identifier for the user.
