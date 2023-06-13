@@ -110,7 +110,7 @@ export async function startMining(
     };
     const response = await api.post(`/imap/mine/${user.id}`, body, { headers });
 
-    const task = response.data?.data?.task;
+    const task = response.data?.data;
     const { miningId } = task;
 
     sse.initConnection(user.id, miningId);

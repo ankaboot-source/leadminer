@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
-import { TasksManager } from '../services/tasks-manager/TasksManager';
 import initializeAuthMiddleware from '../middleware/auth';
 import { AuthResolver } from '../services/auth/types';
+import TasksManager from '../services/tasks-manager/TasksManager';
 
 export default function initializeMiningRoutes(
   authResolver: AuthResolver,

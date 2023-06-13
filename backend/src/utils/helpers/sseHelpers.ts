@@ -36,7 +36,7 @@ export default class RealtimeSSE extends SSE {
    * @param sseData - The data to be sent as part of the SSE.
    * @param sseEvent - The name of the event associated with the SSE.
    */
-  sendSSE(sseData: string, sseEvent: string) {
+  sendSSE(sseData: any, sseEvent: string) {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
@@ -48,6 +48,6 @@ export default class RealtimeSSE extends SSE {
    * Ends the SSE stream by emitting the 'stop' event.
    */
   stop() {
-    this.emit('stop');
+    return this.emit('stop');
   }
 }
