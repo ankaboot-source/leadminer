@@ -263,10 +263,6 @@ export default class TasksManager {
    * @param progressType - The type of progress to update ('fetched' or 'extracted').
    * @param incrementBy - The amount to increment progress by (default is 1).
    * @returns An object containing the updated mining progress, or null if task is not found.
-   * The returned object has the following properties:
-   * - extracted (number): The updated number of messages already extracted.
-   * - fetched (number): The updated number of messages already fetched.
-   * - fetchingStatus (boolean): Indicates whether the fetching process has been completed or not.
    * @throws {Error} Throws an error if the `progressType` parameter is not set to either 'fetched' or 'extracted'.
    */
   private updateProgress(

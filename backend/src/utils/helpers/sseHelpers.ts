@@ -36,7 +36,7 @@ export default class RealtimeSSE extends SSE {
    * @param sseData - The data to be sent as part of the SSE.
    * @param sseEvent - The name of the event associated with the SSE.
    */
-  sendSSE(sseData: any, sseEvent: string) {
+  sendSSE<T>(sseData: T, sseEvent: string) {
     try {
       this.send(sseData, sseEvent);
     } catch (error) {
