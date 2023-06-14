@@ -63,7 +63,7 @@ export default class ImapEmailsFetcher {
 
   private totalFetched = 0;
 
-  private isCompleted = false;
+  public isCompleted = false;
 
   private isCanceled = false;
 
@@ -80,11 +80,11 @@ export default class ImapEmailsFetcher {
    * @param miningId - The unique identifier of the mining process.
    * @param streamName - The name of the stream to write fetched emails.
    * @param fetchEmailBody - Whether to fetch email body or not.
-   * @param [batchSize=50] - A Number To send notification every x emails processed
+   * @param batchSize - A Number To send notification every x emails processed
    */
   constructor(
     private readonly imapConnectionProvider: ImapConnectionProvider,
-    private readonly folders: string[],
+    public readonly folders: string[],
     private readonly userId: string,
     private readonly userEmail: string,
     private readonly miningId: string,

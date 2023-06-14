@@ -1,13 +1,15 @@
+import { flickrBase58IdGenerator } from '../../utils/helpers/hashHelpers';
 import redis from '../../utils/redis';
-import { TasksManager } from './TasksManager';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
+import TasksManager from './TasksManager';
 
-const TASK_MANAGER_SINGELTON = new TasksManager(
+const taskManagerSingleton = new TasksManager(
   redis.getSubscriberClient(),
   redis.getClient(),
   new EmailFetcherFactory(),
-  new SSEBroadcasterFactory()
+  new SSEBroadcasterFactory(),
+  flickrBase58IdGenerator()
 );
 
-export default TASK_MANAGER_SINGELTON;
+export default taskManagerSingleton;

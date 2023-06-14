@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { TasksManager } from '../services/tasks-manager/TasksManager';
+import TasksManager from '../services/tasks-manager/TasksManager';
 import logger from '../utils/logger';
 
 export default function initializeStreamController(tasksManager: TasksManager) {
@@ -19,7 +19,7 @@ export default function initializeStreamController(tasksManager: TasksManager) {
 
       try {
         // TODO: convert TaskManager to ts also add permission management.
-        const { task } = tasksManager.getActiveTask(taskId);
+        const task = tasksManager.getActiveTask(taskId);
 
         if (userId !== task.userId) {
           res.status(401).json({ error: { message: 'User not authorized.' } });

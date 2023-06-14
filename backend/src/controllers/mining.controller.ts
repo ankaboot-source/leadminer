@@ -1,14 +1,22 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { TasksManager } from '../services/tasks-manager/TasksManager';
+import { ImapEmailsFetcherOptions } from '../services/imap/types';
+import TasksManager from '../services/tasks-manager/TasksManager';
 import { generateErrorObjectFromImapError } from './helpers';
 
 export default function initializeMiningController(tasksManager: TasksManager) {
   return {
     async startMining(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
-      const { id: userid, email } = user;
+
+      if (!user?.email || !user?.id) {
+        res.status(400);
+        return next(new Error('user does not exists.'));
+      }
+
+      const { id: userId, email } = user as { id: string; email: string };
+
       const {
         access_token: accessToken,
         host,
@@ -16,11 +24,6 @@ export default function initializeMiningController(tasksManager: TasksManager) {
         port,
         boxes
       } = req.body;
-
-      if (!user) {
-        res.status(400);
-        return next(new Error('user does not exists.'));
-      }
 
       const imapConnectionProvider = accessToken
         ? new ImapConnectionProvider(email).withOauth(accessToken)
@@ -33,19 +36,16 @@ export default function initializeMiningController(tasksManager: TasksManager) {
         // Connect to validate connection before creating the pool.
         imapConnection = await imapConnectionProvider.acquireConnection();
         const batchSize = ENV.LEADMINER_FETCH_BATCH_SIZE;
-        const imapEmailsFetcherOptions: any = {
+        const imapEmailsFetcherOptions: ImapEmailsFetcherOptions = {
           imapConnectionProvider,
           boxes,
-          id: userid,
+          userId,
           email,
           batchSize,
           fetchEmailBody: ENV.IMAP_FETCH_BODY
         };
 
-        miningTask = await tasksManager.createTask(
-          userid,
-          imapEmailsFetcherOptions
-        );
+        miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
       } catch (err) {
         const newError = generateErrorObjectFromImapError(err);
 
@@ -71,7 +71,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       const { id: taskId } = req.params;
 
       try {
-        const { task } = tasksManager.getActiveTask(taskId);
+        const task = tasksManager.getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res
@@ -80,7 +80,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
         }
 
         await tasksManager.deleteTask(taskId);
-        return res.status(200).send({ data: task });
+        return res.status(200).json({ data: task });
       } catch (err) {
         res.status(404);
         return next(err);
@@ -98,7 +98,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       const { id: taskId } = req.params;
 
       try {
-        const { task } = tasksManager.getActiveTask(taskId);
+        const task = tasksManager.getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res

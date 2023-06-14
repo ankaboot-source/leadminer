@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import initializeStreamController from '../controllers/stream.controller';
 import { AuthResolver } from '../services/auth/types';
-import { TasksManager } from '../services/tasks-manager/TasksManager';
+import TasksManager from '../services/tasks-manager/TasksManager';
 // import initializeAuthMiddleware from '../middleware/auth';
 
 export default function initializeStreamRouter(
