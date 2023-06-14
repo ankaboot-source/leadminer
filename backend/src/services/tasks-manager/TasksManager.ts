@@ -9,7 +9,13 @@ import logger from '../../utils/logger';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
-import { ProgressType, RedisCommand, Task, TaskProgress } from './types';
+import {
+  FetcherStatus,
+  ProgressType,
+  RedisCommand,
+  Task,
+  TaskProgress
+} from './types';
 import { redactSensitiveData } from './utils';
 
 export default class TasksManager {
@@ -131,7 +137,7 @@ export default class TasksManager {
         }
       };
 
-      fetcher.start(); // start the fetching process
+      fetcher.start();
       await this.pubsubSendMessage(
         miningId,
         'REGISTER',
@@ -283,7 +289,11 @@ export default class TasksManager {
     progress[`${progressType}`] =
       (progress[`${progressType}`] || 0) + incrementBy;
 
-    return { ...progress, fetchingStatus: fetcher.isCompleted };
+    const fetcherStatus: FetcherStatus = fetcher.isCompleted
+      ? 'completed'
+      : 'running';
+
+    return { ...progress, fetcherStatus };
   }
 
   /**
@@ -297,7 +307,7 @@ export default class TasksManager {
     miningId: string,
     { extracted, fetched, fetcherStatus }: TaskProgress
   ) {
-    const status = fetcherStatus && extracted >= fetched;
+    const status = fetcherStatus === 'completed' && extracted >= fetched;
     const task = status ? await this.deleteTask(miningId) : null;
 
     return { status, task };
