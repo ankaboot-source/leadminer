@@ -1,23 +1,3 @@
-export interface EmailMessageContent {
-  header: any;
-  body?: string;
-}
-
-export interface TaggingCondition {
-  checkCondition(emailMessageContent: EmailMessageContent): boolean;
-}
-
-export interface TaggingRule {
-  fields: MessagingField[];
-  conditions: TaggingCondition[];
-}
-
-export type TagSource = 'refined';
-export interface Tag {
-  name: ContactTag;
-  reachable: number;
-  source?: TagSource;
-}
 
 export const MESSAGING_FIELDS = [
   'to',
@@ -29,28 +9,47 @@ export const MESSAGING_FIELDS = [
   'list-post'
 ] as const;
 
-export type MessagingField = typeof MESSAGING_FIELDS[number];
+type MessagingField = typeof MESSAGING_FIELDS[number];
+//
+export type DomainType = 'provider' | 'custom';
 
-export type EmailMessageTag =
+type EmailMessageTag =
   | 'transactional'
   | 'newsletter'
   | 'group'
   | 'linkedin';
-export type EmailAddressTag =
+type EmailAddressTag =
   | 'no-reply'
   | 'newsletter'
   | 'professional'
   | 'personal'
   | 'transactional';
-export type ContactTag = EmailMessageTag | EmailAddressTag;
+type ContactTag = EmailMessageTag | EmailAddressTag;
 
-export type DomainType = 'provider' | 'custom';
+type TagSource = 'refined';
 
-export interface EmailMessageTagExtractor {
-  tag: Tag;
-  requiredConditions?: TaggingCondition[];
-  /**
-   * If any of the following rules is true, this tag applies to contacts extracted from the given fields.
-   */
-  rulesToCheck: TaggingRule[];
+export interface TaggingStratetgy {
+
+  readonly tags: Tag[]
+
+  extractTags({ header, body, emailAddress, emaildomainType, emailFoundIn }: any): any;
+}
+
+export interface EmailMessageContent {
+  header: any;
+  body?: string;
+  emailAddress?: string
+  emailDomainType?: string
+  emailFoundIn?: MessagingField
+}
+
+export interface Tag {
+  name: ContactTag;
+  reachable: number;
+  source?: TagSource;
+  rules: TaggingCondition[]
+}
+
+export interface TaggingCondition {
+  checkCondition(emailMessageContent: EmailMessageContent): boolean;
 }
