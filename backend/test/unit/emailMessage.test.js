@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import EmailMessage from '../../src/services/EmailMessage';
-import groupEmailMessage from '../../src/services/tagging/group';
+import groupEmailMessage from '../../src/services/tagging/tags/group';
 import linkedinEmailMessage from '../../src/services/tagging/linkedin';
 import transactionalEmailMessage from '../../src/services/tagging/transactional';
 
