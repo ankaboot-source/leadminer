@@ -1,6 +1,5 @@
 import { REGEX_LIST_ID } from '../utils/constants';
 import { checkDomainStatus } from '../utils/helpers/domainHelpers';
-import { getEmailTags } from '../utils/helpers/emailAddressHelpers';
 import { getSpecificHeader } from '../utils/helpers/emailMessageHelpers';
 import {
   extractNameAndEmail,
@@ -43,7 +42,6 @@ class EmailMessage {
     this.date = this.#getDate();
     this.listId = this.#getListId();
     this.references = this.#getReferences();
-    this.messageTags = this.#getMessageTags();
   }
 
   /**
@@ -113,48 +111,6 @@ class EmailMessage {
     return this.header['message-id'][0];
   }
 
-  /**
-   * Extracts message tags based on its header.
-   * @returns { [{name: string, reachable: int, source: string}] | []}
-   */
-  #getMessageTags() {
-    const tags = [];
-
-    for (const {
-      rulesToCheck,
-      tag,
-      requiredConditions
-    } of messageTaggingRules) {
-      // If the email message was already tagged differently, transactional tag no longer applies
-      if (tag.name === 'transactional' && tags.length > 0) {
-        return tags;
-      }
-
-      if (requiredConditions && requiredConditions.length > 0) {
-        const isMissingRequiredCondition = requiredConditions.some(
-          (c) => !c.checkCondition({ header: this.header })
-        );
-
-        if (isMissingRequiredCondition) {
-          // eslint-disable-next-line no-continue
-          continue;
-        }
-      }
-
-      for (const { conditions, fields } of rulesToCheck) {
-        if (
-          conditions.some((condition) =>
-            condition.checkCondition({ header: this.header })
-          )
-        ) {
-          tags.push({ ...tag, source: 'refined', fields });
-          break;
-        }
-      }
-    }
-
-    return tags;
-  }
 
   /**
    * Extracts emails from the header and body of an email, then returns the extracted data.
@@ -222,9 +178,6 @@ class EmailMessage {
    * @returns {Promise<Object[]>} An array of objects
    */
   async extractPersons(emails, fieldName) {
-    const applicableMessageTags = this.messageTags.filter(({ fields }) =>
-      fields.includes(fieldName)
-    );
 
     const extractedPersons = await Promise.allSettled(
       emails.map(async (email) => {
@@ -239,15 +192,14 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            const emailTags = getEmailTags(email, domainType);
-
+            const taggingOptions = {
+              header: this.header,
+              emailAddress: email.address,
+              emailDomainType: domainType,
+              emailFoundIn: fieldName
+            }
             const tags = [
-              ...emailTags,
-              ...applicableMessageTags.map(({ name, reachable }) => ({
-                name,
-                reachable,
-                source: 'refined'
-              }))
+              messageTaggingRules.getTag(taggingOptions)
             ];
 
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
