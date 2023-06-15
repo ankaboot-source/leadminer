@@ -10,7 +10,7 @@ interface UserAuthCredentials {
  * Checks if the user is authenticated or logs out if the access token has expired.
  * @param to - The current route location object.
  * @param redirect - The redirect path if the user is not authenticated.
- * @returns The redirect path or a boolean indicating if the user is authenticated.
+ * @returns The redirect path or a Boolean(true)
  */
 export function isAuthenticatedUserOrLogout(
   to: RouteLocationNormalized,
@@ -37,8 +37,8 @@ export function isAuthenticatedUserOrLogout(
 
 /**
  * Checks if the user is anonymous or redirects to the specified path.
- * @param redirect The redirect path if the user is anonymous.
- * @returns A boolean indicating if the user is anonymous or the redirect path.
+ * @param redirect The redirect path if the user is not anonymous.
+ * @returns A boolean(True) or a redirect path.
  */
 export function isAnonymousUserOrRedirect(redirect: string): boolean | string {
   const isUserAnonymous = !LocalStorage.has("user");
