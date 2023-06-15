@@ -111,7 +111,6 @@ class EmailMessage {
     return this.header['message-id'][0];
   }
 
-
   /**
    * Extracts emails from the header and body of an email, then returns the extracted data.
    * @returns {Promise<{message: {object}, persons: {person: object, pointOfContact: object, tags: object[]}}[]>}
@@ -178,7 +177,6 @@ class EmailMessage {
    * @returns {Promise<Object[]>} An array of objects
    */
   async extractPersons(emails, fieldName) {
-
     const extractedPersons = await Promise.allSettled(
       emails.map(async (email) => {
         if (email.address === this.userEmail) {
@@ -197,10 +195,8 @@ class EmailMessage {
               emailAddress: email.address,
               emailDomainType: domainType,
               emailFoundIn: fieldName
-            }
-            const tags = [
-              messageTaggingRules.getTag(taggingOptions)
-            ];
+            };
+            const tags = [messageTaggingRules.getTag(taggingOptions)];
 
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
           }

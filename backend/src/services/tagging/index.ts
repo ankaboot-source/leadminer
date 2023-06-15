@@ -3,17 +3,15 @@ import { group, linkedin, newsLetter, transactional } from './tags';
 import { Tag, TaggingStratetgy } from './types';
 
 class Tagging {
-
-  private readonly taggingStratetgy
+  private readonly taggingStratetgy;
 
   constructor(taggingStratetgy: TaggingStratetgy) {
-      this.taggingStratetgy = taggingStratetgy
+    this.taggingStratetgy = taggingStratetgy;
   }
 
   getTag(options: any) {
-      return this.taggingStratetgy.extractTags(options)
+    return this.taggingStratetgy.extractTags(options);
   }
-
 }
 
 const tags: Tag[] = [
@@ -24,11 +22,7 @@ const tags: Tag[] = [
   group,
   transactional
 ];
-const taggingStratetgy = new EmailTagging(tags)
-const messageTaggingRules = new Tagging(taggingStratetgy) 
-
-
-
-
+const taggingStratetgy = new EmailTagging(tags);
+const messageTaggingRules = new Tagging(taggingStratetgy);
 
 export default messageTaggingRules;

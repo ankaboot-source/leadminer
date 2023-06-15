@@ -53,4 +53,3 @@ export function isNewsletter(emailAddress: string) {
     emailAddress.toLowerCase().includes(word)
   );
 }
-
