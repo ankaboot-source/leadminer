@@ -1,18 +1,21 @@
-import { LocalStorage } from "quasar";
+import {
+  isAuthenticatedUserOrLogout,
+  isAnonymousUserOrRedirect,
+} from "src/helpers/auth";
 import { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
   {
     path: "/dashboard",
     component: () => import("layouts/MainLayout.vue"),
-    beforeEnter: (to) => LocalStorage.has("user") || Boolean(to.hash) || "/",
+    beforeEnter: (to) => isAuthenticatedUserOrLogout(to, "/"),
     children: [
       { path: "", component: () => import("src/pages/DashboardPage.vue") },
     ],
   },
   {
     path: "/",
-    beforeEnter: () => !LocalStorage.has("user") || "/dashboard",
+    beforeEnter: () => isAnonymousUserOrRedirect("/dashboard"),
     component: () => import("src/pages/LoginPage.vue"),
   },
 
