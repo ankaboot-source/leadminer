@@ -70,10 +70,11 @@ onBeforeMount(async () => {
     const { user } = (await supabaseClient.auth.getUser(accessToken)).data;
 
     if (user) {
-      const { id: userId, app_metadata: appMetadata } = user;
+      const { id: userId, app_metadata: appMetadata, email } = user;
       const isAzureProvider = appMetadata.provider === "azure";
 
       $store.commit("leadminer/SET_USER_CREDENTIALS", {
+        email,
         id: userId,
         accessToken,
         refreshToken,
