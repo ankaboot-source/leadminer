@@ -1,7 +1,7 @@
 import { hasHeaderWithValue } from '../../../utils/helpers/emailMessageHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
-export class IdentifyLinkedinTagRules implements TaggingCondition {
+class IdentifyLinkedinTagRules implements TaggingCondition {
   checkCondition({ header }: EmailMessageContent) {
     return hasHeaderWithValue(header, 'x-linkedin-class', [
       'inmail',
@@ -10,3 +10,5 @@ export class IdentifyLinkedinTagRules implements TaggingCondition {
     ]);
   }
 }
+
+export default IdentifyLinkedinTagRules;

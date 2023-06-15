@@ -4,7 +4,7 @@ import {
 } from '../../../utils/helpers/emailMessageHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
-export class IdentifyGroupTagRules implements TaggingCondition {
+class IdentifyGroupTagRules implements TaggingCondition {
   checkCondition({ header }: EmailMessageContent) {
     const hasRequiredHeader =
       getSpecificHeader(header, ['list-post', 'x-original-from']) !== null;
@@ -15,3 +15,5 @@ export class IdentifyGroupTagRules implements TaggingCondition {
     return hasRequiredHeader || hasToMeetSomeConditions;
   }
 }
+
+export default IdentifyGroupTagRules;

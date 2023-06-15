@@ -1,4 +1,4 @@
-import { EmailTagging } from './stratetgies/EmailTaggingStratetgy';
+import EmailTagging from './stratetgies/EmailTaggingStratetgy';
 import { group, linkedin, newsLetter, transactional } from './tags';
 import { Tag, TaggingStratetgy } from './types';
 

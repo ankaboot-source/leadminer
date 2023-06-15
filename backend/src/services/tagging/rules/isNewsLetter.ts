@@ -1,7 +1,7 @@
 import { getSpecificHeader } from '../../../utils/helpers/emailMessageHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
-export class IdentifyNewsLetterRule implements TaggingCondition {
+class IdentifyNewsLetterRule implements TaggingCondition {
   checkCondition({
     header,
     emailDomainType,
@@ -27,3 +27,4 @@ export class IdentifyNewsLetterRule implements TaggingCondition {
       : hasRequiredHeaderFields;
   }
 }
+export default IdentifyNewsLetterRule;

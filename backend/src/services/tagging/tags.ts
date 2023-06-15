@@ -1,7 +1,7 @@
-import { IdentifyGroupTagRules } from './rules/isGroup';
-import { IdentifyLinkedinTagRules } from './rules/isLinkedin';
-import { IdentifyNewsLetterRule } from './rules/isNewsLetter';
-import { IdentifyTransactionalTagRules } from './rules/isTransactional';
+import IdentifyGroupTagRules from './rules/isGroup';
+import IdentifyLinkedinTagRules from './rules/isLinkedin';
+import IdentifyNewsLetterRule from './rules/isNewsLetter';
+import IdentifyTransactionalTagRules from './rules/isTransactional';
 import { Tag } from './types';
 
 export const newsLetter: Tag = {

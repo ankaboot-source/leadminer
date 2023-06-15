@@ -5,7 +5,7 @@ import {
   isNewsletter
 } from '../../../utils/helpers/emailAddressHelpers';
 
-export class EmailTagging implements TaggingStratetgy {
+class EmailTagging implements TaggingStratetgy {
   tags: Tag[];
 
   constructor(tags: Tag[]) {
@@ -79,8 +79,6 @@ export class EmailTagging implements TaggingStratetgy {
       return currentTag;
     }
 
-    console.log(currentTag);
-
     for (const { rules, name, reachable } of this.tags) {
       const hasMetCondition = rules.some((condition) =>
         condition.checkCondition({
@@ -99,3 +97,5 @@ export class EmailTagging implements TaggingStratetgy {
     return currentTag;
   }
 }
+
+export default EmailTagging;

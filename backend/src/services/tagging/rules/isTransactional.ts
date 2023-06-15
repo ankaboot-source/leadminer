@@ -4,7 +4,7 @@ import {
 } from '../../../utils/helpers/emailMessageHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
-export class IdentifyTransactionalTagRules implements TaggingCondition {
+class IdentifyTransactionalTagRules implements TaggingCondition {
   checkCondition({ header }: EmailMessageContent) {
     const hasToMeetSomeConditions = [
       hasHeaderFieldStartsWith(header, [
@@ -46,3 +46,5 @@ export class IdentifyTransactionalTagRules implements TaggingCondition {
     return hasToMeetSomeConditions;
   }
 }
+
+export default IdentifyTransactionalTagRules;
