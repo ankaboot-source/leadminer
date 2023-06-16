@@ -148,7 +148,7 @@ class EmailMessage {
           )
         ) {
           tags.push({ ...tag, source: 'refined', fields });
-          break;
+          return tags;
         }
       }
     }
@@ -239,17 +239,23 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            const emailTags = getEmailTags(email, domainType);
+            const emailTag = getEmailTags(email, domainType);
+            const tags = [];
 
-            const tags = [
-              ...emailTags,
-              ...applicableMessageTags.map(({ name, reachable }) => ({
-                name,
-                reachable,
-                source: 'refined'
-              }))
-            ];
+            // if the first element is professional then the only tag is professional
+            // so it's eligable for further tagging.
 
+            if (emailTag[0].name === 'professional') {
+              applicableMessageTags.forEach(({ name, reachable }) => {
+                tags.push({
+                  name,
+                  reachable,
+                  source: 'refined'
+                });
+              });
+            } else {
+              tags.push(...emailTag);
+            }
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
           }
 
