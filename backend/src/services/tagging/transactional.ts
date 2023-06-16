@@ -5,7 +5,7 @@ import { EmailMessageTagExtractor } from './types';
 const transactionalEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'transactional',
-    reachable: 2
+    reachable: 0
   },
   rulesToCheck: [
     {
