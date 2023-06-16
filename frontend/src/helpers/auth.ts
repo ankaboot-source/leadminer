@@ -17,11 +17,12 @@ export function isAuthenticatedUserOrLogout(
   redirect: string
 ) {
   const userExists: boolean = LocalStorage.has("user");
-  const authenticatedUser = userExists && LocalStorage.getItem("user");
+  const authenticatedUser =
+    userExists && (LocalStorage.getItem("user") as UserAuthCredentials);
 
-  if (authenticatedUser) {
+  if (authenticatedUser && authenticatedUser?.accessToken) {
     const currentTime = Math.floor(Date.now() / 1000);
-    const { accessToken, expiresAt } = authenticatedUser as UserAuthCredentials;
+    const { accessToken, expiresAt } = authenticatedUser;
     const hasValidAccessToken =
       (accessToken && expiresAt && expiresAt > currentTime) || false;
 
