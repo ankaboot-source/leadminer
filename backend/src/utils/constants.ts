@@ -24,7 +24,22 @@ export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
-export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = ['newsletter'];
+export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
+  '@campaigns.',
+  'newsletter@',
+  '@newsletter.',
+  '@substack.io'
+]; // add newletter domains;
+
+export const GROUP_EMAIL_ADDRESS_INCLUDES = [
+  '@lists.',
+  '@sympa.',
+  '@gaggle.email',
+  '@groups.io',
+  '@framalistes.org',
+  '@groups.google.com'
+];
+
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = ['reply.github'];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
