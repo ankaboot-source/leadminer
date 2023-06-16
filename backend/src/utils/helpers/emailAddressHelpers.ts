@@ -3,6 +3,7 @@ import {
   GROUP_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
+  ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../constants';
 
@@ -66,6 +67,14 @@ export function isGroup(emailAddress: string) {
   );
 }
 
+export function isRole(emailAddress: string) {
+  return ROLE_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+
+
+}
+
 /**
  * Tags an email address.
  * @param email - The email to check.
@@ -90,6 +99,8 @@ export function getEmailTags(
       reachable: 0,
       source: 'refined'
     });
+  } else if (isRole(address)) {
+    emailTags.push({ name: 'role', reachable: 2, source: 'refined' });
   } else if (isNewsletter(address) || name?.includes('newsletter')) {
     emailTags.push({ name: 'newsletter', reachable: 0, source: 'refined' });
   } else if (isGroup(address)) {

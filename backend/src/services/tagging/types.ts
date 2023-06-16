@@ -41,7 +41,9 @@ export type EmailAddressTag =
   | 'newsletter'
   | 'professional'
   | 'personal'
-  | 'transactional';
+  | 'transactional'
+  | 'role';
+
 export type ContactTag = EmailMessageTag | EmailAddressTag;
 
 export type DomainType = 'provider' | 'custom';

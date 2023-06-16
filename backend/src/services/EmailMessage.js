@@ -244,7 +244,7 @@ class EmailMessage {
             // if the first element is professional then the only tag is professional
             // so it's eligable for further tagging.
 
-            if (tags[0].name === 'professional') {
+            if (tags[0].name === 'professional' | tags[0].name === 'role') {
               const headerTags = [];
 
               applicableMessageTags.forEach(({ name, reachable }) => {
