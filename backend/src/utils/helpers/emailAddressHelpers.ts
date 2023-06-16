@@ -1,5 +1,6 @@
 import { DomainType, Tag } from '../../services/tagging/types';
 import {
+  GROUP_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
@@ -17,7 +18,7 @@ export function findEmailAddressType(domainType: DomainType) {
     case 'provider':
       return 'personal';
     default:
-      return '';
+      return 'invalid';
   }
 }
 
@@ -55,6 +56,17 @@ export function isNewsletter(emailAddress: string) {
 }
 
 /**
+ * Checks if an email address can be tagged as group
+ * @param emailAddress - The email address to check.
+ * @returns
+ */
+export function isGroup(emailAddress: string) {
+  return GROUP_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
  * Tags an email address.
  * @param email - The email to check.
  * @param email.address - The email address.
@@ -72,21 +84,17 @@ export function getEmailTags(
 
   if (isNoReply(address)) {
     emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
-  }
-
-  if (isTransactional(address)) {
+  } else if (isTransactional(address)) {
     emailTags.push({
       name: 'transactional',
       reachable: 0,
       source: 'refined'
     });
-  }
-
-  if (isNewsletter(address) || name?.includes('newsletter')) {
-    emailTags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
-  }
-
-  if (emailType !== '') {
+  } else if (isNewsletter(address) || name?.includes('newsletter')) {
+    emailTags.push({ name: 'newsletter', reachable: 0, source: 'refined' });
+  } else if (isGroup(address)) {
+    emailTags.push({ name: 'group', reachable: 2, source: 'refined' });
+  } else if (emailType !== 'invalid') {
     emailTags.push({
       name: emailType,
       reachable: 1,
