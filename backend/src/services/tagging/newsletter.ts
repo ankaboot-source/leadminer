@@ -1,5 +1,4 @@
 import HasHeaderField from './conditions/HasHeaderField';
-import HasNoHeaderField from './conditions/HasNoHeaderField';
 import { EmailMessageTagExtractor } from './types';
 
 const newsletterEmailMessage: EmailMessageTagExtractor = {
