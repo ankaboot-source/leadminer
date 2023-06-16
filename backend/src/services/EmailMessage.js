@@ -239,23 +239,27 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            const emailTag = getEmailTags(email, domainType);
-            const tags = [];
+            let tags = getEmailTags(email, domainType);
 
             // if the first element is professional then the only tag is professional
             // so it's eligable for further tagging.
 
-            if (emailTag[0].name === 'professional') {
+            if (tags[0].name === 'professional') {
+              const headerTags = [];
+
               applicableMessageTags.forEach(({ name, reachable }) => {
-                tags.push({
+                headerTags.push({
                   name,
                   reachable,
                   source: 'refined'
                 });
               });
-            } else {
-              tags.push(...emailTag);
+
+              if (headerTags.length > 0) {
+                tags = headerTags;
+              }
             }
+
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
           }
 
