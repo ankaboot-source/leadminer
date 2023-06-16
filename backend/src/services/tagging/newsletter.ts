@@ -7,7 +7,6 @@ const newsletterEmailMessage: EmailMessageTagExtractor = {
     name: 'newsletter',
     reachable: 1
   },
-  requiredConditions: [new HasNoHeaderField(['list-post'])],
   rulesToCheck: [
     {
       fields: ['from'],
