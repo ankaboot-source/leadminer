@@ -11,20 +11,8 @@ BEGIN
     array_agg(name) AS tags,
     array_agg(reachable) AS tags_reachability
   FROM tags
-  WHERE user_id = get_grouped_tags_by_person._userid AND (reachable = 1 OR reachable = 2)
-  GROUP BY email
-
-  UNION
-
-  SELECT 
-    person_email,
-    array_agg(name) AS tags,
-    array_agg(reachable) AS tags_reachability
-  FROM tags
-  GROUP BY person_email
-  HAVING
-    COUNT(DISTINCT name) = 1
-    OR MAX(name) = 'newsletter';
+  WHERE user_id = _userid
+  GROUP BY email;
 END
 $function$;
 
