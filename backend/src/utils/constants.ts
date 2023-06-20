@@ -26,7 +26,7 @@ export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
-  'newsletter@.',
+  'newsletter@',
   '@newsletter.',
   '@substack.io',
 ] // add newletter domains;
