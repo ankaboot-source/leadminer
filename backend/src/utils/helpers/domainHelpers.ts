@@ -11,7 +11,7 @@ import rejectAfter from '../profiling/timeout';
 export async function checkMXStatus(
   redisClient: Redis,
   domain: string
-): Promise<[boolean, 'custom' | '', string]> {
+): Promise<[boolean, 'custom' | 'invalid', string]> {
   try {
     const result = await Promise.race([
       dns.resolveMx(domain),
@@ -23,7 +23,7 @@ export async function checkMXStatus(
 
     if (hasNoMxRecords) {
       await redisClient.sadd('domainListInvalid', domain);
-      return [false, '', domain];
+      return [false, 'invalid', domain];
     }
 
     await redisClient.sadd('domainListValid', domain);
@@ -34,7 +34,7 @@ export async function checkMXStatus(
       return [true, 'custom', domain];
     }
     await redisClient.sadd('domainListInvalid', domain);
-    return [false, '', domain];
+    return [false, 'invalid', domain];
   }
 }
 
@@ -50,7 +50,9 @@ export async function checkMXStatus(
 export async function checkDomainStatus(
   redisClient: Redis,
   domain: string
-): Promise<[boolean, 'provider' | 'disposable' | 'custom' | '', string]> {
+): Promise<
+  [boolean, 'provider' | 'disposable' | 'custom' | 'invalid', string]
+> {
   /**
    * As most of domains are free providers,
    * we can reduce the execution time when check for freeproviders first.
@@ -60,7 +62,7 @@ export async function checkDomainStatus(
     { redisKey: 'freeProviders', type: 'provider' as const, isValid: true },
     { redisKey: 'disposable', type: 'disposable' as const, isValid: false },
     { redisKey: 'domainListValid', type: 'custom' as const, isValid: true },
-    { redisKey: 'domainListInvalid', type: '' as const, isValid: false }
+    { redisKey: 'domainListInvalid', type: 'invalid' as const, isValid: false }
   ];
 
   for (const provider of providers) {

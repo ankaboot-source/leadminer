@@ -5,12 +5,12 @@ import { EmailMessageTagExtractor } from './types';
 const newsletterEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'newsletter',
-    reachable: 1
+    reachable: 0
   },
   requiredConditions: [new HasNoHeaderField(['list-post'])],
   rulesToCheck: [
     {
-      fields: ['from'],
+      fields: ['from', 'reply_to', 'reply-to'],
       conditions: [new HasHeaderField(['list-unsubscribe', 'list-id', 'list'])]
     }
   ]

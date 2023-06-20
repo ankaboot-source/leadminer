@@ -297,7 +297,7 @@ describe('Email Message', () => {
           expect(message.messageTags).toEqual([
             {
               name: 'transactional',
-              reachable: 2,
+              reachable: 0,
               source: 'refined',
               fields: transactionalRules.fields
             }
@@ -314,7 +314,7 @@ describe('Email Message', () => {
         expect(message.messageTags).toEqual([
           {
             name: 'transactional',
-            reachable: 2,
+            reachable: 0,
             source: 'refined',
             fields: transactionalRules.fields
           }
@@ -330,7 +330,7 @@ describe('Email Message', () => {
         expect(message.messageTags).toEqual([
           {
             name: 'transactional',
-            reachable: 2,
+            reachable: 0,
             source: 'refined',
             fields: transactionalRules.fields
           }
@@ -346,7 +346,7 @@ describe('Email Message', () => {
         expect(message.messageTags).toEqual([
           {
             name: 'transactional',
-            reachable: 2,
+            reachable: 0,
             source: 'refined',
             fields: transactionalRules.fields
           }
@@ -362,7 +362,7 @@ describe('Email Message', () => {
         expect(message.messageTags).toEqual([
           {
             name: 'transactional',
-            reachable: 2,
+            reachable: 0,
             source: 'refined',
             fields: transactionalRules.fields
           }

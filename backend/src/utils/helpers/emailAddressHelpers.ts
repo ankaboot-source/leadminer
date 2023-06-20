@@ -1,7 +1,9 @@
 import { DomainType, Tag } from '../../services/tagging/types';
 import {
+  GROUP_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
+  ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../constants';
 
@@ -17,7 +19,7 @@ export function findEmailAddressType(domainType: DomainType) {
     case 'provider':
       return 'personal';
     default:
-      return '';
+      return 'invalid';
   }
 }
 
@@ -55,44 +57,61 @@ export function isNewsletter(emailAddress: string) {
 }
 
 /**
- * Tags an email address.
- * @param email - The email to check.
- * @param email.address - The email address.
- * @param email.name - The user name.
- * @param domainType - The type of domain, it can be either "provider" or "custom"
- * @returns List of tags
+ * Checks if an email address can be tagged as group
+ * @param emailAddress - The email address to check.
+ * @returns
  */
-export function getEmailTags(
+export function isGroup(emailAddress: string) {
+  return GROUP_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+export function isRole(emailAddress: string) {
+  return ROLE_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
+ * Retrieves a single tag for an email address based on its properties.
+ *
+ * @param address - The email address.
+ * @param name - The name associated with the email address.
+ * @param domainType - The type of domain the email address belongs to.
+ * @returns A tag for the email address, or null if no tag is found.
+ */
+export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
-): Tag[] {
-  const emailTags: Tag[] = [];
-
+): Tag | null {
   const emailType = findEmailAddressType(domainType);
 
   if (isNoReply(address)) {
-    emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
+    return { name: 'no-reply', reachable: 0, source: 'refined' };
   }
 
   if (isTransactional(address)) {
-    emailTags.push({
+    return {
       name: 'transactional',
       reachable: 0,
       source: 'refined'
-    });
+    };
+  }
+
+  if (isRole(address)) {
+    return { name: 'role', reachable: 2, source: 'refined' };
   }
 
   if (isNewsletter(address) || name?.includes('newsletter')) {
-    emailTags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
+    return { name: 'newsletter', reachable: 0, source: 'refined' };
   }
 
-  if (emailType !== '') {
-    emailTags.push({
-      name: emailType,
-      reachable: 1,
-      source: 'refined'
-    });
+  if (isGroup(address)) {
+    return { name: 'group', reachable: 2, source: 'refined' };
   }
 
-  return emailTags;
+  return emailType !== 'invalid'
+    ? { name: emailType, reachable: 1, source: 'refined' }
+    : null;
 }

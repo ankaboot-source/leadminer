@@ -20,7 +20,7 @@ export function isAuthenticatedUserOrLogout(
   const authenticatedUser =
     userExists && (LocalStorage.getItem("user") as UserAuthCredentials);
 
-  if (authenticatedUser && authenticatedUser?.accessToken) {
+  if (authenticatedUser?.accessToken) {
     const currentTime = Math.floor(Date.now() / 1000);
     const { accessToken, expiresAt } = authenticatedUser;
     const hasValidAccessToken =

@@ -1,6 +1,6 @@
 import { REGEX_LIST_ID } from '../utils/constants';
 import { checkDomainStatus } from '../utils/helpers/domainHelpers';
-import { getEmailTags } from '../utils/helpers/emailAddressHelpers';
+import { getEmailTag } from '../utils/helpers/emailAddressHelpers';
 import { getSpecificHeader } from '../utils/helpers/emailMessageHelpers';
 import {
   extractNameAndEmail,
@@ -148,7 +148,7 @@ class EmailMessage {
           )
         ) {
           tags.push({ ...tag, source: 'refined', fields });
-          break;
+          return tags;
         }
       }
     }
@@ -239,16 +239,23 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            const emailTags = getEmailTags(email, domainType);
+            const emailTag = getEmailTag(email, domainType);
+            let tags = [emailTag].filter(Boolean);
 
-            const tags = [
-              ...emailTags,
-              ...applicableMessageTags.map(({ name, reachable }) => ({
-                name,
-                reachable,
-                source: 'refined'
-              }))
-            ];
+            // If the email tag is "professional" or "role", apply header tags
+            if (['professional', 'role'].includes(emailTag.name)) {
+              const headerTags = applicableMessageTags.map(
+                ({ name, reachable }) => ({
+                  name,
+                  reachable,
+                  source: 'refined'
+                })
+              );
+
+              if (headerTags.length > 0) {
+                tags = headerTags;
+              }
+            }
 
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
           }
