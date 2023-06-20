@@ -252,8 +252,6 @@ class EmailMessage {
                 source: 'refined'
               }));
 
-              console.log(emailTag.name, headerTags)
-
               if (headerTags.length > 0) {
                 tags = headerTags;
               }
