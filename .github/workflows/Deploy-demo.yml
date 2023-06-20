@@ -29,7 +29,7 @@ jobs:
           envs: GOOGLE_CLIENT_ID,GOOGLE_SECRET,AZURE_CLIENT_ID,AZURE_SECRET,SUPABASE_SERVICE_ROLE_KEY,PG_CONNECTION_STRING,LEADMINER_API_HASH_SECRET,REDIS_HOST,REDIS_PASSWORD,SAAS_SUPABASE_PG_CONNECTION_STRING,SAAS_SUPABASE_SECRET_PROJECT_TOKEN,AZURE_TENANT_ID
           script: |
             TARGET=demo
-            ( cd leadminer_$TARGET; docker-compose down; git reset --hard origin/main; git pull)
+            ( cd leadminer_$TARGET; docker compose down; git reset --hard origin/main; git pull)
             ( cd leadminer.io; . .env.$TARGET; git reset --hard origin/main; git pull; psql \
                 -Atx "$PG_CONNECTION_STRING" \
                 -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
@@ -54,7 +54,7 @@ jobs:
             cd leadminer_$TARGET
 
             docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
-            docker-compose up -d \
+            docker compose up -d \
               --build \
               --force-recreate
             
