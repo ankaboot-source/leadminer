@@ -76,42 +76,45 @@ export function isRole(emailAddress: string) {
 }
 
 /**
- * Tags an email address.
- * @param email - The email to check.
- * @param email.address - The email address.
- * @param email.name - The user name.
- * @param domainType - The type of domain, it can be either "provider" or "custom"
- * @returns List of tags
+ * Retrieves a single tag for an email address based on its properties.
+ *
+ * @param address - The email address.
+ * @param name - The name associated with the email address.
+ * @param domainType - The type of domain the email address belongs to.
+ * @returns A tag for the email address, or null if no tag is found.
  */
-export function getEmailTags(
+export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
-): Tag[] {
-  const emailTags: Tag[] = [];
+): Tag | null {
 
   const emailType = findEmailAddressType(domainType);
 
   if (isNoReply(address)) {
-    emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
-  } else if (isTransactional(address)) {
-    emailTags.push({
+    return { name: 'no-reply', reachable: 0, source: 'refined' };
+  }
+
+  if (isTransactional(address)) {
+    return {
       name: 'transactional',
       reachable: 0,
       source: 'refined'
-    });
-  } else if (isRole(address)) {
-    emailTags.push({ name: 'role', reachable: 2, source: 'refined' });
-  } else if (isNewsletter(address) || name?.includes('newsletter')) {
-    emailTags.push({ name: 'newsletter', reachable: 0, source: 'refined' });
-  } else if (isGroup(address)) {
-    emailTags.push({ name: 'group', reachable: 2, source: 'refined' });
-  } else if (emailType !== 'invalid') {
-    emailTags.push({
-      name: emailType,
-      reachable: 1,
-      source: 'refined'
-    });
+    };
   }
 
-  return emailTags;
+  if (isRole(address)) {
+    return { name: 'role', reachable: 2, source: 'refined' };
+  }
+
+  if (isNewsletter(address) || name?.includes('newsletter')) {
+    return { name: 'newsletter', reachable: 0, source: 'refined' };
+  }
+
+  if (isGroup(address)) {
+    return { name: 'group', reachable: 2, source: 'refined' };
+  }
+
+  return emailType !== 'invalid'
+    ? { name: emailType, reachable: 1, source: 'refined' }
+    : null
 }
