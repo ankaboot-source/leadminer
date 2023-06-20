@@ -24,6 +24,7 @@ export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
+export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',
@@ -70,8 +71,6 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'unsubscribe',
   'no-response'
 ];
-export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
-
 export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   "@info.",
   "information@",
