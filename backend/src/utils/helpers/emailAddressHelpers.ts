@@ -71,8 +71,6 @@ export function isRole(emailAddress: string) {
   return ROLE_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
-
-
 }
 
 /**
@@ -87,7 +85,6 @@ export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
 ): Tag | null {
-
   const emailType = findEmailAddressType(domainType);
 
   if (isNoReply(address)) {
@@ -116,5 +113,5 @@ export function getEmailTag(
 
   return emailType !== 'invalid'
     ? { name: emailType, reachable: 1, source: 'refined' }
-    : null
+    : null;
 }

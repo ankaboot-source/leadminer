@@ -239,18 +239,18 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-
-            const emailTag = getEmailTag(email, domainType)
-            let tags = [emailTag].filter(Boolean)
+            const emailTag = getEmailTag(email, domainType);
+            let tags = [emailTag].filter(Boolean);
 
             // If the email tag is "professional" or "role", apply header tags
             if (['professional', 'role'].includes(emailTag.name)) {
-
-              const headerTags = applicableMessageTags.map(({ name, reachable }) => ({
-                name,
-                reachable,
-                source: 'refined'
-              }));
+              const headerTags = applicableMessageTags.map(
+                ({ name, reachable }) => ({
+                  name,
+                  reachable,
+                  source: 'refined'
+                })
+              );
 
               if (headerTags.length > 0) {
                 tags = headerTags;

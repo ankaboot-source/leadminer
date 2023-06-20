@@ -29,8 +29,8 @@ export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',
   '@newsletter.',
-  '@substack.io',
-] // add newletter domains;
+  '@substack.io'
+]; // add newletter domains;
 export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@lists.',
   '@sympa.',
@@ -38,7 +38,7 @@ export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@groups.io',
   '@framalistes.org',
   '@groups.google.com'
-]
+];
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = ['reply.github'];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
@@ -72,21 +72,21 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'no-response'
 ];
 export const ROLE_EMAIL_ADDRESS_INCLUDES = [
-  "@info.",
-  "information@",
-  "info@",
-  "infos@",
-  "hello@",
-  "welcome@",
-  "contact@",
-  "news@",
-  "sales@",
-  "support@",
-  "bonjour@",
-  "greetings@",
-  "spam@",
-  "abuse@",
-  "all@",
-  "admin@",
-  "root@"
-]
+  '@info.',
+  'information@',
+  'info@',
+  'infos@',
+  'hello@',
+  'welcome@',
+  'contact@',
+  'news@',
+  'sales@',
+  'support@',
+  'bonjour@',
+  'greetings@',
+  'spam@',
+  'abuse@',
+  'all@',
+  'admin@',
+  'root@'
+];
