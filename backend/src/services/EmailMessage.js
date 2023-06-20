@@ -1,6 +1,6 @@
 import { REGEX_LIST_ID } from '../utils/constants';
 import { checkDomainStatus } from '../utils/helpers/domainHelpers';
-import { getEmailTags } from '../utils/helpers/emailAddressHelpers';
+import { getEmailTag } from '../utils/helpers/emailAddressHelpers';
 import { getSpecificHeader } from '../utils/helpers/emailMessageHelpers';
 import {
   extractNameAndEmail,
@@ -239,21 +239,20 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            let tags = getEmailTags(email, domainType);
 
-            // if the first element is professional then the only tag is professional
-            // so it's eligable for further tagging.
+            const emailTag = getEmailTag(email, domainType)
+            let tags = [emailTag].filter(Boolean)
 
-            if (tags[0].name === 'professional' | tags[0].name === 'role') {
-              const headerTags = [];
+            // If the email tag is "professional" or "role", apply header tags
+            if (['professional', 'role'].includes(emailTag.name)) {
 
-              applicableMessageTags.forEach(({ name, reachable }) => {
-                headerTags.push({
-                  name,
-                  reachable,
-                  source: 'refined'
-                });
-              });
+              const headerTags = applicableMessageTags.map(({ name, reachable }) => ({
+                name,
+                reachable,
+                source: 'refined'
+              }));
+
+              console.log(emailTag.name, headerTags)
 
               if (headerTags.length > 0) {
                 tags = headerTags;
