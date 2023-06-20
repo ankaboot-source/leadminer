@@ -16,9 +16,7 @@ export function isAuthenticatedUserOrLogout(
   to: RouteLocationNormalized,
   redirect: string
 ) {
-  const userExists: boolean = LocalStorage.has("user");
-  const authenticatedUser =
-    userExists && (LocalStorage.getItem("user") as UserAuthCredentials);
+  const authenticatedUser = LocalStorage.getItem("user") as UserAuthCredentials;
 
   if (authenticatedUser?.accessToken) {
     const currentTime = Math.floor(Date.now() / 1000);
