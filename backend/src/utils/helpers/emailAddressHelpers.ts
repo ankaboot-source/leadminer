@@ -104,7 +104,7 @@ export function getEmailTag(
   }
 
   if (isNewsletter(address) || name?.includes('newsletter')) {
-    return { name: 'newsletter', reachable: 0, source: 'refined' };
+    return { name: 'newsletter', reachable: 3, source: 'refined' };
   }
 
   if (isGroup(address)) {
