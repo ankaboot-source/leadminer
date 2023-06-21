@@ -227,6 +227,27 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     });
   });
 
+  it('should pass previous fixed bugs', () => {
+    const testCases = [
+      {
+        description: 'Case where name contains a text and email.',
+        input:
+          '"Leadminer Test leadminer@Teamankaboot.fr" <leadminer@teamankaboot.fr>',
+        output: {
+          name: 'Leadminer Test leadminer@Teamankaboot.fr',
+          identifier: 'leadminer',
+          address: 'leadminer@teamankaboot.fr',
+          domain: 'teamankaboot.fr'
+        }
+      }
+    ];
+
+    testCases.forEach(({ input, output }) => {
+      const [resultOutput] = extractNameAndEmail(input);
+      expect(resultOutput).toEqual(output);
+    });
+  });
+
   it('should pass cases when names have special chars', () => {
     const specialChars = ['-', '()', ':', '|', '&', '@', ','];
     const email = 'leadminer@Teamankaboot.fr';
