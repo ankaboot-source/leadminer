@@ -263,23 +263,23 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
           { input: `${email}`, output: 'EMPTY' },
           { input: `<${email}>`, output: 'EMPTY' },
           {
-            input: `Hello${char}There <${email}>`,
+            input: `"Hello${char}There" <${email}>`,
             output: `Hello${char}There`
           },
-          { input: `Hello${char}There ${email}`, output: `Hello${char}There` },
+          { input: `"Hello${char}There" ${email}`, output: `Hello${char}There` },
           {
-            input: `Hello ${char} There <${email}>`,
+            input: `"Hello ${char} There" <${email}>`,
             output: `Hello ${char} There`
           },
           {
-            input: `Hello ${char} There ${email}`,
+            input: `"Hello ${char} There" ${email}`,
             output: `Hello ${char} There`
           },
           {
-            input: `Hello ${char}There <${email}>`,
+            input: `"Hello ${char}There" <${email}>`,
             output: `Hello ${char}There`
           },
-          { input: `Hello ${char}There ${email}`, output: `Hello ${char}There` }
+          { input: `"Hello ${char}There" ${email}`, output: `Hello ${char}There` }
         ];
 
         return [
@@ -330,8 +330,8 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it.each([{ char: ',' }, { char: ';' }])(
     'Should not include names with trailing $char',
     ({ char }) => {
-      const startsWithInput = `userName${char} user@email.com`;
-      const endsWithInput = `${char}userName user@email.com`;
+      const startsWithInput = `"userName${char}" user@email.com`;
+      const endsWithInput = `"${char}userName" user@email.com`;
 
       const startsWithResult = extractNameAndEmail(startsWithInput);
       const endsWithResult = extractNameAndEmail(endsWithInput);
