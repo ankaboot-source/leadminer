@@ -69,6 +69,11 @@ export function isGroup(emailAddress: string) {
   );
 }
 
+/**
+ * Checks if an email address can be tagged as role
+ * @param emailAddress - The email address to check.
+ * @returns Returns true if the email can be tagged as LinkedIn, false otherwise.
+ */
 export function isRole(emailAddress: string) {
   return ROLE_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
@@ -96,6 +101,7 @@ export function isLinkedin(emailAddress: string) {
     emailAddress.toLowerCase().includes(word)
   );
 }
+
 /**
  * Retrieves a single tag for an email address based on its properties.
  *
