@@ -25,6 +25,10 @@ export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
+
+// Tagging
+export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
+export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',
@@ -39,7 +43,12 @@ export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@framalistes.org',
   '@groups.google.com'
 ];
-export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = ['reply.github'];
+export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
+  'reply.github',
+  '@boards.trello.com',
+  'bot@',
+  'bounce@'
+];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
   'alert',
@@ -88,5 +97,12 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'abuse@',
   'all@',
   'admin@',
-  'root@'
+  'root@',
+  'account@',
+  'boutique@',
+  'recrutement@',
+  'team@',
+  'communication@',
+  'hr@',
+  'marketing@'
 ];
