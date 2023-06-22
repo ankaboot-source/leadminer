@@ -72,7 +72,7 @@ export function isGroup(emailAddress: string) {
 /**
  * Checks if an email address can be tagged as role
  * @param emailAddress - The email address to check.
- * @returns Returns true if the email can be tagged as LinkedIn, false otherwise.
+ * @returns Returns true if the email can be tagged as role, false otherwise.
  */
 export function isRole(emailAddress: string) {
   return ROLE_EMAIL_ADDRESS_INCLUDES.some((word) =>
@@ -83,7 +83,7 @@ export function isRole(emailAddress: string) {
 /**
  * Checks if an email address can be tagged as airbnb
  * @param emailAddress - The email address to check.
- * @returns Returns true if the email can be tagged as LinkedIn, false otherwise.
+ * @returns Returns true if the email can be tagged as airbnb, false otherwise.
  */
 export function isAirbnb(emailAddress: string) {
   return AIRBNB_EMAIL_ADDRESS_INCLUDES.some((word) =>
@@ -94,7 +94,7 @@ export function isAirbnb(emailAddress: string) {
 /**
  * Checks if an email address can be tagged as linkedin
  * @param emailAddress - The email address to check.
- * @returns true if the email can be tagged as LinkedIn, false otherwise.
+ * @returns true if the email can be tagged as linkedin, false otherwise.
  */
 export function isLinkedin(emailAddress: string) {
   return LINKEDIN_EMAIL_ADDRESS_INCLUDES.some((word) =>
