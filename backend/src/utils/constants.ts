@@ -25,6 +25,8 @@ export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
+export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
+export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',
