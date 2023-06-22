@@ -42,7 +42,8 @@ export type EmailAddressTag =
   | 'professional'
   | 'personal'
   | 'transactional'
-  | 'role';
+  | 'role'
+  | 'airbnb';
 
 export type ContactTag = EmailMessageTag | EmailAddressTag;
 

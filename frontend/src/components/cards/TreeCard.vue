@@ -81,13 +81,12 @@ function filterDefaultSelectedFolders(boxes) {
   objectScan(["**.path"], {
     joined: true,
     filterFn: ({ parent }) => {
-      const { path, specialUseAttrib } = parent;
-
+      const { path, attribs } = parent;
       const folder = path.split("/");
       const folderName = folder.pop();
       const folderParent = folder.pop();
 
-      const isExcluded = [specialUseAttrib, folderName, folderParent]
+      const isExcluded = [...attribs, folderName, folderParent]
         .filter(Boolean)
         .map((name) => name.toLowerCase())
         .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
