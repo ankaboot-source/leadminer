@@ -227,24 +227,29 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     });
   });
 
-  it('should pass previous fixed bugs', () => {
+  it('should return valid object if the name is in this format "<text><space><email>"', () => {
+    const expectedOutput = {
+      name: 'Leadminer Test leadminer@Teamankaboot.fr',
+      identifier: 'leadminer',
+      address: 'leadminer@teamankaboot.fr',
+      domain: 'teamankaboot.fr'
+    };
     const testCases = [
       {
-        description: 'Case where name contains a text and email.',
+        description: 'Case when email is surrounded with <>',
         input:
-          '"Leadminer Test leadminer@Teamankaboot.fr" <leadminer@teamankaboot.fr>',
-        output: {
-          name: 'Leadminer Test leadminer@Teamankaboot.fr',
-          identifier: 'leadminer',
-          address: 'leadminer@teamankaboot.fr',
-          domain: 'teamankaboot.fr'
-        }
+          '"Leadminer Test leadminer@Teamankaboot.fr" <leadminer@teamankaboot.fr>'
+      },
+      {
+        description: 'Case when email is not surrounded with <>',
+        input:
+          '"Leadminer Test leadminer@Teamankaboot.fr" leadminer@teamankaboot.fr'
       }
     ];
 
-    testCases.forEach(({ input, output }) => {
+    testCases.forEach(({ input }) => {
       const [resultOutput] = extractNameAndEmail(input);
-      expect(resultOutput).toEqual(output);
+      expect(resultOutput).toEqual(expectedOutput);
     });
   });
 
