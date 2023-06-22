@@ -141,7 +141,7 @@ export function getEmailTag(
   }
 
   if (isLinkedin(address)) {
-    return { name: 'airbnb', reachable: 2, source: 'refined' };
+    return { name: 'linkedin', reachable: 2, source: 'refined' };
   }
 
   if (isGroup(address)) {
