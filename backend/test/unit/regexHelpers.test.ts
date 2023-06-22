@@ -266,7 +266,10 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
             input: `"Hello${char}There" <${email}>`,
             output: `Hello${char}There`
           },
-          { input: `"Hello${char}There" ${email}`, output: `Hello${char}There` },
+          {
+            input: `"Hello${char}There" ${email}`,
+            output: `Hello${char}There`
+          },
           {
             input: `"Hello ${char} There" <${email}>`,
             output: `Hello ${char} There`
@@ -279,7 +282,10 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
             input: `"Hello ${char}There" <${email}>`,
             output: `Hello ${char}There`
           },
-          { input: `"Hello ${char}There" ${email}`, output: `Hello ${char}There` }
+          {
+            input: `"Hello ${char}There" ${email}`,
+            output: `Hello ${char}There`
+          }
         ];
 
         return [
