@@ -1,7 +1,8 @@
-const headerRegexName = /(?<name>^(?:[^<]{1,100}))?/;
+const headerRegexName = /(?<name>^(?:[^<]{1,300}))?/;
 const headerRegexAddress =
   /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}))>?$/;
-const headerRegexEmailSplitPattern = /(?<=\S+@\S+\.\S+),\s/g;
+const headerRegexEmailSplitPattern = /,\s(?=(?:[^"]*"[^"]*")*[^"]*$)/g;
+
 const bodyRegex =
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18})(?=$|\s|>|")/gi;
 const listRegex = /<[^<]{1,255}>$/;
