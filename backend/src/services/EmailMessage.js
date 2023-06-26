@@ -239,11 +239,16 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            const emailTag = getEmailTag(email, domainType);
-            let tags = [emailTag].filter(Boolean);
+            const emailTags = getEmailTag(email, domainType);
+            const tags = emailTags ? [...emailTags] : [];
 
-            // If the email tag is "professional" or "role", apply header tags
-            if (['professional', 'role'].includes(emailTag.name)) {
+            // Apply header tags if the email tag is "professional" or "role".
+            // The "role" tag is a subset of the "newsletter" tag so it's eligible for additional tagging.
+            if (
+              emailTags.find((tag) =>
+                ['professional', 'role'].includes(tag.name)
+              )
+            ) {
               const headerTags = applicableMessageTags.map(
                 ({ name, reachable }) => ({
                   name,
@@ -252,9 +257,7 @@ class EmailMessage {
                 })
               );
 
-              if (headerTags.length > 0) {
-                tags = headerTags;
-              }
+              tags.push(...headerTags);
             }
 
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
