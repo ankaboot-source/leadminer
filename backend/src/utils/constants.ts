@@ -42,7 +42,8 @@ export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@gaggle.email',
   '@groups.io',
   '@framalistes.org',
-  '@groups.google.com'
+  '@groups.google.com',
+  '@yahoogroupes.fr'
 ];
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'reply.github',
@@ -105,5 +106,10 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'team@',
   'communication@',
   'hr@',
+  'marketing@',
+  'email@',
+  'carreer@',
+  'formation@',
+  'bienvenue@',
   'marketing@'
 ];
