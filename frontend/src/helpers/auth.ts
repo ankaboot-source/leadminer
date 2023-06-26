@@ -16,22 +16,20 @@ export function isAuthenticatedUserOrLogout(
   to: RouteLocationNormalized,
   redirect: string
 ) {
-  const authenticatedUser = LocalStorage.getItem("user") as UserAuthCredentials;
-
-  if (authenticatedUser?.accessToken) {
-    const currentTime = Math.floor(Date.now() / 1000);
-    const { accessToken, expiresAt } = authenticatedUser;
-    const hasValidAccessToken =
-      (accessToken && expiresAt && expiresAt > currentTime) || false;
-
-    if (!hasValidAccessToken) {
-      LocalStorage.clear();
-    }
-
-    return hasValidAccessToken || redirect;
+  if (to.hash) {
+    return true;
   }
 
-  return Boolean(to.hash) || redirect;
+  const user = LocalStorage.getItem("user") as UserAuthCredentials;
+  const isAuthenticated =
+    user?.accessToken && user.expiresAt > Math.floor(Date.now() / 1000);
+
+  if (!isAuthenticated) {
+    LocalStorage.clear();
+    return redirect;
+  }
+
+  return true;
 }
 
 /**
