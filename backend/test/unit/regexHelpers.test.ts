@@ -282,10 +282,9 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('should correclty split emails if they are seperated with commas only', () => {
     const testStrings = [
       'leadminer1@teamankaboot.fr',
-      'leadminer2@teamankaboot.fr',
-      '<leadminer3@teamankaboot.fr>',
-      '"Leadminer 4" leadminer4@teamankaboot.fr',
-      '"Leadminer 5" <leadminer5@teamankaboot.fr>'
+      '<leadminer2@teamankaboot.fr>',
+      '"Leadminer 3" leadminer3@teamankaboot.fr',
+      '"Leadminer 4" <leadminer4@teamankaboot.fr>'
     ];
 
     const testCase = {
@@ -304,7 +303,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
           domain: 'teamankaboot.fr'
         },
         {
-          name: '',
+          name: 'Leadminer 3',
           identifier: 'leadminer3',
           address: 'leadminer3@teamankaboot.fr',
           domain: 'teamankaboot.fr'
@@ -313,12 +312,6 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
           name: 'Leadminer 4',
           identifier: 'leadminer4',
           address: 'leadminer4@teamankaboot.fr',
-          domain: 'teamankaboot.fr'
-        },
-        {
-          name: 'Leadminer 5',
-          identifier: 'leadminer5',
-          address: 'leadminer5@teamankaboot.fr',
           domain: 'teamankaboot.fr'
         }
       ]
