@@ -172,7 +172,7 @@ export function getEmailTag(
   if (isAirbnb(address)) {
     emailTags.push({
       name: 'airbnb',
-      reachable: REACHABILITY.UNSURE,
+      reachable: REACHABILITY.INDIRECT_PERSON,
       source: tagSource
     });
   }
@@ -180,7 +180,7 @@ export function getEmailTag(
   if (isRole(address)) {
     emailTags.push({
       name: 'role',
-      reachable: REACHABILITY.INDIRECT_PERSON,
+      reachable: REACHABILITY.UNSURE,
       source: tagSource
     });
   }
