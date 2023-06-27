@@ -1,6 +1,7 @@
 import { DomainType, Tag } from '../../services/tagging/types';
 import {
   AIRBNB_EMAIL_ADDRESS_INCLUDES,
+  REACHABILITY,
   GROUP_EMAIL_ADDRESS_INCLUDES,
   LINKEDIN_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
@@ -113,42 +114,92 @@ export function isLinkedin(emailAddress: string) {
 export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
-): Tag | null {
+): Tag[] | null {
+  const tagSource = 'refined#email_address';
   const emailType = findEmailAddressType(domainType);
+  const emailTags: Tag[] = [];
+
+  if (emailType === 'invalid') {
+    return null;
+  }
+
+  if (emailType === 'personal') {
+    return [
+      {
+        name: emailType,
+        reachable: REACHABILITY.DIRECT_PERSON,
+        source: tagSource
+      }
+    ];
+  }
 
   if (isNoReply(address)) {
-    return { name: 'no-reply', reachable: 0, source: 'refined' };
+    return [
+      {
+        name: 'no-reply',
+        reachable: REACHABILITY.NONE,
+        source: tagSource
+      }
+    ];
   }
 
   if (isTransactional(address)) {
-    return {
-      name: 'transactional',
-      reachable: 0,
-      source: 'refined'
-    };
+    return [
+      {
+        name: 'transactional',
+        reachable: REACHABILITY.NONE,
+        source: tagSource
+      }
+    ];
+  }
+
+  if (emailType === 'professional') {
+    emailTags.push({
+      name: emailType,
+      reachable: REACHABILITY.DIRECT_PERSON,
+      source: tagSource
+    });
   }
 
   if (isNewsletter(address) || name?.includes('newsletter')) {
-    return { name: 'newsletter', reachable: 3, source: 'refined' };
+    emailTags.push({
+      name: 'newsletter',
+      reachable: REACHABILITY.UNSURE,
+      source: tagSource
+    });
   }
 
   if (isAirbnb(address)) {
-    return { name: 'airbnb', reachable: 3, source: 'refined' };
+    emailTags.push({
+      name: 'airbnb',
+      reachable: REACHABILITY.INDIRECT_PERSON,
+      source: tagSource
+    });
   }
 
   if (isRole(address)) {
-    return { name: 'role', reachable: 2, source: 'refined' };
+    emailTags.push({
+      name: 'role',
+      reachable: REACHABILITY.UNSURE,
+      source: tagSource
+    });
   }
 
   if (isLinkedin(address)) {
-    return { name: 'linkedin', reachable: 2, source: 'refined' };
+    emailTags.push({
+      name: 'linkedin',
+      reachable: REACHABILITY.INDIRECT_PERSON,
+      source: tagSource
+    });
   }
 
   if (isGroup(address)) {
-    return { name: 'group', reachable: 2, source: 'refined' };
+    emailTags.push({
+      name: 'group',
+      reachable: REACHABILITY.MANY,
+      source: tagSource
+    });
   }
 
-  return emailType !== 'invalid'
-    ? { name: emailType, reachable: 1, source: 'refined' }
-    : null;
+  return emailTags.length > 0 ? emailTags : null;
 }

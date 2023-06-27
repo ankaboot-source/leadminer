@@ -28,6 +28,15 @@ export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
 // Tagging
+
+export enum REACHABILITY {
+  DIRECT_PERSON = 1,
+  INDIRECT_PERSON = 2,
+  MANY = 2,
+  UNSURE = 3,
+  NONE = 0
+}
+
 export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
 export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
@@ -42,7 +51,8 @@ export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@gaggle.email',
   '@groups.io',
   '@framalistes.org',
-  '@groups.google.com'
+  '@groups.google.com',
+  '@yahoogroupes.fr'
 ];
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'reply.github',
@@ -105,5 +115,10 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'team@',
   'communication@',
   'hr@',
+  'marketing@',
+  'email@',
+  'carreer@',
+  'formation@',
+  'bienvenue@',
   'marketing@'
 ];

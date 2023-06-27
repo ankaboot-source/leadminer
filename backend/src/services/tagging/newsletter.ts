@@ -1,3 +1,4 @@
+import { REACHABILITY } from '../../utils/constants';
 import HasHeaderField from './conditions/HasHeaderField';
 import HasNoHeaderField from './conditions/HasNoHeaderField';
 import { EmailMessageTagExtractor } from './types';
@@ -5,7 +6,7 @@ import { EmailMessageTagExtractor } from './types';
 const newsletterEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'newsletter',
-    reachable: 3
+    reachable: REACHABILITY.UNSURE
   },
   requiredConditions: [new HasNoHeaderField(['list-post'])],
   rulesToCheck: [
