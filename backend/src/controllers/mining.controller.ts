@@ -18,7 +18,7 @@ export default function initializeMiningController(
   miningSources: MiningSources
 ) {
   return {
-    async createGoogleMiningSource(_req: Request, res: Response) {
+    createGoogleMiningSource(_req: Request, res: Response) {
       const user = res.locals.user as User;
       const authorizationUri = googleOAuth2Client.authorizeURL({
         redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/google/callback`,
@@ -31,9 +31,9 @@ export default function initializeMiningController(
         access_type: 'offline',
         prompt: 'consent',
         state: user.id // This will allow us in the callback to associate the authorized account with the user
-      } as any);
+      });
 
-      res.json({ authorizationUri });
+      return res.json({ authorizationUri });
     },
 
     async createGoogleMiningSourceCallback(req: Request, res: Response) {
@@ -105,7 +105,7 @@ export default function initializeMiningController(
       }
     },
 
-    async createAzureMiningSource(_req: Request, res: Response) {
+    createAzureMiningSource(_req: Request, res: Response) {
       const user = res.locals.user as User;
 
       const authorizationUri = azureOAuth2Client.authorizeURL({
@@ -120,7 +120,7 @@ export default function initializeMiningController(
         state: user.id
       });
 
-      res.json({ authorizationUri });
+      return res.json({ authorizationUri });
     },
 
     async createAzureMiningSourceCallback(req: Request, res: Response) {
@@ -253,22 +253,22 @@ export default function initializeMiningController(
         );
 
       if (!miningSourceCredentials) {
-        res.status(400).json({
+        return res.status(400).json({
           message: "This mining source isn't registered for this user"
         });
       }
 
       const imapConnectionProvider =
-        'accessToken' in miningSourceCredentials!
+        'accessToken' in miningSourceCredentials
           ? new ImapConnectionProvider(miningSourceCredentials.email).withOauth(
               miningSourceCredentials.accessToken
             )
           : new ImapConnectionProvider(
-              miningSourceCredentials!.email
+              miningSourceCredentials.email
             ).withPassword(
-              miningSourceCredentials!.host,
-              miningSourceCredentials!.password,
-              miningSourceCredentials!.port
+              miningSourceCredentials.host,
+              miningSourceCredentials.password,
+              miningSourceCredentials.port
             );
 
       let imapConnection = null;
@@ -281,7 +281,7 @@ export default function initializeMiningController(
           imapConnectionProvider,
           boxes,
           userId: user.id,
-          email: miningSourceCredentials!.email,
+          email: miningSourceCredentials.email,
           batchSize: ENV.LEADMINER_FETCH_BATCH_SIZE,
           fetchEmailBody: ENV.IMAP_FETCH_BODY
         };

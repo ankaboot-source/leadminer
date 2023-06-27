@@ -13,6 +13,7 @@ const config = {
   }
 };
 
-const googleOAuth2Client = new AuthorizationCode(config);
+type AuthParams = 'access_type' | 'prompt' | 'state';
+const googleOAuth2Client = new AuthorizationCode<AuthParams>(config);
 
 export default googleOAuth2Client;
