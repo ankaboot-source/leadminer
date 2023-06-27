@@ -6,7 +6,7 @@ import { EmailMessageTagExtractor } from './types';
 const newsletterEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'newsletter',
-    reachable: REACHABILITY.REACHABILITY_MANY_INDIRECT
+    reachable: REACHABILITY.UNSURE
   },
   requiredConditions: [new HasNoHeaderField(['list-post'])],
   rulesToCheck: [

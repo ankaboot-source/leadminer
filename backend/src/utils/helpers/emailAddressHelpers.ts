@@ -127,7 +127,7 @@ export function getEmailTag(
     return [
       {
         name: emailType,
-        reachable: REACHABILITY.EMAIL_TYPE_REACHABILITY_SCORE,
+        reachable: REACHABILITY.DIRECT_PERSON,
         source: tagSource
       }
     ];
@@ -137,7 +137,7 @@ export function getEmailTag(
     return [
       {
         name: 'no-reply',
-        reachable: REACHABILITY.REACHABILITY_UNKNOWN_UNSURE,
+        reachable: REACHABILITY.NONE,
         source: tagSource
       }
     ];
@@ -147,7 +147,7 @@ export function getEmailTag(
     return [
       {
         name: 'transactional',
-        reachable: REACHABILITY.REACHABILITY_UNKNOWN_UNSURE,
+        reachable: REACHABILITY.NONE,
         source: tagSource
       }
     ];
@@ -156,7 +156,7 @@ export function getEmailTag(
   if (emailType === 'professional') {
     emailTags.push({
       name: emailType,
-      reachable: REACHABILITY.EMAIL_TYPE_REACHABILITY_SCORE,
+      reachable: REACHABILITY.DIRECT_PERSON,
       source: tagSource
     });
   }
@@ -164,7 +164,7 @@ export function getEmailTag(
   if (isNewsletter(address) || name?.includes('newsletter')) {
     emailTags.push({
       name: 'newsletter',
-      reachable: REACHABILITY.REACHABILITY_MANY_INDIRECT,
+      reachable: REACHABILITY.UNSURE,
       source: tagSource
     });
   }
@@ -172,7 +172,7 @@ export function getEmailTag(
   if (isAirbnb(address)) {
     emailTags.push({
       name: 'airbnb',
-      reachable: REACHABILITY.REACHABILITY_MANY_INDIRECT,
+      reachable: REACHABILITY.UNSURE,
       source: tagSource
     });
   }
@@ -180,7 +180,7 @@ export function getEmailTag(
   if (isRole(address)) {
     emailTags.push({
       name: 'role',
-      reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT,
+      reachable: REACHABILITY.INDIRECT_PERSON,
       source: tagSource
     });
   }
@@ -188,7 +188,7 @@ export function getEmailTag(
   if (isLinkedin(address)) {
     emailTags.push({
       name: 'linkedin',
-      reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT,
+      reachable: REACHABILITY.INDIRECT_PERSON,
       source: tagSource
     });
   }
@@ -196,7 +196,7 @@ export function getEmailTag(
   if (isGroup(address)) {
     emailTags.push({
       name: 'group',
-      reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT,
+      reachable: REACHABILITY.MULTIPLE_PERSONS,
       source: tagSource
     });
   }

@@ -5,7 +5,7 @@ import { EmailMessageTagExtractor } from './types';
 const linkedinEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'linkedin',
-    reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT
+    reachable: REACHABILITY.INDIRECT_PERSON
   },
   rulesToCheck: [
     {

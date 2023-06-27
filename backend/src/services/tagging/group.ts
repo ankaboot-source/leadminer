@@ -6,7 +6,7 @@ import { EmailMessageTagExtractor } from './types';
 const groupEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'group',
-    reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT
+    reachable: REACHABILITY.MULTIPLE_PERSONS
   },
   rulesToCheck: [
     {
