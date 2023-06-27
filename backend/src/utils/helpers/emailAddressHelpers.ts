@@ -115,7 +115,7 @@ export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
 ): Tag[] | null {
-  const tagSource = 'refined#email_address'
+  const tagSource = 'refined#email_address';
   const emailType = findEmailAddressType(domainType);
   const emailTags: Tag[] = [];
 
