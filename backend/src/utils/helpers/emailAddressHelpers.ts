@@ -118,6 +118,7 @@ export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
 ): Tag[] | null {
+  const tagSource = 'refined#email_address'
   const emailType = findEmailAddressType(domainType);
   const emailTags: Tag[] = [];
 
@@ -130,7 +131,7 @@ export function getEmailTag(
       {
         name: emailType,
         reachable: EMAIL_TYPE_REACHABILITY_SCORE,
-        source: 'refined'
+        source: tagSource
       }
     ];
   }
@@ -140,7 +141,7 @@ export function getEmailTag(
       {
         name: 'no-reply',
         reachable: TAG_REACHABILITY_VERY_LOW,
-        source: 'refined'
+        source: tagSource
       }
     ];
   }
@@ -150,7 +151,7 @@ export function getEmailTag(
       {
         name: 'transactional',
         reachable: TAG_REACHABILITY_VERY_LOW,
-        source: 'refined'
+        source: tagSource
       }
     ];
   }
@@ -159,7 +160,7 @@ export function getEmailTag(
     emailTags.push({
       name: emailType,
       reachable: EMAIL_TYPE_REACHABILITY_SCORE,
-      source: 'refined'
+      source: tagSource
     });
   }
 
@@ -167,7 +168,7 @@ export function getEmailTag(
     emailTags.push({
       name: 'newsletter',
       reachable: TAG_REACHABILITY_LOW,
-      source: 'refined'
+      source: tagSource
     });
   }
 
@@ -175,7 +176,7 @@ export function getEmailTag(
     emailTags.push({
       name: 'airbnb',
       reachable: TAG_REACHABILITY_LOW,
-      source: 'refined'
+      source: tagSource
     });
   }
 
@@ -183,7 +184,7 @@ export function getEmailTag(
     emailTags.push({
       name: 'role',
       reachable: TAG_REACHABILITY_HIGH,
-      source: 'refined'
+      source: tagSource
     });
   }
 
@@ -191,7 +192,7 @@ export function getEmailTag(
     emailTags.push({
       name: 'linkedin',
       reachable: TAG_REACHABILITY_HIGH,
-      source: 'refined'
+      source: tagSource
     });
   }
 
@@ -199,7 +200,7 @@ export function getEmailTag(
     emailTags.push({
       name: 'group',
       reachable: TAG_REACHABILITY_HIGH,
-      source: 'refined'
+      source: tagSource
     });
   }
 

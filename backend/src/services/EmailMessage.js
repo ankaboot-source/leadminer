@@ -253,7 +253,7 @@ class EmailMessage {
                 ({ name, reachable }) => ({
                   name,
                   reachable,
-                  source: 'refined'
+                  source: 'refined#message_header'
                 })
               );
 

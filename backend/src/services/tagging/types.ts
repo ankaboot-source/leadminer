@@ -12,7 +12,7 @@ export interface TaggingRule {
   conditions: TaggingCondition[];
 }
 
-export type TagSource = 'refined';
+export type TagSource = 'refined' | 'refined#message_header' | 'refined#email_address';
 export interface Tag {
   name: ContactTag;
   reachable: number;
