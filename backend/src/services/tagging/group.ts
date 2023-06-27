@@ -1,4 +1,4 @@
-import { TAG_REACHABILITY } from '../../utils/constants';
+import { REACHABILITY } from '../../utils/constants';
 import HasHeaderField from './conditions/HasHeaderField';
 import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
 import { EmailMessageTagExtractor } from './types';
@@ -6,7 +6,7 @@ import { EmailMessageTagExtractor } from './types';
 const groupEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'group',
-    reachable: TAG_REACHABILITY.REACHABILITY_PERSON_DIRECT
+    reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT
   },
   rulesToCheck: [
     {

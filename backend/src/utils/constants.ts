@@ -29,7 +29,7 @@ export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
 // Tagging
 
-export enum TAG_REACHABILITY {
+export enum REACHABILITY {
   EMAIL_TYPE_REACHABILITY_SCORE = 1,
   REACHABILITY_PERSON_DIRECT = 2,
   REACHABILITY_MANY_INDIRECT = 3,

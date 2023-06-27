@@ -1,11 +1,11 @@
-import { TAG_REACHABILITY } from '../../utils/constants';
+import { REACHABILITY } from '../../utils/constants';
 import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
 import { EmailMessageTagExtractor } from './types';
 
 const linkedinEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'linkedin',
-    reachable: TAG_REACHABILITY.REACHABILITY_PERSON_DIRECT
+    reachable: REACHABILITY.REACHABILITY_PERSON_DIRECT
   },
   rulesToCheck: [
     {
