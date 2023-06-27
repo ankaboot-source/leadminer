@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
-import cookieParser from 'cookie-parser';
 import express, { json, urlencoded } from 'express';
 import ENV from './config';
+import { MiningSources } from './db/MiningSources';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
@@ -9,14 +9,14 @@ import notFound from './middleware/notFound';
 import initializeSentry from './middleware/sentry';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
-import initializeOAuthRoutes from './routes/oauth.routes';
 import initializeStreamRouter from './routes/stream.routes';
-import { AuthResolver } from './services/auth/types';
+import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
 
 export default function initializeApp(
   authResolver: AuthResolver,
-  tasksManager: TasksManager
+  tasksManager: TasksManager,
+  miningSources: MiningSources
 ) {
   const app = express();
 
@@ -30,7 +30,6 @@ export default function initializeApp(
 
   app.use(json());
   app.use(urlencoded({ extended: true }));
-  app.use(cookieParser());
 
   app.disable('x-powered-by');
 
@@ -38,14 +37,12 @@ export default function initializeApp(
     res.json({ message: 'Welcome to leadminer application.' })
   );
 
-  // Register api endpoints
+  app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
+  app.use('/api/imap', initializeStreamRouter(tasksManager));
   app.use(
     '/api/imap',
-    initializeImapRoutes(authResolver),
-    initializeStreamRouter(authResolver, tasksManager),
-    initializeMiningRoutes(authResolver, tasksManager)
+    initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
-  app.use('/api/oauth', initializeOAuthRoutes(authResolver));
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

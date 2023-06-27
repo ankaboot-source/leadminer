@@ -1,4 +1,3 @@
-import { IncomingHttpHeaders } from 'http';
 import { ImapUsers } from '../db/ImapUsers';
 import { OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
@@ -51,39 +50,6 @@ const IMAP_ERROR_CODES = new Map([
     }
   ]
 ]);
-
-/**
- * Extracts the x-imap-credentials header field and validates it
- * @param headers - an object containing HTTP request headers.
- * @returns an object containing the extracted values and an error object if any
- */
-export function getXImapHeaderField(headers: IncomingHttpHeaders) {
-  if (!headers['x-imap-credentials']) {
-    return {
-      error: new Error('An x-imap-credentials header field is required.')
-    };
-  }
-  let login = null;
-  try {
-    login = JSON.parse(headers['x-imap-credentials'] as string);
-  } catch (error) {
-    return {
-      error: new Error(
-        'x-imap-credentials header field is not in correct JSON format'
-      )
-    };
-  }
-
-  if (!login.access_token && (!login.host || !login.email || !login.password)) {
-    return {
-      error: new Error(
-        'x-imap-credentials header is missing required field. Check (host, email, password) OR (access_token)'
-      )
-    };
-  }
-
-  return { data: login, error: null };
-}
 
 /**
  * Get a user by either their access token and email or their IMAP ID or email.

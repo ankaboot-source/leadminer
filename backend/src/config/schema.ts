@@ -45,8 +45,6 @@ const schema = z.object({
   GOOGLE_SECRET: z.string().nonempty(),
   AZURE_CLIENT_ID: z.string().nonempty(),
   AZURE_SECRET: z.string().nonempty(),
-  AUTH_SERVER_URL: z.string().url(),
-  AUTH_SERVER_CALLBACK: z.string().url(),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });

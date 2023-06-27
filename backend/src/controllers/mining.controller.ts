@@ -1,33 +1,275 @@
+import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
+import { decode } from 'jsonwebtoken';
 import ENV from '../config';
+import { MiningSources } from '../db/MiningSources';
+import azureOAuth2Client from '../services/OAuth2/azure';
+import googleOAuth2Client from '../services/OAuth2/google';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
-import { generateErrorObjectFromImapError } from './helpers';
+import {
+  generateErrorObjectFromImapError,
+  validateImapCredentials
+} from './helpers';
 
-export default function initializeMiningController(tasksManager: TasksManager) {
+export default function initializeMiningController(
+  tasksManager: TasksManager,
+  miningSources: MiningSources
+) {
   return {
-    async startMining(req: Request, res: Response, next: NextFunction) {
-      const { user } = res.locals;
+    async createGoogleMiningSource(_req: Request, res: Response) {
+      const user = res.locals.user as User;
+      const authorizationUri = googleOAuth2Client.authorizeURL({
+        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/google/callback`,
+        scope: [
+          'openid',
+          'https://mail.google.com/',
+          'https://www.googleapis.com/auth/userinfo.email',
+          'https://www.googleapis.com/auth/userinfo.profile'
+        ],
+        access_type: 'offline',
+        prompt: 'consent',
+        state: user.id // This will allow us in the callback to associate the authorized account with the user
+      } as any);
 
-      if (!user?.email || !user?.id) {
-        res.status(400);
-        return next(new Error('user does not exists.'));
+      res.json({ authorizationUri });
+    },
+
+    async createGoogleMiningSourceCallback(req: Request, res: Response) {
+      const { code, state } = req.query as { code: string; state: string };
+
+      const tokenConfig = {
+        code,
+        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/google/callback`,
+        scope: [
+          'openid',
+          'https://mail.google.com/',
+          'https://www.googleapis.com/auth/userinfo.email',
+          'https://www.googleapis.com/auth/userinfo.profile'
+        ],
+        access_type: 'offline',
+        prompt: 'consent'
+      };
+
+      try {
+        const { token } = await googleOAuth2Client.getToken(tokenConfig);
+
+        const requiredScopes = [
+          'openid',
+          'https://mail.google.com/',
+          'https://www.googleapis.com/auth/userinfo.email',
+          'https://www.googleapis.com/auth/userinfo.profile'
+        ];
+        const approvedScopes = (token.scope as string).split(' ');
+
+        const hasApprovedAllScopes = requiredScopes.every((scope) =>
+          approvedScopes.includes(scope)
+        );
+
+        if (hasApprovedAllScopes) {
+          // User has approved all the required scopes
+          const {
+            refresh_token: refreshToken,
+            access_token: accessToken,
+            id_token: idToken,
+            expires_at: expiresAt
+          } = token as {
+            refresh_token: string;
+            access_token: string;
+            id_token: string;
+            expires_at: number;
+          };
+          const { email } = decode(idToken) as { email: string };
+
+          await miningSources.upsert({
+            userId: state,
+            email,
+            credentials: {
+              email,
+              accessToken,
+              refreshToken,
+              provider: 'Google',
+              expiresAt
+            },
+            type: 'Google'
+          });
+
+          res.redirect(`${ENV.FRONTEND_HOST}/dashboard`);
+        } else {
+          // User has not approved all the required scopes
+          res.status(403).send('Required scopes not granted.');
+        }
+      } catch (error) {
+        res.status(500).send('Token exchange failed.');
+      }
+    },
+
+    async createAzureMiningSource(_req: Request, res: Response) {
+      const user = res.locals.user as User;
+
+      const authorizationUri = azureOAuth2Client.authorizeURL({
+        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/azure/callback`,
+        scope: [
+          'https://outlook.office.com/IMAP.AccessAsUser.All',
+          'offline_access',
+          'email',
+          'openid',
+          'profile'
+        ],
+        state: user.id
+      });
+
+      res.json({ authorizationUri });
+    },
+
+    async createAzureMiningSourceCallback(req: Request, res: Response) {
+      const { code, state } = req.query as { code: string; state: string };
+
+      const tokenConfig = {
+        code,
+        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/azure/callback`,
+        scope: [
+          'https://outlook.office.com/IMAP.AccessAsUser.All',
+          'offline_access',
+          'email',
+          'openid',
+          'profile'
+        ]
+      };
+
+      try {
+        const { token } = await azureOAuth2Client.getToken(tokenConfig);
+
+        const requiredScopes = [
+          'https://outlook.office.com/IMAP.AccessAsUser.All'
+        ];
+        const approvedScopes = (token.scope as string).split(' ');
+
+        const hasApprovedAllScopes = requiredScopes.every((scope) =>
+          approvedScopes.includes(scope)
+        );
+
+        if (hasApprovedAllScopes) {
+          // User has approved all the required scopes
+          const {
+            refresh_token: refreshToken,
+            access_token: accessToken,
+            id_token: idToken,
+            expires_at: expiresAt
+          } = token as {
+            refresh_token: string;
+            access_token: string;
+            id_token: string;
+            expires_at: number;
+          };
+          const { email } = decode(idToken) as { email: string };
+
+          await miningSources.upsert({
+            userId: state,
+            email,
+            credentials: {
+              expiresAt,
+              email,
+              accessToken,
+              refreshToken,
+              provider: 'Azure'
+            },
+            type: 'Azure'
+          });
+
+          res.redirect(`${ENV.FRONTEND_HOST}/dashboard`);
+        } else {
+          // User has not approved all the required scopes
+          res.status(403).send('Required scopes not granted.');
+        }
+      } catch (error) {
+        res.status(500).send('Token exchange failed.');
+      }
+    },
+
+    async createImapMiningSource(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) {
+      const user = res.locals.user as User;
+
+      const { email, host, password, port } = req.body;
+
+      try {
+        // Connect to validate connection before creating the pool.
+        await validateImapCredentials(host, email, password, port);
+        await miningSources.upsert({
+          userId: user.id,
+          email,
+          type: 'IMAP',
+          credentials: { email, host, password, port }
+        });
+
+        return res
+          .status(201)
+          .send({ message: 'IMAP mining source added successfully' });
+      } catch (error) {
+        res.status(500);
+        return next(error);
+      }
+    },
+
+    async getMiningSources(_req: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+
+      try {
+        const sourcesData = await miningSources.getByUser(user.id);
+
+        const sources = sourcesData.map((s) => ({
+          email: s.email,
+          type: s.type
+        }));
+
+        return res.status(200).send({
+          message: 'Mining sources retrieved successfully',
+          sources
+        });
+      } catch (error) {
+        res.status(500);
+        return next(error);
+      }
+    },
+
+    async startMining(req: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+
+      const { miningSource, boxes } = req.body;
+
+      if (!miningSource || !boxes) {
+        res.status(400).json({ message: 'Invalid mining source provided' });
       }
 
-      const { id: userId, email } = user as { id: string; email: string };
+      const miningSourceCredentials =
+        await miningSources.getCredentialsBySourceEmail(
+          user.id,
+          miningSource.email
+        );
 
-      const {
-        access_token: accessToken,
-        host,
-        password,
-        port,
-        boxes
-      } = req.body;
+      if (!miningSourceCredentials) {
+        res.status(400).json({
+          message: "This mining source isn't registered for this user"
+        });
+      }
 
-      const imapConnectionProvider = accessToken
-        ? new ImapConnectionProvider(email).withOauth(accessToken)
-        : new ImapConnectionProvider(email).withPassword(host, password, port);
+      const imapConnectionProvider =
+        'accessToken' in miningSourceCredentials!
+          ? new ImapConnectionProvider(miningSourceCredentials.email).withOauth(
+              miningSourceCredentials.accessToken
+            )
+          : new ImapConnectionProvider(
+              miningSourceCredentials!.email
+            ).withPassword(
+              miningSourceCredentials!.host,
+              miningSourceCredentials!.password,
+              miningSourceCredentials!.port
+            );
 
       let imapConnection = null;
       let miningTask = null;
@@ -35,13 +277,12 @@ export default function initializeMiningController(tasksManager: TasksManager) {
       try {
         // Connect to validate connection before creating the pool.
         imapConnection = await imapConnectionProvider.acquireConnection();
-        const batchSize = ENV.LEADMINER_FETCH_BATCH_SIZE;
         const imapEmailsFetcherOptions: ImapEmailsFetcherOptions = {
           imapConnectionProvider,
           boxes,
-          userId,
-          email,
-          batchSize,
+          userId: user.id,
+          email: miningSourceCredentials!.email,
+          batchSize: ENV.LEADMINER_FETCH_BATCH_SIZE,
           fetchEmailBody: ENV.IMAP_FETCH_BODY
         };
 
@@ -88,12 +329,7 @@ export default function initializeMiningController(tasksManager: TasksManager) {
     },
 
     getMiningTask(req: Request, res: Response, next: NextFunction) {
-      const { user } = res.locals;
-
-      if (!user) {
-        res.status(404);
-        return next(new Error('user does not exists.'));
-      }
+      const user = res.locals.User;
 
       const { id: taskId } = req.params;
 
