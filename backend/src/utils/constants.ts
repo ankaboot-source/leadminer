@@ -28,6 +28,11 @@ export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
 // Tagging
+export const EMAIL_TYPE_REACHABILITY_SCORE = 1;
+export const TAG_REACHABILITY_HIGH = 2;
+export const TAG_REACHABILITY_LOW = 3;
+export const TAG_REACHABILITY_VERY_LOW = 0;
+
 export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
 export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [

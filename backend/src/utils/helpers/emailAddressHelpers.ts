@@ -1,11 +1,15 @@
 import { DomainType, Tag } from '../../services/tagging/types';
 import {
   AIRBNB_EMAIL_ADDRESS_INCLUDES,
+  EMAIL_TYPE_REACHABILITY_SCORE,
   GROUP_EMAIL_ADDRESS_INCLUDES,
   LINKEDIN_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
   ROLE_EMAIL_ADDRESS_INCLUDES,
+  TAG_REACHABILITY_HIGH,
+  TAG_REACHABILITY_LOW,
+  TAG_REACHABILITY_VERY_LOW,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../constants';
 
@@ -125,7 +129,7 @@ export function getEmailTag(
     return [
       {
         name: emailType,
-        reachable: 1,
+        reachable: EMAIL_TYPE_REACHABILITY_SCORE,
         source: 'refined'
       }
     ];
@@ -135,7 +139,7 @@ export function getEmailTag(
     return [
       {
         name: 'no-reply',
-        reachable: 0,
+        reachable: TAG_REACHABILITY_VERY_LOW,
         source: 'refined'
       }
     ];
@@ -145,34 +149,58 @@ export function getEmailTag(
     return [
       {
         name: 'transactional',
-        reachable: 0,
+        reachable: TAG_REACHABILITY_VERY_LOW,
         source: 'refined'
       }
     ];
   }
 
   if (emailType === 'professional') {
-    emailTags.push({ name: emailType, reachable: 1, source: 'refined' });
+    emailTags.push({
+      name: emailType,
+      reachable: EMAIL_TYPE_REACHABILITY_SCORE,
+      source: 'refined'
+    });
   }
 
   if (isNewsletter(address) || name?.includes('newsletter')) {
-    emailTags.push({ name: 'newsletter', reachable: 3, source: 'refined' });
+    emailTags.push({
+      name: 'newsletter',
+      reachable: TAG_REACHABILITY_LOW,
+      source: 'refined'
+    });
   }
 
   if (isAirbnb(address)) {
-    emailTags.push({ name: 'airbnb', reachable: 3, source: 'refined' });
+    emailTags.push({
+      name: 'airbnb',
+      reachable: TAG_REACHABILITY_LOW,
+      source: 'refined'
+    });
   }
 
   if (isRole(address)) {
-    emailTags.push({ name: 'role', reachable: 2, source: 'refined' });
+    emailTags.push({
+      name: 'role',
+      reachable: TAG_REACHABILITY_HIGH,
+      source: 'refined'
+    });
   }
 
   if (isLinkedin(address)) {
-    emailTags.push({ name: 'linkedin', reachable: 2, source: 'refined' });
+    emailTags.push({
+      name: 'linkedin',
+      reachable: TAG_REACHABILITY_HIGH,
+      source: 'refined'
+    });
   }
 
   if (isGroup(address)) {
-    emailTags.push({ name: 'group', reachable: 2, source: 'refined' });
+    emailTags.push({
+      name: 'group',
+      reachable: TAG_REACHABILITY_HIGH,
+      source: 'refined'
+    });
   }
 
   return emailTags.length > 0 ? emailTags : null;
