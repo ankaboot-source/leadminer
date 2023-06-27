@@ -1,6 +1,6 @@
 import { REGEX_LIST_ID } from '../utils/constants';
 import { checkDomainStatus } from '../utils/helpers/domainHelpers';
-import { getEmailTags } from '../utils/helpers/emailAddressHelpers';
+import { getEmailTag } from '../utils/helpers/emailAddressHelpers';
 import { getSpecificHeader } from '../utils/helpers/emailMessageHelpers';
 import {
   extractNameAndEmail,
@@ -148,7 +148,7 @@ class EmailMessage {
           )
         ) {
           tags.push({ ...tag, source: 'refined', fields });
-          break;
+          return tags;
         }
       }
     }
@@ -239,16 +239,26 @@ class EmailMessage {
           );
 
           if (domainIsValid) {
-            const emailTags = getEmailTags(email, domainType);
+            const emailTags = getEmailTag(email, domainType);
+            const tags = emailTags ? [...emailTags] : [];
 
-            const tags = [
-              ...emailTags,
-              ...applicableMessageTags.map(({ name, reachable }) => ({
-                name,
-                reachable,
-                source: 'refined'
-              }))
-            ];
+            // Apply header tags if the email tag is "professional" or "role".
+            // The "role" tag is a subset of the "newsletter" tag so it's eligible for additional tagging.
+            if (
+              emailTags.find((tag) =>
+                ['professional', 'role'].includes(tag.name)
+              )
+            ) {
+              const headerTags = applicableMessageTags.map(
+                ({ name, reachable }) => ({
+                  name,
+                  reachable,
+                  source: 'refined#message_header'
+                })
+              );
+
+              tags.push(...headerTags);
+            }
 
             return EmailMessage.constructPersonPocTags(email, tags, fieldName);
           }

@@ -1,7 +1,12 @@
 import { DomainType, Tag } from '../../services/tagging/types';
 import {
+  AIRBNB_EMAIL_ADDRESS_INCLUDES,
+  REACHABILITY,
+  GROUP_EMAIL_ADDRESS_INCLUDES,
+  LINKEDIN_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
+  ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../constants';
 
@@ -17,7 +22,7 @@ export function findEmailAddressType(domainType: DomainType) {
     case 'provider':
       return 'personal';
     default:
-      return '';
+      return 'invalid';
   }
 }
 
@@ -55,44 +60,146 @@ export function isNewsletter(emailAddress: string) {
 }
 
 /**
- * Tags an email address.
- * @param email - The email to check.
- * @param email.address - The email address.
- * @param email.name - The user name.
- * @param domainType - The type of domain, it can be either "provider" or "custom"
- * @returns List of tags
+ * Checks if an email address can be tagged as group
+ * @param emailAddress - The email address to check.
+ * @returns
  */
-export function getEmailTags(
+export function isGroup(emailAddress: string) {
+  return GROUP_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
+ * Checks if an email address can be tagged as role
+ * @param emailAddress - The email address to check.
+ * @returns Returns true if the email can be tagged as role, false otherwise.
+ */
+export function isRole(emailAddress: string) {
+  return ROLE_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
+ * Checks if an email address can be tagged as airbnb
+ * @param emailAddress - The email address to check.
+ * @returns Returns true if the email can be tagged as airbnb, false otherwise.
+ */
+export function isAirbnb(emailAddress: string) {
+  return AIRBNB_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
+ * Checks if an email address can be tagged as linkedin
+ * @param emailAddress - The email address to check.
+ * @returns true if the email can be tagged as linkedin, false otherwise.
+ */
+export function isLinkedin(emailAddress: string) {
+  return LINKEDIN_EMAIL_ADDRESS_INCLUDES.some((word) =>
+    emailAddress.toLowerCase().includes(word)
+  );
+}
+
+/**
+ * Retrieves a single tag for an email address based on its properties.
+ *
+ * @param address - The email address.
+ * @param name - The name associated with the email address.
+ * @param domainType - The type of domain the email address belongs to.
+ * @returns A tag for the email address, or null if no tag is found.
+ */
+export function getEmailTag(
   { address, name }: { address: string; name: string },
   domainType: DomainType
-): Tag[] {
+): Tag[] | null {
+  const tagSource = 'refined#email_address';
+  const emailType = findEmailAddressType(domainType);
   const emailTags: Tag[] = [];
 
-  const emailType = findEmailAddressType(domainType);
+  if (emailType === 'invalid') {
+    return null;
+  }
+
+  if (emailType === 'personal') {
+    return [
+      {
+        name: emailType,
+        reachable: REACHABILITY.DIRECT_PERSON,
+        source: tagSource
+      }
+    ];
+  }
 
   if (isNoReply(address)) {
-    emailTags.push({ name: 'no-reply', reachable: 0, source: 'refined' });
+    return [
+      {
+        name: 'no-reply',
+        reachable: REACHABILITY.NONE,
+        source: tagSource
+      }
+    ];
   }
 
   if (isTransactional(address)) {
+    return [
+      {
+        name: 'transactional',
+        reachable: REACHABILITY.NONE,
+        source: tagSource
+      }
+    ];
+  }
+
+  if (emailType === 'professional') {
     emailTags.push({
-      name: 'transactional',
-      reachable: 0,
-      source: 'refined'
+      name: emailType,
+      reachable: REACHABILITY.DIRECT_PERSON,
+      source: tagSource
     });
   }
 
   if (isNewsletter(address) || name?.includes('newsletter')) {
-    emailTags.push({ name: 'newsletter', reachable: 2, source: 'refined' });
-  }
-
-  if (emailType !== '') {
     emailTags.push({
-      name: emailType,
-      reachable: 1,
-      source: 'refined'
+      name: 'newsletter',
+      reachable: REACHABILITY.UNSURE,
+      source: tagSource
     });
   }
 
-  return emailTags;
+  if (isAirbnb(address)) {
+    emailTags.push({
+      name: 'airbnb',
+      reachable: REACHABILITY.INDIRECT_PERSON,
+      source: tagSource
+    });
+  }
+
+  if (isRole(address)) {
+    emailTags.push({
+      name: 'role',
+      reachable: REACHABILITY.UNSURE,
+      source: tagSource
+    });
+  }
+
+  if (isLinkedin(address)) {
+    emailTags.push({
+      name: 'linkedin',
+      reachable: REACHABILITY.INDIRECT_PERSON,
+      source: tagSource
+    });
+  }
+
+  if (isGroup(address)) {
+    emailTags.push({
+      name: 'group',
+      reachable: REACHABILITY.MANY,
+      source: tagSource
+    });
+  }
+
+  return emailTags.length > 0 ? emailTags : null;
 }

@@ -1,7 +1,8 @@
-const headerRegexName = /(?<name>^(?:[^<]{1,50}))?/;
+const headerRegexName = /(?<name>^(?:[^<]{1,300}))?/;
 const headerRegexAddress =
-  /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}))>?/;
-const headerRegexEmailSplitPattern = /(?<=\S+@\S+\.\S+),\s/g;
+  /(\s|^)<?(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18}))>?$/;
+const headerRegexEmailSplitPattern = /,\s?(?=(?:[^"]*"[^"]*")*[^"]*$)/g;
+
 const bodyRegex =
   /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18})(?=$|\s|>|")/gi;
 const listRegex = /<[^<]{1,255}>$/;
@@ -24,8 +25,41 @@ export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
-export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = ['newsletter'];
-export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = ['reply.github'];
+export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
+
+// Tagging
+
+export enum REACHABILITY {
+  DIRECT_PERSON = 1,
+  INDIRECT_PERSON = 2,
+  MANY = 2,
+  UNSURE = 3,
+  NONE = 0
+}
+
+export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
+export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
+export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
+  '@campaigns.',
+  'newsletter@',
+  '@newsletter.',
+  '@substack.io'
+]; // add newletter domains;
+export const GROUP_EMAIL_ADDRESS_INCLUDES = [
+  '@lists.',
+  '@sympa.',
+  '@gaggle.email',
+  '@groups.io',
+  '@framalistes.org',
+  '@groups.google.com',
+  '@yahoogroupes.fr'
+];
+export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
+  'reply.github',
+  '@boards.trello.com',
+  'bot@',
+  'bounce@'
+];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
   'alert',
@@ -57,4 +91,34 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'unsubscribe',
   'no-response'
 ];
-export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
+export const ROLE_EMAIL_ADDRESS_INCLUDES = [
+  '@info.',
+  'information@',
+  'info@',
+  'infos@',
+  'hello@',
+  'welcome@',
+  'contact@',
+  'news@',
+  'sales@',
+  'support@',
+  'bonjour@',
+  'greetings@',
+  'spam@',
+  'abuse@',
+  'all@',
+  'admin@',
+  'root@',
+  'account@',
+  'boutique@',
+  'recrutement@',
+  'team@',
+  'communication@',
+  'hr@',
+  'marketing@',
+  'email@',
+  'carreer@',
+  'formation@',
+  'bienvenue@',
+  'marketing@'
+];

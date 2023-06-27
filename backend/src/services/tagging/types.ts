@@ -12,7 +12,10 @@ export interface TaggingRule {
   conditions: TaggingCondition[];
 }
 
-export type TagSource = 'refined';
+export type TagSource =
+  | 'refined'
+  | 'refined#message_header'
+  | 'refined#email_address';
 export interface Tag {
   name: ContactTag;
   reachable: number;
@@ -41,7 +44,10 @@ export type EmailAddressTag =
   | 'newsletter'
   | 'professional'
   | 'personal'
-  | 'transactional';
+  | 'transactional'
+  | 'role'
+  | 'airbnb';
+
 export type ContactTag = EmailMessageTag | EmailAddressTag;
 
 export type DomainType = 'provider' | 'custom';

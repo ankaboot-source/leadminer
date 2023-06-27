@@ -227,6 +227,100 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     });
   });
 
+  it('should return valid object if the name is in this format "<text><space><email>"', () => {
+    const expectedOutput = {
+      name: 'Leadminer Test leadminer@Teamankaboot.fr',
+      identifier: 'leadminer',
+      address: 'leadminer@teamankaboot.fr',
+      domain: 'teamankaboot.fr'
+    };
+    const testCases = [
+      {
+        description: 'Case when email is surrounded with <>',
+        input:
+          '"Leadminer Test leadminer@Teamankaboot.fr" <leadminer@teamankaboot.fr>'
+      },
+      {
+        description: 'Case when email is not surrounded with <>',
+        input:
+          '"Leadminer Test leadminer@Teamankaboot.fr" leadminer@teamankaboot.fr'
+      }
+    ];
+
+    testCases.forEach(({ input }) => {
+      const [resultOutput] = extractNameAndEmail(input);
+      expect(resultOutput).toEqual(expectedOutput);
+    });
+  });
+
+  it('should return valid object if the name is a list of emails"', () => {
+    const expectedOutput = {
+      name: 'leadminer1@Teamankaboot.fr, leadminer2@Teamankaboot.fr, leadminer3@Teamankaboot.fr',
+      identifier: 'leadminer',
+      address: 'leadminer@teamankaboot.fr',
+      domain: 'teamankaboot.fr'
+    };
+    const testCases = [
+      {
+        description: 'Case when email is surrounded with <>',
+        input:
+          '"leadminer1@Teamankaboot.fr, leadminer2@Teamankaboot.fr, leadminer3@Teamankaboot.fr" <leadminer@teamankaboot.fr>'
+      },
+      {
+        description: 'Case when email is not surrounded with <>',
+        input:
+          '"leadminer1@Teamankaboot.fr, leadminer2@Teamankaboot.fr, leadminer3@Teamankaboot.fr" leadminer@teamankaboot.fr'
+      }
+    ];
+
+    testCases.forEach(({ input }) => {
+      const [resultOutput] = extractNameAndEmail(input);
+      expect(resultOutput).toEqual(expectedOutput);
+    });
+  });
+
+  it('should correclty split emails if they are seperated with commas only', () => {
+    const testStrings = [
+      'leadminer1@teamankaboot.fr',
+      '<leadminer2@teamankaboot.fr>',
+      '"Leadminer 3" leadminer3@teamankaboot.fr',
+      '"Leadminer 4" <leadminer4@teamankaboot.fr>'
+    ];
+
+    const testCase = {
+      input: testStrings.join(','),
+      output: [
+        {
+          name: '',
+          identifier: 'leadminer1',
+          address: 'leadminer1@teamankaboot.fr',
+          domain: 'teamankaboot.fr'
+        },
+        {
+          name: '',
+          identifier: 'leadminer2',
+          address: 'leadminer2@teamankaboot.fr',
+          domain: 'teamankaboot.fr'
+        },
+        {
+          name: 'Leadminer 3',
+          identifier: 'leadminer3',
+          address: 'leadminer3@teamankaboot.fr',
+          domain: 'teamankaboot.fr'
+        },
+        {
+          name: 'Leadminer 4',
+          identifier: 'leadminer4',
+          address: 'leadminer4@teamankaboot.fr',
+          domain: 'teamankaboot.fr'
+        }
+      ]
+    };
+
+    const output = extractNameAndEmail(testCase.input);
+    expect(output).toEqual(testCase.output);
+  });
+
   it('should pass cases when names have special chars', () => {
     const specialChars = ['-', '()', ':', '|', '&', '@', ','];
     const email = 'leadminer@Teamankaboot.fr';
@@ -237,23 +331,29 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
           { input: `${email}`, output: 'EMPTY' },
           { input: `<${email}>`, output: 'EMPTY' },
           {
-            input: `Hello${char}There <${email}>`,
+            input: `"Hello${char}There" <${email}>`,
             output: `Hello${char}There`
           },
-          { input: `Hello${char}There ${email}`, output: `Hello${char}There` },
           {
-            input: `Hello ${char} There <${email}>`,
+            input: `"Hello${char}There" ${email}`,
+            output: `Hello${char}There`
+          },
+          {
+            input: `"Hello ${char} There" <${email}>`,
             output: `Hello ${char} There`
           },
           {
-            input: `Hello ${char} There ${email}`,
+            input: `"Hello ${char} There" ${email}`,
             output: `Hello ${char} There`
           },
           {
-            input: `Hello ${char}There <${email}>`,
+            input: `"Hello ${char}There" <${email}>`,
             output: `Hello ${char}There`
           },
-          { input: `Hello ${char}There ${email}`, output: `Hello ${char}There` }
+          {
+            input: `"Hello ${char}There" ${email}`,
+            output: `Hello ${char}There`
+          }
         ];
 
         return [
@@ -304,8 +404,8 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it.each([{ char: ',' }, { char: ';' }])(
     'Should not include names with trailing $char',
     ({ char }) => {
-      const startsWithInput = `userName${char} user@email.com`;
-      const endsWithInput = `${char}userName user@email.com`;
+      const startsWithInput = `"userName${char}" user@email.com`;
+      const endsWithInput = `"${char}userName" user@email.com`;
 
       const startsWithResult = extractNameAndEmail(startsWithInput);
       const endsWithResult = extractNameAndEmail(endsWithInput);
