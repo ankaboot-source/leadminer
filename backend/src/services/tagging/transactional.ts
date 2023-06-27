@@ -1,4 +1,4 @@
-import { TAG_REACHABILITY_VERY_LOW } from '../../utils/constants';
+import { TAG_REACHABILITY } from '../../utils/constants';
 import HasHeaderFieldStartsWith from './conditions/HasHeaderFieldStartsWith';
 import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
 import { EmailMessageTagExtractor } from './types';
@@ -6,7 +6,7 @@ import { EmailMessageTagExtractor } from './types';
 const transactionalEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'transactional',
-    reachable: TAG_REACHABILITY_VERY_LOW
+    reachable: TAG_REACHABILITY.REACHABILITY_UNKNOWN_UNSURE
   },
   rulesToCheck: [
     {

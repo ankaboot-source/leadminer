@@ -1,4 +1,4 @@
-import { TAG_REACHABILITY_LOW } from '../../utils/constants';
+import { TAG_REACHABILITY } from '../../utils/constants';
 import HasHeaderField from './conditions/HasHeaderField';
 import HasNoHeaderField from './conditions/HasNoHeaderField';
 import { EmailMessageTagExtractor } from './types';
@@ -6,7 +6,7 @@ import { EmailMessageTagExtractor } from './types';
 const newsletterEmailMessage: EmailMessageTagExtractor = {
   tag: {
     name: 'newsletter',
-    reachable: TAG_REACHABILITY_LOW
+    reachable: TAG_REACHABILITY.REACHABILITY_MANY_INDIRECT
   },
   requiredConditions: [new HasNoHeaderField(['list-post'])],
   rulesToCheck: [
