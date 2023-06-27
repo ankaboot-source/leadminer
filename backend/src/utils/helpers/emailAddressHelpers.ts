@@ -196,7 +196,7 @@ export function getEmailTag(
   if (isGroup(address)) {
     emailTags.push({
       name: 'group',
-      reachable: REACHABILITY.MULTIPLE_PERSONS,
+      reachable: REACHABILITY.MANY_PERSONS,
       source: tagSource
     });
   }
