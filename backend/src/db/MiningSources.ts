@@ -25,9 +25,7 @@ export interface MiningSource {
 
 export interface MiningSources {
   upsert(source: MiningSource): Promise<void>;
-  getByUser(
-    userId: string
-  ): Promise<
+  getByUser(userId: string): Promise<
     {
       email: string;
       type: MiningSourceType;
