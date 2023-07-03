@@ -1,22 +1,23 @@
-import {
-  isAuthenticatedUserOrLogout,
-  isAnonymousUserOrRedirect,
-} from "src/helpers/auth";
+import DashboardPage from "src/pages/DashboardPage.vue";
+import LoginPage from "src/pages/LoginPage.vue";
 import { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
   {
     path: "/dashboard",
-    component: () => import("layouts/MainLayout.vue"),
-    beforeEnter: (to) => isAuthenticatedUserOrLogout(to, "/"),
-    children: [
-      { path: "", component: () => import("src/pages/DashboardPage.vue") },
-    ],
+    name: "Dashboard",
+    component: DashboardPage,
+    meta: {
+      isAuthRequired: true,
+    },
   },
   {
     path: "/",
-    beforeEnter: () => isAnonymousUserOrRedirect("/dashboard"),
-    component: () => import("src/pages/LoginPage.vue"),
+    component: LoginPage,
+    name: "Login",
+    meta: {
+      isAuthRequired: false,
+    },
   },
 
   // Always leave this as last one,

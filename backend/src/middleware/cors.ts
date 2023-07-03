@@ -8,7 +8,7 @@ const corsOptions: CorsOptions = {
     'Authorization',
     'X-Requested-With',
     'Content-type',
-    'X-imap-credentials'
+    'x-sb-jwt'
   ],
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204,
   credentials: true

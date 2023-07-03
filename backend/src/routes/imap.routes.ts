@@ -1,15 +1,18 @@
 import { Router } from 'express';
-import initializeAuthMiddleware from '../middleware/auth';
 import initializeImapController from '../controllers/imap.controller';
-import { AuthResolver } from '../services/auth/types';
+import { MiningSources } from '../db/MiningSources';
+import initializeAuthMiddleware from '../middleware/auth';
+import AuthResolver from '../services/auth/AuthResolver';
 
-export default function initializeImapRoutes(authResolver: AuthResolver) {
+export default function initializeImapRoutes(
+  authResolver: AuthResolver,
+  miningSources: MiningSources
+) {
   const router = Router();
-  const { verifyJWT } = initializeAuthMiddleware(authResolver);
-  const { getImapBoxes, signinImap } = initializeImapController(authResolver);
 
-  router.post('/login', signinImap);
-  router.get('/:userId/boxes', verifyJWT, getImapBoxes);
+  const { getImapBoxes } = initializeImapController(miningSources);
+
+  router.post('/boxes', initializeAuthMiddleware(authResolver), getImapBoxes);
 
   return router;
 }

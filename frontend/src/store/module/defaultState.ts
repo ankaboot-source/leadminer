@@ -1,16 +1,16 @@
-import { LocalStorage } from "quasar";
+import { MiningSource } from "src/types/providers";
 
 export function getDefaultState() {
   return {
-    miningTask: {},
+    miningTask: null,
     loadingStatus: false,
     loadingStatusDns: false,
     loadingStatusbox: false,
-    imapCredentials: LocalStorage.has("imapCredentials")
-      ? LocalStorage.getItem("imapCredentials")
-      : null,
-    user: LocalStorage.has("user") ? LocalStorage.getItem("user") : null,
+    miningSources: [] as MiningSource[],
+    activeMiningSource: null as MiningSource | null,
+    isLoadingSources: false,
     boxes: [],
+    selectedBoxes: [],
     errorMessage: "",
     infoMessage: "",
     progress: {

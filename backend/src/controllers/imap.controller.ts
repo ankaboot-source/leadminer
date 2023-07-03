@@ -1,81 +1,88 @@
+import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import Connection from 'imap';
-import { AuthResolver } from '../services/auth/types';
+import { MiningSources } from '../db/MiningSources';
+import azureOAuth2Client from '../services/OAuth2/azure';
+import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { ImapAuthError } from '../utils/errors';
 import { hashEmail } from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
-import {
-  generateErrorObjectFromImapError,
-  getXImapHeaderField,
-  validateAndExtractImapParametersFromBody,
-  validateImapCredentials
-} from './helpers';
+import { generateErrorObjectFromImapError } from './helpers';
 
-export default function initializeImapController(authResolver: AuthResolver) {
+export default function initializeImapController(miningSources: MiningSources) {
   return {
-    async signinImap(req: Request, res: Response, next: NextFunction) {
-      try {
-        const { email, host, port, password } =
-          validateAndExtractImapParametersFromBody(req.body);
-
-        await validateImapCredentials(host, email, password, port);
-
-        const response = await authResolver.loginWithOneTimePasswordEmail(
-          email
-        );
-
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
-
-        const message = `Your IMAP sign-in was successful. We've sent a link to ${email}.`;
-        logger.info('IMAP sign-in was successful', { metadata: { email } });
-
-        return res.status(200).send({ data: { message } });
-      } catch (err) {
-        res.status(err instanceof ImapAuthError ? 400 : 500);
-        return next(err);
-      }
-    },
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
-      const { user } = res.locals;
+      const { email } = req.body;
+      const user = res.locals.user as User;
 
-      if (!user) {
+      const data = await miningSources.getCredentialsBySourceEmail(
+        user.id,
+        email
+      );
+
+      if (!data) {
         res.status(400);
-        return next(new Error('user does not exists.'));
+        return next(
+          new Error('Unable to retrieve credentials for this mining source')
+        );
       }
 
-      const { data, error } = getXImapHeaderField(req.headers);
+      if ('accessToken' in data) {
+        const { provider, accessToken, refreshToken, expiresAt } = data;
+        const client =
+          provider === 'Azure' ? azureOAuth2Client : googleOAuth2Client;
 
-      if (error) {
-        res.status(400);
-        return next(error);
+        const token = client.createToken({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: expiresAt
+        });
+
+        if (token.expired(1000)) {
+          const { token: newToken } = await token.refresh();
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          const { access_token, refresh_token, expires_at } = newToken as {
+            access_token: string;
+            refresh_token: string;
+            expires_at: number;
+          };
+          await miningSources.upsert({
+            type: provider,
+            email: data.email,
+            credentials: {
+              email: data.email,
+              provider,
+              accessToken: access_token,
+              refreshToken: refresh_token,
+              expiresAt: expires_at
+            },
+            userId: user.id
+          });
+
+          data.accessToken = access_token;
+        }
       }
 
-      const { id } = user;
-      const { access_token: accessToken, email, host, password, port } = data;
-      const userEmail = email ?? user.email;
-
-      const imapConnectionProvider = accessToken
-        ? new ImapConnectionProvider(userEmail).withOauth(accessToken)
-        : new ImapConnectionProvider(userEmail).withPassword(
-            host,
-            password,
-            port
-          );
+      const imapConnectionProvider =
+        'accessToken' in data
+          ? new ImapConnectionProvider(data.email).withOauth(data.accessToken)
+          : new ImapConnectionProvider(data.email).withPassword(
+              data.host,
+              data.password,
+              data.port
+            );
 
       let imapConnection: Connection | null = null;
 
       try {
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
-        const tree = await imapBoxesFetcher.getTree(userEmail);
+        const tree: any = await imapBoxesFetcher.getTree(data.email);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {
-            user: hashEmail(userEmail, id)
+            user: hashEmail(data.email, user.id)
           }
         });
 

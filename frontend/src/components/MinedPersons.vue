@@ -227,17 +227,17 @@
 import {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
+  User,
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { getCsvStr } from "src/helpers/csv";
-import { fetchData, supabaseClient } from "src/helpers/supabase";
+import { fetchData, supabase } from "src/helpers/supabase";
 import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useStore } from "../store/index";
 
 const $q = useQuasar();
 const $store = useStore();
-
 const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
@@ -265,7 +265,7 @@ const isExportDisabled = computed(
 );
 
 const activeMiningTask = computed(
-  () => !!$store.state.leadminer.miningTask.miningId
+  () => $store.state.leadminer.miningTask !== null
 );
 
 let refreshInterval: number;
@@ -282,9 +282,10 @@ function refreshTable() {
 }
 
 let subscription: RealtimeChannel;
-function setupSubscription() {
-  const user = $store.getters["leadminer/getCurrentUser"];
-  subscription = supabaseClient.channel("*").on(
+async function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  subscription = supabase.channel("*").on(
     "postgres_changes",
     {
       event: "*",
@@ -300,9 +301,9 @@ function setupSubscription() {
 }
 
 async function refineContacts() {
-  const { id } = $store.getters["leadminer/getCurrentUser"];
-  const { error } = await supabaseClient.rpc("refined_persons", {
-    userid: id,
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  const { error } = await supabase.rpc("refined_persons", {
+    userid: user.id,
   });
 
   if (error) {
@@ -322,15 +323,15 @@ async function getContacts(userId: string) {
 }
 
 async function syncTable() {
-  const { id } = $store.getters["leadminer/getCurrentUser"];
-  const contacts = await getContacts(id);
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  const contacts = await getContacts(user.id);
   rows.value = contacts;
 }
 
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     // If mining is active, update refined persons every 3 seconds
-    setupSubscription();
+    await setupSubscription();
     subscription.subscribe();
     if (rows.value.length > 0) {
       contactsCache = new Map(rows.value.map((row) => [row.email, row]));
@@ -425,8 +426,10 @@ async function exportTable() {
     });
     return;
   }
+  const { data: session } = await supabase.auth.getUser();
+
   const currentDatetime = new Date();
-  const { email } = $store.getters["leadminer/getCurrentUser"];
+  const email = session.user?.email;
   const fileName = `leadminer-${email}-${currentDatetime
     .toISOString()
     .slice(0, 10)}.csv`;
@@ -486,9 +489,6 @@ const onKeyDown = (event: KeyboardEvent) => {
 };
 
 onMounted(async () => {
-  if (!$store.getters["leadminer/isLoggedIn"]) {
-    return;
-  }
   window.addEventListener("keydown", onKeyDown);
   isLoading.value = true;
   await refineContacts();

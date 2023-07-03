@@ -1,68 +1,11 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { getUser, getXImapHeaderField } from '../../src/controllers/helpers';
+import { getUser } from '../../src/controllers/helpers';
 import InMemoryImapUsers from '../fakes/db/InMemoryImapUsers';
 import InMemoryOAuthUsers from '../fakes/db/InMemoryOAuthUsers';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
 }));
-
-describe('controllers.helpers.getXImapHeaderField', () => {
-  it('should return an error if the x-imap-credentials header is missing', () => {
-    const headers = {};
-    const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeUndefined();
-    expect(error).toBeInstanceOf(Error);
-    expect(error!.message).toBe(
-      'An x-imap-credentials header field is required.'
-    );
-  });
-
-  it('should return an error if the x-imap-credentials header is not in correct JSON format', () => {
-    const headers = { 'x-imap-credentials': 'invalid json' };
-    const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeUndefined();
-    expect(error).toBeInstanceOf(Error);
-    expect(error!.message).toBe(
-      'x-imap-credentials header field is not in correct JSON format'
-    );
-  });
-
-  it('should return an error if the x-imap-credentials header is missing required fields', () => {
-    const headers = { 'x-imap-credentials': '{"id": "123"}' };
-    const { data, error } = getXImapHeaderField(headers);
-    expect(data).toBeUndefined();
-    expect(error).toBeInstanceOf(Error);
-    expect(error!.message).toBe(
-      'x-imap-credentials header is missing required field. Check (host, email, password) OR (access_token)'
-    );
-  });
-
-  it('should return data when passing (email, host, password) to x-imap-credentials', () => {
-    const headers = {
-      'x-imap-credentials':
-        '{"email": "test@gmail.com","host": "123","password":"testing"}'
-    };
-    const { data, error } = getXImapHeaderField(headers);
-    expect(error).toBeNull();
-    expect(data).toEqual({
-      email: 'test@gmail.com',
-      host: '123',
-      password: 'testing'
-    });
-  });
-
-  it('should return data when passing (access_token) to x-imap-credentials', () => {
-    const headers = {
-      'x-imap-credentials': '{"access_token": "test@gmail.com"}'
-    };
-    const { data, error } = getXImapHeaderField(headers);
-    expect(error).toBeNull();
-    expect(data).toEqual({
-      access_token: 'test@gmail.com'
-    });
-  });
-});
 
 describe('controllers.helpers.getUser', () => {
   it('throws an error if no parameters are passed', () => {
