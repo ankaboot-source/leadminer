@@ -26,7 +26,7 @@ To run Leadminer, follow these steps:
 - Enable third-party providers in your Supabase dashboard. Refer to the [documentation](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
 - Create a third-party provider OAuth app:
   - Under the "Social Auth" section, select the provider you want to configure and follow the provided [instructions](https://supabase.com/docs/guides/auth#providers).
-  - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://<Your backend api>/api/imap/mine/sources/<ProviderName>/callback`.
+  - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://localhost:8081/api/imap/mine/sources/PROVIDER_NAME/callback`.
 
 > **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "ProviderName" if integrating Google OAuth and "azure" if integrating Azure.
 
