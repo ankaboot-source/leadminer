@@ -11,34 +11,24 @@ Leadminer is a tool to mine and transmute raw and passive contacts from your own
 
 ## How to run?
 
-To properly run Leadminer, make sure to follow the steps outlined below.
+To run Leadminer, follow these steps:
 
-### Supabase instance
+### Supabase instance:
 
-Before you can run Leadminer, You'll need a running Supabase instance. If you're going to production usage, it's recommended to use a self-hosted instance. However, for this setup, we'll utilize the Saas version.
+- Create a Supabase account [here](https://supabase.com/dashboard/sign-up) and create a project.
+- Obtain the following three values from your dashboard:
+  - **Project URL**: Found under Settings -> API in the "Project URL" section.
+  - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
+  - **Postgres Connection string**: Found under Settings -> Database in the "Connection string" section. Select the URI option.
 
-1- Create a Supabase account [here](https://supabase.com/dashboard/sign-up) and create a project
+### Configure OAuth:
 
-After creating the project, obtain the following three values from your dashboard. These will be used to set up Leadminer:
+- Enable third-party providers in your Supabase dashboard. Refer to the [documentation](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
+- Create a third-party provider OAuth app:
+  - Under the "Social Auth" section, select the provider you want to configure and follow the provided [instructions](https://supabase.com/docs/guides/auth#providers).
+  - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://<Your backend api>/api/imap/mine/sources/<ProviderName>/callback`.
 
-- **Project URL:** This can be found under Settings -> API in a section called "Project URL."
-- **Project API key:** This can be found under Settings -> API in a section called "Project API keys." There are two secrets; use the one called `service_role`.
-- **Postgres Connection string:** This can be found under Settings -> Database in a section called "Connection string." Select the URI options.
-
-### Configure OAuth
-
-Leadminer relies on OAuth for authenticating users and authorizing access to their email boxes.
-
-1- Enable third-party providers in your Supabase dashboard. Refer to this [section](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
-
-2- Create a third-party provider OAuth app. Under the "Social Auth" section, select the provider you want to configure and follow the  provided [instructions](https://supabase.com/docs/guides/auth#providers).
-
-3 - After successfully creating an OAuth app, go to your OAuth app dashboard and add the following URI under a section called REDIRECT URI's : `http://<Your backend api>/api/imap/mine/sources/<ProviderName>/callback`.
-
-> We currently only support Google and Azure as third-party OAuth providers. Therefore:
->
-> -  if you are integrating Google OAuth,  "ProviderName" should be "google". 
-> - If you are integrating Azure, "ProviderName" should be "azure".
+> **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "ProviderName" if integrating Google OAuth and "azure" if integrating Azure.
 
 ### Run using docker-compose
 
