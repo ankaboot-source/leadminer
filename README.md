@@ -11,30 +11,34 @@ Leadminer is a tool to mine and transmute raw and passive contacts from your own
 
 ## How to run?
 
-Before running the project, make sure to complete the following steps to enable and configure OAuth functionality:
+To properly run Leadminer, make sure to follow the steps outlined below.
 
-### Configuration
+### Supabase instance
 
-1. Create a Provider cloud app following the instructions provided in the `.env.example` file.
+Before you can run Leadminer, You'll need a running Supabase instance. If you're going to production usage, it's recommended to use a self-hosted instance. However, for this setup, we'll utilize the Saas version.
 
-2. Update the relevant settings in the OAuth Provider cloud console. In the "Allowed redirect URI" section, add the following two redirect URIs:
+1- Create a Supabase account [here](https://supabase.com/dashboard/sign-up) and create a project
 
-   - `http://<Your supabase api>/auth/v1/callback`
-   - `http://<Your backend api>/api/oauth/callback`
+After creating the project, obtain the following three values from your dashboard. These will be used to set up Leadminer:
 
-3. For each enabled provider, update the following fields:
+- **Project URL:** This can be found under Settings -> API in a section called "Project URL."
+- **Project API key:** This can be found under Settings -> API in a section called "Project API keys." There are two secrets; use the one called `service_role`.
+- **Postgres Connection string:** This can be found under Settings -> Database in a section called "Connection string." Select the URI options.
 
-   - Update the corresponding variables in the `config.toml` file.
-   - Ensure you change the `redirect_uri` for each provider.
+### Configure OAuth
 
-    The fields to be updated:
+Leadminer relies on OAuth for various functionalities, including  sign-in, sign-up, and obtaining additional permissions for advanced  usage.
 
-   - `enable`: Set to `true` to enable the provider or `false` to disable it.
-   - `client_id`: Update with the appropriate client ID for OAuth.
-   - `secret`: Update with the corresponding secret for OAuth.
-   - `redirect_uri`: Ensure it points to `http://<Your backend api>/api/oauth/callback`.
+1- Enable third-party providers in your Supabase dashboard. Refer to this [section](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
 
-4. Add the remaining required provider environment variables according to the `.env.example` file.
+2- Create a third-party provider OAuth app. Under the "Social Auth" section, select the provider you want to configure and follow the  provided [instructions](https://supabase.com/docs/guides/auth#providers).
+
+3 - After successfully creating an OAuth app, go to your OAuth app dashboard and add the following URI under a section called REDIRECT URI's : `http://<Your backend api>/api/imap/mine/sources/<ProviderName>/callback`.
+
+> We currently only support Google and Azure as third-party OAuth providers. Therefore:
+>
+> -  if you are integrating Google OAuth,  "ProviderName" should be "google". 
+> - If you are integrating Azure, "ProviderName" should be "azure".
 
 ### Run using docker-compose
 
