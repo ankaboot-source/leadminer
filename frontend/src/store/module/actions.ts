@@ -1,60 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosError } from "axios";
-import { LocalStorage } from "quasar";
 
 import { api } from "src/boot/axios";
-import { GENERIC_ERROR_MESSAGE_NETWORK_ERROR } from "src/constants";
 import { sse } from "src/helpers/sse";
+import { supabase } from "src/helpers/supabase";
+import { MiningSource } from "src/types/providers";
 
-export async function signIn({ commit }: any, { data }: any) {
-  commit("SET_ERRORS", {});
-
+export async function getMiningSources({ commit }: any) {
   try {
-    const response = await api.post("/imap/login", data);
-
-    LocalStorage.set("user", data);
-    commit("SET_USER_CREDENTIALS", data);
-    commit("SET_INFO_MESSAGE", response.data.data.message);
-  } catch (err) {
-    if (err !== null && err instanceof AxiosError) {
-      const error = err.response?.data?.error || err;
-
-      if (error.details) {
-        commit("SET_ERRORS", [error.details]);
-        commit("SET_ERROR", null);
-      } else {
-        const message =
-          error.message?.toLowerCase() === "network error"
-            ? GENERIC_ERROR_MESSAGE_NETWORK_ERROR
-            : error.message;
-
-        commit("SET_ERROR", message);
-        commit("SET_ERRORS", {});
-      }
+    commit("setIsLoadingSources", true);
+    const { data } = await api.get<{
+      message: string;
+      sources: MiningSource[];
+    }>("/imap/mine/sources");
+    commit("setMiningSources", data.sources);
+    if (data.sources.length > 0) {
+      commit("setActiveMiningSource", data.sources[0]);
     }
-
-    throw err;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+  } finally {
+    commit("setIsLoadingSources", false);
   }
 }
 
-export async function getBoxes({ getters, commit }: any) {
+export async function getBoxes({ commit }: any, miningSource: MiningSource) {
   commit("SET_LOADINGBOX", true);
-  const user = getters.getCurrentUser;
 
   try {
-    const params = {
-      access_token: user.providerToken,
-      email: user.email,
-      host: user.host,
-      password: user.password,
-      port: user.port,
-    };
-
-    const headers = {
-      Authorization: `Bearer ${user.accessToken}`,
-      "X-imap-credentials": JSON.stringify(params),
-    };
-    const response = await api.get(`/imap/${user.id}/boxes`, { headers });
+    const response = await api.post("/imap/boxes", miningSource);
 
     const folders = response.data?.data?.folders;
 
@@ -70,7 +45,8 @@ export async function getBoxes({ getters, commit }: any) {
       const error = err.response?.data?.error || err;
 
       if (error.message?.toLowerCase() === "network error") {
-        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
       } else {
         message = error.message;
       }
@@ -78,16 +54,12 @@ export async function getBoxes({ getters, commit }: any) {
       commit("SET_ERROR", message);
     }
     throw err;
+  } finally {
+    commit("SET_LOADINGBOX", false);
   }
 }
 
-export async function startMining(
-  this: any,
-  { getters, commit }: any,
-  { data }: any
-) {
-  const user = getters.getCurrentUser;
-
+export async function startMining(this: any, { commit }: any, { data }: any) {
   commit("SET_LOADING", true);
   commit("SET_LOADING_DNS", true);
   commit("SET_SCANNEDEMAILS", 0);
@@ -96,24 +68,18 @@ export async function startMining(
   commit("SET_SCANNEDBOXES", []);
 
   try {
-    const { boxes } = data;
-    const body = {
-      access_token: user.providerToken,
-      email: user.email,
-      host: user.host,
-      password: user.password,
-      port: user.port,
-      boxes,
-    };
-    const headers = {
-      Authorization: `Bearer ${user.accessToken}`,
-    };
-    const response = await api.post(`/imap/mine/${user.id}`, body, { headers });
+    const { data: session } = await supabase.auth.getUser();
+
+    if (!session.user) {
+      return;
+    }
+
+    const response = await api.post(`/imap/mine/${session.user.id}`, data);
 
     const task = response.data?.data;
     const { miningId } = task;
 
-    sse.initConnection(user.id, miningId);
+    sse.initConnection(session.user?.id, miningId);
     sse.registerEventHandlers(miningId, this);
 
     commit("SET_MINING_TASK", task);
@@ -128,7 +94,8 @@ export async function startMining(
       const error = err.response?.data?.error || err;
 
       if (error.message?.toLowerCase() === "network error") {
-        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
       } else {
         message = error.message;
       }
@@ -139,14 +106,16 @@ export async function startMining(
   }
 }
 
-export async function stopMining({ commit, getters }: any, { data }: any) {
+export async function stopMining({ commit }: any, { data }: any) {
   try {
-    const user = getters.getCurrentUser;
+    const { data: session } = await supabase.auth.getUser();
+
+    if (!session.user) {
+      return;
+    }
     const { miningId } = data;
-    const headers = {
-      Authorization: `Bearer ${user.accessToken}`,
-    };
-    await api.delete(`/imap/mine/${user.id}/${miningId}`, { headers });
+
+    await api.delete(`/imap/mine/${session.user.id}/${miningId}`);
 
     commit("DELETE_MINING_TASK");
     commit("SET_STATUS", "");
@@ -157,7 +126,8 @@ export async function stopMining({ commit, getters }: any, { data }: any) {
       const error = err.response?.data?.error || err;
 
       if (error.message?.toLowerCase() === "network error") {
-        message = GENERIC_ERROR_MESSAGE_NETWORK_ERROR;
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
       } else {
         message = error.message;
       }
