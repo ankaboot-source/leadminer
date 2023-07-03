@@ -14,8 +14,8 @@
     "build": "quasar build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.24.0",
     "@quasar/extras": "^1.16.4",
-    "@supabase/supabase-js": "^2.21.0",
     "axios": "^1.4.0",
     "csv-stringify": "^6.4.0",
     "object-scan": "^18.5.1",
