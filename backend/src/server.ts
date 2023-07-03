@@ -1,11 +1,14 @@
 import './env';
-import logger from './utils/logger';
-import redis from './utils/redis';
+
 import initializeApp from './app';
 import ENV from './config';
+import pool from './db/pg';
+import PgMiningSources from './db/pg/PgMiningSources';
+import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
 import tasksManager from './services/tasks-manager';
-import SupabaseAuthResolver from './services/auth/Authentication';
-import supabaseAuthClient from './utils/supabase';
+import logger from './utils/logger';
+import redis from './utils/redis';
+import supabaseClient from './utils/supabase';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -24,12 +27,14 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
-  const authenticationResolver = new SupabaseAuthResolver(
-    supabaseAuthClient,
-    logger
+  const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
+  const miningSource = new PgMiningSources(
+    pool,
+    logger,
+    ENV.LEADMINER_API_HASH_SECRET
   );
 
-  const app = initializeApp(authenticationResolver, tasksManager);
+  const app = initializeApp(authResolver, tasksManager, miningSource);
 
   app.listen(ENV.LEADMINER_API_PORT, () => {
     logger.info(`Server is running on port ${ENV.LEADMINER_API_PORT}.`);

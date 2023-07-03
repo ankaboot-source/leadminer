@@ -135,7 +135,7 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
   : 130;
 
 const activeMiningTask = computed(
-  () => !!$store.state.leadminer.miningTask.miningId
+  () => $store.state.leadminer.miningTask !== null
 );
 const fetchingFinished = computed(
   () => !!$store.state.leadminer.fetchingFinished

@@ -6,8 +6,7 @@ import {
   Store as VuexStore,
   useStore as vuexUseStore,
 } from "vuex";
-
-import leadminer from "./module/index";
+import leadminer from "./module";
 
 // import example from './module-example'
 // import { ExampleStateInterface } from './module-example/state';

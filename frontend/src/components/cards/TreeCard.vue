@@ -4,12 +4,11 @@
     v-model:ticked="selected"
     class="col-10 col-sm-6 q-ma-sm"
     icon="arrow_forward_ios"
-    :nodes="Boxes"
+    :nodes="$props.boxes"
     node-key="path"
     color="teal"
     control-color="teal"
     tick-strategy="leaf"
-    @update:ticked="Ticked"
   >
     <template #default-header="prop">
       <div
@@ -41,14 +40,6 @@
             {{ prop.node.totalIndiv }}
           </q-badge>
         </div>
-        <div class="col-2">
-          <q-icon
-            :name="Scanned.includes(prop.node.label) ? 'check' : ''"
-            color="orange"
-            size="28px"
-            class="q-mr-sm"
-          />
-        </div>
       </div>
     </template>
   </q-tree>
@@ -70,36 +61,6 @@ const EMAIL_EXCLUDED_FOLDERS = [
   "\\trash",
 ];
 
-/**
- * Filters out default selected folders from the input boxes based on email service
- * @param {Array} boxes - The array of folder names to filter
- * @returns {Array} - The filtered array of boxes
- */
-function filterDefaultSelectedFolders(boxes) {
-  const filteredBoxes = [];
-
-  objectScan(["**.path"], {
-    joined: true,
-    filterFn: ({ parent }) => {
-      const { path, attribs } = parent;
-      const folder = path.split("/");
-      const folderName = folder.pop();
-      const folderParent = folder.pop();
-
-      const isExcluded = [...attribs, folderName, folderParent]
-        .filter(Boolean)
-        .map((name) => name.toLowerCase())
-        .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
-
-      if (!isExcluded) {
-        filteredBoxes.push(path);
-      }
-    },
-  })(boxes);
-
-  return filteredBoxes;
-}
-
 export default defineComponent({
   name: "TreeCard",
   props: {
@@ -109,70 +70,48 @@ export default defineComponent({
         return [];
       },
     },
-    scannedBoxes: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
   },
-  emits: ["selected-boxes"],
   data() {
     return {
-      selected: ref([]),
+      selected: ref(this.getDefaultSelectedFolders(this.$props.boxes)),
     };
   },
 
-  computed: {
-    Boxes() {
-      const selectedB = filterDefaultSelectedFolders(this.boxes);
-
-      if (selectedB.length > 0) {
-        // TODO : Rework this
-        // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-        this.selected = selectedB;
-      }
-      return [...this.boxes];
-    },
-    Scanned() {
-      return this.scannedBoxes;
-    },
-  },
   watch: {
     selected(newValue) {
-      this.$emit("selected-boxes", newValue);
+      this.$store.commit("leadminer/setSelectedBoxes", newValue);
     },
   },
   methods: {
-    Ticked() {
-      setTimeout(() => {
-        objectScan(["**.path"], {
-          joined: true,
-          filterFn: ({ value }) => {
-            if (
-              this.$refs.tree.isTicked(value) &&
-              !this.selected.includes(value)
-            ) {
-              this.selected.push(value);
-            }
-            if (
-              !this.$refs.tree.isTicked(value) &&
-              this.selected.includes(value)
-            ) {
-              const index = this.selected.indexOf(value);
-              if (index !== -1) {
-                this.selected.splice(index, 1);
-              }
-            }
-          },
-        })(this.boxes, { sum: 0 });
-      }, 200);
+    /**
+     * Filters out default selected folders from the input boxes based on email service
+     * @param {Array} boxes - The array of folder names to filter
+     * @returns {Array} - The filtered array of boxes
+     */
+    getDefaultSelectedFolders(boxes) {
+      const filteredBoxes = [];
+
+      objectScan(["**.path"], {
+        joined: true,
+        filterFn: ({ parent }) => {
+          const { path, attribs } = parent;
+          const folder = path.split("/");
+          const folderName = folder.pop();
+          const folderParent = folder.pop();
+
+          const isExcluded = [...attribs, folderName, folderParent]
+            .filter(Boolean)
+            .map((name) => name.toLowerCase())
+            .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
+
+          if (!isExcluded) {
+            filteredBoxes.push(path);
+          }
+        },
+      })(boxes);
+
+      return filteredBoxes;
     },
   },
 });
 </script>
-<style>
-.border {
-  border-radius: 10px;
-}
-</style>

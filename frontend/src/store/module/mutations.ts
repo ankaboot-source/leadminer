@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { LoginFormError } from "src/types/mutations";
+import { MiningSource } from "src/types/providers";
 import { getDefaultState } from "./defaultState";
 
 export function SET_LOADING(state: any, newLoadingStatus: any) {
@@ -77,22 +77,27 @@ export function SET_MINING_TASK(state: any, task: any) {
 }
 
 export function DELETE_MINING_TASK(state: any) {
-  state.miningTask = {};
+  state.miningTask = null;
 }
 
 export function SET_FETCHING_FINISHED(state: any, totalFetchedEmails: number) {
   state.fetchingFinished = totalFetchedEmails;
 }
 
-export function SET_ERRORS(state: any, errors: Array<LoginFormError>) {
-  const result: Record<string, string> = {};
+export function setMiningSources(state: any, miningSources: MiningSource[]) {
+  state.miningSources = miningSources;
+}
 
-  if (errors.length > 0) {
-    errors.forEach(({ fields, message }: LoginFormError) => {
-      fields.forEach((field) => {
-        result[field] = message;
-      });
-    });
-  }
-  state.errors = result;
+export function setSelectedBoxes(state: any, value: any) {
+  state.scannedEmails = 0;
+  state.extractedEmails = 0;
+  state.selectedBoxes = value;
+}
+
+export function setActiveMiningSource(state: any, value: MiningSource) {
+  state.activeMiningSource = value;
+}
+
+export function setIsLoadingSources(state: any, isLoadingSources: boolean) {
+  state.isLoadingSources = isLoadingSources;
 }

@@ -1,4 +1,5 @@
 import { route } from "quasar/wrappers";
+import { supabase } from "src/helpers/supabase";
 import {
   createMemoryHistory,
   createRouter,
@@ -33,6 +34,23 @@ export default route<StateInterface>((/* { store, ssrContext } */) => {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  });
+
+  // eslint-disable-next-line consistent-return
+  Router.beforeEach(async (to) => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const isAuthenticated = data?.session && !error;
+      if (isAuthenticated && to.path === "/") {
+        return "/dashboard";
+      }
+      if (!isAuthenticated && to.meta.isAuthRequired) {
+        // redirect the user to the login page
+        return "/";
+      }
+    } catch (error) {
+      return "/";
+    }
   });
 
   return Router;
