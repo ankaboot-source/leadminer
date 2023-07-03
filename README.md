@@ -27,7 +27,7 @@ After creating the project, obtain the following three values from your dashboar
 
 ### Configure OAuth
 
-Leadminer relies on OAuth for various functionalities, including  sign-in, sign-up, and obtaining additional permissions for advanced  usage.
+Leadminer relies on OAuth for authenticating users and authorizing access to their email boxes.
 
 1- Enable third-party providers in your Supabase dashboard. Refer to this [section](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
 
