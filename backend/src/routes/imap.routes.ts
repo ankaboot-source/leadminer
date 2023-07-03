@@ -12,7 +12,7 @@ export default function initializeImapRoutes(
 
   const { getImapBoxes } = initializeImapController(miningSources);
 
-  router.post('/1/boxes', initializeAuthMiddleware(authResolver), getImapBoxes);
+  router.post('/boxes', initializeAuthMiddleware(authResolver), getImapBoxes);
 
   return router;
 }

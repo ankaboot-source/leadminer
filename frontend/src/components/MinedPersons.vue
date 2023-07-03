@@ -238,7 +238,6 @@ import { useStore } from "../store/index";
 
 const $q = useQuasar();
 const $store = useStore();
-// We are 100% sure that the user is authenticated in this component
 const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
@@ -284,6 +283,7 @@ function refreshTable() {
 
 let subscription: RealtimeChannel;
 async function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
   const user = (await supabase.auth.getSession()).data.session?.user as User;
   subscription = supabase.channel("*").on(
     "postgres_changes",

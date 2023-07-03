@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosError } from "axios";
-import { LocalStorage } from "quasar";
 
 import { api } from "src/boot/axios";
 import { sse } from "src/helpers/sse";
@@ -26,42 +25,11 @@ export async function getMiningSources({ commit }: any) {
   }
 }
 
-export async function signIn({ commit }: any, { data }: any) {
-  commit("SET_ERRORS", {});
-
-  try {
-    const response = await api.post("/imap/login", data);
-
-    LocalStorage.set("user", data);
-    commit("SET_USER_CREDENTIALS", data);
-    commit("SET_INFO_MESSAGE", response.data.data.message);
-  } catch (err) {
-    if (err !== null && err instanceof AxiosError) {
-      const error = err.response?.data?.error || err;
-
-      if (error.details) {
-        commit("SET_ERRORS", [error.details]);
-        commit("SET_ERROR", null);
-      } else {
-        const message =
-          error.message?.toLowerCase() === "network error"
-            ? "Unable to access server. Please retry again or contact your service provider."
-            : error.message;
-
-        commit("SET_ERROR", message);
-        commit("SET_ERRORS", {});
-      }
-    }
-
-    throw err;
-  }
-}
-
 export async function getBoxes({ commit }: any, miningSource: MiningSource) {
   commit("SET_LOADINGBOX", true);
 
   try {
-    const response = await api.post("/imap/1/boxes", miningSource);
+    const response = await api.post("/imap/boxes", miningSource);
 
     const folders = response.data?.data?.folders;
 
