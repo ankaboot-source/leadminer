@@ -179,5 +179,3 @@ async function loginWithOAuth(provider: Provider) {
   }
 }
 </script>
-
-<style scoped></style>
