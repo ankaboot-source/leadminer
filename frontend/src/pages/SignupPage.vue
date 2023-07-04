@@ -1,47 +1,23 @@
 <template>
   <AuthLayout>
     <q-card
-      class="q-mt-xl text-center column bg-grey-2 q-gutter-md full-width"
+      class="q-mt-xl text-center column bg-grey-2"
       flat
       style="max-width: 30rem"
     >
-      <div class="text-center">
-        <p class="text-h4 text-bold">Welcome back!</p>
+      <div class="q-mb-lg text-center">
+        <p class="text-h4 text-bold">Create a free account</p>
+        <p class="text-h6">
+          Mine and qualify... Discover hidden gems in your social network
+        </p>
       </div>
 
-      <q-btn
-        no-caps
-        :loading="isLoading"
-        class="full-width"
-        icon="img:icons/google.png"
-        label="Continue with Google"
-        size="1rem"
-        @click="loginWithOAuth('google')"
-      />
-      <q-btn
-        no-caps
-        :loading="isLoading"
-        class="full-width"
-        icon="img:icons/microsoft.png"
-        label="Continue with Microsoft"
-        size="1rem"
-        @click="loginWithOAuth('azure')"
-      />
-
-      <HorizontalSeparator
-        class="q-mt-lg full-width"
-        text="Or sign in with your email"
-      />
-
-      <q-form
-        class="q-gutter-md full-width"
-        @submit="loginWithEmailAndPassword"
-      >
+      <q-form class="q-gutter-md full-width" @submit="signUp()">
         <q-input
           v-model="email"
           autofocus
-          class="full-width"
           :rules="emailRules"
+          class="full-width"
           filled
           label="Email"
           type="email"
@@ -49,8 +25,8 @@
         <q-input
           v-model="password"
           class="full-width"
-          filled
           :rules="passwordRules"
+          filled
           label="Password"
           :type="isPwd ? 'password' : 'text'"
         >
@@ -62,15 +38,11 @@
             />
           </template>
         </q-input>
-        <p class="full-width text-right text-bold q-mt-xs">
-          <router-link to="/forgot-password">Forgot your password?</router-link>
-        </p>
-
         <q-btn
-          no-caps
           type="submit"
-          :disable="loginWithPasswordDisabled"
+          no-caps
           :loading="isLoading"
+          :disable="isDisabled"
           size="1rem"
           class="full-width text-bold"
           label="Start mining"
@@ -78,12 +50,37 @@
         />
       </q-form>
 
-      <p class="text-h6 q-mt-lg">
-        Don't have an account? <router-link to="/signup">Sign up</router-link>
+      <HorizontalSeparator
+        class="q-my-lg"
+        text="Or sign up with your social email"
+      />
+
+      <div class="q-gutter-md flex flex-center row text-bold">
+        <q-btn
+          :loading="isLoading"
+          no-caps
+          icon="img:icons/google.png"
+          label="Google"
+          size="1rem"
+          @click="loginWithOAuth('google')"
+        />
+        <q-btn
+          :loading="isLoading"
+          no-caps
+          icon="img:icons/microsoft.png"
+          label="Microsoft"
+          size="1rem"
+          @click="loginWithOAuth('azure')"
+        />
+      </div>
+
+      <p class="text-h6 q-my-lg">
+        Already have an account?
+        <router-link to="/">Sign in</router-link>
       </p>
 
-      <p class="text-grey-7 text-left full-width">
-        By clicking "Start mining" or signing in, you agree to the
+      <p class="text-grey-7 text-left">
+        By clicking "Start mining" or signing up, you agree to the
         <a
           href="https://github.com/ankaboot-source/leadminer/issues/url"
           target="_blank"
@@ -107,14 +104,13 @@
 </template>
 
 <script setup lang="ts">
-import { Provider } from "@supabase/supabase-js";
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
 import { isValidEmail } from "src/helpers/email";
 import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 
 const $quasar = useQuasar();
 
@@ -122,36 +118,41 @@ const email = ref("");
 const password = ref("");
 const isPwd = ref(true);
 const isLoading = ref(false);
-
-const loginWithPasswordDisabled = computed(() => !isValidEmail(email.value));
+const isDisabled = ref(true);
 
 const passwordRules = [
-  (val: string) => val.length >= 8 || "Please insert a valid password",
+  (val: string) => val.length >= 8 || "Please use at least 8 characters",
 ];
 const emailRules = [
   (val: string) => isValidEmail(val) || "Please insert a valid email address",
 ];
 
-async function loginWithEmailAndPassword() {
+async function signUp() {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email: email.value,
       password: password.value,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
     });
     if (error) {
       throw error;
     }
-  } catch (error) {
-    if (error instanceof Error) {
-      showNotification($quasar, error.message, "red", "error");
+  } catch (e) {
+    if (e instanceof Error) {
+      showNotification(
+        $quasar,
+        `Failed to signup: ${e.message}`,
+        "red",
+        "error"
+      );
     }
-  } finally {
-    isLoading.value = false;
   }
 }
 
-async function loginWithOAuth(provider: Provider) {
+async function loginWithOAuth(provider: "google" | "azure") {
   isLoading.value = true;
   try {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -180,4 +181,8 @@ async function loginWithOAuth(provider: Provider) {
 }
 </script>
 
-<style scoped></style>
+<style>
+a {
+  color: inherit;
+}
+</style>

@@ -1,5 +1,14 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <transition
+      enter-active-class="animated fadeIn"
+      leave-active-class="animated fadeOut"
+      appear
+      :duration="300"
+    >
+      <component :is="Component" />
+    </transition>
+  </router-view>
 </template>
 
 <script setup lang="ts">
