@@ -62,10 +62,11 @@ enable_confirmations = false
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `twitch`, `twitter`, `slack`, `spotify`.
 [auth.external.google]
 enabled = false
-client_id = ""
-secret = ""
+# Default google credentials for local development only.
+client_id = "865693030337-f16qkf77kq5499ee47jq6ruog7it2idv.apps.googleusercontent.com"
+secret = "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"
 # Overrides the default auth redirectUrl.
-redirect_uri = "http://localhost:8081/api/oauth/callback"
+redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
 # or any other third-party OIDC providers.
 url = ""
@@ -74,10 +75,11 @@ url = ""
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `twitch`, `twitter`, `slack`, `spotify`.
 [auth.external.azure]
 enabled = false
-client_id = ""
-secret = ""
+# Default Azure credentials for local development only.
+client_id = "1ee6bd18-c687-40ec-970e-6ca00b4e8e96"
+secret = "ST_8Q~-k_qxVDWYCKUG.k8KX7sTg10t7W6RK4dkJ"
 # Overrides the default auth redirectUrl.
-redirect_uri = "http://localhost:8081/api/oauth/callback"
+redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
 # or any other third-party OIDC providers.
 url = ""

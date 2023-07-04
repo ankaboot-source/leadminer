@@ -11,30 +11,24 @@ Leadminer is a tool to mine and transmute raw and passive contacts from your own
 
 ## How to run?
 
-Before running the project, make sure to complete the following steps to enable and configure OAuth functionality:
+To run Leadminer, follow these steps:
 
-### Configuration
+### Supabase instance:
 
-1. Create a Provider cloud app following the instructions provided in the `.env.example` file.
+- Create a Supabase account [here](https://supabase.com/dashboard/sign-up) and create a project.
+- Obtain the following three values from your dashboard:
+  - **Project URL**: Found under Settings -> API in the "Project URL" section.
+  - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
+  - **Postgres Connection string**: Found under Settings -> Database in the "Connection string" section. Select the URI option.
 
-2. Update the relevant settings in the OAuth Provider cloud console. In the "Allowed redirect URI" section, add the following two redirect URIs:
+### Configure OAuth:
 
-   - `http://<Your supabase api>/auth/v1/callback`
-   - `http://<Your backend api>/api/oauth/callback`
+- Enable third-party providers in your Supabase dashboard. Refer to the [documentation](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
+- Create a third-party provider OAuth app:
+  - Under the "Social Auth" section, select the provider you want to configure and follow the provided [instructions](https://supabase.com/docs/guides/auth#providers).
+  - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://localhost:8081/api/imap/mine/sources/PROVIDER_NAME/callback`.
 
-3. For each enabled provider, update the following fields:
-
-   - Update the corresponding variables in the `config.toml` file.
-   - Ensure you change the `redirect_uri` for each provider.
-
-    The fields to be updated:
-
-   - `enable`: Set to `true` to enable the provider or `false` to disable it.
-   - `client_id`: Update with the appropriate client ID for OAuth.
-   - `secret`: Update with the corresponding secret for OAuth.
-   - `redirect_uri`: Ensure it points to `http://<Your backend api>/api/oauth/callback`.
-
-4. Add the remaining required provider environment variables according to the `.env.example` file.
+> **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "PROVIDER_NAME" if integrating Google OAuth and "azure" if integrating Azure.
 
 ### Run using docker-compose
 
