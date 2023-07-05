@@ -434,22 +434,20 @@ async function exportTable() {
     .toISOString()
     .slice(0, 10)}.csv`;
 
-  const csvData = rows.value.map(
-    (row) => ({
-      name: escapedelimiters(row.name?.trim() || ""),
-      alternateNames: row.alternate_names
-        ?.filter((name: string) => name.trim() !== "" && name !== row.name)
-        ?.map((name: string) => escapedelimiters(name))
-        .join("\n"),
-      email: row.email,
-      engagement: row.engagement,
-      occurence: row.occurence,
-      recency: row.recency
-        ? new Date(row.recency).toISOString().slice(0, 10)
-        : "",
-      tags: row.tags?.join("\n"),
-    })
-  );
+  const csvData = rows.value.map((row) => ({
+    name: escapedelimiters(row.name?.trim() || ""),
+    alternateNames: row.alternate_names
+      ?.filter((name: string) => name.trim() !== "" && name !== row.name)
+      ?.map((name: string) => escapedelimiters(name))
+      .join("\n"),
+    email: row.email,
+    engagement: row.engagement,
+    occurence: row.occurence,
+    recency: row.recency
+      ? new Date(row.recency).toISOString().slice(0, 10)
+      : "",
+    tags: row.tags?.join("\n"),
+  }));
 
   try {
     const csvStr = await getCsvStr(
