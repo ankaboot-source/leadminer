@@ -43,9 +43,7 @@ export default route<StateInterface>((/* { store, ssrContext } */) => {
       const isAuthenticated = data?.session && !error;
       if (
         isAuthenticated &&
-        (to.path === "/" ||
-          to.path === "/signup" ||
-          to.path === "/forgot-password")
+        ["/", "/signup", "/forgot-password"].includes(to.path)
       ) {
         return "/dashboard";
       }
