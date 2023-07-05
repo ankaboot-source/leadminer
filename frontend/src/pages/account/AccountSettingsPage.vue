@@ -51,8 +51,9 @@ const isPwd = ref(true);
 const isLoading = ref(false);
 
 onMounted(async () => {
-  isSocialLogin.value = !!(await supabase.auth.getSession()).data.session
-    ?.provider_token;
+  isSocialLogin.value = Boolean(
+    (await supabase.auth.getSession()).data.session?.provider_token
+  );
 });
 
 async function updatePassword() {
