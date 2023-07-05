@@ -230,7 +230,7 @@ import {
   User,
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
-import { getCsvStr } from "src/helpers/csv";
+import { getCsvStr, escapedelimiters } from "src/helpers/csv";
 import { fetchData, supabase } from "src/helpers/supabase";
 import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -434,17 +434,32 @@ async function exportTable() {
     .toISOString()
     .slice(0, 10)}.csv`;
 
-  const data = rows.value.map((r) => ({
-    name: r.name?.trim(),
-    alternateNames: r.alternate_names
-      ?.filter((name: string) => name.trim() !== "" && name !== r.name)
-      .join("\n"),
-    email: r.email,
-    engagement: r.engagement,
-    occurence: r.occurence,
-    recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
-    tags: r.tags?.join("\n"),
-  }));
+  const csvData: ({
+    name: string | undefined,
+    alternateNames: string | undefined,
+    email: string | undefined,
+    engagement: number | undefined,
+    occurence: number | undefined,
+    recency: string | undefined,
+    tags: string | undefined,
+  })[] = rows.value.map((row) => {
+
+    const cleanedName = escapedelimiters(row.name?.trim() || '')
+    const cleanedAlternateNames = row.alternate_names
+      ?.filter((name: string) => name.trim() !== "" && name !== row.name)
+      ?.map((name: string) => escapedelimiters(name))
+      .join("\n")
+
+    return ({
+        name: cleanedName,
+        alternateNames: cleanedAlternateNames,
+        email: row.email,
+        engagement: row.engagement,
+        occurence: row.occurence,
+        recency: row.recency ? new Date(row.recency).toISOString().slice(0, 10) : "",
+        tags: row.tags?.join("\n"),
+      })
+  })
 
   try {
     const csvStr = await getCsvStr(
@@ -457,7 +472,7 @@ async function exportTable() {
         { key: "recency", header: "Recency" },
         { key: "tags", header: "Tags" },
       ],
-      data
+      csvData
     );
 
     const status = exportFile(fileName, csvStr, "text/csv");
