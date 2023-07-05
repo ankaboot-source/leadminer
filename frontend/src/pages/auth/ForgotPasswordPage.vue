@@ -10,11 +10,12 @@
         Enter the email address associated with your account
       </p>
 
-      <q-form class="q-gutter-md full-width" @submit="resetPassword">
+      <q-form class="q-gutter-sm full-width" @submit="resetPassword">
         <q-input
           v-model="email"
           autofocus
           class="full-width"
+          :rules="emailRules"
           filled
           label="Email"
           type="email"
@@ -22,11 +23,11 @@
         <q-btn
           type="submit"
           :loading="isLoading"
-          size="1rem"
+          size="1.25rem"
           no-caps
-          class="full-width text-bold"
+          class="full-width text-bold text-h6"
           label="Send reset instructions"
-          color="teal"
+          color="indigo"
         />
       </q-form>
       <p class="text-h6 q-my-lg">
@@ -38,6 +39,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from "quasar";
+import { emailRules } from "src/helpers/email";
 import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
@@ -52,15 +54,21 @@ async function resetPassword() {
   isLoading.value = true;
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo: `${window.location.origin}/account`,
     });
 
     if (error) {
       throw error;
     }
+    showNotification(
+      $quasar,
+      "Reset password email successfully sent",
+      "positive",
+      "check"
+    );
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "red", "error");
+      showNotification($quasar, error.message, "negative", "alert");
     }
   } finally {
     isLoading.value = false;

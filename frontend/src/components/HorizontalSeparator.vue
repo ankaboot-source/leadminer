@@ -14,6 +14,7 @@ defineProps<{
   display: flex;
   align-items: center;
   font-size: 0.9375rem;
+  text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 

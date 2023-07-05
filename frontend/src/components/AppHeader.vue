@@ -3,7 +3,7 @@
     style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(7px)"
   >
     <q-toolbar class="text-custom q-pa-sm">
-      <AppLogo />
+      <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
       <q-btn flat class="text-lowercase"> {{ user?.email }}</q-btn>
       <q-btn class="q-mr-sm" flat round dense icon="logout" @click="logout()" />

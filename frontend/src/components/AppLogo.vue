@@ -1,9 +1,9 @@
 <template>
   <q-chip size="xl" color="transparent" text-color="teal">
     <q-avatar class="logo q-mt-xs" size="40px">
-      <img src="icons/favicon-128x128.png" />
+      <img src="/icons/favicon-128x128.png" />
     </q-avatar>
-    <span class="text-h5">𝗹𝗲𝗮𝗱𝗺𝗶𝗻𝗲𝗿</span>
+    <span class="text-h5 text-grey-7">𝗹𝗲𝗮𝗱𝗺𝗶𝗻𝗲𝗿</span>
   </q-chip>
 </template>
 <style>
@@ -13,7 +13,7 @@
 
 @keyframes animation {
   10% {
-    transform: rotate(110deg);
+    transform: rotate(-50deg);
   }
 
   50% {

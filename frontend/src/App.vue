@@ -20,12 +20,13 @@ const $router = useRouter();
 
 supabase.auth.onAuthStateChange((event, session) => {
   if (session) {
+    // All future API calls will be linked to the signed in user
     api.defaults.headers.common["x-sb-jwt"] = `${session.access_token}`;
   }
   if (event === "SIGNED_IN") {
-    // All future API calls will be linked to the signed in user
     $router.push("/dashboard");
   }
+
   if (event === "SIGNED_OUT") {
     $router.push("/");
   }

@@ -1,7 +1,8 @@
 import DashboardPage from "src/pages/DashboardPage.vue";
-import ForgotPasswordPage from "src/pages/ForgotPasswordPage.vue";
-import LoginPage from "src/pages/LoginPage.vue";
-import SignupPage from "src/pages/SignupPage.vue";
+import AccountSettingsPage from "src/pages/account/AccountSettingsPage.vue";
+import ForgotPasswordPage from "src/pages/auth/ForgotPasswordPage.vue";
+import LoginPage from "src/pages/auth/LoginPage.vue";
+import SignupPage from "src/pages/auth/SignupPage.vue";
 import { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
@@ -9,6 +10,14 @@ const routes: RouteRecordRaw[] = [
     path: "/dashboard",
     name: "Dashboard",
     component: DashboardPage,
+    meta: {
+      isAuthRequired: true,
+    },
+  },
+  {
+    path: "/account",
+    name: "Update Password",
+    component: AccountSettingsPage,
     meta: {
       isAuthRequired: true,
     },

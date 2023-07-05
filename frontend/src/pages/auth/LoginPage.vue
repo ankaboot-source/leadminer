@@ -1,23 +1,51 @@
 <template>
   <AuthLayout>
     <q-card
-      class="q-mt-xl text-center column bg-grey-2"
+      class="q-mt-xl text-center column bg-grey-2 q-gutter-md full-width"
       flat
       style="max-width: 30rem"
     >
-      <div class="q-mb-lg text-center">
-        <p class="text-h4 text-bold">Create a free account</p>
-        <p class="text-h6">
-          Mine and qualify... Discover hidden gems in your social network
-        </p>
+      <div class="text-center">
+        <p class="text-h4 text-bold">Welcome back!</p>
       </div>
 
-      <q-form class="q-gutter-md full-width" @submit="signUp()">
+      <q-btn
+        no-caps
+        :loading="isLoading"
+        size="1.25rem"
+        align="left"
+        unelevated
+        class="full-width text-h6"
+        icon="img:icons/google.png"
+        label="Continue with Google"
+        @click="loginWithOAuth('google')"
+      />
+      <q-btn
+        no-caps
+        :loading="isLoading"
+        size="1.25rem"
+        class="full-width text-h6"
+        align="left"
+        unelevated
+        icon="img:icons/microsoft.png"
+        label="Continue with Microsoft"
+        @click="loginWithOAuth('azure')"
+      />
+
+      <HorizontalSeparator
+        class="q-mt-lg full-width"
+        text="Or sign in with your email"
+      />
+
+      <q-form
+        class="q-gutter-sm full-width"
+        @submit="loginWithEmailAndPassword"
+      >
         <q-input
           v-model="email"
           autofocus
-          :rules="emailRules"
           class="full-width"
+          :rules="emailRules"
           filled
           label="Email"
           type="email"
@@ -25,8 +53,8 @@
         <q-input
           v-model="password"
           class="full-width"
-          :rules="passwordRules"
           filled
+          :rules="passwordRules"
           label="Password"
           :type="isPwd ? 'password' : 'text'"
         >
@@ -38,49 +66,28 @@
             />
           </template>
         </q-input>
+        <p class="full-width text-right text-bold q-mt-xs">
+          <router-link to="/forgot-password">Forgot your password?</router-link>
+        </p>
+
         <q-btn
-          type="submit"
           no-caps
+          type="submit"
+          unelevated
+          color="indigo"
           :loading="isLoading"
-          :disable="isDisabled"
-          size="1rem"
-          class="full-width text-bold"
+          class="full-width text-h6"
+          size="1.25rem"
           label="Start mining"
-          color="teal"
         />
       </q-form>
 
-      <HorizontalSeparator
-        class="q-my-lg"
-        text="Or sign up with your social email"
-      />
-
-      <div class="q-gutter-md flex flex-center row text-bold">
-        <q-btn
-          :loading="isLoading"
-          no-caps
-          icon="img:icons/google.png"
-          label="Google"
-          size="1rem"
-          @click="loginWithOAuth('google')"
-        />
-        <q-btn
-          :loading="isLoading"
-          no-caps
-          icon="img:icons/microsoft.png"
-          label="Microsoft"
-          size="1rem"
-          @click="loginWithOAuth('azure')"
-        />
-      </div>
-
-      <p class="text-h6 q-my-lg">
-        Already have an account?
-        <router-link to="/">Sign in</router-link>
+      <p class="text-h6 q-mt-lg">
+        Don't have an account? <router-link to="/signup">Sign up</router-link>
       </p>
 
-      <p class="text-grey-7 text-left">
-        By clicking "Start mining" or signing up, you agree to the
+      <p class="text-grey-7 text-left full-width">
+        By clicking "Start mining" or signing in, you agree to the
         <a
           href="https://github.com/ankaboot-source/leadminer/issues/url"
           target="_blank"
@@ -104,55 +111,49 @@
 </template>
 
 <script setup lang="ts">
+import { Provider } from "@supabase/supabase-js";
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
-import { isValidEmail } from "src/helpers/email";
+import { emailRules } from "src/helpers/email";
 import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const $quasar = useQuasar();
+const $router = useRouter();
 
 const email = ref("");
 const password = ref("");
 const isPwd = ref(true);
 const isLoading = ref(false);
-const isDisabled = ref(true);
 
 const passwordRules = [
-  (val: string) => val.length >= 8 || "Please use at least 8 characters",
-];
-const emailRules = [
-  (val: string) => isValidEmail(val) || "Please insert a valid email address",
+  (val: string) => val.length >= 8 || "Please insert a valid password",
 ];
 
-async function signUp() {
+async function loginWithEmailAndPassword() {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.value,
       password: password.value,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
     });
     if (error) {
       throw error;
     }
-  } catch (e) {
-    if (e instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to signup: ${e.message}`,
-        "red",
-        "error"
-      );
+    await $router.push("/dashboard");
+  } catch (error) {
+    if (error instanceof Error) {
+      showNotification($quasar, error.message, "negative", "alert");
     }
+  } finally {
+    isLoading.value = false;
   }
 }
 
-async function loginWithOAuth(provider: "google" | "azure") {
+async function loginWithOAuth(provider: Provider) {
   isLoading.value = true;
   try {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -171,8 +172,8 @@ async function loginWithOAuth(provider: "google" | "azure") {
       showNotification(
         $quasar,
         `Failed to connect with ${provider}: ${error.message}`,
-        "red",
-        "error"
+        "negative",
+        "alert"
       );
     }
   } finally {
@@ -181,8 +182,8 @@ async function loginWithOAuth(provider: "google" | "azure") {
 }
 </script>
 
-<style>
-a {
-  color: inherit;
+<style scoped>
+.q-btn {
+  border: 1px solid silver;
 }
 </style>

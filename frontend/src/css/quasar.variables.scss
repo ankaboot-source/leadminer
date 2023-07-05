@@ -18,9 +18,9 @@ $typography-font-family: Roboto, ui-sans-serif, system-ui, -apple-system,
   sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
   "Noto Color Emoji";
 
-$primary: teal;
-$secondary: #26a69a;
-$accent: #dd4b39;
+$primary: indigo;
+$secondary: #3f51b5;
+$accent: #ffc107;
 
 $dark: #1d1d1d;
 $dark-page: #121212;
@@ -28,16 +28,4 @@ $dark-page: #121212;
 $positive: #21ba45;
 $negative: #c10015;
 $info: #31ccec;
-$warning: #f2c037;
-
-//General notifications style
-.q-notification {
-  border: 1px solid currentColor;
-  font-size: medium;
-}
-//Quasar fix
-.q-table-control {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
+$warning: #ffc107;
