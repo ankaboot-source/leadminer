@@ -1,5 +1,4 @@
 import { stringify } from "csv-stringify/browser/esm";
-import { delimiter } from "path";
 
 function getLocalizedCsvSeparator() {
   const locale = navigator.language.substring(0, 2);
@@ -41,7 +40,10 @@ export function getCsvStr<T>(
   });
 }
 
-export function escapedelimiters(text: string, delimiters: string[] = [';']): string {
+export function escapedelimiters(
+  text: string,
+  delimiters: string[] = [";"]
+): string {
   if (delimiters.find((d) => text.includes(d))) {
     return `"${text}"`;
   }
