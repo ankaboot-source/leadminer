@@ -157,13 +157,18 @@ async function stopMining() {
   const { miningId } = $store.state.leadminer.miningTask;
   try {
     await $store.dispatch("leadminer/stopMining", { data: { miningId } });
-    showNotification($quasar, $store.state.leadminer.infoMessage, "green", "");
+    showNotification(
+      $quasar,
+      $store.state.leadminer.infoMessage,
+      "positive",
+      "check"
+    );
   } catch (error) {
     showNotification(
       $quasar,
       $store.state.leadminer.errorMessage,
-      "red",
-      "error"
+      "negative",
+      "alert"
     );
   } finally {
     isLoadingStopMining.value = false;
@@ -178,8 +183,8 @@ async function startMining() {
     return showNotification(
       $quasar,
       "Select at least one folder",
-      "orange-5",
-      "warning"
+      "warning",
+      "alert"
     );
   }
 
@@ -190,13 +195,18 @@ async function startMining() {
         miningSource: $store.state.leadminer.activeMiningSource,
       },
     });
-    showNotification($quasar, $store.state.leadminer.infoMessage, "green", "");
+    showNotification(
+      $quasar,
+      $store.state.leadminer.infoMessage,
+      "positive",
+      "check"
+    );
   } catch (error) {
     showNotification(
       $quasar,
       $store.state.leadminer.errorMessage,
-      "red",
-      "error"
+      "negative",
+      "alert"
     );
   } finally {
     isLoadingStartMining.value = false;
@@ -209,13 +219,18 @@ async function getBoxes(activeMiningSource: MiningSource | undefined) {
     isLoadingStartMining.value = true;
     await $store.dispatch("leadminer/getBoxes", activeMiningSource);
 
-    showNotification($quasar, $store.state.leadminer.infoMessage, "green", "");
+    showNotification(
+      $quasar,
+      $store.state.leadminer.infoMessage,
+      "positive",
+      "check"
+    );
   } catch (_) {
     showNotification(
       $quasar,
       $store.state.leadminer.errorMessage,
-      "red",
-      "error"
+      "negative",
+      "alert"
     );
   } finally {
     isLoadingBoxes.value = false;

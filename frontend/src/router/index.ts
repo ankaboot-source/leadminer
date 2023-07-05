@@ -41,7 +41,10 @@ export default route<StateInterface>((/* { store, ssrContext } */) => {
     try {
       const { data, error } = await supabase.auth.getSession();
       const isAuthenticated = data?.session && !error;
-      if (isAuthenticated && to.path === "/") {
+      if (
+        isAuthenticated &&
+        ["/", "/signup", "/forgot-password"].includes(to.path)
+      ) {
         return "/dashboard";
       }
       if (!isAuthenticated && to.meta.isAuthRequired) {

@@ -376,7 +376,7 @@ async function onSubmitImapCredentials() {
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
-      showNotification($quasar, error.message, "red", "error");
+      showNotification($quasar, error.message, "negative", "alert");
     }
   } finally {
     isLoadingImapCredentialsCheck.value = false;

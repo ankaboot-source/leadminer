@@ -1,5 +1,14 @@
 <template>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <transition
+      enter-active-class="animated fadeIn"
+      leave-active-class="animated fadeOut"
+      appear
+      :duration="300"
+    >
+      <component :is="Component" />
+    </transition>
+  </router-view>
 </template>
 
 <script setup lang="ts">
@@ -11,12 +20,13 @@ const $router = useRouter();
 
 supabase.auth.onAuthStateChange((event, session) => {
   if (session) {
+    // All future API calls will be linked to the signed in user
     api.defaults.headers.common["x-sb-jwt"] = `${session.access_token}`;
   }
   if (event === "SIGNED_IN") {
-    // All future API calls will be linked to the signed in user
     $router.push("/dashboard");
   }
+
   if (event === "SIGNED_OUT") {
     $router.push("/");
   }
