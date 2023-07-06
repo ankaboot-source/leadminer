@@ -5,7 +5,7 @@
       flat
       style="max-width: 32rem"
     >
-      <p class="text-h4 text-bold">Forgot your password?</p>
+      <p class="text-h4 text-bold merriweather">Forgot your password?</p>
       <p class="text-h5">
         Enter the email address associated with your account
       </p>
@@ -25,7 +25,7 @@
           :loading="isLoading"
           size="1.25rem"
           no-caps
-          class="full-width text-bold text-h6"
+          class="full-width text-h6"
           label="Send reset instructions"
           color="indigo"
         />

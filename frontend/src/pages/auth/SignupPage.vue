@@ -6,7 +6,7 @@
       style="max-width: 30rem"
     >
       <div class="q-mb-sm text-center">
-        <p class="text-h4 text-bold">Create your account</p>
+        <p class="text-h4 text-bold merriweather">Create your account</p>
         <p class="text-h6">Discover hidden gems in your social network</p>
       </div>
 
@@ -58,14 +58,14 @@
           unelevated
           icon="img:icons/google.png"
           label="Google"
-          class="text-h6"
+          class="text-h6 text-weight-regular"
           @click="loginWithOAuth('google')"
         />
         <q-btn
           :loading="isLoading"
           no-caps
           unelevated
-          class="text-h6"
+          class="text-h6 text-weight-regular"
           icon="img:icons/microsoft.png"
           label="Microsoft"
           @click="loginWithOAuth('azure')"
@@ -77,7 +77,7 @@
         <router-link to="/">Sign in</router-link>
       </p>
 
-      <p class="text-grey-7 text-left">
+      <p class="text-grey-7 text-left merriweather">
         By clicking "Start mining" or signing up, you agree to the
         <a
           href="https://github.com/ankaboot-source/leadminer/issues/url"
@@ -93,8 +93,7 @@
           rel="noopener noreferrer"
         >
           Data Privacy Policy</a
-        >
-        . You also agree to receive information and offers relevant to our
+        >. You also agree to receive information and offers relevant to our
         services via email.
       </p>
     </q-card>
