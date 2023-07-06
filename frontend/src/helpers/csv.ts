@@ -29,6 +29,7 @@ export function getCsvStr<T>(
         bom: true,
         delimiter: getLocalizedCsvSeparator(),
         header: true,
+        quoted_string: true,
       },
       (err, data) => {
         if (err) {
@@ -38,15 +39,4 @@ export function getCsvStr<T>(
       }
     );
   });
-}
-
-export function escapedelimiters(
-  text: string,
-  delimiters: string[] = [";"]
-): string {
-  if (delimiters.find((d) => text.includes(d))) {
-    return `"${text}"`;
-  }
-
-  return text;
 }
