@@ -1,9 +1,9 @@
 <template>
   <q-chip size="xl" color="transparent" text-color="teal">
-    <q-avatar class="logo q-mt-xs" size="40px">
+    <q-avatar class="logo q-mt-xs" size="30px">
       <img src="/icons/favicon-128x128.png" />
     </q-avatar>
-    <q-icon name="img:/logo/LogoWithoutIcon.png" class="text-h4 full-width" />
+    <q-icon name="img:/logo/LogoWithoutIcon.png" class="text-h5 full-width" />
   </q-chip>
 </template>
 <style>

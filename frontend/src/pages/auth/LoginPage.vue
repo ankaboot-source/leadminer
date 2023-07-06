@@ -6,7 +6,7 @@
       style="max-width: 30rem"
     >
       <div class="text-center q-mb-md">
-        <p class="text-h4 text-bold">Welcome back!</p>
+        <p class="text-h4 text-bold merriweather">Welcome back!</p>
       </div>
 
       <q-btn
@@ -86,7 +86,7 @@
         Don't have an account? <router-link to="/signup">Sign up</router-link>
       </p>
 
-      <p class="text-grey-7 text-left full-width">
+      <p class="text-grey-7 text-left full-width merriweather">
         By clicking "Start mining" or signing in, you agree to the
         <a
           href="https://github.com/ankaboot-source/leadminer/issues/url"

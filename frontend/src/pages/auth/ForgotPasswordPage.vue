@@ -5,7 +5,7 @@
       flat
       style="max-width: 32rem"
     >
-      <p class="text-h4 text-bold">Forgot your password?</p>
+      <p class="text-h4 text-bold merriweather">Forgot your password?</p>
       <p class="text-h5">
         Enter the email address associated with your account
       </p>
