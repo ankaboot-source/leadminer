@@ -25,7 +25,7 @@
           :loading="isLoading"
           size="1.25rem"
           no-caps
-          class="full-width text-bold text-h6"
+          class="full-width text-h6"
           label="Send reset instructions"
           color="indigo"
         />
