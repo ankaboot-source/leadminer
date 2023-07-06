@@ -5,7 +5,7 @@
       flat
       style="max-width: 30rem"
     >
-      <div class="text-center">
+      <div class="text-center q-mb-md">
         <p class="text-h4 text-bold">Welcome back!</p>
       </div>
 
@@ -15,7 +15,7 @@
         size="1.25rem"
         align="left"
         unelevated
-        class="full-width text-h6"
+        class="full-width text-h6 text-weight-regular"
         icon="img:icons/google.png"
         label="Continue with Google"
         @click="loginWithOAuth('google')"
@@ -24,7 +24,7 @@
         no-caps
         :loading="isLoading"
         size="1.25rem"
-        class="full-width text-h6"
+        class="full-width text-h6 text-weight-regular"
         align="left"
         unelevated
         icon="img:icons/microsoft.png"
@@ -44,9 +44,9 @@
         <q-input
           v-model="email"
           autofocus
+          filled
           class="full-width"
           :rules="emailRules"
-          filled
           label="Email"
           type="email"
         />
@@ -76,7 +76,7 @@
           unelevated
           color="indigo"
           :loading="isLoading"
-          class="full-width text-h6"
+          class="full-width text-h6 no-border q-mt-xs"
           size="1.25rem"
           label="Start mining"
         />
@@ -101,9 +101,8 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          Data Privacy Policy
-        </a>
-        . You also agree to receive information and offers relevant to our
+          Data Privacy Policy</a
+        >. You also agree to receive information and offers relevant to our
         services via email.
       </p>
     </q-card>

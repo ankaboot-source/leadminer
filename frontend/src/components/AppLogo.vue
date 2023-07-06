@@ -3,7 +3,7 @@
     <q-avatar class="logo q-mt-xs" size="40px">
       <img src="/icons/favicon-128x128.png" />
     </q-avatar>
-    <span class="text-h5 text-grey-7">𝗹𝗲𝗮𝗱𝗺𝗶𝗻𝗲𝗿</span>
+    <q-icon name="img:/logo/LogoWithoutIcon.png" class="text-h4 full-width" />
   </q-chip>
 </template>
 <style>
