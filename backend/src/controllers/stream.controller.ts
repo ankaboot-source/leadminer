@@ -8,8 +8,6 @@ export default function initializeStreamController(tasksManager: TasksManager) {
      * Stream the progress of email extraction and scanning via Server-Sent Events (SSE).
      */
     streamProgress: (req: Request, res: Response) => {
-      console.log(req.headers);
-
       const { id: taskId } = req.params;
 
       try {
