@@ -68,19 +68,21 @@ export async function startMining(this: any, { commit }: any, { data }: any) {
   commit("SET_SCANNEDBOXES", []);
 
   try {
-    const { data: session } = await supabase.auth.getUser();
+    const { data: sessionData } = await supabase.auth.getSession();
 
-    if (!session.user) {
+    if (!sessionData.session?.access_token) {
       return;
     }
 
-    const response = await api.post(`/imap/mine/${session.user.id}`, data);
+    const response = await api.post(
+      `/imap/mine/${sessionData.session.user.id}`,
+      data
+    );
 
     const task = response.data?.data;
     const { miningId } = task;
 
-    sse.initConnection(session.user?.id, miningId);
-    sse.registerEventHandlers(miningId, this);
+    sse.initConnection(miningId, sessionData.session.access_token, this);
 
     commit("SET_MINING_TASK", task);
     commit("SET_LOADING", false);

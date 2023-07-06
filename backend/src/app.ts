@@ -38,7 +38,7 @@ export default function initializeApp(
   );
 
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
-  app.use('/api/imap', initializeStreamRouter(tasksManager));
+  app.use('/api/imap', initializeStreamRouter(tasksManager, authResolver));
   app.use(
     '/api/imap',
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
