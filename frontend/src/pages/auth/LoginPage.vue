@@ -81,8 +81,9 @@
         />
       </q-form>
 
-      <p class="text-h6 q-mt-lg">
-        Don't have an account? <router-link to="/signup">Sign up</router-link>
+      <p class="text-subtitle1 q-mt-lg">
+        Don't have an account?
+        <router-link to="/signup" class="text-bold">Sign up</router-link>
       </p>
 
       <p class="text-grey-7 text-left full-width merriweather">

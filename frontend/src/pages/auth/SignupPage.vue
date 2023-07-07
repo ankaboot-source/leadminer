@@ -15,14 +15,14 @@
           v-model="email"
           autofocus
           :rules="emailRules"
-          class="full-width text-h6"
+          class="full-width"
           filled
           label="Email"
           type="email"
         />
         <q-input
           v-model="password"
-          class="full-width text-h6"
+          class="full-width"
           :rules="passwordRules"
           filled
           label="Password"
@@ -75,9 +75,9 @@
         />
       </div>
 
-      <p class="text-h6 q-my-lg">
+      <p class="text-subtitle1 q-my-lg">
         Already have an account?
-        <router-link to="/">Sign in</router-link>
+        <router-link to="/" class="text-bold">Sign in</router-link>
       </p>
 
       <p class="text-grey-7 text-left merriweather">

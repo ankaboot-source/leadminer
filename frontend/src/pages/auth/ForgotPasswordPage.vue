@@ -6,7 +6,7 @@
       style="max-width: 32rem"
     >
       <p class="text-h4 text-bold merriweather">Forgot your password?</p>
-      <p class="text-h5">
+      <p class="text-subtitle1">
         Enter the email address associated with your account
       </p>
 
@@ -24,13 +24,14 @@
           type="submit"
           :loading="isLoading"
           :size="buttonSize"
+          unelevated
           no-caps
           class="full-width text-h6"
           label="Send reset instructions"
           color="indigo"
         />
       </q-form>
-      <p class="text-h6 q-my-lg">
+      <p class="text-subtitle1 q-my-lg">
         Back to <router-link to="/">Sign in</router-link>
       </p>
     </q-card>
