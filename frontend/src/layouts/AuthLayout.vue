@@ -22,5 +22,3 @@ const logoPosition = computed(() =>
   $quasar.screen.lt.sm ? "justify-center" : "justify-start"
 );
 </script>
-
-<style></style>
