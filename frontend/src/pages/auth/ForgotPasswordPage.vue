@@ -23,7 +23,7 @@
         <q-btn
           type="submit"
           :loading="isLoading"
-          size="1.25rem"
+          :size="buttonSize"
           no-caps
           class="full-width text-h6"
           label="Send reset instructions"
@@ -43,12 +43,16 @@ import { emailRules } from "src/helpers/email";
 import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 const $quasar = useQuasar();
 
 const email = ref("");
 const isLoading = ref(false);
+
+const buttonSize = computed(() =>
+  $quasar.screen.lt.sm ? "1.1rem" : "1.25rem"
+);
 
 async function resetPassword() {
   isLoading.value = true;

@@ -39,6 +39,7 @@
         <q-btn
           type="submit"
           no-caps
+          :size="buttonSize"
           :loading="isLoading"
           class="full-width text-h6 no-border"
           label="Start mining"
@@ -56,6 +57,7 @@
           :loading="isLoading"
           no-caps
           unelevated
+          :size="buttonSize"
           icon="img:icons/google.png"
           label="Google"
           class="text-h6 text-weight-less-regular"
@@ -64,6 +66,7 @@
         <q-btn
           :loading="isLoading"
           no-caps
+          :size="buttonSize"
           unelevated
           class="text-h6 text-weight-less-regular"
           icon="img:icons/microsoft.png"
@@ -108,7 +111,7 @@ import { showNotification } from "src/helpers/notification";
 import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 const $quasar = useQuasar();
 
@@ -116,6 +119,10 @@ const email = ref("");
 const password = ref("");
 const isPwd = ref(true);
 const isLoading = ref(false);
+
+const buttonSize = computed(() =>
+  $quasar.screen.lt.sm ? "1.1rem" : "1.25rem"
+);
 
 async function signUp() {
   isLoading.value = true;
