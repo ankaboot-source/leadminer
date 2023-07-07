@@ -434,7 +434,7 @@ async function exportTable() {
     .toISOString()
     .slice(0, 10)}.csv`;
 
-  const data = rows.value.map((r) => ({
+  const csvData = rows.value.map((r) => ({
     name: r.name?.trim(),
     alternateNames: r.alternate_names
       ?.filter((name: string) => name.trim() !== "" && name !== r.name)
@@ -457,7 +457,7 @@ async function exportTable() {
         { key: "recency", header: "Recency" },
         { key: "tags", header: "Tags" },
       ],
-      data
+      csvData
     );
 
     const status = exportFile(fileName, csvStr, "text/csv");

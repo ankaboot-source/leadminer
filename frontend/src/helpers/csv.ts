@@ -29,6 +29,7 @@ export function getCsvStr<T>(
         bom: true,
         delimiter: getLocalizedCsvSeparator(),
         header: true,
+        quoted_string: true,
       },
       (err, data) => {
         if (err) {
