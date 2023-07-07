@@ -89,7 +89,7 @@
       <p class="text-grey-7 text-left full-width merriweather">
         By clicking "Start mining" or signing in, you agree to the
         <a
-          href="https://github.com/ankaboot-source/leadminer/issues/url"
+          href="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -97,7 +97,7 @@
         </a>
         and
         <a
-          href="https://github.com/ankaboot-source/leadminer/issues/url"
+          href="https://www.leadminer.io/data-privacy"
           target="_blank"
           rel="noopener noreferrer"
         >
