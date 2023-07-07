@@ -1,6 +1,7 @@
 <template>
   <q-header
     style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(7px)"
+    class="q-pt-md q-px-md"
   >
     <q-toolbar class="text-custom q-pa-sm">
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>

@@ -168,7 +168,7 @@ async function stopMining() {
       $quasar,
       $store.state.leadminer.errorMessage,
       "negative",
-      "alert"
+      "error"
     );
   } finally {
     isLoadingStopMining.value = false;
@@ -184,7 +184,7 @@ async function startMining() {
       $quasar,
       "Select at least one folder",
       "warning",
-      "alert"
+      "error"
     );
   }
 
@@ -206,7 +206,7 @@ async function startMining() {
       $quasar,
       $store.state.leadminer.errorMessage,
       "negative",
-      "alert"
+      "error"
     );
   } finally {
     isLoadingStartMining.value = false;
@@ -230,7 +230,7 @@ async function getBoxes(activeMiningSource: MiningSource | undefined) {
       $quasar,
       $store.state.leadminer.errorMessage,
       "negative",
-      "alert"
+      "error"
     );
   } finally {
     isLoadingBoxes.value = false;
