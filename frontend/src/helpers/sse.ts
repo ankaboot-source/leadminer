@@ -13,7 +13,21 @@ class SSE {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initConnection(miningId: string, token: string, store: any) {
+  initConnection(
+    miningId: string,
+    token: string,
+    {
+      onFetchedUpdate,
+      onExtractedUpdate,
+      onClose,
+      onFetchingDone,
+    }: {
+      onFetchedUpdate: (count: number) => void;
+      onExtractedUpdate: (count: number) => void;
+      onClose: () => void;
+      onFetchingDone: (totalFetched: number) => void;
+    }
+  ) {
     this.closeConnection();
     this.ctrl = new AbortController();
 
@@ -27,13 +41,15 @@ class SSE {
           const { event, data } = msg;
 
           if (event === `fetched-${miningId}`) {
-            store.commit("leadminer/SET_SCANNEDEMAILS", parseInt(data));
+            onFetchedUpdate(parseInt(data));
           } else if (event === `extracted-${miningId}`) {
-            store.commit("leadminer/SET_EXTRACTEDEMAILS", parseInt(data));
+            onExtractedUpdate(parseInt(data));
           } else if (event === "close") {
-            store.commit("leadminer/DELETE_MINING_TASK");
+            onClose();
+            // store.commit("leadminer/DELETE_MINING_TASK");
           } else if (event === "fetching-finished") {
-            store.commit("leadminer/SET_FETCHING_FINISHED", parseInt(data));
+            // store.commit("leadminer/SET_FETCHING_FINISHED", parseInt(data));
+            onFetchingDone(parseInt(data));
           }
         },
         signal: this.ctrl.signal,

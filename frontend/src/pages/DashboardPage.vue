@@ -189,12 +189,7 @@ async function startMining() {
   }
 
   try {
-    await $store.dispatch("leadminer/startMining", {
-      data: {
-        boxes: selectedBoxes.value,
-        miningSource: $store.state.leadminer.activeMiningSource,
-      },
-    });
+    await $store.dispatch("leadminer/startMining");
     showNotification(
       $quasar,
       $store.state.leadminer.infoMessage,
