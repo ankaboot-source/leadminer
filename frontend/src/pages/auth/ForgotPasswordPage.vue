@@ -32,7 +32,7 @@
         />
       </q-form>
       <p class="text-subtitle1 q-my-lg">
-        Back to <router-link to="/">Sign in</router-link>
+        Back to <router-link to="/" class="text-bold">Sign in</router-link>
       </p>
     </q-card>
   </AuthLayout>
