@@ -15,7 +15,7 @@
         size="1.25rem"
         align="left"
         unelevated
-        class="full-width text-h6 text-weight-regular"
+        class="full-width text-h6 text-weight-less-regular"
         icon="img:icons/google.png"
         label="Continue with Google"
         @click="loginWithOAuth('google')"
@@ -24,7 +24,7 @@
         no-caps
         :loading="isLoading"
         size="1.25rem"
-        class="full-width text-h6 text-weight-regular"
+        class="full-width text-h6 text-weight-less-regular"
         align="left"
         unelevated
         icon="img:icons/microsoft.png"
@@ -54,7 +54,6 @@
           v-model="password"
           class="full-width"
           filled
-          :rules="passwordRules"
           label="Password"
           :type="isPwd ? 'password' : 'text'"
         >
@@ -128,10 +127,6 @@ const password = ref("");
 const isPwd = ref(true);
 const isLoading = ref(false);
 
-const passwordRules = [
-  (val: string) => val.length >= 8 || "Please insert a valid password",
-];
-
 async function loginWithEmailAndPassword() {
   isLoading.value = true;
   try {
@@ -145,7 +140,7 @@ async function loginWithEmailAndPassword() {
     await $router.push("/dashboard");
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "negative", "alert");
+      showNotification($quasar, error.message, "negative", "error");
     }
   } finally {
     isLoading.value = false;
@@ -172,7 +167,7 @@ async function loginWithOAuth(provider: Provider) {
         $quasar,
         `Failed to connect with ${provider}: ${error.message}`,
         "negative",
-        "alert"
+        "error"
       );
     }
   } finally {

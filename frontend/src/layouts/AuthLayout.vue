@@ -1,7 +1,7 @@
 <template>
   <q-layout>
     <q-page-container>
-      <q-header class="bg-grey-2 q-pt-lg q-pl-lg flex items-center row">
+      <q-header class="bg-grey-2 q-pt-lg q-px-lg flex items-center row">
         <AppLogo />
       </q-header>
       <q-page class="flex justify-center bg-grey-2">

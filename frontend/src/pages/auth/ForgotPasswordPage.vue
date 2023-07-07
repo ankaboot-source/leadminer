@@ -68,7 +68,7 @@ async function resetPassword() {
     );
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "negative", "alert");
+      showNotification($quasar, error.message, "negative", "error");
     }
   } finally {
     isLoading.value = false;

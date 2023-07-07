@@ -40,7 +40,7 @@
           type="submit"
           no-caps
           :loading="isLoading"
-          class="full-width text-h6"
+          class="full-width text-h6 no-border"
           label="Start mining"
           color="indigo"
         />
@@ -58,14 +58,14 @@
           unelevated
           icon="img:icons/google.png"
           label="Google"
-          class="text-h6 text-weight-regular"
+          class="text-h6 text-weight-less-regular"
           @click="loginWithOAuth('google')"
         />
         <q-btn
           :loading="isLoading"
           no-caps
           unelevated
-          class="text-h6 text-weight-regular"
+          class="text-h6 text-weight-less-regular"
           icon="img:icons/microsoft.png"
           label="Microsoft"
           @click="loginWithOAuth('azure')"
@@ -136,7 +136,7 @@ async function signUp() {
         $quasar,
         `Failed to signup: ${e.message}`,
         "negative",
-        "alert"
+        "error"
       );
     }
   } finally {
@@ -164,7 +164,7 @@ async function loginWithOAuth(provider: "google" | "azure") {
         $quasar,
         `Failed to connect with ${provider}: ${error.message}`,
         "negative",
-        "alert"
+        "error"
       );
     }
   } finally {
