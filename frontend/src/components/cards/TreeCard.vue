@@ -47,6 +47,7 @@
 
 <script>
 import objectScan from "object-scan";
+import { useLeadminerStore } from "src/store/leadminer";
 import { defineComponent, ref } from "vue";
 
 const EMAIL_EXCLUDED_FOLDERS = [
@@ -71,6 +72,11 @@ export default defineComponent({
       },
     },
   },
+  setup() {
+    const leadminerStore = useLeadminerStore();
+
+    return { leadminerStore };
+  },
   data() {
     return {
       selected: ref(this.getDefaultSelectedFolders(this.$props.boxes)),
@@ -79,7 +85,7 @@ export default defineComponent({
 
   watch: {
     selected(newValue) {
-      this.$store.commit("leadminer/setSelectedBoxes", newValue);
+      this.leadminerStore.selectedBoxes = newValue;
     },
   },
   methods: {
