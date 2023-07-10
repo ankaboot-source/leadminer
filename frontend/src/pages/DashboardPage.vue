@@ -94,11 +94,10 @@ import MinedPersons from "src/components/MinedPersons.vue";
 import ProgressCard from "src/components/cards/ProgressCard.vue";
 import { showNotification } from "src/helpers/notification";
 import AppLayout from "src/layouts/AppLayout.vue";
-import { useStore } from "src/store";
-import { MiningSource } from "src/types/providers";
+import { useLeadminerStore } from "src/store/leadminer";
 import { computed, onMounted, ref } from "vue";
 
-const $store = useStore();
+const leadminerStore = useLeadminerStore();
 const $quasar = useQuasar();
 
 const settingsDialogRef = ref<InstanceType<typeof SettingsDialog>>();
@@ -111,23 +110,17 @@ const isLoadingBoxes = ref(false);
 
 onMounted(async () => {
   settingsDialogRef.value?.open();
-  await $store.dispatch("leadminer/getMiningSources");
+  await leadminerStore.getMiningSources();
   //   await getBoxes();
 });
 
-const boxes = computed(() => $store.state.leadminer.boxes);
-const selectedBoxes = computed<string[]>(
-  () => $store.state.leadminer.selectedBoxes
-);
+const boxes = computed(() => leadminerStore.boxes);
+const selectedBoxes = computed<string[]>(() => leadminerStore.selectedBoxes);
 const activeMiningTask = computed(
-  () => $store.state.leadminer.miningTask !== null
+  () => leadminerStore.miningTask !== undefined
 );
-const scannedEmails = computed(
-  () => $store.state.leadminer.progress.scannedEmails
-);
-const extractedEmails = computed(
-  () => $store.state.leadminer.progress.extractedEmails
-);
+const scannedEmails = computed(() => leadminerStore.scannedEmails);
+const extractedEmails = computed(() => leadminerStore.extractedEmails);
 const totalEmails = computed<number>(() => {
   if (boxes.value[0]) {
     return objectScan(["**.{total}"], {
@@ -154,22 +147,11 @@ function openDialog() {
 
 async function stopMining() {
   isLoadingStopMining.value = true;
-  const { miningId } = $store.state.leadminer.miningTask;
   try {
-    await $store.dispatch("leadminer/stopMining", { data: { miningId } });
-    showNotification(
-      $quasar,
-      $store.state.leadminer.infoMessage,
-      "positive",
-      "check"
-    );
+    await leadminerStore.stopMining();
+    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
   } catch (error) {
-    showNotification(
-      $quasar,
-      $store.state.leadminer.errorMessage,
-      "negative",
-      "error"
-    );
+    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
   } finally {
     isLoadingStopMining.value = false;
   }
@@ -189,44 +171,24 @@ async function startMining() {
   }
 
   try {
-    await $store.dispatch("leadminer/startMining");
-    showNotification(
-      $quasar,
-      $store.state.leadminer.infoMessage,
-      "positive",
-      "check"
-    );
+    await leadminerStore.startMining();
+    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
   } catch (error) {
-    showNotification(
-      $quasar,
-      $store.state.leadminer.errorMessage,
-      "negative",
-      "error"
-    );
+    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
   } finally {
     isLoadingStartMining.value = false;
   }
 }
 
-async function getBoxes(activeMiningSource: MiningSource | undefined) {
+async function getBoxes() {
   try {
     isLoadingBoxes.value = true;
     isLoadingStartMining.value = true;
-    await $store.dispatch("leadminer/getBoxes", activeMiningSource);
+    await leadminerStore.getBoxes();
 
-    showNotification(
-      $quasar,
-      $store.state.leadminer.infoMessage,
-      "positive",
-      "check"
-    );
+    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
   } catch (_) {
-    showNotification(
-      $quasar,
-      $store.state.leadminer.errorMessage,
-      "negative",
-      "error"
-    );
+    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
   } finally {
     isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;

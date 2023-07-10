@@ -3,13 +3,13 @@ import { defineStore } from "pinia";
 import { api } from "src/boot/axios";
 import { sse } from "src/helpers/sse";
 import { supabase } from "src/helpers/supabase";
-import { MiningSource } from "src/types/providers";
+import { MiningSource, MiningTask } from "src/types/mining";
 import { ref } from "vue";
 
-export const useCounterStore = defineStore("leadminer", () => {
-  const miningTask = ref(null);
+export const useLeadminerStore = defineStore("leadminer", () => {
+  const miningTask = ref<MiningTask | undefined>();
   const miningSources = ref<MiningSource[]>([]);
-  const activeMiningSource = ref<MiningSource | null>(null);
+  const activeMiningSource = ref<MiningSource | undefined>();
   const boxes = ref<string[]>([]);
   const selectedBoxes = ref<string[]>([]);
 
@@ -49,11 +49,13 @@ export const useCounterStore = defineStore("leadminer", () => {
     }
   }
 
-  async function getBoxes(miningSource: MiningSource) {
+  async function getBoxes() {
     loadingStatusbox.value = true;
 
     try {
-      const response = await api.post("/imap/boxes", miningSource);
+      const response = await api.post("/imap/boxes", {
+        ...activeMiningSource.value,
+      });
 
       const folders = response.data?.data?.folders;
 
@@ -96,7 +98,7 @@ export const useCounterStore = defineStore("leadminer", () => {
         return;
       }
 
-      const response = await api.post(
+      const response = await api.post<{ data: MiningTask }>(
         `/imap/mine/${sessionData.session.user.id}`,
         {
           boxes: selectedBoxes.value,
@@ -115,7 +117,8 @@ export const useCounterStore = defineStore("leadminer", () => {
           scannedEmails.value = count;
         },
         onClose: () => {
-          miningTask.value = null;
+          miningTask.value = undefined;
+          sse.closeConnection();
         },
         onFetchingDone: (totalFetched) => {
           totalFetchedEmails.value = totalFetched;
@@ -146,11 +149,45 @@ export const useCounterStore = defineStore("leadminer", () => {
     }
   }
 
+  async function stopMining() {
+    try {
+      const { data: session } = await supabase.auth.getUser();
+
+      if (!session.user || !miningTask.value) {
+        return;
+      }
+
+      const { miningId } = miningTask.value;
+
+      await api.delete(`/imap/mine/${session.user.id}/${miningId}`);
+
+      miningTask.value = undefined;
+      status.value = "";
+      infoMessage.value = "Mining has stopped";
+    } catch (err) {
+      if (err !== null && err instanceof AxiosError) {
+        let message = null;
+        const error = err.response?.data?.error || err;
+
+        if (error.message?.toLowerCase() === "network error") {
+          message =
+            "Unable to access server. Please retry again or contact your service provider.";
+        } else {
+          message = error.message;
+        }
+
+        errorMessage.value = message;
+      }
+      throw err;
+    }
+  }
+
   return {
     getMiningSources,
     getBoxes,
     startMining,
-    mininingTask: miningTask,
+    stopMining,
+    miningTask,
     miningSources,
     activeMiningSource,
     boxes,
@@ -161,6 +198,7 @@ export const useCounterStore = defineStore("leadminer", () => {
     loadingStatus,
     loadingStatusDns,
     loadingStatusbox,
+    totalFetchedEmails,
     extractedEmails,
     scannedEmails,
     status,

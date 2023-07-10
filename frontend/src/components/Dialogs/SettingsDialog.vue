@@ -219,8 +219,8 @@ import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
 import { showNotification } from "src/helpers/notification";
-import { useStore } from "src/store";
-import { MiningSource } from "src/types/providers";
+import { useLeadminerStore } from "src/store/leadminer";
+import { MiningSource } from "src/types/mining";
 import { computed, ref } from "vue";
 import TreeCard from "../cards/TreeCard.vue";
 
@@ -259,7 +259,7 @@ const emit = defineEmits<{
   (e: "get-boxes", activeMiningSource: MiningSource): void;
 }>();
 
-const $store = useStore();
+const leadminerStore = useLeadminerStore();
 const $quasar = useQuasar();
 
 const currentTab = ref<TabName>("configuration");
@@ -275,21 +275,19 @@ const imapPort = ref(993);
 const imapPassword = ref("");
 
 const miningSources = computed<MiningSource[]>(
-  () => $store.state.leadminer.miningSources
+  () => leadminerStore.miningSources
 );
 
 const activeMiningSource = ref<MiningSource>();
 
-const isLoadingSources = computed(
-  () => $store.state.leadminer.isLoadingSources
-);
-const boxes = computed(() => $store.state.leadminer.boxes);
+const isLoadingSources = computed(() => leadminerStore.isLoadingSources);
+const boxes = computed(() => leadminerStore.boxes);
 
 const shouldShowTreeCard = computed(
   () => boxes.value.length > 0 && !props.isLoadingBoxes
 );
 const activeMiningTask = computed(
-  () => $store.state.leadminer.miningTask !== null
+  () => leadminerStore.miningTask !== undefined
 );
 
 function validateEmail(emailStr: string) {
@@ -320,7 +318,7 @@ function onRefreshImapTree() {
 }
 
 function onMiningSourceChanged() {
-  $store.commit("leadminer/setActiveMiningSource", activeMiningSource.value);
+  leadminerStore.activeMiningSource = activeMiningSource.value;
   onRefreshImapTree();
 }
 
@@ -372,7 +370,8 @@ async function onSubmitImapCredentials() {
       port: imapPort.value,
       password: imapPassword.value,
     });
-    await $store.dispatch("leadminer/getMiningSources");
+
+    await leadminerStore.getMiningSources();
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
