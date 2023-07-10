@@ -137,7 +137,9 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
-const fetchingFinished = computed(() => !!leadminerStore.totalFetchedEmails);
+const fetchingFinished = computed(() =>
+  Boolean(leadminerStore.totalFetchedEmails)
+);
 
 const progressBuffer = computed(() =>
   fetchingFinished.value && progressProps.scannedEmails
