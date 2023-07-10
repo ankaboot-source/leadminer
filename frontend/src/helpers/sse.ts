@@ -46,9 +46,7 @@ class SSE {
             onExtractedUpdate(parseInt(data));
           } else if (event === "close") {
             onClose();
-            // store.commit("leadminer/DELETE_MINING_TASK");
           } else if (event === "fetching-finished") {
-            // store.commit("leadminer/SET_FETCHING_FINISHED", parseInt(data));
             onFetchingDone(parseInt(data));
           }
         },
