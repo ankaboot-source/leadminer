@@ -108,11 +108,11 @@
 <script setup lang="ts">
 import { useQuasar } from "quasar";
 import { convertSeconds, timeConversionRounded } from "src/helpers/time";
+import { useLeadminerStore } from "src/store/leadminer";
 import { computed, watch } from "vue";
-import { useStore } from "../../store/index";
 
 const $q = useQuasar();
-const $store = useStore();
+const leadminerStore = useLeadminerStore();
 
 const responsiveCenteredLabel = computed(() =>
   $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg"
@@ -135,10 +135,10 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
   : 130;
 
 const activeMiningTask = computed(
-  () => $store.state.leadminer.miningTask !== null
+  () => leadminerStore.miningTask !== undefined
 );
-const fetchingFinished = computed(
-  () => !!$store.state.leadminer.fetchingFinished
+const fetchingFinished = computed(() =>
+  Boolean(leadminerStore.totalFetchedEmails)
 );
 
 const progressBuffer = computed(() =>
@@ -179,7 +179,7 @@ watch(fetchingFinished, (finished) => {
 
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
-    $store.commit("leadminer/SET_FETCHING_FINISHED", 0);
+    leadminerStore.totalFetchedEmails = 0;
     startTime = performance.now();
     // eslint-disable-next-line no-console
     console.log("Started Mining");

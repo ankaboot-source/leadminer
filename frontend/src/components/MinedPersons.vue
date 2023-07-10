@@ -232,12 +232,12 @@ import {
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { getCsvStr } from "src/helpers/csv";
 import { fetchData, supabase } from "src/helpers/supabase";
+import { useLeadminerStore } from "src/store/leadminer";
 import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { useStore } from "../store/index";
 
 const $q = useQuasar();
-const $store = useStore();
+const leadminerStore = useLeadminerStore();
 const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
@@ -260,12 +260,10 @@ const mailboxValidity = {
 };
 const mailboxValidityCurrent: "green" | "orange" | "red" = "green";
 
-const isExportDisabled = computed(
-  () => $store.state.leadminer.loadingStatusDns
-);
+const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 
 const activeMiningTask = computed(
-  () => $store.state.leadminer.miningTask !== null
+  () => leadminerStore.miningTask !== undefined
 );
 
 let refreshInterval: number;
