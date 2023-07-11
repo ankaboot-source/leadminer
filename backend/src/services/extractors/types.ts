@@ -1,13 +1,9 @@
-export type MessageField =
-  | 'to'
-  | 'from'
-  | 'cc'
-  | 'bcc'
-  | 'reply-to'
-  | 'reply_to'
-  | 'list-post';
+export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
+  'transactional',
+  'no-reply'
+] as const;
 
-export const MESSAGING_FIELDS: ReadonlyArray<MessageField> = [
+export const MESSAGING_FIELDS = [
   'to',
   'from',
   'cc',
@@ -16,6 +12,8 @@ export const MESSAGING_FIELDS: ReadonlyArray<MessageField> = [
   'reply_to',
   'list-post'
 ] as const;
+
+export type MessageField = typeof MESSAGING_FIELDS[number];
 
 export interface EmailSendersRecipients {
   to: MessageField;

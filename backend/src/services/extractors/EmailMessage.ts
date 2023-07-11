@@ -11,21 +11,22 @@ import {
   Contact,
   Person,
   PointOfContact,
-  ContactTag
+  ContactTag,
+  IGNORED_MESSAGE_TAGS
 } from './types';
 import { TaggingEngine } from '../tagging/types';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
 
-class EmailMessage {
-  static #IGNORED_MESSAGE_TAGS = ['transactional', 'no-reply'];
+export default class EmailMessage {
+  private static IGNORED_MESSAGE_TAGS = IGNORED_MESSAGE_TAGS;
 
-  date: string | null;
+  readonly date: string | null;
 
-  listId: string;
+  readonly listId: string;
 
-  messageId: string;
+  readonly messageId: string;
 
-  references: string[];
+  readonly references: string[];
 
   /**
    * Creates an instance of EmailMessage.
@@ -45,17 +46,17 @@ class EmailMessage {
     private readonly body: any,
     private readonly folderPath: string
   ) {
-    this.date = this.#getDate();
-    this.listId = this.#getListId();
-    this.messageId = this.#getMessageId();
-    this.references = this.#getReferences();
+    this.date = this.getDate();
+    this.listId = this.getListId();
+    this.messageId = this.getMessageId();
+    this.references = this.getReferences();
   }
 
   /**
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns
    */
-  #getReferences(): string[] {
+  private getReferences(): string[] {
     const references = getSpecificHeader(this.header, ['references']);
 
     if (references) {
@@ -69,7 +70,7 @@ class EmailMessage {
    * Gets the `list-id` header field if the email is in a mailing list otherwise returns an empty string.
    * @returns
    */
-  #getListId(): string {
+  private getListId(): string {
     const listId = getSpecificHeader(this.header, ['list-id']);
 
     if (listId === null) {
@@ -84,7 +85,7 @@ class EmailMessage {
    * Returns the date from the header object, or null if it is not present or not a valid date
    * @returns The UTC formatted date string or null if it is not present or not a valid date.
    */
-  #getDate() {
+  private getDate() {
     if (!this.header.date) {
       return null;
     }
@@ -96,7 +97,7 @@ class EmailMessage {
    * Extracts messaging fields from the email header.
    * @returns
    */
-  #getSendersRecipientsFields(): EmailSendersRecipients {
+  private getSendersRecipientsFields(): EmailSendersRecipients {
     const filteredFields = Object.entries(this.header)
       .map(([field, emailString]) => [field.toLocaleLowerCase(), emailString])
       .filter(([field]) => MESSAGING_FIELDS.includes(field as MessageField));
@@ -108,7 +109,7 @@ class EmailMessage {
    * Gets the `message-id` header field of the email.
    * @returns
    */
-  #getMessageId(): string {
+  private getMessageId(): string {
     return this.header['message-id'][0];
   }
 
@@ -132,9 +133,9 @@ class EmailMessage {
    * Extracts contact from the email header.
    * @returns A promise that resolves to an array of contact leads.
    */
-  async extractContactsFromEmailHeader(): Promise<ContactLead[]> {
+  private async extractContactsFromEmailHeader() {
     // Get all senders and recipients fields from the email with values.
-    const sendersRecipientsFields = this.#getSendersRecipientsFields();
+    const sendersRecipientsFields = this.getSendersRecipientsFields();
     // Extract emails from all available fields in parallel.
     const contactsExtractedFromHeader: ContactLead[][] = await Promise.all(
       Object.entries(sendersRecipientsFields).map(([field, emailsString]) => {
@@ -165,7 +166,7 @@ class EmailMessage {
    * Extracts contacts from the email body.
    * @returns An array of contact leads.
    */
-  extractContactsFromEmailBody(): ContactLead[] {
+  private extractContactsFromEmailBody() {
     const extractedEmails = extractNameAndEmailFromBody(this.body);
     // Map the extracted emails to contact leads.
     const contacts = extractedEmails
@@ -191,7 +192,7 @@ class EmailMessage {
    * Extracts contacts from the email header and body, validates their email domains,
    * @returns An array of objects containing person, point of contact, and tags.
    */
-  async extractContacts(): Promise<
+  private async extractContacts(): Promise<
     {
       person: Person;
       pointOfContact: PointOfContact;
@@ -259,7 +260,7 @@ class EmailMessage {
           .getTags({ header: this.header, email })
           .filter(
             (t: ContactTag) =>
-              !EmailMessage.#IGNORED_MESSAGE_TAGS.includes(t.name)
+              !EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name)
           )
           .map((tag: ContactTag) => ({
             name: tag.name,
@@ -284,11 +285,9 @@ class EmailMessage {
   async getContacts(): Promise<Contact> {
     const contacts: Contact = {
       message: this.getMessageDetails(),
-      persons: [...(await this.extractContacts())] // Filter ignored tags
+      persons: await this.extractContacts()
     };
 
     return contacts;
   }
 }
-
-export default EmailMessage;
