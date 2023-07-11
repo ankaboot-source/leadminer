@@ -12,7 +12,7 @@ import {
 } from '../../src/services/extractors/helpers';
 import testData from '../testData.json';
 
-jest.mock('../../src/config', () => { });
+jest.mock('../../src/config', () => {});
 
 describe('Regex redos checker', () => {
   const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
@@ -47,8 +47,9 @@ describe('regExHelpers.extractEmailsFromBody(text)', () => {
   });
 
   it('Should return only valid emails', () => {
-    const output = extractNameAndEmailFromBody(testData.randomEmails)
-      .map(({ address }) => address);
+    const output = extractNameAndEmailFromBody(testData.randomEmails).map(
+      ({ address }) => address
+    );
     expect([...new Set(output)]).toEqual(testData.validrandomEmails.split(' '));
   });
 });

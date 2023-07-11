@@ -16,24 +16,23 @@ export type TagSource =
   | 'refined#message_header'
   | 'refined#email_address';
 
-
 export interface BasicTag {
-    name: string;
-    reachable: number;
-    source: TagSource;
-  };
+  name: string;
+  reachable: number;
+  source: TagSource;
+}
 
 export interface HeaderTag {
   name: string;
   reachable: number;
   source: TagSource;
   fields: string[];
-};
+}
 
 export interface Tag {
   tag: {
     name: string;
-    reachable: number
+    reachable: number;
   };
   prerequisiteConditions?: TaggingCondition[];
   /**

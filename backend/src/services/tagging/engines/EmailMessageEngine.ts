@@ -15,13 +15,13 @@ interface EmailAddress {
   address: string;
   name: string;
   domainType: any;
-};
+}
 
 interface Options {
   header: any;
   email: EmailAddress;
   field: string;
-};
+}
 
 export default class EmailMessageTagging implements TaggingEngine {
   tags: Tag[];

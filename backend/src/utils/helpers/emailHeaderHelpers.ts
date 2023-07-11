@@ -26,13 +26,13 @@ export function getMessageId(parsedHeader: any): string {
  * @returns Header value or null.
  */
 export function getSpecificHeader(header: any, headerFields: string[]) {
-    for (const headerField of headerFields) {
-      const firstMatch =
-        header[`${headerField}`] || header[`${headerField.toLocaleLowerCase()}`];
-  
-      if (firstMatch !== undefined) {
-        return firstMatch;
-      }
+  for (const headerField of headerFields) {
+    const firstMatch =
+      header[`${headerField}`] || header[`${headerField.toLocaleLowerCase()}`];
+
+    if (firstMatch !== undefined) {
+      return firstMatch;
     }
-    return null;
   }
+  return null;
+}
