@@ -9,12 +9,19 @@ import {
   isRole,
   isTransactional
 } from '../../../utils/helpers/taggingHelpers';
-import { BasicTag, HeaderTag, Tag, TagSource, TaggingEngine } from '../types';
+import {
+  BasicTag,
+  DomainType,
+  HeaderTag,
+  Tag,
+  TagSource,
+  TaggingEngine
+} from '../types';
 
 interface EmailAddress {
   address: string;
   name: string;
-  domainType: any;
+  domainType: DomainType;
 }
 
 interface Options {
@@ -33,7 +40,7 @@ export default class EmailMessageTagging implements TaggingEngine {
   static getEmailAddressTags(email: {
     address: string;
     name: string;
-    domainType: any;
+    domainType: DomainType;
   }): BasicTag[] | null {
     const { address, name, domainType } = email;
 
@@ -139,7 +146,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
       if (prerequisiteConditions && prerequisiteConditions.length > 0) {
         const isMissingRequiredCondition = prerequisiteConditions.some(
-          (c: any) => !c.checkCondition({ header })
+          (c) => !c.checkCondition({ header })
         );
 
         if (isMissingRequiredCondition) {
@@ -150,9 +157,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
       for (const { conditions, fields } of rules) {
         if (
-          conditions.some((condition: any) =>
-            condition.checkCondition({ header })
-          )
+          conditions.some((condition) => condition.checkCondition({ header }))
         ) {
           tags.push({ ...tag, source: 'refined#message_header', fields });
           return tags;
@@ -166,7 +171,7 @@ export default class EmailMessageTagging implements TaggingEngine {
   getTags({ header, email, field }: Options): BasicTag[] {
     let tags = EmailMessageTagging.getEmailAddressTags(email) ?? [];
 
-    if (tags?.find((tag: any) => ['professional', 'role'].includes(tag.name))) {
+    if (tags?.find((tag) => ['professional', 'role'].includes(tag.name))) {
       // Tag "role" may be a subset of the "newsletter" tag so it's eligible for additional tagging.
       const headerTags = this.getEmailMessageHeaderTags(header).filter(
         (t) => (t && t.fields === undefined) || t.fields.includes(field)
