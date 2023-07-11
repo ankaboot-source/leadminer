@@ -5,6 +5,7 @@
 Leadminer is a tool to mine and transmute raw and passive contacts from your own communication tools (email mailbox, social networks) into actionable and qualified leads.
 
 ## Features
+
 - ⛏️📧 Contacts extracting from your mailbox
 - 🧹💌 Email list cleaning
 - 🧑🏾‍🔬💎 Enrich your contact list
@@ -19,6 +20,7 @@ To run Leadminer, follow these steps:
 - Obtain the following three values from your dashboard:
   - **Project URL**: Found under Settings -> API in the "Project URL" section.
   - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
+  - **Project Anon key**: Found under Settings -> API in the "Project API keys" section. Use the `anon` `public` key.
   - **Postgres Connection string**: Found under Settings -> Database in the "Connection string" section. Select the URI option.
 
 ### Configure OAuth:
@@ -42,13 +44,13 @@ Docker is the recommended solution for self-hosting Leadminer thanks to its conv
    cp .env.example .env
    ```
 
-3. Start docker-compose:
+1. Start docker-compose:
 
    ```sh
    docker-compose up --build --force-recreate
    ```
 
-4. Navigate to `localhost:8080`.
+1. Navigate to `localhost:8080`.
 
 ## Contributing
 
@@ -93,11 +95,11 @@ To run the project in your local environment, follow the steps below:
    ```sh
    # Start the Redis container (You can skip this step if you want to use your local instance)
    docker-compose -f docker-compose.dev.yml up
-   
+
    # Start the backend in development mode
    npm run dev:backend-api
    npm run dev:backend-worker
-   
+
    # Start the frontend in development mode
    npm run dev:frontend
    ```
@@ -128,7 +130,7 @@ npx supabase stop
 - [ ] Enrich data : Get more relevant and actionable information about your contacts
 - [ ] Marketing automation : send emails directly from Leadminer with personalized templates
 
-For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates. 
+For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates.
 
 ## Support
 
@@ -139,4 +141,3 @@ Please note that this app is provided for free and without any guarantee or offi
 ## License
 
 This software is [dual-licensed](DUAL-LICENSE.md) under [GNU AGPL v3](LICENSE).
-
