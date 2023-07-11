@@ -7,9 +7,8 @@ declare namespace NodeJS {
     VUE_ROUTER_BASE: string | undefined;
     SERVER_ENDPOINT: number;
     SUPABASE_PROJECT_URL: string;
-    SUPABASE_SECRET_PROJECT_TOKEN: string;
+    SUPABASE_ANON_KEY: string;
     SUPABASE_MAX_ROWS: number;
-    GG_CLIENT_ID: string;
     AVERAGE_EXTRACTION_RATE: number;
     BANNER_IMAGE_URL: string;
   }
