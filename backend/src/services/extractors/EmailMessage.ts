@@ -137,23 +137,21 @@ class EmailMessage {
     const sendersRecipientsFields = this.#getSendersRecipientsFields();
     // Extract emails from all available fields in parallel.
     const contactsExtractedFromHeader: ContactLead[][] = await Promise.all(
-      Object.entries(sendersRecipientsFields).map(
-        async ([field, emailsString]) => {
-          const extractedEmails = extractNameAndEmail(emailsString[0]);
-          const contactLeads: ContactLead[] = extractedEmails.map((email) => ({
-            name: email.name,
-            email: {
-              address: email.address,
-              identifier: email.identifier,
-              domain: email.domain
-            },
-            source: 'header',
-            sourceField: field as MessageField
-          }));
+      Object.entries(sendersRecipientsFields).map(([field, emailsString]) => {
+        const extractedEmails = extractNameAndEmail(emailsString[0]);
+        const contactLeads: ContactLead[] = extractedEmails.map((email) => ({
+          name: email.name,
+          email: {
+            address: email.address,
+            identifier: email.identifier,
+            domain: email.domain
+          },
+          source: 'header',
+          sourceField: field as MessageField
+        }));
 
-          return contactLeads;
-        }
-      )
+        return contactLeads;
+      })
     );
     // Flatten the array of contacts and filter the user's email address.
     const contacts = contactsExtractedFromHeader
