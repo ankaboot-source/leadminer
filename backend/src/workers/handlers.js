@@ -1,4 +1,5 @@
-import EmailMessage from '../services/EmailMessage';
+import EmailMessage from '../services/extractors/EmailMessage';
+import EmailTaggingEngine from '../services/tagging';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
 
@@ -23,32 +24,23 @@ const redisClientForNormalMode = redis.getClient();
  * @returns {Promise<void>}
  */
 async function handleMessage(
-  {
-    seqNumber,
-    body,
-    header,
-    folderName,
-    userId,
-    userEmail,
-    userIdentifierHash,
-    isLast
-  },
+  { body, header, folderName, userId, userEmail, userIdentifierHash, isLast },
   contacts
 ) {
   const message = new EmailMessage(
+    EmailTaggingEngine,
     redisClientForNormalMode,
     userEmail,
-    seqNumber,
     header,
     body,
     folderName
   );
 
-  const extractedContacts = await message.extractEmailAddresses();
-  await contacts.create(extractedContacts, userId);
+  try {
+    const extractedContacts = await message.getContacts();
+    await contacts.create(extractedContacts, userId);
 
-  if (isLast) {
-    try {
+    if (isLast) {
       logger.info('Calling populate.', {
         metadata: {
           isLast,
@@ -56,13 +48,13 @@ async function handleMessage(
         }
       });
       await contacts.populate(userId);
-    } catch (error) {
-      logger.error(
-        'Failed populating refined_persons.',
-        error,
-        userIdentifierHash
-      );
     }
+  } catch (error) {
+    logger.error(
+      'Failed when processing message from the stream',
+      error,
+      userIdentifierHash
+    );
   }
 }
 
