@@ -1,14 +1,14 @@
-import { REACHABILITY } from '../../utils/constants';
-import HasHeaderFieldStartsWith from './conditions/HasHeaderFieldStartsWith';
-import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
-import { EmailMessageTagExtractor } from './types';
+import { REACHABILITY } from '../../../utils/constants';
+import HasHeaderFieldStartsWith from '../conditions/HasHeaderFieldStartsWith';
+import HasHeaderWithValues from '../conditions/HasHeaderFieldWithValues';
+import { Tag } from '../types';
 
-const transactionalEmailMessage: EmailMessageTagExtractor = {
+const transactionalEmailMessage: Tag = {
   tag: {
     name: 'transactional',
     reachable: REACHABILITY.NONE
   },
-  rulesToCheck: [
+  rules: [
     {
       fields: ['from'],
       conditions: [

@@ -1,13 +1,13 @@
-import { REACHABILITY } from '../../utils/constants';
-import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
-import { EmailMessageTagExtractor } from './types';
+import { REACHABILITY } from '../../../utils/constants';
+import HasHeaderWithValues from '../conditions/HasHeaderFieldWithValues';
+import { Tag } from '../types';
 
-const linkedinEmailMessage: EmailMessageTagExtractor = {
+const linkedinEmailMessage: Tag = {
   tag: {
     name: 'linkedin',
     reachable: REACHABILITY.INDIRECT_PERSON
   },
-  rulesToCheck: [
+  rules: [
     {
       fields: ['reply-to', 'reply_to'],
       conditions: [

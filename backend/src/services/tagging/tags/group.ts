@@ -1,14 +1,14 @@
-import { REACHABILITY } from '../../utils/constants';
-import HasHeaderField from './conditions/HasHeaderField';
-import HasHeaderWithValues from './conditions/HasHeaderFieldWithValues';
-import { EmailMessageTagExtractor } from './types';
+import { REACHABILITY } from '../../../utils/constants';
+import HasHeaderField from '../conditions/HasHeaderField';
+import HasHeaderWithValues from '../conditions/HasHeaderFieldWithValues';
+import { Tag } from '../types';
 
-const groupEmailMessage: EmailMessageTagExtractor = {
+const groupEmailMessage: Tag = {
   tag: {
     name: 'group',
     reachable: REACHABILITY.MANY
   },
-  rulesToCheck: [
+  rules: [
     {
       fields: ['list-post'],
       conditions: [
