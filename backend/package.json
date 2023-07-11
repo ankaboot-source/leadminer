@@ -32,7 +32,7 @@
     "@supabase/supabase-js": "^2.25.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "dotenv": "^16.2.0",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-sse": "github:omgimalexis/express-sse",
     "generic-pool": "^3.9.0",
