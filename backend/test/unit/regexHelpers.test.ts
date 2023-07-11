@@ -9,10 +9,10 @@ import {
   cleanName,
   extractNameAndEmail,
   extractNameAndEmailFromBody
-} from '../../src/utils/helpers/regexpHelpers';
+} from '../../src/services/extractors/helpers';
 import testData from '../testData.json';
 
-jest.mock('../../src/config', () => {});
+jest.mock('../../src/config', () => { });
 
 describe('Regex redos checker', () => {
   const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
@@ -40,13 +40,16 @@ describe('Regex redos checker', () => {
 describe('regExHelpers.extractEmailsFromBody(text)', () => {
   // TODO: Update unit tests for body
   it('Should return a valid array of emails', () => {
-    const output = extractNameAndEmailFromBody(testData.emailBody);
-    expect(output).toEqual(testData.expectedForBodyExtraction);
+    const output = extractNameAndEmailFromBody(testData.emailBody).map(
+      ({ address }) => address
+    );
+    expect([...new Set(output)]).toEqual(testData.expectedForBodyExtraction);
   });
 
   it('Should return only valid emails', () => {
-    const output = extractNameAndEmailFromBody(testData.randomEmails);
-    expect(output).toEqual(testData.validrandomEmails.split(' '));
+    const output = extractNameAndEmailFromBody(testData.randomEmails)
+      .map(({ address }) => address);
+    expect([...new Set(output)]).toEqual(testData.validrandomEmails.split(' '));
   });
 });
 

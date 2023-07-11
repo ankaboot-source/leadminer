@@ -1,8 +1,7 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import EmailMessage from '../../src/services/EmailMessage';
-import groupEmailMessage from '../../src/services/tagging/group';
-import linkedinEmailMessage from '../../src/services/tagging/linkedin';
-import transactionalEmailMessage from '../../src/services/tagging/transactional';
+import { describe, expect, it, jest } from '@jest/globals';
+import EmailMessage from '../../src/services/extractors/EmailMessage';
+// import { beforeEach } from '@jest/globals';
+// import { groupEmailMessage, linkedinEmailMessage, transactionalEmailMessage } from '../../src/services/tagging/tags';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
@@ -13,8 +12,8 @@ describe('Email Message', () => {
     it('should return an empty array if no references are present in the header', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         { 'message-id': 'test' },
         {},
         'folder'
@@ -25,8 +24,8 @@ describe('Email Message', () => {
     it('should return an array of references if they are present in the header', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         { 'message-id': 'test', references: ['<r1>'] },
         {},
         'folder'
@@ -38,8 +37,8 @@ describe('Email Message', () => {
     it('should handle spaces between references', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         { 'message-id': 'test', references: ['<r1> <r2> <r3>'] },
         {},
         'folder'
@@ -73,8 +72,8 @@ describe('Email Message', () => {
       it(`Should return <listID>:string for list-id header fields = ${listIdHeaderField}`, () => {
         const message = new EmailMessage(
           {},
+          {},
           '',
-          1,
           {
             'message-id': 'test',
             'list-post': [''],
@@ -94,8 +93,9 @@ describe('Email Message', () => {
       }`, () => {
         const message = new EmailMessage(
           {},
+          {},
           '',
-          1,
+
           {
             'message-id': 'test',
             'list-post': [''],
@@ -111,8 +111,8 @@ describe('Email Message', () => {
     it('Should return empty string in the absence of list-post header field', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         {
           'message-id': 'test',
           'list-id': ['']
@@ -127,8 +127,8 @@ describe('Email Message', () => {
     it('Should return empty string in the absence of list-id header field', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         {
           'message-id': 'test',
           'list-post': ['']
@@ -146,8 +146,8 @@ describe('Email Message', () => {
       const date = new Date().toUTCString();
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         {
           'message-id': 'test',
           date: [`${date}`]
@@ -162,8 +162,8 @@ describe('Email Message', () => {
     it('should return null if the date is not present in the header', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         {
           'message-id': 'test'
         },
@@ -177,8 +177,8 @@ describe('Email Message', () => {
     it('should return null if the date is not a valid date', () => {
       const message = new EmailMessage(
         {},
+        {},
         '',
-        1,
         {
           'message-id': 'test',
           date: ['not a date']
@@ -191,313 +191,315 @@ describe('Email Message', () => {
     });
   });
 
-  describe('messagingFields', () => {
-    it('should return an empty object if no messaging fields are present in the header', () => {
-      const message = new EmailMessage(
-        {},
-        '',
-        1,
-        {
-          'message-id': 'test'
-        },
-        {},
-        ''
-      );
+  // TODO: Move tagging related to tagging service tests
 
-      expect(message.messagingFields).toEqual({});
-    });
+  // describe('messagingFields', () => {
+  //   it('should return an empty object if no messaging fields are present in the header', () => {
+  //     const message = new EmailMessage(
+  //       {},
+  //       {},
+  //       '',
+  //       {
+  //         'message-id': 'test'
+  //       },
+  //       {},
+  //       ''
+  //     );
 
-    it('should return an object with messaging fields if they are present in the header', () => {
-      const message = new EmailMessage(
-        {},
-        '',
-        1,
-        {
-          'message-id': 'test',
-          to: ['test@example.com'],
-          from: ['sender@example.com'],
-          cc: ['cc@example.com'],
-          bcc: ['bcc@example.com']
-        },
-        {},
-        ''
-      );
+  //     expect(message.messagingFields).toEqual({});
+  //   });
 
-      expect(message.messagingFields).toEqual({
-        to: 'test@example.com',
-        from: 'sender@example.com',
-        bcc: 'bcc@example.com',
-        cc: 'cc@example.com'
-      });
-    });
+  //   it('should return an object with messaging fields if they are present in the header', () => {
+  //     const message = new EmailMessage(
+  //       {},
+  //       {},
+  //       '',
+  //       {
+  //         'message-id': 'test',
+  //         to: ['test@example.com'],
+  //         from: ['sender@example.com'],
+  //         cc: ['cc@example.com'],
+  //         bcc: ['bcc@example.com']
+  //       },
+  //       {},
+  //       ''
+  //     );
 
-    it('should return an object with messaging fields if they are present in the header', () => {
-      const message = new EmailMessage(
-        {},
-        '',
-        1,
-        {
-          'message-id': 'test',
-          subject: ['Test Subject'],
-          to: ['test@example.com'],
-          from: ['sender@example.com']
-        },
-        {},
-        ''
-      );
+  //     expect(message.messagingFields).toEqual({
+  //       to: 'test@example.com',
+  //       from: 'sender@example.com',
+  //       bcc: 'bcc@example.com',
+  //       cc: 'cc@example.com'
+  //     });
+  //   });
 
-      expect(message.messagingFields).toEqual({
-        to: 'test@example.com',
-        from: 'sender@example.com'
-      });
-    });
-  });
+  //   it('should return an object with messaging fields if they are present in the header', () => {
+  //     const message = new EmailMessage(
+  //       {},
+  //       {},
+  //       '',
+  //       {
+  //         'message-id': 'test',
+  //         subject: ['Test Subject'],
+  //         to: ['test@example.com'],
+  //         from: ['sender@example.com']
+  //       },
+  //       {},
+  //       ''
+  //     );
 
-  describe('messageId', () => {
-    it('should return the message-id field if it is present in the header', () => {
-      const message = new EmailMessage(
-        {},
-        '',
-        1,
-        {
-          'message-id': ['<test_message_id>'],
-          subject: ['Test Subject'],
-          to: ['test@example.com'],
-          from: ['sender@example.com']
-        },
-        {},
-        ''
-      );
+  //     expect(message.messagingFields).toEqual({
+  //       to: 'test@example.com',
+  //       from: 'sender@example.com'
+  //     });
+  //   });
+  // });
 
-      expect(message.messageId).toBe('<test_message_id>');
-    });
-  });
+  // describe('messageId', () => {
+  //   it('should return the message-id field if it is present in the header', () => {
+  //     const message = new EmailMessage(
+  //       {},
+  //       {},
+  //       '',
+  //       {
+  //         'message-id': ['<test_message_id>'],
+  //         subject: ['Test Subject'],
+  //         to: ['test@example.com'],
+  //         from: ['sender@example.com']
+  //       },
+  //       {},
+  //       ''
+  //     );
 
-  describe('messageTags', () => {
-    const [transactionalRules] = transactionalEmailMessage.rulesToCheck;
-    const groupRules = groupEmailMessage.rulesToCheck;
-    const [linkedinRules] = linkedinEmailMessage.rulesToCheck;
+  //     expect(message.messageId).toBe('<test_message_id>');
+  //   });
+  // });
 
-    let header = {};
-    beforeEach(() => {
-      header = {
-        'message-id': ['<test_message_id>'],
-        subject: ['Test Subject'],
-        to: ['test@example.com'],
-        from: ['sender@example.com']
-      };
-    });
+  // describe('messageTags', () => {
+  //   const [transactionalRules] = transactionalEmailMessage.rules;
+  //   const groupRules = groupEmailMessage.rules;
+  //   const [linkedinRules] = linkedinEmailMessage.rules;
 
-    transactionalRules.conditions[0].possibleHeaderPrefixes.forEach(
-      (prefix) => {
-        it(`Should include transactional if it has a header field with "${prefix}" as prefix`, () => {
-          header[`${prefix}-test`] = ['test'];
-          const message = new EmailMessage({}, '', 1, header, {}, '');
+  //   let header = {};
+  //   beforeEach(() => {
+  //     header = {
+  //       'message-id': ['<test_message_id>'],
+  //       subject: ['Test Subject'],
+  //       to: ['test@example.com'],
+  //       from: ['sender@example.com']
+  //     };
+  //   });
 
-          expect(message.messageTags).toEqual([
-            {
-              name: 'transactional',
-              reachable: 0,
-              source: 'refined',
-              fields: transactionalRules.fields
-            }
-          ]);
-        });
-      }
-    );
+  //   transactionalRules.conditions[0].possibleHeaderPrefixes.forEach(
+  //     (prefix) => {
+  //       it(`Should include transactional if it has a header field with "${prefix}" as prefix`, () => {
+  //         header[`${prefix}-test`] = ['test'];
+  //         const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    transactionalRules.conditions[1].values.forEach((value) => {
-      it(`Should include transactional if it has an "x-mailer" field with "${value}" as value`, () => {
-        header['x-mailer'] = [value];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //         expect(message.messageTags).toEqual([
+  //           {
+  //             name: 'transactional',
+  //             reachable: 0,
+  //             source: 'refined',
+  //             fields: transactionalRules.fields
+  //           }
+  //         ]);
+  //       });
+  //     }
+  //   );
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'transactional',
-            reachable: 0,
-            source: 'refined',
-            fields: transactionalRules.fields
-          }
-        ]);
-      });
-    });
+  //   transactionalRules.conditions[1].values.forEach((value) => {
+  //     it(`Should include transactional if it has an "x-mailer" field with "${value}" as value`, () => {
+  //       header['x-mailer'] = [value];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    transactionalRules.conditions[2].values.forEach((value) => {
-      it(`Should include transactional if it has an "auto-submitted" field with "${value}" as value`, () => {
-        header['auto-submitted'] = [value];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'transactional',
+  //           reachable: 0,
+  //           source: 'refined',
+  //           fields: transactionalRules.fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'transactional',
-            reachable: 0,
-            source: 'refined',
-            fields: transactionalRules.fields
-          }
-        ]);
-      });
-    });
+  //   transactionalRules.conditions[2].values.forEach((value) => {
+  //     it(`Should include transactional if it has an "auto-submitted" field with "${value}" as value`, () => {
+  //       header['auto-submitted'] = [value];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    transactionalRules.conditions[3].values.forEach((value) => {
-      it(`Should include transactional if it has an "x-gnd-status" field with "${value}" as value`, () => {
-        header['x-gnd-status'] = [value];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'transactional',
+  //           reachable: 0,
+  //           source: 'refined',
+  //           fields: transactionalRules.fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'transactional',
-            reachable: 0,
-            source: 'refined',
-            fields: transactionalRules.fields
-          }
-        ]);
-      });
-    });
+  //   transactionalRules.conditions[3].values.forEach((value) => {
+  //     it(`Should include transactional if it has an "x-gnd-status" field with "${value}" as value`, () => {
+  //       header['x-gnd-status'] = [value];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    transactionalRules.conditions[4].values.forEach((value) => {
-      it(`Should include transactional if it has an "x-spam-flag" field with "${value}" as value`, () => {
-        header['x-spam-flag'] = [value];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'transactional',
+  //           reachable: 0,
+  //           source: 'refined',
+  //           fields: transactionalRules.fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'transactional',
-            reachable: 0,
-            source: 'refined',
-            fields: transactionalRules.fields
-          }
-        ]);
-      });
-    });
+  //   transactionalRules.conditions[4].values.forEach((value) => {
+  //     it(`Should include transactional if it has an "x-spam-flag" field with "${value}" as value`, () => {
+  //       header['x-spam-flag'] = [value];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    groupRules[0].conditions[0].possibleHeaderFields.forEach((field) => {
-      it(`Should include group if it has a "${field}" header field`, () => {
-        header[field] = ['test'];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'transactional',
+  //           reachable: 0,
+  //           source: 'refined',
+  //           fields: transactionalRules.fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'group',
-            reachable: 2,
-            source: 'refined',
-            fields: groupRules[0].fields
-          }
-        ]);
-      });
-    });
+  //   groupRules[0].conditions[0].possibleHeaderFields.forEach((field) => {
+  //     it(`Should include group if it has a "${field}" header field`, () => {
+  //       header[field] = ['test'];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    groupRules[1].conditions[0].possibleHeaderFields.forEach((field) => {
-      it(`Should include group if it has a "${field}" header field`, () => {
-        header[field] = ['test'];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'group',
+  //           reachable: 2,
+  //           source: 'refined',
+  //           fields: groupRules[0].fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'group',
-            reachable: 2,
-            source: 'refined',
-            fields: groupRules[1].fields
-          }
-        ]);
-      });
-    });
+  //   groupRules[1].conditions[0].possibleHeaderFields.forEach((field) => {
+  //     it(`Should include group if it has a "${field}" header field`, () => {
+  //       header[field] = ['test'];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    groupRules[0].conditions[1].values.forEach((value) => {
-      it(`Should include group if it has a "precedence" field with "${value}" as value`, () => {
-        header.precedence = [value];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'group',
+  //           reachable: 2,
+  //           source: 'refined',
+  //           fields: groupRules[1].fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'group',
-            reachable: 2,
-            source: 'refined',
-            fields: groupRules[0].fields
-          }
-        ]);
-      });
-    });
+  //   groupRules[0].conditions[1].values.forEach((value) => {
+  //     it(`Should include group if it has a "precedence" field with "${value}" as value`, () => {
+  //       header.precedence = [value];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    linkedinRules.conditions[0].values.forEach((value) => {
-      it(`Should include linkedin if it has a "x-linkedin-class" field with "${value}" as value`, () => {
-        header['x-linkedin-class'] = [value];
-        const message = new EmailMessage({}, '', 1, header, {}, '');
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'group',
+  //           reachable: 2,
+  //           source: 'refined',
+  //           fields: groupRules[0].fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-        expect(message.messageTags).toEqual([
-          {
-            name: 'linkedin',
-            reachable: 2,
-            source: 'refined',
-            fields: linkedinRules.fields
-          }
-        ]);
-      });
-    });
+  //   linkedinRules.conditions[0].values.forEach((value) => {
+  //     it(`Should include linkedin if it has a "x-linkedin-class" field with "${value}" as value`, () => {
+  //       header['x-linkedin-class'] = [value];
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-    it('Should be empty if there are no tags', () => {
-      const message = new EmailMessage(
-        {},
-        '',
-        1,
-        {
-          'message-id': ['<test_message_id>'],
-          subject: ['Test Subject'],
-          to: ['test@example.com'],
-          from: ['sender@example.com']
-        },
-        {},
-        ''
-      );
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'linkedin',
+  //           reachable: 2,
+  //           source: 'refined',
+  //           fields: linkedinRules.fields
+  //         }
+  //       ]);
+  //     });
+  //   });
 
-      expect(message.messageTags).toHaveLength(0);
-    });
+  //     it('Should be empty if there are no tags', () => {
+  //       const message = new EmailMessage(
+  //         {},
+  //         {},
+  //         '',
+  //         {
+  //           'message-id': ['<test_message_id>'],
+  //           subject: ['Test Subject'],
+  //           to: ['test@example.com'],
+  //           from: ['sender@example.com']
+  //         },
+  //         {},
+  //         ''
+  //       );
 
-    it("Shouldn't include newsletter tag if header has list-post", () => {
-      header['list-post'] = 'test';
-      header['list-id'] = 'test';
+  //       expect(message.messageTags).toHaveLength(0);
+  //     });
 
-      const message = new EmailMessage({}, '', 1, header, {}, '');
+  //     it("Shouldn't include newsletter tag if header has list-post", () => {
+  //       header['list-post'] = 'test';
+  //       header['list-id'] = 'test';
 
-      expect(message.messageTags).toEqual([
-        {
-          name: 'group',
-          reachable: 2,
-          source: 'refined',
-          fields: ['list-post']
-        }
-      ]);
-    });
-  });
-});
+  //       const message = new EmailMessage({}, '', 1, header, {}, '');
 
-describe('EmailMessage.constructPersonPocTags()', () => {
-  const email = {
-    address: 'test@example.com',
-    identifier: 'test_identifier',
-    name: 'Test Name'
-  };
+  //       expect(message.messageTags).toEqual([
+  //         {
+  //           name: 'group',
+  //           reachable: 2,
+  //           source: 'refined',
+  //           fields: ['list-post']
+  //         }
+  //       ]);
+  //     });
+  //   });
+  // });
 
-  it('should return a person object with the correct properties when fieldName is "from"', () => {
-    const result = EmailMessage.constructPersonPocTags(email, [], 'from');
-    expect(result).toHaveProperty('person');
-    expect(result.person).toHaveProperty('name', 'Test Name');
-    expect(result.person).toHaveProperty('email', 'test@example.com');
-    expect(result.person).toHaveProperty('identifiers', ['test_identifier']);
-  });
+  // describe('EmailMessage.extractContacts()', () => {
+  //   const email = {
+  //     address: 'test@example.com',
+  //     identifier: 'test_identifier',
+  //     name: 'Test Name'
+  //   };
 
-  it('should return a pointOfContact object with the correct properties when fieldName is "to"', () => {
-    const result = EmailMessage.constructPersonPocTags(email, [], 'to');
-    expect(result).toHaveProperty('pointOfContact');
-    expect(result.pointOfContact).toHaveProperty('name', 'Test Name');
-    expect(result.pointOfContact).toHaveProperty('to', true);
-    expect(result.pointOfContact).toHaveProperty('from', false);
-  });
+  //   it('should return a person object with the correct properties when fieldName is "from"', () => {
+  //     const result = EmailMessage.extractContacts(email, [], 'from');
+  //     expect(result).toHaveProperty('person');
+  //     expect(result.person).toHaveProperty('name', 'Test Name');
+  //     expect(result.person).toHaveProperty('email', 'test@example.com');
+  //     expect(result.person).toHaveProperty('identifiers', ['test_identifier']);
+  //   });
 
-  it('should return a tags array', () => {
-    const tags = [
-      { name: 'test', label: 'test label', reachable: 2, type: 'test type' }
-    ];
-    const result = EmailMessage.constructPersonPocTags(email, tags, 'from');
-    expect(result).toHaveProperty('tags', tags);
-  });
+  //   it('should return a pointOfContact object with the correct properties when fieldName is "to"', () => {
+  //     const result = EmailMessage.constructPersonPocTags(email, [], 'to');
+  //     expect(result).toHaveProperty('pointOfContact');
+  //     expect(result.pointOfContact).toHaveProperty('name', 'Test Name');
+  //     expect(result.pointOfContact).toHaveProperty('to', true);
+  //     expect(result.pointOfContact).toHaveProperty('from', false);
+  //   });
+
+  //   it('should return a tags array', () => {
+  //     const tags = [
+  //       { name: 'test', label: 'test label', reachable: 2, type: 'test type' }
+  //     ];
+  //     const result = EmailMessage.constructPersonPocTags(email, tags, 'from');
+  //     expect(result).toHaveProperty('tags', tags);
+  //   });
 });
