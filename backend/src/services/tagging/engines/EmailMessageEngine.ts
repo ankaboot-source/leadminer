@@ -75,19 +75,21 @@ export default class EmailMessageTagging implements TaggingEngine {
       ];
     }
 
+    if (isNewsletter(address) || name?.includes('newsletter')) {
+      return [
+        {
+          source,
+          name: 'newsletter',
+          reachable: REACHABILITY.UNSURE
+        }
+      ];
+    }
+
     if (emailType === 'professional') {
       emailTags.push({
         source,
         name: emailType,
         reachable: REACHABILITY.DIRECT_PERSON
-      });
-    }
-
-    if (isNewsletter(address) || name?.includes('newsletter')) {
-      emailTags.push({
-        source,
-        name: 'newsletter',
-        reachable: REACHABILITY.UNSURE
       });
     }
 
@@ -152,7 +154,7 @@ export default class EmailMessageTagging implements TaggingEngine {
             condition.checkCondition({ header })
           )
         ) {
-          tags.push({ ...tag, source: 'refined#message_header', fields }); // TODO: fix fields
+          tags.push({ ...tag, source: 'refined#message_header', fields });
           return tags;
         }
       }
@@ -162,18 +164,19 @@ export default class EmailMessageTagging implements TaggingEngine {
   }
 
   getTags({ header, email, field }: Options): BasicTag[] {
-    const tags = EmailMessageTagging.getEmailAddressTags(email) ?? [];
-    const hasEitherTags = tags?.find((tag: any) =>
-      ['professional', 'role'].includes(tag.name)
-    );
-    // Apply header tags if the email tag is "professional" or "role".
-    // The "role" tag is a subset of the "newsletter" tag so it's eligible for additional tagging.
-    if (hasEitherTags) {
+    let tags = EmailMessageTagging.getEmailAddressTags(email) ?? [];
+
+    if (tags?.find((tag: any) => ['professional', 'role'].includes(tag.name))) {
+      // Tag "role" may be a subset of the "newsletter" tag so it's eligible for additional tagging.
       const headerTags = this.getEmailMessageHeaderTags(header).filter(
         (t) => (t && t.fields === undefined) || t.fields.includes(field)
       );
 
-      tags.push(...headerTags);
+      if (headerTags.length > 0) {
+        // Remove all existing tags except for the "professional" tag.
+        tags = tags.filter(({ name }) => name === 'professional');
+        tags.push(...headerTags);
+      }
     }
 
     const finalTags = tags.map(({ name, source, reachable }) => ({
