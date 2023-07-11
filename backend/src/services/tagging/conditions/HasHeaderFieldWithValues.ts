@@ -1,4 +1,4 @@
-import { hasHeaderWithValue } from '../../../utils/helpers/emailMessageHelpers';
+import { hasHeaderWithValue } from '../../../utils/helpers/taggingHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
 export default class HasHeaderWithValues implements TaggingCondition {

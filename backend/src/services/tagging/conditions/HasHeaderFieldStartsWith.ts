@@ -1,4 +1,4 @@
-import { hasHeaderFieldStartsWith } from '../../../utils/helpers/emailMessageHelpers';
+import { hasHeaderFieldStartsWith } from '../../../utils/helpers/taggingHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
 export default class HasHeaderFieldStartsWith implements TaggingCondition {
