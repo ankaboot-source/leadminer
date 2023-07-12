@@ -19,7 +19,6 @@ import {
   ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../../src/utils/constants';
-import EmailMessageTagging from '../../src/services/tagging/engines/EmailMessageEngine';
 import { DomainType } from '../../src/services/tagging/types';
 
 /**
@@ -370,7 +369,7 @@ describe('test engines.EmailTaggingEngine', () => {
         const tag = expectedTags.map(({ name }) => name).join(',');
 
         it(`should correctly tag "${email.address} as ${tag}`, () => {
-          const tags = EmailMessageTagging.getEmailAddressTags(email);
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
 
           expect(tags).toEqual(expectedTags);
         });

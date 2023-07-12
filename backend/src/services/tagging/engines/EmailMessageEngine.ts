@@ -33,18 +33,23 @@ interface Options {
 export default class EmailMessageTagging implements TaggingEngine {
   tags: Tag[];
 
+  private readonly tagSourceFromEmailAddress: TagSource =
+    'refined#email_address';
+
+  private readonly tagSourceFromEmailHeader: TagSource =
+    'refined#message_header';
+
   constructor(tags: Tag[]) {
     this.tags = tags;
   }
 
-  static getEmailAddressTags(email: {
+  getEmailAddressTags(email: {
     address: string;
     name: string;
     domainType: DomainType;
   }): BasicTag[] | null {
     const { address, name, domainType } = email;
 
-    const source: TagSource = 'refined#email_address';
     const emailTags = [];
     const emailType = findEmailAddressType(domainType);
 
@@ -55,7 +60,7 @@ export default class EmailMessageTagging implements TaggingEngine {
     if (emailType === 'personal') {
       return [
         {
-          source,
+          source: this.tagSourceFromEmailAddress,
           name: emailType,
           reachable: REACHABILITY.DIRECT_PERSON
         }
@@ -65,7 +70,7 @@ export default class EmailMessageTagging implements TaggingEngine {
     if (isNoReply(address)) {
       return [
         {
-          source,
+          source: this.tagSourceFromEmailAddress,
           name: 'no-reply',
           reachable: REACHABILITY.NONE
         }
@@ -75,7 +80,7 @@ export default class EmailMessageTagging implements TaggingEngine {
     if (isTransactional(address)) {
       return [
         {
-          source,
+          source: this.tagSourceFromEmailAddress,
           name: 'transactional',
           reachable: REACHABILITY.NONE
         }
@@ -85,7 +90,7 @@ export default class EmailMessageTagging implements TaggingEngine {
     if (isNewsletter(address) || name?.includes('newsletter')) {
       return [
         {
-          source,
+          source: this.tagSourceFromEmailAddress,
           name: 'newsletter',
           reachable: REACHABILITY.UNSURE
         }
@@ -94,7 +99,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
     if (emailType === 'professional') {
       emailTags.push({
-        source,
+        source: this.tagSourceFromEmailAddress,
         name: emailType,
         reachable: REACHABILITY.DIRECT_PERSON
       });
@@ -102,7 +107,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
     if (isAirbnb(address)) {
       emailTags.push({
-        source,
+        source: this.tagSourceFromEmailAddress,
         name: 'airbnb',
         reachable: REACHABILITY.INDIRECT_PERSON
       });
@@ -110,7 +115,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
     if (isRole(address)) {
       emailTags.push({
-        source,
+        source: this.tagSourceFromEmailAddress,
         name: 'role',
         reachable: REACHABILITY.UNSURE
       });
@@ -118,7 +123,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
     if (isLinkedin(address)) {
       emailTags.push({
-        source,
+        source: this.tagSourceFromEmailAddress,
         name: 'linkedin',
         reachable: REACHABILITY.INDIRECT_PERSON
       });
@@ -126,7 +131,7 @@ export default class EmailMessageTagging implements TaggingEngine {
 
     if (isGroup(address)) {
       emailTags.push({
-        source,
+        source: this.tagSourceFromEmailAddress,
         name: 'group',
         reachable: REACHABILITY.MANY
       });
@@ -159,7 +164,7 @@ export default class EmailMessageTagging implements TaggingEngine {
         if (
           conditions.some((condition) => condition.checkCondition({ header }))
         ) {
-          tags.push({ ...tag, source: 'refined#message_header', fields });
+          tags.push({ ...tag, source: this.tagSourceFromEmailHeader, fields });
           return tags;
         }
       }
@@ -169,7 +174,7 @@ export default class EmailMessageTagging implements TaggingEngine {
   }
 
   getTags({ header, email, field }: Options): BasicTag[] {
-    let tags = EmailMessageTagging.getEmailAddressTags(email) ?? [];
+    let tags = this.getEmailAddressTags(email) ?? [];
 
     if (tags?.find((tag) => ['professional', 'role'].includes(tag.name))) {
       // Tag "role" may be a subset of the "newsletter" tag so it's eligible for additional tagging.
