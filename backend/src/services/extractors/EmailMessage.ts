@@ -46,7 +46,9 @@ export default class EmailMessage {
     private readonly body: any,
     private readonly folderPath: string
   ) {
-    this.date = this.getDate();
+    const date = this.getDate();
+
+    this.date = date !== null ? date : 'UNKOWN';
     this.listId = this.getListId();
     this.messageId = this.getMessageId();
     this.references = this.getReferences();
@@ -120,7 +122,7 @@ export default class EmailMessage {
   getMessageDetails(): Message {
     return {
       channel: 'imap',
-      date: this.date,
+      date: this.date as string,
       listId: this.listId,
       folderPath: this.folderPath,
       messageId: this.messageId,
