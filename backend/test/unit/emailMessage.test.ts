@@ -162,7 +162,7 @@ describe('Email Message', () => {
       expect(message.date).toBe(date);
     });
 
-    it('should return null if the date is not present in the header', () => {
+    it('should return "UNKOWN" if the date is not present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -174,7 +174,7 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.date).toBeNull();
+      expect(message.date).toEqual('UNKOWN');
     });
 
     it('should return null if the date is not a valid date', () => {
