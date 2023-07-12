@@ -28,7 +28,7 @@ export interface EmailSendersRecipients {
 export interface Message {
   channel: string;
   folderPath: string;
-  date: string | null;
+  date: string;
   messageId: string;
   references: string[];
   listId: string;
