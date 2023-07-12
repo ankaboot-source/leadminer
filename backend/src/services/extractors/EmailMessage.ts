@@ -139,27 +139,28 @@ export default class EmailMessage {
     // Get all senders and recipients fields from the email with values.
     const sendersRecipientsFields = this.getSendersRecipientsFields();
     // Extract emails from all available fields in parallel.
-    const contactsExtractedFromHeader: ContactLead[][] = await Promise.all(
+    const contacts: ContactLead[] = [];
+
+    await Promise.all(
       Object.entries(sendersRecipientsFields).map(([field, emailsString]) => {
         const extractedEmails = extractNameAndEmail(emailsString[0]);
-        const contactLeads: ContactLead[] = extractedEmails.map((email) => ({
-          name: email.name,
-          email: {
-            address: email.address,
-            identifier: email.identifier,
-            domain: email.domain
-          },
-          source: 'header',
-          sourceField: field as MessageField
-        }));
-
-        return contactLeads;
+        extractedEmails.forEach((email) => {
+          if (email.address !== this.userEmail) {
+            contacts.push({
+              name: email.name,
+              email: {
+                address: email.address,
+                identifier: email.identifier,
+                domain: email.domain
+              },
+              source: 'header',
+              sourceField: field as MessageField
+            });
+          }
+        });
+        return Promise.resolve()
       })
     );
-    // Flatten the array of contacts and filter the user's email address.
-    const contacts = contactsExtractedFromHeader
-      .flat()
-      .filter((contact) => contact.email.address !== this.userEmail);
 
     return contacts;
   }
@@ -171,21 +172,22 @@ export default class EmailMessage {
   private extractContactsFromEmailBody() {
     const extractedEmails = extractNameAndEmailFromBody(this.body);
     // Map the extracted emails to contact leads.
-    const contacts = extractedEmails
-      .map(
-        (email) =>
-          ({
-            name: email.name,
-            email: {
-              address: email.address,
-              identifier: email.identifier,
-              domain: email.domain
-            },
-            source: 'body',
-            sourceField: 'body'
-          } as ContactLead)
-      )
-      .filter((contact) => contact.email.address !== this.userEmail);
+    const contacts: ContactLead[] = [];
+
+    for (const email of extractedEmails) {
+      if (email && email.address !== this.userEmail) {
+        contacts.push({
+          name: email.name,
+          email: {
+            address: email.address,
+            identifier: email.identifier,
+            domain: email.domain
+          },
+          source: 'body',
+          sourceField: 'body'
+        } as ContactLead);
+      }
+    }
 
     return contacts;
   }
@@ -205,78 +207,78 @@ export default class EmailMessage {
     const bodyContacts =
       this.body !== '' ? this.extractContactsFromEmailBody() : [];
 
-    const contactsToBeValidated = [...headerContacts, ...bodyContacts].map(
-      async (contact) => {
-        const { name, source, sourceField, email } = contact;
+    const validatedContacts: {
+      person: Person;
+      pointOfContact: PointOfContact;
+      tags: ContactTag[];
+    }[] = [];
+
+    await Promise.all(
+      [...headerContacts, ...bodyContacts].map(async (contact: ContactLead) => {
         const [domainIsValid, domainType] = await checkDomainStatus(
           this.redisClientForNormalMode,
-          email.domain.toLowerCase()
+          contact.email.domain.toLowerCase()
         );
 
-        return !domainIsValid
-          ? null
-          : {
-              name,
-              email: {
-                address: email.address,
-                identifier: email.identifier,
-                domain: email.domain,
-                domainType
-              },
-              source,
-              sourceField
-            };
-      }
+        const validContact = {
+          name: contact.name,
+          email: {
+            address: contact.email.address,
+            identifier: contact.email.identifier,
+            domain: contact.email.domain,
+            domainType
+          },
+          source: contact.source,
+          sourceField: contact.sourceField
+        };
+
+        if (domainIsValid) {
+          const person: Person = {
+            name: validContact.name,
+            email: validContact.email.address,
+            url: '',
+            image: '',
+            address: '',
+            alternateNames: [],
+            sameAs: [],
+            givenName: validContact.name,
+            familyName: '',
+            jobTitle: '',
+            identifiers: [validContact.email.identifier]
+          };
+
+          const pointOfContact: PointOfContact = {
+            name: validContact.name ?? '',
+            to: validContact.sourceField === 'to',
+            cc: validContact.sourceField === 'cc',
+            bcc: validContact.sourceField === 'bcc',
+            body: validContact.sourceField === 'body',
+            from: validContact.sourceField === 'from',
+            replyTo:
+              validContact.sourceField === 'reply-to' ||
+              validContact.sourceField === 'reply_to'
+          };
+
+          const tags = this.taggingEngine
+            .getTags({ header: this.header, email: validContact.email })
+            .filter(
+              (t: ContactTag) =>
+                !EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name)
+            )
+            .map((tag: ContactTag) => ({
+              name: tag.name,
+              reachable: tag.reachable,
+              source: tag.source
+            }));
+
+          validatedContacts.push({
+            person,
+            pointOfContact,
+            tags
+          });
+        }
+      })
     );
-
-    const validatedContacts = (await Promise.all(contactsToBeValidated))
-      .filter(Boolean)
-      .map((contact) => {
-        const { name, sourceField, email } = contact as ContactLead;
-
-        const person: Person = {
-          name,
-          email: email.address,
-          url: '',
-          image: '',
-          address: '',
-          alternateNames: [],
-          sameAs: [],
-          givenName: name,
-          familyName: '',
-          jobTitle: '',
-          identifiers: [email.identifier]
-        };
-
-        const pointOfContact: PointOfContact = {
-          name: name ?? '',
-          to: sourceField === 'to',
-          cc: sourceField === 'cc',
-          bcc: sourceField === 'bcc',
-          body: sourceField === 'body',
-          from: sourceField === 'from',
-          replyTo: sourceField === 'reply-to' || sourceField === 'reply_to'
-        };
-
-        const tags = this.taggingEngine
-          .getTags({ header: this.header, email })
-          .filter(
-            (t: ContactTag) =>
-              !EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name)
-          )
-          .map((tag: ContactTag) => ({
-            name: tag.name,
-            reachable: tag.reachable,
-            source: tag.source
-          }));
-
-        return {
-          person,
-          pointOfContact,
-          tags
-        };
-      });
-
     return validatedContacts;
   }
 
