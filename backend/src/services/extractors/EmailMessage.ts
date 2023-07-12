@@ -158,7 +158,7 @@ export default class EmailMessage {
             });
           }
         });
-        return Promise.resolve()
+        return Promise.resolve();
       })
     );
 
