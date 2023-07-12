@@ -76,8 +76,8 @@ jobs:
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
 
             cd leadminer_$TARGET
-            eval "docker rmi $(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead')"
-            eval "docker rm $(docker ps -a -q)"
+            # Remove old leadminer images
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
             docker compose --env-file .env up -d \
               --build \
               --force-recreate
