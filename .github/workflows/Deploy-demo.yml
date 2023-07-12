@@ -14,6 +14,7 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_SECRET: ${{ secrets.AZURE_SECRET }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY}}
           PG_CONNECTION_STRING: ${{ secrets.PG_CONNECTION_STRING }}
           LEADMINER_API_HASH_SECRET: ${{ secrets.LEADMINER_API_HASH_SECRET }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
@@ -26,20 +27,42 @@ jobs:
           host: ${{vars.SSH_HOST_LEADMINER}} # IP address of the server
           key: ${{secrets.SSH_KEY}} # Private or public key of the server
           username: ${{ secrets.SSH_USERNAME }} # User of the server
-          envs: GOOGLE_CLIENT_ID,GOOGLE_SECRET,AZURE_CLIENT_ID,AZURE_SECRET,SUPABASE_SERVICE_ROLE_KEY,PG_CONNECTION_STRING,LEADMINER_API_HASH_SECRET,REDIS_HOST,REDIS_PASSWORD,SAAS_SUPABASE_PG_CONNECTION_STRING,SAAS_SUPABASE_SECRET_PROJECT_TOKEN,AZURE_TENANT_ID
+          envs: GOOGLE_CLIENT_ID,GOOGLE_SECRET,AZURE_CLIENT_ID,AZURE_SECRET,SUPABASE_SERVICE_ROLE_KEY,PG_CONNECTION_STRING,LEADMINER_API_HASH_SECRET,REDIS_HOST,REDIS_PASSWORD,SAAS_SUPABASE_PG_CONNECTION_STRING,SAAS_SUPABASE_SECRET_PROJECT_TOKEN,SUPABASE_ANON_KEY,AZURE_TENANT_ID
           script: |
+            # Pull/Clone leadminer.io repos
             TARGET=demo
-            ( cd leadminer_$TARGET; docker compose down; git reset --hard origin/main; git pull)
-            ( cd leadminer.io; . .env.$TARGET; git reset --hard origin/main; git pull; psql \
+            REPO=leadminer_demo
+            folder_path="/home/leadminer/leadminer.io"
+            folder_path_2="/home/leadminer/leadminer_demo"
+
+            # Check if the folders exists
+            if [ -d "$folder_path" ]; then
+                echo "leadminer.io exists..."
+            else
+                echo "leadminer.io doesn't exist, Cloning Repo..."
+                git clone git@github.com:ankaboot-source/leadminer.io.git
+            fi
+
+            if [ -d "$folder_path_2" ]; then
+                echo "leadminer_demo exists..."
+            else
+                echo "leadminer_demo doesn't exist, Cloning Repo..."
+                git clone git@github.com:ankaboot-source/leadminer.git "$REPO"
+            fi
+
+            # leadminer deploy
+            ( cd leadminer_$TARGET; docker compose down; git restore docker-compose.yml; git fetch; git reset --hard origin/main)
+            ( cd leadminer.io; . .env.$TARGET ; git fetch; git reset --hard origin/main; psql \
                 -Atx "$PG_CONNECTION_STRING" \
                 -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
             )
-            
+
             export GOOGLE_SECRET
             export GOOGLE_CLIENT_ID
             export AZURE_SECRET
             export AZURE_CLIENT_ID
             export SUPABASE_SERVICE_ROLE_KEY
+            export SUPABASE_ANON_KEY
             export PG_CONNECTION_STRING
             export LEADMINER_API_HASH_SECRET
             export REDIS_HOST
@@ -51,11 +74,14 @@ jobs:
 
             envsubst < leadminer.io/.env.$TARGET > leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
-            cd leadminer_$TARGET
 
+            cd leadminer_$TARGET
+            # Remove old leadminer images
             docker images --format '{{.Repository}}:{{.Tag}}' | grep 'lead' | xargs -n 1 docker rmi
-            docker compose up -d \
+            docker compose --env-file .env up -d \
               --build \
               --force-recreate
-            
+
+            #Remove unused images
             docker image prune -a -f
+
