@@ -23,11 +23,13 @@ export function hasHeaderWithValue(
   headerValues: string[]
 ) {
   const headerValue = getSpecificHeader(header, [headerField]);
-  return (
-    headerValue &&
-    headerValues.some((value) =>
-      headerValue[0].toLocaleLowerCase().includes(value)
-    )
+
+  if (!headerValue) {
+    return false;
+  }
+
+  return headerValues.some((value) =>
+    headerValue[0].toLocaleLowerCase().includes(value)
   );
 }
 
