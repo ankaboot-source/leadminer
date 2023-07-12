@@ -177,7 +177,7 @@ describe('Email Message', () => {
       expect(message.date).toEqual('UNKOWN');
     });
 
-    it('should return null if the date is not a valid date', () => {
+    it('should return "UNKOWN" if the date is not a valid date', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -190,7 +190,7 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.date).toBeNull();
+      expect(message.date).toEqual('UNKOWN');
     });
   });
 
