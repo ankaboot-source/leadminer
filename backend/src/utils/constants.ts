@@ -86,7 +86,6 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'password',
   'reply-',
   'send-as-noreply',
-  'support',
   'systemalert',
   'unsubscribe',
   'no-response'
