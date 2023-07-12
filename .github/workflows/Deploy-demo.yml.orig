@@ -14,7 +14,6 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_SECRET: ${{ secrets.AZURE_SECRET }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY}}
           PG_CONNECTION_STRING: ${{ secrets.PG_CONNECTION_STRING }}
           LEADMINER_API_HASH_SECRET: ${{ secrets.LEADMINER_API_HASH_SECRET }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
@@ -41,7 +40,6 @@ jobs:
             export AZURE_SECRET
             export AZURE_CLIENT_ID
             export SUPABASE_SERVICE_ROLE_KEY
-            export SUPABASE_ANON_KEY
             export PG_CONNECTION_STRING
             export LEADMINER_API_HASH_SECRET
             export REDIS_HOST
