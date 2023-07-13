@@ -261,15 +261,16 @@ export default class EmailMessage {
 
           const tags = this.taggingEngine
             .getTags({ header: this.header, email: validContact.email })
-            .filter(
-              (t: ContactTag) =>
-                !EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name)
-            )
-            .map((tag: ContactTag) => ({
-              name: tag.name,
-              reachable: tag.reachable,
-              source: tag.source
-            }));
+            .reduce((result: ContactTag[], tag) => {
+              if (!EmailMessage.IGNORED_MESSAGE_TAGS.includes(tag.name)) {
+                result.push({
+                  name: tag.name,
+                  reachable: tag.reachable,
+                  source: tag.source
+                });
+              }
+              return result;
+            }, []);
 
           validatedContacts.push({
             person,
