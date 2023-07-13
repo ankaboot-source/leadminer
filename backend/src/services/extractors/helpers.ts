@@ -5,19 +5,8 @@ import {
   REGEX_HEADER,
   REGEX_HEADER_EMAIL_SPLIT_PATTERN,
   REGEX_REMOVE_QUOTES
-} from '../constants';
-
-/**
- * Extract Emails from body.
- * @param  data A string that represents the mail body
- */
-export function extractNameAndEmailFromBody(data: string) {
-  const reg = _decode(data).match(REGEX_BODY);
-  if (reg) {
-    return [...new Set(reg)];
-  }
-  return [];
-}
+} from '../../utils/constants';
+import { RegexContact } from './types';
 
 /**
  * Returns the extracted name from a space-separated name email input.
@@ -40,13 +29,8 @@ export function cleanName(name: string) {
  * Extracts name and email addresses from a string of emails.
  * @param emails - String of emails to extract from.
  */
-export function extractNameAndEmail(emails: string) {
-  const result: {
-    name: string;
-    address: string;
-    identifier: string;
-    domain: string;
-  }[] = [];
+export function extractNameAndEmail(emails: string): RegexContact[] {
+  const result = [];
 
   for (const emailStr of emails.split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)) {
     if (emailStr.trim() === '') {
@@ -77,6 +61,33 @@ export function extractNameAndEmail(emails: string) {
       domain: `${domain}.${tld}`
     });
   }
+
+  return result;
+}
+
+/**
+ * Extracts names and emails from the email body.
+ * @param data The email body data.
+ * @returns An array of objects containing the extracted name and email details.
+ */
+export function extractNameAndEmailFromBody(data: string): RegexContact[] {
+  const decodedData = _decode(data);
+  const matches = Array.from(decodedData.matchAll(REGEX_BODY));
+
+  if (!matches || matches.length === 0) {
+    return [];
+  }
+
+  const result = matches.map((match) => {
+    const { address, identifier, domain, tld } = match.groups || {};
+
+    return {
+      name: '',
+      address,
+      identifier,
+      domain: `${domain}.${tld}`
+    };
+  });
 
   return result;
 }

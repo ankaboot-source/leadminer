@@ -1,7 +1,6 @@
-import { DomainType, Tag } from '../../services/tagging/types';
+import { DomainType } from '../../services/tagging/types';
 import {
   AIRBNB_EMAIL_ADDRESS_INCLUDES,
-  REACHABILITY,
   GROUP_EMAIL_ADDRESS_INCLUDES,
   LINKEDIN_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
@@ -9,6 +8,43 @@ import {
   ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../constants';
+import { getSpecificHeader } from './emailHeaderHelpers';
+
+/**
+ * Checks if a particular header field has a value from a given list of possible values
+ * @param header - Header object.
+ * @param headerField - A header key.
+ * @param headerValues - A list of possible header values.
+ * @returns
+ */
+export function hasHeaderWithValue(
+  header: any,
+  headerField: string,
+  headerValues: string[]
+) {
+  const headerValue = getSpecificHeader(header, [headerField]);
+
+  if (!headerValue) {
+    return false;
+  }
+
+  return headerValues.some((value) =>
+    headerValue[0].toLocaleLowerCase().includes(value)
+  );
+}
+
+/**
+ * Checks if a particular header field starts with one of the prefixes
+ * @param header - Header object.
+ * @param prefixes - A list of possible header key prefixes.
+ * @returns
+ */
+export function hasHeaderFieldStartsWith(header: any, prefixes: string[]) {
+  const headerFields = Object.keys(header);
+  return headerFields.some((field) =>
+    prefixes.some((prefix) => field.toLowerCase().startsWith(prefix))
+  );
+}
 
 /**
  * Returns the type type of the email address based on its domain type.
@@ -101,105 +137,4 @@ export function isLinkedin(emailAddress: string) {
   return LINKEDIN_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
-}
-
-/**
- * Retrieves a single tag for an email address based on its properties.
- *
- * @param address - The email address.
- * @param name - The name associated with the email address.
- * @param domainType - The type of domain the email address belongs to.
- * @returns A tag for the email address, or null if no tag is found.
- */
-export function getEmailTag(
-  { address, name }: { address: string; name: string },
-  domainType: DomainType
-): Tag[] | null {
-  const tagSource = 'refined#email_address';
-  const emailType = findEmailAddressType(domainType);
-  const emailTags: Tag[] = [];
-
-  if (emailType === 'invalid') {
-    return null;
-  }
-
-  if (emailType === 'personal') {
-    return [
-      {
-        name: emailType,
-        reachable: REACHABILITY.DIRECT_PERSON,
-        source: tagSource
-      }
-    ];
-  }
-
-  if (isNoReply(address)) {
-    return [
-      {
-        name: 'no-reply',
-        reachable: REACHABILITY.NONE,
-        source: tagSource
-      }
-    ];
-  }
-
-  if (isTransactional(address)) {
-    return [
-      {
-        name: 'transactional',
-        reachable: REACHABILITY.NONE,
-        source: tagSource
-      }
-    ];
-  }
-
-  if (emailType === 'professional') {
-    emailTags.push({
-      name: emailType,
-      reachable: REACHABILITY.DIRECT_PERSON,
-      source: tagSource
-    });
-  }
-
-  if (isNewsletter(address) || name?.includes('newsletter')) {
-    emailTags.push({
-      name: 'newsletter',
-      reachable: REACHABILITY.UNSURE,
-      source: tagSource
-    });
-  }
-
-  if (isAirbnb(address)) {
-    emailTags.push({
-      name: 'airbnb',
-      reachable: REACHABILITY.INDIRECT_PERSON,
-      source: tagSource
-    });
-  }
-
-  if (isRole(address)) {
-    emailTags.push({
-      name: 'role',
-      reachable: REACHABILITY.UNSURE,
-      source: tagSource
-    });
-  }
-
-  if (isLinkedin(address)) {
-    emailTags.push({
-      name: 'linkedin',
-      reachable: REACHABILITY.INDIRECT_PERSON,
-      source: tagSource
-    });
-  }
-
-  if (isGroup(address)) {
-    emailTags.push({
-      name: 'group',
-      reachable: REACHABILITY.MANY,
-      source: tagSource
-    });
-  }
-
-  return emailTags.length > 0 ? emailTags : null;
 }

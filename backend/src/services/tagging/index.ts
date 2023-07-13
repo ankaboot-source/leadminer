@@ -1,14 +1,19 @@
-import groupEmailMessage from './group';
-import linkedinEmailMessage from './linkedin';
-import newsletterEmailMessage from './newsletter';
-import transactionalEmailMessage from './transactional';
-import { EmailMessageTagExtractor } from './types';
+import {
+  groupEmailMessage,
+  linkedinEmailMessage,
+  newsletterEmailMessage,
+  transactionalEmailMessage
+} from './tags';
+import { Tag } from './types';
+import EmailMessageTagging from './engines/EmailMessageEngine';
 
-const messageTaggingRules: EmailMessageTagExtractor[] = [
+const tags: Tag[] = [
   linkedinEmailMessage,
   newsletterEmailMessage,
   groupEmailMessage,
   transactionalEmailMessage // Always keep transactional as the last rule to check
 ];
 
-export default messageTaggingRules;
+const EmailTaggingEngine = new EmailMessageTagging(tags);
+
+export default EmailTaggingEngine;

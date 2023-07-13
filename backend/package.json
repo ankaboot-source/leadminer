@@ -61,7 +61,7 @@
     "@types/express": "^4.17.17",
     "@types/imap": "^0.8.37",
     "@types/jsonwebtoken": "^9.0.2",
-    "@types/node": "^18.16.12",
+    "@types/node": "^18.16.19",
     "@types/pg": "^8.6.6",
     "@types/pg-format": "^1.0.2",
     "@types/quoted-printable": "^1.0.0",

@@ -1,4 +1,4 @@
-import { getSpecificHeader } from '../../../utils/helpers/emailMessageHelpers';
+import { getSpecificHeader } from '../../../utils/helpers/emailHeaderHelpers';
 import { EmailMessageContent, TaggingCondition } from '../types';
 
 export default class HasHeaderField implements TaggingCondition {

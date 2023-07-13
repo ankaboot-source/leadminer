@@ -4,7 +4,7 @@ const headerRegexAddress =
 const headerRegexEmailSplitPattern = /,\s?(?=(?:[^"]*"[^"]*")*[^"]*$)/g;
 
 const bodyRegex =
-  /(?<=<|\s|^|"mailto:)(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18})(?=$|\s|>|")/gi;
+  /(?<=<|\s|^|"mailto:)(?<address>(?<identifier>[\w-]+(?:[+.][\w]+)*)@(?<domain>(?:[\w-]+\.)*\w[\w-]{0,66})\.(?<tld>[a-z]{2,18})(?=$|\s|>|"))/gi;
 const listRegex = /<[^<]{1,255}>$/;
 
 // eslint-disable-next-line
@@ -86,7 +86,6 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'password',
   'reply-',
   'send-as-noreply',
-  'support',
   'systemalert',
   'unsubscribe',
   'no-response'
