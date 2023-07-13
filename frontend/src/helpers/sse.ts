@@ -51,6 +51,7 @@ class SSE {
           }
         },
         signal: this.ctrl.signal,
+        openWhenHidden: true
       }
     );
   }
