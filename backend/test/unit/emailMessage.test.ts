@@ -1,8 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { TaggingEngine } from '../../src/services/tagging/types';
 import EmailMessage from '../../src/services/extractors/EmailMessage';
-// import { beforeEach } from '@jest/globals';
-// import { groupEmailMessage, linkedinEmailMessage, transactionalEmailMessage } from '../../src/services/tagging/tags';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
