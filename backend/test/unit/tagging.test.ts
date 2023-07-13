@@ -19,7 +19,7 @@ import {
   ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../../src/utils/constants';
-import { DomainType } from '../../src/services/tagging/types';
+import { BasicTag, DomainType, Tag } from '../../src/services/tagging/types';
 
 /**
  * Helper function used to generate emails from a list of email parts.
@@ -54,6 +54,60 @@ function generateEmails(emailParts: string[]) {
   });
 
   return emails;
+}
+/**
+ * Tests common logic for tag verification.
+ * @param tagToTest - The tag to be tested.
+ * @param expectedOutputTag - The expected output tag.
+ */
+function testTagsCommonLogic(tagToTest: Tag, expectedOutputTag: BasicTag) {
+  const { rules, tag } = tagToTest;
+
+  for (const { fields, conditions } of rules) {
+    for (const condition of conditions) {
+      if ('possibleHeaderFields' in condition) {
+        (condition.possibleHeaderFields as string[]).forEach(
+          (field: string) => {
+            it(`Should tag as ${tag.name} if it has a "${field}" in the header`, () => {
+              const emailHeader = { [field]: ['test'] };
+              const tags =
+                EmailTaggingEngine.getEmailMessageHeaderTags(emailHeader);
+
+              expect(tags).toEqual([{ ...expectedOutputTag, fields }]);
+            });
+          }
+        );
+      }
+
+      if ('possibleHeaderPrefixes' in condition) {
+        (condition.possibleHeaderPrefixes as string[]).forEach((prefix) => {
+          it(`Should tag as ${tag.name} if it has a header field with "${prefix}" as prefix`, () => {
+            const emailHeader = { [`${prefix}-test`]: ['test'] };
+            const tags =
+              EmailTaggingEngine.getEmailMessageHeaderTags(emailHeader);
+
+            expect(tags).toEqual([{ ...expectedOutputTag, fields }]);
+          });
+        });
+      }
+
+      if ('values' in condition) {
+        const { values, field } = condition as unknown as {
+          values: string[];
+          field: string;
+        };
+        (values as string[]).forEach((value) => {
+          it(`Should tag as ${tag.name} if it has an "${field}" field with "${value}" as value`, () => {
+            const emailHeader = { [field]: [value] };
+            const tags =
+              EmailTaggingEngine.getEmailMessageHeaderTags(emailHeader);
+
+            expect(tags).toEqual([{ ...expectedOutputTag, fields }]);
+          });
+        });
+      }
+    }
+  }
 }
 
 describe('Tagging Conditions', () => {
@@ -160,221 +214,240 @@ describe('test engines.EmailTaggingEngine', () => {
   });
 
   describe('EmailTaggingEngine.getEmailMessageHeaderTags', () => {
-    const testCase = [
-      {
-        input: transactionalEmailMessage,
-        output: {
-          source: 'refined#message_header',
-          name: 'transactional',
-          reachable: 0
-        }
-      },
-      {
-        input: newsletterEmailMessage,
-        output: {
-          source: 'refined#message_header',
-          name: 'newsletter',
-          reachable: 3
-        }
-      },
-      {
-        input: groupEmailMessage,
-        output: {
-          source: 'refined#message_header',
-          name: 'group',
-          reachable: 2
-        }
-      },
-      {
-        input: linkedinEmailMessage,
-        output: {
-          source: 'refined#message_header',
-          name: 'linkedin',
-          reachable: 2
-        }
-      }
-    ];
-
-    // Check that all registred tags work well
-    for (const { input, output } of testCase) {
-      const { rules, tag } = input;
-
-      for (const { fields, conditions } of rules) {
-        for (const condition of conditions) {
-          if ('possibleHeaderFields' in condition) {
-            (condition.possibleHeaderFields as string[]).forEach(
-              (field: string) => {
-                it(`Should tag as ${tag.name} if it has a "${field}" in the header`, () => {
-                  const emailHeader = { [field]: ['test'] };
-                  const tags =
-                    EmailTaggingEngine.getEmailMessageHeaderTags(emailHeader);
-
-                  expect(tags).toEqual([{ ...output, fields }]);
-                });
-              }
-            );
-          }
-
-          if ('possibleHeaderPrefixes' in condition) {
-            (condition.possibleHeaderPrefixes as string[]).forEach((prefix) => {
-              it(`Should tag as ${tag.name} if it has a header field with "${prefix}" as prefix`, () => {
-                const emailHeader = { [`${prefix}-test`]: ['test'] };
-                const tags =
-                  EmailTaggingEngine.getEmailMessageHeaderTags(emailHeader);
-
-                expect(tags).toEqual([{ ...output, fields }]);
-              });
-            });
-          }
-
-          if ('values' in condition) {
-            const { values, field } = condition as unknown as {
-              values: string[];
-              field: string;
-            };
-            (values as string[]).forEach((value) => {
-              it(`Should tag as ${tag.name} if it has an "${field}" field with "${value}" as value`, () => {
-                const emailHeader = { [field]: [value] };
-                const tags =
-                  EmailTaggingEngine.getEmailMessageHeaderTags(emailHeader);
-
-                expect(tags).toEqual([{ ...output, fields }]);
-              });
-            });
-          }
-        }
-      }
-    }
-
-    it("shouldn't tag as newsletter if header has list-post", () => {
-      header['list-post'] = ['test'];
-      header['list-id'] = ['test'];
-
-      const tags = EmailTaggingEngine.getEmailMessageHeaderTags(header);
-
-      expect(tags).toEqual([
-        {
-          name: 'group',
-          reachable: 2,
-          source: 'refined#message_header',
-          fields: ['list-post']
-        }
-      ]);
-    });
-
     it('should return empty array if there are no tags', () => {
       const tags = EmailTaggingEngine.getEmailMessageHeaderTags(header);
 
       expect(tags).toHaveLength(0);
     });
+
+    describe('Testing transactional email header tag', () => {
+      const input: Tag = transactionalEmailMessage;
+      const output: BasicTag = {
+        source: 'refined#message_header',
+        name: 'transactional',
+        reachable: 0
+      };
+
+      testTagsCommonLogic(input, output);
+    });
+
+    describe('Testing newsletter email header tag', () => {
+      const input: Tag = newsletterEmailMessage;
+      const output: BasicTag = {
+        source: 'refined#message_header',
+        name: 'newsletter',
+        reachable: 3
+      };
+
+      testTagsCommonLogic(input, output);
+
+      it("shouldn't tag as newsletter if header has list-post", () => {
+        header['list-post'] = ['test'];
+        header['list-id'] = ['test'];
+
+        const tags = EmailTaggingEngine.getEmailMessageHeaderTags(header);
+
+        expect(tags).toEqual([
+          {
+            name: 'group',
+            reachable: 2,
+            source: 'refined#message_header',
+            fields: ['list-post']
+          }
+        ]);
+      });
+    });
+
+    describe('Testing group email header tag', () => {
+      const input: Tag = groupEmailMessage;
+      const output: BasicTag = {
+        source: 'refined#message_header',
+        name: 'group',
+        reachable: 2
+      };
+
+      testTagsCommonLogic(input, output);
+    });
+
+    describe('Testing linkedin email header tag', () => {
+      const input: Tag = linkedinEmailMessage;
+      const output: BasicTag = {
+        source: 'refined#message_header',
+        name: 'linkedin',
+        reachable: 2
+      };
+
+      testTagsCommonLogic(input, output);
+    });
   });
 
   describe('EmailTaggingEngine.getEmailAddressTags', () => {
-    const testCases = [
-      {
-        input: generateEmails(NOREPLY_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 0,
-            name: 'no-reply',
-            source: 'refined#email_address'
-          }
-        ]
-      },
-      {
-        input: generateEmails(TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 0,
-            name: 'transactional',
-            source: 'refined#email_address'
-          }
-        ]
-      },
-      {
-        input: generateEmails(NEWSLETTER_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 3,
-            name: 'newsletter',
-            source: 'refined#email_address'
-          }
-        ]
-      },
-      {
-        input: generateEmails(ROLE_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 1,
-            name: 'professional',
-            source: 'refined#email_address'
-          },
-          {
-            reachable: 3,
-            name: 'role',
-            source: 'refined#email_address'
-          }
-        ]
-      },
-      {
-        input: generateEmails(LINKEDIN_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 1,
-            name: 'professional',
-            source: 'refined#email_address'
-          },
-          {
-            reachable: 2,
-            name: 'linkedin',
-            source: 'refined#email_address'
-          }
-        ]
-      },
-      {
-        input: generateEmails(AIRBNB_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 1,
-            name: 'professional',
-            source: 'refined#email_address'
-          },
-          {
-            reachable: 2,
-            name: 'airbnb',
-            source: 'refined#email_address'
-          }
-        ]
-      },
-      {
-        input: generateEmails(GROUP_EMAIL_ADDRESS_INCLUDES),
-        output: [
-          {
-            reachable: 1,
-            name: 'professional',
-            source: 'refined#email_address'
-          },
-          {
-            reachable: 2,
-            name: 'group',
-            source: 'refined#email_address'
-          }
-        ]
-      }
-    ];
+    describe('Testing no-reply email addresses tagging', () => {
+      const emailsToTest = generateEmails(NOREPLY_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 0,
+          name: 'no-reply',
+          source: 'refined#email_address'
+        }
+      ];
 
-    // test all registred tags work well
-    for (const { input: emails, output: expectedTags } of testCases) {
-      emails.forEach((email) => {
-        const tag = expectedTags.map(({ name }) => name).join(',');
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
 
         it(`should correctly tag "${email.address} as ${tag}`, () => {
           const tags = EmailTaggingEngine.getEmailAddressTags(email);
 
-          expect(tags).toEqual(expectedTags);
+          expect(tags).toEqual(expectedOutputTags);
         });
       });
-    }
+    });
+
+    describe('Testing transactional email addresses tagging', () => {
+      const emailsToTest = generateEmails(TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 0,
+          name: 'transactional',
+          source: 'refined#email_address'
+        }
+      ];
+
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+
+        it(`should correctly tag "${email.address} as ${tag}`, () => {
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
+
+          expect(tags).toEqual(expectedOutputTags);
+        });
+      });
+    });
+
+    describe('Testing newsletter email addresses tagging', () => {
+      const emailsToTest = generateEmails(NEWSLETTER_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 3,
+          name: 'newsletter',
+          source: 'refined#email_address'
+        }
+      ];
+
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+
+        it(`should correctly tag "${email.address} as ${tag}`, () => {
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
+
+          expect(tags).toEqual(expectedOutputTags);
+        });
+      });
+    });
+
+    describe('Testing role email addresses tagging', () => {
+      const emailsToTest = generateEmails(ROLE_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 1,
+          name: 'professional',
+          source: 'refined#email_address'
+        },
+        {
+          reachable: 3,
+          name: 'role',
+          source: 'refined#email_address'
+        }
+      ];
+
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+
+        it(`should correctly tag "${email.address} as ${tag}`, () => {
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
+
+          expect(tags).toEqual(expectedOutputTags);
+        });
+      });
+    });
+
+    describe('Testing linkedin email addresses tagging', () => {
+      const emailsToTest = generateEmails(LINKEDIN_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 1,
+          name: 'professional',
+          source: 'refined#email_address'
+        },
+        {
+          reachable: 2,
+          name: 'linkedin',
+          source: 'refined#email_address'
+        }
+      ];
+
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+
+        it(`should correctly tag "${email.address} as ${tag}`, () => {
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
+
+          expect(tags).toEqual(expectedOutputTags);
+        });
+      });
+    });
+
+    describe('Testing airbnb email addresses tagging', () => {
+      const emailsToTest = generateEmails(AIRBNB_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 1,
+          name: 'professional',
+          source: 'refined#email_address'
+        },
+        {
+          reachable: 2,
+          name: 'airbnb',
+          source: 'refined#email_address'
+        }
+      ];
+
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+
+        it(`should correctly tag "${email.address} as ${tag}`, () => {
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
+
+          expect(tags).toEqual(expectedOutputTags);
+        });
+      });
+    });
+
+    describe('Testing group email addresses tagging', () => {
+      const emailsToTest = generateEmails(GROUP_EMAIL_ADDRESS_INCLUDES);
+      const expectedOutputTags: BasicTag[] = [
+        {
+          reachable: 1,
+          name: 'professional',
+          source: 'refined#email_address'
+        },
+        {
+          reachable: 2,
+          name: 'group',
+          source: 'refined#email_address'
+        }
+      ];
+
+      emailsToTest.forEach((email) => {
+        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+
+        it(`should correctly tag "${email.address} as ${tag}`, () => {
+          const tags = EmailTaggingEngine.getEmailAddressTags(email);
+
+          expect(tags).toEqual(expectedOutputTags);
+        });
+      });
+    });
   });
 
   describe('EmailTaggingEngine.getTags', () => {
