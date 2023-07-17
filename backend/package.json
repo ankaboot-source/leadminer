@@ -30,6 +30,8 @@
     "@sentry/node": "^7.56.0",
     "@sentry/tracing": "^7.56.0",
     "@supabase/supabase-js": "^2.25.0",
+    "@types/axios": "^0.14.0",
+    "axios": "^1.4.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
