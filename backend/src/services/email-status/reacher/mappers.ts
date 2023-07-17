@@ -23,7 +23,7 @@ export function reacherResultToEmailStatus(
 ): EmailStatusResult {
   return {
     email: reacherResult.input,
-    status: reachableToEmailStatus(reacherResult!.is_reachable),
+    status: reachableToEmailStatus(reacherResult.is_reachable),
     details: {
       isRole:
         'is_role_account' in reacherResult.misc

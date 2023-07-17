@@ -20,14 +20,14 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
   async verify(email: string): Promise<EmailStatusResult> {
     try {
       const { data, error } = await this.reacherClient.checkSingleEmail(email);
-      if (error) {
+      if (error && !data) {
         return {
           email,
           status: Status.UNKNOWN
         };
       }
 
-      return reacherResultToEmailStatus(data!);
+      return reacherResultToEmailStatus(data);
     } catch (error) {
       return {
         email,
@@ -49,7 +49,7 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
     const { data: jobSubmitData, error: jobSubmitError } =
       await this.reacherClient.createBulkVerificationJob(emails);
 
-    if (jobSubmitError) {
+    if (jobSubmitError && !jobSubmitData) {
       this.logger.error(
         'Failed creating bulk verification job',
         jobSubmitError
@@ -57,7 +57,7 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
       return this.defaultBulkResults(emails);
     }
 
-    const jobId = jobSubmitData!.job_id;
+    const jobId = jobSubmitData.job_id;
 
     const jobSuccess = await this.pollJobStatus(jobId);
 
