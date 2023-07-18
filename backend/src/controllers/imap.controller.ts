@@ -6,7 +6,7 @@ import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
-import { hashEmail } from '../utils/helpers/hashHelpers';
+import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './helpers';
 
