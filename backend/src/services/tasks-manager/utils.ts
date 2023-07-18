@@ -1,6 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 
+import { customAlphabet } from 'nanoid/async';
 import { RedactedTask, Task } from './types';
+import { FLICKR_BASE_58_CHARSET } from '../../utils/constants';
+import ENV from '../../config';
 
 /**
  * Removes sensitive data from a task object.
@@ -22,4 +25,14 @@ export function redactSensitiveData(task: Task): RedactedTask {
       folders: task.fetcher.folders
     }
   };
+}
+
+/**
+ * Generates a random ID string using the Flickr Base58 encoding scheme.
+ */
+export function flickrBase58IdGenerator() {
+  return customAlphabet(
+    FLICKR_BASE_58_CHARSET,
+    ENV.LEADMINER_MINING_ID_GENERATOR_LENGTH
+  );
 }
