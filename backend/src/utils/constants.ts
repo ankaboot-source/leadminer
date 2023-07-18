@@ -42,7 +42,9 @@ export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.linkedin.com'];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',
-  '@newsletter.',
+  '@newsletter',
+  'newsletters@',
+  '@newsletters',
   '@substack.io'
 ]; // add newletter domains;
 export const GROUP_EMAIL_ADDRESS_INCLUDES = [
@@ -119,5 +121,6 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'carreer@',
   'formation@',
   'bienvenue@',
-  'marketing@'
+  'marketing@',
+  'hey@'
 ];
