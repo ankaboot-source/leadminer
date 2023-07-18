@@ -90,7 +90,7 @@
             </div>
             <q-select
               v-if="miningSources.length > 1"
-              v-model="activeMiningSource"
+              v-model="leadminerStore.activeMiningSource"
               class="q-mt-md"
               outlined
               :options="miningSources"
@@ -106,7 +106,6 @@
             <div class="bg-grey-1 text-blue-grey-10">
               <TreeCard
                 v-if="shouldShowTreeCard"
-                :boxes="boxes"
                 :class="{ disabled: activeMiningTask }"
               />
             </div>
@@ -256,7 +255,7 @@ const props = defineProps({
   isLoadingBoxes: { type: Boolean, required: true },
 });
 const emit = defineEmits<{
-  (e: "get-boxes", activeMiningSource: MiningSource): void;
+  (e: "get-boxes"): void;
 }>();
 
 const leadminerStore = useLeadminerStore();
@@ -277,8 +276,6 @@ const imapPassword = ref("");
 const miningSources = computed<MiningSource[]>(
   () => leadminerStore.miningSources
 );
-
-const activeMiningSource = ref<MiningSource>();
 
 const isLoadingSources = computed(() => leadminerStore.isLoadingSources);
 const boxes = computed(() => leadminerStore.boxes);
@@ -308,17 +305,10 @@ function getIconByMiningSource(miningSource: MiningSource) {
 }
 
 function onRefreshImapTree() {
-  const miningSource =
-    miningSources.value.length === 1
-      ? miningSources.value[0]
-      : activeMiningSource.value;
-  if (miningSource) {
-    emit("get-boxes", miningSource);
-  }
+  emit("get-boxes");
 }
 
 function onMiningSourceChanged() {
-  leadminerStore.activeMiningSource = activeMiningSource.value;
   onRefreshImapTree();
 }
 

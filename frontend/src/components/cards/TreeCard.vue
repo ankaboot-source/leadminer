@@ -1,10 +1,10 @@
 <template>
   <q-tree
     ref="tree"
-    v-model:ticked="selected"
+    v-model:ticked="leadminerStore.selectedBoxes"
     class="col-10 col-sm-6 q-ma-sm"
     icon="arrow_forward_ios"
-    :nodes="$props.boxes"
+    :nodes="leadminerStore.boxes"
     node-key="path"
     color="teal"
     control-color="teal"
@@ -45,79 +45,8 @@
   </q-tree>
 </template>
 
-<script>
-import objectScan from "object-scan";
+<script setup lang="ts">
 import { useLeadminerStore } from "src/store/leadminer";
-import { defineComponent, ref } from "vue";
 
-const EMAIL_EXCLUDED_FOLDERS = [
-  "mailspring",
-  "outbox",
-  "drafts",
-  "junk",
-  "trash",
-  "\\all",
-  "\\drafts",
-  "\\junk",
-  "\\trash",
-];
-
-export default defineComponent({
-  name: "TreeCard",
-  props: {
-    boxes: {
-      type: Array,
-      default() {
-        return [];
-      },
-    },
-  },
-  setup() {
-    const leadminerStore = useLeadminerStore();
-
-    return { leadminerStore };
-  },
-  data() {
-    return {
-      selected: ref(this.getDefaultSelectedFolders(this.$props.boxes)),
-    };
-  },
-
-  watch: {
-    selected(newValue) {
-      this.leadminerStore.selectedBoxes = newValue;
-    },
-  },
-  methods: {
-    /**
-     * Filters out default selected folders from the input boxes based on email service
-     * @param {Array} boxes - The array of folder names to filter
-     * @returns {Array} - The filtered array of boxes
-     */
-    getDefaultSelectedFolders(boxes) {
-      const filteredBoxes = [];
-
-      objectScan(["**.path"], {
-        joined: true,
-        filterFn: ({ parent }) => {
-          const { path, attribs } = parent;
-          const folder = path.split("/");
-          const folderName = folder.pop();
-          const folderParent = folder.pop();
-
-          const isExcluded = [...attribs, folderName, folderParent]
-            .filter(Boolean)
-            .map((name) => name.toLowerCase())
-            .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
-
-          if (!isExcluded) {
-            filteredBoxes.push(path);
-          }
-        },
-      })(boxes);
-
-      return filteredBoxes;
-    },
-  },
-});
+const leadminerStore = useLeadminerStore();
 </script>
