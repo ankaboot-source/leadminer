@@ -260,7 +260,11 @@ export default class EmailMessage {
           };
 
           const tags = this.taggingEngine
-            .getTags({ header: this.header, email: validContact.email })
+            .getTags({
+              header: this.header,
+              email: validContact.email,
+              field: validContact.sourceField
+            })
             .reduce((result: ContactTag[], tag) => {
               if (!EmailMessage.IGNORED_MESSAGE_TAGS.includes(tag.name)) {
                 result.push({
