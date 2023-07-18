@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "target": "esnext",
-    "allowJs": true,
+    "allowJs": false,
     "module": "commonjs",
     "esModuleInterop": true,
     "resolveJsonModule": true,
