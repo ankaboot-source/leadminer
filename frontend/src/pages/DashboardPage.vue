@@ -108,10 +108,27 @@ const isLoadingStartMining = ref(false);
 const isLoadingStopMining = ref(false);
 const isLoadingBoxes = ref(false);
 
+async function getBoxes() {
+  try {
+    isLoadingBoxes.value = true;
+    isLoadingStartMining.value = true;
+    await leadminerStore.getBoxes();
+
+    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+  } catch (_) {
+    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+  } finally {
+    isLoadingBoxes.value = false;
+    isLoadingStartMining.value = false;
+  }
+}
+
 onMounted(async () => {
   settingsDialogRef.value?.open();
   await leadminerStore.getMiningSources();
-  //   await getBoxes();
+  if (leadminerStore.activeMiningSource) {
+    await getBoxes();
+  }
 });
 
 const boxes = computed(() => leadminerStore.boxes);
@@ -176,21 +193,6 @@ async function startMining() {
   } catch (error) {
     showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
   } finally {
-    isLoadingStartMining.value = false;
-  }
-}
-
-async function getBoxes() {
-  try {
-    isLoadingBoxes.value = true;
-    isLoadingStartMining.value = true;
-    await leadminerStore.getBoxes();
-
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
-  } catch (_) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
-  } finally {
-    isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;
   }
 }

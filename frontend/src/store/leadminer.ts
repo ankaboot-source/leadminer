@@ -1,6 +1,7 @@
 import { AxiosError } from "axios";
 import { defineStore } from "pinia";
 import { api } from "src/boot/axios";
+import { BoxNode, getDefaultSelectedFolders } from "src/helpers/boxes";
 import { sse } from "src/helpers/sse";
 import { supabase } from "src/helpers/supabase";
 import { MiningSource, MiningTask } from "src/types/mining";
@@ -10,7 +11,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const miningTask = ref<MiningTask | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const activeMiningSource = ref<MiningSource | undefined>();
-  const boxes = ref<string[]>([]);
+  const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<string[]>([]);
 
   const errorMessage = ref("");
@@ -61,6 +62,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
 
       if (folders) {
         boxes.value = [...folders];
+        selectedBoxes.value = getDefaultSelectedFolders(folders);
         infoMessage.value = "Successfully retrieved IMAP boxes.";
       }
     } catch (err) {

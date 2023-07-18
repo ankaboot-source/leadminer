@@ -106,7 +106,6 @@
             <div class="bg-grey-1 text-blue-grey-10">
               <TreeCard
                 v-if="shouldShowTreeCard"
-                :boxes="boxes"
                 :class="{ disabled: activeMiningTask }"
               />
             </div>
