@@ -7,10 +7,10 @@ const DISPOSABLE_EMAIL_PROVIDERS_SAVE_LOCATION = join(
   'utils/Disposable.json'
 );
 const DISPOSABLE_EMAIL_PROVIDERS_REMOTE_PATH =
-  'https://raw.githubusercontent.com/ankaboot-source/open-data/main/disposable-email-domains.json';
+  'https://raw.githubusercontent.com/ankaboot-source/email-open-data/main/disposable-email-domains.json';
 
 const PUBLIC_EMAIL_PROVIDERS_REMOTE_PATH =
-  'https://raw.githubusercontent.com/ankaboot-source/open-data/main/public-email-providers.json';
+  'https://raw.githubusercontent.com/ankaboot-source/email-open-data/main/public-email-providers.json';
 const PUBLIC_EMAIL_PROVIDERS_SAVE_LOCATION = join(
   __dirname,
   'utils/FreeProviders.json'
