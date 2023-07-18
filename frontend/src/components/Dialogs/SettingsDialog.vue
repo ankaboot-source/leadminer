@@ -277,7 +277,9 @@ const miningSources = computed<MiningSource[]>(
   () => leadminerStore.miningSources
 );
 
-const activeMiningSource = ref<MiningSource>();
+const activeMiningSource = ref<MiningSource | undefined>(
+  leadminerStore.activeMiningSource
+);
 
 const isLoadingSources = computed(() => leadminerStore.isLoadingSources);
 const boxes = computed(() => leadminerStore.boxes);
