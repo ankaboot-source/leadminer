@@ -78,7 +78,7 @@ METHODS:
 
  */
 
-describe('Test taskManager helper functions', () => {
+describe('Test TaskManager helper functions', () => {
   describe('utils.redactSensitiveData()', () => {
     it('should redact sensitive data from task', () => {
       const task: Task = {
@@ -120,9 +120,9 @@ describe('Test taskManager helper functions', () => {
     });
   });
 
-  describe('flickrBase58IdGenerator', () => {
+  describe('utils.flickrBase58IdGenerator', () => {
     it('generates a random ID string', async () => {
-      const idGeneratorLength = 10; // Replace with the desired length of generated IDs
+      const idGeneratorLength = 10;
       const idGenerator = flickrBase58IdGenerator();
 
       const generatedId = await idGenerator(idGeneratorLength);
@@ -157,7 +157,7 @@ describe('TasksManager class', () => {
   let tasksManager: TasksManager;
 
   beforeEach(() => {
-    TasksManager.resetInstance(); // Reset the module cache
+    TasksManager.resetInstance(); // Reset singelton
     tasksManager = new TasksManager(
       fakeRedisClient,
       fakeRedisClient,
