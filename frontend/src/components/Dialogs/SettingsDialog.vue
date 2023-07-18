@@ -90,7 +90,7 @@
             </div>
             <q-select
               v-if="miningSources.length > 1"
-              v-model="activeMiningSource"
+              v-model="leadminerStore.activeMiningSource"
               class="q-mt-md"
               outlined
               :options="miningSources"
@@ -255,7 +255,7 @@ const props = defineProps({
   isLoadingBoxes: { type: Boolean, required: true },
 });
 const emit = defineEmits<{
-  (e: "get-boxes", activeMiningSource: MiningSource): void;
+  (e: "get-boxes"): void;
 }>();
 
 const leadminerStore = useLeadminerStore();
@@ -275,10 +275,6 @@ const imapPassword = ref("");
 
 const miningSources = computed<MiningSource[]>(
   () => leadminerStore.miningSources
-);
-
-const activeMiningSource = ref<MiningSource | undefined>(
-  leadminerStore.activeMiningSource
 );
 
 const isLoadingSources = computed(() => leadminerStore.isLoadingSources);
@@ -309,17 +305,10 @@ function getIconByMiningSource(miningSource: MiningSource) {
 }
 
 function onRefreshImapTree() {
-  const miningSource =
-    miningSources.value.length === 1
-      ? miningSources.value[0]
-      : activeMiningSource.value;
-  if (miningSource) {
-    emit("get-boxes", miningSource);
-  }
+  emit("get-boxes");
 }
 
 function onMiningSourceChanged() {
-  leadminerStore.activeMiningSource = activeMiningSource.value;
   onRefreshImapTree();
 }
 
