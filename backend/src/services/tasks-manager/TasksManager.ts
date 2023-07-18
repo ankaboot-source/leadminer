@@ -30,7 +30,7 @@ export default class TasksManager {
    */
   private readonly ACTIVE_MINING_TASKS = new Map<string, Task>();
 
-  private static instance: TasksManager;
+  private static instance: TasksManager | null;
 
   /**
    * Creates a new MiningTaskManager instance.
@@ -66,6 +66,10 @@ export default class TasksManager {
         await this.hasCompleted(miningId, progress);
       }
     });
+  }
+
+  static resetInstance() {
+    TasksManager.instance = null;
   }
 
   /**
