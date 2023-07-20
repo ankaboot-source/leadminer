@@ -95,13 +95,16 @@ export default function initializeMiningController(
             type: 'Google'
           });
 
-          res.redirect(`${ENV.FRONTEND_HOST}/dashboard`);
+          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
         } else {
           // User has not approved all the required scopes
-          res.status(403).send('Required scopes not granted.');
+          res.redirect(
+            301,
+            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=google&referrer=${state}`
+          );
         }
       } catch (error) {
-        res.status(500).send('Token exchange failed.');
+        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
       }
     },
 
@@ -178,13 +181,16 @@ export default function initializeMiningController(
             type: 'Azure'
           });
 
-          res.redirect(`${ENV.FRONTEND_HOST}/dashboard`);
+          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
         } else {
           // User has not approved all the required scopes
-          res.status(403).send('Required scopes not granted.');
+          res.redirect(
+            301,
+            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=azure&referrer=${state}`
+          );
         }
       } catch (error) {
-        res.status(500).send('Token exchange failed.');
+        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
       }
     },
 

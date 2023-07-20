@@ -218,6 +218,7 @@ import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
 import { showNotification } from "src/helpers/notification";
+import { addOAuthAccount } from "src/helpers/oauth";
 import { useLeadminerStore } from "src/store/leadminer";
 import { MiningSource } from "src/types/mining";
 import { computed, ref } from "vue";
@@ -369,18 +370,6 @@ async function onSubmitImapCredentials() {
     }
   } finally {
     isLoadingImapCredentialsCheck.value = false;
-  }
-}
-
-async function addOAuthAccount(provider: "azure" | "google") {
-  try {
-    const { data } = await api.post<{ authorizationUri: string }>(
-      `/imap/mine/sources/${provider}`
-    );
-    window.location.href = data.authorizationUri;
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
   }
 }
 

@@ -16,6 +16,7 @@ import { useRouter } from "vue-router";
 import { api } from "./boot/axios";
 import { supabase } from "./helpers/supabase";
 
+const SKIP_DASHBOARD_REDIRECT = ["/oauth-consent-error", "/account"];
 const $router = useRouter();
 
 supabase.auth.onAuthStateChange((event, session) => {
@@ -23,7 +24,11 @@ supabase.auth.onAuthStateChange((event, session) => {
     // All future API calls will be linked to the signed in user
     api.defaults.headers.common["x-sb-jwt"] = `${session.access_token}`;
   }
-  if (event === "SIGNED_IN") {
+
+  if (
+    event === "SIGNED_IN" &&
+    !SKIP_DASHBOARD_REDIRECT.includes($router.currentRoute.value.path)
+  ) {
     $router.push("/dashboard");
   }
 
