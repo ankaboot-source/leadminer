@@ -67,7 +67,7 @@ async function resetPassword() {
     }
     showNotification(
       $quasar,
-      "Reset password email successfully sent",
+      "If an account exists with this email address, you will receive password reset instructions",
       "positive",
       "check"
     );
