@@ -20,7 +20,8 @@ export function cleanName(name: string) {
     .replace(REGEX_REMOVE_QUOTES, '$2')
     .replace(REGEX_REMOVE_QUOTES, '$2') // In case Some inputs have nested quotes like this "'word'"}
     .replace(/[,;]+$/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
-    .replace(/^[,;]+/, ''); // Remove trailing ; and , to not cause errors later when exporting to csv
+    .replace(/^[,;]+/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
+    .replace(/\s\(?via\s.*$/, ''); // Remove the word "via" and text after it
 
   return cleanedName;
 }
