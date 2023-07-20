@@ -33,7 +33,6 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
   const result = [];
 
   for (const emailStr of emails.split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)) {
- 
     if (emailStr.trim() === '') {
       continue;
     }
@@ -57,11 +56,12 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
     } = match.groups || {};
 
     if (!address) {
-      continue
+      continue;
     }
 
     const cleanedName = name && cleanName(name);
-    const finalName = (cleanedName?.toLowerCase() !== address.toLowerCase()) ? cleanedName : null;
+    const finalName =
+      cleanedName?.toLowerCase() !== address.toLowerCase() ? cleanedName : null;
 
     result.push({
       name: finalName,
