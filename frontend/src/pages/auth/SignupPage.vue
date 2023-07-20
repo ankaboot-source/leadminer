@@ -13,7 +13,6 @@
       <q-form class="q-gutter-sm full-width" @submit="signUp()">
         <q-input
           v-model="email"
-          autofocus
           :rules="emailRules"
           class="full-width"
           filled

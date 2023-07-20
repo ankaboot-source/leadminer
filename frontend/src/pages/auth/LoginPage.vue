@@ -43,7 +43,6 @@
       >
         <q-input
           v-model="email"
-          autofocus
           filled
           class="full-width"
           :rules="emailRules"
