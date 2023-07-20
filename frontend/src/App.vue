@@ -15,9 +15,11 @@
 import { useRouter } from "vue-router";
 import { api } from "./boot/axios";
 import { supabase } from "./helpers/supabase";
+import { useLeadminerStore } from "./store/leadminer";
 
 const SKIP_DASHBOARD_REDIRECT = ["/oauth-consent-error", "/account"];
 const $router = useRouter();
+const $store = useLeadminerStore();
 
 supabase.auth.onAuthStateChange((event, session) => {
   if (session) {
@@ -34,6 +36,7 @@ supabase.auth.onAuthStateChange((event, session) => {
 
   if (event === "SIGNED_OUT") {
     $router.push("/");
+    $store.$reset();
   }
 });
 </script>
