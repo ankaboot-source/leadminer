@@ -8,7 +8,7 @@
   "OneEmailNameTest": ["<leadminerTeam@ankaboot.fr>"],
   "expectedEmailNameAddress": [
     {
-      "name": "",
+      "name": null,
       "address": "leadminerteam@ankaboot.fr",
       "identifier": "leadminerTeam",
       "domain": "ankaboot.fr"

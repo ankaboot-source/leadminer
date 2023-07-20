@@ -134,7 +134,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should return valid object with empty name if there is none.', () => {
     const generalOutput = [
       {
-        name: '',
+        name: null,
         identifier: 'leadminer',
         address: 'leadminer@teamankaboot.fr',
         domain: 'Teamankaboot.fr'
@@ -225,7 +225,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
     testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input)
-        .map(({ name }) => (name !== '' ? name : 'empty'))
+        .map(({ name }) => (name !== null ? name : 'empty'))
         .join(', ');
       expect(resultOutput).toEqual(output);
     });
@@ -295,13 +295,13 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       input: testStrings.join(','),
       output: [
         {
-          name: '',
+          name: null,
           identifier: 'leadminer1',
           address: 'leadminer1@teamankaboot.fr',
           domain: 'teamankaboot.fr'
         },
         {
-          name: '',
+          name: null,
           identifier: 'leadminer2',
           address: 'leadminer2@teamankaboot.fr',
           domain: 'teamankaboot.fr'
@@ -377,7 +377,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
     testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input)
-        .map(({ name }) => (name !== '' ? name : 'EMPTY'))
+        .map(({ name }) => (name !== null ? name : 'EMPTY'))
         .join(', ');
       expect(resultOutput).toEqual(output);
     });
@@ -393,7 +393,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should return the correct email object for a list-post header format', () => {
     const input = '<mailto:ga_montreuil_info@lists.riseup.net>';
     const expectedEmail = {
-      name: '',
+      name: null,
       address: 'ga_montreuil_info@lists.riseup.net',
       identifier: 'ga_montreuil_info',
       domain: 'lists.riseup.net'

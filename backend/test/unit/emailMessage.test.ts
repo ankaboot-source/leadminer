@@ -19,7 +19,7 @@ describe('Email Message', () => {
         {},
         'folder'
       );
-      expect(message.references).toEqual([]);
+      expect(message.references).toEqual(null);
     });
 
     it('should return an array of references if they are present in the header', () => {
@@ -105,7 +105,7 @@ describe('Email Message', () => {
           {},
           ''
         );
-        expect(message.listId).toBe('');
+        expect(message.listId).toBe(null);
       });
     });
 
@@ -122,7 +122,7 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.listId).toBe('');
+      expect(message.listId).toBe(null);
     });
 
     it('Should return empty string in the absence of list-id header field', () => {
@@ -138,7 +138,7 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.listId).toBe('');
+      expect(message.listId).toBe(null);
     });
   });
 
