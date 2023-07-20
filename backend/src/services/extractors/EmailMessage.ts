@@ -20,13 +20,13 @@ import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
 export default class EmailMessage {
   private static IGNORED_MESSAGE_TAGS = IGNORED_MESSAGE_TAGS;
 
-  readonly date: string | null;
-
-  readonly listId: string;
-
   readonly messageId: string;
 
-  readonly references: string[];
+  readonly date: string | null;
+
+  readonly listId: string | null;
+
+  readonly references: string[] | null;
 
   /**
    * Creates an instance of EmailMessage.
@@ -36,7 +36,7 @@ export default class EmailMessage {
    * @param {String} sequentialId - The sequential ID of the message.
    * @param {Object} header - The header of the message.
    * @param {Object} body - The body of the message.
-   * @param {String} folder - the path of the folder where the email is located
+   * @param {String} folderPath - the path of the folder where the email is located
    */
   constructor(
     private readonly taggingEngine: TaggingEngine,
@@ -58,36 +58,36 @@ export default class EmailMessage {
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns
    */
-  private getReferences(): string[] {
+  private getReferences(): string[] | null {
     const references = getSpecificHeader(this.header, ['references']);
 
     if (references) {
       return references[0].split(' ').filter((ref: string) => ref !== ''); // references in header comes as ["<r1> <r2> <r3> ..."]
     }
 
-    return [];
+    return null;
   }
 
   /**
    * Gets the `list-id` header field if the email is in a mailing list otherwise returns an empty string.
    * @returns
    */
-  private getListId(): string {
+  private getListId(): string | null {
     const listId = getSpecificHeader(this.header, ['list-id']);
 
     if (listId === null) {
-      return '';
+      return null;
     }
 
     const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
-    return matchId ? matchId[0] : '';
+    return matchId ? matchId[0] : null;
   }
 
   /**
    * Returns the date from the header object, or null if it is not present or not a valid date
    * @returns The UTC formatted date string or null if it is not present or not a valid date.
    */
-  private getDate() {
+  private getDate(): string | null {
     if (!this.header.date) {
       return null;
     }
@@ -127,7 +127,7 @@ export default class EmailMessage {
       folderPath: this.folderPath,
       messageId: this.messageId,
       references: this.references,
-      conversation: this.references.length > 0
+      conversation: this.references !== null
     };
   }
 
@@ -236,19 +236,19 @@ export default class EmailMessage {
           const person: Person = {
             name: validContact.name,
             email: validContact.email.address,
-            url: '',
-            image: '',
-            address: '',
-            alternateNames: [],
-            sameAs: [],
+            url: null,
+            image: null,
+            address: null,
+            alternateNames: null,
+            sameAs: null,
             givenName: validContact.name,
-            familyName: '',
-            jobTitle: '',
+            familyName: null,
+            jobTitle: null,
             identifiers: [validContact.email.identifier]
           };
 
           const pointOfContact: PointOfContact = {
-            name: validContact.name ?? '',
+            name: validContact.name,
             to: validContact.sourceField === 'to',
             cc: validContact.sourceField === 'cc',
             bcc: validContact.sourceField === 'bcc',

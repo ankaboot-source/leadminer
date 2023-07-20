@@ -33,29 +33,38 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
   const result = [];
 
   for (const emailStr of emails.split(REGEX_HEADER_EMAIL_SPLIT_PATTERN)) {
+ 
     if (emailStr.trim() === '') {
       continue;
     }
 
-    let cleanEmailStr = emailStr;
-
     // For emails with format <mailto:email@example.com> found in List-Post headers
-    if (emailStr.startsWith('<mailto:')) {
-      cleanEmailStr = emailStr.replace('<mailto:', '');
-    }
-
+    const cleanEmailStr = emailStr.startsWith('<mailto:')
+      ? emailStr.replace('<mailto:', '')
+      : emailStr;
     const match = cleanEmailStr.match(REGEX_HEADER);
+
     if (!match) {
       continue;
     }
 
-    const { name = '', address, identifier, domain, tld } = match.groups || {};
-    const cleanedName = cleanName(name);
-    const haveSimilarity = cleanedName.toLowerCase() !== address.toLowerCase();
-    const nameToAdd = haveSimilarity ? cleanedName : '';
+    const {
+      name = null,
+      address = null,
+      identifier,
+      domain,
+      tld
+    } = match.groups || {};
+
+    if (!address) {
+      continue
+    }
+
+    const cleanedName = name && cleanName(name);
+    const finalName = (cleanedName?.toLowerCase() !== address.toLowerCase()) ? cleanedName : null;
 
     result.push({
-      name: nameToAdd,
+      name: finalName,
       address: address.toLowerCase(),
       identifier,
       domain: `${domain}.${tld}`
@@ -82,7 +91,7 @@ export function extractNameAndEmailFromBody(data: string): RegexContact[] {
     const { address, identifier, domain, tld } = match.groups || {};
 
     return {
-      name: '',
+      name: null,
       address,
       identifier,
       domain: `${domain}.${tld}`

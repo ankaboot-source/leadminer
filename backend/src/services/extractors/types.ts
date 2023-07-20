@@ -27,47 +27,47 @@ export interface EmailSendersRecipients {
 
 export interface Message {
   channel: string;
-  folderPath: string;
-  date: string;
   messageId: string;
-  references: string[];
-  listId: string;
+  folderPath: string;
+  date: string | null;
+  listId: string | null;
   conversation: boolean;
+  references: string[] | null;
 }
 
 export interface Person {
-  name: string;
   email: string;
-  url: string;
-  image: string;
-  address: string;
-  alternateNames: string[];
-  sameAs: string[];
-  givenName: string;
-  familyName: string;
-  jobTitle: string;
-  identifiers: string[];
+  url: string | null;
+  name: string | null;
+  image: string | null;
+  address: string | null;
+  jobTitle: string | null;
+  sameAs: string[] | null;
+  givenName: string | null;
+  familyName: string | null;
+  identifiers: string[] | null;
+  alternateNames: string[] | null;
 }
 
 export interface PointOfContact {
-  name: string;
-  from: boolean;
-  replyTo: boolean;
   to: boolean;
   cc: boolean;
   bcc: boolean;
+  from: boolean;
   body: boolean;
+  replyTo: boolean;
+  name: string | null;
 }
 
 export interface RegexContact {
-  name: string;
+  domain: string;
   address: string;
   identifier: string;
-  domain: string;
+  name: string | null;
 }
 
 export interface ContactLead {
-  name: string;
+  name: string | null;
   email: {
     address: string;
     identifier: string;
@@ -76,16 +76,6 @@ export interface ContactLead {
   };
   sourceField: MessageField | 'body';
   source: 'header' | 'body';
-}
-
-export interface MessageDetails {
-  references: string[];
-  channel: string;
-  date: string | null;
-  listId: string;
-  folderPath: string;
-  messageId: string;
-  conversation: boolean;
 }
 
 export interface ContactTag {

@@ -5,12 +5,12 @@ export interface Contact {
 
 export interface Message {
   channel: string;
-  folderPath: string;
-  date: string;
   messageId: string;
-  references: string[];
-  listId: string;
+  folderPath: string;
+  date: string | null;
+  listId: string | null;
   conversation: boolean;
+  references: string[] | null;
 }
 
 export interface PersonWithPocAndTag {
@@ -20,27 +20,27 @@ export interface PersonWithPocAndTag {
 }
 
 export interface Person {
-  name: string;
   email: string;
-  url: string;
-  image: string;
-  address: string;
-  alternateNames: string[];
-  sameAs: string[];
-  givenName: string;
-  familyName: string;
-  jobTitle: string;
-  identifiers: string[];
+  url: string | null;
+  name: string | null;
+  image: string | null;
+  address: string | null;
+  jobTitle: string | null;
+  sameAs: string[] | null;
+  givenName: string | null;
+  familyName: string | null;
+  identifiers: string[] | null;
+  alternateNames: string[] | null;
 }
 
 export interface PointOfContact {
-  name: string;
-  from: boolean;
-  replyTo: boolean;
+  name: string | null;
   to: boolean;
   cc: boolean;
   bcc: boolean;
   body: boolean;
+  from: boolean;
+  replyTo: boolean;
 }
 
 export interface Tag {
