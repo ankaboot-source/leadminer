@@ -65,7 +65,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       }>("/imap/mine/sources");
       miningSources.value = data.sources;
       if (data.sources.length > 0) {
-        [activeMiningSource.value] = data.sources;
+        activeMiningSource.value = data.sources.at(-1); // Use the newest mining source as a default
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -80,6 +80,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       return;
     }
     loadingStatusbox.value = true;
+    boxes.value = [];
+    selectedBoxes.value = [];
 
     try {
       const response = await api.post("/imap/boxes", {
@@ -93,20 +95,40 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         selectedBoxes.value = getDefaultSelectedFolders(folders);
         infoMessage.value = "Successfully retrieved IMAP boxes.";
       }
+      miningSources.value = miningSources.value.reduce<MiningSource[]>(
+        (result, current) => {
+          if (current.email === activeMiningSource.value?.email) {
+            current.isValid = true;
+          }
+          result.push(current);
+
+          return result;
+        },
+        []
+      );
     } catch (err) {
-      if (err !== null && err instanceof AxiosError) {
-        let message = null;
+      if (err instanceof AxiosError) {
         const error = err.response?.data?.error || err;
 
         if (error.message?.toLowerCase() === "network error") {
-          message =
+          errorMessage.value =
             "Unable to access server. Please retry again or contact your service provider.";
         } else {
-          message = error.message;
+          errorMessage.value =
+            "Failed to connect to mining source! This probably means that you revoked access or changed your credentials. Please add this source again if you want to use it";
         }
-
-        errorMessage.value = message;
       }
+      miningSources.value = miningSources.value.reduce<MiningSource[]>(
+        (result, current) => {
+          if (current.email === activeMiningSource.value?.email) {
+            current.isValid = false;
+          }
+          result.push(current);
+
+          return result;
+        },
+        []
+      );
       throw err;
     } finally {
       loadingStatusbox.value = false;

@@ -113,7 +113,6 @@ import { Provider } from "@supabase/supabase-js";
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
 import { emailRules } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
 import { computed, ref } from "vue";
@@ -144,7 +143,11 @@ async function loginWithEmailAndPassword() {
     await $router.push("/dashboard");
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "negative", "error");
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
@@ -167,12 +170,11 @@ async function loginWithOAuth(provider: Provider) {
     }
   } catch (error) {
     if (error instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to connect with ${provider}: ${error.message}`,
-        "negative",
-        "error"
-      );
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;

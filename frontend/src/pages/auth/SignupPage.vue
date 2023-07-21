@@ -106,7 +106,6 @@
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
 import { emailRules } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
 import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
@@ -136,20 +135,18 @@ async function signUp() {
     if (error) {
       throw error;
     }
-    showNotification(
-      $quasar,
-      `We have sent a confirmation email to ${email.value}`,
-      "positive",
-      "check"
-    );
+    $quasar.notify({
+      message: `We have sent a confirmation email to ${email.value}`,
+      color: "positive",
+      icon: "check",
+    });
   } catch (e) {
     if (e instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to signup: ${e.message}`,
-        "negative",
-        "error"
-      );
+      $quasar.notify({
+        message: `Failed to signup: ${e.message}`,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
@@ -172,12 +169,11 @@ async function loginWithOAuth(provider: "google" | "azure") {
     }
   } catch (error) {
     if (error instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to connect with ${provider}: ${error.message}`,
-        "negative",
-        "error"
-      );
+      $quasar.notify({
+        message: `Failed to connect with ${provider}: ${error.message}`,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
