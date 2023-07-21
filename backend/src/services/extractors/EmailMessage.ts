@@ -127,7 +127,7 @@ export default class EmailMessage {
       folderPath: this.folderPath,
       messageId: this.messageId,
       references: this.references,
-      conversation: this.references !== null
+      conversation: this.references !== undefined
     };
   }
 
