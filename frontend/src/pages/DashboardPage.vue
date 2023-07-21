@@ -92,7 +92,6 @@ import { useQuasar } from "quasar";
 import SettingsDialog from "src/components/Dialogs/SettingsDialog.vue";
 import MinedPersons from "src/components/MinedPersons.vue";
 import ProgressCard from "src/components/cards/ProgressCard.vue";
-import { showNotification } from "src/helpers/notification";
 import AppLayout from "src/layouts/AppLayout.vue";
 import { useLeadminerStore } from "src/store/leadminer";
 import { computed, onMounted, ref } from "vue";
@@ -114,9 +113,18 @@ async function getBoxes() {
     isLoadingStartMining.value = true;
     await leadminerStore.getBoxes();
 
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+    $quasar.notify({
+      message: leadminerStore.infoMessage,
+      color: "positive",
+      icon: "check",
+    });
   } catch (_) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+      timeout: 10000,
+    });
   } finally {
     isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;
@@ -166,9 +174,17 @@ async function stopMining() {
   isLoadingStopMining.value = true;
   try {
     await leadminerStore.stopMining();
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+    $quasar.notify({
+      message: leadminerStore.infoMessage,
+      color: "positive",
+      icon: "check",
+    });
   } catch (error) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+    });
   } finally {
     isLoadingStopMining.value = false;
   }
@@ -179,19 +195,27 @@ async function startMining() {
   isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
     isLoadingStartMining.value = false;
-    return showNotification(
-      $quasar,
-      "Select at least one folder",
-      "warning",
-      "error"
-    );
+    $quasar.notify({
+      message: "Select at least one folder",
+      color: "warning",
+      icon: "error",
+    });
+    return;
   }
 
   try {
     await leadminerStore.startMining();
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+    $quasar.notify({
+      message: leadminerStore.infoMessage,
+      color: "positive",
+      icon: "check",
+    });
   } catch (error) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+    });
   } finally {
     isLoadingStartMining.value = false;
   }

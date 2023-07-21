@@ -35,7 +35,6 @@
 
 <script setup lang="ts">
 import { useQuasar } from "quasar";
-import { showNotification } from "src/helpers/notification";
 import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
 import AppLayout from "src/layouts/AppLayout.vue";
@@ -65,16 +64,19 @@ async function updatePassword() {
     if (error) {
       throw error;
     }
-    showNotification(
-      $quasar,
-      "Password updated successfully",
-      "positive",
-      "check"
-    );
+    $quasar.notify({
+      message: "Password updated successfully",
+      color: "positive",
+      icon: "check",
+    });
     $router.push("/dashboard");
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "negative", "error");
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;

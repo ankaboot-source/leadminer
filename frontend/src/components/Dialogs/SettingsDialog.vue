@@ -90,12 +90,16 @@
               </q-badge>
             </div>
             <q-select
-              v-if="miningSources.length > 1"
+              v-if="miningSources.length > 0"
               v-model="leadminerStore.activeMiningSource"
               class="q-mt-md"
               outlined
               :options="miningSources"
-              :disable="props.isLoadingBoxes || activeMiningTask"
+              :disable="
+                props.isLoadingBoxes ||
+                activeMiningTask ||
+                miningSources.length === 1
+              "
               option-value="email"
               option-label="email"
               dense
@@ -131,14 +135,40 @@
                 color="primary"
                 size="3em"
               />
-              <q-expansion-item
-                v-for="miningSource in miningSources"
-                :key="miningSource.email"
-                :hide-expand-icon="true"
-                :icon="getIconByMiningSource(miningSource)"
-                :label="miningSource.email"
-              >
-              </q-expansion-item>
+              <q-list>
+                <q-item
+                  v-for="miningSource in miningSources"
+                  :key="miningSource.email"
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="getIconByMiningSource(miningSource)" />
+                  </q-item-section>
+                  <q-item-section>{{ miningSource.email }}</q-item-section>
+                  <q-item-section side>
+                    <q-icon
+                      v-if="miningSource.isValid === true"
+                      name="check"
+                      color="green"
+                      ><q-tooltip class="bg-indigo"
+                        >Valid and reachable</q-tooltip
+                      ></q-icon
+                    >
+                    <q-icon
+                      v-else-if="miningSource.isValid === false"
+                      name="error"
+                      color="red"
+                      ><q-tooltip class="bg-indigo"
+                        >Unreachable</q-tooltip
+                      ></q-icon
+                    >
+                    <q-icon v-else name="pending" color="accent"
+                      ><q-tooltip class="bg-indigo"
+                        >Unverified</q-tooltip
+                      ></q-icon
+                    >
+                  </q-item-section>
+                </q-item>
+              </q-list>
             </div>
 
             <q-dialog
@@ -218,7 +248,6 @@ import { AxiosError } from "axios";
 import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
 import { addOAuthAccount } from "src/helpers/oauth";
 import { useLeadminerStore } from "src/store/leadminer";
 import { MiningSource } from "src/types/mining";
@@ -369,7 +398,11 @@ async function onSubmitImapCredentials() {
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
-      showNotification($quasar, error.message, "negative", "error");
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoadingImapCredentialsCheck.value = false;
