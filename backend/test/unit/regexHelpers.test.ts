@@ -106,6 +106,15 @@ describe('regexHelpers.cleanName', () => {
       });
     });
   });
+
+  it('should remove "via" and the text after it', () => {
+    const inputs = ['Leadminer via nextcloud', 'Leadminer (via nextcloud)'];
+
+    inputs.forEach((name) => {
+      const output = cleanName(name);
+      expect(output).toBe('Leadminer');
+    });
+  });
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
