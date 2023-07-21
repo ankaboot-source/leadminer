@@ -74,6 +74,7 @@
                 icon="refresh"
                 class="q-ml-sm"
                 :loading="props.isLoadingBoxes"
+                :disable="activeMiningSource === undefined"
                 @click="onRefreshImapTree"
               />
               <q-space />
@@ -277,6 +278,8 @@ const imapPassword = ref("");
 const miningSources = computed<MiningSource[]>(
   () => leadminerStore.miningSources
 );
+
+const activeMiningSource = computed(() => leadminerStore.activeMiningSource);
 
 const isLoadingSources = computed(() => leadminerStore.isLoadingSources);
 const boxes = computed(() => leadminerStore.boxes);

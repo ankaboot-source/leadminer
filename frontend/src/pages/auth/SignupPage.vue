@@ -136,6 +136,12 @@ async function signUp() {
     if (error) {
       throw error;
     }
+    showNotification(
+      $quasar,
+      `We have sent a confirmation email to ${email.value}`,
+      "positive",
+      "check"
+    );
   } catch (e) {
     if (e instanceof Error) {
       showNotification(

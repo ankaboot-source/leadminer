@@ -31,6 +31,31 @@ export const useLeadminerStore = defineStore("leadminer", () => {
 
   const errors = ref({});
 
+  function $reset() {
+    miningTask.value = undefined;
+    miningSources.value = [];
+    activeMiningSource.value = undefined;
+    boxes.value = [];
+    selectedBoxes.value = [];
+
+    errorMessage.value = "";
+    infoMessage.value = "";
+
+    isLoadingSources.value = false;
+    loadingStatus.value = false;
+    loadingStatusDns.value = false;
+    loadingStatusbox.value = false;
+
+    extractedEmails.value = 0;
+    scannedEmails.value = 0;
+    totalFetchedEmails.value = 0;
+
+    status.value = "";
+    scannedBoxes.value = [];
+    statistics.value = {};
+    errors.value = {};
+  }
+
   async function getMiningSources() {
     try {
       isLoadingSources.value = true;
@@ -51,6 +76,9 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   }
 
   async function getBoxes() {
+    if (!activeMiningSource.value) {
+      return;
+    }
     loadingStatusbox.value = true;
 
     try {
@@ -189,6 +217,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     getBoxes,
     startMining,
     stopMining,
+    $reset,
     miningTask,
     miningSources,
     activeMiningSource,
