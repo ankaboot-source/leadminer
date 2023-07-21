@@ -48,8 +48,8 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
     }
 
     const {
-      name = null,
-      address = null,
+      name = undefined,
+      address = undefined,
       identifier,
       domain,
       tld
@@ -61,7 +61,9 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
 
     const cleanedName = name && cleanName(name);
     const finalName =
-      cleanedName?.toLowerCase() !== address.toLowerCase() ? cleanedName : null;
+      cleanedName?.toLowerCase() !== address.toLowerCase()
+        ? cleanedName
+        : undefined;
 
     result.push({
       name: finalName,
@@ -91,7 +93,6 @@ export function extractNameAndEmailFromBody(data: string): RegexContact[] {
     const { address, identifier, domain, tld } = match.groups || {};
 
     return {
-      name: null,
       address,
       identifier,
       domain: `${domain}.${tld}`

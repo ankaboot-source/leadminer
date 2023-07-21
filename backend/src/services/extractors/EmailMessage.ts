@@ -22,11 +22,11 @@ export default class EmailMessage {
 
   readonly messageId: string;
 
-  readonly date: string | null;
+  readonly date: string | undefined;
 
-  readonly listId: string | null;
+  readonly listId: string | undefined;
 
-  readonly references: string[] | null;
+  readonly references: string[] | undefined;
 
   /**
    * Creates an instance of EmailMessage.
@@ -58,41 +58,41 @@ export default class EmailMessage {
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns
    */
-  private getReferences(): string[] | null {
+  private getReferences(): string[] | undefined {
     const references = getSpecificHeader(this.header, ['references']);
 
     if (references) {
       return references[0].split(' ').filter((ref: string) => ref !== ''); // references in header comes as ["<r1> <r2> <r3> ..."]
     }
 
-    return null;
+    return undefined;
   }
 
   /**
    * Gets the `list-id` header field if the email is in a mailing list otherwise returns an empty string.
    * @returns
    */
-  private getListId(): string | null {
+  private getListId(): string | undefined {
     const listId = getSpecificHeader(this.header, ['list-id']);
 
-    if (listId === null) {
-      return null;
+    if (listId === undefined) {
+      return undefined;
     }
 
-    const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
-    return matchId ? matchId[0] : null;
+    const matchId = listId ? listId[0].match(REGEX_LIST_ID) : undefined;
+    return matchId ? matchId[0] : undefined;
   }
 
   /**
    * Returns the date from the header object, or null if it is not present or not a valid date
    * @returns The UTC formatted date string or null if it is not present or not a valid date.
    */
-  private getDate(): string | null {
+  private getDate(): string | undefined {
     if (!this.header.date) {
-      return null;
+      return undefined;
     }
     const dateStr = new Date(this.header.date[0]).toUTCString();
-    return dateStr !== 'Invalid Date' ? dateStr : null;
+    return dateStr !== 'Invalid Date' ? dateStr : undefined;
   }
 
   /**
@@ -236,14 +236,7 @@ export default class EmailMessage {
           const person: Person = {
             name: validContact.name,
             email: validContact.email.address,
-            url: null,
-            image: null,
-            address: null,
-            alternateNames: null,
-            sameAs: null,
             givenName: validContact.name,
-            familyName: null,
-            jobTitle: null,
             identifiers: [validContact.email.identifier]
           };
 
