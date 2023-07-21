@@ -7,10 +7,10 @@ export interface Message {
   channel: string;
   messageId: string;
   folderPath: string;
-  date: string | null;
-  listId: string | null;
+  date?: string;
+  listId?: string;
   conversation: boolean;
-  references: string[] | null;
+  references?: string[];
 }
 
 export interface PersonWithPocAndTag {
@@ -21,20 +21,20 @@ export interface PersonWithPocAndTag {
 
 export interface Person {
   email: string;
-  url: string | null;
-  name: string | null;
-  image: string | null;
-  address: string | null;
-  jobTitle: string | null;
-  sameAs: string[] | null;
-  givenName: string | null;
-  familyName: string | null;
-  identifiers: string[] | null;
-  alternateNames: string[] | null;
+  url?: string;
+  name?: string;
+  image?: string;
+  address?: string;
+  jobTitle?: string;
+  sameAs?: string[];
+  givenName?: string;
+  familyName?: string;
+  identifiers?: string[];
+  alternateNames?: string[];
 }
 
 export interface PointOfContact {
-  name: string | null;
+  name?: string;
   to: boolean;
   cc: boolean;
   bcc: boolean;
