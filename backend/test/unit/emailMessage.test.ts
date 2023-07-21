@@ -10,7 +10,7 @@ const taggingEngine = {} as TaggingEngine;
 
 describe('Email Message', () => {
   describe('references', () => {
-    it('should return an empty array if no references are present in the header', () => {
+    it('should return undefined if no references are present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -19,7 +19,7 @@ describe('Email Message', () => {
         {},
         'folder'
       );
-      expect(message.references).toEqual(null);
+      expect(message.references).toBeUndefined();
     });
 
     it('should return an array of references if they are present in the header', () => {
@@ -89,7 +89,7 @@ describe('Email Message', () => {
     });
 
     TEST_INPUTS_SHOULD_FAIL.forEach((testInput) => {
-      it(`Should return empty string for falsy list-id value = ${
+      it(`Should return undefined for falsy list-id value = ${
         testInput === '' ? 'empty-string' : testInput
       }`, () => {
         const message = new EmailMessage(
@@ -105,11 +105,11 @@ describe('Email Message', () => {
           {},
           ''
         );
-        expect(message.listId).toBe(null);
+        expect(message.listId).toBeUndefined();
       });
     });
 
-    it('Should return empty string in the absence of list-post header field', () => {
+    it('Should return undefined in the absence of list-post header field', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -122,10 +122,10 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.listId).toBe(null);
+      expect(message.listId).toBeUndefined();
     });
 
-    it('Should return empty string in the absence of list-id header field', () => {
+    it('Should return undefined in the absence of list-id header field', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -138,7 +138,7 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.listId).toBe(null);
+      expect(message.listId).toBeUndefined();
     });
   });
 
@@ -160,7 +160,7 @@ describe('Email Message', () => {
       expect(message.date).toBe(date);
     });
 
-    it('should return "UNKOWN" if the date is not present in the header', () => {
+    it('should return undefined if the date is not present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -172,10 +172,10 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.date).toEqual('UNKOWN');
+      expect(message.date).toBeUndefined();
     });
 
-    it('should return "UNKOWN" if the date is not a valid date', () => {
+    it('should return undefined if the date is not a valid date', () => {
       const message = new EmailMessage(
         taggingEngine,
         {},
@@ -188,7 +188,7 @@ describe('Email Message', () => {
         ''
       );
 
-      expect(message.date).toEqual('UNKOWN');
+      expect(message.date).toBeUndefined();
     });
   });
 
