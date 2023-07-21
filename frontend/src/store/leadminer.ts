@@ -95,14 +95,17 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         selectedBoxes.value = getDefaultSelectedFolders(folders);
         infoMessage.value = "Successfully retrieved IMAP boxes.";
       }
-      miningSources.value.reduce<MiningSource[]>((result, current) => {
-        if (current.email === activeMiningSource.value?.email) {
-          current.isValid = true;
-        }
-        result.push(current);
+      miningSources.value = miningSources.value.reduce<MiningSource[]>(
+        (result, current) => {
+          if (current.email === activeMiningSource.value?.email) {
+            current.isValid = true;
+          }
+          result.push(current);
 
-        return result;
-      }, []);
+          return result;
+        },
+        []
+      );
     } catch (err) {
       if (err instanceof AxiosError) {
         const error = err.response?.data?.error || err;
@@ -115,14 +118,17 @@ export const useLeadminerStore = defineStore("leadminer", () => {
             "Failed to connect to mining source! This probably means that you revoked access or changed your credentials. Please add this source again if you want to use it";
         }
       }
-      miningSources.value.reduce<MiningSource[]>((result, current) => {
-        if (current.email === activeMiningSource.value?.email) {
-          current.isValid = false;
-        }
-        result.push(current);
+      miningSources.value = miningSources.value.reduce<MiningSource[]>(
+        (result, current) => {
+          if (current.email === activeMiningSource.value?.email) {
+            current.isValid = false;
+          }
+          result.push(current);
 
-        return result;
-      }, []);
+          return result;
+        },
+        []
+      );
       throw err;
     } finally {
       loadingStatusbox.value = false;
