@@ -98,11 +98,13 @@ export default class EmailMessageTagging implements TaggingEngine {
     }
 
     if (isRole(address)) {
-      return [{
-        source: this.tagSourceFromEmailAddress,
-        name: 'role',
-        reachable: REACHABILITY.UNSURE
-      }]                                                                                                                                                                                                ;
+      return [
+        {
+          source: this.tagSourceFromEmailAddress,
+          name: 'role',
+          reachable: REACHABILITY.UNSURE
+        }
+      ];
     }
 
     if (emailType === 'professional') {
