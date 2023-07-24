@@ -153,55 +153,7 @@
 
       <template #body-cell-name="props">
         <q-td :props="props">
-          <q-expansion-item
-            v-if="props.row.name && props.row.alternate_names?.length > 1"
-            dense
-            dense-toggle
-            expand-icon-class="text-orange"
-            header-class="q-prl-16"
-          >
-            <template #header>
-              <q-item-section>
-                <div class="row items-center">
-                  <q-badge outline color="orange">
-                    {{
-                      props.row.name.length > 35
-                        ? props.row.name.substring(0, 30).concat("...")
-                        : props.row.name
-                    }}
-                  </q-badge>
-                  <q-badge
-                    class="text-little q-ml-sm"
-                    outline
-                    color="orange"
-                    transparent
-                  >
-                    +{{ props.row.alternate_names.length - 1 }}
-                  </q-badge>
-                </div>
-              </q-item-section>
-            </template>
-            <div
-              v-for="name in props.row.alternate_names.filter((element: string) => {
-                return element.trim() !== '' && element !== props.row.name;
-              })"
-              :key="name.index"
-              :bind="name.index"
-              style="padding-left: 16px"
-            >
-              <q-badge v-if="name.length > 0" outline color="orange">
-                {{
-                  name.length > 35 ? name.substring(0, 30).concat("...") : name
-                }}
-              </q-badge>
-              <br />
-            </div>
-          </q-expansion-item>
-          <div
-            v-else-if="props.row.name"
-            class="row items-center"
-            style="padding-left: 16px"
-          >
+          <div class="row items-center">
             <q-badge outline color="orange">
               {{ props.row.name ? props.row.name : "" }}
             </q-badge>
