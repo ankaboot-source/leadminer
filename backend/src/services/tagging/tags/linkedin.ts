@@ -5,7 +5,7 @@ import { Tag } from '../types';
 const linkedinEmailMessage: Tag = {
   tag: {
     name: 'linkedin',
-    reachable: REACHABILITY.INDIRECT_PERSON
+    reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
   },
   rules: [
     {

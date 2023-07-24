@@ -105,12 +105,11 @@ export default class EmailMessageTagging implements TaggingEngine {
       });
     }
 
-    
     if (isAirbnb(address)) {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'airbnb',
-        reachable: REACHABILITY.INDIRECT_PERSON
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 
@@ -126,7 +125,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'linkedin',
-        reachable: REACHABILITY.INDIRECT_PERSON
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 
@@ -134,7 +133,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'group',
-        reachable: REACHABILITY.MANY
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 

@@ -31,8 +31,7 @@ export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
 export enum REACHABILITY {
   DIRECT_PERSON = 1,
-  INDIRECT_PERSON = 2,
-  MANY = 2,
+  MANY_OR_INDIRECT_PERSON = 2,
   UNSURE = 3,
   NONE = 0
 }
