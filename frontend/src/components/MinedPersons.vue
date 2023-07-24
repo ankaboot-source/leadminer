@@ -154,8 +154,8 @@
       <template #body-cell-name="props">
         <q-td :props="props">
           <div class="row items-center">
-            <q-badge outline color="orange">
-              {{ props.row.name ? props.row.name : "" }}
+            <q-badge v-if="props.row.name" outline color="orange">
+              {{ props.row.name }}
             </q-badge>
           </div>
         </q-td>
