@@ -1,24 +1,32 @@
-import { REGEX_LIST_ID } from '../../utils/constants';
+import { Redis } from 'ioredis';
+import { REACHABILITY, REGEX_LIST_ID } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
-import {
-  ContactLead,
-  EmailSendersRecipients,
-  Message,
-  MESSAGING_FIELDS,
-  MessageField,
-  Contact,
-  Person,
-  PointOfContact,
-  ContactTag,
-  IGNORED_MESSAGE_TAGS
-} from './types';
-import { TaggingEngine } from '../tagging/types';
+import { differenceInDays } from '../../utils/helpers/date';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
+import {
+  EmailStatusVerifier,
+  Status
+} from '../email-status/EmailStatusVerifier';
+import { TaggingEngine } from '../tagging/types';
+import {
+  Contact,
+  ContactLead,
+  ContactTag,
+  EmailSendersRecipients,
+  IGNORED_MESSAGE_TAGS,
+  MESSAGING_FIELDS,
+  Message,
+  MessageField,
+  Person,
+  PointOfContact
+} from './types';
 
 export default class EmailMessage {
   private static IGNORED_MESSAGE_TAGS = IGNORED_MESSAGE_TAGS;
+
+  private static MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS = 100;
 
   readonly messageId: string;
 
@@ -31,16 +39,17 @@ export default class EmailMessage {
   /**
    * Creates an instance of EmailMessage.
    *
-   * @param {Object} redisClientForNormalMode - The Redis client used for normal mode.
-   * @param {String} userEmail - The email address of the user.
-   * @param {String} sequentialId - The sequential ID of the message.
-   * @param {Object} header - The header of the message.
-   * @param {Object} body - The body of the message.
-   * @param {String} folderPath - the path of the folder where the email is located
+   * @param redisClientForNormalMode - The Redis client used for normal mode.
+   * @param userEmail - The email address of the user.
+   * @param sequentialId - The sequential ID of the message.
+   * @param header - The header of the message.
+   * @param body - The body of the message.
+   * @param folderPath - the path of the folder where the email is located
    */
   constructor(
     private readonly taggingEngine: TaggingEngine,
-    private readonly redisClientForNormalMode: any,
+    private readonly emailVerifier: EmailStatusVerifier,
+    private readonly redisClientForNormalMode: Redis,
     private readonly userEmail: string,
     private readonly header: any,
     private readonly body: any,
@@ -48,7 +57,7 @@ export default class EmailMessage {
   ) {
     const date = this.getDate();
 
-    this.date = date !== null ? date : 'UNKOWN';
+    this.date = date !== null ? date : undefined;
     this.listId = this.getListId();
     this.messageId = this.getMessageId();
     this.references = this.getReferences();
@@ -234,6 +243,7 @@ export default class EmailMessage {
 
         if (domainIsValid) {
           const person: Person = {
+            status: Status.UNKNOWN,
             name: validContact.name,
             email: validContact.email.address,
             givenName: validContact.name,
@@ -268,6 +278,20 @@ export default class EmailMessage {
               }
               return result;
             }, []);
+
+          if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
+            if (
+              this.date &&
+              differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
+                EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
+            )
+              person.status = Status.VALID;
+            else {
+              person.status = (
+                await this.emailVerifier.verify(person.email)
+              ).status;
+            }
+          }
 
           validatedContacts.push({
             person,

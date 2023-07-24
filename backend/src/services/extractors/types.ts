@@ -1,3 +1,5 @@
+import { Status } from '../email-status/EmailStatusVerifier';
+
 export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
   'transactional',
   'no-reply'
@@ -37,6 +39,7 @@ export interface Message {
 
 export interface Person {
   email: string;
+  status: Status;
   url?: string;
   name?: string;
   image?: string;

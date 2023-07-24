@@ -211,12 +211,7 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <q-badge rounded :color="mailboxValidityCurrent">
-            {{ " " }}
-            <q-tooltip :class="'bg-' + mailboxValidityCurrent">
-              {{ mailboxValidity[mailboxValidityCurrent] }}
-            </q-tooltip>
-          </q-badge>
+          <validity-indicator :email-status="props.row.emailStatus" />
         </q-td>
       </template>
     </q-table>
@@ -235,6 +230,7 @@ import { fetchData, supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
 import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
 const leadminerStore = useLeadminerStore();
@@ -253,12 +249,6 @@ const initialPagination = {
   sortBy: "engagement",
   descending: true,
 };
-const mailboxValidity = {
-  green: "Valid mailbox",
-  orange: "The mailbox could not receive your emails",
-  red: "The mailbox is not valid",
-};
-const mailboxValidityCurrent: "green" | "orange" | "red" = "green";
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 
