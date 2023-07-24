@@ -105,19 +105,20 @@ export default class EmailMessageTagging implements TaggingEngine {
       });
     }
 
-    if (isRole(address)) {
-      emailTags.push({
-        source: this.tagSourceFromEmailAddress,
-        name: 'role',
-        reachable: REACHABILITY.UNSURE
-      });
-    }
-
+    
     if (isAirbnb(address)) {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'airbnb',
         reachable: REACHABILITY.INDIRECT_PERSON
+      });
+    }
+
+    if (isRole(address)) {
+      emailTags.push({
+        source: this.tagSourceFromEmailAddress,
+        name: 'role',
+        reachable: REACHABILITY.UNSURE
       });
     }
 
