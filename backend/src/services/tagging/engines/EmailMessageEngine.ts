@@ -109,7 +109,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'airbnb',
-        reachable: REACHABILITY.INDIRECT_PERSON
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 
@@ -125,7 +125,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'linkedin',
-        reachable: REACHABILITY.INDIRECT_PERSON
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 
@@ -133,7 +133,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'group',
-        reachable: REACHABILITY.MANY
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 
@@ -181,6 +181,14 @@ export default class EmailMessageTagging implements TaggingEngine {
       const headerTags = this.getEmailMessageHeaderTags(header).filter(
         (t) => (t && t.fields === undefined) || t.fields.includes(field)
       );
+
+      if (headerTags.length === 1) {
+        const { name } = headerTags[0];
+
+        if (['transactional', 'no-reply'].includes(name)) {
+          headerTags.length = 0; // reset array
+        }
+      }
 
       if (headerTags.length > 0) {
         // Remove all existing tags except for the "professional" tag.
