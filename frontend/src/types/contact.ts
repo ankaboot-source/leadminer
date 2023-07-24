@@ -8,7 +8,7 @@ export interface Contact {
   email: string;
   engagement?: number;
   name?: string;
-  emailStatus: EmailStatus;
+  status: EmailStatus;
   occurence?: number;
   personid?: string;
   recency?: Date;
