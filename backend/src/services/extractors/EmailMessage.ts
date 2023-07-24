@@ -281,6 +281,7 @@ export default class EmailMessage {
 
           if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
             if (
+              validContact.sourceField === 'from' &&
               this.date &&
               differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
