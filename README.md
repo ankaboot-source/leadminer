@@ -32,6 +32,12 @@ To run Leadminer, follow these steps:
 
 > **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "PROVIDER_NAME" if integrating Google OAuth and "azure" if integrating Azure.
 
+### Configure Reacher:
+
+We use [Reacher](https://reacher.email/) as our email verification API. You can either use the SaaS version or self host it. Follow [their official documentation](https://help.reacher.email/) for more details on how to configure it.
+
+> **Note:** Leadminer is configured by default to use a Mock server of Reacher for ease of use (Check the `### REACHER ###` section in the env file).
+
 ### Run using docker-compose
 
 Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
