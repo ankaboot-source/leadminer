@@ -1,8 +1,7 @@
 import { DomainType } from '../../services/tagging/types';
 import {
-  AIRBNB_EMAIL_ADDRESS_INCLUDES,
+  CHAT_EMAIL_ADDRESS_INCLUDES,
   GROUP_EMAIL_ADDRESS_INCLUDES,
-  LINKEDIN_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
   ROLE_EMAIL_ADDRESS_INCLUDES,
@@ -118,23 +117,12 @@ export function isRole(emailAddress: string) {
 }
 
 /**
- * Checks if an email address can be tagged as airbnb
+ * Checks if an email address can be tagged as chat
  * @param emailAddress - The email address to check.
- * @returns Returns true if the email can be tagged as airbnb, false otherwise.
+ * @returns true if the email can be tagged as chat, false otherwise.
  */
-export function isAirbnb(emailAddress: string) {
-  return AIRBNB_EMAIL_ADDRESS_INCLUDES.some((word) =>
-    emailAddress.toLowerCase().includes(word)
-  );
-}
-
-/**
- * Checks if an email address can be tagged as linkedin
- * @param emailAddress - The email address to check.
- * @returns true if the email can be tagged as linkedin, false otherwise.
- */
-export function isLinkedin(emailAddress: string) {
-  return LINKEDIN_EMAIL_ADDRESS_INCLUDES.some((word) =>
+export function isChat(emailAddress: string) {
+  return CHAT_EMAIL_ADDRESS_INCLUDES.some((word) =>
     emailAddress.toLowerCase().includes(word)
   );
 }
