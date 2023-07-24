@@ -2,9 +2,9 @@ import { REACHABILITY } from '../../../utils/constants';
 import HasHeaderWithValues from '../conditions/HasHeaderFieldWithValues';
 import { Tag } from '../types';
 
-const linkedinEmailMessage: Tag = {
+const chatEmailMessage: Tag = {
   tag: {
-    name: 'linkedin',
+    name: 'chat',
     reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
   },
   rules: [
@@ -21,4 +21,4 @@ const linkedinEmailMessage: Tag = {
   ]
 };
 
-export default linkedinEmailMessage;
+export default chatEmailMessage;

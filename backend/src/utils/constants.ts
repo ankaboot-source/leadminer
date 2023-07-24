@@ -36,8 +36,11 @@ export enum REACHABILITY {
   NONE = 0
 }
 
-export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
-export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.linkedin.com'];
+export const CHAT_EMAIL_ADDRESS_INCLUDES = [
+  '@reply.airbnb.com',
+  '@reply.linkedin.com',
+  '@messagerie.leboncoin.fr'
+];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',

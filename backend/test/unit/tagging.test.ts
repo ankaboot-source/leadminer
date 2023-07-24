@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, expect } from '@jest/globals';
 import {
   groupEmailMessage,
-  linkedinEmailMessage,
+  chatEmailMessage,
   newsletterEmailMessage,
   transactionalEmailMessage
 } from '../../src/services/tagging/tags';
@@ -11,9 +11,8 @@ import HasHeaderFieldStartsWith from '../../src/services/tagging/conditions/HasH
 import HasHeaderWithValues from '../../src/services/tagging/conditions/HasHeaderFieldWithValues';
 import HasNoHeaderField from '../../src/services/tagging/conditions/HasNoHeaderField';
 import {
-  AIRBNB_EMAIL_ADDRESS_INCLUDES,
+  CHAT_EMAIL_ADDRESS_INCLUDES,
   GROUP_EMAIL_ADDRESS_INCLUDES,
-  LINKEDIN_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
   ROLE_EMAIL_ADDRESS_INCLUDES,
@@ -269,11 +268,11 @@ describe('test engines.EmailTaggingEngine', () => {
       testTagsCommonLogic(input, output);
     });
 
-    describe('Testing linkedin email header tag', () => {
-      const input: Tag = linkedinEmailMessage;
+    describe('Testing chat email header tag', () => {
+      const input: Tag = chatEmailMessage;
       const output: BasicTag = {
         source: 'refined#message_header',
-        name: 'linkedin',
+        name: 'chat',
         reachable: 2
       };
 
@@ -371,8 +370,8 @@ describe('test engines.EmailTaggingEngine', () => {
       });
     });
 
-    describe('Testing linkedin email addresses tagging', () => {
-      const emailsToTest = generateEmails(LINKEDIN_EMAIL_ADDRESS_INCLUDES);
+    describe('Testing chat email addresses tagging', () => {
+      const emailsToTest = generateEmails(CHAT_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
           reachable: 1,
@@ -381,33 +380,7 @@ describe('test engines.EmailTaggingEngine', () => {
         },
         {
           reachable: 2,
-          name: 'linkedin',
-          source: 'refined#email_address'
-        }
-      ];
-
-      emailsToTest.forEach((email) => {
-        const tag = expectedOutputTags.map(({ name }) => name).join(',');
-
-        it(`should correctly tag "${email.address} as ${tag}`, () => {
-          const tags = EmailTaggingEngine.getEmailAddressTags(email);
-
-          expect(tags).toEqual(expectedOutputTags);
-        });
-      });
-    });
-
-    describe('Testing airbnb email addresses tagging', () => {
-      const emailsToTest = generateEmails(AIRBNB_EMAIL_ADDRESS_INCLUDES);
-      const expectedOutputTags: BasicTag[] = [
-        {
-          reachable: 1,
-          name: 'professional',
-          source: 'refined#email_address'
-        },
-        {
-          reachable: 2,
-          name: 'airbnb',
+          name: 'chat',
           source: 'refined#email_address'
         }
       ];
@@ -538,7 +511,7 @@ describe('test engines.EmailTaggingEngine', () => {
 
     it('should correctly filter tags to the supplied field', () => {
       header['list-post'] = ['test']; // will be tagged as group with field list-post
-      header['x-linkedin-class'] = ['inmail']; // will be tagged as linkedin with field reply-to
+      header['x-linkedin-class'] = ['inmail']; // will be tagged as chat with field reply-to
       const email = {
         // will be tagged as professional
         name: 'user',
@@ -565,7 +538,7 @@ describe('test engines.EmailTaggingEngine', () => {
         },
         {
           reachable: 2,
-          name: 'linkedin',
+          name: 'chat',
           source: 'refined#message_header'
         }
       ]);

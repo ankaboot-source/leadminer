@@ -1,9 +1,8 @@
 import { REACHABILITY } from '../../../utils/constants';
 import {
   findEmailAddressType,
-  isAirbnb,
+  isChat,
   isGroup,
-  isLinkedin,
   isNewsletter,
   isNoReply,
   isRole,
@@ -105,14 +104,6 @@ export default class EmailMessageTagging implements TaggingEngine {
       });
     }
 
-    if (isAirbnb(address)) {
-      emailTags.push({
-        source: this.tagSourceFromEmailAddress,
-        name: 'airbnb',
-        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
-      });
-    }
-
     if (isRole(address)) {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
@@ -121,10 +112,10 @@ export default class EmailMessageTagging implements TaggingEngine {
       });
     }
 
-    if (isLinkedin(address)) {
+    if (isChat(address)) {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
-        name: 'linkedin',
+        name: 'chat',
         reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
