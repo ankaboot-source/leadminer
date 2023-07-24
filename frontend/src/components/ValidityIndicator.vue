@@ -9,7 +9,6 @@
 
 <script setup lang="ts">
 import { EmailStatus } from "src/types/contact";
-import { computed } from "vue";
 
 const props = defineProps<{
   emailStatus: EmailStatus;
@@ -17,7 +16,7 @@ const props = defineProps<{
 
 type Settings = Record<EmailStatus, { color: string; tooltip: string }>;
 
-const settings: Settings = {
+const settingsMapper: Settings = {
   UNKNOWN: {
     color: "grey",
     tooltip: "Unknown",
@@ -36,6 +35,5 @@ const settings: Settings = {
   },
 };
 
-const color = computed(() => settings[props.emailStatus].color);
-const tooltip = computed(() => settings[props.emailStatus].tooltip);
+const { color, tooltip } = settingsMapper[props.emailStatus];
 </script>
