@@ -97,6 +97,14 @@ export default class EmailMessageTagging implements TaggingEngine {
       ];
     }
 
+    if (isRole(address)) {
+      return [{
+        source: this.tagSourceFromEmailAddress,
+        name: 'role',
+        reachable: REACHABILITY.UNSURE
+      }]                                                                                                                                                                                                ;
+    }
+
     if (emailType === 'professional') {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
@@ -110,14 +118,6 @@ export default class EmailMessageTagging implements TaggingEngine {
         source: this.tagSourceFromEmailAddress,
         name: 'airbnb',
         reachable: REACHABILITY.INDIRECT_PERSON
-      });
-    }
-
-    if (isRole(address)) {
-      emailTags.push({
-        source: this.tagSourceFromEmailAddress,
-        name: 'role',
-        reachable: REACHABILITY.UNSURE
       });
     }
 
