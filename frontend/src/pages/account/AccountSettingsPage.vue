@@ -1,14 +1,32 @@
 <template>
   <AppLayout class="q-px-lg">
-    <h1 class="text-h4 text-bold">Account Settings</h1>
-    <h2 class="text-h6 text-bold">Update your password</h2>
-    <q-form class="q-gutter-sm flex column" @submit="updatePassword">
+    <div class="profile-header">
+      <h1 class="text-h4 text">
+        <q-btn
+          flat
+          icon="arrow_back"
+          round
+          @click="$router.push('/dashboard')"
+        />
+        Settings
+      </h1>
+    </div>
+    <h2 class="text-h6 text">Profile Information</h2>
+    <q-form class="q-gutter-sm flex column" @submit="updateProfile">
+      <q-input
+        ref="firstNameInput"
+        v-model="fullName"
+        outlined
+        label="Full Name"
+      />
+      <q-input ref="emailInput" v-model="email" outlined label="Email" />
       <q-input
         v-model="password"
-        :disable="isSocialLogin"
-        filled
+        outlined
+        hide-bottom-space
+        label="Password"
+        :disabled="isSocialLogin"
         :rules="passwordRules"
-        label="New password"
         :type="isPwd ? 'password' : 'text'"
       >
         <template #append>
@@ -19,21 +37,70 @@
           />
         </template>
       </q-input>
-
       <q-btn
-        no-caps
         type="submit"
-        :disable="isSocialLogin"
+        :disabled="isSocialLogin"
         :loading="isLoading"
         class="text-h6"
         label="Update"
         color="indigo"
       />
     </q-form>
+    <br />
+    <!-- Delete Account Section -->
+    <div>
+      <h2 class="text-h6 text">Delete Account</h2>
+      <p class="text-body1">
+        You can permanently delete your account including your minging data. You
+        can't undo this action.
+      </p>
+      <q-btn
+        no-caps
+        icon="delete"
+        label="Delete my account"
+        color="negative"
+        :unelevated="true"
+        @click="showWarning"
+      />
+    </div>
+
+    <!-- Warning model Section -->
+    <q-dialog v-model="showDeleteModal" no-refocus>
+      <q-card class="delete-modal q-pa-md">
+        <div style="flex: 1; text-align: right">
+          <q-btn v-close-popup dense flat icon="close"></q-btn>
+        </div>
+        <q-card-section class="delete-modal-content">
+          <p class="text-h6">
+            ⚠️ Deleting your account is permanent. You will lose all your mining
+            data.
+          </p>
+        </q-card-section>
+        <q-card-actions :align="'right'">
+          <q-btn
+            no-caps
+            outline
+            color="#1f2124"
+            label="Cancel"
+            :unelevated="true"
+            @click="closeWarning"
+          />
+
+          <q-btn
+            no-caps
+            label="Delete"
+            color="negative"
+            :unelevated="true"
+            @click="DeleteAccount"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
+import { User } from "@supabase/supabase-js";
 import { useQuasar } from "quasar";
 import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
@@ -44,32 +111,57 @@ import { useRouter } from "vue-router";
 const $quasar = useQuasar();
 const $router = useRouter();
 
-const isSocialLogin = ref(false);
+const fullName = ref("");
+const email = ref("");
 const password = ref("");
+
+const isSocialLogin = ref(false);
 const isPwd = ref(true);
 const isLoading = ref(false);
 
+const showDeleteModal = ref(false);
+
 onMounted(async () => {
-  isSocialLogin.value = Boolean(
-    (await supabase.auth.getSession()).data.session?.provider_token
-  );
+  const { session } = (await supabase.auth.getSession()).data;
+  if (session) {
+    const { full_name: fullUserName, email: userEmail } =
+      session.user.user_metadata;
+    fullName.value = fullUserName;
+    email.value = userEmail;
+    isSocialLogin.value = Boolean(session.provider_token);
+  }
 });
 
-async function updatePassword() {
+function showWarning() {
+  showDeleteModal.value = true;
+}
+
+function closeWarning() {
+  showDeleteModal.value = false;
+}
+
+async function updateProfile() {
   isLoading.value = true;
   try {
     const { error } = await supabase.auth.updateUser({
+      data: {
+        name: fullName.value,
+        full_name: fullName.value,
+        email: email.value,
+      },
+      email: email.value,
       password: password.value,
     });
+
     if (error) {
       throw error;
     }
+
     $quasar.notify({
       message: "Password updated successfully",
       color: "positive",
       icon: "check",
     });
-    $router.push("/dashboard");
   } catch (error) {
     if (error instanceof Error) {
       $quasar.notify({
@@ -81,5 +173,18 @@ async function updatePassword() {
   } finally {
     isLoading.value = false;
   }
+}
+
+async function DeleteAccount() {
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  const { error } = await supabase.rpc("delete_user_and_related_data", {
+    userid: user.id,
+  });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+  }
+  await supabase.auth.signOut();
 }
 </script>
