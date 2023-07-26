@@ -115,6 +115,22 @@ describe('regexHelpers.cleanName', () => {
       expect(output).toBe('Leadminer');
     });
   });
+
+  it('should remove "(Google) | (Drive) | (Google Drive)" and the text after it', () => {
+    const inputs = [
+      'Leadminer (google)',
+      'Leadminer (Google)',
+      'Leadminer (drive)',
+      'Leadminer (Drive)',
+      'Leadminer (google drive)',
+      'Leadminer (Google Drive)'
+    ];
+
+    inputs.forEach((name) => {
+      const output = cleanName(name);
+      expect(output).toBe('Leadminer');
+    });
+  });
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
