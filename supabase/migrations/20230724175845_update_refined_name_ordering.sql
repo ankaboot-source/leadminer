@@ -32,7 +32,7 @@ BEGIN
                   END) over (partition by person_email, name) AS total,
                 COUNT(
                   CASE
-                    WHEN m.conversation THEN 1
+                    WHEN m.conversation AND "from" THEN 1
                   END
                 ) over (partition by person_email) AS engagement,
                 MAX(m.date) over (partition by person_email) AS recency
