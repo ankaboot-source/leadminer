@@ -3,7 +3,8 @@ import { check } from 'recheck';
 import {
   REGEX_BODY,
   REGEX_LIST_ID,
-  REGEX_REMOVE_QUOTES
+  REGEX_REMOVE_QUOTES,
+  REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
 } from '../../src/utils/constants';
 import {
   cleanName,
@@ -15,7 +16,12 @@ import testData from '../testData.json';
 jest.mock('../../src/config', () => {});
 
 describe('Regex redos checker', () => {
-  const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
+  const regex = [
+    REGEX_BODY,
+    REGEX_LIST_ID,
+    REGEX_REMOVE_QUOTES,
+    REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
+  ];
 
   regex.forEach((r) => {
     it('regex should be REDOS safe', async () => {
@@ -109,6 +115,22 @@ describe('regexHelpers.cleanName', () => {
 
   it('should remove "via" and the text after it', () => {
     const inputs = ['Leadminer via nextcloud', 'Leadminer (via nextcloud)'];
+
+    inputs.forEach((name) => {
+      const output = cleanName(name);
+      expect(output).toBe('Leadminer');
+    });
+  });
+
+  it('should remove "(Google) | (Drive) | (Google Drive)" and the text after it', () => {
+    const inputs = [
+      'Leadminer (google)',
+      'Leadminer (Google)',
+      'Leadminer (drive)',
+      'Leadminer (Drive)',
+      'Leadminer (google drive)',
+      'Leadminer (Google Drive)'
+    ];
 
     inputs.forEach((name) => {
       const output = cleanName(name);
