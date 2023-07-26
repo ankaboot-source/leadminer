@@ -6,7 +6,9 @@
     <q-toolbar class="text-custom q-pa-sm">
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
-      <q-btn flat class="text-lowercase"> {{ user?.email }}</q-btn>
+      <q-btn flat class="text-lowercase" @click="settings()">
+        {{ user?.email }}</q-btn
+      >
       <q-btn class="q-mr-sm" flat round dense icon="logout" @click="logout()" />
     </q-toolbar>
   </q-header>
@@ -27,6 +29,10 @@ async function logout() {
   await supabase.auth.signOut();
   sse.closeConnection();
   router.push("/");
+}
+
+function settings() {
+  router.push("/account");
 }
 
 onMounted(async () => {
