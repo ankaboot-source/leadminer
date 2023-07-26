@@ -83,5 +83,3 @@ const $router = useRouter();
 
 const provider = $router.currentRoute.value.query?.provider;
 </script>
-
-<style></style>
