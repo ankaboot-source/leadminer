@@ -1,3 +1,7 @@
+-- Added ordering for name by field source L20
+-- Added a new field in the subquery select L26
+-- Added a new condition when calculating engagement L39
+
 CREATE
 OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void 
 LANGUAGE plpgsql 
