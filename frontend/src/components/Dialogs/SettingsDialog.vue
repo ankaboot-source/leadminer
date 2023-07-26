@@ -150,29 +150,25 @@
                       name="check"
                       color="green"
                     >
-                      <q-tooltip class="bg-indigo"
-                        >Valid and reachable</q-tooltip
-                      >
+                      <q-tooltip>Valid and reachable</q-tooltip>
                     </q-icon>
                     <q-icon
                       v-else-if="miningSource.isValid === false"
                       name="error"
                       color="red"
                     >
-                      <q-tooltip class="bg-indigo">Unreachable</q-tooltip>
+                      <q-tooltip>Unreachable</q-tooltip>
                     </q-icon>
                     <q-spinner
                       v-else-if="
                         activeMiningSource?.email === miningSource.email &&
                         isLoadingBoxes
                       "
-                      size="1.5rem"
-                      :thickness="7"
-                      color="accent"
+                      size="1.3rem"
                     >
                     </q-spinner>
                     <q-icon v-else name="pending" color="accent">
-                      <q-tooltip class="bg-indigo">Unverified</q-tooltip>
+                      <q-tooltip>Unverified</q-tooltip>
                     </q-icon>
                   </q-item-section>
                 </q-item>
