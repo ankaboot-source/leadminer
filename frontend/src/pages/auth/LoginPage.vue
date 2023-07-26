@@ -15,7 +15,7 @@
         :size="buttonSize"
         align="left"
         unelevated
-        class="full-width text-h6 text-weight-less-regular"
+        class="full-width text-h6 text-weight-less-regular secondary-button"
         icon="img:icons/google.png"
         label="Continue with Google"
         @click="loginWithOAuth('google')"
@@ -24,7 +24,7 @@
         no-caps
         :loading="isLoading"
         :size="buttonSize"
-        class="full-width text-h6 text-weight-less-regular"
+        class="full-width text-h6 text-weight-less-regular secondary-button"
         align="left"
         unelevated
         icon="img:icons/microsoft.png"
@@ -181,9 +181,3 @@ async function loginWithOAuth(provider: Provider) {
   }
 }
 </script>
-
-<style scoped>
-.q-btn {
-  border: 1px solid silver;
-}
-</style>
