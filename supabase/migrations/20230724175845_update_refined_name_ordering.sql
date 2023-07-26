@@ -13,14 +13,14 @@ BEGIN
         alternate_names = null,
         name = sub_query.name
     FROM (
-        SELECT
+        SELECT distinct
             subquery.person_email,
             first_value(name) over (partition by person_email order by total desc, source desc, recent_date desc) as name,
             subquery.occurrence,
             subquery.engagement,
             subquery.recency
         FROM (
-            SELECT distinct
+            SELECT
                 person_email,
                 "from" as source,
                 name,
