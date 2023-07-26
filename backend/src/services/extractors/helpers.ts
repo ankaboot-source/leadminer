@@ -2,6 +2,7 @@ import { decode } from 'html-entities';
 import { decode as _decode } from 'quoted-printable';
 import {
   REGEX_BODY,
+  REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS,
   REGEX_HEADER,
   REGEX_HEADER_EMAIL_SPLIT_PATTERN,
   REGEX_REMOVE_QUOTES
@@ -21,7 +22,7 @@ export function cleanName(name: string) {
     .replace(REGEX_REMOVE_QUOTES, '$2') // In case Some inputs have nested quotes like this "'word'"}
     .replace(/[,;]+$/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
     .replace(/^[,;]+/, '') // Remove trailing ; and , to not cause errors later when exporting to csv
-    .replace(/\s\(?via\s.*$/, ''); // Remove the word "via" and text after it
+    .replace(REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS, ''); // Remove the word "via" and text after it
 
   return cleanedName;
 }

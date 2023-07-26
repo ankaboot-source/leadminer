@@ -24,6 +24,8 @@ export const REGEX_HEADER_EMAIL_SPLIT_PATTERN = headerRegexEmailSplitPattern;
 export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
+export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =
+  /\s(\(?(via\s?.*)|\((Google|Drive)\s?.*\))$/i;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
