@@ -21,8 +21,8 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
 
   private static readonly INSERT_TAGS_SQL = `
@@ -68,7 +68,8 @@ export default class PgContacts implements Contacts {
           person.familyName,
           person.jobTitle,
           person.identifiers,
-          userId
+          userId,
+          person.status
         ]);
 
         const tagValues = tags.map((tag) => [

@@ -1,10 +1,15 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { TaggingEngine } from '../../src/services/tagging/types';
+import RedisMock from 'ioredis-mock';
 import EmailMessage from '../../src/services/extractors/EmailMessage';
+import { TaggingEngine } from '../../src/services/tagging/types';
+import FakeEmailStatusVerifier from '../fakes/db/FakeEmailVerifier';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
 }));
+
+jest.mock('ioredis', () => jest.requireActual('ioredis-mock'));
+const redis = new RedisMock();
 
 const taggingEngine = {} as TaggingEngine;
 
@@ -13,7 +18,8 @@ describe('Email Message', () => {
     it('should return undefined if no references are present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         { 'message-id': 'test' },
         {},
@@ -25,7 +31,8 @@ describe('Email Message', () => {
     it('should return an array of references if they are present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         { 'message-id': 'test', references: ['<r1>'] },
         {},
@@ -38,7 +45,8 @@ describe('Email Message', () => {
     it('should handle spaces between references', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         { 'message-id': 'test', references: ['<r1> <r2> <r3>'] },
         {},
@@ -73,7 +81,8 @@ describe('Email Message', () => {
       it(`Should return <listID>:string for list-id header fields = ${listIdHeaderField}`, () => {
         const message = new EmailMessage(
           taggingEngine,
-          {},
+          new FakeEmailStatusVerifier({}),
+          redis,
           '',
           {
             'message-id': 'test',
@@ -94,7 +103,8 @@ describe('Email Message', () => {
       }`, () => {
         const message = new EmailMessage(
           taggingEngine,
-          {},
+          new FakeEmailStatusVerifier({}),
+          redis,
           '',
 
           {
@@ -112,7 +122,8 @@ describe('Email Message', () => {
     it('Should return undefined in the absence of list-post header field', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         {
           'message-id': 'test',
@@ -128,7 +139,8 @@ describe('Email Message', () => {
     it('Should return undefined in the absence of list-id header field', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         {
           'message-id': 'test',
@@ -147,7 +159,8 @@ describe('Email Message', () => {
       const date = new Date().toUTCString();
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         {
           'message-id': 'test',
@@ -163,7 +176,8 @@ describe('Email Message', () => {
     it('should return undefined if the date is not present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         {
           'message-id': 'test'
@@ -178,7 +192,8 @@ describe('Email Message', () => {
     it('should return undefined if the date is not a valid date', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         {
           'message-id': 'test',
@@ -196,7 +211,8 @@ describe('Email Message', () => {
     it('should return the message-id field if it is present in the header', () => {
       const message = new EmailMessage(
         taggingEngine,
-        {},
+        new FakeEmailStatusVerifier({}),
+        redis,
         '',
         {
           'message-id': ['<test_message_id>'],

@@ -153,57 +153,9 @@
 
       <template #body-cell-name="props">
         <q-td :props="props">
-          <q-expansion-item
-            v-if="props.row.name && props.row.alternate_names?.length > 1"
-            dense
-            dense-toggle
-            expand-icon-class="text-orange"
-            header-class="q-prl-16"
-          >
-            <template #header>
-              <q-item-section>
-                <div class="row items-center">
-                  <q-badge outline color="orange">
-                    {{
-                      props.row.name.length > 35
-                        ? props.row.name.substring(0, 30).concat("...")
-                        : props.row.name
-                    }}
-                  </q-badge>
-                  <q-badge
-                    class="text-little q-ml-sm"
-                    outline
-                    color="orange"
-                    transparent
-                  >
-                    +{{ props.row.alternate_names.length - 1 }}
-                  </q-badge>
-                </div>
-              </q-item-section>
-            </template>
-            <div
-              v-for="name in props.row.alternate_names.filter((element: string) => {
-                return element.trim() !== '' && element !== props.row.name;
-              })"
-              :key="name.index"
-              :bind="name.index"
-              style="padding-left: 16px"
-            >
-              <q-badge v-if="name.length > 0" outline color="orange">
-                {{
-                  name.length > 35 ? name.substring(0, 30).concat("...") : name
-                }}
-              </q-badge>
-              <br />
-            </div>
-          </q-expansion-item>
-          <div
-            v-else-if="props.row.name"
-            class="row items-center"
-            style="padding-left: 16px"
-          >
-            <q-badge outline color="orange">
-              {{ props.row.name ? props.row.name : "" }}
+          <div class="row items-center">
+            <q-badge v-if="props.row.name" outline color="orange">
+              {{ props.row.name }}
             </q-badge>
           </div>
         </q-td>
@@ -211,12 +163,7 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <q-badge rounded :color="mailboxValidityCurrent">
-            {{ " " }}
-            <q-tooltip :class="'bg-' + mailboxValidityCurrent">
-              {{ mailboxValidity[mailboxValidityCurrent] }}
-            </q-tooltip>
-          </q-badge>
+          <validity-indicator :email-status="props.row.status" />
         </q-td>
       </template>
     </q-table>
@@ -235,6 +182,7 @@ import { fetchData, supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
 import { Contact } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
 const leadminerStore = useLeadminerStore();
@@ -253,12 +201,6 @@ const initialPagination = {
   sortBy: "engagement",
   descending: true,
 };
-const mailboxValidity = {
-  green: "Valid mailbox",
-  orange: "The mailbox could not receive your emails",
-  red: "The mailbox is not valid",
-};
-const mailboxValidityCurrent: "green" | "orange" | "red" = "green";
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 

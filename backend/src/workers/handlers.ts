@@ -1,4 +1,5 @@
 import { Contacts } from '../db/Contacts';
+import { EmailStatusVerifier } from '../services/email-status/EmailStatusVerifier';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import logger from '../utils/logger';
@@ -21,9 +22,7 @@ export interface PublishedStreamMessage {
 /**
  * Handles incoming email message and performs necessary operations like storing contact information,
  * populating refined_persons table and reporting progress.
- * @async
- * @function handleMessage
- * @param {options} options - The options object.
+ * @param options - The options object.
  * @param options.seqNumber - The sequence number of the email message.
  * @param options.body - The body of the email message.
  * @param options.header - The header of the email message.
@@ -33,8 +32,7 @@ export interface PublishedStreamMessage {
  * @param options.userIdentifier - The hash of the user's identifier.
  * @param options.isLast - Indicates whether this is the last message in a sequence of messages.
  * @param options.miningId - The id of the mining process.
- * @param {import('../db/Contacts').Contacts} contacts - The contacts db accessor.
- * @returns {Promise<void>}
+ * @param contacts - The contacts db accessor.
  */
 async function handleMessage(
   {
@@ -46,10 +44,12 @@ async function handleMessage(
     userIdentifier,
     isLast
   }: PublishedStreamMessage,
-  contacts: Contacts
+  contacts: Contacts,
+  emailStatusVerifier: EmailStatusVerifier
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
+    emailStatusVerifier,
     redisClientForNormalMode,
     userEmail,
     header,
@@ -81,16 +81,18 @@ async function handleMessage(
 
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
- * @param {Array} message - Array containing the stream message ID and the message data
  */
-export default function initializeMessageProcessor(contacts: Contacts) {
+export default function initializeMessageProcessor(
+  contacts: Contacts,
+  emailStatusVerifier: EmailStatusVerifier
+) {
   return {
     processStreamData: async (message: [string, string]) => {
       const [, msg] = message;
       const data: PublishedStreamMessage = JSON.parse(msg[1]);
       const { miningId } = data;
 
-      await handleMessage(data, contacts);
+      await handleMessage(data, contacts, emailStatusVerifier);
       return miningId;
     }
   };

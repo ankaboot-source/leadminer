@@ -1,3 +1,5 @@
+import { Status } from '../services/email-status/EmailStatusVerifier';
+
 export interface Contact {
   message: Message;
   persons: PersonWithPocAndTag[];
@@ -21,6 +23,7 @@ export interface PersonWithPocAndTag {
 
 export interface Person {
   email: string;
+  status: Status;
   url?: string;
   name?: string;
   image?: string;
