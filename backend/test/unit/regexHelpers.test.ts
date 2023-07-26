@@ -3,7 +3,8 @@ import { check } from 'recheck';
 import {
   REGEX_BODY,
   REGEX_LIST_ID,
-  REGEX_REMOVE_QUOTES
+  REGEX_REMOVE_QUOTES,
+  REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
 } from '../../src/utils/constants';
 import {
   cleanName,
@@ -15,7 +16,12 @@ import testData from '../testData.json';
 jest.mock('../../src/config', () => {});
 
 describe('Regex redos checker', () => {
-  const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
+  const regex = [
+    REGEX_BODY,
+    REGEX_LIST_ID,
+    REGEX_REMOVE_QUOTES,
+    REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
+  ];
 
   regex.forEach((r) => {
     it('regex should be REDOS safe', async () => {
