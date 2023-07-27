@@ -15,7 +15,7 @@ export default function initializeAuthController(authResolver: AuthResolver) {
 
         if (!deleteRelatedData) {
           return next(
-            new Error('Something unexpected happend, please try again later.')
+            new Error('Unexpected error when deleting mining data. Please try again later.')
           );
         }
 
@@ -24,7 +24,7 @@ export default function initializeAuthController(authResolver: AuthResolver) {
 
         if (!deleteUser) {
           return next(
-            new Error('Something unexpected happend, please try again later.')
+            new Error('Unexpected error when deleting user. Please try again later.')
           );
         }
 
