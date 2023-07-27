@@ -27,10 +27,6 @@ supabase.auth.onAuthStateChange((event, session) => {
     api.defaults.headers.common["x-sb-jwt"] = `${session.access_token}`;
   }
 
-  if (event === "USER_UPDATED" && session) {
-    localStorage.setItem("sb-localhost-auth-token", JSON.stringify(session));
-  }
-
   if (
     event === "SIGNED_IN" &&
     !SKIP_DASHBOARD_REDIRECT.includes($router.currentRoute.value.path)
