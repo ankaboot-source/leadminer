@@ -25,7 +25,6 @@
         outlined
         hide-bottom-space
         label="Password"
-        :disabled="isSocialLogin"
         :rules="passwordRules"
         :type="isPwd ? 'password' : 'text'"
       >
@@ -50,7 +49,7 @@
     <div>
       <h2 class="text-h6 text">Delete Account</h2>
       <p class="text-body1">
-        You can permanently delete your account including your minging data. You
+        You can permanently delete your account including your mined data. You
         can't undo this action.
       </p>
       <q-btn
