@@ -39,7 +39,6 @@
       </q-input>
       <q-btn
         type="submit"
-        :disabled="isSocialLogin"
         :loading="isLoading"
         class="text-h6"
         label="Update"
@@ -115,7 +114,6 @@ const fullName = ref("");
 const email = ref("");
 const password = ref("");
 
-const isSocialLogin = ref(false);
 const isPwd = ref(true);
 const isLoading = ref(false);
 
@@ -128,7 +126,6 @@ onMounted(async () => {
       session.user.user_metadata;
     fullName.value = fullUserName;
     email.value = userEmail;
-    isSocialLogin.value = Boolean(session.provider_token);
   }
 });
 
