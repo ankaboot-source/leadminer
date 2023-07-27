@@ -70,13 +70,17 @@ describe('taggingHelpers.isNoReply(emailAddress)', () => {
 });
 
 describe('taggingHelpers.isTransactional(emailAddress)', () => {
-  test.each`
-    input
-    ${'reply+ABOE2A5ILHXMYEL3KF74W5OCOJCEREVBNHHGMLYEUE@reply.github.com'}
-    ${'leadminer@noreply.github.com'}
-    ${'subscribed@noreply.github.com'}
-    ${'unsub+ABOE2A5ILHXMYEL3KF74W5OCOJCEREVBNHHGMLYEUE@reply.github.com'}
-  `('Should tag $input email address as transactional', ({ input }) => {
-    expect(isTransactional(input)).toBe(true);
+  
+  const tests = [
+    'reply+ABOE2A5ILHXMYEL3KF74W5OCOJCEREVBNHHGMLYEUE@reply.github.com',
+    'leadminer@noreply.github.com',
+    'subscribed@noreply.github.com',
+    'unsub+ABOE2A5ILHXMYEL3KF74W5OCOJCEREVBNHHGMLYEUE@reply.github.com'
+  ]
+  
+  tests.map((input) => {
+    it(`Should tag ${input} email address as transactional`, () => {
+      expect(isTransactional(input)).toBe(true);
+    });
   });
 });
