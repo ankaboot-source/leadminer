@@ -36,7 +36,7 @@
         :loading="isLoading"
         class="text-h6"
         label="Update"
-        color="indigo"
+        color="primary"
       />
     </q-form>
     <br />

@@ -61,7 +61,7 @@
         <q-btn
           no-caps
           unelevated
-          color="indigo"
+          color="primary"
           class="no-border no-border-radius no-box-shadow"
           label="Try again"
           @click="

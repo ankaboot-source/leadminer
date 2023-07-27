@@ -42,7 +42,7 @@
           :loading="isLoading"
           class="full-width text-h6 no-border"
           label="Start mining"
-          color="indigo"
+          color="primary"
         />
       </q-form>
 
