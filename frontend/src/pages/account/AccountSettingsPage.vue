@@ -199,13 +199,13 @@ async function deleteAccount() {
     }
 
     if (error instanceof AxiosError) {
-      const e = error.response?.data || error;
+      const err = error.response?.data || error;
 
-      if (e.message?.toLowerCase() === "network error") {
+      if (err.message?.toLowerCase() === "network error") {
         message =
           "Unable to access server. Please retry again or contact your service provider.";
       } else {
-        message = e.message;
+        message = err.message;
       }
     }
 
