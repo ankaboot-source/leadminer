@@ -1,7 +1,7 @@
 -- Create the PostgreSQL function to delete the user and their related data
 -- Update database function permission for authenticated
 
-CREATE OR REPLACE FUNCTION delete_user_and_related_data(userid UUID) RETURNS VOID
+CREATE OR REPLACE FUNCTION delete_user_data(userid UUID) RETURNS VOID
 AS $$
 DECLARE
   owner_id uuid;
