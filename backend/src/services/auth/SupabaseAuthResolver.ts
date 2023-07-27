@@ -45,9 +45,9 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async invoke(functionName: string, functionParameters: Record<string, any>) {
+  async invokeDeleteMiningData(userid: string) {
     try {
-      await this.client.rpc(functionName, { ...functionParameters });
+      await this.client.rpc('delete_user_and_related_data', { userid });
       return true;
     } catch (e) {
       this.logger.error('Failed to invoke database function user', e);
