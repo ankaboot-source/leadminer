@@ -104,7 +104,10 @@ export default function initializeMiningController(
           );
         }
       } catch (error) {
-        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
+        res.redirect(
+          301,
+          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=google&referrer=${state}`
+        );
       }
     },
 
@@ -190,7 +193,10 @@ export default function initializeMiningController(
           );
         }
       } catch (error) {
-        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
+        res.redirect(
+          301,
+          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=azure&referrer=${state}`
+        );
       }
     },
 
