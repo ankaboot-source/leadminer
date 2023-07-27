@@ -31,6 +31,7 @@
         </template>
       </q-input>
       <q-btn
+        no-caps
         type="submit"
         :loading="isLoading"
         class="text-h6"
