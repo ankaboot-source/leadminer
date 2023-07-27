@@ -2,7 +2,6 @@
 -- Update database function permission for authenticated
 
 CREATE OR REPLACE FUNCTION delete_user_and_related_data(userid UUID) RETURNS VOID
-security definer set search_path = public -- Execute the function as definer so we can delete table auth.users
 AS $$
 DECLARE
   owner_id uuid;
@@ -14,7 +13,6 @@ BEGIN
   DELETE FROM tags t WHERE t.user_id = owner_id;
   DELETE FROM refinedpersons r WHERE r.userid = owner_id;
   DELETE from mining_sources ms WHERE ms.user_id = owner_id;
-  DELETE FROM auth.users WHERE id = owner_id;
 END;
 $$ LANGUAGE plpgsql;
 
