@@ -27,7 +27,6 @@ import AppLogo from "./AppLogo.vue";
 const router = useRouter();
 const user = ref<User | null>(null);
 
-console.log(window.location.pathname);
 const shouldShow = computed(() => window.location.pathname !== "/account");
 
 async function logout() {
