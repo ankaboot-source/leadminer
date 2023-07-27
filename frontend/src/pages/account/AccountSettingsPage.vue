@@ -1,10 +1,10 @@
 <template>
-  <AppLayout class="q-px-lg">
-    <h1 class="text-h4">
+  <AppLayout class="q-px-md">
+    <div class="flex items-center">
       <q-btn flat icon="arrow_back" round @click="goToDashboard()" />
-      Settings
-    </h1>
-    <h2 class="text-h6">Profile Information</h2>
+      <h1 class="text-h4">Settings</h1>
+    </div>
+    <h2 class="text-h6 q-mt-xs">Profile Information</h2>
     <q-form class="q-gutter-sm flex column" @submit="updateProfile">
       <q-input v-model="fullName" outlined label="Full Name" />
       <q-input
@@ -41,7 +41,7 @@
     <br />
     <!-- Delete Account Section -->
     <div>
-      <h2 class="text-h6">Delete Account</h2>
+      <h2 class="text-h6 q-mb-xs">Delete Account</h2>
       <p class="text-body1">
         You can permanently delete your account including your mined data. You
         can't undo this action.
@@ -59,9 +59,10 @@
     <!-- Warning model Section -->
     <q-dialog v-model="showDeleteModal" no-refocus>
       <q-card class="delete-modal q-pa-md">
-        <div style="flex: 1; text-align: right">
-          <q-btn v-close-popup dense flat icon="close"></q-btn>
-        </div>
+        <q-card-section class="row items-center q-pb-none">
+          <q-space />
+          <q-btn v-close-popup aligh="right" dense flat icon="close"></q-btn>
+        </q-card-section>
         <q-card-section class="delete-modal-content">
           <p class="text-h6">
             ⚠️ Deleting your account is permanent. You will lose all your mining
@@ -95,8 +96,10 @@
 </template>
 
 <script setup lang="ts">
-import { User } from "@supabase/supabase-js";
+import { AxiosError } from "axios";
 import { useQuasar } from "quasar";
+import { api } from "src/boot/axios";
+import { logout } from "src/helpers/auth";
 import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
 import AppLayout from "src/layouts/AppLayout.vue";
@@ -118,6 +121,7 @@ const isSocialLogin = ref(false);
 
 onMounted(async () => {
   const { session } = (await supabase.auth.getSession()).data;
+
   if (session) {
     const { full_name: fullUserName, email: userEmail } =
       session.user.user_metadata;
@@ -142,22 +146,25 @@ function goToDashboard() {
 async function updateProfile() {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.updateUser({
+    const body = {
       data: {
         name: fullName.value,
         full_name: fullName.value,
         email: email.value,
       },
       email: email.value,
-      password: password.value,
-    });
+      password: password.value.length > 0 ? password.value : undefined,
+    };
+    const { error } = await supabase.auth.updateUser(body);
 
     if (error) {
       throw error;
     }
 
+    await supabase.auth.refreshSession();
+
     $quasar.notify({
-      message: "Password updated successfully",
+      message: "Profile information updated successfully",
       color: "positive",
       icon: "check",
     });
@@ -177,25 +184,38 @@ async function updateProfile() {
 async function deleteAccount() {
   isLoading.value = true;
   try {
-    const user = (await supabase.auth.getSession()).data.session?.user as User;
-    const { error } = await supabase.rpc("delete_user_and_related_data", {
-      userid: user.id,
-    });
+    const { error } = (await api.delete("/auth/users/delete")).data;
 
     if (error) {
       throw error;
     }
+
+    logout();
   } catch (error) {
+    let message = "";
+
     if (error instanceof Error) {
-      $quasar.notify({
-        message: error.message,
-        color: "negative",
-        icon: "error",
-      });
+      message = error.message;
     }
+
+    if (error instanceof AxiosError) {
+      const e = error.response?.data || error;
+
+      if (e.message?.toLowerCase() === "network error") {
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
+      } else {
+        message = e.message;
+      }
+    }
+
+    $quasar.notify({
+      message,
+      color: "negative",
+      icon: "error",
+    });
   } finally {
     isLoading.value = false;
-    await supabase.auth.signOut();
   }
 }
 </script>
