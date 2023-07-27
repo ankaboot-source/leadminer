@@ -6,10 +6,11 @@ module.exports = {
   coverageReporters: ['json-summary'],
   collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
   transform: {
-    "^.+\\.(ts|tsx|js|jsx)$": [
-        'ts-jest', {
-            isolatedModules: true
-        },
+    '^.+\\.(ts|tsx|js|jsx)$': [
+      'ts-jest',
+      {
+        isolatedModules: true
+      }
     ]
-  },
+  }
 };
