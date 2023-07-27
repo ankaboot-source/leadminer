@@ -4,5 +4,12 @@ module.exports = {
   testEnvironment: 'node',
   testPathIgnorePatterns: ['dist/', 'src/'],
   coverageReporters: ['json-summary'],
-  collectCoverageFrom: ['<rootDir>/src/**/*.ts']
+  collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
+  transform: {
+    "^.+\\.(ts|tsx|js|jsx)$": [
+        'ts-jest', {
+            isolatedModules: true
+        },
+    ]
+  },
 };
