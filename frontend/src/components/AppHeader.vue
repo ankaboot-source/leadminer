@@ -18,22 +18,16 @@
 
 <script setup lang="ts">
 import { User } from "@supabase/supabase-js";
-import { sse } from "src/helpers/sse";
 import { supabase } from "src/helpers/supabase";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { logout } from "src/helpers/auth";
 import AppLogo from "./AppLogo.vue";
 
 const router = useRouter();
 const user = ref<User | null>(null);
 
 const shouldShow = computed(() => window.location.pathname !== "/account");
-
-async function logout() {
-  await supabase.auth.signOut();
-  sse.closeConnection();
-  router.push("/");
-}
 
 function goToSettings() {
   router.push("/account");
