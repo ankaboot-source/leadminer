@@ -50,7 +50,10 @@ export default class SupabaseAuthResolver implements AuthResolver {
       await this.client.rpc('delete_user_data', { userid });
       return true;
     } catch (e) {
-      this.logger.error('Failed to invoke database function "delete_user_data"', e);
+      this.logger.error(
+        'Failed to invoke database function "delete_user_data"',
+        e
+      );
       return undefined;
     }
   }
