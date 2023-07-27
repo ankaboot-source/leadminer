@@ -29,4 +29,29 @@ export default class SupabaseAuthResolver implements AuthResolver {
       return undefined;
     }
   }
+
+  async deleteUser(userid: string) {
+    try {
+      const { data, error } = await this.client.auth.admin.deleteUser(userid);
+
+      if (error) {
+        return undefined;
+      }
+
+      return data.user;
+    } catch (e) {
+      this.logger.error('Failed to delete authenticated user', e);
+      return undefined;
+    }
+  }
+
+  async invoke(functionName: string, functionParameters: Record<string, any>) {
+    try {
+      await this.client.rpc(functionName, { ...functionParameters });
+      return true;
+    } catch (e) {
+      this.logger.error('Failed to invoke database function user', e);
+      return undefined;
+    }
+  }
 }
