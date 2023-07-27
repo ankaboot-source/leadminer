@@ -59,7 +59,7 @@
           :size="buttonSize"
           icon="img:icons/google.png"
           label="Google"
-          class="text-h6 text-weight-less-regular"
+          class="text-h6 text-weight-less-regular secondary-button"
           @click="loginWithOAuth('google')"
         />
         <q-btn
@@ -67,7 +67,7 @@
           no-caps
           :size="buttonSize"
           unelevated
-          class="text-h6 text-weight-less-regular"
+          class="text-h6 text-weight-less-regular secondary-button"
           icon="img:icons/microsoft.png"
           label="Microsoft"
           @click="loginWithOAuth('azure')"
@@ -180,9 +180,3 @@ async function loginWithOAuth(provider: "google" | "azure") {
   }
 }
 </script>
-
-<style scoped>
-.q-btn {
-  border: 1px solid silver;
-}
-</style>

@@ -6,8 +6,11 @@ import { sse } from "src/helpers/sse";
 import { supabase } from "src/helpers/supabase";
 import { MiningSource, MiningTask } from "src/types/mining";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 export const useLeadminerStore = defineStore("leadminer", () => {
+  const $router = useRouter();
+
   const miningTask = ref<MiningTask | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -114,8 +117,18 @@ export const useLeadminerStore = defineStore("leadminer", () => {
           errorMessage.value =
             "Unable to access server. Please retry again or contact your service provider.";
         } else {
-          errorMessage.value =
-            "Failed to connect to mining source! This probably means that you revoked access or changed your credentials. Please add this source again if you want to use it";
+          errorMessage.value = "Imap connection error";
+          if (
+            activeMiningSource.value.type === "Azure" ||
+            activeMiningSource.value.type === "Google"
+          ) {
+            const { data } = await supabase.auth.getUser();
+            $router.push(
+              `/oauth-consent-error?provider=${
+                activeMiningSource.value.type === "Google" ? "google" : "azure"
+              }&referrer=${data.user?.id}`
+            );
+          }
         }
       }
       miningSources.value = miningSources.value.reduce<MiningSource[]>(
