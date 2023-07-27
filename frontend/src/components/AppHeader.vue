@@ -6,9 +6,11 @@
     <q-toolbar class="text-custom q-pa-sm">
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
-      <q-btn flat class="text-lowercase" @click="settings()">
-        {{ user?.email }}</q-btn
-      >
+      <div v-show="shouldShow">
+        <q-btn flat class="text-lowercase" @click="settings()">
+          {{ user?.email }}</q-btn
+        >
+      </div>
       <q-btn class="q-mr-sm" flat round dense icon="logout" @click="logout()" />
     </q-toolbar>
   </q-header>
@@ -18,12 +20,15 @@
 import { User } from "@supabase/supabase-js";
 import { sse } from "src/helpers/sse";
 import { supabase } from "src/helpers/supabase";
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import AppLogo from "./AppLogo.vue";
 
 const router = useRouter();
 const user = ref<User | null>(null);
+
+console.log(window.location.pathname);
+const shouldShow = computed(() => window.location.pathname !== "/account");
 
 async function logout() {
   await supabase.auth.signOut();
