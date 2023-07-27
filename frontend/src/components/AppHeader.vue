@@ -7,9 +7,9 @@
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
       <div v-show="shouldShow">
-        <q-btn flat class="text-lowercase" @click="settings()">
-          {{ user?.email }}</q-btn
-        >
+        <q-btn flat class="text-lowercase" @click="goToSettings()">
+          {{ user?.email }}
+        </q-btn>
       </div>
       <q-btn class="q-mr-sm" flat round dense icon="logout" @click="logout()" />
     </q-toolbar>
@@ -35,7 +35,7 @@ async function logout() {
   router.push("/");
 }
 
-function settings() {
+function goToSettings() {
   router.push("/account");
 }
 

@@ -1,30 +1,24 @@
 <template>
   <AppLayout class="q-px-lg">
-    <div class="profile-header">
-      <h1 class="text-h4 text">
-        <q-btn
-          flat
-          icon="arrow_back"
-          round
-          @click="$router.push('/dashboard')"
-        />
-        Settings
-      </h1>
-    </div>
-    <h2 class="text-h6 text">Profile Information</h2>
+    <h1 class="text-h4">
+      <q-btn flat icon="arrow_back" round @click="goToDashboard()" />
+      Settings
+    </h1>
+    <h2 class="text-h6">Profile Information</h2>
     <q-form class="q-gutter-sm flex column" @submit="updateProfile">
+      <q-input v-model="fullName" outlined label="Full Name" />
       <q-input
-        ref="firstNameInput"
-        v-model="fullName"
+        v-model="email"
+        :disable="isSocialLogin"
         outlined
-        label="Full Name"
+        label="Email"
       />
-      <q-input ref="emailInput" v-model="email" outlined label="Email" />
       <q-input
         v-model="password"
         outlined
         hide-bottom-space
         label="Password"
+        :disable="isSocialLogin"
         :rules="passwordRules"
         :type="isPwd ? 'password' : 'text'"
       >
@@ -47,7 +41,7 @@
     <br />
     <!-- Delete Account Section -->
     <div>
-      <h2 class="text-h6 text">Delete Account</h2>
+      <h2 class="text-h6">Delete Account</h2>
       <p class="text-body1">
         You can permanently delete your account including your mined data. You
         can't undo this action.
@@ -57,7 +51,7 @@
         icon="delete"
         label="Delete my account"
         color="negative"
-        :unelevated="true"
+        unelevated
         @click="showWarning"
       />
     </div>
@@ -74,22 +68,25 @@
             data.
           </p>
         </q-card-section>
-        <q-card-actions :align="'right'">
+        <q-card-actions align="right">
           <q-btn
             no-caps
+            class="text-h6"
             outline
-            color="#1f2124"
+            color="secondary"
             label="Cancel"
-            :unelevated="true"
+            unelevated
             @click="closeWarning"
           />
 
           <q-btn
             no-caps
+            class="text-h6"
             label="Delete"
             color="negative"
-            :unelevated="true"
-            @click="DeleteAccount"
+            :loading="isLoading"
+            unelevated
+            @click="deleteAccount"
           />
         </q-card-actions>
       </q-card>
@@ -117,6 +114,7 @@ const isPwd = ref(true);
 const isLoading = ref(false);
 
 const showDeleteModal = ref(false);
+const isSocialLogin = ref(false);
 
 onMounted(async () => {
   const { session } = (await supabase.auth.getSession()).data;
@@ -125,6 +123,7 @@ onMounted(async () => {
       session.user.user_metadata;
     fullName.value = fullUserName;
     email.value = userEmail;
+    isSocialLogin.value = Boolean(session.provider_token);
   }
 });
 
@@ -134,6 +133,10 @@ function showWarning() {
 
 function closeWarning() {
   showDeleteModal.value = false;
+}
+
+function goToDashboard() {
+  $router.push("/dashboard");
 }
 
 async function updateProfile() {
@@ -171,16 +174,28 @@ async function updateProfile() {
   }
 }
 
-async function DeleteAccount() {
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  const { error } = await supabase.rpc("delete_user_and_related_data", {
-    userid: user.id,
-  });
+async function deleteAccount() {
+  isLoading.value = true;
+  try {
+    const user = (await supabase.auth.getSession()).data.session?.user as User;
+    const { error } = await supabase.rpc("delete_user_and_related_data", {
+      userid: user.id,
+    });
 
-  if (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
+    }
+  } finally {
+    isLoading.value = false;
+    await supabase.auth.signOut();
   }
-  await supabase.auth.signOut();
 }
 </script>
