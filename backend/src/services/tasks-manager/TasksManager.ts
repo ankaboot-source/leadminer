@@ -1,4 +1,5 @@
 // eslint-disable-next-line max-classes-per-file
+import { Queue } from 'bullmq';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import {
@@ -126,6 +127,9 @@ export default class TasksManager {
         fetchEmailBody
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
+      const emailVerificationQueue = new Queue(miningId, {
+        connection: this.redisSubscriber
+      });
 
       const miningTask: Task = {
         stream,
@@ -134,6 +138,7 @@ export default class TasksManager {
         miningId,
         startedAt: performance.now(),
         progressHandlerSSE,
+        emailVerificationQueue,
         progress: {
           totalMessages: await fetcher.getTotalMessages(),
           fetched: 0,
@@ -207,7 +212,15 @@ export default class TasksManager {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { fetcher, progressHandlerSSE, stream, startedAt, progress } = task;
+    const {
+      fetcher,
+      progressHandlerSSE,
+      stream,
+      startedAt,
+      progress,
+      emailVerificationQueue
+    } = task;
+    await emailVerificationQueue.obliterate({ force: true });
 
     this.ACTIVE_MINING_TASKS.delete(miningId);
 

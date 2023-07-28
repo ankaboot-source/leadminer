@@ -1,7 +1,12 @@
+import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { Logger } from 'winston';
 
-type StreamEntry = { streamName: string; consumerGroupName: string };
+type StreamEntry = {
+  streamName: string;
+  consumerGroupName: string;
+  emailVerificationQueue: Queue;
+};
 
 export default class StreamConsumer {
   private isInterrupted: boolean;
@@ -46,7 +51,14 @@ export default class StreamConsumer {
         JSON.parse(data);
 
       if (command === 'REGISTER') {
-        this.streamsRegistry.set(miningId, { streamName, consumerGroupName });
+        const emailVerificationQueue = new Queue(miningId, {
+          connection: redisClient
+        });
+        this.streamsRegistry.set(miningId, {
+          streamName,
+          consumerGroupName,
+          emailVerificationQueue
+        });
       } else {
         this.streamsRegistry.delete(miningId);
       }
@@ -69,7 +81,10 @@ export default class StreamConsumer {
    * @param consumerGroupName - The name of the Redis consumer group to read from
    * @returns A Promise that resolves when the stream is consumed successfully, or rejects with an error
    */
-  async consumeFromStreams(streams: string[], consumerGroupName: string) {
+  async consumeFromStreams(
+    streams: { streamName: string; emailVerificationQueue: Queue }[],
+    consumerGroupName: string
+  ) {
     try {
       const result = await this.redisClient.xreadgroup(
         'GROUP',
@@ -81,7 +96,7 @@ export default class StreamConsumer {
         2000,
         'NOACK',
         'STREAMS',
-        ...streams,
+        ...streams.map((s) => s.streamName),
         ...new Array(streams.length).fill('>')
       );
 
@@ -147,7 +162,10 @@ export default class StreamConsumer {
 
     const registry = Array.from(this.streamsRegistry.values());
     const streams = registry
-      .map(({ streamName }) => streamName)
+      .map(({ streamName, emailVerificationQueue }) => ({
+        streamName,
+        emailVerificationQueue
+      }))
       .filter(Boolean);
 
     if (registry.length > 0) {

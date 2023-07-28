@@ -1,8 +1,9 @@
 import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
+import { Status } from '../../services/email-status/EmailStatusVerifier';
 import { Contacts } from '../Contacts';
-import { Contact } from '../types';
+import { ExtractionResult } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
@@ -32,6 +33,15 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
+  // eslint-disable-next-line class-methods-use-this
+  updatePersonStatus(
+    _personEmail: string,
+    _userId: string,
+    _status: Status
+  ): Promise<boolean> {
+    return Promise.resolve(true);
+  }
+
   async populate(userId: string) {
     try {
       await this.pool.query(PgContacts.POPULATE_REFINED_SQL, [userId]);
@@ -42,7 +52,7 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async create({ message, persons }: Contact, userId: string) {
+  async create({ message, persons }: ExtractionResult, userId: string) {
     try {
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
