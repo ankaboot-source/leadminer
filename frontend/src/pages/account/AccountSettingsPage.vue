@@ -193,7 +193,7 @@ async function deleteAccount() {
 
     logout();
   } catch (error) {
-    let message = "";
+    let message = "Apologies, an unexpected error has occurred. Please try again later.";
 
     if (error instanceof Error) {
       message = error.message;
