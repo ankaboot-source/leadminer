@@ -20,12 +20,48 @@ export default class SupabaseAuthResolver implements AuthResolver {
       const { data, error } = await this.client.auth.getUser(accessToken);
 
       if (error) {
-        return undefined;
+        throw error;
       }
 
       return data.user;
     } catch (e) {
       this.logger.error('Failed to get authenticated user', e);
+      return undefined;
+    }
+  }
+
+  async deleteUser(userId: string) {
+    try {
+      const { data, error } = await this.client.auth.admin.deleteUser(userId);
+
+      if (error) {
+        throw error;
+      }
+
+      return data.user;
+    } catch (e) {
+      this.logger.error('Failed to delete authenticated user', e);
+      return undefined;
+    }
+  }
+
+  async deleteUserData(userId: string) {
+    try {
+      const { error } = await this.client.rpc('delete_user_data', {
+        userid: userId
+      });
+
+      if (error) {
+        const postgresErrorMessage = `message=${error.message} | code=${error.code} | details=${error.details}`;
+        throw new Error(postgresErrorMessage);
+      }
+
+      return true;
+    } catch (e) {
+      this.logger.error(
+        'Failed to invoke database function "delete_user_data"',
+        e
+      );
       return undefined;
     }
   }

@@ -28,7 +28,7 @@
           no-caps
           class="full-width text-h6"
           label="Send reset instructions"
-          color="indigo"
+          color="primary"
         />
       </q-form>
       <p class="text-subtitle1 q-my-lg">

@@ -72,7 +72,7 @@
           no-caps
           type="submit"
           unelevated
-          color="indigo"
+          color="primary"
           :loading="isLoading"
           class="full-width text-h6 no-border q-mt-xs"
           :size="buttonSize"
