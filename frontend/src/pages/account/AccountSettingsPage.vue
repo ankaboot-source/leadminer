@@ -2,7 +2,7 @@
   <AppLayout class="q-px-md">
     <div class="flex items-center">
       <q-btn flat icon="arrow_back" round @click="goToDashboard()" />
-      <h1 class="text-h4">Settings</h1>
+      <div class="text-h4">Settings</div>
     </div>
     <h2 class="text-h6 q-mt-xs">Profile Information</h2>
     <q-form class="q-gutter-sm flex column" @submit="updateProfile">
@@ -191,7 +191,8 @@ async function deleteAccount() {
       throw error;
     }
 
-    logout();
+    await logout();
+
   } catch (error) {
     let message = "Apologies, an unexpected error has occurred. Please try again later.";
 
