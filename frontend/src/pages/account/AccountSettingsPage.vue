@@ -185,7 +185,7 @@ async function updateProfile() {
 async function deleteAccount() {
   isLoading.value = true;
   try {
-    const { error } = (await api.delete("/auth/users/delete")).data;
+    const { error } = (await api.delete("/auth/users")).data;
 
     if (error) {
       throw error;

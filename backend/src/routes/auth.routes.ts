@@ -8,7 +8,7 @@ export default function initializeAuthRoutes(authResolver: AuthResolver) {
   const middleware = initializeAuthMiddleware(authResolver);
   const { deleteUserAccount } = initializeAuthController(authResolver);
 
-  router.delete('/users/delete', middleware, deleteUserAccount);
+  router.delete('/users', middleware, deleteUserAccount);
 
   return router;
 }
