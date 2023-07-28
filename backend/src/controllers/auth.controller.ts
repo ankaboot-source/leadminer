@@ -8,7 +8,6 @@ export default function initializeAuthController(authResolver: AuthResolver) {
       const user = res.locals.user as User;
 
       try {
-        // Delete all user mined data from other tables
         const deleteRelatedData = await authResolver.deleteUserData(
           user.id
         );
@@ -19,7 +18,6 @@ export default function initializeAuthController(authResolver: AuthResolver) {
             )
         }
 
-        // Delete authenticated user account
         const deleteUser = await authResolver.deleteUser(user.id);
 
         if (!deleteUser) {
