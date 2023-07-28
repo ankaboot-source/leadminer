@@ -4,6 +4,6 @@ import { Request } from 'express';
 export default interface AuthResolver {
   getAccessToken(req: Request): string | undefined;
   getUser(accessToken: string): Promise<User | undefined>;
-  deleteUser(userid: string): Promise<User | undefined>;
-  deleteUserData(userid: string): Promise<true | undefined>;
+  deleteUser(userId: string): Promise<User | undefined>;
+  deleteUserData(userId: string): Promise<true | undefined>;
 }

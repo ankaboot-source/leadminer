@@ -29,9 +29,9 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async deleteUser(userid: string) {
+  async deleteUser(userId: string) {
     try {
-      const { data, error } = await this.client.auth.admin.deleteUser(userid);
+      const { data, error } = await this.client.auth.admin.deleteUser(userId);
 
       if (error) {
         throw error;
@@ -43,9 +43,9 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async deleteUserData(userid: string) {
+  async deleteUserData(userId: string) {
     try {
-      const { error } = await this.client.rpc('delete_user_data', { userid });
+      const { error } = await this.client.rpc('delete_user_data', { userId });
       
       if (error) {
         throw error
