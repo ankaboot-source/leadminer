@@ -26,7 +26,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
       return data.user;
     } catch (e) {
       this.logger.error('Failed to get authenticated user', e);
-      return undefined
+      return undefined;
     }
   }
 
@@ -41,7 +41,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
       return data.user;
     } catch (e) {
       this.logger.error('Failed to delete authenticated user', e);
-      return undefined
+      return undefined;
     }
   }
 
@@ -52,7 +52,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
       });
 
       if (error) {
-        const postgresErrorMessage = `message=${error.message} | code=${error.code} | details=${error.details}`
+        const postgresErrorMessage = `message=${error.message} | code=${error.code} | details=${error.details}`;
         throw new Error(postgresErrorMessage);
       }
 
@@ -61,8 +61,8 @@ export default class SupabaseAuthResolver implements AuthResolver {
       this.logger.error(
         'Failed to invoke database function "delete_user_data"',
         e
-      );      
-      return undefined
-    }   
+      );
+      return undefined;
+    }
   }
 }

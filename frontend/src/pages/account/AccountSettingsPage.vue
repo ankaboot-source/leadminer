@@ -192,16 +192,17 @@ async function deleteAccount() {
     }
 
     await logout();
-
   } catch (error) {
-    let message = "Apologies, an unexpected error has occurred. Please try again later.";
+    let message =
+      "Apologies, an unexpected error has occurred. Please try again later.";
 
     if (error instanceof Error) {
       message = error.message;
     }
 
     if (error instanceof AxiosError) {
-      const err = error.response?.data?.error ?? error.response?.data?.error ?? error;
+      const err =
+        error.response?.data?.error ?? error.response?.data?.error ?? error;
 
       if (err.message?.toLowerCase() === "network error") {
         message =
