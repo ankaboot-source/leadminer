@@ -288,9 +288,9 @@ export default class EmailMessage {
             )
               person.status = Status.VALID;
             else {
-              person.status = (
-                await this.emailVerifier.verify(person.email)
-              ).status;
+              //   person.status = (
+              //     await this.emailVerifier.verify(person.email)
+              //   ).status;
             }
           }
 
