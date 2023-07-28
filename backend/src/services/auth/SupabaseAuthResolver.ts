@@ -20,7 +20,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
       const { data, error } = await this.client.auth.getUser(accessToken);
 
       if (error) {
-        return undefined;
+        throw error;
       }
 
       return data.user;
@@ -35,7 +35,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
       const { data, error } = await this.client.auth.admin.deleteUser(userid);
 
       if (error) {
-        return undefined;
+        throw error;
       }
 
       return data.user;

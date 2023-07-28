@@ -14,22 +14,18 @@ export default function initializeAuthController(authResolver: AuthResolver) {
         );
 
         if (!deleteRelatedData) {
-          return next(
-            new Error(
+          throw new Error(
               'Unexpected error when deleting mining data. Please try again later.'
             )
-          );
         }
 
         // Delete authenticated user account
         const deleteUser = await authResolver.deleteUser(user.id);
 
         if (!deleteUser) {
-          return next(
-            new Error(
+          throw new Error(
               'Unexpected error when deleting user. Please try again later.'
             )
-          );
         }
 
         return res.status(200).json({
