@@ -201,7 +201,7 @@ async function deleteAccount() {
     }
 
     if (error instanceof AxiosError) {
-      const err = error.response?.data || error;
+      const err = error.response?.data?.error ?? error.response?.data?.error ?? error;
 
       if (err.message?.toLowerCase() === "network error") {
         message =
