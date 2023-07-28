@@ -19,5 +19,5 @@ $$ LANGUAGE plpgsql;
 -- Change functions permissions
 ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 -- Choose which roles can execute functions
-GRANT EXECUTE ON FUNCTION delete_user_data TO authenticated;
+GRANT EXECUTE ON FUNCTION delete_user_data TO service_role;
 GRANT EXECUTE ON FUNCTION refined_persons TO authenticated;
