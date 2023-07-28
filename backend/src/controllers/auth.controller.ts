@@ -9,7 +9,7 @@ export default function initializeAuthController(authResolver: AuthResolver) {
 
       try {
         // Delete all user mined data from other tables
-        const deleteRelatedData = await authResolver.invokeDeleteMiningData(
+        const deleteRelatedData = await authResolver.deleteUserData(
           user.id
         );
 

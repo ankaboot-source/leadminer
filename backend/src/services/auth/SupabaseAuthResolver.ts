@@ -45,7 +45,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async invokeDeleteMiningData(userid: string) {
+  async deleteUserData(userid: string) {
     try {
       await this.client.rpc('delete_user_data', { userid });
       return true;
