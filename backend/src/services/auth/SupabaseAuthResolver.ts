@@ -45,8 +45,9 @@ export default class SupabaseAuthResolver implements AuthResolver {
 
   async deleteUserData(userId: string) {
     try {
-      const { error } = await this.client.rpc('delete_user_data', { 'userid': userId });
-      
+      const { error } = await this.client.rpc('delete_user_data', {
+        userid: userId
+      });
       if (error) {
         const postgresErrorMessage = `message=${error.message} | code=${error.code} | details=${error.details}`
         throw new Error(postgresErrorMessage);

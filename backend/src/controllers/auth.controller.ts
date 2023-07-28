@@ -8,22 +8,20 @@ export default function initializeAuthController(authResolver: AuthResolver) {
       const user = res.locals.user as User;
 
       try {
-        const deleteRelatedData = await authResolver.deleteUserData(
-          user.id
-        );
+        const deleteRelatedData = await authResolver.deleteUserData(user.id);
 
         if (!deleteRelatedData) {
           throw new Error(
-              'Unexpected error when deleting mining data. Please try again later.'
-            )
+            'Unexpected error when deleting mining data. Please try again later.'
+          );
         }
 
         const deleteUser = await authResolver.deleteUser(user.id);
 
         if (!deleteUser) {
           throw new Error(
-              'Unexpected error when deleting user. Please try again later.'
-            )
+            'Unexpected error when deleting user. Please try again later.'
+          );
         }
 
         return res.status(200).json({
