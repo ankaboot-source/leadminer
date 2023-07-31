@@ -24,31 +24,32 @@ import { BasicTag, DomainType, Tag } from '../../src/services/tagging/types';
  * Helper function used to generate emails from a list of email parts.
  * @returns
  */
-function generateEmails(emailParts: string[]) {
+function generateEmails(emailParts: string[], domainType: string = 'custom') {
   const emails = emailParts.map((part) => {
+    let address = `${part}@leadminer.io`
+    let domain = `${part}.io` ;
+    
+    
     if (part.startsWith('@')) {
-      return {
-        name: '',
-        address: `leadminer${part}.io`,
-        domain: `${part}.io`,
-        domainType: 'custom' as DomainType
-      };
+        address = `leadminer${part}.io`
+        domain = `${part}.io`
     }
 
-    if (part.endsWith('@')) {
-      return {
-        name: '',
-        address: `${part}leadminer.io`,
-        domain: `${part}.io`,
-        domainType: 'custom' as DomainType
-      };
+    else if (/\.[a-zA-Z]{2,18}$/.test(part)) {
+      address = `leadminer${part}`
+      domain = part
+    }
+
+    else if (part.endsWith('@')) {
+      address = `${part}leadminer.io`
+      domain = `${part}.io`
     }
 
     return {
       name: '',
-      address: `${part}@leadminer.io`,
-      domain: `${part}.io`,
-      domainType: 'custom' as DomainType
+      address,
+      domain,
+      domainType: domainType as DomainType
     };
   });
 
@@ -282,7 +283,6 @@ describe('test engines.EmailTaggingEngine', () => {
 
   describe('EmailTaggingEngine.getEmailAddressTags', () => {
     describe('Testing no-reply email addresses tagging', () => {
-      const emailsToTest = generateEmails(NOREPLY_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
           reachable: 0,
@@ -291,14 +291,22 @@ describe('test engines.EmailTaggingEngine', () => {
         }
       ];
 
-      emailsToTest.forEach((email) => {
-        const tag = expectedOutputTags.map(({ name }) => name).join(',');
+      it(`should correctly tag no-reply email addresses`, () => {
+        const emailsToTest = generateEmails(NOREPLY_EMAIL_ADDRESS_INCLUDES);
+        const outputTags = emailsToTest.map((email) => EmailTaggingEngine.getEmailAddressTags(email))
+        
+        for (const tag of outputTags) {
+          expect(tag).toEqual(expectedOutputTags);
+        }
+      });
 
-        it(`should correctly tag "${email.address} as ${tag}`, () => {
-          const tags = EmailTaggingEngine.getEmailAddressTags(email);
-
-          expect(tags).toEqual(expectedOutputTags);
-        });
+      it(`should correctly tag no-reply email addresses with emailType "personal"`, () => {
+        const emailsToTest = generateEmails(NOREPLY_EMAIL_ADDRESS_INCLUDES, 'provider');
+        const outputTags = emailsToTest.map((email) => EmailTaggingEngine.getEmailAddressTags(email))
+        
+        for (const tag of outputTags) {
+          expect(tag).toEqual(expectedOutputTags);
+        }
       });
     });
 
