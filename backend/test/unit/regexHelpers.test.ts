@@ -45,7 +45,7 @@ describe('Regex redos checker', () => {
 
   test.concurrent.each(regex)(
     'Regex %p with flags %p should be REDOS safe',
-    async (re) => testRegexSafety(re.source, re.flags)
+    async (re) => await testRegexSafety(re.source, re.flags)
   );
 });
 
