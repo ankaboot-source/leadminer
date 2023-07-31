@@ -56,16 +56,6 @@ export default class EmailMessageTagging implements TaggingEngine {
       return null;
     }
 
-    if (emailType === 'personal') {
-      return [
-        {
-          source: this.tagSourceFromEmailAddress,
-          name: emailType,
-          reachable: REACHABILITY.DIRECT_PERSON
-        }
-      ];
-    }
-
     if (isNoReply(address)) {
       return [
         {
@@ -92,6 +82,16 @@ export default class EmailMessageTagging implements TaggingEngine {
           source: this.tagSourceFromEmailAddress,
           name: 'newsletter',
           reachable: REACHABILITY.UNSURE
+        }
+      ];
+    }
+
+    if (emailType === 'personal') {
+      return [
+        {
+          source: this.tagSourceFromEmailAddress,
+          name: emailType,
+          reachable: REACHABILITY.DIRECT_PERSON
         }
       ];
     }
