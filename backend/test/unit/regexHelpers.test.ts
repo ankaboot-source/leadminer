@@ -14,13 +14,13 @@ import testData from '../testData.json';
 
 jest.mock('../../src/config', () => {});
 
-
 async function testRegexSafety(regexSource: string, regexFlags: string) {
   const diagnostics = await check(regexSource, regexFlags);
 
   if (diagnostics.status === 'vulnerable') {
     const vulParts = diagnostics.hotspot.map(
-      (i) => ` index(${i.start}, ${i.end}): ${regexSource.slice(i.start, i.end)}`
+      (i) =>
+        ` index(${i.start}, ${i.end}): ${regexSource.slice(i.start, i.end)}`
     );
 
     const messageError = `
@@ -29,7 +29,7 @@ async function testRegexSafety(regexSource: string, regexFlags: string) {
       - Attack string: ${diagnostics.attack.pattern} 
       - Vulnerable parts: ${vulParts}
     `;
-
+    // eslint-disable-next-line no-console
     console.error(messageError);
   }
 
@@ -40,12 +40,12 @@ describe('Regex redos checker', () => {
   const regex = [
     REGEX_LIST_ID,
     REGEX_REMOVE_QUOTES,
-    REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS,
+    REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
   ];
 
   test.concurrent.each(regex)(
     'Regex %p with flags %p should be REDOS safe',
-    async (re) => await testRegexSafety(re.source, re.flags)  
+    async (re) => testRegexSafety(re.source, re.flags)
   );
 });
 
