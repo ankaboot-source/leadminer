@@ -328,6 +328,15 @@ const columns: any = [
     sortable: true,
   },
   {
+    name: "seniority",
+    label: "Seniority",
+    align: "center",
+    field: "seniority",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    format: (val: any) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
+    sortable: true,
+  },
+  {
     name: "engagement",
     label: "Engagement",
     field: "engagement",
@@ -383,6 +392,7 @@ async function exportTable() {
     engagement: r.engagement,
     occurence: r.occurence,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
+    seniority: r.seniority ? new Date(r.seniority).toISOString().slice(0, 10) : "",
     tags: r.tags?.join("\n"),
     sender: r.sender,
     recipient: r.recipient,
@@ -399,6 +409,7 @@ async function exportTable() {
         { key: "engagement", header: "Engagement" },
         { key: "occurence", header: "Occurrence" },
         { key: "recency", header: "Recency" },
+        { key: "seniority", header: "Seniority" },
         { key: "tags", header: "Tags" },
         { key: "sender", header: "Sender" },
         { key: "recipient", header: "Recipient" },
