@@ -1,3 +1,4 @@
+alter table "public"."refinedpersons" add column "seniority" timestamp with time zone;
 alter table "public"."refinedpersons" add column "sender" integer;
 alter table "public"."refinedpersons" add column "recipient" integer;
 alter table "public"."refinedpersons" add column "conversations" integer;
@@ -13,6 +14,7 @@ BEGIN
     SET
         engagement = sub_query.engagement,
         recency = sub_query.recency,
+        seniority = sub_query.seniority,
         occurence = sub_query.occurrence,
         alternate_names = null,
         name = sub_query.name,
@@ -28,6 +30,7 @@ BEGIN
             subquery.occurrence,
             subquery.sender + subquery.replied_conversations as engagement,
             subquery.recency,
+            subquery.seniority,
             subquery.sender,
             subquery.recipient,
             subquery.conversations,
@@ -38,6 +41,7 @@ BEGIN
                 "from" as source,
                 name,
                 MAX(m.date) over grouped_by_email AS recency,
+                MIN(m.date) over grouped_by_email AS seniority,
                 MAX(m.date) over (partition by person_email, name) AS recent_date,
                 COUNT(
                   CASE
