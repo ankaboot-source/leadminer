@@ -392,12 +392,14 @@ async function exportTable() {
     engagement: r.engagement,
     occurence: r.occurence,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
-    seniority: r.seniority ? new Date(r.seniority).toISOString().slice(0, 10) : "",
+    seniority: r.seniority
+      ? new Date(r.seniority).toISOString().slice(0, 10)
+      : "",
     tags: r.tags?.join("\n"),
     sender: r.sender,
     recipient: r.recipient,
     conversations: r.conversations,
-    repliedConversations: r.replied_conversations
+    repliedConversations: r.replied_conversations,
   }));
 
   try {
