@@ -13,6 +13,7 @@ import {
 } from '../../src/services/tasks-manager/utils';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 
+import { Contacts } from '../../src/db/Contacts';
 import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
 import redis from '../../src/utils/redis';
 import FakeEmailStatusVerifier from '../fakes/FakeEmailVerifier';
@@ -63,6 +64,12 @@ const miningIdGenerator = jest.fn(() => {
   const randomId = Math.random().toString(36).substring(2);
   return Promise.resolve(`test-id-${randomId}`);
 });
+const fakeContacts: Contacts = {
+  create: jest.fn(() => Promise.resolve()),
+  refine: jest.fn(() => Promise.resolve(true)),
+  populate: jest.fn(() => Promise.resolve(true)),
+  updatePersonStatus: jest.fn(() => Promise.resolve(true))
+};
 
 /*
 
@@ -165,6 +172,7 @@ describe('TasksManager class', () => {
       fakeRedisClient,
       fakeRedisClient,
       new FakeEmailStatusVerifier({}),
+      fakeContacts,
       emailFetcherFactory,
       sseBroadcasterFactory,
       miningIdGenerator
@@ -188,6 +196,8 @@ describe('TasksManager class', () => {
         const instance1 = new TasksManager(
           fakeRedisClient,
           fakeRedisClient,
+          new FakeEmailStatusVerifier({}),
+          fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
           miningIdGenerator
@@ -196,6 +206,8 @@ describe('TasksManager class', () => {
         const instance2 = new TasksManager(
           fakeRedisClient,
           fakeRedisClient,
+          new FakeEmailStatusVerifier({}),
+          fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
           miningIdGenerator
