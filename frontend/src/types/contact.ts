@@ -16,6 +16,7 @@ export interface Contact {
   occurence?: number;
   personid?: string;
   recency?: Date;
+  seniority?: Date;
   alternate_names?: string[];
   tags?: Tag[];
 }
