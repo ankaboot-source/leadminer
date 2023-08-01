@@ -384,6 +384,10 @@ async function exportTable() {
     occurence: r.occurence,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     tags: r.tags?.join("\n"),
+    sender: r.sender,
+    recipient: r.recipient,
+    conversations: r.conversations,
+    repliedConversations: r.replied_conversations
   }));
 
   try {
@@ -396,6 +400,10 @@ async function exportTable() {
         { key: "occurence", header: "Occurrence" },
         { key: "recency", header: "Recency" },
         { key: "tags", header: "Tags" },
+        { key: "sender", header: "Sender" },
+        { key: "recipient", header: "Recipient" },
+        { key: "conversations", header: "Conversations" },
+        { key: "repliedConversations", header: "Replied conversations" },
       ],
       csvData
     );
