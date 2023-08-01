@@ -46,7 +46,7 @@ export default class StreamConsumer {
       logger.info('Subscribed to redis channel');
     });
 
-    this.redisSubscriber.on('message', async (_, data) => {
+    this.redisSubscriber.on('message', (_, data) => {
       const { miningId, command, streamName, consumerGroupName } =
         JSON.parse(data);
 

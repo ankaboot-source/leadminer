@@ -3,12 +3,10 @@ import { Redis } from 'ioredis';
 import { Logger } from 'winston';
 import { Contacts } from '../db/Contacts';
 import {
-  EmailStatusResult,
   EmailStatusVerifier,
   Status
 } from '../services/email-status/EmailStatusVerifier';
 import { REDIS_EMAIL_STATUS_KEY } from '../utils/constants';
-import rejectAfter from '../utils/profiling/timeout';
 
 export default function initializeEmailVerificationWorker(
   miningId: string,
@@ -33,16 +31,17 @@ export default function initializeEmailVerificationWorker(
         if (cacheResult) {
           status = cacheResult as Status;
         } else {
-          const reacherResult = (await Promise.race([
-            emailStatusVerifier.verify(email, abortController.signal),
-            rejectAfter(2000)
-          ])) as EmailStatusResult;
+          const reacherResult = await emailStatusVerifier.verify(
+            email,
+            abortController.signal
+          );
           logger.debug('Got verification result', reacherResult);
           await redis.hset(REDIS_EMAIL_STATUS_KEY, email, reacherResult.status);
           status = reacherResult.status;
         }
-        await contacts.updatePersonStatus(email, userId, status);
-        logger.debug('Inserted verification result');
+        if (status !== Status.UNKNOWN) {
+          await contacts.updatePersonStatus(email, userId, status);
+        }
       } catch (error) {
         logger.error('error', error);
       }

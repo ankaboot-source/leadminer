@@ -216,10 +216,7 @@ export default class TasksManager {
    * @returns Returns the deleted task.
    * @throws {Error} Throws an error if the task with the given mining ID does not exist.
    */
-  async deleteTask(
-    miningId: string,
-    killEmailVerificationImmediately: boolean = false
-  ) {
+  async deleteTask(miningId: string, killEmailVerificationImmediately = false) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {

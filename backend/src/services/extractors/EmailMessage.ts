@@ -282,35 +282,36 @@ export default class EmailMessage {
               return result;
             }, []);
 
-          if (
-            tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON) &&
-            validContact.sourceField === 'from' &&
-            this.date &&
-            differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
-              EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
-          ) {
-            person.status = Status.VALID;
-            await this.redisClientForNormalMode.hset(
-              REDIS_EMAIL_STATUS_KEY,
-              person.email,
-              Status.VALID
-            );
-          } else {
-            const status = await this.redisClientForNormalMode.hget(
-              REDIS_EMAIL_STATUS_KEY,
-              validContact.email.address
-            );
-            if (!status) {
-              this.emailVerificationQueue.add(
+          if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
+            if (
+              validContact.sourceField === 'from' &&
+              this.date &&
+              differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
+                EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
+            ) {
+              person.status = Status.VALID;
+              await this.redisClientForNormalMode.hset(
+                REDIS_EMAIL_STATUS_KEY,
                 person.email,
-                {
-                  userId: this.userId,
-                  email: person.email
-                },
-                { removeOnComplete: true, removeOnFail: true }
+                Status.VALID
               );
             } else {
-              person.status = status as Status;
+              const statusCache = await this.redisClientForNormalMode.hget(
+                REDIS_EMAIL_STATUS_KEY,
+                validContact.email.address
+              );
+              if (!statusCache) {
+                this.emailVerificationQueue.add(
+                  person.email,
+                  {
+                    userId: this.userId,
+                    email: person.email
+                  },
+                  { removeOnComplete: true, removeOnFail: true }
+                );
+              } else {
+                person.status = statusCache as Status;
+              }
             }
           }
           validatedContacts.push({
