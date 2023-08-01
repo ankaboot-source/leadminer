@@ -1,4 +1,4 @@
-import { Queue } from 'bullmq';
+import { Worker } from 'bullmq';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
@@ -17,7 +17,7 @@ export interface Task {
   };
   progress: TaskProgress;
   fetcher: ImapEmailsFetcher;
-  emailVerificationQueue: Queue;
+  emailVerificationWorker: Worker;
   progressHandlerSSE: RealtimeSSE;
   startedAt: number;
 }

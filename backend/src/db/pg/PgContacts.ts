@@ -26,6 +26,14 @@ export default class PgContacts implements Contacts {
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
 
+  private static readonly UPDATE_PERSON_STATUS_SQL = `
+    UPDATE persons
+    SET status = CASE
+                   WHEN status <> 'VALID' AND $1 <> 'UNKNOWN' THEN $1
+                   ELSE status
+                 END
+    WHERE email = $2 AND user_id = $3;`;
+
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
     VALUES %L
@@ -33,13 +41,22 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
-  // eslint-disable-next-line class-methods-use-this
-  updatePersonStatus(
-    _personEmail: string,
-    _userId: string,
-    _status: Status
+  async updatePersonStatus(
+    personEmail: string,
+    userId: string,
+    status: Status
   ): Promise<boolean> {
-    return Promise.resolve(true);
+    try {
+      await this.pool.query(PgContacts.UPDATE_PERSON_STATUS_SQL, [
+        status,
+        personEmail,
+        userId
+      ]);
+      return true;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
   }
 
   async populate(userId: string) {

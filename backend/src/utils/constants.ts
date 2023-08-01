@@ -18,6 +18,7 @@ export const FLICKR_BASE_58_CHARSET =
 export const MAX_REDIS_PUBLISH_RETRIES_COUNT = 3;
 export const REDIS_PUBSUB_COMMUNICATION_CHANNEL = 'stream-management';
 export const REDIS_STREAMS_CONSUMER_GROUP = 'imap-consumers-group';
+export const REDIS_EMAIL_STATUS_KEY = 'email-status';
 export const MAX_WORKER_TIMEOUT = 600000;
 export const MX_RESOLVER_TIMEOUT_MS = 3000;
 export const REGEX_HEADER_EMAIL_SPLIT_PATTERN = headerRegexEmailSplitPattern;

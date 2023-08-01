@@ -1,6 +1,10 @@
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
-import { REACHABILITY, REGEX_LIST_ID } from '../../utils/constants';
+import {
+  REACHABILITY,
+  REDIS_EMAIL_STATUS_KEY,
+  REGEX_LIST_ID
+} from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
@@ -278,19 +282,35 @@ export default class EmailMessage {
               return result;
             }, []);
 
-          if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
-            if (
-              validContact.sourceField === 'from' &&
-              this.date &&
-              differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
-                EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
-            ) {
-              person.status = Status.VALID;
+          if (
+            tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON) &&
+            validContact.sourceField === 'from' &&
+            this.date &&
+            differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
+              EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
+          ) {
+            person.status = Status.VALID;
+            await this.redisClientForNormalMode.hset(
+              REDIS_EMAIL_STATUS_KEY,
+              person.email,
+              Status.VALID
+            );
+          } else {
+            const status = await this.redisClientForNormalMode.hget(
+              REDIS_EMAIL_STATUS_KEY,
+              validContact.email.address
+            );
+            if (!status) {
+              this.emailVerificationQueue.add(
+                person.email,
+                {
+                  userId: this.userId,
+                  email: person.email
+                },
+                { removeOnComplete: true, removeOnFail: true }
+              );
             } else {
-              await this.emailVerificationQueue.add(this.userId, {
-                userId: this.userId,
-                email: person.email
-              });
+              person.status = status as Status;
             }
           }
           validatedContacts.push({

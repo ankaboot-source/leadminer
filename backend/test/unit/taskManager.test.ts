@@ -1,19 +1,21 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Worker } from 'bullmq';
 import httpMocks from 'node-mocks-http';
+import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
+import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
+import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
+import ImapEmailsFetcher from '../../src/services/imap/ImapEmailsFetcher';
 import TasksManager from '../../src/services/tasks-manager/TasksManager';
+import { RedactedTask, Task } from '../../src/services/tasks-manager/types';
 import {
   flickrBase58IdGenerator,
   redactSensitiveData
 } from '../../src/services/tasks-manager/utils';
-import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
-import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
-import { RedactedTask, Task } from '../../src/services/tasks-manager/types';
-import ImapEmailsFetcher from '../../src/services/imap/ImapEmailsFetcher';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
-import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
 
-import redis from '../../src/utils/redis';
 import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
+import redis from '../../src/utils/redis';
+import FakeEmailStatusVerifier from '../fakes/FakeEmailVerifier';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
@@ -95,6 +97,7 @@ describe('Test TaskManager helper functions', () => {
           folders: ['test']
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
+        emailVerificationWorker: {} as Worker,
         stream: {
           streamName: 'test-stream',
           consumerGroupName: 'test-group'
@@ -161,6 +164,7 @@ describe('TasksManager class', () => {
     tasksManager = new TasksManager(
       fakeRedisClient,
       fakeRedisClient,
+      new FakeEmailStatusVerifier({}),
       emailFetcherFactory,
       sseBroadcasterFactory,
       miningIdGenerator

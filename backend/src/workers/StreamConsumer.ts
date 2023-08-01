@@ -24,21 +24,21 @@ export default class StreamConsumer {
     private readonly pubsubCommunicationChannel: string,
     private readonly consumerName: string,
     private readonly batchSize: number,
-    private readonly messageProcessor: CallableFunction,
+    private readonly messageProcessor: (
+      message: [string, string],
+      emailVerificationQueue: Queue
+    ) => Promise<string>,
     private readonly redisSubscriber: Redis,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
-    this.pubsubCommunicationChannel = pubsubCommunicationChannel;
     this.messageProcessor = messageProcessor;
-    this.consumerName = consumerName;
-    this.batchSize = batchSize;
     this.isInterrupted = true;
 
     this.streamsRegistry = new Map();
 
     // Subscribe to the Redis channel for stream management.
-    this.redisSubscriber.subscribe(pubsubCommunicationChannel, (err) => {
+    this.redisSubscriber.subscribe(this.pubsubCommunicationChannel, (err) => {
       if (err) {
         logger.error('Failed subscribing to Redis.', err);
         return;
@@ -46,18 +46,16 @@ export default class StreamConsumer {
       logger.info('Subscribed to redis channel');
     });
 
-    this.redisSubscriber.on('message', (_, data) => {
+    this.redisSubscriber.on('message', async (_, data) => {
       const { miningId, command, streamName, consumerGroupName } =
         JSON.parse(data);
 
       if (command === 'REGISTER') {
-        const emailVerificationQueue = new Queue(miningId, {
-          connection: redisClient
-        });
+        const queue = new Queue(miningId, { connection: redisClient });
         this.streamsRegistry.set(miningId, {
           streamName,
           consumerGroupName,
-          emailVerificationQueue
+          emailVerificationQueue: queue
         });
       } else {
         this.streamsRegistry.delete(miningId);
@@ -101,20 +99,29 @@ export default class StreamConsumer {
       );
 
       if (result === null) {
-        return null;
+        return await Promise.reject(new Error('Missing stream entry'));
       }
 
       const processedData = await Promise.allSettled(
         result.map(async ([streamName, streamMessages]: any) => {
           const messageIds = streamMessages.map(([id]: any) => id);
           const lastMessageId = messageIds.slice(-1)[0];
+          const miningId = streamName.split('-')[1];
+          const streamEntry = this.streamsRegistry.get(miningId);
+          if (!streamEntry) {
+            return null;
+          }
+
           try {
             const promises: any = await Promise.allSettled(
               streamMessages.map((message: any) =>
-                this.messageProcessor(message)
+                this.messageProcessor(
+                  message,
+                  streamEntry.emailVerificationQueue
+                )
               )
             );
-            const miningId = promises[0].value;
+
             const extractionProgress = {
               miningId,
               progressType: 'extracted',
