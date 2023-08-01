@@ -62,10 +62,15 @@
     <!-- Warning model Section -->
     <q-dialog v-model="showDeleteModal">
       <q-card>
-        <!-- Close icon -->
-        <q-card-section class="row items-center">
+        <q-card-section class="row items-center q-card-actions">
+          <p class="text-h6 q-ma-none q-mt-xs">
+            ⚠️ Deleting your account is permanent. You will lose all your mining
+            data.
+          </p>
           <q-space />
-          <q-btn
+          <div class="absolute-top-right">
+            <q-btn
+            class="q-pa-xs q-ma-xs"
             v-close-popup
             aligh="right"
             dense
@@ -73,16 +78,8 @@
             icon="close"
             size="20"
           ></q-btn>
-        </q-card-section>
+          </div>
 
-        <q-separator />
-
-        <!-- Modal message -->
-        <q-card-section>
-          <p class="text-h6">
-            ⚠️ Deleting your account is permanent. You will lose all your mining
-            data.
-          </p>
         </q-card-section>
         <q-separator />
         <!-- Buttons -->
