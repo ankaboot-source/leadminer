@@ -42,7 +42,9 @@ export enum REACHABILITY {
 export const CHAT_EMAIL_ADDRESS_INCLUDES = [
   '@reply.airbnb.com',
   '@reply.linkedin.com',
-  '@messagerie.leboncoin.fr'
+  '@messagerie.leboncoin.fr',
+  '@mail.2dehands.beto',
+  '@reply.facebook.com'
 ];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
@@ -54,26 +56,33 @@ export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
 ]; // add newletter domains;
 export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@lists.',
+  '@listes.',
   '@sympa.',
   '@gaggle.email',
   '@groups.io',
   '@framalistes.org',
   '@groups.google.com',
-  '@yahoogroupes.fr'
+  '@yahoogroupes.fr',
+  '@googlegroups.fr',
+  '@list.attac.org'
 ];
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'reply.github',
   '@boards.trello.com',
   'bot@',
-  'bounce@'
+  'bounce@',
+  'unsub-',
+  'unsubscribe',
+  'unsubscribe-',
+  '@bnc3.mailjet.com',
+  '@group.calendar.google.com',
+  'wordpress@',
+  'receipts+'
 ];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
   'alert',
   'auto-confirm',
-  'donotreply',
-  'do-notreply',
-  'do-not-reply',
   'feedbackform',
   'maildaemon',
   'mailer-daemon',
@@ -85,6 +94,11 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'no_reply',
   'noreply',
   'no-reply',
+  'notreply',
+  'donotreply',
+  'do-notreply',
+  'do-not-reply',
+  'do_not_reply',
   'notification',
   'notifications',
   'notifications-noreply',
@@ -94,7 +108,6 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'reply-',
   'send-as-noreply',
   'systemalert',
-  'unsubscribe',
   'no-response'
 ];
 export const ROLE_EMAIL_ADDRESS_INCLUDES = [
@@ -107,7 +120,6 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'contact@',
   'news@',
   'sales@',
-  'support@',
   'bonjour@',
   'greetings@',
   'spam@',
@@ -127,5 +139,12 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'formation@',
   'bienvenue@',
   'marketing@',
-  'hey@'
+  'hey@',
+  'support-',
+  'support@',
+  '@support',
+  '.zendesk.com',
+  '.intercom-mail.com',
+  'help@',
+  'customercare@support.fr.gotogate.com'
 ];

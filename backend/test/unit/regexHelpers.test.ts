@@ -1,7 +1,6 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, jest, test } from '@jest/globals';
 import { check } from 'recheck';
 import {
-  REGEX_BODY,
   REGEX_LIST_ID,
   REGEX_REMOVE_QUOTES,
   REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
@@ -15,32 +14,41 @@ import testData from '../testData.json';
 
 jest.mock('../../src/config', () => {});
 
+async function testRegexSafety(regexSource: string, regexFlags: string) {
+  const diagnostics = await check(regexSource, regexFlags);
+
+  if (diagnostics.status === 'vulnerable') {
+    const vulParts = diagnostics.hotspot.map(
+      (i) =>
+        ` index(${i.start}, ${i.end}): ${regexSource.slice(i.start, i.end)}`
+    );
+
+    const messageError = `
+      Regex is vulnerable! 
+      - Complexity: ${diagnostics.complexity.type} 
+      - Attack string: ${diagnostics.attack.pattern} 
+      - Vulnerable parts: ${vulParts}
+    `;
+    // eslint-disable-next-line no-console
+    console.error(messageError);
+  }
+
+  expect(diagnostics.status).toBe('safe');
+}
+
 describe('Regex redos checker', () => {
   const regex = [
-    REGEX_BODY,
     REGEX_LIST_ID,
     REGEX_REMOVE_QUOTES,
     REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
   ];
 
-  regex.forEach((r) => {
-    it('regex should be REDOS safe', async () => {
-      let messageError = 'Regex is vulnerable !';
-
-      const diagnostics = await check(r.source, r.flags);
-
-      if (diagnostics.status === 'vulnerable') {
-        const vulParts = diagnostics.hotspot.map(
-          (i) =>
-            ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}`
-        );
-        messageError += ` \n\t- Complixity: ${diagnostics.complexity.type} \n\t- Attack string: ${diagnostics.attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`;
-        // eslint-disable-next-line no-console
-        console.error(messageError);
-      }
-      expect(diagnostics.status).toBe('safe');
-    });
-  });
+  test.concurrent.each(regex)(
+    'Regex %p with flags %p should be REDOS safe',
+    async (re) => {
+      await testRegexSafety(re.source, re.flags);
+    }
+  );
 });
 
 describe('regExHelpers.extractEmailsFromBody(text)', () => {

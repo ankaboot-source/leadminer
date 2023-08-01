@@ -12,6 +12,8 @@ import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
+import initializeAuthRoutes from './routes/auth.routes';
+import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -37,6 +39,10 @@ export default function initializeApp(
     res.json({ message: 'Welcome to leadminer application.' })
   );
 
+  app.use(
+    '/api/auth',
+    initializeAuthRoutes(authResolver as SupabaseAuthResolver)
+  );
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
   app.use('/api/imap', initializeStreamRouter(tasksManager, authResolver));
   app.use(
