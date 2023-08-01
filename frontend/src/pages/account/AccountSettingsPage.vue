@@ -70,16 +70,15 @@
           <q-space />
           <div class="absolute-top-right">
             <q-btn
-            class="q-pa-xs q-ma-xs"
-            v-close-popup
-            aligh="right"
-            dense
-            flat
-            icon="close"
-            size="20"
-          ></q-btn>
+              class="q-pa-xs q-ma-xs"
+              v-close-popup
+              aligh="right"
+              dense
+              flat
+              icon="close"
+              size="20"
+            ></q-btn>
           </div>
-
         </q-card-section>
         <q-separator />
         <!-- Buttons -->
