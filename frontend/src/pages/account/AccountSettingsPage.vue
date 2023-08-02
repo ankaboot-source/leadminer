@@ -70,8 +70,8 @@
           <q-space />
           <div class="absolute-top-right">
             <q-btn
-              class="q-ma-sm q-pa-sm"
               v-close-popup
+              class="q-ma-sm q-pa-sm"
               flat
               icon="close"
               size="sm"
