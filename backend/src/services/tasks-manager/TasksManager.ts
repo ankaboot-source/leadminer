@@ -1,11 +1,15 @@
 // eslint-disable-next-line max-classes-per-file
+import { Queue, QueueEvents } from 'bullmq';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
+import { Contacts } from '../../db/Contacts';
 import {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP
 } from '../../utils/constants';
 import logger from '../../utils/logger';
+import initializeEmailVerificationWorker from '../../workers/emailVerificationWorker';
+import { EmailStatusVerifier } from '../email-status/EmailStatusVerifier';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
@@ -43,6 +47,8 @@ export default class TasksManager {
   constructor(
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
+    private readonly emailStatusVerifier: EmailStatusVerifier,
+    private readonly contacts: Contacts,
     private readonly emailFetcherFactory: EmailFetcherFactory,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
     private readonly idGenerator: () => Promise<string>
@@ -126,6 +132,13 @@ export default class TasksManager {
         fetchEmailBody
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
+      const emailVerificationWorker = initializeEmailVerificationWorker(
+        miningId,
+        this.redisPublisher,
+        logger,
+        this.contacts,
+        this.emailStatusVerifier
+      );
 
       const miningTask: Task = {
         stream,
@@ -134,6 +147,7 @@ export default class TasksManager {
         miningId,
         startedAt: performance.now(),
         progressHandlerSSE,
+        emailVerificationWorker,
         progress: {
           totalMessages: await fetcher.getTotalMessages(),
           fetched: 0,
@@ -142,6 +156,7 @@ export default class TasksManager {
       };
 
       fetcher.start();
+      emailVerificationWorker.run();
       await this.pubsubSendMessage(
         miningId,
         'REGISTER',
@@ -197,17 +212,54 @@ export default class TasksManager {
   /**
    * Deletes a mining task with a given mining ID.
    * @param miningId - The mining ID of the task to delete.
+   * @param killEmailVerificationImmediately - A flag that indicates whether we should also obliterate the background email verification task.
    * @returns Returns the deleted task.
    * @throws {Error} Throws an error if the task with the given mining ID does not exist.
    */
-  async deleteTask(miningId: string) {
+  async deleteTask(miningId: string, killEmailVerificationImmediately = false) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { fetcher, progressHandlerSSE, stream, startedAt, progress } = task;
+    const {
+      fetcher,
+      progressHandlerSSE,
+      stream,
+      startedAt,
+      progress,
+      emailVerificationWorker
+    } = task;
+
+    const queue = new Queue(miningId, {
+      connection: this.redisPublisher
+    });
+
+    if (killEmailVerificationImmediately) {
+      await queue.close();
+      await queue.obliterate();
+      await emailVerificationWorker.close();
+    } else {
+      const queueEvents = new QueueEvents(miningId, {
+        connection: this.redisPublisher
+      });
+      // This sets up an event listener that will delete the queue once it's completed
+      queueEvents.on('completed', async () => {
+        const jobCounts = await queue.getJobCounts();
+        logger.debug('Completed', { jobCounts });
+
+        if (
+          jobCounts.waiting === 0 &&
+          jobCounts.active === 0 &&
+          jobCounts.delayed === 0
+        ) {
+          await queue.close();
+          await queue.obliterate();
+          await emailVerificationWorker.close();
+        }
+      });
+    }
 
     this.ACTIVE_MINING_TASKS.delete(miningId);
 

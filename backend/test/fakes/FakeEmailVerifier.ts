@@ -1,7 +1,7 @@
 import {
   EmailStatusResult,
   EmailStatusVerifier
-} from '../../../src/services/email-status/EmailStatusVerifier';
+} from '../../src/services/email-status/EmailStatusVerifier';
 
 export default class FakeEmailStatusVerifier implements EmailStatusVerifier {
   constructor(

@@ -1,5 +1,5 @@
+import { Queue } from 'bullmq';
 import { Contacts } from '../db/Contacts';
-import { EmailStatusVerifier } from '../services/email-status/EmailStatusVerifier';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import logger from '../utils/logger';
@@ -45,13 +45,14 @@ async function handleMessage(
     isLast
   }: PublishedStreamMessage,
   contacts: Contacts,
-  emailStatusVerifier: EmailStatusVerifier
+  emailVerificationQueue: Queue
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
-    emailStatusVerifier,
     redisClientForNormalMode,
+    emailVerificationQueue,
     userEmail,
+    userId,
     header,
     body,
     folderName
@@ -82,17 +83,17 @@ async function handleMessage(
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  */
-export default function initializeMessageProcessor(
-  contacts: Contacts,
-  emailStatusVerifier: EmailStatusVerifier
-) {
+export default function initializeMessageProcessor(contacts: Contacts) {
   return {
-    processStreamData: async (message: [string, string]) => {
+    processStreamData: async (
+      message: [string, string],
+      emailVerificationQueue: Queue
+    ) => {
       const [, msg] = message;
       const data: PublishedStreamMessage = JSON.parse(msg[1]);
       const { miningId } = data;
 
-      await handleMessage(data, contacts, emailStatusVerifier);
+      await handleMessage(data, contacts, emailVerificationQueue);
       return miningId;
     }
   };

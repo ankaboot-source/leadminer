@@ -94,13 +94,13 @@ export default class ReacherClient {
     }
   }
 
-  async checkSingleEmail(email: string) {
+  async checkSingleEmail(email: string, abortSignal?: AbortSignal) {
     try {
       const { data } = await this.api.post<EmailCheckOutput>(
         ReacherClient.SINGLE_VERIFICATION_PATH,
-        { to_email: email }
+        { to_email: email },
+        { signal: abortSignal, timeout: 5000 }
       );
-
       return { data, error: null };
     } catch (error) {
       this.logger.error('Failed checking single email', error);

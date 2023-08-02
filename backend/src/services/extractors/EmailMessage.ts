@@ -1,14 +1,16 @@
+import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
-import { REACHABILITY, REGEX_LIST_ID } from '../../utils/constants';
+import {
+  REACHABILITY,
+  REDIS_EMAIL_STATUS_KEY,
+  REGEX_LIST_ID
+} from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
 import { differenceInDays } from '../../utils/helpers/date';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
-import {
-  EmailStatusVerifier,
-  Status
-} from '../email-status/EmailStatusVerifier';
+import { Status } from '../email-status/EmailStatusVerifier';
 import { TaggingEngine } from '../tagging/types';
 import {
   Contact,
@@ -48,9 +50,10 @@ export default class EmailMessage {
    */
   constructor(
     private readonly taggingEngine: TaggingEngine,
-    private readonly emailVerifier: EmailStatusVerifier,
     private readonly redisClientForNormalMode: Redis,
+    private readonly emailVerificationQueue: Queue,
     private readonly userEmail: string,
+    private readonly userId: string,
     private readonly header: any,
     private readonly body: any,
     private readonly folderPath: string
@@ -285,15 +288,32 @@ export default class EmailMessage {
               this.date &&
               differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
-            )
+            ) {
               person.status = Status.VALID;
-            else {
-              //   person.status = (
-              //     await this.emailVerifier.verify(person.email)
-              //   ).status;
+              await this.redisClientForNormalMode.hset(
+                REDIS_EMAIL_STATUS_KEY,
+                person.email,
+                Status.VALID
+              );
+            } else {
+              const statusCache = await this.redisClientForNormalMode.hget(
+                REDIS_EMAIL_STATUS_KEY,
+                validContact.email.address
+              );
+              if (!statusCache) {
+                await this.emailVerificationQueue.add(
+                  person.email,
+                  {
+                    userId: this.userId,
+                    email: person.email
+                  },
+                  { removeOnComplete: true, removeOnFail: true }
+                );
+              } else {
+                person.status = statusCache as Status;
+              }
             }
           }
-
           validatedContacts.push({
             person,
             pointOfContact,

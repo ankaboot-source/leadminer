@@ -1,8 +1,9 @@
 import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
+import { Status } from '../../services/email-status/EmailStatusVerifier';
 import { Contacts } from '../Contacts';
-import { Contact } from '../types';
+import { ExtractionResult } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
@@ -25,12 +26,38 @@ export default class PgContacts implements Contacts {
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
 
+  private static readonly UPDATE_PERSON_STATUS_SQL = `
+    UPDATE persons
+    SET status = CASE
+                   WHEN status <> 'VALID' AND $1 <> 'UNKNOWN' THEN $1
+                   ELSE status
+                 END
+    WHERE email = $2 AND user_id = $3;`;
+
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
     VALUES %L
     ON CONFLICT(person_email, name, user_id) DO NOTHING;`;
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
+
+  async updatePersonStatus(
+    personEmail: string,
+    userId: string,
+    status: Status
+  ): Promise<boolean> {
+    try {
+      await this.pool.query(PgContacts.UPDATE_PERSON_STATUS_SQL, [
+        status,
+        personEmail,
+        userId
+      ]);
+      return true;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
 
   async populate(userId: string) {
     try {
@@ -42,7 +69,7 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async create({ message, persons }: Contact, userId: string) {
+  async create({ message, persons }: ExtractionResult, userId: string) {
     try {
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,

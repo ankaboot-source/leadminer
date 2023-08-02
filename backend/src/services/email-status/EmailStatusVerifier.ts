@@ -20,6 +20,9 @@ export interface EmailStatusResult {
 }
 
 export interface EmailStatusVerifier {
-  verify(email: string): Promise<EmailStatusResult>;
-  verifyMany(emails: string[]): Promise<EmailStatusResult[]>;
+  verify(email: string, abortSignal?: AbortSignal): Promise<EmailStatusResult>;
+  verifyMany(
+    emails: string[],
+    abortSignal?: AbortSignal
+  ): Promise<EmailStatusResult[]>;
 }

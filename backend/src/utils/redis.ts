@@ -24,7 +24,8 @@ class RedisManager {
   ) {
     let redisOpts: RedisOptions = {
       host,
-      port
+      port,
+      maxRetriesPerRequest: null
     };
 
     if (tls) {

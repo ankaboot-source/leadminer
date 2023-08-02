@@ -1,6 +1,6 @@
 import { Status } from '../services/email-status/EmailStatusVerifier';
 
-export interface Contact {
+export interface ExtractionResult {
   message: Message;
   persons: PersonWithPocAndTag[];
 }

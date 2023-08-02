@@ -17,9 +17,15 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
     private readonly logger: Logger
   ) {}
 
-  async verify(email: string): Promise<EmailStatusResult> {
+  async verify(
+    email: string,
+    abortSignal?: AbortSignal
+  ): Promise<EmailStatusResult> {
     try {
-      const { data, error } = await this.reacherClient.checkSingleEmail(email);
+      const { data, error } = await this.reacherClient.checkSingleEmail(
+        email,
+        abortSignal
+      );
       if (error && !data) {
         return {
           email,
@@ -36,13 +42,16 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
     }
   }
 
-  async verifyMany(emails: string[]): Promise<EmailStatusResult[]> {
+  async verifyMany(
+    emails: string[],
+    abortSignal?: AbortSignal
+  ): Promise<EmailStatusResult[]> {
     if (emails.length === 0) {
       return [];
     }
 
     if (emails.length === 1) {
-      const result = await this.verify(emails[0]);
+      const result = await this.verify(emails[0], abortSignal);
       return [result];
     }
 
