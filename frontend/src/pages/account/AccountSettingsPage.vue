@@ -68,23 +68,14 @@
             data.
           </p>
           <q-space />
-          <div
-            class="absolute-top-right"
-            style="
-              height: 52px;
-              width: 52px;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            "
-          >
+          <div class="absolute-top-right">
             <q-btn
-              style="margin: 8px; padding: 8px"
+              class="q-ma-sm q-pa-sm"
               v-close-popup
               flat
               icon="close"
-              size="xs"
-              color="#616a75"
+              size="sm"
+              color="grey-7"
             ></q-btn>
           </div>
         </q-card-section>
