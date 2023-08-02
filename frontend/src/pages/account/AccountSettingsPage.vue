@@ -85,6 +85,7 @@
           <q-btn
             no-caps
             unelevated
+            padding="sm md"
             class="custom-btn-style text-h6"
             label="Cancel"
             @click="closeWarning"
@@ -92,7 +93,7 @@
           <q-btn
             no-caps
             unelevated
-            padding="7px 16px"
+            padding="sm md"
             color="negative"
             class="text-h6"
             label="Delete"
