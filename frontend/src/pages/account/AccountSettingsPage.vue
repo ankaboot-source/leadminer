@@ -86,7 +86,7 @@
             no-caps
             unelevated
             padding="sm md"
-            class="custom-btn-style text-h6"
+            class="secondary-button text-h6"
             label="Cancel"
             @click="closeWarning"
           />
@@ -232,8 +232,3 @@ async function deleteAccount() {
   }
 }
 </script>
-<style>
-.custom-btn-style {
-  border: 1px solid #abb1ba;
-}
-</style>
