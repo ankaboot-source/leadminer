@@ -323,8 +323,8 @@ const columns: any = [
     label: "Recency",
     align: "center",
     field: "recency",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    format: (val: any) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
+    format: (val: Date) =>
+      val ? new Date(val).toISOString().slice(0, 10) : "",
     sortable: true,
   },
   {
@@ -332,8 +332,8 @@ const columns: any = [
     label: "Seniority",
     align: "center",
     field: "seniority",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    format: (val: any) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
+    format: (val: Date) =>
+      val ? new Date(val).toISOString().slice(0, 10) : "",
     sortable: true,
   },
   {
