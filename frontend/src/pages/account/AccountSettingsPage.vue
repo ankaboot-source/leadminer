@@ -63,41 +63,53 @@
     <q-dialog v-model="showDeleteModal">
       <q-card>
         <q-card-section class="row items-center q-card-actions">
-          <p class="text-h6 q-ma-none q-mt-xs">
+          <p class="text-h6 q-ma-none q-mr-md">
             ⚠️ Deleting your account is permanent. You will lose all your mining
             data.
           </p>
           <q-space />
-          <div class="absolute-top-right">
+          <div
+            class="absolute-top-right"
+            style="
+              height: 52px;
+              width: 52px;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+            "
+          >
             <q-btn
-              class="q-pa-xs q-ma-xs"
+              padding="8px"
               v-close-popup
               aligh="right"
               dense
               flat
               icon="close"
-              size="20"
+              size="xs"
+              color="#616a75"
             ></q-btn>
           </div>
         </q-card-section>
         <q-separator />
         <!-- Buttons -->
-        <q-card-actions align="right" class="q-pa-md">
+        <q-card-actions align="right" class="q-pa-md q-pr-lg">
           <q-btn
             no-caps
+            unelevated
+            padding="7px 16px"
+            style="border: 1px solid #abb1ba"
             class="text-h6"
-            outline
-            color="secondary"
             label="Cancel"
             @click="closeWarning"
           />
           <q-btn
             no-caps
+            unelevated
+            padding="7px 16px"
+            color="negative"
             class="text-h6"
             label="Delete"
-            color="negative"
             :loading="isLoading"
-            unelevated
             @click="deleteAccount"
           />
         </q-card-actions>
