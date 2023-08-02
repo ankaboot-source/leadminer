@@ -78,16 +78,14 @@
               align-items: center;
             "
           >
-            <q-btn
-              padding="8px"
-              v-close-popup
-              aligh="right"
-              dense
-              flat
-              icon="close"
-              size="xs"
-              color="#616a75"
-            ></q-btn>
+          <q-btn
+            style="margin: 8px; padding: 8px;"
+            v-close-popup
+            flat
+            icon="close"
+            size="xs"
+            color="#616a75"
+          ></q-btn>
           </div>
         </q-card-section>
         <q-separator />
@@ -97,7 +95,7 @@
             no-caps
             unelevated
             padding="7px 16px"
-            style="border: 1px solid #abb1ba"
+            style="border: 1px solid #abb1ba;"
             class="text-h6"
             label="Cancel"
             @click="closeWarning"
