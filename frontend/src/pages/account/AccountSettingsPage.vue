@@ -37,6 +37,7 @@
         class="text-h6"
         label="Update"
         color="primary"
+        unelevated
       />
     </q-form>
     <br />
@@ -49,6 +50,7 @@
       </p>
       <q-btn
         no-caps
+        class="text-h6"
         icon="delete"
         label="Delete my account"
         color="negative"
@@ -58,36 +60,44 @@
     </div>
 
     <!-- Warning model Section -->
-    <q-dialog v-model="showDeleteModal" no-refocus>
-      <q-card class="delete-modal q-pa-md">
-        <q-card-section class="row items-center q-pb-none">
-          <q-space />
-          <q-btn v-close-popup aligh="right" dense flat icon="close"></q-btn>
-        </q-card-section>
-        <q-card-section class="delete-modal-content">
-          <p class="text-h6">
+    <q-dialog v-model="showDeleteModal">
+      <q-card>
+        <q-card-section class="row items-center q-card-actions">
+          <p class="text-h6 q-ma-none q-mr-md">
             ⚠️ Deleting your account is permanent. You will lose all your mining
             data.
           </p>
+          <q-space />
+          <div class="absolute-top-right">
+            <q-btn
+              v-close-popup
+              class="q-ma-sm q-pa-sm"
+              flat
+              icon="close"
+              size="sm"
+              color="grey-7"
+            ></q-btn>
+          </div>
         </q-card-section>
-        <q-card-actions align="right">
+        <q-separator />
+        <!-- Buttons -->
+        <q-card-actions align="right" class="q-pa-md q-pr-lg">
           <q-btn
             no-caps
-            class="text-h6"
-            outline
-            color="secondary"
-            label="Cancel"
             unelevated
+            padding="sm md"
+            class="secondary-button text-h6"
+            label="Cancel"
             @click="closeWarning"
           />
-
           <q-btn
             no-caps
+            unelevated
+            padding="sm md"
+            color="negative"
             class="text-h6"
             label="Delete"
-            color="negative"
             :loading="isLoading"
-            unelevated
             @click="deleteAccount"
           />
         </q-card-actions>
