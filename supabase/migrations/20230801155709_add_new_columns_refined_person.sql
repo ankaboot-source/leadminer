@@ -1,8 +1,9 @@
-alter table "public"."refinedpersons" add column "seniority" timestamp with time zone;
-alter table "public"."refinedpersons" add column "sender" integer;
-alter table "public"."refinedpersons" add column "recipient" integer;
-alter table "public"."refinedpersons" add column "conversations" integer;
-alter table "public"."refinedpersons" add column "replied_conversations" integer;
+ALTER TABLE "public"."refinedpersons"
+ADD COLUMN "sender" integer,
+ADD COLUMN "recipient" integer,
+ADD COLUMN "conversations" integer,
+ADD COLUMN "replied_conversations" integer,
+ADD COLUMN "seniority" timestamp with time zone;
 
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void 
 LANGUAGE plpgsql 
