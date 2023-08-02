@@ -301,7 +301,7 @@ export default class EmailMessage {
                 validContact.email.address
               );
               if (!statusCache) {
-                this.emailVerificationQueue.add(
+                await this.emailVerificationQueue.add(
                   person.email,
                   {
                     userId: this.userId,
