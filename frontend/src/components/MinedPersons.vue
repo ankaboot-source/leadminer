@@ -323,8 +323,17 @@ const columns: any = [
     label: "Recency",
     align: "center",
     field: "recency",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    format: (val: any) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
+    format: (val: Date) =>
+      val ? new Date(val).toISOString().slice(0, 10) : "",
+    sortable: true,
+  },
+  {
+    name: "seniority",
+    label: "Seniority",
+    align: "center",
+    field: "seniority",
+    format: (val: Date) =>
+      val ? new Date(val).toISOString().slice(0, 10) : "",
     sortable: true,
   },
   {
@@ -383,7 +392,14 @@ async function exportTable() {
     engagement: r.engagement,
     occurence: r.occurence,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
+    seniority: r.seniority
+      ? new Date(r.seniority).toISOString().slice(0, 10)
+      : "",
     tags: r.tags?.join("\n"),
+    sender: r.sender,
+    recipient: r.recipient,
+    conversations: r.conversations,
+    repliedConversations: r.replied_conversations,
   }));
 
   try {
@@ -395,7 +411,12 @@ async function exportTable() {
         { key: "engagement", header: "Engagement" },
         { key: "occurence", header: "Occurrence" },
         { key: "recency", header: "Recency" },
+        { key: "seniority", header: "Seniority" },
         { key: "tags", header: "Tags" },
+        { key: "sender", header: "Sender" },
+        { key: "recipient", header: "Recipient" },
+        { key: "conversations", header: "Conversations" },
+        { key: "repliedConversations", header: "Replied conversations" },
       ],
       csvData
     );

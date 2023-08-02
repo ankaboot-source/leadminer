@@ -8,10 +8,15 @@ export interface Contact {
   email: string;
   engagement?: number;
   name?: string;
+  sender?: string;
+  recipient?: string;
+  conversations?: number;
+  replied_conversations?: number;
   status: EmailStatus;
   occurence?: number;
   personid?: string;
   recency?: Date;
+  seniority?: Date;
   alternate_names?: string[];
   tags?: Tag[];
 }
