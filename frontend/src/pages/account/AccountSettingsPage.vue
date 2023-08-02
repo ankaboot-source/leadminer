@@ -85,9 +85,7 @@
           <q-btn
             no-caps
             unelevated
-            padding="7px 16px"
-            style="border: 1px solid #abb1ba"
-            class="text-h6"
+            class="custom-btn-style text-h6"
             label="Cancel"
             @click="closeWarning"
           />
@@ -233,3 +231,8 @@ async function deleteAccount() {
   }
 }
 </script>
+<style>
+.custom-btn-style {
+  border: 1px solid #abb1ba;
+}
+</style>
