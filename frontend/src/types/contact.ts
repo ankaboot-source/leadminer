@@ -13,7 +13,7 @@ export interface Contact {
   conversations?: number;
   replied_conversations?: number;
   status: EmailStatus;
-  occurence?: number;
+  frequency?: number;
   personid?: string;
   recency?: Date;
   seniority?: Date;

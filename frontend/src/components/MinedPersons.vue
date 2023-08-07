@@ -389,8 +389,7 @@ async function exportTable() {
       ?.filter((name: string) => name.trim() !== "" && name !== r.name)
       .join("\n"),
     email: r.email,
-    engagement: r.engagement,
-    occurence: r.occurence,
+    frequency: r.frequency,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     seniority: r.seniority
       ? new Date(r.seniority).toISOString().slice(0, 10)
@@ -408,8 +407,7 @@ async function exportTable() {
         { key: "name", header: "Name" },
         { key: "alternateNames", header: "Alternate Names" },
         { key: "email", header: "Email" },
-        { key: "engagement", header: "Engagement" },
-        { key: "occurence", header: "Occurrence" },
+        { key: "frequency", header: "Frequency" },
         { key: "recency", header: "Recency" },
         { key: "seniority", header: "Seniority" },
         { key: "tags", header: "Tags" },
