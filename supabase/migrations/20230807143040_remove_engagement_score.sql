@@ -6,7 +6,7 @@ ALTER TABLE refinedpersons DROP COLUMN alternate_names;
 
 -- Removes the engagement score
 -- removes alternate_names L20,
--- Renames occurence to occurence L18, L30, L50
+-- Renames occurence to frequency L18, L30, L50
 
 CREATE OR REPLACE FUNCTION public.refined_persons(userid uuid) RETURNS void 
 LANGUAGE plpgsql 
