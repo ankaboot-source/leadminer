@@ -397,8 +397,8 @@ async function exportTable() {
     frequency: r.frequency,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     seniority: r.seniority
-    ? new Date(r.seniority).toISOString().slice(0, 10)
-    : "",
+      ? new Date(r.seniority).toISOString().slice(0, 10)
+      : "",
     tags: r.tags?.join("\n"),
     sender: r.sender,
     recipient: r.recipient,
