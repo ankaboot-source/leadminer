@@ -23,7 +23,8 @@ const transactionalEmailMessage: Tag = {
           'x-mailgun',
           'x-github',
           'x-msfbl',
-          'x-netsuite'
+          'x-netsuite',
+          'x-sg-eid'
         ]),
         new HasHeaderWithValues('x-mailer', [
           'ec-messenger',
@@ -45,7 +46,8 @@ const transactionalEmailMessage: Tag = {
           'bounce',
           'suspect'
         ]),
-        new HasHeaderWithValues('x-spam-flag', ['true'])
+        new HasHeaderWithValues('x-spam-flag', ['true']),
+        new HasHeaderWithValues('X-AMAZON-MAIL-RELAY-TYPE', ['notification'])
       ]
     }
   ]

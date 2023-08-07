@@ -77,12 +77,19 @@ export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   '@bnc3.mailjet.com',
   '@group.calendar.google.com',
   'wordpress@',
-  'receipts+'
+  'receipts+',
+  'updates@*',
+  'confirmation-commande@amazon.fr',
+  'transaction@notice.aliexpress.com',
+  'order-update@amazon.',
+  'shipment-tracking@amazon.',
+  'payments-update@amazon.',
+  'primenow-reply@amazon.'
 ];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
   'alert',
-  'auto-confirm',
+  //  'auto-confirm',
   'feedbackform',
   'maildaemon',
   'mailer-daemon',
@@ -142,9 +149,11 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'hey@',
   'support-',
   'support@',
+  '@support.',
   '@support',
   '.zendesk.com',
   '.intercom-mail.com',
   'help@',
-  'customercare@support.fr.gotogate.com'
+  'customercare@',
+  'community@'
 ];
