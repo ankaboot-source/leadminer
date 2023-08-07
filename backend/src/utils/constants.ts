@@ -89,7 +89,7 @@ export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
   'alert',
-  //  'auto-confirm',
+  'auto-confirm',
   'feedbackform',
   'maildaemon',
   'mailer-daemon',
