@@ -244,8 +244,8 @@ async function refineContacts() {
   const user = (await supabase.auth.getSession()).data.session?.user as User;
 
   try {
-    // Refresh the data in the table one final time before refining,
-    // ensuring that the table is cleaned from undesirable tags.
+    // Populate the data in the table one final time before refining,
+    // ensure that undesirable tags are filtered.
     const populate = await supabase.rpc("populate_refined", {
       '_userid': user.id,
     });
