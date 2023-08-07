@@ -265,22 +265,18 @@ export default class EmailMessage {
               validContact.sourceField === 'reply_to'
           };
 
-          const tags = this.taggingEngine
-            .getTags({
-              header: this.header,
-              email: validContact.email,
-              field: validContact.sourceField
-            })
-            .reduce((result: ContactTag[], tag) => {
-              if (!EmailMessage.IGNORED_MESSAGE_TAGS.includes(tag.name)) {
-                result.push({
-                  name: tag.name,
-                  reachable: tag.reachable,
-                  source: tag.source
-                });
-              }
-              return result;
-            }, []);
+          const tags = this.taggingEngine.getTags({
+            header: this.header,
+            email: validContact.email,
+            field: validContact.sourceField
+          });
+
+          // Eliminate unwanted contacts associated with tags listed in IGNORED_MESSAGE_TAGS
+          if (
+            tags.some((t) => EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name))
+          ) {
+            return;
+          }
 
           if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
             if (
