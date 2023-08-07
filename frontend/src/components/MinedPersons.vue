@@ -247,23 +247,21 @@ async function refineContacts() {
     // Populate the data in the table one final time before refining,
     // ensure that undesirable tags are filtered.
     const populate = await supabase.rpc("populate_refined", {
-      '_userid': user.id,
+      _userid: user.id,
     });
 
     if (populate.error) {
-      throw populate.error
+      throw populate.error;
     }
 
     const refine = await supabase.rpc("refined_persons", {
       userid: user.id,
-    })
+    });
 
     if (refine.error) {
-      throw refine.error
+      throw refine.error;
     }
-  }
-
-  catch (error) {
+  } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
   }
