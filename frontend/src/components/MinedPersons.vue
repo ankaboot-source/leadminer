@@ -385,9 +385,6 @@ async function exportTable() {
 
   const csvData = rows.value.map((r) => ({
     name: r.name?.trim(),
-    alternateNames: r.alternate_names
-      ?.filter((name: string) => name.trim() !== "" && name !== r.name)
-      .join("\n"),
     email: r.email,
     engagement: r.engagement,
     occurence: r.occurence,
@@ -406,7 +403,6 @@ async function exportTable() {
     const csvStr = await getCsvStr(
       [
         { key: "name", header: "Name" },
-        { key: "alternateNames", header: "Alternate Names" },
         { key: "email", header: "Email" },
         { key: "engagement", header: "Engagement" },
         { key: "occurence", header: "Occurrence" },
