@@ -9,6 +9,7 @@
       :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
       :columns="columns"
+      :visible-columns="visibleColumns"
       title="Mined emails"
       :loading="isLoading"
       :filter="filter"
@@ -292,6 +293,15 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
+const visibleColumns = ref([
+  "copy",
+  "email",
+  "name",
+  "recency",
+  "reply",
+  "tags",
+  "status",
+]);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any = [
   {
@@ -336,14 +346,13 @@ const columns: any = [
       val ? new Date(val).toISOString().slice(0, 10) : "",
     sortable: true,
   },
-  // Disable field engagement
-  // {
-  //   name: "engagement",
-  //   label: "Engagement",
-  //   field: "engagement",
-  //   align: "center",
-  //   sortable: true,
-  // },
+  {
+    name: "engagement",
+    label: "Engagement",
+    field: "engagement",
+    align: "center",
+    sortable: true,
+  },
   {
     name: "reply",
     label: "Reply",
