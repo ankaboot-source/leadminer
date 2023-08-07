@@ -336,10 +336,18 @@ const columns: any = [
       val ? new Date(val).toISOString().slice(0, 10) : "",
     sortable: true,
   },
+  // Disable field engagement
+  // {
+  //   name: "engagement",
+  //   label: "Engagement",
+  //   field: "engagement",
+  //   align: "center",
+  //   sortable: true,
+  // },
   {
-    name: "engagement",
-    label: "Engagement",
-    field: "engagement",
+    name: "reply",
+    label: "Reply",
+    field: "replied_conversations",
     align: "center",
     sortable: true,
   },
@@ -385,27 +393,24 @@ async function exportTable() {
 
   const csvData = rows.value.map((r) => ({
     name: r.name?.trim(),
-    alternateNames: r.alternate_names
-      ?.filter((name: string) => name.trim() !== "" && name !== r.name)
-      .join("\n"),
     email: r.email,
     frequency: r.frequency,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     seniority: r.seniority
-      ? new Date(r.seniority).toISOString().slice(0, 10)
-      : "",
+    ? new Date(r.seniority).toISOString().slice(0, 10)
+    : "",
     tags: r.tags?.join("\n"),
     sender: r.sender,
     recipient: r.recipient,
     conversations: r.conversations,
     repliedConversations: r.replied_conversations,
+    // engagement: r.engagement Disable engagement,
   }));
 
   try {
     const csvStr = await getCsvStr(
       [
         { key: "name", header: "Name" },
-        { key: "alternateNames", header: "Alternate Names" },
         { key: "email", header: "Email" },
         { key: "frequency", header: "Frequency" },
         { key: "recency", header: "Recency" },
@@ -415,6 +420,7 @@ async function exportTable() {
         { key: "recipient", header: "Recipient" },
         { key: "conversations", header: "Conversations" },
         { key: "repliedConversations", header: "Replied conversations" },
+        // { key: "engagement", header: "Engagement" } Disables engagement,
       ],
       csvData
     );
