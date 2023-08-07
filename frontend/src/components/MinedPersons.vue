@@ -242,11 +242,28 @@ async function setupSubscription() {
 
 async function refineContacts() {
   const user = (await supabase.auth.getSession()).data.session?.user as User;
-  const { error } = await supabase.rpc("refined_persons", {
-    userid: user.id,
-  });
 
-  if (error) {
+  try {
+    // Refresh the data in the table one final time before refining,
+    // ensuring that the table is cleaned from undesirable tags.
+    const populate = await supabase.rpc("populate_refined", {
+      '_userid': user.id,
+    });
+
+    if (populate.error) {
+      throw populate.error
+    }
+
+    const refine = await supabase.rpc("refined_persons", {
+      userid: user.id,
+    })
+
+    if (refine.error) {
+      throw refine.error
+    }
+  }
+
+  catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
   }
