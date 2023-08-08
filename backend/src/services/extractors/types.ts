@@ -1,3 +1,4 @@
+import Redis from 'ioredis';
 import { Status } from '../email-status/EmailStatusVerifier';
 
 export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
@@ -95,3 +96,10 @@ export interface Contact {
     tags: ContactTag[];
   }[];
 }
+
+export type DomainStatusVerificationFunction = (
+  redisClient: Redis,
+  domain: string
+) => Promise<
+  [boolean, 'provider' | 'disposable' | 'custom' | 'invalid', string]
+>;

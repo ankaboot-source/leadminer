@@ -5,7 +5,6 @@ import {
   REDIS_EMAIL_STATUS_KEY,
   REGEX_LIST_ID
 } from '../../utils/constants';
-import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
 import { differenceInDays } from '../../utils/helpers/date';
@@ -16,6 +15,7 @@ import {
   Contact,
   ContactLead,
   ContactTag,
+  DomainStatusVerificationFunction,
   EmailSendersRecipients,
   IGNORED_MESSAGE_TAGS,
   MESSAGING_FIELDS,
@@ -55,6 +55,7 @@ export default class EmailMessage {
     private readonly taggingEngine: TaggingEngine,
     private readonly redisClientForNormalMode: Redis,
     private readonly emailVerificationQueue: Queue,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction,
     private readonly userEmail: string,
     private readonly userId: string,
     private readonly header: any,
@@ -230,7 +231,7 @@ export default class EmailMessage {
 
     await Promise.all(
       [...headerContacts, ...bodyContacts].map(async (contact: ContactLead) => {
-        const [domainIsValid, domainType] = await checkDomainStatus(
+        const [domainIsValid, domainType] = await this.domainStatusVerification(
           this.redisClientForNormalMode,
           contact.email.domain.toLowerCase()
         );

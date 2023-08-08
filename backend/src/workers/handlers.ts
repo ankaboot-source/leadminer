@@ -4,6 +4,7 @@ import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
+import { checkDomainStatus } from '../utils/helpers/domainHelpers';
 
 const redisClientForNormalMode = redis.getClient();
 
@@ -51,6 +52,7 @@ async function handleMessage(
     EmailTaggingEngine,
     redisClientForNormalMode,
     emailVerificationQueue,
+    checkDomainStatus,
     userEmail,
     userId,
     header,
