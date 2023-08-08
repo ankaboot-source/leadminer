@@ -237,8 +237,8 @@ export default class TasksManager {
     });
 
     if (killEmailVerificationImmediately) {
-      await queue.close();
-      await queue.obliterate();
+        await queue.obliterate({ force: true });
+        await queue.close();
       await emailVerificationWorker.close();
     } else {
       const queueEvents = new QueueEvents(miningId, {
