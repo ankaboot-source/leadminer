@@ -3,11 +3,6 @@ ALTER TABLE "public"."refinedpersons"
     ADD COLUMN "created_at" timestamp,
     ADD COLUMN "updated_at" timestamp;
 
--- Creates an update trigger for updated_at column in refinedpersons
-CREATE extension IF NOT EXISTS moddatetime SCHEMA extensions;
-CREATE TRIGGER handle_updated_at BEFORE UPDATE ON public.refinedpersons
-  FOR EACH ROW EXECUTE PROCEDURE moddatetime (updated_at);
-
 -- Updates function to copy created_at, updated_at from table persons
 CREATE OR REPLACE FUNCTION public.populate_refined(_userid uuid) RETURNS void
 LANGUAGE plpgsql
