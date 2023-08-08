@@ -111,13 +111,13 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       );
     } catch (err) {
       if (err instanceof AxiosError) {
-        const error = err.response?.data?.error || err;
+        const error = err.response?.data || err;
 
         if (error.message?.toLowerCase() === "network error") {
           errorMessage.value =
             "Unable to access server. Please retry again or contact your service provider.";
         } else {
-          errorMessage.value = "Imap connection error";
+          errorMessage.value = error.message;
           if (
             activeMiningSource.value.type === "Azure" ||
             activeMiningSource.value.type === "Google"
@@ -199,7 +199,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       sse.closeConnection();
       if (err !== null && err instanceof AxiosError) {
         let message = null;
-        const error = err.response?.data?.error || err;
+        const error = err.response?.data || err;
 
         if (error.message?.toLowerCase() === "network error") {
           message =
@@ -208,7 +208,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
           message = error.message;
         }
 
-        error.value = message;
+        errorMessage.value = message;
       }
       throw err;
     }
@@ -232,7 +232,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     } catch (err) {
       if (err !== null && err instanceof AxiosError) {
         let message = null;
-        const error = err.response?.data?.error || err;
+        const error = err.response?.data || err;
 
         if (error.message?.toLowerCase() === "network error") {
           message =

@@ -118,10 +118,10 @@
           <q-tab-panel name="configuration">
             <div class="text-h6">Start by configuring mining sources</div>
             <div class="flex row flex-center q-gutter-md q-mt-sm text-bold">
-              <q-btn :icon="mdiMicrosoft" @click="addOAuthAccount('azure')">
+              <q-btn :icon="mdiMicrosoft" @click="addOAuthSource('azure')">
                 Add Microsoft Account
               </q-btn>
-              <q-btn :icon="mdiGoogle" @click="addOAuthAccount('google')">
+              <q-btn :icon="mdiGoogle" @click="addOAuthSource('google')">
                 Add Google Account
               </q-btn>
               <q-btn :icon="mdiEmailLock" @click="openImapCredentialsDialog"
@@ -402,8 +402,12 @@ async function onSubmitImapCredentials() {
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
+      const message =
+        error.response?.data?.details?.message ??
+        error.response?.data?.message ??
+        error.message;
       $quasar.notify({
-        message: error.message,
+        message,
         color: "negative",
         icon: "error",
       });
@@ -422,6 +426,20 @@ function tabItemClicked(name: TabName) {
       menuItem.active = false;
     }
   });
+}
+
+async function addOAuthSource(source: "google" | "azure") {
+  try {
+    await addOAuthAccount(source);
+  } catch (error) {
+    if (error instanceof Error) {
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
+    }
+  }
 }
 
 defineExpose({
