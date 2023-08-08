@@ -325,7 +325,7 @@ const activeMiningTask = computed(
 );
 
 function validateEmail(emailStr: string) {
-  return isValidEmail(emailStr) || "Please insert a valid email address";
+  return isValidEmail(emailStr) ?? "Please insert a valid email address";
 }
 
 function getIconByMiningSource(miningSource: MiningSource) {
@@ -350,16 +350,16 @@ function onMiningSourceChanged() {
 }
 
 function validatePassword(passwordStr: string) {
-  return passwordStr !== "" || "Please insert your IMAP password";
+  return passwordStr !== "" ?? "Please insert your IMAP password";
 }
 
 function validateImapHost(imapHostStr: string) {
-  return imapHostStr !== "" || "Please insert your IMAP host";
+  return imapHostStr !== "" ?? "Please insert your IMAP host";
 }
 
 function validateImapPort(port: number) {
   return (
-    (port > 0 && port <= 65536) || "Please insert a valid IMAP port number"
+    (port > 0 && port <= 65536) ?? "Please insert a valid IMAP port number"
   );
 }
 
