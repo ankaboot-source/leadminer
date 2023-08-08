@@ -78,7 +78,7 @@ export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   '@group.calendar.google.com',
   'wordpress@',
   'receipts+',
-  'updates@*',
+  'updates@',
   'confirmation-commande@amazon.fr',
   'transaction@notice.aliexpress.com',
   'order-update@amazon.',
