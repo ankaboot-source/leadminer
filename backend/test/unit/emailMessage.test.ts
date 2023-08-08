@@ -13,7 +13,7 @@ jest.mock('ioredis', () => jest.requireActual('ioredis-mock'));
 
 const taggingEngine: TaggingEngine = {
   tags: [],
-  getTags: jest.fn(({ email }: Record<string, any>) => {
+  getTags: jest.fn(({ email }: { email: { address: string } }) => {
     const tags: BasicTag[] = [];
     if (email.address.startsWith('invalid')) {
       tags.push({
