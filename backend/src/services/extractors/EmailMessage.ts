@@ -41,12 +41,15 @@ export default class EmailMessage {
   /**
    * Creates an instance of EmailMessage.
    *
+   * @param taggingEngine - The tagging engine responsible for categorizing the message.
    * @param redisClientForNormalMode - The Redis client used for normal mode.
+   * @param emailVerificationQueue - The queue used for email verification.
+   * @param domainStatusVerification - The function that does domain status verification.
    * @param userEmail - The email address of the user.
-   * @param sequentialId - The sequential ID of the message.
+   * @param userId - The unique identifier of the user.
    * @param header - The header of the message.
    * @param body - The body of the message.
-   * @param folderPath - the path of the folder where the email is located
+   * @param folderPath - The path of the folder where the email is located.
    */
   constructor(
     private readonly taggingEngine: TaggingEngine,
