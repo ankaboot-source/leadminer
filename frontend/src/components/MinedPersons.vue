@@ -9,6 +9,7 @@
       :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
       :columns="columns"
+      :visible-columns="visibleColumns"
       title="Mined emails"
       :loading="isLoading"
       :filter="filter"
@@ -292,6 +293,15 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
+const visibleColumns = ref([
+  "copy",
+  "email",
+  "name",
+  "recency",
+  "reply",
+  "tags",
+  "status",
+]);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any = [
   {
@@ -344,6 +354,13 @@ const columns: any = [
     sortable: true,
   },
   {
+    name: "reply",
+    label: "Reply",
+    field: "replied_conversations",
+    align: "center",
+    sortable: true,
+  },
+  {
     name: "tags",
     label: "Tags",
     align: "center",
@@ -385,12 +402,8 @@ async function exportTable() {
 
   const csvData = rows.value.map((r) => ({
     name: r.name?.trim(),
-    alternateNames: r.alternate_names
-      ?.filter((name: string) => name.trim() !== "" && name !== r.name)
-      .join("\n"),
     email: r.email,
-    engagement: r.engagement,
-    occurence: r.occurence,
+    frequency: r.frequency,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     seniority: r.seniority
       ? new Date(r.seniority).toISOString().slice(0, 10)
@@ -406,10 +419,8 @@ async function exportTable() {
     const csvStr = await getCsvStr(
       [
         { key: "name", header: "Name" },
-        { key: "alternateNames", header: "Alternate Names" },
         { key: "email", header: "Email" },
-        { key: "engagement", header: "Engagement" },
-        { key: "occurence", header: "Occurrence" },
+        { key: "frequency", header: "Frequency" },
         { key: "recency", header: "Recency" },
         { key: "seniority", header: "Seniority" },
         { key: "tags", header: "Tags" },
