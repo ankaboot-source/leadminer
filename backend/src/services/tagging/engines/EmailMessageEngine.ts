@@ -173,14 +173,6 @@ export default class EmailMessageTagging implements TaggingEngine {
         (t) => (t && t.fields === undefined) || t.fields.includes(field)
       );
 
-      if (headerTags.length === 1) {
-        const { name } = headerTags[0];
-
-        if (['transactional', 'no-reply'].includes(name)) {
-          headerTags.length = 0; // reset array
-        }
-      }
-
       if (headerTags.length > 0) {
         // Remove all existing tags except for the "professional" tag.
         tags = tags.filter(({ name }) => name === 'professional');

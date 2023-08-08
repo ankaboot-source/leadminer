@@ -5,7 +5,6 @@ import {
   REDIS_EMAIL_STATUS_KEY,
   REGEX_LIST_ID
 } from '../../utils/constants';
-import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
 import { differenceInDays } from '../../utils/helpers/date';
@@ -16,6 +15,7 @@ import {
   Contact,
   ContactLead,
   ContactTag,
+  DomainStatusVerificationFunction,
   EmailSendersRecipients,
   IGNORED_MESSAGE_TAGS,
   MESSAGING_FIELDS,
@@ -41,17 +41,21 @@ export default class EmailMessage {
   /**
    * Creates an instance of EmailMessage.
    *
+   * @param taggingEngine - The tagging engine responsible for categorizing the message.
    * @param redisClientForNormalMode - The Redis client used for normal mode.
+   * @param emailVerificationQueue - The queue used for email verification.
+   * @param domainStatusVerification - The function that does domain status verification.
    * @param userEmail - The email address of the user.
-   * @param sequentialId - The sequential ID of the message.
+   * @param userId - The unique identifier of the user.
    * @param header - The header of the message.
    * @param body - The body of the message.
-   * @param folderPath - the path of the folder where the email is located
+   * @param folderPath - The path of the folder where the email is located.
    */
   constructor(
     private readonly taggingEngine: TaggingEngine,
     private readonly redisClientForNormalMode: Redis,
     private readonly emailVerificationQueue: Queue,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction,
     private readonly userEmail: string,
     private readonly userId: string,
     private readonly header: any,
@@ -227,7 +231,7 @@ export default class EmailMessage {
 
     await Promise.all(
       [...headerContacts, ...bodyContacts].map(async (contact: ContactLead) => {
-        const [domainIsValid, domainType] = await checkDomainStatus(
+        const [domainIsValid, domainType] = await this.domainStatusVerification(
           this.redisClientForNormalMode,
           contact.email.domain.toLowerCase()
         );
@@ -265,22 +269,18 @@ export default class EmailMessage {
               validContact.sourceField === 'reply_to'
           };
 
-          const tags = this.taggingEngine
-            .getTags({
-              header: this.header,
-              email: validContact.email,
-              field: validContact.sourceField
-            })
-            .reduce((result: ContactTag[], tag) => {
-              if (!EmailMessage.IGNORED_MESSAGE_TAGS.includes(tag.name)) {
-                result.push({
-                  name: tag.name,
-                  reachable: tag.reachable,
-                  source: tag.source
-                });
-              }
-              return result;
-            }, []);
+          const tags = this.taggingEngine.getTags({
+            header: this.header,
+            email: validContact.email,
+            field: validContact.sourceField
+          });
+
+          // Eliminate unwanted contacts associated with tags listed in IGNORED_MESSAGE_TAGS
+          if (
+            tags.some((t) => EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name))
+          ) {
+            return;
+          }
 
           if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
             if (
