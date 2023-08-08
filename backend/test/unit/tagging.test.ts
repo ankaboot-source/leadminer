@@ -434,10 +434,12 @@ describe('test engines.EmailTaggingEngine', () => {
   });
 
   describe('EmailTaggingEngine.getTags', () => {
-    it('should return header and email tags', () => {
-      header['list-post'] = ['test']; // will be tagged as group
+    it('should correctly combine header and email tags', () => {
+      // will be tagged as group
+      header['list-post'] = ['test'];
+
+      // will be tagged as professional
       const email = {
-        // will be tagged as professional
         name: 'user',
         address: 'user@leadminer.io',
         domain: 'leadminer.io',
@@ -464,10 +466,12 @@ describe('test engines.EmailTaggingEngine', () => {
       expect(tags).toEqual(expectedTags);
     });
 
-    it('should correctly filter email tags and add header tags', () => {
-      header['list-post'] = ['test']; // will be tagged as group
+    it('should correctly filter email tags and add relevant header tags', () => {
+      // will be tagged as group
+      header['list-post'] = ['test'];
+
+      // will be tagged as professional, role
       const email = {
-        // will be tagged as professional, role
         name: 'contact',
         address: 'contact@leadminer.io',
         domain: 'leadminer.io',
@@ -494,9 +498,9 @@ describe('test engines.EmailTaggingEngine', () => {
       expect(tags).toEqual(expectedTags);
     });
 
-    it('should return only email tags', () => {
+    it('should return only emailAddress-related tags ', () => {
+      // will be tagged as professional, role
       const email = {
-        // will be tagged as professional, role
         name: 'contact',
         address: 'contact@leadminer.io',
         domain: 'leadminer.io',
@@ -514,16 +518,25 @@ describe('test engines.EmailTaggingEngine', () => {
           source: 'refined#email_address'
         }
       ];
-      const tags = EmailTaggingEngine.getTags({ header, email, field: '' });
+
+      const tags = EmailTaggingEngine.getTags({
+        header,
+        email,
+        field: 'list-post'
+      });
 
       expect(tags).toEqual(expectedTags);
     });
 
-    it('should correctly filter tags to the supplied field', () => {
-      header['list-post'] = ['test']; // will be tagged as group with field list-post
-      header['x-linkedin-class'] = ['inmail']; // will be tagged as chat with field reply-to
+    it('should correctly apply relevant tags based on email address and header informations', () => {
+      // will be tagged as group with field list-post
+      header['list-post'] = ['test'];
+
+      // will be tagged as chat with field reply-to
+      header['x-linkedin-class'] = ['inmail'];
+
+      // will be tagged as professional
       const email = {
-        // will be tagged as professional
         name: 'user',
         address: 'user@leadminer.io',
         domain: 'leadminer.io',
@@ -557,6 +570,79 @@ describe('test engines.EmailTaggingEngine', () => {
           reachable: 1,
           name: 'professional',
           source: 'refined#email_address'
+        }
+      ]);
+    });
+
+    it('should tag transactional and no-reply emails with the correct tags', () => {
+      const transactionalTag = EmailTaggingEngine.getTags({
+        header,
+        email: {
+          name: '',
+          address: 'updates@leadminer.io',
+          domainType: 'custom' as DomainType
+        },
+        field: ''
+      });
+
+      const noReplyTag = EmailTaggingEngine.getTags({
+        header,
+        email: {
+          name: '',
+          address: 'no-reply@leadminer.io',
+          domainType: 'custom' as DomainType
+        },
+        field: ''
+      });
+      const expectedTag = {
+        reachable: 0,
+        source: 'refined#email_address'
+      };
+
+      // Validate the transactional email tag
+      expect(transactionalTag.length).toEqual(1);
+      expect(transactionalTag).toEqual([
+        {
+          name: 'transactional',
+          ...expectedTag
+        }
+      ]);
+
+      // Validate the no-reply email tag
+      expect(noReplyTag.length).toEqual(1);
+      expect(noReplyTag).toEqual([
+        {
+          name: 'no-reply',
+          ...expectedTag
+        }
+      ]);
+    });
+
+    it('should tag transactional message headers with the correct tags', () => {
+      // set a transactional field
+      header['feedback-id'] = [''];
+
+      const transactionalTag = EmailTaggingEngine.getTags({
+        header,
+        email: {
+          name: '',
+          address: 'leadminer@leadminer.io',
+          domainType: 'custom' as DomainType
+        },
+        field: 'from'
+      });
+
+      expect(transactionalTag.length).toEqual(2);
+      expect(transactionalTag).toEqual([
+        {
+          name: 'professional',
+          reachable: 1,
+          source: 'refined#email_address'
+        },
+        {
+          name: 'transactional',
+          reachable: 0,
+          source: 'refined#message_header'
         }
       ]);
     });
