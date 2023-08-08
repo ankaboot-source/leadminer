@@ -413,7 +413,6 @@ async function exportTable() {
     recipient: r.recipient,
     conversations: r.conversations,
     repliedConversations: r.replied_conversations,
-    // engagement: r.engagement Disable engagement,
   }));
 
   try {
@@ -429,7 +428,6 @@ async function exportTable() {
         { key: "recipient", header: "Recipient" },
         { key: "conversations", header: "Conversations" },
         { key: "repliedConversations", header: "Replied conversations" },
-        // { key: "engagement", header: "Engagement" } Disables engagement,
       ],
       csvData
     );
