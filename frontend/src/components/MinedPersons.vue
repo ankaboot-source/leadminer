@@ -82,7 +82,7 @@
             anchor="top middle"
             self="center middle"
           >
-          When was the last time this contact was seen
+            When was the last time this contact was seen
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -121,7 +121,7 @@
             anchor="top middle"
             self="center middle"
           >
-          How many times this contact replied
+            How many times this contact replied
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -134,7 +134,7 @@
             anchor="top middle"
             self="center middle"
           >
-          Categorize your contacts
+            Categorize your contacts
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -147,7 +147,7 @@
             anchor="top middle"
             self="center middle"
           >
-          How reachable is your contact
+            How reachable is your contact
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -466,15 +466,15 @@ async function exportTable() {
     email: r.email,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     seniority: r.seniority
-    ? new Date(r.seniority).toISOString().slice(0, 10)
-    : "",
+      ? new Date(r.seniority).toISOString().slice(0, 10)
+      : "",
     occurrence: r.occurrence,
     sender: r.sender,
     recipient: r.recipient,
     conversations: r.conversations,
     repliedConversations: r.replied_conversations,
     tags: r.tags?.join("\n"),
-    status: r.status
+    status: r.status,
   }));
 
   try {
