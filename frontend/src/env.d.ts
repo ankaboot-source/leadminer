@@ -11,5 +11,7 @@ declare namespace NodeJS {
     SUPABASE_MAX_ROWS: number;
     AVERAGE_EXTRACTION_RATE: number;
     BANNER_IMAGE_URL: string;
+    POSTHOG_API_KEY: string;
+    POSTHOG_INSTANCE_ADDRESS: string;
   }
 }
