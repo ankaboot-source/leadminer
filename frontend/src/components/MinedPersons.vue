@@ -238,7 +238,7 @@ let contactsCache = new Map<string, Contact>();
 const minedEmails = computed(() => rows.value.length);
 
 const initialPagination = {
-  sortBy: "engagement",
+  sortBy: "recency",
   descending: true,
 };
 
