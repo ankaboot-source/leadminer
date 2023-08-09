@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 import { api } from "src/boot/axios";
 
-export async function addOAuthAccount(provider: string) {
+export async function addOAuthAccount(provider: "google" | "azure") {
   try {
     const { data } = await api.post<{ authorizationUri: string }>(
       `/imap/mine/sources/${provider}`
