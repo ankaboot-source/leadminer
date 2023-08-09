@@ -236,35 +236,9 @@ export default class TasksManager {
       connection: this.redisPublisher
     });
 
-    if (killEmailVerificationImmediately) {
-      await queue.close();
-      await queue.obliterate();
-      await emailVerificationWorker.close();
-    } else {
-      const queueEvents = new QueueEvents(miningId, {
-        connection: this.redisPublisher
-      });
-      // This sets up an event listener that will delete the queue once it's completed
-      queueEvents.on('completed', async () => {
-        const jobCounts = await queue.getJobCounts();
-        logger.debug('Completed', { jobCounts });
-
-        if (
-          jobCounts.waiting === 0 &&
-          jobCounts.active === 0 &&
-          jobCounts.delayed === 0
-        ) {
-          await queue.close();
-          await queue.obliterate();
-          await emailVerificationWorker.close();
-        }
-      });
-    }
-
     this.ACTIVE_MINING_TASKS.delete(miningId);
 
     try {
-      await fetcher.stop();
       progressHandlerSSE.stop();
       await this.pubsubSendMessage(
         miningId,
@@ -272,6 +246,33 @@ export default class TasksManager {
         stream.streamName,
         stream.consumerGroupName
       );
+
+      await fetcher.stop();
+
+      if (killEmailVerificationImmediately) {
+        await queue.obliterate({ force: true });
+        await queue.close();
+        await emailVerificationWorker.close();
+      } else {
+        const queueEvents = new QueueEvents(miningId, {
+          connection: this.redisPublisher
+        });
+        // This sets up an event listener that will delete the queue once it's completed
+        queueEvents.on('completed', async () => {
+          const jobCounts = await queue.getJobCounts();
+          logger.debug('Completed', { jobCounts });
+
+          if (
+            jobCounts.waiting === 0 &&
+            jobCounts.active === 0 &&
+            jobCounts.delayed === 0
+          ) {
+            await queue.close();
+            await queue.obliterate();
+            await emailVerificationWorker.close();
+          }
+        });
+      }
     } catch (error) {
       logger.error('Error when deleting task', error);
     }

@@ -24,5 +24,5 @@ export default function errorHandler(
     response.details = error.fieldErrors;
   }
 
-  return res.status(code).send({ error: response });
+  return res.status(code).send({ ...response });
 }

@@ -118,10 +118,10 @@
           <q-tab-panel name="configuration">
             <div class="text-h6">Start by configuring mining sources</div>
             <div class="flex row flex-center q-gutter-md q-mt-sm text-bold">
-              <q-btn :icon="mdiMicrosoft" @click="addOAuthAccount('azure')">
+              <q-btn :icon="mdiMicrosoft" @click="addOAuthSource('azure')">
                 Add Microsoft Account
               </q-btn>
-              <q-btn :icon="mdiGoogle" @click="addOAuthAccount('google')">
+              <q-btn :icon="mdiGoogle" @click="addOAuthSource('google')">
                 Add Google Account
               </q-btn>
               <q-btn :icon="mdiEmailLock" @click="openImapCredentialsDialog"
@@ -325,7 +325,7 @@ const activeMiningTask = computed(
 );
 
 function validateEmail(emailStr: string) {
-  return isValidEmail(emailStr) || "Please insert a valid email address";
+  return isValidEmail(emailStr) ?? "Please insert a valid email address";
 }
 
 function getIconByMiningSource(miningSource: MiningSource) {
@@ -350,16 +350,16 @@ function onMiningSourceChanged() {
 }
 
 function validatePassword(passwordStr: string) {
-  return passwordStr !== "" || "Please insert your IMAP password";
+  return passwordStr !== "" ?? "Please insert your IMAP password";
 }
 
 function validateImapHost(imapHostStr: string) {
-  return imapHostStr !== "" || "Please insert your IMAP host";
+  return imapHostStr !== "" ?? "Please insert your IMAP host";
 }
 
 function validateImapPort(port: number) {
   return (
-    (port > 0 && port <= 65536) || "Please insert a valid IMAP port number"
+    (port > 0 && port <= 65536) ?? "Please insert a valid IMAP port number"
   );
 }
 
@@ -402,8 +402,12 @@ async function onSubmitImapCredentials() {
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
+      const message =
+        error.response?.data?.details?.message ??
+        error.response?.data?.message ??
+        error.message;
       $quasar.notify({
-        message: error.message,
+        message,
         color: "negative",
         icon: "error",
       });
@@ -422,6 +426,20 @@ function tabItemClicked(name: TabName) {
       menuItem.active = false;
     }
   });
+}
+
+async function addOAuthSource(source: "google" | "azure") {
+  try {
+    await addOAuthAccount(source);
+  } catch (error) {
+    if (error instanceof Error) {
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
+    }
+  }
 }
 
 defineExpose({
