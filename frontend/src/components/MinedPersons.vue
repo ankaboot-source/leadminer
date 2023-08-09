@@ -423,7 +423,7 @@ async function exportTable() {
     seniority: r.seniority
       ? new Date(r.seniority).toISOString().slice(0, 10)
       : "",
-    tags: r.tags?.join("\n"),
+    occurrence: r.occurrence,
     sender: r.sender,
     recipient: r.recipient,
     conversations: r.conversations,
@@ -438,7 +438,7 @@ async function exportTable() {
         { key: "frequency", header: "Frequency" },
         { key: "recency", header: "Recency" },
         { key: "seniority", header: "Seniority" },
-        { key: "tags", header: "Tags" },
+        { key: "occurrence", header: "Occurrence" },
         { key: "sender", header: "Sender" },
         { key: "recipient", header: "Recipient" },
         { key: "conversations", header: "Conversations" },
