@@ -90,6 +90,13 @@ export default function initializeImapController(miningSources: MiningSources) {
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.toLowerCase().startsWith('invalid credentials')
+        ) {
+          return res.status(401).json({ message: err.message });
+        }
+
         const generatedError = generateErrorObjectFromImapError(err);
         return next(generatedError);
       } finally {

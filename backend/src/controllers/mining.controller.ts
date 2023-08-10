@@ -300,12 +300,20 @@ export default function initializeMiningController(
 
         miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
       } catch (err) {
-        const newError = generateErrorObjectFromImapError(err);
-
         if (imapConnection) {
           await imapConnectionProvider.releaseConnection(imapConnection);
         }
         await imapConnectionProvider.cleanPool();
+
+        if (
+          err instanceof Error &&
+          err.message.toLowerCase().startsWith('invalid credentials')
+        ) {
+          return res.status(401).json({ message: err.message });
+        }
+
+        const newError = generateErrorObjectFromImapError(err);
+
         res.status(500);
         return next(new Error(newError.message));
       }
