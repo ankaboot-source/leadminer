@@ -2,7 +2,7 @@ export type Tag = "professional" | "newsletter" | "personal" | "group";
 
 export type EmailStatus = "UNKNOWN" | "RISKY" | "VALID" | "INVALID";
 
-export const EmailStatusScore = {
+export const EmailStatusScore: Record<EmailStatus, number> = {
   VALID: 0,
   RISKY: 1,
   UNKNOWN: 2,
