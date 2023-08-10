@@ -220,7 +220,7 @@ import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { getCsvStr } from "src/helpers/csv";
 import { fetchData, supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
-import { Contact } from "src/types/contact";
+import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
@@ -239,7 +239,6 @@ const minedEmails = computed(() => rows.value.length);
 
 const initialPagination = {
   sortBy: "status",
-  descending: true,
 };
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
@@ -433,13 +432,8 @@ const columns: any = [
     align: "center",
     field: "status",
     sortable: true,
-    sort: (a: string, b: string) => {
-      // Sort the data array by status with "VALID" first
-      if (a === "VALID") return 1;
-      if (b === "VALID") return -1;
-      return 0;
-    },
-  },
+    sort: (a: EmailStatus, b: EmailStatus) => EmailStatusScore[a] - EmailStatusScore[b],
+  }
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

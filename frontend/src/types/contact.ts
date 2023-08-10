@@ -2,6 +2,13 @@ export type Tag = "professional" | "newsletter" | "personal" | "group";
 
 export type EmailStatus = "UNKNOWN" | "RISKY" | "VALID" | "INVALID";
 
+export const EmailStatusScore = {
+  VALID: 0,
+  RISKY: 1,
+  UNKNOWN: 2,
+  INVALID: 3,
+};
+
 export interface Contact {
   id: string;
   userid: string;
