@@ -199,7 +199,7 @@ let contactsCache = new Map<string, Contact>();
 const minedEmails = computed(() => rows.value.length);
 
 const initialPagination = {
-  sortBy: "engagement",
+  sortBy: "status",
   descending: true,
 };
 
@@ -385,7 +385,14 @@ const columns: any = [
     name: "status",
     label: "Status",
     align: "center",
-    field: "",
+    field: "status",
+    sortable: true,
+    sort: (a: string, b: string) => {
+      // Sort the data array by status with "VALID" first
+      if (a === "VALID") return 1;
+      if (b === "VALID") return -1;
+      return 0;
+    },
   },
 ];
 
