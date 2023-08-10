@@ -220,7 +220,7 @@ import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { getCsvStr } from "src/helpers/csv";
 import { fetchData, supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
-import { Contact } from "src/types/contact";
+import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
@@ -238,8 +238,7 @@ let contactsCache = new Map<string, Contact>();
 const minedEmails = computed(() => rows.value.length);
 
 const initialPagination = {
-  sortBy: "recency",
-  descending: true,
+  sortBy: "status",
 };
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
@@ -431,7 +430,10 @@ const columns: any = [
     name: "status",
     label: "Status",
     align: "center",
-    field: "",
+    field: "status",
+    sortable: true,
+    sort: (a: EmailStatus, b: EmailStatus) =>
+      EmailStatusScore[a] - EmailStatusScore[b],
   },
 ];
 
