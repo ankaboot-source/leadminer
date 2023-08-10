@@ -82,7 +82,7 @@
             anchor="top middle"
             self="center middle"
           >
-            Date of last interaction with this person
+            When was the last time this contact was seen
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -95,7 +95,7 @@
             anchor="top middle"
             self="center middle"
           >
-            Count of conversations this email address was in
+            Count of conversations this contact was in
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -108,7 +108,46 @@
             anchor="top middle"
             self="center middle"
           >
-            Total occurrences of this email address
+            Total occurrences of this contact
+          </q-tooltip>
+          {{ props.col.label }}
+        </q-th>
+      </template>
+
+      <template #header-cell-reply="props">
+        <q-th :props="props">
+          <q-tooltip
+            class="bg-orange-13 text-caption"
+            anchor="top middle"
+            self="center middle"
+          >
+            How many times this contact replied
+          </q-tooltip>
+          {{ props.col.label }}
+        </q-th>
+      </template>
+
+      <template #header-cell-tags="props">
+        <q-th :props="props">
+          <q-tooltip
+            class="bg-orange-13 text-caption"
+            anchor="top middle"
+            self="center middle"
+          >
+            Categorize your contacts
+          </q-tooltip>
+          {{ props.col.label }}
+        </q-th>
+      </template>
+
+      <template #header-cell-status="props">
+        <q-th :props="props">
+          <q-tooltip
+            class="bg-orange-13 text-caption"
+            anchor="top middle"
+            self="center middle"
+          >
+            How reachable is your contact
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -369,6 +408,13 @@ const columns: any = [
     sortable: true,
   },
   {
+    name: "occurrence",
+    label: "Occurrence",
+    field: "occurrence",
+    align: "center",
+    sortable: true,
+  },
+  {
     name: "reply",
     label: "Reply",
     field: "replied_conversations",
@@ -425,16 +471,17 @@ async function exportTable() {
   const csvData = rows.value.map((r) => ({
     name: r.name?.trim(),
     email: r.email,
-    frequency: r.frequency,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
     seniority: r.seniority
       ? new Date(r.seniority).toISOString().slice(0, 10)
       : "",
-    tags: r.tags?.join("\n"),
+    occurrence: r.occurrence,
     sender: r.sender,
     recipient: r.recipient,
     conversations: r.conversations,
     repliedConversations: r.replied_conversations,
+    tags: r.tags?.join("\n"),
+    status: r.status,
   }));
 
   try {
@@ -442,14 +489,15 @@ async function exportTable() {
       [
         { key: "name", header: "Name" },
         { key: "email", header: "Email" },
-        { key: "frequency", header: "Frequency" },
         { key: "recency", header: "Recency" },
         { key: "seniority", header: "Seniority" },
-        { key: "tags", header: "Tags" },
+        { key: "occurrence", header: "Occurrence" },
         { key: "sender", header: "Sender" },
         { key: "recipient", header: "Recipient" },
         { key: "conversations", header: "Conversations" },
         { key: "repliedConversations", header: "Replied conversations" },
+        { key: "tags", header: "Tags" },
+        { key: "status", header: "Status" },
       ],
       csvData
     );
