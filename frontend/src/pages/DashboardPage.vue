@@ -216,9 +216,9 @@ async function startMining() {
   } catch (error) {
     if (error instanceof AxiosError && error.response?.status === 401) {
       const { data: sessionData } = await supabase.auth.getSession();
-
+      const provider = leadminerStore.activeMiningSource?.type;
       $router.push(
-        `/oauth-consent-error?referrer=${sessionData.session?.user.id}`
+        `/oauth-consent-error?provider=${provider}&referrer=${sessionData.session?.user.id}`
       );
     } else {
       $quasar.notify({

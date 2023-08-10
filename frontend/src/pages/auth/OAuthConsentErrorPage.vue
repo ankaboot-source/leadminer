@@ -81,5 +81,7 @@ import { useRouter } from "vue-router";
 
 const $router = useRouter();
 
-const provider = $router.currentRoute.value.query?.provider;
+const provider = $router.currentRoute.value.query?.provider
+  ?.toString()
+  .toLocaleLowerCase();
 </script>
