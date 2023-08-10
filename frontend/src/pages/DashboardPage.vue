@@ -88,16 +88,20 @@
 <script lang="ts" setup>
 // @ts-expect-error "No type definitions"
 import objectScan from "object-scan";
+import { AxiosError } from "axios";
 import { useQuasar } from "quasar";
 import SettingsDialog from "src/components/Dialogs/SettingsDialog.vue";
 import MinedPersons from "src/components/MinedPersons.vue";
 import ProgressCard from "src/components/cards/ProgressCard.vue";
+import { supabase } from "src/helpers/supabase";
 import AppLayout from "src/layouts/AppLayout.vue";
 import { useLeadminerStore } from "src/store/leadminer";
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 const leadminerStore = useLeadminerStore();
 const $quasar = useQuasar();
+const $router = useRouter();
 
 const settingsDialogRef = ref<InstanceType<typeof SettingsDialog>>();
 
@@ -202,7 +206,6 @@ async function startMining() {
     });
     return;
   }
-
   try {
     await leadminerStore.startMining();
     $quasar.notify({
@@ -211,11 +214,19 @@ async function startMining() {
       icon: "check",
     });
   } catch (error) {
-    $quasar.notify({
-      message: leadminerStore.errorMessage,
-      color: "negative",
-      icon: "error",
-    });
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      $router.push(
+        `/oauth-consent-error?referrer=${sessionData.session?.user.id}`
+      );
+    } else {
+      $quasar.notify({
+        message: leadminerStore.errorMessage,
+        color: "negative",
+        icon: "error",
+      });
+    }
   } finally {
     isLoadingStartMining.value = false;
   }
