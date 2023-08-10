@@ -350,6 +350,7 @@ const visibleColumns = ref([
   "copy",
   "email",
   "name",
+  "occurrence",
   "recency",
   "reply",
   "tags",
