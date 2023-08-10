@@ -432,8 +432,9 @@ const columns: any = [
     align: "center",
     field: "status",
     sortable: true,
-    sort: (a: EmailStatus, b: EmailStatus) => EmailStatusScore[a] - EmailStatusScore[b],
-  }
+    sort: (a: EmailStatus, b: EmailStatus) =>
+      EmailStatusScore[a] - EmailStatusScore[b],
+  },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
