@@ -408,8 +408,8 @@ async function onSubmitImapCredentials() {
         error.message;
 
       if (error.message?.toLowerCase() === "network error") {
-          message =
-            "Unable to access server. Please retry again or contact your service provider.";
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
       }
 
       $quasar.notify({
