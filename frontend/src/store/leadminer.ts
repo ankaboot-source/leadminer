@@ -118,15 +118,10 @@ export const useLeadminerStore = defineStore("leadminer", () => {
             "Unable to access server. Please retry again or contact your service provider.";
         } else {
           errorMessage.value = error.message;
-          if (
-            activeMiningSource.value.type === "Azure" ||
-            activeMiningSource.value.type === "Google"
-          ) {
+          if (["google", "azure"].includes(activeMiningSource.value.type)) {
             const { data } = await supabase.auth.getUser();
             $router.push(
-              `/oauth-consent-error?provider=${
-                activeMiningSource.value.type === "Google" ? "google" : "azure"
-              }&referrer=${data.user?.id}`
+              `/oauth-consent-error?provider=${activeMiningSource.value.type}&referrer=${data.user?.id}`
             );
           }
         }
