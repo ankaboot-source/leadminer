@@ -1,7 +1,8 @@
 import { AxiosError } from "axios";
 import { api } from "src/boot/axios";
+import { OAuthMiningSource } from "src/types/mining";
 
-export async function addOAuthAccount(provider: "google" | "azure") {
+export async function addOAuthAccount(provider: OAuthMiningSource) {
   try {
     const { data } = await api.post<{ authorizationUri: string }>(
       `/imap/mine/sources/${provider}`
