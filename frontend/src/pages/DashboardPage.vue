@@ -214,11 +214,18 @@ async function startMining() {
       icon: "check",
     });
   } catch (error) {
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      const { data: sessionData } = await supabase.auth.getSession();
+    const provider = leadminerStore.activeMiningSource?.type;
 
+    if (
+      error instanceof AxiosError &&
+      error.response?.status === 401 &&
+      provider &&
+      ["google", "azure"].includes(provider)
+    ) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const referrer = sessionData.session?.user.id;
       $router.push(
-        `/oauth-consent-error?referrer=${sessionData.session?.user.id}`
+        `/oauth-consent-error?provider=${provider}&referrer=${referrer}`
       );
     } else {
       $quasar.notify({
@@ -236,6 +243,7 @@ async function startMining() {
 .q-dialog__inner--minimized > div {
   max-width: 1000px;
 }
+
 .bg-banner-color {
   background: linear-gradient(
     135deg,

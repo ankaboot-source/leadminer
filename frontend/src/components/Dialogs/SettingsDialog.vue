@@ -254,7 +254,7 @@ import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
 import { addOAuthAccount } from "src/helpers/oauth";
 import { useLeadminerStore } from "src/store/leadminer";
-import { MiningSource } from "src/types/mining";
+import { MiningSource, OAuthMiningSource } from "src/types/mining";
 import { computed, ref } from "vue";
 import TreeCard from "../cards/TreeCard.vue";
 
@@ -330,11 +330,11 @@ function validateEmail(emailStr: string) {
 
 function getIconByMiningSource(miningSource: MiningSource) {
   switch (miningSource.type) {
-    case "Google":
+    case "google":
       return mdiGoogle;
-    case "Azure":
+    case "azure":
       return mdiMicrosoft;
-    case "IMAP":
+    case "imap":
       return mdiEmail;
     default:
       return mdiEmail;
@@ -402,10 +402,16 @@ async function onSubmitImapCredentials() {
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
-      const message =
+      let message =
         error.response?.data?.details?.message ??
         error.response?.data?.message ??
         error.message;
+
+      if (error.message?.toLowerCase() === "network error") {
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
+      }
+
       $quasar.notify({
         message,
         color: "negative",
@@ -428,7 +434,7 @@ function tabItemClicked(name: TabName) {
   });
 }
 
-async function addOAuthSource(source: "google" | "azure") {
+async function addOAuthSource(source: OAuthMiningSource) {
   try {
     await addOAuthAccount(source);
   } catch (error) {

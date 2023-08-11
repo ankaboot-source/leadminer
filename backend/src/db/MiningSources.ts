@@ -5,8 +5,8 @@ export interface ImapMiningSourceCredentials {
   port: number;
 }
 
-export type OAuthMiningSourceProvider = 'Azure' | 'Google';
-export type MiningSourceType = OAuthMiningSourceProvider | 'IMAP';
+export type OAuthMiningSourceProvider = 'azure' | 'google';
+export type MiningSourceType = OAuthMiningSourceProvider | 'imap';
 
 export interface OAuthMiningSourceCredentials {
   email: string;
