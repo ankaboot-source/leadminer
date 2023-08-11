@@ -111,7 +111,10 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       );
     } catch (err) {
       if (err instanceof AxiosError) {
-        const error = err.response?.data || err;
+        const error = 
+          err.response?.data?.details 
+          ?? err.response?.data
+          ?? err;
 
         if (error.message?.toLowerCase() === "network error") {
           errorMessage.value =
