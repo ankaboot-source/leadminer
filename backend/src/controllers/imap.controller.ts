@@ -34,7 +34,7 @@ export default function initializeImapController(miningSources: MiningSources) {
         if ('accessToken' in data) {
           const { provider, accessToken, refreshToken, expiresAt } = data;
           const client =
-            provider === 'Azure' ? azureOAuth2Client : googleOAuth2Client;
+            provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
 
           const token = client.createToken({
             access_token: accessToken,

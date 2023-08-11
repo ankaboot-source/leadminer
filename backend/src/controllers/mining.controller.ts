@@ -89,10 +89,10 @@ export default function initializeMiningController(
               email,
               accessToken,
               refreshToken,
-              provider: 'Google',
+              provider: 'google',
               expiresAt
             },
-            type: 'Google'
+            type: 'google'
           });
 
           res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
@@ -179,9 +179,9 @@ export default function initializeMiningController(
               email,
               accessToken,
               refreshToken,
-              provider: 'Azure'
+              provider: 'azure'
             },
-            type: 'Azure'
+            type: 'azure'
           });
 
           res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
@@ -215,7 +215,7 @@ export default function initializeMiningController(
         await miningSources.upsert({
           userId: user.id,
           email,
-          type: 'IMAP',
+          type: 'imap',
           credentials: { email, host, password, port }
         });
 
