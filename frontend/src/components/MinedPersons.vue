@@ -337,7 +337,7 @@ watch(activeMiningTask, async (isActive) => {
     await refineContacts();
     await syncTable();
     if (subscription) {
-      subscription.unsubscribe();
+      subscription.subscribe();
     }
     isLoading.value = false;
   }
