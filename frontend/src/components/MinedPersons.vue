@@ -203,7 +203,10 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <validity-indicator :email-status="props.row.status" :key="props.row.status" />
+          <validity-indicator
+            :key="props.row.status"
+            :email-status="props.row.status"
+          />
         </q-td>
       </template>
     </q-table>
@@ -269,7 +272,7 @@ async function setupSubscription() {
 }
 
 // This code is temporary and will be removed once we finish
-// emailStatusVerification progress and task management. 
+// emailStatusVerification progress and task management.
 async function subscribeToEmailVerificationEvents() {
   // We are 100% sure that the user is authenticated in this component
   const user = (await supabase.auth.getSession()).data.session?.user as User;
@@ -284,9 +287,11 @@ async function subscribeToEmailVerificationEvents() {
     (payload: RealtimePostgresChangesPayload<Contact>) => {
       const newContact = payload.new as Contact;
       // add values to quassar table
-      const index = rows.value.findIndex(({ email }) => email === newContact.email);
+      const index = rows.value.findIndex(
+        ({ email }) => email === newContact.email
+      );
       if (index !== -1) {
-        rows.value[index].status = newContact.status
+        rows.value[index].status = newContact.status;
       }
     }
   );
@@ -361,7 +366,7 @@ watch(activeMiningTask, async (isActive) => {
     await refineContacts();
     await syncTable();
     if (subscription) {
-      await subscribeToEmailVerificationEvents()
+      await subscribeToEmailVerificationEvents();
       subscription.subscribe();
     }
     isLoading.value = false;

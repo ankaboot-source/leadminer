@@ -34,7 +34,7 @@ export interface RedactedFetcherData {
 }
 
 export interface EmailStatusVerifier {
-  running: boolean
+  running: boolean;
 }
 
 export interface RedactedTask {
@@ -42,5 +42,5 @@ export interface RedactedTask {
   miningId: string;
   progress: TaskProgress;
   fetcher: RedactedFetcherData;
-  emailStatusVerifier: EmailStatusVerifier
+  emailStatusVerifier: EmailStatusVerifier;
 }

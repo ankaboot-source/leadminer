@@ -88,7 +88,7 @@ describe('Test TaskManager helper functions', () => {
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
         emailVerificationWorker: {
-          isRunning: () => { return false }
+          isRunning: () => false
         } as Worker,
         stream: {
           streamName: 'test-stream',
