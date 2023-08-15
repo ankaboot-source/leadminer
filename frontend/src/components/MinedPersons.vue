@@ -1,26 +1,9 @@
 <template>
   <div class="bg-transparent col" style="height: 60vh">
-    <q-table
-      ref="table"
-      class="q-pt-sm"
-      style="height: 100%"
-      virtual-scroll
-      virtual-scroll-slice-size="60"
-      :rows-per-page-options="[150, 500, 1000]"
-      row-key="email"
-      :columns="columns"
-      :visible-columns="visibleColumns"
-      title="Mined emails"
-      :loading="isLoading"
-      :filter="filter"
-      :filter-method="filterFn"
-      :rows="rows"
-      :pagination="initialPagination"
-      binary-state-sort
-      bordered
-      flat
-      dense
-    >
+    <q-table ref="table" class="q-pt-sm" style="height: 100%" virtual-scroll virtual-scroll-slice-size="60"
+      :rows-per-page-options="[150, 500, 1000]" row-key="email" :columns="columns" :visible-columns="visibleColumns"
+      title="Mined emails" :loading="isLoading" :filter="filter" :filter-method="filterFn" :rows="rows"
+      :pagination="initialPagination" binary-state-sort bordered flat dense>
       <template #top-left>
         <div class="text-blue-grey-14 text-body1">
           <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
@@ -30,40 +13,18 @@
         </div>
       </template>
       <template #top-right="props">
-        <q-input
-          v-model="filterSearch"
-          dense
-          standout
-          outlined
-          color="teal-5"
-          class="q-pr-sm q-pl-lg"
-          style="width: 25vw"
-          debounce="700"
-          placeholder="Search"
-        >
+        <q-input v-model="filterSearch" dense standout outlined color="teal-5" class="q-pr-sm q-pl-lg" style="width: 25vw"
+          debounce="700" placeholder="Search">
           <template #append>
             <q-icon name="search" />
           </template>
         </q-input>
         <div class="q-px-sm">
-          <q-btn
-            color="teal-5"
-            icon="archive"
-            label="Export to CSV"
-            no-caps
-            :disable="isExportDisabled"
-            outline
-            @click="exportTable"
-          />
+          <q-btn color="teal-5" icon="archive" label="Export to CSV" no-caps :disable="isExportDisabled" outline
+            @click="exportTable" />
         </div>
-        <q-btn
-          flat
-          round
-          dense
-          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-          class="q-px-sm"
-          @click="props.toggleFullscreen"
-        >
+        <q-btn flat round dense :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'" class="q-px-sm"
+          @click="props.toggleFullscreen">
           <q-tooltip :disable="$q.platform.is.mobile">
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
           </q-tooltip>
@@ -77,11 +38,7 @@
       <!--Header tooltips -->
       <template #header-cell-recency="props">
         <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
+          <q-tooltip class="bg-orange-13 text-caption" anchor="top middle" self="center middle">
             When was the last time this contact was seen
           </q-tooltip>
           {{ props.col.label }}
@@ -90,11 +47,7 @@
 
       <template #header-cell-engagement="props">
         <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
+          <q-tooltip class="bg-orange-13 text-caption" anchor="top middle" self="center middle">
             Count of conversations this contact was in
           </q-tooltip>
           {{ props.col.label }}
@@ -103,11 +56,7 @@
 
       <template #header-cell-occurrence="props">
         <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
+          <q-tooltip class="bg-orange-13 text-caption" anchor="top middle" self="center middle">
             Total occurrences of this contact
           </q-tooltip>
           {{ props.col.label }}
@@ -116,11 +65,7 @@
 
       <template #header-cell-reply="props">
         <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
+          <q-tooltip class="bg-orange-13 text-caption" anchor="top middle" self="center middle">
             How many times this contact replied
           </q-tooltip>
           {{ props.col.label }}
@@ -129,11 +74,7 @@
 
       <template #header-cell-tags="props">
         <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
+          <q-tooltip class="bg-orange-13 text-caption" anchor="top middle" self="center middle">
             Categorize your contacts
           </q-tooltip>
           {{ props.col.label }}
@@ -142,11 +83,7 @@
 
       <template #header-cell-status="props">
         <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
+          <q-tooltip class="bg-orange-13 text-caption" anchor="top middle" self="center middle">
             How reachable is your contact
           </q-tooltip>
           {{ props.col.label }}
@@ -156,20 +93,12 @@
       <!-- Table body slots -->
       <template #body-cell-copy="props">
         <q-td auto-width>
-          <q-btn
-            flat
-            round
-            size="xs"
-            color="teal"
-            class="q-mr-none"
-            icon="content_copy"
-            @click="
-              copyValueToClipboard(
-                `${props.row.name} <${props.row.email}>`,
-                'Contact'
-              )
-            "
-          />
+          <q-btn flat round size="xs" color="teal" class="q-mr-none" icon="content_copy" @click="
+            copyValueToClipboard(
+              `${props.row.name} <${props.row.email}>`,
+              'Contact'
+            )
+            " />
         </q-td>
       </template>
       <template #body-cell-email="props">
@@ -180,12 +109,8 @@
 
       <template #body-cell-tags="props">
         <q-td :props="props">
-          <q-badge
-            v-for="tag in props.row.tags"
-            :key="tag"
-            color="teal-1"
-            class="q-pa-xs text-uppercase text-teal-8 q-mx-xs"
-          >
+          <q-badge v-for="tag in props.row.tags" :key="tag" color="teal-1"
+            class="q-pa-xs text-uppercase text-teal-8 q-mx-xs">
             {{ tag }}
           </q-badge>
         </q-td>
@@ -203,10 +128,7 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <validity-indicator
-            :key="props.row.status"
-            :email-status="props.row.status"
-          />
+          <validity-indicator :key="props.row.status" :email-status="props.row.status" />
         </q-td>
       </template>
     </q-table>
@@ -271,10 +193,9 @@ async function setupSubscription() {
   );
 }
 
-// This code is temporary and will be removed once we finish
-// emailStatusVerification progress and task management.
 async function subscribeToEmailVerificationEvents() {
-  // We are 100% sure that the user is authenticated in this component
+  // This function is temporary and will be removed once we finish
+  // emailStatusVerification progress and task managemen
   const user = (await supabase.auth.getSession()).data.session?.user as User;
   subscription = supabase.channel("listening-to-emailVerification").on(
     "postgres_changes",
@@ -286,7 +207,6 @@ async function subscribeToEmailVerificationEvents() {
     },
     (payload: RealtimePostgresChangesPayload<Contact>) => {
       const newContact = payload.new as Contact;
-      // add values to quassar table
       const index = rows.value.findIndex(
         ({ email }) => email === newContact.email
       );
@@ -583,7 +503,8 @@ async function copyValueToClipboard(value: any, valueName: any) {
 .q-table__bottom,
 thead tr:first-child th
 
-/* bg color is important for th; just specify one */ {
+/* bg color is important for th; just specify one */
+  {
   background-color: #fff;
 }
 
