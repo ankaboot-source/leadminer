@@ -203,7 +203,7 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <validity-indicator :email-status="props.row.status" />
+          <validity-indicator :email-status="props.row.status" :key="props.row.status" />
         </q-td>
       </template>
     </q-table>
