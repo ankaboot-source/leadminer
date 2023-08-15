@@ -268,6 +268,30 @@ async function setupSubscription() {
   );
 }
 
+// This code is temporary and will be removed once we finish
+// emailStatusVerification progress and task management. 
+async function subscribeToEmailVerificationEvents() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  subscription = supabase.channel("listening-to-emailVerification").on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "persons",
+      filter: `user_id=eq.${user.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      // add values to quassar table
+      const index = rows.value.findIndex(({ email }) => email === newContact.email);
+      if (index !== -1) {
+        rows.value[index].status = newContact.status
+      }
+    }
+  );
+}
+
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const contactTableLength = rows.value.length;
@@ -329,7 +353,7 @@ watch(activeMiningTask, async (isActive) => {
   } else {
     // Close realtime and re-open again later
     if (subscription) {
-      subscription.unsubscribe();
+      await subscription.unsubscribe();
     }
     clearInterval(refreshInterval);
     contactsCache.clear();
@@ -337,6 +361,7 @@ watch(activeMiningTask, async (isActive) => {
     await refineContacts();
     await syncTable();
     if (subscription) {
+      await subscribeToEmailVerificationEvents()
       subscription.subscribe();
     }
     isLoading.value = false;
