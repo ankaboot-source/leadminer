@@ -145,7 +145,8 @@ BEGIN
             record_row.conversations,
             record_row.replied_conversations,
             record_row.tags
-        );
+        )
+        ON CONFLICT DO NOTHING;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
