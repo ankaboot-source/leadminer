@@ -9,9 +9,6 @@ export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refined_persons($1)';
 
-  private static readonly POPULATE_REFINED_SQL =
-    'SELECT * FROM populate_refined($1)';
-
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8);`;
@@ -52,16 +49,6 @@ export default class PgContacts implements Contacts {
         personEmail,
         userId
       ]);
-      return true;
-    } catch (error) {
-      this.logger.error(error);
-      return false;
-    }
-  }
-
-  async populate(userId: string) {
-    try {
-      await this.pool.query(PgContacts.POPULATE_REFINED_SQL, [userId]);
       return true;
     } catch (error) {
       this.logger.error(error);

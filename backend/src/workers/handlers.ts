@@ -43,7 +43,6 @@ async function handleMessage(
     userId,
     userEmail,
     userIdentifier,
-    isLast
   }: PublishedStreamMessage,
   contacts: Contacts,
   emailVerificationQueue: Queue
@@ -63,16 +62,6 @@ async function handleMessage(
   try {
     const extractedContacts = await message.getContacts();
     await contacts.create(extractedContacts, userId);
-
-    if (isLast) {
-      logger.info('Calling populate.', {
-        metadata: {
-          isLast,
-          userHash: userIdentifier
-        }
-      });
-      await contacts.populate(userId);
-    }
   } catch (error) {
     logger.error(
       'Failed when processing message from the stream',
