@@ -1,6 +1,6 @@
 -- This migration file introduces the following changes:
 
--- 1. Drop "name" and "status" columns from "refinedpersons" table.
+-- 1. Changes to table "refinedpersons", drop "name" and "status" && add created_at, updated_at trigger.
 
 -- 2. Rebuild "persons" table without partitioning for real-time compatibility.
 
@@ -14,8 +14,18 @@
 -- 1. Drop the columns "name, status"
 ALTER TABLE refinedpersons
     DROP COLUMN "name",
-    DROP COLUMN "status";
+    DROP COLUMN "status",
+    DROP COLUMN "created_at",
+    DROP COLUMN "updated_at";
 
+-- 1. Add the columns "created_at, updated_at"
+ALTER TABLE refinedpersons
+    ADD COLUMN "created_at" timestamp without time zone NOT NULL DEFAULT NOW(),
+    ADD COLUMN "updated_at" timestamp without time zone NOT NULL DEFAULT NOW();
+
+CREATE TRIGGER handle_updated_at BEFORE
+UPDATE ON public.refinedpersons FOR EACH 
+ROW EXECUTE FUNCTION moddatetime('updated_at');
 
 -- 2. Recreate persons table
 DROP TABLE "public"."persons" CASCADE;
@@ -38,6 +48,7 @@ CREATE TABLE "public"."persons" (
     "updated_at" timestamp without time zone NOT NULL DEFAULT NOW(),
     PRIMARY KEY (email, user_id)
 );
+
 CREATE TRIGGER handle_updated_at BEFORE
 UPDATE ON public.persons FOR EACH 
 ROW EXECUTE FUNCTION moddatetime('updated_at');
@@ -151,7 +162,8 @@ RETURNS TABLE (
     sender INTEGER,
     recipient INTEGER,
     conversations INTEGER,
-    replied_conversations INTEGER
+    replied_conversations INTEGER,
+    tags TEXT []
 )
 AS
 $$
@@ -167,7 +179,8 @@ BEGIN
         rp.sender,
         rp.recipient,
         rp.conversations,
-        rp.replied_conversations
+        rp.replied_conversations,
+        rp.tags
     FROM 
         persons p
     INNER JOIN 
