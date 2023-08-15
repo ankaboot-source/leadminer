@@ -71,18 +71,18 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         activeMiningSource.value = data.sources.at(-1); // Use the newest mining source as a default
       }
     } catch (error) {
-      let message = 'Something unexpected happend.'
-      
+      let message = "Something unexpected happend.";
+
       if (error instanceof AxiosError) {
-        message = error.response?.data?.message ?? error.message
-        
+        message = error.response?.data?.message ?? error.message;
+
         if (message?.toLowerCase() === "network error") {
           message =
             "Unable to access server. Please retry again or contact your service provider.";
         }
-      } 
-      
-      errorMessage.value = message
+      }
+
+      errorMessage.value = message;
       throw error;
     } finally {
       isLoadingSources.value = false;

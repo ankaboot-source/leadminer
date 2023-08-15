@@ -42,7 +42,7 @@ async function handleMessage(
     folderName,
     userId,
     userEmail,
-    userIdentifier,
+    userIdentifier
   }: PublishedStreamMessage,
   contacts: Contacts,
   emailVerificationQueue: Queue

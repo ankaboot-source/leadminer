@@ -298,13 +298,12 @@ async function refineContacts() {
 }
 
 async function getContacts(userId: string) {
-  const {
-    data,
-    error
-  } = await supabase.rpc('get_contacts_table', { userid: userId })
+  const { data, error } = await supabase.rpc("get_contacts_table", {
+    userid: userId,
+  });
 
   if (error) {
-    throw error
+    throw error;
   }
 
   return data;
