@@ -87,7 +87,9 @@ describe('Test TaskManager helper functions', () => {
           folders: ['test']
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
-        emailVerificationWorker: {} as Worker,
+        emailVerificationWorker: {
+          isRunning: () => { return false }
+        } as Worker,
         stream: {
           streamName: 'test-stream',
           consumerGroupName: 'test-group'
@@ -106,6 +108,9 @@ describe('Test TaskManager helper functions', () => {
         fetcher: {
           status: 'running',
           folders: ['test']
+        },
+        emailStatusVerifier: {
+          running: false
         }
       };
 

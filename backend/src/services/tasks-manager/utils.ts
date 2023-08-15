@@ -23,6 +23,9 @@ export function redactSensitiveData(task: Task): RedactedTask {
     fetcher: {
       status: task.fetcher.isCompleted === true ? 'completed' : 'running',
       folders: task.fetcher.folders
+    },
+    emailStatusVerifier: {
+      running: task.emailVerificationWorker.isRunning()
     }
   };
 }

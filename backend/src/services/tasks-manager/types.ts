@@ -33,9 +33,14 @@ export interface RedactedFetcherData {
   folders: string[];
 }
 
+export interface EmailStatusVerifier {
+  running: boolean
+}
+
 export interface RedactedTask {
   userId: string;
   miningId: string;
   progress: TaskProgress;
   fetcher: RedactedFetcherData;
+  emailStatusVerifier: EmailStatusVerifier
 }
