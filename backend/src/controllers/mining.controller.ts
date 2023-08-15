@@ -340,8 +340,8 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        await tasksManager.deleteTask(taskId, true);
-        return res.status(200).json({ data: task });
+        const deletedTask = await tasksManager.deleteTask(taskId, true);
+        return res.status(200).json({ data: deletedTask });
       } catch (err) {
         res.status(404);
         return next(err);
