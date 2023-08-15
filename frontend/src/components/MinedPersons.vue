@@ -218,7 +218,7 @@ import {
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { getCsvStr } from "src/helpers/csv";
-import { fetchData, supabase } from "src/helpers/supabase";
+import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
 import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -248,6 +248,26 @@ const activeMiningTask = computed(
 );
 
 let refreshInterval: number;
+let subscription: RealtimeChannel;
+
+async function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  subscription = supabase.channel("*").on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "persons",
+      filter: `user_id=eq.${user.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
+}
+
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const contactTableLength = rows.value.length;
@@ -260,40 +280,11 @@ function refreshTable() {
   }
 }
 
-let subscription: RealtimeChannel;
-async function setupSubscription() {
-  // We are 100% sure that the user is authenticated in this component
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  subscription = supabase.channel("*").on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "refinedpersons",
-      filter: `userid=eq.${user.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
 async function refineContacts() {
   const user = (await supabase.auth.getSession()).data.session?.user as User;
 
   try {
-    // Populate the data in the table one final time before refining,
-    // ensure that undesirable tags are filtered.
-    const populate = await supabase.rpc("populate_refined", {
-      _userid: user.id,
-    });
-
-    if (populate.error) {
-      throw populate.error;
-    }
-
-    const refine = await supabase.rpc("refined_persons", {
+    const refine = await supabase.rpc("refine_persons", {
       userid: user.id,
     });
 
@@ -307,13 +298,16 @@ async function refineContacts() {
 }
 
 async function getContacts(userId: string) {
-  const contacts = await fetchData<Contact>(
-    userId,
-    "refinedpersons",
-    process.env.SUPABASE_MAX_ROWS
-  );
+  const {
+    data,
+    error
+  } = await supabase.rpc('get_contacts_table', { userid: userId })
 
-  return contacts;
+  if (error) {
+    throw error
+  }
+
+  return data;
 }
 
 async function syncTable() {
@@ -332,8 +326,9 @@ watch(activeMiningTask, async (isActive) => {
     }
     refreshInterval = window.setInterval(() => {
       refreshTable();
-    }, 3000);
+    }, 5000);
   } else {
+    // Close realtime and re-open again later
     if (subscription) {
       subscription.unsubscribe();
     }
@@ -342,6 +337,9 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
+    if (subscription) {
+      subscription.unsubscribe();
+    }
     isLoading.value = false;
   }
 });

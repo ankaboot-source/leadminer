@@ -137,7 +137,16 @@ async function getBoxes() {
 
 onMounted(async () => {
   settingsDialogRef.value?.open();
-  await leadminerStore.getMiningSources();
+  try {
+    await leadminerStore.getMiningSources();
+  } catch (err) {
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+    });
+  }
+
   if (leadminerStore.activeMiningSource) {
     await getBoxes();
   }
