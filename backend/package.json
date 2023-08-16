@@ -29,7 +29,7 @@
   "dependencies": {
     "@sentry/tracing": "^7.57.0",
     "@sentry/node": "^7.57.0",
-    "@supabase/supabase-js": "^2.25.0",
+    "@supabase/supabase-js": "^2.26.0",
     "axios": "^1.4.0",
     "bullmq": "^4.6.2",
     "cookie-parser": "^1.4.6",
