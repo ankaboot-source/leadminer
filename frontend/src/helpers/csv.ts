@@ -1,6 +1,4 @@
-import { stringify } from "csv-stringify/browser/esm";
-
-function getLocalizedCsvSeparator() {
+export default function getLocalizedCsvSeparator() {
   const locale = navigator.language.substring(0, 2);
   switch (locale) {
     case "fr":
@@ -12,31 +10,4 @@ function getLocalizedCsvSeparator() {
     default:
       return ",";
   }
-}
-
-export function getCsvStr<T>(
-  columns: { key: keyof T; header: string }[],
-  rows: T[]
-) {
-  return new Promise<string>((resolve, reject) => {
-    stringify(
-      rows,
-      {
-        columns: columns.map(({ key, header }) => ({
-          key: String(key),
-          header,
-        })),
-        bom: true,
-        delimiter: getLocalizedCsvSeparator(),
-        header: true,
-        quoted_string: true,
-      },
-      (err, data) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(data);
-      }
-    );
-  });
 }
