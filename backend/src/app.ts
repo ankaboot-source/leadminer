@@ -14,11 +14,14 @@ import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
 import initializeAuthRoutes from './routes/auth.routes';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
+import { Contacts } from './db/Contacts';
+import initializeContactsRoutes from './routes/contacts.routes';
 
 export default function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
-  miningSources: MiningSources
+  miningSources: MiningSources,
+  contacts: Contacts
 ) {
   const app = express();
 
@@ -48,6 +51,10 @@ export default function initializeApp(
   app.use(
     '/api/imap',
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
+  );
+  app.use(
+    '/api/imap',
+    initializeContactsRoutes(contacts, authResolver)
   );
 
   if (ENV.SENTRY_DSN) {

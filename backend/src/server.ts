@@ -59,8 +59,11 @@ console.log(
     logger,
     ENV.LEADMINER_API_HASH_SECRET
   );
-
-  const app = initializeApp(authResolver, tasksManager, miningSources);
+  const contactsResolver = new PgContacts(
+    pool,
+    logger
+  )
+  const app = initializeApp(authResolver, tasksManager, miningSources, contactsResolver);
 
   app.listen(ENV.LEADMINER_API_PORT, () => {
     logger.info(`Server is running on port ${ENV.LEADMINER_API_PORT}.`);
