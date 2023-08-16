@@ -27,7 +27,7 @@ CREATE TRIGGER handle_updated_at BEFORE
 UPDATE ON public.refinedpersons FOR EACH 
 ROW EXECUTE FUNCTION moddatetime('updated_at');
 
--- 2. Recreate persons table
+-- 2. Recreate persons table & add RLS
 DROP TABLE "public"."persons" CASCADE;
 CREATE TABLE "public"."persons" (
     "name" text,
@@ -49,9 +49,20 @@ CREATE TABLE "public"."persons" (
     PRIMARY KEY (email, user_id)
 );
 
+-- Add trigger to auto update "updated_at"
 CREATE TRIGGER handle_updated_at BEFORE
 UPDATE ON public.persons FOR EACH 
 ROW EXECUTE FUNCTION moddatetime('updated_at');
+
+-- Add RLS to table persons
+alter table "public"."persons" enable row level security;
+
+create policy "Enable select for users based on user_id"
+on "public"."persons"
+as permissive
+for select
+to public
+using ((auth.uid() = user_id));
 
 -- 3. Re-establish real-time
 BEGIN;
