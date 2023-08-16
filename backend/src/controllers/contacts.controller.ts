@@ -16,7 +16,7 @@ export default function initializeContactsController(contacts: Contacts) {
                     return res.status(404).json({ message: 'No contacts available for export' });
                 }
 
-                const csvSeparator = String(req.query.delimiter || ',');
+                const csvSeparator = String(req.query.delimiter ?? ',');
 
                 const csvData = minedContacts.map((contact) => ({
                     name: contact.name?.trim(),
