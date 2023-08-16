@@ -52,10 +52,7 @@ export default function initializeApp(
     '/api/imap',
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
-  app.use(
-    '/api/imap',
-    initializeContactsRoutes(contacts, authResolver)
-  );
+  app.use('/api/imap', initializeContactsRoutes(contacts, authResolver));
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

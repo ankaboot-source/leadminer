@@ -52,7 +52,7 @@ export interface Tag {
   source: string;
 }
 
-export type EmailStatus = "UNKNOWN" | "RISKY" | "VALID" | "INVALID";
+export type EmailStatus = 'UNKNOWN' | 'RISKY' | 'VALID' | 'INVALID';
 
 export interface Contact {
   id: string;
