@@ -273,7 +273,7 @@ async function setupSubscription() {
 
 async function subscribeToEmailVerificationEvents() {
   // This function is temporary and will be removed once we finish
-  // emailStatusVerification progress and task managemen
+  // emailStatusVerification progress and task management
   const user = (await supabase.auth.getSession()).data.session?.user as User;
   subscription = supabase.channel("listening-to-emailVerification").on(
     "postgres_changes",
@@ -324,7 +324,7 @@ async function refineContacts() {
   }
 }
 
-async function getContacts(userId: string) {
+async function getContacts(userId: string): Promise<Contact[]> {
   const { data, error } = await supabase.rpc("get_contacts_table", {
     userid: userId,
   });
