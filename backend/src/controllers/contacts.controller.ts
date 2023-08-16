@@ -18,7 +18,7 @@ export default function initializeContactsController(contacts: Contacts) {
 
                 const csvSeparator = String(req.query.delimiter || ',');
 
-                const csvData = minedContacts.map((contact: any) => ({
+                const csvData = minedContacts.map((contact) => ({
                     name: contact.name?.trim(),
                     email: contact.email,
                     recency: contact.recency ? new Date(contact.recency).toISOString().slice(0, 10) : '',
