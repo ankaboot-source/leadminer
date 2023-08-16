@@ -51,7 +51,6 @@ const miningIdGenerator = jest.fn(() => {
 const fakeContacts: Contacts = {
   create: jest.fn(() => Promise.resolve()),
   refine: jest.fn(() => Promise.resolve(true)),
-  populate: jest.fn(() => Promise.resolve(true)),
   updatePersonStatus: jest.fn(() => Promise.resolve(true))
 };
 
@@ -88,7 +87,9 @@ describe('Test TaskManager helper functions', () => {
           folders: ['test']
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
-        emailVerificationWorker: {} as Worker,
+        emailVerificationWorker: {
+          isRunning: () => false
+        } as Worker,
         stream: {
           streamName: 'test-stream',
           consumerGroupName: 'test-group'
@@ -107,6 +108,9 @@ describe('Test TaskManager helper functions', () => {
         fetcher: {
           status: 'running',
           folders: ['test']
+        },
+        emailStatusVerifier: {
+          running: false
         }
       };
 
