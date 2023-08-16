@@ -18,12 +18,15 @@ export const FLICKR_BASE_58_CHARSET =
 export const MAX_REDIS_PUBLISH_RETRIES_COUNT = 3;
 export const REDIS_PUBSUB_COMMUNICATION_CHANNEL = 'stream-management';
 export const REDIS_STREAMS_CONSUMER_GROUP = 'imap-consumers-group';
+export const REDIS_EMAIL_STATUS_KEY = 'email-status';
 export const MAX_WORKER_TIMEOUT = 600000;
 export const MX_RESOLVER_TIMEOUT_MS = 3000;
 export const REGEX_HEADER_EMAIL_SPLIT_PATTERN = headerRegexEmailSplitPattern;
 export const REGEX_HEADER = headerRegex;
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
+export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =
+  /\s(\(?(via\s?.{1,20}?)|\((Google|Drive)\s?.{0,20}\))$/i;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
@@ -31,42 +34,62 @@ export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 
 export enum REACHABILITY {
   DIRECT_PERSON = 1,
-  INDIRECT_PERSON = 2,
-  MANY = 2,
+  MANY_OR_INDIRECT_PERSON = 2,
   UNSURE = 3,
   NONE = 0
 }
 
-export const AIRBNB_EMAIL_ADDRESS_INCLUDES = ['@reply.airbnb.com'];
-export const LINKEDIN_EMAIL_ADDRESS_INCLUDES = ['@reply.linkedin.com'];
+export const CHAT_EMAIL_ADDRESS_INCLUDES = [
+  '@reply.airbnb.com',
+  '@reply.linkedin.com',
+  '@messagerie.leboncoin.fr',
+  '@mail.2dehands.beto',
+  '@reply.facebook.com'
+];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
   'newsletter@',
-  '@newsletter.',
+  '@newsletter',
+  'newsletters@',
+  '@newsletters',
   '@substack.io'
 ]; // add newletter domains;
 export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@lists.',
+  '@listes.',
   '@sympa.',
   '@gaggle.email',
   '@groups.io',
   '@framalistes.org',
   '@groups.google.com',
-  '@yahoogroupes.fr'
+  '@yahoogroupes.fr',
+  '@googlegroups.fr',
+  '@list.attac.org'
 ];
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'reply.github',
   '@boards.trello.com',
   'bot@',
-  'bounce@'
+  'bounce@',
+  'unsub-',
+  'unsubscribe',
+  'unsubscribe-',
+  '@bnc3.mailjet.com',
+  '@group.calendar.google.com',
+  'wordpress@',
+  'receipts+',
+  'updates@',
+  'confirmation-commande@amazon.fr',
+  'transaction@notice.aliexpress.com',
+  'order-update@amazon.',
+  'shipment-tracking@amazon.',
+  'payments-update@amazon.',
+  'primenow-reply@amazon.'
 ];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
   'alert',
   'auto-confirm',
-  'donotreply',
-  'do-notreply',
-  'do-not-reply',
   'feedbackform',
   'maildaemon',
   'mailer-daemon',
@@ -78,6 +101,11 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'no_reply',
   'noreply',
   'no-reply',
+  'notreply',
+  'donotreply',
+  'do-notreply',
+  'do-not-reply',
+  'do_not_reply',
   'notification',
   'notifications',
   'notifications-noreply',
@@ -87,7 +115,6 @@ export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'reply-',
   'send-as-noreply',
   'systemalert',
-  'unsubscribe',
   'no-response'
 ];
 export const ROLE_EMAIL_ADDRESS_INCLUDES = [
@@ -100,7 +127,6 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'contact@',
   'news@',
   'sales@',
-  'support@',
   'bonjour@',
   'greetings@',
   'spam@',
@@ -119,5 +145,15 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'carreer@',
   'formation@',
   'bienvenue@',
-  'marketing@'
+  'marketing@',
+  'hey@',
+  'support-',
+  'support@',
+  '@support.',
+  '@support',
+  '.zendesk.com',
+  '.intercom-mail.com',
+  'help@',
+  'customercare@',
+  'community@'
 ];

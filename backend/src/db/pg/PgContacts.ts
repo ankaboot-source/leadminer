@@ -1,15 +1,13 @@
 import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
+import { Status } from '../../services/email-status/EmailStatusVerifier';
 import { Contacts } from '../Contacts';
-import { Contact } from '../types';
+import { ExtractionResult } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refined_persons($1)';
-
-  private static readonly POPULATE_REFINED_SQL =
-    'SELECT * FROM populate_refined($1)';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -21,9 +19,17 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
+
+  private static readonly UPDATE_PERSON_STATUS_SQL = `
+    UPDATE persons
+    SET status = CASE
+                   WHEN status <> 'VALID' AND $1 <> 'UNKNOWN' THEN $1
+                   ELSE status
+                 END
+    WHERE email = $2 AND user_id = $3;`;
 
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
@@ -32,9 +38,17 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
-  async populate(userId: string) {
+  async updatePersonStatus(
+    personEmail: string,
+    userId: string,
+    status: Status
+  ): Promise<boolean> {
     try {
-      await this.pool.query(PgContacts.POPULATE_REFINED_SQL, [userId]);
+      await this.pool.query(PgContacts.UPDATE_PERSON_STATUS_SQL, [
+        status,
+        personEmail,
+        userId
+      ]);
       return true;
     } catch (error) {
       this.logger.error(error);
@@ -42,7 +56,7 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async create({ message, persons }: Contact, userId: string) {
+  async create({ message, persons }: ExtractionResult, userId: string) {
     try {
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
@@ -68,7 +82,8 @@ export default class PgContacts implements Contacts {
           person.familyName,
           person.jobTitle,
           person.identifiers,
-          userId
+          userId,
+          person.status
         ]);
 
         const tagValues = tags.map((tag) => [

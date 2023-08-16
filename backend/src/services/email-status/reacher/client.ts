@@ -65,6 +65,12 @@ interface BulkVerificationResultsResponse {
   results: EmailCheckOutput[];
 }
 
+interface ReacherConfig {
+  host: string;
+  apiKey?: string;
+  headerSecret?: string;
+}
+
 export default class ReacherClient {
   private static readonly SINGLE_VERIFICATION_PATH = '/v0/check_email';
 
@@ -74,22 +80,27 @@ export default class ReacherClient {
 
   constructor(
     private readonly logger: Logger,
-    private readonly apiKey: string,
-    private readonly host: string = 'https://api.reacher.email'
+    private readonly config: ReacherConfig
   ) {
     this.api = axios.create({
-      baseURL: this.host,
-      headers: { Authorization: this.apiKey }
+      baseURL: this.config.host
     });
+    if (this.config.apiKey) {
+      this.api.defaults.headers.common.Authorization = this.config.apiKey;
+    }
+    if (this.config.headerSecret) {
+      this.api.defaults.headers.common['x-reacher-secret'] =
+        this.config.headerSecret;
+    }
   }
 
-  async checkSingleEmail(email: string) {
+  async checkSingleEmail(email: string, abortSignal?: AbortSignal) {
     try {
       const { data } = await this.api.post<EmailCheckOutput>(
         ReacherClient.SINGLE_VERIFICATION_PATH,
-        { to_email: email }
+        { to_email: email },
+        { signal: abortSignal, timeout: 5000 }
       );
-
       return { data, error: null };
     } catch (error) {
       this.logger.error('Failed checking single email', error);

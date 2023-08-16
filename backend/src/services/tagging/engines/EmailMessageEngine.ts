@@ -1,9 +1,8 @@
 import { REACHABILITY } from '../../../utils/constants';
 import {
   findEmailAddressType,
-  isAirbnb,
+  isChat,
   isGroup,
-  isLinkedin,
   isNewsletter,
   isNoReply,
   isRole,
@@ -57,16 +56,6 @@ export default class EmailMessageTagging implements TaggingEngine {
       return null;
     }
 
-    if (emailType === 'personal') {
-      return [
-        {
-          source: this.tagSourceFromEmailAddress,
-          name: emailType,
-          reachable: REACHABILITY.DIRECT_PERSON
-        }
-      ];
-    }
-
     if (isNoReply(address)) {
       return [
         {
@@ -97,19 +86,21 @@ export default class EmailMessageTagging implements TaggingEngine {
       ];
     }
 
+    if (emailType === 'personal') {
+      return [
+        {
+          source: this.tagSourceFromEmailAddress,
+          name: emailType,
+          reachable: REACHABILITY.DIRECT_PERSON
+        }
+      ];
+    }
+
     if (emailType === 'professional') {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: emailType,
         reachable: REACHABILITY.DIRECT_PERSON
-      });
-    }
-
-    if (isAirbnb(address)) {
-      emailTags.push({
-        source: this.tagSourceFromEmailAddress,
-        name: 'airbnb',
-        reachable: REACHABILITY.INDIRECT_PERSON
       });
     }
 
@@ -121,11 +112,11 @@ export default class EmailMessageTagging implements TaggingEngine {
       });
     }
 
-    if (isLinkedin(address)) {
+    if (isChat(address)) {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
-        name: 'linkedin',
-        reachable: REACHABILITY.INDIRECT_PERSON
+        name: 'chat',
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 
@@ -133,7 +124,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'group',
-        reachable: REACHABILITY.MANY
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 

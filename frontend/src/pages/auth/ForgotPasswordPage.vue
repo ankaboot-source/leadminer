@@ -28,7 +28,7 @@
           no-caps
           class="full-width text-h6"
           label="Send reset instructions"
-          color="indigo"
+          color="primary"
         />
       </q-form>
       <p class="text-subtitle1 q-my-lg">
@@ -41,7 +41,6 @@
 <script setup lang="ts">
 import { useQuasar } from "quasar";
 import { emailRules } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
 import { computed, ref } from "vue";
@@ -65,15 +64,19 @@ async function resetPassword() {
     if (error) {
       throw error;
     }
-    showNotification(
-      $quasar,
-      "Reset password email successfully sent",
-      "positive",
-      "check"
-    );
+    $quasar.notify({
+      message:
+        "If an account exists with this email address, you will receive password reset instructions",
+      color: "positive",
+      icon: "check",
+    });
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "negative", "error");
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;

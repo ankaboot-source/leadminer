@@ -89,19 +89,25 @@ export default function initializeMiningController(
               email,
               accessToken,
               refreshToken,
-              provider: 'Google',
+              provider: 'google',
               expiresAt
             },
-            type: 'Google'
+            type: 'google'
           });
 
-          res.redirect(`${ENV.FRONTEND_HOST}/dashboard`);
+          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
         } else {
           // User has not approved all the required scopes
-          res.status(403).send('Required scopes not granted.');
+          res.redirect(
+            301,
+            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=google&referrer=${state}`
+          );
         }
       } catch (error) {
-        res.status(500).send('Token exchange failed.');
+        res.redirect(
+          301,
+          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=google&referrer=${state}`
+        );
       }
     },
 
@@ -173,18 +179,24 @@ export default function initializeMiningController(
               email,
               accessToken,
               refreshToken,
-              provider: 'Azure'
+              provider: 'azure'
             },
-            type: 'Azure'
+            type: 'azure'
           });
 
-          res.redirect(`${ENV.FRONTEND_HOST}/dashboard`);
+          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
         } else {
           // User has not approved all the required scopes
-          res.status(403).send('Required scopes not granted.');
+          res.redirect(
+            301,
+            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=azure&referrer=${state}`
+          );
         }
       } catch (error) {
-        res.status(500).send('Token exchange failed.');
+        res.redirect(
+          301,
+          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=azure&referrer=${state}`
+        );
       }
     },
 
@@ -203,7 +215,7 @@ export default function initializeMiningController(
         await miningSources.upsert({
           userId: user.id,
           email,
-          type: 'IMAP',
+          type: 'imap',
           credentials: { email, host, password, port }
         });
 
@@ -288,12 +300,20 @@ export default function initializeMiningController(
 
         miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
       } catch (err) {
-        const newError = generateErrorObjectFromImapError(err);
-
         if (imapConnection) {
           await imapConnectionProvider.releaseConnection(imapConnection);
         }
         await imapConnectionProvider.cleanPool();
+
+        if (
+          err instanceof Error &&
+          err.message.toLowerCase().startsWith('invalid credentials')
+        ) {
+          return res.status(401).json({ message: err.message });
+        }
+
+        const newError = generateErrorObjectFromImapError(err);
+
         res.status(500);
         return next(new Error(newError.message));
       }
@@ -320,8 +340,8 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        await tasksManager.deleteTask(taskId);
-        return res.status(200).json({ data: task });
+        const deletedTask = await tasksManager.deleteTask(taskId, true);
+        return res.status(200).json({ data: deletedTask });
       } catch (err) {
         res.status(404);
         return next(err);

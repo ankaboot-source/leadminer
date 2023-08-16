@@ -15,7 +15,7 @@
         :size="buttonSize"
         align="left"
         unelevated
-        class="full-width text-h6 text-weight-less-regular"
+        class="full-width text-h6 text-weight-less-regular secondary-button"
         icon="img:icons/google.png"
         label="Continue with Google"
         @click="loginWithOAuth('google')"
@@ -24,7 +24,7 @@
         no-caps
         :loading="isLoading"
         :size="buttonSize"
-        class="full-width text-h6 text-weight-less-regular"
+        class="full-width text-h6 text-weight-less-regular secondary-button"
         align="left"
         unelevated
         icon="img:icons/microsoft.png"
@@ -43,7 +43,6 @@
       >
         <q-input
           v-model="email"
-          autofocus
           filled
           class="full-width"
           :rules="emailRules"
@@ -73,7 +72,7 @@
           no-caps
           type="submit"
           unelevated
-          color="indigo"
+          color="primary"
           :loading="isLoading"
           class="full-width text-h6 no-border q-mt-xs"
           :size="buttonSize"
@@ -114,7 +113,6 @@ import { Provider } from "@supabase/supabase-js";
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
 import { emailRules } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
 import { computed, ref } from "vue";
@@ -145,7 +143,11 @@ async function loginWithEmailAndPassword() {
     await $router.push("/dashboard");
   } catch (error) {
     if (error instanceof Error) {
-      showNotification($quasar, error.message, "negative", "error");
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
@@ -168,21 +170,14 @@ async function loginWithOAuth(provider: Provider) {
     }
   } catch (error) {
     if (error instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to connect with ${provider}: ${error.message}`,
-        "negative",
-        "error"
-      );
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
   }
 }
 </script>
-
-<style scoped>
-.q-btn {
-  border: 1px solid silver;
-}
-</style>

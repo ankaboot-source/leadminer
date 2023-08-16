@@ -6,8 +6,11 @@ import { sse } from "src/helpers/sse";
 import { supabase } from "src/helpers/supabase";
 import { MiningSource, MiningTask } from "src/types/mining";
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 export const useLeadminerStore = defineStore("leadminer", () => {
+  const $router = useRouter();
+
   const miningTask = ref<MiningTask | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const activeMiningSource = ref<MiningSource | undefined>();
@@ -31,6 +34,31 @@ export const useLeadminerStore = defineStore("leadminer", () => {
 
   const errors = ref({});
 
+  function $reset() {
+    miningTask.value = undefined;
+    miningSources.value = [];
+    activeMiningSource.value = undefined;
+    boxes.value = [];
+    selectedBoxes.value = [];
+
+    errorMessage.value = "";
+    infoMessage.value = "";
+
+    isLoadingSources.value = false;
+    loadingStatus.value = false;
+    loadingStatusDns.value = false;
+    loadingStatusbox.value = false;
+
+    extractedEmails.value = 0;
+    scannedEmails.value = 0;
+    totalFetchedEmails.value = 0;
+
+    status.value = "";
+    scannedBoxes.value = [];
+    statistics.value = {};
+    errors.value = {};
+  }
+
   async function getMiningSources() {
     try {
       isLoadingSources.value = true;
@@ -40,18 +68,34 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       }>("/imap/mine/sources");
       miningSources.value = data.sources;
       if (data.sources.length > 0) {
-        [activeMiningSource.value] = data.sources;
+        activeMiningSource.value = data.sources.at(-1); // Use the newest mining source as a default
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error);
+      let message = "Something unexpected happend.";
+
+      if (error instanceof AxiosError) {
+        message = error.response?.data?.message ?? error.message;
+
+        if (message?.toLowerCase() === "network error") {
+          message =
+            "Unable to access server. Please retry again or contact your service provider.";
+        }
+      }
+
+      errorMessage.value = message;
+      throw error;
     } finally {
       isLoadingSources.value = false;
     }
   }
 
   async function getBoxes() {
+    if (!activeMiningSource.value) {
+      return;
+    }
     loadingStatusbox.value = true;
+    boxes.value = [];
+    selectedBoxes.value = [];
 
     try {
       const response = await api.post("/imap/boxes", {
@@ -65,20 +109,45 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         selectedBoxes.value = getDefaultSelectedFolders(folders);
         infoMessage.value = "Successfully retrieved IMAP boxes.";
       }
+      miningSources.value = miningSources.value.reduce<MiningSource[]>(
+        (result, current) => {
+          if (current.email === activeMiningSource.value?.email) {
+            current.isValid = true;
+          }
+          result.push(current);
+
+          return result;
+        },
+        []
+      );
     } catch (err) {
-      if (err !== null && err instanceof AxiosError) {
-        let message = null;
-        const error = err.response?.data?.error || err;
+      if (err instanceof AxiosError) {
+        const error = err.response?.data?.details ?? err.response?.data ?? err;
 
         if (error.message?.toLowerCase() === "network error") {
-          message =
+          errorMessage.value =
             "Unable to access server. Please retry again or contact your service provider.";
         } else {
-          message = error.message;
+          errorMessage.value = error.message;
+          if (["google", "azure"].includes(activeMiningSource.value.type)) {
+            const { data } = await supabase.auth.getUser();
+            $router.push(
+              `/oauth-consent-error?provider=${activeMiningSource.value.type}&referrer=${data.user?.id}`
+            );
+          }
         }
-
-        errorMessage.value = message;
       }
+      miningSources.value = miningSources.value.reduce<MiningSource[]>(
+        (result, current) => {
+          if (current.email === activeMiningSource.value?.email) {
+            current.isValid = false;
+          }
+          result.push(current);
+
+          return result;
+        },
+        []
+      );
       throw err;
     } finally {
       loadingStatusbox.value = false;
@@ -136,7 +205,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       sse.closeConnection();
       if (err !== null && err instanceof AxiosError) {
         let message = null;
-        const error = err.response?.data?.error || err;
+        const error = err.response?.data || err;
 
         if (error.message?.toLowerCase() === "network error") {
           message =
@@ -145,7 +214,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
           message = error.message;
         }
 
-        error.value = message;
+        errorMessage.value = message;
       }
       throw err;
     }
@@ -169,7 +238,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     } catch (err) {
       if (err !== null && err instanceof AxiosError) {
         let message = null;
-        const error = err.response?.data?.error || err;
+        const error = err.response?.data || err;
 
         if (error.message?.toLowerCase() === "network error") {
           message =
@@ -189,6 +258,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     getBoxes,
     startMining,
     stopMining,
+    $reset,
     miningTask,
     miningSources,
     activeMiningSource,

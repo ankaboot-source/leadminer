@@ -74,6 +74,7 @@
                 icon="refresh"
                 class="q-ml-sm"
                 :loading="props.isLoadingBoxes"
+                :disable="activeMiningSource === undefined"
                 @click="onRefreshImapTree"
               />
               <q-space />
@@ -89,12 +90,16 @@
               </q-badge>
             </div>
             <q-select
-              v-if="miningSources.length > 1"
+              v-if="miningSources.length > 0"
               v-model="leadminerStore.activeMiningSource"
               class="q-mt-md"
               outlined
               :options="miningSources"
-              :disable="props.isLoadingBoxes || activeMiningTask"
+              :disable="
+                props.isLoadingBoxes ||
+                activeMiningTask ||
+                miningSources.length === 1
+              "
               option-value="email"
               option-label="email"
               dense
@@ -113,10 +118,10 @@
           <q-tab-panel name="configuration">
             <div class="text-h6">Start by configuring mining sources</div>
             <div class="flex row flex-center q-gutter-md q-mt-sm text-bold">
-              <q-btn :icon="mdiMicrosoft" @click="addOAuthAccount('azure')">
+              <q-btn :icon="mdiMicrosoft" @click="addOAuthSource('azure')">
                 Add Microsoft Account
               </q-btn>
-              <q-btn :icon="mdiGoogle" @click="addOAuthAccount('google')">
+              <q-btn :icon="mdiGoogle" @click="addOAuthSource('google')">
                 Add Google Account
               </q-btn>
               <q-btn :icon="mdiEmailLock" @click="openImapCredentialsDialog"
@@ -130,14 +135,44 @@
                 color="primary"
                 size="3em"
               />
-              <q-expansion-item
-                v-for="miningSource in miningSources"
-                :key="miningSource.email"
-                :hide-expand-icon="true"
-                :icon="getIconByMiningSource(miningSource)"
-                :label="miningSource.email"
-              >
-              </q-expansion-item>
+              <q-list>
+                <q-item
+                  v-for="miningSource in miningSources"
+                  :key="miningSource.email"
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="getIconByMiningSource(miningSource)" />
+                  </q-item-section>
+                  <q-item-section>{{ miningSource.email }}</q-item-section>
+                  <q-item-section side>
+                    <q-icon
+                      v-if="miningSource.isValid === true"
+                      name="check"
+                      color="green"
+                    >
+                      <q-tooltip>Valid and reachable</q-tooltip>
+                    </q-icon>
+                    <q-icon
+                      v-else-if="miningSource.isValid === false"
+                      name="error"
+                      color="red"
+                    >
+                      <q-tooltip>Unreachable</q-tooltip>
+                    </q-icon>
+                    <q-spinner
+                      v-else-if="
+                        activeMiningSource?.email === miningSource.email &&
+                        isLoadingBoxes
+                      "
+                      size="1.3rem"
+                    >
+                    </q-spinner>
+                    <q-icon v-else name="pending" color="accent">
+                      <q-tooltip>Unverified</q-tooltip>
+                    </q-icon>
+                  </q-item-section>
+                </q-item>
+              </q-list>
             </div>
 
             <q-dialog
@@ -217,9 +252,9 @@ import { AxiosError } from "axios";
 import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
+import { addOAuthAccount } from "src/helpers/oauth";
 import { useLeadminerStore } from "src/store/leadminer";
-import { MiningSource } from "src/types/mining";
+import { MiningSource, OAuthMiningSource } from "src/types/mining";
 import { computed, ref } from "vue";
 import TreeCard from "../cards/TreeCard.vue";
 
@@ -277,6 +312,8 @@ const miningSources = computed<MiningSource[]>(
   () => leadminerStore.miningSources
 );
 
+const activeMiningSource = computed(() => leadminerStore.activeMiningSource);
+
 const isLoadingSources = computed(() => leadminerStore.isLoadingSources);
 const boxes = computed(() => leadminerStore.boxes);
 
@@ -288,16 +325,16 @@ const activeMiningTask = computed(
 );
 
 function validateEmail(emailStr: string) {
-  return isValidEmail(emailStr) || "Please insert a valid email address";
+  return isValidEmail(emailStr) ?? "Please insert a valid email address";
 }
 
 function getIconByMiningSource(miningSource: MiningSource) {
   switch (miningSource.type) {
-    case "Google":
+    case "google":
       return mdiGoogle;
-    case "Azure":
+    case "azure":
       return mdiMicrosoft;
-    case "IMAP":
+    case "imap":
       return mdiEmail;
     default:
       return mdiEmail;
@@ -313,16 +350,16 @@ function onMiningSourceChanged() {
 }
 
 function validatePassword(passwordStr: string) {
-  return passwordStr !== "" || "Please insert your IMAP password";
+  return passwordStr !== "" ?? "Please insert your IMAP password";
 }
 
 function validateImapHost(imapHostStr: string) {
-  return imapHostStr !== "" || "Please insert your IMAP host";
+  return imapHostStr !== "" ?? "Please insert your IMAP host";
 }
 
 function validateImapPort(port: number) {
   return (
-    (port > 0 && port <= 65536) || "Please insert a valid IMAP port number"
+    (port > 0 && port <= 65536) ?? "Please insert a valid IMAP port number"
   );
 }
 
@@ -365,22 +402,24 @@ async function onSubmitImapCredentials() {
     closeImapCredentialsDialog();
   } catch (error) {
     if (error instanceof AxiosError) {
-      showNotification($quasar, error.message, "negative", "error");
+      let message =
+        error.response?.data?.details?.message ??
+        error.response?.data?.message ??
+        error.message;
+
+      if (error.message?.toLowerCase() === "network error") {
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
+      }
+
+      $quasar.notify({
+        message,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoadingImapCredentialsCheck.value = false;
-  }
-}
-
-async function addOAuthAccount(provider: "azure" | "google") {
-  try {
-    const { data } = await api.post<{ authorizationUri: string }>(
-      `/imap/mine/sources/${provider}`
-    );
-    window.location.href = data.authorizationUri;
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
   }
 }
 
@@ -393,6 +432,20 @@ function tabItemClicked(name: TabName) {
       menuItem.active = false;
     }
   });
+}
+
+async function addOAuthSource(source: OAuthMiningSource) {
+  try {
+    await addOAuthAccount(source);
+  } catch (error) {
+    if (error instanceof Error) {
+      $quasar.notify({
+        message: error.message,
+        color: "negative",
+        icon: "error",
+      });
+    }
+  }
 }
 
 defineExpose({

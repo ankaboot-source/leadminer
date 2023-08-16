@@ -1,6 +1,6 @@
 import {
   groupEmailMessage,
-  linkedinEmailMessage,
+  chatEmailMessage,
   newsletterEmailMessage,
   transactionalEmailMessage
 } from './tags';
@@ -8,7 +8,7 @@ import { Tag } from './types';
 import EmailMessageTagging from './engines/EmailMessageEngine';
 
 const tags: Tag[] = [
-  linkedinEmailMessage,
+  chatEmailMessage,
   newsletterEmailMessage,
   groupEmailMessage,
   transactionalEmailMessage // Always keep transactional as the last rule to check

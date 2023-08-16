@@ -88,17 +88,20 @@
 <script lang="ts" setup>
 // @ts-expect-error "No type definitions"
 import objectScan from "object-scan";
+import { AxiosError } from "axios";
 import { useQuasar } from "quasar";
 import SettingsDialog from "src/components/Dialogs/SettingsDialog.vue";
 import MinedPersons from "src/components/MinedPersons.vue";
 import ProgressCard from "src/components/cards/ProgressCard.vue";
-import { showNotification } from "src/helpers/notification";
+import { supabase } from "src/helpers/supabase";
 import AppLayout from "src/layouts/AppLayout.vue";
 import { useLeadminerStore } from "src/store/leadminer";
 import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 
 const leadminerStore = useLeadminerStore();
 const $quasar = useQuasar();
+const $router = useRouter();
 
 const settingsDialogRef = ref<InstanceType<typeof SettingsDialog>>();
 
@@ -114,9 +117,18 @@ async function getBoxes() {
     isLoadingStartMining.value = true;
     await leadminerStore.getBoxes();
 
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+    $quasar.notify({
+      message: leadminerStore.infoMessage,
+      color: "positive",
+      icon: "check",
+    });
   } catch (_) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+      timeout: 10000,
+    });
   } finally {
     isLoadingBoxes.value = false;
     isLoadingStartMining.value = false;
@@ -125,7 +137,16 @@ async function getBoxes() {
 
 onMounted(async () => {
   settingsDialogRef.value?.open();
-  await leadminerStore.getMiningSources();
+  try {
+    await leadminerStore.getMiningSources();
+  } catch (err) {
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+    });
+  }
+
   if (leadminerStore.activeMiningSource) {
     await getBoxes();
   }
@@ -166,9 +187,17 @@ async function stopMining() {
   isLoadingStopMining.value = true;
   try {
     await leadminerStore.stopMining();
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+    $quasar.notify({
+      message: leadminerStore.infoMessage,
+      color: "positive",
+      icon: "check",
+    });
   } catch (error) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+    $quasar.notify({
+      message: leadminerStore.errorMessage,
+      color: "negative",
+      icon: "error",
+    });
   } finally {
     isLoadingStopMining.value = false;
   }
@@ -179,19 +208,41 @@ async function startMining() {
   isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
     isLoadingStartMining.value = false;
-    return showNotification(
-      $quasar,
-      "Select at least one folder",
-      "warning",
-      "error"
-    );
+    $quasar.notify({
+      message: "Select at least one folder",
+      color: "warning",
+      icon: "error",
+    });
+    return;
   }
-
   try {
     await leadminerStore.startMining();
-    showNotification($quasar, leadminerStore.infoMessage, "positive", "check");
+    $quasar.notify({
+      message: leadminerStore.infoMessage,
+      color: "positive",
+      icon: "check",
+    });
   } catch (error) {
-    showNotification($quasar, leadminerStore.errorMessage, "negative", "error");
+    const provider = leadminerStore.activeMiningSource?.type;
+
+    if (
+      error instanceof AxiosError &&
+      error.response?.status === 401 &&
+      provider &&
+      ["google", "azure"].includes(provider)
+    ) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const referrer = sessionData.session?.user.id;
+      $router.push(
+        `/oauth-consent-error?provider=${provider}&referrer=${referrer}`
+      );
+    } else {
+      $quasar.notify({
+        message: leadminerStore.errorMessage,
+        color: "negative",
+        icon: "error",
+      });
+    }
   } finally {
     isLoadingStartMining.value = false;
   }
@@ -201,6 +252,7 @@ async function startMining() {
 .q-dialog__inner--minimized > div {
   max-width: 1000px;
 }
+
 .bg-banner-color {
   background: linear-gradient(
     135deg,

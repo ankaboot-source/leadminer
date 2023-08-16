@@ -1,5 +1,3 @@
-import { ImapUsers } from '../db/ImapUsers';
-import { OAuthUsers } from '../db/OAuthUsers';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 
@@ -50,43 +48,6 @@ const IMAP_ERROR_CODES = new Map([
     }
   ]
 ]);
-
-/**
- * Get a user by either their access token and email or their IMAP ID or email.
- * @param params - User data params.
- * @param imapUsers - Imap users db accessor.
- * @param oAuthUsers - OAuth users db accessor.
- * @throws {Error} - If at least one parameter is not provided.
- */
-export function getUser(
-  {
-    access_token,
-    id,
-    email
-  }: {
-    access_token?: string;
-    id?: string;
-    email?: string;
-  },
-  imapUsers: ImapUsers,
-  oAuthUsers: OAuthUsers
-) {
-  if (!access_token && !id && !email) {
-    throw new Error(
-      'At least one parameter is required { access_token, id, email }.'
-    );
-  }
-
-  if (access_token) {
-    return oAuthUsers.getByEmail(email!);
-  }
-
-  if (id) {
-    return imapUsers.getById(id);
-  }
-
-  return imapUsers.getByEmail(email!);
-}
 
 /**
  * Generates a new error object from a given IMAP error code or text code.

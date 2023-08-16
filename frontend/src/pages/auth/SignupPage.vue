@@ -13,7 +13,6 @@
       <q-form class="q-gutter-sm full-width" @submit="signUp()">
         <q-input
           v-model="email"
-          autofocus
           :rules="emailRules"
           class="full-width"
           filled
@@ -43,7 +42,7 @@
           :loading="isLoading"
           class="full-width text-h6 no-border"
           label="Start mining"
-          color="indigo"
+          color="primary"
         />
       </q-form>
 
@@ -60,7 +59,7 @@
           :size="buttonSize"
           icon="img:icons/google.png"
           label="Google"
-          class="text-h6 text-weight-less-regular"
+          class="text-h6 text-weight-less-regular secondary-button"
           @click="loginWithOAuth('google')"
         />
         <q-btn
@@ -68,7 +67,7 @@
           no-caps
           :size="buttonSize"
           unelevated
-          class="text-h6 text-weight-less-regular"
+          class="text-h6 text-weight-less-regular secondary-button"
           icon="img:icons/microsoft.png"
           label="Microsoft"
           @click="loginWithOAuth('azure')"
@@ -107,7 +106,6 @@
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
 import { emailRules } from "src/helpers/email";
-import { showNotification } from "src/helpers/notification";
 import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
@@ -137,14 +135,18 @@ async function signUp() {
     if (error) {
       throw error;
     }
+    $quasar.notify({
+      message: `We have sent a confirmation email to ${email.value}`,
+      color: "positive",
+      icon: "check",
+    });
   } catch (e) {
     if (e instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to signup: ${e.message}`,
-        "negative",
-        "error"
-      );
+      $quasar.notify({
+        message: `Failed to signup: ${e.message}`,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
@@ -167,21 +169,14 @@ async function loginWithOAuth(provider: "google" | "azure") {
     }
   } catch (error) {
     if (error instanceof Error) {
-      showNotification(
-        $quasar,
-        `Failed to connect with ${provider}: ${error.message}`,
-        "negative",
-        "error"
-      );
+      $quasar.notify({
+        message: `Failed to connect with ${provider}: ${error.message}`,
+        color: "negative",
+        icon: "error",
+      });
     }
   } finally {
     isLoading.value = false;
   }
 }
 </script>
-
-<style scoped>
-.q-btn {
-  border: 1px solid silver;
-}
-</style>

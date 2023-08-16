@@ -1,9 +1,9 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, jest, test } from '@jest/globals';
 import { check } from 'recheck';
 import {
-  REGEX_BODY,
   REGEX_LIST_ID,
-  REGEX_REMOVE_QUOTES
+  REGEX_REMOVE_QUOTES,
+  REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
 } from '../../src/utils/constants';
 import {
   cleanName,
@@ -14,27 +14,41 @@ import testData from '../testData.json';
 
 jest.mock('../../src/config', () => {});
 
+async function testRegexSafety(regexSource: string, regexFlags: string) {
+  const diagnostics = await check(regexSource, regexFlags);
+
+  if (diagnostics.status === 'vulnerable') {
+    const vulParts = diagnostics.hotspot.map(
+      (i) =>
+        ` index(${i.start}, ${i.end}): ${regexSource.slice(i.start, i.end)}`
+    );
+
+    const messageError = `
+      Regex is vulnerable! 
+      - Complexity: ${diagnostics.complexity.type} 
+      - Attack string: ${diagnostics.attack.pattern} 
+      - Vulnerable parts: ${vulParts}
+    `;
+    // eslint-disable-next-line no-console
+    console.error(messageError);
+  }
+
+  expect(diagnostics.status).toBe('safe');
+}
+
 describe('Regex redos checker', () => {
-  const regex = [REGEX_BODY, REGEX_LIST_ID, REGEX_REMOVE_QUOTES];
+  const regex = [
+    REGEX_LIST_ID,
+    REGEX_REMOVE_QUOTES,
+    REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS
+  ];
 
-  regex.forEach((r) => {
-    it('regex should be REDOS safe', async () => {
-      let messageError = 'Regex is vulnerable !';
-
-      const diagnostics = await check(r.source, r.flags);
-
-      if (diagnostics.status === 'vulnerable') {
-        const vulParts = diagnostics.hotspot.map(
-          (i) =>
-            ` index(${i.start}, ${i.end}): ${r.source.slice(i.start, i.end)}`
-        );
-        messageError += ` \n\t- Complixity: ${diagnostics.complexity.type} \n\t- Attack string: ${diagnostics.attack.pattern} \n\t- Vulnerable parts: ${vulParts}\n\t`;
-        // eslint-disable-next-line no-console
-        console.error(messageError);
-      }
-      expect(diagnostics.status).toBe('safe');
-    });
-  });
+  test.concurrent.each(regex)(
+    'Regex %p with flags %p should be REDOS safe',
+    async (re) => {
+      await testRegexSafety(re.source, re.flags);
+    }
+  );
 });
 
 describe('regExHelpers.extractEmailsFromBody(text)', () => {
@@ -106,6 +120,31 @@ describe('regexHelpers.cleanName', () => {
       });
     });
   });
+
+  it('should remove "via" and the text after it', () => {
+    const inputs = ['Leadminer via nextcloud', 'Leadminer (via nextcloud)'];
+
+    inputs.forEach((name) => {
+      const output = cleanName(name);
+      expect(output).toBe('Leadminer');
+    });
+  });
+
+  it('should remove "(Google) | (Drive) | (Google Drive)" and the text after it', () => {
+    const inputs = [
+      'Leadminer (google)',
+      'Leadminer (Google)',
+      'Leadminer (drive)',
+      'Leadminer (Drive)',
+      'Leadminer (google drive)',
+      'Leadminer (Google Drive)'
+    ];
+
+    inputs.forEach((name) => {
+      const output = cleanName(name);
+      expect(output).toBe('Leadminer');
+    });
+  });
 });
 
 describe('regExHelpers.extractNameAndEmail(data)', () => {
@@ -134,7 +173,6 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should return valid object with empty name if there is none.', () => {
     const generalOutput = [
       {
-        name: '',
         identifier: 'leadminer',
         address: 'leadminer@teamankaboot.fr',
         domain: 'Teamankaboot.fr'
@@ -225,7 +263,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
     testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input)
-        .map(({ name }) => (name !== '' ? name : 'empty'))
+        .map(({ name }) => (name !== undefined ? name : 'empty'))
         .join(', ');
       expect(resultOutput).toEqual(output);
     });
@@ -295,13 +333,11 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       input: testStrings.join(','),
       output: [
         {
-          name: '',
           identifier: 'leadminer1',
           address: 'leadminer1@teamankaboot.fr',
           domain: 'teamankaboot.fr'
         },
         {
-          name: '',
           identifier: 'leadminer2',
           address: 'leadminer2@teamankaboot.fr',
           domain: 'teamankaboot.fr'
@@ -377,7 +413,7 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
 
     testCases.forEach(({ input, output }) => {
       const resultOutput = extractNameAndEmail(input)
-        .map(({ name }) => (name !== '' ? name : 'EMPTY'))
+        .map(({ name }) => (name !== undefined ? name : 'EMPTY'))
         .join(', ');
       expect(resultOutput).toEqual(output);
     });
@@ -393,7 +429,6 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
   it('Should return the correct email object for a list-post header format', () => {
     const input = '<mailto:ga_montreuil_info@lists.riseup.net>';
     const expectedEmail = {
-      name: '',
       address: 'ga_montreuil_info@lists.riseup.net',
       identifier: 'ga_montreuil_info',
       domain: 'lists.riseup.net'

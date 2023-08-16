@@ -139,6 +139,9 @@ a {
   color: #3f51b5;
   text-decoration: none;
 }
+a:hover {
+  text-decoration: underline;
+}
 
 .q-field__inner {
   background-color: rgb(246, 246, 246);
@@ -150,4 +153,8 @@ a {
 
 .text-weight-less-regular {
   font-weight: 300;
+}
+
+.secondary-button {
+  border: 1px solid #abb1ba;
 }

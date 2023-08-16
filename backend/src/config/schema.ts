@@ -46,6 +46,15 @@ const schema = z.object({
   AZURE_CLIENT_ID: z.string().nonempty(),
   AZURE_SECRET: z.string().nonempty(),
 
+  /* REACHER */
+  REACHER_HOST: z
+    .string()
+    .nonempty()
+    .optional()
+    .default('https://api.reacher.email'),
+  REACHER_API_KEY: z.string().nonempty().optional(),
+  REACHER_HEADER_SECRET: z.string().nonempty().optional(),
+
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

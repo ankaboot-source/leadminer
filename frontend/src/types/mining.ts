@@ -1,7 +1,9 @@
-export type MiningSourceType = "Google" | "Azure" | "IMAP";
+export type OAuthMiningSource = "azure" | "google";
+export type MiningSourceType = OAuthMiningSource | "imap";
 export interface MiningSource {
   type: MiningSourceType;
   email: string;
+  isValid?: boolean;
 }
 
 export interface MiningProgress {

@@ -1,3 +1,6 @@
+import Redis from 'ioredis';
+import { Status } from '../email-status/EmailStatusVerifier';
+
 export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
   'transactional',
   'no-reply'
@@ -27,47 +30,48 @@ export interface EmailSendersRecipients {
 
 export interface Message {
   channel: string;
-  folderPath: string;
-  date: string;
   messageId: string;
-  references: string[];
-  listId: string;
+  folderPath: string;
+  date?: string;
+  listId?: string;
   conversation: boolean;
+  references?: string[];
 }
 
 export interface Person {
-  name: string;
   email: string;
-  url: string;
-  image: string;
-  address: string;
-  alternateNames: string[];
-  sameAs: string[];
-  givenName: string;
-  familyName: string;
-  jobTitle: string;
-  identifiers: string[];
+  status: Status;
+  url?: string;
+  name?: string;
+  image?: string;
+  address?: string;
+  jobTitle?: string;
+  sameAs?: string[];
+  givenName?: string;
+  familyName?: string;
+  identifiers?: string[];
+  alternateNames?: string[];
 }
 
 export interface PointOfContact {
-  name: string;
-  from: boolean;
-  replyTo: boolean;
   to: boolean;
   cc: boolean;
   bcc: boolean;
+  from: boolean;
   body: boolean;
+  replyTo: boolean;
+  name?: string;
 }
 
 export interface RegexContact {
-  name: string;
+  domain: string;
   address: string;
   identifier: string;
-  domain: string;
+  name?: string;
 }
 
 export interface ContactLead {
-  name: string;
+  name?: string;
   email: {
     address: string;
     identifier: string;
@@ -76,16 +80,6 @@ export interface ContactLead {
   };
   sourceField: MessageField | 'body';
   source: 'header' | 'body';
-}
-
-export interface MessageDetails {
-  references: string[];
-  channel: string;
-  date: string | null;
-  listId: string;
-  folderPath: string;
-  messageId: string;
-  conversation: boolean;
 }
 
 export interface ContactTag {
@@ -102,3 +96,10 @@ export interface Contact {
     tags: ContactTag[];
   }[];
 }
+
+export type DomainStatusVerificationFunction = (
+  redisClient: Redis,
+  domain: string
+) => Promise<
+  [boolean, 'provider' | 'disposable' | 'custom' | 'invalid', string]
+>;

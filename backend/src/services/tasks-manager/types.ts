@@ -1,3 +1,4 @@
+import { Worker } from 'bullmq';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
@@ -16,6 +17,7 @@ export interface Task {
   };
   progress: TaskProgress;
   fetcher: ImapEmailsFetcher;
+  emailVerificationWorker: Worker;
   progressHandlerSSE: RealtimeSSE;
   startedAt: number;
 }
@@ -31,9 +33,14 @@ export interface RedactedFetcherData {
   folders: string[];
 }
 
+export interface EmailStatusVerifier {
+  running: boolean;
+}
+
 export interface RedactedTask {
   userId: string;
   miningId: string;
   progress: TaskProgress;
   fetcher: RedactedFetcherData;
+  emailStatusVerifier: EmailStatusVerifier;
 }

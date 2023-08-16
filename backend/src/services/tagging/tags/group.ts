@@ -6,7 +6,7 @@ import { Tag } from '../types';
 const groupEmailMessage: Tag = {
   tag: {
     name: 'group',
-    reachable: REACHABILITY.MANY
+    reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
   },
   rules: [
     {

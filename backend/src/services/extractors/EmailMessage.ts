@@ -1,54 +1,70 @@
-import { REGEX_LIST_ID } from '../../utils/constants';
-import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
+import { Queue } from 'bullmq';
+import { Redis } from 'ioredis';
+import {
+  REACHABILITY,
+  REDIS_EMAIL_STATUS_KEY,
+  REGEX_LIST_ID
+} from '../../utils/constants';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
-import {
-  ContactLead,
-  EmailSendersRecipients,
-  Message,
-  MESSAGING_FIELDS,
-  MessageField,
-  Contact,
-  Person,
-  PointOfContact,
-  ContactTag,
-  IGNORED_MESSAGE_TAGS
-} from './types';
-import { TaggingEngine } from '../tagging/types';
+import { differenceInDays } from '../../utils/helpers/date';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
+import { Status } from '../email-status/EmailStatusVerifier';
+import { TaggingEngine } from '../tagging/types';
+import {
+  Contact,
+  ContactLead,
+  ContactTag,
+  DomainStatusVerificationFunction,
+  EmailSendersRecipients,
+  IGNORED_MESSAGE_TAGS,
+  MESSAGING_FIELDS,
+  Message,
+  MessageField,
+  Person,
+  PointOfContact
+} from './types';
 
 export default class EmailMessage {
   private static IGNORED_MESSAGE_TAGS = IGNORED_MESSAGE_TAGS;
 
-  readonly date: string | null;
-
-  readonly listId: string;
+  private static MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS = 100;
 
   readonly messageId: string;
 
-  readonly references: string[];
+  readonly date: string | undefined;
+
+  readonly listId: string | undefined;
+
+  readonly references: string[] | undefined;
 
   /**
    * Creates an instance of EmailMessage.
    *
-   * @param {Object} redisClientForNormalMode - The Redis client used for normal mode.
-   * @param {String} userEmail - The email address of the user.
-   * @param {String} sequentialId - The sequential ID of the message.
-   * @param {Object} header - The header of the message.
-   * @param {Object} body - The body of the message.
-   * @param {String} folder - the path of the folder where the email is located
+   * @param taggingEngine - The tagging engine responsible for categorizing the message.
+   * @param redisClientForNormalMode - The Redis client used for normal mode.
+   * @param emailVerificationQueue - The queue used for email verification.
+   * @param domainStatusVerification - The function that does domain status verification.
+   * @param userEmail - The email address of the user.
+   * @param userId - The unique identifier of the user.
+   * @param header - The header of the message.
+   * @param body - The body of the message.
+   * @param folderPath - The path of the folder where the email is located.
    */
   constructor(
     private readonly taggingEngine: TaggingEngine,
-    private readonly redisClientForNormalMode: any,
+    private readonly redisClientForNormalMode: Redis,
+    private readonly emailVerificationQueue: Queue,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction,
     private readonly userEmail: string,
+    private readonly userId: string,
     private readonly header: any,
     private readonly body: any,
     private readonly folderPath: string
   ) {
     const date = this.getDate();
 
-    this.date = date !== null ? date : 'UNKOWN';
+    this.date = date !== null ? date : undefined;
     this.listId = this.getListId();
     this.messageId = this.getMessageId();
     this.references = this.getReferences();
@@ -58,41 +74,41 @@ export default class EmailMessage {
    * Gets the list of references from  the email header if the message is in a conversation, otherwise returns an empty array.
    * @returns
    */
-  private getReferences(): string[] {
+  private getReferences(): string[] | undefined {
     const references = getSpecificHeader(this.header, ['references']);
 
     if (references) {
       return references[0].split(' ').filter((ref: string) => ref !== ''); // references in header comes as ["<r1> <r2> <r3> ..."]
     }
 
-    return [];
+    return undefined;
   }
 
   /**
    * Gets the `list-id` header field if the email is in a mailing list otherwise returns an empty string.
    * @returns
    */
-  private getListId(): string {
+  private getListId(): string | undefined {
     const listId = getSpecificHeader(this.header, ['list-id']);
 
-    if (listId === null) {
-      return '';
+    if (listId === undefined) {
+      return undefined;
     }
 
-    const matchId = listId ? listId[0].match(REGEX_LIST_ID) : null;
-    return matchId ? matchId[0] : '';
+    const matchId = listId ? listId[0].match(REGEX_LIST_ID) : undefined;
+    return matchId ? matchId[0] : undefined;
   }
 
   /**
    * Returns the date from the header object, or null if it is not present or not a valid date
    * @returns The UTC formatted date string or null if it is not present or not a valid date.
    */
-  private getDate() {
+  private getDate(): string | undefined {
     if (!this.header.date) {
-      return null;
+      return undefined;
     }
     const dateStr = new Date(this.header.date[0]).toUTCString();
-    return dateStr !== 'Invalid Date' ? dateStr : null;
+    return dateStr !== 'Invalid Date' ? dateStr : undefined;
   }
 
   /**
@@ -127,7 +143,7 @@ export default class EmailMessage {
       folderPath: this.folderPath,
       messageId: this.messageId,
       references: this.references,
-      conversation: this.references.length > 0
+      conversation: this.references !== undefined
     };
   }
 
@@ -215,7 +231,7 @@ export default class EmailMessage {
 
     await Promise.all(
       [...headerContacts, ...bodyContacts].map(async (contact: ContactLead) => {
-        const [domainIsValid, domainType] = await checkDomainStatus(
+        const [domainIsValid, domainType] = await this.domainStatusVerification(
           this.redisClientForNormalMode,
           contact.email.domain.toLowerCase()
         );
@@ -234,21 +250,15 @@ export default class EmailMessage {
 
         if (domainIsValid) {
           const person: Person = {
+            status: Status.UNKNOWN,
             name: validContact.name,
             email: validContact.email.address,
-            url: '',
-            image: '',
-            address: '',
-            alternateNames: [],
-            sameAs: [],
             givenName: validContact.name,
-            familyName: '',
-            jobTitle: '',
             identifiers: [validContact.email.identifier]
           };
 
           const pointOfContact: PointOfContact = {
-            name: validContact.name ?? '',
+            name: validContact.name,
             to: validContact.sourceField === 'to',
             cc: validContact.sourceField === 'cc',
             bcc: validContact.sourceField === 'bcc',
@@ -259,19 +269,51 @@ export default class EmailMessage {
               validContact.sourceField === 'reply_to'
           };
 
-          const tags = this.taggingEngine
-            .getTags({ header: this.header, email: validContact.email })
-            .reduce((result: ContactTag[], tag) => {
-              if (!EmailMessage.IGNORED_MESSAGE_TAGS.includes(tag.name)) {
-                result.push({
-                  name: tag.name,
-                  reachable: tag.reachable,
-                  source: tag.source
-                });
-              }
-              return result;
-            }, []);
+          const tags = this.taggingEngine.getTags({
+            header: this.header,
+            email: validContact.email,
+            field: validContact.sourceField
+          });
 
+          // Eliminate unwanted contacts associated with tags listed in IGNORED_MESSAGE_TAGS
+          if (
+            tags.some((t) => EmailMessage.IGNORED_MESSAGE_TAGS.includes(t.name))
+          ) {
+            return;
+          }
+
+          if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
+            if (
+              validContact.sourceField === 'from' &&
+              this.date &&
+              differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
+                EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
+            ) {
+              person.status = Status.VALID;
+              await this.redisClientForNormalMode.hset(
+                REDIS_EMAIL_STATUS_KEY,
+                person.email,
+                Status.VALID
+              );
+            } else {
+              const statusCache = await this.redisClientForNormalMode.hget(
+                REDIS_EMAIL_STATUS_KEY,
+                validContact.email.address
+              );
+              if (!statusCache) {
+                await this.emailVerificationQueue.add(
+                  person.email,
+                  {
+                    userId: this.userId,
+                    email: person.email
+                  },
+                  { removeOnComplete: true, removeOnFail: true }
+                );
+              } else {
+                person.status = statusCache as Status;
+              }
+            }
+          }
           validatedContacts.push({
             person,
             pointOfContact,

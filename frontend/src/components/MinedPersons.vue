@@ -9,6 +9,7 @@
       :rows-per-page-options="[150, 500, 1000]"
       row-key="email"
       :columns="columns"
+      :visible-columns="visibleColumns"
       title="Mined emails"
       :loading="isLoading"
       :filter="filter"
@@ -81,7 +82,7 @@
             anchor="top middle"
             self="center middle"
           >
-            Date of last interaction with this person
+            When was the last time this contact was seen
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -94,7 +95,7 @@
             anchor="top middle"
             self="center middle"
           >
-            Count of conversations this email address was in
+            Count of conversations this contact was in
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -107,7 +108,46 @@
             anchor="top middle"
             self="center middle"
           >
-            Total occurrences of this email address
+            Total occurrences of this contact
+          </q-tooltip>
+          {{ props.col.label }}
+        </q-th>
+      </template>
+
+      <template #header-cell-reply="props">
+        <q-th :props="props">
+          <q-tooltip
+            class="bg-orange-13 text-caption"
+            anchor="top middle"
+            self="center middle"
+          >
+            How many times this contact replied
+          </q-tooltip>
+          {{ props.col.label }}
+        </q-th>
+      </template>
+
+      <template #header-cell-tags="props">
+        <q-th :props="props">
+          <q-tooltip
+            class="bg-orange-13 text-caption"
+            anchor="top middle"
+            self="center middle"
+          >
+            Categorize your contacts
+          </q-tooltip>
+          {{ props.col.label }}
+        </q-th>
+      </template>
+
+      <template #header-cell-status="props">
+        <q-th :props="props">
+          <q-tooltip
+            class="bg-orange-13 text-caption"
+            anchor="top middle"
+            self="center middle"
+          >
+            How reachable is your contact
           </q-tooltip>
           {{ props.col.label }}
         </q-th>
@@ -153,57 +193,9 @@
 
       <template #body-cell-name="props">
         <q-td :props="props">
-          <q-expansion-item
-            v-if="props.row.name && props.row.alternate_names?.length > 1"
-            dense
-            dense-toggle
-            expand-icon-class="text-orange"
-            header-class="q-prl-16"
-          >
-            <template #header>
-              <q-item-section>
-                <div class="row items-center">
-                  <q-badge outline color="orange">
-                    {{
-                      props.row.name.length > 35
-                        ? props.row.name.substring(0, 30).concat("...")
-                        : props.row.name
-                    }}
-                  </q-badge>
-                  <q-badge
-                    class="text-little q-ml-sm"
-                    outline
-                    color="orange"
-                    transparent
-                  >
-                    +{{ props.row.alternate_names.length - 1 }}
-                  </q-badge>
-                </div>
-              </q-item-section>
-            </template>
-            <div
-              v-for="name in props.row.alternate_names.filter((element: string) => {
-                return element.trim() !== '' && element !== props.row.name;
-              })"
-              :key="name.index"
-              :bind="name.index"
-              style="padding-left: 16px"
-            >
-              <q-badge v-if="name.length > 0" outline color="orange">
-                {{
-                  name.length > 35 ? name.substring(0, 30).concat("...") : name
-                }}
-              </q-badge>
-              <br />
-            </div>
-          </q-expansion-item>
-          <div
-            v-else-if="props.row.name"
-            class="row items-center"
-            style="padding-left: 16px"
-          >
-            <q-badge outline color="orange">
-              {{ props.row.name ? props.row.name : "" }}
+          <div class="row items-center">
+            <q-badge v-if="props.row.name" outline color="orange">
+              {{ props.row.name }}
             </q-badge>
           </div>
         </q-td>
@@ -211,12 +203,10 @@
 
       <template #body-cell-status="props">
         <q-td :props="props">
-          <q-badge rounded :color="mailboxValidityCurrent">
-            {{ " " }}
-            <q-tooltip :class="'bg-' + mailboxValidityCurrent">
-              {{ mailboxValidity[mailboxValidityCurrent] }}
-            </q-tooltip>
-          </q-badge>
+          <validity-indicator
+            :key="props.row.status"
+            :email-status="props.row.status"
+          />
         </q-td>
       </template>
     </q-table>
@@ -231,10 +221,11 @@ import {
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { getCsvStr } from "src/helpers/csv";
-import { fetchData, supabase } from "src/helpers/supabase";
+import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
-import { Contact } from "src/types/contact";
+import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
 const leadminerStore = useLeadminerStore();
@@ -250,15 +241,8 @@ let contactsCache = new Map<string, Contact>();
 const minedEmails = computed(() => rows.value.length);
 
 const initialPagination = {
-  sortBy: "engagement",
-  descending: true,
+  sortBy: "status",
 };
-const mailboxValidity = {
-  green: "Valid mailbox",
-  orange: "The mailbox could not receive your emails",
-  red: "The mailbox is not valid",
-};
-const mailboxValidityCurrent: "green" | "orange" | "red" = "green";
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 
@@ -267,6 +251,50 @@ const activeMiningTask = computed(
 );
 
 let refreshInterval: number;
+let subscription: RealtimeChannel;
+
+async function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  subscription = supabase.channel("*").on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "persons",
+      filter: `user_id=eq.${user.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
+}
+
+async function subscribeToEmailVerificationEvents() {
+  // This function is temporary and will be removed once we finish
+  // emailStatusVerification progress and task management
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  subscription = supabase.channel("listening-to-emailVerification").on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "persons",
+      filter: `user_id=eq.${user.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      const index = rows.value.findIndex(
+        ({ email }) => email === newContact.email
+      );
+      if (index !== -1) {
+        rows.value[index].status = newContact.status;
+      }
+    }
+  );
+}
+
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const contactTableLength = rows.value.length;
@@ -279,45 +307,33 @@ function refreshTable() {
   }
 }
 
-let subscription: RealtimeChannel;
-async function setupSubscription() {
-  // We are 100% sure that the user is authenticated in this component
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  subscription = supabase.channel("*").on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "refinedpersons",
-      filter: `userid=eq.${user.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
 async function refineContacts() {
   const user = (await supabase.auth.getSession()).data.session?.user as User;
-  const { error } = await supabase.rpc("refined_persons", {
-    userid: user.id,
-  });
 
-  if (error) {
+  try {
+    const refine = await supabase.rpc("refine_persons", {
+      userid: user.id,
+    });
+
+    if (refine.error) {
+      throw refine.error;
+    }
+  } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
   }
 }
 
-async function getContacts(userId: string) {
-  const contacts = await fetchData<Contact>(
-    userId,
-    "refinedpersons",
-    process.env.SUPABASE_MAX_ROWS
-  );
+async function getContacts(userId: string): Promise<Contact[]> {
+  const { data, error } = await supabase.rpc("get_contacts_table", {
+    userid: userId,
+  });
 
-  return contacts;
+  if (error) {
+    throw error;
+  }
+
+  return data;
 }
 
 async function syncTable() {
@@ -336,20 +352,35 @@ watch(activeMiningTask, async (isActive) => {
     }
     refreshInterval = window.setInterval(() => {
       refreshTable();
-    }, 3000);
+    }, 5000);
   } else {
+    // Close realtime and re-open again later
     if (subscription) {
-      subscription.unsubscribe();
+      await subscription.unsubscribe();
     }
     clearInterval(refreshInterval);
     contactsCache.clear();
     isLoading.value = true;
     await refineContacts();
     await syncTable();
+    if (subscription) {
+      await subscribeToEmailVerificationEvents();
+      subscription.subscribe();
+    }
     isLoading.value = false;
   }
 });
 
+const visibleColumns = ref([
+  "copy",
+  "email",
+  "name",
+  "occurrence",
+  "recency",
+  "reply",
+  "tags",
+  "status",
+]);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any = [
   {
@@ -381,14 +412,37 @@ const columns: any = [
     label: "Recency",
     align: "center",
     field: "recency",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    format: (val: any) => (val ? new Date(val).toISOString().slice(0, 10) : ""),
+    format: (val: Date) =>
+      val ? new Date(val).toISOString().slice(0, 10) : "",
+    sortable: true,
+  },
+  {
+    name: "seniority",
+    label: "Seniority",
+    align: "center",
+    field: "seniority",
+    format: (val: Date) =>
+      val ? new Date(val).toISOString().slice(0, 10) : "",
     sortable: true,
   },
   {
     name: "engagement",
     label: "Engagement",
     field: "engagement",
+    align: "center",
+    sortable: true,
+  },
+  {
+    name: "occurrence",
+    label: "Occurrence",
+    field: "occurrence",
+    align: "center",
+    sortable: true,
+  },
+  {
+    name: "reply",
+    label: "Reply",
+    field: "replied_conversations",
     align: "center",
     sortable: true,
   },
@@ -402,7 +456,10 @@ const columns: any = [
     name: "status",
     label: "Status",
     align: "center",
-    field: "",
+    field: "status",
+    sortable: true,
+    sort: (a: EmailStatus, b: EmailStatus) =>
+      EmailStatusScore[a] - EmailStatusScore[b],
   },
 ];
 
@@ -434,26 +491,34 @@ async function exportTable() {
 
   const csvData = rows.value.map((r) => ({
     name: r.name?.trim(),
-    alternateNames: r.alternate_names
-      ?.filter((name: string) => name.trim() !== "" && name !== r.name)
-      .join("\n"),
     email: r.email,
-    engagement: r.engagement,
-    occurence: r.occurence,
     recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
+    seniority: r.seniority
+      ? new Date(r.seniority).toISOString().slice(0, 10)
+      : "",
+    occurrence: r.occurrence,
+    sender: r.sender,
+    recipient: r.recipient,
+    conversations: r.conversations,
+    repliedConversations: r.replied_conversations,
     tags: r.tags?.join("\n"),
+    status: r.status,
   }));
 
   try {
     const csvStr = await getCsvStr(
       [
         { key: "name", header: "Name" },
-        { key: "alternateNames", header: "Alternate Names" },
         { key: "email", header: "Email" },
-        { key: "engagement", header: "Engagement" },
-        { key: "occurence", header: "Occurrence" },
         { key: "recency", header: "Recency" },
+        { key: "seniority", header: "Seniority" },
+        { key: "occurrence", header: "Occurrence" },
+        { key: "sender", header: "Sender" },
+        { key: "recipient", header: "Recipient" },
+        { key: "conversations", header: "Conversations" },
+        { key: "repliedConversations", header: "Replied conversations" },
         { key: "tags", header: "Tags" },
+        { key: "status", header: "Status" },
       ],
       csvData
     );

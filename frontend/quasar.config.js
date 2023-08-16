@@ -78,6 +78,8 @@ module.exports = configure((/* ctx */) => ({
       SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
       AVERAGE_EXTRACTION_RATE: parseInt(process.env.AVERAGE_EXTRACTION_RATE),
       BANNER_IMAGE_URL: process.env.BANNER_IMAGE_URL,
+      POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
+      POSTHOG_INSTANCE_ADDRESS: process.env.POSTHOG_INSTANCE_ADDRESS,
     },
     // rawDefine: {}
     // ignorePublicFolder: true,

@@ -1,8 +1,10 @@
+import { Queue } from 'bullmq';
 import { Contacts } from '../db/Contacts';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
+import { checkDomainStatus } from '../utils/helpers/domainHelpers';
 
 const redisClientForNormalMode = redis.getClient();
 
@@ -21,9 +23,7 @@ export interface PublishedStreamMessage {
 /**
  * Handles incoming email message and performs necessary operations like storing contact information,
  * populating refined_persons table and reporting progress.
- * @async
- * @function handleMessage
- * @param {options} options - The options object.
+ * @param options - The options object.
  * @param options.seqNumber - The sequence number of the email message.
  * @param options.body - The body of the email message.
  * @param options.header - The header of the email message.
@@ -33,8 +33,7 @@ export interface PublishedStreamMessage {
  * @param options.userIdentifier - The hash of the user's identifier.
  * @param options.isLast - Indicates whether this is the last message in a sequence of messages.
  * @param options.miningId - The id of the mining process.
- * @param {import('../db/Contacts').Contacts} contacts - The contacts db accessor.
- * @returns {Promise<void>}
+ * @param contacts - The contacts db accessor.
  */
 async function handleMessage(
   {
@@ -43,15 +42,18 @@ async function handleMessage(
     folderName,
     userId,
     userEmail,
-    userIdentifier,
-    isLast
+    userIdentifier
   }: PublishedStreamMessage,
-  contacts: Contacts
+  contacts: Contacts,
+  emailVerificationQueue: Queue
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
     redisClientForNormalMode,
+    emailVerificationQueue,
+    checkDomainStatus,
     userEmail,
+    userId,
     header,
     body,
     folderName
@@ -60,16 +62,6 @@ async function handleMessage(
   try {
     const extractedContacts = await message.getContacts();
     await contacts.create(extractedContacts, userId);
-
-    if (isLast) {
-      logger.info('Calling populate.', {
-        metadata: {
-          isLast,
-          userHash: userIdentifier
-        }
-      });
-      await contacts.populate(userId);
-    }
   } catch (error) {
     logger.error(
       'Failed when processing message from the stream',
@@ -81,16 +73,18 @@ async function handleMessage(
 
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
- * @param {Array} message - Array containing the stream message ID and the message data
  */
 export default function initializeMessageProcessor(contacts: Contacts) {
   return {
-    processStreamData: async (message: [string, string]) => {
+    processStreamData: async (
+      message: [string, string],
+      emailVerificationQueue: Queue
+    ) => {
       const [, msg] = message;
       const data: PublishedStreamMessage = JSON.parse(msg[1]);
       const { miningId } = data;
 
-      await handleMessage(data, contacts);
+      await handleMessage(data, contacts, emailVerificationQueue);
       return miningId;
     }
   };
