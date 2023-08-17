@@ -1,5 +1,5 @@
 import { Status } from '../services/email-status/EmailStatusVerifier';
-import { ExtractionResult } from './types';
+import { Contact, ExtractionResult } from './types';
 
 export interface Contacts {
   create(contact: ExtractionResult, userId: string): Promise<void>;
@@ -9,4 +9,5 @@ export interface Contacts {
     userId: string,
     status: Status
   ): Promise<boolean>;
+  getContactsTable(userId: string): Promise<Contact[] | undefined>;
 }
