@@ -23,7 +23,7 @@
     "pinia": "^2.1.4",
     "quasar": "^2.12.1",
     "vue": "^3.3.1",
-    "vue-router": "^4.2.0"
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@quasar/app-vite": "^1.0.0",
