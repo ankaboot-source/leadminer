@@ -220,11 +220,13 @@ import {
   User,
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
-import { getCsvStr } from "src/helpers/csv";
+import getLocalizedCsvSeparator from "src/helpers/csv";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
 import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { api } from "src/boot/axios";
+import { AxiosError } from "axios";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
@@ -481,49 +483,21 @@ async function exportTable() {
     });
     return;
   }
-  const { data: session } = await supabase.auth.getUser();
-
-  const currentDatetime = new Date();
-  const email = session.user?.email;
-  const fileName = `leadminer-${email}-${currentDatetime
-    .toISOString()
-    .slice(0, 10)}.csv`;
-
-  const csvData = rows.value.map((r) => ({
-    name: r.name?.trim(),
-    email: r.email,
-    recency: r.recency ? new Date(r.recency).toISOString().slice(0, 10) : "",
-    seniority: r.seniority
-      ? new Date(r.seniority).toISOString().slice(0, 10)
-      : "",
-    occurrence: r.occurrence,
-    sender: r.sender,
-    recipient: r.recipient,
-    conversations: r.conversations,
-    repliedConversations: r.replied_conversations,
-    tags: r.tags?.join("\n"),
-    status: r.status,
-  }));
-
   try {
-    const csvStr = await getCsvStr(
-      [
-        { key: "name", header: "Name" },
-        { key: "email", header: "Email" },
-        { key: "recency", header: "Recency" },
-        { key: "seniority", header: "Seniority" },
-        { key: "occurrence", header: "Occurrence" },
-        { key: "sender", header: "Sender" },
-        { key: "recipient", header: "Recipient" },
-        { key: "conversations", header: "Conversations" },
-        { key: "repliedConversations", header: "Replied conversations" },
-        { key: "tags", header: "Tags" },
-        { key: "status", header: "Status" },
-      ],
-      csvData
-    );
+    const delimiter = getLocalizedCsvSeparator();
+    const currentDatetime = new Date().toISOString().slice(0, 10);
 
-    const status = exportFile(fileName, csvStr, "text/csv");
+    const { data: session } = await supabase.auth.getUser();
+    const email = session.user?.email;
+
+    const response = await api.get(
+      `/imap/export/csv?delimiter=${encodeURIComponent(delimiter)}`
+    );
+    const status = exportFile(
+      `leadminer-${email}-${currentDatetime}.csv`,
+      response.data,
+      "text/csv"
+    );
 
     if (status !== true) {
       $q.notify({
@@ -541,7 +515,22 @@ async function exportTable() {
       icon: "task_alt",
     });
   } catch (error) {
-    $q.notify("Error when exporting to CSV");
+    let message = "Error when exporting to CSV";
+
+    if (error instanceof AxiosError) {
+      message = error.response?.data.message ?? error.message;
+
+      if (message.toLocaleLowerCase() === "network error") {
+        message =
+          "Unable to access server. Please retry again or contact your service provider.";
+      }
+    }
+
+    $q.notify({
+      message,
+      color: "negative",
+      icon: "error",
+    });
   }
 }
 

@@ -15,15 +15,14 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
-    "@quasar/extras": "^1.16.4",
+    "@quasar/extras": "^1.16.5",
     "@supabase/supabase-js": "^2.31.0",
     "axios": "^1.4.0",
-    "csv-stringify": "^6.4.0",
     "object-scan": "^18.5.1",
-    "pinia": "^2.1.4",
-    "quasar": "^2.12.1",
+    "pinia": "^2.1.6",
+    "quasar": "^2.12.3",
     "vue": "^3.3.1",
-    "vue-router": "^4.2.0"
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@quasar/app-vite": "^1.0.0",
