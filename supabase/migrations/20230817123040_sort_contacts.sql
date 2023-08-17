@@ -1,4 +1,4 @@
--- Add ORDER BY status, reply, occurrence
+-- Add ORDER BY status, reply, occurrence. (Line 38)
 CREATE OR REPLACE FUNCTION get_contacts_table(userid uuid)
 RETURNS TABLE (
     email TEXT,
