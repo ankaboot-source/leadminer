@@ -5,7 +5,8 @@
       <div class="text-h4">Settings</div>
     </div>
     <h2 class="text-h6 q-mt-xs">Profile Information</h2>
-    <q-form class="q-gutter-sm flex column" @submit="updateProfile">
+    <q-form class="q-gutter-sm flex column text-h4" @submit="updateProfile">
+      <q-input v-model="accountCredits" outlined label="Account Credits" />
       <q-input v-model="fullName" outlined label="Full Name" />
       <q-input
         v-model="email"
@@ -120,8 +121,10 @@ import { useRouter } from "vue-router";
 const $quasar = useQuasar();
 const $router = useRouter();
 
-const fullName = ref("");
+const userId = ref("");
 const email = ref("");
+const accountCredits = ref("");
+const fullName = ref("");
 const password = ref("");
 
 const isPwd = ref(true);
@@ -133,13 +136,28 @@ const isSocialLogin = ref(false);
 onMounted(async () => {
   const { session } = (await supabase.auth.getSession()).data;
 
-  if (session) {
-    const { full_name: fullUserName, email: userEmail } =
-      session.user.user_metadata;
-    fullName.value = fullUserName;
-    email.value = userEmail;
-    isSocialLogin.value = Boolean(session.provider_token);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .single();
+
+  if (!session || !profile) {
+    return;
   }
+
+  const { provider_token: providerToken } = session;
+  const {
+    id,
+    email: userEmail,
+    full_name: userFullName,
+    total_credits: credits,
+  } = profile;
+
+  userId.value = id;
+  email.value = userEmail;
+  fullName.value = userFullName;
+  accountCredits.value = credits;
+  isSocialLogin.value = Boolean(providerToken);
 });
 
 function showWarning() {
@@ -157,16 +175,26 @@ function goToDashboard() {
 async function updateProfile() {
   isLoading.value = true;
   try {
-    const body = {
-      data: {
-        name: fullName.value,
-        full_name: fullName.value,
+    const canChangeEmailPassword = Boolean(isSocialLogin.value);
+
+    if (canChangeEmailPassword && password.value.length > 0) {
+      const { error } = await supabase.auth.updateUser({
         email: email.value,
-      },
-      email: email.value,
-      password: password.value.length > 0 ? password.value : undefined,
-    };
-    const { error } = await supabase.auth.updateUser(body);
+        password: password.value,
+      });
+
+      if (error) {
+        throw error;
+      }
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        email: canChangeEmailPassword ? email.value : undefined,
+        full_name: fullName.value,
+        total_credits: accountCredits.value,
+      })
+      .eq("id", userId.value);
 
     if (error) {
       throw error;
