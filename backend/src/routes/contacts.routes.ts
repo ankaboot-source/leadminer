@@ -10,7 +10,10 @@ export default function initializeContactsRoutes(
 ) {
   const router = Router();
 
-  const { exportContactsCSV } = initializeContactsController(contacts);
+  const { exportContactsCSV } = initializeContactsController(
+    contacts,
+    authResolver
+  );
 
   router.get(
     '/export/csv',

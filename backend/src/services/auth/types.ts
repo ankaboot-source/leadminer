@@ -8,6 +8,14 @@ interface AuthUser {
   email: string | undefined;
   role: string | undefined;
 }
+
+export interface Profile {
+  id: string;
+  email: string;
+  name: string;
+  total_credits: number;
+}
+
 /**
  * Represents an authentication error.
  */

@@ -30,6 +30,43 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
+  async getUserProfile(userId: string) {
+    try {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('*')
+        .match({ id: userId })
+        .single();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data;
+    } catch (e) {
+      this.logger.error('Failed to get user profile', e);
+      return undefined;
+    }
+  }
+
+  async updateUserProfile(userId: string, updateData: Record<string, any>) {
+    try {
+      const { status, error } = await this.client
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return status === 204;
+    } catch (error) {
+      this.logger.error('Failed to update user profile', error);
+      return undefined;
+    }
+  }
+
   async deleteUser(userId: string) {
     try {
       const { data, error } = await this.client.auth.admin.deleteUser(userId);
