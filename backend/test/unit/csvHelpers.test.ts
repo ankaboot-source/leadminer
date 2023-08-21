@@ -1,25 +1,30 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, test } from '@jest/globals';
 import {
   getLocalizedCsvSeparator,
   getCsvStr
 } from '../../src/utils/helpers/csv';
 
 describe('getLocalizedCsvSeparator', () => {
-  it('should return ; for supported languages', () => {
-    expect(getLocalizedCsvSeparator('fr-FR')).toBe(';');
-    expect(getLocalizedCsvSeparator('de-DE')).toBe(';');
-    expect(getLocalizedCsvSeparator('es-ES')).toBe(';');
-    expect(getLocalizedCsvSeparator('pt-PT')).toBe(';');
-    expect(getLocalizedCsvSeparator('it-IT')).toBe(';');
+  test.each([
+    ['fr-FR', ';'],
+    ['de-DE', ';'],
+    ['es-ES', ';'],
+    ['pt-PT', ';'],
+    ['it-IT', ';']
+  ])('should return ; for language %s', (language, expectedSeparator) => {
+    expect(getLocalizedCsvSeparator(language)).toBe(expectedSeparator);
   });
 
-  it('should return , for unsupported languages', () => {
-    expect(getLocalizedCsvSeparator('en-US')).toBe(',');
-    expect(getLocalizedCsvSeparator('ja-JP')).toBe(',');
+  test.each([
+    ['en-US', ','],
+    ['ja-JP', ',']
+  ])('should return , for language %s', (language, expectedSeparator) => {
+    expect(getLocalizedCsvSeparator(language)).toBe(expectedSeparator);
   });
 
-  it('should return default when string is empty', () => {
+  it('should return default for falsy strings', () => {
     expect(getLocalizedCsvSeparator('')).toBe(',');
+    expect(getLocalizedCsvSeparator('test')).toBe(',');
   });
 });
 
