@@ -220,7 +220,6 @@ import {
   User,
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
-import getLocalizedCsvSeparator from "src/helpers/csv";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
 import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
@@ -484,15 +483,12 @@ async function exportTable() {
     return;
   }
   try {
-    const delimiter = getLocalizedCsvSeparator();
     const currentDatetime = new Date().toISOString().slice(0, 10);
 
     const { data: session } = await supabase.auth.getUser();
     const email = session.user?.email;
 
-    const response = await api.get(
-      `/imap/export/csv?delimiter=${encodeURIComponent(delimiter)}`
-    );
+    const response = await api.get(`/imap/export/csv`);
     const status = exportFile(
       `leadminer-${email}-${currentDatetime}.csv`,
       response.data,
