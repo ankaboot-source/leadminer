@@ -1,6 +1,21 @@
 import { stringify } from 'csv-stringify';
 
-export default function getCsvStr<T>(
+export function getLocalizedCsvSeparator(locale: string) {
+  const language = locale.substring(0, 2);
+
+  switch (language) {
+    case 'fr':
+    case 'de':
+    case 'es':
+    case 'pt':
+    case 'it':
+      return ';';
+    default:
+      return ',';
+  }
+}
+
+export function getCsvStr<T>(
   columns: { key: keyof T; header: string }[],
   rows: T[],
   delimiter: string
