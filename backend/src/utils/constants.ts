@@ -84,7 +84,20 @@ export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
   'order-update@amazon.',
   'shipment-tracking@amazon.',
   'payments-update@amazon.',
-  'primenow-reply@amazon.'
+  'primenow-reply@amazon.',
+  'confirmation@',
+  'ship-confirm@',
+  'order_confirm@',
+  'commandes@',
+  'commande@',
+  'orders@',
+  'replies@',
+  'infos.fr@',
+  'postmaster@',
+  'feedback@',
+  'mail@',
+  'connect@',
+  'livraison@'
 ];
 export const NOREPLY_EMAIL_ADDRESS_INCLUDES = [
   'accusereception',
@@ -141,7 +154,6 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'communication@',
   'hr@',
   'marketing@',
-  'email@',
   'carreer@',
   'formation@',
   'bienvenue@',
@@ -155,5 +167,13 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   '.intercom-mail.com',
   'help@',
   'customercare@',
-  'community@'
+  'community@',
+  'web@',
+  'service-client@',
+  'serviceclient@',
+  'windows@',
+  'commercial@',
+  'customer.service@',
+  'developpement@',
+  'webmaster@'
 ];
