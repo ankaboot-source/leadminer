@@ -16,6 +16,7 @@
       :filter-method="filterFn"
       :rows="rows"
       :pagination="initialPagination"
+      :sort-method="customSortLogic"
       binary-state-sort
       bordered
       flat
@@ -242,12 +243,7 @@ let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
 
-const initialPagination = {
-  sortBy: "status",
-};
-
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
-
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
@@ -373,18 +369,93 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
+const initialPagination = {
+  sortBy: "custom",
+};
+
+function customSortLogic(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rowsToFilter: readonly Record<keyof Contact, any>[],
+  sortBy: string,
+  descending: boolean
+) {
+  switch (sortBy) {
+    case "custom":
+      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
+        if (a.status !== b.status) {
+          // Sort by 'status' column (VALID before UNKNOWN)
+          return (
+            EmailStatusScore[a.status as EmailStatus] -
+            EmailStatusScore[b.status as EmailStatus]
+          );
+        }
+
+        if (a.replied_conversations !== b.replied_conversations) {
+          // Sort by 'reply' column in descending order
+          return (
+            (b.replied_conversations ?? 0) - (a.replied_conversations ?? 0)
+          );
+        }
+
+        // Sort by 'occurrence' column in descending order
+        return (b.occurrence ?? 0) - (a.occurrence ?? 0);
+      });
+
+    case "status":
+      return [...rowsToFilter].sort((a: Contact, b: Contact) =>
+        descending
+          ? EmailStatusScore[a[sortBy] as EmailStatus] -
+            EmailStatusScore[b[sortBy] as EmailStatus]
+          : EmailStatusScore[b[sortBy] as EmailStatus] -
+            EmailStatusScore[a[sortBy] as EmailStatus]
+      );
+
+    default:
+      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "string") {
+        return [...rowsToFilter].sort(
+          (a: Record<string, string>, b: Record<string, string>) => {
+            const aValue = a[sortBy as keyof Contact] ?? "";
+            const bValue = b[sortBy as keyof Contact] ?? "";
+
+            return descending
+              ? bValue.localeCompare(aValue)
+              : aValue.localeCompare(bValue);
+          }
+        );
+      }
+
+      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "number") {
+        return [...rowsToFilter].sort(
+          (a: Record<string, number>, b: Record<string, number>) => {
+            const aValue = a[sortBy] ?? 0;
+            const bValue = b[sortBy] ?? 0;
+
+            return descending ? aValue - bValue : bValue - aValue;
+          }
+        );
+      }
+
+      return rowsToFilter;
+  }
+}
+
 const visibleColumns = ref([
   "copy",
   "email",
   "name",
   "occurrence",
   "recency",
-  "reply",
+  "replied_conversations",
   "tags",
   "status",
 ]);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any = [
+  {
+    // This colums is only used to trigger the custom sort.
+    name: "custom",
+  },
   {
     name: "copy",
     label: "",
@@ -397,8 +468,6 @@ const columns: any = [
     field: "email",
     sortable: true,
     align: "left",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: (a: any, b: any) => a.localeCompare(b),
   },
   {
     name: "name",
@@ -406,8 +475,6 @@ const columns: any = [
     field: "name",
     sortable: true,
     align: "left",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: (a: any, b: any) => b.localeCompare(a),
   },
   {
     name: "recency",
@@ -442,7 +509,7 @@ const columns: any = [
     sortable: true,
   },
   {
-    name: "reply",
+    name: "replied_conversations",
     label: "Reply",
     field: "replied_conversations",
     align: "center",
@@ -460,8 +527,6 @@ const columns: any = [
     align: "center",
     field: "status",
     sortable: true,
-    sort: (a: EmailStatus, b: EmailStatus) =>
-      EmailStatusScore[a] - EmailStatusScore[b],
   },
 ];
 
