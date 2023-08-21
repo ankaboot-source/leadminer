@@ -10,15 +10,10 @@ describe('getLocalizedCsvSeparator', () => {
     ['de-DE', ';'],
     ['es-ES', ';'],
     ['pt-PT', ';'],
-    ['it-IT', ';']
-  ])('should return ; for language %s', (language, expectedSeparator) => {
-    expect(getLocalizedCsvSeparator(language)).toBe(expectedSeparator);
-  });
-
-  test.each([
+    ['it-IT', ';'],
     ['en-US', ','],
     ['ja-JP', ',']
-  ])('should return , for language %s', (language, expectedSeparator) => {
+  ])('should return ; for language %s', (language, expectedSeparator) => {
     expect(getLocalizedCsvSeparator(language)).toBe(expectedSeparator);
   });
 
