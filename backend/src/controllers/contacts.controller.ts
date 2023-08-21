@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { User } from '@supabase/supabase-js';
 import { Contacts } from '../db/Contacts';
-import getCsvStr from '../utils/helpers/csv';
+import { getCsvStr, getLocalizedCsvSeparator } from '../utils/helpers/csv';
 
 export default function initializeContactsController(contacts: Contacts) {
   return {
@@ -16,7 +16,11 @@ export default function initializeContactsController(contacts: Contacts) {
             .json({ message: 'No contacts available for export' });
         }
 
-        const csvSeparator = String(req.query.delimiter ?? ',');
+        const delimiterOption = req.query.delimiter;
+        const localeFromHeader = req.headers['accept-language'];
+        const csvSeparator = delimiterOption
+          ? String(delimiterOption)
+          : getLocalizedCsvSeparator(localeFromHeader ?? '');
 
         const csvData = minedContacts.map((contact) => ({
           name: contact.name?.trim(),
