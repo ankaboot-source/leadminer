@@ -488,7 +488,7 @@ async function exportTable() {
     const { data: session } = await supabase.auth.getUser();
     const email = session.user?.email;
 
-    const response = await api.get(`/imap/export/csv`);
+    const response = await api.get('/imap/export/csv');
     const status = exportFile(
       `leadminer-${email}-${currentDatetime}.csv`,
       response.data,
