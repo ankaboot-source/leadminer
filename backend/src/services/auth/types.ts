@@ -13,7 +13,7 @@ export interface Profile {
   id: string;
   email: string;
   name: string;
-  total_credits: number;
+  credits: number;
 }
 
 /**
