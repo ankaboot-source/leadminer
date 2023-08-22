@@ -374,7 +374,6 @@ const initialPagination = {
 };
 
 function customSortLogic(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rowsToFilter: readonly Contact[],
   sortBy: string,
   descending: boolean
