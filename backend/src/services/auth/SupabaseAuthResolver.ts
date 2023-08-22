@@ -30,7 +30,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async getUserProfile(userId: string) {
+  async getProfile(userId: string) {
     try {
       const { data, error } = await this.client
         .from('profiles')

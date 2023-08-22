@@ -5,7 +5,7 @@ import { Profile } from './types';
 export default interface AuthResolver {
   getAccessToken(req: Request): string | undefined;
   getUser(accessToken: string): Promise<User | undefined>;
-  getUserProfile(userId: string): Promise<Profile | undefined>;
+  getProfile(userId: string): Promise<Profile | undefined>;
   updateProfile(
     userId: string,
     updateData: Record<string, any>
