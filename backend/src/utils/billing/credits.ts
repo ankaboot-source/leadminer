@@ -23,7 +23,6 @@ export default function createCreditVerifier(
      * Verifies if the user has enough credits to perform an action,
      * calculates a quota, and deducts the credits if successful.
      *
-     * @param req - Express.js request object.
      * @param res - Express.js response object.
      * @param units - The nuumber of emails or contacts.
      * @throws {Error} - Throws an error if the credit deduction fails.
