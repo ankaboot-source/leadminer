@@ -16,6 +16,7 @@
       :filter-method="filterFn"
       :rows="rows"
       :pagination="initialPagination"
+      :sort-method="customSortLogic"
       binary-state-sort
       bordered
       flat
@@ -222,7 +223,7 @@ import {
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
-import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
+import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { api } from "src/boot/axios";
 import { AxiosError } from "axios";
@@ -241,12 +242,7 @@ let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
 
-const initialPagination = {
-  sortBy: "status",
-};
-
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
-
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
@@ -372,18 +368,94 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
+const initialPagination = {
+  sortBy: "custom",
+};
+
+function customSortLogic(
+  rowsToFilter: readonly Contact[],
+  sortBy: string,
+  descending: boolean
+) {
+  switch (sortBy) {
+    case "custom":
+      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
+        const {
+          status: statusA,
+          replied_conversations: repliedA,
+          occurrence: occurrenceA,
+        } = a;
+        const {
+          status: statusB,
+          replied_conversations: repliedB,
+          occurrence: occurrenceB,
+        } = b;
+
+        if (statusA !== statusB) {
+          // Sort by 'status' column (VALID before UNKNOWN)
+          return EmailStatusScore[statusA] - EmailStatusScore[statusB];
+        }
+
+        if (repliedA !== repliedB) {
+          // Sort by 'reply' column in descending order
+          return (repliedB ?? 0) - (repliedA ?? 0);
+        }
+        // Sort by 'occurrence' column in descending order
+        return (occurrenceB ?? 0) - (occurrenceA ?? 0);
+      });
+
+    case "status":
+      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
+        const { status: statusA } = a;
+        const { status: statusB } = b;
+
+        return descending
+          ? EmailStatusScore[statusA] - EmailStatusScore[statusB]
+          : EmailStatusScore[statusB] - EmailStatusScore[statusA];
+      });
+
+    default:
+      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "string") {
+        return [...rowsToFilter].sort((a, b) => {
+          const aValue = (a[sortBy as keyof Contact] ?? "") as string;
+          const bValue = (b[sortBy as keyof Contact] ?? "") as string;
+
+          return descending
+            ? bValue.localeCompare(aValue)
+            : aValue.localeCompare(bValue);
+        });
+      }
+
+      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "number") {
+        return [...rowsToFilter].sort((a, b) => {
+          const aValue = a[sortBy as keyof Contact] as number;
+          const bValue = b[sortBy as keyof Contact] as number;
+
+          return descending ? aValue - bValue : bValue - aValue;
+        });
+      }
+
+      return rowsToFilter;
+  }
+}
+
 const visibleColumns = ref([
   "copy",
   "email",
   "name",
   "occurrence",
   "recency",
-  "reply",
+  "replied_conversations",
   "tags",
   "status",
 ]);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any = [
+  {
+    // This colums is only used to trigger the custom sort.
+    name: "custom",
+  },
   {
     name: "copy",
     label: "",
@@ -396,8 +468,6 @@ const columns: any = [
     field: "email",
     sortable: true,
     align: "left",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: (a: any, b: any) => a.localeCompare(b),
   },
   {
     name: "name",
@@ -405,8 +475,6 @@ const columns: any = [
     field: "name",
     sortable: true,
     align: "left",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: (a: any, b: any) => b.localeCompare(a),
   },
   {
     name: "recency",
@@ -441,7 +509,7 @@ const columns: any = [
     sortable: true,
   },
   {
-    name: "reply",
+    name: "replied_conversations",
     label: "Reply",
     field: "replied_conversations",
     align: "center",
@@ -459,8 +527,6 @@ const columns: any = [
     align: "center",
     field: "status",
     sortable: true,
-    sort: (a: EmailStatus, b: EmailStatus) =>
-      EmailStatusScore[a] - EmailStatusScore[b],
   },
 ];
 
