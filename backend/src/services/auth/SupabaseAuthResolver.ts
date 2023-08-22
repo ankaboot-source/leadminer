@@ -49,7 +49,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async updateUserProfile(userId: string, updateData: Record<string, any>) {
+  async updateProfile(userId: string, updateData: Record<string, any>) {
     try {
       const { status, error } = await this.client
         .from('profiles')
