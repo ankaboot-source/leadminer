@@ -6,9 +6,9 @@ import AuthResolver from '../../services/auth/AuthResolver';
  * to perform a certain action.
  *
  * @param enableVerifier - Whether to enabled/disable verification.
- * @param creditsPerUnit - The number of credits required per unit of action.
+ * @param creditsPerUnit - The number of credits required per contact or email.
  * @param authResolver - Authentication resolver.
- * @returns - A function that verifies if the user has enough credits.
+ * @returns - Verification function or undefined.
  */
 export default function createCreditVerifier(
   enableVerifier: boolean,
@@ -38,7 +38,7 @@ export default function createCreditVerifier(
 
       const { user } = res.locals;
 
-      const { credits } = (await authResolver.getUserProfile(user.id)) ?? {};
+      const { credits } = (await authResolver.getProfile(user.id)) ?? {};
 
       if (credits === undefined) {
         return null;
