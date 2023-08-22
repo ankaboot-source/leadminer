@@ -375,64 +375,66 @@ const initialPagination = {
 
 function customSortLogic(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  rowsToFilter: readonly Record<keyof Contact, any>[],
+  rowsToFilter: readonly Contact[],
   sortBy: string,
   descending: boolean
 ) {
   switch (sortBy) {
     case "custom":
       return [...rowsToFilter].sort((a: Contact, b: Contact) => {
-        if (a.status !== b.status) {
+        const {
+          status: statusA,
+          replied_conversations: repliedA,
+          occurrence: occurrenceA,
+        } = a;
+        const {
+          status: statusB,
+          replied_conversations: repliedB,
+          occurrence: occurrenceB,
+        } = b;
+
+        if (statusA !== statusB) {
           // Sort by 'status' column (VALID before UNKNOWN)
-          return (
-            EmailStatusScore[a.status as EmailStatus] -
-            EmailStatusScore[b.status as EmailStatus]
-          );
+          return EmailStatusScore[statusA] - EmailStatusScore[statusB];
         }
 
-        if (a.replied_conversations !== b.replied_conversations) {
+        if (repliedA !== repliedB) {
           // Sort by 'reply' column in descending order
-          return (
-            (b.replied_conversations ?? 0) - (a.replied_conversations ?? 0)
-          );
+          return (repliedB ?? 0) - (repliedA ?? 0);
         }
-
         // Sort by 'occurrence' column in descending order
-        return (b.occurrence ?? 0) - (a.occurrence ?? 0);
+        return (occurrenceB ?? 0) - (occurrenceA ?? 0);
       });
 
     case "status":
-      return [...rowsToFilter].sort((a: Contact, b: Contact) =>
-        descending
-          ? EmailStatusScore[a[sortBy] as EmailStatus] -
-            EmailStatusScore[b[sortBy] as EmailStatus]
-          : EmailStatusScore[b[sortBy] as EmailStatus] -
-            EmailStatusScore[a[sortBy] as EmailStatus]
-      );
+      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
+        const { status: statusA } = a;
+        const { status: statusB } = b;
+
+        return descending
+          ? EmailStatusScore[statusA] - EmailStatusScore[statusB]
+          : EmailStatusScore[statusB] - EmailStatusScore[statusA];
+      });
 
     default:
       if (typeof rowsToFilter[0][sortBy as keyof Contact] === "string") {
-        return [...rowsToFilter].sort(
-          (a: Record<string, string>, b: Record<string, string>) => {
-            const aValue = a[sortBy as keyof Contact] ?? "";
-            const bValue = b[sortBy as keyof Contact] ?? "";
+        return [...rowsToFilter].sort((a, b) => {
+          const aValue = (a[sortBy as keyof Contact] ?? "") as string;
+          const bValue = (b[sortBy as keyof Contact] ?? "") as string;
 
-            return descending
-              ? bValue.localeCompare(aValue)
-              : aValue.localeCompare(bValue);
-          }
-        );
+          return descending
+            ? bValue.localeCompare(aValue)
+            : aValue.localeCompare(bValue);
+        });
       }
 
       if (typeof rowsToFilter[0][sortBy as keyof Contact] === "number") {
-        return [...rowsToFilter].sort(
-          (a: Record<string, number>, b: Record<string, number>) => {
-            const aValue = a[sortBy] ?? 0;
-            const bValue = b[sortBy] ?? 0;
+        return [...rowsToFilter].sort((a, b) => {
+          const aValue = a[sortBy as keyof Contact] as number;
+          const bValue = b[sortBy as keyof Contact] as number;
 
-            return descending ? aValue - bValue : bValue - aValue;
-          }
-        );
+          return descending ? aValue - bValue : bValue - aValue;
+        });
       }
 
       return rowsToFilter;
