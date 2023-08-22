@@ -20,8 +20,8 @@ export default function createCreditVerifier(
 
   return {
     /**
-     * Verifies if the user has enough credits to perform an action
-     * and calculates a quota, then deducts the credits if successful.
+     * Verifies if the user has enough credits to perform an action,
+     * calculates a quota, and deducts the credits if successful.
      *
      * @param req - Express.js request object.
      * @param res - Express.js response object.
