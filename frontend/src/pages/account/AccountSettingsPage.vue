@@ -144,11 +144,7 @@ onMounted(async () => {
   }
 
   const { provider_token: providerToken } = session;
-  const {
-    id,
-    email: userEmail,
-    full_name: userFullName,
-  } = profile;
+  const { id, email: userEmail, full_name: userFullName } = profile;
 
   userId.value = id;
   email.value = userEmail;
@@ -185,12 +181,10 @@ async function updateProfile() {
     }
     const { error } = await supabase
       .from("profiles")
-      .update(
-        {
-          email: canChangeEmailPassword ? email.value : undefined,
-          full_name: fullName.value,
-        }
-      )
+      .update({
+        email: canChangeEmailPassword ? email.value : undefined,
+        full_name: fullName.value,
+      })
       .eq("id", userId.value);
 
     if (error) {

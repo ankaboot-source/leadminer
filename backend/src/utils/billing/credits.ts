@@ -45,7 +45,6 @@ export default function createCreditVerifier(
 
       const calculatedQuota = units * CREDITS_PER_UNIT;
       const hasAvailableCredits = credits >= calculatedQuota;
-      const remainingCredits = hasAvailableCredits && credits - calculatedQuota;
 
       if (!hasAvailableCredits) {
         return res
@@ -54,7 +53,7 @@ export default function createCreditVerifier(
       }
 
       const updatedCredit = await authResolver.updateProfile(user.id, {
-        credits: remainingCredits // update with the new credits.
+        credits: credits - calculatedQuota // update with the new credits.
       });
 
       if (!updatedCredit) {

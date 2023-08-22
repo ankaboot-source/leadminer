@@ -64,8 +64,8 @@ export default function initializeContactsController(
 
         // Call credit verification process if enabled
         const verification = await createCreditVerifier(
-          Boolean(process.env.ENABLE_PAYMENT) || false,
-          parseInt(process.env.CREDIT_PER_CONTACT || '0')
+          Boolean(process.env.ENABLE_PAYMENT) ?? false,
+          parseInt(process.env.CREDIT_PER_CONTACT ?? '0')
         )?.verifyThenDeduct(res, authResolver, minedContacts.length);
 
         return (
