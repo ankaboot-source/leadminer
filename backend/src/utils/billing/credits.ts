@@ -54,7 +54,7 @@ export default function createCreditVerifier(
       }
 
       const updatedCredit = await authResolver.updateProfile(user.id, {
-        credits: remainingCredits // deduct credits from the user.
+        credits: remainingCredits // update with the new credits.
       });
 
       if (!updatedCredit) {
