@@ -224,7 +224,7 @@ import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import getLocalizedCsvSeparator from "src/helpers/csv";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/store/leadminer";
-import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
+import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { api } from "src/boot/axios";
 import { AxiosError } from "axios";
