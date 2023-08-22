@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { User } from '@supabase/supabase-js';
 import { Contacts } from '../db/Contacts';
-import getCsvStr from '../utils/helpers/csv';
 import AuthResolver from '../services/auth/AuthResolver';
+import { getCsvStr, getLocalizedCsvSeparator } from '../utils/helpers/csv';
 
 export default function initializeContactsController(
   contacts: Contacts,
@@ -52,7 +52,11 @@ export default function initializeContactsController(
           throw new Error('Failed to update the user credits.');
         }
 
-        const csvSeparator = String(req.query.delimiter ?? ',');
+        const delimiterOption = req.query.delimiter;
+        const localeFromHeader = req.headers['accept-language'];
+        const csvSeparator = delimiterOption
+          ? String(delimiterOption)
+          : getLocalizedCsvSeparator(localeFromHeader ?? '');
 
         const csvData = minedContacts.map((contact) => ({
           name: contact.name?.trim(),
