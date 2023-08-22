@@ -5,7 +5,7 @@
       <div class="text-h4">Settings</div>
     </div>
     <h2 class="text-h6 q-mt-xs">Profile Information</h2>
-    <q-form class="q-gutter-sm flex column text-h4" @submit="updateProfile">
+    <q-form class="q-gutter-sm flex column" @submit="updateProfile">
       <q-input v-model="fullName" outlined label="Full Name" />
       <q-input
         v-model="email"
