@@ -6,7 +6,6 @@
     </div>
     <h2 class="text-h6 q-mt-xs">Profile Information</h2>
     <q-form class="q-gutter-sm flex column text-h4" @submit="updateProfile">
-      <q-input v-model="accountCredits" outlined label="Account Credits" />
       <q-input v-model="fullName" outlined label="Full Name" />
       <q-input
         v-model="email"
@@ -123,7 +122,6 @@ const $router = useRouter();
 
 const userId = ref("");
 const email = ref("");
-const accountCredits = ref("");
 const fullName = ref("");
 const password = ref("");
 
@@ -150,13 +148,11 @@ onMounted(async () => {
     id,
     email: userEmail,
     full_name: userFullName,
-    total_credits: credits,
   } = profile;
 
   userId.value = id;
   email.value = userEmail;
   fullName.value = userFullName;
-  accountCredits.value = credits;
   isSocialLogin.value = Boolean(providerToken);
 });
 
@@ -189,11 +185,12 @@ async function updateProfile() {
     }
     const { error } = await supabase
       .from("profiles")
-      .update({
-        email: canChangeEmailPassword ? email.value : undefined,
-        full_name: fullName.value,
-        total_credits: accountCredits.value,
-      })
+      .update(
+        {
+          email: canChangeEmailPassword ? email.value : undefined,
+          full_name: fullName.value,
+        }
+      )
       .eq("id", userId.value);
 
     if (error) {
