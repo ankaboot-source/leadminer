@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Request } from 'express';
 import { Logger } from 'winston';
 import AuthResolver from './AuthResolver';
+import { Profile } from './types';
 
 export default class SupabaseAuthResolver implements AuthResolver {
   private readonly headerKey = 'x-sb-jwt';
@@ -49,7 +50,7 @@ export default class SupabaseAuthResolver implements AuthResolver {
     }
   }
 
-  async updateProfile(userId: string, updateData: Record<string, any>) {
+  async updateProfile(userId: string, updateData: Partial<Profile>) {
     try {
       const { status, error } = await this.client
         .from('profiles')

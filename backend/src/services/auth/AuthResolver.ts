@@ -8,7 +8,7 @@ export default interface AuthResolver {
   getProfile(userId: string): Promise<Profile | undefined>;
   updateProfile(
     userId: string,
-    updateData: Record<string, any>
+    updateData?: Partial<Profile>
   ): Promise<boolean | undefined>;
   deleteUser(userId: string): Promise<User | undefined>;
   deleteUserData(userId: string): Promise<true | undefined>;
