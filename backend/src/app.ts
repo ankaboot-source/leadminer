@@ -47,10 +47,7 @@ export default function initializeApp(
 
   app.use(
     '/api/auth',
-    initializeAuthRoutes(
-      authResolver as SupabaseAuthResolver,
-      userResolver as SupabaseUsers
-    )
+    initializeAuthRoutes(authResolver, userResolver)
   );
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
   app.use('/api/imap', initializeStreamRouter(tasksManager, authResolver));
