@@ -1,13 +1,18 @@
 import { NextFunction, Request, Response } from 'express';
 import { User } from '@supabase/supabase-js';
-import { Contacts } from '../db/Contacts';
-import AuthResolver from '../services/auth/AuthResolver';
+import { Contacts } from '../db/interfaces/Contacts';
 import { getCsvStr, getLocalizedCsvSeparator } from '../utils/helpers/csv';
-import createCreditVerifier from '../utils/billing/credits';
+import ENV from '../config';
+import {
+  INSUFFICIENT_CREDITS_STATUS,
+  INSUFFICIENT_CREDITS_MESSAGE,
+  createCreditHandler
+} from '../utils/billing/credits';
+import { Users } from '../db/interfaces/Users';
 
 export default function initializeContactsController(
   contacts: Contacts,
-  authResolver: AuthResolver
+  userResolver: Users
 ) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
@@ -63,15 +68,20 @@ export default function initializeContactsController(
         );
 
         // Call credit verification process if enabled
-        const verification = await createCreditVerifier(
-          Boolean(process.env.ENABLE_PAYMENT) ?? false,
-          parseInt(process.env.CREDIT_PER_CONTACT ?? '0')
-        )?.verifyThenDeduct(res, authResolver, minedContacts.length);
+        const succesfullOp = await createCreditHandler(
+          ENV.ENABLE_CREDIT,
+          ENV.CONTACT_CREDIT
+        )?.process(user.id, minedContacts.length, userResolver);
 
-        return (
-          verification ??
-          res.header('Content-Type', 'text/csv').status(200).send(csvStr)
-        );
+        console.log(succesfullOp);
+
+        if (!succesfullOp) {
+          return res
+            .status(INSUFFICIENT_CREDITS_STATUS)
+            .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
+        }
+
+        return res.header('Content-Type', 'text/csv').status(200).send(csvStr);
       } catch (err) {
         return next(err);
       }
