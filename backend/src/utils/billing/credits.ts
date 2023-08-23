@@ -1,64 +1,6 @@
 import { Users } from '../../db/interfaces/Users';
 
 /**
- * Get the user's credits from the authentication resolver.
- *
- * @param userId - User ID.
- * @param userResolver - An authentication resolver object.
- * @returns {Promise<number>} - The user's credits.
- * @throws {Error} - Throws an error if fetching credits fails.
- */
-async function getUserCredits(
-  userId: string,
-  userResolver: Users
-): Promise<number> {
-  const profile = await userResolver.getUserProfile(userId);
-  const credits = profile?.credits;
-
-  if (credits === undefined) {
-    throw new Error('Failed to get user credits.');
-  }
-
-  return credits;
-}
-
-/**
- * Deduct credits from the user's account.
- *
- * @param userId - User ID.
- * @param credits - The amount of credits to set.
- * @param userResolver - An authentication resolver object.
- * @returns Returns true if credit deduction is succesfull, Otherwise false.
- * @throws {Error} - Throws an error if updating credits fails.
- */
-async function setUserCredits(
-  userId: string,
-  credits: number,
-  userResolver: Users
-): Promise<boolean> {
-  const updatedCredit = await userResolver.updateUserProfile(userId, {
-    credits
-  });
-
-  if (!updatedCredit) {
-    throw new Error('Failed to update credits.');
-  }
-
-  return updatedCredit;
-}
-
-/**
- * Calculate the quota required for the action based on units and credits per unit.
- *
- * @param units - The number of emails or contacts.
- * @param creditsPerUnit - The number of credits required per contact or email.
- * @returns The calculated quota.
- */
-function calculateQuota(units: number, creditsPerUnit: number): number {
-  return units * creditsPerUnit;
-}
-
-/**
  * Creates a credit verifier function that checks if a user has enough credits
  * to perform a certain action.
  *
@@ -92,15 +34,27 @@ export function createCreditHandler(
       units: number,
       userResolver: Users
     ): Promise<boolean> {
-      const credits = await getUserCredits(userId, userResolver);
-      const calculatedQuota = calculateQuota(units, CREDITS_PER_UNIT);
+      const credits = (await userResolver.getUserProfile(userId))?.credits;
+
+      if (!credits) {
+        throw new Error('Failed to get user credits');
+      }
+
+      const calculatedQuota = units * CREDITS_PER_UNIT;
 
       if (credits < calculatedQuota) {
         return false;
       }
 
-      const remainingCredit = credits - calculatedQuota;
-      return setUserCredits(userId, remainingCredit, userResolver);
+      const updatedCredit = await userResolver.updateUserProfile(userId, {
+        credits: credits - calculatedQuota
+      });
+
+      if (!updatedCredit) {
+        throw new Error('Failed to update credits.');
+      }
+
+      return updatedCredit;
     }
   };
 }
