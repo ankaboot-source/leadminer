@@ -3,7 +3,6 @@
 
 create table public.profiles (
   user_id uuid not null references auth.users on delete cascade,
-  email text,
   full_name text,
   credits integer default 1500,
   stripe_customer_id text,
