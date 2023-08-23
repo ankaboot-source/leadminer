@@ -140,15 +140,21 @@ onMounted(async () => {
     .single();
 
   if (!session || !profile) {
+    $quasar.notify({
+      message: "Session is expired.",
+      color: "negative",
+      icon: "error",
+    });
+    await supabase.auth.signOut();
     return;
   }
 
   const { provider_token: providerToken } = session;
-  const { id, email: userEmail, full_name: userFullName } = profile;
+  const { user_id: userid, full_name: userFullName } = profile;
 
-  userId.value = id;
-  email.value = userEmail;
+  userId.value = userid;
   fullName.value = userFullName;
+  email.value = String(session.user.email);
   isSocialLogin.value = Boolean(providerToken);
 });
 
@@ -185,7 +191,7 @@ async function updateProfile() {
         email: canChangeEmailPassword ? email.value : undefined,
         full_name: fullName.value,
       })
-      .eq("id", userId.value);
+      .eq("user_id", userId.value);
 
     if (error) {
       throw error;
