@@ -9,13 +9,6 @@ interface AuthUser {
   role: string | undefined;
 }
 
-export interface Profile {
-  id: string;
-  email: string;
-  name: string;
-  credits: number;
-}
-
 /**
  * Represents an authentication error.
  */
