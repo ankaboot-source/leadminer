@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import initializeMiningController from '../controllers/mining.controller';
-import { MiningSources } from '../db/MiningSources';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
 import TasksManager from '../services/tasks-manager/TasksManager';

@@ -2,7 +2,7 @@
 import { Queue, QueueEvents } from 'bullmq';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
-import { Contacts } from '../../db/Contacts';
+import { Contacts } from '../../db/interfaces/Contacts';
 import {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP

@@ -13,7 +13,7 @@ import {
 } from '../../src/services/tasks-manager/utils';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 
-import { Contacts } from '../../src/db/Contacts';
+import { Contacts } from '../../src/db/interfaces/Contacts';
 import FakeEmailStatusVerifier from '../fakes/FakeEmailVerifier';
 
 jest.mock('../../src/config', () => ({

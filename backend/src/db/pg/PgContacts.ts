@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
 import { Status } from '../../services/email-status/EmailStatusVerifier';
-import { Contacts } from '../Contacts';
+import { Contacts } from '../interfaces/Contacts';
 import { Contact, ExtractionResult } from '../types';
 
 export default class PgContacts implements Contacts {
