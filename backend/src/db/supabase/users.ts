@@ -14,7 +14,7 @@ export default class SupabaseUsers implements Users {
       const { data, error } = await this.client
         .from('profiles')
         .select('*')
-        .match({ id: userId })
+        .match({ user_id: userId })
         .single();
 
       if (error) {
@@ -33,7 +33,7 @@ export default class SupabaseUsers implements Users {
       const { status, error } = await this.client
         .from('profiles')
         .update(updateData)
-        .eq('id', userId);
+        .eq('user_id', userId);
 
       if (error) {
         throw new Error(error.message);
