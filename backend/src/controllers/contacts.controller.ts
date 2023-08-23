@@ -73,8 +73,6 @@ export default function initializeContactsController(
           ENV.CONTACT_CREDIT
         )?.process(user.id, minedContacts.length, userResolver);
 
-        console.log(succesfullOp);
-
         if (!succesfullOp) {
           return res
             .status(INSUFFICIENT_CREDITS_STATUS)
