@@ -72,3 +72,10 @@ export interface Contact {
   alternate_names?: string[];
   tags?: Tag[];
 }
+
+export interface Profile {
+  id: string;
+  email: string;
+  name: string;
+  credits: number;
+}
