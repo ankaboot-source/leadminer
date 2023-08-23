@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
 import ENV from './config';
-import { MiningSources } from './db/MiningSources';
+import { MiningSources } from './db/interfaces/MiningSources';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
@@ -14,14 +14,17 @@ import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
 import initializeAuthRoutes from './routes/auth.routes';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import { Contacts } from './db/Contacts';
+import { Contacts } from './db/interfaces/Contacts';
 import initializeContactsRoutes from './routes/contacts.routes';
+import { Users } from './db/interfaces/Users';
+import SupabaseUsers from './db/supabase/users';
 
 export default function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
   miningSources: MiningSources,
-  contacts: Contacts
+  contacts: Contacts,
+  userResolver: Users
 ) {
   const app = express();
 
@@ -44,7 +47,10 @@ export default function initializeApp(
 
   app.use(
     '/api/auth',
-    initializeAuthRoutes(authResolver as SupabaseAuthResolver)
+    initializeAuthRoutes(
+      authResolver as SupabaseAuthResolver,
+      userResolver as SupabaseUsers
+    )
   );
   app.use('/api/imap', initializeImapRoutes(authResolver, miningSources));
   app.use('/api/imap', initializeStreamRouter(tasksManager, authResolver));
@@ -52,7 +58,10 @@ export default function initializeApp(
     '/api/imap',
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
-  app.use('/api/imap', initializeContactsRoutes(contacts, authResolver));
+  app.use(
+    '/api/imap',
+    initializeContactsRoutes(contacts, userResolver, authResolver)
+  );
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

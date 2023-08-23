@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '@supabase/supabase-js';
-import AuthResolver from '../services/auth/AuthResolver';
+import { Users } from '../db/interfaces/Users';
 
-export default function initializeAuthController(authResolver: AuthResolver) {
+export default function initializeAuthController(userResolver: Users) {
   return {
     async deleteUserAccount(_: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
 
       try {
-        const deleteRelatedData = await authResolver.deleteUserData(user.id);
+        const deleteRelatedData = await userResolver.deleteUserData(user.id);
 
         if (!deleteRelatedData) {
           throw new Error(
@@ -16,7 +16,7 @@ export default function initializeAuthController(authResolver: AuthResolver) {
           );
         }
 
-        const deleteUser = await authResolver.deleteUser(user.id);
+        const deleteUser = await userResolver.deleteUser(user.id);
 
         if (!deleteUser) {
           throw new Error(

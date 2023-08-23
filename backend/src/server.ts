@@ -15,6 +15,7 @@ import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
+import SupabaseUsers from './db/supabase/users';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -52,19 +53,21 @@ console.log(
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
-
-  const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const miningSources = new PgMiningSources(
     pool,
     logger,
     ENV.LEADMINER_API_HASH_SECRET
   );
+  const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
+  const userResolver = new SupabaseUsers(supabaseClient, logger);
+
   const app = initializeApp(
     authResolver,
     tasksManager,
     miningSources,
-    contactsResolver
+    contactsResolver,
+    userResolver
   );
 
   app.listen(ENV.LEADMINER_API_PORT, () => {
