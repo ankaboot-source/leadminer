@@ -9,8 +9,5 @@ export interface Contacts {
     userId: string,
     status: Status
   ): Promise<boolean>;
-  getContacts(
-    userId: string,
-    offset?: number
-  ): Promise<Contact[] | undefined>;
+  getContacts(userId: string, offset?: number): Promise<Contact[] | undefined>;
 }

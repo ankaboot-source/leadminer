@@ -341,7 +341,7 @@ async function syncTable() {
   } catch (error) {
     if (error instanceof Error) {
       /* eslint-disable no-console */
-      console.log(error.message)
+      console.log(error.message);
       $q.notify({
         message: "Error occured when refreshing table",
         textColor: "negative",
