@@ -334,9 +334,15 @@ async function getContacts(userId: string): Promise<Contact[]> {
 }
 
 async function syncTable() {
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  const contacts = await getContacts(user.id);
-  rows.value = contacts;
+  try {
+    const user = (await supabase.auth.getSession()).data.session?.user as User;
+    const contacts = await getContacts(user.id);
+    rows.value = contacts;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.log(error.message)
+    }
+  }
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -557,7 +563,7 @@ async function exportTable() {
     const response = await api.get("/imap/export/csv");
     const status = exportFile(
       `leadminer-${email}-${currentDatetime}.csv`,
-      response.data,
+      response.data.csv,
       "text/csv"
     );
 
