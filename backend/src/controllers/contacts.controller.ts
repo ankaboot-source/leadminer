@@ -68,15 +68,23 @@ export default function initializeContactsController(
         );
 
         // Call credit verification process if enabled
-        const succesfullOp = await createCreditHandler(
+        const handler = createCreditHandler(
           ENV.ENABLE_CREDIT,
           ENV.CONTACT_CREDIT
-        )?.process(user.id, minedContacts.length, userResolver);
+        );
 
-        if (!succesfullOp) {
-          return res
-            .status(INSUFFICIENT_CREDITS_STATUS)
-            .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
+        if (handler) {
+          const succesfullOp = await handler.process(
+            user.id,
+            minedContacts.length,
+            userResolver
+          );
+
+          if (!succesfullOp) {
+            return res
+              .status(INSUFFICIENT_CREDITS_STATUS)
+              .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
+          }
         }
 
         return res.header('Content-Type', 'text/csv').status(200).send(csvStr);
