@@ -18,7 +18,7 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       try {
-        const offset = parseInt(String(req.query.offset)) || 0;
+        const offset = parseInt(String(req.query.offset)) ?? 0;
         const minedContacts = await contacts.getContactsTable(user.id, offset);
 
         if (!minedContacts || minedContacts.length === 0) {

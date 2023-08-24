@@ -131,7 +131,7 @@ export default class PgContacts implements Contacts {
 
   async getContactsTable(
     userId: string,
-    offset: number = 0
+    offset = 0
   ): Promise<Contact[] | undefined> {
     try {
       const { rows } = await this.pool.query(
