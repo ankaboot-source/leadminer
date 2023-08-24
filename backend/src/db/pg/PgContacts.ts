@@ -129,7 +129,7 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getContactsTable(
+  async getContacts(
     userId: string,
     offset = 0
   ): Promise<Contact[] | undefined> {
