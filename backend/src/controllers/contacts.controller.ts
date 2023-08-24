@@ -18,8 +18,8 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       try {
-        const offset = parseInt(String(req.query.offset)) ?? 0;
-        const minedContacts = await contacts.getContactsTable(user.id, offset);
+        const offset = parseInt(String(req.query.offset ?? 0));
+        const minedContacts = await contacts.getContacts(user.id, offset);
 
         if (!minedContacts || minedContacts.length === 0) {
           return res
@@ -33,20 +33,20 @@ export default function initializeContactsController(
           userResolver
         );
 
-        const totalContactsForExport =
-          await creditHandler?.calculateAvailableUnitsFromCredits(
+        const { credits, accessAllUnits, availableUnits } =
+          (await creditHandler?.validateCreditUsage(
             user.id,
             minedContacts.length
-          );
+          )) ?? {};
 
-        if (totalContactsForExport === 0) {
+        if (credits === 0) {
           return res
             .status(INSUFFICIENT_CREDITS_STATUS)
             .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
         }
 
         // Minimize the length based on totalContactsForExport if available,
-        minedContacts.length = totalContactsForExport ?? minedContacts.length;
+        minedContacts.length = availableUnits ?? minedContacts.length;
 
         const delimiterOption = req.query.delimiter;
         const localeFromHeader = req.headers['accept-language'];
@@ -90,15 +90,16 @@ export default function initializeContactsController(
           csvSeparator
         );
 
-        // Deduct credits from user account
-        await creditHandler?.deductCredits(
-          user.id,
-          totalContactsForExport ?? 0
-        );
+        // Determine the HTTP status code based on whether all units can be accessed
+        const httpStatusCode = accessAllUnits ? 200 : 206;
+        // Calculate the offset of the last exported item to avoid duplicate data
+        const lastExportedOffset = (offset ?? 0) + (availableUnits ?? 0);
 
-        return res.status(200).json({
+        // Deduct credits from user account
+        await creditHandler?.deductCredits(user.id, availableUnits ?? 0);
+        return res.status(httpStatusCode).json({
           csv: csvStr,
-          last_exported_offset: (offset ?? 0) + (totalContactsForExport ?? 0)
+          last_exported_offset: lastExportedOffset
         });
       } catch (err) {
         return next(err);

@@ -23,25 +23,39 @@ export function createCreditHandler(
 
   return {
     /**
-     * Calculate the available credits for a user based on their profile and the specified units.
+     * Calculate credit-related information based on the user's profile and specified units.
      *
-     * @param userId - The user's ID.
+     * @param userId - The unique identifier of the user.
      * @param units - The number of units (e.g., emails or contacts) for which to calculate credits.
-     * @returns - The available credits, capped at the specified units.
-     * @throws - Throws an error if user credits cannot be retrieved.
+     * @returns An object containing credit-related information:
+     *   - `credits`: The user current credits.
+     *   - `canAccessAllUnits`: Indicates whether the user can access all specified units.
+     *   - `availableUnits`: The available units (e.g., emails or contacts) based on the user's credits.
+     * @throws Throws an error if user credits cannot be retrieved.
      */
-    async calculateAvailableUnitsFromCredits(
+    async validateCreditUsage(
       userId: string,
       units: number
-    ): Promise<number> {
+    ): Promise<{
+      credits: number;
+      accessAllUnits: boolean;
+      availableUnits: number;
+    }> {
       const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
 
       if (userCredits === undefined) {
         throw new Error('Failed to retrieve user credits.');
       }
 
-      const availableCredits = userCredits / CREDITS_PER_UNIT;
-      return availableCredits > units ? units : availableCredits;
+      const availableUnitsFromCredits = userCredits / CREDITS_PER_UNIT;
+      const accessAllUnits = availableUnitsFromCredits > units;
+      const availableUnits = accessAllUnits ? units : availableUnitsFromCredits;
+
+      return {
+        credits: userCredits,
+        accessAllUnits,
+        availableUnits
+      };
     },
 
     /**
