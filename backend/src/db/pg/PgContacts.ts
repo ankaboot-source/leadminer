@@ -10,7 +10,7 @@ export default class PgContacts implements Contacts {
     'SELECT * FROM refine_persons($1)';
 
   private static readonly SELECT_REFINED_CONTACTS_SQL =
-    'SELECT * FROM get_contacts_table($1)';
+    'SELECT * FROM get_contacts_table($1, $2)';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -129,11 +129,14 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getContactsTable(userId: string): Promise<Contact[] | undefined> {
+  async getContactsTable(
+    userId: string,
+    offset: number = 0
+  ): Promise<Contact[] | undefined> {
     try {
       const { rows } = await this.pool.query(
         PgContacts.SELECT_REFINED_CONTACTS_SQL,
-        [userId]
+        [userId, offset]
       );
       return rows;
     } catch (error) {
