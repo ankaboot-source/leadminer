@@ -2,7 +2,7 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { decode } from 'jsonwebtoken';
 import ENV from '../config';
-import { MiningSources } from '../db/MiningSources';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';

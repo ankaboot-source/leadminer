@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { Contacts } from '../db/Contacts';
+import { Contacts } from '../db/interfaces/Contacts';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import logger from '../utils/logger';

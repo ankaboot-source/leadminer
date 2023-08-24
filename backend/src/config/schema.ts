@@ -55,6 +55,11 @@ const schema = z.object({
   REACHER_API_KEY: z.string().nonempty().optional(),
   REACHER_HEADER_SECRET: z.string().nonempty().optional(),
 
+  /* CREDITS */
+  ENABLE_CREDIT: boolean().default('false'),
+  CONTACT_CREDIT: number().optional(),
+  EMAIL_CREDIT: number().optional(),
+
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });
 

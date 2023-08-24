@@ -1,7 +1,7 @@
 import { Job, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { Logger } from 'winston';
-import { Contacts } from '../db/Contacts';
+import { Contacts } from '../db/interfaces/Contacts';
 import {
   EmailStatusVerifier,
   Status
