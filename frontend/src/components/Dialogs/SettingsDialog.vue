@@ -253,7 +253,7 @@ import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
 import { addOAuthAccount } from "src/helpers/oauth";
-import { useLeadminerStore } from "src/store/leadminer";
+import { useLeadminerStore } from "src/stores/leadminer";
 import { MiningSource, OAuthMiningSource } from "src/types/mining";
 import { computed, ref } from "vue";
 import TreeCard from "../cards/TreeCard.vue";

@@ -222,7 +222,7 @@ import {
 } from "@supabase/supabase-js";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { supabase } from "src/helpers/supabase";
-import { useLeadminerStore } from "src/store/leadminer";
+import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { api } from "src/boot/axios";

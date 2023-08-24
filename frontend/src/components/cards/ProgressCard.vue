@@ -108,7 +108,7 @@
 <script setup lang="ts">
 import { useQuasar } from "quasar";
 import { convertSeconds, timeConversionRounded } from "src/helpers/time";
-import { useLeadminerStore } from "src/store/leadminer";
+import { useLeadminerStore } from "src/stores/leadminer";
 import { computed, watch } from "vue";
 
 const $q = useQuasar();
