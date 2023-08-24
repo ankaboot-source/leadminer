@@ -340,7 +340,11 @@ async function syncTable() {
     rows.value = contacts;
   } catch (error) {
     if (error instanceof Error) {
-      console.log(error.message)
+      $q.notify({
+        message: "Error occured when refreshing table",
+        textColor: "negative",
+        color: "red-1",
+      });
     }
   }
 }
