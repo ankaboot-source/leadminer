@@ -18,13 +18,35 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       try {
-        const minedContacts = await contacts.getContactsTable(user.id);
+        const offset = parseInt(String(req.query.offset)) || 0;
+        const minedContacts = await contacts.getContactsTable(user.id, offset);
 
         if (!minedContacts || minedContacts.length === 0) {
           return res
             .status(404)
             .json({ message: 'No contacts available for export' });
         }
+
+        const creditHandler = createCreditHandler(
+          ENV.ENABLE_CREDIT,
+          ENV.CONTACT_CREDIT,
+          userResolver
+        );
+
+        const totalContactsForExport =
+          await creditHandler?.calculateAvailableUnitsFromCredits(
+            user.id,
+            minedContacts.length
+          );
+
+        if (totalContactsForExport === 0) {
+          return res
+            .status(INSUFFICIENT_CREDITS_STATUS)
+            .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
+        }
+
+        // Minimize the length based on totalContactsForExport if available,
+        minedContacts.length = totalContactsForExport ?? minedContacts.length;
 
         const delimiterOption = req.query.delimiter;
         const localeFromHeader = req.headers['accept-language'];
@@ -49,6 +71,7 @@ export default function initializeContactsController(
           tags: contact.tags?.join('\n'),
           status: contact.status
         }));
+
         const csvStr = await getCsvStr(
           [
             { key: 'name', header: 'Name' },
@@ -67,27 +90,16 @@ export default function initializeContactsController(
           csvSeparator
         );
 
-        // Call credit verification process if enabled
-        const handler = createCreditHandler(
-          ENV.ENABLE_CREDIT,
-          ENV.CONTACT_CREDIT
+        // Deduct credits from user account
+        await creditHandler?.deductCredits(
+          user.id,
+          totalContactsForExport ?? 0
         );
 
-        if (handler) {
-          const succesfullOp = await handler.process(
-            user.id,
-            minedContacts.length,
-            userResolver
-          );
-
-          if (!succesfullOp) {
-            return res
-              .status(INSUFFICIENT_CREDITS_STATUS)
-              .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
-          }
-        }
-
-        return res.header('Content-Type', 'text/csv').status(200).send(csvStr);
+        return res.status(200).json({
+          csv: csvStr,
+          last_exported_offset: (offset ?? 0) + (totalContactsForExport ?? 0)
+        });
       } catch (err) {
         return next(err);
       }
