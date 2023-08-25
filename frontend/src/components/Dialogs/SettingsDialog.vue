@@ -439,8 +439,12 @@ async function addOAuthSource(source: OAuthMiningSource) {
     await addOAuthAccount(source);
   } catch (error) {
     if (error instanceof Error) {
+      const message =
+        error.message?.toLowerCase() === "network error"
+          ? "Unable to access server. Please retry again or contact your service provider."
+          : error.message;
       $quasar.notify({
-        message: error.message,
+        message,
         color: "negative",
         icon: "error",
       });
