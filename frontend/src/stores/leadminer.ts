@@ -28,11 +28,18 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const extractedEmails = ref(0);
   const scannedEmails = ref(0);
   const totalFetchedEmails = ref(0);
+  const totalExtractedEmails = ref(0);
   const status = ref("");
   const scannedBoxes = ref<string[]>([]);
   const statistics = ref({});
 
   const errors = ref({});
+
+  const fetchingFinished = ref(false);
+  const extractingFinished = ref(false);
+
+  const verifiedEmails = ref(0);
+  const emailsToVerify = ref(0);
 
   function $reset() {
     miningTask.value = undefined;
@@ -157,8 +164,12 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   async function startMining() {
     loadingStatus.value = true;
     loadingStatusDns.value = true;
+    fetchingFinished.value = false;
+    extractingFinished.value = false;
     scannedEmails.value = 0;
     extractedEmails.value = 0;
+    emailsToVerify.value = 0;
+    verifiedEmails.value = 0;
     statistics.value = "f";
     scannedBoxes.value = [];
 
@@ -193,6 +204,17 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         },
         onFetchingDone: (totalFetched) => {
           totalFetchedEmails.value = totalFetched;
+          fetchingFinished.value = true;
+        },
+        onExtractionDone: (totalExtracted) => {
+          totalExtractedEmails.value = totalExtracted;
+          extractingFinished.value = true;
+        },
+        onVerifiedUpdate: (count) => {
+          verifiedEmails.value = count;
+        },
+        onToVerifyUpdate: (count) => {
+          emailsToVerify.value = count;
         },
       });
 
@@ -277,5 +299,9 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     scannedBoxes,
     statistics,
     errors,
+    verifiedEmails,
+    emailsToVerify,
+    extractingFinished,
+    fetchingFinished,
   };
 });

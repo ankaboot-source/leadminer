@@ -1,9 +1,9 @@
 /* eslint-disable import/prefer-default-export */
 
 import { customAlphabet } from 'nanoid/async';
-import { RedactedTask, Task } from './types';
-import { FLICKR_BASE_58_CHARSET } from '../../utils/constants';
 import ENV from '../../config';
+import { FLICKR_BASE_58_CHARSET } from '../../utils/constants';
+import { RedactedTask, Task } from './types';
 
 /**
  * Removes sensitive data from a task object.
@@ -16,16 +16,11 @@ export function redactSensitiveData(task: Task): RedactedTask {
     userId: task.userId,
     miningId: task.miningId,
     progress: {
-      totalMessages: task.progress.totalMessages,
-      extracted: task.progress.extracted,
-      fetched: task.progress.fetched
+      ...task.progress
     },
     fetcher: {
       status: task.fetcher.isCompleted === true ? 'completed' : 'running',
       folders: task.fetcher.folders
-    },
-    emailStatusVerifier: {
-      running: task.emailVerificationWorker.isRunning()
     }
   };
 }

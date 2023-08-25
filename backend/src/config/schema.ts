@@ -60,7 +60,7 @@ const schema = z.object({
   CONTACT_CREDIT: number().optional(),
   EMAIL_CREDIT: number().optional(),
 
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });
 
 export default schema;

@@ -220,13 +220,13 @@ import {
   RealtimePostgresChangesPayload,
   User,
 } from "@supabase/supabase-js";
+import { AxiosError } from "axios";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
+import { api } from "src/boot/axios";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { api } from "src/boot/axios";
-import { AxiosError } from "axios";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
@@ -235,7 +235,7 @@ const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const table = ref<QTable>();
 
 let contactsCache = new Map<string, Contact>();
@@ -264,30 +264,6 @@ async function setupSubscription() {
     (payload: RealtimePostgresChangesPayload<Contact>) => {
       const newContact = payload.new as Contact;
       contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
-async function subscribeToEmailVerificationEvents() {
-  // This function is temporary and will be removed once we finish
-  // emailStatusVerification progress and task management
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  subscription = supabase.channel("listening-to-emailVerification").on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "persons",
-      filter: `user_id=eq.${user.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      const index = rows.value.findIndex(
-        ({ email }) => email === newContact.email
-      );
-      if (index !== -1) {
-        rows.value[index].status = newContact.status;
-      }
     }
   );
 }
@@ -351,19 +327,12 @@ watch(activeMiningTask, async (isActive) => {
       refreshTable();
     }, 5000);
   } else {
-    // Close realtime and re-open again later
-    if (subscription) {
-      await subscription.unsubscribe();
-    }
+    await subscription.unsubscribe();
     clearInterval(refreshInterval);
     contactsCache.clear();
     isLoading.value = true;
     await refineContacts();
     await syncTable();
-    if (subscription) {
-      await subscribeToEmailVerificationEvents();
-      subscription.subscribe();
-    }
     isLoading.value = false;
   }
 });
@@ -615,8 +584,7 @@ onUnmounted(() => {
   clearInterval(refreshInterval);
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function copyValueToClipboard(value: any, valueName: any) {
+async function copyValueToClipboard(value: string, valueName: string) {
   await copyToClipboard(value);
   $q.notify({
     message: `${valueName} copied to clipboard`,

@@ -229,6 +229,8 @@ export default class EmailMessage {
       tags: ContactTag[];
     }[] = [];
 
+    const statusLocalCache = new Map<string, Status>();
+
     await Promise.all(
       [...headerContacts, ...bodyContacts].map(async (contact: ContactLead) => {
         const [domainIsValid, domainType] = await this.domainStatusVerification(
@@ -249,8 +251,29 @@ export default class EmailMessage {
         };
 
         if (domainIsValid) {
+          let status = Status.UNKNOWN;
+          let isCached = true;
+
+          const localCachedStatus = statusLocalCache.get(
+            validContact.email.address
+          );
+          if (localCachedStatus) {
+            status = localCachedStatus;
+          } else {
+            const redisCachedStatus = await this.redisClientForNormalMode.hget(
+              REDIS_EMAIL_STATUS_KEY,
+              validContact.email.address
+            );
+            if (redisCachedStatus !== null) {
+              status = redisCachedStatus as Status;
+              statusLocalCache.set(validContact.email.address, status);
+            } else {
+              isCached = false;
+            }
+          }
+
           const person: Person = {
-            status: Status.UNKNOWN,
+            status,
             name: validContact.name,
             email: validContact.email.address,
             givenName: validContact.name,
@@ -284,10 +307,14 @@ export default class EmailMessage {
 
           if (tags.some((t) => t.reachable === REACHABILITY.DIRECT_PERSON)) {
             if (
-              validContact.sourceField === 'from' &&
-              this.date &&
-              differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
-                EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
+              (validContact.sourceField === 'from' ||
+                (this.date &&
+                  differenceInDays(
+                    new Date(),
+                    new Date(Date.parse(this.date))
+                  ) <=
+                    EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS)) &&
+              status !== 'VALID'
             ) {
               person.status = Status.VALID;
               await this.redisClientForNormalMode.hset(
@@ -295,12 +322,14 @@ export default class EmailMessage {
                 person.email,
                 Status.VALID
               );
-            } else {
-              const statusCache = await this.redisClientForNormalMode.hget(
-                REDIS_EMAIL_STATUS_KEY,
-                validContact.email.address
-              );
-              if (!statusCache) {
+              statusLocalCache.set(person.email, Status.VALID);
+            } else if (!isCached) {
+              const isSentToWorker =
+                await this.redisClientForNormalMode.sismember(
+                  'verification-queue',
+                  person.email
+                );
+              if (!isSentToWorker) {
                 await this.emailVerificationQueue.add(
                   person.email,
                   {
@@ -309,8 +338,10 @@ export default class EmailMessage {
                   },
                   { removeOnComplete: true, removeOnFail: true }
                 );
-              } else {
-                person.status = statusCache as Status;
+                await this.redisClientForNormalMode.sadd(
+                  'verification-queue',
+                  person.email
+                );
               }
             }
           }
@@ -322,6 +353,7 @@ export default class EmailMessage {
         }
       })
     );
+
     return validatedContacts;
   }
 

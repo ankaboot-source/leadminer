@@ -5,9 +5,9 @@ import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
+import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import ReacherEmailStatusVerifier from './services/email-status/reacher';
-import ReacherClient from './services/email-status/reacher/client';
+import EmailStatusVerifierFactory from './services/email-status/EmailStatusVerifierFactory';
 import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
@@ -15,7 +15,6 @@ import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
-import SupabaseUsers from './db/supabase/users';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -34,16 +33,9 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
   const contacts = new PgContacts(pool, logger);
-  const reacherClient = new ReacherClient(logger, {
-    host: ENV.REACHER_HOST,
-    apiKey: ENV.REACHER_API_KEY,
-    headerSecret: ENV.REACHER_HEADER_SECRET
-  });
 
-  const emailStatusVerifier = new ReacherEmailStatusVerifier(
-    reacherClient,
-    logger
-  );
+  const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
+
   const tasksManager = new TasksManager(
     redis.getSubscriberClient(),
     redis.getClient(),

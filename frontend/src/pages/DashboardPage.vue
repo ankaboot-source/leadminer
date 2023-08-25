@@ -72,12 +72,7 @@
         </div>
 
         <div class="bg-transparent col q-pb-lg">
-          <ProgressCard
-            v-if="boxes"
-            :scanned-emails="scannedEmails"
-            :extracted-emails="extractedEmails"
-            :total-emails="totalEmails"
-          />
+          <ProgressCard v-if="boxes" :total-emails="totalEmails" />
         </div>
       </q-card>
     </div>
@@ -86,9 +81,9 @@
 </template>
 
 <script lang="ts" setup>
+import { AxiosError } from "axios";
 // @ts-expect-error "No type definitions"
 import objectScan from "object-scan";
-import { AxiosError } from "axios";
 import { useQuasar } from "quasar";
 import SettingsDialog from "src/components/Dialogs/SettingsDialog.vue";
 import MinedPersons from "src/components/MinedPersons.vue";
@@ -157,8 +152,7 @@ const selectedBoxes = computed<string[]>(() => leadminerStore.selectedBoxes);
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
-const scannedEmails = computed(() => leadminerStore.scannedEmails);
-const extractedEmails = computed(() => leadminerStore.extractedEmails);
+
 const totalEmails = computed<number>(() => {
   if (boxes.value[0]) {
     return objectScan(["**.{total}"], {

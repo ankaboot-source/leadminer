@@ -20,25 +20,16 @@ export default function initializeEmailVerificationWorker(
   const worker = new Worker<{ email: string; userId: string }, void, string>(
     miningId,
     async (job: Job<{ email: string; userId: string }, void, string>) => {
-      const { userId, email } = job.data;
-
-      logger.debug('Requested verification', { userId, email });
-
       try {
-        let status: Status;
+        const { userId, email } = job.data;
 
-        const cacheResult = await redis.hget(REDIS_EMAIL_STATUS_KEY, email);
-        if (cacheResult) {
-          status = cacheResult as Status;
-        } else {
-          const reacherResult = await emailStatusVerifier.verify(
-            email,
-            abortController.signal
-          );
-          logger.debug('Got verification result', reacherResult);
-          await redis.hset(REDIS_EMAIL_STATUS_KEY, email, reacherResult.status);
-          status = reacherResult.status;
-        }
+        const { status } = await emailStatusVerifier.verify(
+          email,
+          abortController.signal
+        );
+
+        await redis.hset(REDIS_EMAIL_STATUS_KEY, email, status);
+
         if (status !== Status.UNKNOWN) {
           await contacts.updatePersonStatus(email, userId, status);
         }

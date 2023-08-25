@@ -1,21 +1,21 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
 import ENV from './config';
+import { Contacts } from './db/interfaces/Contacts';
 import { MiningSources } from './db/interfaces/MiningSources';
+import { Users } from './db/interfaces/Users';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
 import notFound from './middleware/notFound';
 import initializeSentry from './middleware/sentry';
+import initializeAuthRoutes from './routes/auth.routes';
+import initializeContactsRoutes from './routes/contacts.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
-import initializeAuthRoutes from './routes/auth.routes';
-import { Contacts } from './db/interfaces/Contacts';
-import initializeContactsRoutes from './routes/contacts.routes';
-import { Users } from './db/interfaces/Users';
 
 export default function initializeApp(
   authResolver: AuthResolver,

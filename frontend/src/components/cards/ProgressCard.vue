@@ -19,17 +19,13 @@
             <div v-if="!fetchingFinished">
               Fetched emails:
               <span class="text-weight-bolder">
-                {{ scannedEmails.toLocaleString() }}/{{
-                  totalEmails.toLocaleString()
-                }}
+                {{ scannedEmails }}/{{ totalEmails }}
               </span>
             </div>
             <div>
               Extracted emails:
               <span class="text-weight-bolder">
-                {{ extractedEmails.toLocaleString() }}/{{
-                  scannedEmails.toLocaleString()
-                }}
+                {{ extractedEmails }}/{{ scannedEmails }}
               </span>
             </div>
           </q-tooltip>
@@ -48,7 +44,7 @@
           class="text-blue-grey-14 text-center text-h6 text-weight-medium"
         >
           <span class="text-weight-bolder q-mr-xs">
-            {{ totalEmails.toLocaleString() }}
+            {{ totalEmails }}
           </span>
           email messages to mine.
         </div>
@@ -86,17 +82,19 @@
           <div v-if="!fetchingFinished">
             Fetched emails:
             <span class="text-weight-bolder">
-              {{ scannedEmails.toLocaleString() }}/{{
-                totalEmails.toLocaleString()
-              }}
+              {{ scannedEmails }}/{{ totalEmails }}
+            </span>
+          </div>
+          <div v-if="!extractionFinished">
+            Extracted emails:
+            <span class="text-weight-bolder">
+              {{ extractedEmails }}/{{ scannedEmails }}
             </span>
           </div>
           <div>
-            Extracted emails:
+            Cleaned contacts:
             <span class="text-weight-bolder">
-              {{ extractedEmails.toLocaleString() }}/{{
-                scannedEmails.toLocaleString()
-              }}
+              {{ verifiedEmails }}/{{ emailsToVerify }}
             </span>
           </div>
         </q-tooltip>
@@ -119,8 +117,6 @@ const responsiveCenteredLabel = computed(() =>
 );
 
 const progressProps = defineProps({
-  extractedEmails: { type: Number, default: 0 },
-  scannedEmails: { type: Number, default: 0 },
   totalEmails: { type: Number, default: 0 },
 });
 
@@ -137,20 +133,24 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
-const fetchingFinished = computed(() =>
-  Boolean(leadminerStore.totalFetchedEmails)
-);
+const fetchingFinished = computed(() => leadminerStore.fetchingFinished);
+const extractionFinished = computed(() => leadminerStore.extractingFinished);
+
+const scannedEmails = computed(() => leadminerStore.scannedEmails);
+const extractedEmails = computed(() => leadminerStore.extractedEmails);
+const verifiedEmails = computed(() => leadminerStore.verifiedEmails);
+const emailsToVerify = computed(() => leadminerStore.emailsToVerify);
 
 const progressBuffer = computed(() =>
-  fetchingFinished.value && progressProps.scannedEmails
+  fetchingFinished.value && scannedEmails.value
     ? 1
-    : progressProps.scannedEmails / progressProps.totalEmails || 0
+    : scannedEmails.value / progressProps.totalEmails || 0
 );
 
 const progressValue = computed(() =>
   fetchingFinished.value
-    ? progressProps.extractedEmails / progressProps.scannedEmails || 0
-    : progressProps.extractedEmails / progressProps.totalEmails || 0
+    ? extractedEmails.value / scannedEmails.value || 0
+    : extractedEmails.value / progressProps.totalEmails || 0
 );
 
 function getEstimatedRemainingTime() {

@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { Queue, QueueEvents, Worker } from 'bullmq';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
@@ -6,7 +6,10 @@ export interface TaskProgress {
   totalMessages: number;
   fetched: number;
   extracted: number;
-  fetcherStatus?: FetcherStatus;
+  verified: number;
+  toVerify: number;
+  fetcherStatus?: TaskStatus;
+  extractorStatus?: TaskStatus;
 }
 export interface Task {
   userId: string;
@@ -17,24 +20,30 @@ export interface Task {
   };
   progress: TaskProgress;
   fetcher: ImapEmailsFetcher;
-  emailVerificationWorker: Worker;
   progressHandlerSSE: RealtimeSSE;
+  emailStatusVerifier: EmailStatusVerifier;
   startedAt: number;
 }
 
-export type FetcherStatus = 'completed' | 'running';
+export type TaskStatus = 'completed' | 'running';
 
-export type ProgressType = 'fetched' | 'extracted';
+export type ProgressType = 'fetched' | 'extracted' | 'verified' | 'toVerify';
 
 export type RedisCommand = 'REGISTER' | 'DELETE';
 
 export interface RedactedFetcherData {
-  status: FetcherStatus;
+  status: TaskStatus;
   folders: string[];
 }
 
 export interface EmailStatusVerifier {
-  running: boolean;
+  emailVerificationWorker: Worker;
+  emailVerificationQueue: Queue;
+  emailVerificationQueueEvents: QueueEvents;
+}
+
+export interface RedactedEmailStatusVerifierData {
+  status: TaskStatus;
 }
 
 export interface RedactedTask {
@@ -42,5 +51,4 @@ export interface RedactedTask {
   miningId: string;
   progress: TaskProgress;
   fetcher: RedactedFetcherData;
-  emailStatusVerifier: EmailStatusVerifier;
 }

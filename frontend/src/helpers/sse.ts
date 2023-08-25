@@ -21,11 +21,17 @@ class SSE {
       onExtractedUpdate,
       onClose,
       onFetchingDone,
+      onExtractionDone,
+      onVerifiedUpdate,
+      onToVerifyUpdate,
     }: {
       onFetchedUpdate: (count: number) => void;
       onExtractedUpdate: (count: number) => void;
       onClose: () => void;
       onFetchingDone: (totalFetched: number) => void;
+      onExtractionDone: (totalExtracted: number) => void;
+      onVerifiedUpdate: (count: number) => void;
+      onToVerifyUpdate: (count: number) => void;
     }
   ) {
     this.closeConnection();
@@ -48,6 +54,12 @@ class SSE {
             onClose();
           } else if (event === "fetching-finished") {
             onFetchingDone(parseInt(data));
+          } else if (event === "extraction-finished") {
+            onExtractionDone(parseInt(data));
+          } else if (event === `verified-${miningId}`) {
+            onVerifiedUpdate(parseInt(data));
+          } else if (event === `toVerify-${miningId}`) {
+            onToVerifyUpdate(parseInt(data));
           }
         },
         signal: this.ctrl.signal,

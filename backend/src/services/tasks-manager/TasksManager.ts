@@ -14,11 +14,11 @@ import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import {
-  FetcherStatus,
   ProgressType,
   RedisCommand,
   Task,
-  TaskProgress
+  TaskProgress,
+  TaskStatus
 } from './types';
 import { redactSensitiveData } from './utils';
 
@@ -131,7 +131,13 @@ export default class TasksManager {
         batchSize,
         fetchEmailBody
       });
+
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
+
+      const emailVerificationQueue = new Queue(miningId, {
+        connection: this.redisPublisher
+      });
+
       const emailVerificationWorker = initializeEmailVerificationWorker(
         miningId,
         this.redisPublisher,
@@ -140,6 +146,28 @@ export default class TasksManager {
         this.emailStatusVerifier
       );
 
+      const emailVerificationQueueEvents = new QueueEvents(miningId, {
+        connection: this.redisPublisher
+      });
+
+      emailVerificationQueueEvents.on('completed', async () => {
+        const progress = this.updateProgress(miningId, 'verified');
+        const notified = this.notifyChanges(miningId, 'verified');
+
+        if (progress !== null && notified !== null) {
+          await this.hasCompleted(miningId, progress);
+        }
+      });
+
+      emailVerificationQueueEvents.on('added', async () => {
+        const progress = this.updateProgress(miningId, 'toVerify');
+        const notified = this.notifyChanges(miningId, 'toVerify');
+
+        if (progress !== null && notified !== null) {
+          await this.hasCompleted(miningId, progress);
+        }
+      });
+
       const miningTask: Task = {
         stream,
         userId,
@@ -147,16 +175,23 @@ export default class TasksManager {
         miningId,
         startedAt: performance.now(),
         progressHandlerSSE,
-        emailVerificationWorker,
+        emailStatusVerifier: {
+          emailVerificationWorker,
+          emailVerificationQueue,
+          emailVerificationQueueEvents
+        },
         progress: {
           totalMessages: await fetcher.getTotalMessages(),
           fetched: 0,
-          extracted: 0
+          extracted: 0,
+          verified: 0,
+          toVerify: 0
         }
       };
 
       fetcher.start();
       emailVerificationWorker.run();
+
       await this.pubsubSendMessage(
         miningId,
         'REGISTER',
@@ -216,7 +251,7 @@ export default class TasksManager {
    * @returns Returns the deleted task.
    * @throws {Error} Throws an error if the task with the given mining ID does not exist.
    */
-  async deleteTask(miningId: string, killEmailVerificationImmediately = false) {
+  async deleteTask(miningId: string) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
@@ -229,12 +264,8 @@ export default class TasksManager {
       stream,
       startedAt,
       progress,
-      emailVerificationWorker
+      emailStatusVerifier
     } = task;
-
-    const queue = new Queue(miningId, {
-      connection: this.redisPublisher
-    });
 
     this.ACTIVE_MINING_TASKS.delete(miningId);
 
@@ -249,30 +280,12 @@ export default class TasksManager {
 
       await fetcher.stop();
 
-      if (killEmailVerificationImmediately) {
-        await queue.obliterate({ force: true });
-        await queue.close();
-        await emailVerificationWorker.close();
-      } else {
-        const queueEvents = new QueueEvents(miningId, {
-          connection: this.redisPublisher
-        });
-        // This sets up an event listener that will delete the queue once it's completed
-        queueEvents.on('completed', async () => {
-          const jobCounts = await queue.getJobCounts();
-          logger.debug('Completed', { jobCounts });
+      const { emailVerificationQueue, emailVerificationWorker } =
+        emailStatusVerifier;
 
-          if (
-            jobCounts.waiting === 0 &&
-            jobCounts.active === 0 &&
-            jobCounts.delayed === 0
-          ) {
-            await queue.close();
-            await queue.obliterate();
-            await emailVerificationWorker.close();
-          }
-        });
-      }
+      await emailVerificationQueue.obliterate({ force: true });
+      await emailVerificationQueue.close();
+      await emailVerificationWorker.close();
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
@@ -305,12 +318,18 @@ export default class TasksManager {
     const eventName = `${progressType}-${miningId}`;
     const value = progress[`${progressType}`];
 
-    // If the fetching is completed, notify the clients that it has finished.
     if (progressType === 'fetched' && fetcher.isCompleted) {
       progressHandlerSSE.sendSSE(value, 'fetching-finished');
     }
 
-    // Send the progress to parties subscribed on SSE
+    if (
+      progressType === 'extracted' &&
+      progress.extracted >= progress.fetched &&
+      fetcher.isCompleted
+    ) {
+      progressHandlerSSE.sendSSE(value, 'extraction-finished');
+    }
+
     return progressHandlerSSE.sendSSE(value, eventName);
   }
 
@@ -327,10 +346,6 @@ export default class TasksManager {
     progressType: ProgressType,
     incrementBy = 1
   ) {
-    if (!['fetched', 'extracted'].includes(progressType)) {
-      throw Error('progressType value must be either fetched or extracted.');
-    }
-
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
@@ -342,11 +357,14 @@ export default class TasksManager {
     progress[`${progressType}`] =
       (progress[`${progressType}`] || 0) + incrementBy;
 
-    const fetcherStatus: FetcherStatus = fetcher.isCompleted
+    const fetcherStatus: TaskStatus = fetcher.isCompleted
       ? 'completed'
       : 'running';
 
-    return { ...progress, fetcherStatus };
+    const extractorStatus: TaskStatus =
+      progress.extracted >= progress.fetched ? 'completed' : 'running';
+
+    return { ...progress, fetcherStatus, extractorStatus };
   }
 
   /**
@@ -358,9 +376,13 @@ export default class TasksManager {
    */
   private async hasCompleted(
     miningId: string,
-    { extracted, fetched, fetcherStatus }: TaskProgress
+    { fetcherStatus, extractorStatus, verified, toVerify }: TaskProgress
   ) {
-    const status = fetcherStatus === 'completed' && extracted >= fetched;
+    const status =
+      fetcherStatus === 'completed' &&
+      extractorStatus === 'completed' &&
+      verified >= toVerify;
+
     const task = status ? await this.deleteTask(miningId) : null;
 
     return { status, task };
@@ -381,12 +403,6 @@ export default class TasksManager {
     streamName: string,
     consumerGroupName: string
   ) {
-    if (!['REGISTER', 'DELETE'].includes(command)) {
-      throw new Error(
-        `Invalid command '${command}', expected 'REGISTER' or 'DELETE'.`
-      );
-    }
-
     switch (command) {
       case 'REGISTER': {
         // Create consumer group and empty stream.
