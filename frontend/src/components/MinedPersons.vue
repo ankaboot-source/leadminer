@@ -569,7 +569,7 @@ async function exportTable() {
     const response = await api.get("/imap/export/csv");
     const status = exportFile(
       `leadminer-${email}-${currentDatetime}.csv`,
-      response.data.csv,
+      response.data,
       "text/csv"
     );
 

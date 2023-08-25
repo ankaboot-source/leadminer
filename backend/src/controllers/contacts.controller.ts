@@ -112,7 +112,10 @@ export default function initializeContactsController(
         // Determine the HTTP status code based on whether all units can be accessed
         const httpStatusCode = accessAllUnits ? 200 : 206;
 
-        return res.status(httpStatusCode).json({ csv: csvStr });
+        return res
+          .header('Content-Type', 'text/csv')
+          .status(httpStatusCode)
+          .send(csvStr);
       } catch (err) {
         return next(err);
       }
