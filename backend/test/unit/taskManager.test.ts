@@ -52,7 +52,9 @@ const fakeContacts: Contacts = {
   create: jest.fn(() => Promise.resolve()),
   refine: jest.fn(() => Promise.resolve(true)),
   updatePersonStatus: jest.fn(() => Promise.resolve(true)),
-  getContacts: jest.fn(() => Promise.resolve(undefined))
+  getContacts: jest.fn(() => Promise.resolve(undefined)),
+  getExportedContacts: jest.fn(() => Promise.resolve(undefined)),
+  registerExportedContacts: jest.fn(() => Promise.resolve(undefined))
 };
 
 /*
