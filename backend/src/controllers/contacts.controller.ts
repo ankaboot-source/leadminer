@@ -9,6 +9,7 @@ import {
   createCreditHandler
 } from '../utils/billing/credits';
 import { Users } from '../db/interfaces/Users';
+import { Contact } from '../db/types';
 
 export default function initializeContactsController(
   contacts: Contacts,
@@ -18,10 +19,14 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       try {
-        const offset = parseInt(String(req.query.offset ?? 0));
-        const minedContacts = await contacts.getContacts(user.id, offset);
+        const freshContacts = (await contacts.getContacts(user.id, true)) ?? [];
+        const previousExportedContacts =
+          (await contacts.getExportedContacts(user.id)) ?? [];
 
-        if (!minedContacts || minedContacts.length === 0) {
+        if (
+          freshContacts.length === 0 &&
+          previousExportedContacts.length === 0
+        ) {
           return res
             .status(404)
             .json({ message: 'No contacts available for export' });
@@ -36,17 +41,23 @@ export default function initializeContactsController(
         const { credits, accessAllUnits, availableUnits } =
           (await creditHandler?.validateCreditUsage(
             user.id,
-            minedContacts.length
+            freshContacts.length
           )) ?? {};
 
-        if (credits === 0) {
+        if (availableUnits && credits === 0) {
           return res
             .status(INSUFFICIENT_CREDITS_STATUS)
             .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
         }
 
         // Minimize the length based on totalContactsForExport if available,
-        minedContacts.length = availableUnits ?? minedContacts.length;
+        freshContacts.length = availableUnits ?? freshContacts.length;
+
+        // Group all old and new contacts
+        const contactstoExport: Contact[] = [
+          ...previousExportedContacts,
+          ...freshContacts
+        ];
 
         const delimiterOption = req.query.delimiter;
         const localeFromHeader = req.headers['accept-language'];
@@ -54,7 +65,7 @@ export default function initializeContactsController(
           ? String(delimiterOption)
           : getLocalizedCsvSeparator(localeFromHeader ?? '');
 
-        const csvData = minedContacts.map((contact) => ({
+        const csvData = contactstoExport.map((contact) => ({
           name: contact.name?.trim(),
           email: contact.email,
           recency: contact.recency
@@ -90,17 +101,18 @@ export default function initializeContactsController(
           csvSeparator
         );
 
-        // Determine the HTTP status code based on whether all units can be accessed
-        const httpStatusCode = accessAllUnits ? 200 : 206;
-        // Calculate the offset of the last exported item to avoid duplicate data
-        const lastExportedOffset = (offset ?? 0) + (availableUnits ?? 0);
-
         // Deduct credits from user account
         await creditHandler?.deductCredits(user.id, availableUnits ?? 0);
-        return res.status(httpStatusCode).json({
-          csv: csvStr,
-          last_exported_offset: lastExportedOffset
-        });
+
+        await contacts.registerExportedContacts(
+          freshContacts.map(({ id }) => id),
+          user.id
+        );
+
+        // Determine the HTTP status code based on whether all units can be accessed
+        const httpStatusCode = accessAllUnits ? 200 : 206;
+
+        return res.status(httpStatusCode).json({ csv: csvStr });
       } catch (err) {
         return next(err);
       }

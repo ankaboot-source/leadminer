@@ -9,5 +9,10 @@ export interface Contacts {
     userId: string,
     status: Status
   ): Promise<boolean>;
-  getContacts(userId: string, offset?: number): Promise<Contact[] | undefined>;
+  getContacts(
+    userId: string,
+    execludeExported?: boolean
+  ): Promise<Contact[] | undefined>;
+  getExportedContacts(userId: string): Promise<Contact[] | undefined>;
+  registerExportedContacts(contactIds: string[], userId: string): Promise<void>;
 }

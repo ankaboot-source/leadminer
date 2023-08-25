@@ -9,8 +9,30 @@ export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refine_persons($1)';
 
-  private static readonly SELECT_REFINED_CONTACTS_SQL =
-    'SELECT * FROM get_contacts_table($1, $2)';
+  private static readonly SELECT_CONTACTS_SQL =
+    'SELECT * FROM get_contacts_table($1)';
+
+  private static readonly SELECT_NOT_EXPORTED_CONTACTS = `
+    SELECT contacts.* 
+    FROM get_contacts_table($1) contacts
+      LEFT JOIN engagement e
+        ON e.person_id = contacts.id
+        AND e.user_id = $1
+        AND e.engagement_type = 'CSV'
+    WHERE e.person_id IS NULL;
+    `;
+
+  private static readonly SELECT_EXPORTED_CONTACTS = `
+    SELECT contacts.* 
+    FROM get_contacts_table($1) contacts
+      JOIN engagement e
+        ON e.person_id = contacts.id
+        AND e.user_id = $1
+        AND e.engagement_type = 'CSV'
+    `;
+
+  private static readonly INSERT_EXPORTED_CONTACT =
+    'INSERT INTO engagement (user_id, person_id, engagement_type) VALUES ($1, $2, $3);';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -131,17 +153,51 @@ export default class PgContacts implements Contacts {
 
   async getContacts(
     userId: string,
-    offset = 0
+    excludedExported = false
   ): Promise<Contact[] | undefined> {
     try {
+      const sqlQuery = excludedExported
+        ? PgContacts.SELECT_NOT_EXPORTED_CONTACTS
+        : PgContacts.SELECT_CONTACTS_SQL;
+      const { rows } = await this.pool.query(sqlQuery, [userId]);
+
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return undefined;
+    }
+  }
+
+  async getExportedContacts(userId: string): Promise<Contact[] | undefined> {
+    try {
       const { rows } = await this.pool.query(
-        PgContacts.SELECT_REFINED_CONTACTS_SQL,
-        [userId, offset]
+        PgContacts.SELECT_EXPORTED_CONTACTS,
+        [userId]
       );
       return rows;
     } catch (error) {
       this.logger.error(error);
       return undefined;
+    }
+  }
+
+  async registerExportedContacts(
+    contactIds: string[],
+    userId: string
+  ): Promise<void> {
+    try {
+      const promises = contactIds.map(async (id) => {
+        await this.pool.query(PgContacts.INSERT_EXPORTED_CONTACT, [
+          userId,
+          id,
+          'CSV'
+        ]);
+      });
+
+      await Promise.all(promises);
+    } catch (error) {
+      this.logger.error(error);
+      throw error; // Re-throw the error to propagate it further
     }
   }
 }
