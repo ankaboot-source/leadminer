@@ -125,14 +125,14 @@ export default class ReacherClient {
     }
     if (config.smtpConfig?.proxy) {
       this.smtpConfig.proxy = {
-        host: config.smtpConfig?.proxy.host,
-        port: config.smtpConfig?.proxy.port
+        host: config.smtpConfig.proxy.host,
+        port: config.smtpConfig.proxy.port
       };
-      if (config.smtpConfig?.proxy.username) {
-        this.smtpConfig.proxy.username = config.smtpConfig?.proxy.username;
+      if (config.smtpConfig.proxy.username) {
+        this.smtpConfig.proxy.username = config.smtpConfig.proxy.username;
       }
-      if (config.smtpConfig?.proxy.password) {
-        this.smtpConfig.proxy.password = config.smtpConfig?.proxy.password;
+      if (config.smtpConfig.proxy.password) {
+        this.smtpConfig.proxy.password = config.smtpConfig.proxy.password;
       }
     }
   }
