@@ -4,8 +4,8 @@ import RandomEmailStatusVerifier from './RandomEmailStatusVerifier';
 import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
 
-export default class EmailStatusVerifierFactory {
-  static create(
+const EmailStatusVerifierFactory = {
+  create(
     config: {
       NODE_ENV: 'development' | 'production' | 'test';
       REACHER_HOST: string;
@@ -26,4 +26,6 @@ export default class EmailStatusVerifierFactory {
 
     return new ReacherEmailStatusVerifier(reacherClient, logger);
   }
-}
+};
+
+export default EmailStatusVerifierFactory;

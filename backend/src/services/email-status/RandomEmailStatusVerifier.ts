@@ -11,7 +11,7 @@ export default class RandomEmailStatusVerifier implements EmailStatusVerifier {
   /**
    * @param delayMs - A fake delay to simulate a real email verification process
    */
-  constructor(private readonly delayMs = 25) {}
+  constructor(private readonly delayMs = 500) {}
 
   verify(email: string): Promise<EmailStatusResult> {
     return new Promise((resolve) => {
