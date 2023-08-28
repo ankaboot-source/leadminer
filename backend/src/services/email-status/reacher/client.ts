@@ -69,6 +69,16 @@ interface ReacherConfig {
   host: string;
   apiKey?: string;
   headerSecret?: string;
+  smtpConfig?: SMTPConfig;
+}
+
+interface SMTPConfig {
+  from?: string;
+  helloName?: string;
+  proxy?: {
+    host: string;
+    port: number;
+  };
 }
 
 export default class ReacherClient {
@@ -78,27 +88,45 @@ export default class ReacherClient {
 
   private readonly api: AxiosInstance;
 
-  constructor(
-    private readonly logger: Logger,
-    private readonly config: ReacherConfig
-  ) {
+  private readonly smtpConfig?: SMTPConfig;
+
+  constructor(private readonly logger: Logger, config: ReacherConfig) {
     this.api = axios.create({
-      baseURL: this.config.host
+      baseURL: config.host
     });
-    if (this.config.apiKey) {
-      this.api.defaults.headers.common.Authorization = this.config.apiKey;
+    if (config.apiKey) {
+      this.api.defaults.headers.common.Authorization = config.apiKey;
     }
-    if (this.config.headerSecret) {
+    if (config.headerSecret) {
       this.api.defaults.headers.common['x-reacher-secret'] =
-        this.config.headerSecret;
+        config.headerSecret;
+    }
+    if (config.smtpConfig) {
+      this.smtpConfig = config.smtpConfig;
     }
   }
 
   async checkSingleEmail(email: string, abortSignal?: AbortSignal) {
     try {
+      // We're using any here to be able to dynamically add attributes to the request body
+      // If we use optional chaining, Axios will serialize undefined values in the payload which we don't want to happen
+      const requestBody: any = {
+        to_email: email
+      };
+
+      if (this.smtpConfig?.from) {
+        requestBody.from_email = this.smtpConfig?.from;
+      }
+      if (this.smtpConfig?.helloName) {
+        requestBody.hello_name = this.smtpConfig?.helloName;
+      }
+      if (this.smtpConfig?.proxy) {
+        requestBody.proxy = this.smtpConfig?.proxy;
+      }
+
       const { data } = await this.api.post<EmailCheckOutput>(
         ReacherClient.SINGLE_VERIFICATION_PATH,
-        { to_email: email },
+        requestBody,
         { signal: abortSignal, timeout: 5000 }
       );
       return { data, error: null };
@@ -116,10 +144,27 @@ export default class ReacherClient {
   ): Promise<
     { data: BulkSubmitResponse; error: null } | { data: null; error: Error }
   > {
+    // We're using any here to be able to dynamically add attributes to the request body
+    // If we use optional chaining, Axios will serialize undefined values in the payload which we don't want to happen
+    const requestBody: any = {
+      input_type: 'array',
+      input: emails
+    };
+
+    if (this.smtpConfig?.from) {
+      requestBody.from_email = this.smtpConfig?.from;
+    }
+    if (this.smtpConfig?.helloName) {
+      requestBody.hello_name = this.smtpConfig?.helloName;
+    }
+    if (this.smtpConfig?.proxy) {
+      requestBody.proxy = this.smtpConfig?.proxy;
+    }
+
     try {
       const { data } = await this.api.post<BulkSubmitResponse>(
         ReacherClient.BULK_VERIFICATION_PATH,
-        { data: { input_type: 'array', input: emails } }
+        { data: requestBody }
       );
 
       return { data, error: null };

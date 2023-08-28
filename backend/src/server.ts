@@ -5,6 +5,7 @@ import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
+import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
 import ReacherEmailStatusVerifier from './services/email-status/reacher';
 import ReacherClient from './services/email-status/reacher/client';
@@ -15,7 +16,6 @@ import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
-import SupabaseUsers from './db/supabase/users';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -37,7 +37,18 @@ console.log(
   const reacherClient = new ReacherClient(logger, {
     host: ENV.REACHER_HOST,
     apiKey: ENV.REACHER_API_KEY,
-    headerSecret: ENV.REACHER_HEADER_SECRET
+    headerSecret: ENV.REACHER_HEADER_SECRET,
+    smtpConfig: {
+      helloName: ENV.REACHER_SMTP_HELLO,
+      from: ENV.REACHER_SMTP_FROM,
+      proxy:
+        ENV.REACHER_PROXY_HOST && ENV.REACHER_PROXY_PORT
+          ? {
+              port: ENV.REACHER_PROXY_PORT,
+              host: ENV.REACHER_PROXY_HOST
+            }
+          : undefined
+    }
   });
 
   const emailStatusVerifier = new ReacherEmailStatusVerifier(
