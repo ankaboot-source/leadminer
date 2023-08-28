@@ -37,8 +37,8 @@ export function createCreditHandler(
       userId: string,
       units: number
     ): Promise<{
-      credits: number;
-      accessAllUnits: boolean;
+      insufficientCredits: boolean;
+      requestedUnits: number;
       availableUnits: number;
     }> {
       const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
@@ -47,13 +47,23 @@ export function createCreditHandler(
         throw new Error('Failed to retrieve user credits.');
       }
 
-      const availableUnitsFromCredits = userCredits / CREDITS_PER_UNIT;
-      const accessAllUnits = availableUnitsFromCredits > units;
-      const availableUnits = accessAllUnits ? units : availableUnitsFromCredits;
+      const insufficientCredits = userCredits < CREDITS_PER_UNIT;
+
+      if (insufficientCredits) {
+        return {
+          insufficientCredits,
+          requestedUnits: units,
+          availableUnits: units
+        };
+      }
+
+      const userCreditsToUnits = userCredits / CREDITS_PER_UNIT;
+      const availableUnits =
+        units > 0 && userCreditsToUnits >= units ? units : 0;
 
       return {
-        credits: userCredits,
-        accessAllUnits,
+        insufficientCredits,
+        requestedUnits: units,
         availableUnits
       };
     },
