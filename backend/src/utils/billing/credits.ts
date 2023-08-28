@@ -59,7 +59,7 @@ export function createCreditHandler(
 
       const userCreditsToUnits = userCredits / CREDITS_PER_UNIT;
       const availableUnits =
-        units > 0 && userCreditsToUnits >= units ? units : 0;
+        units > 0 && userCreditsToUnits >= units ? units : userCreditsToUnits;
 
       return {
         insufficientCredits,
