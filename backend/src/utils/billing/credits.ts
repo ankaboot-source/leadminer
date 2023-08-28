@@ -28,8 +28,8 @@ export function createCreditHandler(
      * @param userId - The unique identifier of the user.
      * @param units - The number of units (e.g., emails or contacts) for which to calculate credits.
      * @returns An object containing credit-related information:
-     *   - `credits`: The user current credits.
-     *   - `canAccessAllUnits`: Indicates whether the user can access all specified units.
+     *   - `insufficientCredits`: Indicates whether the user has insufficient credits for the requested units.
+     *   - `requestedUnits`: The number of units requested.
      *   - `availableUnits`: The available units (e.g., emails or contacts) based on the user's credits.
      * @throws Throws an error if user credits cannot be retrieved.
      */
