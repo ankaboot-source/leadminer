@@ -44,10 +44,7 @@ export function getCsvStr<T>(
   });
 }
 
-export async function exportContactsToCSV(
-  contacts: Contact[],
-  csvSeparator = ','
-) {
+export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
   const csvData = contacts.map((contact) => ({
     name: contact.name?.trim(),
     email: contact.email,
