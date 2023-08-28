@@ -16,7 +16,7 @@ export async function addOAuthAccount(provider: OAuthMiningSource) {
     }
 
     if (error instanceof AxiosError) {
-      message = error.response?.data?.message;
+      message = error.response?.data?.message ?? error.message;
     }
 
     throw new Error(message);

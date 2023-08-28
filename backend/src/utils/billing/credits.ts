@@ -11,50 +11,88 @@ import { Users } from '../../db/interfaces/Users';
  */
 export function createCreditHandler(
   enable: boolean,
-  creditsPerUnit: number | undefined
+  creditsPerUnit: number | undefined,
+  userResolver: Users
 ) {
   if (!enable || !creditsPerUnit) {
     return undefined;
   }
 
+  const USER_RESOLVER = userResolver;
   const CREDITS_PER_UNIT = creditsPerUnit;
 
   return {
     /**
-     * Verifies if the user has enough credits to perform an action,
-     * calculates a quota, and deducts the credits if successful.
+     * Calculate credit-related information based on the user's profile and specified units.
      *
-     * @param userId - User ID.
-     * @param userResolver - An authentication resolver object.
-     * @param units - The number of emails or contacts.
-     * @returns {Promise<boolean>} - Returns true if credits verification, deduction is succesfull, otherwise false.
+     * @param userId - The unique identifier of the user.
+     * @param units - The number of units (e.g., emails or contacts) for which to calculate credits.
+     * @returns An object containing credit-related information:
+     *   - `insufficientCredits`: Indicates whether the user has insufficient credits for the requested units.
+     *   - `requestedUnits`: The number of units requested.
+     *   - `availableUnits`: The available units (e.g., emails or contacts) based on the user's credits.
+     * @throws Throws an error if user credits cannot be retrieved.
      */
-    async process(
+    async validateCreditUsage(
       userId: string,
-      units: number,
-      userResolver: Users
-    ): Promise<boolean> {
-      const credits = (await userResolver.getUserProfile(userId))?.credits;
+      units: number
+    ): Promise<{
+      insufficientCredits: boolean;
+      requestedUnits: number;
+      availableUnits: number;
+    }> {
+      const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
 
-      if (!credits) {
-        throw new Error('Failed to get user credits');
+      if (userCredits === undefined) {
+        throw new Error('Failed to retrieve user credits.');
       }
 
-      const calculatedQuota = units * CREDITS_PER_UNIT;
+      const insufficientCredits = userCredits < CREDITS_PER_UNIT;
 
-      if (credits < calculatedQuota) {
-        return false;
+      if (insufficientCredits) {
+        return {
+          insufficientCredits,
+          requestedUnits: units,
+          availableUnits: units
+        };
       }
 
-      const updatedCredit = await userResolver.updateUserProfile(userId, {
-        credits: credits - calculatedQuota
+      const userCreditsToUnits = userCredits / CREDITS_PER_UNIT;
+      const availableUnits =
+        units > 0 && userCreditsToUnits >= units ? units : 0;
+
+      return {
+        insufficientCredits,
+        requestedUnits: units,
+        availableUnits
+      };
+    },
+
+    /**
+     * Deduct credits from a user's profile based on number of units.
+     *
+     * @param userId - The user's ID.
+     * @param units - The number of units (e.g., emails or contacts) to deduct credits for.
+     * @returns - The updated user profile with deducted credits.
+     * @throws - Throws an error if user credits cannot be retrieved or if credit deduction fails.
+     */
+    async deductCredits(userId: string, units: number) {
+      const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
+
+      if (userCredits === undefined) {
+        throw new Error('Failed to retrieve user credits.');
+      }
+
+      const deduction = userCredits - units * CREDITS_PER_UNIT;
+      const updatedUserProfile = await USER_RESOLVER.updateUserProfile(userId, {
+        credits: deduction >= 0 ? deduction : 0
       });
 
-      if (!updatedCredit) {
-        throw new Error('Failed to update credits.');
+      if (!updatedUserProfile) {
+        throw new Error('Failed to update user credits.');
       }
 
-      return updatedCredit;
+      return updatedUserProfile;
     }
   };
 }

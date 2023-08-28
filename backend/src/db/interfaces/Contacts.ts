@@ -9,5 +9,8 @@ export interface Contacts {
     userId: string,
     status: Status
   ): Promise<boolean>;
-  getContactsTable(userId: string): Promise<Contact[] | undefined>;
+  getContacts(userId: string, execludeExported?: boolean): Promise<Contact[]>;
+  getExportedContacts(userId: string): Promise<Contact[]>;
+  getNonExportedContacts(userId: string): Promise<Contact[]>;
+  registerExportedContacts(contactIds: string[], userId: string): Promise<void>;
 }

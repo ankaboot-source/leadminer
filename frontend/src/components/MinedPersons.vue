@@ -334,9 +334,21 @@ async function getContacts(userId: string): Promise<Contact[]> {
 }
 
 async function syncTable() {
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  const contacts = await getContacts(user.id);
-  rows.value = contacts;
+  try {
+    const user = (await supabase.auth.getSession()).data.session?.user as User;
+    const contacts = await getContacts(user.id);
+    rows.value = contacts;
+  } catch (error) {
+    if (error instanceof Error) {
+      /* eslint-disable no-console */
+      console.log(error.message);
+      $q.notify({
+        message: "Error occured when refreshing table",
+        textColor: "negative",
+        color: "red-1",
+      });
+    }
+  }
 }
 
 watch(activeMiningTask, async (isActive) => {
