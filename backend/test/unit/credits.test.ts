@@ -40,4 +40,6 @@ describe('createCreditHandler', () => {
       expect(typeof handler.deductCredits).toBe('function');
     });
   });
+
+  // TODO: Implement tests validateCreditUsage and deductCredits using mocks
 });
