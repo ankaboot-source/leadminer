@@ -40,12 +40,14 @@ console.log(
     headerSecret: ENV.REACHER_HEADER_SECRET,
     smtpConfig: {
       helloName: ENV.REACHER_SMTP_HELLO,
-      from: ENV.REACHER_SMTP_FROM,
+      fromEmail: ENV.REACHER_SMTP_FROM,
       proxy:
         ENV.REACHER_PROXY_HOST && ENV.REACHER_PROXY_PORT
           ? {
               port: ENV.REACHER_PROXY_PORT,
-              host: ENV.REACHER_PROXY_HOST
+              host: ENV.REACHER_PROXY_HOST,
+              username: ENV.REACHER_PROXY_USERNAME,
+              password: ENV.REACHER_PROXY_PASSWORD
             }
           : undefined
     }

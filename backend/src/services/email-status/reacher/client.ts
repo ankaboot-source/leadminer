@@ -73,12 +73,18 @@ interface ReacherConfig {
 }
 
 interface SMTPConfig {
-  from?: string;
+  fromEmail?: string;
   helloName?: string;
   proxy?: {
     host: string;
     port: number;
+    username?: string;
+    password?: string;
   };
+}
+
+interface ValidationOptions {
+  fromEmail: string;
 }
 
 export default class ReacherClient {
@@ -88,13 +94,21 @@ export default class ReacherClient {
 
   private readonly api: AxiosInstance;
 
-  private readonly smtpConfig?: SMTPConfig;
+  private readonly smtpConfig: {
+    from_email?: string;
+    hello_name?: string;
+    proxy?: {
+      host: string;
+      port: number;
+      username?: string;
+      password?: string;
+    };
+  } = {};
 
   constructor(private readonly logger: Logger, config: ReacherConfig) {
     this.api = axios.create({
       baseURL: config.host
     });
-    this.smtpConfig = config.smtpConfig;
     if (config.apiKey) {
       this.api.defaults.headers.common.Authorization = config.apiKey;
     }
@@ -102,29 +116,42 @@ export default class ReacherClient {
       this.api.defaults.headers.common['x-reacher-secret'] =
         config.headerSecret;
     }
+
+    if (config.smtpConfig?.fromEmail) {
+      this.smtpConfig.from_email = config.smtpConfig?.fromEmail;
+    }
+    if (config.smtpConfig?.helloName) {
+      this.smtpConfig.hello_name = config.smtpConfig?.helloName;
+    }
+    if (config.smtpConfig?.proxy) {
+      this.smtpConfig.proxy = {
+        host: config.smtpConfig?.proxy.host,
+        port: config.smtpConfig?.proxy.port
+      };
+      if (config.smtpConfig?.proxy.username) {
+        this.smtpConfig.proxy.username = config.smtpConfig?.proxy.username;
+      }
+      if (config.smtpConfig?.proxy.password) {
+        this.smtpConfig.proxy.password = config.smtpConfig?.proxy.password;
+      }
+    }
   }
 
-  async checkSingleEmail(email: string, abortSignal?: AbortSignal) {
+  async checkSingleEmail(
+    email: string,
+    abortSignal?: AbortSignal,
+    validationOptions?: ValidationOptions
+  ) {
     try {
-      // We're using any here to be able to dynamically add attributes to the request body
-      // If we use optional chaining, Axios will serialize undefined values in the payload which we don't want to happen
-      const requestBody: any = {
-        to_email: email
-      };
-
-      if (this.smtpConfig?.from) {
-        requestBody.from_email = this.smtpConfig?.from;
-      }
-      if (this.smtpConfig?.helloName) {
-        requestBody.hello_name = this.smtpConfig?.helloName;
-      }
-      if (this.smtpConfig?.proxy) {
-        requestBody.proxy = this.smtpConfig?.proxy;
-      }
-
       const { data } = await this.api.post<EmailCheckOutput>(
         ReacherClient.SINGLE_VERIFICATION_PATH,
-        requestBody,
+        {
+          to_email: email,
+          ...this.smtpConfig,
+          from_email: validationOptions
+            ? validationOptions.fromEmail
+            : this.smtpConfig.from_email
+        },
         { signal: abortSignal, timeout: 5000 }
       );
       return { data, error: null };
@@ -142,27 +169,16 @@ export default class ReacherClient {
   ): Promise<
     { data: BulkSubmitResponse; error: null } | { data: null; error: Error }
   > {
-    // We're using any here to be able to dynamically add attributes to the request body
-    // If we use optional chaining, Axios will serialize undefined values in the payload which we don't want to happen
-    const requestBody: any = {
-      input_type: 'array',
-      input: emails
-    };
-
-    if (this.smtpConfig?.from) {
-      requestBody.from_email = this.smtpConfig?.from;
-    }
-    if (this.smtpConfig?.helloName) {
-      requestBody.hello_name = this.smtpConfig?.helloName;
-    }
-    if (this.smtpConfig?.proxy) {
-      requestBody.proxy = this.smtpConfig?.proxy;
-    }
-
     try {
       const { data } = await this.api.post<BulkSubmitResponse>(
         ReacherClient.BULK_VERIFICATION_PATH,
-        { data: requestBody }
+        {
+          data: {
+            input_type: 'array',
+            input: emails,
+            ...this.smtpConfig
+          }
+        }
       );
 
       return { data, error: null };

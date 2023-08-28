@@ -58,6 +58,8 @@ const schema = z.object({
   REACHER_SMTP_HELLO: z.string().nonempty().optional(),
   REACHER_PROXY_PORT: z.number().optional(),
   REACHER_PROXY_HOST: z.string().nonempty().optional(),
+  REACHER_PROXY_USERNAME: z.string().nonempty().optional(),
+  REACHER_PROXY_PASSWORD: z.string().nonempty().optional(),
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
