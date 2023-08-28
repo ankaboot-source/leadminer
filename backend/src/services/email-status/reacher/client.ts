@@ -94,15 +94,13 @@ export default class ReacherClient {
     this.api = axios.create({
       baseURL: config.host
     });
+    this.smtpConfig = config.smtpConfig;
     if (config.apiKey) {
       this.api.defaults.headers.common.Authorization = config.apiKey;
     }
     if (config.headerSecret) {
       this.api.defaults.headers.common['x-reacher-secret'] =
         config.headerSecret;
-    }
-    if (config.smtpConfig) {
-      this.smtpConfig = config.smtpConfig;
     }
   }
 
