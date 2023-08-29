@@ -1,14 +1,10 @@
-import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
-import {
-  REACHABILITY,
-  REDIS_EMAIL_STATUS_KEY,
-  REGEX_LIST_ID
-} from '../../utils/constants';
+import { REACHABILITY, REGEX_LIST_ID } from '../../utils/constants';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
 import { differenceInDays } from '../../utils/helpers/date';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
+import EmailStatusCache from '../cache/EmailStatusCache';
 import { Status } from '../email-status/EmailStatusVerifier';
 import { TaggingEngine } from '../tagging/types';
 import {
@@ -43,7 +39,7 @@ export default class EmailMessage {
    *
    * @param taggingEngine - The tagging engine responsible for categorizing the message.
    * @param redisClientForNormalMode - The Redis client used for normal mode.
-   * @param emailVerificationQueue - The queue used for email verification.
+   * @param emailStatusCache - The queue used for email verification.
    * @param domainStatusVerification - The function that does domain status verification.
    * @param userEmail - The email address of the user.
    * @param userId - The unique identifier of the user.
@@ -54,7 +50,7 @@ export default class EmailMessage {
   constructor(
     private readonly taggingEngine: TaggingEngine,
     private readonly redisClientForNormalMode: Redis,
-    private readonly emailVerificationQueue: Queue,
+    private readonly emailStatusCache: EmailStatusCache,
     private readonly domainStatusVerification: DomainStatusVerificationFunction,
     private readonly userEmail: string,
     private readonly userId: string,
@@ -251,6 +247,7 @@ export default class EmailMessage {
         if (domainIsValid) {
           const person: Person = {
             status: Status.UNKNOWN,
+            verified: false,
             name: validContact.name,
             email: validContact.email.address,
             givenName: validContact.name,
@@ -290,27 +287,13 @@ export default class EmailMessage {
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
             ) {
               person.status = Status.VALID;
-              await this.redisClientForNormalMode.hset(
-                REDIS_EMAIL_STATUS_KEY,
-                person.email,
-                Status.VALID
-              );
+              person.verified = true;
+              await this.emailStatusCache.set(person.email, Status.VALID);
             } else {
-              const statusCache = await this.redisClientForNormalMode.hget(
-                REDIS_EMAIL_STATUS_KEY,
-                validContact.email.address
-              );
-              if (!statusCache) {
-                await this.emailVerificationQueue.add(
-                  person.email,
-                  {
-                    userId: this.userId,
-                    email: person.email
-                  },
-                  { removeOnComplete: true, removeOnFail: true }
-                );
-              } else {
-                person.status = statusCache as Status;
+              const statusCache = await this.emailStatusCache.get(person.email);
+              if (statusCache) {
+                person.status = statusCache;
+                person.verified = true;
               }
             }
           }

@@ -1,10 +1,10 @@
-import { Queue } from 'bullmq';
 import { Contacts } from '../db/interfaces/Contacts';
+import EmailStatusCache from '../services/cache/EmailStatusCache';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
+import { checkDomainStatus } from '../utils/helpers/domainHelpers';
 import logger from '../utils/logger';
 import redis from '../utils/redis';
-import { checkDomainStatus } from '../utils/helpers/domainHelpers';
 
 const redisClientForNormalMode = redis.getClient();
 
@@ -45,12 +45,12 @@ async function handleMessage(
     userIdentifier
   }: PublishedStreamMessage,
   contacts: Contacts,
-  emailVerificationQueue: Queue
+  emailStatusCache: EmailStatusCache
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
     redisClientForNormalMode,
-    emailVerificationQueue,
+    emailStatusCache,
     checkDomainStatus,
     userEmail,
     userId,
@@ -74,17 +74,17 @@ async function handleMessage(
 /**
  * Asynchronously processes a message from a Redis stream by parsing the data and passing it to the handleMessage function
  */
-export default function initializeMessageProcessor(contacts: Contacts) {
+export default function initializeMessageProcessor(
+  contacts: Contacts,
+  emailStatusCache: EmailStatusCache
+) {
   return {
-    processStreamData: async (
-      message: [string, string],
-      emailVerificationQueue: Queue
-    ) => {
+    processStreamData: async (message: [string, string]) => {
       const [, msg] = message;
       const data: PublishedStreamMessage = JSON.parse(msg[1]);
       const { miningId } = data;
 
-      await handleMessage(data, contacts, emailVerificationQueue);
+      await handleMessage(data, contacts, emailStatusCache);
       return miningId;
     }
   };

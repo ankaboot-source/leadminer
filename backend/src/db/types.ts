@@ -24,6 +24,7 @@ export interface PersonWithPocAndTag {
 export interface Person {
   email: string;
   status: Status;
+  verified: boolean;
   url?: string;
   name?: string;
   image?: string;
@@ -71,6 +72,7 @@ export interface Contact {
   seniority?: Date;
   alternate_names?: string[];
   tags?: Tag[];
+  verified: boolean;
 }
 
 export interface Profile {

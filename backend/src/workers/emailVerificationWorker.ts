@@ -40,7 +40,7 @@ export default function initializeEmailVerificationWorker(
           status = reacherResult.status;
         }
         if (status !== Status.UNKNOWN) {
-          await contacts.updatePersonStatus(email, userId, status);
+          await contacts.updateSinglePersonStatus(email, userId, status);
         }
       } catch (error) {
         logger.error('error', error);

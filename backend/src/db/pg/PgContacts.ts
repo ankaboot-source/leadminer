@@ -12,6 +12,12 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_SQL =
     'SELECT * FROM get_contacts_table($1)';
 
+  private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
+    SELECT email 
+    FROM persons
+    WHERE user_id = $1 and verified = false
+    `;
+
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
     SELECT contacts.* 
     FROM get_contacts_table($1) contacts
@@ -31,6 +37,12 @@ export default class PgContacts implements Contacts {
         AND e.engagement_type = 'CSV'
     `;
 
+  private static readonly UPDATE_PERSON_STATUS_BULK = `
+    UPDATE persons 
+    SET status = update.status 
+    FROM (VALUES %L) AS update(email, status) 
+    WHERE persons.email = update.email and persons.user_id = %L`;
+
   private static readonly INSERT_EXPORTED_CONTACT =
     'INSERT INTO engagement (user_id, person_id, engagement_type) VALUES %L;';
 
@@ -44,16 +56,13 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status","verified")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
 
   private static readonly UPDATE_PERSON_STATUS_SQL = `
     UPDATE persons
-    SET status = CASE
-                   WHEN status <> 'VALID' AND $1 <> 'UNKNOWN' THEN $1
-                   ELSE status
-                 END
+    SET status = $1
     WHERE email = $2 AND user_id = $3;`;
 
   private static readonly INSERT_TAGS_SQL = `
@@ -63,7 +72,7 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
-  async updatePersonStatus(
+  async updateSinglePersonStatus(
     personEmail: string,
     userId: string,
     status: Status
@@ -74,6 +83,27 @@ export default class PgContacts implements Contacts {
         personEmail,
         userId
       ]);
+      return true;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
+
+  async updateManyPersonsStatus(
+    userId: string,
+    emailsToUpdate: { status: Status; email: string }[]
+  ): Promise<boolean> {
+    try {
+      const updates = emailsToUpdate.map((update) => [
+        update.email,
+        update.status
+      ]);
+
+      await this.pool.query(
+        format(PgContacts.UPDATE_PERSON_STATUS_BULK, updates, userId)
+      );
+
       return true;
     } catch (error) {
       this.logger.error(error);
@@ -108,7 +138,8 @@ export default class PgContacts implements Contacts {
           person.jobTitle,
           person.identifiers,
           userId,
-          person.status
+          person.status,
+          person.verified
         ]);
 
         const tagValues = tags.map((tag) => [
@@ -158,6 +189,20 @@ export default class PgContacts implements Contacts {
       ]);
 
       return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getUnverifiedEmails(userId: string): Promise<string[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_UNVERIFIED_EMAILS_SQL,
+        [userId]
+      );
+
+      return rows.map((r) => r.email);
     } catch (error) {
       this.logger.error(error);
       return [];

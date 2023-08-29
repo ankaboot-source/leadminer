@@ -1,15 +1,18 @@
 // eslint-disable-next-line max-classes-per-file
-import { Queue, QueueEvents } from 'bullmq';
+import { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import { Contacts } from '../../db/interfaces/Contacts';
 import {
+  REDIS_EMAIL_STATUS_KEY,
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP
 } from '../../utils/constants';
 import logger from '../../utils/logger';
-import initializeEmailVerificationWorker from '../../workers/emailVerificationWorker';
-import { EmailStatusVerifier } from '../email-status/EmailStatusVerifier';
+import {
+  EmailStatusVerifier,
+  Status
+} from '../email-status/EmailStatusVerifier';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
@@ -51,7 +54,8 @@ export default class TasksManager {
     private readonly contacts: Contacts,
     private readonly emailFetcherFactory: EmailFetcherFactory,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
-    private readonly idGenerator: () => Promise<string>
+    private readonly idGenerator: () => Promise<string>,
+    private readonly supabaseClient: SupabaseClient
   ) {
     if (TasksManager.instance) {
       throw new Error(
@@ -132,13 +136,68 @@ export default class TasksManager {
         fetchEmailBody
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
-      const emailVerificationWorker = initializeEmailVerificationWorker(
-        miningId,
-        this.redisPublisher,
-        logger,
-        this.contacts,
-        this.emailStatusVerifier
-      );
+
+      let channel: RealtimeChannel;
+      const channelIdx = this.supabaseClient
+        .getChannels()
+        .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
+
+      if (channelIdx !== -1) {
+        channel = this.supabaseClient.getChannels()[channelIdx];
+
+        if (channel.state !== 'joined') {
+          channel.subscribe();
+        }
+      } else {
+        channel = this.supabaseClient
+          .channel(`person-insertions-${userId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'persons',
+              filter: `user_id=eq.${userId}`
+            },
+            async (payload: { new: { email: string; status: Status } }) => {
+              try {
+                let status: Status;
+
+                if (payload.new.status === Status.VALID) {
+                  return;
+                }
+
+                const cacheResult = await this.redisPublisher.hget(
+                  REDIS_EMAIL_STATUS_KEY,
+                  payload.new.email
+                );
+                if (cacheResult) {
+                  status = cacheResult as Status;
+                } else {
+                  const emailStatusResult =
+                    await this.emailStatusVerifier.verify(payload.new.email);
+                  logger.debug('GOT VERIFICATION result');
+                  await this.redisPublisher.hset(
+                    REDIS_EMAIL_STATUS_KEY,
+                    payload.new.email,
+                    emailStatusResult.status
+                  );
+                  status = emailStatusResult.status;
+                }
+                if (status !== Status.UNKNOWN) {
+                  await this.contacts.updateSinglePersonStatus(
+                    payload.new.email,
+                    userId,
+                    status
+                  );
+                }
+              } catch (error) {
+                logger.error('error', error);
+              }
+            }
+          )
+          .subscribe();
+      }
 
       const miningTask: Task = {
         stream,
@@ -147,7 +206,6 @@ export default class TasksManager {
         miningId,
         startedAt: performance.now(),
         progressHandlerSSE,
-        emailVerificationWorker,
         progress: {
           totalMessages: await fetcher.getTotalMessages(),
           fetched: 0,
@@ -156,7 +214,6 @@ export default class TasksManager {
       };
 
       fetcher.start();
-      emailVerificationWorker.run();
       await this.pubsubSendMessage(
         miningId,
         'REGISTER',
@@ -216,25 +273,26 @@ export default class TasksManager {
    * @returns Returns the deleted task.
    * @throws {Error} Throws an error if the task with the given mining ID does not exist.
    */
-  async deleteTask(miningId: string, killEmailVerificationImmediately = false) {
+  async deleteTask(miningId: string) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const {
-      fetcher,
-      progressHandlerSSE,
-      stream,
-      startedAt,
-      progress,
-      emailVerificationWorker
-    } = task;
+    const { fetcher, progressHandlerSSE, stream, startedAt, progress, userId } =
+      task;
 
-    const queue = new Queue(miningId, {
-      connection: this.redisPublisher
-    });
+    const channelIdx = this.supabaseClient
+      .getChannels()
+      .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
+
+    if (channelIdx !== -1) {
+      logger.info('closing soon');
+      const channel = this.supabaseClient.getChannels()[channelIdx];
+      await this.supabaseClient.removeChannel(channel);
+      logger.info('CLOSED');
+    }
 
     this.ACTIVE_MINING_TASKS.delete(miningId);
 
@@ -248,31 +306,6 @@ export default class TasksManager {
       );
 
       await fetcher.stop();
-
-      if (killEmailVerificationImmediately) {
-        await queue.obliterate({ force: true });
-        await queue.close();
-        await emailVerificationWorker.close();
-      } else {
-        const queueEvents = new QueueEvents(miningId, {
-          connection: this.redisPublisher
-        });
-        // This sets up an event listener that will delete the queue once it's completed
-        queueEvents.on('completed', async () => {
-          const jobCounts = await queue.getJobCounts();
-          logger.debug('Completed', { jobCounts });
-
-          if (
-            jobCounts.waiting === 0 &&
-            jobCounts.active === 0 &&
-            jobCounts.delayed === 0
-          ) {
-            await queue.close();
-            await queue.obliterate();
-            await emailVerificationWorker.close();
-          }
-        });
-      }
     } catch (error) {
       logger.error('Error when deleting task', error);
     }

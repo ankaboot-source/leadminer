@@ -72,7 +72,7 @@
       </template>
 
       <template #loading>
-        <q-inner-loading showing color="teal" />
+        <q-inner-loading showing color="teal" :label="loadingLabel" />
       </template>
 
       <!--Header tooltips -->
@@ -220,13 +220,13 @@ import {
   RealtimePostgresChangesPayload,
   User,
 } from "@supabase/supabase-js";
+import { AxiosError } from "axios";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
+import { api } from "src/boot/axios";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { api } from "src/boot/axios";
-import { AxiosError } from "axios";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
@@ -235,6 +235,7 @@ const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(false);
+const loadingLabel = ref("");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = ref<QTable>();
 
@@ -268,30 +269,6 @@ async function setupSubscription() {
   );
 }
 
-async function subscribeToEmailVerificationEvents() {
-  // This function is temporary and will be removed once we finish
-  // emailStatusVerification progress and task management
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  subscription = supabase.channel("listening-to-emailVerification").on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "persons",
-      filter: `user_id=eq.${user.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      const index = rows.value.findIndex(
-        ({ email }) => email === newContact.email
-      );
-      if (index !== -1) {
-        rows.value[index].status = newContact.status;
-      }
-    }
-  );
-}
-
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const contactTableLength = rows.value.length;
@@ -305,6 +282,7 @@ function refreshTable() {
 }
 
 async function refineContacts() {
+  loadingLabel.value = "Refining contacts...";
   const user = (await supabase.auth.getSession()).data.session?.user as User;
 
   try {
@@ -335,6 +313,7 @@ async function getContacts(userId: string): Promise<Contact[]> {
 
 async function syncTable() {
   try {
+    loadingLabel.value = "Syncing...";
     const user = (await supabase.auth.getSession()).data.session?.user as User;
     const contacts = await getContacts(user.id);
     rows.value = contacts;
@@ -343,11 +322,24 @@ async function syncTable() {
       /* eslint-disable no-console */
       console.log(error.message);
       $q.notify({
-        message: "Error occured when refreshing table",
+        message: "Error occurred when refreshing table",
         textColor: "negative",
         color: "red-1",
       });
     }
+  }
+}
+
+async function verifyContacts() {
+  try {
+    loadingLabel.value = "Verifying contacts...";
+    await api.post("/imap/contacts/verify");
+  } catch (error) {
+    $q.notify({
+      message: "Error occurred when verifying contacts",
+      textColor: "negative",
+      color: "red-1",
+    });
   }
 }
 
@@ -370,12 +362,9 @@ watch(activeMiningTask, async (isActive) => {
     clearInterval(refreshInterval);
     contactsCache.clear();
     isLoading.value = true;
+    await verifyContacts();
     await refineContacts();
     await syncTable();
-    if (subscription) {
-      await subscribeToEmailVerificationEvents();
-      subscription.subscribe();
-    }
     isLoading.value = false;
   }
 });

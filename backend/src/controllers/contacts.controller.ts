@@ -1,21 +1,27 @@
-import { NextFunction, Request, Response } from 'express';
 import { User } from '@supabase/supabase-js';
+import { NextFunction, Request, Response } from 'express';
+import { Logger } from 'winston';
+import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
+import { Users } from '../db/interfaces/Users';
+import EmailStatusCache from '../services/cache/EmailStatusCache';
+import { EmailStatusVerifier } from '../services/email-status/EmailStatusVerifier';
+import {
+  INSUFFICIENT_CREDITS_MESSAGE,
+  INSUFFICIENT_CREDITS_STATUS,
+  createCreditHandler
+} from '../utils/billing/credits';
 import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
-import ENV from '../config';
-import {
-  INSUFFICIENT_CREDITS_STATUS,
-  INSUFFICIENT_CREDITS_MESSAGE,
-  createCreditHandler
-} from '../utils/billing/credits';
-import { Users } from '../db/interfaces/Users';
 
 export default function initializeContactsController(
   contacts: Contacts,
-  userResolver: Users
+  userResolver: Users,
+  emailStatusVerifier: EmailStatusVerifier,
+  emailStatusCache: EmailStatusCache,
+  logger: Logger
 ) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
@@ -88,6 +94,27 @@ export default function initializeContactsController(
         return res.header('Content-Type', 'text/csv').status(200).send(csvData);
       } catch (err) {
         return next(err);
+      }
+    },
+
+    async verifyContacts(req: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+
+      try {
+        const unverifiedEmails = await contacts.getUnverifiedEmails(user.id);
+
+        logger.info('Unverified emails', unverifiedEmails);
+        const results = await emailStatusVerifier.verifyMany(unverifiedEmails);
+
+        await emailStatusCache.setMany(results);
+        logger.info('Cache set', unverifiedEmails);
+
+        await contacts.updateManyPersonsStatus(user.id, results);
+        logger.info('Postgres updated', unverifiedEmails);
+
+        return res.json({ message: 'Success' });
+      } catch (error) {
+        return next(error);
       }
     }
   };
