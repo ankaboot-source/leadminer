@@ -426,18 +426,17 @@ function customSortLogic(
           : EmailStatusScore[statusB] - EmailStatusScore[statusA];
       });
 
+    case "name":
+    case "email":
+      return [...rowsToFilter].sort((a, b) => {
+        const aValue = (a[sortBy as keyof Contact] as string) ?? "";
+        const bValue = (b[sortBy as keyof Contact] as string) ?? "";
+        return descending
+          ? bValue.localeCompare(aValue)
+          : aValue.localeCompare(bValue);
+      });
+
     default:
-      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "string") {
-        return [...rowsToFilter].sort((a, b) => {
-          const aValue = (a[sortBy as keyof Contact] ?? "") as string;
-          const bValue = (b[sortBy as keyof Contact] ?? "") as string;
-
-          return descending
-            ? bValue.localeCompare(aValue)
-            : aValue.localeCompare(bValue);
-        });
-      }
-
       if (typeof rowsToFilter[0][sortBy as keyof Contact] === "number") {
         return [...rowsToFilter].sort((a, b) => {
           const aValue = a[sortBy as keyof Contact] as number;
