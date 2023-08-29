@@ -44,7 +44,9 @@ describe('createCreditHandler', () => {
 
   describe('createCreditHandler.validateCreditUsage', () => {
     it('should return insufficientCredits when userCredits < CREDITS_PER_UNIT', async () => {
-      userResolverMock.getUserProfile = jest.fn(() => Promise.resolve({ credits: 5 } as Profile))
+      userResolverMock.getUserProfile = jest.fn(() =>
+        Promise.resolve({ credits: 5 } as Profile)
+      );
       const creditHandler = createCreditHandler(true, 10, userResolverMock);
 
       const result = await creditHandler?.validateCreditUsage('userId', 3);
@@ -55,7 +57,9 @@ describe('createCreditHandler', () => {
     });
 
     it('should return availableUnits when userCredits >= CREDITS_PER_UNIT * units', async () => {
-      userResolverMock.getUserProfile = jest.fn(() => Promise.resolve({ credits: 30 } as Profile))
+      userResolverMock.getUserProfile = jest.fn(() =>
+        Promise.resolve({ credits: 30 } as Profile)
+      );
       const creditHandler = createCreditHandler(true, 10, userResolverMock);
 
       const result = await creditHandler?.validateCreditUsage('userId', 3);
@@ -65,9 +69,10 @@ describe('createCreditHandler', () => {
       expect(result?.availableUnits).toBe(3);
     });
 
-
     it('should return availableUnits when userCredits < CREDITS_PER_UNIT * units', async () => {
-      userResolverMock.getUserProfile = jest.fn(() => Promise.resolve({ credits: 20 } as Profile))
+      userResolverMock.getUserProfile = jest.fn(() =>
+        Promise.resolve({ credits: 20 } as Profile)
+      );
       const creditHandler = createCreditHandler(true, 10, userResolverMock);
 
       const result = await creditHandler?.validateCreditUsage('userId', 3);
@@ -76,12 +81,12 @@ describe('createCreditHandler', () => {
       expect(result?.requestedUnits).toBe(3);
       expect(result?.availableUnits).toBe(2);
     });
-
   });
 
   describe('createCreditHandler.deductCredits', () => {
     it('should return true if profile udpated successfully', async () => {
-      userResolverMock.getUserProfile = () => Promise.resolve({ credits: 30 } as Profile);
+      userResolverMock.getUserProfile = () =>
+        Promise.resolve({ credits: 30 } as Profile);
       userResolverMock.updateUserProfile = () => Promise.resolve(true);
 
       const creditHandler = createCreditHandler(true, 10, userResolverMock);
