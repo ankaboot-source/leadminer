@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { Worker } from 'bullmq';
 import RedisMock from 'ioredis-mock';
 import httpMocks from 'node-mocks-http';
 import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
@@ -14,11 +13,16 @@ import {
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 
 import { Contacts } from '../../src/db/interfaces/Contacts';
+import supabaseClient from '../../src/utils/supabase';
 import FakeEmailStatusVerifier from '../fakes/FakeEmailVerifier';
 
 jest.mock('../../src/config', () => ({
-  LEADMINER_API_LOG_LEVEL: 'error'
+  LEADMINER_API_LOG_LEVEL: 'error',
+  SUPABASE_PROJECT_URL: 'fake',
+  SUPABASE_SECRET_PROJECT_TOKEN: 'fake'
 }));
+
+jest.mock('../../src/utils/supabase');
 
 jest.mock('ioredis', () => jest.requireActual('ioredis-mock'));
 const fakeRedisClient = new RedisMock();
@@ -52,6 +56,8 @@ const fakeContacts: Contacts = {
   create: jest.fn(() => Promise.resolve()),
   refine: jest.fn(() => Promise.resolve(true)),
   updateSinglePersonStatus: jest.fn(() => Promise.resolve(true)),
+  updateManyPersonsStatus: jest.fn(() => Promise.resolve(true)),
+  getUnverifiedEmails: jest.fn(() => Promise.resolve([])),
   getContacts: jest.fn(() => Promise.resolve([])),
   getExportedContacts: jest.fn(() => Promise.resolve([])),
   getNonExportedContacts: jest.fn(() => Promise.resolve([])),
@@ -91,9 +97,6 @@ describe('Test TaskManager helper functions', () => {
           folders: ['test']
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
-        emailVerificationWorker: {
-          isRunning: () => false
-        } as Worker,
         stream: {
           streamName: 'test-stream',
           consumerGroupName: 'test-group'
@@ -112,9 +115,6 @@ describe('Test TaskManager helper functions', () => {
         fetcher: {
           status: 'running',
           folders: ['test']
-        },
-        emailStatusVerifier: {
-          running: false
         }
       };
 
@@ -167,7 +167,8 @@ describe('TasksManager class', () => {
       fakeContacts,
       emailFetcherFactory,
       sseBroadcasterFactory,
-      miningIdGenerator
+      miningIdGenerator,
+      supabaseClient
     );
   });
 
@@ -192,7 +193,8 @@ describe('TasksManager class', () => {
           fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
-          miningIdGenerator
+          miningIdGenerator,
+          supabaseClient
         );
 
         const instance2 = new TasksManager(
@@ -202,7 +204,8 @@ describe('TasksManager class', () => {
           fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
-          miningIdGenerator
+          miningIdGenerator,
+          supabaseClient
         );
 
         expect(instance1).not.toEqual(instance2);
