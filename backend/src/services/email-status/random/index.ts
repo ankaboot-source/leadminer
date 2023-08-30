@@ -21,7 +21,7 @@ export default class RandomEmailStatusVerifier implements EmailStatusVerifier {
     });
   }
 
-  async verifyMany(emails: string[]): Promise<EmailStatusResult[]> {
+  verifyMany(emails: string[]): Promise<EmailStatusResult[]> {
     return Promise.resolve(
       emails.map((email) => ({ email, status: this.getRandomStatus() }))
     );
