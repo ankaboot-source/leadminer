@@ -14,11 +14,11 @@ export default class EmailVerificationQueue {
     this.queue = new Queue(queueName, { connection: redisClient });
   }
 
-  async addSingle(data: EmailVerificationJobData) {
+  addSingle(data: EmailVerificationJobData) {
     return this.queue.add(data.email, data, this.jobOptions);
   }
 
-  async addMany(data: EmailVerificationJobData[]) {
+  addMany(data: EmailVerificationJobData[]) {
     if (data.length) {
       return this.queue.addBulk(
         data.map((d) => ({

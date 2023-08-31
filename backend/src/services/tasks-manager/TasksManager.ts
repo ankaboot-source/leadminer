@@ -133,68 +133,6 @@ export default class TasksManager {
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
-      //   let channel: RealtimeChannel;
-      //   const channelIdx = this.supabaseClient
-      //     .getChannels()
-      //     .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
-
-      //   if (channelIdx !== -1) {
-      //     channel = this.supabaseClient.getChannels()[channelIdx];
-
-      //     if (channel.state !== 'joined') {
-      //       channel.subscribe();
-      //     }
-      //   } else {
-      //     channel = this.supabaseClient
-      //       .channel(`person-insertions-${userId}`)
-      //       .on(
-      //         'postgres_changes',
-      //         {
-      //           event: 'INSERT',
-      //           schema: 'public',
-      //           table: 'persons',
-      //           filter: `user_id=eq.${userId}`
-      //         },
-      //         async (payload: { new: { email: string; status: Status } }) => {
-      //           try {
-      //             let status: Status;
-
-      //             if (payload.new.status === Status.VALID) {
-      //               return;
-      //             }
-
-      //             const cacheResult = await this.redisPublisher.hget(
-      //               REDIS_EMAIL_STATUS_KEY,
-      //               payload.new.email
-      //             );
-      //             if (cacheResult) {
-      //               status = cacheResult as Status;
-      //             } else {
-      //               const emailStatusResult =
-      //                 await this.emailStatusVerifier.verify(payload.new.email);
-      //               logger.debug('GOT VERIFICATION result');
-      //               await this.redisPublisher.hset(
-      //                 REDIS_EMAIL_STATUS_KEY,
-      //                 payload.new.email,
-      //                 emailStatusResult.status
-      //               );
-      //               status = emailStatusResult.status;
-      //             }
-      //             if (status !== Status.UNKNOWN) {
-      //               await this.contacts.updateSinglePersonStatus(
-      //                 payload.new.email,
-      //                 userId,
-      //                 status
-      //               );
-      //             }
-      //           } catch (error) {
-      //             logger.error('error', error);
-      //           }
-      //         }
-      //       )
-      //       .subscribe();
-      //   }
-
       const miningTask: Task = {
         stream,
         userId,
@@ -276,19 +214,7 @@ export default class TasksManager {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { fetcher, progressHandlerSSE, stream, startedAt, progress, userId } =
-      task;
-
-    // const channelIdx = this.supabaseClient
-    //   .getChannels()
-    //   .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
-
-    // if (channelIdx !== -1) {
-    //   logger.info('closing soon');
-    //   const channel = this.supabaseClient.getChannels()[channelIdx];
-    //   await this.supabaseClient.removeChannel(channel);
-    //   logger.info('CLOSED');
-    // }
+    const { fetcher, progressHandlerSSE, stream, startedAt, progress } = task;
 
     this.ACTIVE_MINING_TASKS.delete(miningId);
 
