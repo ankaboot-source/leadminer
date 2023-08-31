@@ -313,7 +313,6 @@ describe('Email Message', () => {
       const expectedContacts = [
         {
           person: {
-            status: 'UNKNOWN',
             name: 'Leadminer',
             email: 'leadminer@leadminer.io',
             givenName: 'Leadminer',

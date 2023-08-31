@@ -12,10 +12,6 @@ import {
 } from '../../src/services/tasks-manager/utils';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 
-import { Contacts } from '../../src/db/interfaces/Contacts';
-import supabaseClient from '../../src/utils/supabase';
-import FakeEmailStatusVerifier from '../fakes/FakeEmailVerifier';
-
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
@@ -52,17 +48,6 @@ const miningIdGenerator = jest.fn(() => {
   const randomId = Math.random().toString(36).substring(2);
   return Promise.resolve(`test-id-${randomId}`);
 });
-const fakeContacts: Contacts = {
-  create: jest.fn(() => Promise.resolve([])),
-  refine: jest.fn(() => Promise.resolve(true)),
-  updateSinglePersonStatus: jest.fn(() => Promise.resolve(true)),
-  updateManyPersonsStatus: jest.fn(() => Promise.resolve(true)),
-  getUnverifiedEmails: jest.fn(() => Promise.resolve([])),
-  getContacts: jest.fn(() => Promise.resolve([])),
-  getExportedContacts: jest.fn(() => Promise.resolve([])),
-  getNonExportedContacts: jest.fn(() => Promise.resolve([])),
-  registerExportedContacts: jest.fn(() => Promise.resolve())
-};
 
 /*
 
@@ -163,12 +148,9 @@ describe('TasksManager class', () => {
     tasksManager = new TasksManager(
       fakeRedisClient,
       fakeRedisClient,
-      new FakeEmailStatusVerifier({}),
-      fakeContacts,
       emailFetcherFactory,
       sseBroadcasterFactory,
-      miningIdGenerator,
-      supabaseClient
+      miningIdGenerator
     );
   });
 
@@ -189,23 +171,17 @@ describe('TasksManager class', () => {
         const instance1 = new TasksManager(
           fakeRedisClient,
           fakeRedisClient,
-          new FakeEmailStatusVerifier({}),
-          fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
-          miningIdGenerator,
-          supabaseClient
+          miningIdGenerator
         );
 
         const instance2 = new TasksManager(
           fakeRedisClient,
           fakeRedisClient,
-          new FakeEmailStatusVerifier({}),
-          fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
-          miningIdGenerator,
-          supabaseClient
+          miningIdGenerator
         );
 
         expect(instance1).not.toEqual(instance2);

@@ -1,14 +1,11 @@
 // eslint-disable-next-line max-classes-per-file
-import { SupabaseClient } from '@supabase/supabase-js';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
-import { Contacts } from '../../db/interfaces/Contacts';
 import {
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP
 } from '../../utils/constants';
 import logger from '../../utils/logger';
-import { EmailStatusVerifier } from '../email-status/EmailStatusVerifier';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
@@ -46,12 +43,9 @@ export default class TasksManager {
   constructor(
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
-    private readonly emailStatusVerifier: EmailStatusVerifier,
-    private readonly contacts: Contacts,
     private readonly emailFetcherFactory: EmailFetcherFactory,
     private readonly sseBroadcasterFactory: SSEBroadcasterFactory,
-    private readonly idGenerator: () => Promise<string>,
-    private readonly supabaseClient: SupabaseClient
+    private readonly idGenerator: () => Promise<string>
   ) {
     if (TasksManager.instance) {
       throw new Error(

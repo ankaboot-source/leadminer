@@ -33,19 +33,15 @@ console.log(
 (async () => {
   await redis.flushAll();
   await redis.initProviders();
-  const contacts = new PgContacts(pool, logger);
 
   const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
 
   const tasksManager = new TasksManager(
     redis.getSubscriberClient(),
     redis.getClient(),
-    emailStatusVerifier,
-    contacts,
     new EmailFetcherFactory(),
     new SSEBroadcasterFactory(),
-    flickrBase58IdGenerator(),
-    supabaseClient
+    flickrBase58IdGenerator()
   );
   const miningSources = new PgMiningSources(
     pool,
