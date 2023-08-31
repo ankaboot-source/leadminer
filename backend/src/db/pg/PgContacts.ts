@@ -15,7 +15,7 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
     SELECT email 
     FROM persons
-    WHERE user_id = $1 and verified = false
+    WHERE user_id = $1 and status IS NULL
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
@@ -39,9 +39,9 @@ export default class PgContacts implements Contacts {
 
   private static readonly UPDATE_PERSON_STATUS_BULK = `
     UPDATE persons 
-    SET status = update.status 
+    SET status = update.status
     FROM (VALUES %L) AS update(email, status) 
-    WHERE persons.email = update.email and persons.user_id = %L`;
+    WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
     'INSERT INTO engagement (user_id, person_id, engagement_type) VALUES %L;';
@@ -56,14 +56,15 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status","verified")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-    ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name
+    RETURNING persons.email;`;
 
   private static readonly UPDATE_PERSON_STATUS_SQL = `
     UPDATE persons
     SET status = $1
-    WHERE email = $2 AND user_id = $3;`;
+    WHERE email = $2 AND user_id = $3 AND persons.status IS NULL;`;
 
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
@@ -113,6 +114,8 @@ export default class PgContacts implements Contacts {
 
   async create({ message, persons }: ExtractionResult, userId: string) {
     try {
+      const insertedEmails: string[] = [];
+
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
@@ -126,7 +129,7 @@ export default class PgContacts implements Contacts {
 
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+        const { rows } = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
           person.name,
           person.email,
           person.url,
@@ -138,9 +141,12 @@ export default class PgContacts implements Contacts {
           person.jobTitle,
           person.identifiers,
           userId,
-          person.status,
-          person.verified
+          person.status ?? null
         ]);
+
+        if (rows.length) {
+          insertedEmails.push(...rows.map((r: { email: string }) => r.email));
+        }
 
         const tagValues = tags.map((tag) => [
           tag.name,
@@ -167,8 +173,11 @@ export default class PgContacts implements Contacts {
           ])
         ]);
       }
+
+      return insertedEmails;
     } catch (e) {
       this.logger.error('Error when inserting contact', e);
+      return [];
     }
   }
 

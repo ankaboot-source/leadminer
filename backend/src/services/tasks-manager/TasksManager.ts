@@ -1,18 +1,14 @@
 // eslint-disable-next-line max-classes-per-file
-import { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import { Contacts } from '../../db/interfaces/Contacts';
 import {
-  REDIS_EMAIL_STATUS_KEY,
   REDIS_PUBSUB_COMMUNICATION_CHANNEL,
   REDIS_STREAMS_CONSUMER_GROUP
 } from '../../utils/constants';
 import logger from '../../utils/logger';
-import {
-  EmailStatusVerifier,
-  Status
-} from '../email-status/EmailStatusVerifier';
+import { EmailStatusVerifier } from '../email-status/EmailStatusVerifier';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
@@ -137,67 +133,67 @@ export default class TasksManager {
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
-      let channel: RealtimeChannel;
-      const channelIdx = this.supabaseClient
-        .getChannels()
-        .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
+      //   let channel: RealtimeChannel;
+      //   const channelIdx = this.supabaseClient
+      //     .getChannels()
+      //     .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
 
-      if (channelIdx !== -1) {
-        channel = this.supabaseClient.getChannels()[channelIdx];
+      //   if (channelIdx !== -1) {
+      //     channel = this.supabaseClient.getChannels()[channelIdx];
 
-        if (channel.state !== 'joined') {
-          channel.subscribe();
-        }
-      } else {
-        channel = this.supabaseClient
-          .channel(`person-insertions-${userId}`)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'persons',
-              filter: `user_id=eq.${userId}`
-            },
-            async (payload: { new: { email: string; status: Status } }) => {
-              try {
-                let status: Status;
+      //     if (channel.state !== 'joined') {
+      //       channel.subscribe();
+      //     }
+      //   } else {
+      //     channel = this.supabaseClient
+      //       .channel(`person-insertions-${userId}`)
+      //       .on(
+      //         'postgres_changes',
+      //         {
+      //           event: 'INSERT',
+      //           schema: 'public',
+      //           table: 'persons',
+      //           filter: `user_id=eq.${userId}`
+      //         },
+      //         async (payload: { new: { email: string; status: Status } }) => {
+      //           try {
+      //             let status: Status;
 
-                if (payload.new.status === Status.VALID) {
-                  return;
-                }
+      //             if (payload.new.status === Status.VALID) {
+      //               return;
+      //             }
 
-                const cacheResult = await this.redisPublisher.hget(
-                  REDIS_EMAIL_STATUS_KEY,
-                  payload.new.email
-                );
-                if (cacheResult) {
-                  status = cacheResult as Status;
-                } else {
-                  const emailStatusResult =
-                    await this.emailStatusVerifier.verify(payload.new.email);
-                  logger.debug('GOT VERIFICATION result');
-                  await this.redisPublisher.hset(
-                    REDIS_EMAIL_STATUS_KEY,
-                    payload.new.email,
-                    emailStatusResult.status
-                  );
-                  status = emailStatusResult.status;
-                }
-                if (status !== Status.UNKNOWN) {
-                  await this.contacts.updateSinglePersonStatus(
-                    payload.new.email,
-                    userId,
-                    status
-                  );
-                }
-              } catch (error) {
-                logger.error('error', error);
-              }
-            }
-          )
-          .subscribe();
-      }
+      //             const cacheResult = await this.redisPublisher.hget(
+      //               REDIS_EMAIL_STATUS_KEY,
+      //               payload.new.email
+      //             );
+      //             if (cacheResult) {
+      //               status = cacheResult as Status;
+      //             } else {
+      //               const emailStatusResult =
+      //                 await this.emailStatusVerifier.verify(payload.new.email);
+      //               logger.debug('GOT VERIFICATION result');
+      //               await this.redisPublisher.hset(
+      //                 REDIS_EMAIL_STATUS_KEY,
+      //                 payload.new.email,
+      //                 emailStatusResult.status
+      //               );
+      //               status = emailStatusResult.status;
+      //             }
+      //             if (status !== Status.UNKNOWN) {
+      //               await this.contacts.updateSinglePersonStatus(
+      //                 payload.new.email,
+      //                 userId,
+      //                 status
+      //               );
+      //             }
+      //           } catch (error) {
+      //             logger.error('error', error);
+      //           }
+      //         }
+      //       )
+      //       .subscribe();
+      //   }
 
       const miningTask: Task = {
         stream,
@@ -283,16 +279,16 @@ export default class TasksManager {
     const { fetcher, progressHandlerSSE, stream, startedAt, progress, userId } =
       task;
 
-    const channelIdx = this.supabaseClient
-      .getChannels()
-      .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
+    // const channelIdx = this.supabaseClient
+    //   .getChannels()
+    //   .findIndex((c) => c.topic === `realtime:person-insertions-${userId}`);
 
-    if (channelIdx !== -1) {
-      logger.info('closing soon');
-      const channel = this.supabaseClient.getChannels()[channelIdx];
-      await this.supabaseClient.removeChannel(channel);
-      logger.info('CLOSED');
-    }
+    // if (channelIdx !== -1) {
+    //   logger.info('closing soon');
+    //   const channel = this.supabaseClient.getChannels()[channelIdx];
+    //   await this.supabaseClient.removeChannel(channel);
+    //   logger.info('CLOSED');
+    // }
 
     this.ACTIVE_MINING_TASKS.delete(miningId);
 

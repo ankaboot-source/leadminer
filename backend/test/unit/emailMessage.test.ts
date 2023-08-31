@@ -317,8 +317,7 @@ describe('Email Message', () => {
             name: 'Leadminer',
             email: 'leadminer@leadminer.io',
             givenName: 'Leadminer',
-            identifiers: ['leadminer'],
-            verified: false
+            identifiers: ['leadminer']
           },
           pointOfContact: {
             name: 'Leadminer',

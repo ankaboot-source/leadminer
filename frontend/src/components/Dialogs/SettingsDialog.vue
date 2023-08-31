@@ -164,7 +164,7 @@
                         activeMiningSource?.email === miningSource.email &&
                         isLoadingBoxes
                       "
-                      size="1.3rem"
+                      size="20px"
                     >
                     </q-spinner>
                     <q-icon v-else name="pending" color="accent">

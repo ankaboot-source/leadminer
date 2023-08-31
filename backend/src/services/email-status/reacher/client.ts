@@ -173,17 +173,14 @@ export default class ReacherClient {
       const { data } = await this.api.post<BulkSubmitResponse>(
         ReacherClient.BULK_VERIFICATION_PATH,
         {
-          data: {
-            input_type: 'array',
-            input: emails,
-            ...this.smtpConfig
-          }
+          input_type: 'array',
+          input: emails,
+          ...this.smtpConfig
         }
       );
 
       return { data, error: null };
     } catch (error) {
-      this.logger.error('Failed creating bulk verification job', error);
       if (axios.isAxiosError(error)) {
         return { ...handleAxiosError(error), data: null };
       }

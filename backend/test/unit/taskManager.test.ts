@@ -53,7 +53,7 @@ const miningIdGenerator = jest.fn(() => {
   return Promise.resolve(`test-id-${randomId}`);
 });
 const fakeContacts: Contacts = {
-  create: jest.fn(() => Promise.resolve()),
+  create: jest.fn(() => Promise.resolve([])),
   refine: jest.fn(() => Promise.resolve(true)),
   updateSinglePersonStatus: jest.fn(() => Promise.resolve(true)),
   updateManyPersonsStatus: jest.fn(() => Promise.resolve(true)),

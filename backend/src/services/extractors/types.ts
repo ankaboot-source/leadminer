@@ -40,8 +40,7 @@ export interface Message {
 
 export interface Person {
   email: string;
-  verified: boolean;
-  status: Status;
+  status?: Status;
   url?: string;
   name?: string;
   image?: string;

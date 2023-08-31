@@ -19,9 +19,11 @@ export default class RedisEmailStatusCache implements EmailStatusCache {
   }
 
   async setMany(inputs: { email: string; status: Status }[]): Promise<void> {
-    await this.redisClient.hset(
-      this.emailStatusKey,
-      ...inputs.flatMap(({ email, status }) => [email, status])
-    );
+    if (inputs.length) {
+      await this.redisClient.hset(
+        this.emailStatusKey,
+        ...inputs.flatMap(({ email, status }) => [email, status])
+      );
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { Contacts } from '../db/interfaces/Contacts';
 import EmailStatusCache from '../services/cache/EmailStatusCache';
+import EmailVerificationQueue from '../services/email-status/EmailVerificationQueue';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import { checkDomainStatus } from '../utils/helpers/domainHelpers';
@@ -45,7 +46,8 @@ async function handleMessage(
     userIdentifier
   }: PublishedStreamMessage,
   contacts: Contacts,
-  emailStatusCache: EmailStatusCache
+  emailStatusCache: EmailStatusCache,
+  emailVerificationQueue: EmailVerificationQueue
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
@@ -61,7 +63,10 @@ async function handleMessage(
 
   try {
     const extractedContacts = await message.getContacts();
-    await contacts.create(extractedContacts, userId);
+    const emails = await contacts.create(extractedContacts, userId);
+    await emailVerificationQueue.addMany(
+      emails.map((email) => ({ email, userId }))
+    );
   } catch (error) {
     logger.error(
       'Failed when processing message from the stream',
@@ -76,7 +81,8 @@ async function handleMessage(
  */
 export default function initializeMessageProcessor(
   contacts: Contacts,
-  emailStatusCache: EmailStatusCache
+  emailStatusCache: EmailStatusCache,
+  emailVerificationQueue: EmailVerificationQueue
 ) {
   return {
     processStreamData: async (message: [string, string]) => {
@@ -84,7 +90,12 @@ export default function initializeMessageProcessor(
       const data: PublishedStreamMessage = JSON.parse(msg[1]);
       const { miningId } = data;
 
-      await handleMessage(data, contacts, emailStatusCache);
+      await handleMessage(
+        data,
+        contacts,
+        emailStatusCache,
+        emailVerificationQueue
+      );
       return miningId;
     }
   };

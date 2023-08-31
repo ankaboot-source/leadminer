@@ -71,10 +71,6 @@
         </q-btn>
       </template>
 
-      <template #loading>
-        <q-inner-loading showing color="teal" :label="loadingLabel" />
-      </template>
-
       <!--Header tooltips -->
       <template #header-cell-recency="props">
         <q-th :props="props">
@@ -206,9 +202,29 @@
         <q-td :props="props">
           <validity-indicator
             :key="props.row.status"
-            :email-status="props.row.status"
+            :email-status="props.row.status ?? 'UNKNOWN'"
           />
         </q-td>
+      </template>
+
+      <template #loading>
+        <q-inner-loading showing color="teal">
+          <template #default>
+            <q-circular-progress
+              v-if="isVerifying"
+              show-value
+              :value="verificationProgress"
+              size="3em"
+              color="primary"
+              track-color="grey-3"
+              class="q-ma-md"
+            >
+              {{ verificationProgress }}%
+            </q-circular-progress>
+            <q-spinner v-else color="primary" size="3em" />
+            <p>{{ loadingLabel }}</p>
+          </template>
+        </q-inner-loading>
       </template>
     </q-table>
   </div>
@@ -234,14 +250,25 @@ const leadminerStore = useLeadminerStore();
 const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
-const isLoading = ref(false);
+const isLoading = ref(true);
+const isVerifying = ref(false);
 const loadingLabel = ref("");
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = ref<QTable>();
 
 let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
+const unverifiedEmails = ref(0);
+const verifiedEmails = ref(0);
+
+const verificationProgress = computed(() =>
+  unverifiedEmails.value !== 0
+    ? Math.min(
+        Math.floor((verifiedEmails.value / unverifiedEmails.value) * 100),
+        100
+      )
+    : 0
+);
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 const activeMiningTask = computed(
@@ -331,16 +358,52 @@ async function syncTable() {
 }
 
 async function verifyContacts() {
-  try {
-    loadingLabel.value = "Verifying contacts...";
-    await api.post("/imap/contacts/verify");
-  } catch (error) {
-    $q.notify({
-      message: "Error occurred when verifying contacts",
-      textColor: "negative",
-      color: "red-1",
-    });
-  }
+  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  loadingLabel.value = "Verifying contacts...";
+  isVerifying.value = true;
+
+  const contacts = await getContacts(user.id);
+
+  unverifiedEmails.value = contacts.filter((c) => !c.status).length;
+  verifiedEmails.value = 0;
+  const maxMsBeforeClosingRealtime = 5000;
+
+  return new Promise<void>((resolve) => {
+    let interval: number;
+    let msWaiting = 0;
+
+    const setupInterval = () =>
+      window.setInterval(async () => {
+        msWaiting += 1000;
+        if (msWaiting >= maxMsBeforeClosingRealtime) {
+          await subscription?.unsubscribe();
+          isVerifying.value = false;
+          resolve();
+        }
+      }, 1000);
+
+    interval = setupInterval();
+    subscription = supabase
+      .channel("*")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "persons",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          verifiedEmails.value += 1;
+          if (interval) {
+            clearInterval(interval);
+          }
+          msWaiting = 0;
+          interval = setupInterval();
+        }
+      )
+      .subscribe();
+  });
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -362,8 +425,8 @@ watch(activeMiningTask, async (isActive) => {
     clearInterval(refreshInterval);
     contactsCache.clear();
     isLoading.value = true;
-    await verifyContacts();
     await refineContacts();
+    await verifyContacts();
     await syncTable();
     isLoading.value = false;
   }
@@ -394,7 +457,10 @@ function customSortLogic(
 
         if (statusA !== statusB) {
           // Sort by 'status' column (VALID before UNKNOWN)
-          return EmailStatusScore[statusA] - EmailStatusScore[statusB];
+          return (
+            EmailStatusScore[statusA ?? "UNKNOWN"] -
+            EmailStatusScore[statusB ?? "UNKNOWN"]
+          );
         }
 
         if (repliedA !== repliedB) {
@@ -411,8 +477,10 @@ function customSortLogic(
         const { status: statusB } = b;
 
         return descending
-          ? EmailStatusScore[statusA] - EmailStatusScore[statusB]
-          : EmailStatusScore[statusB] - EmailStatusScore[statusA];
+          ? EmailStatusScore[statusA ?? "UNKNOWN"] -
+              EmailStatusScore[statusB ?? "UNKNOWN"]
+          : EmailStatusScore[statusB ?? "UNKNOWN"] -
+              EmailStatusScore[statusA ?? "UNKNOWN"];
       });
 
     default:

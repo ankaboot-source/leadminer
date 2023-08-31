@@ -246,8 +246,6 @@ export default class EmailMessage {
 
         if (domainIsValid) {
           const person: Person = {
-            status: Status.UNKNOWN,
-            verified: false,
             name: validContact.name,
             email: validContact.email.address,
             givenName: validContact.name,
@@ -287,13 +285,11 @@ export default class EmailMessage {
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
             ) {
               person.status = Status.VALID;
-              person.verified = true;
               await this.emailStatusCache.set(person.email, Status.VALID);
             } else {
               const statusCache = await this.emailStatusCache.get(person.email);
               if (statusCache) {
                 person.status = statusCache;
-                person.verified = true;
               }
             }
           }
