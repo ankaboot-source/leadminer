@@ -19,7 +19,7 @@ export interface Contact {
   recipient?: string;
   conversations?: number;
   replied_conversations?: number;
-  status: EmailStatus;
+  status: EmailStatus | null;
   occurrence?: number;
   personid?: string;
   recency?: Date;
