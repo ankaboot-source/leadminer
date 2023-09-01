@@ -366,6 +366,7 @@ async function verifyContacts() {
 
   unverifiedEmails.value = contacts.filter((c) => !c.status).length;
   verifiedEmails.value = 0;
+  let verifiedEmailsCountBuffer = 0;
   const maxMsBeforeClosingRealtime = 5000;
 
   return new Promise<void>((resolve) => {
@@ -376,6 +377,7 @@ async function verifyContacts() {
       window.setInterval(async () => {
         msWaiting += 1000;
         if (msWaiting >= maxMsBeforeClosingRealtime) {
+          verifiedEmails.value += verifiedEmailsCountBuffer;
           await subscription?.unsubscribe();
           isVerifying.value = false;
           resolve();
@@ -394,7 +396,12 @@ async function verifyContacts() {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          verifiedEmails.value += 1;
+          // We use a buffer to reduce how many times we update the DOM
+          verifiedEmailsCountBuffer += 1;
+          if (verifiedEmailsCountBuffer >= 50) {
+            verifiedEmails.value += verifiedEmailsCountBuffer;
+            verifiedEmailsCountBuffer = 0;
+          }
           if (interval) {
             clearInterval(interval);
           }

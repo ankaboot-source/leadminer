@@ -6,7 +6,6 @@ import PgContacts from './db/pg/PgContacts';
 import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
 import EmailStatusVerifierFactory from './services/email-status/EmailStatusVerifierFactory';
 import EmailVerificationWorker from './services/email-status/EmailVerificationWorker';
-import { REDIS_EMAIL_VERIFICATION_QUEUE as EMAIL_VERIFICATION_QUEUE_NAME } from './utils/constants';
 import logger from './utils/logger';
 import redis from './utils/redis';
 
@@ -20,7 +19,7 @@ const worker = new EmailVerificationWorker(
   contacts,
   emailStatusVerifier,
   emailStatusCache,
-  EMAIL_VERIFICATION_QUEUE_NAME
+  ENV
 );
 
 worker.run();

@@ -6,6 +6,11 @@ import EmailStatusCache from '../cache/EmailStatusCache';
 import { EmailStatusVerifier } from './EmailStatusVerifier';
 import { EmailVerificationJobData } from './types';
 
+interface Options {
+  EMAIL_VERIFICATION_QUEUE_NAME: string;
+  CONCURRENCY_FACTOR: number;
+}
+
 export default class EmailVerificationWorker {
   private readonly worker: Worker<EmailVerificationJobData, void, string>;
 
@@ -15,13 +20,13 @@ export default class EmailVerificationWorker {
     private readonly contacts: Contacts,
     private readonly emailStatusVerifier: EmailStatusVerifier,
     private readonly emailStatusCache: EmailStatusCache,
-    queueName: string
+    { EMAIL_VERIFICATION_QUEUE_NAME, CONCURRENCY_FACTOR }: Options
   ) {
     this.worker = new Worker<EmailVerificationJobData, void, string>(
-      queueName,
+      EMAIL_VERIFICATION_QUEUE_NAME,
       (job) => this.jobHandler(job),
       {
-        concurrency: 10,
+        concurrency: CONCURRENCY_FACTOR,
         connection: this.redisClient,
         autorun: false
       }
