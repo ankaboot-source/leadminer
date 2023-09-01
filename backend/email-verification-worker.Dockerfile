@@ -14,4 +14,4 @@ COPY package*.json ./
 RUN npm install --omit-dev
 COPY --from=build-stage /leadminer-worker/dist .
 
-CMD [ "node", "emailVerificationWorker.js" ]
+CMD [ "node", "--max-old-space-size=4096", "emailVerificationWorker.js" ]
