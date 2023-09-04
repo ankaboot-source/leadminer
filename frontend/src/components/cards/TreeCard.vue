@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { useLeadminerStore } from "src/store/leadminer";
+import { useLeadminerStore } from "src/stores/leadminer";
 
 const leadminerStore = useLeadminerStore();
 </script>

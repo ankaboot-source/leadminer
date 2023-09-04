@@ -2,15 +2,49 @@ import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
 import { Status } from '../../services/email-status/EmailStatusVerifier';
-import { Contacts } from '../Contacts';
+import { Contacts } from '../interfaces/Contacts';
 import { Contact, ExtractionResult } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refine_persons($1)';
 
-  private static readonly SELECT_REFINED_CONTACTS_SQL =
+  private static readonly SELECT_CONTACTS_SQL =
     'SELECT * FROM get_contacts_table($1)';
+
+  private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
+    SELECT email 
+    FROM persons
+    WHERE user_id = $1 and status IS NULL
+    `;
+
+  private static readonly SELECT_NON_EXPORTED_CONTACTS = `
+    SELECT contacts.* 
+    FROM get_contacts_table($1) contacts
+      LEFT JOIN engagement e
+        ON e.person_id = contacts.id
+        AND e.user_id = $1
+        AND e.engagement_type = 'CSV'
+    WHERE e.person_id IS NULL;
+    `;
+
+  private static readonly SELECT_EXPORTED_CONTACTS = `
+    SELECT contacts.* 
+    FROM get_contacts_table($1) contacts
+      JOIN engagement e
+        ON e.person_id = contacts.id
+        AND e.user_id = $1
+        AND e.engagement_type = 'CSV'
+    `;
+
+  private static readonly UPDATE_PERSON_STATUS_BULK = `
+    UPDATE persons 
+    SET status = update.status
+    FROM (VALUES %L) AS update(email, status) 
+    WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
+
+  private static readonly INSERT_EXPORTED_CONTACT =
+    'INSERT INTO engagement (user_id, person_id, engagement_type) VALUES %L;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
@@ -24,15 +58,13 @@ export default class PgContacts implements Contacts {
   private static readonly UPSERT_PERSON_SQL = `
     INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-    ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name;`;
+    ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name
+    RETURNING persons.email;`;
 
   private static readonly UPDATE_PERSON_STATUS_SQL = `
     UPDATE persons
-    SET status = CASE
-                   WHEN status <> 'VALID' AND $1 <> 'UNKNOWN' THEN $1
-                   ELSE status
-                 END
-    WHERE email = $2 AND user_id = $3;`;
+    SET status = $1
+    WHERE email = $2 AND user_id = $3 AND persons.status IS NULL;`;
 
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
@@ -41,7 +73,7 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
-  async updatePersonStatus(
+  async updateSinglePersonStatus(
     personEmail: string,
     userId: string,
     status: Status
@@ -59,8 +91,31 @@ export default class PgContacts implements Contacts {
     }
   }
 
+  async updateManyPersonsStatus(
+    userId: string,
+    emailsToUpdate: { status: Status; email: string }[]
+  ): Promise<boolean> {
+    try {
+      const updates = emailsToUpdate.map((update) => [
+        update.email,
+        update.status
+      ]);
+
+      await this.pool.query(
+        format(PgContacts.UPDATE_PERSON_STATUS_BULK, updates, userId)
+      );
+
+      return true;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
+
   async create({ message, persons }: ExtractionResult, userId: string) {
     try {
+      const insertedEmails: string[] = [];
+
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
@@ -74,7 +129,7 @@ export default class PgContacts implements Contacts {
 
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+        const { rows } = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
           person.name,
           person.email,
           person.url,
@@ -86,8 +141,12 @@ export default class PgContacts implements Contacts {
           person.jobTitle,
           person.identifiers,
           userId,
-          person.status
+          person.status ?? null
         ]);
+
+        if (rows.length) {
+          insertedEmails.push(...rows.map((r: { email: string }) => r.email));
+        }
 
         const tagValues = tags.map((tag) => [
           tag.name,
@@ -114,8 +173,11 @@ export default class PgContacts implements Contacts {
           ])
         ]);
       }
+
+      return insertedEmails;
     } catch (e) {
       this.logger.error('Error when inserting contact', e);
+      return [];
     }
   }
 
@@ -129,16 +191,70 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getContactsTable(userId: string): Promise<Contact[] | undefined> {
+  async getContacts(userId: string): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [
+        userId
+      ]);
+
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getUnverifiedEmails(userId: string): Promise<string[]> {
     try {
       const { rows } = await this.pool.query(
-        PgContacts.SELECT_REFINED_CONTACTS_SQL,
+        PgContacts.SELECT_UNVERIFIED_EMAILS_SQL,
+        [userId]
+      );
+
+      return rows.map((r) => r.email);
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getNonExportedContacts(userId: string): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_NON_EXPORTED_CONTACTS,
+        [userId]
+      );
+
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getExportedContacts(userId: string): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_EXPORTED_CONTACTS,
         [userId]
       );
       return rows;
     } catch (error) {
       this.logger.error(error);
-      return undefined;
+      return [];
+    }
+  }
+
+  async registerExportedContacts(
+    contactIds: string[],
+    userId: string
+  ): Promise<void> {
+    try {
+      const values = contactIds.map((id) => [userId, id, 'CSV']);
+      await this.pool.query(format(PgContacts.INSERT_EXPORTED_CONTACT, values));
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
   }
 }

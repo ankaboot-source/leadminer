@@ -15,7 +15,7 @@
 import { useRouter } from "vue-router";
 import { api } from "./boot/axios";
 import { supabase } from "./helpers/supabase";
-import { useLeadminerStore } from "./store/leadminer";
+import { useLeadminerStore } from "./stores/leadminer";
 
 const SKIP_DASHBOARD_REDIRECT = ["/oauth-consent-error", "/account"];
 const $router = useRouter();

@@ -120,8 +120,9 @@ import { useRouter } from "vue-router";
 const $quasar = useQuasar();
 const $router = useRouter();
 
-const fullName = ref("");
+const userId = ref("");
 const email = ref("");
+const fullName = ref("");
 const password = ref("");
 
 const isPwd = ref(true);
@@ -133,13 +134,28 @@ const isSocialLogin = ref(false);
 onMounted(async () => {
   const { session } = (await supabase.auth.getSession()).data;
 
-  if (session) {
-    const { full_name: fullUserName, email: userEmail } =
-      session.user.user_metadata;
-    fullName.value = fullUserName;
-    email.value = userEmail;
-    isSocialLogin.value = Boolean(session.provider_token);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .single();
+
+  if (!session || !profile) {
+    $quasar.notify({
+      message: "Session is expired.",
+      color: "negative",
+      icon: "error",
+    });
+    await supabase.auth.signOut();
+    return;
   }
+
+  const { provider_token: providerToken } = session;
+  const { user_id: userid, full_name: userFullName } = profile;
+
+  userId.value = userid;
+  fullName.value = userFullName;
+  email.value = String(session.user.email);
+  isSocialLogin.value = Boolean(providerToken);
 });
 
 function showWarning() {
@@ -157,16 +173,25 @@ function goToDashboard() {
 async function updateProfile() {
   isLoading.value = true;
   try {
-    const body = {
-      data: {
-        name: fullName.value,
-        full_name: fullName.value,
+    const canChangeEmailPassword = Boolean(isSocialLogin.value);
+
+    if (canChangeEmailPassword && password.value.length > 0) {
+      const { error } = await supabase.auth.updateUser({
         email: email.value,
-      },
-      email: email.value,
-      password: password.value.length > 0 ? password.value : undefined,
-    };
-    const { error } = await supabase.auth.updateUser(body);
+        password: password.value,
+      });
+
+      if (error) {
+        throw error;
+      }
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        email: canChangeEmailPassword ? email.value : undefined,
+        full_name: fullName.value,
+      })
+      .eq("user_id", userId.value);
 
     if (error) {
       throw error;

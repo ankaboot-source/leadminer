@@ -95,7 +95,7 @@ import MinedPersons from "src/components/MinedPersons.vue";
 import ProgressCard from "src/components/cards/ProgressCard.vue";
 import { supabase } from "src/helpers/supabase";
 import AppLayout from "src/layouts/AppLayout.vue";
-import { useLeadminerStore } from "src/store/leadminer";
+import { useLeadminerStore } from "src/stores/leadminer";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 

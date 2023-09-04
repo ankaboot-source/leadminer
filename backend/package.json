@@ -9,6 +9,7 @@
     "test-ci:unit": "jest ./test/unit --coverage",
     "dev-api": "nodemon src/server.ts",
     "dev-worker": "nodemon src/messageWorker.ts",
+    "dev-email-worker": "nodemon src/emailVerificationWorker.ts",
     "dev:inspect": "ts-node --inspect src/server.ts",
     "lint": "eslint src test",
     "lint:fix": "eslint --fix src test",
