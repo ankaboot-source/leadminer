@@ -3,7 +3,7 @@ import Connection, { Config } from 'imap';
 import ENV from '../../config';
 import generateXOauthToken from '../../utils/helpers/tokenHelpers';
 import logger from '../../utils/logger';
-import PROVIDER_POOL from '../auth/Provider';
+import { getOAuthImapConfigByEmail } from '../auth/Provider';
 
 class ImapConnectionProvider {
   private imapConfig: Config;
@@ -39,9 +39,7 @@ class ImapConnectionProvider {
       const email = this.imapConfig.user;
       const xoauth2Token = generateXOauthToken(token, email);
 
-      const { host, port } = PROVIDER_POOL.getProviderConfig({
-        email
-      }).imapConfig;
+      const { host, port } = getOAuthImapConfigByEmail(email);
       const tlsOptions = { host, port, servername: host };
 
       this.imapConfig = {
