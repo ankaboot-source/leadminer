@@ -30,6 +30,17 @@ services:
     depends_on:
       - redis
 
+  leadminer-email-worker:
+    image: leadminer-email-worker:git
+    container_name: leadminer_email_worker
+    build:
+      context: backend
+      dockerfile: email-verification-worker.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
   leadminer-server:
     image: leadminer-server:git
     container_name: nginx_server

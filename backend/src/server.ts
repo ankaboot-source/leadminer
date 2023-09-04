@@ -5,9 +5,10 @@ import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
+import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import ReacherEmailStatusVerifier from './services/email-status/reacher';
-import ReacherClient from './services/email-status/reacher/client';
+import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
+import EmailStatusVerifierFactory from './services/email-status/EmailStatusVerifierFactory';
 import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
@@ -32,39 +33,36 @@ console.log(
 (async () => {
   await redis.flushAll();
   await redis.initProviders();
-  const contacts = new PgContacts(pool, logger);
-  const reacherClient = new ReacherClient(logger, {
-    host: ENV.REACHER_HOST,
-    apiKey: ENV.REACHER_API_KEY,
-    headerSecret: ENV.REACHER_HEADER_SECRET
-  });
 
-  const emailStatusVerifier = new ReacherEmailStatusVerifier(
-    reacherClient,
-    logger
-  );
+  const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
+
   const tasksManager = new TasksManager(
     redis.getSubscriberClient(),
     redis.getClient(),
-    emailStatusVerifier,
-    contacts,
     new EmailFetcherFactory(),
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
   );
-
-  const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const miningSources = new PgMiningSources(
     pool,
     logger,
     ENV.LEADMINER_API_HASH_SECRET
   );
+  const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
+  const userResolver = new SupabaseUsers(supabaseClient, logger);
+
+  const emailStatusCache = new RedisEmailStatusCache(redis.getClient());
+
   const app = initializeApp(
     authResolver,
     tasksManager,
     miningSources,
-    contactsResolver
+    contactsResolver,
+    userResolver,
+    emailStatusVerifier,
+    emailStatusCache,
+    logger
   );
 
   app.listen(ENV.LEADMINER_API_PORT, () => {

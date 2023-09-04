@@ -16,6 +16,7 @@
       :filter-method="filterFn"
       :rows="rows"
       :pagination="initialPagination"
+      :sort-method="customSortLogic"
       binary-state-sort
       bordered
       flat
@@ -68,10 +69,6 @@
             {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
           </q-tooltip>
         </q-btn>
-      </template>
-
-      <template #loading>
-        <q-inner-loading showing color="teal" />
       </template>
 
       <!--Header tooltips -->
@@ -205,9 +202,29 @@
         <q-td :props="props">
           <validity-indicator
             :key="props.row.status"
-            :email-status="props.row.status"
+            :email-status="props.row.status ?? 'UNKNOWN'"
           />
         </q-td>
+      </template>
+
+      <template #loading>
+        <q-inner-loading showing color="teal">
+          <template #default>
+            <q-circular-progress
+              v-if="isVerifying"
+              show-value
+              :value="verificationProgress"
+              size="3em"
+              color="primary"
+              track-color="grey-3"
+              class="q-ma-md"
+            >
+              {{ verificationProgress }}%
+            </q-circular-progress>
+            <q-spinner v-else color="primary" size="3em" />
+            <p>{{ loadingLabel }}</p>
+          </template>
+        </q-inner-loading>
       </template>
     </q-table>
   </div>
@@ -219,13 +236,13 @@ import {
   RealtimePostgresChangesPayload,
   User,
 } from "@supabase/supabase-js";
-import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
-import { supabase } from "src/helpers/supabase";
-import { useLeadminerStore } from "src/store/leadminer";
-import { Contact, EmailStatus, EmailStatusScore } from "src/types/contact";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { api } from "src/boot/axios";
 import { AxiosError } from "axios";
+import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
+import { api } from "src/boot/axios";
+import { supabase } from "src/helpers/supabase";
+import { useLeadminerStore } from "src/stores/leadminer";
+import { Contact, EmailStatusScore } from "src/types/contact";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
 const $q = useQuasar();
@@ -233,20 +250,27 @@ const leadminerStore = useLeadminerStore();
 const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
-const isLoading = ref(false);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isLoading = ref(true);
+const isVerifying = ref(false);
+const loadingLabel = ref("");
 const table = ref<QTable>();
 
 let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
+const unverifiedEmails = ref(0);
+const verifiedEmails = ref(0);
 
-const initialPagination = {
-  sortBy: "status",
-};
+const verificationProgress = computed(() =>
+  unverifiedEmails.value !== 0
+    ? Math.min(
+        Math.floor((verifiedEmails.value / unverifiedEmails.value) * 100),
+        100
+      )
+    : 0
+);
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
-
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
@@ -272,30 +296,6 @@ async function setupSubscription() {
   );
 }
 
-async function subscribeToEmailVerificationEvents() {
-  // This function is temporary and will be removed once we finish
-  // emailStatusVerification progress and task management
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  subscription = supabase.channel("listening-to-emailVerification").on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "persons",
-      filter: `user_id=eq.${user.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      const index = rows.value.findIndex(
-        ({ email }) => email === newContact.email
-      );
-      if (index !== -1) {
-        rows.value[index].status = newContact.status;
-      }
-    }
-  );
-}
-
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const contactTableLength = rows.value.length;
@@ -309,6 +309,7 @@ function refreshTable() {
 }
 
 async function refineContacts() {
+  loadingLabel.value = "Refining contacts...";
   const user = (await supabase.auth.getSession()).data.session?.user as User;
 
   try {
@@ -338,9 +339,78 @@ async function getContacts(userId: string): Promise<Contact[]> {
 }
 
 async function syncTable() {
+  try {
+    loadingLabel.value = "Syncing...";
+    const user = (await supabase.auth.getSession()).data.session?.user as User;
+    const contacts = await getContacts(user.id);
+    rows.value = contacts;
+  } catch (error) {
+    if (error instanceof Error) {
+      /* eslint-disable no-console */
+      console.log(error.message);
+      $q.notify({
+        message: "Error occurred when refreshing table",
+        textColor: "negative",
+        color: "red-1",
+      });
+    }
+  }
+}
+
+async function verifyContacts() {
   const user = (await supabase.auth.getSession()).data.session?.user as User;
+  loadingLabel.value = "Verifying contacts...";
+  isVerifying.value = true;
+
   const contacts = await getContacts(user.id);
-  rows.value = contacts;
+
+  unverifiedEmails.value = contacts.filter((c) => !c.status).length;
+  verifiedEmails.value = 0;
+  let verifiedEmailsCountBuffer = 0;
+  const maxMsBeforeClosingRealtime = 5000;
+
+  return new Promise<void>((resolve) => {
+    let interval: number;
+    let msWaiting = 0;
+
+    const setupInterval = () =>
+      window.setInterval(async () => {
+        msWaiting += 1000;
+        if (msWaiting >= maxMsBeforeClosingRealtime) {
+          verifiedEmails.value += verifiedEmailsCountBuffer;
+          await subscription?.unsubscribe();
+          isVerifying.value = false;
+          resolve();
+        }
+      }, 1000);
+
+    interval = setupInterval();
+    subscription = supabase
+      .channel("*")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "persons",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // We use a buffer to reduce how many times we update the DOM
+          verifiedEmailsCountBuffer += 1;
+          if (verifiedEmailsCountBuffer >= 50) {
+            verifiedEmails.value += verifiedEmailsCountBuffer;
+            verifiedEmailsCountBuffer = 0;
+          }
+          if (interval) {
+            clearInterval(interval);
+          }
+          msWaiting = 0;
+          interval = setupInterval();
+        }
+      )
+      .subscribe();
+  });
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -363,14 +433,86 @@ watch(activeMiningTask, async (isActive) => {
     contactsCache.clear();
     isLoading.value = true;
     await refineContacts();
+    await verifyContacts();
     await syncTable();
-    if (subscription) {
-      await subscribeToEmailVerificationEvents();
-      subscription.subscribe();
-    }
     isLoading.value = false;
   }
 });
+
+const initialPagination = {
+  sortBy: "custom",
+};
+
+function customSortLogic(
+  rowsToFilter: readonly Contact[],
+  sortBy: string,
+  descending: boolean
+) {
+  switch (sortBy) {
+    case "custom":
+      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
+        const {
+          status: statusA,
+          replied_conversations: repliedA,
+          occurrence: occurrenceA,
+        } = a;
+        const {
+          status: statusB,
+          replied_conversations: repliedB,
+          occurrence: occurrenceB,
+        } = b;
+
+        if (statusA !== statusB) {
+          // Sort by 'status' column (VALID before UNKNOWN)
+          return (
+            EmailStatusScore[statusA ?? "UNKNOWN"] -
+            EmailStatusScore[statusB ?? "UNKNOWN"]
+          );
+        }
+
+        if (repliedA !== repliedB) {
+          // Sort by 'reply' column in descending order
+          return (repliedB ?? 0) - (repliedA ?? 0);
+        }
+        // Sort by 'occurrence' column in descending order
+        return (occurrenceB ?? 0) - (occurrenceA ?? 0);
+      });
+
+    case "status":
+      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
+        const { status: statusA } = a;
+        const { status: statusB } = b;
+
+        return descending
+          ? EmailStatusScore[statusA ?? "UNKNOWN"] -
+              EmailStatusScore[statusB ?? "UNKNOWN"]
+          : EmailStatusScore[statusB ?? "UNKNOWN"] -
+              EmailStatusScore[statusA ?? "UNKNOWN"];
+      });
+
+    case "name":
+    case "email":
+      return [...rowsToFilter].sort((a, b) => {
+        const aValue = (a[sortBy as keyof Contact] as string) ?? "";
+        const bValue = (b[sortBy as keyof Contact] as string) ?? "";
+        return descending
+          ? bValue.localeCompare(aValue)
+          : aValue.localeCompare(bValue);
+      });
+
+    default:
+      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "number") {
+        return [...rowsToFilter].sort((a, b) => {
+          const aValue = a[sortBy as keyof Contact] as number;
+          const bValue = b[sortBy as keyof Contact] as number;
+
+          return descending ? aValue - bValue : bValue - aValue;
+        });
+      }
+
+      return rowsToFilter;
+  }
+}
 
 const visibleColumns = ref([
   "copy",
@@ -378,12 +520,17 @@ const visibleColumns = ref([
   "name",
   "occurrence",
   "recency",
-  "reply",
+  "replied_conversations",
   "tags",
   "status",
 ]);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const columns: any = [
+  {
+    // This colums is only used to trigger the custom sort.
+    name: "custom",
+  },
   {
     name: "copy",
     label: "",
@@ -396,8 +543,6 @@ const columns: any = [
     field: "email",
     sortable: true,
     align: "left",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: (a: any, b: any) => a.localeCompare(b),
   },
   {
     name: "name",
@@ -405,8 +550,6 @@ const columns: any = [
     field: "name",
     sortable: true,
     align: "left",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sort: (a: any, b: any) => b.localeCompare(a),
   },
   {
     name: "recency",
@@ -441,7 +584,7 @@ const columns: any = [
     sortable: true,
   },
   {
-    name: "reply",
+    name: "replied_conversations",
     label: "Reply",
     field: "replied_conversations",
     align: "center",
@@ -459,8 +602,6 @@ const columns: any = [
     align: "center",
     field: "status",
     sortable: true,
-    sort: (a: EmailStatus, b: EmailStatus) =>
-      EmailStatusScore[a] - EmailStatusScore[b],
   },
 ];
 

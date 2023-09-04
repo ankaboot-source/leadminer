@@ -164,7 +164,7 @@
                         activeMiningSource?.email === miningSource.email &&
                         isLoadingBoxes
                       "
-                      size="1.3rem"
+                      size="20px"
                     >
                     </q-spinner>
                     <q-icon v-else name="pending" color="accent">
@@ -253,7 +253,7 @@ import { useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { isValidEmail } from "src/helpers/email";
 import { addOAuthAccount } from "src/helpers/oauth";
-import { useLeadminerStore } from "src/store/leadminer";
+import { useLeadminerStore } from "src/stores/leadminer";
 import { MiningSource, OAuthMiningSource } from "src/types/mining";
 import { computed, ref } from "vue";
 import TreeCard from "../cards/TreeCard.vue";
@@ -439,8 +439,12 @@ async function addOAuthSource(source: OAuthMiningSource) {
     await addOAuthAccount(source);
   } catch (error) {
     if (error instanceof Error) {
+      const message =
+        error.message?.toLowerCase() === "network error"
+          ? "Unable to access server. Please retry again or contact your service provider."
+          : error.message;
       $quasar.notify({
-        message: error.message,
+        message,
         color: "negative",
         icon: "error",
       });
