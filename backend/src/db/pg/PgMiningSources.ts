@@ -6,7 +6,7 @@ import {
   MiningSourceType,
   MiningSources,
   OAuthMiningSourceCredentials
-} from '../MiningSources';
+} from '../interfaces/MiningSources';
 
 export default class PgMiningSources implements MiningSources {
   private static readonly UPSERT_SQL = `

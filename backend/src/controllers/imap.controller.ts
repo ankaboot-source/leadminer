@@ -1,7 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import Connection from 'imap';
-import { MiningSources } from '../db/MiningSources';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';

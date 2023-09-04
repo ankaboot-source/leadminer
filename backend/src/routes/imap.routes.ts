@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import initializeImapController from '../controllers/imap.controller';
-import { MiningSources } from '../db/MiningSources';
+import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
 

@@ -40,7 +40,7 @@ export interface Message {
 
 export interface Person {
   email: string;
-  status: Status;
+  status?: Status;
   url?: string;
   name?: string;
   image?: string;
