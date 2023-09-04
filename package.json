@@ -10,7 +10,8 @@
     "dev:supabase": "supabase start",
     "dev:frontend": "npm run dev --prefix ./frontend",
     "dev:backend-api": "npm run dev-api --prefix ./backend",
-    "dev:backend-worker": "npm run dev-worker --prefix ./backend"
+    "dev:backend-worker": "npm run dev-worker --prefix ./backend",
+    "dev:backend-email-worker": "npm run dev-email-worker --prefix ./backend"
   },
   "author": "ankaboot",
   "license": "AGPL-3.0",

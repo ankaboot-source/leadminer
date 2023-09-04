@@ -31,7 +31,7 @@ export default function initializeStreamController(tasksManager: TasksManager) {
 
       req.on('close', async () => {
         try {
-          await tasksManager.deleteTask(taskId, true);
+          await tasksManager.deleteTask(taskId);
         } catch (error) {
           logger.error(
             `Error when disconnecting from the stream with miningId ${taskId}`,

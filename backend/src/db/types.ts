@@ -23,7 +23,7 @@ export interface PersonWithPocAndTag {
 
 export interface Person {
   email: string;
-  status: Status;
+  status?: Status;
   url?: string;
   name?: string;
   image?: string;
@@ -64,11 +64,18 @@ export interface Contact {
   recipient?: string;
   conversations?: number;
   replied_conversations?: number;
-  status: EmailStatus;
+  status?: EmailStatus;
   occurrence?: number;
   personid?: string;
   recency?: Date;
   seniority?: Date;
   alternate_names?: string[];
   tags?: Tag[];
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  name: string;
+  credits: number;
 }

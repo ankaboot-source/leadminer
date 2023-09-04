@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { Worker } from 'bullmq';
 import RedisMock from 'ioredis-mock';
 import httpMocks from 'node-mocks-http';
 import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
@@ -13,12 +12,13 @@ import {
 } from '../../src/services/tasks-manager/utils';
 import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
 
-import { Contacts } from '../../src/db/Contacts';
-import FakeEmailStatusVerifier from '../fakes/FakeEmailVerifier';
-
 jest.mock('../../src/config', () => ({
-  LEADMINER_API_LOG_LEVEL: 'error'
+  LEADMINER_API_LOG_LEVEL: 'error',
+  SUPABASE_PROJECT_URL: 'fake',
+  SUPABASE_SECRET_PROJECT_TOKEN: 'fake'
 }));
+
+jest.mock('../../src/utils/supabase');
 
 jest.mock('ioredis', () => jest.requireActual('ioredis-mock'));
 const fakeRedisClient = new RedisMock();
@@ -48,12 +48,6 @@ const miningIdGenerator = jest.fn(() => {
   const randomId = Math.random().toString(36).substring(2);
   return Promise.resolve(`test-id-${randomId}`);
 });
-const fakeContacts: Contacts = {
-  create: jest.fn(() => Promise.resolve()),
-  refine: jest.fn(() => Promise.resolve(true)),
-  updatePersonStatus: jest.fn(() => Promise.resolve(true)),
-  getContactsTable: jest.fn(() => Promise.resolve(undefined))
-};
 
 /*
 
@@ -88,9 +82,6 @@ describe('Test TaskManager helper functions', () => {
           folders: ['test']
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
-        emailVerificationWorker: {
-          isRunning: () => false
-        } as Worker,
         stream: {
           streamName: 'test-stream',
           consumerGroupName: 'test-group'
@@ -109,9 +100,6 @@ describe('Test TaskManager helper functions', () => {
         fetcher: {
           status: 'running',
           folders: ['test']
-        },
-        emailStatusVerifier: {
-          running: false
         }
       };
 
@@ -160,8 +148,6 @@ describe('TasksManager class', () => {
     tasksManager = new TasksManager(
       fakeRedisClient,
       fakeRedisClient,
-      new FakeEmailStatusVerifier({}),
-      fakeContacts,
       emailFetcherFactory,
       sseBroadcasterFactory,
       miningIdGenerator
@@ -185,8 +171,6 @@ describe('TasksManager class', () => {
         const instance1 = new TasksManager(
           fakeRedisClient,
           fakeRedisClient,
-          new FakeEmailStatusVerifier({}),
-          fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
           miningIdGenerator
@@ -195,8 +179,6 @@ describe('TasksManager class', () => {
         const instance2 = new TasksManager(
           fakeRedisClient,
           fakeRedisClient,
-          new FakeEmailStatusVerifier({}),
-          fakeContacts,
           emailFetcherFactory,
           sseBroadcasterFactory,
           miningIdGenerator

@@ -8,6 +8,7 @@ interface AuthUser {
   email: string | undefined;
   role: string | undefined;
 }
+
 /**
  * Represents an authentication error.
  */
