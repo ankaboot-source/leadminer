@@ -2,8 +2,8 @@
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import {
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-  REDIS_STREAMS_CONSUMER_GROUP
+  MESSAGES_STREAM_CONSUMER_GROUP,
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL
 } from '../../utils/constants';
 import logger from '../../utils/logger';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
@@ -23,7 +23,7 @@ export default class TasksManager {
     REDIS_PUBSUB_COMMUNICATION_CHANNEL;
 
   private readonly REDIS_STREAMS_CONSUMER_GROUP_NAME =
-    REDIS_STREAMS_CONSUMER_GROUP;
+    MESSAGES_STREAM_CONSUMER_GROUP;
 
   /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.

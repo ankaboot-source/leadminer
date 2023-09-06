@@ -1,6 +1,5 @@
 import { Contacts } from '../db/interfaces/Contacts';
 import EmailStatusCache from '../services/cache/EmailStatusCache';
-import EmailVerificationQueue from '../services/email-status/EmailVerificationQueue';
 import EmailMessage from '../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../services/tagging';
 import { checkDomainStatus } from '../utils/helpers/domainHelpers';
@@ -9,7 +8,7 @@ import redis from '../utils/redis';
 
 const redisClientForNormalMode = redis.getClient();
 
-export interface PublishedStreamMessage {
+export interface EmailMessageData {
   header: unknown;
   body: unknown;
   seqNumber: number;
@@ -17,6 +16,9 @@ export interface PublishedStreamMessage {
   isLast: boolean;
   userId: string;
   userEmail: string;
+  /**
+   * The hash of the userId
+   */
   userIdentifier: string;
   miningId: string;
 }
@@ -24,16 +26,7 @@ export interface PublishedStreamMessage {
 /**
  * Handles incoming email message and performs necessary operations like storing contact information,
  * populating refined_persons table and reporting progress.
- * @param options - The options object.
- * @param options.seqNumber - The sequence number of the email message.
- * @param options.body - The body of the email message.
- * @param options.header - The header of the email message.
- * @param options.folderName - The name of the folder containing the email message.
- * @param options.userId - The id of the user who received the email message.
- * @param options.userEmail - The email of the user who received the email message.
- * @param options.userIdentifier - The hash of the user's identifier.
- * @param options.isLast - Indicates whether this is the last message in a sequence of messages.
- * @param options.miningId - The id of the mining process.
+ * @param message - The message data.
  * @param contacts - The contacts db accessor.
  */
 async function handleMessage(
@@ -44,10 +37,9 @@ async function handleMessage(
     userId,
     userEmail,
     userIdentifier
-  }: PublishedStreamMessage,
+  }: EmailMessageData,
   contacts: Contacts,
-  emailStatusCache: EmailStatusCache,
-  emailVerificationQueue: EmailVerificationQueue
+  emailStatusCache: EmailStatusCache
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
@@ -63,10 +55,11 @@ async function handleMessage(
 
   try {
     const extractedContacts = await message.getContacts();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const emails = await contacts.create(extractedContacts, userId);
-    await emailVerificationQueue.addMany(
-      emails.map((email) => ({ email, userId }))
-    );
+    // await emailVerificationQueue.addMany(
+    //   emails.map((email) => ({ email, userId }))
+    // );
   } catch (error) {
     logger.error(
       'Failed when processing message from the stream',
@@ -81,22 +74,10 @@ async function handleMessage(
  */
 export default function initializeMessageProcessor(
   contacts: Contacts,
-  emailStatusCache: EmailStatusCache,
-  emailVerificationQueue: EmailVerificationQueue
+  emailStatusCache: EmailStatusCache
 ) {
   return {
-    processStreamData: async (message: [string, string]) => {
-      const [, msg] = message;
-      const data: PublishedStreamMessage = JSON.parse(msg[1]);
-      const { miningId } = data;
-
-      await handleMessage(
-        data,
-        contacts,
-        emailStatusCache,
-        emailVerificationQueue
-      );
-      return miningId;
-    }
+    processStreamData: async (message: EmailMessageData) =>
+      handleMessage(message, contacts, emailStatusCache)
   };
 }
