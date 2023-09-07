@@ -77,5 +77,5 @@ export interface Profile {
   email: string;
   name: string;
   credits: number;
-  customer_id: string;
+  stripe_customer_id: string;
 }

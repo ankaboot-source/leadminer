@@ -38,11 +38,11 @@ export async function createOrRetrieveUser(
     throw new Error('Failed to retrieve user profile.');
   }
 
-  return userProfile.customer_id === null
+  return userProfile.stripe_customer_id === null
     ? (
         await supabaseClient
           .from('profiles')
-          .update({ customer_id: customer.id })
+          .update({ stripe_customer_id: customer.id })
           .eq('user_id', userProfile.user_id)
           .select()
           .single()
@@ -70,7 +70,7 @@ export async function handleSubscriptionCreated(
 
   if (!user) {
     throw new Error(
-      `Could not find user with customer_id ${subscription.customer}`
+      `Could not find user with stripe_customer_id ${subscription.customer}`
     );
   }
 
@@ -79,7 +79,7 @@ export async function handleSubscriptionCreated(
       .from('profiles')
       .update({
         credits: user.credits + tiers.up_to,
-        subscription_id: subscription.id
+        stripe_subscription_id: subscription.id
       })
       .eq('user_id', user.user_id);
 
@@ -104,7 +104,7 @@ export async function handleSubscriptionUpdated(
     await supabaseClient
       .from('profiles')
       .select('*')
-      .eq('customer_id', subscription.customer)
+      .eq('stripe_customer_id', subscription.customer)
       .single()
   ).data;
 
@@ -122,7 +122,7 @@ export async function handleSubscriptionUpdated(
       .from('profiles')
       .update({
         credits: user.credits + tiers.up_to,
-        subscription_id: subscription.id
+        stripe_subscription_id: subscription.id
       })
       .eq('user_id', user.user_id);
 
@@ -141,7 +141,7 @@ export async function handleDeletedSubscribtion(
     await supabaseClient
       .from('profiles')
       .select('*')
-      .eq('subscription_id', subscription.id)
+      .eq('stripe_subscription_id', subscription.id)
       .single()
   ).data;
 
@@ -151,7 +151,7 @@ export async function handleDeletedSubscribtion(
 
   const { error } = await supabaseClient
     .from('profiles')
-    .update({ subscription_id: null })
+    .update({ stripe_subscription_id: null })
     .eq('user_id', user.user_id);
 
   if (error) {

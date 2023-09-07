@@ -68,14 +68,10 @@ LANGUAGE plpgsql;
 
 -- Alter the table "profiles" add new colunms and set the default value of the "credits" column to 0
 ALTER TABLE "public"."profiles"
-    DROP COLUMN "stripe_customer_id";
-ALTER TABLE "public"."profiles"
     ADD COLUMN "email" TEXT NULL,
-    ADD COLUMN "customer_id" TEXT NULL,
-    ADD COLUMN "subscription_id" TEXT NULL,
+    ADD COLUMN "stripe_subscription_id" TEXT NULL,
     ALTER COLUMN credits SET DEFAULT 0;
 
-    
 -- Update function "handle_new_user"
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
