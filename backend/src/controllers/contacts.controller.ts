@@ -6,11 +6,7 @@ import {
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
 import ENV from '../config';
-import {
-  INSUFFICIENT_CREDITS_STATUS,
-  INSUFFICIENT_CREDITS_MESSAGE,
-  createCreditHandler
-} from '../utils/billing/credits';
+import { createCreditHandler } from '../utils/credits';
 import { Users } from '../db/interfaces/Users';
 
 export default function initializeContactsController(
@@ -18,6 +14,48 @@ export default function initializeContactsController(
   userResolver: Users
 ) {
   return {
+    async verifyExportContacts(_: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+      try {
+        const newContacts = await contacts.getNonExportedContacts(user.id);
+        const previousExportedContacts = await contacts.getExportedContacts(
+          user.id
+        );
+        const creditHandler = await createCreditHandler(
+          ENV.CONTACT_CREDIT,
+          userResolver
+        );
+
+        if (creditHandler) {
+          const { insufficientCredits, requestedUnits, availableUnits } =
+            await creditHandler.validateCreditUsage(
+              user.id,
+              newContacts.length
+            );
+
+          const insufficientCreditsStatusCode =
+            insufficientCredits && availableUnits
+              ? creditHandler.INSUFFICIENT_CREDITS_STATUS
+              : null;
+          const statusCode =
+            insufficientCreditsStatusCode ??
+            (availableUnits !== requestedUnits ? 206 : 200);
+
+          const response = {
+            newContacts: newContacts.length,
+            totalContacts: previousExportedContacts.length,
+            availableContacts: insufficientCredits ? 0 : availableUnits
+          };
+
+          return res.status(statusCode).json(response);
+        }
+
+        return res.sendStatus(200);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       try {
@@ -35,14 +73,12 @@ export default function initializeContactsController(
           ? String(delimiterOption)
           : getLocalizedCsvSeparator(localeFromHeader ?? '');
 
-        const creditHandler = createCreditHandler(
-          ENV.ENABLE_CREDIT,
+        const creditHandler = await createCreditHandler(
           ENV.CONTACT_CREDIT,
           userResolver
         );
 
         if (creditHandler) {
-          // If creditHandler is available, we only use this path.
           const newContacts = await contacts.getNonExportedContacts(user.id);
           const previousExportedContacts = await contacts.getExportedContacts(
             user.id
@@ -54,15 +90,10 @@ export default function initializeContactsController(
               newContacts.length
             );
 
-          if (insufficientCredits && availableUnits) {
-            return res
-              .status(INSUFFICIENT_CREDITS_STATUS)
-              .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
-          }
-
+          const availableContacts = newContacts.slice(0, availableUnits);
           const contactsToExport = [
             ...previousExportedContacts,
-            ...newContacts.slice(0, availableUnits)
+            ...availableContacts
           ];
 
           const csvData = await exportContactsToCSV(
@@ -70,9 +101,9 @@ export default function initializeContactsController(
             csvSeparator
           );
 
-          if (availableUnits) {
+          if (insufficientCredits === false && availableUnits) {
             await contacts.registerExportedContacts(
-              newContacts.map(({ id }) => id),
+              availableContacts.map(({ email }) => email),
               user.id
             );
             await creditHandler.deductCredits(user.id, availableUnits);
