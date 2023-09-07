@@ -28,6 +28,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const extractedEmails = ref(0);
   const scannedEmails = ref(0);
   const totalFetchedEmails = ref(0);
+  const verifiedContacts = ref(0);
+  const createdContacts = ref(0);
   const status = ref("");
   const scannedBoxes = ref<string[]>([]);
   const statistics = ref({});
@@ -52,6 +54,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     extractedEmails.value = 0;
     scannedEmails.value = 0;
     totalFetchedEmails.value = 0;
+    verifiedContacts.value = 0;
+    createdContacts.value = 0;
 
     status.value = "";
     scannedBoxes.value = [];
@@ -193,6 +197,18 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         },
         onFetchingDone: (totalFetched) => {
           totalFetchedEmails.value = totalFetched;
+        },
+        onExtractionDone: (totalExtracted) => {
+          extractedEmails.value = totalExtracted;
+          console.log("Extraction done");
+        },
+        onVerifiedContacts: (totalVerified) => {
+          verifiedContacts.value = totalVerified;
+          console.log({ totalVerified });
+        },
+        onCreatedContacts: (totalCreated) => {
+          createdContacts.value = totalCreated;
+          console.log({ totalCreated });
         },
       });
 

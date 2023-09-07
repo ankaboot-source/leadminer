@@ -141,6 +141,10 @@ const fetchingFinished = computed(() =>
   Boolean(leadminerStore.totalFetchedEmails)
 );
 
+const extractionFinished = computed(() =>
+  Boolean(leadminerStore.extractedEmails)
+);
+
 const progressBuffer = computed(() =>
   fetchingFinished.value && progressProps.scannedEmails
     ? 1
