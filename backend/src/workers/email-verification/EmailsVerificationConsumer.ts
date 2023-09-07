@@ -28,7 +28,7 @@ export default class EmailVerificationConsumer {
           this.activeStreams.delete(emailsStreamName);
         }
 
-        this.logger.info('Received PubSub signal.', {
+        this.logger.debug('Received PubSub signal.', {
           metadata: {
             miningId,
             command,

@@ -67,11 +67,11 @@ export default class MessagesConsumer {
           }
         }
 
-        this.logger.info('Received PubSub signal.', {
+        this.logger.debug('Received PubSub signal.', {
           metadata: {
             miningId,
             command,
-            streamName: messagesStreamName
+            messagesStreamName
           }
         });
       }
