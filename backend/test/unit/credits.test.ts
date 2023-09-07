@@ -15,17 +15,17 @@ describe('createCreditHandler', () => {
   });
 
   describe('createCreditHandler setup', () => {
-    it('should return undefined when enable is false', async () => {
+    it('should return undefined when enable is false', () => {
       const creditHandler = createCreditHandler(10, userResolverMock);
       expect(creditHandler).toBeUndefined();
     });
 
-    it('should return undefined when creditsPerUnit is undefined', async () => {
+    it('should return undefined when creditsPerUnit is undefined', () => {
       const creditHandler = createCreditHandler(undefined, userResolverMock);
       expect(creditHandler).toBeUndefined();
     });
 
-    it('should return validateCreditUsage and deductCredits methods when passing correct values', async () => {
+    it('should return validateCreditUsage and deductCredits methods when passing correct values', () => {
       const handler = createCreditHandler(10, userResolverMock);
 
       expect(handler).not.toBeUndefined();
