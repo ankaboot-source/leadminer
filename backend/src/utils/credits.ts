@@ -34,7 +34,7 @@ interface CreditsPlugin {
     deductCredits(userId: string, units: number): Promise<true>;
     addCredits(userId: string, credits: number): Promise<true>;
   };
-  deleteCustomer(customerId: string): Promise<null | void>;
+  deleteCustomer(customerId: string): Promise<void>;
 }
 
 const plugin = DynamicCreditPlugin as CreditsPlugin;
