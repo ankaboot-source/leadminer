@@ -249,6 +249,14 @@ export default class TasksManager {
       progressHandlerSSE.sendSSE(value, 'fetching-finished');
     }
 
+    if (
+      progressType === 'extracted' &&
+      fetcher.isCompleted &&
+      progress.extracted >= progress.fetched
+    ) {
+      progressHandlerSSE.sendSSE(value, 'extraction-finished');
+    }
+
     // Send the progress to parties subscribed on SSE
     return progressHandlerSSE.sendSSE(value, eventName);
   }
@@ -301,7 +309,7 @@ export default class TasksManager {
       createdContacts
     }: TaskProgress
   ) {
-    logger.info('test', {
+    logger.debug('Task progress update', {
       extracted,
       fetched,
       verifiedContacts,
@@ -310,7 +318,7 @@ export default class TasksManager {
     const status =
       fetcherStatus === 'completed' &&
       extracted >= fetched &&
-      Math.floor(verifiedContacts / createdContacts) >= 0.94;
+      verifiedContacts >= createdContacts;
     const task = status ? await this.deleteTask(miningId) : null;
 
     return { status, task };
