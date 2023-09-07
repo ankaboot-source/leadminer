@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '@supabase/supabase-js';
 import { Users } from '../db/interfaces/Users';
+import { deleteCustomer } from '../utils/credits';
 
 export default function initializeAuthController(userResolver: Users) {
   return {
@@ -14,6 +15,12 @@ export default function initializeAuthController(userResolver: Users) {
           throw new Error(
             'Unexpected error when deleting mining data. Please try again later.'
           );
+        }
+
+        const userProfile = await userResolver.getUserProfile(user.id);
+
+        if (userProfile && userProfile.customer_id) {
+          await deleteCustomer(userProfile.customer_id);
         }
 
         const deleteUser = await userResolver.deleteUser(user.id);
