@@ -4,12 +4,13 @@ import { Express } from 'express';
 import ENV from '../config';
 // skipcq: JS-C1003
 import * as DynamicCreditPlugin from './credits-plugin/index';
+import { Profile } from '../db/types';
 
 interface UserResololver {
-  getUserProfile(userId: string): Promise<Record<string, any> | undefined>;
+  getUserProfile(userId: string): Promise<Profile | undefined>;
   updateUserProfile(
     userId: string,
-    updateData?: Record<string, any | undefined>
+    updateData?: Partial<Profile> | undefined
   ): Promise<boolean | undefined>;
 }
 

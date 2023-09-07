@@ -1,9 +1,18 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
+interface StripeEventData extends Stripe.Event.Data {
+  id: string;
+  customer: string;
+  plan: Stripe.Plan;
+  cancel_at: number;
+  cancel_at_period_end: number;
+  canceled_at: number;
+}
+
 export async function createOrRetrieveUser(
   supabaseClient: SupabaseClient,
-  customer: Partial<Stripe.Customer>
+  customer: Stripe.Customer
 ) {
   if (!customer.id || !customer.email) {
     throw new Error('Missing required customerID and customerEmail.');
@@ -42,14 +51,20 @@ export async function createOrRetrieveUser(
 }
 
 export async function handleSubscriptionCreated(
-  event: any,
+  event: Stripe.Event,
   supabaseClient: SupabaseClient,
   stripeClient: Stripe
 ) {
-  const subscription = event.data.object;
+  const subscription = event.data.object as StripeEventData;
   const customer = (await stripeClient.customers.retrieve(
     subscription.customer
   )) as Stripe.Customer;
+
+  const tiers = subscription.plan.tiers && subscription.plan.tiers[0];
+
+  if (!tiers) {
+    throw new Error(`No tiers found for subscription: ${subscription.id}`);
+  }
 
   const user = await createOrRetrieveUser(supabaseClient, customer);
 
@@ -59,15 +74,12 @@ export async function handleSubscriptionCreated(
     );
   }
 
-  const subscriptionId = subscription.id;
-  const tiers = subscription.plan.tiers[0];
-
   if (tiers.up_to) {
     const { error } = await supabaseClient
       .from('profiles')
       .update({
         credits: user.credits + tiers.up_to,
-        subscription_id: subscriptionId
+        subscription_id: subscription.id
       })
       .eq('user_id', user.user_id);
 
@@ -78,10 +90,16 @@ export async function handleSubscriptionCreated(
 }
 
 export async function handleSubscriptionUpdated(
-  event: any,
+  event: Stripe.Event,
   supabaseClient: SupabaseClient
 ) {
-  const subscription = event.data.object;
+  const subscription = event.data.object as StripeEventData;
+  const tiers = subscription.plan.tiers && subscription.plan.tiers[0];
+
+  if (!tiers) {
+    throw new Error(`No tiers found for subscription: ${subscription.id}`);
+  }
+
   const user = (
     await supabaseClient
       .from('profiles')
@@ -94,9 +112,6 @@ export async function handleSubscriptionUpdated(
     return;
   }
 
-  const subscriptionId = subscription.id;
-  const tiers = subscription.plan.tiers[0];
-
   const isCancelingSubscription =
     subscription.cancel_at &&
     subscription.cancel_at_period_end &&
@@ -107,7 +122,7 @@ export async function handleSubscriptionUpdated(
       .from('profiles')
       .update({
         credits: user.credits + tiers.up_to,
-        subscription_id: subscriptionId
+        subscription_id: subscription.id
       })
       .eq('user_id', user.user_id);
 
@@ -118,10 +133,10 @@ export async function handleSubscriptionUpdated(
 }
 
 export async function handleDeletedSubscribtion(
-  event: any,
+  event: Stripe.Event,
   supabaseClient: SupabaseClient
 ) {
-  const subscription = event.data.object;
+  const subscription = event.data.object as StripeEventData;
   const user = (
     await supabaseClient
       .from('profiles')

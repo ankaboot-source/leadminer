@@ -1,8 +1,12 @@
+interface Profile {
+  credits: number;
+}
+
 interface UserResololver {
-  getUserProfile(userId: string): Promise<Record<string, any> | undefined>;
+  getUserProfile(userId: string): Promise<Profile | undefined>;
   updateUserProfile(
     userId: string,
-    updateData?: Record<string, any | undefined>
+    updateData?: Partial<Profile | undefined>
   ): Promise<boolean | undefined>;
 }
 
