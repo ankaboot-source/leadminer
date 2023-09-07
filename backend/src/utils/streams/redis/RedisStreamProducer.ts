@@ -9,14 +9,13 @@ export default class RedisStreamProducer<T> implements StreamProducer<T> {
     private readonly logger: Logger
   ) {}
 
-  async produce(data: T): Promise<void> {
+  async produce(data: T[]): Promise<void> {
     try {
-      await this.redisClient.xadd(
-        this.streamName,
-        '*',
-        'message',
-        JSON.stringify(data)
-      );
+      const pipeline = this.redisClient.pipeline();
+      for (const item of data) {
+        pipeline.xadd(this.streamName, '*', 'message', JSON.stringify(item));
+      }
+      await pipeline.exec();
     } catch (error) {
       this.logger.error(
         `Error when publishing message to stream ${this.streamName}`,

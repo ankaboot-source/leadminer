@@ -12,12 +12,12 @@ import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
-import MessagesStreamConsumer, {
+import MessagesConsumer, {
   PubSubMessage
-} from './workers/MessagesStreamConsumer';
+} from './workers/email-message/MessagesConsumer';
 import initializeEmailMessageProcessor, {
   EmailMessageData
-} from './workers/handlers';
+} from './workers/email-message/emailMessageHandlers';
 
 const subscriberRedisClient = redis.getSubscriberClient();
 const redisClient = redis.getClient();
@@ -44,7 +44,7 @@ const messagesStreamsConsumer =
     MESSAGES_STREAM_CONSUMER_GROUP
   );
 
-const streamConsumerInstance = new MessagesStreamConsumer(
+const streamConsumerInstance = new MessagesConsumer(
   tasksManagementSubscriber,
   messagesStreamsConsumer,
   ENV.REDIS_CONSUMER_BATCH_SIZE,

@@ -5,15 +5,21 @@ export interface TaskProgress {
   totalMessages: number;
   fetched: number;
   extracted: number;
+  verifiedContacts: number;
+  createdContacts: number;
   fetcherStatus?: FetcherStatus;
+}
+
+export interface StreamInfo {
+  messagesStreamName: string;
+  messagesConsumerGroupName: string;
+  emailsStreamName: string;
+  emailsConsumerGroupName: string;
 }
 export interface Task {
   userId: string;
   miningId: string;
-  stream: {
-    streamName: string;
-    consumerGroupName: string;
-  };
+  stream: StreamInfo;
   progress: TaskProgress;
   fetcher: ImapEmailsFetcher;
   progressHandlerSSE: RealtimeSSE;
@@ -22,7 +28,11 @@ export interface Task {
 
 export type FetcherStatus = 'completed' | 'running';
 
-export type ProgressType = 'fetched' | 'extracted';
+export type ProgressType =
+  | 'fetched'
+  | 'extracted'
+  | 'createdContacts'
+  | 'verifiedContacts';
 
 export type RedisCommand = 'REGISTER' | 'DELETE';
 

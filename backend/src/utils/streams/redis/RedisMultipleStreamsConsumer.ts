@@ -34,7 +34,7 @@ export default class RedisMultipleStreamsConsumer<T>
       )) as any[]; // [streamName, [messageId, messageData] [] ][]
 
       if (streamsResponse === null) {
-        throw new Error('Missing stream');
+        return [];
       }
 
       return streamsResponse.map(([streamName, messages]) => {

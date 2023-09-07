@@ -16,9 +16,7 @@ export function redactSensitiveData(task: Task): RedactedTask {
     userId: task.userId,
     miningId: task.miningId,
     progress: {
-      totalMessages: task.progress.totalMessages,
-      extracted: task.progress.extracted,
-      fetched: task.progress.fetched
+      ...task.progress
     },
     fetcher: {
       status: task.fetcher.isCompleted === true ? 'completed' : 'running',

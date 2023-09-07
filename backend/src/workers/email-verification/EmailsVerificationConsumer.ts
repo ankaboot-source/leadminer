@@ -1,43 +1,38 @@
 import { Redis } from 'ioredis';
 import { Logger } from 'winston';
-import RedisSubscriber from '../utils/pubsub/redis/RedisSubscriber';
-import MultipleStreamsConsumer from '../utils/streams/MultipleStreamsConsumer';
-import { EmailMessageData } from './handlers';
+import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
+import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
+import { PubSubMessage } from '../email-message/MessagesConsumer';
+import { EmailVerificationData } from './emailVerificationHandlers';
 
-export interface PubSubMessage {
-  miningId: string;
-  command: 'REGISTER' | 'DELETE';
-  streamName: string;
-}
-
-export default class MessagesStreamConsumer {
+export default class EmailVerificationConsumer {
   private isInterrupted: boolean;
 
   private readonly activeStreams = new Set<string>();
 
   constructor(
     private readonly taskManagementSubscriber: RedisSubscriber<PubSubMessage>,
-    private readonly emailMessagesStreamsConsumer: MultipleStreamsConsumer<EmailMessageData>,
+    private readonly emailStreamsConsumer: MultipleStreamsConsumer<EmailVerificationData>,
     private readonly batchSize: number,
-    private readonly messageProcessor: (data: EmailMessageData) => void,
+    private readonly emailProcessor: (data: EmailVerificationData) => void,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe(
-      ({ miningId, command, streamName }) => {
+      async ({ miningId, command, emailsStreamName }) => {
         if (command === 'REGISTER') {
-          this.activeStreams.add(streamName);
+          this.activeStreams.add(emailsStreamName);
         } else {
-          this.activeStreams.delete(streamName);
+          this.activeStreams.delete(emailsStreamName);
         }
 
         this.logger.info('Received PubSub signal.', {
           metadata: {
             miningId,
             command,
-            streamName
+            emailsStreamName
           }
         });
       }
@@ -51,7 +46,7 @@ export default class MessagesStreamConsumer {
    */
   async consumeFromStreams(streams: string[]) {
     try {
-      const result = await this.emailMessagesStreamsConsumer.consume(
+      const result = await this.emailStreamsConsumer.consume(
         streams,
         this.batchSize
       );
@@ -60,7 +55,7 @@ export default class MessagesStreamConsumer {
         result.map(async ({ streamName, data }) => {
           try {
             const promises = await Promise.allSettled(
-              data.map((message) => this.messageProcessor(message))
+              data.map((message) => this.emailProcessor(message))
             );
 
             if (!this.activeStreams.has(streamName)) {
@@ -70,7 +65,7 @@ export default class MessagesStreamConsumer {
             const miningId = streamName.split('-')[1];
             const extractionProgress = {
               miningId,
-              progressType: 'extracted',
+              progressType: 'verifiedContacts',
               count: promises.length
             };
 
@@ -102,7 +97,6 @@ export default class MessagesStreamConsumer {
     }
 
     const streams = Array.from(this.activeStreams);
-    // console.log({ streams, cache: this.activeStreams });
 
     if (streams.length > 0) {
       try {
