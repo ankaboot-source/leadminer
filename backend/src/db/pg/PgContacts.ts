@@ -16,23 +16,23 @@ export default class PgContacts implements Contacts {
     SELECT contacts.* 
     FROM get_contacts_table($1) contacts
       LEFT JOIN engagement e
-        ON e.person_id = contacts.id
+        ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
-    WHERE e.person_id IS NULL;
+    WHERE e.email IS NULL;
     `;
 
   private static readonly SELECT_EXPORTED_CONTACTS = `
     SELECT contacts.* 
     FROM get_contacts_table($1) contacts
       JOIN engagement e
-        ON e.person_id = contacts.id
+        ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
     `;
 
   private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO engagement (user_id, person_id, engagement_type) VALUES %L;';
+    'INSERT INTO engagement (user_id, email, engagement_type) VALUES %L;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
