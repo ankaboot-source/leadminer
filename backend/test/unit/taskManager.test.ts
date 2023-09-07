@@ -75,7 +75,9 @@ describe('Test TaskManager helper functions', () => {
         progress: {
           totalMessages: 100,
           fetched: 50,
-          extracted: 10
+          extracted: 10,
+          verifiedContacts: 5,
+          createdContacts: 10
         },
         fetcher: {
           status: 'running',
@@ -83,8 +85,10 @@ describe('Test TaskManager helper functions', () => {
         } as unknown as ImapEmailsFetcher,
         progressHandlerSSE: {} as RealtimeSSE,
         stream: {
-          streamName: 'test-stream',
-          consumerGroupName: 'test-group'
+          messagesStreamName: 'test-messages-stream-name',
+          messagesConsumerGroupName: 'test-messages-consumer-group-name',
+          emailsStreamName: 'test-emails-stream-name',
+          emailsConsumerGroupName: 'test-emails-consumer-stream-name'
         },
         startedAt: Date.now()
       };
@@ -95,7 +99,9 @@ describe('Test TaskManager helper functions', () => {
         progress: {
           totalMessages: task.progress.totalMessages,
           fetched: task.progress.fetched,
-          extracted: task.progress.extracted
+          extracted: task.progress.extracted,
+          verifiedContacts: task.progress.verifiedContacts,
+          createdContacts: task.progress.createdContacts
         },
         fetcher: {
           status: 'running',
