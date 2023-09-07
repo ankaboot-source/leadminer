@@ -6,8 +6,8 @@ import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
 import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import ReacherEmailStatusVerifier from './services/email-status/reacher';
-import ReacherClient from './services/email-status/reacher/client';
+import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
+import EmailStatusVerifierFactory from './services/email-status/EmailStatusVerifierFactory';
 import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
@@ -34,35 +34,12 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
   verifyCreditEnvironmentVariables();
-  const contacts = new PgContacts(pool, logger);
-  const reacherClient = new ReacherClient(logger, {
-    host: ENV.REACHER_HOST,
-    apiKey: ENV.REACHER_API_KEY,
-    headerSecret: ENV.REACHER_HEADER_SECRET,
-    smtpConfig: {
-      helloName: ENV.REACHER_SMTP_HELLO,
-      fromEmail: ENV.REACHER_SMTP_FROM,
-      proxy:
-        ENV.REACHER_PROXY_HOST && ENV.REACHER_PROXY_PORT
-          ? {
-              port: ENV.REACHER_PROXY_PORT,
-              host: ENV.REACHER_PROXY_HOST,
-              username: ENV.REACHER_PROXY_USERNAME,
-              password: ENV.REACHER_PROXY_PASSWORD
-            }
-          : undefined
-    }
-  });
 
-  const emailStatusVerifier = new ReacherEmailStatusVerifier(
-    reacherClient,
-    logger
-  );
+  const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
+
   const tasksManager = new TasksManager(
     redis.getSubscriberClient(),
     redis.getClient(),
-    emailStatusVerifier,
-    contacts,
     new EmailFetcherFactory(),
     new SSEBroadcasterFactory(),
     flickrBase58IdGenerator()
@@ -75,13 +52,17 @@ console.log(
   const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
+  const emailStatusCache = new RedisEmailStatusCache(redis.getClient());
 
   const app = await initializeApp(
     authResolver,
     tasksManager,
     miningSources,
     contactsResolver,
-    userResolver
+    userResolver,
+    emailStatusVerifier,
+    emailStatusCache,
+    logger
   );
 
   app.listen(ENV.LEADMINER_API_PORT, () => {

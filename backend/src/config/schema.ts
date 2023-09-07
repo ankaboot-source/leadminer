@@ -56,10 +56,19 @@ const schema = z.object({
   REACHER_HEADER_SECRET: z.string().nonempty().optional(),
   REACHER_SMTP_FROM: z.string().nonempty().optional(),
   REACHER_SMTP_HELLO: z.string().nonempty().optional(),
-  REACHER_PROXY_PORT: z.number().optional(),
+  REACHER_PROXY_PORT: number().optional(),
   REACHER_PROXY_HOST: z.string().nonempty().optional(),
   REACHER_PROXY_USERNAME: z.string().nonempty().optional(),
   REACHER_PROXY_PASSWORD: z.string().nonempty().optional(),
+
+  /* EMAIL VERIFICATION WORKER */
+  COMPLETED_JOBS_MAX_AGE_MINUTES: number().optional().default(30),
+  COMPLETED_JOBS_MAX_COUNT: number().optional().default(50000),
+  CONCURRENCY_FACTOR: number().optional().default(50),
+  EMAIL_VERIFICATION_QUEUE_NAME: z
+    .string()
+    .optional()
+    .default('email-verification'),
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
@@ -68,7 +77,7 @@ const schema = z.object({
   STRIPE_API_KEY: z.string().nonempty().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
 
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });
 
 export default schema;

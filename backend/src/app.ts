@@ -1,31 +1,36 @@
 import * as Sentry from '@sentry/node';
 import express, { json, urlencoded } from 'express';
+import { Logger } from 'winston';
 import ENV from './config';
+import { Contacts } from './db/interfaces/Contacts';
 import { MiningSources } from './db/interfaces/MiningSources';
+import { Users } from './db/interfaces/Users';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
 import notFound from './middleware/notFound';
 import initializeSentry from './middleware/sentry';
+import initializeAuthRoutes from './routes/auth.routes';
+import initializeContactsRoutes from './routes/contacts.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
+import EmailStatusCache from './services/cache/EmailStatusCache';
+import { EmailStatusVerifier } from './services/email-status/EmailStatusVerifier';
 import TasksManager from './services/tasks-manager/TasksManager';
-import initializeAuthRoutes from './routes/auth.routes';
-import { Contacts } from './db/interfaces/Contacts';
-import initializeContactsRoutes from './routes/contacts.routes';
-import { Users } from './db/interfaces/Users';
 import { initPaymentApp } from './utils/credits';
 import supabaseClient from './utils/supabase';
-import logger from './utils/logger';
 
 export default async function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
   miningSources: MiningSources,
   contacts: Contacts,
-  userResolver: Users
+  userResolver: Users,
+  emailStatusVerifier: EmailStatusVerifier,
+  emailStatusCache: EmailStatusCache,
+  logger: Logger
 ) {
   const app = express();
 
@@ -61,7 +66,14 @@ export default async function initializeApp(
   );
   app.use(
     '/api/imap',
-    initializeContactsRoutes(contacts, userResolver, authResolver)
+    initializeContactsRoutes(
+      contacts,
+      userResolver,
+      authResolver,
+      emailStatusVerifier,
+      emailStatusCache,
+      logger
+    )
   );
 
   if (ENV.SENTRY_DSN) {

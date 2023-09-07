@@ -7,7 +7,9 @@ export function handleAxiosError<T>(axiosError: AxiosError<T>): {
   if (axiosError.response) {
     // Request was made, but the server responded with an error status
     return {
-      error: new Error('Error received from verification server')
+      error: new Error(
+        `Error received from verification server: ${axiosError.message}`
+      )
     };
   }
   if (axiosError.request) {

@@ -1,9 +1,9 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import { Queue } from 'bullmq';
 import RedisMock from 'ioredis-mock';
+import RedisEmailStatusCache from '../../src/services/cache/redis/RedisEmailStatusCache';
 import EmailMessage from '../../src/services/extractors/EmailMessage';
-import { BasicTag, TaggingEngine } from '../../src/services/tagging/types';
 import { DomainStatusVerificationFunction } from '../../src/services/extractors/types';
+import { BasicTag, TaggingEngine } from '../../src/services/tagging/types';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
@@ -44,7 +44,7 @@ const domainStatusVerification = jest.fn(() => [
 ]) as unknown as DomainStatusVerificationFunction;
 
 const redis = new RedisMock();
-const emailVerificationQueue = { add: jest.fn(() => true) } as unknown as Queue;
+const mockEmailStatusCache = new RedisEmailStatusCache(redis);
 
 describe('Email Message', () => {
   describe('references', () => {
@@ -53,7 +53,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -69,7 +69,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -86,7 +86,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -129,7 +129,7 @@ describe('Email Message', () => {
         const message = new EmailMessage(
           taggingEngine,
           redis,
-          emailVerificationQueue,
+          mockEmailStatusCache,
           domainStatusVerification,
           'userEmail@example.com',
           'userid-1',
@@ -154,7 +154,7 @@ describe('Email Message', () => {
         const message = new EmailMessage(
           taggingEngine,
           redis,
-          emailVerificationQueue,
+          mockEmailStatusCache,
           domainStatusVerification,
           'userEmail@example.com',
           'userid-1',
@@ -174,7 +174,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -194,7 +194,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -217,7 +217,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -236,7 +236,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -256,7 +256,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -280,7 +280,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         'userEmail@example.com',
         'userid-1',
@@ -302,7 +302,7 @@ describe('Email Message', () => {
       const message = new EmailMessage(
         taggingEngine,
         redis,
-        emailVerificationQueue,
+        mockEmailStatusCache,
         domainStatusVerification,
         '',
         '',
@@ -313,7 +313,6 @@ describe('Email Message', () => {
       const expectedContacts = [
         {
           person: {
-            status: 'UNKNOWN',
             name: 'Leadminer',
             email: 'leadminer@leadminer.io',
             givenName: 'Leadminer',
