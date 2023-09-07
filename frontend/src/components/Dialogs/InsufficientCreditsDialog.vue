@@ -23,7 +23,7 @@
       <q-card-section class="q-pa-lg">
         <p class="text-body1 q-ma-none">
           You don't have enough credits to {{ actionType }} all your
-          {{ allUnits }} {{ props.engagementType }}.
+          {{ allUnits }} {{ engagementType }}.
         </p>
       </q-card-section>
       <q-separator />
@@ -55,10 +55,8 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 
-const emit = defineEmits<{
-  (e: "secondary-action"): Promise<void>;
-}>();
-const props = defineProps<{
+const emit = defineEmits(["secondary-action"]);
+const { engagementType, actionType } = defineProps<{
   engagementType: string;
   actionType: string;
 }>();

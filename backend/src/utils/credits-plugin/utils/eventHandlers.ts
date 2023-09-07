@@ -60,7 +60,7 @@ export async function handleSubscriptionCreated(
     subscription.customer
   )) as Stripe.Customer;
 
-  const tiers = subscription.plan.tiers && subscription.plan.tiers[0];
+  const tiers = subscription.plan.tiers?.[0];
 
   if (!tiers) {
     throw new Error(`No tiers found for subscription: ${subscription.id}`);
@@ -94,7 +94,7 @@ export async function handleSubscriptionUpdated(
   supabaseClient: SupabaseClient
 ) {
   const subscription = event.data.object as StripeEventData;
-  const tiers = subscription.plan.tiers && subscription.plan.tiers[0];
+  const tiers = subscription.plan.tiers?.[0];
 
   if (!tiers) {
     throw new Error(`No tiers found for subscription: ${subscription.id}`);
