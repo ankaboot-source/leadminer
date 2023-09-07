@@ -100,7 +100,7 @@ export default function initializeMessageProcessor(
   emailStatusCache: EmailStatusCache
 ) {
   return {
-    processStreamData: async (
+    processStreamData: (
       message: EmailMessageData,
       emailsStreamProducer: StreamProducer<EmailVerificationData>,
       queuedEmailsCache: QueuedEmailsCache

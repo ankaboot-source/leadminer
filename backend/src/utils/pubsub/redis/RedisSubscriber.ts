@@ -9,7 +9,7 @@ export default class RedisSubscriber<T> implements Subscriber<T> {
     private readonly channel: string
   ) {}
 
-  async subscribe(onMessage: (data: T) => void | Promise<void>): Promise<void> {
+  subscribe(onMessage: (data: T) => void | Promise<void>) {
     try {
       this.redisClient.subscribe(this.channel, (err) => {
         if (err) {

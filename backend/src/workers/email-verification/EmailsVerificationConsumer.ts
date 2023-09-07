@@ -21,7 +21,7 @@ export default class EmailVerificationConsumer {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe(
-      async ({ miningId, command, emailsStreamName }) => {
+      ({ miningId, command, emailsStreamName }) => {
         if (command === 'REGISTER') {
           this.activeStreams.add(emailsStreamName);
         } else {
