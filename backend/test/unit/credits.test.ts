@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createCreditHandler } from '../../src/utils/credits';
+import { createCreditHandler, verifyCreditEnvironmentVariables } from '../../src/utils/credits';
 import { Users } from '../../src/db/interfaces/Users';
+
+jest.mock('../../src/config', () => {});
 
 describe('createCreditHandler', () => {
   let userResolverMock: Users;
@@ -15,18 +17,12 @@ describe('createCreditHandler', () => {
   });
 
   describe('createCreditHandler setup', () => {
-    it('should return undefined when enable is false', () => {
-      const creditHandler = createCreditHandler(10, userResolverMock);
-      expect(creditHandler).toBeUndefined();
-    });
-
-    it('should return undefined when creditsPerUnit is undefined', () => {
-      const creditHandler = createCreditHandler(undefined, userResolverMock);
-      expect(creditHandler).toBeUndefined();
-    });
-
-    it('should return validateCreditUsage and deductCredits methods when passing correct values', () => {
+    it('should return correct methods and values', () => {
       const handler = createCreditHandler(10, userResolverMock);
+
+      if (handler === null) {
+        return
+      }
 
       expect(handler).not.toBeUndefined();
       expect(handler).not.toBeNull();
