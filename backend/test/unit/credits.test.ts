@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createCreditHandler, verifyCreditEnvironmentVariables } from '../../src/utils/credits';
+import { createCreditHandler } from '../../src/utils/credits';
 import { Users } from '../../src/db/interfaces/Users';
 
 jest.mock('../../src/config', () => {});
@@ -21,7 +21,7 @@ describe('createCreditHandler', () => {
       const handler = createCreditHandler(10, userResolverMock);
 
       if (handler === null) {
-        return
+        return;
       }
 
       expect(handler).not.toBeUndefined();
