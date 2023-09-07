@@ -19,7 +19,7 @@ export default function initializeAuthController(userResolver: Users) {
 
         const userProfile = await userResolver.getUserProfile(user.id);
 
-        if (userProfile && userProfile.customer_id) {
+        if (userProfile?.customer_id) {
           await deleteCustomer(userProfile.customer_id);
         }
 
