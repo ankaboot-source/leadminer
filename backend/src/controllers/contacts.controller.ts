@@ -40,19 +40,18 @@ export default function initializeContactsController(
               newContacts.length
             );
 
-          const insufficientCreditsStatusCode =
-            insufficientCredits && availableUnits
-              ? creditHandler.INSUFFICIENT_CREDITS_STATUS
-              : null;
-          const statusCode =
-            insufficientCreditsStatusCode ??
-            (availableUnits !== requestedUnits ? 206 : 200);
-
           const response = {
             newContacts: newContacts.length,
             totalContacts: previousExportedContacts.length,
             availableContacts: insufficientCredits ? 0 : availableUnits
           };
+
+          let statusCode = 200;
+          if (insufficientCredits && availableUnits) {
+            statusCode = creditHandler.INSUFFICIENT_CREDITS_STATUS;
+          } else if (availableUnits !== requestedUnits) {
+            statusCode = 206;
+          }
 
           return res.status(statusCode).json(response);
         }
