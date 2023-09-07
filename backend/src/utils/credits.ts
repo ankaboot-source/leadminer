@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
 import { Express } from 'express';
 import ENV from '../config';
+// skipcq: JS-C1003
 import * as DynamicCreditPlugin from './credits-plugin/index';
 
 interface UserResololver {
