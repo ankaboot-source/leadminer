@@ -21,10 +21,7 @@ describe('createCreditHandler', () => {
     });
 
     it('should return undefined when creditsPerUnit is undefined', async () => {
-      const creditHandler = createCreditHandler(
-        undefined,
-        userResolverMock
-      );
+      const creditHandler = createCreditHandler(undefined, userResolverMock);
       expect(creditHandler).toBeUndefined();
     });
 

@@ -12,6 +12,7 @@ import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
+
 export default function initializeContactsController(
   contacts: Contacts,
   userResolver: Users,
