@@ -1,4 +1,10 @@
-import { Users } from '../../db/interfaces/Users';
+interface UserResololver {
+  getUserProfile(userId: string): Promise<Record<string, any> | undefined>;
+  updateUserProfile(
+    userId: string,
+    updateData?: Record<string, any | undefined>
+  ): Promise<boolean | undefined>;
+}
 
 /**
  * Creates a credit verifier function that checks if a user has enough credits
@@ -9,19 +15,17 @@ import { Users } from '../../db/interfaces/Users';
  * @param userResolver - Authentication resolver.
  * @returns - Verification function or undefined.
  */
-export function createCreditHandler(
-  enable: boolean,
-  creditsPerUnit: number | undefined,
-  userResolver: Users
+export default function createCreditHandler(
+  creditsPerUnit: number,
+  userResolver: UserResololver
 ) {
-  if (!enable || !creditsPerUnit) {
-    return undefined;
-  }
-
   const USER_RESOLVER = userResolver;
   const CREDITS_PER_UNIT = creditsPerUnit;
 
   return {
+    INSUFFICIENT_CREDITS_STATUS: 402,
+    INSUFFICIENT_CREDITS_MESSAGE: 'Insufficient credits',
+
     /**
      * Calculate credit-related information based on the user's profile and specified units.
      *
@@ -53,13 +57,13 @@ export function createCreditHandler(
         return {
           insufficientCredits,
           requestedUnits: units,
-          availableUnits: units
+          availableUnits: 0
         };
       }
 
       const userCreditsToUnits = userCredits / CREDITS_PER_UNIT;
       const availableUnits =
-        units > 0 && userCreditsToUnits >= units ? units : userCreditsToUnits;
+        units >= userCreditsToUnits ? userCreditsToUnits : units;
 
       return {
         insufficientCredits,
@@ -93,9 +97,31 @@ export function createCreditHandler(
       }
 
       return updatedUserProfile;
+    },
+
+    /**
+     * Add credits to a user's account.
+     *
+     * @param {string} userId - The ID of the user.
+     * @param {number} credits - The number of credits to add. It should be a non-negative number.
+     * @returns {Promise<Object>} - A Promise that resolves to the updated user profile.
+     * @throws {Error} - If there is an error in retrieving or updating user credits.
+     */
+    async addCredits(userId: string, credits: number) {
+      const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
+
+      if (userCredits === undefined) {
+        throw new Error('Failed to retrieve user credits.');
+      }
+      const updatedUserProfile = await USER_RESOLVER.updateUserProfile(userId, {
+        credits: credits >= 0 ? credits : userCredits
+      });
+
+      if (!updatedUserProfile) {
+        throw new Error('Failed to update user credits.');
+      }
+
+      return updatedUserProfile;
     }
   };
 }
-
-export const INSUFFICIENT_CREDITS_STATUS = 402;
-export const INSUFFICIENT_CREDITS_MESSAGE = 'Insufficient credits';

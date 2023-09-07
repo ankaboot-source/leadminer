@@ -65,6 +65,8 @@ const schema = z.object({
   ENABLE_CREDIT: boolean().default('false'),
   CONTACT_CREDIT: number().optional(),
   EMAIL_CREDIT: number().optional(),
+  STRIPE_API_KEY: z.string().nonempty().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
 });

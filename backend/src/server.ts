@@ -1,5 +1,4 @@
 import './env';
-
 import initializeApp from './app';
 import ENV from './config';
 import pool from './db/pg';
@@ -16,6 +15,7 @@ import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
+import { verifyCreditEnvironmentVariables } from './utils/credits';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -33,6 +33,7 @@ console.log(
 (async () => {
   await redis.flushAll();
   await redis.initProviders();
+  verifyCreditEnvironmentVariables();
   const contacts = new PgContacts(pool, logger);
   const reacherClient = new ReacherClient(logger, {
     host: ENV.REACHER_HOST,
@@ -75,7 +76,7 @@ console.log(
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
 
-  const app = initializeApp(
+  const app = await initializeApp(
     authResolver,
     tasksManager,
     miningSources,

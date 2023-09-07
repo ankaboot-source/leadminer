@@ -16,8 +16,11 @@ import initializeAuthRoutes from './routes/auth.routes';
 import { Contacts } from './db/interfaces/Contacts';
 import initializeContactsRoutes from './routes/contacts.routes';
 import { Users } from './db/interfaces/Users';
+import { initPaymentApp } from './utils/credits';
+import supabaseClient from './utils/supabase';
+import logger from './utils/logger';
 
-export default function initializeApp(
+export default async function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
   miningSources: MiningSources,
@@ -30,6 +33,12 @@ export default function initializeApp(
     initializeSentry(app, ENV.SENTRY_DSN);
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
+  }
+
+  const creditPaymentApp = await initPaymentApp(supabaseClient, logger);
+
+  if (creditPaymentApp) {
+    app.use('/api', creditPaymentApp);
   }
 
   app.use(corsMiddleware);
