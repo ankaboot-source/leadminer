@@ -72,8 +72,6 @@ async function emailMessageHandler(
         })
       );
 
-      console.log(input);
-
       await emailsStreamProducer.produce(input);
 
       redisClientForNormalMode.publish(

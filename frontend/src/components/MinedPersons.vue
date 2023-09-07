@@ -236,7 +236,6 @@ const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(true);
-const isVerifying = ref(false);
 const loadingLabel = ref("");
 const table = ref<QTable>();
 

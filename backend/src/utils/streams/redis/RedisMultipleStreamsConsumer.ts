@@ -4,6 +4,11 @@ import MultipleStreamsConsumer, {
   StreamData
 } from '../MultipleStreamsConsumer';
 
+/**
+ * [streamName, [messageId, [messageKey,stringifiedMessageData]][] ][]
+ */
+type StreamResult = [string, [string, [string, string]][]][];
+
 export default class RedisMultipleStreamsConsumer<T>
   implements MultipleStreamsConsumer<T>
 {
@@ -14,10 +19,7 @@ export default class RedisMultipleStreamsConsumer<T>
     private readonly consumerGroup: string
   ) {}
 
-  async consume(
-    streams: string[],
-    count: number = 1
-  ): Promise<StreamData<T>[]> {
+  async consume(streams: string[], count = 1): Promise<StreamData<T>[]> {
     try {
       const streamsResponse = (await this.redisClient.xreadgroup(
         'GROUP',
@@ -31,7 +33,7 @@ export default class RedisMultipleStreamsConsumer<T>
         'STREAMS',
         ...streams,
         ...new Array(streams.length).fill('>')
-      )) as any[]; // [streamName, [messageId, messageData] [] ][]
+      )) as StreamResult;
 
       if (streamsResponse === null) {
         return [];
@@ -39,12 +41,15 @@ export default class RedisMultipleStreamsConsumer<T>
 
       return streamsResponse.map(([streamName, messages]) => {
         const data: T[] = messages.map(
-          ([, stringifiedMessagedData]: any) =>
+          ([, stringifiedMessagedData]) =>
             JSON.parse(stringifiedMessagedData[1]) as T
         );
 
-        const lastMessageId = messages.at(-1)[0];
-        this.redisClient.xtrim(streamName, 'MINID', lastMessageId);
+        const lastMessage = messages.at(-1);
+        if (lastMessage) {
+          const lastMessageId = lastMessage[0];
+          this.redisClient.xtrim(streamName, 'MINID', lastMessageId);
+        }
         return { streamName, data };
       });
     } catch (error) {
