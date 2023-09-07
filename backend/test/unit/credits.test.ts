@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createCreditHandler } from '../../src/utils/billing/credits';
+import { createCreditHandler } from '../../src/utils/credits';
 import { Users } from '../../src/db/interfaces/Users';
 
 describe('createCreditHandler', () => {
@@ -15,29 +15,26 @@ describe('createCreditHandler', () => {
   });
 
   describe('createCreditHandler setup', () => {
-    it('should return undefined when enable is false', () => {
-      const creditHandler = createCreditHandler(false, 10, userResolverMock);
+    it('should return undefined when enable is false', async () => {
+      const creditHandler = createCreditHandler(10, userResolverMock);
       expect(creditHandler).toBeUndefined();
     });
 
-    it('should return undefined when creditsPerUnit is undefined', () => {
+    it('should return undefined when creditsPerUnit is undefined', async () => {
       const creditHandler = createCreditHandler(
-        true,
         undefined,
         userResolverMock
       );
       expect(creditHandler).toBeUndefined();
     });
 
-    it('should return validateCreditUsage and deductCredits methods when passing correct values', () => {
-      const handler = createCreditHandler(true, 10, userResolverMock);
+    it('should return validateCreditUsage and deductCredits methods when passing correct values', async () => {
+      const handler = createCreditHandler(10, userResolverMock);
 
-      if (handler === undefined) {
-        throw new Error('Handler is undefined');
-      }
-
-      expect(typeof handler.validateCreditUsage).toBe('function');
-      expect(typeof handler.deductCredits).toBe('function');
+      expect(handler).not.toBeUndefined();
+      expect(handler).not.toBeNull();
+      expect(typeof handler?.validateCreditUsage).toBe('function');
+      expect(typeof handler?.deductCredits).toBe('function');
     });
   });
 
