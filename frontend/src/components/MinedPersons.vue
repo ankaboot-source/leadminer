@@ -411,6 +411,14 @@ function customSortLogic(
       return [...rowsToFilter].sort((a, b) => {
         const aValue = (a[sortBy as keyof Contact] as string) ?? "";
         const bValue = (b[sortBy as keyof Contact] as string) ?? "";
+
+        if (aValue === "") {
+          return 1;
+        }
+
+        if (bValue === "") {
+          return -1;
+        }
         return descending
           ? bValue.localeCompare(aValue)
           : aValue.localeCompare(bValue);
