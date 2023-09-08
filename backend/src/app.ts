@@ -19,7 +19,7 @@ import AuthResolver from './services/auth/AuthResolver';
 import EmailStatusCache from './services/cache/EmailStatusCache';
 import { EmailStatusVerifier } from './services/email-status/EmailStatusVerifier';
 import TasksManager from './services/tasks-manager/TasksManager';
-import { initPaymentApp } from './utils/credits';
+import { initPaymentRouter } from './utils/credits';
 import supabaseClient from './utils/supabase';
 
 export default async function initializeApp(
@@ -39,9 +39,8 @@ export default async function initializeApp(
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
   }
-
-  const creditPaymentApp = await initPaymentApp(supabaseClient, logger);
-
+  
+  const creditPaymentApp = initPaymentRouter(supabaseClient, logger);
   if (creditPaymentApp) {
     app.use('/api', creditPaymentApp);
   }

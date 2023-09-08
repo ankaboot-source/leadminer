@@ -1,6 +1,5 @@
-import initPaymentApp from './app';
+import initPaymentRouter from './app';
 import createCreditHandler from './utils/credits';
 import deleteCustomer from './utils/stripe';
 
-export { initPaymentApp, createCreditHandler, deleteCustomer };
-// export {}
+export { initPaymentRouter, createCreditHandler, deleteCustomer };
