@@ -141,6 +141,8 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
   ? process.env.AVERAGE_EXTRACTION_RATE
   : 130;
 
+let previousProgress = 0;
+
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
@@ -167,11 +169,19 @@ const verificationProgress = computed(
 const progressBuffer = computed(() =>
   fetchingFinished.value && scannedEmails.value ? 1 : fetchingProgress.value
 );
-const progressValue = computed(() =>
-  activeMiningTask.value
-    ? (verificationProgress.value + extractionProgress.value) / 2
-    : 0
-);
+
+const progressValue = computed(() => {
+  if (!activeMiningTask.value) {
+    return 0;
+  }
+  const currentProgress =
+    (verificationProgress.value + extractionProgress.value) / 2;
+  if (currentProgress > previousProgress) {
+    previousProgress = currentProgress;
+    return currentProgress;
+  }
+  return previousProgress;
+});
 
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
@@ -200,6 +210,7 @@ watch(fetchingFinished, (finished) => {
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
     leadminerStore.totalFetchedEmails = 0;
+    previousProgress = 0;
     startTime = performance.now();
     // eslint-disable-next-line no-console
     console.log("Started Mining");
