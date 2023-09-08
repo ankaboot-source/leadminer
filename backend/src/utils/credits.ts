@@ -15,10 +15,10 @@ interface UserResololver {
 }
 
 interface CreditsPlugin {
-  initPaymentApp(
+  initPaymentRouter(
     supabaseClient: SupabaseClient,
     logger: Logger
-  ): Express | null;
+  ): Express;
   createCreditHandler(
     creditsPerUnit: number | undefined,
     userResolver: UserResololver
@@ -39,30 +39,12 @@ interface CreditsPlugin {
   deleteCustomer(customerId: string): Promise<void>;
 }
 
-const plugin = DynamicCreditPlugin as CreditsPlugin;
+let plugin = {} as CreditsPlugin;
 
-export const initPaymentApp = plugin.initPaymentApp ?? (() => null);
+if (ENV.ENABLE_CREDIT) {
+  plugin = DynamicCreditPlugin as CreditsPlugin;
+}
+
+export const initPaymentRouter = plugin.initPaymentRouter ?? (() => null);
 export const createCreditHandler = plugin.createCreditHandler ?? (() => null);
 export const deleteCustomer = plugin.deleteCustomer ?? (() => null);
-
-export function verifyCreditEnvironmentVariables() {
-  if (!ENV.ENABLE_CREDIT) {
-    return;
-  }
-
-  if (!ENV.CONTACT_CREDIT) {
-    throw new Error('Missing environment variable CONTACT_CREDIT');
-  }
-
-  if (!ENV.EMAIL_CREDIT) {
-    throw new Error('Missing environment variable EMAIL_CREDIT');
-  }
-
-  if (!ENV.STRIPE_API_KEY) {
-    throw new Error('Missing environment variable STRIPE_API_KEY');
-  }
-
-  if (!ENV.STRIPE_WEBHOOK_SECRET) {
-    throw new Error('Missing environment variable STRIPE_WEBHOOK_SECRET');
-  }
-}

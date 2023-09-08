@@ -106,12 +106,12 @@ export default function createCreditHandler(
     /**
      * Add credits to a user's account.
      *
-     * @param {string} userId - The ID of the user.
-     * @param {number} credits - The number of credits to add. It should be a non-negative number.
-     * @returns {Promise<Object>} - A Promise that resolves to the updated user profile.
+     * @param userId - The ID of the user.
+     * @param credits - The number of credits to add. It should be a non-negative number.
+     * @returns - A Promise that resolves to the updated user profile.
      * @throws {Error} - If there is an error in retrieving or updating user credits.
      */
-    async addCredits(userId: string, credits: number) {
+    async addCredits(userId: string, credits: number): Promise<Boolean> {
       const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
 
       if (userCredits === undefined) {
