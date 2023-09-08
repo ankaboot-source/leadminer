@@ -22,7 +22,7 @@ import TasksManager from './services/tasks-manager/TasksManager';
 import { initPaymentRouter } from './utils/credits';
 import supabaseClient from './utils/supabase';
 
-export default async function initializeApp(
+export default function initializeApp(
   authResolver: AuthResolver,
   tasksManager: TasksManager,
   miningSources: MiningSources,

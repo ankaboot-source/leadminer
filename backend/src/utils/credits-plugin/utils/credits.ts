@@ -111,7 +111,7 @@ export default function createCreditHandler(
      * @returns - A Promise that resolves to the updated user profile.
      * @throws {Error} - If there is an error in retrieving or updating user credits.
      */
-    async addCredits(userId: string, credits: number): Promise<Boolean> {
+    async addCredits(userId: string, credits: number): Promise<boolean> {
       const userCredits = (await USER_RESOLVER.getUserProfile(userId))?.credits;
 
       if (userCredits === undefined) {

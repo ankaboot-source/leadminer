@@ -16,7 +16,7 @@ export default function initPaymentRouter(
   const router = express.Router();
 
   const stripeClient = new Stripe(ENV.STRIPE_API_KEY, {
-    // @ts-ignore
+    // @ts-expect-error: Suppresses TypeScript error because the "apiVersion" is typed with latest Stripe version
     apiVersion: ENV.STRIPE_API_VERSION
   });
 

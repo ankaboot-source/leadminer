@@ -52,7 +52,7 @@ console.log(
   const userResolver = new SupabaseUsers(supabaseClient, logger);
   const emailStatusCache = new RedisEmailStatusCache(redis.getClient());
 
-  const app = await initializeApp(
+  const app = initializeApp(
     authResolver,
     tasksManager,
     miningSources,

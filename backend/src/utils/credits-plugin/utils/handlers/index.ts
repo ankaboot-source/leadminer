@@ -12,7 +12,7 @@ import SupabaseProfiles from '../../db/SupabaseProfiles';
 export default class StripeEventHandlerFactory {
   constructor(
     private readonly supabaseClient: SupabaseClient,
-    private readonly stripeClient?: Stripe
+    private readonly stripeClient: Stripe
   ) {}
 
   /**
@@ -32,7 +32,7 @@ export default class StripeEventHandlerFactory {
         return new StripeSubscriptionCreated(
           event as StripeEvent,
           supabaseClient,
-          this.stripeClient!
+          this.stripeClient
         );
       case 'customer.subscription.updated':
         return new StripeSubscriptionUpdated(
