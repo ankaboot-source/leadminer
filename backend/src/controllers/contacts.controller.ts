@@ -164,7 +164,6 @@ export default function initializeContactsController(
           ).toFixed(2)} seconds`,
           { count: unverifiedEmails.length }
         );
-        logger.info('Success');
         return res.json({ message: 'Success' });
       } catch (error) {
         return next(error);

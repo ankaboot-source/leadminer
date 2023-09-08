@@ -29,11 +29,10 @@
   "author": "ankaboot",
   "license": "GNU AGPL v3",
   "dependencies": {
-    "@sentry/node": "^7.61.0",
-    "@sentry/tracing": "^7.61.0",
+    "@sentry/tracing": "^7.64.0",
+    "@sentry/node": "^7.64.0",
     "@supabase/supabase-js": "^2.31.0",
     "axios": "^1.4.0",
-    "bullmq": "^4.6.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "csv-stringify": "^6.4.0",

@@ -2,8 +2,9 @@
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import {
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL,
-  REDIS_STREAMS_CONSUMER_GROUP
+  EMAILS_STREAM_CONSUMER_GROUP,
+  MESSAGES_STREAM_CONSUMER_GROUP,
+  REDIS_PUBSUB_COMMUNICATION_CHANNEL
 } from '../../utils/constants';
 import logger from '../../utils/logger';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
@@ -13,18 +14,13 @@ import {
   FetcherStatus,
   ProgressType,
   RedisCommand,
+  StreamInfo,
   Task,
   TaskProgress
 } from './types';
 import { redactSensitiveData } from './utils';
 
 export default class TasksManager {
-  private readonly REDIS_PUBSUB_COMMUNICATION_CHANNEL =
-    REDIS_PUBSUB_COMMUNICATION_CHANNEL;
-
-  private readonly REDIS_STREAMS_CONSUMER_GROUP_NAME =
-    REDIS_STREAMS_CONSUMER_GROUP;
-
   /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
    */
@@ -90,8 +86,10 @@ export default class TasksManager {
     return {
       miningId,
       stream: {
-        streamName: `stream-${miningId}`,
-        consumerGroupName: this.REDIS_STREAMS_CONSUMER_GROUP_NAME
+        messagesStreamName: `messages_stream-${miningId}`,
+        emailsStreamName: `emails_stream-${miningId}`,
+        messagesConsumerGroupName: MESSAGES_STREAM_CONSUMER_GROUP,
+        emailsConsumerGroupName: EMAILS_STREAM_CONSUMER_GROUP
       }
     };
   }
@@ -113,7 +111,7 @@ export default class TasksManager {
   }: ImapEmailsFetcherOptions) {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
-      const { streamName } = stream;
+      const { messagesStreamName } = stream;
 
       const fetcher = this.emailFetcherFactory.create({
         imapConnectionProvider,
@@ -121,7 +119,7 @@ export default class TasksManager {
         userId,
         email,
         miningId,
-        streamName,
+        streamName: messagesStreamName,
         batchSize,
         fetchEmailBody
       });
@@ -137,17 +135,14 @@ export default class TasksManager {
         progress: {
           totalMessages: await fetcher.getTotalMessages(),
           fetched: 0,
-          extracted: 0
+          extracted: 0,
+          verifiedContacts: 0,
+          createdContacts: 0
         }
       };
 
       fetcher.start();
-      await this.pubsubSendMessage(
-        miningId,
-        'REGISTER',
-        stream.streamName,
-        stream.consumerGroupName
-      );
+      await this.pubsubSendMessage(miningId, 'REGISTER', stream);
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
       this.redisSubscriber.subscribe(miningId, (err) => {
@@ -214,12 +209,7 @@ export default class TasksManager {
 
     try {
       progressHandlerSSE.stop();
-      await this.pubsubSendMessage(
-        miningId,
-        'DELETE',
-        stream.streamName,
-        stream.consumerGroupName
-      );
+      await this.pubsubSendMessage(miningId, 'DELETE', stream);
 
       await fetcher.stop();
     } catch (error) {
@@ -259,6 +249,14 @@ export default class TasksManager {
       progressHandlerSSE.sendSSE(value, 'fetching-finished');
     }
 
+    if (
+      progressType === 'extracted' &&
+      fetcher.isCompleted &&
+      progress.extracted >= progress.fetched
+    ) {
+      progressHandlerSSE.sendSSE(value, 'extraction-finished');
+    }
+
     // Send the progress to parties subscribed on SSE
     return progressHandlerSSE.sendSSE(value, eventName);
   }
@@ -276,10 +274,6 @@ export default class TasksManager {
     progressType: ProgressType,
     incrementBy = 1
   ) {
-    if (!['fetched', 'extracted'].includes(progressType)) {
-      throw Error('progressType value must be either fetched or extracted.');
-    }
-
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
@@ -307,9 +301,24 @@ export default class TasksManager {
    */
   private async hasCompleted(
     miningId: string,
-    { extracted, fetched, fetcherStatus }: TaskProgress
+    {
+      extracted,
+      fetched,
+      fetcherStatus,
+      verifiedContacts,
+      createdContacts
+    }: TaskProgress
   ) {
-    const status = fetcherStatus === 'completed' && extracted >= fetched;
+    logger.debug('Task progress update', {
+      extracted,
+      fetched,
+      verifiedContacts,
+      createdContacts
+    });
+    const status =
+      fetcherStatus === 'completed' &&
+      extracted >= fetched &&
+      verifiedContacts >= createdContacts;
     const task = status ? await this.deleteTask(miningId) : null;
 
     return { status, task };
@@ -327,43 +336,60 @@ export default class TasksManager {
   private async pubsubSendMessage(
     miningId: string,
     command: RedisCommand,
-    streamName: string,
-    consumerGroupName: string
+    {
+      messagesConsumerGroupName,
+      messagesStreamName,
+      emailsConsumerGroupName,
+      emailsStreamName
+    }: StreamInfo
   ) {
-    if (!['REGISTER', 'DELETE'].includes(command)) {
-      throw new Error(
-        `Invalid command '${command}', expected 'REGISTER' or 'DELETE'.`
-      );
-    }
-
     switch (command) {
       case 'REGISTER': {
-        // Create consumer group and empty stream.
         await this.redisPublisher.xgroup(
           'CREATE',
-          streamName,
-          consumerGroupName,
+          messagesStreamName,
+          messagesConsumerGroupName,
+          '$',
+          'MKSTREAM'
+        );
+        await this.redisPublisher.xgroup(
+          'CREATE',
+          emailsStreamName,
+          emailsConsumerGroupName,
           '$',
           'MKSTREAM'
         );
         break;
       }
       case 'DELETE': {
-        // Delete the stream and consumer groups.
         await this.redisPublisher.xgroup(
           'DESTROY',
-          streamName,
-          consumerGroupName
+          messagesStreamName,
+          messagesConsumerGroupName
         );
-        await this.redisPublisher.del(streamName);
+        await this.redisPublisher.del(messagesStreamName);
+
+        await this.redisPublisher.xgroup(
+          'DESTROY',
+          emailsStreamName,
+          emailsConsumerGroupName
+        );
+        await this.redisPublisher.del(emailsStreamName);
         break;
       }
       default:
     }
 
-    const message = { miningId, command, streamName, consumerGroupName };
+    const message = {
+      miningId,
+      command,
+      messagesStreamName,
+      messagesConsumerGroupName,
+      emailsStreamName,
+      emailsConsumerGroupName
+    };
     await this.redisPublisher.publish(
-      this.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+      REDIS_PUBSUB_COMMUNICATION_CHANNEL,
       JSON.stringify(message)
     );
   }

@@ -208,22 +208,7 @@
       </template>
 
       <template #loading>
-        <q-inner-loading showing color="teal">
-          <template #default>
-            <q-circular-progress
-              v-if="isVerifying"
-              show-value
-              :value="verificationProgress"
-              size="3em"
-              color="primary"
-              track-color="grey-3"
-              class="q-ma-md"
-            >
-              {{ verificationProgress }}%
-            </q-circular-progress>
-            <q-spinner v-else color="primary" size="3em" />
-            <p>{{ loadingLabel }}</p>
-          </template>
+        <q-inner-loading showing color="teal" :label="loadingLabel">
         </q-inner-loading>
       </template>
     </q-table>
@@ -260,24 +245,12 @@ const rows = ref<Contact[]>([]);
 const filterSearch = ref("");
 const filter = { filterSearch };
 const isLoading = ref(true);
-const isVerifying = ref(false);
 const loadingLabel = ref("");
 const table = ref<QTable>();
 
 let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
-const unverifiedEmails = ref(0);
-const verifiedEmails = ref(0);
-
-const verificationProgress = computed(() =>
-  unverifiedEmails.value !== 0
-    ? Math.min(
-        Math.floor((verifiedEmails.value / unverifiedEmails.value) * 100),
-        100
-      )
-    : 0
-);
 
 const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 const activeMiningTask = computed(
@@ -366,62 +339,6 @@ async function syncTable() {
   }
 }
 
-async function verifyContacts() {
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  loadingLabel.value = "Verifying contacts...";
-  isVerifying.value = true;
-
-  const contacts = await getContacts(user.id);
-
-  unverifiedEmails.value = contacts.filter((c) => !c.status).length;
-  verifiedEmails.value = 0;
-  let verifiedEmailsCountBuffer = 0;
-  const maxMsBeforeClosingRealtime = 5000;
-
-  return new Promise<void>((resolve) => {
-    let interval: number;
-    let msWaiting = 0;
-
-    const setupInterval = () =>
-      window.setInterval(async () => {
-        msWaiting += 1000;
-        if (msWaiting >= maxMsBeforeClosingRealtime) {
-          verifiedEmails.value += verifiedEmailsCountBuffer;
-          await subscription?.unsubscribe();
-          isVerifying.value = false;
-          resolve();
-        }
-      }, 1000);
-
-    interval = setupInterval();
-    subscription = supabase
-      .channel("*")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "persons",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // We use a buffer to reduce how many times we update the DOM
-          verifiedEmailsCountBuffer += 1;
-          if (verifiedEmailsCountBuffer >= 50) {
-            verifiedEmails.value += verifiedEmailsCountBuffer;
-            verifiedEmailsCountBuffer = 0;
-          }
-          if (interval) {
-            clearInterval(interval);
-          }
-          msWaiting = 0;
-          interval = setupInterval();
-        }
-      )
-      .subscribe();
-  });
-}
-
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     // If mining is active, update refined persons every 3 seconds
@@ -442,7 +359,6 @@ watch(activeMiningTask, async (isActive) => {
     contactsCache.clear();
     isLoading.value = true;
     await refineContacts();
-    await verifyContacts();
     await syncTable();
     isLoading.value = false;
   }

@@ -59,7 +59,7 @@ export default class PgContacts implements Contacts {
     INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name
-    RETURNING persons.email;`;
+    RETURNING persons.email, persons.status;`;
 
   private static readonly UPDATE_PERSON_STATUS_SQL = `
     UPDATE persons
@@ -114,7 +114,7 @@ export default class PgContacts implements Contacts {
 
   async create({ message, persons }: ExtractionResult, userId: string) {
     try {
-      const insertedEmails: string[] = [];
+      const insertedEmails = new Set<string>();
 
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
@@ -129,7 +129,16 @@ export default class PgContacts implements Contacts {
 
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
-        const { rows } = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+        const { rowCount: selectResults } = await this.pool.query(
+          'SELECT email FROM persons WHERE user_id = $1 AND email = $2;',
+          [userId, person.email]
+        );
+        if (selectResults === 0) {
+          insertedEmails.add(person.email);
+        }
+
+        // eslint-disable-next-line no-await-in-loop
+        await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
           person.name,
           person.email,
           person.url,
@@ -143,10 +152,6 @@ export default class PgContacts implements Contacts {
           userId,
           person.status ?? null
         ]);
-
-        if (rows.length) {
-          insertedEmails.push(...rows.map((r: { email: string }) => r.email));
-        }
 
         const tagValues = tags.map((tag) => [
           tag.name,
@@ -174,7 +179,7 @@ export default class PgContacts implements Contacts {
         ]);
       }
 
-      return insertedEmails;
+      return Array.from(insertedEmails);
     } catch (e) {
       this.logger.error('Error when inserting contact', e);
       return [];
