@@ -45,7 +45,7 @@
           color="green"
           class="text-body1"
           label="Refill credits or Upgrade 🚀"
-          @click="BuyOrUpgrade"
+          @click="buyOrUpgrade"
         />
       </q-card-actions>
     </q-card>
@@ -84,7 +84,7 @@ const executePartialAction = async () => {
   closeModal();
 };
 const downloadActionLabel = computed(() => `Download only ${available.value}`);
-const BuyOrUpgrade = () => {
+const buyOrUpgrade = () => {
   window.open("https://www.leadminer.io/product", "_blank");
 };
 
