@@ -9,21 +9,14 @@ export default function initPaymentApp(
   logger: Logger
 ) {
   if (
-    !process.env.ENABLE_CREDIT ||
-    !process.env.STRIPE_API_KEY ||
-    !process.env.STRIPE_WEBHOOK_SECRET
+    !ENV.STRIPE_API_KEY
   ) {
     return null;
   }
 
-  const app = express();
-
-  app.on('mount', () =>
-    logger.info('Credit payment app mounted successfully ✔️')
-  );
-
-  const stripeClient = new Stripe(process.env.STRIPE_API_KEY, {
-    apiVersion: '2023-08-16'
+  const stripeClient = new Stripe(ENV.STRIPE_API_KEY, {
+    // @ts-ignore
+    apiVersion: ENV.STRIPE_API_VERSION
   });
 
   app.use(

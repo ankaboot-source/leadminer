@@ -1,12 +1,14 @@
 import Stripe from 'stripe';
+import ENV from '../config';
 
 export default async function deleteCustomer(customerId: string) {
-  if (!process.env.STRIPE_API_KEY) {
+  if (!ENV.STRIPE_API_KEY) {
     return;
   }
 
-  const stripeClient = new Stripe(process.env.STRIPE_API_KEY, {
-    apiVersion: '2023-08-16'
+  const stripeClient = new Stripe(ENV.STRIPE_API_KEY, {
+    // @ts-ignore
+    apiVersion: ENV.STRIPE_API_VERSION
   });
 
   await stripeClient.customers.del(customerId);

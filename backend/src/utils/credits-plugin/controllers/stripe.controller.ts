@@ -7,6 +7,7 @@ import {
   handleSubscriptionCreated,
   handleSubscriptionUpdated
 } from '../utils/eventHandlers';
+import ENV from '../config';
 
 export default function initializeStripePaymentController(
   stripeClient: Stripe,
@@ -19,18 +20,23 @@ export default function initializeStripePaymentController(
       res: Response,
       next: NextFunction
     ) {
+
+      if (!ENV.STRIPE_WEBHOOK_SECRET) {
+        throw new Error('Missing stripe WEBHOOK_ENDPOINT_SECRET')
+      }
+
       try {
         const signature = req.headers['stripe-signature'];
 
-        if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
-          logger.error('Missing Stripe signature or WEBHOOK_ENDPOINT_SECRET');
+        if (!signature) {
+          logger.error('Missing stripe signature or WEBHOOK_ENDPOINT_SECRET');
           return res.sendStatus(500);
         }
 
         const event = stripeClient.webhooks.constructEvent(
           req.body,
           signature,
-          process.env.STRIPE_WEBHOOK_SECRET
+          ENV.STRIPE_WEBHOOK_SECRET
         );
 
         if (!event) {
@@ -68,6 +74,11 @@ export default function initializeStripePaymentController(
       req: Request,
       res: Response
     ) {
+
+      if(!ENV.FRONTEND_HOST) {
+        throw new Error('Missing env FRONTEND_HOST.')
+      }
+
       try {
         const stripeCheckoutSessionId = req.query.checkout_session_id as string;
 
@@ -111,7 +122,7 @@ export default function initializeStripePaymentController(
           logger.error(`An error occurred: ${error.message}`);
         }
 
-        return res.redirect(process.env.FRONTEND_HOST as string);
+        return res.redirect(ENV.FRONTEND_HOST as string);
       }
     }
   };

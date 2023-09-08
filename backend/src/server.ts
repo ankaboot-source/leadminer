@@ -15,7 +15,6 @@ import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
-import { verifyCreditEnvironmentVariables } from './utils/credits';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -33,7 +32,6 @@ console.log(
 (async () => {
   await redis.flushAll();
   await redis.initProviders();
-  verifyCreditEnvironmentVariables();
 
   const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
 
