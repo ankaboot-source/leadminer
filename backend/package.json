@@ -10,7 +10,7 @@
     "dev-api": "nodemon src/server.ts",
     "dev-worker": "nodemon src/messageWorker.ts",
     "dev-email-worker": "nodemon src/emailVerificationWorker.ts",
-    "dev:webhook-listener": "stripe listen --load-from-webhooks-api --forward-to localhost:5000",
+    "dev:webhook-listener": "stripe listen --forward-to http://localhost:8081/api/payment/stripe/webhook",
     "dev:inspect": "ts-node --inspect src/server.ts",
     "lint": "eslint src test",
     "lint:fix": "eslint --fix src test",
