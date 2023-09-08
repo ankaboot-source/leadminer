@@ -92,8 +92,3 @@ defineExpose({
   openModal,
 });
 </script>
-<style>
-.negative-margin-8 {
-  margin-right: -8px;
-}
-</style>
