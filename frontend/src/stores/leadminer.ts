@@ -30,6 +30,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const totalFetchedEmails = ref(0);
   const verifiedContacts = ref(0);
   const createdContacts = ref(0);
+  const fetchingFinished = ref(true);
+  const extractionFinished = ref(true);
   const status = ref("");
   const scannedBoxes = ref<string[]>([]);
   const statistics = ref({});
@@ -163,6 +165,10 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     loadingStatusDns.value = true;
     scannedEmails.value = 0;
     extractedEmails.value = 0;
+    verifiedContacts.value = 0;
+    createdContacts.value = 0;
+    fetchingFinished.value = false;
+    extractionFinished.value = false;
     statistics.value = "f";
     scannedBoxes.value = [];
 
@@ -197,18 +203,17 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         },
         onFetchingDone: (totalFetched) => {
           totalFetchedEmails.value = totalFetched;
+          fetchingFinished.value = true;
         },
         onExtractionDone: (totalExtracted) => {
           extractedEmails.value = totalExtracted;
-          console.log("Extraction done");
+          extractionFinished.value = true;
         },
         onVerifiedContacts: (totalVerified) => {
           verifiedContacts.value = totalVerified;
-          console.log({ totalVerified });
         },
         onCreatedContacts: (totalCreated) => {
           createdContacts.value = totalCreated;
-          console.log({ totalCreated });
         },
       });
 
@@ -251,6 +256,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
       miningTask.value = undefined;
       status.value = "";
       infoMessage.value = "Mining has stopped";
+      fetchingFinished.value = true;
+      extractionFinished.value = true;
     } catch (err) {
       if (err !== null && err instanceof AxiosError) {
         let message = null;
@@ -289,6 +296,10 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     totalFetchedEmails,
     extractedEmails,
     scannedEmails,
+    createdContacts,
+    verifiedContacts,
+    fetchingFinished,
+    extractionFinished,
     status,
     scannedBoxes,
     statistics,

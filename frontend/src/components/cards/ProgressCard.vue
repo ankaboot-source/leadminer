@@ -24,7 +24,7 @@
                 }}
               </span>
             </div>
-            <div>
+            <div v-if="!extractionFinished">
               Extracted emails:
               <span class="text-weight-bolder">
                 {{ extractedEmails.toLocaleString() }}/{{
@@ -38,13 +38,13 @@
         <div
           v-if="activeMiningTask"
           class="text-h6 text-weight-medium text-center text-blue-grey-14"
-          :class="[responsiveCenteredLabel]"
+          :class="[labelClass]"
         >
           We're deep in the mines now... extracting contacts!
         </div>
         <div
           v-else
-          :class="[responsiveCenteredLabel]"
+          :class="[labelClass]"
           class="text-blue-grey-14 text-center text-h6 text-weight-medium"
         >
           <span class="text-weight-bolder q-mr-xs">
@@ -82,7 +82,10 @@
         style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
         animation-speed="1200"
       >
-        <q-tooltip class="text-center text-body2 bordered">
+        <q-tooltip
+          v-if="activeMiningTask"
+          class="text-center text-body2 bordered"
+        >
           <div v-if="!fetchingFinished">
             Fetched emails:
             <span class="text-weight-bolder">
@@ -91,12 +94,18 @@
               }}
             </span>
           </div>
-          <div>
+          <div v-if="!extractionFinished">
             Extracted emails:
             <span class="text-weight-bolder">
               {{ extractedEmails.toLocaleString() }}/{{
                 scannedEmails.toLocaleString()
               }}
+            </span>
+          </div>
+          <div>
+            Verified contacts:
+            <span class="text-weight-bolder">
+              {{ verifiedContacts.toLocaleString() }}
             </span>
           </div>
         </q-tooltip>
@@ -114,13 +123,11 @@ import { computed, watch } from "vue";
 const $q = useQuasar();
 const leadminerStore = useLeadminerStore();
 
-const responsiveCenteredLabel = computed(() =>
+const labelClass = computed(() =>
   $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg"
 );
 
 const progressProps = defineProps({
-  extractedEmails: { type: Number, default: 0 },
-  scannedEmails: { type: Number, default: 0 },
   totalEmails: { type: Number, default: 0 },
 });
 
@@ -137,24 +144,33 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
-const fetchingFinished = computed(() =>
-  Boolean(leadminerStore.totalFetchedEmails)
-);
+const fetchingFinished = computed(() => leadminerStore.fetchingFinished);
+const extractionFinished = computed(() => leadminerStore.extractionFinished);
 
-const extractionFinished = computed(() =>
-  Boolean(leadminerStore.extractedEmails)
+const scannedEmails = computed(() => leadminerStore.scannedEmails);
+const extractedEmails = computed(() => leadminerStore.extractedEmails);
+const contactsToVerify = computed(() => leadminerStore.createdContacts);
+const verifiedContacts = computed(() => leadminerStore.verifiedContacts);
+
+const fetchingProgress = computed(
+  () => scannedEmails.value / progressProps.totalEmails || 0
+);
+const extractionProgress = computed(() =>
+  fetchingFinished.value
+    ? extractedEmails.value / scannedEmails.value || 0
+    : extractedEmails.value / progressProps.totalEmails || 0
+);
+const verificationProgress = computed(
+  () => verifiedContacts.value / contactsToVerify.value || 0
 );
 
 const progressBuffer = computed(() =>
-  fetchingFinished.value && progressProps.scannedEmails
-    ? 1
-    : progressProps.scannedEmails / progressProps.totalEmails || 0
+  fetchingFinished.value && scannedEmails.value ? 1 : fetchingProgress.value
 );
-
 const progressValue = computed(() =>
-  fetchingFinished.value
-    ? progressProps.extractedEmails / progressProps.scannedEmails || 0
-    : progressProps.extractedEmails / progressProps.totalEmails || 0
+  activeMiningTask.value
+    ? (verificationProgress.value + extractionProgress.value) / 2
+    : 0
 );
 
 function getEstimatedRemainingTime() {
