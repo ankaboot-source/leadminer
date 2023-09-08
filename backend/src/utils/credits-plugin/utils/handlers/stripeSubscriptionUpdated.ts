@@ -1,5 +1,5 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import { StripeEvent, StripeEventHandler } from './types';
+import SupabaseProfiles from '../../db/SupabaseProfiles';
 
 /**
  * Handles Stripe subscription updates.
@@ -7,7 +7,7 @@ import { StripeEvent, StripeEventHandler } from './types';
 export default class StripeSubscriptionUpdated implements StripeEventHandler {
   constructor(
     private readonly event: StripeEvent,
-    private readonly supabaseClient: SupabaseClient
+    private readonly supabaseClient: SupabaseProfiles
   ) {}
 
   async handle(): Promise<void> {
@@ -18,13 +18,9 @@ export default class StripeSubscriptionUpdated implements StripeEventHandler {
       throw new Error(`No tiers found for subscription: ${subscription.id}`);
     }
 
-    const user = (
-      await this.supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('stripe_customer_id', subscription.customer)
-        .single()
-    ).data;
+    const user = await this.supabaseClient.getUserProfileBySubscriptionId(
+      subscription.id
+    );
 
     if (!user) {
       return;
@@ -36,17 +32,10 @@ export default class StripeSubscriptionUpdated implements StripeEventHandler {
       subscription.canceled_at;
 
     if (!isCancelingSubscription && tiers.up_to) {
-      const { error } = await this.supabaseClient
-        .from('profiles')
-        .update({
-          credits: user.credits + tiers.up_to,
-          stripe_subscription_id: subscription.id
-        })
-        .eq('user_id', user.user_id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
+      await this.supabaseClient.updateUserProfile(user.user_id, {
+        credits: user.credits + tiers.up_to,
+        stripe_subscription_id: subscription.id
+      });
     }
   }
 }

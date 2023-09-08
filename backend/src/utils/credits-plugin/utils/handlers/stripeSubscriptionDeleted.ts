@@ -1,5 +1,5 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import { StripeEvent, StripeEventHandler } from './types';
+import SupabaseProfiles from '../../db/SupabaseProfiles';
 
 /**
  * Handles the deletion of a Stripe subscription.
@@ -7,30 +7,21 @@ import { StripeEvent, StripeEventHandler } from './types';
 export default class StripeSubscriptionDeleted implements StripeEventHandler {
   constructor(
     private readonly event: StripeEvent,
-    private readonly supabaseClient: SupabaseClient
+    private readonly supabaseClient: SupabaseProfiles
   ) {}
 
   async handle(): Promise<void> {
     const subscription = this.event.data.object;
-    const user = (
-      await this.supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('stripe_subscription_id', subscription.id)
-        .single()
-    ).data;
+    const user = await this.supabaseClient.getUserProfileBySubscriptionId(
+      subscription.id
+    );
 
     if (!user) {
       return;
     }
 
-    const { error } = await this.supabaseClient
-      .from('profiles')
-      .update({ stripe_subscription_id: null })
-      .eq('user_id', user.user_id);
-
-    if (error) {
-      throw new Error(error.message);
-    }
+    await this.supabaseClient.updateUserProfile(user.user_id, {
+      stripe_subscription_id: null
+    });
   }
 }

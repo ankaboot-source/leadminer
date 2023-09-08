@@ -4,6 +4,7 @@ import { StripeEvent, StripeEventHandler } from './types';
 import StripeSubscriptionCreated from './stripeSubscriptionCreated';
 import StripeSubscriptionUpdated from './stripeSubscriptionUpdated';
 import StripeSubscriptionDeleted from './stripeSubscriptionDeleted';
+import SupabaseProfiles from '../../db/SupabaseProfiles';
 
 /**
  * Factory class for creating Stripe event handlers.
@@ -24,22 +25,24 @@ export default class StripeEventHandlerFactory {
     eventType: Stripe.Event.Type,
     event: Stripe.Event
   ): StripeEventHandler | null {
+    const supabaseClient = new SupabaseProfiles(this.supabaseClient);
+
     switch (eventType) {
       case 'customer.subscription.created':
         return new StripeSubscriptionCreated(
           event as StripeEvent,
-          this.supabaseClient,
+          supabaseClient,
           this.stripeClient!
         );
       case 'customer.subscription.updated':
         return new StripeSubscriptionUpdated(
           event as StripeEvent,
-          this.supabaseClient
+          supabaseClient
         );
       case 'customer.subscription.deleted':
         return new StripeSubscriptionDeleted(
           event as StripeEvent,
-          this.supabaseClient
+          supabaseClient
         );
       default:
         return null;

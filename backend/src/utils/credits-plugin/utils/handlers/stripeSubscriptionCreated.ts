@@ -1,6 +1,6 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { StripeEvent, StripeEventHandler } from './types';
+import SupabaseProfiles from '../../db/SupabaseProfiles';
 
 /**
  * Handles the creation of a Stripe subscription.
@@ -8,7 +8,7 @@ import { StripeEvent, StripeEventHandler } from './types';
 export default class StripeSubscriptionCreated implements StripeEventHandler {
   constructor(
     private readonly event: StripeEvent,
-    private readonly supabaseClient: SupabaseClient,
+    private readonly supabaseClient: SupabaseProfiles,
     private readonly stripeClient: Stripe
   ) {}
 
@@ -33,17 +33,10 @@ export default class StripeSubscriptionCreated implements StripeEventHandler {
     }
 
     if (tiers.up_to) {
-      const { error } = await this.supabaseClient
-        .from('profiles')
-        .update({
-          credits: user.credits + tiers.up_to,
-          stripe_subscription_id: subscription.id
-        })
-        .eq('user_id', user.user_id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
+      await this.supabaseClient.updateUserProfile(user.user_id, {
+        credits: user.credits + tiers.up_to,
+        stripe_subscription_id: subscription.id
+      });
     }
   }
 
@@ -52,35 +45,15 @@ export default class StripeSubscriptionCreated implements StripeEventHandler {
       throw new Error('Missing required customerID and customerEmail.');
     }
 
-    const { data } = await this.supabaseClient.auth.admin.createUser({
-      user_metadata: {
-        full_name: customer.name
-      },
-      email: customer.email
-    });
-    const { user } = data;
+    const user = await this.supabaseClient.createNewUserProfile(
+      customer.email,
+      customer.name
+    );
 
-    const userProfile = (
-      await this.supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('email', user?.email ?? customer.email)
-        .single()
-    ).data;
-
-    if (!userProfile) {
-      throw new Error('Failed to retrieve user profile.');
-    }
-
-    return userProfile.stripe_customer_id === null
-      ? (
-          await this.supabaseClient
-            .from('profiles')
-            .update({ stripe_customer_id: customer.id })
-            .eq('user_id', userProfile.user_id)
-            .select()
-            .single()
-        ).data
-      : userProfile;
+    return user.stripe_customer_id === null
+      ? this.supabaseClient.updateUserProfile(user.user_id, {
+          stripe_customer_id: customer.id
+        })
+      : user;
   }
 }
