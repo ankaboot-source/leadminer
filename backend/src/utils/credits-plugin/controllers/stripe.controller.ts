@@ -2,11 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { Logger } from 'winston';
 import Stripe from 'stripe';
 import { SupabaseClient } from '@supabase/supabase-js';
-import {
-  handleDeletedSubscribtion,
-  handleSubscriptionCreated,
-  handleSubscriptionUpdated
-} from '../utils/eventHandlers';
+import StripeEventHandlerFactory from '../utils/handlers';
 import ENV from '../config';
 
 export default function initializeStripePaymentController(
@@ -20,9 +16,8 @@ export default function initializeStripePaymentController(
       res: Response,
       next: NextFunction
     ) {
-
       if (!ENV.STRIPE_WEBHOOK_SECRET) {
-        throw new Error('Missing stripe WEBHOOK_ENDPOINT_SECRET')
+        throw new Error('Missing stripe WEBHOOK_ENDPOINT_SECRET');
       }
 
       try {
@@ -43,27 +38,18 @@ export default function initializeStripePaymentController(
           return res.sendStatus(400);
         }
 
-        switch (event.type) {
-          case 'customer.subscription.updated':
-            logger.info(`Handling event type ${event.type}`);
-            await handleSubscriptionUpdated(event, supabaseClient);
-            break;
-          case 'customer.subscription.created':
-            logger.info(`Handling event type ${event.type}`);
-            await handleSubscriptionCreated(
-              event,
-              supabaseClient,
-              stripeClient
-            );
-            break;
-          case 'customer.subscription.deleted':
-            logger.info(`Handling event type ${event.type}`);
-            await handleDeletedSubscribtion(event, supabaseClient);
-            break;
-          default:
-            logger.warn(`Unhandled event type ${event.type}`);
+        const eventHandler = new StripeEventHandlerFactory(
+          supabaseClient,
+          stripeClient
+        ).create(event.type, event);
+
+        if (eventHandler) {
+          await eventHandler.handle();
+          logger.info(`Handeling event type: ${event.type}`);
+        } else {
+          logger.warn(`Unhandled event type: ${event.type}`);
         }
-        // Return a 200 response to acknowledge receipt of the event
+
         return res.sendStatus(200);
       } catch (err) {
         return next(err);
@@ -74,9 +60,8 @@ export default function initializeStripePaymentController(
       req: Request,
       res: Response
     ) {
-
-      if(!ENV.FRONTEND_HOST) {
-        throw new Error('Missing env FRONTEND_HOST.')
+      if (!ENV.FRONTEND_HOST) {
+        throw new Error('Missing env FRONTEND_HOST.');
       }
 
       try {
