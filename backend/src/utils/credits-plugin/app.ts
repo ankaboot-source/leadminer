@@ -9,25 +9,23 @@ export default function initPaymentRouter(
   supabaseClient: SupabaseClient,
   logger: Logger
 ) {
-  if (
-    !ENV.STRIPE_API_KEY
-  ) {
+  if (!ENV.STRIPE_API_KEY) {
     return null;
   }
 
   const router = express.Router();
-  
+
   const stripeClient = new Stripe(ENV.STRIPE_API_KEY, {
     // @ts-ignore
     apiVersion: ENV.STRIPE_API_VERSION
   });
-  
+
   router.use(
     '/payment/stripe',
     initializeStripePaymentRoutes(stripeClient, supabaseClient, logger)
   );
-    
-  logger.info('Credits router mounted successfully ✔️')
-  
+
+  logger.info('Credits router mounted successfully ✔️');
+
   return router;
 }

@@ -15,10 +15,7 @@ interface UserResololver {
 }
 
 interface CreditsPlugin {
-  initPaymentRouter(
-    supabaseClient: SupabaseClient,
-    logger: Logger
-  ): Express;
+  initPaymentRouter(supabaseClient: SupabaseClient, logger: Logger): Express;
   createCreditHandler(
     creditsPerUnit: number | undefined,
     userResolver: UserResololver

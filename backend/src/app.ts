@@ -39,7 +39,7 @@ export default async function initializeApp(
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
   }
-  
+
   const creditPaymentApp = initPaymentRouter(supabaseClient, logger);
   if (creditPaymentApp) {
     app.use('/api', creditPaymentApp);
