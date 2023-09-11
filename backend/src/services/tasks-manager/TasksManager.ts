@@ -55,12 +55,8 @@ export default class TasksManager {
     this.redisSubscriber.on('message', async (_channel, data) => {
       const { miningId, progressType, count } = JSON.parse(data);
 
-      if (count !== 0) {
-        const progress = this.updateProgress(
-          miningId,
-          progressType,
-          count || 1
-        );
+      if (count > 0) {
+        const progress = this.updateProgress(miningId, progressType, count);
         const notified = this.notifyChanges(miningId, progressType);
 
         if (progress !== null && notified !== null) {
