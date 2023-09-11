@@ -8,7 +8,11 @@
       <div class="row justify-between q-pa-sm q-mx-md">
         <div
           v-if="activeMiningTask"
-          class="col-auto text-amber-1 bg-amber-8 text-h6 text-weight-bolder border q-px-sm text-center"
+          :class="[
+            'col-auto text-h6 text-weight-bolder border q-px-sm text-center',
+            ,
+            progressPercentageClasses,
+          ]"
         >
           {{ progressPercentage }}
           <q-tooltip
@@ -40,7 +44,8 @@
           class="text-h6 text-weight-medium text-center text-blue-grey-14"
           :class="[labelClass]"
         >
-          We're deep in the mines now... extracting contacts!
+          We're deep in the mines now...
+          {{ extractionFinished ? "verifying" : "extracting contacts" }} !
         </div>
         <div
           v-else
@@ -76,7 +81,7 @@
         :buffer="progressBuffer"
         :value="progressValue"
         size="1.5rem"
-        color="yellow-8"
+        :color="progressColor"
         track-color="amber-2"
         stripe
         style="border-top: 1px solid rgba(0, 0, 0, 0.12)"
@@ -141,8 +146,6 @@ const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
   ? process.env.AVERAGE_EXTRACTION_RATE
   : 130;
 
-let previousProgress = 0;
-
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
@@ -166,21 +169,33 @@ const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0
 );
 
-const progressBuffer = computed(() =>
-  fetchingFinished.value && scannedEmails.value ? 1 : fetchingProgress.value
+const progressColor = computed(() =>
+  activeMiningTask.value && extractionFinished.value ? "green-8" : "yellow-8"
 );
+const progressPercentageClasses = computed(() =>
+  activeMiningTask.value && extractionFinished.value
+    ? "text-green-1 bg-green-8"
+    : "text-amber-1 bg-amber-8"
+);
+
+const progressBuffer = computed(() => {
+  if (!activeMiningTask.value) {
+    return 0;
+  }
+  if (fetchingFinished.value && scannedEmails.value) {
+    return 1;
+  }
+  return fetchingProgress.value;
+});
 
 const progressValue = computed(() => {
   if (!activeMiningTask.value) {
     return 0;
   }
-  const currentProgress =
-    (verificationProgress.value + extractionProgress.value) / 2;
-  if (currentProgress > previousProgress) {
-    previousProgress = currentProgress;
-    return currentProgress;
+  if (!extractionFinished.value) {
+    return extractionProgress.value;
   }
-  return previousProgress;
+  return verificationProgress.value;
 });
 
 function getEstimatedRemainingTime() {
@@ -210,7 +225,6 @@ watch(fetchingFinished, (finished) => {
 watch(activeMiningTask, (isActive) => {
   if (isActive) {
     leadminerStore.totalFetchedEmails = 0;
-    previousProgress = 0;
     startTime = performance.now();
     // eslint-disable-next-line no-console
     console.log("Started Mining");
