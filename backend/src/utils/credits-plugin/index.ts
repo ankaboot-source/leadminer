@@ -28,7 +28,7 @@ function initCreditAndPaymentPlugin(stripeClient: Stripe, userResolver: Users) {
         initializeStripePaymentRoutes(STRIPE_CLIENT, USER_RESOLVER, logger)
       );
 
-      logger.info('Credits router mounted successfully ✔️');
+      logger.info('Credits routes mounted successfully ✔️');
 
       return router;
     }

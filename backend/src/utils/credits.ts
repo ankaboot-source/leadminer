@@ -15,6 +15,7 @@ let plugin = {} as CreditsPlugin;
 if (ENV.ENABLE_CREDIT) {
   try {
     /* eslint-disable global-require */
+    // deepsource-ignore-next-line JS-0359 - Can't use import here
     plugin = require('./credits-plugin').default as CreditsPlugin;
   } catch (err) {
     if (err instanceof Error) {
