@@ -6,7 +6,7 @@ import {
   Status
 } from '../EmailStatusVerifier';
 import ReacherClient from './client';
-import { reacherResultToEmailStatus } from './mappers';
+import { reacherResultToEmailStatusWithDetails } from './mappers';
 
 export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
   private static readonly JOB_POLL_INTERVAL_MS = 1000;
@@ -32,15 +32,21 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
       if (error && !data) {
         return {
           email,
-          status: Status.UNKNOWN
+          status: Status.UNKNOWN,
+          details: {
+            hasTimedOut: true
+          }
         };
       }
 
-      return reacherResultToEmailStatus(data);
+      return reacherResultToEmailStatusWithDetails(data);
     } catch (error) {
       return {
         email,
-        status: Status.UNKNOWN
+        status: Status.UNKNOWN,
+        details: {
+          hasTimedOut: true
+        }
       };
     }
   }
@@ -90,7 +96,9 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
           { jobId, count: emails.length }
         );
 
-        return jobResults.results.map((r) => reacherResultToEmailStatus(r));
+        return jobResults.results.map((r) =>
+          reacherResultToEmailStatusWithDetails(r)
+        );
       }
 
       this.logger.info('No verification job results', { jobId });
@@ -153,7 +161,10 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
   private defaultBulkResults(emails: string[]) {
     return emails.map((e: string) => ({
       email: e,
-      status: Status.UNKNOWN
+      status: Status.UNKNOWN,
+      details: {
+        hasTimedOut: true
+      }
     }));
   }
 }

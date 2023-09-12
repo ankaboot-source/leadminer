@@ -6,14 +6,16 @@ interface BulkSubmitResponse {
   job_id: string;
 }
 
-interface CheckError {
+export interface CheckError {
   type: string;
   message: string;
 }
 
+export type Reachability = 'invalid' | 'unknown' | 'safe' | 'risky';
+
 export interface EmailCheckOutput {
   input: string;
-  is_reachable: 'invalid' | 'unknown' | 'safe' | 'risky';
+  is_reachable: Reachability;
   misc: Misc | CheckError;
   mx: Mx | CheckError;
   smtp: Smtp | CheckError;
