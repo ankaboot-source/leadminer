@@ -1,19 +1,19 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import express, { Router } from 'express';
 import Stripe from 'stripe';
 import { Logger } from 'winston';
 import initializeStripePaymentController from '../controllers/stripe.controller';
+import { Users } from '../database/interfaces/Users';
 
 export default function initializeStripePaymentRoutes(
   stripeClient: Stripe,
-  supabaseClient: SupabaseClient,
+  accountsResolver: Users,
   logger: Logger
 ) {
   const router = Router();
   const {
     stripeWebhookController,
     stripeHandleSuccessfulRedirectionController
-  } = initializeStripePaymentController(stripeClient, supabaseClient, logger);
+  } = initializeStripePaymentController(stripeClient, accountsResolver, logger);
 
   router.post(
     '/webhook',

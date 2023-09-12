@@ -2,10 +2,15 @@ import { generateErrorMessage } from 'zod-error';
 import z from 'zod';
 
 const schema = z.object({
-  STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
+  // stripe conf
+  STRIPE_WEBHOOK_SECRET: z.string().nonempty(),
   STRIPE_API_VERSION: z.string().default('2023-08-16'),
-  STRIPE_API_KEY: z.string().nonempty().optional(),
-  FRONTEND_HOST: z.string().nonempty().optional()
+  STRIPE_API_KEY: z.string().nonempty(),
+  FRONTEND_HOST: z.string().nonempty(),
+
+  // supabase conf
+  SUPABASE_PROJECT_URL: z.string().nonempty(),
+  SUPABASE_SECRET_PROJECT_TOKEN: z.string().nonempty()
 });
 
 const validationResult = schema.safeParse(process.env);

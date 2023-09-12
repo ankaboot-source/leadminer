@@ -1,13 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 import { Logger } from 'winston';
 import Stripe from 'stripe';
-import { SupabaseClient } from '@supabase/supabase-js';
-import StripeEventHandlerFactory from '../utils/handlers';
 import ENV from '../config';
 
+import StripeEventHandlerFactory from '../services/stripe-event-handlers';
+import { Users } from '../database/interfaces/Users';
+
 export default function initializeStripePaymentController(
-  stripeClient: Stripe,
-  supabaseClient: SupabaseClient,
+  stripeResolver: Stripe,
+  accountResolver: Users,
   logger: Logger
 ) {
   return {
@@ -16,10 +17,6 @@ export default function initializeStripePaymentController(
       res: Response,
       next: NextFunction
     ) {
-      if (!ENV.STRIPE_WEBHOOK_SECRET) {
-        throw new Error('Missing stripe WEBHOOK_ENDPOINT_SECRET');
-      }
-
       try {
         const signature = req.headers['stripe-signature'];
 
@@ -28,7 +25,7 @@ export default function initializeStripePaymentController(
           return res.sendStatus(500);
         }
 
-        const event = stripeClient.webhooks.constructEvent(
+        const event = stripeResolver.webhooks.constructEvent(
           req.body,
           signature,
           ENV.STRIPE_WEBHOOK_SECRET
@@ -39,8 +36,8 @@ export default function initializeStripePaymentController(
         }
 
         const eventHandler = new StripeEventHandlerFactory(
-          supabaseClient,
-          stripeClient
+          accountResolver,
+          stripeResolver
         ).create(event.type, event);
 
         if (eventHandler) {
@@ -60,10 +57,6 @@ export default function initializeStripePaymentController(
       req: Request,
       res: Response
     ) {
-      if (!ENV.FRONTEND_HOST) {
-        throw new Error('Missing env FRONTEND_HOST.');
-      }
-
       try {
         const stripeCheckoutSessionId = req.query.checkout_session_id as string;
 
@@ -73,7 +66,7 @@ export default function initializeStripePaymentController(
             .json({ message: 'Missing query parameter "checkout_session_id"' });
         }
 
-        const session = await stripeClient.checkout.sessions.retrieve(
+        const session = await stripeResolver.checkout.sessions.retrieve(
           stripeCheckoutSessionId
         );
         const customer = session.customer_details;
@@ -82,32 +75,27 @@ export default function initializeStripePaymentController(
           throw new Error('Request from Stripe is missing customer email');
         }
 
-        const { error: inviteUserError } =
-          await supabaseClient.auth.admin.inviteUserByEmail(customer.email);
+        const inviteUserError = await accountResolver.inviteUserByEmail(
+          customer.email
+        );
 
-        if (inviteUserError) {
+        if (inviteUserError instanceof Error) {
           logger.error(
             `An error occurred when sending the invitation: ${inviteUserError.message}`
           );
         }
 
-        const { data, error } = await supabaseClient.auth.admin.generateLink({
-          type: 'magiclink',
-          email: customer.email
-        });
+        const actionLink = await accountResolver.generateMagicLink(
+          customer.email
+        );
 
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        const redirectionURL = data.properties.action_link;
-        return res.redirect(redirectionURL);
+        return res.redirect(actionLink);
       } catch (error) {
         if (error instanceof Error) {
           logger.error(`An error occurred: ${error.message}`);
         }
 
-        return res.redirect(ENV.FRONTEND_HOST as string);
+        return res.redirect(ENV.FRONTEND_HOST);
       }
     }
   };
