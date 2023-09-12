@@ -21,7 +21,7 @@ export default class StripeSubscriptionUpdated implements StripeEventHandler {
 
     if (
       (subscription.status === 'active' && subscription.cancel_at_period_end) ||
-      (prevAttributes?.cancel_at_period_end)
+      prevAttributes?.cancel_at_period_end
     ) {
       return;
     }
