@@ -4,8 +4,9 @@ import { Profile } from '../types';
 export interface Users {
   deleteUser(userId: string): Promise<User | undefined>;
   deleteUserData(userId: string): Promise<true | undefined>;
-  getUserProfile(userId: string): Promise<Profile | undefined>;
-  updateUserProfile(
+  getById(userId: string): Promise<Profile | undefined>;
+  getByEmail(email: string): Promise<Profile | undefined>;
+  update(
     userId: string,
     updateData?: Partial<Profile>
   ): Promise<boolean | undefined>;

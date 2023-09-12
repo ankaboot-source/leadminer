@@ -9,26 +9,43 @@ export default class SupabaseUsers implements Users {
     private readonly logger: Logger
   ) {}
 
-  async getUserProfile(userId: string) {
+  async getById(userId: string) {
     try {
       const { data, error } = await this.client
         .from('profiles')
         .select('*')
-        .match({ user_id: userId })
-        .single();
+        .match({ user_id: userId });
 
       if (error) {
         throw new Error(error.message);
       }
 
-      return data;
+      return data[0];
     } catch (e) {
       this.logger.error('Failed to get user profile', e);
       return undefined;
     }
   }
 
-  async updateUserProfile(userId: string, updateData: Partial<Profile>) {
+  async getByEmail(email: string) {
+    try {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('*')
+        .match({ email });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return data[0];
+    } catch (e) {
+      this.logger.error('Failed to get user profile', e);
+      return undefined;
+    }
+  }
+
+  async update(userId: string, updateData: Partial<Profile>) {
     try {
       const { status, error } = await this.client
         .from('profiles')
