@@ -1,14 +1,14 @@
 import Stripe from 'stripe';
-import { StripeEvent, StripeEventHandler } from './types';
-import SupabaseProfiles from '../../db/SupabaseProfiles';
+import { StripeSubscriptionEvent, StripeEventHandler } from './interfaces';
+import { Users } from '../../database/interfaces/Users';
 
 /**
  * Handles the creation of a Stripe subscription.
  */
 export default class StripeSubscriptionCreated implements StripeEventHandler {
   constructor(
-    private readonly event: StripeEvent,
-    private readonly supabaseClient: SupabaseProfiles,
+    private readonly event: StripeSubscriptionEvent,
+    private readonly userResolver: Users,
     private readonly stripeClient: Stripe
   ) {}
 
@@ -33,7 +33,7 @@ export default class StripeSubscriptionCreated implements StripeEventHandler {
     }
 
     if (tiers.up_to) {
-      await this.supabaseClient.updateUserProfile(user.user_id, {
+      await this.userResolver.update(user.user_id, {
         credits: user.credits + tiers.up_to,
         stripe_subscription_id: subscription.id
       });
@@ -45,13 +45,10 @@ export default class StripeSubscriptionCreated implements StripeEventHandler {
       throw new Error('Missing required customerID and customerEmail.');
     }
 
-    const user = await this.supabaseClient.createNewUserProfile(
-      customer.email,
-      customer.name
-    );
+    const user = await this.userResolver.create(customer.email, customer.name);
 
     return user.stripe_customer_id === null
-      ? this.supabaseClient.updateUserProfile(user.user_id, {
+      ? this.userResolver.update(user.user_id, {
           stripe_customer_id: customer.id
         })
       : user;

@@ -10,7 +10,7 @@ export interface StripeEventHandler {
 /**
  * Represents a Stripe event with specific data properties.
  */
-export interface StripeEvent extends Stripe.Event {
+export interface StripeSubscriptionEvent extends Stripe.Event {
   data: {
     object: {
       id: string;
@@ -19,6 +19,8 @@ export interface StripeEvent extends Stripe.Event {
       cancel_at: number;
       cancel_at_period_end: number;
       canceled_at: number;
+      status: string;
     };
+    previous_attributes?: Record<string, any>;
   };
 }

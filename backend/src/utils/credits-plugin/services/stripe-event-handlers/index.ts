@@ -1,17 +1,16 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { StripeEvent, StripeEventHandler } from './types';
-import StripeSubscriptionCreated from './stripeSubscriptionCreated';
-import StripeSubscriptionUpdated from './stripeSubscriptionUpdated';
-import StripeSubscriptionDeleted from './stripeSubscriptionDeleted';
-import SupabaseProfiles from '../../db/SupabaseProfiles';
+import { StripeSubscriptionEvent, StripeEventHandler } from './interfaces';
+import StripeSubscriptionCreated from './subscriptionCreated';
+import StripeSubscriptionUpdated from './subscriptionUpdated';
+import StripeSubscriptionDeleted from './subscriptionDeleted';
+import { Users } from '../../database/interfaces/Users';
 
 /**
  * Factory class for creating Stripe event handlers.
  */
 export default class StripeEventHandlerFactory {
   constructor(
-    private readonly supabaseClient: SupabaseClient,
+    private readonly userResolver: Users,
     private readonly stripeClient: Stripe
   ) {}
 
@@ -25,24 +24,22 @@ export default class StripeEventHandlerFactory {
     eventType: Stripe.Event.Type,
     event: Stripe.Event
   ): StripeEventHandler | null {
-    const supabaseClient = new SupabaseProfiles(this.supabaseClient);
-
     switch (eventType) {
       case 'customer.subscription.created':
         return new StripeSubscriptionCreated(
-          event as StripeEvent,
-          supabaseClient,
+          event as StripeSubscriptionEvent,
+          this.userResolver,
           this.stripeClient
         );
       case 'customer.subscription.updated':
         return new StripeSubscriptionUpdated(
-          event as StripeEvent,
-          supabaseClient
+          event as StripeSubscriptionEvent,
+          this.userResolver
         );
       case 'customer.subscription.deleted':
         return new StripeSubscriptionDeleted(
-          event as StripeEvent,
-          supabaseClient
+          event as StripeSubscriptionEvent,
+          this.userResolver
         );
       default:
         return null;
