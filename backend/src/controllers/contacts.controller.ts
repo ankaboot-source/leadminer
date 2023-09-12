@@ -7,11 +7,11 @@ import { Users } from '../db/interfaces/Users';
 import EmailStatusCache from '../services/cache/EmailStatusCache';
 import { EmailStatusVerifier } from '../services/email-status/EmailStatusVerifier';
 import { chunkGenerator } from '../utils/array';
-import { createCreditHandler } from '../utils/credits';
 import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
+import CreditsHandler from '../services/credits/creditHandler';
 
 export default function initializeContactsController(
   contacts: Contacts,
@@ -28,17 +28,14 @@ export default function initializeContactsController(
         const previousExportedContacts = await contacts.getExportedContacts(
           user.id
         );
-        const creditHandler = await createCreditHandler(
-          ENV.CONTACT_CREDIT,
-          userResolver
-        );
 
-        if (creditHandler) {
+        if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
+          const creditHandler = new CreditsHandler(
+            userResolver,
+            ENV.CONTACT_CREDIT
+          );
           const { insufficientCredits, requestedUnits, availableUnits } =
-            await creditHandler.validateCreditUsage(
-              user.id,
-              newContacts.length
-            );
+            await creditHandler.validate(user.id, newContacts.length);
 
           const response = {
             newContacts: newContacts.length,
@@ -79,22 +76,19 @@ export default function initializeContactsController(
           ? String(delimiterOption)
           : getLocalizedCsvSeparator(localeFromHeader ?? '');
 
-        const creditHandler = await createCreditHandler(
-          ENV.CONTACT_CREDIT,
-          userResolver
-        );
+        if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
+          const creditHandler = new CreditsHandler(
+            userResolver,
+            ENV.CONTACT_CREDIT
+          );
 
-        if (creditHandler) {
           const newContacts = await contacts.getNonExportedContacts(user.id);
           const previousExportedContacts = await contacts.getExportedContacts(
             user.id
           );
 
           const { insufficientCredits, requestedUnits, availableUnits } =
-            await creditHandler.validateCreditUsage(
-              user.id,
-              newContacts.length
-            );
+            await creditHandler.validate(user.id, newContacts.length);
 
           const availableContacts = newContacts.slice(0, availableUnits);
           const contactsToExport = [
@@ -112,7 +106,7 @@ export default function initializeContactsController(
               availableContacts.map(({ email }) => email),
               user.id
             );
-            await creditHandler.deductCredits(user.id, availableUnits);
+            await creditHandler.deduct(user.id, availableUnits);
           }
 
           return res
