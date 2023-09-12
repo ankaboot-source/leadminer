@@ -19,8 +19,7 @@ import AuthResolver from './services/auth/AuthResolver';
 import EmailStatusCache from './services/cache/EmailStatusCache';
 import { EmailStatusVerifier } from './services/email-status/EmailStatusVerifier';
 import TasksManager from './services/tasks-manager/TasksManager';
-import { initPaymentRouter } from './utils/credits';
-import supabaseClient from './utils/supabase';
+import { initCreditAndPaymentRoutes } from './utils/credits';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -40,9 +39,9 @@ export default function initializeApp(
     app.use(Sentry.Handlers.tracingHandler());
   }
 
-  const creditPaymentApp = initPaymentRouter(supabaseClient, logger);
-  if (creditPaymentApp) {
-    app.use('/api', creditPaymentApp);
+  const pluginRoutes = initCreditAndPaymentRoutes(logger);
+  if (pluginRoutes) {
+    app.use('/api', pluginRoutes);
   }
 
   app.use(corsMiddleware);

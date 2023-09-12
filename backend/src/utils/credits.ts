@@ -1,47 +1,28 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
 import { Express } from 'express';
 import ENV from '../config';
-// skipcq: JS-C1003
-import * as DynamicCreditPlugin from './credits-plugin/index';
-import { Profile } from '../db/types';
-
-interface UserResololver {
-  getUserProfile(userId: string): Promise<Profile | undefined>;
-  updateUserProfile(
-    userId: string,
-    updateData?: Partial<Profile> | undefined
-  ): Promise<boolean | undefined>;
-}
+import logger from './logger';
 
 interface CreditsPlugin {
-  initPaymentRouter(supabaseClient: SupabaseClient, logger: Logger): Express;
-  createCreditHandler(
-    creditsPerUnit: number | undefined,
-    userResolver: UserResololver
-  ): {
-    INSUFFICIENT_CREDITS_STATUS: number;
-    INSUFFICIENT_CREDITS_MESSAGE: string;
-    validateCreditUsage(
-      userId: string,
-      units: number
-    ): Promise<{
-      insufficientCredits: boolean;
-      requestedUnits: number;
-      availableUnits: number;
-    }>;
-    deductCredits(userId: string, units: number): Promise<true>;
-    addCredits(userId: string, credits: number): Promise<true>;
+  initCreditAndPaymentRoutes(logger: Logger): Express;
+  customerHandler(): {
+    delete(customerId: string): Promise<void>;
   };
-  deleteCustomer(customerId: string): Promise<void>;
 }
 
 let plugin = {} as CreditsPlugin;
 
 if (ENV.ENABLE_CREDIT) {
-  plugin = DynamicCreditPlugin as CreditsPlugin;
+  try {
+    /* eslint-disable global-require */
+    plugin = require('./credits-plugin').default as CreditsPlugin;
+  } catch (err) {
+    if (err instanceof Error) {
+      logger.error(`Failed to load package credits-plugin: ${err.message}`);
+    }
+  }
 }
 
-export const initPaymentRouter = plugin.initPaymentRouter ?? (() => null);
-export const createCreditHandler = plugin.createCreditHandler ?? (() => null);
-export const deleteCustomer = plugin.deleteCustomer ?? (() => null);
+export const initCreditAndPaymentRoutes =
+  plugin.initCreditAndPaymentRoutes ?? (() => null);
+export const customerHandler = plugin.customerHandler ?? (() => null);
