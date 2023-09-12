@@ -27,24 +27,6 @@ export default class SupabaseUsers implements Users {
     }
   }
 
-  async getByEmail(email: string) {
-    try {
-      const { data, error } = await this.client
-        .from('profiles')
-        .select('*')
-        .match({ email });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data[0];
-    } catch (e) {
-      this.logger.error('Failed to get user profile', e);
-      return undefined;
-    }
-  }
-
   async update(userId: string, updateData: Partial<Profile>) {
     try {
       const { status, error } = await this.client
