@@ -1,4 +1,5 @@
 import './env';
+
 import initializeApp from './app';
 import ENV from './config';
 import pool from './db/pg';
