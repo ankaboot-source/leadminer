@@ -8,14 +8,10 @@ import EmailStatusCache from '../services/cache/EmailStatusCache';
 import { EmailStatusVerifier } from '../services/email-status/EmailStatusVerifier';
 import { chunkGenerator } from '../utils/array';
 import {
-  INSUFFICIENT_CREDITS_MESSAGE,
-  INSUFFICIENT_CREDITS_STATUS,
-  createCreditHandler
-} from '../utils/billing/credits';
-import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
+import CreditsHandler from '../services/credits/creditHandler';
 
 export default function initializeContactsController(
   contacts: Contacts,
@@ -25,6 +21,44 @@ export default function initializeContactsController(
   logger: Logger
 ) {
   return {
+    async verifyExportContacts(_: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+      try {
+        const newContacts = await contacts.getNonExportedContacts(user.id);
+        const previousExportedContacts = await contacts.getExportedContacts(
+          user.id
+        );
+
+        if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
+          const creditHandler = new CreditsHandler(
+            userResolver,
+            ENV.CONTACT_CREDIT
+          );
+          const { insufficientCredits, requestedUnits, availableUnits } =
+            await creditHandler.validate(user.id, newContacts.length);
+
+          const response = {
+            newContacts: newContacts.length,
+            totalContacts: previousExportedContacts.length,
+            availableContacts: insufficientCredits ? 0 : availableUnits
+          };
+
+          let statusCode = 200;
+          if (insufficientCredits && availableUnits) {
+            statusCode = creditHandler.INSUFFICIENT_CREDITS_STATUS;
+          } else if (availableUnits !== requestedUnits) {
+            statusCode = 206;
+          }
+
+          return res.status(statusCode).json(response);
+        }
+
+        return res.sendStatus(200);
+      } catch (error) {
+        return next(error);
+      }
+    },
+
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       try {
@@ -42,34 +76,24 @@ export default function initializeContactsController(
           ? String(delimiterOption)
           : getLocalizedCsvSeparator(localeFromHeader ?? '');
 
-        const creditHandler = createCreditHandler(
-          ENV.ENABLE_CREDIT,
-          ENV.CONTACT_CREDIT,
-          userResolver
-        );
+        if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
+          const creditHandler = new CreditsHandler(
+            userResolver,
+            ENV.CONTACT_CREDIT
+          );
 
-        if (creditHandler) {
-          // If creditHandler is available, we only use this path.
           const newContacts = await contacts.getNonExportedContacts(user.id);
           const previousExportedContacts = await contacts.getExportedContacts(
             user.id
           );
 
           const { insufficientCredits, requestedUnits, availableUnits } =
-            await creditHandler.validateCreditUsage(
-              user.id,
-              newContacts.length
-            );
+            await creditHandler.validate(user.id, newContacts.length);
 
-          if (insufficientCredits && availableUnits) {
-            return res
-              .status(INSUFFICIENT_CREDITS_STATUS)
-              .json({ message: INSUFFICIENT_CREDITS_MESSAGE });
-          }
-
+          const availableContacts = newContacts.slice(0, availableUnits);
           const contactsToExport = [
             ...previousExportedContacts,
-            ...newContacts.slice(0, availableUnits)
+            ...availableContacts
           ];
 
           const csvData = await exportContactsToCSV(
@@ -77,12 +101,12 @@ export default function initializeContactsController(
             csvSeparator
           );
 
-          if (availableUnits) {
+          if (insufficientCredits === false && availableUnits) {
             await contacts.registerExportedContacts(
-              newContacts.map(({ id }) => id),
+              availableContacts.map(({ email }) => email),
               user.id
             );
-            await creditHandler.deductCredits(user.id, availableUnits);
+            await creditHandler.deduct(user.id, availableUnits);
           }
 
           return res

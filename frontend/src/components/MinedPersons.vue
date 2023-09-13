@@ -54,7 +54,7 @@
             no-caps
             :disable="isExportDisabled"
             outline
-            @click="exportTable"
+            @click="verifyExport"
           />
         </div>
         <q-btn
@@ -213,6 +213,12 @@
       </template>
     </q-table>
   </div>
+  <CreditsDialog
+    ref="CreditsDialogRef"
+    engagement-type="contacts"
+    action-type="download"
+    @secondary-action="exportTable"
+  />
 </template>
 
 <script setup lang="ts">
@@ -221,14 +227,17 @@ import {
   RealtimePostgresChangesPayload,
   User,
 } from "@supabase/supabase-js";
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import CreditsDialog from "./Dialogs/InsufficientCreditsDialog.vue";
 import ValidityIndicator from "./ValidityIndicator.vue";
+
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const $q = useQuasar();
 const leadminerStore = useLeadminerStore();
@@ -588,6 +597,55 @@ async function exportTable() {
     }
 
     $q.notify({
+      message,
+      color: "negative",
+      icon: "error",
+    });
+  }
+}
+
+const openCreditModel = (response: AxiosResponse) => {
+  const { totalContacts, newContacts, availableContacts } = response.data;
+
+  if (newContacts === undefined || availableContacts === undefined) {
+    return $q.notify({
+      message: "Error when verifying export CSV",
+      color: "negative",
+      icon: "error",
+    });
+  }
+  return CreditsDialogRef.value?.openModal(
+    totalContacts,
+    newContacts,
+    availableContacts
+  );
+};
+
+async function verifyExport() {
+  try {
+    const response = await api.get("/imap/export/csv/verify");
+
+    if (response.status !== 206) {
+      return await exportTable();
+    }
+
+    return openCreditModel(response);
+  } catch (error) {
+    let message = "Error when verifying export CSV";
+
+    if (error instanceof AxiosError) {
+      if (error.response?.status === 402) {
+        return openCreditModel(error.response);
+      }
+
+      message = error.response?.data.message ?? error.message;
+      message =
+        message.toLowerCase() === "network error"
+          ? "Unable to access the server. Please retry or contact your service provider."
+          : message;
+    }
+
+    return $q.notify({
       message,
       color: "negative",
       icon: "error",

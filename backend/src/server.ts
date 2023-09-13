@@ -51,7 +51,6 @@ console.log(
   const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
-
   const emailStatusCache = new RedisEmailStatusCache(redis.getClient());
 
   const app = initializeApp(

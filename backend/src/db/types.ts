@@ -74,8 +74,8 @@ export interface Contact {
 }
 
 export interface Profile {
-  id: string;
   email: string;
   name: string;
   credits: number;
+  stripe_customer_id: string;
 }
