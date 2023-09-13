@@ -155,18 +155,7 @@ export default class ReacherClient {
       );
       return data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const { stack, code, name, message, cause } = error;
-        this.logger.error(
-          `[Reacher:checkSingleEmail] Failed checking email with reacher: ${message}`,
-          { code, name, stack, cause }
-        );
-      } else {
-        this.logger.error(
-          '[Reacher:checkSingleEmail] Something went wrong',
-          error
-        );
-      }
+      this.logError(error, '[Reacher:checkSingleEmail]');
       throw error;
     }
   }
@@ -186,18 +175,7 @@ export default class ReacherClient {
 
       return data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const { stack, code, name, message, cause } = error;
-        this.logger.error(
-          `[Reacher:createBulkVerificationJob] Failed creating job in reacher: ${message}`,
-          { code, name, stack, cause }
-        );
-      } else {
-        this.logger.error(
-          '[Reacher:createBulkVerificationJob] Something went wrong',
-          error
-        );
-      }
+      this.logError(error, '[Reacher:createBulkVerificationJob]');
       throw error;
     }
   }
@@ -210,15 +188,7 @@ export default class ReacherClient {
 
       return data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const { stack, code, name, message, cause } = error;
-        this.logger.error(
-          `[Reacher:getJobStatus] Failed retrieving job status from reacher: ${message}`,
-          { code, name, stack, cause }
-        );
-      } else {
-        this.logger.error('[Reacher:getJobStatus] Something went wrong', error);
-      }
+      this.logError(error, '[Reacher:getJobStatus]');
       throw error;
     }
   }
@@ -231,16 +201,17 @@ export default class ReacherClient {
 
       return data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const { stack, code, name, message, cause } = error;
-        this.logger.error(
-          `[Reacher:getResults] Failed retrieving job results from reacher: ${message}`,
-          { code, name, stack, cause }
-        );
-      } else {
-        this.logger.error('[Reacher:getResults] Something went wrong', error);
-      }
+      this.logError(error, '[Reacher:getResults]');
       throw error;
+    }
+  }
+
+  private logError(error: unknown, context: string) {
+    if (axios.isAxiosError(error)) {
+      const { stack, code, name, message } = error;
+      this.logger.error(`${context}: ${message}`, { code, name, stack });
+    } else {
+      this.logger.error(`${context}: Something went wrong`, error);
     }
   }
 }
