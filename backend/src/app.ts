@@ -19,6 +19,7 @@ import AuthResolver from './services/auth/AuthResolver';
 import EmailStatusCache from './services/cache/EmailStatusCache';
 import { EmailStatusVerifier } from './services/email-status/EmailStatusVerifier';
 import TasksManager from './services/tasks-manager/TasksManager';
+import { initCreditAndPaymentRoutes } from './utils/credits';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -36,6 +37,11 @@ export default function initializeApp(
     initializeSentry(app, ENV.SENTRY_DSN);
     app.use(Sentry.Handlers.requestHandler());
     app.use(Sentry.Handlers.tracingHandler());
+  }
+
+  const pluginRoutes = initCreditAndPaymentRoutes(logger);
+  if (pluginRoutes) {
+    app.use('/api', pluginRoutes);
   }
 
   app.use(corsMiddleware);
