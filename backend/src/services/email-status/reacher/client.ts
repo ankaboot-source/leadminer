@@ -1,6 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
-import { handleAxiosError } from '../../../utils/axios';
 
 interface BulkSubmitResponse {
   job_id: string;
@@ -141,7 +140,7 @@ export default class ReacherClient {
     email: string,
     abortSignal?: AbortSignal,
     validationOptions?: ValidationOptions
-  ) {
+  ): Promise<EmailCheckOutput> {
     try {
       const { data } = await this.api.post<EmailCheckOutput>(
         ReacherClient.SINGLE_VERIFICATION_PATH,
@@ -154,11 +153,19 @@ export default class ReacherClient {
         },
         { signal: abortSignal, timeout: 5000 }
       );
-      return { data, error: null };
+      return data;
     } catch (error) {
-      this.logger.error('Failed checking single email', error);
       if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
+        const { stack, code, name, message, cause } = error;
+        this.logger.error(
+          `[Reacher:checkSingleEmail] Failed checking email with reacher: ${message}`,
+          { code, name, stack, cause }
+        );
+      } else {
+        this.logger.error(
+          '[Reacher:checkSingleEmail] Something went wrong',
+          error
+        );
       }
       throw error;
     }
@@ -166,9 +173,7 @@ export default class ReacherClient {
 
   async createBulkVerificationJob(
     emails: string[]
-  ): Promise<
-    { data: BulkSubmitResponse; error: null } | { data: null; error: Error }
-  > {
+  ): Promise<BulkSubmitResponse> {
     try {
       const { data } = await this.api.post<BulkSubmitResponse>(
         ReacherClient.BULK_VERIFICATION_PATH,
@@ -179,42 +184,61 @@ export default class ReacherClient {
         }
       );
 
-      return { data, error: null };
+      return data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
+        const { stack, code, name, message, cause } = error;
+        this.logger.error(
+          `[Reacher:createBulkVerificationJob] Failed creating job in reacher: ${message}`,
+          { code, name, stack, cause }
+        );
+      } else {
+        this.logger.error(
+          '[Reacher:createBulkVerificationJob] Something went wrong',
+          error
+        );
       }
       throw error;
     }
   }
 
-  async getJobStatus(jobId: string) {
+  async getJobStatus(jobId: string): Promise<BulkVerificationStatusResponse> {
     try {
       const { data } = await this.api.get<BulkVerificationStatusResponse>(
         `${ReacherClient.BULK_VERIFICATION_PATH}/${jobId}`
       );
 
-      return { data, error: null };
+      return data;
     } catch (error) {
-      this.logger.error('Failed retrieving job status', error);
       if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
+        const { stack, code, name, message, cause } = error;
+        this.logger.error(
+          `[Reacher:getJobStatus] Failed retrieving job status from reacher: ${message}`,
+          { code, name, stack, cause }
+        );
+      } else {
+        this.logger.error('[Reacher:getJobStatus] Something went wrong', error);
       }
       throw error;
     }
   }
 
-  async getResults(jobId: string) {
+  async getResults(jobId: string): Promise<BulkVerificationResultsResponse> {
     try {
       const { data } = await this.api.get<BulkVerificationResultsResponse>(
         `${ReacherClient.BULK_VERIFICATION_PATH}/${jobId}/results`
       );
 
-      return { data, error: null };
+      return data;
     } catch (error) {
-      this.logger.error('Failed retrieving job results', error);
       if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
+        const { stack, code, name, message, cause } = error;
+        this.logger.error(
+          `[Reacher:getResults] Failed retrieving job results from reacher: ${message}`,
+          { code, name, stack, cause }
+        );
+      } else {
+        this.logger.error('[Reacher:getResults] Something went wrong', error);
       }
       throw error;
     }
