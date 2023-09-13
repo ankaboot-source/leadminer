@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { Logger } from 'winston';
 import { chunkGenerator } from '../../../utils/array';
 import {
@@ -25,29 +26,24 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
     abortSignal?: AbortSignal
   ): Promise<EmailStatusResult> {
     try {
-      const { data, error } = await this.reacherClient.checkSingleEmail(
+      const data = await this.reacherClient.checkSingleEmail(
         email,
         abortSignal
       );
-      if (error && !data) {
-        return {
-          email,
-          status: Status.UNKNOWN,
-          details: {
-            hasTimedOut: true
-          }
-        };
-      }
 
       return reacherResultToEmailStatusWithDetails(data);
     } catch (error) {
-      return {
+      const result: EmailStatusResult = {
         email,
         status: Status.UNKNOWN,
         details: {
           hasTimedOut: true
         }
       };
+      if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+        result.details = { hasTimedOut: true };
+      }
+      return result;
     }
   }
 
@@ -65,29 +61,21 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
     }
 
     const fn = async (emailsChunk: string[]) => {
-      const startedAt = performance.now();
-      const { data: jobSubmitData, error: jobSubmitError } =
-        await this.reacherClient.createBulkVerificationJob(emailsChunk);
+      try {
+        const startedAt = performance.now();
+        const jobSubmitData =
+          await this.reacherClient.createBulkVerificationJob(emailsChunk);
 
-      if (jobSubmitError && !jobSubmitData) {
-        this.logger.error(
-          'Failed creating bulk verification job',
-          jobSubmitError
-        );
-        return this.defaultBulkResults(emailsChunk);
-      }
+        const jobId = jobSubmitData.job_id;
 
-      const jobId = jobSubmitData.job_id;
+        const jobSuccess = await this.pollJobStatus(jobId);
 
-      const jobSuccess = await this.pollJobStatus(jobId);
+        if (!jobSuccess) {
+          this.logger.error('Failed bulk email verification job', { jobId });
+          return this.defaultBulkResults(emails);
+        }
 
-      if (!jobSuccess) {
-        this.logger.error('Failed bulk email verification job', { jobId });
-        return this.defaultBulkResults(emails);
-      }
-
-      const { data: jobResults } = await this.reacherClient.getResults(jobId);
-      if (jobResults) {
+        const jobResults = await this.reacherClient.getResults(jobId);
         this.logger.info(
           `Successful verification job took ${(
             (performance.now() - startedAt) /
@@ -99,10 +87,10 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
         return jobResults.results.map((r) =>
           reacherResultToEmailStatusWithDetails(r)
         );
+      } catch (error) {
+        this.logger.error('Failed processing bulk verification job');
+        return this.defaultBulkResults(emailsChunk);
       }
-
-      this.logger.info('No verification job results', { jobId });
-      return this.defaultBulkResults(emailsChunk);
     };
 
     if (emails.length > ReacherEmailStatusVerifier.MAX_CHUNK_SIZE) {
@@ -127,31 +115,27 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
       let failedSuccessivePollAttempts = 0;
       const interval = setInterval(async () => {
         try {
-          const { data, error } = await this.reacherClient.getJobStatus(jobId);
-
-          if (error) {
-            if (
-              failedSuccessivePollAttempts ===
-              ReacherEmailStatusVerifier.MAX_FAILED_POLL_ATTEMPTS
-            ) {
-              this.logger.error(
-                `${ReacherEmailStatusVerifier.MAX_FAILED_POLL_ATTEMPTS} Failed poll attempts for job status`,
-                error
-              );
-              resolve(false);
-            }
-            failedSuccessivePollAttempts += 1;
-            return;
-          }
-
+          const data = await this.reacherClient.getJobStatus(jobId);
           failedSuccessivePollAttempts = 0;
-
           if (data?.job_status === 'Completed') {
             clearInterval(interval);
             resolve(true);
           }
         } catch (error) {
-          resolve(false);
+          if (
+            failedSuccessivePollAttempts ===
+            ReacherEmailStatusVerifier.MAX_FAILED_POLL_ATTEMPTS
+          ) {
+            this.logger.error(
+              `${
+                ReacherEmailStatusVerifier.MAX_FAILED_POLL_ATTEMPTS
+              } Failed poll attempts for job status: ${
+                error instanceof Error ? error.message : ''
+              }`
+            );
+            resolve(false);
+          }
+          failedSuccessivePollAttempts += 1;
         }
       }, ReacherEmailStatusVerifier.JOB_POLL_INTERVAL_MS);
     });

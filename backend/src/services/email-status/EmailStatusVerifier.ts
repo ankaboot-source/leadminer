@@ -5,8 +5,8 @@ export interface Details {
   isCatchAll?: boolean;
   isDeliverable?: boolean;
   hasFullInbox?: boolean;
-  hasTimedOut?: boolean;
   isRecentFrom?: boolean;
+  hasTimedOut?: boolean;
 }
 
 export enum Status {

@@ -1,0 +1,102 @@
+import { NextFunction, Request, Response } from 'express';
+import { Logger } from 'winston';
+import Stripe from 'stripe';
+import ENV from '../config';
+
+import StripeEventHandlerFactory from '../services/stripe-event-handlers';
+import { Users } from '../database/interfaces/Users';
+
+export default function initializeStripePaymentController(
+  stripeResolver: Stripe,
+  accountResolver: Users,
+  logger: Logger
+) {
+  return {
+    async stripeWebhookController(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) {
+      try {
+        const signature = req.headers['stripe-signature'];
+
+        if (!signature) {
+          logger.error('Missing stripe signature or WEBHOOK_ENDPOINT_SECRET');
+          return res.sendStatus(500);
+        }
+
+        const event = stripeResolver.webhooks.constructEvent(
+          req.body,
+          signature,
+          ENV.STRIPE_WEBHOOK_SECRET
+        );
+
+        if (!event) {
+          return res.sendStatus(400);
+        }
+
+        const eventHandler = new StripeEventHandlerFactory(
+          accountResolver,
+          stripeResolver
+        ).create(event.type, event);
+
+        if (eventHandler) {
+          await eventHandler.handle();
+          logger.info(`Handeling event type: ${event.type}`);
+        } else {
+          logger.warn(`Unhandled event type: ${event.type}`);
+        }
+
+        return res.sendStatus(200);
+      } catch (err) {
+        return next(err);
+      }
+    },
+
+    async stripeHandleSuccessfulRedirectionController(
+      req: Request,
+      res: Response
+    ) {
+      try {
+        const stripeCheckoutSessionId = req.query.checkout_session_id as string;
+
+        if (!stripeCheckoutSessionId) {
+          return res
+            .status(400)
+            .json({ message: 'Missing query parameter "checkout_session_id"' });
+        }
+
+        const session = await stripeResolver.checkout.sessions.retrieve(
+          stripeCheckoutSessionId
+        );
+        const customer = session.customer_details;
+
+        if (!customer?.email) {
+          throw new Error('Request from Stripe is missing customer email');
+        }
+
+        const inviteUserError = await accountResolver.inviteUserByEmail(
+          customer.email
+        );
+
+        if (inviteUserError instanceof Error) {
+          logger.error(
+            `An error occurred when sending the invitation: ${inviteUserError.message}`
+          );
+        }
+
+        const actionLink = await accountResolver.generateMagicLink(
+          customer.email
+        );
+
+        return res.redirect(actionLink);
+      } catch (error) {
+        if (error instanceof Error) {
+          logger.error(`An error occurred: ${error.message}`);
+        }
+
+        return res.redirect(ENV.FRONTEND_HOST);
+      }
+    }
+  };
+}
