@@ -157,7 +157,7 @@ export default class ReacherClient {
       );
       return data;
     } catch (error) {
-      this.logError(error, '[Reacher:checkSingleEmail]');
+      this.logError(error, `[Reacher:checkSingleEmail:${email}]`);
       throw error;
     }
   }
