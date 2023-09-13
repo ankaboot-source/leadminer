@@ -60,6 +60,7 @@ const schema = z.object({
   REACHER_PROXY_HOST: z.string().nonempty().optional(),
   REACHER_PROXY_USERNAME: z.string().nonempty().optional(),
   REACHER_PROXY_PASSWORD: z.string().nonempty().optional(),
+  REACHER_REQUEST_TIMEOUT_MS: number().optional().default(10000),
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
