@@ -68,10 +68,16 @@ interface BulkVerificationResultsResponse {
 
 interface ReacherConfig {
   host: string;
+  timeoutMs?: number;
   apiKey?: string;
   headerSecret?: string;
   smtpConfig?: SMTPConfig;
-  timeoutMs: number;
+  smtpTimeoutSeconds?: number;
+  smtpRetries?: number;
+  microsoft365UseApi?: boolean;
+  gmailUseApi?: boolean;
+  yahooUseApi?: boolean;
+  hotmailUseHeadless?: string;
 }
 
 interface SMTPConfig {
@@ -107,11 +113,25 @@ export default class ReacherClient {
     };
   } = {};
 
+  private readonly additionalSettings: {
+    microsoft365_use_api?: boolean;
+    gmail_use_api?: boolean;
+    yahoo_use_api?: boolean;
+    hotmail_use_headless?: string;
+    retries?: number;
+    smtp_timeout?: {
+      secs: number;
+      nanos: number;
+    };
+  } = {};
+
   constructor(private readonly logger: Logger, config: ReacherConfig) {
     this.api = axios.create({
       baseURL: config.host
     });
-    this.api.defaults.timeout = config.timeoutMs;
+    if (config.timeoutMs) {
+      this.api.defaults.timeout = config.timeoutMs;
+    }
     if (config.apiKey) {
       this.api.defaults.headers.common.Authorization = config.apiKey;
     }
@@ -119,7 +139,27 @@ export default class ReacherClient {
       this.api.defaults.headers.common['x-reacher-secret'] =
         config.headerSecret;
     }
-
+    if (config.microsoft365UseApi) {
+      this.additionalSettings.microsoft365_use_api = config.microsoft365UseApi;
+    }
+    if (config.gmailUseApi) {
+      this.additionalSettings.gmail_use_api = config.gmailUseApi;
+    }
+    if (config.yahooUseApi) {
+      this.additionalSettings.yahoo_use_api = config.yahooUseApi;
+    }
+    if (config.hotmailUseHeadless) {
+      this.additionalSettings.hotmail_use_headless = config.hotmailUseHeadless;
+    }
+    if (config.smtpRetries) {
+      this.additionalSettings.retries = config.smtpRetries;
+    }
+    if (config.smtpTimeoutSeconds) {
+      this.additionalSettings.smtp_timeout = {
+        secs: config.smtpTimeoutSeconds,
+        nanos: 0
+      };
+    }
     if (config.smtpConfig?.fromEmail) {
       this.smtpConfig.from_email = config.smtpConfig?.fromEmail;
     }
@@ -150,6 +190,7 @@ export default class ReacherClient {
         ReacherClient.SINGLE_VERIFICATION_PATH,
         {
           to_email: email,
+          ...this.additionalSettings,
           ...this.smtpConfig,
           from_email: validationOptions
             ? validationOptions.fromEmail
@@ -173,7 +214,8 @@ export default class ReacherClient {
         {
           input_type: 'array',
           input: emails,
-          ...this.smtpConfig
+          ...this.smtpConfig,
+          ...this.additionalSettings
         }
       );
 
