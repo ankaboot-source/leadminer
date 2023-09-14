@@ -60,7 +60,17 @@ const schema = z.object({
   REACHER_PROXY_HOST: z.string().nonempty().optional(),
   REACHER_PROXY_USERNAME: z.string().nonempty().optional(),
   REACHER_PROXY_PASSWORD: z.string().nonempty().optional(),
-  REACHER_REQUEST_TIMEOUT_MS: number().optional().default(5000),
+  REACHER_REQUEST_TIMEOUT_MS: number().optional().default(60000),
+  REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS: number().optional().default(20),
+  REACHER_SMTP_CONNECTION_RETRIES: number().optional().default(2),
+  REACHER_HOTMAIL_USE_HEADLESS: z
+    .string()
+    .nonempty()
+    .optional()
+    .default('http://localhost:4444'),
+  REACHER_MICROSOFT365_USE_API: boolean().optional().default('true'),
+  REACHER_GMAIL_USE_API: boolean().optional().default('false'),
+  REACHER_YAHOO_USE_API: boolean().optional().default('false'),
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
