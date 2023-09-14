@@ -8,7 +8,7 @@ export interface StripeEventHandler {
 }
 
 /**
- * Represents a Stripe event with specific data properties.
+ * Represents a subscription Stripe event with specific data properties.
  */
 export interface StripeSubscriptionEvent extends Stripe.Event {
   data: {
@@ -22,5 +22,20 @@ export interface StripeSubscriptionEvent extends Stripe.Event {
       status: string;
     };
     previous_attributes?: Record<string, any>;
+  };
+}
+
+/**
+ * Represents an invoice Stripe event with specific data properties.
+ */
+export interface StripeSubscriptionInvoiceEvent extends Stripe.Event {
+  data: {
+    object: {
+      subscription: string;
+      customer: string;
+      lines: {
+        data: Stripe.InvoiceLineItem[];
+      };
+    };
   };
 }
