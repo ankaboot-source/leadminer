@@ -1,4 +1,4 @@
-import { Status } from '../services/email-status/EmailStatusVerifier';
+import { Details, Status } from '../services/email-status/EmailStatusVerifier';
 
 export interface ExtractionResult {
   message: Message;
@@ -24,6 +24,7 @@ export interface PersonWithPocAndTag {
 export interface Person {
   email: string;
   status?: Status;
+  verificationDetails?: Details;
   url?: string;
   name?: string;
   image?: string;

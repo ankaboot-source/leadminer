@@ -25,14 +25,13 @@ async function emailVerificationHandler(
   try {
     const existingStatus = await emailStatusCache.get(email);
     if (!existingStatus) {
-      const { status } = await emailStatusVerifier.verify(email);
+      const statusResult = await emailStatusVerifier.verify(email);
       logger.debug('Got verification results from verifier', {
-        status,
-        email
+        statusResult
       });
       await Promise.allSettled([
-        emailStatusCache.set(email, status),
-        contacts.updateSinglePersonStatus(email, userId, status)
+        emailStatusCache.set(email, statusResult),
+        contacts.updateSinglePersonStatus(email, userId, statusResult)
       ]);
     } else {
       await contacts.updateSinglePersonStatus(email, userId, existingStatus);

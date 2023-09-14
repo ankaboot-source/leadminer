@@ -1,4 +1,5 @@
 import { Contacts } from '../../db/interfaces/Contacts';
+import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
 import EmailMessage from '../../services/extractors/EmailMessage';
@@ -45,12 +46,14 @@ async function emailMessageHandler(
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
   emailsStreamProducer: StreamProducer<EmailVerificationData>,
-  queuedEmailsCache: QueuedEmailsCache
+  queuedEmailsCache: QueuedEmailsCache,
+  catchAllDomainsCache: CatchAllDomainsCache
 ) {
   const message = new EmailMessage(
     EmailTaggingEngine,
     redisClientForNormalMode,
     emailStatusCache,
+    catchAllDomainsCache,
     checkDomainStatus,
     userEmail,
     userId,
@@ -97,7 +100,8 @@ async function emailMessageHandler(
  */
 export default function initializeMessageProcessor(
   contacts: Contacts,
-  emailStatusCache: EmailStatusCache
+  emailStatusCache: EmailStatusCache,
+  catchAllDomainsCache: CatchAllDomainsCache
 ) {
   return {
     processStreamData: (
@@ -110,7 +114,8 @@ export default function initializeMessageProcessor(
         contacts,
         emailStatusCache,
         emailsStreamProducer,
-        queuedEmailsCache
+        queuedEmailsCache,
+        catchAllDomainsCache
       )
   };
 }

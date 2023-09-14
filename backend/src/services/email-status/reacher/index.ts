@@ -7,7 +7,7 @@ import {
   Status
 } from '../EmailStatusVerifier';
 import ReacherClient from './client';
-import { reacherResultToEmailStatus } from './mappers';
+import { reacherResultToEmailStatusWithDetails } from './mappers';
 
 export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
   private static readonly JOB_POLL_INTERVAL_MS = 1000;
@@ -31,11 +31,14 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
         abortSignal
       );
 
-      return reacherResultToEmailStatus(data);
+      return reacherResultToEmailStatusWithDetails(data);
     } catch (error) {
       const result: EmailStatusResult = {
         email,
-        status: Status.UNKNOWN
+        status: Status.UNKNOWN,
+        details: {
+          hasTimedOut: true
+        }
       };
       if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
         result.details = { hasTimedOut: true };
@@ -81,7 +84,9 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
           { jobId, count: emails.length }
         );
 
-        return jobResults.results.map((r) => reacherResultToEmailStatus(r));
+        return jobResults.results.map((r) =>
+          reacherResultToEmailStatusWithDetails(r)
+        );
       } catch (error) {
         this.logger.error('Failed processing bulk verification job');
         return this.defaultBulkResults(emailsChunk);
@@ -140,7 +145,10 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
   private defaultBulkResults(emails: string[]) {
     return emails.map((e: string) => ({
       email: e,
-      status: Status.UNKNOWN
+      status: Status.UNKNOWN,
+      details: {
+        hasTimedOut: true
+      }
     }));
   }
 }

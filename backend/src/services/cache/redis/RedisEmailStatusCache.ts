@@ -1,5 +1,5 @@
 import { Redis } from 'ioredis';
-import { Status } from '../../email-status/EmailStatusVerifier';
+import { EmailStatusResult } from '../../email-status/EmailStatusVerifier';
 import EmailStatusCache from '../EmailStatusCache';
 
 export default class RedisEmailStatusCache implements EmailStatusCache {
@@ -7,22 +7,27 @@ export default class RedisEmailStatusCache implements EmailStatusCache {
 
   constructor(private readonly redisClient: Redis) {}
 
-  get(email: string): Promise<Status | null> {
-    return this.redisClient.hget(
+  async get(email: string): Promise<EmailStatusResult | null> {
+    const result = await this.redisClient.hget(this.emailStatusKey, email);
+    if (result !== null) {
+      return JSON.parse(result) as EmailStatusResult;
+    }
+    return null;
+  }
+
+  async set(email: string, status: EmailStatusResult): Promise<void> {
+    await this.redisClient.hset(
       this.emailStatusKey,
-      email
-    ) as Promise<Status | null>;
+      email,
+      JSON.stringify(status)
+    );
   }
 
-  async set(email: string, status: Status): Promise<void> {
-    await this.redisClient.hset(this.emailStatusKey, email, status);
-  }
-
-  async setMany(inputs: { email: string; status: Status }[]): Promise<void> {
+  async setMany(inputs: EmailStatusResult[]): Promise<void> {
     if (inputs.length) {
       await this.redisClient.hset(
         this.emailStatusKey,
-        ...inputs.flatMap(({ email, status }) => [email, status])
+        ...inputs.flatMap((input) => [input.email, JSON.stringify(input)])
       );
     }
   }

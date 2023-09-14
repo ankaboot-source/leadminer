@@ -1,4 +1,7 @@
-import { Status } from '../../services/email-status/EmailStatusVerifier';
+import {
+  EmailStatusResult,
+  Status
+} from '../../services/email-status/EmailStatusVerifier';
 import { Contact, ExtractionResult } from '../types';
 
 export interface Contacts {
@@ -7,7 +10,7 @@ export interface Contacts {
   updateSinglePersonStatus(
     personEmail: string,
     userId: string,
-    status: Status
+    status: EmailStatusResult
   ): Promise<boolean>;
   updateManyPersonsStatus(
     userId: string,
