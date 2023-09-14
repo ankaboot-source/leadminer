@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { Status } from '../email-status/EmailStatusVerifier';
+import { Details, Status } from '../email-status/EmailStatusVerifier';
 
 export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
   'transactional',
@@ -41,6 +41,7 @@ export interface Message {
 export interface Person {
   email: string;
   status?: Status;
+  verificationDetails?: Details;
   url?: string;
   name?: string;
   image?: string;

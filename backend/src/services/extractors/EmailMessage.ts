@@ -4,6 +4,7 @@ import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
 import { differenceInDays } from '../../utils/helpers/date';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
+import CatchAllDomainsCache from '../cache/CatchAllDomainsCache';
 import EmailStatusCache from '../cache/EmailStatusCache';
 import { Status } from '../email-status/EmailStatusVerifier';
 import { TaggingEngine } from '../tagging/types';
@@ -51,6 +52,7 @@ export default class EmailMessage {
     private readonly taggingEngine: TaggingEngine,
     private readonly redisClientForNormalMode: Redis,
     private readonly emailStatusCache: EmailStatusCache,
+    private readonly catchAllDomainsCache: CatchAllDomainsCache,
     private readonly domainStatusVerification: DomainStatusVerificationFunction,
     private readonly userEmail: string,
     private readonly userId: string,
@@ -285,11 +287,31 @@ export default class EmailMessage {
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
             ) {
               person.status = Status.VALID;
-              await this.emailStatusCache.set(person.email, Status.VALID);
+              person.verificationDetails = { isRecentFrom: true };
+              await this.emailStatusCache.set(person.email, {
+                email: person.email,
+                status: Status.VALID,
+                details: { isRecentFrom: true }
+              });
+            }
+          } else {
+            const statusCache = await this.emailStatusCache.get(person.email);
+            if (statusCache) {
+              person.status = statusCache.status;
+              person.verificationDetails = statusCache.details;
             } else {
-              const statusCache = await this.emailStatusCache.get(person.email);
-              if (statusCache) {
-                person.status = statusCache;
+              const catchAllDomainCache =
+                await this.catchAllDomainsCache.exists(
+                  validContact.email.domain
+                );
+              if (catchAllDomainCache) {
+                person.status = Status.UNKNOWN;
+                person.verificationDetails = { isCatchAll: true };
+                this.emailStatusCache.set(person.email, {
+                  status: Status.UNKNOWN,
+                  email: person.email,
+                  details: { isCatchAll: true }
+                });
               }
             }
           }

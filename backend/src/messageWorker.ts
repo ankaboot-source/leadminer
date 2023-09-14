@@ -3,6 +3,8 @@ import './env';
 import ENV from './config';
 import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
+import CatchAllDomainsCache from './services/cache/CatchAllDomainsCache';
+import RedisCatchAllDomainsCache from './services/cache/redis/RedisCatchAllDomainsCache';
 import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
 import {
   MESSAGES_STREAM_CONSUMER_GROUP,
@@ -24,10 +26,14 @@ const redisClient = redis.getClient();
 
 const contacts = new PgContacts(pool, logger);
 const emailStatusCache = new RedisEmailStatusCache(redisClient);
+const catchAllDomainsCache = new RedisCatchAllDomainsCache(
+  redisClient
+) as CatchAllDomainsCache;
 
 const { processStreamData } = initializeEmailMessageProcessor(
   contacts,
-  emailStatusCache
+  emailStatusCache,
+  catchAllDomainsCache
 );
 
 const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(

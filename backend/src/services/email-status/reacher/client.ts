@@ -1,19 +1,20 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
-import { handleAxiosError } from '../../../utils/axios';
 
 interface BulkSubmitResponse {
   job_id: string;
 }
 
-interface CheckError {
+export interface CheckError {
   type: string;
   message: string;
 }
 
+export type Reachability = 'invalid' | 'unknown' | 'safe' | 'risky';
+
 export interface EmailCheckOutput {
   input: string;
-  is_reachable: 'invalid' | 'unknown' | 'safe' | 'risky';
+  is_reachable: Reachability;
   misc: Misc | CheckError;
   mx: Mx | CheckError;
   smtp: Smtp | CheckError;
@@ -70,6 +71,7 @@ interface ReacherConfig {
   apiKey?: string;
   headerSecret?: string;
   smtpConfig?: SMTPConfig;
+  timeoutMs: number;
 }
 
 interface SMTPConfig {
@@ -109,6 +111,7 @@ export default class ReacherClient {
     this.api = axios.create({
       baseURL: config.host
     });
+    this.api.defaults.timeout = config.timeoutMs;
     if (config.apiKey) {
       this.api.defaults.headers.common.Authorization = config.apiKey;
     }
@@ -141,7 +144,7 @@ export default class ReacherClient {
     email: string,
     abortSignal?: AbortSignal,
     validationOptions?: ValidationOptions
-  ) {
+  ): Promise<EmailCheckOutput> {
     try {
       const { data } = await this.api.post<EmailCheckOutput>(
         ReacherClient.SINGLE_VERIFICATION_PATH,
@@ -152,23 +155,18 @@ export default class ReacherClient {
             ? validationOptions.fromEmail
             : this.smtpConfig.from_email
         },
-        { signal: abortSignal, timeout: 5000 }
+        { signal: abortSignal }
       );
-      return { data, error: null };
+      return data;
     } catch (error) {
-      this.logger.error('Failed checking single email', error);
-      if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
-      }
+      this.logError(error, `[Reacher:checkSingleEmail:${email}]`);
       throw error;
     }
   }
 
   async createBulkVerificationJob(
     emails: string[]
-  ): Promise<
-    { data: BulkSubmitResponse; error: null } | { data: null; error: Error }
-  > {
+  ): Promise<BulkSubmitResponse> {
     try {
       const { data } = await this.api.post<BulkSubmitResponse>(
         ReacherClient.BULK_VERIFICATION_PATH,
@@ -179,44 +177,45 @@ export default class ReacherClient {
         }
       );
 
-      return { data, error: null };
+      return data;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
-      }
+      this.logError(error, '[Reacher:createBulkVerificationJob]');
       throw error;
     }
   }
 
-  async getJobStatus(jobId: string) {
+  async getJobStatus(jobId: string): Promise<BulkVerificationStatusResponse> {
     try {
       const { data } = await this.api.get<BulkVerificationStatusResponse>(
         `${ReacherClient.BULK_VERIFICATION_PATH}/${jobId}`
       );
 
-      return { data, error: null };
+      return data;
     } catch (error) {
-      this.logger.error('Failed retrieving job status', error);
-      if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
-      }
+      this.logError(error, '[Reacher:getJobStatus]');
       throw error;
     }
   }
 
-  async getResults(jobId: string) {
+  async getResults(jobId: string): Promise<BulkVerificationResultsResponse> {
     try {
       const { data } = await this.api.get<BulkVerificationResultsResponse>(
         `${ReacherClient.BULK_VERIFICATION_PATH}/${jobId}/results`
       );
 
-      return { data, error: null };
+      return data;
     } catch (error) {
-      this.logger.error('Failed retrieving job results', error);
-      if (axios.isAxiosError(error)) {
-        return { ...handleAxiosError(error), data: null };
-      }
+      this.logError(error, '[Reacher:getResults]');
       throw error;
+    }
+  }
+
+  private logError(error: unknown, context: string) {
+    if (axios.isAxiosError(error)) {
+      const { stack, code, name, message } = error;
+      this.logger.error(`${context}: ${message}`, { code, name, stack });
+    } else {
+      this.logger.error(`${context}: Something went wrong`, error);
     }
   }
 }

@@ -1,7 +1,11 @@
 import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
-import { Status } from '../../services/email-status/EmailStatusVerifier';
+import {
+  EmailStatusResult,
+  Status
+} from '../../services/email-status/EmailStatusVerifier';
+import { REACHABILITY } from '../../utils/constants';
 import { Contacts } from '../interfaces/Contacts';
 import { Contact, ExtractionResult } from '../types';
 
@@ -56,15 +60,15 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status", "verification_details")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
     ON CONFLICT (email, user_id) DO UPDATE SET name=excluded.name
     RETURNING persons.email, persons.status;`;
 
-  private static readonly UPDATE_PERSON_STATUS_SQL = `
+  private static readonly SET_PERSON_STATUS_SQL = `
     UPDATE persons
-    SET status = $1
-    WHERE email = $2 AND user_id = $3 AND persons.status IS NULL;`;
+    SET status = $1, verification_details = $2
+    WHERE email = $3 AND user_id = $4 AND persons.status IS NULL;`;
 
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
@@ -76,14 +80,26 @@ export default class PgContacts implements Contacts {
   async updateSinglePersonStatus(
     personEmail: string,
     userId: string,
-    status: Status
+    statusWithDetails: EmailStatusResult
   ): Promise<boolean> {
     try {
-      await this.pool.query(PgContacts.UPDATE_PERSON_STATUS_SQL, [
-        status,
+      await this.pool.query(PgContacts.SET_PERSON_STATUS_SQL, [
+        statusWithDetails.status,
+        { ...statusWithDetails.details, verifiedOn: new Date().toISOString() },
         personEmail,
         userId
       ]);
+      if (statusWithDetails.details?.isRole) {
+        await this.pool.query(PgContacts.INSERT_TAGS_SQL, [
+          [
+            'role',
+            REACHABILITY.UNSURE,
+            'email-verification',
+            userId,
+            personEmail
+          ]
+        ]);
+      }
       return true;
     } catch (error) {
       this.logger.error(error);
@@ -150,7 +166,8 @@ export default class PgContacts implements Contacts {
           person.jobTitle,
           person.identifiers,
           userId,
-          person.status ?? null
+          person.status ?? null,
+          person.verificationDetails ?? null
         ]);
 
         const tagValues = tags.map((tag) => [
