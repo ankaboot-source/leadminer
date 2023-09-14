@@ -5,14 +5,16 @@ interface BulkSubmitResponse {
   job_id: string;
 }
 
-interface CheckError {
+export interface CheckError {
   type: string;
   message: string;
 }
 
+export type Reachability = 'invalid' | 'unknown' | 'safe' | 'risky';
+
 export interface EmailCheckOutput {
   input: string;
-  is_reachable: 'invalid' | 'unknown' | 'safe' | 'risky';
+  is_reachable: Reachability;
   misc: Misc | CheckError;
   mx: Mx | CheckError;
   smtp: Smtp | CheckError;
@@ -69,6 +71,7 @@ interface ReacherConfig {
   apiKey?: string;
   headerSecret?: string;
   smtpConfig?: SMTPConfig;
+  timeoutMs: number;
 }
 
 interface SMTPConfig {
@@ -108,6 +111,7 @@ export default class ReacherClient {
     this.api = axios.create({
       baseURL: config.host
     });
+    this.api.defaults.timeout = config.timeoutMs;
     if (config.apiKey) {
       this.api.defaults.headers.common.Authorization = config.apiKey;
     }
@@ -151,11 +155,11 @@ export default class ReacherClient {
             ? validationOptions.fromEmail
             : this.smtpConfig.from_email
         },
-        { signal: abortSignal, timeout: 5000 }
+        { signal: abortSignal }
       );
       return data;
     } catch (error) {
-      this.logError(error, '[Reacher:checkSingleEmail]');
+      this.logError(error, `[Reacher:checkSingleEmail:${email}]`);
       throw error;
     }
   }

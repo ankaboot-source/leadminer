@@ -4,6 +4,8 @@ export interface Details {
   isDisabled?: boolean;
   isCatchAll?: boolean;
   isDeliverable?: boolean;
+  hasFullInbox?: boolean;
+  isRecentFrom?: boolean;
   hasTimedOut?: boolean;
 }
 

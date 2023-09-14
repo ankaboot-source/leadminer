@@ -60,15 +60,7 @@ const schema = z.object({
   REACHER_PROXY_HOST: z.string().nonempty().optional(),
   REACHER_PROXY_USERNAME: z.string().nonempty().optional(),
   REACHER_PROXY_PASSWORD: z.string().nonempty().optional(),
-
-  /* EMAIL VERIFICATION WORKER */
-  COMPLETED_JOBS_MAX_AGE_MINUTES: number().optional().default(30),
-  COMPLETED_JOBS_MAX_COUNT: number().optional().default(50000),
-  CONCURRENCY_FACTOR: number().optional().default(50),
-  EMAIL_VERIFICATION_QUEUE_NAME: z
-    .string()
-    .optional()
-    .default('email-verification'),
+  REACHER_REQUEST_TIMEOUT_MS: number().optional().default(5000),
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
