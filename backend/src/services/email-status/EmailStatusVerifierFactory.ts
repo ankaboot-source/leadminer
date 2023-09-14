@@ -19,6 +19,7 @@ interface ProductionConfig {
   REACHER_PROXY_HOST?: string;
   REACHER_PROXY_USERNAME?: string;
   REACHER_PROXY_PASSWORD?: string;
+  REACHER_REQUEST_TIMEOUT_MS: number;
 }
 
 type Config = DevConfig | ProductionConfig;
@@ -33,6 +34,7 @@ const EmailStatusVerifierFactory = {
       host: config.REACHER_HOST,
       apiKey: config.REACHER_API_KEY,
       headerSecret: config.REACHER_HEADER_SECRET,
+      timeoutMs: config.REACHER_REQUEST_TIMEOUT_MS,
       smtpConfig: {
         helloName: config.REACHER_SMTP_HELLO,
         fromEmail: config.REACHER_SMTP_FROM,

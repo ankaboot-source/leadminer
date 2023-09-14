@@ -96,8 +96,6 @@ export default class ReacherClient {
 
   private readonly api: AxiosInstance;
 
-  private readonly timeout: number;
-
   private readonly smtpConfig: {
     from_email?: string;
     hello_name?: string;
@@ -110,10 +108,10 @@ export default class ReacherClient {
   } = {};
 
   constructor(private readonly logger: Logger, config: ReacherConfig) {
-    this.timeout = config.timeoutMs;
     this.api = axios.create({
       baseURL: config.host
     });
+    this.api.defaults.timeout = config.timeoutMs;
     if (config.apiKey) {
       this.api.defaults.headers.common.Authorization = config.apiKey;
     }
@@ -157,7 +155,7 @@ export default class ReacherClient {
             ? validationOptions.fromEmail
             : this.smtpConfig.from_email
         },
-        { signal: abortSignal, timeout: this.timeout }
+        { signal: abortSignal }
       );
       return data;
     } catch (error) {
