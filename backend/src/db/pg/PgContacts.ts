@@ -90,15 +90,17 @@ export default class PgContacts implements Contacts {
         userId
       ]);
       if (statusWithDetails.details?.isRole) {
-        await this.pool.query(PgContacts.INSERT_TAGS_SQL, [
-          [
-            'role',
-            REACHABILITY.UNSURE,
-            'email-verification',
-            userId,
-            personEmail
-          ]
-        ]);
+        await this.pool.query(
+          format(PgContacts.INSERT_TAGS_SQL, [
+            [
+              'role',
+              REACHABILITY.UNSURE,
+              'email-verification',
+              userId,
+              personEmail
+            ]
+          ])
+        );
       }
       return true;
     } catch (error) {
@@ -123,7 +125,7 @@ export default class PgContacts implements Contacts {
 
       return true;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('updateManyPersonsStatus', error);
       return false;
     }
   }
@@ -208,7 +210,7 @@ export default class PgContacts implements Contacts {
       await this.pool.query(PgContacts.REFINE_CONTACTS_SQL, [userId]);
       return true;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error('[PgContacts.refine]', error);
       return false;
     }
   }
