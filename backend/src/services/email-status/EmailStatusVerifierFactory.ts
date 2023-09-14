@@ -20,6 +20,12 @@ interface ProductionConfig {
   REACHER_PROXY_USERNAME?: string;
   REACHER_PROXY_PASSWORD?: string;
   REACHER_REQUEST_TIMEOUT_MS: number;
+  REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS: number;
+  REACHER_SMTP_CONNECTION_RETRIES: number;
+  REACHER_HOTMAIL_USE_HEADLESS: string;
+  REACHER_MICROSOFT365_USE_API: boolean;
+  REACHER_GMAIL_USE_API: boolean;
+  REACHER_YAHOO_USE_API: boolean;
 }
 
 type Config = DevConfig | ProductionConfig;
@@ -35,6 +41,12 @@ const EmailStatusVerifierFactory = {
       apiKey: config.REACHER_API_KEY,
       headerSecret: config.REACHER_HEADER_SECRET,
       timeoutMs: config.REACHER_REQUEST_TIMEOUT_MS,
+      microsoft365UseApi: config.REACHER_MICROSOFT365_USE_API,
+      gmailUseApi: config.REACHER_GMAIL_USE_API,
+      yahooUseApi: config.REACHER_YAHOO_USE_API,
+      hotmailUseHeadless: config.REACHER_HOTMAIL_USE_HEADLESS,
+      smtpRetries: config.REACHER_SMTP_CONNECTION_RETRIES,
+      smtpTimeoutSeconds: config.REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS,
       smtpConfig: {
         helloName: config.REACHER_SMTP_HELLO,
         fromEmail: config.REACHER_SMTP_FROM,
