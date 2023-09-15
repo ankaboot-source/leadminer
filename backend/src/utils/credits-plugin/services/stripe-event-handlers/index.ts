@@ -1,7 +1,10 @@
 import Stripe from 'stripe';
-import { StripeSubscriptionEvent, StripeEventHandler } from './interfaces';
-import StripeSubscriptionCreated from './subscriptionCreated';
-import StripeSubscriptionUpdated from './subscriptionUpdated';
+import {
+  StripeSubscriptionEvent,
+  StripeEventHandler,
+  StripeSubscriptionInvoiceEvent
+} from './interfaces';
+import StripeSubscriptionInvoicePaid from './invoicePaid';
 import StripeSubscriptionDeleted from './subscriptionDeleted';
 import { Users } from '../../database/interfaces/Users';
 
@@ -25,17 +28,13 @@ export default class StripeEventHandlerFactory {
     event: Stripe.Event
   ): StripeEventHandler | null {
     switch (eventType) {
-      case 'customer.subscription.created':
-        return new StripeSubscriptionCreated(
-          event as StripeSubscriptionEvent,
+      case 'invoice.paid':
+        return new StripeSubscriptionInvoicePaid(
+          event as StripeSubscriptionInvoiceEvent,
           this.userResolver,
           this.stripeClient
         );
-      case 'customer.subscription.updated':
-        return new StripeSubscriptionUpdated(
-          event as StripeSubscriptionEvent,
-          this.userResolver
-        );
+
       case 'customer.subscription.deleted':
         return new StripeSubscriptionDeleted(
           event as StripeSubscriptionEvent,
