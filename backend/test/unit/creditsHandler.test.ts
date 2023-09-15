@@ -117,7 +117,7 @@ describe('CreditsHandler', () => {
       expect(updatedUserAccount).toEqual({ credits: calcultedCredit });
     });
 
-    it('should set credits to zero if user has insufficient credits', async () => {
+    it('should set credits to zero if the deduction will be negative', async () => {
       await creditsHandler.deduct(USER_ID_WITH_INSUFFICIENT_CREDITS, 5);
 
       expect(mockedSupabaseUser.update).toHaveBeenCalledWith(
@@ -135,7 +135,7 @@ describe('CreditsHandler', () => {
       );
     });
 
-    it('should throw an error if credit deduction fails', async () => {
+    it('should throw an error if credits deduction fails', async () => {
       mockedSupabaseUser.update = () => Promise.resolve(undefined);
 
       await expect(
