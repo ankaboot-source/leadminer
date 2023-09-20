@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
+import { logError } from '../../../utils/axios';
 
 interface BulkSubmitResponse {
   job_id: string;
@@ -200,7 +201,7 @@ export default class ReacherClient {
       );
       return data;
     } catch (error) {
-      this.logError(error, `[Reacher:checkSingleEmail:${email}]`);
+      logError(error, `[Reacher:checkSingleEmail:${email}]`, this.logger);
       throw error;
     }
   }
@@ -221,7 +222,7 @@ export default class ReacherClient {
 
       return data;
     } catch (error) {
-      this.logError(error, '[Reacher:createBulkVerificationJob]');
+      logError(error, '[Reacher:createBulkVerificationJob]', this.logger);
       throw error;
     }
   }
@@ -234,7 +235,7 @@ export default class ReacherClient {
 
       return data;
     } catch (error) {
-      this.logError(error, '[Reacher:getJobStatus]');
+      logError(error, '[Reacher:getJobStatus]', this.logger);
       throw error;
     }
   }
@@ -247,17 +248,8 @@ export default class ReacherClient {
 
       return data;
     } catch (error) {
-      this.logError(error, '[Reacher:getResults]');
+      logError(error, '[Reacher:getResults]', this.logger);
       throw error;
-    }
-  }
-
-  private logError(error: unknown, context: string) {
-    if (axios.isAxiosError(error)) {
-      const { stack, code, name, message } = error;
-      this.logger.error(`${context}: ${message}`, { code, name, stack });
-    } else {
-      this.logger.error(`${context}: Something went wrong`, error);
     }
   }
 }
