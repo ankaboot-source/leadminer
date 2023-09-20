@@ -6,7 +6,7 @@
     <q-toolbar class="text-custom q-pa-sm">
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
-      <CreditsCounter v-if="shouldShowCreditBadge" />
+      <CreditsCounter v-if="shouldShowCreditsBadge" />
       <div v-show="shouldShow">
         <q-btn flat class="text-lowercase" @click="goToSettings()">
           {{ user?.email }}
@@ -30,7 +30,7 @@ const router = useRouter();
 const user = ref<User | null>(null);
 
 const shouldShow = computed(() => window.location.pathname !== "/account");
-const shouldShowCreditBadge = process.env.ENABLE_CREDIT;
+const shouldShowCreditsBadge = process.env.ENABLE_CREDIT;
 
 function goToSettings() {
   router.push("/account");

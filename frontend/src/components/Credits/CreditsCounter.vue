@@ -43,7 +43,7 @@ function refillCredits() {
   refillCreditsOrUpgrade();
 }
 
-function creditNotify(message: string) {
+function Notify(message: string) {
   $quasar.notify({
     message,
     color: "white",
@@ -64,9 +64,9 @@ onMounted(async () => {
 
   watch(credits, (newValue: number,) => {
     if (newValue === 0) {
-      creditNotify("🚨 Out of credits.");
+      Notify("🚨 Out of credits.");
     } else if (newValue < 10000) {
-      creditNotify("😅 You're running low on credits.");
+      Notify("😅 You're running low on credits.");
     }
   });
 });
