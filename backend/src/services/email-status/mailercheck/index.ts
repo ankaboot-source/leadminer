@@ -69,7 +69,7 @@ export default class MailerCheckEmailStatusVerifier
     }
   }
 
-  private async pollVerificationStatus(listId: number) {
+  private pollVerificationStatus(listId: number) {
     return new Promise<boolean>((resolve) => {
       let failedSuccessivePollAttempts = 0;
       const interval = setInterval(async () => {
