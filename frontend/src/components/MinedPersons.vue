@@ -234,7 +234,7 @@ import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import CreditsDialog from "./Dialogs/InsufficientCreditsDialog.vue";
+import CreditsDialog from "./Credits/InsufficientCreditsDialog.vue";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
