@@ -80,6 +80,8 @@ module.exports = configure((/* ctx */) => ({
       BANNER_IMAGE_URL: process.env.BANNER_IMAGE_URL,
       POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
       POSTHOG_INSTANCE_ADDRESS: process.env.POSTHOG_INSTANCE_ADDRESS,
+      ENABLE_CREDIT: process.env.ENABLE_CREDIT,
+      EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK
     },
     // rawDefine: {}
     // ignorePublicFolder: true,
