@@ -132,8 +132,8 @@ export interface Email {
   line: number;
   checked: number;
   result: MailerCheckResult;
-  created_at: any;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface ListResponse {
