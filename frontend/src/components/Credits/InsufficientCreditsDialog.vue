@@ -86,7 +86,7 @@ const executePartialAction = async () => {
 };
 const downloadActionLabel = computed(() => `Download only ${available.value}`);
 const buyOrUpgrade = () => {
-  refillCreditsOrUpgrade()
+  refillCreditsOrUpgrade();
 };
 
 defineExpose({
