@@ -15,6 +15,5 @@ declare namespace NodeJS {
     POSTHOG_INSTANCE_ADDRESS: string;
     ENABLE_CREDIT: boolean;
     EXTERNAL_REFILL_CREDITS_LINK: string;
-
   }
 }
