@@ -161,3 +161,28 @@ a:hover {
 .negative-margin-8 {
   margin-right: -8px;
 }
+.credits-badge {
+  width: 8.4rem;
+  height: 2.2rem;
+  border: 1px solid;
+  border-color: #abb1ba;
+  color: #03c8a8;
+}
+.low-credits-badge {
+  border-color: red;
+}
+.flash-animation {
+  animation: flash-animation 0.5s 5;
+  /* Repeats 5 times*/
+}
+
+@keyframes flash-animation {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
