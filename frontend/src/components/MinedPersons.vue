@@ -162,7 +162,9 @@
             icon="content_copy"
             @click="
               copyValueToClipboard(
-                `${props.row.name} <${props.row.email}>`,
+                props.row.name && props.row.name !== ''
+                  ? `${props.row.name} <${props.row.email}>`
+                  : `<${props.row.email}>`,
                 'Contact'
               )
             "
