@@ -10,6 +10,7 @@ import { useRouter } from "vue-router";
 
 export const useLeadminerStore = defineStore("leadminer", () => {
   const $router = useRouter();
+
   const userCredits = ref(0);
 
   const miningTask = ref<MiningTask | undefined>();
@@ -66,7 +67,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     errors.value = {};
   }
 
-  async function $syncUserCredits() {
+  async function syncUserCredits() {
     const { credits } = (await supabase.from("profiles").select("*").single())
       .data;
     userCredits.value = credits;
@@ -289,7 +290,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     startMining,
     stopMining,
     $reset,
-    $syncUserCredits,
+    syncUserCredits,
     userCredits,
     miningTask,
     miningSources,
