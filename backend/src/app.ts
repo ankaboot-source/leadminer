@@ -16,8 +16,6 @@ import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
-import EmailStatusCache from './services/cache/EmailStatusCache';
-import { EmailStatusVerifier } from './services/email-status/EmailStatusVerifier';
 import TasksManager from './services/tasks-manager/TasksManager';
 import { initCreditAndPaymentRoutes } from './utils/credits';
 
@@ -27,8 +25,6 @@ export default function initializeApp(
   miningSources: MiningSources,
   contacts: Contacts,
   userResolver: Users,
-  emailStatusVerifier: EmailStatusVerifier,
-  emailStatusCache: EmailStatusCache,
   logger: Logger
 ) {
   const app = express();
@@ -64,14 +60,7 @@ export default function initializeApp(
   );
   app.use(
     '/api/imap',
-    initializeContactsRoutes(
-      contacts,
-      userResolver,
-      authResolver,
-      emailStatusVerifier,
-      emailStatusCache,
-      logger
-    )
+    initializeContactsRoutes(contacts, userResolver, authResolver)
   );
 
   if (ENV.SENTRY_DSN) {
