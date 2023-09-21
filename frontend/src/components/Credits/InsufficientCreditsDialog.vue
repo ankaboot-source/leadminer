@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import refillCreditsOrUpgrade from "src/helpers/credits";
+import { refillCreditsOrUpgrade } from "src/helpers/credits";
 import { ref, computed } from "vue";
 
 const emit = defineEmits(["secondary-action"]);

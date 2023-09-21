@@ -1,12 +1,18 @@
 <template>
-  <div :class="`credit-indicator q-pa-xs q-mr-sm ${creditsBadgeClass}`">
-    <span class="q-pr-xs q-pl-xs bigger-emoji">🪙</span>
-    <span v-if="credits === 0" class="text-caption flashAnimation">
+  <div
+    :class="`credits-badge flex items-center rounded-borders border-red q-mr-sm ${creditsBadgeState}`"
+  >
+    <span class="text-subtitle1 q-pr-xs q-pl-sm">🪙</span>
+    <span
+      v-if="leadminerStore.userCredits === 0"
+      class="text-caption flash-animation"
+    >
       Out of credits
     </span>
     <span v-else>{{ formattedCredits }}</span>
     <q-tooltip class="text-caption">
-      1 credit per email / 10 credits per contact
+      {{ CREDITS_PER_EMAIL }} credit per email /
+      {{ CREDITS_PER_CONTACT }} credits per contact
     </q-tooltip>
   </div>
   <div>
@@ -15,7 +21,7 @@
       no-caps
       color="amber-13"
       icon="rocket_launch"
-      @click="refillCredits"
+      @click="refillCreditsOrUpgrade"
     >
       <span class="q-pl-sm">Refill</span>
     </q-btn>
@@ -26,90 +32,59 @@
 import { onMounted, computed, watch } from "vue";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { useQuasar } from "quasar";
-import refillCreditsOrUpgrade from "src/helpers/credits";
+import {
+  CREDITS_MIN_THRESHOLD,
+  CREDITS_PER_CONTACT,
+  CREDITS_PER_EMAIL,
+  refillCreditsOrUpgrade,
+} from "src/helpers/credits";
 
 const $quasar = useQuasar();
 const leadminerStore = useLeadminerStore();
 
-const credits = computed(() => leadminerStore.userCredits);
-const formattedCredits = computed(() =>
-  new Intl.NumberFormat().format(credits.value)
-);
-const creditsBadgeClass = computed(() =>
-  credits.value > 10000 ? "" : "low-credits"
-);
-
-function refillCredits() {
-  refillCreditsOrUpgrade();
-}
-
-function Notify(message: string) {
-  $quasar.notify({
-    message,
-    color: "white",
-    textColor: "black",
-    actions: [
-      {
-        label: "🚀 Refill",
-        color: "black",
-        noCaps: true,
-        handler: refillCredits,
-      },
-    ],
-  });
-}
-
 onMounted(async () => {
-  await leadminerStore.$syncUserCredits();
+  await leadminerStore.syncUserCredits();
+});
 
-  watch(credits, (newValue: number,) => {
-    if (newValue === 0) {
-      Notify("🚨 Out of credits.");
-    } else if (newValue < 10000) {
-      Notify("😅 You're running low on credits.");
-    }
-  });
+const formattedCredits = computed(() =>
+  new Intl.NumberFormat().format(leadminerStore.userCredits)
+);
+const creditsBadgeState = computed(() =>
+  leadminerStore.userCredits >= CREDITS_MIN_THRESHOLD
+    ? ""
+    : "text-red  low-credits-badge"
+);
+const credits = computed(() => leadminerStore.userCredits);
+
+watch(credits, (newVal: number) => {
+  if (newVal === 0) {
+    $quasar.notify({
+      message: "🚨 Out of credits.",
+      color: "white",
+      textColor: "black",
+      actions: [
+        {
+          label: "🚀 Refill",
+          color: "black",
+          noCaps: true,
+          handler: refillCreditsOrUpgrade,
+        },
+      ],
+    });
+  } else if (newVal < CREDITS_MIN_THRESHOLD) {
+    $quasar.notify({
+      message: "😅 You're running low on credits.",
+      color: "white",
+      textColor: "black",
+      actions: [
+        {
+          label: "🚀 Refill",
+          color: "black",
+          noCaps: true,
+          handler: refillCreditsOrUpgrade,
+        },
+      ],
+    });
+  }
 });
 </script>
-
-<style>
-.credit-indicator {
-  display: flex;
-  align-items: center;
-  width: 130px;
-  height: 36px;
-  border-radius: 5px;
-  border: 1px solid;
-}
-
-.low-credits {
-  border-color: red;
-  color: red;
-}
-
-.default-credits {
-  border-color: #abb1ba;
-  color: #03c8a8;
-}
-
-.bigger-emoji {
-  font-size: 18px;
-}
-
-/* flashAnimation animation */
-.flashAnimation {
-  animation: flashAnimation 0.5s 5;
-  /* Repeats 5 times*/
-}
-
-@keyframes flashAnimation {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0;
-  }
-}
-</style>

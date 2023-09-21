@@ -578,7 +578,7 @@ async function exportTable() {
       return;
     }
 
-    await leadminerStore.$syncUserCredits();
+    await leadminerStore.syncUserCredits();
 
     $q.notify({
       message: "Emails exported successfully",
