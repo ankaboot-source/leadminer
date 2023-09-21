@@ -68,7 +68,7 @@ interface BulkVerificationResultsResponse {
 }
 
 interface ReacherConfig {
-  host: string;
+  host?: string;
   timeoutMs?: number;
   apiKey?: string;
   headerSecret?: string;

@@ -24,13 +24,13 @@ export default class MailerCheckEmailStatusVerifier
       const result = await this.mailerCheckClient.verifyEmail(email);
       return {
         email,
-        ...mailerCheckResultToEmailStatusResultMapper[`${result}`]
+        ...mailerCheckResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
       return {
         email,
         status: Status.UNKNOWN,
-        details: { hasTimedOut: true }
+        details: { hasTimedOut: true, source: 'mailercheck' }
       };
     }
   }
@@ -62,7 +62,7 @@ export default class MailerCheckEmailStatusVerifier
 
       return results.emails.map(({ address, result }) => ({
         email: address,
-        ...mailerCheckResultToEmailStatusResultMapper[`${result}`]
+        ...mailerCheckResultToEmailStatusResultMapper(result)
       }));
     } catch (error) {
       return this.defaultBulkResults(emails);
@@ -108,7 +108,8 @@ export default class MailerCheckEmailStatusVerifier
       email: e,
       status: Status.UNKNOWN,
       details: {
-        hasTimedOut: true
+        hasTimedOut: true,
+        source: 'mailercheck' as const
       }
     }));
   }

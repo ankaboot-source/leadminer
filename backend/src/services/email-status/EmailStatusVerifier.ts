@@ -10,6 +10,7 @@ export interface Details {
   hasPastDeliveryIssues?: boolean;
   isBlocked?: boolean;
   isNotFound?: boolean;
+  source?: 'reacher' | 'mailercheck';
 }
 
 export enum Status {

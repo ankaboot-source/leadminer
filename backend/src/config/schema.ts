@@ -72,6 +72,9 @@ const schema = z.object({
   REACHER_GMAIL_USE_API: boolean().optional().default('false'),
   REACHER_YAHOO_USE_API: boolean().optional().default('false'),
 
+  /* MAILERCHECK */
+  MAILERCHECK_API_KEY: z.string().nonempty().optional(),
+
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
   CONTACT_CREDIT: number().optional(),
