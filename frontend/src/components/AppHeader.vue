@@ -6,12 +6,20 @@
     <q-toolbar class="text-custom q-pa-sm">
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
-      <div v-show="shouldShow">
+      <div v-show="shouldShowSettings">
         <q-btn flat class="text-lowercase" @click="goToSettings()">
           {{ user?.email }}
         </q-btn>
       </div>
-      <q-btn class="q-mr-sm" flat round dense icon="logout" @click="logout()" />
+      <q-btn
+        v-show="shouldShowLogout"
+        class="q-mr-sm"
+        flat
+        round
+        dense
+        icon="logout"
+        @click="logout()"
+      />
     </q-toolbar>
   </q-header>
 </template>
@@ -27,7 +35,10 @@ import AppLogo from "./AppLogo.vue";
 const router = useRouter();
 const user = ref<User | null>(null);
 
-const shouldShow = computed(() => window.location.pathname !== "/account");
+const shouldShowSettings = computed(
+  () => user.value && window.location.pathname !== "/account"
+);
+const shouldShowLogout = computed(() => !!user.value);
 
 function goToSettings() {
   router.push("/account");
