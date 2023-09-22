@@ -53,6 +53,7 @@
 </template>
 
 <script setup lang="ts">
+import { refillCreditsOrUpgrade } from "src/helpers/credits";
 import { ref, computed } from "vue";
 
 const emit = defineEmits(["secondary-action"]);
@@ -85,7 +86,7 @@ const executePartialAction = async () => {
 };
 const downloadActionLabel = computed(() => `Download only ${available.value}`);
 const buyOrUpgrade = () => {
-  window.open("https://www.leadminer.io/product", "_blank");
+  refillCreditsOrUpgrade();
 };
 
 defineExpose({

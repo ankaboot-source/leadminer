@@ -162,7 +162,9 @@
             icon="content_copy"
             @click="
               copyValueToClipboard(
-                `${props.row.name} <${props.row.email}>`,
+                props.row.name && props.row.name !== ''
+                  ? `${props.row.name} <${props.row.email}>`
+                  : `<${props.row.email}>`,
                 'Contact'
               )
             "
@@ -234,7 +236,7 @@ import { supabase } from "src/helpers/supabase";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import CreditsDialog from "./Dialogs/InsufficientCreditsDialog.vue";
+import CreditsDialog from "./Credits/InsufficientCreditsDialog.vue";
 import ValidityIndicator from "./ValidityIndicator.vue";
 
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
@@ -577,6 +579,8 @@ async function exportTable() {
       });
       return;
     }
+
+    await leadminerStore.syncUserCredits();
 
     $q.notify({
       message: "Emails exported successfully",

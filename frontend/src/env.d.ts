@@ -13,5 +13,7 @@ declare namespace NodeJS {
     BANNER_IMAGE_URL: string;
     POSTHOG_API_KEY: string;
     POSTHOG_INSTANCE_ADDRESS: string;
+    ENABLE_CREDIT: boolean;
+    EXTERNAL_REFILL_CREDITS_LINK: string;
   }
 }
