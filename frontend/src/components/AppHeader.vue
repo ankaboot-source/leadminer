@@ -40,7 +40,7 @@ const user = ref<User | null>(null);
 const shouldShowSettings = computed(
   () => user.value && window.location.pathname !== "/account"
 );
-const shouldShowLogout = computed(() => !!user.value);
+const shouldShowLogout = computed(() => Boolean(user.value));
 const shouldShowCreditsBadge = process.env.ENABLE_CREDIT;
 
 function goToSettings() {
