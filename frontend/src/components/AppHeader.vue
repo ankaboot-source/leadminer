@@ -6,6 +6,7 @@
     <q-toolbar class="text-custom q-pa-sm">
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
+      <CreditsCounter v-if="shouldShowCreditsBadge" />
       <div v-show="shouldShow">
         <q-btn flat class="text-lowercase" @click="goToSettings()">
           {{ user?.email }}
@@ -22,12 +23,14 @@ import { supabase } from "src/helpers/supabase";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { logout } from "src/helpers/auth";
+import CreditsCounter from "./Credits/CreditsCounter.vue";
 import AppLogo from "./AppLogo.vue";
 
 const router = useRouter();
 const user = ref<User | null>(null);
 
 const shouldShow = computed(() => window.location.pathname !== "/account");
+const shouldShowCreditsBadge = process.env.ENABLE_CREDIT;
 
 function goToSettings() {
   router.push("/account");
