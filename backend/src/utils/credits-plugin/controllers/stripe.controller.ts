@@ -101,11 +101,6 @@ export default function initializeStripePaymentController(
             customer.email,
             customer.name
           );
-          /*
-            Since User is newly created, we link it to stripe and add credits. then
-            safely generate the magick and invitation links. Mainly the process of
-            adding credits happens on the webhook level for existing users.
-          */
           await accountResolver.update(profile.user_id, {
             stripe_subscription_id: session.subscription as string,
             stripe_customer_id: customer.id,
