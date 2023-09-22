@@ -33,6 +33,29 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/credits-success",
+    name: "Landing post payment",
+    component: () =>
+      import("src/billing/pages/CreditsSuccess.vue").catch(() => DashboardPage),
+    beforeEnter: async (_, __, next) => {
+      try {
+        await import("src/billing/pages/CreditsSuccess.vue");
+      } catch (e) {
+        next("/dashboard");
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const subscription = params.get("is_subscription");
+      const credits = parseInt(params.get("credits") ?? "");
+
+      if (!subscription || !credits || Number.isNaN(credits)) {
+        next("/dashboard");
+      } else {
+        next();
+      }
+    },
+  },
+  {
     path: "/account",
     name: "Update Password",
     component: AccountSettingsPage,
