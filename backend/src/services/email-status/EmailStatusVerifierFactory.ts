@@ -44,7 +44,7 @@ export default class EmailStatusVerifierFactory {
   constructor(config: Config, logger: Logger) {
     this.randomEmailStatusVerifier = new RandomEmailStatusVerifier();
 
-    if (config.REACHER_API_KEY) {
+    if (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET) {
       this.createReacherEmailStatusVerifier(config, logger);
     }
 
