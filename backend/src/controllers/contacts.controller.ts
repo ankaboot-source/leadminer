@@ -22,7 +22,7 @@ export default function initializeContactsController(
           user.id
         );
 
-        if ([...newContacts, ...previousExportedContacts].length === 0) {
+        if (newContacts.length + previousExportedContacts.length === 0) {
           return res.sendStatus(204);
         }
 
