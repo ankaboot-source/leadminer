@@ -22,6 +22,10 @@ export default function initializeContactsController(
           user.id
         );
 
+        if ([...newContacts, ...previousExportedContacts].length === 0) {
+          return res.sendStatus(204)
+        }
+
         if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
           const creditHandler = new CreditsHandler(
             userResolver,
@@ -58,9 +62,7 @@ export default function initializeContactsController(
         const minedContacts = await contacts.getContacts(user.id);
 
         if (minedContacts.length === 0) {
-          return res
-            .status(404)
-            .json({ message: 'No contacts available for export' });
+          return res.sendStatus(204)
         }
 
         const delimiterOption = req.query.delimiter;
