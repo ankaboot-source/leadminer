@@ -1,6 +1,6 @@
 import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
-import { EmailStatusVerifier } from '../../services/email-status/EmailStatusVerifier';
+import EmailStatusVerifierFactory from '../../services/email-status/EmailStatusVerifierFactory';
 import logger from '../../utils/logger';
 
 export interface EmailVerificationData {
@@ -14,18 +14,20 @@ export interface EmailVerificationData {
  * @param data - The verification data.
  * @param contacts - The contacts db accessor.
  * @param emailStatusCache - The emails status cache accessor.
- * @param emailStatusVerifier - The email verification service.
+ * @param emailStatusVerifierFactory - The email verification service.
  */
 async function emailVerificationHandler(
   { userId, email }: EmailVerificationData,
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
-  emailStatusVerifier: EmailStatusVerifier
+  emailStatusVerifierFactory: EmailStatusVerifierFactory
 ) {
   try {
     const existingStatus = await emailStatusCache.get(email);
     if (!existingStatus) {
-      const statusResult = await emailStatusVerifier.verify(email);
+      const statusResult = await emailStatusVerifierFactory
+        .getVerifier(email)
+        .verify(email);
       logger.debug('Got verification results from verifier', {
         statusResult
       });
@@ -44,7 +46,7 @@ async function emailVerificationHandler(
 export default function initializeEmailVerificationProcessor(
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
-  emailStatusVerifier: EmailStatusVerifier
+  emailStatusVerifier: EmailStatusVerifierFactory
 ) {
   return {
     processStreamData: (message: EmailVerificationData) =>

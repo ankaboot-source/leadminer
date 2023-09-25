@@ -32,7 +32,7 @@ export function reacherResultToEmailStatus(
 export function reacherResultToEmailStatusWithDetails(
   reacherResult: EmailCheckOutput
 ): EmailStatusResult {
-  const details = {
+  const details: Details = {
     isRole:
       'is_role_account' in reacherResult.misc
         ? reacherResult.misc.is_role_account
@@ -56,7 +56,8 @@ export function reacherResultToEmailStatusWithDetails(
     hasFullInbox:
       'has_full_inbox' in reacherResult.smtp
         ? reacherResult.smtp.has_full_inbox
-        : undefined
+        : undefined,
+    source: 'reacher'
   };
   return {
     email: reacherResult.input,

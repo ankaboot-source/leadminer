@@ -22,7 +22,7 @@ import initializeEmailVerificationProcessor, {
 const redisClient = redis.getClient();
 const subscriberRedisClient = redis.getSubscriberClient();
 
-const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
+const emailStatusVerifier = new EmailStatusVerifierFactory(ENV, logger);
 const emailStatusCache = new RedisEmailStatusCache(redisClient);
 const contacts = new PgContacts(pool, logger);
 

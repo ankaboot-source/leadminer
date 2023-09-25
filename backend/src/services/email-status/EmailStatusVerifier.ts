@@ -7,6 +7,10 @@ export interface Details {
   hasFullInbox?: boolean;
   isRecentFrom?: boolean;
   hasTimedOut?: boolean;
+  hasPastDeliveryIssues?: boolean;
+  isBlocked?: boolean;
+  isNotFound?: boolean;
+  source?: 'reacher' | 'mailercheck';
 }
 
 export enum Status {
@@ -23,9 +27,6 @@ export interface EmailStatusResult {
 }
 
 export interface EmailStatusVerifier {
-  verify(email: string, abortSignal?: AbortSignal): Promise<EmailStatusResult>;
-  verifyMany(
-    emails: string[],
-    abortSignal?: AbortSignal
-  ): Promise<EmailStatusResult[]>;
+  verify(email: string): Promise<EmailStatusResult>;
+  verifyMany(emails: string[]): Promise<EmailStatusResult[]>;
 }
