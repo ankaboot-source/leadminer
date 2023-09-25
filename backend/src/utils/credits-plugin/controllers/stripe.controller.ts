@@ -71,8 +71,15 @@ export default function initializeStripePaymentController(
           stripeCheckoutSessionId,
           { expand: ['line_items.data.price.tiers'] }
         );
+
+        if (session.customer === null) {
+          throw new Error('customer was not provided.')
+        }
+        
         const customer = {
-          id: session.customer as string,
+          id: typeof session.customer === 'string'
+            ? session.customer
+            : session.customer.id,
           ...session.customer_details
         };
 
