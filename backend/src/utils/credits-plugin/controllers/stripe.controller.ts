@@ -59,7 +59,7 @@ export default function initializeStripePaymentController(
     ) {
       try {
         const baseUrl = `${ENV.FRONTEND_HOST}/credits-success`;
-        const stripeCheckoutSessionId = req.query.checkout_session_id as string;
+        const stripeCheckoutSessionId = req.query.checkout_session_id as string | undefined;
 
         if (!stripeCheckoutSessionId) {
           return res
