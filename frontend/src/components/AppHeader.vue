@@ -13,7 +13,6 @@
         </q-btn>
       </div>
       <q-btn
-        v-show="shouldShowLogout"
         class="q-mr-sm"
         flat
         round
@@ -38,9 +37,8 @@ const router = useRouter();
 const user = ref<User | null>(null);
 
 const shouldShowSettings = computed(
-  () => user.value && window.location.pathname !== "/account"
+  () => window.location.pathname !== "/account"
 );
-const shouldShowLogout = computed(() => Boolean(user.value));
 const shouldShowCreditsBadge = process.env.ENABLE_CREDIT;
 
 function goToSettings() {
