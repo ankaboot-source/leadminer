@@ -36,10 +36,10 @@ const routes: RouteRecordRaw[] = [
     path: "/credits-success",
     name: "Landing post payment",
     component: () =>
-      import("src/billing/pages/CreditsSuccess.vue").catch(() => DashboardPage),
+      import("src/billing/pages/CreditsRefillSuccess.vue").catch(() => DashboardPage),
     beforeEnter: async (_, __, next) => {
       try {
-        await import("src/billing/pages/CreditsSuccess.vue");
+        await import("src/billing/pages/CreditsRefillSuccess.vue");
       } catch (e) {
         next("/dashboard");
       }
