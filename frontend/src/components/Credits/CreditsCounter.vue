@@ -2,18 +2,21 @@
   <div
     :class="`credits-badge flex items-center rounded-borders border-red q-mr-sm ${creditsBadgeState}`"
   >
-    <span class="text-subtitle1 q-pr-xs q-pl-sm">🪙</span>
-    <span
-      v-if="leadminerStore.userCredits === 0"
-      class="text-caption flash-animation"
-    >
-      Out of credits
-    </span>
-    <span v-else>{{ formattedCredits }}</span>
-    <q-tooltip class="text-caption">
-      {{ CREDITS_PER_EMAIL }} credit per email /
-      {{ CREDITS_PER_CONTACT }} credits per contact
-    </q-tooltip>
+    <q-icon class="q-pl-sm" size="1.5rem" name="img:icons/coin.png" />
+    <!-- Coin icon https://icons8.com/icon/OFHwDWASQWmX/coin by Icons8 https://icons8.com -->
+    <div class="q-pl-sm">
+      <span
+        v-if="leadminerStore.userCredits === 0"
+        class="text-caption flash-animation"
+      >
+        Out of credits
+      </span>
+      <span v-else>{{ formattedCredits }}</span>
+      <q-tooltip class="text-caption">
+        {{ CREDITS_PER_EMAIL }} credit per email /
+        {{ CREDITS_PER_CONTACT }} credits per contact
+      </q-tooltip>
+    </div>
   </div>
   <div>
     <q-btn
