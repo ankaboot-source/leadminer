@@ -23,7 +23,7 @@ export default function initializeContactsController(
         );
 
         if ([...newContacts, ...previousExportedContacts].length === 0) {
-          return res.sendStatus(204)
+          return res.sendStatus(204);
         }
 
         if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
@@ -62,7 +62,7 @@ export default function initializeContactsController(
         const minedContacts = await contacts.getContacts(user.id);
 
         if (minedContacts.length === 0) {
-          return res.sendStatus(204)
+          return res.sendStatus(204);
         }
 
         const delimiterOption = req.query.delimiter;
