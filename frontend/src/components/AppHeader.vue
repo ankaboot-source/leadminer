@@ -12,14 +12,7 @@
           {{ user?.email }}
         </q-btn>
       </div>
-      <q-btn
-        class="q-mr-sm"
-        flat
-        round
-        dense
-        icon="logout"
-        @click="logout()"
-      />
+      <q-btn class="q-mr-sm" flat round dense icon="logout" @click="logout()" />
     </q-toolbar>
   </q-header>
 </template>

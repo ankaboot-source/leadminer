@@ -59,7 +59,9 @@ export default function initializeStripePaymentController(
     ) {
       try {
         const baseUrl = `${ENV.FRONTEND_HOST}/credits-success`;
-        const stripeCheckoutSessionId = req.query.checkout_session_id as string | undefined;
+        const stripeCheckoutSessionId = req.query.checkout_session_id as
+          | string
+          | undefined;
 
         if (!stripeCheckoutSessionId) {
           return res
@@ -73,13 +75,14 @@ export default function initializeStripePaymentController(
         );
 
         if (session.customer === null) {
-          throw new Error('customer was not provided.')
+          throw new Error('customer was not provided.');
         }
-        
+
         const customer = {
-          id: typeof session.customer === 'string'
-            ? session.customer
-            : session.customer.id,
+          id:
+            typeof session.customer === 'string'
+              ? session.customer
+              : session.customer.id,
           ...session.customer_details
         };
 
