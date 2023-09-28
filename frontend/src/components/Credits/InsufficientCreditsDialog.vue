@@ -23,7 +23,7 @@
       <q-card-section class="q-pa-lg">
         <p class="text-body1 q-ma-none">
           You don't have enough credits to {{ actionType }} all your
-          {{ allUnits }} {{ engagementType }}.
+          {{ formattedTotal }} {{ engagementType }}.
         </p>
       </q-card-section>
       <q-separator />
@@ -64,19 +64,19 @@ const { engagementType, actionType } = defineProps<{
 
 const showModal = ref(false);
 const showDownloadButton = ref(true);
-const allUnits = ref(0);
+const total = ref(0);
 const available = ref(0);
+
+const formattedTotal = computed(() =>
+  new Intl.NumberFormat().format(total.value)
+);
 
 const closeModal = () => {
   showModal.value = false;
 };
-function openModal(
-  totalUnits: number,
-  newUnits: number,
-  availableUnits: number
-) {
-  allUnits.value = totalUnits + newUnits;
-  available.value = totalUnits + availableUnits;
+function openModal(totalUnits: number, availableUnits: number) {
+  total.value = totalUnits;
+  available.value = availableUnits;
   showDownloadButton.value = available.value !== 0;
   showModal.value = true;
 }
@@ -84,7 +84,9 @@ const executePartialAction = async () => {
   await emit("secondary-action");
   closeModal();
 };
-const downloadActionLabel = computed(() => `Download only ${available.value}`);
+const downloadActionLabel = computed(
+  () => `${actionType} only ${available.value}`
+);
 const buyOrUpgrade = () => {
   refillCreditsOrUpgrade();
 };

@@ -35,9 +35,8 @@ export default function initializeContactsController(
             await creditHandler.validate(user.id, newContacts.length);
 
           const response = {
-            newContacts: newContacts.length,
-            totalContacts: previousExportedContacts.length,
-            availableContacts: insufficientCredits ? 0 : availableUnits
+            total: newContacts.length + previousExportedContacts.length,
+            available: insufficientCredits ? 0 : availableUnits
           };
 
           let statusCode = 200;
