@@ -334,7 +334,6 @@ export default function initializeMiningController(
         } else {
           miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
         }
-
       } catch (err) {
         if (imapConnection) {
           await imapConnectionProvider.releaseConnection(imapConnection);
