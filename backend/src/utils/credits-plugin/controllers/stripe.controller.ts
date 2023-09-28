@@ -58,7 +58,10 @@ export default function initializeStripePaymentController(
       res: Response
     ) {
       try {
-        const stripeCheckoutSessionId = req.query.checkout_session_id as string;
+        const baseUrl = `${ENV.FRONTEND_HOST}/credits-success`;
+        const stripeCheckoutSessionId = req.query.checkout_session_id as
+          | string
+          | undefined;
 
         if (!stripeCheckoutSessionId) {
           return res
@@ -67,29 +70,75 @@ export default function initializeStripePaymentController(
         }
 
         const session = await stripeResolver.checkout.sessions.retrieve(
-          stripeCheckoutSessionId
+          stripeCheckoutSessionId,
+          { expand: ['line_items.data.price.tiers'] }
         );
-        const customer = session.customer_details;
+
+        if (session.customer === null) {
+          throw new Error('customer was not provided.');
+        }
+
+        const customer = {
+          id:
+            typeof session.customer === 'string'
+              ? session.customer
+              : session.customer.id,
+          ...session.customer_details
+        };
 
         if (!customer?.email) {
           throw new Error('Request from Stripe is missing customer email');
         }
 
-        const inviteUserError = await accountResolver.inviteUserByEmail(
-          customer.email
-        );
+        const redirectParams: Record<string, string> = {
+          is_subscription: session.subscription ? 'true' : 'false'
+        };
 
-        if (inviteUserError instanceof Error) {
-          logger.error(
-            `An error occurred when sending the invitation: ${inviteUserError.message}`
-          );
+        const plan = session.line_items?.data[0].price;
+        const credits =
+          plan?.transform_quantity?.divide_by ?? plan?.tiers?.[0].up_to;
+
+        if (!credits) {
+          throw Error('Missing credits.');
         }
 
-        const actionLink = await accountResolver.generateMagicLink(
-          customer.email
-        );
+        redirectParams.credits = credits.toString();
 
-        return res.redirect(actionLink);
+        const userProfile = await accountResolver.getByEmail(customer.email);
+
+        if (!userProfile) {
+          const profile = await accountResolver.create(
+            customer.email,
+            customer.name
+          );
+          await accountResolver.update(profile.user_id, {
+            stripe_subscription_id: session.subscription as string,
+            stripe_customer_id: customer.id,
+            credits
+          });
+
+          const inviteUserError = await accountResolver.inviteUserByEmail(
+            customer.email
+          );
+
+          if (inviteUserError instanceof Error) {
+            logger.error(
+              `An error occurred when sending the invitation: ${inviteUserError.message}`
+            );
+          }
+
+          const actionLink = await accountResolver.generateMagicLink(
+            customer.email
+          );
+
+          redirectParams.redirect_to = actionLink;
+        }
+
+        const redirectURL = `${baseUrl}?${new URLSearchParams(
+          redirectParams
+        ).toString()}`;
+
+        return res.redirect(redirectURL);
       } catch (error) {
         if (error instanceof Error) {
           logger.error(`An error occurred: ${error.message}`);

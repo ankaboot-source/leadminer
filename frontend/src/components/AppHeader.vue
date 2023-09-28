@@ -7,7 +7,7 @@
       <RouterLink to="/dashboard"><AppLogo /></RouterLink>
       <q-space />
       <CreditsCounter v-if="shouldShowCreditsBadge" />
-      <div v-show="shouldShow">
+      <div v-show="shouldShowSettings">
         <q-btn flat class="text-lowercase" @click="goToSettings()">
           {{ user?.email }}
         </q-btn>
@@ -36,7 +36,9 @@ import AppLogo from "./AppLogo.vue";
 const router = useRouter();
 const user = ref<User | null>(null);
 
-const shouldShow = computed(() => window.location.pathname !== "/account");
+const shouldShowSettings = computed(
+  () => window.location.pathname !== "/account"
+);
 const shouldShowCreditsBadge = process.env.ENABLE_CREDIT;
 
 function goToSettings() {
