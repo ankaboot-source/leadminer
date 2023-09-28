@@ -6,12 +6,12 @@
     <!-- Coin icon https://icons8.com/icon/OFHwDWASQWmX/coin by Icons8 https://icons8.com -->
     <div class="q-pl-sm">
       <span
-        v-if="leadminerStore.userCredits === 0"
-        class="text-caption flash-animation"
+        :class="
+          credits < CREDITS_MIN_THRESHOLD ? 'text-caption flash-animation' : ''
+        "
       >
-        Out of credits
+        {{ formattedCredits }}
       </span>
-      <span v-else>{{ formattedCredits }}</span>
       <q-tooltip class="text-caption">
         {{ CREDITS_PER_EMAIL }} credit per email /
         {{ CREDITS_PER_CONTACT }} credits per contact
@@ -49,15 +49,16 @@ onMounted(async () => {
   await leadminerStore.syncUserCredits();
 });
 
+const credits = computed(() => leadminerStore.userCredits);
+
 const formattedCredits = computed(() =>
-  new Intl.NumberFormat().format(leadminerStore.userCredits)
+  credits.value === 0
+    ? "Out of credit"
+    : new Intl.NumberFormat().format(credits.value)
 );
 const creditsBadgeState = computed(() =>
-  leadminerStore.userCredits >= CREDITS_MIN_THRESHOLD
-    ? ""
-    : "text-red  low-credits-badge"
+  credits.value >= CREDITS_MIN_THRESHOLD ? "" : "text-red  low-credits-badge"
 );
-const credits = computed(() => leadminerStore.userCredits);
 
 watch(credits, (newVal: number) => {
   if (newVal === 0) {
