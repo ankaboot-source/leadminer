@@ -219,6 +219,7 @@ async function startMining() {
   }
   try {
     await leadminerStore.startMining();
+    await leadminerStore.syncUserCredits();
     $quasar.notify({
       message: leadminerStore.infoMessage,
       color: "positive",
