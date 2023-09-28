@@ -17,24 +17,7 @@ export default class StripeSubscriptionInvoicePaid {
     const invoiceItem = invoice.lines.data.pop();
 
     const customer = await this.getCustomer(invoice.customer);
-
-    if (!customer.email) {
-      throw new Error('Missing customer email.');
-    }
-
-    const user = await this.userResolver.getByEmail(customer.email);
-
-    if (!user) {
-      throw new Error(
-        `Profile associated with email "${customer.email}" not found!`
-      );
-    }
-
-    if (user.stripe_customer_id === null) {
-      await this.userResolver.update(user.user_id, {
-        stripe_customer_id: customer.id
-      });
-    }
+    const user = await this.createOrRetrieveUser(customer);
 
     const { subscription } = invoice;
 
@@ -43,24 +26,35 @@ export default class StripeSubscriptionInvoicePaid {
 
     const packageCredits = !plan && price?.transform_quantity?.divide_by;
 
-    let profileData: Partial<Profile> = {
-      stripe_customer_id: customer.id
-    };
-
     if (packageCredits) {
-      profileData = {
-        ...profileData,
+      await this.userResolver.update(user.user_id, {
         credits: user.credits + packageCredits
-      };
+      });
     } else if (subscription && plan) {
       const subscriptionCredits = await this.getSubscriptionCredits(plan);
-      profileData = {
-        ...profileData,
+      await this.userResolver.update(user.user_id, {
         credits: user.credits + subscriptionCredits,
         stripe_subscription_id: invoice.subscription
-      };
+      });
     }
-    await this.userResolver.update(user.user_id, profileData);
+  }
+
+  private async createOrRetrieveUser(
+    customer: Stripe.Customer
+  ): Promise<Profile> {
+    if (!customer.id || !customer.email) {
+      throw new Error('Missing required customerID and customerEmail.');
+    }
+
+    const user = await this.userResolver.create(customer.email, customer.name);
+
+    if (user.stripe_customer_id === null) {
+      await this.userResolver.update(user.user_id, {
+        stripe_customer_id: customer.id
+      });
+    }
+
+    return user;
   }
 
   private async getCustomer(customerId: string): Promise<Stripe.Customer> {
