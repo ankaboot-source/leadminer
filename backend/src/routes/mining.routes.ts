@@ -4,11 +4,13 @@ import { MiningSources } from '../db/interfaces/MiningSources';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import { Users } from '../db/interfaces/Users';
 
 export default function initializeMiningRoutes(
   tasksManager: TasksManager,
   miningSource: MiningSources,
-  authResolver: AuthResolver
+  authResolver: AuthResolver,
+  userResolver: Users
 ) {
   const router = Router();
 
@@ -22,7 +24,7 @@ export default function initializeMiningRoutes(
     createGoogleMiningSourceCallback,
     createImapMiningSource,
     getMiningSources
-  } = initializeMiningController(tasksManager, miningSource);
+  } = initializeMiningController(tasksManager, miningSource, userResolver);
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
 
