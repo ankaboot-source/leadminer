@@ -331,9 +331,10 @@ export default function initializeMiningController(
           }
           miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
           await creditHandler?.deduct(user.id, availableUnits);
+        } else {
+          miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
         }
 
-        miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
       } catch (err) {
         if (imapConnection) {
           await imapConnectionProvider.releaseConnection(imapConnection);
