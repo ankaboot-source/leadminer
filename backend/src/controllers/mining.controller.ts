@@ -302,7 +302,7 @@ export default function initializeMiningController(
           fetchEmailBody: ENV.IMAP_FETCH_BODY
         };
 
-        if (ENV.EMAIL_CREDIT && ENV.CONTACT_CREDIT) {
+        if (ENV.EMAIL_CREDIT && ENV.EMAIL_CREDIT) {
           // Get total messages to mine
           const messagesToMine = await new ImapEmailsFetcher(
             imapConnectionProvider,
@@ -317,7 +317,7 @@ export default function initializeMiningController(
 
           const creditHandler = new CreditsHandler(
             userResolver,
-            ENV.CONTACT_CREDIT
+            ENV.EMAIL_CREDIT
           );
           const { insufficientCredits, availableUnits } =
             await creditHandler.validate(user.id, messagesToMine);
