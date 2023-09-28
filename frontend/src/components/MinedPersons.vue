@@ -598,20 +598,16 @@ async function exportTable() {
 }
 
 const openCreditModel = (response: AxiosResponse) => {
-  const { totalContacts, newContacts, availableContacts } = response.data;
+  const { total: totalContacts, available: availableContacts } = response.data;
 
-  if (newContacts === undefined || availableContacts === undefined) {
+  if (totalContacts === undefined || availableContacts === undefined) {
     return $q.notify({
       message: "Error when verifying export CSV",
       color: "negative",
       icon: "error",
     });
   }
-  return CreditsDialogRef.value?.openModal(
-    totalContacts,
-    newContacts,
-    availableContacts
-  );
+  return CreditsDialogRef.value?.openModal(totalContacts, availableContacts);
 };
 
 async function verifyExport() {

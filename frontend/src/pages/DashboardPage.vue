@@ -76,6 +76,12 @@
         </div>
       </q-card>
     </div>
+    <CreditsDialog
+      ref="CreditsDialogRef"
+      engagement-type="messages"
+      action-type="mine"
+      @secondary-action="startMining"
+    />
     <MinedPersons />
   </AppLayout>
 </template>
@@ -93,12 +99,14 @@ import AppLayout from "src/layouts/AppLayout.vue";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import CreditsDialog from "src/components/Credits/InsufficientCreditsDialog.vue";
 
 const leadminerStore = useLeadminerStore();
 const $quasar = useQuasar();
 const $router = useRouter();
 
 const settingsDialogRef = ref<InstanceType<typeof SettingsDialog>>();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const imgUrl = process.env.BANNER_IMAGE_URL;
 
@@ -218,6 +226,14 @@ async function startMining() {
     });
   } catch (error) {
     const provider = leadminerStore.activeMiningSource?.type;
+
+    if (error instanceof AxiosError && error.response?.status === 402) {
+      const { total: totalMessages, available: availableMessages } =
+        error.response.data;
+
+      CreditsDialogRef.value?.openModal(totalMessages, availableMessages);
+      return;
+    }
 
     if (
       error instanceof AxiosError &&
