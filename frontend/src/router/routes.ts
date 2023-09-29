@@ -41,7 +41,7 @@ const routes: RouteRecordRaw[] = [
         () => import("pages/ErrorNotFound.vue")
       )
     ),
-    beforeEnter: async (_, __, next) => {
+    beforeEnter: (_, __, next) => {
       const params = new URLSearchParams(window.location.search);
       const subscription = params.get("is_subscription");
       const credits = parseInt(params.get("credits") ?? "");
