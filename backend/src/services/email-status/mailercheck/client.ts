@@ -3,7 +3,7 @@ import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
 
 export default class MailerCheckClient {
-  private static readonly baseURL: 'https://app.mailercheck.com/api';
+  private static readonly baseURL: 'https://app.mailercheck.com/api/';
 
   private readonly api: AxiosInstance;
 
@@ -19,7 +19,7 @@ export default class MailerCheckClient {
   async verifyEmail(email: string): Promise<MailerCheckResult> {
     try {
       const { data } = await this.api.post<{ status: MailerCheckResult }>(
-        '/check/single',
+        'check/single',
         { email }
       );
 
@@ -32,7 +32,7 @@ export default class MailerCheckClient {
 
   async createList({ emails, name }: CreateListInput): Promise<number> {
     try {
-      const { data } = await this.api.post<ListResponse>('/lists', {
+      const { data } = await this.api.post<ListResponse>('lists', {
         emails,
         name
       });
@@ -46,7 +46,7 @@ export default class MailerCheckClient {
 
   async startListVerification(listId: number): Promise<void> {
     try {
-      await this.api.put(`/lists/${listId}/verify`);
+      await this.api.put(`lists/${listId}/verify`);
     } catch (error) {
       logError(error, '[MailerCheck:startListVerification]', this.logger);
       throw error;
@@ -55,7 +55,7 @@ export default class MailerCheckClient {
 
   async getListStatus(listId: number): Promise<StatusName> {
     try {
-      const { data } = await this.api.get<ListResponse>(`/lists/${listId}`);
+      const { data } = await this.api.get<ListResponse>(`lists/${listId}`);
 
       return data.status.name;
     } catch (error) {
@@ -78,7 +78,7 @@ export default class MailerCheckClient {
         page
       };
       const { data } = await this.api.get<ListVerificationResult>(
-        `/lists/${listId}/results`,
+        `lists/${listId}/results`,
         { params }
       );
 
