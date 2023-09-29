@@ -33,7 +33,7 @@ interface MailerCheckConfig {
 
 export default class EmailStatusVerifierFactory {
   private static readonly OUTLOOK_DOMAIN_REGEX =
-    /\b(?:outlook|hotmail|live|msn)(?:\.[a-z]{2,3}){1,2}\.com\b/;
+    /(?:outlook|hotmail|live|msn)(?:\.[a-z]{2,3}){1,2}$/;
 
   private readonly randomEmailStatusVerifier: EmailStatusVerifier;
 
