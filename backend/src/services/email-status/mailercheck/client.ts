@@ -3,7 +3,7 @@ import { Logger } from 'winston';
 import { logError } from '../../../utils/axios';
 
 export default class MailerCheckClient {
-  private static readonly baseURL: 'https://app.mailercheck.com/api/';
+  private static readonly baseURL = 'https://app.mailercheck.com/api/';
 
   private readonly api: AxiosInstance;
 
