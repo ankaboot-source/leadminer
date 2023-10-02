@@ -23,10 +23,10 @@
       unelevated
       no-caps
       color="amber-13"
-      icon="rocket_launch"
+      icon-right="rocket_launch"
       @click="refillCreditsOrUpgrade"
     >
-      <span class="q-pl-sm">Refill</span>
+      <span class="q-pr-sm">Refill</span>
     </q-btn>
   </div>
 </template>

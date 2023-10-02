@@ -6,6 +6,7 @@ import LoginPage from "src/pages/auth/LoginPage.vue";
 import OAuthConsentErrorPage from "src/pages/auth/OAuthConsentErrorPage.vue";
 import SignupPage from "src/pages/auth/SignupPage.vue";
 import { RouteRecordRaw } from "vue-router";
+import { defineAsyncComponent } from "vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -30,6 +31,26 @@ const routes: RouteRecordRaw[] = [
     },
     meta: {
       isAuthRequired: true,
+    },
+  },
+  {
+    path: "/credits-success",
+    name: "Landing post payment",
+    component: defineAsyncComponent(() =>
+      import("src/billing/pages/CreditsRefillSuccess.vue").catch(
+        () => import("pages/ErrorNotFound.vue")
+      )
+    ),
+    beforeEnter: (_, __, next) => {
+      const params = new URLSearchParams(window.location.search);
+      const subscription = params.get("is_subscription");
+      const credits = parseInt(params.get("credits") ?? "");
+
+      if (!subscription || !credits || Number.isNaN(credits)) {
+        next("/dashboard");
+      } else {
+        next();
+      }
     },
   },
   {

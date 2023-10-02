@@ -62,6 +62,35 @@ module.exports = configure((/* ctx */) => ({
       node: "node16",
     },
 
+    beforeBuild() {
+      /**
+       * This hook runs before Quasar builds the app for production.
+       * It addresses the error "ENOENT: no such file or directory" that breaks the build
+       * process due to the initial absence of billing module files. If the module or its containing
+       * directory is missing, create an empty version of them.
+       */
+      const fs = require("fs");
+      const path = require("path");
+
+      const billingFiles = [
+        // Add more file paths as needed
+        path.resolve(__dirname, "src/billing/pages/CreditsRefillSuccess.vue"),
+      ];
+
+      billingFiles.forEach((billingFilePath) => {
+        const billingDirectoryPath = path.dirname(billingFilePath);
+
+        if (!fs.existsSync(billingDirectoryPath)) {
+          fs.mkdirSync(billingDirectoryPath, { recursive: true });
+        }
+
+        if (!fs.existsSync(billingFilePath)) {
+          const placeholderModuleContent = `<script>\nthrow new Error("Billing module '${billingFilePath}' is missing.")\n</script>;`;
+          fs.writeFileSync(billingFilePath, placeholderModuleContent, "utf-8");
+        }
+      });
+    },
+
     vueRouterMode: "history", // available values: 'hash', 'history'
     // vueRouterBase,
     // vueDevtools,
