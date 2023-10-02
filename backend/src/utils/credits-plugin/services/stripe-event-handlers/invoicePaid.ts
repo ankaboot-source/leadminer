@@ -48,9 +48,12 @@ export default class StripeSubscriptionInvoicePaid {
     };
 
     if (packageCredits) {
+      const quantity = invoiceItem?.quantity;
+      const totalCredits =
+        packageCredits * (quantity && quantity >= 1 ? quantity : 1);
       profileData = {
         ...profileData,
-        credits: user.credits + packageCredits
+        credits: user.credits + totalCredits
       };
     } else if (subscription && plan) {
       const subscriptionCredits = await this.getSubscriptionCredits(plan);
