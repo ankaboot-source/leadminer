@@ -229,10 +229,11 @@ import {
   RealtimePostgresChangesPayload,
   User,
 } from "@supabase/supabase-js";
-import { AxiosError, AxiosResponse } from "axios";
+import { AxiosResponse } from "axios";
 import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
 import { api } from "src/boot/axios";
 import { supabase } from "src/helpers/supabase";
+import { exportCSVError } from "src/helpers/export";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
@@ -254,9 +255,15 @@ let contactsCache = new Map<string, Contact>();
 
 const minedEmails = computed(() => rows.value.length);
 
-const isExportDisabled = computed(() => leadminerStore.loadingStatusDns);
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
+);
+
+const isExportDisabled = computed(
+  () =>
+    rows.value.length === 0 ||
+    activeMiningTask.value ||
+    leadminerStore.loadingStatusDns
 );
 
 let refreshInterval: number;
@@ -550,14 +557,6 @@ function filterFn(rowsToFilter: readonly any[], terms: any) {
 }
 
 async function exportTable() {
-  if (!rows.value.length) {
-    $q.notify({
-      message: "There are no contacts present in the table.",
-      textColor: "negative",
-      color: "red-1",
-    });
-    return;
-  }
   try {
     const currentDatetime = new Date().toISOString().slice(0, 10);
 
@@ -565,6 +564,11 @@ async function exportTable() {
     const email = session.user?.email;
 
     const response = await api.get("/imap/export/csv");
+
+    if (response.status === 204) {
+      return;
+    }
+
     const status = exportFile(
       `leadminer-${email}-${currentDatetime}.csv`,
       response.data,
@@ -572,12 +576,7 @@ async function exportTable() {
     );
 
     if (status !== true) {
-      $q.notify({
-        message: "Browser denied file download...",
-        color: "negative",
-        icon: "warning",
-      });
-      return;
+      throw new Error("Browser denied file download...");
     }
 
     await leadminerStore.syncUserCredits();
@@ -589,17 +588,7 @@ async function exportTable() {
       icon: "task_alt",
     });
   } catch (error) {
-    let message = "Error when exporting to CSV";
-
-    if (error instanceof AxiosError) {
-      message = error.response?.data.message ?? error.message;
-
-      if (message.toLocaleLowerCase() === "network error") {
-        message =
-          "Unable to access server. Please retry again or contact your service provider.";
-      }
-    }
-
+    const message = exportCSVError(error);
     $q.notify({
       message,
       color: "negative",
@@ -609,25 +598,25 @@ async function exportTable() {
 }
 
 const openCreditModel = (response: AxiosResponse) => {
-  const { totalContacts, newContacts, availableContacts } = response.data;
+  const { total: totalContacts, available: availableContacts } = response.data;
 
-  if (newContacts === undefined || availableContacts === undefined) {
+  if (totalContacts === undefined || availableContacts === undefined) {
     return $q.notify({
       message: "Error when verifying export CSV",
       color: "negative",
       icon: "error",
     });
   }
-  return CreditsDialogRef.value?.openModal(
-    totalContacts,
-    newContacts,
-    availableContacts
-  );
+  return CreditsDialogRef.value?.openModal(totalContacts, availableContacts);
 };
 
 async function verifyExport() {
   try {
     const response = await api.get("/imap/export/csv/verify");
+
+    if (response.status === 204) {
+      return Promise.resolve();
+    }
 
     if (response.status !== 206) {
       return await exportTable();
@@ -635,20 +624,7 @@ async function verifyExport() {
 
     return openCreditModel(response);
   } catch (error) {
-    let message = "Error when verifying export CSV";
-
-    if (error instanceof AxiosError) {
-      if (error.response?.status === 402) {
-        return openCreditModel(error.response);
-      }
-
-      message = error.response?.data.message ?? error.message;
-      message =
-        message.toLowerCase() === "network error"
-          ? "Unable to access the server. Please retry or contact your service provider."
-          : message;
-    }
-
+    const message = exportCSVError(error);
     return $q.notify({
       message,
       color: "negative",

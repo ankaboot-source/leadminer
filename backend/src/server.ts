@@ -7,8 +7,6 @@ import PgContacts from './db/pg/PgContacts';
 import PgMiningSources from './db/pg/PgMiningSources';
 import SupabaseUsers from './db/supabase/users';
 import SupabaseAuthResolver from './services/auth/SupabaseAuthResolver';
-import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
-import EmailStatusVerifierFactory from './services/email-status/EmailStatusVerifierFactory';
 import EmailFetcherFactory from './services/factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from './services/factory/SSEBroadcasterFactory';
 import TasksManager from './services/tasks-manager/TasksManager';
@@ -34,8 +32,6 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
-  const emailStatusVerifier = EmailStatusVerifierFactory.create(ENV, logger);
-
   const tasksManager = new TasksManager(
     redis.getSubscriberClient(),
     redis.getClient(),
@@ -51,7 +47,6 @@ console.log(
   const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
-  const emailStatusCache = new RedisEmailStatusCache(redis.getClient());
 
   const app = initializeApp(
     authResolver,
@@ -59,8 +54,6 @@ console.log(
     miningSources,
     contactsResolver,
     userResolver,
-    emailStatusVerifier,
-    emailStatusCache,
     logger
   );
 

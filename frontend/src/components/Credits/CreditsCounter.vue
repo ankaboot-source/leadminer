@@ -2,18 +2,21 @@
   <div
     :class="`credits-badge flex items-center rounded-borders border-red q-mr-sm ${creditsBadgeState}`"
   >
-    <span class="text-subtitle1 q-pr-xs q-pl-sm">🪙</span>
-    <span
-      v-if="leadminerStore.userCredits === 0"
-      class="text-caption flash-animation"
-    >
-      Out of credits
-    </span>
-    <span v-else>{{ formattedCredits }}</span>
-    <q-tooltip class="text-caption">
-      {{ CREDITS_PER_EMAIL }} credit per email /
-      {{ CREDITS_PER_CONTACT }} credits per contact
-    </q-tooltip>
+    <q-icon class="q-pl-sm" size="1.5rem" name="img:icons/coin.png" />
+    <!-- Coin icon https://icons8.com/icon/OFHwDWASQWmX/coin by Icons8 https://icons8.com -->
+    <div class="q-pl-sm">
+      <span
+        :class="
+          credits < CREDITS_MIN_THRESHOLD ? 'text-caption flash-animation' : ''
+        "
+      >
+        {{ formattedCredits }}
+      </span>
+      <q-tooltip class="text-caption">
+        {{ CREDITS_PER_EMAIL }} credit per email /
+        {{ CREDITS_PER_CONTACT }} credits per contact
+      </q-tooltip>
+    </div>
   </div>
   <div>
     <q-btn
@@ -46,15 +49,16 @@ onMounted(async () => {
   await leadminerStore.syncUserCredits();
 });
 
+const credits = computed(() => leadminerStore.userCredits);
+
 const formattedCredits = computed(() =>
-  new Intl.NumberFormat().format(leadminerStore.userCredits)
+  credits.value === 0
+    ? "Out of credit"
+    : new Intl.NumberFormat().format(credits.value)
 );
 const creditsBadgeState = computed(() =>
-  leadminerStore.userCredits >= CREDITS_MIN_THRESHOLD
-    ? ""
-    : "text-red  low-credits-badge"
+  credits.value >= CREDITS_MIN_THRESHOLD ? "" : "text-red  low-credits-badge"
 );
-const credits = computed(() => leadminerStore.userCredits);
 
 watch(credits, (newVal: number) => {
   if (newVal === 0) {

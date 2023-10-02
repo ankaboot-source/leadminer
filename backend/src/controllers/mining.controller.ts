@@ -12,10 +12,14 @@ import {
   generateErrorObjectFromImapError,
   validateImapCredentials
 } from './helpers';
+import ImapEmailsFetcher from '../services/imap/ImapEmailsFetcher';
+import CreditsHandler from '../services/credits/creditHandler';
+import { Users } from '../db/interfaces/Users';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
-  miningSources: MiningSources
+  miningSources: MiningSources,
+  userResolver: Users
 ) {
   return {
     createGoogleMiningSource(_req: Request, res: Response) {
@@ -298,7 +302,38 @@ export default function initializeMiningController(
           fetchEmailBody: ENV.IMAP_FETCH_BODY
         };
 
-        miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
+        if (ENV.EMAIL_CREDIT && ENV.EMAIL_CREDIT) {
+          // Get total messages to mine
+          const messagesToMine = await new ImapEmailsFetcher(
+            imapConnectionProvider,
+            boxes,
+            user.id,
+            miningSourceCredentials.email,
+            'MINING-ID',
+            'STREAM-NAME',
+            ENV.IMAP_FETCH_BODY,
+            ENV.LEADMINER_FETCH_BATCH_SIZE
+          ).getTotalMessages();
+
+          const creditHandler = new CreditsHandler(
+            userResolver,
+            ENV.EMAIL_CREDIT
+          );
+          const { insufficientCredits, availableUnits } =
+            await creditHandler.validate(user.id, messagesToMine);
+
+          if (insufficientCredits || availableUnits !== messagesToMine) {
+            return res.status(creditHandler.INSUFFICIENT_CREDITS_STATUS).json({
+              total: messagesToMine,
+              new: 0,
+              available: 0
+            });
+          }
+          miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
+          await creditHandler?.deduct(user.id, availableUnits);
+        } else {
+          miningTask = await tasksManager.createTask(imapEmailsFetcherOptions);
+        }
       } catch (err) {
         if (imapConnection) {
           await imapConnectionProvider.releaseConnection(imapConnection);
