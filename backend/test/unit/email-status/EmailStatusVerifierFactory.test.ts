@@ -1,6 +1,8 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import EmailStatusVerifierFactory from '../../../src/services/email-status/EmailStatusVerifierFactory';
 import MailerCheckEmailStatusVerifier from '../../../src/services/email-status/mailercheck';
+import RandomEmailStatusVerifier from '../../../src/services/email-status/random';
+import ReacherEmailStatusVerifier from '../../../src/services/email-status/reacher';
 import logger from '../../../src/utils/logger';
 
 jest.mock('../../../src/config', () => ({
@@ -72,4 +74,34 @@ describe('getVerifier', () => {
       expect(verifier).toBeInstanceOf(MailerCheckEmailStatusVerifier);
     }
   );
+
+  it.each([...yahooEmails, ...outlookEmails])(
+    'should use Reacher for yahoo or outlook email "%s" when MailerCheck api key is not provided but Reacher credentials are provided',
+    (email) => {
+      const sut = new EmailStatusVerifierFactory(
+        {
+          REACHER_API_KEY: 'apiKey',
+          ...reacherDefaultConfig
+        },
+        logger
+      );
+
+      const verifier = sut.getVerifier(email);
+
+      expect(verifier).toBeInstanceOf(ReacherEmailStatusVerifier);
+    }
+  );
+
+  it('should fallback to default implementation when Reacher and MailerCheck credentials are not provided', () => {
+    const sut = new EmailStatusVerifierFactory(
+      {
+        ...reacherDefaultConfig
+      },
+      logger
+    );
+
+    const verifier = sut.getVerifier('email@domain.com');
+
+    expect(verifier).toBeInstanceOf(RandomEmailStatusVerifier);
+  });
 });
