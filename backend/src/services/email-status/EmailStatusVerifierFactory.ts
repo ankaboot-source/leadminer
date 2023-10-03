@@ -32,8 +32,8 @@ interface MailerCheckConfig {
 }
 
 export default class EmailStatusVerifierFactory {
-  private static readonly OUTLOOK_DOMAIN_REGEX =
-    /(?:outlook|hotmail|live|msn)(?:\.[a-z]{2,3}){1,2}$/;
+  private static readonly OUTLOOK_OR_YAHOO_DOMAIN_REGEX =
+    /(?:outlook|hotmail|live|msn|yahoo)(?:\.[a-z]{2,3}){1,2}$/;
 
   private readonly randomEmailStatusVerifier: EmailStatusVerifier;
 
@@ -59,7 +59,7 @@ export default class EmailStatusVerifierFactory {
   getVerifier(email: string): EmailStatusVerifier {
     const [, domain] = email.split('@');
     if (
-      EmailStatusVerifierFactory.OUTLOOK_DOMAIN_REGEX.test(domain) &&
+      EmailStatusVerifierFactory.OUTLOOK_OR_YAHOO_DOMAIN_REGEX.test(domain) &&
       this.mailerCheckEmailStatusVerifier
     ) {
       return this.mailerCheckEmailStatusVerifier;
