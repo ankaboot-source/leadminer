@@ -51,7 +51,7 @@ export interface Task {
   type: TaskType;
   category: TaskCategory;
   status: TaskStatus;
-  /* skipcq: JS-0323 - details can contain any values */
+  // skipcq: JS-0323 - details can contain any values
   details: Record<string, any>;
   duration?: number;
   startedAt?: string;
