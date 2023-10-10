@@ -91,7 +91,7 @@ export interface SupabaseTask {
   type: TaskType;
   category: TaskCategory;
   status: TaskStatus;
-  /* tslint:disable-next-line:no-implicit-any */
+  /* skipcq: JS-0323 - details can contain any values */
   details: Record<string, any>;
   started_at?: string;
   stopped_at?: string;
