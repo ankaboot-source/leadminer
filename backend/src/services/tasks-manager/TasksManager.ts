@@ -81,7 +81,7 @@ export default class TasksManager {
    * Generates a unique mining ID for a given user.
    * @returns A Promise that resolves to the unique mining ID.
    */
-  generateMiningId() {
+  private generateMiningId() {
     return this.idGenerator();
   }
 
