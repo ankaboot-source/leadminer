@@ -62,7 +62,7 @@ jest.mock('../../src/utils/redis', () => {
 
 jest.mock('../../src/db/supabase/tasks', () =>
   jest.fn().mockImplementation(() => ({
-    create: jest.fn(() => [undefined]),
+    create: jest.fn(() => undefined),
     update: jest.fn(() => undefined)
   }))
 );
@@ -312,6 +312,8 @@ describe('TasksManager', () => {
         const deletedTask = await tasksManager.deleteTask(task.miningId);
 
         expect(deletedTask).toBeDefined();
+        expect(deletedTask).toEqual(task);
+        expect(() => tasksManager.getActiveTask(deletedTask.miningId)).toThrow(Error);
 
         expect(tasksResolver.update).toHaveBeenCalledWith(
           expect.objectContaining({
