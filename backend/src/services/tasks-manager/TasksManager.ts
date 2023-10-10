@@ -391,7 +391,7 @@ export default class TasksManager {
   private updateProgress(
     miningId: string,
     progressType: TaskProgressType,
-    incrementBy: number = 1
+    incrementBy = 1
   ): TaskProgress | undefined {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
@@ -409,7 +409,7 @@ export default class TasksManager {
         [key: string]: number;
       };
       taskProgress[progressProperty] =
-        (taskProgress[progressProperty] || 0) + incrementBy;
+        (taskProgress[progressProperty] ?? 0) + incrementBy;
       progress[progressProperty] = taskProgress[progressProperty];
     };
 

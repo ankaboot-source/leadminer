@@ -87,7 +87,7 @@ const sseBroadcasterFactory = {
   create: jest.fn(() => mockedProgressHandler)
 };
 
-const miningIdGenerator = jest.fn(async () =>
+const miningIdGenerator = jest.fn(() =>
   Promise.resolve(`test-id-${Math.random().toString(36).substring(2)}`)
 );
 
@@ -205,7 +205,7 @@ describe('TasksManager', () => {
       fakeRedisClient,
       emailFetcherFactory as unknown as EmailFetcherFactory,
       sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
-      miningIdGenerator as any
+      miningIdGenerator
     );
   });
 
@@ -223,7 +223,7 @@ describe('TasksManager', () => {
           fakeRedisClient,
           emailFetcherFactory as unknown as EmailFetcherFactory,
           sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
-          miningIdGenerator as any
+          miningIdGenerator
         );
 
         /* eslint-disable-next-line no-new */
@@ -233,7 +233,7 @@ describe('TasksManager', () => {
           fakeRedisClient,
           emailFetcherFactory as unknown as EmailFetcherFactory,
           sseBroadcasterFactory as unknown as SSEBroadcasterFactory,
-          miningIdGenerator as any
+          miningIdGenerator
         );
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
@@ -313,7 +313,9 @@ describe('TasksManager', () => {
 
         expect(deletedTask).toBeDefined();
         expect(deletedTask).toEqual(task);
-        expect(() => tasksManager.getActiveTask(deletedTask.miningId)).toThrow(Error);
+        expect(() => tasksManager.getActiveTask(deletedTask.miningId)).toThrow(
+          Error
+        );
 
         expect(tasksResolver.update).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -360,7 +362,7 @@ describe('TasksManager', () => {
         expect(retrievedTask).toEqual(createdTask);
       });
 
-      it('should throw an error if the task with the given mining ID does not exist', async () => {
+      it('should throw an error if the task with the given mining ID does not exist', () => {
         expect(() => tasksManager.getActiveTask('test-mining-id')).toThrow(
           Error
         );
@@ -368,7 +370,7 @@ describe('TasksManager', () => {
     });
 
     describe('attachSSE()', () => {
-      it('should throw an error if the task with the given mining ID does not exist', async () => {
+      it('should throw an error if the task with the given mining ID does not exist', () => {
         const miningId = 'testing-mining-id';
         const req = httpMocks.createRequest();
         const res = httpMocks.createResponse();

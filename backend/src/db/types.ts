@@ -1,6 +1,5 @@
 import { Details, Status } from '../services/email-status/EmailStatusVerifier';
 import {
-  Task as MiningTask,
   TaskCategory,
   TaskStatus,
   TaskType
@@ -86,16 +85,14 @@ export interface Profile {
   credits: number;
   stripe_customer_id: string;
 }
-
-export interface Task extends MiningTask {}
-
 export interface SupabaseTask {
   id?: string;
   user_id: string;
   type: TaskType;
   category: TaskCategory;
   status: TaskStatus;
-  details: Record<any, any>;
+  /* tslint:disable-next-line:no-implicit-any */
+  details: Record<string, any>;
   started_at?: string;
   stopped_at?: string;
   duration?: number;

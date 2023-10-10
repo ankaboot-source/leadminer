@@ -51,7 +51,8 @@ export interface Task {
   type: TaskType;
   category: TaskCategory;
   status: TaskStatus;
-  details: Record<any, any>;
+  /* tslint:disable-next-line:no-implicit-any */
+  details: Record<string, any>;
   duration?: number;
   startedAt?: string;
   stoppedAt?: string;
