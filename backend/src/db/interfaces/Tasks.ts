@@ -1,4 +1,5 @@
-import { SupabaseTask, Task } from '../types';
+import { Task } from '../../services/tasks-manager/types';
+import { SupabaseTask } from '../types';
 
 export interface Tasks {
   create(tasks: Task[]): Promise<SupabaseTask[] | undefined>;
