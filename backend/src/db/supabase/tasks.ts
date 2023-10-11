@@ -11,10 +11,10 @@ export default class SupabaseTasks implements Tasks {
   ) {}
 
   /**
-   * Inserts or updates one or more tasks in the Supabase database.
+   * Inserts one or more tasks in the database.
    *
-   * @param tasks - An array of tasks to insert or update.
-   * @returns An array of inserted or updated tasks, or undefined if an error occurred.
+   * @param tasks - An array of tasks to insert.
+   * @returns An array of inserted tasks, or undefined if an error occurred.
    */
   async create(tasks: Task[]): Promise<SupabaseTask[] | undefined> {
     try {
@@ -44,10 +44,10 @@ export default class SupabaseTasks implements Tasks {
   }
 
   /**
-   * Inserts or updates a task in the Supabase database.
+   * Updates a task in the database.
    *
-   * @param task - The task to insert or update.
-   * @returns The inserted or updated task, or undefined if an error occurred.
+   * @param task - The task to update.
+   * @returns The updated task, or undefined if an error occurred.
    */
   async update(task: Task): Promise<SupabaseTask | undefined> {
     try {
