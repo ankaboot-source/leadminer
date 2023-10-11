@@ -261,58 +261,6 @@ export default class TasksManager {
   }
 
   /**
-   * Notifies the client of the progress of a mining task with a given mining ID.
-   *
-   * @param miningId - The ID of the mining task to notify progress for.
-   * @param progressType - The type of progress to notify ('fetched' or 'extracted').
-   * @returns Returns true if the progress was notified successfully, false if the mining task has no progress handler.
-   * @throws {Error} Throws an error if the mining task does not exist.
-   */
-  notifyChanges(miningId: string, progressType: TaskProgressType): void {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (task === undefined) {
-      return;
-    }
-
-    // If the mining task does not exist or has no progress handler, return null
-    if (!task.progressHandlerSSE) {
-      return;
-    }
-
-    const { progressHandlerSSE, process } = task;
-    const { fetch, extract, enrich } = process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      enrich: TaskVerify;
-    };
-    const progress: TaskProgress = {
-      ...fetch.details.progress,
-      ...extract.details.progress,
-      ...enrich.details.progress
-    };
-
-    const eventName = `${progressType}-${miningId}`;
-    const value = progress[`${progressType}`];
-
-    // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched' && fetch.stoppedAt) {
-      progressHandlerSSE.sendSSE(value, 'fetching-finished');
-    }
-
-    if (
-      progressType === 'extracted' &&
-      fetch.stoppedAt &&
-      (progress.extracted >= progress.fetched || extract.stoppedAt)
-    ) {
-      progressHandlerSSE.sendSSE(value, 'extraction-finished');
-    }
-
-    // Send the progress to parties subscribed on SSE
-    progressHandlerSSE.sendSSE(value, eventName);
-  }
-
-  /**
    * Deletes a mining task with a given mining ID.
    *
    * @param miningId - The mining ID of the task to delete.
@@ -352,7 +300,7 @@ export default class TasksManager {
    *
    * @param tasks - An array of mining tasks to stop.
    * @param canceled - Indicates whether the tasks were canceled (default is false).
-   * @returns {Promise<void>} A Promise that resolves when all tasks have been stopped and updated.
+   * @returns A Promise that resolves when all tasks have been stopped and updated.
    */
   private async stopTask(tasks: Task[], canceled = false): Promise<void> {
     const stopPromises = [];
@@ -380,12 +328,63 @@ export default class TasksManager {
   }
 
   /**
+   * Notifies the client of the progress of a mining task with a given mining ID.
+   *
+   * @param miningId - The ID of the mining task to notify progress for.
+   * @param progressType - The type of progress to notify.
+   * @returns
+   */
+  private notifyChanges(miningId: string, progressType: TaskProgressType): void {
+    const task = this.ACTIVE_MINING_TASKS.get(miningId);
+
+    if (task === undefined) {
+      return;
+    }
+
+    if (!task.progressHandlerSSE) {
+      // No progress handler to send updates from.
+      return;
+    }
+
+    const { progressHandlerSSE, process } = task;
+    const { fetch, extract, enrich } = process as {
+      fetch: TaskFetch;
+      extract: TaskExtract;
+      enrich: TaskVerify;
+    };
+    const progress: TaskProgress = {
+      ...fetch.details.progress,
+      ...extract.details.progress,
+      ...enrich.details.progress
+    };
+
+    const eventName = `${progressType}-${miningId}`;
+    const value = progress[`${progressType}`];
+
+    // If the fetching is completed, notify the clients that it has finished.
+    if (progressType === 'fetched' && fetch.stoppedAt) {
+      progressHandlerSSE.sendSSE(value, 'fetching-finished');
+    }
+
+    if (
+      progressType === 'extracted' &&
+      fetch.stoppedAt &&
+      (progress.extracted >= progress.fetched || extract.stoppedAt)
+    ) {
+      progressHandlerSSE.sendSSE(value, 'extraction-finished');
+    }
+
+    // Send the progress to parties subscribed on SSE
+    progressHandlerSSE.sendSSE(value, eventName);
+  }
+
+  /**
    * Updates the progress of a mining task with a given mining ID.
    *
    * @param miningId - The ID of the mining task to update the progress for.
    * @param progressType - The type of progress to update.
    * @param incrementBy - The amount to increment progress by (default is 1).
-   * @returns The updated progress or undefined if there is no task.
+   * @returns The updated progress or `undefined` if there is no task.
    * @throws {Error} Throws an error if the task is not found.
    */
   private updateProgress(
@@ -437,8 +436,7 @@ export default class TasksManager {
    * Check if a mining task has completed and, if so, deletes it.
    *
    * @param miningId - The ID of the mining task to check.
-   * @returns `boolean` indicates if the task has completed and was deleted; otherwise undefined.
-   * @throws {Error} If the task with the specified mining ID doesn't exist.
+   * @returns `boolean` indicates if the task has completed and was deleted. `undefined` if task does not exist.
    */
   private async hasCompleted(miningId: string): Promise<boolean | undefined> {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
