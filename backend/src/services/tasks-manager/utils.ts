@@ -3,7 +3,7 @@
 import { customAlphabet } from 'nanoid/async';
 import ENV from '../../config';
 import { FLICKR_BASE_58_CHARSET } from '../../utils/constants';
-import { RedactedTask, Task } from './types';
+import { MiningTask, RedactedTask } from './types';
 
 /**
  * Removes sensitive data from a task object.
@@ -11,16 +11,12 @@ import { RedactedTask, Task } from './types';
  * @param task - The task object to redact sensitive data from.
  * @returns - A new task object with sensitive data removed.
  */
-export function redactSensitiveData(task: Task): RedactedTask {
+export function redactSensitiveData(task: MiningTask): RedactedTask {
   return {
     userId: task.userId,
     miningId: task.miningId,
     progress: {
       ...task.progress
-    },
-    fetcher: {
-      status: task.fetcher.isCompleted === true ? 'completed' : 'running',
-      folders: task.fetcher.folders
     }
   };
 }
