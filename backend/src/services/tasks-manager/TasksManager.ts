@@ -334,7 +334,10 @@ export default class TasksManager {
    * @param progressType - The type of progress to notify.
    * @returns
    */
-  private notifyChanges(miningId: string, progressType: TaskProgressType): void {
+  private notifyChanges(
+    miningId: string,
+    progressType: TaskProgressType
+  ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
     if (task === undefined) {
