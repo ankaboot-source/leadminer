@@ -6,7 +6,7 @@ CREATE TYPE task_status_enum AS ENUM ('running', 'canceled', 'done');
 -- Create the 'tasks' table
 CREATE TABLE tasks (
     id uuid NOT NULL DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users,
+    user_id UUID,
     status task_status_enum DEFAULT NULL,
     category task_category_enum NOT NULL,
     type task_type_enum NOT NULL,
