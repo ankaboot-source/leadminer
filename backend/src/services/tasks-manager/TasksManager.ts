@@ -11,28 +11,20 @@ import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import {
-  MiningTask,
-  TaskProgressType,
+  FetcherStatus,
+  ProgressType,
   RedisCommand,
   StreamInfo,
   Task,
-  TaskExtract,
-  TaskFetch,
-  TaskProgress,
-  TaskVerify,
-  TaskCategory,
-  TaskType,
-  TaskStatus,
-  RedactedTask
+  TaskProgress
 } from './types';
 import { redactSensitiveData } from './utils';
-import SupabaseTasks from '../../db/supabase/tasks';
 
 export default class TasksManager {
   /**
    * The Map of active mining tasks, with mining ID as the key and mining task object as the value.
    */
-  private readonly ACTIVE_MINING_TASKS = new Map<string, MiningTask>();
+  private readonly ACTIVE_MINING_TASKS = new Map<string, Task>();
 
   private static instance: TasksManager | null;
 
@@ -45,7 +37,6 @@ export default class TasksManager {
    * @param idGenerator - A function that generates unique mining IDs
    */
   constructor(
-    private readonly tasksResolver: SupabaseTasks,
     private readonly redisSubscriber: Redis,
     private readonly redisPublisher: Redis,
     private readonly emailFetcherFactory: EmailFetcherFactory,
@@ -65,10 +56,12 @@ export default class TasksManager {
       const { miningId, progressType, count } = JSON.parse(data);
 
       if (count > 0) {
-        this.updateProgress(miningId, progressType, count);
-        this.notifyChanges(miningId, progressType);
+        const progress = this.updateProgress(miningId, progressType, count);
+        const notified = this.notifyChanges(miningId, progressType);
 
-        await this.hasCompleted(miningId);
+        if (progress !== null && notified !== null) {
+          await this.hasCompleted(miningId, progress);
+        }
       }
     });
   }
@@ -81,7 +74,7 @@ export default class TasksManager {
    * Generates a unique mining ID for a given user.
    * @returns A Promise that resolves to the unique mining ID.
    */
-  private generateMiningId() {
+  generateMiningId() {
     return this.idGenerator();
   }
 
@@ -134,88 +127,26 @@ export default class TasksManager {
       });
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
-      const miningTask: MiningTask = {
+      const miningTask: Task = {
         stream,
         userId,
+        fetcher,
         miningId,
+        startedAt: performance.now(),
         progressHandlerSSE,
-        process: {
-          fetch: {
-            userId,
-            category: TaskCategory.Mining,
-            type: TaskType.Fetch,
-            status: TaskStatus.Running,
-            instance: fetcher,
-            details: {
-              miningId,
-              stream,
-              progress: {
-                totalMessages: await fetcher.getTotalMessages(),
-                folders: fetcher.folders,
-                fetched: 0
-              }
-            }
-          },
-          extract: {
-            userId,
-            category: TaskCategory.Mining,
-            type: TaskType.Extract,
-            status: TaskStatus.Running,
-            details: {
-              miningId,
-              stream,
-              progress: {
-                extracted: 0
-              }
-            }
-          },
-          enrich: {
-            userId,
-            category: TaskCategory.Enrich,
-            type: TaskType.Enrich,
-            status: TaskStatus.Running,
-            details: {
-              miningId,
-              stream,
-              progress: {
-                verifiedContacts: 0,
-                createdContacts: 0
-              }
-            }
-          }
-        },
         progress: {
-          totalMessages: 0,
+          totalMessages: await fetcher.getTotalMessages(),
           fetched: 0,
           extracted: 0,
           verifiedContacts: 0,
           createdContacts: 0
-        },
-        startedAt: performance.now()
-      };
-
-      const { progress, process } = miningTask;
-      const { fetch, extract, enrich } = process as {
-        fetch: TaskFetch;
-        extract: TaskExtract;
-        enrich: TaskVerify;
-      };
-
-      progress.totalMessages = fetch.details.progress.totalMessages;
-
-      (await this.tasksResolver.create([fetch, extract, enrich]))?.forEach(
-        (task) => {
-          const { id: TaskId, started_at: startedAt } = task;
-          miningTask.process[`${task.type}`].id = TaskId;
-          miningTask.process[`${task.type}`].startedAt = startedAt;
         }
-      );
+      };
 
-      this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
-      fetch.instance.start();
-
+      fetcher.start();
       await this.pubsubSendMessage(miningId, 'REGISTER', stream);
 
+      this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
       this.redisSubscriber.subscribe(miningId, (err) => {
         if (err) {
           logger.error('Failed subscribing to Redis.', err);
@@ -262,30 +193,31 @@ export default class TasksManager {
 
   /**
    * Deletes a mining task with a given mining ID.
-   *
    * @param miningId - The mining ID of the task to delete.
-   * @returns The deleted task.
+   * @param killEmailVerificationImmediately - A flag that indicates whether we should also obliterate the background email verification task.
+   * @returns Returns the deleted task.
    * @throws {Error} Throws an error if the task with the given mining ID does not exist.
    */
-  async deleteTask(miningId: string): Promise<RedactedTask> {
+  async deleteTask(miningId: string) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (!task) {
+    if (task === undefined) {
       throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
     }
 
-    const { progressHandlerSSE, stream, startedAt, progress, process } = task;
-    const tasks = Object.values(process).filter((p) => !p.stoppedAt);
+    const { fetcher, progressHandlerSSE, stream, startedAt, progress } = task;
+
+    this.ACTIVE_MINING_TASKS.delete(miningId);
 
     try {
-      this.ACTIVE_MINING_TASKS.delete(miningId);
       progressHandlerSSE.stop();
-      // Stop all associated tasks and mark them as canceled
-      await this.stopTask(tasks, true);
       await this.pubsubSendMessage(miningId, 'DELETE', stream);
+
+      await fetcher.stop();
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
+
     logger.info(
       `Mining task took ${((performance.now() - startedAt) / 1000).toFixed(
         2
@@ -296,196 +228,102 @@ export default class TasksManager {
   }
 
   /**
-   * Stops one or more mining tasks and updates their status and timestamps.
-   *
-   * @param tasks - An array of mining tasks to stop.
-   * @param canceled - Indicates whether the tasks were canceled (default is false).
-   * @returns A Promise that resolves when all tasks have been stopped and updated.
-   */
-  private async stopTask(tasks: Task[], canceled = false): Promise<void> {
-    const stopPromises = [];
-
-    for (const task of tasks) {
-      task.stoppedAt = new Date().toUTCString();
-
-      if (task.duration === undefined && task.startedAt) {
-        const startedAt = new Date(task.startedAt).getTime();
-        const stoppedAt = new Date(task.stoppedAt).getTime();
-        const durationInMilliSeconds = stoppedAt - startedAt;
-        task.duration = durationInMilliSeconds;
-      }
-
-      task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
-
-      if (task.type === 'fetch') {
-        stopPromises.push((task as TaskFetch).instance.stop());
-      }
-
-      stopPromises.push(this.tasksResolver.update(task));
-    }
-
-    await Promise.all(stopPromises);
-  }
-
-  /**
    * Notifies the client of the progress of a mining task with a given mining ID.
-   *
    * @param miningId - The ID of the mining task to notify progress for.
-   * @param progressType - The type of progress to notify.
-   * @returns
+   * @param progressType - The type of progress to notify ('fetched' or 'extracted').
+   * @returns Returns null if the mining task does not exist.
    */
-  private notifyChanges(
-    miningId: string,
-    progressType: TaskProgressType
-  ): void {
+  notifyChanges(miningId: string, progressType: ProgressType) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (task === undefined) {
-      return;
+    // If the mining task does not exist or has no progress handler, return null
+    if (!task?.progressHandlerSSE) {
+      return null;
     }
 
-    if (!task.progressHandlerSSE) {
-      // No progress handler to send updates from.
-      return;
-    }
-
-    const { progressHandlerSSE, process } = task;
-    const { fetch, extract, enrich } = process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      enrich: TaskVerify;
-    };
-    const progress: TaskProgress = {
-      ...fetch.details.progress,
-      ...extract.details.progress,
-      ...enrich.details.progress
-    };
+    const { fetcher, progressHandlerSSE, progress } = task;
 
     const eventName = `${progressType}-${miningId}`;
     const value = progress[`${progressType}`];
 
     // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched' && fetch.stoppedAt) {
+    if (progressType === 'fetched' && fetcher.isCompleted) {
       progressHandlerSSE.sendSSE(value, 'fetching-finished');
     }
 
     if (
       progressType === 'extracted' &&
-      fetch.stoppedAt &&
-      (progress.extracted >= progress.fetched || extract.stoppedAt)
+      fetcher.isCompleted &&
+      progress.extracted >= progress.fetched
     ) {
       progressHandlerSSE.sendSSE(value, 'extraction-finished');
     }
 
     // Send the progress to parties subscribed on SSE
-    progressHandlerSSE.sendSSE(value, eventName);
+    return progressHandlerSSE.sendSSE(value, eventName);
   }
 
   /**
    * Updates the progress of a mining task with a given mining ID.
-   *
    * @param miningId - The ID of the mining task to update the progress for.
-   * @param progressType - The type of progress to update.
+   * @param progressType - The type of progress to update ('fetched' or 'extracted').
    * @param incrementBy - The amount to increment progress by (default is 1).
-   * @returns The updated progress or `undefined` if there is no task.
-   * @throws {Error} Throws an error if the task is not found.
+   * @returns An object containing the updated mining progress, or null if task is not found.
+   * @throws {Error} Throws an error if the `progressType` parameter is not set to either 'fetched' or 'extracted'.
    */
   private updateProgress(
     miningId: string,
-    progressType: TaskProgressType,
+    progressType: ProgressType,
     incrementBy = 1
-  ): TaskProgress | undefined {
+  ) {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (!task) {
-      return undefined;
+    if (task === undefined) {
+      return null;
     }
 
-    const { progress, process } = task;
+    const { progress, fetcher } = task;
 
-    const update = (
-      taskProperty: keyof typeof process,
-      progressProperty: keyof TaskProgress
-    ) => {
-      const taskProgress = process[taskProperty].details.progress as {
-        [key: string]: number;
-      };
-      taskProgress[progressProperty] =
-        (taskProgress[progressProperty] ?? 0) + incrementBy;
-      progress[progressProperty] = taskProgress[progressProperty];
-    };
+    progress[`${progressType}`] =
+      (progress[`${progressType}`] || 0) + incrementBy;
 
-    switch (progressType) {
-      case 'fetched':
-        update('fetch', 'fetched');
-        break;
+    const fetcherStatus: FetcherStatus = fetcher.isCompleted
+      ? 'completed'
+      : 'running';
 
-      case 'extracted':
-        update('extract', 'extracted');
-        break;
-
-      case 'createdContacts':
-      case 'verifiedContacts':
-        update('enrich', progressType);
-        break;
-
-      default:
-    }
-
-    return { ...progress };
+    return { ...progress, fetcherStatus };
   }
 
   /**
-   * Check if a mining task has completed and, if so, deletes it.
-   *
+   * Checks whether a mining task has completed and deletes it if it has.
+   * @async
    * @param miningId - The ID of the mining task to check.
-   * @returns `boolean` indicates if the task has completed and was deleted. `undefined` if task does not exist.
+   * @param progress - An object containing the extracted and fetched progress for the task.
+   * @returns An object containing the status of the task and the task itself (if it has been deleted).
    */
-  private async hasCompleted(miningId: string): Promise<boolean | undefined> {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (!task) {
-      return undefined;
-    }
-
-    const { fetch, extract, enrich } = task.process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      enrich: TaskVerify;
-    };
-    const progress: TaskProgress = {
-      ...fetch.details.progress,
-      ...extract.details.progress,
-      ...enrich.details.progress
-    };
-
+  private async hasCompleted(
+    miningId: string,
+    {
+      extracted,
+      fetched,
+      fetcherStatus,
+      verifiedContacts,
+      createdContacts
+    }: TaskProgress
+  ) {
     logger.debug('Task progress update', {
-      ...progress
+      extracted,
+      fetched,
+      verifiedContacts,
+      createdContacts
     });
-
-    if (!fetch.stoppedAt && fetch.instance.isCompleted) {
-      await this.stopTask([fetch]);
-    }
-
-    if (
-      !extract.stoppedAt &&
-      fetch.stoppedAt &&
-      progress.extracted >= progress.fetched
-    ) {
-      await this.stopTask([extract]);
-    }
-
     const status =
-      fetch.stoppedAt !== undefined &&
-      extract.stoppedAt !== undefined &&
-      progress.verifiedContacts >= progress.createdContacts;
+      fetcherStatus === 'completed' &&
+      extracted >= fetched &&
+      verifiedContacts >= createdContacts;
+    const task = status ? await this.deleteTask(miningId) : null;
 
-    if (status) {
-      await this.stopTask([enrich]);
-      await this.deleteTask(miningId);
-    }
-
-    return status;
+    return { status, task };
   }
 
   /**

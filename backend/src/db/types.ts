@@ -1,9 +1,4 @@
 import { Details, Status } from '../services/email-status/EmailStatusVerifier';
-import {
-  TaskCategory,
-  TaskStatus,
-  TaskType
-} from '../services/tasks-manager/types';
 
 export interface ExtractionResult {
   message: Message;
@@ -84,16 +79,4 @@ export interface Profile {
   name: string;
   credits: number;
   stripe_customer_id: string;
-}
-export interface SupabaseTask {
-  id?: string;
-  user_id: string;
-  type: TaskType;
-  category: TaskCategory;
-  status: TaskStatus;
-  // skipcq: JS-0323 - details can contain any values
-  details: Record<string, any>;
-  started_at?: string;
-  stopped_at?: string;
-  duration?: number;
 }

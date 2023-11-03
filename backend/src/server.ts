@@ -14,7 +14,6 @@ import { flickrBase58IdGenerator } from './services/tasks-manager/utils';
 import logger from './utils/logger';
 import redis from './utils/redis';
 import supabaseClient from './utils/supabase';
-import SupabaseTasks from './db/supabase/tasks';
 
 // eslint-disable-next-line no-console
 console.log(
@@ -33,6 +32,13 @@ console.log(
   await redis.flushAll();
   await redis.initProviders();
 
+  const tasksManager = new TasksManager(
+    redis.getSubscriberClient(),
+    redis.getClient(),
+    new EmailFetcherFactory(),
+    new SSEBroadcasterFactory(),
+    flickrBase58IdGenerator()
+  );
   const miningSources = new PgMiningSources(
     pool,
     logger,
@@ -41,15 +47,7 @@ console.log(
   const authResolver = new SupabaseAuthResolver(supabaseClient, logger);
   const contactsResolver = new PgContacts(pool, logger);
   const userResolver = new SupabaseUsers(supabaseClient, logger);
-  const tasksResolver = new SupabaseTasks(supabaseClient, logger);
-  const tasksManager = new TasksManager(
-    tasksResolver,
-    redis.getSubscriberClient(),
-    redis.getClient(),
-    new EmailFetcherFactory(),
-    new SSEBroadcasterFactory(),
-    flickrBase58IdGenerator()
-  );
+
   const app = initializeApp(
     authResolver,
     tasksManager,
