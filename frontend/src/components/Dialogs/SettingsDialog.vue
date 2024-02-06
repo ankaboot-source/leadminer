@@ -289,9 +289,7 @@ const props = defineProps({
   totalEmails: { type: Number, required: true },
   isLoadingBoxes: { type: Boolean, required: true },
 });
-const emit = defineEmits<{
-  (e: "get-boxes"): void;
-}>();
+const emit = defineEmits<(e: "get-boxes") => void>();
 
 const leadminerStore = useLeadminerStore();
 const $quasar = useQuasar();
