@@ -55,7 +55,7 @@
                 round
                 dense
                 size="lg"
-                @click="openDialog"
+                @click="openAdvancedOptionsDialog"
               >
                 <q-tooltip> Advanced options </q-tooltip>
               </q-btn>
@@ -180,7 +180,7 @@ const totalEmails = computed<number>(() => {
   return 0;
 });
 
-function openDialog() {
+function openAdvancedOptionsDialog() {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   settingsDialogRef.value!.open();
 }
@@ -207,16 +207,16 @@ async function stopMining() {
 
 // eslint-disable-next-line consistent-return
 async function startMining() {
-  isLoadingStartMining.value = true;
   if (selectedBoxes.value.length === 0) {
-    isLoadingStartMining.value = false;
+    openAdvancedOptionsDialog();
     $quasar.notify({
-      message: "Select at least one folder",
+      message: "Please select at least one folder to start mining.",
       color: "warning",
       icon: "error",
     });
     return;
   }
+  isLoadingStartMining.value = true;
   try {
     await leadminerStore.startMining();
     await leadminerStore.syncUserCredits();
