@@ -52,25 +52,21 @@
       />
 
       <div class="q-gutter-md flex flex-center row">
-        <q-btn
-          :loading="isLoading"
-          no-caps
-          unelevated
-          :size="buttonSize"
-          icon="img:icons/google.png"
+        <oauth-button
+          align="center"
           label="Google"
+          icon="img:icons/google.png"
           class="text-h6 text-weight-less-regular secondary-button"
-          @click="loginWithOAuth('google')"
-        />
-        <q-btn
-          :loading="isLoading"
-          no-caps
           :size="buttonSize"
-          unelevated
-          class="text-h6 text-weight-less-regular secondary-button"
-          icon="img:icons/microsoft.png"
+          source="google"
+        />
+        <oauth-button
+          align="center"
           label="Microsoft"
-          @click="loginWithOAuth('azure')"
+          icon="img:icons/microsoft.png"
+          class="text-h6 text-weight-less-regular secondary-button"
+          :size="buttonSize"
+          source="azure"
         />
       </div>
 
@@ -110,6 +106,7 @@ import { passwordRules } from "src/helpers/password";
 import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
 import { computed, ref } from "vue";
+import OauthButton from "src/components/Auth/OauthButton.vue";
 
 const $quasar = useQuasar();
 
@@ -144,33 +141,6 @@ async function signUp() {
     if (e instanceof Error) {
       $quasar.notify({
         message: `Failed to signup: ${e.message}`,
-        color: "negative",
-        icon: "error",
-      });
-    }
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function loginWithOAuth(provider: "google" | "azure") {
-  isLoading.value = true;
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        skipBrowserRedirect: false,
-        redirectTo: `${window.location.origin}/dashboard`,
-        scopes: "email",
-      },
-    });
-    if (error) {
-      throw error;
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      $quasar.notify({
-        message: `Failed to connect with ${provider}: ${error.message}`,
         color: "negative",
         icon: "error",
       });
