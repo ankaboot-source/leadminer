@@ -9,7 +9,7 @@
         :class="
           credits < CREDITS_MIN_THRESHOLD
             ? 'text-caption flash-animation'
-            : 'text-caption text-black'
+            : 'text-caption'
         "
       >
         {{ formattedCredits }}
