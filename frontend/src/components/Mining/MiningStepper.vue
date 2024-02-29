@@ -106,7 +106,7 @@
         />
         <q-stepper-navigation class="text-right">
           <q-btn
-            v-if="!activeMiningTask"
+            v-if="!activeMiningTask && !leadminerStore.isLoadingBoxes"
             flat
             color="secondary"
             no-caps
