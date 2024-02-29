@@ -6,8 +6,8 @@
     icon="arrow_forward_ios"
     :nodes="leadminerStore.boxes"
     node-key="path"
-    color="teal"
-    control-color="teal"
+    color="primary"
+    control-color="primary"
     tick-strategy="leaf"
   >
     <template #default-header="prop">
