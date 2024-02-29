@@ -242,7 +242,7 @@ async function getBoxes() {
   }
 }
 
-watch(sourceModel, async (selectedSource) => {
+watch(sourceModel, (selectedSource) => {
   leadminerStore.boxes = [];
   leadminerStore.selectedBoxes = [];
   leadminerStore.activeMiningSource = selectedSource;
