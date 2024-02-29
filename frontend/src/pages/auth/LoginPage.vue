@@ -8,28 +8,21 @@
       <div class="text-center q-mb-md">
         <p class="text-h4 text-bold merriweather">Welcome back!</p>
       </div>
-
-      <q-btn
-        no-caps
-        :loading="isLoading"
-        :size="buttonSize"
+      <oauth-button
         align="left"
-        unelevated
-        class="full-width text-h6 text-weight-less-regular secondary-button"
-        icon="img:icons/google.png"
         label="Continue with Google"
-        @click="loginWithOAuth('google')"
-      />
-      <q-btn
-        no-caps
-        :loading="isLoading"
-        :size="buttonSize"
+        icon="img:icons/google.png"
         class="full-width text-h6 text-weight-less-regular secondary-button"
+        :size="buttonSize"
+        source="google"
+      />
+      <oauth-button
         align="left"
-        unelevated
-        icon="img:icons/microsoft.png"
         label="Continue with Microsoft"
-        @click="loginWithOAuth('azure')"
+        icon="img:icons/microsoft.png"
+        class="full-width text-h6 text-weight-less-regular secondary-button"
+        :size="buttonSize"
+        source="azure"
       />
 
       <HorizontalSeparator
@@ -109,7 +102,6 @@
 </template>
 
 <script setup lang="ts">
-import { Provider } from "@supabase/supabase-js";
 import { useQuasar } from "quasar";
 import HorizontalSeparator from "src/components/HorizontalSeparator.vue";
 import { emailRules } from "src/helpers/email";
@@ -117,6 +109,7 @@ import { supabase } from "src/helpers/supabase";
 import AuthLayout from "src/layouts/AuthLayout.vue";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
+import OauthButton from "src/components/Auth/OauthButton.vue";
 
 const $quasar = useQuasar();
 const $router = useRouter();
@@ -141,33 +134,6 @@ async function loginWithEmailAndPassword() {
       throw error;
     }
     await $router.push("/dashboard");
-  } catch (error) {
-    if (error instanceof Error) {
-      $quasar.notify({
-        message: error.message,
-        color: "negative",
-        icon: "error",
-      });
-    }
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-async function loginWithOAuth(provider: Provider) {
-  isLoading.value = true;
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        skipBrowserRedirect: false,
-        redirectTo: `${window.location.origin}/dashboard`,
-        scopes: "email",
-      },
-    });
-    if (error) {
-      throw error;
-    }
   } catch (error) {
     if (error instanceof Error) {
       $quasar.notify({

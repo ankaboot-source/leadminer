@@ -7,7 +7,9 @@
     <div class="q-pl-sm">
       <span
         :class="
-          credits < CREDITS_MIN_THRESHOLD ? 'text-caption flash-animation' : ''
+          credits < CREDITS_MIN_THRESHOLD
+            ? 'text-caption flash-animation'
+            : 'text-caption'
         "
       >
         {{ formattedCredits }}

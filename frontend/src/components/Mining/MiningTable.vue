@@ -48,7 +48,7 @@
         </q-input>
         <div class="q-px-sm">
           <q-btn
-            color="teal-5"
+            color="primary"
             icon="archive"
             label="Export to CSV"
             no-caps
@@ -237,8 +237,8 @@ import { exportCSVError } from "src/helpers/export";
 import { useLeadminerStore } from "src/stores/leadminer";
 import { Contact, EmailStatusScore } from "src/types/contact";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import CreditsDialog from "./Credits/InsufficientCreditsDialog.vue";
-import ValidityIndicator from "./ValidityIndicator.vue";
+import CreditsDialog from "src/components/Credits/InsufficientCreditsDialog.vue";
+import ValidityIndicator from "src/components/ValidityIndicator.vue";
 
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 

@@ -151,6 +151,10 @@ a:hover {
   font-family: "Merriweather";
 }
 
+.borders {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
 .text-weight-less-regular {
   font-weight: 300;
 }
@@ -166,8 +170,9 @@ a:hover {
   height: 2.2rem;
   border: 1px solid;
   border-color: #abb1ba;
-  color: #03c8a8;
+  color: #000000;
 }
+
 .low-credits-badge {
   border-color: red;
 }
