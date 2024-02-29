@@ -22,6 +22,10 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const errorMessage = ref("");
   const infoMessage = ref("");
 
+  const isLoadingStartMining = ref(false);
+  const isLoadingStopMining = ref(false);
+  const isLoadingBoxes = ref(false);
+
   const isLoadingSources = ref(false);
   const loadingStatus = ref(false);
   const loadingStatusDns = ref(false);
@@ -50,6 +54,9 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     errorMessage.value = "";
     infoMessage.value = "";
 
+    isLoadingStartMining.value = false;
+    isLoadingStopMining.value = false;
+    isLoadingBoxes.value = false;
     isLoadingSources.value = false;
     loadingStatus.value = false;
     loadingStatusDns.value = false;
@@ -81,9 +88,6 @@ export const useLeadminerStore = defineStore("leadminer", () => {
         sources: MiningSource[];
       }>("/imap/mine/sources");
       miningSources.value = data.sources;
-      if (data.sources.length > 0) {
-        activeMiningSource.value = data.sources.at(-1); // Use the newest mining source as a default
-      }
     } catch (error) {
       let message = "Something unexpected happend.";
 
@@ -299,6 +303,9 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     selectedBoxes,
     errorMessage,
     infoMessage,
+    isLoadingStartMining,
+    isLoadingStopMining,
+    isLoadingBoxes,
     isLoadingSources,
     loadingStatus,
     loadingStatusDns,

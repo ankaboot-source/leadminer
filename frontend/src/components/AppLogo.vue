@@ -1,7 +1,7 @@
 <template>
   <q-chip color="transparent">
     <q-avatar class="logo" size="25px">
-      <img src="/icons/favicon-128x128.png" />
+      <img src="/icons/pickaxe.svg" />
     </q-avatar>
     <q-img src="/logo/LogoWithoutIcon.png" width="9rem" />
   </q-chip>
