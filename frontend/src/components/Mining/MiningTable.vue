@@ -36,7 +36,7 @@
           dense
           standout
           outlined
-          color="teal-5"
+          color="primary-5"
           class="q-pr-sm q-pl-lg"
           style="width: 25vw"
           debounce="700"
@@ -157,7 +157,7 @@
             flat
             round
             size="xs"
-            color="teal"
+            color="primary"
             class="q-mr-none"
             icon="content_copy"
             @click="
@@ -182,8 +182,8 @@
           <q-badge
             v-for="tag in props.row.tags"
             :key="tag"
-            color="teal-1"
-            class="q-pa-xs text-uppercase text-teal-8 q-mx-xs"
+            color="blue-1"
+            class="q-pa-xs text-uppercase text-primary q-mx-xs"
           >
             {{ tag }}
           </q-badge>
@@ -210,7 +210,7 @@
       </template>
 
       <template #loading>
-        <q-inner-loading showing color="teal" :label="loadingLabel">
+        <q-inner-loading showing color="primary" :label="loadingLabel">
         </q-inner-loading>
       </template>
     </q-table>
