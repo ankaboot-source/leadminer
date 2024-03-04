@@ -3,9 +3,7 @@
     <q-card>
       <q-card-section class="q-pr-lg q-pl-lg">
         <div class="row items-center">
-          <q-title class="text-h6 q-ma-none"
-            >Oops! Running low on credits 😅</q-title
-          >
+          <div class="text-h6 q-ma-none">Oops! Running low on credits 😅</div>
           <!-- Close Button at Top-Right -->
           <div class="q-ml-auto">
             <q-btn
@@ -54,7 +52,7 @@
 
 <script setup lang="ts">
 import { refillCreditsOrUpgrade } from "src/helpers/credits";
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 
 const emit = defineEmits(["secondary-action"]);
 const { engagementType, actionType } = defineProps<{
