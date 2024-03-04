@@ -1,4 +1,4 @@
-name: leadminer-prod
+name: Leadminer-prod
 on:
   workflow_dispatch
 jobs:

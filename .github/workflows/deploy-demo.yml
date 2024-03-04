@@ -1,4 +1,4 @@
-name: leadminer-demo
+name: Leadminer-demo
 on:
   push:
     branches: [main]

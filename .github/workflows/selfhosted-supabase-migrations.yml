@@ -1,4 +1,4 @@
-name: Self hosted Supabase migrations
+name: Self-hosted Supabase migrations
 on:
   push:
     branches: [main]
