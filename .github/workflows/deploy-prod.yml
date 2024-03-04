@@ -1,11 +1,11 @@
-name: Deploy Leadminer Prod
+name: Leadminer-prod
 on:
   workflow_dispatch
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy Leadminer
+      - name: Deploy Leadminer Prod
         uses: appleboy/ssh-action@master
         with:
           host: ${{vars.SSH_HOST_LEADMINER}} # IP address of the server

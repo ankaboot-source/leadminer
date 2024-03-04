@@ -63,7 +63,6 @@
           />
         </q-stepper-navigation>
       </q-step>
-
       <q-step :name="3" title="Start mining" icon="bolt" active-icon="done">
         <div class="text-center text-h6 text-bold q-pb-md">
           Discover hidden gems in your social network
