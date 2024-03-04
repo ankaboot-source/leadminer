@@ -52,10 +52,18 @@
           :class="[labelClass]"
           class="text-blue-grey-14 text-center text-h6 text-weight-medium"
         >
-          <span class="text-weight-bolder q-mr-xs">
-            {{ totalEmails.toLocaleString() }}
-          </span>
-          email messages to mine.
+          <div v-if="leadminerStore.isLoadingBoxes">
+            <span class="text-weight-bolder q-mr-xs">
+              <q-spinner class="on-left" />
+            </span>
+            Retrieving mailboxes...
+          </div>
+          <div v-else>
+            <span class="text-weight-bolder q-mr-xs">
+              {{ totalEmails.toLocaleString() }}
+            </span>
+            email messages to mine.
+          </div>
         </div>
 
         <div
