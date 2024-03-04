@@ -28,7 +28,6 @@
           use-chips
           stack-label
           :options="sourceOptions"
-          label="Linked Emails"
         />
         <q-stepper-navigation class="text-right">
           <q-btn
@@ -40,6 +39,7 @@
           />
           <q-btn
             class="text-black q-ml-sm"
+            :disable="!leadminerStore.activeMiningSource"
             unelevated
             color="amber-13"
             no-caps
@@ -80,14 +80,6 @@
             label="Back"
             @click="stepper.previous()"
           />
-          <q-btn
-            class="text-black q-ml-xs"
-            unelevated
-            color="amber-13"
-            no-caps
-            label="Continue"
-            @click="stepper.next()"
-          />
         </q-stepper-navigation>
       </q-step>
 
@@ -106,7 +98,7 @@
         />
         <q-stepper-navigation class="text-right">
           <q-btn
-            v-if="!activeMiningTask && !leadminerStore.isLoadingBoxes"
+            v-if="!activeMiningTask"
             flat
             color="secondary"
             no-caps
@@ -115,6 +107,10 @@
           />
           <q-btn
             v-if="!activeMiningTask"
+            :disable="
+              leadminerStore.isLoadingStartMining ||
+              leadminerStore.isLoadingBoxes
+            "
             no-caps
             outline
             label="Fine tune mining"
@@ -124,7 +120,11 @@
           </q-btn>
           <q-btn
             v-if="!activeMiningTask"
-            :disable="activeMiningTask || leadminerStore.isLoadingStartMining"
+            :disable="
+              activeMiningTask ||
+              leadminerStore.isLoadingStartMining ||
+              leadminerStore.isLoadingBoxes
+            "
             :loading="leadminerStore.isLoadingStartMining"
             no-caps
             unelevated
@@ -138,7 +138,6 @@
             <template #loading>
               Start mining now!
               <q-spinner class="on-right" />
-              <q-tooltip> Retrieving mailboxes... </q-tooltip>
             </template>
           </q-btn>
           <q-btn
@@ -227,7 +226,6 @@ onMounted(async () => {
 async function getBoxes() {
   try {
     leadminerStore.isLoadingBoxes = true;
-    leadminerStore.isLoadingStartMining = true;
     await leadminerStore.getBoxes();
   } catch (_) {
     $quasar.notify({
@@ -238,7 +236,6 @@ async function getBoxes() {
     });
   } finally {
     leadminerStore.isLoadingBoxes = false;
-    leadminerStore.isLoadingStartMining = false;
   }
 }
 

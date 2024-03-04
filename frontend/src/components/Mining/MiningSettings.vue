@@ -13,7 +13,7 @@
       <q-header>
         <q-toolbar>
           <q-btn round dense icon="menu" flat @click="toggleDrawer" />
-          <q-toolbar-title>Fine-Tune Your Mining Pereferences</q-toolbar-title>
+          <q-toolbar-title>Fine-tune your mining</q-toolbar-title>
           <q-space />
           <q-btn
             dense
