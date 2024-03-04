@@ -1,4 +1,4 @@
-name: Deploy Leadminer
+name: leadminer-demo
 on:
   push:
     branches: [main]
