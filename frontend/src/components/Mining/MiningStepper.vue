@@ -17,7 +17,7 @@
         active-icon="manage_accounts"
         :done="step > 1"
       >
-        <div v-if="leadminerStore.miningSources.length">
+        <div v-if="sourceOptions.length">
           <span class="text-body1">Pick a source of contacts to mine</span>
           <q-select
             v-model="sourceModel"
@@ -33,7 +33,7 @@
           <span class="text-body1">Or add a new email provider</span>
         </div>
         <div>
-          <span v-if="!leadminerStore.miningSources.length" class="text-body1"
+          <span v-if="!sourceOptions.length" class="text-body1"
             >Add a new email provider</span
           >
           <div class="flex row flex-right q-gutter-md q-pt-sm">
@@ -52,14 +52,14 @@
         </div>
         <q-stepper-navigation class="text-right">
           <q-btn
-            v-if="leadminerStore.miningSources.length"
+            v-if="sourceOptions.length"
             class="text-black q-ml-sm"
             :disable="!leadminerStore.activeMiningSource"
             unelevated
             color="amber-13"
             no-caps
             label="Continue with this email account"
-            @click="stepper.goTo(3)"
+            @click="stepper.next()"
           />
         </q-stepper-navigation>
       </q-step>
@@ -83,7 +83,7 @@
             color="secondary"
             no-caps
             label="Back"
-            @click="stepper.goTo(1)"
+            @click="stepper.previous()"
           />
           <q-btn
             v-if="!activeMiningTask"
@@ -190,7 +190,6 @@ onMounted(async () => {
     const user = (await supabase.auth.getSession()).data.session?.user;
     const { miningSources } = leadminerStore;
 
-    step.value = miningSources.length ? (activeMining.value ? 3 : 1) : 2;
     sourceModel.value = miningSources.find(
       ({ email }) => user && email === user.email
     );
