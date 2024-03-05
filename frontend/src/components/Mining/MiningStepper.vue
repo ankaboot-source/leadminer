@@ -17,27 +17,42 @@
         active-icon="manage_accounts"
         :done="step > 1"
       >
-        <div class="text-body1">Pick a source of contacts to mine</div>
-        <q-select
-          v-model="sourceModel"
-          class="q-pt-sm"
-          option-value="email"
-          option-label="email"
-          outlined
-          unelevated
-          use-chips
-          stack-label
-          :options="sourceOptions"
-        />
+        <div v-if="leadminerStore.miningSources.length">
+          <span class="text-body1">Pick a source of contacts to mine</span>
+          <q-select
+            v-model="sourceModel"
+            class="q-pt-sm q-pb-lg"
+            option-value="email"
+            option-label="email"
+            outlined
+            unelevated
+            use-chips
+            stack-label
+            :options="sourceOptions"
+          />
+          <span class="text-body1">Or add a new email provider</span>
+        </div>
+        <div>
+          <span v-if="!leadminerStore.miningSources.length" class="text-body1"
+            >Add a new email provider</span
+          >
+          <div class="flex row flex-right q-gutter-md q-pt-sm">
+            <oauth-source
+              icon="img:icons/google.png"
+              label="Google"
+              source="google"
+            />
+            <oauth-source
+              icon="img:icons/microsoft.png"
+              label="Microsoft or Outlook"
+              source="azure"
+            />
+            <imap-source />
+          </div>
+        </div>
         <q-stepper-navigation class="text-right">
           <q-btn
-            outline
-            color="secondary"
-            no-caps
-            label="Add a new email account"
-            @click="stepper.next()"
-          />
-          <q-btn
+            v-if="leadminerStore.miningSources.length"
             class="text-black q-ml-sm"
             :disable="!leadminerStore.activeMiningSource"
             unelevated
@@ -48,41 +63,6 @@
           />
         </q-stepper-navigation>
       </q-step>
-
-      <q-step
-        :name="2"
-        title="Add a new source"
-        caption="Optional"
-        icon="login"
-        active-icon="login"
-        :done="step > 2"
-      >
-        <div class="text-center text-body1">Select Your Email Provider</div>
-        <div class="flex row flex-center q-gutter-md q-mt-sm">
-          <oauth-source
-            icon="img:icons/google.png"
-            label="Google"
-            source="google"
-          />
-          <oauth-source
-            icon="img:icons/microsoft.png"
-            label="Microsoft or Outlook"
-            source="azure"
-          />
-          <imap-source />
-        </div>
-        <q-stepper-navigation class="text-right">
-          <q-btn
-            v-if="step > 1"
-            flat
-            color="secondary"
-            no-caps
-            label="Back"
-            @click="stepper.previous()"
-          />
-        </q-stepper-navigation>
-      </q-step>
-
       <q-step :name="3" title="Start mining" icon="bolt" active-icon="done">
         <div class="text-center text-h6 text-bold q-pb-md">
           Discover hidden gems in your social network
