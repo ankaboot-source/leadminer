@@ -156,17 +156,10 @@
       </q-step>
     </q-stepper>
   </div>
-  <credits-dialog
-    ref="CreditsDialogRef"
-    engagement-type="messages"
-    action-type="mine"
-    @secondary-action="startMining"
-  />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import CreditsDialog from "src/components/Credits/InsufficientCreditsDialog.vue";
 import MiningSettings from "src/components/Mining/MiningSettings.vue";
 import ProgressCard from "src/components/Mining/MiningProgress.vue";
 import OauthSource from "src/components/Mining/AddSourceOauth.vue";
@@ -192,7 +185,6 @@ const sourceModel = ref<MiningSource>();
 const sourceOptions = computed(() => leadminerStore.miningSources);
 
 const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const activeMining = computed(() =>
   Boolean(
@@ -324,14 +316,6 @@ async function startMining() {
     });
   } catch (error) {
     const provider = leadminerStore.activeMiningSource?.type;
-
-    if (error instanceof AxiosError && error.response?.status === 402) {
-      const { total: totalMessages, available: availableMessages } =
-        error.response.data;
-
-      CreditsDialogRef.value?.openModal(totalMessages, availableMessages);
-      return;
-    }
 
     if (
       error instanceof AxiosError &&
