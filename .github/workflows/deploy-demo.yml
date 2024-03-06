@@ -57,10 +57,7 @@ jobs:
 
             # leadminer deploy
             ( cd leadminer_$TARGET; docker compose down; git restore docker-compose.yml; git fetch; git reset --hard origin/main)
-            ( cd leadminer.io; . .env.$TARGET ; git fetch; git reset --hard origin/main; psql \
-                -Atx "$PG_CONNECTION_STRING" \
-                -c "TRUNCATE table messages, persons, pointsofcontact, refinedpersons, tags;"
-            )
+            ( cd leadminer.io; . .env.$TARGET ; git fetch; git reset --hard origin/main)
 
             export GOOGLE_SECRET
             export GOOGLE_CLIENT_ID
