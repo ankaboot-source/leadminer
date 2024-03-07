@@ -1,0 +1,23 @@
+{
+  "name": "frontend-nuxt",
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "@nuxtjs/supabase": "^1.1.7",
+    "@nuxtjs/tailwindcss": "^6.11.4",
+    "nuxt": "^3.10.3",
+    "nuxt-primevue": "^0.3.1",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "dependencies": {
+    "primevue": "^3.49.1"
+  }
+}
