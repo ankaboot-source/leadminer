@@ -1,4 +1,4 @@
-name: Trigger Target Workflow
+name: Trigger QA deployment
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Workflow in Another Repository
+      - name: Trigger Workflow in Leadminer.io repository
         run: |
           repo_owner="ankaboot-source"
           repo_name="leadminer.io"

@@ -28,4 +28,4 @@ jobs:
               --build \
               --force-recreate
 
-            docker image prune -a -f     
+            docker image prune -a -f
