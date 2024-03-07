@@ -55,7 +55,7 @@ jobs:
       - name: Setup doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DO_TOKEN }}
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - name: Allow through firewall
         run: |
           RUNNER_IP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
