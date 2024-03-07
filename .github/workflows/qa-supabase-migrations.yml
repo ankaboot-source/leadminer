@@ -18,7 +18,7 @@ jobs:
       - name: Setup doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DO_TOKEN }}
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
       - id: firewall_id
         run: echo "output=$(doctl compute firewall list --no-header --format Name,ID | awk '/supabase-firewall/{print $2}')" >> "$GITHUB_OUTPUT"
       - id: droplet_id
