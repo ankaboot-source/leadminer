@@ -1,7 +1,9 @@
 name: QA Supabase migrations
 on:
-  repository_dispatch:
-    types: [trigger-workflow]
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
   workflow_dispatch:
 
 jobs:
