@@ -25,3 +25,16 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/$repo_owner/$repo_name/dispatches \
             -d "{\"event_type\": \"$event_type\"}"
+
+
+      - name: Push supabase migrations to leadminer.io
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_PAT }}
+        with:
+          source_file: 'supabase/migrations/*'
+          destination_repo: 'ankaboot-source/leadminer.io'
+          destination_folder: 'supabase/migrations'
+          user_email: 'deploy@leadminer.io'
+          user_name: 'deploy-bot'
+          commit_message: 'Updating supabase migrations'
