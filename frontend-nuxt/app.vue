@@ -1,5 +1,12 @@
+<script setup lang="ts">
+import './assets/theme.css';
+import 'primeicons/primeicons.css';
+</script>
+
 <template>
   <div>
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>

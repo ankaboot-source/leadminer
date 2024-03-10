@@ -16,6 +16,6 @@ export default defineNuxtConfig({
     }
   },
   css: [
-    "primevue/resources/themes/aura-light-amber/theme.css"
+    "primevue/resources/themes/aura-light-indigo/theme.css"
   ]
 });
