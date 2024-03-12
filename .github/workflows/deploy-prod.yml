@@ -42,8 +42,8 @@ jobs:
             # Pull/Clone leadminer.io repos
             TARGET=prod
             REPO=leadminer_prod
-            CONF_REPO="/home/leadminer-qa/leadminer.io"
-            APP_REPO="/home/leadminer-qa/$REPO"
+            CONF_REPO="/home/leadminer/leadminer.io"
+            APP_REPO="/home/leadminer/$REPO"
 
             # Check if the folders exists
             if [ -d "$CONF_REPO" ]; then
