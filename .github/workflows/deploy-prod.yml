@@ -1,4 +1,4 @@
-name: Leadminer
+*name: Leadminer
 on:
   release:
     types: [published]
@@ -70,7 +70,7 @@ jobs:
 
             # Setting up caddyfile
             cd leadminer.io
-            sudo ansible-playbook -i ansible/caddy/leadminer/inventory/prod/hosts.ini ansible/caddy/leadminer/playbook.yml
+            sudo ansible-playbook -i ansible/caddy/leadminer/inventory/prod/hosts.ini ansible/caddy/leadminer/playbook.yml -e "@ansible/caddy/leadminer/vars/prod.yml"
             cd
 
             # leadminer deploy
@@ -99,7 +99,7 @@ jobs:
             export AUTH_SERVER_URL
             export AUTH_SERVER_CALLBACK
 
-            mv leadminer.io/.env leadminer.io/.env.$target
+            mv leadminer.io/.env leadminer.io/".env.$TARGET"
             envsubst < leadminer.io/.env.$TARGET > leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
 
