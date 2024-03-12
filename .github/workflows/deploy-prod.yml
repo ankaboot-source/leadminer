@@ -1,4 +1,4 @@
-*name: Leadminer
+name: Leadminer
 on:
   release:
     types: [published]
