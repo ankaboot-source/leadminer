@@ -75,7 +75,7 @@ jobs:
 
             # leadminer deploy
             ( cd leadminer_$TARGET; docker compose down; git restore docker-compose.yml; git fetch; git reset --hard origin/main)
-            ( cd leadminer.io; . .env.$TARGET ; git fetch; git reset --hard origin/main)
+            ( cd leadminer.io; git fetch; git reset --hard origin/main)
 
             export GOOGLE_SECRET
             export GOOGLE_CLIENT_ID
@@ -99,6 +99,7 @@ jobs:
             export AUTH_SERVER_URL
             export AUTH_SERVER_CALLBACK
 
+            mv leadminer.io/.env leadminer.io/.env.$target
             envsubst < leadminer.io/.env.$TARGET > leadminer_$TARGET/.env
             cp leadminer.io/docker-compose.yml leadminer_$TARGET
 
