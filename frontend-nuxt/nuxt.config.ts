@@ -2,20 +2,24 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
+    "@nuxt/test-utils/module",
+    "@nuxtjs/i18n",
+    "@nuxtjs/supabase",
     "@nuxtjs/tailwindcss",
     "nuxt-primevue",
-    '@nuxtjs/supabase'
   ],
+  i18n: {
+    locales: ["en", "fr"],
+    defaultLocale: "en"
+  },
   supabase: {
-    redirect: false
+    redirect: false,
   },
   primevue: {
     cssLayerOrder: "tailwind-base, primevue, tailwind-utilities",
     components: {
-      exclude: ["Editor", "Chart"]
-    }
+      exclude: ["Editor", "Chart"],
+    },
   },
-  css: [
-    "primevue/resources/themes/aura-light-indigo/theme.css"
-  ]
+  css: ["primevue/resources/themes/aura-light-indigo/theme.css"],
 });
