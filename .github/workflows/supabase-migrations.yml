@@ -1,9 +1,7 @@
 name: Supabase migrations
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/migrations/**'
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
