@@ -1,13 +1,9 @@
-name: Trigger QA deployment
+name: Trigger Prod deployment
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - '!.github/workflows/**'
-
+  release:
+    types: [published]
 
 jobs:
   trigger:
@@ -18,7 +14,7 @@ jobs:
         run: |
           repo_owner="ankaboot-source"
           repo_name="leadminer.io"
-          event_type="trigger-qa"
+          event_type="trigger-prod"
 
           curl -L \
             -X POST \
