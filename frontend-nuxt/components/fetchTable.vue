@@ -18,7 +18,7 @@
     paginator
     filterDisplay="menu"
     v-model:filters="filters"
-    :globalFilterFields="['email']"
+    :globalFilterFields="['email', 'name']"
     removableSort
     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     currentPageReportTemplate="({currentPage} of {totalPages}) {totalRecords}"
@@ -337,7 +337,6 @@ const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
   if (event.checked) {
     selectAll.value = true;
     selectedContacts.value = filteredContacts.value; // all data according to your needs
-    console.log(selectedContacts.value);
   } else {
     selectAll.value = false;
     selectedContacts.value = [];
@@ -346,6 +345,7 @@ const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
 const onRowSelect = () => {
   // This control can be completely managed by you.
   selectAll.value = selectedContacts.value.length === contactsLength.value;
+  console.log(selectedContacts.value);
 };
 const onRowUnselect = () => {
   // When a row is unchecked, the header checkbox must always be in an unchecked state.
@@ -369,7 +369,7 @@ function debounce<T extends (...args: any[]) => any>(
   };
 }
 const debouncedUpdate = debounce((newValue: string) => {
-  filters.value.email.value = newValue;
+  filters.value.global.value = newValue;
 }, 500);
 watch(searchContactModel, (newValue: string) => {
   debouncedUpdate(newValue);
@@ -437,6 +437,7 @@ const clearFilter = () => {
 const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
+  console.log(filteredContacts.value);
 }
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
