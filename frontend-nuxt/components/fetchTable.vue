@@ -320,7 +320,6 @@ async function fetchTable() {
     const { data } = await supabase.rpc("get_contacts_table", {
       userid: USER_ID,
     });
-    console.log(data);
     return data ? convertDates(data) : [];
   });
   loading.value = false;
@@ -346,7 +345,6 @@ const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
 const onRowSelect = () => {
   // This control can be completely managed by you.
   selectAll.value = selectedContacts.value.length === contactsLength.value;
-  console.log(selectedContacts.value);
 };
 const onRowUnselect = () => {
   // When a row is unchecked, the header checkbox must always be in an unchecked state.
@@ -436,7 +434,6 @@ const clearFilter = () => {
 const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
-  console.log(filteredContacts.value);
 }
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
@@ -444,8 +441,6 @@ const filteredContactsLength = computed(() => filteredContacts.value.length);
 const myTable = ref();
 
 const exportCSV = () => {
-  console.log("Export to CSV");
-
   myTable.value.exportCSV(
     selectedContactsLength.value !== 0 &&
       selectedContactsLength.value !== contactsLength.value
