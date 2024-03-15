@@ -505,6 +505,7 @@ const initFilters = () => {
     status: { value: null, matchMode: FilterMatchMode.IN },
   };
 };
+initFilters();
 
 const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
@@ -666,7 +667,6 @@ function toggleToggles() {
   onRecentToggle(3);
 }
 toggleToggles();
-initFilters();
 const clearFilter = () => {
   validToggle.value = false;
   discussionsToggle.value = false;
