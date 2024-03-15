@@ -495,4 +495,41 @@ function toggleToggles() {
   onRecentToggle(3);
 }
 toggleToggles();
+
+// // Realtime
+// const channel = ref();
+// const contactsCache = new Map();
+
+// onNuxtReady(() => {
+//   setInterval(() => {
+//     data.value = Array.from(contactsCache.values());
+//     data.value = convertDates(data.value);
+//   }, 5000);
+
+//   channel.value = supabase
+//     .channel("*")
+//     .on(
+//       "postgres_changes",
+//       {
+//         event: "*",
+//         schema: "public",
+//         table: "persons",
+//         filter: `user_id=eq.${USER_ID}`,
+//       },
+//       (payload) => {
+//         const newContact = payload.new as Contact;
+//         if (newContact) {
+//           contactsCache.set(newContact.email, newContact);
+//         }
+//       }
+//     )
+//     .subscribe();
+// });
+
+// onUnmounted(() => {
+//   supabase.removeChannel(channel.value);
+// });
+
 </script>
+
+

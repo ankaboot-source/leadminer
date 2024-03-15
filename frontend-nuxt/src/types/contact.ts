@@ -1,6 +1,6 @@
-export type Tag = 'professional' | 'newsletter' | 'personal' | 'group';
+export type Tag = "professional" | "newsletter" | "personal" | "group" | "chat";
 
-export type EmailStatus = 'UNKNOWN' | 'RISKY' | 'VALID' | 'INVALID';
+export type EmailStatus = "UNKNOWN" | "RISKY" | "VALID" | "INVALID";
 
 export const EmailStatusScore: Record<EmailStatus, number> = {
   VALID: 0,
