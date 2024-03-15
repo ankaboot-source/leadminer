@@ -275,8 +275,8 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 import { useToast } from 'primevue/usetoast';
-import { useLeadminerStore } from '~/stores/leadminer';
-import type { Contact } from '~/types/contact';
+import { useLeadminerStore } from '../../stores/leadminer';
+import type { Contact } from '../../types/contact';
 
 const toast = useToast();
 
