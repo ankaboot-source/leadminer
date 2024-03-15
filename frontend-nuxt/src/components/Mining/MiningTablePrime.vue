@@ -439,30 +439,10 @@ onUnmounted(() => {
 /* *** Filters *** */
 const filters = ref();
 const searchContactModel = ref('');
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function _(...args: Parameters<T>): void {
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-const debouncedUpdate = debounce((newValue: string) => {
-  filters.value.global.value = newValue;
-}, 500);
-watch(searchContactModel, (newValue: string) => {
-  debouncedUpdate(newValue);
-});
-
 const ANY_SELECTED = ref('ANY_SELECTED');
 FilterService.register(ANY_SELECTED.value, (value, filter) =>
   !filter ? true : filter.some((item: string) => value.includes(item))
 );
-
 const initFilters = () => {
   filters.value = {
     global: {
@@ -506,6 +486,25 @@ const initFilters = () => {
   };
 };
 initFilters();
+
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return function _(...args: Parameters<T>): void {
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+const debouncedUpdate = debounce((newValue: string) => {
+  filters.value.global.value = newValue;
+}, 500);
+watch(searchContactModel, (newValue: string) => {
+  debouncedUpdate(newValue);
+});
 
 const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
