@@ -28,7 +28,7 @@
   >
     <template #empty> No contacts found. </template>
     <template #header>
-      <div class="flex justify-content-between items-center gap-1">
+      <div class="flex items-center gap-1">
         <Button
           type="button"
           :icon="loading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
@@ -59,38 +59,39 @@
           label="Export CSV"
           @click="exportCSV()"
         />
+        <!-- Settings -->
         <Button icon="pi pi-sliders-h" @click="toggleSettingsPanel" />
         <OverlayPanel ref="settingsPanel">
           <span class="font-medium text-900 block mb-2"> Settings </span>
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
-            <li class="flex align-items-center gap-2">
+            <li class="flex justify-between">
               <div>Certified valid</div>
               <InputSwitch
                 v-model="validToggle"
                 @update:model-value="onValidToggle"
               />
             </li>
-            <li class="flex align-items-center gap-2">
+            <li class="flex justify-between gap-2">
               <div>At least one discussion</div>
               <InputSwitch
                 v-model="discussionsToggle"
                 @update:model-value="onDiscussionsToggle"
               />
             </li>
-            <li class="flex align-items-center gap-2">
+            <li class="flex justify-between gap-2">
               <div>Only real persons</div>
               <InputSwitch
                 v-model="personsToggle"
                 @update:model-value="onPersonsToggle"
               />
             </li>
-            <li class="flex align-items-center gap-2">
+            <li class="flex justify-between gap-2">
               <div v-tooltip.left="'- Less than 3 years \n- GDPR Proof'">
                 Recent
               </div>
               <InputSwitch
                 v-model="recentToggle"
-                @update:model-value="onRecentToggle"
+                @update:model-value="onRecentToggle(3)"
               />
             </li>
           </ul>
@@ -386,10 +387,8 @@ const initFilters = () => {
       value: null,
       matchMode: FilterMatchMode.CONTAINS,
     },
-    contacts: {
-      value: null,
-      matchMode: FilterMatchMode.CONTAINS,
-    },
+
+    // Contact
     name: {
       value: null,
       matchMode: FilterMatchMode.CONTAINS,
@@ -407,18 +406,14 @@ const initFilters = () => {
 
     // Occurrence
     occurrence: {
-      operator: FilterOperator.AND,
-      constraints: [
-        { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
-      ],
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
     },
 
     // Replied Conversations
     replied_conversations: {
-      operator: FilterOperator.AND,
-      constraints: [
-        { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
-      ],
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
     },
 
     // Tags
@@ -430,6 +425,10 @@ const initFilters = () => {
 };
 initFilters();
 const clearFilter = () => {
+  validToggle.value = false;
+  discussionsToggle.value = false;
+  personsToggle.value = false;
+  recentToggle.value = false;
   searchContactModel.value = "";
   initFilters();
 };
@@ -473,11 +472,32 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 const validToggle = ref(true); // status: valid
-function onValidToggle() {}
-const discussionsToggle = ref(true); // conversations?: >0
-function onDiscussionsToggle() {}
+function onValidToggle() {
+  filters.value.status.value = validToggle.value ? ["VALID"] : null;
+}
+const discussionsToggle = ref(true); // replies: >=1
+function onDiscussionsToggle() {
+  filters.value.replied_conversations.value = discussionsToggle.value
+    ? 1
+    : null;
+}
 const personsToggle = ref(true); // tags: professional, personal
-function onPersonsToggle() {}
+function onPersonsToggle() {
+  filters.value.tags.value = personsToggle.value
+    ? ["professional", "personal"]
+    : null;
+}
 const recentToggle = ref(true); // recency: <3 years
-function onRecentToggle() {}
+function onRecentToggle(yearsAgo: number) {
+  filters.value.recency.constraints[0].value = recentToggle.value
+    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
+    : null;
+}
+function toggleToggles() {
+  onValidToggle();
+  onDiscussionsToggle();
+  onPersonsToggle();
+  onRecentToggle(3);
+}
+toggleToggles();
 </script>
