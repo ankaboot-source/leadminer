@@ -284,6 +284,7 @@ const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
 const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
 
 function getStatusColor(status: string) {
+  if (!status) return undefined;
   switch (status) {
     case 'UNKNOWN':
       return 'secondary';
@@ -299,6 +300,7 @@ function getStatusColor(status: string) {
 }
 
 function getTagColor(tag: string) {
+  if (!tag) return undefined;
   switch (tag) {
     case 'personal':
       return 'success';
