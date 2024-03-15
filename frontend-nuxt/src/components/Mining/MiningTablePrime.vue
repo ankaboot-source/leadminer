@@ -333,7 +333,7 @@ const activeMiningTask = computed(
 let refreshInterval: number;
 let subscription: RealtimeChannel;
 
-async function setupSubscription() {
+function setupSubscription() {
   // We are 100% sure that the user is authenticated in this component
   const user = useSupabaseUser().value;
   subscription = useSupabaseClient()
@@ -367,7 +367,7 @@ function refreshTable() {
 async function refineContacts() {
   loadingLabel.value = 'Refining contacts...';
   const user = useSupabaseUser().value;
-  // @ts-ignore: Issue with @nuxt/supabase typing
+  // @ts-expect-error: Issue with @nuxt/supabase typing
   const refine = await useSupabaseClient().rpc('refine_persons', {
     userid: user?.id,
   });
@@ -380,7 +380,7 @@ async function refineContacts() {
 async function getContacts(userId: string): Promise<Contact[]> {
   const { data: myData, error } = await useSupabaseClient().rpc(
     'get_contacts_table',
-    // @ts-ignore: Issue with @nuxt/supabase typing
+    // @ts-expect-error: Issue with @nuxt/supabase typing
     { userid: userId }
   );
 
@@ -400,7 +400,7 @@ async function syncTable() {
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     // If mining is active, update refined persons every 3 seconds
-    await setupSubscription();
+    setupSubscription();
     subscription.subscribe();
     if (contactsLength.value > 0) {
       contactsCache = new Map(data.value.map((row) => [row.email, row]));
