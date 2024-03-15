@@ -45,12 +45,12 @@ export default defineNuxtConfig({
   primevue: {
     cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
     components: {
-      exclude: ["Editor", "Chart"],
+      exclude: ['Editor', 'Chart'],
     },
   },
   css: [
-    "primevue/resources/themes/aura-light-indigo/theme.css",
-    "primeicons/primeicons.css",
+    'primevue/resources/themes/aura-light-indigo/theme.css',
+    'primeicons/primeicons.css',
   ],
   imports: {
     autoImport: true,
