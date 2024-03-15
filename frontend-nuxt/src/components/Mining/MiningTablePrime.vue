@@ -8,29 +8,29 @@
   <Toast />
   <DataTable
     ref="myTable"
-    scrollable
-    scrollHeight="70vh"
-    size="small"
-    stripedRows
-    @filter="onFilter($event)"
     v-model:selection="selectedContacts"
-    :selectAll="selectAll"
+    v-model:filters="filters"
+    scrollable
+    scroll-height="60vh"
+    size="small"
+    striped-rows
+    :select-all="selectAll"
+    :value="contacts"
+    export-filename="contacts"
+    data-key="email"
+    paginator
+    filter-display="menu"
+    :global-filter-fields="['email', 'name']"
+    removable-sort
+    paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+    current-page-report-template="({currentPage} of {totalPages}) {totalRecords}"
+    :rows="150"
+    :rows-per-page-options="[150, 500, 1000]"
+    :is-loading="isLoading"
+    @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
-    :value="contacts"
-    exportFilename="contacts"
-    dataKey="email"
-    paginator
-    filterDisplay="menu"
-    v-model:filters="filters"
-    :globalFilterFields="['email', 'name']"
-    removableSort
-    paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    currentPageReportTemplate="({currentPage} of {totalPages}) {totalRecords}"
-    :rows="150"
-    :rows-per-page-options="[150, 500, 1000]"
-    :loading="loading"
   >
     <template #empty> No contacts found. </template>
     <template #loading>{{ loadingLabel }}</template>
@@ -38,7 +38,7 @@
       <div class="flex items-center gap-1">
         <Button
           type="button"
-          :icon="loading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
+          :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
           text
           @click="refreshTable()"
         />
@@ -107,14 +107,14 @@
     </template>
 
     <!-- Select -->
-    <Column selectionMode="multiple" />
+    <Column selection-mode="multiple" />
 
     <!-- Contacts -->
     <Column field="email">
       <template #header>
         <div>Contacts</div>
         <div class="p-column-filter p-fluid p-column-filter-menu">
-          <IconField iconPosition="left">
+          <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
               v-model="searchContactModel"
@@ -123,14 +123,14 @@
           </IconField>
         </div>
       </template>
-      <template #body="{ data }">
+      <template #body="{ data: rowData }">
         <div class="flex justify-between items-center">
           <div>
-            <template v-if="data.name">
-              <div class="font-medium">{{ data.name }}</div>
-              <div>{{ data.email }}</div>
+            <template v-if="rowData.name">
+              <div class="font-medium">{{ rowData.name }}</div>
+              <div>{{ rowData.email }}</div>
             </template>
-            <div v-else class="font-medium">{{ data.email }}</div>
+            <div v-else class="font-medium">{{ rowData.email }}</div>
           </div>
           <div>
             <Button
@@ -138,7 +138,7 @@
               text
               icon="pi pi-copy"
               aria-label="Copy"
-              @click="copyContact(data.name, data.email)"
+              @click="copyContact(rowData.name, rowData.email)"
             />
           </div>
         </div>
@@ -150,9 +150,9 @@
       field="occurrence"
       header="Occurrence"
       sortable
-      dataType="numeric"
-      :showFilterOperator="false"
-      :showAddButton="false"
+      data-type="numeric"
+      :show-filter-operator="false"
+      :show-add-button="false"
     >
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
@@ -160,14 +160,14 @@
     </Column>
 
     <!-- Recency -->
-    <Column field="recency" header="Recency" sortable dataType="date">
-      <template #body="{ data }">
-        {{ new Date(data.recency).toLocaleString() }}
+    <Column field="recency" header="Recency" sortable data-type="date">
+      <template #body="{ data: rowData }">
+        {{ new Date(rowData.recency).toLocaleString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
           v-model="filterModel.value"
-          showIcon
+          show-icon
           class="p-column-filter"
         />
       </template>
@@ -177,10 +177,10 @@
     <Column
       field="replied_conversations"
       header="Replies"
-      dataType="numeric"
+      data-type="numeric"
       sortable
-      :showFilterOperator="false"
-      :showAddButton="false"
+      :show-filter-operator="false"
+      :show-add-button="false"
     >
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
@@ -192,15 +192,16 @@
       field="tags"
       header="Tags"
       sortable
-      :showFilterOperator="false"
-      :showFilterMatchModes="false"
-      :showAddButton="false"
-      :filterMenuStyle="{ width: '14rem' }"
+      :show-filter-operator="false"
+      :show-filter-match-modes="false"
+      :show-add-button="false"
+      :filter-menu-style="{ width: '14rem' }"
     >
-      <template #body="{ data }">
+      <template #body="{ data: rowData }">
         <div class="flex flex-wrap gap-1">
           <Tag
-            v-for="tag of data.tags"
+            v-for="tag of rowData.tags"
+            :key="tag"
             :value="tag"
             :severity="getTagColor(tag)"
             class="capitalize"
@@ -229,19 +230,19 @@
     <!-- Status | Reachable -->
     <Column
       field="status"
-      filterField="status"
+      filter-field="status"
       header="Reachable"
       sortable
-      :showFilterOperator="false"
-      :showFilterMatchModes="false"
-      :showAddButton="false"
-      :filterMenuStyle="{ width: '14rem' }"
+      :show-filter-operator="false"
+      :show-filter-match-modes="false"
+      :show-add-button="false"
+      :filter-menu-style="{ width: '14rem' }"
     >
-      <template #body="{ data }">
+      <template #body="{ data: rowData }">
         <Tag
-          v-if="data.status"
-          :value="data.status"
-          :severity="getStatusColor(data.status)"
+          v-if="rowData.status"
+          :value="rowData.status"
+          :severity="getStatusColor(rowData.status)"
         />
       </template>
       <template #filter="{ filterModel }">
@@ -262,7 +263,6 @@
 </template>
 
 <script setup lang="ts">
-import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import {
   type RealtimeChannel,
   type RealtimePostgresChangesPayload,
@@ -275,15 +275,15 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 import { useToast } from 'primevue/usetoast';
-import { useLeadminerStore } from '~/src/stores/leadminer';
-import type { Contact } from '~/src/types/contact';
+import { useLeadminerStore } from '~/stores/leadminer';
+import type { Contact } from '~/types/contact';
+
 const toast = useToast();
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
 const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
 
 function getStatusColor(status: string) {
-  if (!status) return;
   switch (status) {
     case 'UNKNOWN':
       return 'secondary';
@@ -293,11 +293,12 @@ function getStatusColor(status: string) {
       return 'warning';
     case 'VALID':
       return 'success';
+    default:
+      return undefined;
   }
 }
 
 function getTagColor(tag: string) {
-  if (!tag) return;
   switch (tag) {
     case 'personal':
       return 'success';
@@ -309,16 +310,19 @@ function getTagColor(tag: string) {
       return 'secondary';
     case 'chat':
       return 'secondary';
+    default:
+      return undefined;
   }
 }
 
-/*************** INTEGRATION ***********************/
-const { $api } = useNuxtApp();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+/* ************** INTEGRATION ********************** */
+
 const leadminerStore = useLeadminerStore();
 const data = ref<Contact[]>([]);
 const isLoading = ref(true);
 const loadingLabel = ref('');
+const contacts = computed(() => data.value);
+const contactsLength = computed(() => contacts.value?.length);
 
 let contactsCache = new Map<string, Contact>();
 
@@ -374,23 +378,23 @@ async function refineContacts() {
 }
 
 async function getContacts(userId: string): Promise<Contact[]> {
-  // @ts-ignore: Issue with @nuxt/supabase typing
-  const { data, error } = await useSupabaseClient().rpc('get_contacts_table', {
-    userid: userId,
-  });
+  const { data: myData, error } = await useSupabaseClient().rpc(
+    'get_contacts_table',
+    // @ts-ignore: Issue with @nuxt/supabase typing
+    { userid: userId }
+  );
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return myData;
 }
 
 async function syncTable() {
   loadingLabel.value = 'Syncing...';
   const user = useSupabaseUser().value as User;
-  const contacts = await getContacts(user.id);
-  data.value = contacts;
+  data.value = await getContacts(user.id);
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -428,36 +432,9 @@ onMounted(async () => {
 onUnmounted(() => {
   clearInterval(refreshInterval);
 });
-/**************************************/
+/* ************************************ */
 
-const contacts = computed(() => data.value);
-const contactsLength = computed(() => contacts.value?.length);
-const loading = ref(true);
-
-/*** Selection ***/
-const selectedContacts = ref<Contact[]>([]);
-const selectedContactsLength = computed(() => selectedContacts.value.length);
-const selectAll = ref(false);
-
-const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
-  if (event.checked) {
-    selectAll.value = true;
-    selectedContacts.value = filteredContacts.value; // all data according to your needs
-  } else {
-    selectAll.value = false;
-    selectedContacts.value = [];
-  }
-};
-const onRowSelect = () => {
-  // This control can be completely managed by you.
-  selectAll.value = selectedContacts.value.length === contactsLength.value;
-};
-const onRowUnselect = () => {
-  // When a row is unchecked, the header checkbox must always be in an unchecked state.
-  selectAll.value = false;
-};
-
-/*** Filters ***/
+/* *** Filters *** */
 const filters = ref();
 const searchContactModel = ref('');
 function debounce<T extends (...args: any[]) => any>(
@@ -465,7 +442,7 @@ function debounce<T extends (...args: any[]) => any>(
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function (...args: Parameters<T>): void {
+  return function _(...args: Parameters<T>): void {
     if (timeout !== null) {
       clearTimeout(timeout);
     }
@@ -480,9 +457,9 @@ watch(searchContactModel, (newValue: string) => {
 });
 
 const ANY_SELECTED = ref('ANY_SELECTED');
-FilterService.register(ANY_SELECTED.value, (value, filter) => {
-  return !filter ? true : filter.some((item: string) => value.includes(item));
-});
+FilterService.register(ANY_SELECTED.value, (value, filter) =>
+  !filter ? true : filter.some((item: string) => value.includes(item))
+);
 
 const initFilters = () => {
   filters.value = {
@@ -526,23 +503,37 @@ const initFilters = () => {
     status: { value: null, matchMode: FilterMatchMode.IN },
   };
 };
-initFilters();
-const clearFilter = () => {
-  validToggle.value = false;
-  discussionsToggle.value = false;
-  personsToggle.value = false;
-  recentToggle.value = false;
-  searchContactModel.value = '';
-  initFilters();
-};
 
 const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
-const filteredContactsLength = computed(() => filteredContacts.value.length);
+// const filteredContactsLength = computed(() => filteredContacts.value.length);
 
-/*** Export CSV ***/
+/* *** Selection *** */
+const selectedContacts = ref<Contact[]>([]);
+const selectedContactsLength = computed(() => selectedContacts.value.length);
+const selectAll = ref(false);
+
+const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
+  if (event.checked) {
+    selectAll.value = true;
+    selectedContacts.value = filteredContacts.value; // all data according to your needs
+  } else {
+    selectAll.value = false;
+    selectedContacts.value = [];
+  }
+};
+const onRowSelect = () => {
+  // This control can be completely managed by you.
+  selectAll.value = selectedContacts.value.length === contactsLength.value;
+};
+const onRowUnselect = () => {
+  // When a row is unchecked, the header checkbox must always be in an unchecked state.
+  selectAll.value = false;
+};
+
+/* *** Export CSV *** */
 const myTable = ref();
 
 const exportCSV = () => {
@@ -567,6 +558,8 @@ function copyContact(name: string, email: string) {
 }
 
 // // EXPORT CSV OLD
+// const { $api } = useNuxtApp();
+// const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 // const isExportDisabled = computed(
 //   () =>
 //     data.value.length === 0 ||
@@ -637,7 +630,7 @@ function copyContact(name: string, email: string) {
 //   });
 // }
 
-/*** Settings ***/
+/* *** Settings *** */
 const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
@@ -671,6 +664,15 @@ function toggleToggles() {
   onRecentToggle(3);
 }
 toggleToggles();
+initFilters();
+const clearFilter = () => {
+  validToggle.value = false;
+  discussionsToggle.value = false;
+  personsToggle.value = false;
+  recentToggle.value = false;
+  searchContactModel.value = '';
+  initFilters();
+};
 
 // // Realtime
 // const channel = ref();
