@@ -162,7 +162,7 @@
     <!-- Recency -->
     <Column field="recency" header="Recency" sortable data-type="date">
       <template #body="{ data: rowData }">
-        {{ new Date(rowData.recency).toLocaleString() }}
+        {{ rowData.recency.toLocaleString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -379,7 +379,16 @@ async function refineContacts() {
   }
 }
 
+function convertDates(data: Contact[]) {
+  return [...data].map((d) => {
+    if (d.recency) {
+      d.recency = new Date(d.recency);
+    }
+    return d;
+  });
+}
 async function getContacts(userId: string): Promise<Contact[]> {
+
   const { data: myData, error } = await useSupabaseClient().rpc(
     'get_contacts_table',
     // @ts-expect-error: Issue with @nuxt/supabase typing
@@ -390,7 +399,7 @@ async function getContacts(userId: string): Promise<Contact[]> {
     throw error;
   }
 
-  return myData;
+  return myData ? convertDates(myData) : [];
 }
 
 async function syncTable() {
