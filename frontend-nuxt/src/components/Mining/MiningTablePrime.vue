@@ -1,4 +1,10 @@
 <template>
+  <!-- <CreditsDialog
+    ref="CreditsDialogRef"
+    engagement-type="contacts"
+    action-type="download"
+    @secondary-action="exportTable"
+  /> -->
   <Toast />
   <DataTable
     ref="myTable"
@@ -27,13 +33,14 @@
     :loading="loading"
   >
     <template #empty> No contacts found. </template>
+    <template #loading>{{ loadingLabel }}</template>
     <template #header>
       <div class="flex items-center gap-1">
         <Button
           type="button"
           :icon="loading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
           text
-          @click="fetchTable()"
+          @click="refreshTable()"
         />
         <div>
           <template
@@ -155,7 +162,7 @@
     <!-- Recency -->
     <Column field="recency" header="Recency" sortable dataType="date">
       <template #body="{ data }">
-        {{ data.recency.toLocaleString() }}
+        {{ new Date(data.recency).toLocaleString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -255,80 +262,179 @@
 </template>
 
 <script setup lang="ts">
-import { FilterMatchMode, FilterOperator, FilterService } from "primevue/api";
+import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import {
+  type RealtimeChannel,
+  type RealtimePostgresChangesPayload,
+  type User,
+} from '@supabase/supabase-js';
+
+import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
-} from "primevue/datatable";
-import { useToast } from "primevue/usetoast";
-import type { Contact } from "~/types/contact";
+} from 'primevue/datatable';
+import { useToast } from 'primevue/usetoast';
+import { useLeadminerStore } from '~/src/stores/leadminer';
+import type { Contact } from '~/src/types/contact';
 const toast = useToast();
 
-const tags = ["professional", "newsletter", "personal", "group", "chat"];
-const statuses = ["UNKNOWN", "INVALID", "RISKY", "VALID"];
+const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
+const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
 
 function getStatusColor(status: string) {
   if (!status) return;
   switch (status) {
-    case "UNKNOWN":
-      return "secondary";
-    case "INVALID":
-      return "danger";
-    case "RISKY":
-      return "warning";
-    case "VALID":
-      return "success";
+    case 'UNKNOWN':
+      return 'secondary';
+    case 'INVALID':
+      return 'danger';
+    case 'RISKY':
+      return 'warning';
+    case 'VALID':
+      return 'success';
   }
 }
 
 function getTagColor(tag: string) {
   if (!tag) return;
   switch (tag) {
-    case "personal":
-      return "success";
-    case "professional":
-      return "primary";
-    case "newsletter":
-      return "secondary";
-    case "group":
-      return "secondary";
-    case "chat":
-      return "secondary";
+    case 'personal':
+      return 'success';
+    case 'professional':
+      return 'primary';
+    case 'newsletter':
+      return 'secondary';
+    case 'group':
+      return 'secondary';
+    case 'chat':
+      return 'secondary';
   }
 }
 
-const USER_ID = "9e217eca-0358-4b09-8a69-7a5269b2d864";
-
-const supabase = useSupabaseClient();
-
+/*************** INTEGRATION ***********************/
+const { $api } = useNuxtApp();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+const leadminerStore = useLeadminerStore();
 const data = ref<Contact[]>([]);
+const isLoading = ref(true);
+const loadingLabel = ref('');
+
+let contactsCache = new Map<string, Contact>();
+
+const activeMiningTask = computed(
+  () => leadminerStore.miningTask !== undefined
+);
+
+let refreshInterval: number;
+let subscription: RealtimeChannel;
+
+async function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = useSupabaseUser().value;
+  subscription = useSupabaseClient()
+    .channel('*')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'persons',
+        filter: `user_id=eq.${user?.id}`,
+      },
+      (payload: RealtimePostgresChangesPayload<Contact>) => {
+        const newContact = payload.new as Contact;
+        contactsCache.set(newContact.email, newContact);
+      }
+    );
+}
+
+function refreshTable() {
+  const contactCacheLength = contactsCache.size;
+  const hasNewContacts = contactCacheLength > contactsLength.value;
+
+  if (hasNewContacts) {
+    isLoading.value = true;
+    data.value = Array.from(contactsCache.values());
+    isLoading.value = false;
+  }
+}
+
+async function refineContacts() {
+  loadingLabel.value = 'Refining contacts...';
+  const user = useSupabaseUser().value;
+  // @ts-ignore: Issue with @nuxt/supabase typing
+  const refine = await useSupabaseClient().rpc('refine_persons', {
+    userid: user?.id,
+  });
+
+  if (refine.error) {
+    throw refine.error;
+  }
+}
+
+async function getContacts(userId: string): Promise<Contact[]> {
+  // @ts-ignore: Issue with @nuxt/supabase typing
+  const { data, error } = await useSupabaseClient().rpc('get_contacts_table', {
+    userid: userId,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function syncTable() {
+  loadingLabel.value = 'Syncing...';
+  const user = useSupabaseUser().value as User;
+  const contacts = await getContacts(user.id);
+  data.value = contacts;
+}
+
+watch(activeMiningTask, async (isActive) => {
+  if (isActive) {
+    // If mining is active, update refined persons every 3 seconds
+    await setupSubscription();
+    subscription.subscribe();
+    if (contactsLength.value > 0) {
+      contactsCache = new Map(data.value.map((row) => [row.email, row]));
+    }
+    refreshInterval = window.setInterval(() => {
+      refreshTable();
+    }, 5000);
+  } else {
+    // Close realtime and re-open again later
+    if (subscription) {
+      await subscription.unsubscribe();
+    }
+    clearInterval(refreshInterval);
+    contactsCache.clear();
+    isLoading.value = true;
+    await refineContacts();
+    await syncTable();
+    isLoading.value = false;
+  }
+});
+
+onMounted(async () => {
+  isLoading.value = true;
+  await refineContacts();
+  await syncTable();
+  isLoading.value = false;
+});
+
+onUnmounted(() => {
+  clearInterval(refreshInterval);
+});
+/**************************************/
+
 const contacts = computed(() => data.value);
 const contactsLength = computed(() => contacts.value?.length);
 const loading = ref(true);
 
-function convertDates(data: Contact[]) {
-  return [...data].map((d) => {
-    if (d.recency) {
-      d.recency = new Date(d.recency);
-    }
-    return d;
-  });
-}
-async function fetchTable() {
-  loading.value = true;
-  const { data: mydata } = await useAsyncData("contacts", async () => {
-    const { data } = await supabase.rpc("get_contacts_table", {
-      userid: USER_ID,
-    });
-    return data ? convertDates(data) : [];
-  });
-  loading.value = false;
-  data.value = mydata.value ?? [];
-}
-await fetchTable();
-
 /*** Selection ***/
-
 const selectedContacts = ref<Contact[]>([]);
 const selectedContactsLength = computed(() => selectedContacts.value.length);
 const selectAll = ref(false);
@@ -352,9 +458,8 @@ const onRowUnselect = () => {
 };
 
 /*** Filters ***/
-
 const filters = ref();
-const searchContactModel = ref("");
+const searchContactModel = ref('');
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -374,7 +479,7 @@ watch(searchContactModel, (newValue: string) => {
   debouncedUpdate(newValue);
 });
 
-const ANY_SELECTED = ref("ANY_SELECTED");
+const ANY_SELECTED = ref('ANY_SELECTED');
 FilterService.register(ANY_SELECTED.value, (value, filter) => {
   return !filter ? true : filter.some((item: string) => value.includes(item));
 });
@@ -427,7 +532,7 @@ const clearFilter = () => {
   discussionsToggle.value = false;
   personsToggle.value = false;
   recentToggle.value = false;
-  searchContactModel.value = "";
+  searchContactModel.value = '';
   initFilters();
 };
 
@@ -451,15 +556,86 @@ const exportCSV = () => {
 
 function copyContact(name: string, email: string) {
   toast.add({
-    severity: "success",
-    summary: "Copied contact!",
-    detail: "Copied contact to clipboard",
+    severity: 'success',
+    summary: 'Copied contact!',
+    detail: 'Copied contact to clipboard',
     life: 3000,
   });
   navigator.clipboard.writeText(
-    name && name !== "" ? `${name} <${email}>` : `<${email}>`
+    name && name !== '' ? `${name} <${email}>` : `<${email}>`
   );
 }
+
+// // EXPORT CSV OLD
+// const isExportDisabled = computed(
+//   () =>
+//     data.value.length === 0 ||
+//     activeMiningTask.value ||
+//     leadminerStore.loadingStatusDns
+// );
+// async function exportTable() {
+//   const { email } = useSupabaseUser().value as User;
+//   const currentDatetime = new Date().toISOString().slice(0, 10);
+
+//   await $api('/imap/export/csv', {
+//     async onResponse({ response }) {
+//       if (response.status === 204) {
+//         return;
+//       }
+
+//       const status = exportFile(
+//         `leadminer-${email}-${currentDatetime}.csv`,
+//         response._data,
+//         'text/csv'
+//       );
+
+//       if (status !== true) {
+//         throw new Error('Browser denied file download...');
+//       }
+
+//       await leadminerStore.syncUserCredits();
+
+//       toast.add({
+//     severity: "success",
+//     summary:  'Emails exported successfully',
+//     life: 3000,
+//   });
+//     },
+//   });
+// }
+
+// const openCreditModel = ({
+//   total,
+//   available,
+// }: {
+//   total: number;
+//   available: number;
+// }) => {
+//   if (total === undefined || available === undefined) {
+//     return toast.add({
+//     severity: "error",
+//     summary: "Error when verifying export CSV",
+//     life: 3000,
+//   });
+//   }
+//   return CreditsDialogRef.value?.openModal(total, available);
+// };
+
+// async function verifyExport() {
+//   await $api('/imap/export/csv/verify', {
+//     async onResponse({ response }) {
+//       if (response.status === 204) {
+//         return;
+//       }
+
+//       if (response.status !== 206) {
+//         await exportTable();
+//       } else {
+//         openCreditModel(response._data);
+//       }
+//     },
+//   });
+// }
 
 /*** Settings ***/
 const settingsPanel = ref();
@@ -468,7 +644,7 @@ function toggleSettingsPanel(event: Event) {
 }
 const validToggle = ref(true); // status: valid
 function onValidToggle() {
-  filters.value.status.value = validToggle.value ? ["VALID"] : null;
+  filters.value.status.value = validToggle.value ? ['VALID'] : null;
 }
 const discussionsToggle = ref(true); // replies: >=1
 function onDiscussionsToggle() {
@@ -479,7 +655,7 @@ function onDiscussionsToggle() {
 const personsToggle = ref(true); // tags: professional, personal
 function onPersonsToggle() {
   filters.value.tags.value = personsToggle.value
-    ? ["professional", "personal"]
+    ? ['professional', 'personal']
     : null;
 }
 const recentToggle = ref(true); // recency: <3 years
@@ -529,7 +705,4 @@ toggleToggles();
 // onUnmounted(() => {
 //   supabase.removeChannel(channel.value);
 // });
-
 </script>
-
-
