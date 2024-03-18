@@ -234,18 +234,19 @@ import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import ValidityIndicator from '@/components/ValidityIndicator.vue';
 import { type Contact, EmailStatusScore } from '@/types/contact';
 
+const $q = useQuasar();
 const { $api } = useNuxtApp();
+const $user = useSupabaseUser();
+const $supabaseClient = useSupabaseClient();
+const leadminerStore = useLeadminerStore();
 
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
-
-const $q = useQuasar();
-const leadminerStore = useLeadminerStore();
+const table = ref<QTable>();
 const rows = ref<Contact[]>([]);
 const filterSearch = ref('');
-const filter = { filterSearch };
-const isLoading = ref(true);
 const loadingLabel = ref('');
-const table = ref<QTable>();
+const isLoading = ref(true);
+const filter = { filterSearch };
 
 let contactsCache = new Map<string, Contact>();
 
@@ -267,22 +268,20 @@ let subscription: RealtimeChannel;
 
 async function setupSubscription() {
   // We are 100% sure that the user is authenticated in this component
-  const user = useSupabaseUser().value;
-  subscription = useSupabaseClient()
-    .channel('*')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'persons',
-        filter: `user_id=eq.${user?.id}`,
-      },
-      (payload: RealtimePostgresChangesPayload<Contact>) => {
-        const newContact = payload.new as Contact;
-        contactsCache.set(newContact.email, newContact);
-      }
-    );
+  const user = $user.value;
+  subscription = $supabaseClient.channel('*').on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'persons',
+      filter: `user_id=eq.${user?.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
 }
 
 function refreshTable() {
@@ -299,9 +298,9 @@ function refreshTable() {
 
 async function refineContacts() {
   loadingLabel.value = 'Refining contacts...';
-  const user = useSupabaseUser().value;
+  const user = $user.value;
   // @ts-ignore: Issue with @nuxt/supabase typing
-  const refine = await useSupabaseClient().rpc('refine_persons', {
+  const refine = await $supabaseClient.rpc('refine_persons', {
     userid: user?.id,
   });
 
@@ -312,7 +311,7 @@ async function refineContacts() {
 
 async function getContacts(userId: string): Promise<Contact[]> {
   // @ts-ignore: Issue with @nuxt/supabase typing
-  const { data, error } = await useSupabaseClient().rpc('get_contacts_table', {
+  const { data, error } = await $supabaseClient.rpc('get_contacts_table', {
     userid: userId,
   });
 
@@ -324,10 +323,16 @@ async function getContacts(userId: string): Promise<Contact[]> {
 }
 
 async function syncTable() {
-  loadingLabel.value = 'Syncing...';
-  const user = useSupabaseUser().value as User;
-  const contacts = await getContacts(user.id);
-  rows.value = contacts;
+  try {
+    isLoading.value = true;
+    loadingLabel.value = 'Syncing...';
+    const user = $user.value as User;
+    rows.value = await getContacts(user.id);
+    isLoading.value = false;
+  } catch (err) {
+    isLoading.value = false;
+    throw err;
+  }
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -539,7 +544,7 @@ function filterFn(rowsToFilter: readonly any[], terms: any) {
 }
 
 async function exportTable() {
-  const { email } = useSupabaseUser().value as User;
+  const { email } = $user.value as User;
   const currentDatetime = new Date().toISOString().slice(0, 10);
 
   await $api('/imap/export/csv', {
@@ -609,12 +614,11 @@ const onKeyDown = (event: KeyboardEvent) => {
   }
 };
 
+await useAsyncData('refine', () => refineContacts());
+await useAsyncData('contacts', () => syncTable());
+
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown);
-  isLoading.value = true;
-  await refineContacts();
-  await syncTable();
-  isLoading.value = false;
 });
 
 onUnmounted(() => {
