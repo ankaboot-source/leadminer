@@ -1,8 +1,64 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  srcDir: 'src',
   $development: {
     devtools: { enabled: true },
+    sourcemap: {
+      server: true,
+      client: true,
+    },
+  },
+  srcDir: 'src',
+  modules: [
+    '@nuxtjs/tailwindcss',
+    '@nuxtjs/supabase',
+    'nuxt-primevue',
+    '@pinia/nuxt',
+    'nuxt-quasar-ui',
+    '@nuxtjs/eslint-module',
+  ],
+  css: [
+    'primevue/resources/themes/aura-light-amber/theme.css',
+    '~/assets/css/app.scss',
+  ],
+  postcss: {
+    plugins: {
+      autoprefixer: {
+        overrideBrowserslist: [
+          'last 4 Chrome versions',
+          'last 4 Firefox versions',
+          'last 4 Edge versions',
+          'last 4 Safari versions',
+          'last 4 Android versions',
+          'last 4 ChromeAndroid versions',
+          'last 4 FirefoxAndroid versions',
+          'last 4 iOS versions',
+        ],
+      },
+    },
+  },
+  quasar: {
+    plugins: ['Notify'],
+    sassVariables: '~/assets/css/quasar.variables.scss',
+    extras: {
+      fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
+    },
+  },
+  primevue: {
+    cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
+    components: {
+      exclude: ['Editor', 'Chart'],
+    },
+  },
+  supabase: {
+    url: process.env.SUPABASE_PROJECT_URL,
+    key: process.env.SUPABASE_ANON_KEY,
+    redirectOptions: {
+      login: '/auth/login',
+      callback: '/callback',
+      include: undefined,
+      exclude: ['/auth/signup', '/auth/forgot-password'],
+      cookieRedirect: false,
+    },
   },
   runtimeConfig: {
     public: {
@@ -17,36 +73,4 @@ export default defineNuxtConfig({
       EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
     },
   },
-  modules: [
-    '@nuxtjs/tailwindcss',
-    '@nuxtjs/supabase',
-    'nuxt-primevue',
-    '@pinia/nuxt',
-    'nuxt-quasar-ui',
-    '@nuxtjs/eslint-module',
-  ],
-  supabase: {
-    url: process.env.SUPABASE_PROJECT_URL,
-    key: process.env.SUPABASE_ANON_KEY,
-    redirectOptions: {
-      login: '/auth/login',
-      callback: '/callback',
-      include: undefined,
-      exclude: ['/auth/signup', '/auth/forgot-password'],
-      cookieRedirect: false,
-    },
-  },
-  quasar: {
-    plugins: ['Notify'],
-    extras: {
-      fontIcons: ['material-icons'],
-    },
-  },
-  primevue: {
-    cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
-    components: {
-      exclude: ['Editor', 'Chart'],
-    },
-  },
-  css: ['primevue/resources/themes/aura-light-amber/theme.css'],
 });
