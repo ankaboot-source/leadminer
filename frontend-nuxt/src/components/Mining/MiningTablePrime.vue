@@ -5,7 +5,6 @@
     action-type="download"
     @secondary-action="exportTable"
   />
-  <Toast />
   <DataTable
     ref="myTable"
     v-model:selection="selectedContacts"

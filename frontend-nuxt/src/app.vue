@@ -1,5 +1,6 @@
 <template>
   <NuxtPage />
+  <Toast />
 </template>
 
 <script setup lang="ts">
@@ -36,4 +37,3 @@ onNuxtReady(() => {
   }
 });
 </script>
-./src/stores/leadminer./src/stores/leadminer./src/stores/leadminer
