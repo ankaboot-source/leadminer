@@ -69,8 +69,8 @@
         <!-- Settings -->
         <Button
           icon="pi pi-sliders-h"
-          @click="toggleSettingsPanel"
           :badge="defaultOnFilters"
+          @click="toggleSettingsPanel"
         />
         <OverlayPanel ref="settingsPanel">
           <span class="font-medium text-900 block mb-2"> Settings </span>
@@ -401,8 +401,6 @@ async function getContacts(userId: string): Promise<Contact[]> {
   if (error) {
     throw error;
   }
-  console.log(data);
-
   return data ? convertDates(data) : [];
 }
 
@@ -672,6 +670,14 @@ function onRecentToggle(yearsAgo: number) {
     ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
     : null;
 }
+function clearFilter() {
+  validToggle.value = false;
+  discussionsToggle.value = false;
+  personsToggle.value = false;
+  recentToggle.value = false;
+  searchContactModel.value = '';
+  initFilters();
+}
 function initDefaultFilters() {
   onValidToggle();
   onDiscussionsToggle();
@@ -681,21 +687,12 @@ function initDefaultFilters() {
     clearFilter();
   }
 }
-function clearFilter() {
-  validToggle.value = false;
-  discussionsToggle.value = false;
-  personsToggle.value = false;
-  recentToggle.value = false;
-  searchContactModel.value = '';
-  initFilters();
-}
 initDefaultFilters();
-const defaultOnFilters = computed(() => {
-  return (
+const defaultOnFilters = computed(
+  () =>
     validToggle.value +
     discussionsToggle.value +
     personsToggle.value +
     recentToggle.value
-  );
-});
+);
 </script>
