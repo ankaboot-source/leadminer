@@ -1,10 +1,10 @@
 <template>
-  <!-- <CreditsDialog
+  <CreditsDialog
     ref="CreditsDialogRef"
     engagement-type="contacts"
     action-type="download"
     @secondary-action="exportTable"
-  /> -->
+  />
   <Toast />
   <DataTable
     ref="myTable"
@@ -32,7 +32,7 @@
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
   >
-    <template #empty> No contacts found. </template>
+    <template #empty> No contacts found.</template>
     <template #loading>{{ loadingLabel }}</template>
     <template #header>
       <div class="flex items-center gap-1">
@@ -64,7 +64,8 @@
         <Button
           icon="pi pi-external-link"
           label="Export CSV"
-          @click="exportCSV()"
+          :disable="isExportDisabled"
+          @click="verifyExport"
         />
         <!-- Settings -->
         <Button
@@ -272,15 +273,17 @@ import {
   type RealtimePostgresChangesPayload,
   type User,
 } from '@supabase/supabase-js';
-
 import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 import { useToast } from 'primevue/usetoast';
+import { exportFile } from 'quasar';
 import { useLeadminerStore } from '../../stores/leadminer';
 import type { Contact } from '../../types/contact';
+
+import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 
 const toast = useToast();
 
@@ -401,6 +404,7 @@ async function getContacts(userId: string): Promise<Contact[]> {
   if (error) {
     throw error;
   }
+
   return data ? convertDates(data) : [];
 }
 
@@ -546,18 +550,6 @@ const onRowUnselect = () => {
   selectAll.value = false;
 };
 
-/* *** Export CSV *** */
-const myTable = ref();
-
-const exportCSV = () => {
-  myTable.value.exportCSV(
-    selectedContactsLength.value !== 0 &&
-      selectedContactsLength.value !== contactsLength.value
-      ? { selectionOnly: true }
-      : {}
-  );
-};
-
 function copyContact(name: string, email: string) {
   toast.add({
     severity: 'success',
@@ -570,78 +562,91 @@ function copyContact(name: string, email: string) {
   );
 }
 
-// // EXPORT CSV OLD
-// const { $api } = useNuxtApp();
-// const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
-// const isExportDisabled = computed(
-//   () =>
-//     data.value.length === 0 ||
-//     activeMiningTask.value ||
-//     leadminerStore.loadingStatusDns
-// );
-// async function exportTable() {
-//   const { email } = useSupabaseUser().value as User;
-//   const currentDatetime = new Date().toISOString().slice(0, 10);
+/* *** Export CSV *** */
 
-//   await $api('/imap/export/csv', {
-//     async onResponse({ response }) {
-//       if (response.status === 204) {
-//         return;
-//       }
+// /* *** PrimeVue *** */
+// const myTable = ref();
 
-//       const status = exportFile(
-//         `leadminer-${email}-${currentDatetime}.csv`,
-//         response._data,
-//         'text/csv'
-//       );
-
-//       if (status !== true) {
-//         throw new Error('Browser denied file download...');
-//       }
-
-//       await leadminerStore.syncUserCredits();
-
-//       toast.add({
-//     severity: "success",
-//     summary:  'Emails exported successfully',
-//     life: 3000,
-//   });
-//     },
-//   });
-// }
-
-// const openCreditModel = ({
-//   total,
-//   available,
-// }: {
-//   total: number;
-//   available: number;
-// }) => {
-//   if (total === undefined || available === undefined) {
-//     return toast.add({
-//     severity: "error",
-//     summary: "Error when verifying export CSV",
-//     life: 3000,
-//   });
-//   }
-//   return CreditsDialogRef.value?.openModal(total, available);
+// const exportCSV = () => {
+//   myTable.value.exportCSV(
+//     selectedContactsLength.value !== 0 &&
+//       selectedContactsLength.value !== contactsLength.value
+//       ? { selectionOnly: true }
+//       : {}
+//   );
 // };
 
-// async function verifyExport() {
-//   await $api('/imap/export/csv/verify', {
-//     async onResponse({ response }) {
-//       if (response.status === 204) {
-//         return;
-//       }
+const { $api } = useNuxtApp();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+const isExportDisabled = computed(
+  () =>
+    rows.value.length === 0 ||
+    activeMiningTask.value ||
+    leadminerStore.loadingStatusDns
+);
+async function exportTable() {
+  const { email } = useSupabaseUser().value as User;
+  const currentDatetime = new Date().toISOString().slice(0, 10);
 
-//       if (response.status !== 206) {
-//         await exportTable();
-//       } else {
-//         openCreditModel(response._data);
-//       }
-//     },
-//   });
-// }
+  await $api('/imap/export/csv', {
+    async onResponse({ response }) {
+      if (response.status === 204) {
+        return;
+      }
+
+      const status = exportFile(
+        `leadminer-${email}-${currentDatetime}.csv`,
+        response._data,
+        'text/csv'
+      );
+
+      if (status !== true) {
+        throw new Error('Browser denied file download...');
+      }
+
+      await leadminerStore.syncUserCredits();
+
+      toast.add({
+        severity: 'success',
+        summary: 'Emails exported successfully',
+        life: 3000,
+      });
+    },
+  });
+}
+
+const openCreditModel = ({
+  total,
+  available,
+}: {
+  total: number;
+  available: number;
+}) => {
+  if (total === undefined || available === undefined) {
+    return toast.add({
+      severity: 'error',
+      summary: 'Error when verifying export CSV',
+      life: 3000,
+    });
+  }
+  return CreditsDialogRef.value?.openModal(total, available);
+};
+
+async function verifyExport() {
+  await $api('/imap/export/csv/verify', {
+    async onResponse({ response }) {
+      if (response.status === 204) {
+        return;
+      }
+
+      if (response.status !== 206) {
+        await exportTable();
+      } else {
+        openCreditModel(response._data);
+      }
+    },
+  });
+}
 
 /* *** Settings *** */
 const settingsPanel = ref();
@@ -683,9 +688,6 @@ function initDefaultFilters() {
   onDiscussionsToggle();
   onPersonsToggle();
   onRecentToggle(3);
-  if (contactsLength.value === 0) {
-    clearFilter();
-  }
 }
 initDefaultFilters();
 const defaultOnFilters = computed(
