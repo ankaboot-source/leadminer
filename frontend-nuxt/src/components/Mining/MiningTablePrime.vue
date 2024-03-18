@@ -67,7 +67,11 @@
           @click="exportCSV()"
         />
         <!-- Settings -->
-        <Button icon="pi pi-sliders-h" @click="toggleSettingsPanel" />
+        <Button
+          icon="pi pi-sliders-h"
+          @click="toggleSettingsPanel"
+          :badge="defaultOnFilters"
+        />
         <OverlayPanel ref="settingsPanel">
           <span class="font-medium text-900 block mb-2"> Settings </span>
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
@@ -123,14 +127,14 @@
           </IconField>
         </div>
       </template>
-      <template #body="{ data: rowData }">
+      <template #body="{ data }">
         <div class="flex justify-between items-center">
           <div>
-            <template v-if="rowData.name">
-              <div class="font-medium">{{ rowData.name }}</div>
-              <div>{{ rowData.email }}</div>
+            <template v-if="data.name">
+              <div class="font-medium">{{ data.name }}</div>
+              <div>{{ data.email }}</div>
             </template>
-            <div v-else class="font-medium">{{ rowData.email }}</div>
+            <div v-else class="font-medium">{{ data.email }}</div>
           </div>
           <div>
             <Button
@@ -138,7 +142,7 @@
               text
               icon="pi pi-copy"
               aria-label="Copy"
-              @click="copyContact(rowData.name, rowData.email)"
+              @click="copyContact(data.name, data.email)"
             />
           </div>
         </div>
@@ -161,8 +165,8 @@
 
     <!-- Recency -->
     <Column field="recency" header="Recency" sortable data-type="date">
-      <template #body="{ data: rowData }">
-        {{ rowData.recency.toLocaleString() }}
+      <template #body="{ data }">
+        {{ data.recency.toLocaleString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -197,10 +201,10 @@
       :show-add-button="false"
       :filter-menu-style="{ width: '14rem' }"
     >
-      <template #body="{ data: rowData }">
+      <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
           <Tag
-            v-for="tag of rowData.tags"
+            v-for="tag of data.tags"
             :key="tag"
             :value="tag"
             :severity="getTagColor(tag)"
@@ -238,11 +242,11 @@
       :show-add-button="false"
       :filter-menu-style="{ width: '14rem' }"
     >
-      <template #body="{ data: rowData }">
+      <template #body="{ data }">
         <Tag
-          v-if="rowData.status"
-          :value="rowData.status"
-          :severity="getStatusColor(rowData.status)"
+          v-if="data.status"
+          :value="data.status"
+          :severity="getStatusColor(data.status)"
         />
       </template>
       <template #filter="{ filterModel }">
@@ -320,10 +324,10 @@ function getTagColor(tag: string) {
 /* ************** INTEGRATION ********************** */
 
 const leadminerStore = useLeadminerStore();
-const data = ref<Contact[]>([]);
+const rows = ref<Contact[]>([]);
 const isLoading = ref(true);
 const loadingLabel = ref('');
-const contacts = computed(() => data.value);
+const contacts = computed(() => rows.value);
 const contactsLength = computed(() => contacts.value?.length);
 
 let contactsCache = new Map<string, Contact>();
@@ -361,7 +365,7 @@ function refreshTable() {
 
   if (hasNewContacts) {
     isLoading.value = true;
-    data.value = Array.from(contactsCache.values());
+    rows.value = Array.from(contactsCache.values());
     isLoading.value = false;
   }
 }
@@ -388,8 +392,7 @@ function convertDates(data: Contact[]) {
   });
 }
 async function getContacts(userId: string): Promise<Contact[]> {
-
-  const { data: myData, error } = await useSupabaseClient().rpc(
+  const { data, error } = await useSupabaseClient().rpc(
     'get_contacts_table',
     // @ts-expect-error: Issue with @nuxt/supabase typing
     { userid: userId }
@@ -398,14 +401,15 @@ async function getContacts(userId: string): Promise<Contact[]> {
   if (error) {
     throw error;
   }
+  console.log(data);
 
-  return myData ? convertDates(myData) : [];
+  return data ? convertDates(data) : [];
 }
 
 async function syncTable() {
   loadingLabel.value = 'Syncing...';
   const user = useSupabaseUser().value as User;
-  data.value = await getContacts(user.id);
+  rows.value = await getContacts(user.id);
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -414,7 +418,7 @@ watch(activeMiningTask, async (isActive) => {
     setupSubscription();
     subscription.subscribe();
     if (contactsLength.value > 0) {
-      contactsCache = new Map(data.value.map((row) => [row.email, row]));
+      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
     }
     refreshInterval = window.setInterval(() => {
       refreshTable();
@@ -668,19 +672,30 @@ function onRecentToggle(yearsAgo: number) {
     ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
     : null;
 }
-function toggleToggles() {
+function initDefaultFilters() {
   onValidToggle();
   onDiscussionsToggle();
   onPersonsToggle();
   onRecentToggle(3);
+  if (contactsLength.value === 0) {
+    clearFilter();
+  }
 }
-toggleToggles();
-const clearFilter = () => {
+function clearFilter() {
   validToggle.value = false;
   discussionsToggle.value = false;
   personsToggle.value = false;
   recentToggle.value = false;
   searchContactModel.value = '';
   initFilters();
-};
+}
+initDefaultFilters();
+const defaultOnFilters = computed(() => {
+  return (
+    validToggle.value +
+    discussionsToggle.value +
+    personsToggle.value +
+    recentToggle.value
+  );
+});
 </script>
