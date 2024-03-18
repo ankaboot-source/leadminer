@@ -70,7 +70,7 @@
         <!-- Settings -->
         <Button
           icon="pi pi-sliders-h"
-          :badge="defaultOnFilters"
+          :badge="defaultOnFilters ? defaultOnFilters.toString() : undefined"
           @click="toggleSettingsPanel"
         />
         <OverlayPanel ref="settingsPanel">
