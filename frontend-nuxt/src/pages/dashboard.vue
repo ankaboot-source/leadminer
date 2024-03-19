@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout name="app">
     <mining-stepper />
-    <mining-table />
+    <mining-table-prime />
   </NuxtLayout>
 </template>
