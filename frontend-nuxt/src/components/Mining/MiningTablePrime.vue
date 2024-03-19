@@ -7,6 +7,7 @@
   />
   <DataTable
     ref="myTable"
+    :exportFilename="getFileName()"
     v-model:selection="selectedContacts"
     v-model:filters="filters"
     scrollable
@@ -15,7 +16,6 @@
     striped-rows
     :select-all="selectAll"
     :value="contacts"
-    export-filename="contacts"
     data-key="email"
     paginator
     filter-display="menu"
@@ -565,15 +565,18 @@ function copyContact(name: string, email: string) {
 
 // /* *** PrimeVue *** */
 // const myTable = ref();
-
-// const exportCSV = () => {
+// function myExportFunction(data, field) {
+//   console.log(data, field);
+//   console.log('exporting...');
+// }
+// function exportCSV() {
 //   myTable.value.exportCSV(
 //     selectedContactsLength.value !== 0 &&
 //       selectedContactsLength.value !== contactsLength.value
 //       ? { selectionOnly: true }
 //       : {}
 //   );
-// };
+// }
 
 const { $api } = useNuxtApp();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
@@ -583,18 +586,20 @@ const isExportDisabled = computed(
     activeMiningTask.value ||
     leadminerStore.loadingStatusDns
 );
-async function exportTable() {
+function getFileName() {
   const { email } = useSupabaseUser().value as User;
   const currentDatetime = new Date().toISOString().slice(0, 10);
-
+  const fileName = `leadminer-${email}-${currentDatetime}`;
+  return fileName;
+}
+async function exportTable() {
   await $api('/imap/export/csv', {
     async onResponse({ response }) {
       if (response.status === 204) {
         return;
       }
-
       const status = exportFile(
-        `leadminer-${email}-${currentDatetime}.csv`,
+        getFileName() + '.csv',
         response._data,
         'text/csv'
       );
