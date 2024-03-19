@@ -18,7 +18,7 @@ export default defineNuxtConfig({
   css: [
     'primeicons/primeicons.css',
     'primevue/resources/themes/aura-light-indigo/theme.css',
-    '~/assets/css/app.scss'
+    '~/assets/css/app.scss',
   ],
   postcss: {
     plugins: {
@@ -52,12 +52,18 @@ export default defineNuxtConfig({
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
     key: process.env.SUPABASE_ANON_KEY,
+    clientOptions: {
+      auth: {
+        flowType: 'implicit',
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    },
     redirectOptions: {
+      callback: '/',
       login: '/auth/login',
-      callback: '/callback',
-      include: undefined,
       exclude: ['/auth/signup', '/auth/forgot-password'],
-      cookieRedirect: false,
     },
   },
   runtimeConfig: {
