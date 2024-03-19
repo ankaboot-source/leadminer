@@ -37,4 +37,3 @@ onNuxtReady(() => {
   }
 });
 </script>
-./src/stores/leadminer./src/stores/leadminer./src/stores/leadminer
