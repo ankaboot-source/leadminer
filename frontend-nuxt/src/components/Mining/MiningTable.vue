@@ -657,6 +657,9 @@ function initDefaultFilters() {
 }
 initDefaultFilters();
 const defaultOnFilters = computed(
-  () => Number(validToggle.value) + Number(discussionsToggle.value) + Number(recentToggle.value)
+  () =>
+    Number(validToggle.value) +
+    Number(discussionsToggle.value) +
+    Number(recentToggle.value)
 );
 </script>
