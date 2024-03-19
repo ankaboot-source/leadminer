@@ -2,27 +2,23 @@
 export default defineNuxtConfig({
   $development: {
     devtools: { enabled: true },
-    sourcemap: {
-      server: true,
-      client: true,
-    },
     devServer: {
       port: 8082,
     },
   },
   srcDir: 'src',
   modules: [
+    '@nuxtjs/eslint-module',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/supabase',
-    'nuxt-primevue',
     '@pinia/nuxt',
+    'nuxt-primevue',
     'nuxt-quasar-ui',
-    '@nuxtjs/eslint-module',
   ],
   css: [
-    'primevue/resources/themes/aura-light-indigo/theme.css',
     'primeicons/primeicons.css',
-    '~/assets/css/app.scss',
+    'primevue/resources/themes/aura-light-indigo/theme.css',
+    '~/assets/css/app.scss'
   ],
   postcss: {
     plugins: {
@@ -42,8 +38,9 @@ export default defineNuxtConfig({
   },
   quasar: {
     plugins: ['Notify'],
+    sassVariables: '~/assets/css/quasar.variables.scss',
     extras: {
-      fontIcons: ['material-icons'],
+      fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
     },
   },
   primevue: {
