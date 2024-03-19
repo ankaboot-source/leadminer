@@ -330,24 +330,24 @@ const activeMiningTask = computed(
 let refreshInterval: number;
 let subscription: RealtimeChannel;
 
+const $user = useSupabaseUser();
+const $supabaseClient = useSupabaseClient();
 function setupSubscription() {
   // We are 100% sure that the user is authenticated in this component
-  const user = useSupabaseUser().value;
-  subscription = useSupabaseClient()
-    .channel('*')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'persons',
-        filter: `user_id=eq.${user?.id}`,
-      },
-      (payload: RealtimePostgresChangesPayload<Contact>) => {
-        const newContact = payload.new as Contact;
-        contactsCache.set(newContact.email, newContact);
-      }
-    );
+  const user = $user.value;
+  subscription = $supabaseClient.channel('*').on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'persons',
+      filter: `user_id=eq.${user?.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
 }
 
 function refreshTable() {
@@ -363,9 +363,9 @@ function refreshTable() {
 
 async function refineContacts() {
   loadingLabel.value = 'Refining contacts...';
-  const user = useSupabaseUser().value;
+  const user = $user.value;
   // @ts-expect-error: Issue with @nuxt/supabase typing
-  const refine = await useSupabaseClient().rpc('refine_persons', {
+  const refine = await $supabaseClient.rpc('refine_persons', {
     userid: user?.id,
   });
 
@@ -383,7 +383,7 @@ function convertDates(data: Contact[]) {
   });
 }
 async function getContacts(userId: string): Promise<Contact[]> {
-  const { data, error } = await useSupabaseClient().rpc(
+  const { data, error } = await $supabaseClient.rpc(
     'get_contacts_table',
     // @ts-expect-error: Issue with @nuxt/supabase typing
     { userid: userId }
@@ -398,7 +398,7 @@ async function getContacts(userId: string): Promise<Contact[]> {
 
 async function syncTable() {
   loadingLabel.value = 'Syncing...';
-  const user = useSupabaseUser().value as User;
+  const user = $user.value as User;
   rows.value = await getContacts(user.id);
 }
 
@@ -559,7 +559,7 @@ const isExportDisabled = computed(
     leadminerStore.loadingStatusDns
 );
 function getFileName() {
-  const { email } = useSupabaseUser().value as User;
+  const { email } = $user.value as User;
   const currentDatetime = new Date().toISOString().slice(0, 10);
   const fileName = `leadminer-${email}-${currentDatetime}`;
   return fileName;
@@ -571,7 +571,7 @@ async function exportTable() {
         return;
       }
       const status = exportFile(
-        getFileName() + '.csv',
+        `${getFileName()}.csv`,
         response._data,
         'text/csv'
       );
