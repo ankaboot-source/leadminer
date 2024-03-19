@@ -6,6 +6,9 @@ export default defineNuxtConfig({
       server: true,
       client: true,
     },
+    devServer: {
+      port: 8082
+    }
   },
   srcDir: 'src',
   modules: [
