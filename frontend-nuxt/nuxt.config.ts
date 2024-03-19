@@ -1,22 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  srcDir: 'src',
   $development: {
     devtools: { enabled: true },
-  },
-  runtimeConfig: {
-    public: {
-      SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
-      // Analytics
-      POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
-      POSTHOG_INSTANCE_ADDRESS: process.env.POSTHOG_INSTANCE_ADDRESS,
-      // UI
-      AVERAGE_EXTRACTION_RATE: process.env.AVERAGE_EXTRACTION_RATE,
-      // Credits
-      ENABLE_CREDIT: process.env.ENABLE_CREDIT,
-      EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
+    sourcemap: {
+      server: true,
+      client: true,
+    },
+    devServer: {
+      port: 8082,
     },
   },
+  srcDir: 'src',
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/supabase',
@@ -25,15 +19,25 @@ export default defineNuxtConfig({
     'nuxt-quasar-ui',
     '@nuxtjs/eslint-module',
   ],
-  supabase: {
-    url: process.env.SUPABASE_PROJECT_URL,
-    key: process.env.SUPABASE_ANON_KEY,
-    redirectOptions: {
-      login: '/auth/login',
-      callback: '/callback',
-      include: undefined,
-      exclude: ['/auth/signup', '/auth/forgot-password'],
-      cookieRedirect: false,
+  css: [
+    'primevue/resources/themes/aura-light-indigo/theme.css',
+    'primeicons/primeicons.css',
+    '~/assets/css/app.scss',
+  ],
+  postcss: {
+    plugins: {
+      autoprefixer: {
+        overrideBrowserslist: [
+          'last 4 Chrome versions',
+          'last 4 Firefox versions',
+          'last 4 Edge versions',
+          'last 4 Safari versions',
+          'last 4 Android versions',
+          'last 4 ChromeAndroid versions',
+          'last 4 FirefoxAndroid versions',
+          'last 4 iOS versions',
+        ],
+      },
     },
   },
   quasar: {
@@ -48,10 +52,30 @@ export default defineNuxtConfig({
       exclude: ['Editor', 'Chart'],
     },
   },
-  css: [
-    'primevue/resources/themes/aura-light-indigo/theme.css',
-    'primeicons/primeicons.css',
-  ],
+  supabase: {
+    url: process.env.SUPABASE_PROJECT_URL,
+    key: process.env.SUPABASE_ANON_KEY,
+    redirectOptions: {
+      login: '/auth/login',
+      callback: '/callback',
+      include: undefined,
+      exclude: ['/auth/signup', '/auth/forgot-password'],
+      cookieRedirect: false,
+    },
+  },
+  runtimeConfig: {
+    public: {
+      SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
+      // Analytics
+      POSTHOG_API_KEY: process.env.POSTHOG_API_KEY,
+      POSTHOG_INSTANCE_ADDRESS: process.env.POSTHOG_INSTANCE_ADDRESS,
+      // UI
+      AVERAGE_EXTRACTION_RATE: process.env.AVERAGE_EXTRACTION_RATE,
+      // Credits
+      ENABLE_CREDIT: process.env.ENABLE_CREDIT,
+      EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
+    },
+  },
   imports: {
     autoImport: true,
   },
