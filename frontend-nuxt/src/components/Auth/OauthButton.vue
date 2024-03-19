@@ -31,7 +31,6 @@ async function loginWithOAuth(provider: Provider) {
       provider,
       options: {
         skipBrowserRedirect: false,
-        redirectTo: `${window.location.origin}/dashboard`,
         scopes: 'email',
       },
     });
