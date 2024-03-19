@@ -52,7 +52,7 @@
           :class="[labelClass]"
           class="text-blue-grey-14 text-center text-h6 text-weight-medium"
         >
-          <div v-if="leadminerStore.isLoadingBoxes">
+          <div v-if="leadminerStore.isLoadingBoxes" class="flex items-center">
             <span class="text-weight-bolder q-mr-xs">
               <q-spinner class="on-left" />
             </span>
