@@ -31,6 +31,6 @@ const { icon, label, loading, outlined, size, click } = defineProps<{
     | 'help'
     | 'danger'
     | 'contrast';
-  click?: (...args: any) => void;
+  click?: (...args: unknown[]) => void;
 }>();
 </script>

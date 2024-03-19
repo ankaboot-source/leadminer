@@ -19,9 +19,7 @@ const supabase = useSupabaseClient();
 const { label, icon, source } = defineProps<{
   label: string;
   icon: string;
-  size: 'large' | 'small';
   source: Provider;
-  align?: 'left' | 'right' | 'center' | 'around' | 'between' | 'evenly';
 }>();
 
 const isLoading = ref(false);
