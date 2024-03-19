@@ -489,7 +489,7 @@ const initFilters = () => {
 };
 initFilters();
 
-function debounce<T extends (...args: unknown[]) => unknown>(
+function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
