@@ -7,22 +7,34 @@ export default defineNuxtConfig({
       client: true,
     },
     devServer: {
-      port: 8082
-    }
+      port: 8082,
+    },
   },
   srcDir: 'src',
   modules: [
-    '@nuxtjs/tailwindcss',
-    '@nuxtjs/supabase',
-    'nuxt-primevue',
-    '@pinia/nuxt',
-    'nuxt-quasar-ui',
+    '@nuxt/test-utils/module',
     '@nuxtjs/eslint-module',
+    '@nuxtjs/i18n',
+    '@nuxtjs/supabase',
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt',
+    'nuxt-primevue',
+    'nuxt-quasar-ui',
   ],
+  primevue: {
+    cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
+    components: {
+      exclude: ['Editor', 'Chart'],
+    },
+  },
   css: [
-    'primevue/resources/themes/aura-light-amber/theme.css',
+    'primevue/resources/themes/aura-light-indigo/theme.css',
     '~/assets/css/app.scss',
   ],
+  i18n: {
+    locales: ['en', 'fr'],
+    defaultLocale: 'en',
+  },
   postcss: {
     plugins: {
       autoprefixer: {
@@ -44,12 +56,6 @@ export default defineNuxtConfig({
     sassVariables: '~/assets/css/quasar.variables.scss',
     extras: {
       fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
-    },
-  },
-  primevue: {
-    cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
-    components: {
-      exclude: ['Editor', 'Chart'],
     },
   },
   supabase: {
