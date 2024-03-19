@@ -400,6 +400,7 @@ async function syncTable() {
   loadingLabel.value = 'Syncing...';
   const user = $user.value as User;
   rows.value = await getContacts(user.id);
+  isLoading.value = false;
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -427,12 +428,9 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
-onMounted(async () => {
-  isLoading.value = true;
-  await refineContacts();
-  await syncTable();
-  isLoading.value = false;
-});
+isLoading.value = true;
+await useAsyncData('refine', () => refineContacts());
+await useAsyncData('contacts', () => syncTable());
 
 onUnmounted(() => {
   clearInterval(refreshInterval);
