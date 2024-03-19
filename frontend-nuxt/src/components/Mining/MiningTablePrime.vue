@@ -6,8 +6,6 @@
     @secondary-action="exportTable"
   />
   <DataTable
-    ref="myTable"
-    :exportFilename="getFileName()"
     v-model:selection="selectedContacts"
     v-model:filters="filters"
     scrollable
@@ -52,6 +50,7 @@
           </template>
           {{ contactsLength }}
         </div>
+        <div>Contacts</div>
         <div class="grow" />
         <Button
           type="button"
@@ -73,7 +72,6 @@
           @click="toggleSettingsPanel"
         />
         <OverlayPanel ref="settingsPanel">
-          <span class="font-medium text-900 block mb-2"> Settings </span>
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
             <li class="flex justify-between">
               <div>Certified valid</div>
@@ -90,15 +88,8 @@
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div>Only real persons</div>
-              <InputSwitch
-                v-model="personsToggle"
-                @update:model-value="onPersonsToggle"
-              />
-            </li>
-            <li class="flex justify-between gap-2">
               <div v-tooltip.left="'- Less than 3 years \n- GDPR Proof'">
-                Recent
+                Recent contacts
               </div>
               <InputSwitch
                 v-model="recentToggle"
@@ -323,8 +314,6 @@ function getTagColor(tag: string) {
   }
 }
 
-/* ************** INTEGRATION ********************** */
-
 const leadminerStore = useLeadminerStore();
 const rows = ref<Contact[]>([]);
 const isLoading = ref(true);
@@ -448,7 +437,6 @@ onMounted(async () => {
 onUnmounted(() => {
   clearInterval(refreshInterval);
 });
-/* ************************************ */
 
 /* *** Filters *** */
 const filters = ref();
@@ -524,7 +512,6 @@ const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
-// const filteredContactsLength = computed(() => filteredContacts.value.length);
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
@@ -562,21 +549,6 @@ function copyContact(name: string, email: string) {
 }
 
 /* *** Export CSV *** */
-
-// /* *** PrimeVue *** */
-// const myTable = ref();
-// function myExportFunction(data, field) {
-//   console.log(data, field);
-//   console.log('exporting...');
-// }
-// function exportCSV() {
-//   myTable.value.exportCSV(
-//     selectedContactsLength.value !== 0 &&
-//       selectedContactsLength.value !== contactsLength.value
-//       ? { selectionOnly: true }
-//       : {}
-//   );
-// }
 
 const { $api } = useNuxtApp();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
@@ -667,12 +639,7 @@ function onDiscussionsToggle() {
     ? 1
     : null;
 }
-const personsToggle = ref(true); // tags: professional, personal
-function onPersonsToggle() {
-  filters.value.tags.value = personsToggle.value
-    ? ['professional', 'personal']
-    : null;
-}
+
 const recentToggle = ref(true); // recency: <3 years
 function onRecentToggle(yearsAgo: number) {
   filters.value.recency.constraints[0].value = recentToggle.value
@@ -682,7 +649,6 @@ function onRecentToggle(yearsAgo: number) {
 function clearFilter() {
   validToggle.value = false;
   discussionsToggle.value = false;
-  personsToggle.value = false;
   recentToggle.value = false;
   searchContactModel.value = '';
   initFilters();
@@ -690,15 +656,10 @@ function clearFilter() {
 function initDefaultFilters() {
   onValidToggle();
   onDiscussionsToggle();
-  onPersonsToggle();
   onRecentToggle(3);
 }
 initDefaultFilters();
 const defaultOnFilters = computed(
-  () =>
-    validToggle.value +
-    discussionsToggle.value +
-    personsToggle.value +
-    recentToggle.value
+  () => validToggle.value + discussionsToggle.value + recentToggle.value
 );
 </script>
