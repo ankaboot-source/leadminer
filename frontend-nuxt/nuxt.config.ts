@@ -7,8 +7,8 @@ export default defineNuxtConfig({
       client: true,
     },
     devServer: {
-      port: 8082
-    }
+      port: 8082,
+    },
   },
   srcDir: 'src',
   modules: [
@@ -20,7 +20,8 @@ export default defineNuxtConfig({
     '@nuxtjs/eslint-module',
   ],
   css: [
-    'primevue/resources/themes/aura-light-amber/theme.css',
+    'primevue/resources/themes/aura-light-indigo/theme.css',
+    'primeicons/primeicons.css',
     '~/assets/css/app.scss',
   ],
   postcss: {
@@ -41,9 +42,8 @@ export default defineNuxtConfig({
   },
   quasar: {
     plugins: ['Notify'],
-    sassVariables: '~/assets/css/quasar.variables.scss',
     extras: {
-      fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
+      fontIcons: ['material-icons'],
     },
   },
   primevue: {
@@ -75,5 +75,8 @@ export default defineNuxtConfig({
       ENABLE_CREDIT: process.env.ENABLE_CREDIT,
       EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
     },
+  },
+  imports: {
+    autoImport: true,
   },
 });
