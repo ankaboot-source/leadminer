@@ -1,25 +1,27 @@
 <template>
-  <q-btn
-    :loading="isLoading"
-    no-caps
-    unelevated
-    :align="align"
-    :size="size"
+  <Button
     :icon="icon"
     :label="label"
+    outlined
+    size="large"
+    severity="secondary"
     @click="loginWithOAuth(source)"
-  />
+  >
+    <slot />
+  </Button>
 </template>
+
 <script setup lang="ts">
-import { type Provider } from '@supabase/supabase-js';
+import Button from 'primevue/button';
+import type { Provider } from '@supabase/supabase-js';
 import { ref } from 'vue';
 
-const { label, icon, size, source, align } = defineProps<{
+const $supabase = useSupabaseClient();
+
+const { label, icon, source } = defineProps<{
   label: string;
   icon: string;
-  size: string;
   source: Provider;
-  align: 'left' | 'right' | 'center' | 'around' | 'between' | 'evenly';
 }>();
 
 const isLoading = ref(false);
@@ -27,7 +29,7 @@ const isLoading = ref(false);
 async function loginWithOAuth(provider: Provider) {
   isLoading.value = true;
   try {
-    const { error } = await useSupabaseClient().auth.signInWithOAuth({
+    const { error } = await $supabase.auth.signInWithOAuth({
       provider,
       options: {
         skipBrowserRedirect: false,
@@ -37,10 +39,12 @@ async function loginWithOAuth(provider: Provider) {
     if (error) {
       throw error;
     }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw Error(error.message);
+    }
+  } finally {
     isLoading.value = false;
-  } catch (err) {
-    isLoading.value = false;
-    throw err;
   }
 }
 </script>

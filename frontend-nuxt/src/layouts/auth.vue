@@ -1,24 +1,16 @@
 <template>
-  <q-layout>
-    <q-page-container>
-      <q-header class="bg-grey-2 q-pt-lg q-px-lg flex" :class="logoPosition">
+  <div class="flex flex-col h-screen">
+    <div class="bg-white w-screen h-auto z-10">
+      <div class="mx-4 my-4">
         <AppLogo />
-      </q-header>
-      <q-page class="flex justify-center bg-grey-2 q-px-xl">
-        <slot />
-      </q-page>
-    </q-page-container>
-  </q-layout>
+      </div>
+    </div>
+    <div class="flex flex-grow">
+      <slot></slot>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
-import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-
-const $quasar = useQuasar();
-
-const logoPosition = computed(() =>
-  $quasar.screen.lt.sm ? 'justify-center' : 'justify-start'
-);
 </script>

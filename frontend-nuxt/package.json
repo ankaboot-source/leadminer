@@ -6,6 +6,7 @@
   "author": "ankaboot",
   "private": true,
   "scripts": {
+    "test": "vitest",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
@@ -19,7 +20,9 @@
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "@nuxt/eslint-config": "^0.2.0",
+    "@nuxt/test-utils": "^3.12.0",
     "@nuxtjs/eslint-module": "^4.1.0",
+    "@nuxtjs/i18n": "^8.2.0",
     "@nuxtjs/supabase": "^1.1.7",
     "@nuxtjs/tailwindcss": "^6.11.4",
     "eslint": "^8.57.0",
@@ -28,7 +31,9 @@
     "nuxt": "^3.10.3",
     "nuxt-primevue": "^0.3.1",
     "nuxt-quasar-ui": "^2.0.7",
+    "recheck": "^4.4.5",
     "sass": "^1.72.0",
+    "vitest": "^1.4.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },

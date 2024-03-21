@@ -268,14 +268,13 @@ import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
-import { useToast } from 'primevue/usetoast';
 import { exportFile } from 'quasar';
 import { useLeadminerStore } from '../../stores/leadminer';
 import type { Contact } from '../../types/contact';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 
-const toast = useToast();
+const $toast = useToast();
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
 const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
@@ -486,6 +485,7 @@ const initFilters = () => {
 };
 initFilters();
 
+// skipcq: JS-0323
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -534,7 +534,7 @@ const onRowUnselect = () => {
 };
 
 function copyContact(name: string, email: string) {
-  toast.add({
+  $toast.add({
     severity: 'success',
     summary: 'Copied contact!',
     detail: 'Copied contact to clipboard',
@@ -579,7 +579,7 @@ async function exportTable() {
 
       await leadminerStore.syncUserCredits();
 
-      toast.add({
+      $toast.add({
         severity: 'success',
         summary: 'Emails exported successfully',
         life: 3000,
@@ -596,7 +596,7 @@ const openCreditModel = ({
   available: number;
 }) => {
   if (total === undefined || available === undefined) {
-    return toast.add({
+    return $toast.add({
       severity: 'error',
       summary: 'Error when verifying export CSV',
       life: 3000,
