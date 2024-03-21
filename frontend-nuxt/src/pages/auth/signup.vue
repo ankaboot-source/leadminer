@@ -43,9 +43,6 @@
         </p>
       </div>
 
-      <div class="card flex justify-content-center">
-        <Toast />
-      </div>
     </NuxtLayout>
   </ClientOnly>
 </template>
