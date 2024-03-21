@@ -2,12 +2,12 @@
   <ClientOnly>
     <NuxtLayout name="auth">
       <div class="m-auto text-center grid gap-6 max-w-[30rem]" flat>
-        <h1 class="text-5xl font-bold font-[Merriweather]">
+        <div class="text-5xl font-bold font-[Merriweather]">
           Forgot your password?
-        </h1>
-        <h2 class="text-lg">
+        </div>
+        <div class="text-lg">
           Enter the email address associated with your account
-        </h2>
+        </div>
 
         <div class="grid gap-4 w-full">
           <FloatLabel>
