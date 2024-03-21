@@ -485,6 +485,7 @@ const initFilters = () => {
 };
 initFilters();
 
+// skipcq: JS-0323
 function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
