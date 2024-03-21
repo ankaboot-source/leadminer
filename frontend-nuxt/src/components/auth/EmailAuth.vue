@@ -49,7 +49,7 @@
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Start Mining"
+          label="Sign up"
           size="large"
           class="w-full"
           @click="signUp"
@@ -96,7 +96,7 @@
         <Button
           v-if="state === 'login'"
           :loading="isLoading"
-          label="Start Mining"
+          label="Sign in"
           class="w-full"
           size="large"
           @click="loginWithEmailAndPassword"
