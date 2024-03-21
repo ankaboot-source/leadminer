@@ -17,7 +17,7 @@
         <div>
           <SocialAuth />
           <Divider align="center" type="solid">
-            <b class="text-gray-500">or sign-up with your email</b>
+            <b class="text-gray-500">or sign-up with email</b>
           </Divider>
           <EmailAuth state="signup" />
         </div>
