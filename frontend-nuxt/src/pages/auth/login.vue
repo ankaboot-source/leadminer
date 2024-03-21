@@ -1,25 +1,29 @@
 <template>
   <ClientOnly>
     <NuxtLayout name="auth">
-      <div class="m-auto text-center grid gap-6 max-w-[30rem]" flat>
-        <h1 class="font-bold font-[Merriweather]">Welcome back!</h1>
+      <div
+        class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]"
+        flat
+      >
+        <div>
+          <p class="text-5xl font-bold font-[Merriweather]">Welcome back!</p>
+        </div>
+        <div>
+          <SocialAuth />
+          <Divider align="center" type="solid">
+            <b class="text-gray-500">or sign-in with email</b>
+          </Divider>
+          <EmailAuth state="login" />
+        </div>
 
-        <SimpleAuthComponent state="login" />
-
-        <Divider align="center" type="solid">
-          <b class="text-gray-500">Or sign in with social email</b>
-        </Divider>
-
-        <SocialAuthComponent />
-
-        <p>
+        <span>
           Don't have an account?
           <NuxtLink to="/auth/signup" class="font-bold link">
             Sign up
           </NuxtLink>
-        </p>
+        </span>
 
-        <p class="text-gray-700 font-[merriweather]">
+        <span class="text-gray-700 font-[merriweather]">
           By clicking "Start mining" or signing in, you agree to the
           <a
             class="link"
@@ -39,13 +43,13 @@
             Data Privacy Policy </a
           >. You also agree to receive information and offers relevant to our
           services via email.
-        </p>
+        </span>
       </div>
     </NuxtLayout>
   </ClientOnly>
 </template>
 
 <script setup lang="ts">
-import SimpleAuthComponent from '@/components/auth/SimpleAuthComponent.vue';
-import SocialAuthComponent from '@/components/auth/SocialAuthComponent.vue';
+import EmailAuth from '@/components/auth/EmailAuth.vue';
+import SocialAuth from '@/components/auth/SocialAuth.vue';
 </script>

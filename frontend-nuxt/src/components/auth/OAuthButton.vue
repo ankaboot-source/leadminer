@@ -16,7 +16,7 @@ import Button from 'primevue/button';
 import type { Provider } from '@supabase/supabase-js';
 import { ref } from 'vue';
 
-const supabase = useSupabaseClient();
+const $supabase = useSupabaseClient();
 
 const { label, icon, source } = defineProps<{
   label: string;
@@ -29,7 +29,7 @@ const isLoading = ref(false);
 async function loginWithOAuth(provider: Provider) {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await $supabase.auth.signInWithOAuth({
       provider,
       options: {
         skipBrowserRedirect: false,

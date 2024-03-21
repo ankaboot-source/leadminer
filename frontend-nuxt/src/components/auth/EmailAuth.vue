@@ -121,9 +121,9 @@ const { state } = withDefaults(
   }
 );
 
-const toast = useToast();
+const $toast = useToast();
 
-const supabase = useSupabaseClient();
+const $supabase = useSupabaseClient();
 
 const $router = useRouter();
 
@@ -144,7 +144,7 @@ const isLoading = ref(false);
 async function loginWithEmailAndPassword() {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await $supabase.auth.signInWithPassword({
       email: email.value,
       password: password.value,
     });
@@ -154,7 +154,7 @@ async function loginWithEmailAndPassword() {
     await $router.push('/');
   } catch (error) {
     if (error instanceof Error) {
-      toast.add({
+      $toast.add({
         severity: 'error',
         summary: 'Error Message',
         detail: error.message,
@@ -169,7 +169,7 @@ async function loginWithEmailAndPassword() {
 async function signUp() {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await $supabase.auth.signUp({
       email: email.value,
       password: password.value,
       options: {
@@ -179,7 +179,7 @@ async function signUp() {
     if (error) {
       throw error;
     }
-    toast.add({
+    $toast.add({
       severity: 'success',
       summary: 'Success Message',
       detail: `We have sent a confirmation email to ${email.value}`,
@@ -187,7 +187,7 @@ async function signUp() {
     });
   } catch (error) {
     if (error instanceof Error) {
-      toast.add({
+      $toast.add({
         severity: 'error',
         summary: 'Error Message',
         detail: `Failed to signup: ${error.message}`,

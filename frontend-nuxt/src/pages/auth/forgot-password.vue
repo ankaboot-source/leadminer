@@ -20,7 +20,7 @@
             />
             <label for="email">Email</label>
           </FloatLabel>
-          <ButtonComponent
+          <Button
             label="Send reset instructions"
             size="large"
             @click="resetPassword"
@@ -36,11 +36,10 @@
 </template>
 
 <script setup lang="ts">
-import ButtonComponent from '@/components/button/ButtonComponent.vue';
+import Button from 'primevue/button';
 
-const toast = useToast();
-
-const supabase = useSupabaseClient();
+const $toast = useToast();
+const $supabase = useSupabaseClient();
 
 const email = ref('');
 const isLoading = ref(false);
@@ -48,14 +47,14 @@ const isLoading = ref(false);
 async function resetPassword() {
   isLoading.value = true;
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
+    const { error } = await $supabase.auth.resetPasswordForEmail(email.value, {
       redirectTo: `${window.location.origin}/account`,
     });
 
     if (error) {
       throw error;
     }
-    toast.add({
+    $toast.add({
       severity: 'success',
       summary:
         'If an account exists with this email address, you will receive password reset instructions',
@@ -63,7 +62,7 @@ async function resetPassword() {
     });
   } catch (error) {
     if (error instanceof Error) {
-      toast.add({
+      $toast.add({
         severity: 'error',
         summary: error.message,
         life: 3000,
