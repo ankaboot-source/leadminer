@@ -27,7 +27,9 @@
           />
           <p>
             Back to
-            <NuxtLink to="/login" class="font-bold link"> Sign in </NuxtLink>
+            <NuxtLink to="auth/login" class="font-bold link">
+              Sign in
+            </NuxtLink>
           </p>
         </div>
       </div>
