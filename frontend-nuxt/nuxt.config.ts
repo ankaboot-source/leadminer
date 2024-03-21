@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   },
   srcDir: 'src',
   modules: [
+    '@nuxt/test-utils/module',
     '@nuxtjs/eslint-module',
     '@nuxtjs/i18n',
     '@nuxtjs/supabase',
