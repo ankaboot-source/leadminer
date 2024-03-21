@@ -6,13 +6,15 @@
     size="large"
     severity="secondary"
     @click="loginWithOAuth(source)"
-  />
+  >
+    <slot />
+  </Button>
 </template>
 
 <script setup lang="ts">
+import Button from 'primevue/button';
 import type { Provider } from '@supabase/supabase-js';
 import { ref } from 'vue';
-import Button from '@/components/button/ButtonComponent.vue';
 
 const supabase = useSupabaseClient();
 
