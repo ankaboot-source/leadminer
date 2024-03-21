@@ -29,7 +29,13 @@
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
   >
-    <template #empty> No contacts found.</template>
+    <template #empty>
+      {{
+        defaultOnFilters !== 0
+          ? 'No contacts found. Try adjusting or clearing filters'
+          : 'No contacts found.'
+      }}
+    </template>
     <template #loading>{{ loadingLabel }}</template>
     <template #header>
       <div class="flex items-center gap-1">

@@ -87,8 +87,8 @@
               </q-badge>
             </div>
             <q-select
-              v-if="leadminerStore.activeMiningSource"
-              v-model="leadminerStore.activeMiningSource"
+              v-if="$leadminerStore.activeMiningSource"
+              v-model="$leadminerStore.activeMiningSource"
               outlined
               disable
               dense
@@ -153,31 +153,31 @@ const props = defineProps({
   isLoadingBoxes: { type: Boolean, required: true },
 });
 
-const leadminerStore = useLeadminerStore();
+const $leadminerStore = useLeadminerStore();
 
 const currentTab = ref<TabName>('mailbox-folders');
 const isFullScreen = ref(false);
 const isVisible = ref(false);
 const drawer = ref(true);
 
-const activeMiningSource = computed(() => leadminerStore.activeMiningSource);
+const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
 
-const boxes = computed(() => leadminerStore.boxes);
+const boxes = computed(() => $leadminerStore.boxes);
 
 const shouldShowTreeCard = computed(
   () => boxes.value.length > 0 && !props.isLoadingBoxes
 );
 const activeMiningTask = computed(
-  () => leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined
 );
 
 async function onRefreshImapTree() {
   try {
-    leadminerStore.isLoadingBoxes = true;
-    await leadminerStore.getBoxes();
-    leadminerStore.isLoadingBoxes = false;
+    $leadminerStore.isLoadingBoxes = true;
+    await $leadminerStore.getBoxes();
+    $leadminerStore.isLoadingBoxes = false;
   } catch (err) {
-    leadminerStore.isLoadingBoxes = false;
+    $leadminerStore.isLoadingBoxes = false;
     throw err;
   }
 }

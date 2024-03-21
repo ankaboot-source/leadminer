@@ -89,7 +89,7 @@
           <label for="password">Password</label>
         </FloatLabel>
       </div>
-      <span class="w-full text-right font-bold text-sm link">
+      <span class="w-full text-right link">
         <NuxtLink to="/auth/forgot-password"> Forgot your password? </NuxtLink>
       </span>
       <div class="pt-1">
