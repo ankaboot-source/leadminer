@@ -1,15 +1,14 @@
 <template>
   <ClientOnly>
     <NuxtLayout name="auth">
-      <div class="m-auto text-center grid gap-6 max-w-[30rem]" flat>
-        <div class="text-5xl font-bold font-[Merriweather]">
+      <div class="m-auto grid text-center gap-6 max-w-[30rem]" flat>
+        <div class="text-4xl font-bold font-[Merriweather]">
           Forgot your password?
         </div>
-        <div class="text-lg">
-          Enter the email address associated with your account
-        </div>
-
         <div class="grid gap-4 w-full">
+          <div class="text-lg">
+            Enter the email address associated with your account
+          </div>
           <FloatLabel>
             <InputText
               v-model="email"
@@ -20,18 +19,17 @@
             />
             <label for="email">Email</label>
           </FloatLabel>
-          <Button
-            label="Send reset instructions"
-            size="large"
-            @click="resetPassword"
-          />
-          <p>
-            Back to
-            <NuxtLink to="auth/login" class="font-bold link">
-              Sign in
-            </NuxtLink>
-          </p>
         </div>
+        <Button
+          class="w-full"
+          label="Send reset instructions"
+          size="large"
+          @click="resetPassword"
+        />
+        <p>
+          Back to
+          <NuxtLink to="auth/login" class="font-bold link"> Sign in </NuxtLink>
+        </p>
       </div>
     </NuxtLayout>
   </ClientOnly>

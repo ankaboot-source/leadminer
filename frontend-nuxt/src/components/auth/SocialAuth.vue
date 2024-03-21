@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col space-y-3">
+  <div class="flex flex-col space-y-4">
     <div>
       <OAuthButton
         label="Continue with Google"
