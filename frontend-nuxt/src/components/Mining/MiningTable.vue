@@ -428,7 +428,6 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
-isLoading.value = true;
 await useAsyncData('refine', () => refineContacts());
 await useAsyncData('contacts', () => syncTable());
 
@@ -658,6 +657,9 @@ function initDefaultFilters() {
 }
 initDefaultFilters();
 const defaultOnFilters = computed(
-  () => validToggle.value + discussionsToggle.value + recentToggle.value
+  () =>
+    Number(validToggle.value) +
+    Number(discussionsToggle.value) +
+    Number(recentToggle.value)
 );
 </script>

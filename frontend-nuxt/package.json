@@ -42,7 +42,7 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@pinia/nuxt": "^0.5.1",
     "@quasar/extras": "^1.16.9",
-    "nitropack": "^2.8.1",
+    "nitropack": "^2.9.4",
     "object-scan": "^19.0.5",
     "pinia": "^2.1.7",
     "prettier": "^2.8.7",

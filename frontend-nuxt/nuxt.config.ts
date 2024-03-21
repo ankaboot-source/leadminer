@@ -2,10 +2,6 @@
 export default defineNuxtConfig({
   $development: {
     devtools: { enabled: true },
-    sourcemap: {
-      server: true,
-      client: true,
-    },
     devServer: {
       port: 8082,
     },
@@ -28,8 +24,8 @@ export default defineNuxtConfig({
     },
   },
   css: [
-    'primevue/resources/themes/aura-light-indigo/theme.css',
     'primeicons/primeicons.css',
+    'primevue/resources/themes/aura-light-indigo/theme.css',
     '~/assets/css/app.scss',
   ],
   i18n: {
@@ -54,19 +50,26 @@ export default defineNuxtConfig({
   },
   quasar: {
     plugins: ['Notify'],
+    sassVariables: '~/assets/css/quasar.variables.scss',
     extras: {
-      fontIcons: ['material-icons'],
+      fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
     },
   },
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
     key: process.env.SUPABASE_ANON_KEY,
+    clientOptions: {
+      auth: {
+        flowType: 'implicit',
+        detectSessionInUrl: true,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    },
     redirectOptions: {
+      callback: '/',
       login: '/auth/login',
-      callback: '/callback',
-      include: undefined,
       exclude: ['/auth/signup', '/auth/forgot-password'],
-      cookieRedirect: false,
     },
   },
   runtimeConfig: {
