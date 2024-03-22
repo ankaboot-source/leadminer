@@ -1,6 +1,6 @@
 <template>
   <q-badge rounded :color="color">
-    {{ ' ' }}
+    ' '
     <q-tooltip :class="'bg-' + color">
       {{ tooltip }}
     </q-tooltip>
