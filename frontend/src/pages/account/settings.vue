@@ -185,7 +185,7 @@ async function updateProfile() {
     }
     const { error } = await useSupabaseClient()
       .from('profiles')
-      // @ts-ignore: Issue with @nuxt/supabase typing
+      // @ts-expect-error - Issue with @nuxt/supabase typing
       .update({
         email: canChangeEmailPassword ? email.value : undefined,
         full_name: fullName.value,
