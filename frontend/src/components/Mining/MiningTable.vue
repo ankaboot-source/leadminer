@@ -31,7 +31,7 @@
   >
     <template #empty>
       {{
-        defaultOnFilters !== 0
+        defaultOnFilters !== 0 && contactsLength !== 0
           ? 'No contacts found. Try adjusting or clearing filters'
           : 'No contacts found.'
       }}
