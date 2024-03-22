@@ -1,5 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import pkg from './package.json'
+import pkg from './package.json';
 
 export default defineNuxtConfig({
   srcDir: 'src',
@@ -22,9 +22,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       titleTemplate: `${pkg.productName}`,
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      ],
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
     },
   },
   runtimeConfig: {
