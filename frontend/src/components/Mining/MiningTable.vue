@@ -542,8 +542,8 @@ const onRowUnselect = () => {
 function copyContact(name: string, email: string) {
   $toast.add({
     severity: 'success',
-    summary: 'Copied contact!',
-    detail: 'Copied contact to clipboard',
+    summary: 'Contact copied',
+    detail: 'This contact email address has been copied to your clipboard',
     life: 3000,
   });
   navigator.clipboard.writeText(
