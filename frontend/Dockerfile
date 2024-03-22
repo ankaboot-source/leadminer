@@ -1,6 +1,4 @@
 FROM node:lts-alpine as build-stage
-WORKDIR /frontend
-COPY . .
 ARG SERVER_ENDPOINT
 ARG SUPABASE_PROJECT_URL
 ARG SUPABASE_ANON_KEY
@@ -22,9 +20,11 @@ ENV POSTHOG_INSTANCE_ADDRESS ${POSTHOG_INSTANCE_ADDRESS}
 ENV ENABLE_CREDIT ${ENABLE_CREDIT}
 ENV EXTERNAL_REFILL_CREDITS_LINK ${EXTERNAL_REFILL_CREDITS_LINK}
 
+WORKDIR /frontend
+COPY . .
+
 RUN npm install && npm run build
 
-FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /frontend/dist/spa /usr/share/nginx/html
+EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD [ "node", ".output/server/index.mjs" ]

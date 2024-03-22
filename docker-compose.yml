@@ -42,10 +42,8 @@ services:
       - redis
 
   leadminer-server:
-    image: leadminer-server:git
-    container_name: nginx_server
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    image: leadminer-frontend:git
+    container_name: nuxt_frontend
     build:
       context: frontend
       args:
@@ -61,7 +59,7 @@ services:
         EXTERNAL_REFILL_CREDITS_LINK: ${EXTERNAL_REFILL_CREDITS_LINK}
 
     ports:
-      - 8020:80
+      - 8020:3000
     restart: always
     depends_on:
       - leadminer-api
