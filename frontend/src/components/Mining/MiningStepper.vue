@@ -38,12 +38,12 @@
           >
           <div class="flex row flex-right q-gutter-md q-pt-sm">
             <oauth-source
-              icon="img:icons/google.png"
+              icon="img:/icons/google.png"
               label="Google"
               source="google"
             />
             <oauth-source
-              icon="img:icons/microsoft.png"
+              icon="img:/icons/microsoft.png"
               label="Microsoft or Outlook"
               source="azure"
             />
@@ -54,7 +54,7 @@
           <q-btn
             v-if="sourceOptions.length"
             class="text-black q-ml-sm"
-            :disable="!leadminerStore.activeMiningSource"
+            :disable="!$leadminerStore.activeMiningSource"
             unelevated
             color="amber-13"
             no-caps
@@ -73,7 +73,7 @@
         <mining-settings
           ref="miningSettingsRef"
           :total-emails="totalEmails"
-          :is-loading-boxes="leadminerStore.isLoadingBoxes"
+          :is-loading-boxes="$leadminerStore.isLoadingBoxes"
           @get-boxes="getBoxes"
         />
         <q-stepper-navigation class="text-right">
@@ -88,8 +88,8 @@
           <q-btn
             v-if="!activeMiningTask"
             :disable="
-              leadminerStore.isLoadingStartMining ||
-              leadminerStore.isLoadingBoxes
+              $leadminerStore.isLoadingStartMining ||
+              $leadminerStore.isLoadingBoxes
             "
             no-caps
             outline
@@ -102,15 +102,15 @@
             v-if="!activeMiningTask"
             :disable="
               activeMiningTask ||
-              leadminerStore.isLoadingStartMining ||
-              leadminerStore.isLoadingBoxes
+              $leadminerStore.isLoadingStartMining ||
+              $leadminerStore.isLoadingBoxes
             "
-            :loading="leadminerStore.isLoadingStartMining"
+            :loading="$leadminerStore.isLoadingStartMining"
             no-caps
             unelevated
             color="amber-13"
             class="text-black q-ml-sm"
-            icon-right="img:icons/pickaxe.svg"
+            icon-right="img:/icons/pickaxe.svg"
             style="border: 2px solid black !important"
             label="Start mining now!"
             @click="startMining"
@@ -122,7 +122,7 @@
           </q-btn>
           <q-btn
             v-else
-            :loading="leadminerStore.isLoadingStartMining"
+            :loading="$leadminerStore.isLoadingStartMining"
             no-caps
             unelevated
             class="text-black"
@@ -139,97 +139,85 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
-import MiningSettings from "src/components/Mining/MiningSettings.vue";
-import ProgressCard from "src/components/Mining/MiningProgress.vue";
-import OauthSource from "src/components/Mining/AddSourceOauth.vue";
-import ImapSource from "src/components/Mining/AddSourceImap.vue";
-import { useLeadminerStore } from "src/stores/leadminer";
-import { supabase } from "src/helpers/supabase";
-import { MiningSource } from "src/types/mining";
-import { useRouter } from "vue-router";
-import { AxiosError } from "axios";
+import { ref, computed, onMounted, watch } from 'vue';
 // @ts-expect-error "No type definitions"
-import objectScan from "object-scan";
-import { useQuasar } from "quasar";
+import objectScan from 'object-scan';
+import { FetchError } from 'ofetch';
+import MiningSettings from '@/components/Mining/MiningSettings.vue';
+import ProgressCard from '@/components/Mining/MiningProgress.vue';
+import OauthSource from '@/components/Mining/AddSourceOauth.vue';
+import ImapSource from '@/components/Mining/AddSourceImap.vue';
+import { type MiningSource } from '@/types/mining';
 
 const $quasar = useQuasar();
 const $router = useRouter();
-const leadminerStore = useLeadminerStore();
+const $user = useSupabaseUser();
+const $leadminerStore = useLeadminerStore();
 
 const step = ref(1);
 const stepper = ref();
 const stepperContractedHeader = ref(false);
 
 const sourceModel = ref<MiningSource>();
-const sourceOptions = computed(() => leadminerStore.miningSources);
+const sourceOptions = computed(() => $leadminerStore.miningSources);
 
 const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
 
 const activeMining = computed(() =>
   Boolean(
-    leadminerStore.miningTask ||
-      leadminerStore.isLoadingBoxes ||
-      leadminerStore.isLoadingStartMining ||
-      leadminerStore.isLoadingStopMining
+    $leadminerStore.miningTask ||
+      $leadminerStore.isLoadingBoxes ||
+      $leadminerStore.isLoadingStartMining ||
+      $leadminerStore.isLoadingStopMining
   )
 );
 
-onMounted(async () => {
-  try {
-    await leadminerStore.getMiningSources();
+const { error: sourcesError } = await useAsyncData(() =>
+  $leadminerStore.getMiningSources()
+);
 
-    const user = (await supabase.auth.getSession()).data.session?.user;
-    const { miningSources } = leadminerStore;
-
-    sourceModel.value = miningSources.find(
-      ({ email }) => user && email === user.email
-    );
-  } catch (err) {
-    $quasar.notify({
-      message: leadminerStore.errorMessage,
-      color: "negative",
-      icon: "error",
-    });
+onMounted(() => {
+  if (sourcesError.value) {
+    throw sourcesError.value;
   }
+
+  const { miningSources } = $leadminerStore;
+  sourceModel.value = miningSources.find(
+    ({ email }) => $user.value && email === $user.value.email
+  );
 });
 
 async function getBoxes() {
   try {
-    leadminerStore.isLoadingBoxes = true;
-    await leadminerStore.getBoxes();
-  } catch (_) {
-    $quasar.notify({
-      message: leadminerStore.errorMessage,
-      color: "negative",
-      icon: "error",
-      timeout: 10000,
-    });
-  } finally {
-    leadminerStore.isLoadingBoxes = false;
+    $leadminerStore.isLoadingBoxes = true;
+    await $leadminerStore.getBoxes();
+    $leadminerStore.isLoadingBoxes = false;
+  } catch (err) {
+    $leadminerStore.isLoadingBoxes = false;
+    throw err;
   }
 }
 
 watch(sourceModel, (selectedSource) => {
-  leadminerStore.boxes = [];
-  leadminerStore.selectedBoxes = [];
-  leadminerStore.activeMiningSource = selectedSource;
+  $leadminerStore.boxes = [];
+  $leadminerStore.selectedBoxes = [];
+  $leadminerStore.activeMiningSource = selectedSource;
 });
 
-const boxes = computed(() => leadminerStore.boxes);
-const selectedBoxes = computed<string[]>(() => leadminerStore.selectedBoxes);
+const boxes = computed(() => $leadminerStore.boxes);
+const selectedBoxes = computed<string[]>(() => $leadminerStore.selectedBoxes);
 const activeMiningTask = computed(
-  () => leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined
 );
 
 const totalEmails = computed<number>(() => {
   if (boxes.value[0]) {
-    return objectScan(["**.{total}"], {
+    return objectScan(['**.{total}'], {
       joined: true,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       filterFn: ({ parent, property, value, context }: any) => {
         if (
-          property === "total" &&
+          property === 'total' &&
           parent.path &&
           selectedBoxes.value.includes(parent.path)
         ) {
@@ -247,29 +235,26 @@ function openMiningSettings() {
 }
 
 async function handleNavigation(value: number | string) {
-  if (value === 3 && !activeMining.value && !leadminerStore.boxes.length) {
+  if (value === 3 && !activeMining.value && !$leadminerStore.boxes.length) {
     await getBoxes();
   }
 }
 
 async function stopMining() {
-  leadminerStore.isLoadingStopMining = true;
+  $leadminerStore.isLoadingStopMining = true;
   try {
-    await leadminerStore.stopMining();
+    await $leadminerStore.stopMining();
     $quasar.notify({
-      message: leadminerStore.infoMessage,
-      color: "positive",
-      icon: "check",
+      message: $leadminerStore.infoMessage,
+      color: 'positive',
+      icon: 'check',
     });
-  } catch (error) {
-    $quasar.notify({
-      message: leadminerStore.errorMessage,
-      color: "negative",
-      icon: "error",
-    });
-  } finally {
-    leadminerStore.isLoadingStopMining = false;
+    $leadminerStore.isLoadingStopMining = false;
     stepperContractedHeader.value = false;
+  } catch (error) {
+    $leadminerStore.isLoadingStopMining = false;
+    stepperContractedHeader.value = false;
+    throw error;
   }
 }
 
@@ -278,45 +263,37 @@ async function startMining() {
   if (selectedBoxes.value.length === 0) {
     openMiningSettings();
     $quasar.notify({
-      message: "Please select at least one folder to start mining.",
-      color: "warning",
-      icon: "error",
+      message: 'Please select at least one folder to start mining.',
+      color: 'warning',
+      icon: 'error',
     });
     return;
   }
-  leadminerStore.isLoadingStartMining = true;
+  $leadminerStore.isLoadingStartMining = true;
   try {
-    await leadminerStore.startMining();
-    await leadminerStore.syncUserCredits();
+    await $leadminerStore.startMining();
+    await $leadminerStore.syncUserCredits();
     $quasar.notify({
-      message: leadminerStore.infoMessage,
-      color: "positive",
-      icon: "check",
+      message: $leadminerStore.infoMessage,
+      color: 'positive',
+      icon: 'check',
     });
+    $leadminerStore.isLoadingStartMining = false;
+    stepperContractedHeader.value = true;
   } catch (error) {
-    const provider = leadminerStore.activeMiningSource?.type;
-
+    const provider = $leadminerStore.activeMiningSource?.type;
     if (
-      error instanceof AxiosError &&
+      error instanceof FetchError &&
       error.response?.status === 401 &&
       provider &&
-      ["google", "azure"].includes(provider)
+      ['google', 'azure'].includes(provider)
     ) {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const referrer = sessionData.session?.user.id;
-      $router.push(
-        `/oauth-consent-error?provider=${provider}&referrer=${referrer}`
-      );
+      $router.push(await redirectOauthConsentPage());
     } else {
-      $quasar.notify({
-        message: leadminerStore.errorMessage,
-        color: "negative",
-        icon: "error",
-      });
+      $leadminerStore.isLoadingStartMining = false;
+      stepperContractedHeader.value = true;
+      throw error;
     }
-  } finally {
-    leadminerStore.isLoadingStartMining = false;
-    stepperContractedHeader.value = true;
   }
 }
 </script>

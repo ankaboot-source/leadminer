@@ -1,6 +1,6 @@
 <template>
   <q-badge rounded :color="color">
-    {{ " " }}
+    ' '
     <q-tooltip :class="'bg-' + color">
       {{ tooltip }}
     </q-tooltip>
@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { EmailStatus } from "src/types/contact";
+import { type EmailStatus } from '@/types/contact';
 
 const props = defineProps<{
   emailStatus: EmailStatus;
@@ -18,20 +18,20 @@ type Settings = Record<EmailStatus, { color: string; tooltip: string }>;
 
 const settingsMapper: Settings = {
   UNKNOWN: {
-    color: "grey",
-    tooltip: "Unknown",
+    color: 'grey',
+    tooltip: 'Unknown',
   },
   VALID: {
-    color: "green",
-    tooltip: "Valid email address",
+    color: 'green',
+    tooltip: 'Valid email address',
   },
   INVALID: {
-    color: "red",
-    tooltip: "Invalid email address",
+    color: 'red',
+    tooltip: 'Invalid email address',
   },
   RISKY: {
-    color: "orange",
-    tooltip: "Risky email address",
+    color: 'orange',
+    tooltip: 'Risky email address',
   },
 };
 

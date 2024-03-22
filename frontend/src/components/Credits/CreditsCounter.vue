@@ -2,7 +2,7 @@
   <div
     :class="`credits-badge flex items-center rounded-borders border-red q-mr-sm ${creditsBadgeState}`"
   >
-    <q-icon class="q-pl-sm" size="1.5rem" name="img:icons/coin.png" />
+    <q-icon class="q-pl-sm" size="1.5rem" name="img:/icons/coin.png" />
     <!-- Coin icon https://icons8.com/icon/OFHwDWASQWmX/coin by Icons8 https://icons8.com -->
     <div class="q-pl-sm">
       <span
@@ -34,15 +34,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, watch } from "vue";
-import { useLeadminerStore } from "src/stores/leadminer";
-import { useQuasar } from "quasar";
 import {
   CREDITS_MIN_THRESHOLD,
   CREDITS_PER_CONTACT,
   CREDITS_PER_EMAIL,
   refillCreditsOrUpgrade,
-} from "src/helpers/credits";
+} from '@/utils/credits';
 
 const $quasar = useQuasar();
 const leadminerStore = useLeadminerStore();
@@ -55,23 +52,23 @@ const credits = computed(() => leadminerStore.userCredits);
 
 const formattedCredits = computed(() =>
   credits.value === 0
-    ? "Out of credit"
+    ? 'Out of credit'
     : new Intl.NumberFormat().format(credits.value)
 );
 const creditsBadgeState = computed(() =>
-  credits.value >= CREDITS_MIN_THRESHOLD ? "" : "text-red  low-credits-badge"
+  credits.value >= CREDITS_MIN_THRESHOLD ? '' : 'text-red  low-credits-badge'
 );
 
 watch(credits, (newVal: number) => {
   if (newVal === 0) {
     $quasar.notify({
-      message: "🚨 Out of credits.",
-      color: "white",
-      textColor: "black",
+      message: '🚨 Out of credits.',
+      color: 'white',
+      textColor: 'black',
       actions: [
         {
-          label: "🚀 Refill",
-          color: "black",
+          label: '🚀 Refill',
+          color: 'black',
           noCaps: true,
           handler: refillCreditsOrUpgrade,
         },
@@ -80,12 +77,12 @@ watch(credits, (newVal: number) => {
   } else if (newVal < CREDITS_MIN_THRESHOLD) {
     $quasar.notify({
       message: "😅 You're running low on credits.",
-      color: "white",
-      textColor: "black",
+      color: 'white',
+      textColor: 'black',
       actions: [
         {
-          label: "🚀 Refill",
-          color: "black",
+          label: '🚀 Refill',
+          color: 'black',
           noCaps: true,
           handler: refillCreditsOrUpgrade,
         },

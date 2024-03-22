@@ -51,10 +51,9 @@
 </template>
 
 <script setup lang="ts">
-import { refillCreditsOrUpgrade } from "src/helpers/credits";
-import { computed, ref } from "vue";
+import { refillCreditsOrUpgrade } from '@/utils/credits';
 
-const emit = defineEmits(["secondary-action"]);
+const emit = defineEmits(['secondary-action']);
 const { engagementType, actionType } = defineProps<{
   engagementType: string;
   actionType: string;
@@ -79,7 +78,7 @@ function openModal(totalUnits: number, availableUnits: number) {
   showModal.value = true;
 }
 const executePartialAction = async () => {
-  await emit("secondary-action");
+  await emit('secondary-action');
   closeModal();
 };
 const downloadActionLabel = computed(

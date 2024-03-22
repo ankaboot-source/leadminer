@@ -41,18 +41,15 @@ services:
     depends_on:
       - redis
 
-  leadminer-server:
-    image: leadminer-server:git
-    container_name: nginx_server
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  leadminer-frontend:
+    image: leadminer-frontend:git
+    container_name: nuxt_frontend
     build:
       context: frontend
       args:
         SERVER_ENDPOINT: ${LEADMINER_API_HOST}
         SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
         SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-        SUPABASE_MAX_ROWS: ${SUPABASE_MAX_ROWS}
         AVERAGE_EXTRACTION_RATE: ${AVERAGE_EXTRACTION_RATE}
         BANNER_IMAGE_URL: ${BANNER_IMAGE_URL}
         POSTHOG_API_KEY: ${POSTHOG_API_KEY}
@@ -61,7 +58,7 @@ services:
         EXTERNAL_REFILL_CREDITS_LINK: ${EXTERNAL_REFILL_CREDITS_LINK}
 
     ports:
-      - 8020:80
+      - 8020:3000
     restart: always
     depends_on:
       - leadminer-api
