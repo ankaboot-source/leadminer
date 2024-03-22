@@ -149,19 +149,28 @@
     <!-- Occurrence -->
     <Column
       field="occurrence"
-      header="Occurrence"
       sortable
       data-type="numeric"
       :show-filter-operator="false"
       :show-add-button="false"
     >
+      <template #header>
+        <div v-tooltip.top="'Total occurrences of this contact'">
+          Occurrence
+        </div>
+      </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
       </template>
     </Column>
 
     <!-- Recency -->
-    <Column field="recency" header="Recency" sortable data-type="date">
+    <Column field="recency" sortable data-type="date">
+      <template #header>
+        <div v-tooltip.top="'When was the last time this contact was seen'">
+          Recency
+        </div>
+      </template>
       <template #body="{ data }">
         {{ data.recency.toLocaleString() }}
       </template>
@@ -177,12 +186,14 @@
     <!-- Replied conversations -->
     <Column
       field="replied_conversations"
-      header="Replies"
       data-type="numeric"
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
     >
+      <template #header>
+        <div v-tooltip.top="'How many times this contact replied'">Replies</div>
+      </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
       </template>
@@ -191,13 +202,15 @@
     <!-- Tags -->
     <Column
       field="tags"
-      header="Tags"
       sortable
       :show-filter-operator="false"
       :show-filter-match-modes="false"
       :show-add-button="false"
       :filter-menu-style="{ width: '14rem' }"
     >
+      <template #header>
+        <div v-tooltip.top="'Categorize your contacts'">Tags</div>
+      </template>
       <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
           <Tag
@@ -232,13 +245,15 @@
     <Column
       field="status"
       filter-field="status"
-      header="Reachable"
       sortable
       :show-filter-operator="false"
       :show-filter-match-modes="false"
       :show-add-button="false"
       :filter-menu-style="{ width: '14rem' }"
     >
+      <template #header>
+        <div v-tooltip.top="'How reachable is your contact'">Reachable</div>
+      </template>
       <template #body="{ data }">
         <Tag
           v-if="data.status"
