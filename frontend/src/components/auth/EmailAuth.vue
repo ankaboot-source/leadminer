@@ -108,8 +108,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { isValidEmail } from '@/utils/email';
 import { isValidPassword } from '@/utils/password';
 
