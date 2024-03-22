@@ -9,7 +9,7 @@
     v-model:selection="selectedContacts"
     v-model:filters="filters"
     scrollable
-    scroll-height="60vh"
+    scroll-height="38vh"
     size="small"
     striped-rows
     :select-all="selectAll"
@@ -669,3 +669,12 @@ const defaultOnFilters = computed(
     Number(recentToggle.value)
 );
 </script>
+
+<style>
+.p-datatable,
+.p-datatable-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+</style>

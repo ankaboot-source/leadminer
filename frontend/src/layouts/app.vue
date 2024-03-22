@@ -2,7 +2,7 @@
   <q-layout view="lHh Lpr lFf">
     <app-header />
     <q-page-container>
-      <q-page padding>
+      <q-page padding class="flex flex-col">
         <slot />
       </q-page>
     </q-page-container>
