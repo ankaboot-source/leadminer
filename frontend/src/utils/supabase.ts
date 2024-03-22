@@ -1,3 +1,5 @@
+import type { Contact } from '~/types/contact';
+
 /**
  * Fetches data from a Supabase table for a specific user.
  *
@@ -17,7 +19,7 @@ export async function fetchData<T>(
     throw new Error('Invalid parameters');
   }
 
-  const contacts: any = [];
+  const contacts: Contact[] = [];
   let offset = 0;
   let isFetching = true;
 
