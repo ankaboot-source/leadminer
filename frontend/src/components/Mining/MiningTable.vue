@@ -113,7 +113,7 @@
     <!-- Contacts -->
     <Column field="email">
       <template #header>
-        <div>Contacts</div>
+        <div class="pr-2">Contacts</div>
         <div class="p-column-filter p-fluid p-column-filter-menu">
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
