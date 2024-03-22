@@ -82,6 +82,7 @@
             :input-style="{ width: '100%' }"
             toggle-mask
             required
+            :feedback="false"
             @focusin="passwordFocus = true"
             @focusout="passwordFocus = false"
           >
@@ -107,10 +108,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { isValidEmail } from '@/utils/email';
 import { isValidPassword } from '@/utils/password';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 const { state } = withDefaults(
   defineProps<{
