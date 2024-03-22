@@ -41,7 +41,7 @@ services:
     depends_on:
       - redis
 
-  leadminer-server:
+  leadminer-frontend:
     image: leadminer-frontend:git
     container_name: nuxt_frontend
     build:
