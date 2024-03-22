@@ -21,10 +21,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      titleTemplate: `${pkg.productName} - %s`,
-      htmlAttrs: {
-        lang: 'en-US',
-      },
+      titleTemplate: `${pkg.productName}`,
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
       ],
