@@ -45,14 +45,14 @@
           :class="[labelClass]"
         >
           We're deep in the mines now...
-          {{ extractionFinished ? 'verifying' : 'extracting contacts' }} !
+          {{ extractionFinished ? "verifying" : "extracting contacts" }} !
         </div>
         <div
           v-else
           :class="[labelClass]"
           class="text-blue-grey-14 text-center text-h6 text-weight-medium"
         >
-          <div v-if="leadminerStore.isLoadingBoxes" class="flex items-center">
+          <div v-if="leadminerStore.isLoadingBoxes">
             <span class="text-weight-bolder q-mr-xs">
               <q-spinner class="on-left" />
             </span>
@@ -128,14 +128,16 @@
 </template>
 
 <script setup lang="ts">
-import { convertSeconds, timeConversionRounded } from '@/utils/time';
-import { useLeadminerStore } from '@/stores/leadminer';
+import { useQuasar } from "quasar";
+import { convertSeconds, timeConversionRounded } from "src/helpers/time";
+import { useLeadminerStore } from "src/stores/leadminer";
+import { computed, watch } from "vue";
 
 const $q = useQuasar();
 const leadminerStore = useLeadminerStore();
 
 const labelClass = computed(() =>
-  $q.screen.lt.md ? 'flex-center' : 'absolute-center q-pb-lg'
+  $q.screen.lt.md ? "flex-center" : "absolute-center q-pb-lg"
 );
 
 const progressProps = defineProps({
@@ -148,8 +150,9 @@ function getElapsedTime() {
   return Math.floor((performance.now() - startTime || 0) / 1000);
 }
 
-const averageExtractionRate =
-  parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) ?? 130;
+const averageExtractionRate = process.env.AVERAGE_EXTRACTION_RATE
+  ? process.env.AVERAGE_EXTRACTION_RATE
+  : 130;
 
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
@@ -175,12 +178,12 @@ const verificationProgress = computed(
 );
 
 const progressColor = computed(() =>
-  activeMiningTask.value && extractionFinished.value ? 'green-8' : 'yellow-8'
+  activeMiningTask.value && extractionFinished.value ? "green-8" : "yellow-8"
 );
 const progressPercentageClasses = computed(() =>
   activeMiningTask.value && extractionFinished.value
-    ? 'text-green-1 bg-green-8'
-    : 'text-amber-1 bg-amber-8'
+    ? "text-green-1 bg-green-8"
+    : "text-amber-1 bg-amber-8"
 );
 
 const progressBuffer = computed(() => {
@@ -213,7 +216,7 @@ function getEstimatedRemainingTime() {
 }
 
 const estimatedRemainingTimeConverted = computed(() =>
-  timeConversionRounded(getEstimatedRemainingTime()).join(' ')
+  timeConversionRounded(getEstimatedRemainingTime()).join(" ")
 );
 
 const progressPercentage = computed(
@@ -223,7 +226,7 @@ const progressPercentage = computed(
 watch(fetchingFinished, (finished) => {
   if (finished) {
     // eslint-disable-next-line no-console
-    console.log('Fetching completed, time elapsed:', getElapsedTime(), 's');
+    console.log("Fetching completed, time elapsed:", getElapsedTime(), "s");
   }
 });
 
@@ -232,10 +235,10 @@ watch(activeMiningTask, (isActive) => {
     leadminerStore.totalFetchedEmails = 0;
     startTime = performance.now();
     // eslint-disable-next-line no-console
-    console.log('Started Mining');
+    console.log("Started Mining");
   } else {
     // eslint-disable-next-line no-console
-    console.log('Stopped Mining, time elapsed:', getElapsedTime(), 's');
+    console.log("Stopped Mining, time elapsed:", getElapsedTime(), "s");
   }
 });
 </script>

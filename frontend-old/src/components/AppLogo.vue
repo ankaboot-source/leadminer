@@ -1,10 +1,11 @@
 <template>
-  <div class="flex h-10">
-    <img class="logo h-8 mt-1" src="/icons/pickaxe.svg" />
-    <img class="ml-2 h-10" src="/logo/LogoWithoutIcon.png" />
-  </div>
+  <q-chip color="transparent">
+    <q-avatar class="logo" size="25px">
+      <img src="/icons/pickaxe.svg" />
+    </q-avatar>
+    <q-img src="/logo/LogoWithoutIcon.png" width="9rem" />
+  </q-chip>
 </template>
-
 <style>
 .logo {
   animation: animation 3s infinite;

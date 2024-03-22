@@ -2,8 +2,6 @@
 /src-capacitor
 /src-cordova
 /.quasar
-/.nuxt
-/_nuxt
 /node_modules
 .eslintrc.js
 /src-ssr

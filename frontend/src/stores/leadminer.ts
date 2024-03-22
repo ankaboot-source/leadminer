@@ -1,15 +1,15 @@
-import { AxiosError } from "axios";
-import { defineStore } from "pinia";
-import { api } from "src/boot/axios";
-import { BoxNode, getDefaultSelectedFolders } from "src/helpers/boxes";
-import { sse } from "src/helpers/sse";
-import { supabase } from "src/helpers/supabase";
-import { MiningSource, MiningTask } from "src/types/mining";
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
+import { sse } from '../utils/sse';
+import { type MiningSource, type MiningTask } from '../types/mining';
+import type { Profile } from '@/types/user';
+import { updateMiningSourcesValidity } from '@/utils/sources';
 
-export const useLeadminerStore = defineStore("leadminer", () => {
+export const useLeadminerStore = defineStore('leadminer', () => {
   const $router = useRouter();
+  const { $api } = useNuxtApp();
 
   const userCredits = ref(0);
 
@@ -19,8 +19,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<string[]>([]);
 
-  const errorMessage = ref("");
-  const infoMessage = ref("");
+  const errorMessage = ref('');
+  const infoMessage = ref('');
 
   const isLoadingStartMining = ref(false);
   const isLoadingStopMining = ref(false);
@@ -38,7 +38,7 @@ export const useLeadminerStore = defineStore("leadminer", () => {
   const createdContacts = ref(0);
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
-  const status = ref("");
+  const status = ref('');
   const scannedBoxes = ref<string[]>([]);
   const statistics = ref({});
 
@@ -51,8 +51,8 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     boxes.value = [];
     selectedBoxes.value = [];
 
-    errorMessage.value = "";
-    infoMessage.value = "";
+    errorMessage.value = '';
+    infoMessage.value = '';
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -68,110 +68,97 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     verifiedContacts.value = 0;
     createdContacts.value = 0;
 
-    status.value = "";
+    status.value = '';
     scannedBoxes.value = [];
     statistics.value = {};
     errors.value = {};
   }
 
+  /**
+   * Synchronizes user credits with the backend.
+   */
   async function syncUserCredits() {
-    const { credits } = (await supabase.from("profiles").select("*").single())
-      .data;
+    const { credits } = (
+      await useSupabaseClient().from('profiles').select('*').single()
+    ).data as unknown as Profile;
     userCredits.value = credits;
   }
 
+  /**
+   * Retrieves mining sources.
+   * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
+   */
   async function getMiningSources() {
     try {
       isLoadingSources.value = true;
-      const { data } = await api.get<{
+
+      const { sources } = await $api<{
         message: string;
         sources: MiningSource[];
-      }>("/imap/mine/sources");
-      miningSources.value = data.sources;
-    } catch (error) {
-      let message = "Something unexpected happend.";
+      }>('/imap/mine/sources');
 
-      if (error instanceof AxiosError) {
-        message = error.response?.data?.message ?? error.message;
+      miningSources.value = sources ?? [];
 
-        if (message?.toLowerCase() === "network error") {
-          message =
-            "Unable to access server. Please retry again or contact your service provider.";
-        }
-      }
-
-      errorMessage.value = message;
-      throw error;
-    } finally {
       isLoadingSources.value = false;
+    } catch (err) {
+      isLoadingSources.value = false;
+      throw err;
     }
   }
 
   async function getBoxes() {
-    if (!activeMiningSource.value) {
-      return;
-    }
-    loadingStatusbox.value = true;
-    boxes.value = [];
-    selectedBoxes.value = [];
-
     try {
-      const response = await api.post("/imap/boxes", {
-        ...activeMiningSource.value,
+      if (!activeMiningSource.value) {
+        return;
+      }
+
+      loadingStatusbox.value = true;
+      boxes.value = [];
+      selectedBoxes.value = [];
+
+      const { data } = await $api<{
+        data: { message: string; folders: BoxNode[] };
+      }>('/imap/boxes', {
+        method: 'POST',
+        body: {
+          ...activeMiningSource.value,
+        },
       });
 
-      const folders = response.data?.data?.folders;
+      const { folders } = data || {};
 
       if (folders) {
         boxes.value = [...folders];
         selectedBoxes.value = getDefaultSelectedFolders(folders);
-        infoMessage.value = "Successfully retrieved IMAP boxes.";
+        infoMessage.value = 'Successfully retrieved IMAP boxes.';
       }
-      miningSources.value = miningSources.value.reduce<MiningSource[]>(
-        (result, current) => {
-          if (current.email === activeMiningSource.value?.email) {
-            current.isValid = true;
-          }
-          result.push(current);
 
-          return result;
-        },
-        []
+      miningSources.value = updateMiningSourcesValidity(
+        miningSources.value,
+        activeMiningSource.value,
+        true
       );
     } catch (err) {
-      if (err instanceof AxiosError) {
-        const error = err.response?.data?.details ?? err.response?.data ?? err;
-
-        if (error.message?.toLowerCase() === "network error") {
-          errorMessage.value =
-            "Unable to access server. Please retry again or contact your service provider.";
-        } else {
-          errorMessage.value = error.message;
-          if (["google", "azure"].includes(activeMiningSource.value.type)) {
-            const { data } = await supabase.auth.getUser();
-            $router.push(
-              `/oauth-consent-error?provider=${activeMiningSource.value.type}&referrer=${data.user?.id}`
-            );
-          }
-        }
+      if (
+        activeMiningSource.value?.type &&
+        ['google', 'azure'].includes(activeMiningSource.value.type)
+      ) {
+        $router.push(await redirectOauthConsentPage());
       }
-      miningSources.value = miningSources.value.reduce<MiningSource[]>(
-        (result, current) => {
-          if (current.email === activeMiningSource.value?.email) {
-            current.isValid = false;
-          }
-          result.push(current);
-
-          return result;
-        },
-        []
+      miningSources.value = updateMiningSourcesValidity(
+        miningSources.value,
+        activeMiningSource.value as MiningSource,
+        false
       );
-      throw err;
-    } finally {
       loadingStatusbox.value = false;
+      throw err;
     }
   }
 
+  /**
+   * Starts the mining process.
+   * @throws {Error} Throws an error if there is an issue while starting the mining process.
+   */
   async function startMining() {
     loadingStatus.value = true;
     loadingStatusDns.value = true;
@@ -181,81 +168,79 @@ export const useLeadminerStore = defineStore("leadminer", () => {
     createdContacts.value = 0;
     fetchingFinished.value = false;
     extractionFinished.value = false;
-    statistics.value = "f";
+    statistics.value = 'f';
     scannedBoxes.value = [];
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-
+      const { data: sessionData } = await useSupabaseClient().auth.getSession();
       if (!sessionData.session?.access_token) {
         return;
       }
 
-      const response = await api.post<{ data: MiningTask }>(
+      const { data } = await $api<{ data: MiningTask }>(
         `/imap/mine/${sessionData.session.user.id}`,
         {
-          boxes: selectedBoxes.value,
-          miningSource: activeMiningSource.value,
+          method: 'POST',
+          body: {
+            boxes: selectedBoxes.value,
+            miningSource: activeMiningSource.value,
+          },
         }
       );
 
-      const task = response.data?.data;
-      const { miningId } = task;
-
-      sse.initConnection(miningId, sessionData.session.access_token, {
-        onExtractedUpdate: (count) => {
-          extractedEmails.value = count;
-        },
-        onFetchedUpdate: (count) => {
-          scannedEmails.value = count;
-        },
-        onClose: () => {
-          miningTask.value = undefined;
-          sse.closeConnection();
-        },
-        onFetchingDone: (totalFetched) => {
-          totalFetchedEmails.value = totalFetched;
-          fetchingFinished.value = true;
-        },
-        onExtractionDone: (totalExtracted) => {
-          extractedEmails.value = totalExtracted;
-          extractionFinished.value = true;
-        },
-        onVerifiedContacts: (totalVerified) => {
-          verifiedContacts.value = totalVerified;
-        },
-        onCreatedContacts: (totalCreated) => {
-          createdContacts.value = totalCreated;
-        },
-      });
+      const task = data;
+      sse.initConnection(
+        task?.miningId as string,
+        sessionData.session.access_token,
+        {
+          onExtractedUpdate: (count) => {
+            extractedEmails.value = count;
+          },
+          onFetchedUpdate: (count) => {
+            scannedEmails.value = count;
+          },
+          onClose: () => {
+            miningTask.value = undefined;
+            sse.closeConnection();
+          },
+          onFetchingDone: (totalFetched) => {
+            totalFetchedEmails.value = totalFetched;
+            fetchingFinished.value = true;
+          },
+          onExtractionDone: (totalExtracted) => {
+            extractedEmails.value = totalExtracted;
+            extractionFinished.value = true;
+          },
+          onVerifiedContacts: (totalVerified) => {
+            verifiedContacts.value = totalVerified;
+          },
+          onCreatedContacts: (totalCreated) => {
+            createdContacts.value = totalCreated;
+          },
+        }
+      );
 
       miningTask.value = task;
       loadingStatus.value = false;
       loadingStatusDns.value = false;
-      status.value = "";
-      infoMessage.value = "Mining has started";
+      status.value = '';
+      infoMessage.value = 'Mining has started';
     } catch (err) {
+      loadingStatus.value = false;
+      loadingStatusDns.value = false;
+      status.value = '';
       sse.closeConnection();
-      if (err !== null && err instanceof AxiosError) {
-        let message = null;
-        const error = err.response?.data || err;
-
-        if (error.message?.toLowerCase() === "network error") {
-          message =
-            "Unable to access server. Please retry again or contact your service provider.";
-        } else {
-          message = error.message;
-        }
-
-        errorMessage.value = message;
-      }
       throw err;
     }
   }
 
+  /**
+   * Stops the mining process.
+   * @throws {Error} Throws an error if there is an issue while stopping the mining process.
+   */
   async function stopMining() {
     try {
-      const { data: session } = await supabase.auth.getUser();
+      const { data: session } = await useSupabaseClient().auth.getUser();
 
       if (!session.user || !miningTask.value) {
         return;
@@ -263,27 +248,20 @@ export const useLeadminerStore = defineStore("leadminer", () => {
 
       const { miningId } = miningTask.value;
 
-      await api.delete(`/imap/mine/${session.user.id}/${miningId}`);
+      await $api(`/imap/mine/${session.user.id}/${miningId}`, {
+        method: 'DELETE',
+      });
 
       miningTask.value = undefined;
-      status.value = "";
-      infoMessage.value = "Mining has stopped";
+      status.value = '';
+      infoMessage.value = 'Mining has stopped';
       fetchingFinished.value = true;
       extractionFinished.value = true;
     } catch (err) {
-      if (err !== null && err instanceof AxiosError) {
-        let message = null;
-        const error = err.response?.data || err;
-
-        if (error.message?.toLowerCase() === "network error") {
-          message =
-            "Unable to access server. Please retry again or contact your service provider.";
-        } else {
-          message = error.message;
-        }
-
-        errorMessage.value = message;
-      }
+      // Reset values and rethrow error
+      status.value = '';
+      fetchingFinished.value = true;
+      extractionFinished.value = true;
       throw err;
     }
   }

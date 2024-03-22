@@ -8,8 +8,12 @@
       <q-space />
       <CreditsCounter v-if="shouldShowCreditsBadge" />
       <div v-show="shouldShowSettings">
-        <q-btn flat class="text-lowercase" @click="goToSettings()">
-          {{ user?.email }}
+        <q-btn
+          flat
+          class="text-lowercase"
+          @click="navigateTo('/account/settings')"
+        >
+          {{ $user?.email }}
         </q-btn>
       </div>
       <q-btn
@@ -25,32 +29,15 @@
 </template>
 
 <script setup lang="ts">
-import { User } from "@supabase/supabase-js";
-import { supabase } from "src/helpers/supabase";
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
-import { logout } from "src/helpers/auth";
-import CreditsCounter from "./Credits/CreditsCounter.vue";
-import AppLogo from "./AppLogo.vue";
+import { logout } from '@/utils/auth';
+import CreditsCounter from './Credits/CreditsCounter.vue';
+import AppLogo from './AppLogo.vue';
 
-const router = useRouter();
-const user = ref<User | null>(null);
+const $user = useSupabaseUser();
+const $route = useRoute();
 
-const shouldShowSettings = computed(
-  () => window.location.pathname !== "/account"
-);
-const shouldShowCreditsBadge = process.env.ENABLE_CREDIT;
-
-function goToSettings() {
-  router.push("/account");
-}
-
-onMounted(async () => {
-  const { data } = await supabase.auth.getSession();
-  if (data?.session) {
-    user.value = data.session?.user;
-  }
-});
+const shouldShowSettings = computed(() => $route.path !== '/account/settings');
+const shouldShowCreditsBadge = useRuntimeConfig().public.ENABLE_CREDIT;
 </script>
 
 <style scoped>

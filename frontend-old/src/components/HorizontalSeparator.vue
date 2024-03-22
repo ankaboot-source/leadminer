@@ -20,7 +20,7 @@ defineProps<{
 
 .text-divider::before,
 .text-divider::after {
-  content: '';
+  content: "";
   height: 1px;
   background-color: silver;
   flex-grow: 1;

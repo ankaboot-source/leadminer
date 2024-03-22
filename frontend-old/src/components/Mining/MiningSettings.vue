@@ -22,7 +22,7 @@
             @click="toggleFullScreen"
           >
             <q-tooltip class="bg-white text-black">
-              {{ isFullScreen ? 'Minimize' : 'Maximize' }}
+              {{ isFullScreen ? "Minimize" : "Maximize" }}
             </q-tooltip>
           </q-btn>
           <q-btn dense flat icon="close" @click="close">
@@ -87,8 +87,8 @@
               </q-badge>
             </div>
             <q-select
-              v-if="$leadminerStore.activeMiningSource"
-              v-model="$leadminerStore.activeMiningSource"
+              v-if="leadminerStore.activeMiningSource"
+              v-model="leadminerStore.activeMiningSource"
               outlined
               disable
               dense
@@ -126,9 +126,11 @@
 </template>
 
 <script setup lang="ts">
-import TreeCard from '@/components/cards/TreeCard.vue';
+import { useLeadminerStore } from "src/stores/leadminer";
+import { computed, ref } from "vue";
+import TreeCard from "src/components/cards/TreeCard.vue";
 
-type TabName = 'mailbox-folders';
+type TabName = "mailbox-folders";
 
 interface Tab {
   icon: string;
@@ -140,9 +142,9 @@ interface Tab {
 
 const menuList: Tab[] = [
   {
-    name: 'mailbox-folders',
-    icon: 'all_inbox',
-    label: 'Mailbox Folders',
+    name: "mailbox-folders",
+    icon: "all_inbox",
+    label: "Mailbox Folders",
     active: false,
     disable: false,
   },
@@ -152,34 +154,28 @@ const props = defineProps({
   totalEmails: { type: Number, required: true },
   isLoadingBoxes: { type: Boolean, required: true },
 });
+const emit = defineEmits<(e: "get-boxes") => void>();
 
-const $leadminerStore = useLeadminerStore();
+const leadminerStore = useLeadminerStore();
 
-const currentTab = ref<TabName>('mailbox-folders');
+const currentTab = ref<TabName>("mailbox-folders");
 const isFullScreen = ref(false);
 const isVisible = ref(false);
 const drawer = ref(true);
 
-const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
+const activeMiningSource = computed(() => leadminerStore.activeMiningSource);
 
-const boxes = computed(() => $leadminerStore.boxes);
+const boxes = computed(() => leadminerStore.boxes);
 
 const shouldShowTreeCard = computed(
   () => boxes.value.length > 0 && !props.isLoadingBoxes
 );
 const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined
+  () => leadminerStore.miningTask !== undefined
 );
 
-async function onRefreshImapTree() {
-  try {
-    $leadminerStore.isLoadingBoxes = true;
-    await $leadminerStore.getBoxes();
-    $leadminerStore.isLoadingBoxes = false;
-  } catch (err) {
-    $leadminerStore.isLoadingBoxes = false;
-    throw err;
-  }
+function onRefreshImapTree() {
+  emit("get-boxes");
 }
 
 function onMiningSourceChanged() {

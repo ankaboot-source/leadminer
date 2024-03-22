@@ -1,284 +1,352 @@
 <template>
-  <div class="bg-transparent col" style="height: 60vh">
-    <q-table
-      ref="table"
-      class="q-pt-sm"
-      style="height: 100%"
-      virtual-scroll
-      virtual-scroll-slice-size="60"
-      :rows-per-page-options="[150, 500, 1000]"
-      row-key="email"
-      :columns="columns"
-      :visible-columns="visibleColumns"
-      title="Mined emails"
-      :loading="isLoading"
-      :filter="filter"
-      :filter-method="filterFn"
-      :rows="rows"
-      :pagination="initialPagination"
-      :sort-method="customSortLogic"
-      binary-state-sort
-      bordered
-      flat
-      dense
-    >
-      <template #top-left>
-        <div class="text-blue-grey-14 text-body1">
-          <span class="text-h6 text-weight-bolder q-ml-sm q-mr-xs">
-            {{ minedEmails }}
-          </span>
-          contacts mined
-        </div>
-      </template>
-      <template #top-right="props">
-        <q-input
-          v-model="filterSearch"
-          dense
-          standout
-          outlined
-          color="primary-5"
-          class="q-pr-sm q-pl-lg"
-          style="width: 25vw"
-          debounce="700"
-          placeholder="Search"
-        >
-          <template #append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
-        <div class="q-px-sm">
-          <q-btn
-            color="primary"
-            icon="archive"
-            label="Export to CSV"
-            no-caps
-            :disable="isExportDisabled"
-            outline
-            @click="verifyExport"
-          />
-        </div>
-        <q-btn
-          flat
-          round
-          dense
-          :icon="props.inFullscreen ? 'fullscreen_exit' : 'fullscreen'"
-          class="q-px-sm"
-          @click="props.toggleFullscreen"
-        >
-          <q-tooltip :disable="$q.platform.is.mobile">
-            {{ props.inFullscreen ? "Exit Fullscreen" : "Toggle Fullscreen" }}
-          </q-tooltip>
-        </q-btn>
-      </template>
-
-      <!--Header tooltips -->
-      <template #header-cell-recency="props">
-        <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
-            When was the last time this contact was seen
-          </q-tooltip>
-          {{ props.col.label }}
-        </q-th>
-      </template>
-
-      <template #header-cell-engagement="props">
-        <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
-            Count of conversations this contact was in
-          </q-tooltip>
-          {{ props.col.label }}
-        </q-th>
-      </template>
-
-      <template #header-cell-occurrence="props">
-        <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
-            Total occurrences of this contact
-          </q-tooltip>
-          {{ props.col.label }}
-        </q-th>
-      </template>
-
-      <template #header-cell-reply="props">
-        <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
-            How many times this contact replied
-          </q-tooltip>
-          {{ props.col.label }}
-        </q-th>
-      </template>
-
-      <template #header-cell-tags="props">
-        <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
-            Categorize your contacts
-          </q-tooltip>
-          {{ props.col.label }}
-        </q-th>
-      </template>
-
-      <template #header-cell-status="props">
-        <q-th :props="props">
-          <q-tooltip
-            class="bg-orange-13 text-caption"
-            anchor="top middle"
-            self="center middle"
-          >
-            How reachable is your contact
-          </q-tooltip>
-          {{ props.col.label }}
-        </q-th>
-      </template>
-
-      <!-- Table body slots -->
-      <template #body-cell-copy="props">
-        <q-td auto-width>
-          <q-btn
-            flat
-            round
-            size="xs"
-            color="primary"
-            class="q-mr-none"
-            icon="content_copy"
-            @click="
-              copyValueToClipboard(
-                props.row.name && props.row.name !== ''
-                  ? `${props.row.name} <${props.row.email}>`
-                  : `<${props.row.email}>`,
-                'Contact'
-              )
-            "
-          />
-        </q-td>
-      </template>
-      <template #body-cell-email="props">
-        <q-td :props="props">
-          {{ props.row.email }}
-        </q-td>
-      </template>
-
-      <template #body-cell-tags="props">
-        <q-td :props="props">
-          <q-badge
-            v-for="tag in props.row.tags"
-            :key="tag"
-            color="blue-1"
-            class="q-pa-xs text-uppercase text-primary q-mx-xs"
-          >
-            {{ tag }}
-          </q-badge>
-        </q-td>
-      </template>
-
-      <template #body-cell-name="props">
-        <q-td :props="props">
-          <div class="row items-center">
-            <q-badge v-if="props.row.name" outline color="orange">
-              {{ props.row.name }}
-            </q-badge>
-          </div>
-        </q-td>
-      </template>
-
-      <template #body-cell-status="props">
-        <q-td :props="props">
-          <validity-indicator
-            :key="props.row.status"
-            :email-status="props.row.status ?? 'UNKNOWN'"
-          />
-        </q-td>
-      </template>
-
-      <template #loading>
-        <q-inner-loading showing color="primary" :label="loadingLabel">
-        </q-inner-loading>
-      </template>
-    </q-table>
-  </div>
   <CreditsDialog
     ref="CreditsDialogRef"
     engagement-type="contacts"
     action-type="download"
     @secondary-action="exportTable"
   />
+  <DataTable
+    v-model:selection="selectedContacts"
+    v-model:filters="filters"
+    scrollable
+    scroll-height="60vh"
+    size="small"
+    striped-rows
+    :select-all="selectAll"
+    :value="contacts"
+    data-key="email"
+    paginator
+    filter-display="menu"
+    :global-filter-fields="['email', 'name']"
+    removable-sort
+    paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+    current-page-report-template="({currentPage} of {totalPages}) {totalRecords}"
+    :rows="150"
+    :rows-per-page-options="[150, 500, 1000]"
+    :is-loading="isLoading"
+    @filter="onFilter($event)"
+    @select-all-change="onSelectAllChange"
+    @row-select="onRowSelect"
+    @row-unselect="onRowUnselect"
+  >
+    <template #empty>
+      {{
+        defaultOnFilters !== 0
+          ? 'No contacts found. Try adjusting or clearing filters'
+          : 'No contacts found.'
+      }}
+    </template>
+    <template #loading>{{ loadingLabel }}</template>
+    <template #header>
+      <div class="flex items-center gap-1">
+        <Button
+          type="button"
+          :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
+          text
+          @click="refreshTable()"
+        />
+        <div>
+          <template
+            v-if="
+              selectedContactsLength !== 0 &&
+              selectedContactsLength !== contactsLength
+            "
+          >
+            {{ selectedContactsLength }} /
+          </template>
+          {{ contactsLength }}
+        </div>
+        <div>Contacts</div>
+        <div class="grow" />
+        <Button
+          type="button"
+          icon="pi pi-filter-slash"
+          label="Clear"
+          outlined
+          @click="clearFilter()"
+        />
+        <Button
+          icon="pi pi-external-link"
+          label="Export CSV"
+          :disable="isExportDisabled"
+          @click="verifyExport"
+        />
+        <!-- Settings -->
+        <Button
+          icon="pi pi-sliders-h"
+          :badge="defaultOnFilters ? defaultOnFilters.toString() : undefined"
+          @click="toggleSettingsPanel"
+        />
+        <OverlayPanel ref="settingsPanel">
+          <ul class="list-none p-0 m-0 flex flex-col gap-3">
+            <li class="flex justify-between">
+              <div>Certified valid</div>
+              <InputSwitch
+                v-model="validToggle"
+                @update:model-value="onValidToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div>At least one discussion</div>
+              <InputSwitch
+                v-model="discussionsToggle"
+                @update:model-value="onDiscussionsToggle"
+              />
+            </li>
+            <li class="flex justify-between gap-2">
+              <div v-tooltip.left="'- Less than 3 years \n- GDPR Proof'">
+                Recent contacts
+              </div>
+              <InputSwitch
+                v-model="recentToggle"
+                @update:model-value="onRecentToggle(3)"
+              />
+            </li>
+          </ul>
+        </OverlayPanel>
+      </div>
+    </template>
+
+    <!-- Select -->
+    <Column selection-mode="multiple" />
+
+    <!-- Contacts -->
+    <Column field="email">
+      <template #header>
+        <div>Contacts</div>
+        <div class="p-column-filter p-fluid p-column-filter-menu">
+          <IconField icon-position="left">
+            <InputIcon class="pi pi-search" />
+            <InputText
+              v-model="searchContactModel"
+              placeholder="Search contacts"
+            />
+          </IconField>
+        </div>
+      </template>
+      <template #body="{ data }">
+        <div class="flex justify-between items-center">
+          <div>
+            <template v-if="data.name">
+              <div class="font-medium">{{ data.name }}</div>
+              <div>{{ data.email }}</div>
+            </template>
+            <div v-else class="font-medium">{{ data.email }}</div>
+          </div>
+          <div>
+            <Button
+              rounded
+              text
+              icon="pi pi-copy"
+              aria-label="Copy"
+              @click="copyContact(data.name, data.email)"
+            />
+          </div>
+        </div>
+      </template>
+    </Column>
+
+    <!-- Occurrence -->
+    <Column
+      field="occurrence"
+      header="Occurrence"
+      sortable
+      data-type="numeric"
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Recency -->
+    <Column field="recency" header="Recency" sortable data-type="date">
+      <template #body="{ data }">
+        {{ data.recency.toLocaleString() }}
+      </template>
+      <template #filter="{ filterModel }">
+        <Calendar
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
+      </template>
+    </Column>
+
+    <!-- Replied conversations -->
+    <Column
+      field="replied_conversations"
+      header="Replies"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Tags -->
+    <Column
+      field="tags"
+      header="Tags"
+      sortable
+      :show-filter-operator="false"
+      :show-filter-match-modes="false"
+      :show-add-button="false"
+      :filter-menu-style="{ width: '14rem' }"
+    >
+      <template #body="{ data }">
+        <div class="flex flex-wrap gap-1">
+          <Tag
+            v-for="tag of data.tags"
+            :key="tag"
+            :value="tag"
+            :severity="getTagColor(tag)"
+            class="capitalize"
+          />
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <MultiSelect
+          v-model="filterModel.value"
+          :options="tags"
+          placeholder="Any"
+          class="p-column-filter"
+          display="chip"
+        >
+          <template #option="{ option }">
+            <Tag
+              :value="option"
+              :severity="getTagColor(option)"
+              class="capitalize"
+            />
+          </template>
+        </MultiSelect>
+      </template>
+    </Column>
+
+    <!-- Status | Reachable -->
+    <Column
+      field="status"
+      filter-field="status"
+      header="Reachable"
+      sortable
+      :show-filter-operator="false"
+      :show-filter-match-modes="false"
+      :show-add-button="false"
+      :filter-menu-style="{ width: '14rem' }"
+    >
+      <template #body="{ data }">
+        <Tag
+          v-if="data.status"
+          :value="data.status"
+          :severity="getStatusColor(data.status)"
+        />
+      </template>
+      <template #filter="{ filterModel }">
+        <MultiSelect
+          v-model="filterModel.value"
+          :options="statuses"
+          placeholder="Any"
+          class="p-column-filter"
+          display="chip"
+        >
+          <template #option="{ option }">
+            <Tag :value="option" :severity="getStatusColor(option)" />
+          </template>
+        </MultiSelect>
+      </template>
+    </Column>
+  </DataTable>
 </template>
 
 <script setup lang="ts">
 import {
-  RealtimeChannel,
-  RealtimePostgresChangesPayload,
-  User,
-} from "@supabase/supabase-js";
-import { AxiosResponse } from "axios";
-import { QTable, copyToClipboard, exportFile, useQuasar } from "quasar";
-import { api } from "src/boot/axios";
-import { supabase } from "src/helpers/supabase";
-import { exportCSVError } from "src/helpers/export";
-import { useLeadminerStore } from "src/stores/leadminer";
-import { Contact, EmailStatusScore } from "src/types/contact";
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import CreditsDialog from "src/components/Credits/InsufficientCreditsDialog.vue";
-import ValidityIndicator from "src/components/ValidityIndicator.vue";
+  type RealtimeChannel,
+  type RealtimePostgresChangesPayload,
+  type User,
+} from '@supabase/supabase-js';
+import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
+import type {
+  DataTableFilterEvent,
+  DataTableSelectAllChangeEvent,
+} from 'primevue/datatable';
+import { exportFile } from 'quasar';
+import { useLeadminerStore } from '../../stores/leadminer';
+import type { Contact } from '../../types/contact';
 
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 
-const $q = useQuasar();
+const $toast = useToast();
+
+const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
+const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
+
+function getStatusColor(status: string) {
+  if (!status) return undefined;
+  switch (status) {
+    case 'UNKNOWN':
+      return 'secondary';
+    case 'INVALID':
+      return 'danger';
+    case 'RISKY':
+      return 'warning';
+    case 'VALID':
+      return 'success';
+    default:
+      return undefined;
+  }
+}
+
+function getTagColor(tag: string) {
+  if (!tag) return undefined;
+  switch (tag) {
+    case 'personal':
+      return 'success';
+    case 'professional':
+      return 'primary';
+    case 'newsletter':
+      return 'secondary';
+    case 'group':
+      return 'secondary';
+    case 'chat':
+      return 'secondary';
+    default:
+      return undefined;
+  }
+}
+
 const leadminerStore = useLeadminerStore();
 const rows = ref<Contact[]>([]);
-const filterSearch = ref("");
-const filter = { filterSearch };
 const isLoading = ref(true);
-const loadingLabel = ref("");
-const table = ref<QTable>();
+const loadingLabel = ref('');
+const contacts = computed(() => rows.value);
+const contactsLength = computed(() => contacts.value?.length);
 
 let contactsCache = new Map<string, Contact>();
-
-const minedEmails = computed(() => rows.value.length);
 
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
 
-const isExportDisabled = computed(
-  () =>
-    rows.value.length === 0 ||
-    activeMiningTask.value ||
-    leadminerStore.loadingStatusDns
-);
-
 let refreshInterval: number;
 let subscription: RealtimeChannel;
 
-async function setupSubscription() {
+const $user = useSupabaseUser();
+const $supabaseClient = useSupabaseClient();
+function setupSubscription() {
   // We are 100% sure that the user is authenticated in this component
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
-  subscription = supabase.channel("*").on(
-    "postgres_changes",
+  const user = $user.value;
+  subscription = $supabaseClient.channel('*').on(
+    'postgres_changes',
     {
-      event: "*",
-      schema: "public",
-      table: "persons",
-      filter: `user_id=eq.${user.id}`,
+      event: '*',
+      schema: 'public',
+      table: 'persons',
+      filter: `user_id=eq.${user?.id}`,
     },
     (payload: RealtimePostgresChangesPayload<Contact>) => {
       const newContact = payload.new as Contact;
@@ -289,8 +357,7 @@ async function setupSubscription() {
 
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
-  const contactTableLength = rows.value.length;
-  const hasNewContacts = contactCacheLength > contactTableLength;
+  const hasNewContacts = contactCacheLength > contactsLength.value;
 
   if (hasNewContacts) {
     isLoading.value = true;
@@ -300,60 +367,53 @@ function refreshTable() {
 }
 
 async function refineContacts() {
-  loadingLabel.value = "Refining contacts...";
-  const user = (await supabase.auth.getSession()).data.session?.user as User;
+  loadingLabel.value = 'Refining contacts...';
+  const user = $user.value;
+  // @ts-expect-error: Issue with @nuxt/supabase typing
+  const refine = await $supabaseClient.rpc('refine_persons', {
+    userid: user?.id,
+  });
 
-  try {
-    const refine = await supabase.rpc("refine_persons", {
-      userid: user.id,
-    });
-
-    if (refine.error) {
-      throw refine.error;
-    }
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
+  if (refine.error) {
+    throw refine.error;
   }
 }
 
-async function getContacts(userId: string): Promise<Contact[]> {
-  const { data, error } = await supabase.rpc("get_contacts_table", {
-    userid: userId,
+function convertDates(data: Contact[]) {
+  return [...data].map((d) => {
+    if (d.recency) {
+      d.recency = new Date(d.recency);
+    }
+    return d;
   });
+}
+async function getContacts(userId: string): Promise<Contact[]> {
+  const { data, error } = await $supabaseClient.rpc(
+    'get_contacts_table',
+    // @ts-expect-error: Issue with @nuxt/supabase typing
+    { userid: userId }
+  );
 
   if (error) {
     throw error;
   }
 
-  return data;
+  return data ? convertDates(data) : [];
 }
 
 async function syncTable() {
-  try {
-    loadingLabel.value = "Syncing...";
-    const user = (await supabase.auth.getSession()).data.session?.user as User;
-    const contacts = await getContacts(user.id);
-    rows.value = contacts;
-  } catch (error) {
-    if (error instanceof Error) {
-      /* eslint-disable no-console */
-      console.log(error.message);
-      $q.notify({
-        message: "Error occurred when refreshing table",
-        textColor: "negative",
-        color: "red-1",
-      });
-    }
-  }
+  loadingLabel.value = 'Syncing...';
+  const user = $user.value as User;
+  rows.value = await getContacts(user.id);
+  isLoading.value = false;
 }
 
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     // If mining is active, update refined persons every 3 seconds
-    await setupSubscription();
+    setupSubscription();
     subscription.subscribe();
-    if (rows.value.length > 0) {
+    if (contactsLength.value > 0) {
       contactsCache = new Map(rows.value.map((row) => [row.email, row]));
     }
     refreshInterval = window.setInterval(() => {
@@ -373,318 +433,239 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
-const initialPagination = {
-  sortBy: "custom",
-};
-
-function customSortLogic(
-  rowsToFilter: readonly Contact[],
-  sortBy: string,
-  descending: boolean
-) {
-  switch (sortBy) {
-    case "custom":
-      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
-        const {
-          status: statusA,
-          replied_conversations: repliedA,
-          occurrence: occurrenceA,
-        } = a;
-        const {
-          status: statusB,
-          replied_conversations: repliedB,
-          occurrence: occurrenceB,
-        } = b;
-
-        if (statusA !== statusB) {
-          // Sort by 'status' column (VALID before UNKNOWN)
-          return (
-            EmailStatusScore[statusA ?? "UNKNOWN"] -
-            EmailStatusScore[statusB ?? "UNKNOWN"]
-          );
-        }
-
-        if (repliedA !== repliedB) {
-          // Sort by 'reply' column in descending order
-          return (repliedB ?? 0) - (repliedA ?? 0);
-        }
-        // Sort by 'occurrence' column in descending order
-        return (occurrenceB ?? 0) - (occurrenceA ?? 0);
-      });
-
-    case "status":
-      return [...rowsToFilter].sort((a: Contact, b: Contact) => {
-        const { status: statusA } = a;
-        const { status: statusB } = b;
-
-        return descending
-          ? EmailStatusScore[statusA ?? "UNKNOWN"] -
-              EmailStatusScore[statusB ?? "UNKNOWN"]
-          : EmailStatusScore[statusB ?? "UNKNOWN"] -
-              EmailStatusScore[statusA ?? "UNKNOWN"];
-      });
-
-    case "name":
-    case "email":
-      return [...rowsToFilter].sort((a, b) => {
-        const aValue = (a[sortBy as keyof Contact] as string) ?? "";
-        const bValue = (b[sortBy as keyof Contact] as string) ?? "";
-
-        if (aValue === "") {
-          return 1;
-        }
-
-        if (bValue === "") {
-          return -1;
-        }
-        return descending
-          ? bValue.localeCompare(aValue)
-          : aValue.localeCompare(bValue);
-      });
-
-    default:
-      if (typeof rowsToFilter[0][sortBy as keyof Contact] === "number") {
-        return [...rowsToFilter].sort((a, b) => {
-          const aValue = a[sortBy as keyof Contact] as number;
-          const bValue = b[sortBy as keyof Contact] as number;
-
-          return descending ? aValue - bValue : bValue - aValue;
-        });
-      }
-
-      return rowsToFilter;
-  }
-}
-
-const visibleColumns = ref([
-  "copy",
-  "email",
-  "name",
-  "occurrence",
-  "recency",
-  "replied_conversations",
-  "tags",
-  "status",
-]);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const columns: any = [
-  {
-    // This colums is only used to trigger the custom sort.
-    name: "custom",
-  },
-  {
-    name: "copy",
-    label: "",
-    align: "left",
-    field: "",
-  },
-  {
-    name: "email",
-    label: "Email",
-    field: "email",
-    sortable: true,
-    align: "left",
-  },
-  {
-    name: "name",
-    label: "Name",
-    field: "name",
-    sortable: true,
-    align: "left",
-  },
-  {
-    name: "recency",
-    label: "Recency",
-    align: "center",
-    field: "recency",
-    format: (val: Date) =>
-      val ? new Date(val).toISOString().slice(0, 10) : "",
-    sortable: true,
-  },
-  {
-    name: "seniority",
-    label: "Seniority",
-    align: "center",
-    field: "seniority",
-    format: (val: Date) =>
-      val ? new Date(val).toISOString().slice(0, 10) : "",
-    sortable: true,
-  },
-  {
-    name: "engagement",
-    label: "Engagement",
-    field: "engagement",
-    align: "center",
-    sortable: true,
-  },
-  {
-    name: "occurrence",
-    label: "Occurrence",
-    field: "occurrence",
-    align: "center",
-    sortable: true,
-  },
-  {
-    name: "replied_conversations",
-    label: "Reply",
-    field: "replied_conversations",
-    align: "center",
-    sortable: true,
-  },
-  {
-    name: "tags",
-    label: "Tags",
-    align: "center",
-    field: "tags",
-  },
-  {
-    name: "status",
-    label: "Status",
-    align: "center",
-    field: "status",
-    sortable: true,
-  },
-];
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function filterFn(rowsToFilter: readonly any[], terms: any) {
-  return rowsToFilter.filter((r) =>
-    [r.email, r.name, ...(r.alternate_names ?? [])].some((field) =>
-      field?.toLowerCase().includes(terms.filterSearch.value.toLowerCase())
-    )
-  );
-}
-
-async function exportTable() {
-  try {
-    const currentDatetime = new Date().toISOString().slice(0, 10);
-
-    const { data: session } = await supabase.auth.getUser();
-    const email = session.user?.email;
-
-    const response = await api.get("/imap/export/csv");
-
-    if (response.status === 204) {
-      return;
-    }
-
-    const status = exportFile(
-      `leadminer-${email}-${currentDatetime}.csv`,
-      response.data,
-      "text/csv"
-    );
-
-    if (status !== true) {
-      throw new Error("Browser denied file download...");
-    }
-
-    await leadminerStore.syncUserCredits();
-
-    $q.notify({
-      message: "Emails exported successfully",
-      textColor: "positive",
-      color: "white",
-      icon: "task_alt",
-    });
-  } catch (error) {
-    const message = exportCSVError(error);
-    $q.notify({
-      message,
-      color: "negative",
-      icon: "error",
-    });
-  }
-}
-
-const openCreditModel = (response: AxiosResponse) => {
-  const { total: totalContacts, available: availableContacts } = response.data;
-
-  if (totalContacts === undefined || availableContacts === undefined) {
-    return $q.notify({
-      message: "Error when verifying export CSV",
-      color: "negative",
-      icon: "error",
-    });
-  }
-  return CreditsDialogRef.value?.openModal(totalContacts, availableContacts);
-};
-
-async function verifyExport() {
-  try {
-    const response = await api.get("/imap/export/csv/verify");
-
-    if (response.status === 204) {
-      return Promise.resolve();
-    }
-
-    if (response.status !== 206) {
-      return await exportTable();
-    }
-
-    return openCreditModel(response);
-  } catch (error) {
-    const message = exportCSVError(error);
-    return $q.notify({
-      message,
-      color: "negative",
-      icon: "error",
-    });
-  }
-}
-
-const onKeyDown = (event: KeyboardEvent) => {
-  if (event.key === "Escape") {
-    table.value?.exitFullscreen();
-  }
-};
-
-onMounted(async () => {
-  window.addEventListener("keydown", onKeyDown);
-  isLoading.value = true;
-  await refineContacts();
-  await syncTable();
-  isLoading.value = false;
-});
+await useAsyncData('refine', () => refineContacts());
+await useAsyncData('contacts', () => syncTable());
 
 onUnmounted(() => {
-  window.removeEventListener("keydown", onKeyDown);
   clearInterval(refreshInterval);
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function copyValueToClipboard(value: any, valueName: any) {
-  await copyToClipboard(value);
-  $q.notify({
-    message: `${valueName} copied to clipboard`,
-    textColor: "positive",
-    color: "white",
-    icon: "content_copy",
+/* *** Filters *** */
+const filters = ref();
+const searchContactModel = ref('');
+const ANY_SELECTED = ref('ANY_SELECTED');
+FilterService.register(ANY_SELECTED.value, (value, filter) =>
+  !filter ? true : filter.some((item: string) => value.includes(item))
+);
+const initFilters = () => {
+  filters.value = {
+    global: {
+      value: null,
+      matchMode: FilterMatchMode.CONTAINS,
+    },
+
+    // Contact
+    name: {
+      value: null,
+      matchMode: FilterMatchMode.CONTAINS,
+    },
+    email: {
+      value: null,
+      matchMode: FilterMatchMode.CONTAINS,
+    },
+
+    // Recency
+    recency: {
+      operator: FilterOperator.AND,
+      constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+    },
+
+    // Occurrence
+    occurrence: {
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    },
+
+    // Replied Conversations
+    replied_conversations: {
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    },
+
+    // Tags
+    tags: { value: null, matchMode: ANY_SELECTED.value },
+
+    // Status
+    status: { value: null, matchMode: FilterMatchMode.IN },
+  };
+};
+initFilters();
+
+// skipcq: JS-0323
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return function _(...args: Parameters<T>): void {
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+const debouncedUpdate = debounce((newValue: string) => {
+  filters.value.global.value = newValue;
+}, 500);
+watch(searchContactModel, (newValue: string) => {
+  debouncedUpdate(newValue);
+});
+
+const filteredContacts = ref<Contact[]>([]);
+function onFilter(event: DataTableFilterEvent) {
+  filteredContacts.value = event.filteredValue;
+}
+
+/* *** Selection *** */
+const selectedContacts = ref<Contact[]>([]);
+const selectedContactsLength = computed(() => selectedContacts.value.length);
+const selectAll = ref(false);
+
+const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
+  if (event.checked) {
+    selectAll.value = true;
+    selectedContacts.value = filteredContacts.value; // all data according to your needs
+  } else {
+    selectAll.value = false;
+    selectedContacts.value = [];
+  }
+};
+const onRowSelect = () => {
+  // This control can be completely managed by you.
+  selectAll.value = selectedContacts.value.length === contactsLength.value;
+};
+const onRowUnselect = () => {
+  // When a row is unchecked, the header checkbox must always be in an unchecked state.
+  selectAll.value = false;
+};
+
+function copyContact(name: string, email: string) {
+  $toast.add({
+    severity: 'success',
+    summary: 'Copied contact!',
+    detail: 'Copied contact to clipboard',
+    life: 3000,
+  });
+  navigator.clipboard.writeText(
+    name && name !== '' ? `${name} <${email}>` : `<${email}>`
+  );
+}
+
+/* *** Export CSV *** */
+
+const { $api } = useNuxtApp();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+const isExportDisabled = computed(
+  () =>
+    rows.value.length === 0 ||
+    activeMiningTask.value ||
+    leadminerStore.loadingStatusDns
+);
+function getFileName() {
+  const { email } = $user.value as User;
+  const currentDatetime = new Date().toISOString().slice(0, 10);
+  const fileName = `leadminer-${email}-${currentDatetime}`;
+  return fileName;
+}
+async function exportTable() {
+  await $api('/imap/export/csv', {
+    async onResponse({ response }) {
+      if (response.status === 204) {
+        return;
+      }
+      const status = exportFile(
+        `${getFileName()}.csv`,
+        response._data,
+        'text/csv'
+      );
+
+      if (status !== true) {
+        throw new Error('Browser denied file download...');
+      }
+
+      await leadminerStore.syncUserCredits();
+
+      $toast.add({
+        severity: 'success',
+        summary: 'Emails exported successfully',
+        life: 3000,
+      });
+    },
   });
 }
+
+const openCreditModel = ({
+  total,
+  available,
+}: {
+  total: number;
+  available: number;
+}) => {
+  if (total === undefined || available === undefined) {
+    return $toast.add({
+      severity: 'error',
+      summary: 'Error when verifying export CSV',
+      life: 3000,
+    });
+  }
+  return CreditsDialogRef.value?.openModal(total, available);
+};
+
+async function verifyExport() {
+  await $api('/imap/export/csv/verify', {
+    async onResponse({ response }) {
+      if (response.status === 204) {
+        return;
+      }
+
+      if (response.status !== 206) {
+        await exportTable();
+      } else {
+        openCreditModel(response._data);
+      }
+    },
+  });
+}
+
+/* *** Settings *** */
+const settingsPanel = ref();
+function toggleSettingsPanel(event: Event) {
+  settingsPanel.value.toggle(event);
+}
+const validToggle = ref(true); // status: valid
+function onValidToggle() {
+  filters.value.status.value = validToggle.value ? ['VALID'] : null;
+}
+const discussionsToggle = ref(true); // replies: >=1
+function onDiscussionsToggle() {
+  filters.value.replied_conversations.value = discussionsToggle.value
+    ? 1
+    : null;
+}
+
+const recentToggle = ref(true); // recency: <3 years
+function onRecentToggle(yearsAgo: number) {
+  filters.value.recency.constraints[0].value = recentToggle.value
+    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
+    : null;
+}
+function clearFilter() {
+  validToggle.value = false;
+  discussionsToggle.value = false;
+  recentToggle.value = false;
+  searchContactModel.value = '';
+  initFilters();
+}
+function initDefaultFilters() {
+  onValidToggle();
+  onDiscussionsToggle();
+  onRecentToggle(3);
+}
+initDefaultFilters();
+const defaultOnFilters = computed(
+  () =>
+    Number(validToggle.value) +
+    Number(discussionsToggle.value) +
+    Number(recentToggle.value)
+);
 </script>
-
-<style>
-.q-table__top,
-.q-table__bottom,
-thead tr:first-child th
-
-/* bg color is important for th; just specify one */ {
-  background-color: #fff;
-}
-
-thead tr th {
-  position: sticky;
-  z-index: 1;
-}
-
-/* this will be the loading indicator */
-thead tr:last-child th {
-  /* height of all previous header rows */
-  top: 48px;
-}
-
-thead tr:first-child th {
-  top: 0;
-}
-</style>
