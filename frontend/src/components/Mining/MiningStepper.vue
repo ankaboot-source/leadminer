@@ -176,7 +176,7 @@ const { error: sourcesError } = await useAsyncData(() =>
   $leadminerStore.getMiningSources()
 );
 
-onMounted(async () => {
+onMounted(() => {
   if (sourcesError.value) {
     throw sourcesError.value;
   }

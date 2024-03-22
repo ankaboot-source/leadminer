@@ -1,5 +1,5 @@
 export default defineNuxtPlugin({
-  async setup() {
+  setup() {
     const api = $fetch.create({
       baseURL: `${useRuntimeConfig().public.SERVER_ENDPOINT}/api`,
       async onRequest({ options }) {
