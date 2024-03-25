@@ -20,7 +20,6 @@
     :global-filter-fields="['email', 'name']"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    current-page-report-template="({currentPage} of {totalPages}) {totalRecords}"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
     :is-loading="isLoading"
@@ -47,16 +46,13 @@
           @click="refreshTable()"
         />
         <div>
-          <template
-            v-if="
-              selectedContactsLength !== 0 &&
-              selectedContactsLength !== contactsLength
-            "
-          >
-            {{ selectedContactsLength }} /
+          <template v-if="implicitlySelectedContactsLength !== contactsLength">
+            {{ implicitlySelectedContactsLength }} /
           </template>
+
           {{ contactsLength }}
         </div>
+
         <div>Contacts</div>
         <div class="grow" />
         <Button
@@ -531,6 +527,7 @@ const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
+const filteredContactsLength = computed(() => filteredContacts.value.length);
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
@@ -548,7 +545,8 @@ const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
 };
 const onRowSelect = () => {
   // This control can be completely managed by you.
-  selectAll.value = selectedContacts.value.length === contactsLength.value;
+  selectAll.value =
+    selectedContactsLength.value === filteredContactsLength.value;
 };
 const onRowUnselect = () => {
   // When a row is unchecked, the header checkbox must always be in an unchecked state.
@@ -683,6 +681,28 @@ const defaultOnFilters = computed(
     Number(validToggle.value) +
     Number(discussionsToggle.value) +
     Number(recentToggle.value)
+);
+
+const implicitlySelectedContacts = computed(() => {
+  // If (Filter) & (No selection) : user implicitly selected all filtered contacts
+  if (
+    selectedContactsLength.value === 0 &&
+    filteredContactsLength.value !== contactsLength.value
+  ) {
+    return filteredContacts.value;
+  }
+  // (Partial selection) : user explicitly selected contacts partially
+  if (
+    selectedContactsLength.value !== 0 &&
+    selectedContactsLength.value !== contactsLength.value
+  ) {
+    return selectedContacts.value;
+  }
+  // If (selection of All or None) && (No filter) : user implicitly selected all contacts
+  return contacts.value;
+});
+const implicitlySelectedContactsLength = computed(
+  () => implicitlySelectedContacts.value.length
 );
 </script>
 
