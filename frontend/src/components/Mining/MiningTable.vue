@@ -8,8 +8,9 @@
   <DataTable
     v-model:selection="selectedContacts"
     v-model:filters="filters"
+    :class="{ fullscreenTable: isFullscreen }"
+    :scroll-height="isFullscreen ? '85vh' : '38vh'"
     scrollable
-    scroll-height="38vh"
     size="small"
     striped-rows
     :select-all="selectAll"
@@ -101,6 +102,10 @@
             </li>
           </ul>
         </OverlayPanel>
+        <Button
+          :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
+          @click="isFullscreen = !isFullscreen"
+        />
       </div>
     </template>
 
@@ -706,6 +711,8 @@ const implicitlySelectedContacts = computed(() => {
 const implicitlySelectedContactsLength = computed(
   () => implicitlySelectedContacts.value.length
 );
+
+const isFullscreen = ref(false);
 </script>
 
 <style>
@@ -718,5 +725,16 @@ const implicitlySelectedContactsLength = computed(
 .q-header,
 .q-footer {
   z-index: 3 !important;
+}
+.fullscreenTable {
+  position: fixed;
+  z-index: 4;
+  background-color: white;
+  max-width: 100vw;
+  max-height: 100vh;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 </style>
