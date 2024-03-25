@@ -349,108 +349,6 @@ let subscription: RealtimeChannel;
 
 const $user = useSupabaseUser();
 const $supabaseClient = useSupabaseClient();
-function setupSubscription() {
-  // We are 100% sure that the user is authenticated in this component
-  const user = $user.value;
-  subscription = $supabaseClient.channel('*').on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'persons',
-      filter: `user_id=eq.${user?.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
-function refreshTable() {
-  const contactCacheLength = contactsCache.size;
-  const hasNewContacts = contactCacheLength > contactsLength.value;
-
-  if (hasNewContacts) {
-    isLoading.value = true;
-    rows.value = Array.from(contactsCache.values());
-    isLoading.value = false;
-  }
-}
-
-async function refineContacts() {
-  loadingLabel.value = 'Refining contacts...';
-  const user = $user.value;
-  // @ts-expect-error: Issue with @nuxt/supabase typing
-  const refine = await $supabaseClient.rpc('refine_persons', {
-    userid: user?.id,
-  });
-
-  if (refine.error) {
-    throw refine.error;
-  }
-}
-
-function convertDates(data: Contact[]) {
-  return [...data].map((d) => {
-    if (d.recency) {
-      d.recency = new Date(d.recency);
-    }
-    return d;
-  });
-}
-async function getContacts(userId: string): Promise<Contact[]> {
-  const { data, error } = await $supabaseClient.rpc(
-    'get_contacts_table',
-    // @ts-expect-error: Issue with @nuxt/supabase typing
-    { userid: userId }
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data ? convertDates(data) : [];
-}
-
-async function syncTable() {
-  loadingLabel.value = 'Syncing...';
-  const user = $user.value as User;
-  rows.value = await getContacts(user.id);
-  isLoading.value = false;
-}
-
-watch(activeMiningTask, async (isActive) => {
-  if (isActive) {
-    // If mining is active, update refined persons every 3 seconds
-    setupSubscription();
-    subscription.subscribe();
-    if (contactsLength.value > 0) {
-      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
-    }
-    refreshInterval = window.setInterval(() => {
-      refreshTable();
-    }, 5000);
-  } else {
-    // Close realtime and re-open again later
-    if (subscription) {
-      await subscription.unsubscribe();
-    }
-    clearInterval(refreshInterval);
-    contactsCache.clear();
-    isLoading.value = true;
-    await refineContacts();
-    await syncTable();
-    isLoading.value = false;
-  }
-});
-
-await useAsyncData('refine', () => refineContacts());
-await useAsyncData('contacts', () => syncTable());
-
-onUnmounted(() => {
-  clearInterval(refreshInterval);
-});
 
 /* *** Filters *** */
 const filters = ref();
@@ -528,6 +426,152 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 const filteredContactsLength = computed(() => filteredContacts.value.length);
+
+/* *** Settings *** */
+const settingsPanel = ref();
+function toggleSettingsPanel(event: Event) {
+  settingsPanel.value.toggle(event);
+}
+const validToggle = ref(true); // status: valid
+function onValidToggle() {
+  filters.value.status.value = validToggle.value ? ['VALID'] : null;
+}
+const discussionsToggle = ref(true); // replies: >=1
+function onDiscussionsToggle() {
+  filters.value.replied_conversations.value = discussionsToggle.value
+    ? 1
+    : null;
+}
+
+const recentToggle = ref(true); // recency: <3 years
+function onRecentToggle(yearsAgo: number) {
+  filters.value.recency.constraints[0].value = recentToggle.value
+    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
+    : null;
+}
+function clearFilter() {
+  validToggle.value = false;
+  discussionsToggle.value = false;
+  recentToggle.value = false;
+  searchContactModel.value = '';
+  initFilters();
+}
+function initDefaultFilters() {
+  onValidToggle();
+  onDiscussionsToggle();
+  onRecentToggle(3);
+}
+initDefaultFilters();
+const defaultOnFilters = computed(
+  () =>
+    Number(validToggle.value) +
+    Number(discussionsToggle.value) +
+    Number(recentToggle.value)
+);
+
+function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = $user.value;
+  subscription = $supabaseClient.channel('*').on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'persons',
+      filter: `user_id=eq.${user?.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
+}
+
+function refreshTable() {
+  const contactCacheLength = contactsCache.size;
+  const hasNewContacts = contactCacheLength > contactsLength.value;
+
+  if (hasNewContacts) {
+    isLoading.value = true;
+    rows.value = Array.from(contactsCache.values());
+    isLoading.value = false;
+  }
+}
+
+async function refineContacts() {
+  loadingLabel.value = 'Refining contacts...';
+  const user = $user.value;
+  // @ts-expect-error: Issue with @nuxt/supabase typing
+  const refine = await $supabaseClient.rpc('refine_persons', {
+    userid: user?.id,
+  });
+
+  if (refine.error) {
+    throw refine.error;
+  }
+}
+
+function convertDates(data: Contact[]) {
+  return [...data].map((d) => {
+    if (d.recency) {
+      d.recency = new Date(d.recency);
+    }
+    return d;
+  });
+}
+async function getContacts(userId: string): Promise<Contact[]> {
+  const { data, error } = await $supabaseClient.rpc(
+    'get_contacts_table',
+    // @ts-expect-error: Issue with @nuxt/supabase typing
+    { userid: userId }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? convertDates(data) : [];
+}
+
+async function syncTable() {
+  loadingLabel.value = 'Syncing...';
+  const user = $user.value as User;
+  rows.value = await getContacts(user.id);
+  isLoading.value = false;
+}
+
+watch(activeMiningTask, async (isActive) => {
+  if (isActive) {
+    clearFilter();
+    // If mining is active, update refined persons every 3 seconds
+    setupSubscription();
+    subscription.subscribe();
+    if (contactsLength.value > 0) {
+      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
+    }
+    refreshInterval = window.setInterval(() => {
+      refreshTable();
+    }, 5000);
+  } else {
+    // Close realtime and re-open again later
+    if (subscription) {
+      await subscription.unsubscribe();
+    }
+    clearInterval(refreshInterval);
+    contactsCache.clear();
+    isLoading.value = true;
+    await refineContacts();
+    await syncTable();
+    isLoading.value = false;
+  }
+});
+
+await useAsyncData('refine', () => refineContacts());
+await useAsyncData('contacts', () => syncTable());
+
+onUnmounted(() => {
+  clearInterval(refreshInterval);
+});
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
@@ -641,48 +685,6 @@ async function verifyExport() {
   });
 }
 
-/* *** Settings *** */
-const settingsPanel = ref();
-function toggleSettingsPanel(event: Event) {
-  settingsPanel.value.toggle(event);
-}
-const validToggle = ref(true); // status: valid
-function onValidToggle() {
-  filters.value.status.value = validToggle.value ? ['VALID'] : null;
-}
-const discussionsToggle = ref(true); // replies: >=1
-function onDiscussionsToggle() {
-  filters.value.replied_conversations.value = discussionsToggle.value
-    ? 1
-    : null;
-}
-
-const recentToggle = ref(true); // recency: <3 years
-function onRecentToggle(yearsAgo: number) {
-  filters.value.recency.constraints[0].value = recentToggle.value
-    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
-    : null;
-}
-function clearFilter() {
-  validToggle.value = false;
-  discussionsToggle.value = false;
-  recentToggle.value = false;
-  searchContactModel.value = '';
-  initFilters();
-}
-function initDefaultFilters() {
-  onValidToggle();
-  onDiscussionsToggle();
-  onRecentToggle(3);
-}
-initDefaultFilters();
-const defaultOnFilters = computed(
-  () =>
-    Number(validToggle.value) +
-    Number(discussionsToggle.value) +
-    Number(recentToggle.value)
-);
-
 const implicitlySelectedContacts = computed(() => {
   // If (Filter) & (No selection) : user implicitly selected all filtered contacts
   if (
@@ -712,5 +714,9 @@ const implicitlySelectedContactsLength = computed(
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+}
+.q-header,
+.q-footer {
+  z-index: 3 !important;
 }
 </style>
