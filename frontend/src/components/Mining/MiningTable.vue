@@ -30,11 +30,12 @@
     @row-unselect="onRowUnselect"
   >
     <template #empty>
-      {{
-        defaultOnFilters !== 0 && contactsLength !== 0
-          ? 'No contacts found. Try adjusting or clearing filters'
-          : 'No contacts found.'
-      }}
+      <div class="text-center py-5">
+        <div class="font-semibold">No contacts found</div>
+        <div v-if="defaultOnFilters !== 0 && contactsLength !== 0">
+          Try clearing filters
+        </div>
+      </div>
     </template>
     <template #loading>{{ loadingLabel }}</template>
     <template #header>
