@@ -722,10 +722,6 @@ const isFullscreen = ref(false);
   display: flex;
   flex-direction: column;
 }
-.q-header,
-.q-footer {
-  z-index: 3 !important;
-}
 .fullscreenTable {
   position: fixed;
   z-index: 4;
@@ -736,5 +732,10 @@ const isFullscreen = ref(false);
   right: 0;
   bottom: 0;
   left: 0;
+}
+/* Quasar fix to bring toast and related high index elements over the header, once Quasar is removed, this should be removed */
+.q-header,
+.q-footer {
+  z-index: 3 !important;
 }
 </style>
