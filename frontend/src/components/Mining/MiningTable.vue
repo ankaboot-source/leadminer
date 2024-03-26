@@ -23,7 +23,7 @@
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
-    :is-loading="isLoading"
+    :loading="isLoading"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
