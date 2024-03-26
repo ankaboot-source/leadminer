@@ -8,8 +8,9 @@
   <DataTable
     v-model:selection="selectedContacts"
     v-model:filters="filters"
+    :class="`${isFullscreen ? 'fullscreenTable' : ''}`"
+    :scroll-height="isFullscreen ? '85vh' : '38vh'"
     scrollable
-    scroll-height="38vh"
     size="small"
     striped-rows
     :select-all="selectAll"
@@ -20,21 +21,21 @@
     :global-filter-fields="['email', 'name']"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    current-page-report-template="({currentPage} of {totalPages}) {totalRecords}"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
-    :is-loading="isLoading"
+    :loading="isLoading"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
   >
     <template #empty>
-      {{
-        defaultOnFilters !== 0 && contactsLength !== 0
-          ? 'No contacts found. Try adjusting or clearing filters'
-          : 'No contacts found.'
-      }}
+      <div class="text-center py-5">
+        <div class="font-semibold">No contacts found</div>
+        <div v-if="defaultOnFilters !== 0 && contactsLength !== 0">
+          Try clearing filters
+        </div>
+      </div>
     </template>
     <template #loading>{{ loadingLabel }}</template>
     <template #header>
@@ -46,16 +47,13 @@
           @click="refreshTable()"
         />
         <div>
-          <template
-            v-if="
-              selectedContactsLength !== 0 &&
-              selectedContactsLength !== contactsLength
-            "
-          >
-            {{ selectedContactsLength }} /
+          <template v-if="implicitlySelectedContactsLength !== contactsLength">
+            {{ implicitlySelectedContactsLength }} /
           </template>
+
           {{ contactsLength }}
         </div>
+
         <div>Contacts</div>
         <div class="grow" />
         <Button
@@ -104,6 +102,10 @@
             </li>
           </ul>
         </OverlayPanel>
+        <Button
+          :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
+          @click="isFullscreen = !isFullscreen"
+        />
       </div>
     </template>
 
@@ -149,19 +151,28 @@
     <!-- Occurrence -->
     <Column
       field="occurrence"
-      header="Occurrence"
       sortable
       data-type="numeric"
       :show-filter-operator="false"
       :show-add-button="false"
     >
+      <template #header>
+        <div v-tooltip.top="'Total occurrences of this contact'">
+          Occurrence
+        </div>
+      </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
       </template>
     </Column>
 
     <!-- Recency -->
-    <Column field="recency" header="Recency" sortable data-type="date">
+    <Column field="recency" sortable data-type="date">
+      <template #header>
+        <div v-tooltip.top="'When was the last time this contact was seen'">
+          Recency
+        </div>
+      </template>
       <template #body="{ data }">
         {{ data.recency.toLocaleString() }}
       </template>
@@ -177,12 +188,14 @@
     <!-- Replied conversations -->
     <Column
       field="replied_conversations"
-      header="Replies"
       data-type="numeric"
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
     >
+      <template #header>
+        <div v-tooltip.top="'How many times this contact replied'">Replies</div>
+      </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
       </template>
@@ -191,13 +204,15 @@
     <!-- Tags -->
     <Column
       field="tags"
-      header="Tags"
       sortable
       :show-filter-operator="false"
       :show-filter-match-modes="false"
       :show-add-button="false"
       :filter-menu-style="{ width: '14rem' }"
     >
+      <template #header>
+        <div v-tooltip.top="'Categorize your contacts'">Tags</div>
+      </template>
       <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
           <Tag
@@ -232,13 +247,15 @@
     <Column
       field="status"
       filter-field="status"
-      header="Reachable"
       sortable
       :show-filter-operator="false"
       :show-filter-match-modes="false"
       :show-add-button="false"
       :filter-menu-style="{ width: '14rem' }"
     >
+      <template #header>
+        <div v-tooltip.top="'How reachable is your contact'">Reachable</div>
+      </template>
       <template #body="{ data }">
         <Tag
           v-if="data.status"
@@ -337,108 +354,6 @@ let subscription: RealtimeChannel;
 
 const $user = useSupabaseUser();
 const $supabaseClient = useSupabaseClient();
-function setupSubscription() {
-  // We are 100% sure that the user is authenticated in this component
-  const user = $user.value;
-  subscription = $supabaseClient.channel('*').on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'persons',
-      filter: `user_id=eq.${user?.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
-function refreshTable() {
-  const contactCacheLength = contactsCache.size;
-  const hasNewContacts = contactCacheLength > contactsLength.value;
-
-  if (hasNewContacts) {
-    isLoading.value = true;
-    rows.value = Array.from(contactsCache.values());
-    isLoading.value = false;
-  }
-}
-
-async function refineContacts() {
-  loadingLabel.value = 'Refining contacts...';
-  const user = $user.value;
-  // @ts-expect-error: Issue with @nuxt/supabase typing
-  const refine = await $supabaseClient.rpc('refine_persons', {
-    userid: user?.id,
-  });
-
-  if (refine.error) {
-    throw refine.error;
-  }
-}
-
-function convertDates(data: Contact[]) {
-  return [...data].map((d) => {
-    if (d.recency) {
-      d.recency = new Date(d.recency);
-    }
-    return d;
-  });
-}
-async function getContacts(userId: string): Promise<Contact[]> {
-  const { data, error } = await $supabaseClient.rpc(
-    'get_contacts_table',
-    // @ts-expect-error: Issue with @nuxt/supabase typing
-    { userid: userId }
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return data ? convertDates(data) : [];
-}
-
-async function syncTable() {
-  loadingLabel.value = 'Syncing...';
-  const user = $user.value as User;
-  rows.value = await getContacts(user.id);
-  isLoading.value = false;
-}
-
-watch(activeMiningTask, async (isActive) => {
-  if (isActive) {
-    // If mining is active, update refined persons every 3 seconds
-    setupSubscription();
-    subscription.subscribe();
-    if (contactsLength.value > 0) {
-      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
-    }
-    refreshInterval = window.setInterval(() => {
-      refreshTable();
-    }, 5000);
-  } else {
-    // Close realtime and re-open again later
-    if (subscription) {
-      await subscription.unsubscribe();
-    }
-    clearInterval(refreshInterval);
-    contactsCache.clear();
-    isLoading.value = true;
-    await refineContacts();
-    await syncTable();
-    isLoading.value = false;
-  }
-});
-
-await useAsyncData('refine', () => refineContacts());
-await useAsyncData('contacts', () => syncTable());
-
-onUnmounted(() => {
-  clearInterval(refreshInterval);
-});
 
 /* *** Filters *** */
 const filters = ref();
@@ -515,6 +430,153 @@ const filteredContacts = ref<Contact[]>([]);
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
+const filteredContactsLength = computed(() => filteredContacts.value.length);
+
+/* *** Settings *** */
+const settingsPanel = ref();
+function toggleSettingsPanel(event: Event) {
+  settingsPanel.value.toggle(event);
+}
+const validToggle = ref(true); // status: valid
+function onValidToggle() {
+  filters.value.status.value = validToggle.value ? ['VALID'] : null;
+}
+const discussionsToggle = ref(true); // replies: >=1
+function onDiscussionsToggle() {
+  filters.value.replied_conversations.value = discussionsToggle.value
+    ? 1
+    : null;
+}
+
+const recentToggle = ref(true); // recency: <3 years
+function onRecentToggle(yearsAgo: number) {
+  filters.value.recency.constraints[0].value = recentToggle.value
+    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
+    : null;
+}
+function clearFilter() {
+  validToggle.value = false;
+  discussionsToggle.value = false;
+  recentToggle.value = false;
+  searchContactModel.value = '';
+  initFilters();
+}
+function initDefaultFilters() {
+  onValidToggle();
+  onDiscussionsToggle();
+  onRecentToggle(3);
+}
+initDefaultFilters();
+const defaultOnFilters = computed(
+  () =>
+    Number(validToggle.value) +
+    Number(discussionsToggle.value) +
+    Number(recentToggle.value)
+);
+
+function setupSubscription() {
+  // We are 100% sure that the user is authenticated in this component
+  const user = $user.value;
+  subscription = $supabaseClient.channel('*').on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'persons',
+      filter: `user_id=eq.${user?.id}`,
+    },
+    (payload: RealtimePostgresChangesPayload<Contact>) => {
+      const newContact = payload.new as Contact;
+      contactsCache.set(newContact.email, newContact);
+    }
+  );
+}
+
+function refreshTable() {
+  const contactCacheLength = contactsCache.size;
+  const hasNewContacts = contactCacheLength > contactsLength.value;
+
+  if (hasNewContacts) {
+    isLoading.value = true;
+    rows.value = Array.from(contactsCache.values());
+    isLoading.value = false;
+  }
+}
+
+async function refineContacts() {
+  loadingLabel.value = 'Refining contacts...';
+  const user = $user.value;
+  // @ts-expect-error: Issue with @nuxt/supabase typing
+  const refine = await $supabaseClient.rpc('refine_persons', {
+    userid: user?.id,
+  });
+
+  if (refine.error) {
+    throw refine.error;
+  }
+}
+
+function convertDates(data: Contact[]) {
+  return [...data].map((d) => {
+    if (d.recency) {
+      d.recency = new Date(d.recency);
+    }
+    return d;
+  });
+}
+async function getContacts(userId: string): Promise<Contact[]> {
+  const { data, error } = await $supabaseClient.rpc(
+    'get_contacts_table',
+    // @ts-expect-error: Issue with @nuxt/supabase typing
+    { userid: userId }
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data ? convertDates(data) : [];
+}
+
+async function syncTable() {
+  loadingLabel.value = 'Syncing...';
+  const user = $user.value as User;
+  rows.value = await getContacts(user.id);
+  isLoading.value = false;
+}
+
+watch(activeMiningTask, async (isActive) => {
+  if (isActive) {
+    clearFilter();
+    // If mining is active, update refined persons every 3 seconds
+    setupSubscription();
+    subscription.subscribe();
+    if (contactsLength.value > 0) {
+      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
+    }
+    refreshInterval = window.setInterval(() => {
+      refreshTable();
+    }, 5000);
+  } else {
+    // Close realtime and re-open again later
+    if (subscription) {
+      await subscription.unsubscribe();
+    }
+    clearInterval(refreshInterval);
+    contactsCache.clear();
+    isLoading.value = true;
+    await refineContacts();
+    await syncTable();
+    isLoading.value = false;
+  }
+});
+
+await useAsyncData('refine', () => refineContacts());
+await useAsyncData('contacts', () => syncTable());
+
+onUnmounted(() => {
+  clearInterval(refreshInterval);
+});
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
@@ -532,7 +594,8 @@ const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
 };
 const onRowSelect = () => {
   // This control can be completely managed by you.
-  selectAll.value = selectedContacts.value.length === contactsLength.value;
+  selectAll.value =
+    selectedContactsLength.value === filteredContactsLength.value;
 };
 const onRowUnselect = () => {
   // When a row is unchecked, the header checkbox must always be in an unchecked state.
@@ -542,8 +605,8 @@ const onRowUnselect = () => {
 function copyContact(name: string, email: string) {
   $toast.add({
     severity: 'success',
-    summary: 'Copied contact!',
-    detail: 'Copied contact to clipboard',
+    summary: 'Contact copied',
+    detail: 'This contact email address has been copied to your clipboard',
     life: 3000,
   });
   navigator.clipboard.writeText(
@@ -627,47 +690,29 @@ async function verifyExport() {
   });
 }
 
-/* *** Settings *** */
-const settingsPanel = ref();
-function toggleSettingsPanel(event: Event) {
-  settingsPanel.value.toggle(event);
-}
-const validToggle = ref(true); // status: valid
-function onValidToggle() {
-  filters.value.status.value = validToggle.value ? ['VALID'] : null;
-}
-const discussionsToggle = ref(true); // replies: >=1
-function onDiscussionsToggle() {
-  filters.value.replied_conversations.value = discussionsToggle.value
-    ? 1
-    : null;
-}
-
-const recentToggle = ref(true); // recency: <3 years
-function onRecentToggle(yearsAgo: number) {
-  filters.value.recency.constraints[0].value = recentToggle.value
-    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
-    : null;
-}
-function clearFilter() {
-  validToggle.value = false;
-  discussionsToggle.value = false;
-  recentToggle.value = false;
-  searchContactModel.value = '';
-  initFilters();
-}
-function initDefaultFilters() {
-  onValidToggle();
-  onDiscussionsToggle();
-  onRecentToggle(3);
-}
-initDefaultFilters();
-const defaultOnFilters = computed(
-  () =>
-    Number(validToggle.value) +
-    Number(discussionsToggle.value) +
-    Number(recentToggle.value)
+const implicitlySelectedContacts = computed(() => {
+  // If (Filter) & (No selection) : user implicitly selected all filtered contacts
+  if (
+    selectedContactsLength.value === 0 &&
+    filteredContactsLength.value !== contactsLength.value
+  ) {
+    return filteredContacts.value;
+  }
+  // (Partial selection) : user explicitly selected contacts partially
+  if (
+    selectedContactsLength.value !== 0 &&
+    selectedContactsLength.value !== contactsLength.value
+  ) {
+    return selectedContacts.value;
+  }
+  // If (selection of All or None) && (No filter) : user implicitly selected all contacts
+  return contacts.value;
+});
+const implicitlySelectedContactsLength = computed(
+  () => implicitlySelectedContacts.value.length
 );
+
+const isFullscreen = ref(false);
 </script>
 
 <style>
@@ -676,5 +721,21 @@ const defaultOnFilters = computed(
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+}
+.fullscreenTable {
+  position: fixed;
+  z-index: 4;
+  background-color: white;
+  max-width: 100vw;
+  max-height: 100vh;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+/* Quasar fix to bring toast and related high index elements over the header, once Quasar is removed, this should be removed */
+.q-header,
+.q-footer {
+  z-index: 3 !important;
 }
 </style>
