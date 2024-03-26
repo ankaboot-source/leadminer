@@ -8,7 +8,7 @@
   <DataTable
     v-model:selection="selectedContacts"
     v-model:filters="filters"
-    :class="{ fullscreenTable: isFullscreen }"
+    :class="`${isFullscreen ? 'fullscreenTable' : ''}`"
     :scroll-height="isFullscreen ? '85vh' : '38vh'"
     scrollable
     size="small"
