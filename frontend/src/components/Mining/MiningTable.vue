@@ -11,8 +11,8 @@
     show-gridlines
     row-hover
     highlight-on-select
-    :class="`${isFullscreen ? 'fullscreenTable' : ''}`"
-    :scroll-height="isFullscreen ? '85vh' : '38vh'"
+    :class="isFullscreen ? 'fullscreenTable' : 'nonFullscreenTable'"
+    :scroll-height="!isFullscreen ? '38vh' : ''"
     scrollable
     size="small"
     striped-rows
@@ -184,7 +184,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency.toLocaleString() }}
+        {{ data.recency?.toLocaleString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
