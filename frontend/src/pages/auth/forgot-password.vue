@@ -10,11 +10,22 @@
             Enter the email address associated with your account
           </div>
           <FloatLabel class="mt-4">
-            <InputText v-model="email" filled class="w-full" label="Email" type="email" />
+            <InputText
+              v-model="email"
+              filled
+              class="w-full"
+              label="Email"
+              type="email"
+            />
             <label for="email">Email</label>
           </FloatLabel>
         </div>
-        <Button class="w-full" label="Send reset instructions" size="large" @click="resetPassword" />
+        <Button
+          class="w-full"
+          label="Send reset instructions"
+          size="large"
+          @click="resetPassword"
+        />
         <p>
           Back to
           <NuxtLink to="auth/login" class="font-bold link"> Sign in </NuxtLink>

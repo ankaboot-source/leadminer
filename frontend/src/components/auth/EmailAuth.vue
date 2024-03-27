@@ -12,9 +12,16 @@
             required
             @focusin="emailFocus = true"
             @focusout="emailFocus = false"
+            aria-describedby="email-help"
           />
           <label for="email">Email</label>
         </FloatLabel>
+        <small
+          v-if="!!email && !isValidEmail(email)"
+          id="email-help"
+          class="text-[#f87171]"
+          >Please enter a valid email</small
+        >
       </div>
       <div :class="typingPassword ? 'pt-3' : ''">
         <FloatLabel>
@@ -27,6 +34,7 @@
             :invalid="!!password && !isValidPassword(password)"
             @focusin="passwordFocus = true"
             @focusout="passwordFocus = false"
+            aria-describedby="password-help"
           >
             <template #header>
               <h6>Pick a password</h6>
@@ -44,6 +52,12 @@
           </Password>
           <label for="password">Password</label>
         </FloatLabel>
+        <small
+          v-if="!!password && !isValidPassword(password)"
+          id="password-help"
+          class="text-[#f87171]"
+          >Please enter a valid password</small
+        >
       </div>
       <div class="pt-3">
         <Button
@@ -73,6 +87,12 @@
           />
           <label for="email">Email</label>
         </FloatLabel>
+        <small
+          v-if="!!email && !isValidEmail(email)"
+          id="email-help"
+          class="text-[#f87171]"
+          >Please enter a valid email</small
+        >
       </div>
 
       <div :class="typingPassword ? 'pt-3' : ''">
@@ -90,6 +110,12 @@
           </Password>
           <label for="password">Password</label>
         </FloatLabel>
+        <small
+          v-if="!!password && !isValidPassword(password)"
+          id="password-help"
+          class="text-[#f87171]"
+          >Please enter a valid password</small
+        >
       </div>
 
       <NuxtLink class="text-right" to="/auth/forgot-password">
