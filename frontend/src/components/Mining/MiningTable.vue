@@ -110,6 +110,19 @@
                 @update:model-value="onRecentToggle(3)"
               />
             </li>
+            <Divider />
+            <MultiSelect
+              v-model="visibleColumns"
+              display="chip"
+              :options="visibleColumnsOptions"
+              option-disabled="contacts"
+              option-label="label"
+              option-value="value"
+              placeholder="Visible columns"
+              style="width: 14rem"
+              class="capitalize"
+              pt:option:class="capitalize"
+            />
           </ul>
         </OverlayPanel>
         <Button
@@ -123,7 +136,7 @@
     <Column selection-mode="multiple" />
 
     <!-- Contacts -->
-    <Column field="email">
+    <Column field="contacts">
       <template #header>
         <div class="pr-2">Contacts</div>
         <div class="p-column-filter p-fluid p-column-filter-menu">
@@ -160,6 +173,7 @@
 
     <!-- Occurrence -->
     <Column
+      v-if="visibleColumns.includes('occurrence')"
       field="occurrence"
       sortable
       data-type="numeric"
@@ -177,7 +191,12 @@
     </Column>
 
     <!-- Recency -->
-    <Column field="recency" sortable data-type="date">
+    <Column
+      v-if="visibleColumns.includes('recency')"
+      field="recency"
+      sortable
+      data-type="date"
+    >
       <template #header>
         <div v-tooltip.top="'When was the last time this contact was seen'">
           Recency
@@ -197,6 +216,7 @@
 
     <!-- Replied conversations -->
     <Column
+      v-if="visibleColumns.includes('replied_conversations')"
       field="replied_conversations"
       data-type="numeric"
       sortable
@@ -213,6 +233,7 @@
 
     <!-- Tags -->
     <Column
+      v-if="visibleColumns.includes('tags')"
       field="tags"
       sortable
       :show-filter-operator="false"
@@ -255,6 +276,7 @@
 
     <!-- Status | Reachable -->
     <Column
+      v-if="visibleColumns.includes('status')"
       field="status"
       filter-field="status"
       sortable
@@ -379,7 +401,7 @@ const initFilters = () => {
       matchMode: FilterMatchMode.CONTAINS,
     },
 
-    // Contact
+    // Contacts
     name: {
       value: null,
       matchMode: FilterMatchMode.CONTAINS,
@@ -401,7 +423,7 @@ const initFilters = () => {
       matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
     },
 
-    // Replied Conversations
+    // Replies
     replied_conversations: {
       value: null,
       matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
@@ -723,6 +745,25 @@ const implicitlySelectedContactsLength = computed(
 );
 
 const isFullscreen = ref(false);
+
+const visibleColumns = ref([
+  // 'contacts',
+  'occurrence',
+  'recency',
+  'tags',
+  'status',
+]);
+const visibleColumnsOptions = [
+  //  { label: 'contacts', value: 'contacts' },
+  { label: 'occurrence', value: 'occurrence' },
+  { label: 'recency', value: 'recency' },
+  { label: 'replies', value: 'replied_conversations' },
+  { label: 'tags', value: 'tags' },
+  { label: 'reachable', value: 'status' },
+  //  { label: 'recipient', value: 'recipient' },
+  //  { label: 'sender', value: 'sender' },
+  //  { label: 'seniority', value: 'seniority' },
+];
 </script>
 
 <style>
