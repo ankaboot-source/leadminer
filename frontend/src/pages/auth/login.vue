@@ -11,7 +11,7 @@
         <div>
           <EmailAuth state="login" />
 
-          <HorizontalSeparator content="or sign-in with social email" />
+          <HorizontalSeparator content="or sign-in with social account" />
 
           <SocialAuth />
         </div>

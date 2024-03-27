@@ -10,16 +10,16 @@
             :invalid="!!email && !isValidEmail(email)"
             type="email"
             required
+            aria-describedby="email-help"
             @focusin="emailFocus = true"
             @focusout="emailFocus = false"
-            aria-describedby="email-help"
           />
           <label for="email">Email</label>
         </FloatLabel>
         <small
           v-if="!!email && !isValidEmail(email)"
           id="email-help"
-          class="text-[#f87171]"
+          class="text-red-400"
           >Please enter a valid email</small
         >
       </div>
@@ -32,9 +32,9 @@
             toggle-mask
             required
             :invalid="!!password && !isValidPassword(password)"
+            aria-describedby="password-help"
             @focusin="passwordFocus = true"
             @focusout="passwordFocus = false"
-            aria-describedby="password-help"
           >
             <template #header>
               <h6>Pick a password</h6>
@@ -55,7 +55,7 @@
         <small
           v-if="!!password && !isValidPassword(password)"
           id="password-help"
-          class="text-[#f87171]"
+          class="text-red-400"
           >Please enter a valid password</small
         >
       </div>
@@ -63,7 +63,7 @@
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Sign up"
+          label="Start mining"
           size="large"
           class="w-full"
           severity="contrast"
@@ -90,7 +90,7 @@
         <small
           v-if="!!email && !isValidEmail(email)"
           id="email-help"
-          class="text-[#f87171]"
+          class="text-red-400"
           >Please enter a valid email</small
         >
       </div>
@@ -113,7 +113,7 @@
         <small
           v-if="!!password && !isValidPassword(password)"
           id="password-help"
-          class="text-[#f87171]"
+          class="text-red-400"
           >Please enter a valid password</small
         >
       </div>
@@ -184,7 +184,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Failed to signin',
+        summary: 'Signin Failed',
         detail: error.message,
         life: 3000,
       });
@@ -216,7 +216,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Failed to signup',
+        summary: 'Signup Failed',
         detail: `${error.message}`,
         life: 3000,
       });
