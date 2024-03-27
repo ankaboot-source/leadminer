@@ -748,4 +748,15 @@ const isFullscreen = ref(false);
 .q-footer {
   z-index: 3 !important;
 }
+
+/* PrimeVue Table fixes */
+/* theme.css:4049 */
+.p-datatable-scrollable-table > .p-datatable-thead {
+  top: 0;
+  z-index: 2;
+}
+/* tailwind.css:2 */
+table.p-datatable-table {
+  border-collapse: separate;
+}
 </style>
