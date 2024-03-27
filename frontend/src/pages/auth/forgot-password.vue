@@ -53,7 +53,8 @@ async function resetPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: error.message,
+        summary: 'Failed to reset password',
+        detail: error.message,
         life: 3000,
       });
     }
