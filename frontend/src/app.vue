@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { useLeadminerStore } from './stores/leadminer';
+import 'assets/css/theme.css';
 
 const SKIP_DASHBOARD_REDIRECT = ['/oauth-consent-error', '/account'];
 const $router = useRouter();

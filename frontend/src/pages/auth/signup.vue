@@ -6,7 +6,7 @@
         flat
       >
         <div class="flex flex-col space-y-1.5">
-          <span class="text-5xl font-bold font-[Merriweather]">
+          <span class="text-4xl font-bold font-[Merriweather]">
             Create your account
           </span>
           <span class="text-xl"
@@ -16,21 +16,18 @@
 
         <div>
           <SocialAuth />
-          <Divider align="center" type="solid">
-            <b class="text-gray-500">or sign-up with email</b>
-          </Divider>
+          <HorizontalSeparator content="or sign-up with email" />
           <EmailAuth state="signup" />
         </div>
 
         <span>
           Already have an account?
-          <NuxtLink to="/auth/login" class="font-bold link"> Sign in </NuxtLink>
+          <NuxtLink to="/auth/login" class="font-bold"> Sign in </NuxtLink>
         </span>
 
         <span class="text-gray-700 full-width font-[merriweather]">
           By clicking "Start mining" or signing up, you agree to the
           <a
-            class="link"
             href="https://www.leadminer.io/terms-of-service"
             target="_blank"
             rel="noopener noreferrer"
@@ -39,7 +36,6 @@
           </a>
           and
           <a
-            class="link"
             href="https://www.leadminer.io/data-privacy"
             target="_blank"
             rel="noopener noreferrer"
@@ -56,4 +52,5 @@
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
+import HorizontalSeparator from '@/components/HorizontalSeparator.vue';
 </script>

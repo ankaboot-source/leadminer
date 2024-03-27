@@ -52,6 +52,7 @@
           label="Sign up"
           size="large"
           class="w-full"
+          severity="contrast"
           @click="signUp"
         />
       </div>
@@ -90,9 +91,11 @@
           <label for="password">Password</label>
         </FloatLabel>
       </div>
-      <span class="w-full text-right link">
-        <NuxtLink to="/auth/forgot-password"> Forgot your password? </NuxtLink>
-      </span>
+
+      <NuxtLink class="text-right" to="/auth/forgot-password">
+        Forgot your password?</NuxtLink
+      >
+
       <div class="pt-1">
         <Button
           v-if="state === 'login'"
@@ -155,6 +158,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
+        summary: 'Failed to signin',
         detail: error.message,
         life: 3000,
       });
@@ -186,7 +190,8 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        detail: `Failed to signup: ${error.message}`,
+        summary: 'Failed to signup',
+        detail: `${error.message}`,
         life: 3000,
       });
     }
