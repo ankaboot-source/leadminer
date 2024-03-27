@@ -8,6 +8,9 @@
   <DataTable
     v-model:selection="selectedContacts"
     v-model:filters="filters"
+    show-gridlines
+    row-hover
+    highlight-on-select
     :class="`${isFullscreen ? 'fullscreenTable' : ''}`"
     :scroll-height="isFullscreen ? '85vh' : '38vh'"
     scrollable
@@ -50,11 +53,8 @@
           <template v-if="implicitlySelectedContactsLength !== contactsLength">
             {{ implicitlySelectedContactsLength }} /
           </template>
-
-          {{ contactsLength }}
+          {{ contactsLength }} Contacts
         </div>
-
-        <div>Contacts</div>
         <div class="grow" />
         <Button
           type="button"
@@ -78,14 +78,24 @@
         <OverlayPanel ref="settingsPanel">
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
             <li class="flex justify-between">
-              <div>Certified valid</div>
+              <div
+                v-tooltip.left="'Ensure the deliverability of your campaign'"
+              >
+                Only valid
+              </div>
               <InputSwitch
                 v-model="validToggle"
                 @update:model-value="onValidToggle"
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div>At least one discussion</div>
+              <div
+                v-tooltip.left="
+                  'Contacts who previously engaged with you perform best'
+                "
+              >
+                At least one reply
+              </div>
               <InputSwitch
                 v-model="discussionsToggle"
                 @update:model-value="onDiscussionsToggle"
@@ -219,7 +229,7 @@
             v-for="tag of data.tags"
             :key="tag"
             :value="tag"
-            :severity="getTagColor(tag)"
+            :class="getTagColor(tag)"
             class="capitalize"
           />
         </div>
@@ -235,7 +245,7 @@
           <template #option="{ option }">
             <Tag
               :value="option"
-              :severity="getTagColor(option)"
+              :class="getTagColor(option)"
               class="capitalize"
             />
           </template>
@@ -322,15 +332,15 @@ function getTagColor(tag: string) {
   if (!tag) return undefined;
   switch (tag) {
     case 'personal':
-      return 'success';
+      return 'bg-red-100 text-red-700';
     case 'professional':
-      return 'primary';
+      return 'bg-cyan-100 text-cyan-700';
     case 'newsletter':
-      return 'secondary';
+      return 'p-tag-secondary';
     case 'group':
-      return 'secondary';
+      return 'p-tag-secondary';
     case 'chat':
-      return 'secondary';
+      return 'p-tag-secondary';
     default:
       return undefined;
   }
