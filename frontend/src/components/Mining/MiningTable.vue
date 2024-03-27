@@ -8,6 +8,8 @@
   <DataTable
     v-model:selection="selectedContacts"
     v-model:filters="filters"
+    resizable-columns
+    reorderable-columns
     show-gridlines
     row-hover
     highlight-on-select
@@ -309,6 +311,62 @@
         </MultiSelect>
       </template>
     </Column>
+
+    <!-- Recipient -->
+    <Column
+      v-if="visibleColumns.includes('recipient')"
+      field="recipient"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="''">Recipient</div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Sender -->
+    <Column
+      v-if="visibleColumns.includes('sender')"
+      field="sender"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="''">Sender</div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Seniority -->
+    <Column
+      v-if="visibleColumns.includes('seniority')"
+      field="seniority"
+      sortable
+      data-type="date"
+    >
+      <template #header>
+        <div v-tooltip.top="''">Seniority</div>
+      </template>
+      <template #body="{ data }">
+        {{ data.seniority?.toLocaleString() }}
+      </template>
+      <template #filter="{ filterModel }">
+        <Calendar
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
@@ -434,6 +492,24 @@ const initFilters = () => {
 
     // Status
     status: { value: null, matchMode: FilterMatchMode.IN },
+
+    // Recipient
+    recipient: {
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    },
+
+    // Sender
+    sender: {
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    },
+
+    // Seniority
+    seniority: {
+      operator: FilterOperator.AND,
+      constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+    },
   };
 };
 initFilters();
@@ -553,6 +629,9 @@ function convertDates(data: Contact[]) {
     if (d.recency) {
       d.recency = new Date(d.recency);
     }
+    if (d.seniority) {
+      d.seniority = new Date(d.seniority);
+    }
     return d;
   });
 }
@@ -566,6 +645,7 @@ async function getContacts(userId: string): Promise<Contact[]> {
   if (error) {
     throw error;
   }
+  console.log(data);
 
   return data ? convertDates(data) : [];
 }
@@ -760,9 +840,9 @@ const visibleColumnsOptions = [
   { label: 'replies', value: 'replied_conversations' },
   { label: 'tags', value: 'tags' },
   { label: 'reachable', value: 'status' },
-  //  { label: 'recipient', value: 'recipient' },
-  //  { label: 'sender', value: 'sender' },
-  //  { label: 'seniority', value: 'seniority' },
+  { label: 'recipient', value: 'recipient' },
+  { label: 'sender', value: 'sender' },
+  { label: 'seniority', value: 'seniority' },
 ];
 </script>
 
