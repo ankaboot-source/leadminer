@@ -13,7 +13,7 @@
     show-gridlines
     row-hover
     highlight-on-select
-    :class="isFullscreen ? 'fullscreenTable' : 'nonFullscreenTable'"
+    :class="isFullscreen ? 'fullscreenTable' : ''"
     :scroll-height="!isFullscreen ? '38vh' : ''"
     scrollable
     size="small"
