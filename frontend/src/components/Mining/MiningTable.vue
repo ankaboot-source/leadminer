@@ -115,15 +115,16 @@
             <Divider />
             <MultiSelect
               v-model="visibleColumns"
-              display="chip"
               :options="visibleColumnsOptions"
-              option-disabled="contacts"
+              :option-disabled="disabledColumns"
               option-label="label"
               option-value="value"
               placeholder="Visible columns"
               style="width: 14rem"
-              class="capitalize"
+              selected-items-label="{0} Visible columns"
+              :max-selected-labels="0"
               pt:option:class="capitalize"
+              @change="onSelectColumnsChange"
             />
           </ul>
         </OverlayPanel>
@@ -832,14 +833,14 @@ const implicitlySelectedContactsLength = computed(
 const isFullscreen = ref(false);
 
 const visibleColumns = ref([
-  // 'contacts',
+  'contacts',
   'occurrence',
   'recency',
   'tags',
   'status',
 ]);
 const visibleColumnsOptions = [
-  //  { label: 'contacts', value: 'contacts' },
+  { label: 'contacts', value: 'contacts' },
   { label: 'occurrence', value: 'occurrence' },
   { label: 'recency', value: 'recency' },
   { label: 'replies', value: 'replied_conversations' },
@@ -849,6 +850,15 @@ const visibleColumnsOptions = [
   { label: 'sender', value: 'sender' },
   { label: 'seniority', value: 'seniority' },
 ];
+function disabledColumns(column: { label: string; value: string }) {
+  return column.value === 'contacts';
+}
+function onSelectColumnsChange() {
+  // PrimeVue bug fix: MultiSelect: Can deselect disabled options https://github.com/primefaces/primevue/issues/5490
+  if (!visibleColumns.value.includes('contacts')) {
+    visibleColumns.value.push('contacts');
+  }
+}
 </script>
 
 <style>
@@ -875,13 +885,21 @@ const visibleColumnsOptions = [
   z-index: 3 !important;
 }
 
-/* PrimeVue Table fixes */
-/* theme.css:4049 */
+/* PrimeVue bugs Table fixes */
+/* 
+  DataTable: Checkbox in a row behind the header is clickable
+  https://github.com/primefaces/primevue/issues/5483 
+  theme.css:4049 
+*/
 .p-datatable-scrollable-table > .p-datatable-thead {
   top: 0;
   z-index: 2;
 }
-/* tailwind.css:2 */
+/* 
+  DataTable - table is leaking up behind table header
+  https://github.com/primefaces/primevue-tailwind/issues/197
+  tailwind.css:2 
+*/
 table.p-datatable-table {
   border-collapse: separate;
 }
