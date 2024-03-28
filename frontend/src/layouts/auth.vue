@@ -5,7 +5,7 @@
         <AppLogo />
       </div>
     </div>
-    <div class="flex flex-grow">
+    <div class="flex flex-grow mx-4">
       <slot></slot>
     </div>
   </div>
