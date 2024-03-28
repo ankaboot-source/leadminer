@@ -8,8 +8,13 @@
   <DataTable
     v-model:selection="selectedContacts"
     v-model:filters="filters"
-    :class="`${isFullscreen ? 'fullscreenTable' : ''}`"
-    :scroll-height="isFullscreen ? '85vh' : '38vh'"
+    resizable-columns
+    reorderable-columns
+    show-gridlines
+    row-hover
+    highlight-on-select
+    :class="isFullscreen ? 'fullscreenTable' : ''"
+    :scroll-height="!isFullscreen ? '38vh' : ''"
     scrollable
     size="small"
     striped-rows
@@ -41,6 +46,12 @@
     <template #header>
       <div class="flex items-center gap-1">
         <Button
+          icon="pi pi-external-link"
+          label="Export CSV"
+          :disable="isExportDisabled"
+          @click="verifyExport"
+        />
+        <Button
           type="button"
           :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
           text
@@ -50,11 +61,8 @@
           <template v-if="implicitlySelectedContactsLength !== contactsLength">
             {{ implicitlySelectedContactsLength }} /
           </template>
-
-          {{ contactsLength }}
+          {{ contactsLength }} Contacts
         </div>
-
-        <div>Contacts</div>
         <div class="grow" />
         <Button
           type="button"
@@ -62,12 +70,6 @@
           label="Clear"
           outlined
           @click="clearFilter()"
-        />
-        <Button
-          icon="pi pi-external-link"
-          label="Export CSV"
-          :disable="isExportDisabled"
-          @click="verifyExport"
         />
         <!-- Settings -->
         <Button
@@ -78,14 +80,24 @@
         <OverlayPanel ref="settingsPanel">
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
             <li class="flex justify-between">
-              <div>Certified valid</div>
+              <div
+                v-tooltip.left="'Ensure the deliverability of your campaign'"
+              >
+                Only valid contacts
+              </div>
               <InputSwitch
                 v-model="validToggle"
                 @update:model-value="onValidToggle"
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div>At least one discussion</div>
+              <div
+                v-tooltip.left="
+                  'Contacts who previously engaged with you perform best'
+                "
+              >
+                At least one reply
+              </div>
               <InputSwitch
                 v-model="discussionsToggle"
                 @update:model-value="onDiscussionsToggle"
@@ -100,6 +112,20 @@
                 @update:model-value="onRecentToggle(3)"
               />
             </li>
+            <Divider />
+            <MultiSelect
+              v-model="visibleColumns"
+              :options="visibleColumnsOptions"
+              :option-disabled="disabledColumns"
+              option-label="label"
+              option-value="value"
+              placeholder="Visible columns"
+              style="width: 14rem"
+              selected-items-label="{0} Visible columns"
+              :max-selected-labels="0"
+              pt:option:class="capitalize"
+              @change="onSelectColumnsChange"
+            />
           </ul>
         </OverlayPanel>
         <Button
@@ -113,7 +139,7 @@
     <Column selection-mode="multiple" />
 
     <!-- Contacts -->
-    <Column field="email">
+    <Column field="contacts">
       <template #header>
         <div class="pr-2">Contacts</div>
         <div class="p-column-filter p-fluid p-column-filter-menu">
@@ -150,6 +176,7 @@
 
     <!-- Occurrence -->
     <Column
+      v-if="visibleColumns.includes('occurrence')"
       field="occurrence"
       sortable
       data-type="numeric"
@@ -167,14 +194,19 @@
     </Column>
 
     <!-- Recency -->
-    <Column field="recency" sortable data-type="date">
+    <Column
+      v-if="visibleColumns.includes('recency')"
+      field="recency"
+      sortable
+      data-type="date"
+    >
       <template #header>
         <div v-tooltip.top="'When was the last time this contact was seen'">
           Recency
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency.toLocaleString() }}
+        {{ data.recency?.toLocaleString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -187,6 +219,7 @@
 
     <!-- Replied conversations -->
     <Column
+      v-if="visibleColumns.includes('replied_conversations')"
       field="replied_conversations"
       data-type="numeric"
       sortable
@@ -203,6 +236,7 @@
 
     <!-- Tags -->
     <Column
+      v-if="visibleColumns.includes('tags')"
       field="tags"
       sortable
       :show-filter-operator="false"
@@ -219,7 +253,7 @@
             v-for="tag of data.tags"
             :key="tag"
             :value="tag"
-            :severity="getTagColor(tag)"
+            :class="getTagColor(tag)"
             class="capitalize"
           />
         </div>
@@ -235,7 +269,7 @@
           <template #option="{ option }">
             <Tag
               :value="option"
-              :severity="getTagColor(option)"
+              :class="getTagColor(option)"
               class="capitalize"
             />
           </template>
@@ -245,6 +279,7 @@
 
     <!-- Status | Reachable -->
     <Column
+      v-if="visibleColumns.includes('status')"
       field="status"
       filter-field="status"
       sortable
@@ -275,6 +310,68 @@
             <Tag :value="option" :severity="getStatusColor(option)" />
           </template>
         </MultiSelect>
+      </template>
+    </Column>
+
+    <!-- Recipient -->
+    <Column
+      v-if="visibleColumns.includes('recipient')"
+      field="recipient"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="'How many times the contact has received emails'">
+          Recipient
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Sender -->
+    <Column
+      v-if="visibleColumns.includes('sender')"
+      field="sender"
+      data-type="numeric"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="'How many times the contact has sent emails'">
+          Sender
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputNumber v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Seniority -->
+    <Column
+      v-if="visibleColumns.includes('seniority')"
+      field="seniority"
+      sortable
+      data-type="date"
+    >
+      <template #header>
+        <div v-tooltip.top="'Oldest date this contact has been seen'">
+          Seniority
+        </div>
+      </template>
+      <template #body="{ data }">
+        {{ data.seniority?.toLocaleString() }}
+      </template>
+      <template #filter="{ filterModel }">
+        <Calendar
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
       </template>
     </Column>
   </DataTable>
@@ -322,15 +419,15 @@ function getTagColor(tag: string) {
   if (!tag) return undefined;
   switch (tag) {
     case 'personal':
-      return 'success';
+      return 'bg-red-100 text-red-700';
     case 'professional':
-      return 'primary';
+      return 'bg-blue-100 text-blue-700';
     case 'newsletter':
-      return 'secondary';
+      return 'p-tag-secondary';
     case 'group':
-      return 'secondary';
+      return 'p-tag-secondary';
     case 'chat':
-      return 'secondary';
+      return 'p-tag-secondary';
     default:
       return undefined;
   }
@@ -369,7 +466,7 @@ const initFilters = () => {
       matchMode: FilterMatchMode.CONTAINS,
     },
 
-    // Contact
+    // Contacts
     name: {
       value: null,
       matchMode: FilterMatchMode.CONTAINS,
@@ -391,7 +488,7 @@ const initFilters = () => {
       matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
     },
 
-    // Replied Conversations
+    // Replies
     replied_conversations: {
       value: null,
       matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
@@ -402,6 +499,24 @@ const initFilters = () => {
 
     // Status
     status: { value: null, matchMode: FilterMatchMode.IN },
+
+    // Recipient
+    recipient: {
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    },
+
+    // Sender
+    sender: {
+      value: null,
+      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    },
+
+    // Seniority
+    seniority: {
+      operator: FilterOperator.AND,
+      constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+    },
   };
 };
 initFilters();
@@ -520,6 +635,9 @@ function convertDates(data: Contact[]) {
   return [...data].map((d) => {
     if (d.recency) {
       d.recency = new Date(d.recency);
+    }
+    if (d.seniority) {
+      d.seniority = new Date(d.seniority);
     }
     return d;
   });
@@ -713,6 +831,39 @@ const implicitlySelectedContactsLength = computed(
 );
 
 const isFullscreen = ref(false);
+
+const visibleColumns = ref(['contacts', 'occurrence']);
+onMounted(() => {
+  const windowInnerWidth = window.innerWidth;
+
+  visibleColumns.value = [
+    'contacts',
+    ...(windowInnerWidth > 500 ? ['occurrence'] : []),
+    ...(windowInnerWidth > 800 ? ['recency'] : []),
+    ...(windowInnerWidth > 900 ? ['tags'] : []),
+    ...(windowInnerWidth > 1000 ? ['status'] : []),
+  ];
+});
+const visibleColumnsOptions = [
+  { label: 'contacts', value: 'contacts' },
+  { label: 'occurrence', value: 'occurrence' },
+  { label: 'recency', value: 'recency' },
+  { label: 'replies', value: 'replied_conversations' },
+  { label: 'tags', value: 'tags' },
+  { label: 'reachable', value: 'status' },
+  { label: 'recipient', value: 'recipient' },
+  { label: 'sender', value: 'sender' },
+  { label: 'seniority', value: 'seniority' },
+];
+function disabledColumns(column: { label: string; value: string }) {
+  return column.value === 'contacts';
+}
+function onSelectColumnsChange() {
+  // PrimeVue bug fix: MultiSelect: Can deselect disabled options https://github.com/primefaces/primevue/issues/5490
+  if (!visibleColumns.value.includes('contacts')) {
+    visibleColumns.value.push('contacts');
+  }
+}
 </script>
 
 <style>
@@ -737,5 +888,24 @@ const isFullscreen = ref(false);
 .q-header,
 .q-footer {
   z-index: 3 !important;
+}
+
+/* PrimeVue bugs Table fixes */
+/* 
+  DataTable: Checkbox in a row behind the header is clickable
+  https://github.com/primefaces/primevue/issues/5483 
+  theme.css:4049 
+*/
+.p-datatable-scrollable-table > .p-datatable-thead {
+  top: 0;
+  z-index: 2;
+}
+/* 
+  DataTable - table is leaking up behind table header
+  https://github.com/primefaces/primevue-tailwind/issues/197
+  tailwind.css:2 
+*/
+table.p-datatable-table {
+  border-collapse: separate;
 }
 </style>
