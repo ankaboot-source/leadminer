@@ -832,13 +832,18 @@ const implicitlySelectedContactsLength = computed(
 
 const isFullscreen = ref(false);
 
-const visibleColumns = ref([
-  'contacts',
-  'occurrence',
-  'recency',
-  'tags',
-  'status',
-]);
+const visibleColumns = ref(['contacts', 'occurrence']);
+onMounted(() => {
+  const windowInnerWidth = window.innerWidth;
+
+  visibleColumns.value = [
+    'contacts',
+    'occurrence',
+    ...(windowInnerWidth > 1100 ? ['recency'] : []),
+    ...(windowInnerWidth > 500 ? ['tags'] : []),
+    ...(windowInnerWidth > 850 ? ['status'] : []),
+  ];
+});
 const visibleColumnsOptions = [
   { label: 'contacts', value: 'contacts' },
   { label: 'occurrence', value: 'occurrence' },
