@@ -838,10 +838,10 @@ onMounted(() => {
 
   visibleColumns.value = [
     'contacts',
-    'occurrence',
-    ...(windowInnerWidth > 1100 ? ['recency'] : []),
-    ...(windowInnerWidth > 500 ? ['tags'] : []),
-    ...(windowInnerWidth > 850 ? ['status'] : []),
+    ...(windowInnerWidth > 500 ? ['occurrence'] : []),
+    ...(windowInnerWidth > 800 ? ['recency'] : []),
+    ...(windowInnerWidth > 900 ? ['tags'] : []),
+    ...(windowInnerWidth > 1000 ? ['status'] : []),
   ];
 });
 const visibleColumnsOptions = [
