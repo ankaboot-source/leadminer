@@ -46,6 +46,12 @@
     <template #header>
       <div class="flex items-center gap-1">
         <Button
+          icon="pi pi-external-link"
+          label="Export CSV"
+          :disable="isExportDisabled"
+          @click="verifyExport"
+        />
+        <Button
           type="button"
           :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
           text
@@ -65,12 +71,6 @@
           outlined
           @click="clearFilter()"
         />
-        <Button
-          icon="pi pi-external-link"
-          label="Export CSV"
-          :disable="isExportDisabled"
-          @click="verifyExport"
-        />
         <!-- Settings -->
         <Button
           icon="pi pi-sliders-h"
@@ -83,7 +83,7 @@
               <div
                 v-tooltip.left="'Ensure the deliverability of your campaign'"
               >
-                Only valid
+                Only valid contacts
               </div>
               <InputSwitch
                 v-model="validToggle"
@@ -322,7 +322,9 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="''">Recipient</div>
+        <div v-tooltip.top="'How many times the contact has received emails'">
+          Recipient
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
@@ -339,7 +341,9 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="''">Sender</div>
+        <div v-tooltip.top="'How many times the contact has sent emails'">
+          Sender
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
@@ -354,7 +358,9 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="''">Seniority</div>
+        <div v-tooltip.top="'Oldest date this contact has been seen'">
+          Seniority
+        </div>
       </template>
       <template #body="{ data }">
         {{ data.seniority?.toLocaleString() }}
@@ -414,7 +420,7 @@ function getTagColor(tag: string) {
     case 'personal':
       return 'bg-red-100 text-red-700';
     case 'professional':
-      return 'bg-cyan-100 text-cyan-700';
+      return 'bg-blue-100 text-blue-700';
     case 'newsletter':
       return 'p-tag-secondary';
     case 'group':
@@ -645,7 +651,6 @@ async function getContacts(userId: string): Promise<Contact[]> {
   if (error) {
     throw error;
   }
-  console.log(data);
 
   return data ? convertDates(data) : [];
 }
