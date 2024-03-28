@@ -1,8 +1,8 @@
 <template>
-  <div class="flex h-10">
+  <NuxtLink to="/" class="flex h-10">
     <img class="logo h-8 mt-1" src="/icons/pickaxe.svg" />
     <img class="ml-2 h-10" src="/logo/LogoWithoutIcon.png" />
-  </div>
+  </NuxtLink>
 </template>
 
 <style>

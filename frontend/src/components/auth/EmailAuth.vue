@@ -10,11 +10,18 @@
             :invalid="!!email && !isValidEmail(email)"
             type="email"
             required
+            aria-describedby="email-help"
             @focusin="emailFocus = true"
             @focusout="emailFocus = false"
           />
           <label for="email">Email</label>
         </FloatLabel>
+        <small
+          v-if="!!email && !isValidEmail(email)"
+          id="email-help"
+          class="text-red-400"
+          >Please enter a valid email</small
+        >
       </div>
       <div :class="typingPassword ? 'pt-3' : ''">
         <FloatLabel>
@@ -25,6 +32,7 @@
             toggle-mask
             required
             :invalid="!!password && !isValidPassword(password)"
+            aria-describedby="password-help"
             @focusin="passwordFocus = true"
             @focusout="passwordFocus = false"
           >
@@ -44,14 +52,21 @@
           </Password>
           <label for="password">Password</label>
         </FloatLabel>
+        <small
+          v-if="!!password && !isValidPassword(password)"
+          id="password-help"
+          class="text-red-400"
+          >Please enter a valid password</small
+        >
       </div>
       <div class="pt-3">
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Sign up"
+          label="Start mining"
           size="large"
           class="w-full"
+          severity="contrast"
           @click="signUp"
         />
       </div>
@@ -72,6 +87,12 @@
           />
           <label for="email">Email</label>
         </FloatLabel>
+        <small
+          v-if="!!email && !isValidEmail(email)"
+          id="email-help"
+          class="text-red-400"
+          >Please enter a valid email</small
+        >
       </div>
 
       <div :class="typingPassword ? 'pt-3' : ''">
@@ -89,10 +110,18 @@
           </Password>
           <label for="password">Password</label>
         </FloatLabel>
+        <small
+          v-if="!!password && !isValidPassword(password)"
+          id="password-help"
+          class="text-red-400"
+          >Please enter a valid password</small
+        >
       </div>
-      <span class="w-full text-right link">
-        <NuxtLink to="/auth/forgot-password"> Forgot your password? </NuxtLink>
-      </span>
+
+      <NuxtLink class="text-right" to="/auth/forgot-password">
+        Forgot your password?</NuxtLink
+      >
+
       <div class="pt-1">
         <Button
           v-if="state === 'login'"
@@ -155,6 +184,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
+        summary: 'Signin Failed',
         detail: error.message,
         life: 3000,
       });
@@ -186,7 +216,8 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        detail: `Failed to signup: ${error.message}`,
+        summary: 'Signup Failed',
+        detail: `${error.message}`,
         life: 3000,
       });
     }

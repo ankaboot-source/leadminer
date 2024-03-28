@@ -9,7 +9,7 @@
           <div class="text-lg">
             Enter the email address associated with your account
           </div>
-          <FloatLabel>
+          <FloatLabel class="mt-4">
             <InputText
               v-model="email"
               filled
@@ -64,7 +64,8 @@ async function resetPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: error.message,
+        summary: 'Reset Password Failed',
+        detail: error.message,
         life: 3000,
       });
     }

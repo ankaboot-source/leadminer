@@ -83,7 +83,7 @@ export default defineNuxtConfig({
   },
   css: [
     'primeicons/primeicons.css',
-    'primevue/resources/themes/aura-light-indigo/theme.css',
+    '~/assets/css/aura-light-indigo-theme-contrast-amber.css',
     '~/assets/css/app.scss',
   ],
   supabase: {
