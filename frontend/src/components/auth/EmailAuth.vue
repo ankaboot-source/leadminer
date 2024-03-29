@@ -186,15 +186,15 @@ const typingPassword = computed(() =>
 );
 
 const hasLowerCase = computed(
-  () => Boolean(password.value) && password.value.match(/.*[a-z]+.*/g)
+  () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value)
 );
 
 const hasUpperCase = computed(
-  () => Boolean(password.value) && password.value.match(/.*[A-Z]+.*/g)
+  () => Boolean(password.value) && /.*[A-Z]+.*/g.test(password.value)
 );
 
 const hasNumber = computed(
-  () => Boolean(password.value) && password.value.match(/.*[0-9]+.*/g)
+  () => Boolean(password.value) && /.*[0-9]+.*/g.test(password.value)
 );
 
 const isLoading = ref(false);
