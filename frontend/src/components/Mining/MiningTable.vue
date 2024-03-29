@@ -112,7 +112,7 @@
                 @update:model-value="onRecentToggle(3)"
               />
             </li>
-            <Divider />
+            <Divider class="my-0" />
             <MultiSelect
               v-model="visibleColumns"
               :options="visibleColumnsOptions"
