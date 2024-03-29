@@ -14,7 +14,7 @@
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
-    :scroll-height="!isFullscreen ? '38vh' : ''"
+    :scroll-height="!isFullscreen ? '37vh' : ''"
     scrollable
     size="small"
     striped-rows
