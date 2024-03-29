@@ -56,7 +56,8 @@ async function resetPassword() {
     }
     $toast.add({
       severity: 'success',
-      summary:
+      summary: 'Reset Password Confirmed',
+      detail:
         'If an account exists with this email address, you will receive password reset instructions',
       life: 3000,
     });
