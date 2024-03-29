@@ -206,7 +206,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency?.toLocaleString() }}
+        {{ data.recency?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -364,7 +364,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.seniority?.toLocaleString() }}
+        {{ data.seniority?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -838,10 +838,10 @@ onMounted(() => {
 
   visibleColumns.value = [
     'contacts',
-    ...(windowInnerWidth > 500 ? ['occurrence'] : []),
-    ...(windowInnerWidth > 800 ? ['recency'] : []),
-    ...(windowInnerWidth > 900 ? ['tags'] : []),
-    ...(windowInnerWidth > 1000 ? ['status'] : []),
+    ...(windowInnerWidth > 550 ? ['occurrence'] : []),
+    ...(windowInnerWidth > 700 ? ['recency'] : []),
+    ...(windowInnerWidth > 800 ? ['tags'] : []),
+    ...(windowInnerWidth > 950 ? ['status'] : []),
   ];
 });
 const visibleColumnsOptions = [
