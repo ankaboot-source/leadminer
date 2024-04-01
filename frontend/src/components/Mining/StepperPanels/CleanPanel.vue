@@ -20,7 +20,7 @@
   <div class="flex pt-6 justify-end">
     <Button
       v-if="activeTask"
-      class="text-black bg-amber-400"
+      class="text-black bg-amber-400 border-solid border-2 border-black"
       icon="pi pi-stop"
       icon-pos="right"
       style="border: 2px solid black !important"
@@ -29,7 +29,7 @@
     />
     <Button
       v-else
-      class="text-black bg-amber-400"
+      class="text-black bg-amber-400 border-solid border-2 border-black"
       style="border: 2px solid black !important"
       label="Start a new mining"
       @click="prevCallback()"
