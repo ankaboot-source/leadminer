@@ -29,7 +29,6 @@
     <Button
       v-else
       class="text-black bg-amber-400 border-solid border-2 border-black"
-      style="border: 2px solid black !important"
       label="Start a new mining"
       @click="prevCallback()"
     />
