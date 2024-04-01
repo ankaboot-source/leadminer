@@ -40,6 +40,7 @@ import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 
 const { nextCallback } = defineProps<{
+  // skipcq: JS-0296
   nextCallback: Function;
 }>();
 
