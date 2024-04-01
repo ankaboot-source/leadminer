@@ -32,8 +32,8 @@
       <div class="w-full flex gap-1">
         <label for="port">Port</label>
         <InputNumber
-          showButtons
           v-model="imapPort"
+          show-buttons
           class="w-full"
           :invalid="!(imapPort > 0 && imapPort <= 65536)"
         />

@@ -56,8 +56,8 @@ const props = defineProps({
   status: { type: Boolean, default: false },
   total: { type: Number, default: 0 },
   progress: { type: Number, default: 0 },
-  progressTitle: { type: String },
-  progressTooltip: { type: String },
+  progressTitle: { type: String, default: '' },
+  progressTooltip: { type: String, default: '' },
 });
 
 let startTime: number;

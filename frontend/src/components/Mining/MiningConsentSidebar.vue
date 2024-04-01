@@ -72,7 +72,6 @@ const source = defineModel<MiningSource>('source');
 const stepper = defineModel<Number>('stepper');
 
 function close() {
-  console.log('im here')
   show.value = false;
   if (source.value) {
     source.value.isValid = false;
@@ -83,8 +82,9 @@ function close() {
 
 function refreshOAuth() {
   if (source.value && ['google', 'azure'].includes(source.value.type)) {
-    return addOAuthAccount(source.value.type as OAuthMiningSource);
+    addOAuthAccount(source.value.type as OAuthMiningSource);
+  } else {
+    navigateTo('/dashboard');
   }
-  navigateTo('/dashboard');
 }
 </script>
