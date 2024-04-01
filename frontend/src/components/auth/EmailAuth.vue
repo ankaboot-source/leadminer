@@ -79,7 +79,7 @@
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Start mining"
+          label="Sign up"
           size="large"
           class="w-full"
           severity="contrast"

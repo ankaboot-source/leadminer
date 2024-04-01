@@ -1,6 +1,6 @@
 <template>
   <Divider align="center" type="solid">
-    <b class="text-gray-400 font-semibold">{{ content.toUpperCase() }}</b>
+    <b class="text-gray-400 font-semibold">{{ content }}</b>
   </Divider>
 </template>
 

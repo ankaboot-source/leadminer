@@ -5,20 +5,32 @@
         <div class="text-4xl font-bold font-[Merriweather]">
           Forgot your password?
         </div>
-        <div class="grid gap-4 w-full">
+        <div class="grid gap-6 w-full">
           <div class="text-lg">
             Enter the email address associated with your account
           </div>
-          <FloatLabel class="mt-4">
-            <InputText
-              v-model="email"
-              filled
-              class="w-full"
-              label="Email"
-              type="email"
-            />
-            <label for="email">Email</label>
-          </FloatLabel>
+          <div class="grid gap-1">
+            <FloatLabel>
+              <InputText
+                v-model="email"
+                filled
+                class="w-full"
+                :invalid="!!email && !isValidEmail(email)"
+                type="email"
+                required
+                aria-describedby="email-help"
+                @focusin="emailFocus = true"
+                @focusout="emailFocus = false"
+              />
+              <label for="email">Email</label>
+            </FloatLabel>
+            <small
+              v-if="!!email && !isValidEmail(email)"
+              id="email-help"
+              class="text-red-400 text-left pl-4"
+              >Please enter a valid email</small
+            >
+          </div>
         </div>
         <Button
           class="w-full"
@@ -28,7 +40,7 @@
         />
         <p>
           Back to
-          <NuxtLink to="auth/login" class="font-bold link"> Sign in </NuxtLink>
+          <NuxtLink to="/auth/login" class="font-bold link"> Sign in </NuxtLink>
         </p>
       </div>
     </NuxtLayout>
@@ -41,6 +53,7 @@ import Button from 'primevue/button';
 const $toast = useToast();
 const $supabase = useSupabaseClient();
 
+const emailFocus = ref(false);
 const email = ref('');
 const isLoading = ref(false);
 

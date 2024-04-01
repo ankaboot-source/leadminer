@@ -22,7 +22,7 @@
         </span>
 
         <span class="text-gray-700 font-[merriweather]">
-          By clicking signing in, you agree to the
+          By signing in, you agree to the
           <a
             href="https://www.leadminer.io/terms-of-service"
             target="_blank"
