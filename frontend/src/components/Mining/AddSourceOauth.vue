@@ -1,10 +1,10 @@
 <template>
-  <q-btn
+  <Button
+    outlined
     :icon="icon"
     :label="label"
-    unelevated
-    outline
-    no-caps
+    size="small"
+    class="rounded-none border-black text-slate-700"
     @click="addOAuthAccount(source)"
   />
 </template>
