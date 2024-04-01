@@ -33,7 +33,7 @@
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
       severity="secondary"
       label="Back"
-      @click="props.prevCallback()"
+      @click="prevCallback()"
     />
     <div class="flex gap-2">
       <Button
@@ -81,10 +81,12 @@
 import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
-import ProgressCard from '@/components/ProgressCar.vue';
+import ProgressCard from '@/components/ProgressCard.vue';
 
-const props = defineProps<{
+const { nextCallback, prevCallback } = defineProps<{
+  // skipcq: JS-0296
   nextCallback: Function;
+  // skipcq: JS-0296
   prevCallback: Function;
 }>();
 
@@ -144,7 +146,7 @@ const progressTooltip = computed(() =>
 
 watch(extractionFinished, (finished) => {
   if (!canceled && finished) {
-    props.nextCallback();
+    nextCallback();
   }
 });
 

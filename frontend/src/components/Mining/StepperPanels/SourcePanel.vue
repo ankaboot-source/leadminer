@@ -29,7 +29,7 @@
       :disabled="!sourceModel"
       class="text-black bg-amber-13"
       label="Continue with this email account"
-      @click="props.nextCallback"
+      @click="nextCallback()"
     />
   </div>
 </template>
@@ -39,7 +39,7 @@ import type { MiningSource } from '~/types/mining';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 
-const props = defineProps<{
+const { nextCallback } = defineProps<{
   nextCallback: Function;
 }>();
 

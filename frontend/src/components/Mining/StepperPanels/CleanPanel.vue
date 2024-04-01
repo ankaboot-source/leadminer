@@ -32,14 +32,15 @@
       class="text-black bg-amber-400"
       style="border: 2px solid black !important"
       label="Start a new mining"
-      @click="props.prevCallback()"
+      @click="prevCallback()"
     />
   </div>
 </template>
 <script setup lang="ts">
 import ProgressCard from '@/components/ProgressCard.vue';
 
-const props = defineProps<{
+const { prevCallback } = defineProps<{
+  // skipcq: JS-0296
   prevCallback: Function;
 }>();
 

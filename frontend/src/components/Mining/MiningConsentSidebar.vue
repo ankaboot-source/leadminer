@@ -69,7 +69,7 @@ import { type MiningSource, type OAuthMiningSource } from '@/types/mining';
 
 const show = defineModel<boolean>('show');
 const source = defineModel<MiningSource>('source');
-const stepper = defineModel<Number>('stepper');
+const stepper = defineModel<number>('stepper');
 
 function close() {
   show.value = false;
