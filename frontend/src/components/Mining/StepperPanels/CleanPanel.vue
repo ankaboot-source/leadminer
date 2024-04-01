@@ -37,7 +37,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import ProgressCard from '@/components/ProgressBar.vue';
+import ProgressCard from '@/components/ProgressCar.vue';
 
 const props = defineProps<{
   prevCallback: Function;

@@ -81,7 +81,7 @@
 import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
-import ProgressCard from '@/components/ProgressBar.vue';
+import ProgressCard from '@/components/ProgressCar.vue';
 
 const props = defineProps<{
   nextCallback: Function;

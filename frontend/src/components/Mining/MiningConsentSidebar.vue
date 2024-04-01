@@ -72,6 +72,7 @@ const source = defineModel<MiningSource>('source');
 const stepper = defineModel<Number>('stepper');
 
 function close() {
+  console.log('im here')
   show.value = false;
   if (source.value) {
     source.value.isValid = false;
