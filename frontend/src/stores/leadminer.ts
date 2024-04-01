@@ -139,12 +139,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         true
       );
     } catch (err) {
-      if (
-        activeMiningSource.value?.type &&
-        ['google', 'azure'].includes(activeMiningSource.value.type)
-      ) {
-        $router.push(await redirectOauthConsentPage());
-      }
       miningSources.value = updateMiningSourcesValidity(
         miningSources.value,
         activeMiningSource.value as MiningSource,

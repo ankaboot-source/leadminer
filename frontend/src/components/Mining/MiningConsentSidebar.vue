@@ -1,7 +1,7 @@
 <template>
   <Sidebar
-    class="pt-16"
     v-model:visible="show"
+    class="pt-16"
     position="top"
     style="height: auto"
   >
