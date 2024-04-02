@@ -64,7 +64,7 @@
       </Button>
       <Button
         v-else
-        :loading="$leadminerStore.isLoadingStartMining"
+        :loading="$leadminerStore?.isLoadingStartMining"
         class="text-black bg-amber-400 border-solid border-2 border-black"
         icon="pi pi-stop"
         icon-pos="right"
@@ -143,7 +143,7 @@ const progressTooltip = computed(() =>
 );
 
 watch(extractionFinished, (finished) => {
-  if (!canceled && finished) {
+  if (!canceled.value && finished) {
     nextCallback();
   }
 });
@@ -177,6 +177,7 @@ async function startMining() {
     });
     $leadminerStore.isLoadingStartMining = false;
   } catch (error) {
+    $leadminerStore.isLoadingStartMining = false;
     const provider = $leadminerStore.activeMiningSource?.type;
     if (
       error instanceof FetchError &&
@@ -186,7 +187,6 @@ async function startMining() {
     ) {
       navigateTo(await redirectOauthConsentPage());
     } else {
-      $leadminerStore.isLoadingStartMining = false;
       throw error;
     }
   }
