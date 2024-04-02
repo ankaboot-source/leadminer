@@ -34,7 +34,7 @@
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
   >
-    <template #empty>
+    <template v-if="!isLoading" #empty>
       <div class="text-center py-5">
         <div class="font-semibold">No contacts found</div>
         <div v-if="defaultOnFilters !== 0 && contactsLength !== 0">
@@ -42,15 +42,27 @@
         </div>
       </div>
     </template>
-    <template #loading>{{ loadingLabel }}</template>
+    <template #loading>
+      <div class="text-center">
+        <ProgressSpinner />
+        <div class="font-semibold text-white">{{ loadingLabel }}</div>
+      </div>
+    </template>
     <template #header>
       <div class="flex items-center gap-1">
-        <Button
-          icon="pi pi-external-link"
-          label="Export CSV"
-          :disable="isExportDisabled"
-          @click="verifyExport"
-        />
+        <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
+        <div
+          v-tooltip.top="
+            isExportDisabled && 'Select at least one contact to export'
+          "
+        >
+          <Button
+            icon="pi pi-external-link"
+            label="Export CSV"
+            :disabled="isExportDisabled"
+            @click="exportTable"
+          />
+        </div>
         <Button
           type="button"
           :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
@@ -136,7 +148,17 @@
     </template>
 
     <!-- Select -->
-    <Column selection-mode="multiple" />
+    <Column
+      selection-mode="multiple"
+      style="width: 38px"
+      :pt="{
+        rowCheckbox: {
+          root: {
+            style: { 'z-index': 0 },
+          },
+        },
+      }"
+    />
 
     <!-- Contacts -->
     <Column field="contacts">
@@ -685,6 +707,7 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
+    initDefaultFilters();
     isLoading.value = false;
   }
 });
@@ -720,94 +743,6 @@ const onRowUnselect = () => {
   selectAll.value = false;
 };
 
-function copyContact(name: string, email: string) {
-  $toast.add({
-    severity: 'success',
-    summary: 'Contact copied',
-    detail: 'This contact email address has been copied to your clipboard',
-    life: 3000,
-  });
-  navigator.clipboard.writeText(
-    name && name !== '' ? `${name} <${email}>` : `<${email}>`
-  );
-}
-
-/* *** Export CSV *** */
-
-const { $api } = useNuxtApp();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
-const isExportDisabled = computed(
-  () =>
-    rows.value.length === 0 ||
-    activeMiningTask.value ||
-    leadminerStore.loadingStatusDns
-);
-function getFileName() {
-  const { email } = $user.value as User;
-  const currentDatetime = new Date().toISOString().slice(0, 10);
-  const fileName = `leadminer-${email}-${currentDatetime}`;
-  return fileName;
-}
-async function exportTable() {
-  await $api('/imap/export/csv', {
-    async onResponse({ response }) {
-      if (response.status === 204) {
-        return;
-      }
-      const status = exportFile(
-        `${getFileName()}.csv`,
-        response._data,
-        'text/csv'
-      );
-
-      if (status !== true) {
-        throw new Error('Browser denied file download...');
-      }
-
-      await leadminerStore.syncUserCredits();
-
-      $toast.add({
-        severity: 'success',
-        summary: 'Emails exported successfully',
-        life: 3000,
-      });
-    },
-  });
-}
-
-const openCreditModel = ({
-  total,
-  available,
-}: {
-  total: number;
-  available: number;
-}) => {
-  if (total === undefined || available === undefined) {
-    return $toast.add({
-      severity: 'error',
-      summary: 'Error when verifying export CSV',
-      life: 3000,
-    });
-  }
-  return CreditsDialogRef.value?.openModal(total, available);
-};
-
-async function verifyExport() {
-  await $api('/imap/export/csv/verify', {
-    async onResponse({ response }) {
-      if (response.status === 204) {
-        return;
-      }
-
-      if (response.status !== 206) {
-        await exportTable();
-      } else {
-        openCreditModel(response._data);
-      }
-    },
-  });
-}
-
 const implicitlySelectedContacts = computed(() => {
   // If (Filter) & (No selection) : user implicitly selected all filtered contacts
   if (
@@ -829,6 +764,90 @@ const implicitlySelectedContacts = computed(() => {
 const implicitlySelectedContactsLength = computed(
   () => implicitlySelectedContacts.value.length
 );
+
+function copyContact(name: string, email: string) {
+  $toast.add({
+    severity: 'success',
+    summary: 'Contact copied',
+    detail: 'This contact email address has been copied to your clipboard',
+    life: 3000,
+  });
+  navigator.clipboard.writeText(
+    name && name !== '' ? `${name} <${email}>` : `<${email}>`
+  );
+}
+
+/* *** Export CSV *** */
+
+const { $api } = useNuxtApp();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+const isExportDisabled = computed(
+  () =>
+    rows.value.length === 0 ||
+    activeMiningTask.value ||
+    leadminerStore.loadingStatusDns ||
+    !implicitlySelectedContactsLength.value
+);
+function getFileName() {
+  const { email } = $user.value as User;
+  const currentDatetime = new Date().toISOString().slice(0, 10);
+  const fileName = `leadminer-${email}-${currentDatetime}`;
+  return fileName;
+}
+
+const openCreditModel = ({
+  total,
+  available,
+}: {
+  total: number;
+  available: number;
+}) => {
+  if (total === undefined || available === undefined) {
+    return $toast.add({
+      severity: 'error',
+      summary: 'Error when verifying export CSV',
+      life: 3000,
+    });
+  }
+  return CreditsDialogRef.value?.openModal(total, available);
+};
+
+async function exportTable() {
+  const contactsToExport = implicitlySelectedContacts.value.map(
+    (item: Contact) => item.email
+  );
+  console.log(implicitlySelectedContactsLength.value, contactsToExport);
+
+  await $api('/export/csv', {
+    method: 'POST', // Specify the HTTP method as POST
+    body: { contactsToExport: JSON.stringify(contactsToExport) }, // Convert requestData to JSON string and include it in the request body
+    async onResponse({ response }) {
+      if (response.status === 402) {
+        openCreditModel(response._data);
+      }
+
+      if (response.status === 200 || response.status === 206) {
+        const status = exportFile(
+          `${getFileName()}.csv`,
+          response._data,
+          'text/csv'
+        );
+
+        if (status !== true) {
+          throw new Error('Browser denied file download...');
+        }
+
+        await leadminerStore.syncUserCredits();
+
+        $toast.add({
+          severity: 'success',
+          summary: 'Emails exported successfully',
+          life: 3000,
+        });
+      }
+    },
+  });
+}
 
 const isFullscreen = ref(false);
 
@@ -891,15 +910,6 @@ function onSelectColumnsChange() {
 }
 
 /* PrimeVue bugs Table fixes */
-/* 
-  DataTable: Checkbox in a row behind the header is clickable
-  https://github.com/primefaces/primevue/issues/5483 
-  theme.css:4049 
-*/
-.p-datatable-scrollable-table > .p-datatable-thead {
-  top: 0;
-  z-index: 2;
-}
 /* 
   DataTable - table is leaking up behind table header
   https://github.com/primefaces/primevue-tailwind/issues/197

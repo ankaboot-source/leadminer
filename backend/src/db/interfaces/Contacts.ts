@@ -17,6 +17,7 @@ export interface Contacts {
     emailStatus: { status: Status; email: string }[]
   ): Promise<boolean>;
   getContacts(userId: string): Promise<Contact[]>;
+  getSelectedContacts(userId: string, emails: string[]): Promise<Contact[]>;
   getUnverifiedEmails(userId: string): Promise<string[]>;
   getExportedContacts(userId: string): Promise<Contact[]>;
   getNonExportedContacts(userId: string): Promise<Contact[]>;

@@ -5,7 +5,7 @@ import { Users } from '../../db/interfaces/Users';
  * to perform a certain action.
  */
 export default class CreditsHandler {
-  public readonly INSUFFICIENT_CREDITS_STATUS = 402;
+  public readonly DEFICIENT_CREDITS_STATUS = 402;
 
   public readonly INSUFFICIENT_CREDITS_MESSAGE = 'Insufficient credits';
 
@@ -20,7 +20,8 @@ export default class CreditsHandler {
    * @param userId - The unique identifier of the user.
    * @param units - The number of units (e.g., emails or contacts) for which to calculate credits.
    * @returns An object containing credit-related information:
-   *   - `insufficientCredits`: Indicates whether the user has insufficient credits for the requested units.
+   *   - `hasDeficientCredits`: Indicates whether the user has deficient credits for the requested units. (Deficient would be lacking something that is necessary.)
+   *   - `hasInsufficientCredits`: Indicates whether the user has insufficient credits for the requested units. (Insufficient would be considered not quite up to a certain standard, or subpar.)
    *   - `requestedUnits`: The number of units requested.
    *   - `availableUnits`: The available units (e.g., emails or contacts) based on the user's credits.
    * @throws Throws an error if user credits cannot be retrieved.
@@ -29,7 +30,8 @@ export default class CreditsHandler {
     userId: string,
     units: number
   ): Promise<{
-    insufficientCredits: boolean;
+    hasDeficientCredits: boolean;
+    hasInsufficientCredits: boolean;
     requestedUnits: number;
     availableUnits: number;
   }> {
@@ -39,11 +41,12 @@ export default class CreditsHandler {
       throw new Error('Failed to retrieve user credits.');
     }
 
-    const insufficientCredits = userCredits < this.creditsPerUnit;
+    const hasDeficientCredits = userCredits < this.creditsPerUnit;
 
-    if (insufficientCredits) {
+    if (hasDeficientCredits) {
       return {
-        insufficientCredits,
+        hasDeficientCredits,
+        hasInsufficientCredits: true,
         requestedUnits: units,
         availableUnits: 0
       };
@@ -53,8 +56,11 @@ export default class CreditsHandler {
     const availableUnits =
       units >= userCreditsToUnits ? userCreditsToUnits : units;
 
+    const hasInsufficientCredits = availableUnits < units;
+
     return {
-      insufficientCredits,
+      hasDeficientCredits,
+      hasInsufficientCredits,
       requestedUnits: units,
       availableUnits
     };

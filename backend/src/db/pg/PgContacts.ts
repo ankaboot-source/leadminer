@@ -16,6 +16,9 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_SQL =
     'SELECT * FROM get_contacts_table($1)';
 
+  private static readonly SELECT_CONTACTS_BY_EMAILS =
+    'SELECT * FROM get_contacts_table_by_emails($1,$2)';
+
   private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
     SELECT email 
     FROM persons
@@ -220,6 +223,23 @@ export default class PgContacts implements Contacts {
       const { rows } = await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [
         userId
       ]);
+
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getSelectedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_CONTACTS_BY_EMAILS,
+        [userId, emails]
+      );
 
       return rows;
     } catch (error) {
