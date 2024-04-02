@@ -51,7 +51,7 @@ const stepper = ref();
 
 const consentSource = ref<MiningSource | undefined>(
   $leadminerStore.activeMiningSource
-  );
+);
 const showConsentSideBar = ref(false);
 
 const activeMining = computed(() =>

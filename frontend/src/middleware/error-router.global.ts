@@ -10,6 +10,6 @@ export default defineNuxtRouteMiddleware((to) => {
         },
       });
     default:
-      return true
+      return true;
   }
 });
