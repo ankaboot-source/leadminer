@@ -22,5 +22,5 @@ export async function redirectOauthConsentPage() {
   const provider = useLeadminerStore().activeMiningSource?.type;
   const referrer = (await useSupabaseClient().auth.getSession()).data.session
     ?.user.id;
-  return `/auth/oauth-consent-error?provider=${provider}&referrer=${referrer}`;
+  return `/oauth-consent-error?provider=${provider}&referrer=${referrer}`;
 }

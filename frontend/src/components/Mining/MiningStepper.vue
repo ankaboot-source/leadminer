@@ -28,8 +28,8 @@
   </Panel>
   <MiningConsentSidebar
     v-model:stepper="stepper"
-    v-model:show="showOAuthConsentWarning"
-    v-model:source="$leadminerStore.activeMiningSource"
+    v-model:show="showConsentSideBar"
+    v-model:source="consentSource"
   />
 </template>
 
@@ -42,11 +42,17 @@ import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import { type MiningSource, type MiningSourceType } from '~/types/mining';
 
+const $route = useRoute();
 const $leadminerStore = useLeadminerStore();
 
 const stepper = ref();
-const showOAuthConsentWarning = ref(false);
+
+const consentSource = ref<MiningSource | undefined>(
+  $leadminerStore.activeMiningSource
+  );
+const showConsentSideBar = ref(false);
 
 const activeMining = computed(() =>
   Boolean(
@@ -57,6 +63,21 @@ const activeMining = computed(() =>
   )
 );
 
+onMounted(() => {
+  const { error, provider } = $route.query;
+  if (error !== 'oauth-consent') {
+    return;
+  }
+
+  useRouter().replace({ query: {} });
+  consentSource.value = {
+    type: provider as MiningSourceType,
+    isValid: false,
+    email: '',
+  };
+  showConsentSideBar.value = true;
+});
+
 async function getBoxes() {
   try {
     $leadminerStore.isLoadingBoxes = true;
@@ -64,7 +85,7 @@ async function getBoxes() {
     $leadminerStore.isLoadingBoxes = false;
   } catch (err) {
     $leadminerStore.isLoadingBoxes = false;
-    showOAuthConsentWarning.value = true;
+    showConsentSideBar.value = true;
   }
 }
 
