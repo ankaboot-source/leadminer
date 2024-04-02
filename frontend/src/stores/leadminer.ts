@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
 import { sse } from '../utils/sse';
 import { type MiningSource, type MiningTask } from '../types/mining';
@@ -8,7 +7,6 @@ import type { Profile } from '@/types/user';
 import { updateMiningSourcesValidity } from '@/utils/sources';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
-  const $router = useRouter();
   const { $api } = useNuxtApp();
 
   const userCredits = ref(0);
@@ -139,12 +137,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         true
       );
     } catch (err) {
-      if (
-        activeMiningSource.value?.type &&
-        ['google', 'azure'].includes(activeMiningSource.value.type)
-      ) {
-        $router.push(await redirectOauthConsentPage());
-      }
       miningSources.value = updateMiningSourcesValidity(
         miningSources.value,
         activeMiningSource.value as MiningSource,
