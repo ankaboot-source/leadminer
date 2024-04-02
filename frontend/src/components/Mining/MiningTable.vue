@@ -816,7 +816,6 @@ async function exportTable() {
   const contactsToExport = implicitlySelectedContacts.value.map(
     (item: Contact) => item.email
   );
-  console.log(implicitlySelectedContactsLength.value, contactsToExport);
 
   await $api('/export/csv', {
     method: 'POST', // Specify the HTTP method as POST

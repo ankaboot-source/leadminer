@@ -29,7 +29,6 @@ export default function initializeContactsController(
       const user = res.locals.user as User;
       const contactsToExport = JSON.parse(req.body.contactsToExport);
 
-      console.log(contactsToExport, contactsToExport.length);
       if (!contactsToExport.length) {
         return res.sendStatus(204);
       }
@@ -57,11 +56,9 @@ export default function initializeContactsController(
           const {
             hasDeficientCredits,
             hasInsufficientCredits,
-            requestedUnits,
             availableUnits
           } = await creditHandler.validate(user.id, newContacts.length);
 
-          let statusCode = 200;
           if (hasDeficientCredits) {
             statusCode = creditHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
             const response = {
@@ -69,19 +66,20 @@ export default function initializeContactsController(
               available: hasDeficientCredits ? 0 : availableUnits
             };
             return res.status(statusCode).json(response);
-          } else if (hasInsufficientCredits) {
+          }
+          if (hasInsufficientCredits) {
             statusCode = 206; // 206 Partial Content
           }
 
           // Verified, Export.
           const availableContacts = newContacts.slice(0, availableUnits);
-          const contactsToExport = [
+          const selectedContacts = [
             ...previousExportedContacts,
             ...availableContacts
           ];
 
           const csvData = await exportToCSV(
-            contactsToExport,
+            selectedContacts,
             req.query.delimiter ? String(req.query.delimiter) : undefined,
             req.headers['accept-language']
           );
@@ -105,7 +103,7 @@ export default function initializeContactsController(
         );
         if (!selectedContacts.length) {
           statusCode = 204; // 204 No Content
-          return res.sendStatus(204);
+          return res.sendStatus(statusCode);
         }
 
         const csvData = await exportToCSV(
