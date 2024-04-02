@@ -59,10 +59,14 @@ export default function initializeContactsController(
         }
 
         // Verify
-        const newContacts = await contacts.getNonExportedContacts(user.id);
-        const previousExportedContacts = await contacts.getExportedContacts(
-          user.id
+        const newContacts = await contacts.getSelectedNonExportedContacts(
+          user.id,
+          contactsToExport
         );
+
+        const previousExportedContacts =
+          await contacts.getSelectedExportedContacts(user.id, contactsToExport);
+
         if (!(newContacts.length + previousExportedContacts.length)) {
           statusCode = 204; // 204 No Content
           return res.sendStatus(204);

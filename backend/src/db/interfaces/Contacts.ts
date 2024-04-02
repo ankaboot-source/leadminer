@@ -16,10 +16,18 @@ export interface Contacts {
     userId: string,
     emailStatus: { status: Status; email: string }[]
   ): Promise<boolean>;
-  getContacts(userId: string): Promise<Contact[]>;
-  getSelectedContacts(userId: string, emails: string[]): Promise<Contact[]>;
   getUnverifiedEmails(userId: string): Promise<string[]>;
+  getContacts(userId: string): Promise<Contact[]>;
   getExportedContacts(userId: string): Promise<Contact[]>;
   getNonExportedContacts(userId: string): Promise<Contact[]>;
+  getSelectedContacts(userId: string, emails: string[]): Promise<Contact[]>;
+  getSelectedExportedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]>;
+  getSelectedNonExportedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]>;
   registerExportedContacts(contactIds: string[], userId: string): Promise<void>;
 }
