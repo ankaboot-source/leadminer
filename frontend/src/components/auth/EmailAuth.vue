@@ -3,39 +3,18 @@
     <template v-if="state === 'signup'">
       <div :class="typingEmail ? 'pt-1 grid gap-1' : 'grid gap-1'">
         <FloatLabel>
-          <InputText
-            v-model="email"
-            filled
-            class="w-full"
-            :invalid="!!email && !isValidEmail(email)"
-            type="email"
-            required
-            aria-describedby="email-help"
-            @focusin="emailFocus = true"
-            @focusout="emailFocus = false"
-          />
+          <InputText v-model="email" filled class="w-full" :invalid="!!email && !isValidEmail(email)" type="email"
+            required aria-describedby="email-help" @focusin="emailFocus = true" @focusout="emailFocus = false" />
           <label for="email">Email</label>
         </FloatLabel>
-        <small
-          v-if="!!email && !isValidEmail(email)"
-          id="email-help"
-          class="text-red-400 text-left pl-4"
-          >Please enter a valid email</small
-        >
+        <small v-if="!!email && !isValidEmail(email)" id="email-help" class="text-red-400 text-left pl-4">Please enter a
+          valid email</small>
       </div>
       <div :class="typingPassword ? 'pt-3 grid gap-1' : 'grid gap-1'">
         <FloatLabel>
-          <Password
-            v-model="password"
-            class="w-full"
-            :input-style="{ width: '100%' }"
-            toggle-mask
-            required
-            :invalid="!!password && !isValidPassword(password)"
-            aria-describedby="password-help"
-            @focusin="passwordFocus = true"
-            @focusout="passwordFocus = false"
-          >
+          <Password v-model="password" class="w-full" :input-style="{ width: '100%' }" toggle-mask required
+            :invalid="!!password && !isValidPassword(password)" aria-describedby="password-help"
+            @focusin="passwordFocus = true" @focusout="passwordFocus = false">
             <template #header>
               <h6>Pick a password</h6>
             </template>
@@ -68,23 +47,13 @@
           </Password>
           <label for="password">Password</label>
         </FloatLabel>
-        <small
-          v-if="!!password && !isValidPassword(password)"
-          id="password-help"
-          class="text-red-400 text-left pl-4"
-          >Please enter a valid password</small
-        >
+        <small v-if="!!password && !isValidPassword(password)" id="password-help"
+          class="text-red-400 text-left pl-4">Please
+          enter a valid password</small>
       </div>
       <div class="pt-3">
-        <Button
-          v-if="state === 'signup'"
-          :loading="isLoading"
-          label="Sign up"
-          size="large"
-          class="w-full"
-          severity="contrast"
-          @click="signUp"
-        />
+        <Button v-if="state === 'signup'" :loading="isLoading" label="Sign up" size="large" class="w-full"
+          severity="contrast" @click="signUp" />
       </div>
     </template>
     <template v-else>
@@ -92,63 +61,31 @@
         <div class="grid gap-4">
           <div :class="typingEmail ? 'pt-1 grid gap-1' : ' grid gap-1'">
             <FloatLabel>
-              <InputText
-                v-model="email"
-                filled
-                class="w-full"
-                :invalid="!!email && !isValidEmail(email)"
-                label="Email"
-                type="email"
-                required
-                @focusin="emailFocus = true"
-                @focusout="emailFocus = false"
-              />
+              <InputText v-model="email" filled class="w-full" :invalid="!!email && !isValidEmail(email)" label="Email"
+                type="email" required @focusin="emailFocus = true" @focusout="emailFocus = false" />
               <label for="email">Email</label>
             </FloatLabel>
-            <small
-              v-if="!!email && !isValidEmail(email)"
-              id="email-help"
-              class="text-red-400 text-left pl-4"
-              >Please enter a valid email</small
-            >
+            <small v-if="!!email && !isValidEmail(email)" id="email-help" class="text-red-400 text-left pl-4">Please
+              enter a valid email</small>
           </div>
           <div :class="typingPassword ? 'pt-3 grid gap-1' : ' grid gap-1'">
             <FloatLabel>
-              <Password
-                v-model="password"
-                class="w-full"
-                :input-style="{ width: '100%' }"
-                toggle-mask
-                required
-                :feedback="false"
-                @focusin="passwordFocus = true"
-                @focusout="passwordFocus = false"
-              >
+              <Password v-model="password" class="w-full" :input-style="{ width: '100%' }" toggle-mask required
+                :feedback="false" @focusin="passwordFocus = true" @focusout="passwordFocus = false">
               </Password>
               <label for="password">Password</label>
             </FloatLabel>
-            <small
-              v-if="!!password && !isValidPassword(password)"
-              id="password-help"
-              class="text-red-400 text-left pl-4"
-              >Please enter a valid password</small
-            >
+            <small v-if="!!password && !isValidPassword(password)" id="password-help"
+              class="text-red-400 text-left pl-4">Please enter a valid password</small>
           </div>
         </div>
         <NuxtLink class="text-right" to="/auth/forgot-password">
-          Forgot your password?</NuxtLink
-        >
+          Forgot your password?</NuxtLink>
       </div>
 
       <div class="pt-1">
-        <Button
-          v-if="state === 'login'"
-          :loading="isLoading"
-          label="Sign in"
-          class="w-full"
-          size="large"
-          @click="loginWithEmailAndPassword"
-        />
+        <Button v-if="state === 'login'" :loading="isLoading" label="Sign in" class="w-full" size="large"
+          @click="loginWithEmailAndPassword" />
       </div>
     </template>
   </div>
@@ -239,7 +176,7 @@ async function signUp() {
     }
     $toast.add({
       severity: 'success',
-      summary: 'Sign-up Successfully',
+      summary: 'Sign up Successfully',
       detail: `We have sent a confirmation email to ${email.value}`,
       life: 3000,
     });
@@ -247,7 +184,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Sign-up Failed',
+        summary: 'Sign up Failed',
         detail: `${error.message}`,
         life: 3000,
       });
