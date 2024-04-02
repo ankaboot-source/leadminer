@@ -28,16 +28,38 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       const contactsToExport = JSON.parse(req.body.contactsToExport);
+      let statusCode = 200;
 
       if (!contactsToExport.length) {
-        return res.sendStatus(204);
+        statusCode = 204; // 204 No Content
+        return res.sendStatus(statusCode);
       }
 
       try {
-        // Verify
-        let statusCode = 200;
+        if (!ENV.ENABLE_CREDIT || !ENV.CONTACT_CREDIT) {
+          // No need to Verify Credits, Export.
+          const selectedContacts = await contacts.getSelectedContacts(
+            user.id,
+            contactsToExport
+          );
+          if (!selectedContacts.length) {
+            statusCode = 204; // 204 No Content
+            return res.sendStatus(statusCode);
+          }
 
-        const newContacts = await contacts.getNonExportedContacts(user.id); // !
+          const csvData = await exportToCSV(
+            selectedContacts,
+            req.query.delimiter ? String(req.query.delimiter) : undefined,
+            req.headers['accept-language']
+          );
+          return res
+            .header('Content-Type', 'text/csv')
+            .status(statusCode)
+            .send(csvData);
+        }
+
+        // Verify
+        const newContacts = await contacts.getNonExportedContacts(user.id);
         const previousExportedContacts = await contacts.getExportedContacts(
           user.id
         );
@@ -47,64 +69,32 @@ export default function initializeContactsController(
         }
 
         // Verify Credits
-        if (ENV.ENABLE_CREDIT && ENV.CONTACT_CREDIT) {
-          const creditHandler = new CreditsHandler(
-            userResolver,
-            ENV.CONTACT_CREDIT
-          );
-
-          const {
-            hasDeficientCredits,
-            hasInsufficientCredits,
-            availableUnits
-          } = await creditHandler.validate(user.id, newContacts.length);
-
-          if (hasDeficientCredits) {
-            statusCode = creditHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
-            const response = {
-              total: newContacts.length + previousExportedContacts.length,
-              available: hasDeficientCredits ? 0 : availableUnits
-            };
-            return res.status(statusCode).json(response);
-          }
-          if (hasInsufficientCredits) {
-            statusCode = 206; // 206 Partial Content
-          }
-
-          // Verified, Export.
-          const availableContacts = newContacts.slice(0, availableUnits);
-          const selectedContacts = [
-            ...previousExportedContacts,
-            ...availableContacts
-          ];
-
-          const csvData = await exportToCSV(
-            selectedContacts,
-            req.query.delimiter ? String(req.query.delimiter) : undefined,
-            req.headers['accept-language']
-          );
-
-          await contacts.registerExportedContacts(
-            availableContacts.map(({ email }) => email),
-            user.id
-          );
-          await creditHandler.deduct(user.id, availableUnits);
-
-          return res
-            .header('Content-Type', 'text/csv')
-            .status(statusCode)
-            .send(csvData);
-        }
-
-        // No need to Verify Credits, Export.
-        const selectedContacts = await contacts.getSelectedContacts(
-          user.id,
-          contactsToExport
+        const creditHandler = new CreditsHandler(
+          userResolver,
+          ENV.CONTACT_CREDIT
         );
-        if (!selectedContacts.length) {
-          statusCode = 204; // 204 No Content
-          return res.sendStatus(statusCode);
+
+        const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
+          await creditHandler.validate(user.id, newContacts.length);
+
+        if (hasDeficientCredits) {
+          statusCode = creditHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
+          const response = {
+            total: newContacts.length + previousExportedContacts.length,
+            available: hasDeficientCredits ? 0 : availableUnits
+          };
+          return res.status(statusCode).json(response);
         }
+        if (hasInsufficientCredits) {
+          statusCode = 206; // 206 Partial Content
+        }
+
+        // Verified, Export.
+        const availableContacts = newContacts.slice(0, availableUnits);
+        const selectedContacts = [
+          ...previousExportedContacts,
+          ...availableContacts
+        ];
 
         const csvData = await exportToCSV(
           selectedContacts,
@@ -112,7 +102,16 @@ export default function initializeContactsController(
           req.headers['accept-language']
         );
 
-        return res.header('Content-Type', 'text/csv').status(200).send(csvData);
+        await contacts.registerExportedContacts(
+          availableContacts.map(({ email }) => email),
+          user.id
+        );
+        await creditHandler.deduct(user.id, availableUnits);
+
+        return res
+          .header('Content-Type', 'text/csv')
+          .status(statusCode)
+          .send(csvData);
       } catch (error) {
         return next(error);
       }

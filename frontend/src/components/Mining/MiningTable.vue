@@ -908,9 +908,8 @@ function onSelectColumnsChange() {
   z-index: 3 !important;
 }
 
-/* PrimeVue bugs Table fixes */
 /* 
-  DataTable - table is leaking up behind table header
+  PrimeVue fix DataTable - table is leaking up behind table header
   https://github.com/primefaces/primevue-tailwind/issues/197
   tailwind.css:2 
 */
