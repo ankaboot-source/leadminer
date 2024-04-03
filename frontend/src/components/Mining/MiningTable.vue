@@ -117,12 +117,16 @@
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div v-tooltip.left="'- Less than 3 years \n- GDPR Proof'">
+              <div
+                v-tooltip.left="
+                  `- Less than ${recentYearsAgo}} years \n- GDPR Proof`
+                "
+              >
                 Recent contacts
               </div>
               <InputSwitch
                 v-model="recentToggle"
-                @update:model-value="onRecentToggle(3)"
+                @update:model-value="onRecentToggle"
               />
             </li>
             <Divider class="my-0" />
@@ -567,9 +571,6 @@ watch(searchContactModel, (newValue: string) => {
 });
 
 const filteredContacts = ref<Contact[]>([]);
-function onFilter(event: DataTableFilterEvent) {
-  filteredContacts.value = event.filteredValue;
-}
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
 /* *** Settings *** */
@@ -578,33 +579,58 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 const validToggle = ref(true); // status: valid
-function onValidToggle() {
-  filters.value.status.value = validToggle.value ? ['VALID'] : null;
+function onValidToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    validToggle.value = toggle;
+  }
+
+  if (filters.value.status.value === null) {
+    filters.value.status.value = [];
+  }
+  if (!filters.value.status.value.includes('VALID')) {
+    filters.value.status.value.push('VALID');
+  } else {
+    filters.value.status.value = filters.value.status.value.filter(
+      (item: string) => item !== 'VALID'
+    );
+  }
 }
+
 const discussionsToggle = ref(true); // replies: >=1
-function onDiscussionsToggle() {
+function onDiscussionsToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    discussionsToggle.value = toggle;
+  }
   filters.value.replied_conversations.value = discussionsToggle.value
     ? 1
     : null;
 }
 
 const recentToggle = ref(true); // recency: <3 years
-function onRecentToggle(yearsAgo: number) {
+const recentYearsAgo = 3;
+function onRecentToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    recentToggle.value = toggle;
+  }
+
   filters.value.recency.constraints[0].value = recentToggle.value
-    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
+    ? new Date(
+        new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+      )
     : null;
 }
+
 function clearFilter() {
-  validToggle.value = false;
-  discussionsToggle.value = false;
-  recentToggle.value = false;
   searchContactModel.value = '';
+  onValidToggle(false);
+  onDiscussionsToggle(false);
+  onRecentToggle(false);
   initFilters();
 }
 function initDefaultFilters() {
-  onValidToggle();
-  onDiscussionsToggle();
-  onRecentToggle(3);
+  onValidToggle(true);
+  onDiscussionsToggle(true);
+  onRecentToggle(true);
 }
 initDefaultFilters();
 const defaultOnFilters = computed(
@@ -613,6 +639,10 @@ const defaultOnFilters = computed(
     Number(discussionsToggle.value) +
     Number(recentToggle.value)
 );
+
+function onFilter(event: DataTableFilterEvent) {
+  filteredContacts.value = event.filteredValue;
+}
 
 function setupSubscription() {
   // We are 100% sure that the user is authenticated in this component
