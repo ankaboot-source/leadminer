@@ -79,7 +79,7 @@
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Start mining"
+          label="Sign up"
           size="large"
           class="w-full"
           severity="contrast"
@@ -239,7 +239,7 @@ async function signUp() {
     }
     $toast.add({
       severity: 'success',
-      summary: 'Sign-up Successfully',
+      summary: 'Sign up Successfully',
       detail: `We have sent a confirmation email to ${email.value}`,
       life: 3000,
     });
@@ -247,7 +247,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Sign-up Failed',
+        summary: 'Sign up Failed',
         detail: `${error.message}`,
         life: 3000,
       });
