@@ -6,6 +6,7 @@
     @secondary-action="exportTable(true)"
   />
   <DataTable
+    ref="TableRef"
     v-model:selection="selectedContacts"
     v-model:filters="filters"
     resizable-columns
@@ -14,8 +15,8 @@
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
-    :scroll-height="!isFullscreen ? '37vh' : ''"
     scrollable
+    :scroll-height="scrollHeight"
     size="small"
     striped-rows
     :select-all="selectAll"
@@ -34,7 +35,7 @@
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
   >
-    <template v-if="!isLoading" #empty>
+    <template #empty>
       <div class="text-center py-5">
         <div class="font-semibold">No contacts found</div>
         <div v-if="defaultOnFilters !== 0 && contactsLength !== 0">
@@ -406,10 +407,12 @@ import {
   type User,
 } from '@supabase/supabase-js';
 import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
+import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
+
 import { exportFile } from 'quasar';
 import { useLeadminerStore } from '../../stores/leadminer';
 import type { Contact } from '../../types/contact';
@@ -715,10 +718,6 @@ watch(activeMiningTask, async (isActive) => {
 await useAsyncData('refine', () => refineContacts());
 await useAsyncData('contacts', () => syncTable());
 
-onUnmounted(() => {
-  clearInterval(refreshInterval);
-});
-
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
 const selectedContactsLength = computed(() => selectedContacts.value.length);
@@ -865,14 +864,14 @@ const isFullscreen = ref(false);
 
 const visibleColumns = ref(['contacts', 'occurrence']);
 onMounted(() => {
-  const windowInnerWidth = window.innerWidth;
+  const windowWidth = window.innerWidth;
 
   visibleColumns.value = [
     'contacts',
-    ...(windowInnerWidth > 550 ? ['occurrence'] : []),
-    ...(windowInnerWidth > 700 ? ['recency'] : []),
-    ...(windowInnerWidth > 800 ? ['tags'] : []),
-    ...(windowInnerWidth > 950 ? ['status'] : []),
+    ...(windowWidth > 550 ? ['occurrence'] : []),
+    ...(windowWidth > 700 ? ['recency'] : []),
+    ...(windowWidth > 800 ? ['tags'] : []),
+    ...(windowWidth > 950 ? ['status'] : []),
   ];
 });
 const visibleColumnsOptions = [
@@ -895,6 +894,41 @@ function onSelectColumnsChange() {
     visibleColumns.value.push('contacts');
   }
 }
+
+/* Table dynamic Height */
+const TableRef = ref();
+const tablePosTop = ref<number>(
+  TableRef.value?.$el.getBoundingClientRect().top ?? 0
+);
+const windowHeight = ref<number>(window?.innerHeight ?? 0);
+function onWindowHeightChange() {
+  windowHeight.value = window.innerHeight ?? 0;
+}
+
+const tableHeight = ref('37vh');
+const scrollHeight = computed(() =>
+  !isFullscreen.value ? tableHeight.value : ''
+);
+
+onMounted(() => {
+  window.addEventListener('resize', onWindowHeightChange);
+  function observeTop() {
+    const resizeObserver = new ResizeObserver(() => {
+      tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
+    });
+    resizeObserver.observe(TableRef.value?.$el);
+  }
+  observeTop();
+
+  watchEffect(() => {
+    tableHeight.value = `${windowHeight.value - tablePosTop.value - 140}px`;
+  });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onWindowHeightChange);
+  clearInterval(refreshInterval);
+});
 </script>
 
 <style>
@@ -906,7 +940,7 @@ function onSelectColumnsChange() {
 }
 .fullscreenTable {
   position: fixed;
-  z-index: 4;
+  z-index: 3;
   background-color: white;
   max-width: 100vw;
   max-height: 100vh;
