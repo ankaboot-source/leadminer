@@ -23,14 +23,14 @@
       />
       <imap-source />
     </div>
-  </div>
-  <div class="flex justify-end">
-    <Button
-      :disabled="!sourceModel"
-      class="text-black bg-amber-13 border-black"
-      label="Continue with this email account"
-      @click="nextCallback()"
-    />
+    <div class="flex justify-end">
+      <Button
+        :disabled="!sourceModel"
+        class="text-black bg-amber-13 border-black"
+        label="Continue with this email account"
+        @click="nextCallback()"
+      />
+    </div>
   </div>
 </template>
 
@@ -44,25 +44,40 @@ const { nextCallback } = defineProps<{
   nextCallback: Function;
 }>();
 
+const $route = useRoute();
 const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 
 const sourceModel = ref<MiningSource>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
+const skipToMining = computed(() => $route.query.source);
 const { error: sourcesError } = await useAsyncData(() =>
   $leadminerStore.getMiningSources()
 );
 
+const { miningSources } = $leadminerStore;
+
+sourceModel.value = miningSources.find(
+  ({ email }) => email === $user.value?.email
+);
+
 onMounted(() => {
+  useRouter().replace({ query: {} });
   if (sourcesError.value) {
     throw sourcesError.value;
   }
 
-  const { miningSources } = $leadminerStore;
-  sourceModel.value = miningSources.find(
-    ({ email }) => $user.value && email === $user.value.email
-  );
+  if (skipToMining.value) {
+    sourceModel.value = miningSources.find(
+      ({ email }) => email === skipToMining.value
+    );
+    $leadminerStore.boxes = [];
+    $leadminerStore.selectedBoxes = [];
+    $leadminerStore.activeMiningSource = sourceModel.value;
+
+    nextCallback();
+  }
 });
 
 watch(sourceModel, (selectedSource) => {

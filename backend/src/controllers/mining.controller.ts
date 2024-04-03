@@ -95,7 +95,7 @@ export default function initializeMiningController(
             type: 'google'
           });
 
-          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
+          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
         } else {
           // User has not approved all the required scopes
           res.redirect(
@@ -184,7 +184,7 @@ export default function initializeMiningController(
             type: 'azure'
           });
 
-          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard`);
+          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
         } else {
           // User has not approved all the required scopes
           res.redirect(
