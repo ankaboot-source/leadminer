@@ -32,7 +32,7 @@
           no-caps
           unelevated
           padding="sm md"
-          class="secondary-button text-body1"
+          class="secondary-button text-body1 capitalize"
           :label="downloadActionLabel"
           @click="executePartialAction"
         />
@@ -63,6 +63,7 @@ const showModal = ref(false);
 const showDownloadButton = ref(true);
 const total = ref(0);
 const available = ref(0);
+const availableAlready = ref(0);
 
 const formattedTotal = computed(() =>
   new Intl.NumberFormat().format(total.value)
@@ -71,10 +72,17 @@ const formattedTotal = computed(() =>
 const closeModal = () => {
   showModal.value = false;
 };
-function openModal(totalUnits: number, availableUnits: number) {
+function openModal(
+  hasDeficientCredits: boolean,
+  totalUnits: number,
+  availableUnits: number,
+  availableAlreadyUnits: number
+) {
   total.value = totalUnits;
   available.value = availableUnits;
-  showDownloadButton.value = available.value !== 0;
+  availableAlready.value = availableAlreadyUnits;
+
+  showDownloadButton.value = !hasDeficientCredits;
   showModal.value = true;
 }
 const executePartialAction = async () => {
@@ -82,7 +90,7 @@ const executePartialAction = async () => {
   closeModal();
 };
 const downloadActionLabel = computed(
-  () => `${actionType} only ${available.value}`
+  () => `${actionType} only ${availableAlready.value + available.value}`
 );
 const buyOrUpgrade = () => {
   refillCreditsOrUpgrade();

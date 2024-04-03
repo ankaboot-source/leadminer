@@ -3,7 +3,7 @@
     ref="CreditsDialogRef"
     engagement-type="contacts"
     action-type="download"
-    @secondary-action="exportTable"
+    @secondary-action="exportTable(true)"
   />
   <DataTable
     v-model:selection="selectedContacts"
@@ -60,7 +60,7 @@
             icon="pi pi-external-link"
             label="Export CSV"
             :disabled="isExportDisabled"
-            @click="exportTable"
+            @click="exportTable()"
           />
         </div>
         <Button
@@ -795,13 +795,18 @@ function getFileName() {
   return fileName;
 }
 
-const openCreditModel = ({
-  total,
-  available,
-}: {
-  total: number;
-  available: number;
-}) => {
+const openCreditModel = (
+  hasDeficientCredits: boolean,
+  {
+    total,
+    available,
+    availableAlready,
+  }: {
+    total: number;
+    available: number;
+    availableAlready: number;
+  }
+) => {
   if (total === undefined || available === undefined) {
     return $toast.add({
       severity: 'error',
@@ -809,20 +814,28 @@ const openCreditModel = ({
       life: 3000,
     });
   }
-  return CreditsDialogRef.value?.openModal(total, available);
+  return CreditsDialogRef.value?.openModal(
+    hasDeficientCredits,
+    total,
+    available,
+    availableAlready ?? 0
+  );
 };
 
-async function exportTable() {
+async function exportTable(partialExport = false) {
   const contactsToExport = implicitlySelectedContacts.value.map(
     (item: Contact) => item.email
   );
-
   await $api('/export/csv', {
-    method: 'POST', // Specify the HTTP method as POST
-    body: { contactsToExport: JSON.stringify(contactsToExport) }, // Convert requestData to JSON string and include it in the request body
+    method: 'POST',
+    body: {
+      partialExport,
+      contactsToExport: JSON.stringify(contactsToExport),
+    },
     async onResponse({ response }) {
-      if (response.status === 402) {
-        openCreditModel(response._data);
+      if (response.status === 402 || response.status === 266) {
+        openCreditModel(response.status === 402, response._data);
+        return;
       }
 
       if (response.status === 200 || response.status === 206) {
