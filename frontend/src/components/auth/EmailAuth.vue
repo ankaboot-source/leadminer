@@ -1,7 +1,7 @@
 <template>
   <div class="card flex flex-col space-y-4">
     <template v-if="state === 'signup'">
-      <div :class="typingEmail ? 'pt-1' : ''">
+      <div :class="typingEmail ? 'pt-1 grid gap-1' : 'grid gap-1'">
         <FloatLabel>
           <InputText
             v-model="email"
@@ -19,11 +19,11 @@
         <small
           v-if="!!email && !isValidEmail(email)"
           id="email-help"
-          class="text-red-400"
+          class="text-red-400 text-left pl-4"
           >Please enter a valid email</small
         >
       </div>
-      <div :class="typingPassword ? 'pt-3' : ''">
+      <div :class="typingPassword ? 'pt-3 grid gap-1' : 'grid gap-1'">
         <FloatLabel>
           <Password
             v-model="password"
@@ -43,10 +43,26 @@
               <Divider />
               <p class="mt-2">Suggestions</p>
               <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
-                <li>At least one lowercase</li>
-                <li>At least one uppercase</li>
-                <li>At least one numeric</li>
-                <li>Minimum 8 characters</li>
+                <li>
+                  <i v-if="hasLowerCase" class="pi pi-check-square"></i>
+                  <i v-else class="pi pi-stop"></i>
+                  At least one lowercase
+                </li>
+                <li>
+                  <i v-if="hasUpperCase" class="pi pi-check-square"></i>
+                  <i v-else class="pi pi-stop"></i>
+                  At least one uppercase
+                </li>
+                <li>
+                  <i v-if="hasNumber" class="pi pi-check-square"></i>
+                  <i v-else class="pi pi-stop"></i>
+                  At least one numeric
+                </li>
+                <li>
+                  <i v-if="password.length >= 8" class="pi pi-check-square"></i>
+                  <i v-else class="pi pi-stop"></i>
+                  Minimum 8 characters
+                </li>
               </ul>
             </template>
           </Password>
@@ -55,7 +71,7 @@
         <small
           v-if="!!password && !isValidPassword(password)"
           id="password-help"
-          class="text-red-400"
+          class="text-red-400 text-left pl-4"
           >Please enter a valid password</small
         >
       </div>
@@ -63,7 +79,7 @@
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Start mining"
+          label="Sign up"
           size="large"
           class="w-full"
           severity="contrast"
@@ -72,55 +88,57 @@
       </div>
     </template>
     <template v-else>
-      <div :class="typingEmail ? 'pt-1' : ''">
-        <FloatLabel>
-          <InputText
-            v-model="email"
-            filled
-            class="w-full"
-            :invalid="!!email && !isValidEmail(email)"
-            label="Email"
-            type="email"
-            required
-            @focusin="emailFocus = true"
-            @focusout="emailFocus = false"
-          />
-          <label for="email">Email</label>
-        </FloatLabel>
-        <small
-          v-if="!!email && !isValidEmail(email)"
-          id="email-help"
-          class="text-red-400"
-          >Please enter a valid email</small
+      <div class="grid gap-1">
+        <div class="grid gap-4">
+          <div :class="typingEmail ? 'pt-1 grid gap-1' : ' grid gap-1'">
+            <FloatLabel>
+              <InputText
+                v-model="email"
+                filled
+                class="w-full"
+                :invalid="!!email && !isValidEmail(email)"
+                label="Email"
+                type="email"
+                required
+                @focusin="emailFocus = true"
+                @focusout="emailFocus = false"
+              />
+              <label for="email">Email</label>
+            </FloatLabel>
+            <small
+              v-if="!!email && !isValidEmail(email)"
+              id="email-help"
+              class="text-red-400 text-left pl-4"
+              >Please enter a valid email</small
+            >
+          </div>
+          <div :class="typingPassword ? 'pt-3 grid gap-1' : ' grid gap-1'">
+            <FloatLabel>
+              <Password
+                v-model="password"
+                class="w-full"
+                :input-style="{ width: '100%' }"
+                toggle-mask
+                required
+                :feedback="false"
+                @focusin="passwordFocus = true"
+                @focusout="passwordFocus = false"
+              >
+              </Password>
+              <label for="password">Password</label>
+            </FloatLabel>
+            <small
+              v-if="!!password && !isValidPassword(password)"
+              id="password-help"
+              class="text-red-400 text-left pl-4"
+              >Please enter a valid password</small
+            >
+          </div>
+        </div>
+        <NuxtLink class="text-right" to="/auth/forgot-password">
+          Forgot your password?</NuxtLink
         >
       </div>
-
-      <div :class="typingPassword ? 'pt-3' : ''">
-        <FloatLabel>
-          <Password
-            v-model="password"
-            class="w-full"
-            :input-style="{ width: '100%' }"
-            toggle-mask
-            required
-            :feedback="false"
-            @focusin="passwordFocus = true"
-            @focusout="passwordFocus = false"
-          >
-          </Password>
-          <label for="password">Password</label>
-        </FloatLabel>
-        <small
-          v-if="!!password && !isValidPassword(password)"
-          id="password-help"
-          class="text-red-400"
-          >Please enter a valid password</small
-        >
-      </div>
-
-      <NuxtLink class="text-right" to="/auth/forgot-password">
-        Forgot your password?</NuxtLink
-      >
 
       <div class="pt-1">
         <Button
@@ -167,6 +185,18 @@ const typingPassword = computed(() =>
   Boolean(passwordFocus.value || password.value.length)
 );
 
+const hasLowerCase = computed(
+  () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value)
+);
+
+const hasUpperCase = computed(
+  () => Boolean(password.value) && /.*[A-Z]+.*/g.test(password.value)
+);
+
+const hasNumber = computed(
+  () => Boolean(password.value) && /.*[0-9]+.*/g.test(password.value)
+);
+
 const isLoading = ref(false);
 
 async function loginWithEmailAndPassword() {
@@ -184,7 +214,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Signin Failed',
+        summary: 'Sign in Failed',
         detail: error.message,
         life: 3000,
       });
@@ -209,6 +239,7 @@ async function signUp() {
     }
     $toast.add({
       severity: 'success',
+      summary: 'Sign up Successfully',
       detail: `We have sent a confirmation email to ${email.value}`,
       life: 3000,
     });
@@ -216,7 +247,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Signup Failed',
+        summary: 'Sign up Failed',
         detail: `${error.message}`,
         life: 3000,
       });

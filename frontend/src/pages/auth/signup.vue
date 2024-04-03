@@ -16,7 +16,7 @@
 
         <div>
           <SocialAuth />
-          <HorizontalSeparator content="or sign-up with email" />
+          <HorizontalSeparator content="or sign up with email" />
           <EmailAuth state="signup" />
         </div>
 
@@ -26,7 +26,7 @@
         </span>
 
         <span class="text-gray-700 full-width font-[merriweather]">
-          By clicking "Start mining" or signing up, you agree to the
+          By signing up, you agree to the
           <a
             href="https://www.leadminer.io/terms-of-service"
             target="_blank"

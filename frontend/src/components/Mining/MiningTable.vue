@@ -14,7 +14,7 @@
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
-    :scroll-height="!isFullscreen ? '38vh' : ''"
+    :scroll-height="!isFullscreen ? '37vh' : ''"
     scrollable
     size="small"
     striped-rows
@@ -124,7 +124,7 @@
                 @update:model-value="onRecentToggle(3)"
               />
             </li>
-            <Divider />
+            <Divider class="my-0" />
             <MultiSelect
               v-model="visibleColumns"
               :options="visibleColumnsOptions"
@@ -228,7 +228,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency?.toLocaleString() }}
+        {{ data.recency?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -386,7 +386,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.seniority?.toLocaleString() }}
+        {{ data.seniority?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
         <Calendar
@@ -869,10 +869,10 @@ onMounted(() => {
 
   visibleColumns.value = [
     'contacts',
-    ...(windowInnerWidth > 500 ? ['occurrence'] : []),
-    ...(windowInnerWidth > 800 ? ['recency'] : []),
-    ...(windowInnerWidth > 900 ? ['tags'] : []),
-    ...(windowInnerWidth > 1000 ? ['status'] : []),
+    ...(windowInnerWidth > 550 ? ['occurrence'] : []),
+    ...(windowInnerWidth > 700 ? ['recency'] : []),
+    ...(windowInnerWidth > 800 ? ['tags'] : []),
+    ...(windowInnerWidth > 950 ? ['status'] : []),
   ];
 });
 const visibleColumnsOptions = [

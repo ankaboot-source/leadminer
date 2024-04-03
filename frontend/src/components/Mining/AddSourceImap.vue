@@ -1,98 +1,60 @@
 <template>
-  <q-btn
-    :icon="mdiEmailLock"
+  <Button
+    outlined
+    class="rounded-none border-black text-slate-700"
     label="Other email provider (IMAP)"
-    unelevated
-    outline
-    no-caps
+    icon="pi pi-inbox"
     @click="openImapCredentialsDialog"
   />
-  <q-dialog v-model="showImapCredentialsDialog">
-    <q-card class="column" style="width: 30vw; max-height: 80vh">
-      <q-toolbar class="borders">
-        <q-toolbar-title class="merriweather">
-          Sign-in with IMAP
-        </q-toolbar-title>
-        <q-btn v-close-popup flat round dense icon="close" size="sm" />
-      </q-toolbar>
-      <q-form @submit="onSubmitImapCredentials">
-        <q-card-section>
-          <q-input
-            v-model="imapEmail"
-            dense
-            outlined
-            class="q-mb-sm"
-            bg-color="white"
-            label="Email"
-            lazy-rules
-            :rules="[
-              (email: string) =>
-                isValidEmail(email) || 'Please insert a valid email address',
-            ]"
-          />
-          <q-input
-            v-model="imapPassword"
-            type="password"
-            dense
-            outlined
-            class="q-mb-sm"
-            bg-color="white"
-            label="Password"
-            lazy-rules
-            :rules="[
-              (password: string) =>
-                password !== '' || 'Please insert your IMAP password',
-            ]"
-          />
-          <q-input
-            v-model="imapHost"
-            dense
-            outlined
-            class="q-mb-sm"
-            bg-color="white"
-            label="Host"
-            lazy-rules
-            :rules="[(host: string) => host !== '' || 'Please insert your IMAP host']"
-          />
-          <q-input
-            v-model="imapPort"
-            dense
-            outlined
-            bg-color="white"
-            type="number"
-            label="Port"
-            lazy-rules
-            :rules="[
-              (port: number) =>
-                (port > 0 && port <= 65536) ||
-                'Please insert a valid IMAP port number',
-            ]"
-          />
-        </q-card-section>
-        <q-card-actions class="borders">
-          <q-btn
-            v-close-popup
-            no-caps
-            outline
-            color="secondary"
-            label="Cancel"
-          />
-          <q-space />
-          <q-btn
-            :loading="isLoadingImapCredentialsCheck"
-            unelevated
-            no-caps
-            label="Connect"
-            type="Connect"
-            color="primary"
-          />
-        </q-card-actions>
-      </q-form>
-    </q-card>
-  </q-dialog>
+  <Dialog
+    v-model:visible="showImapCredentialsDialog"
+    modal
+    header="Sign-in with IMAP"
+    :style="{ width: '30rem' }"
+  >
+    <div class="flex space-y-2">
+      <div class="w-full flex gap-1">
+        <label for="email">Email</label>
+        <InputText
+          v-model="imapEmail"
+          :invalid="!!imapEmail && !isValidEmail(imapEmail)"
+          class="w-full"
+        />
+      </div>
+      <div class="w-full flex gap-1">
+        <label for="password">Password</label>
+        <InputText v-model="imapPassword" class="w-full" type="password" />
+      </div>
+      <div class="w-full flex gap-1">
+        <label for="host">Host</label>
+        <InputText v-model="imapHost" class="w-full" />
+      </div>
+      <div class="w-full flex gap-1">
+        <label for="port">Port</label>
+        <InputNumber
+          v-model="imapPort"
+          show-buttons
+          class="w-full"
+          :invalid="!(imapPort > 0 && imapPort <= 65536)"
+        />
+      </div>
+      <div class="flex justify-end w-full gap-2 pt-4">
+        <Button
+          type="button"
+          label="Cancel"
+          severity="secondary"
+          @click="showImapCredentialsDialog = false"
+        ></Button>
+        <Button
+          type="button"
+          label="Save"
+          @click="onSubmitImapCredentials"
+        ></Button>
+      </div>
+    </div>
+  </Dialog>
 </template>
 <script setup lang="ts">
-import { mdiEmailLock } from '@quasar/extras/mdi-v6';
 import { isValidEmail } from '@/utils/email';
 import { useLeadminerStore } from '@/stores/leadminer';
 
