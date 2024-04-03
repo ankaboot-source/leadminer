@@ -58,15 +58,15 @@ const { error: sourcesError } = await useAsyncData(() =>
 
 const { miningSources } = $leadminerStore;
 
-sourceModel.value = miningSources.find(
-  ({ email }) => email === $user.value?.email
-);
-
 onMounted(() => {
   useRouter().replace({ query: {} });
   if (sourcesError.value) {
     throw sourcesError.value;
   }
+
+  sourceModel.value = miningSources.find(
+    ({ email }) => email === $user.value?.email
+  );
 
   if (skipToMining.value) {
     sourceModel.value = miningSources.find(
