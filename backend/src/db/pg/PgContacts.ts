@@ -263,6 +263,7 @@ export default class PgContacts implements Contacts {
       return [];
     }
   }
+
   async getExportedContacts(userId: string): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(
