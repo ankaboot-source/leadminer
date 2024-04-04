@@ -100,8 +100,3 @@ watch(progressStatus, (active) => {
   }
 });
 </script>
-<style>
-.q-linear-progress__track--with-transition {
-  transition: transform 0ms;
-}
-</style>
