@@ -4,25 +4,27 @@
     modal
     header="Oops! Running low on credits 😅"
   >
-    <p>
+    <p class="m-0">
       You don't have enough credits to {{ actionType }} all your
       {{ formattedTotal }} {{ engagementType }}.
     </p>
-    <div class="flex justify-end gap-2">
-      <Button
-        v-if="showDownloadButton"
-        outlined
-        severity="secondary"
-        pt:label:class="capitalize"
-        :label="downloadActionLabel"
-        @click="executePartialAction"
-      />
-      <Button
-        label="Refill credits or Upgrade 🚀"
-        severity="success"
-        @click="buyOrUpgrade"
-      />
-    </div>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <Button
+          v-if="showDownloadButton"
+          outlined
+          severity="secondary"
+          pt:label:class="capitalize"
+          :label="downloadActionLabel"
+          @click="executePartialAction"
+        />
+        <Button
+          label="Refill credits or Upgrade 🚀"
+          severity="success"
+          @click="buyOrUpgrade"
+        />
+      </div>
+    </template>
   </Dialog>
 </template>
 
