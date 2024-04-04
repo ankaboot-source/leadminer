@@ -49,7 +49,7 @@ const $leadminerStore = useLeadminerStore();
 
 const stepper = ref();
 
-const consentSource = ref<MiningSource | undefined>(
+const consentSource = toRef<MiningSource | undefined>(
   $leadminerStore.activeMiningSource
 );
 const showConsentSideBar = ref(false);

@@ -53,7 +53,7 @@
             label="Cancel"
             @click="close()"
           />
-          <Button severity="primary" label="Try again" @click="refreshOAuth" />
+          <Button severity="primary" label="Authorize" @click="refreshOAuth" />
         </div>
       </div>
     </template>
