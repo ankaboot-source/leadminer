@@ -119,7 +119,7 @@
             <li class="flex justify-between gap-2">
               <div
                 v-tooltip.left="
-                  `- Less than ${recentYearsAgo}} years \n- GDPR Proof`
+                  `- Less than ${recentYearsAgo} years \n- GDPR Proof`
                 "
               >
                 Recent contacts
@@ -578,23 +578,33 @@ const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
+
 const validToggle = ref(true); // status: valid
 function onValidToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     validToggle.value = toggle;
   }
-
   if (filters.value.status.value === null) {
     filters.value.status.value = [];
   }
-  if (!filters.value.status.value.includes('VALID')) {
+  if (!filters.value.status.value.includes('VALID') && validToggle.value) {
     filters.value.status.value.push('VALID');
-  } else {
+  } else if (
+    filters.value.status.value.includes('VALID') &&
+    !validToggle.value
+  ) {
     filters.value.status.value = filters.value.status.value.filter(
       (item: string) => item !== 'VALID'
     );
   }
 }
+watch(
+  () => filters.value.status.value,
+  (newStatusValue) => {
+    validToggle.value = newStatusValue?.includes('VALID');
+  },
+  { deep: true }
+);
 
 const discussionsToggle = ref(true); // replies: >=1
 function onDiscussionsToggle(toggle?: boolean) {
@@ -605,6 +615,13 @@ function onDiscussionsToggle(toggle?: boolean) {
     ? 1
     : null;
 }
+watch(
+  () => filters.value.replied_conversations.value,
+  (newRepliesValue) => {
+    discussionsToggle.value = newRepliesValue === 1;
+  },
+  { deep: true }
+);
 
 const recentToggle = ref(true); // recency: <3 years
 const recentYearsAgo = 3;
@@ -619,6 +636,17 @@ function onRecentToggle(toggle?: boolean) {
       )
     : null;
 }
+watch(
+  () => filters.value.recency.constraints[0].value,
+  (newRecencyValue) => {
+    recentToggle.value =
+      newRecencyValue?.toString() ===
+      new Date(
+        new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+      ).toString();
+  },
+  { deep: true }
+);
 
 function clearFilter() {
   searchContactModel.value = '';
