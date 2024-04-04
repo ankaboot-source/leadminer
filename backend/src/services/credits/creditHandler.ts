@@ -20,8 +20,8 @@ export default class CreditsHandler {
    * @param userId - The unique identifier of the user.
    * @param units - The number of units (e.g., emails or contacts) for which to calculate credits.
    * @returns An object containing credit-related information:
-   *   - `hasDeficientCredits`: Indicates whether the user has deficient credits for the requested units. (Deficient would be lacking something that is necessary.)
-   *   - `hasInsufficientCredits`: Indicates whether the user has insufficient credits for the requested units. (Insufficient would be considered not quite up to a certain standard, or subpar.)
+   *   - `hasDeficientCredits`: Indicates whether the user has no credits for at least one unit. (Deficient would be lacking something that is necessary.)
+   *   - `hasInsufficientCredits`: Indicates whether the user has no credits for the requested units. (Insufficient would be considered not quite up to a certain standard, or subpar.)
    *   - `requestedUnits`: The number of units requested.
    *   - `availableUnits`: The available units (e.g., emails or contacts) based on the user's credits.
    * @throws Throws an error if user credits cannot be retrieved.
