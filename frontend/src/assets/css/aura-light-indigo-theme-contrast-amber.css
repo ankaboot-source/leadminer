@@ -11061,17 +11061,17 @@
   @keyframes p-progress-spinner-color {
     100%,
     0% {
-      stroke: #dc2626;
+      stroke: #ffffff;
     }
     40% {
-      stroke: #2563eb;
+      stroke: #fbbf24;
     }
     66% {
-      stroke: #16a34a;
+      stroke: #fbbf24;
     }
     80%,
     90% {
-      stroke: #ca8a04;
+      stroke: #ffffff;
     }
   }
   .p-ripple {
