@@ -602,8 +602,7 @@ watch(
   () => filters.value.status.value,
   (newStatusValue) => {
     validToggle.value = newStatusValue?.includes('VALID');
-  },
-  { deep: true }
+  }
 );
 
 const discussionsToggle = ref(true); // replies: >=1
@@ -619,8 +618,7 @@ watch(
   () => filters.value.replied_conversations.value,
   (newRepliesValue) => {
     discussionsToggle.value = newRepliesValue === 1;
-  },
-  { deep: true }
+  }
 );
 
 const recentToggle = ref(true); // recency: <3 years
@@ -640,12 +638,11 @@ watch(
   () => filters.value.recency.constraints[0].value,
   (newRecencyValue) => {
     recentToggle.value =
-      newRecencyValue?.toString() ===
+      newRecencyValue?.toLocaleDateString() ===
       new Date(
         new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
-      ).toString();
-  },
-  { deep: true }
+      ).toLocaleDateString();
+  }
 );
 
 function clearFilter() {
