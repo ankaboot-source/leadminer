@@ -13,7 +13,7 @@
   >
     <template #progress-title>
       <div v-if="$leadminerStore.isLoadingBoxes" class="flex items-center">
-        <q-spinner class="on-left" />
+        <i class="pi pi-spin pi-spinner mr-1.5" />
         Retrieving mailboxes...
       </div>
       <div v-else-if="!$leadminerStore.miningTask">
@@ -78,6 +78,7 @@
 // @ts-expect-error "No type definitions"
 import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
+
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 

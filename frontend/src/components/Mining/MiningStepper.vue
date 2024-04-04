@@ -34,14 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-
 import type { StepperChangeEvent } from 'primevue/stepper';
-import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
+import { computed, ref } from 'vue';
 
-import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
-import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
+import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
+import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import { type MiningSource, type MiningSourceType } from '~/types/mining';
 
 const $route = useRoute();
@@ -96,10 +95,6 @@ async function handleNavigation({ index }: StepperChangeEvent) {
 }
 </script>
 <style>
-.q-dialog__inner--minimized > div {
-  max-width: 1000px;
-}
-
 .bg-banner-color {
   background: linear-gradient(
     135deg,
