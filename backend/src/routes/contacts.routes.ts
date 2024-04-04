@@ -12,15 +12,12 @@ export default function initializeContactsRoutes(
 ) {
   const router = Router();
 
-  const { exportContactsCSV, verifyExportContacts } =
-    initializeContactsController(contacts, userResolver);
-  router.get(
-    '/export/csv/verify',
-    initializeAuthMiddleware(authResolver),
-    verifyExportContacts
+  const { exportContactsCSV } = initializeContactsController(
+    contacts,
+    userResolver
   );
 
-  router.get(
+  router.post(
     '/export/csv',
     initializeAuthMiddleware(authResolver),
     exportContactsCSV
