@@ -1,35 +1,37 @@
 <template>
-  <div
-    :class="`credits-badge flex items-center rounded-borders border-red q-mr-sm ${creditsBadgeState}`"
-  >
-    <q-icon class="q-pl-sm" size="1.5rem" name="img:/icons/coin.png" />
-    <!-- Coin icon https://icons8.com/icon/OFHwDWASQWmX/coin by Icons8 https://icons8.com -->
-    <div class="q-pl-sm">
+  <div class="row gap-2">
+    <div
+      class="flex gap-2 items-center w-32 h-9 justify-center border rounded-borders"
+      :class="creditsBadgeState"
+    >
+      <img class="h-6" src="/icons/coin.png" />
       <span
-        :class="
-          credits < CREDITS_MIN_THRESHOLD
-            ? 'text-caption flash-animation'
-            : 'text-caption'
-        "
+        v-tooltip.bottom="{
+          class: 'mt-4',
+          value: `${CREDITS_PER_EMAIL} credit per email /
+          ${CREDITS_PER_CONTACT} credits per contact
+          `,
+        }"
+        class="text-xs"
+        :class="creditsBadgeTextAnimation"
       >
         {{ formattedCredits }}
       </span>
-      <q-tooltip class="text-caption">
-        {{ CREDITS_PER_EMAIL }} credit per email /
-        {{ CREDITS_PER_CONTACT }} credits per contact
-      </q-tooltip>
     </div>
-  </div>
-  <div>
-    <q-btn
-      unelevated
-      no-caps
-      color="amber-13"
-      icon-right="rocket_launch"
+    <Button
+      severity="contrast"
+      icon-pos="right"
+      class="text-white"
+      size="small"
       @click="refillCreditsOrUpgrade"
     >
-      <span class="q-pr-sm">Refill</span>
-    </q-btn>
+      <div class="row space-x-1 items-center">
+        <span class="font-semibold">Refill</span>
+        <span class="material-icons" style="font-size: 1.3rem"
+          >rocket_launch</span
+        >
+      </div>
+    </Button>
   </div>
 </template>
 
@@ -41,7 +43,7 @@ import {
   refillCreditsOrUpgrade,
 } from '@/utils/credits';
 
-const $quasar = useQuasar();
+const $toast = useToast();
 const leadminerStore = useLeadminerStore();
 
 onMounted(async () => {
@@ -56,37 +58,28 @@ const formattedCredits = computed(() =>
     : new Intl.NumberFormat().format(credits.value)
 );
 const creditsBadgeState = computed(() =>
-  credits.value >= CREDITS_MIN_THRESHOLD ? '' : 'text-red  low-credits-badge'
+  credits.value >= CREDITS_MIN_THRESHOLD
+    ? 'text-black border-gray-400'
+    : 'text-red  border border-red-400'
+);
+const creditsBadgeTextAnimation = computed(() =>
+  credits.value < CREDITS_MIN_THRESHOLD ? 'text-xs flash-animation' : ''
 );
 
 watch(credits, (newVal: number) => {
   if (newVal === 0) {
-    $quasar.notify({
-      message: '🚨 Out of credits.',
-      color: 'white',
-      textColor: 'black',
-      actions: [
-        {
-          label: '🚀 Refill',
-          color: 'black',
-          noCaps: true,
-          handler: refillCreditsOrUpgrade,
-        },
-      ],
+    $toast.add({
+      severity: 'warn',
+      summary: 'Insufficient credits',
+      detail: 'Your current balance is empty. Please refill.',
+      life: 3000,
     });
   } else if (newVal < CREDITS_MIN_THRESHOLD) {
-    $quasar.notify({
-      message: "😅 You're running low on credits.",
-      color: 'white',
-      textColor: 'black',
-      actions: [
-        {
-          label: '🚀 Refill',
-          color: 'black',
-          noCaps: true,
-          handler: refillCreditsOrUpgrade,
-        },
-      ],
+    $toast.add({
+      severity: 'warn',
+      summary: 'Low credits',
+      detail: 'Running low on credits. Remember to refill.',
+      life: 3000,
     });
   }
 });
