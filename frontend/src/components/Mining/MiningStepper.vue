@@ -69,11 +69,12 @@ onMounted(() => {
   }
 
   useRouter().replace({ query: {} });
-  consentSource.value = {
+  $leadminerStore.activeMiningSource = {
     type: provider as MiningSourceType,
+    email: provider as string,
     isValid: false,
-    email: '',
   };
+  consentSource.value = $leadminerStore.activeMiningSource;
   showConsentSideBar.value = true;
 });
 
