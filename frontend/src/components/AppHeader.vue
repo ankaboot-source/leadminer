@@ -20,7 +20,7 @@
 
     <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />
 
-    <Sidebar v-model:visible="visible">
+    <Sidebar :visible="visible">
       <template #container>
         <div class="absolute flex flex-column h-screen px-6">
           <div class="w-full">
