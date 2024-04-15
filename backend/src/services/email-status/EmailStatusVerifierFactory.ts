@@ -32,7 +32,7 @@ interface MailerCheckConfig {
 }
 
 export default class EmailStatusVerifierFactory {
-  private static readonly GOOGLE_HOTMAIL_DOMAIN_REGEX = /(?=(@gmail|@hotmail))/;
+  private static readonly DOMAIN_REGEX = /(?=(@hotmail))/;
 
   private readonly randomEmailStatusVerifier: EmailStatusVerifier;
 
@@ -60,7 +60,7 @@ export default class EmailStatusVerifierFactory {
       this.reacherEmailStatusVerifier &&
       this.mailerCheckEmailStatusVerifier
     ) {
-      return EmailStatusVerifierFactory.GOOGLE_HOTMAIL_DOMAIN_REGEX.test(email)
+      return EmailStatusVerifierFactory.DOMAIN_REGEX.test(email)
         ? this.reacherEmailStatusVerifier
         : this.mailerCheckEmailStatusVerifier;
     }
