@@ -627,22 +627,25 @@ function onRecentToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     recentToggle.value = toggle;
   }
-
+  filters.value.recency.constraints?.splice(1);
   filters.value.recency.constraints[0].value = recentToggle.value
     ? new Date(
         new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
       )
     : null;
 }
+
 watch(
-  () => filters.value.recency.constraints[0].value,
-  (newRecencyValue) => {
+  () => filters.value.recency.constraints,
+  (newRecencyConstraints) => {
     recentToggle.value =
-      newRecencyValue?.toLocaleDateString() ===
-      new Date(
-        new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
-      ).toLocaleDateString();
-  }
+      newRecencyConstraints.length === 1 &&
+      newRecencyConstraints[0].value?.toLocaleDateString() ===
+        new Date(
+          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+        ).toLocaleDateString();
+  },
+  { deep: true }
 );
 
 function clearFilter() {
