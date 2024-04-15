@@ -26,7 +26,7 @@
     <div class="flex justify-end">
       <Button
         :disabled="!sourceModel"
-        class="text-black bg-amber-13 border-black"
+        severity="contrast"
         label="Continue with this email account"
         @click="nextCallback()"
       />

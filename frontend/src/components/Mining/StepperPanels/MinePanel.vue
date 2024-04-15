@@ -56,7 +56,8 @@
           $leadminerStore.isLoadingBoxes
         "
         :loading="$leadminerStore.isLoadingStartMining"
-        class="text-black bg-amber-400 border-solid border-2 border-black"
+        severity="contrast"
+        class="border-solid border-2 border-black"
         label="Start mining now!"
         loading-icon="pi pi-spinner"
         @click="startMining"
@@ -65,7 +66,8 @@
       <Button
         v-else
         :loading="$leadminerStore?.isLoadingStartMining"
-        class="text-black bg-amber-400 border-solid border-2 border-black"
+        class="border-solid border-2 border-black"
+        severity="contrast"
         icon="pi pi-stop"
         icon-pos="right"
         label="Halt mining"
