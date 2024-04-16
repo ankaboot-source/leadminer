@@ -64,12 +64,6 @@
             @click="exportTable()"
           />
         </div>
-        <Button
-          type="button"
-          :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
-          text
-          @click="refreshTable()"
-        />
         <div>
           <template v-if="implicitlySelectedContactsLength !== contactsLength">
             {{ implicitlySelectedContactsLength }} /
