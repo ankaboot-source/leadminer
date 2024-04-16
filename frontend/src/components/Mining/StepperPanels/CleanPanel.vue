@@ -29,8 +29,7 @@
     />
     <Button
       v-else
-      severity="contrast"
-      class="border-solid border-2 border-black"
+      severity="secondary"
       label="Start a new mining"
       @click="prevCallback()"
     />
@@ -51,7 +50,9 @@ const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
 
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
-
+const verificationFinished = computed(
+  () => verifiedContacts.value === contactsToVerify.value
+);
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0
 );
@@ -61,14 +62,27 @@ const progressTooltip = computed(
     `Verified emails: ${contactsToVerify.value.toLocaleString()}/${verifiedContacts.value.toLocaleString()}`
 );
 
+watch(verificationFinished, (finished) => {
+  if (finished) {
+    $toast.add({
+      severity: 'success',
+      summary: 'Cleaning done',
+      detail: `${verifiedContacts.value} contacts are verified.`,
+      group: 'mining',
+      life: 5000,
+    });
+  }
+});
+
 async function haltCleaning() {
   $leadminerStore.isLoadingStopMining = true;
   try {
     await $leadminerStore.stopMining();
     $toast.add({
       severity: 'success',
-      summary: 'Mining Stopped',
-      detail: 'Your mining has been successfully canceled.',
+      summary: 'Cleanning Stopped',
+      detail: 'Your cleaning is successfully canceled.',
+      group: 'mining',
       life: 3000,
     });
     $leadminerStore.isLoadingStopMining = false;

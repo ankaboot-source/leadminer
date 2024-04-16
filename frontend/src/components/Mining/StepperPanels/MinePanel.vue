@@ -134,19 +134,20 @@ const extractionProgress = computed(() =>
     : extractedEmails.value / totalEmails.value || 0
 );
 
-const progressTooltip = computed(() =>
-  [
-    fetchingFinished
-      ? `Fetched emails: ${scannedEmails.value.toLocaleString()}/${totalEmails.value.toLocaleString()}`
-      : '',
-    extractionFinished
-      ? `Extracted emails: ${extractedEmails.value.toLocaleString()}/${scannedEmails.value.toLocaleString()}`
-      : '',
-  ].join('\n')
+const progressTooltip = computed(
+  () =>
+    `<span class="text-xs">contacts/Fetched/Total emails<span/><div class="flex justify-center items-center">${extractedEmails.value.toLocaleString()} / ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()} </div>`
 );
 
 watch(extractionFinished, (finished) => {
   if (!canceled.value && finished) {
+    $toast.add({
+      severity: 'success',
+      summary: 'Mining done',
+      detail: `${extractedEmails.value} contacts extracted from your mailbox`,
+      group: 'mining',
+      life: 5000,
+    });
     nextCallback();
   }
 });
@@ -175,7 +176,8 @@ async function startMining() {
     $toast.add({
       severity: 'success',
       summary: 'Mining Started',
-      detail: 'Your mining has been successfully started.',
+      detail: 'Your mining is successfully started.',
+      group: 'mining',
       life: 3000,
     });
     $leadminerStore.isLoadingStartMining = false;
@@ -204,7 +206,8 @@ async function haltMining() {
     $toast.add({
       severity: 'success',
       summary: 'Mining Stopped',
-      detail: 'Your mining has been successfully canceled.',
+      detail: 'Your mining is successfully canceled.',
+      group: 'mining',
       life: 3000,
     });
     $leadminerStore.isLoadingStopMining = false;
