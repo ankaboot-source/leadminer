@@ -60,11 +60,6 @@ describe('getVerifier', () => {
       );
     });
 
-    it.each(googleEmails)('should use Reacher for google email %s', (email) => {
-      const verifier = factory.getVerifier(email);
-      expect(verifier).toBeInstanceOf(ReacherEmailStatusVerifier);
-    });
-
     it.each(hotmailEmails)(
       'should use Reacher for hotmail.* email %s',
       (email) => {
@@ -73,7 +68,7 @@ describe('getVerifier', () => {
       }
     );
 
-    it.each([...outlookEmails, ...yahooEmails])(
+    it.each([...googleEmails, ...outlookEmails, ...yahooEmails])(
       'should use MailerCheck for other providers email %s',
       (email) => {
         const verifier = factory.getVerifier(email);
