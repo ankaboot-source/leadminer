@@ -73,9 +73,9 @@ export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
       { key: 'sender', header: 'Sender' },
       { key: 'recipient', header: 'Recipient' },
       { key: 'conversations', header: 'Conversations' },
-      { key: 'repliedConversations', header: 'Replied conversations' },
+      { key: 'repliedConversations', header: 'Replies' },
       { key: 'tags', header: 'Tags' },
-      { key: 'status', header: 'Status' }
+      { key: 'status', header: 'Reachable' }
     ],
     csvData,
     csvSeparator

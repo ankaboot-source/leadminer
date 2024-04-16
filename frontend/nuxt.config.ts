@@ -83,7 +83,7 @@ export default defineNuxtConfig({
   },
   css: [
     'primeicons/primeicons.css',
-    '~/assets/css/aura-light-indigo-theme-contrast-amber.css',
+    '~/assets/themes/aura/aura-light/indigo/theme.scss',
     '~/assets/css/app.scss',
   ],
   supabase: {
@@ -100,7 +100,7 @@ export default defineNuxtConfig({
     redirectOptions: {
       callback: '/',
       login: '/auth/login',
-      exclude: ['/auth/signup', '/auth/forgot-password'],
+      exclude: ['/auth/signup', '/auth/forgot-password', '/credits-success'],
     },
   },
 });
