@@ -38,7 +38,7 @@
   />
   <div class="flex flex-col justify-center">
     <ProgressBar
-      v-tooltip.bottom="props.progressTooltip"
+      v-tooltip.bottom="{ value: props.progressTooltip, escape: false }"
       :value="progressValue"
       :pt="{
         value: {
