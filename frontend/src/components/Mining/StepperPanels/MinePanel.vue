@@ -136,7 +136,9 @@ const extractionProgress = computed(() =>
 
 const progressTooltip = computed(
   () =>
-    `<span class="text-xs">contacts/Fetched/Total emails<span/><div class="flex justify-center items-center">${extractedEmails.value.toLocaleString()} / ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()} </div>`
+    `<div class='text-xs'>Mined / Total emails
+      ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
+      </div>`
 );
 
 watch(extractionFinished, (finished) => {
