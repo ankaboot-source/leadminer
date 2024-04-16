@@ -29,7 +29,7 @@
   <MiningConsentSidebar
     v-model:stepper="stepper"
     v-model:show="showConsentSideBar"
-    v-model:source="consentSource"
+    v-model:source="consentSourceComputed"
   />
 </template>
 
@@ -48,8 +48,9 @@ const $leadminerStore = useLeadminerStore();
 
 const stepper = ref();
 
-const consentSource = toRef<MiningSource | undefined>(
-  $leadminerStore.activeMiningSource
+const consentSource = ref<MiningSource | undefined>();
+const consentSourceComputed = computed<MiningSource | undefined>(
+  () => consentSource.value || $leadminerStore.activeMiningSource
 );
 const showConsentSideBar = ref(false);
 
