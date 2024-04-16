@@ -1,5 +1,5 @@
 <template>
-  <div class="py-3.5 px-6 flex justify-between items-center">
+  <div class="py-3.5 px-6 flex justify-between">
     <RouterLink to="/dashboard">
       <AppLogo />
     </RouterLink>
@@ -37,9 +37,9 @@
           <div class="overflow-y-auto"></div>
 
           <div class="overflow-y-auto w-full"></div>
-          <div class="mt-auto w-full">
+          <div class="mt-auto w-full mb-4">
             <Button
-              class="w-full pl-10 text-lowercase"
+              class="w-full pl-10 text-lowercase justify-center"
               text
               @click="navigateTo('/account/settings')"
             >
