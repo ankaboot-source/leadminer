@@ -26,7 +26,7 @@
                   share it with any third parties without your explicit
                   permission. Please be assured that your data will be handled
                   securely and used solely for the purposes of providing you
-                  with the best lead generation experience in full compliance
+                  with the best contact mining experience in full compliance
                   with the GDPR.
                   <a
                     href="https://www.leadminer.io/data-privacy"
@@ -43,7 +43,7 @@
         <div>
           For any questions or assistance, our support team is here to help at
           <a href="mailto:support@leadminer.io">support@leadminer.io</a>. Keep
-          your data secure and take control of your lead generation journey!🔒💪
+          your data secure and take control of your contact mining journey!🔒💪
         </div>
 
         <div class="flex justify-end gap-2">

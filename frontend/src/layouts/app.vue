@@ -1,12 +1,8 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <div>
     <app-header />
-    <q-page-container>
-      <q-page padding class="flex flex-col">
-        <slot />
-      </q-page>
-    </q-page-container>
-  </q-layout>
+    <slot />
+  </div>
 </template>
 
 <script setup lang="ts">

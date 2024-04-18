@@ -23,9 +23,9 @@
     </Stepper>
   </Panel>
   <MiningConsentSidebar
-    :stepper="stepper"
-    :show="showConsentSideBar"
-    :source="consentSource"
+    v-model:stepper="stepper"
+    v-model:show="showConsentSideBar"
+    v-model:source="consentSourceComputed"
   />
 </template>
 
@@ -44,8 +44,9 @@ const $leadminerStore = useLeadminerStore();
 
 const stepper = ref();
 
-const consentSource = toRef<MiningSource | undefined>(
-  $leadminerStore.activeMiningSource
+const consentSource = ref<MiningSource | undefined>();
+const consentSourceComputed = computed<MiningSource | undefined>(
+  () => consentSource.value || $leadminerStore.activeMiningSource
 );
 const showConsentSideBar = ref(false);
 
@@ -65,11 +66,12 @@ onMounted(() => {
   }
 
   useRouter().replace({ query: {} });
-  consentSource.value = {
+  $leadminerStore.activeMiningSource = {
     type: provider as MiningSourceType,
+    email: provider as string,
     isValid: false,
-    email: '',
   };
+  consentSource.value = $leadminerStore.activeMiningSource;
   showConsentSideBar.value = true;
 });
 
