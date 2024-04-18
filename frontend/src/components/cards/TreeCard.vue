@@ -26,13 +26,4 @@ import { useLeadminerStore } from '@/stores/leadminer';
 
 const leadminerStore = useLeadminerStore();
 const expandedKeys = ref({});
-watch(
-  () => leadminerStore.selectedBoxes,
-  () => {
-    console.log({
-      watchBoxes: leadminerStore.selectedBoxes,
-    });
-  },
-  { deep: true }
-);
 </script>
