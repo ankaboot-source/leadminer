@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
+import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
-import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
-import { sse } from '../utils/sse';
-import { type MiningSource, type MiningTask } from '../types/mining';
+
 import type { Profile } from '@/types/user';
 import { updateMiningSourcesValidity } from '@/utils/sources';
+import { type MiningSource, type MiningTask } from '../types/mining';
+import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
+import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api } = useNuxtApp();
@@ -15,7 +17,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningSources = ref<MiningSource[]>([]);
   const activeMiningSource = ref<MiningSource | undefined>();
   const boxes = ref<BoxNode[]>([]);
-  const selectedBoxes = ref<string[]>([]);
+  const selectedBoxes = ref<TreeSelectionKeys>([]);
 
   const errorMessage = ref('');
   const infoMessage = ref('');
@@ -124,7 +126,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       });
 
       const { folders } = data || {};
-
       if (folders) {
         boxes.value = [...folders];
         selectedBoxes.value = getDefaultSelectedFolders(folders);
@@ -174,7 +175,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         {
           method: 'POST',
           body: {
-            boxes: selectedBoxes.value,
+            boxes: Object.keys(selectedBoxes.value).slice(1),
             miningSource: activeMiningSource.value,
           },
         }

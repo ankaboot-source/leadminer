@@ -85,6 +85,7 @@ async function getBoxes() {
   } catch (err) {
     $leadminerStore.isLoadingBoxes = false;
     showConsentSideBar.value = true;
+    console.error(err);
   }
 }
 
