@@ -12,13 +12,14 @@
       <Button
         icon="pi pi-bars"
         class="p-dialog-header-icon"
-        @click="toggleMenu"
+        @click="toggleMenu()"
       />
       <div class="p-dialog-title">Fine-tune your mining</div>
     </template>
 
     <div class="flex flex-row h-full">
       <Listbox
+        v-show="menuVisible"
         v-model="settingsTab"
         :options="settingsOptions"
         option-value="value"
