@@ -1,8 +1,8 @@
 <template>
   <Tree
-    v-model:value="leadminerStore.boxes"
-    v-model:expanded-keys="expandedKeys"
-    v-model:selection-keys="leadminerStore.selectedBoxes"
+    :value="leadminerStore.boxes"
+    :expanded-keys="expandedKeys"
+    :selection-keys="leadminerStore.selectedBoxes"
     selection-mode="checkbox"
   >
     <template #default="{ node }">

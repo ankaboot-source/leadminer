@@ -1,6 +1,6 @@
 <template>
   <Dialog
-    v-model:visible="isVisible"
+    :visible="isVisible"
     modal
     dismissable-mask
     maximizable
