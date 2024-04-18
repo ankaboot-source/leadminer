@@ -1,36 +1,32 @@
 <template>
-  <div class="row gap-2">
-    <div
-      class="flex gap-2 items-center w-32 h-9 justify-center border rounded-borders"
+  <div class="grid md:flex gap-2">
+    <Button
+      v-tooltip.bottom="{
+        value: `${CREDITS_PER_EMAIL} credit per email / ${CREDITS_PER_CONTACT} credits per contact`,
+        showDelay: 0,
+        hideDelay: 300,
+      }"
+      class="flex justify-center md:justify-start cursor-default md:w-[155px]"
       :class="creditsBadgeState"
+      outlined
+      severity="danger"
+      disabled
     >
-      <img class="h-6" src="/icons/coin.png" />
-      <span
-        v-tooltip.bottom="{
-          class: 'mt-4',
-          value: `${CREDITS_PER_EMAIL} credit per email /
-          ${CREDITS_PER_CONTACT} credits per contact
-          `,
-        }"
-        class="text-xs"
-        :class="creditsBadgeTextAnimation"
-      >
+      <PhosphorCoin class="h-[1.5rem] mr-2" />
+      <span :class="creditsBadgeTextAnimation">
         {{ formattedCredits }}
       </span>
-    </div>
+    </Button>
     <Button
+      class="flex space-x-1 items-center justify-center md:justify-normal text-white"
       severity="contrast"
-      icon-pos="right"
-      class="text-white"
       size="small"
       @click="refillCreditsOrUpgrade"
     >
-      <div class="row space-x-1 items-center">
-        <span class="font-semibold">Refill</span>
-        <span class="material-icons" style="font-size: 1.3rem"
-          >rocket_launch</span
-        >
-      </div>
+      <span class="font-semibold">Refill</span>
+      <span class="material-icons" style="font-size: 1.3rem"
+        >rocket_launch</span
+      >
     </Button>
   </div>
 </template>
@@ -42,6 +38,7 @@ import {
   CREDITS_PER_EMAIL,
   refillCreditsOrUpgrade,
 } from '@/utils/credits';
+import PhosphorCoin from '../icons/PhosphorCoin.vue';
 
 const $toast = useToast();
 const leadminerStore = useLeadminerStore();
