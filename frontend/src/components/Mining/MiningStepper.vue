@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <template>
   <Panel class="mb-4" header="Start a new mining" toggleable>
     <Stepper
@@ -105,3 +106,108 @@ async function handleNavigation({ index }: StepperChangeEvent) {
   );
 }
 </style>
+=======
+<template>
+  <Panel class="mb-4" header="Start a new mining" toggleable>
+    <Stepper :active-step="stepper" linear @step-change="handleNavigation">
+      <StepperPanel header="Select source">
+        <template #content="{ nextCallback }">
+          <SourcePanel :next-callback="nextCallback" />
+        </template>
+      </StepperPanel>
+
+      <StepperPanel header="Mine">
+        <template #content="{ prevCallback, nextCallback }">
+          <MinePanel
+            :next-callback="nextCallback"
+            :prev-callback="prevCallback"
+          />
+        </template>
+      </StepperPanel>
+      <StepperPanel header="Clean">
+        <template #content="{ prevCallback }">
+          <CleanPanel :prev-callback="prevCallback" />
+        </template>
+      </StepperPanel>
+    </Stepper>
+  </Panel>
+  <MiningConsentSidebar
+    v-model:stepper="stepper"
+    v-model:show="showConsentSideBar"
+    v-model:source="consentSourceComputed"
+  />
+</template>
+
+<script setup lang="ts">
+import type { StepperChangeEvent } from 'primevue/stepper';
+import { computed, ref } from 'vue';
+
+import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
+import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
+import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
+import { type MiningSource, type MiningSourceType } from '~/types/mining';
+
+const $route = useRoute();
+const $leadminerStore = useLeadminerStore();
+
+const stepper = ref();
+
+const consentSource = ref<MiningSource | undefined>();
+const consentSourceComputed = computed<MiningSource | undefined>(
+  () => consentSource.value || $leadminerStore.activeMiningSource
+);
+const showConsentSideBar = ref(false);
+
+const activeMining = computed(() =>
+  Boolean(
+    $leadminerStore.miningTask ||
+      $leadminerStore.isLoadingBoxes ||
+      $leadminerStore.isLoadingStartMining ||
+      $leadminerStore.isLoadingStopMining
+  )
+);
+
+onMounted(() => {
+  const { error, provider } = $route.query;
+  if (error !== 'oauth-consent') {
+    return;
+  }
+
+  useRouter().replace({ query: {} });
+  $leadminerStore.activeMiningSource = {
+    type: provider as MiningSourceType,
+    email: provider as string,
+    isValid: false,
+  };
+  consentSource.value = $leadminerStore.activeMiningSource;
+  showConsentSideBar.value = true;
+});
+
+async function getBoxes() {
+  try {
+    $leadminerStore.isLoadingBoxes = true;
+    await $leadminerStore.getBoxes();
+    $leadminerStore.isLoadingBoxes = false;
+  } catch (err) {
+    $leadminerStore.isLoadingBoxes = false;
+    showConsentSideBar.value = true;
+  }
+}
+
+async function handleNavigation({ index }: StepperChangeEvent) {
+  if (index === 1 && !activeMining.value && !$leadminerStore.boxes.length) {
+    await getBoxes();
+  }
+}
+</script>
+<style>
+.bg-banner-color {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 230, 149, 0.5) 0%,
+    rgba(255, 248, 225, 0.5) 100%
+  );
+}
+</style>
+>>>>>>> f4d841ab9f10db11448ed46d18f0dec3a7d9d2fa
