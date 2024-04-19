@@ -171,8 +171,6 @@ const $toast = useToast();
 
 const $supabase = useSupabaseClient();
 
-const $router = useRouter();
-
 const email = ref('');
 const emailFocus = ref(false);
 const typingEmail = computed(() =>
@@ -209,7 +207,6 @@ async function loginWithEmailAndPassword() {
     if (error) {
       throw error;
     }
-    await $router.push('/');
   } catch (error) {
     if (error instanceof Error) {
       $toast.add({

@@ -10,10 +10,10 @@
     v-model:visible="showImapCredentialsDialog"
     modal
     header="Sign-in with IMAP"
-    :style="{ width: '30rem' }"
+    class="md:w-[30rem]"
   >
-    <div class="flex space-y-2">
-      <div class="w-full flex gap-1">
+    <div class="flex flex-col space-y-2">
+      <div class="w-full flex flex-col gap-1">
         <label for="email">Email</label>
         <InputText
           v-model="imapEmail"
@@ -21,15 +21,15 @@
           class="w-full"
         />
       </div>
-      <div class="w-full flex gap-1">
+      <div class="w-full flex flex-col gap-1">
         <label for="password">Password</label>
         <InputText v-model="imapPassword" class="w-full" type="password" />
       </div>
-      <div class="w-full flex gap-1">
+      <div class="w-full flex flex-col gap-1">
         <label for="host">Host</label>
         <InputText v-model="imapHost" class="w-full" />
       </div>
-      <div class="w-full flex gap-1">
+      <div class="w-full flex flex-col gap-1">
         <label for="port">Port</label>
         <InputNumber
           v-model="imapPort"
@@ -91,7 +91,7 @@ async function onSubmitImapCredentials() {
       },
     });
 
-    await leadminerStore.getMiningSources();
+    await leadminerStore.fetchMiningSources();
     closeImapCredentialsDialog();
     isLoadingImapCredentialsCheck.value = false;
   } catch (err) {
