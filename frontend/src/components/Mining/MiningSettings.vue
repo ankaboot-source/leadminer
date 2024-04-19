@@ -47,10 +47,7 @@
           />
           <div class="grow" />
 
-          <Chip
-            v-tooltip="'Email messages selected'"
-            class="bg-primary text-white"
-          >
+          <Chip v-tooltip="'Email messages selected'">
             {{ totalEmails }}
             <i class="pi pi-envelope ml-1.5" />
           </Chip>
