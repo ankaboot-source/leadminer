@@ -1,10 +1,6 @@
 <template>
   <Panel class="mb-4" header="Start a new mining" toggleable>
-    <Stepper
-      v-model:active-step="stepper"
-      linear
-      @step-change="handleNavigation"
-    >
+    <Stepper :active-step="stepper" linear @step-change="handleNavigation">
       <StepperPanel header="Select source">
         <template #content="{ nextCallback }">
           <SourcePanel :next-callback="nextCallback" />

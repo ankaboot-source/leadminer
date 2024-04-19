@@ -2,7 +2,7 @@ import ImapConnectionProvider from './ImapConnectionProvider';
 
 export interface FlatTree {
   label: string;
-  path: string;
+  key: string;
   attribs?: string[];
   parent?: FlatTree;
   total?: number;

@@ -1,9 +1,5 @@
 <template>
-  <Dialog
-    v-model:visible="showModal"
-    modal
-    header="Oops! Running low on credits 😅"
-  >
+  <Dialog :visible="showModal" modal header="Oops! Running low on credits 😅">
     <p class="m-0">
       You don't have enough credits to {{ actionType }} all your
       {{ formattedTotal }} {{ engagementType }}.
