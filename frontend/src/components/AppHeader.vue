@@ -1,5 +1,5 @@
 <template>
-  <div class="py-3.5 px-6 flex justify-between">
+  <div class="py-3.5 flex justify-between">
     <RouterLink to="/dashboard">
       <AppLogo />
     </RouterLink>
