@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="app" class="q-px-md">
+  <div>
     <div class="flex items-center">
       <q-btn flat icon="arrow_back" round @click="goToDashboard()" />
       <div class="text-h4">Settings</div>
@@ -103,7 +103,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-  </NuxtLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
