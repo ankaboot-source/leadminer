@@ -5,9 +5,7 @@ export default defineNuxtConfig({
   srcDir: 'src',
   imports: {
     autoImport: true,
-  },
-  eslint: {
-    lintOnStart: false,
+    dirs: ['stores'],
   },
   $development: {
     devtools: { enabled: true },
@@ -15,14 +13,19 @@ export default defineNuxtConfig({
       port: 8082,
     },
     typescript: {
-      // Enable after removing quasar
-      typeCheck: false,
+      typeCheck: true,
     },
   },
   app: {
     head: {
       titleTemplate: `${pkg.productName}`,
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
+        },
+      ],
     },
   },
   runtimeConfig: {
