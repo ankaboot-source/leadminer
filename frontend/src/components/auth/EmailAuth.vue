@@ -101,7 +101,7 @@
             >
           </div>
           <div class="grid gap-1">
-            <labe class="text-left" for="password">Password</labe>
+            <label class="text-left" for="password">Password</label>
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
