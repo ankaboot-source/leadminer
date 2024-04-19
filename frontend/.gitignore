@@ -26,10 +26,6 @@ logs
 .env.*
 !.env.example
 
-# Quasar core related directories
-.quasar
-/dist
-
 # Cordova related directories and files
 /src-cordova/node_modules
 /src-cordova/platforms

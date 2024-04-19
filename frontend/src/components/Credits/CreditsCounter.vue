@@ -43,9 +43,7 @@ import PhosphorCoin from '../icons/PhosphorCoin.vue';
 const $toast = useToast();
 const leadminerStore = useLeadminerStore();
 
-onMounted(async () => {
-  await leadminerStore.syncUserCredits();
-});
+useAsyncData('credits', () => leadminerStore.syncUserCredits());
 
 const credits = computed(() => leadminerStore.userCredits);
 

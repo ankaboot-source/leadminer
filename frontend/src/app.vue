@@ -1,5 +1,7 @@
 <template>
-  <NuxtPage />
+  <NuxtLayout :name="useSupabaseUser().value ? 'app' : 'auth'">
+    <NuxtPage />
+  </NuxtLayout>
   <Toast />
   <Toast
     group="mining"

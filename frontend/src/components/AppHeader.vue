@@ -1,10 +1,10 @@
 <template>
-  <div class="py-3.5 px-6 flex justify-between">
+  <div class="py-3.5 flex justify-between">
     <RouterLink to="/dashboard">
       <AppLogo />
     </RouterLink>
 
-    <div class="md:flex md:items-center md:gap-2 max-md:hidden">
+    <div class="md:flex md:items-center md:gap-1 max-md:hidden">
       <CreditsCounter v-if="shouldShowCreditsBadge" />
       <div v-show="shouldShowSettings">
         <Button
@@ -14,8 +14,8 @@
         >
           {{ $user?.email }}
         </Button>
-        <Button icon="pi pi-sign-out" text @click="logout()" />
       </div>
+      <Button icon="pi pi-sign-out" text @click="logout()" />
     </div>
 
     <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />

@@ -1,6 +1,6 @@
 <template>
   <Panel class="mb-4" header="Start a new mining" toggleable>
-    <Stepper :active-step="stepper" linear @step-change="handleNavigation">
+    <Stepper v-model:active-step="stepper" linear>
       <StepperPanel header="Select source">
         <template #content="{ nextCallback }">
           <SourcePanel :next-callback="nextCallback" />
@@ -10,6 +10,7 @@
       <StepperPanel header="Mine">
         <template #content="{ prevCallback, nextCallback }">
           <MinePanel
+            :mining-source="$leadminerStore.activeMiningSource!"
             :next-callback="nextCallback"
             :prev-callback="prevCallback"
           />
@@ -23,74 +24,44 @@
     </Stepper>
   </Panel>
   <MiningConsentSidebar
+    v-model:show="$consentSidebar.status"
+    v-model:provider="$consentSidebar.provider"
     v-model:stepper="stepper"
-    v-model:show="showConsentSideBar"
-    v-model:source="consentSourceComputed"
   />
 </template>
 
 <script setup lang="ts">
-import type { StepperChangeEvent } from 'primevue/stepper';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
-import { type MiningSource, type MiningSourceType } from '~/types/mining';
+import type { MiningSourceType } from '~/types/mining';
 
 const $route = useRoute();
+const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 
 const stepper = ref();
 
-const consentSource = ref<MiningSource | undefined>();
-const consentSourceComputed = computed<MiningSource | undefined>(
-  () => consentSource.value || $leadminerStore.activeMiningSource
-);
-const showConsentSideBar = ref(false);
+const { error, provider, source } = $route.query;
 
-const activeMining = computed(() =>
-  Boolean(
-    $leadminerStore.miningTask ||
-      $leadminerStore.isLoadingBoxes ||
-      $leadminerStore.isLoadingStartMining ||
-      $leadminerStore.isLoadingStopMining
-  )
-);
+if (source) {
+  await $leadminerStore.fetchMiningSources();
+  $leadminerStore.activeMiningSource = $leadminerStore.getMiningSourceByEmail(
+    source as string
+  );
+  if ($leadminerStore.activeMiningSource) {
+    stepper.value = 1;
+  }
+} else if (error === 'oauth-consent') {
+  $consentSidebar.show(provider as MiningSourceType);
+}
 
 onMounted(() => {
-  const { error, provider } = $route.query;
-  if (error !== 'oauth-consent') {
-    return;
-  }
-
   useRouter().replace({ query: {} });
-  $leadminerStore.activeMiningSource = {
-    type: provider as MiningSourceType,
-    email: provider as string,
-    isValid: false,
-  };
-  consentSource.value = $leadminerStore.activeMiningSource;
-  showConsentSideBar.value = true;
 });
-
-async function getBoxes() {
-  try {
-    $leadminerStore.isLoadingBoxes = true;
-    await $leadminerStore.getBoxes();
-    $leadminerStore.isLoadingBoxes = false;
-  } catch (err) {
-    $leadminerStore.isLoadingBoxes = false;
-    showConsentSideBar.value = true;
-  }
-}
-
-async function handleNavigation({ index }: StepperChangeEvent) {
-  if (index === 1 && !activeMining.value && !$leadminerStore.boxes.length) {
-    await getBoxes();
-  }
-}
 </script>
 <style>
 .bg-banner-color {

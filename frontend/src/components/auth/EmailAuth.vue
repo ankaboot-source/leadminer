@@ -155,8 +155,6 @@ const $toast = useToast();
 
 const $supabase = useSupabaseClient();
 
-const $router = useRouter();
-
 const email = ref('');
 const emailFocus = ref(false);
 
@@ -187,7 +185,6 @@ async function loginWithEmailAndPassword() {
     if (error) {
       throw error;
     }
-    await $router.push('/');
   } catch (error) {
     if (error instanceof Error) {
       $toast.add({
