@@ -7,8 +7,8 @@
   />
   <DataTable
     ref="TableRef"
-    :selection="selectedContacts"
-    :filters="filters"
+    v-model:selection="selectedContacts"
+    v-model:filters="filters"
     resizable-columns
     reorderable-columns
     show-gridlines
