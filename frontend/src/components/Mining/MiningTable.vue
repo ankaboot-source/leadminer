@@ -417,11 +417,9 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
-import { exportFile } from 'quasar';
-import { useLeadminerStore } from '../../stores/leadminer';
-import type { Contact } from '../../types/contact';
-
+import type { Contact } from '@/types/contact';
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import { saveCSVFile } from '~/utils/csv';
 
 const $toast = useToast();
 
@@ -896,21 +894,13 @@ async function exportTable(partialExport = false) {
       }
 
       if (response.status === 200 || response.status === 206) {
-        const status = exportFile(
-          `${getFileName()}.csv`,
-          response._data,
-          'text/csv'
-        );
-
-        if (status !== true) {
-          throw new Error('Browser denied file download...');
-        }
+        saveCSVFile(response._data, `${getFileName()}.csv`);
 
         await leadminerStore.syncUserCredits();
-
         $toast.add({
           severity: 'success',
-          summary: 'Emails exported successfully',
+          summary: 'CSV Export',
+          detail: 'Your contacts are successfully exported.',
           life: 3000,
         });
       }
@@ -1006,11 +996,6 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   left: 0;
-}
-/* Quasar fix to bring toast and related high index elements over the header, once Quasar is removed, this should be removed */
-.q-header,
-.q-footer {
-  z-index: 3 !important;
 }
 
 /* 
