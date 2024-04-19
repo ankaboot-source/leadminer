@@ -10,20 +10,16 @@
             Enter the email address associated with your account
           </div>
           <div class="grid gap-1">
-            <FloatLabel>
-              <InputText
-                v-model="email"
-                filled
-                class="w-full"
-                :invalid="!!email && !isValidEmail(email)"
-                type="email"
-                required
-                aria-describedby="email-help"
-                @focusin="emailFocus = true"
-                @focusout="emailFocus = false"
-              />
-              <label for="email">Email</label>
-            </FloatLabel>
+            <label class="text-left" for="email">Email</label>
+            <InputText
+              v-model="email"
+              :invalid="!!email && !isValidEmail(email)"
+              type="email"
+              required
+              aria-describedby="email-help"
+              @focusin="emailFocus = true"
+              @focusout="emailFocus = false"
+            />
             <small
               v-if="!!email && !isValidEmail(email)"
               id="email-help"
@@ -33,7 +29,6 @@
           </div>
         </div>
         <Button
-          class="w-full"
           label="Send reset instructions"
           size="large"
           @click="resetPassword"

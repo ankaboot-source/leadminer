@@ -1,21 +1,17 @@
 <template>
-  <div class="card flex flex-col space-y-4">
+  <div class="card flex flex-col space-y-2">
     <template v-if="state === 'signup'">
-      <div :class="typingEmail ? 'pt-1 grid gap-1' : 'grid gap-1'">
-        <FloatLabel>
-          <InputText
-            v-model="email"
-            filled
-            class="w-full"
-            :invalid="!!email && !isValidEmail(email)"
-            type="email"
-            required
-            aria-describedby="email-help"
-            @focusin="emailFocus = true"
-            @focusout="emailFocus = false"
-          />
-          <label for="email">Email</label>
-        </FloatLabel>
+      <div class="grid gap-1">
+        <label class="text-left" for="email">Email</label>
+        <InputText
+          v-model="email"
+          :invalid="!!email && !isValidEmail(email)"
+          type="email"
+          required
+          aria-describedby="email-help"
+          @focusin="emailFocus = true"
+          @focusout="emailFocus = false"
+        />
         <small
           v-if="!!email && !isValidEmail(email)"
           id="email-help"
@@ -23,51 +19,48 @@
           >Please enter a valid email</small
         >
       </div>
-      <div :class="typingPassword ? 'pt-3 grid gap-1' : 'grid gap-1'">
-        <FloatLabel>
-          <Password
-            v-model="password"
-            class="w-full"
-            :input-style="{ width: '100%' }"
-            toggle-mask
-            required
-            :invalid="!!password && !isValidPassword(password)"
-            aria-describedby="password-help"
-            @focusin="passwordFocus = true"
-            @focusout="passwordFocus = false"
-          >
-            <template #header>
-              <h6>Pick a password</h6>
-            </template>
-            <template #footer>
-              <Divider />
-              <p class="mt-2">Suggestions</p>
-              <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
-                <li>
-                  <i v-if="hasLowerCase" class="pi pi-check-square"></i>
-                  <i v-else class="pi pi-stop"></i>
-                  At least one lowercase
-                </li>
-                <li>
-                  <i v-if="hasUpperCase" class="pi pi-check-square"></i>
-                  <i v-else class="pi pi-stop"></i>
-                  At least one uppercase
-                </li>
-                <li>
-                  <i v-if="hasNumber" class="pi pi-check-square"></i>
-                  <i v-else class="pi pi-stop"></i>
-                  At least one numeric
-                </li>
-                <li>
-                  <i v-if="password.length >= 8" class="pi pi-check-square"></i>
-                  <i v-else class="pi pi-stop"></i>
-                  Minimum 8 characters
-                </li>
-              </ul>
-            </template>
-          </Password>
-          <label for="password">Password</label>
-        </FloatLabel>
+      <div class="grid gap-1">
+        <label class="text-left" for="password">Password</label>
+        <Password
+          v-model="password"
+          :input-style="{ width: '100%' }"
+          toggle-mask
+          required
+          :invalid="!!password && !isValidPassword(password)"
+          aria-describedby="password-help"
+          @focusin="passwordFocus = true"
+          @focusout="passwordFocus = false"
+        >
+          <template #header>
+            <h6>Pick a password</h6>
+          </template>
+          <template #footer>
+            <Divider />
+            <p class="mt-2">Suggestions</p>
+            <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
+              <li>
+                <i v-if="hasLowerCase" class="pi pi-check-square"></i>
+                <i v-else class="pi pi-stop"></i>
+                At least one lowercase
+              </li>
+              <li>
+                <i v-if="hasUpperCase" class="pi pi-check-square"></i>
+                <i v-else class="pi pi-stop"></i>
+                At least one uppercase
+              </li>
+              <li>
+                <i v-if="hasNumber" class="pi pi-check-square"></i>
+                <i v-else class="pi pi-stop"></i>
+                At least one numeric
+              </li>
+              <li>
+                <i v-if="password.length >= 8" class="pi pi-check-square"></i>
+                <i v-else class="pi pi-stop"></i>
+                Minimum 8 characters
+              </li>
+            </ul>
+          </template>
+        </Password>
         <small
           v-if="!!password && !isValidPassword(password)"
           id="password-help"
@@ -89,22 +82,17 @@
     </template>
     <template v-else>
       <div class="grid gap-1">
-        <div class="grid gap-4">
-          <div :class="typingEmail ? 'pt-1 grid gap-1' : ' grid gap-1'">
-            <FloatLabel>
-              <InputText
-                v-model="email"
-                filled
-                class="w-full"
-                :invalid="!!email && !isValidEmail(email)"
-                label="Email"
-                type="email"
-                required
-                @focusin="emailFocus = true"
-                @focusout="emailFocus = false"
-              />
-              <label for="email">Email</label>
-            </FloatLabel>
+        <div class="grid gap-2">
+          <div class="grid gap-1">
+            <label class="text-left" for="email">Email</label>
+            <InputText
+              v-model="email"
+              :invalid="!!email && !isValidEmail(email)"
+              type="email"
+              required
+              @focusin="emailFocus = true"
+              @focusout="emailFocus = false"
+            />
             <small
               v-if="!!email && !isValidEmail(email)"
               id="email-help"
@@ -112,21 +100,18 @@
               >Please enter a valid email</small
             >
           </div>
-          <div :class="typingPassword ? 'pt-3 grid gap-1' : ' grid gap-1'">
-            <FloatLabel>
-              <Password
-                v-model="password"
-                class="w-full"
-                :input-style="{ width: '100%' }"
-                toggle-mask
-                required
-                :feedback="false"
-                @focusin="passwordFocus = true"
-                @focusout="passwordFocus = false"
-              >
-              </Password>
-              <label for="password">Password</label>
-            </FloatLabel>
+          <div class="grid gap-1">
+            <label class="text-left" for="password">Password</label>
+            <Password
+              v-model="password"
+              :input-style="{ width: '100%' }"
+              toggle-mask
+              required
+              :feedback="false"
+              @focusin="passwordFocus = true"
+              @focusout="passwordFocus = false"
+            >
+            </Password>
             <small
               v-if="!!password && !isValidPassword(password)"
               id="password-help"
@@ -139,7 +124,6 @@
           Forgot your password?</NuxtLink
         >
       </div>
-
       <div class="pt-1">
         <Button
           v-if="state === 'login'"
@@ -175,15 +159,9 @@ const $router = useRouter();
 
 const email = ref('');
 const emailFocus = ref(false);
-const typingEmail = computed(() =>
-  Boolean(emailFocus.value || email.value.length)
-);
 
 const password = ref('');
 const passwordFocus = ref(false);
-const typingPassword = computed(() =>
-  Boolean(passwordFocus.value || password.value.length)
-);
 
 const hasLowerCase = computed(
   () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value)
