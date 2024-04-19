@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout :name="useSupabaseUser().value ? 'app' : 'auth'">
+  <NuxtLayout :name="useSupabaseUser().value ? 'default' : 'auth'">
     <NuxtPage />
   </NuxtLayout>
   <Toast />

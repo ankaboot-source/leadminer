@@ -213,7 +213,8 @@ async function startMining() {
       $toast.add({
         severity: 'error',
         summary: 'Start Mining',
-        detail: 'Oops! We encountered an issue while trying to start your mining process.',
+        detail:
+          'Oops! We encountered an issue while trying to start your mining process.',
         group: 'mining',
         life: 3000,
       });
