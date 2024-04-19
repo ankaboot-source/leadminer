@@ -40,25 +40,16 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxt/test-utils/module',
-    '@nuxtjs/eslint-module',
     '@nuxtjs/i18n',
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
     'nuxt-primevue',
-    'nuxt-quasar-ui',
   ],
   primevue: {
     cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
     components: {
       exclude: ['Editor', 'Chart'],
-    },
-  },
-  quasar: {
-    plugins: ['Notify'],
-    sassVariables: '~/assets/css/quasar.variables.scss',
-    extras: {
-      fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
     },
   },
   i18n: {

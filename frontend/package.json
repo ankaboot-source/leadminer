@@ -21,7 +21,6 @@
     "@nuxt/devtools": "latest",
     "@nuxt/eslint-config": "^0.2.0",
     "@nuxt/test-utils": "^3.12.0",
-    "@nuxtjs/eslint-module": "^4.1.0",
     "@nuxtjs/i18n": "^8.2.0",
     "@nuxtjs/supabase": "^1.1.7",
     "@nuxtjs/tailwindcss": "^6.11.4",
@@ -30,7 +29,6 @@
     "eslint-config-prettier": "^9.1.0",
     "nuxt": "^3.10.3",
     "nuxt-primevue": "^0.3.1",
-    "nuxt-quasar-ui": "^2.0.7",
     "recheck": "^4.4.5",
     "sass": "^1.72.0",
     "typescript": "^5.4.3",
@@ -42,7 +40,6 @@
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
     "@pinia/nuxt": "^0.5.1",
-    "@quasar/extras": "^1.16.9",
     "nitropack": "^2.9.4",
     "object-scan": "^19.0.5",
     "pinia": "^2.1.7",

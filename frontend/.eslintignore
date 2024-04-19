@@ -1,6 +1,5 @@
 /node_modules
 /.output
-/.quasar
 /.nuxt
 .eslintrc.js
 /src-ssr

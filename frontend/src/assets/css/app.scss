@@ -135,29 +135,6 @@
   src: url('../fonts/merriweather-v30-latin-900italic.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
 }
 
-.q-field__inner {
-  background-color: rgb(246, 246, 246);
-}
-
-.merriweather {
-  font-family: 'Merriweather';
-}
-
-.borders {
-  border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.text-weight-less-regular {
-  font-weight: 300;
-}
-
-.secondary-button {
-  border: 1px solid #abb1ba;
-}
-.negative-margin-8 {
-  margin-right: -8px;
-}
-
 .flash-animation {
   animation: flash-animation 0.5s 5;
   /* Repeats 5 times*/
