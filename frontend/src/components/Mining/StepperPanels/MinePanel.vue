@@ -23,10 +23,11 @@
     </template>
   </ProgressCard>
 
-  <!-- <mining-settings
+  <mining-settings
+    ref="miningSettingsRef"
     :total-emails="totalEmails"
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
-  /> -->
+  />
   <div class="flex pt-6 justify-between">
     <Button
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"

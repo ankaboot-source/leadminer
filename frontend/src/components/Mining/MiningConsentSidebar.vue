@@ -1,5 +1,10 @@
 <template>
-  <Sidebar v-model:visible="show" class="h-auto" position="top" :dismissable="false">
+  <Sidebar
+    v-model:visible="show"
+    class="h-auto"
+    position="top"
+    :dismissable="false"
+  >
     <template #container>
       <div class="grid gap-3 p-8">
         <span class="text-xl font-bold merriweather"
