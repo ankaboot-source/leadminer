@@ -1,19 +1,18 @@
 <template>
   <ClientOnly>
-    <div class="m-auto grid text-center gap-6 max-w-[30rem]" flat>
-      <div class="text-4xl font-bold font-[Merriweather]">
-        Forgot your password?
-      </div>
-      <div class="grid gap-6 w-full">
-        <div class="text-lg">
-          Enter the email address associated with your account
+    <NuxtLayout name="auth">
+      <div class="m-auto grid text-center gap-6 max-w-[30rem]" flat>
+        <div class="text-4xl font-bold font-[Merriweather]">
+          Forgot your password?
         </div>
-        <div class="grid gap-1">
-          <FloatLabel>
+        <div class="grid gap-6 w-full">
+          <div class="text-lg">
+            Enter the email address associated with your account
+          </div>
+          <div class="grid gap-1">
+            <label class="text-left" for="email">Email</label>
             <InputText
               v-model="email"
-              filled
-              class="w-full"
               :invalid="!!email && !isValidEmail(email)"
               type="email"
               required
@@ -21,27 +20,25 @@
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
             />
-            <label for="email">Email</label>
-          </FloatLabel>
-          <small
-            v-if="!!email && !isValidEmail(email)"
-            id="email-help"
-            class="text-red-400 text-left pl-4"
-            >Please enter a valid email</small
-          >
+            <small
+              v-if="!!email && !isValidEmail(email)"
+              id="email-help"
+              class="text-red-400 text-left pl-4"
+              >Please enter a valid email</small
+            >
+          </div>
         </div>
+        <Button
+          label="Send reset instructions"
+          size="large"
+          @click="resetPassword"
+        />
+        <p>
+          Back to
+          <NuxtLink to="/auth/login" class="font-bold link"> Sign in </NuxtLink>
+        </p>
       </div>
-      <Button
-        class="w-full"
-        label="Send reset instructions"
-        size="large"
-        @click="resetPassword"
-      />
-      <p>
-        Back to
-        <NuxtLink to="/auth/login" class="font-bold link"> Sign in </NuxtLink>
-      </p>
-    </div>
+    </NuxtLayout>
   </ClientOnly>
 </template>
 
