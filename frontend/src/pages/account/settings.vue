@@ -107,12 +107,11 @@
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { logout } from '@/utils/auth';
 
-const $quasar = useQuasar();
+const $toast = useToast();
 const $router = useRouter();
 
 const userId = ref('');
@@ -136,10 +135,11 @@ onMounted(async () => {
     .single();
 
   if (!session || !profile) {
-    $quasar.notify({
-      message: 'Session is expired.',
-      color: 'negative',
-      icon: 'error',
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Session is expired.',
+      life: 3000,
     });
     await useSupabaseClient().auth.signOut();
     return;
@@ -196,11 +196,13 @@ async function updateProfile() {
 
     await useSupabaseClient().auth.refreshSession();
 
-    $quasar.notify({
-      message: 'Profile information updated successfully',
-      color: 'positive',
-      icon: 'check',
+    $toast.add({
+      severity: 'success',
+      summary: 'Update information',
+      detail: 'Profile information updated successfully',
+      life: 3000,
     });
+
     isLoading.value = false;
   } catch (err) {
     isLoading.value = false;
