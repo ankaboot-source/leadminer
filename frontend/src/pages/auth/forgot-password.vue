@@ -1,6 +1,5 @@
 <template>
   <ClientOnly>
-    <NuxtLayout name="auth">
       <div class="m-auto grid text-center gap-6 max-w-[30rem]" flat>
         <div class="text-4xl font-bold font-[Merriweather]">
           Forgot your password?
@@ -38,7 +37,6 @@
           <NuxtLink to="/auth/login" class="font-bold link"> Sign in </NuxtLink>
         </p>
       </div>
-    </NuxtLayout>
   </ClientOnly>
 </template>
 
