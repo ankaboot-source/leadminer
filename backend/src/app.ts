@@ -59,7 +59,7 @@ export default function initializeApp(
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
   app.use(
-    '/api/imap',
+    '/api',
     initializeContactsRoutes(contacts, userResolver, authResolver)
   );
 

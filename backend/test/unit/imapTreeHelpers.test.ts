@@ -12,33 +12,33 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const expectedOutput = [
     {
       label: 'Brouillons',
-      path: 'Brouillons',
+      key: 'Brouillons',
       attribs: ['\\Drafts', '\\HasNoChildren']
     },
-    { label: 'INBOX', path: 'INBOX', attribs: ['\\HasChildren'] },
+    { label: 'INBOX', key: 'INBOX', attribs: ['\\HasChildren'] },
     {
       label: 'mars',
-      path: 'INBOX/mars',
+      key: 'INBOX/mars',
       parent: {
         label: 'INBOX',
-        path: 'INBOX',
+        key: 'INBOX',
         attribs: ['\\HasChildren']
       },
       attribs: ['\\Junk', '\\HasNoChildren']
     },
     {
       label: 'Administratif',
-      path: 'INBOX/Administratif',
+      key: 'INBOX/Administratif',
       parent: {
         label: 'INBOX',
-        path: 'INBOX',
+        key: 'INBOX',
         attribs: ['\\HasChildren']
       },
       attribs: ['\\Junk', '\\HasNoChildren']
     },
     {
       label: 'Spam',
-      path: 'Spam',
+      key: 'Spam',
       attribs: ['\\Junk', '\\HasNoChildren']
     }
   ];
@@ -56,33 +56,33 @@ describe.skip('imapTreeHelpers.buildFinalTree(foldersFlatArray, userEmail)', () 
     const input = [
       {
         label: 'Brouillons',
-        path: 'Brouillons',
+        key: 'Brouillons',
         total: 0,
         cumulativeTotal: 0
       },
       {
         label: 'INBOX',
-        path: 'INBOX',
+        key: 'INBOX',
         total: 0,
         cumulativeTotal: 0
       },
       {
         label: 'mars',
-        path: 'INBOX/mars',
-        parent: { label: 'INBOX', path: 'INBOX', total: 0, cumulativeTotal: 0 },
+        key: 'INBOX/mars',
+        parent: { label: 'INBOX', key: 'INBOX', total: 0, cumulativeTotal: 0 },
         total: 1,
         cumulativeTotal: 1
       },
       {
         label: 'Administratif',
-        path: 'INBOX/Administratif',
-        parent: { label: 'INBOX', path: 'INBOX', total: 0, cumulativeTotal: 0 },
+        key: 'INBOX/Administratif',
+        parent: { label: 'INBOX', key: 'INBOX', total: 0, cumulativeTotal: 0 },
         total: 1,
         cumulativeTotal: 1
       },
       {
         label: 'Spam',
-        path: 'Spam',
+        key: 'Spam',
         total: 1,
         cumulativeTotal: 1
       }
@@ -93,31 +93,31 @@ describe.skip('imapTreeHelpers.buildFinalTree(foldersFlatArray, userEmail)', () 
         children: [
           {
             label: 'Brouillons',
-            path: 'Brouillons',
+            key: 'Brouillons',
             total: 0,
             cumulativeTotal: 0
           },
           {
             label: 'INBOX',
-            path: 'INBOX',
+            key: 'INBOX',
             cumulativeTotal: 2,
             total: 0,
             children: [
               {
                 label: 'mars',
-                path: 'INBOX/mars',
+                key: 'INBOX/mars',
                 total: 1,
                 cumulativeTotal: 1
               },
               {
                 label: 'Administratif',
-                path: 'INBOX/Administratif',
+                key: 'INBOX/Administratif',
                 total: 1,
                 cumulativeTotal: 1
               }
             ]
           },
-          { label: 'Spam', path: 'Spam', total: 1, cumulativeTotal: 1 }
+          { label: 'Spam', key: 'Spam', total: 1, cumulativeTotal: 1 }
         ],
         total: 3
       }

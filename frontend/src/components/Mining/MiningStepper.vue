@@ -1,167 +1,54 @@
 <template>
-  <div class="q-pb-sm">
-    <q-stepper
-      ref="stepper"
-      v-model="step"
-      active-color="secondary"
-      done-color="secondary"
-      class="bg-banner-color"
-      animated
-      :contracted="stepperContractedHeader"
-      @update:model-value="handleNavigation"
-    >
-      <q-step
-        :name="1"
-        title="Select source"
-        icon="manage_accounts"
-        active-icon="manage_accounts"
-        :done="step > 1"
-      >
-        <div v-if="sourceOptions.length">
-          <span class="text-body1">Pick a source of contacts to mine</span>
-          <q-select
-            v-model="sourceModel"
-            class="q-pt-sm q-pb-lg"
-            option-value="email"
-            option-label="email"
-            outlined
-            unelevated
-            use-chips
-            stack-label
-            :options="sourceOptions"
+  <Panel class="mb-4" header="Start a new mining" toggleable>
+    <Stepper :active-step="stepper" linear @step-change="handleNavigation">
+      <StepperPanel header="Select source">
+        <template #content="{ nextCallback }">
+          <SourcePanel :next-callback="nextCallback" />
+        </template>
+      </StepperPanel>
+
+      <StepperPanel header="Mine">
+        <template #content="{ prevCallback, nextCallback }">
+          <MinePanel
+            :next-callback="nextCallback"
+            :prev-callback="prevCallback"
           />
-          <span class="text-body1">Or add a new email provider</span>
-        </div>
-        <div>
-          <span v-if="!sourceOptions.length" class="text-body1"
-            >Add a new email provider</span
-          >
-          <div class="flex row flex-right q-gutter-md q-pt-sm">
-            <oauth-source
-              icon="img:/icons/google.png"
-              label="Google"
-              source="google"
-            />
-            <oauth-source
-              icon="img:/icons/microsoft.png"
-              label="Microsoft or Outlook"
-              source="azure"
-            />
-            <imap-source />
-          </div>
-        </div>
-        <q-stepper-navigation class="text-right">
-          <q-btn
-            v-if="sourceOptions.length"
-            class="text-black q-ml-sm"
-            :disable="!$leadminerStore.activeMiningSource"
-            unelevated
-            color="amber-13"
-            no-caps
-            label="Continue with this email account"
-            @click="stepper.next()"
-          />
-        </q-stepper-navigation>
-      </q-step>
-      <q-step :name="3" title="Start mining" icon="bolt" active-icon="done">
-        <div class="text-center text-h6 text-bold q-pb-md">
-          Discover hidden gems in your social network
-        </div>
-        <div class="bg-transparent q-pb-lg">
-          <ProgressCard v-if="boxes" :total-emails="totalEmails" />
-        </div>
-        <mining-settings
-          ref="miningSettingsRef"
-          :total-emails="totalEmails"
-          :is-loading-boxes="$leadminerStore.isLoadingBoxes"
-          @get-boxes="getBoxes"
-        />
-        <q-stepper-navigation class="text-right">
-          <q-btn
-            v-if="!activeMiningTask"
-            flat
-            color="secondary"
-            no-caps
-            label="Back"
-            @click="stepper.previous()"
-          />
-          <q-btn
-            v-if="!activeMiningTask"
-            :disable="
-              $leadminerStore.isLoadingStartMining ||
-              $leadminerStore.isLoadingBoxes
-            "
-            no-caps
-            outline
-            label="Fine tune mining"
-            @click="openMiningSettings"
-          >
-            <q-tooltip> Tailor your mining pereferences </q-tooltip>
-          </q-btn>
-          <q-btn
-            v-if="!activeMiningTask"
-            :disable="
-              activeMiningTask ||
-              $leadminerStore.isLoadingStartMining ||
-              $leadminerStore.isLoadingBoxes
-            "
-            :loading="$leadminerStore.isLoadingStartMining"
-            no-caps
-            unelevated
-            color="amber-13"
-            class="text-black q-ml-sm"
-            icon-right="img:/icons/pickaxe.svg"
-            style="border: 2px solid black !important"
-            label="Start mining now!"
-            @click="startMining"
-          >
-            <template #loading>
-              Start mining now!
-              <q-spinner class="on-right" />
-            </template>
-          </q-btn>
-          <q-btn
-            v-else
-            :loading="$leadminerStore.isLoadingStartMining"
-            no-caps
-            unelevated
-            class="text-black"
-            color="amber-13"
-            icon-right="stop"
-            style="border: 2px solid black !important"
-            label="Halt mining"
-            @click="stopMining"
-          />
-        </q-stepper-navigation>
-      </q-step>
-    </q-stepper>
-  </div>
+        </template>
+      </StepperPanel>
+      <StepperPanel header="Clean">
+        <template #content="{ prevCallback }">
+          <CleanPanel :prev-callback="prevCallback" />
+        </template>
+      </StepperPanel>
+    </Stepper>
+  </Panel>
+  <MiningConsentSidebar
+    v-model:stepper="stepper"
+    v-model:show="showConsentSideBar"
+    v-model:source="consentSourceComputed"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-// @ts-expect-error "No type definitions"
-import objectScan from 'object-scan';
-import { FetchError } from 'ofetch';
-import MiningSettings from '@/components/Mining/MiningSettings.vue';
-import ProgressCard from '@/components/Mining/MiningProgress.vue';
-import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import ImapSource from '@/components/Mining/AddSourceImap.vue';
-import { type MiningSource } from '@/types/mining';
+import type { StepperChangeEvent } from 'primevue/stepper';
+import { computed, ref } from 'vue';
 
-const $quasar = useQuasar();
-const $router = useRouter();
-const $user = useSupabaseUser();
+import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
+import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
+import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
+import { type MiningSource, type MiningSourceType } from '~/types/mining';
+
+const $route = useRoute();
 const $leadminerStore = useLeadminerStore();
 
-const step = ref(1);
 const stepper = ref();
-const stepperContractedHeader = ref(false);
 
-const sourceModel = ref<MiningSource>();
-const sourceOptions = computed(() => $leadminerStore.miningSources);
-
-const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
+const consentSource = ref<MiningSource | undefined>();
+const consentSourceComputed = computed<MiningSource | undefined>(
+  () => consentSource.value || $leadminerStore.activeMiningSource
+);
+const showConsentSideBar = ref(false);
 
 const activeMining = computed(() =>
   Boolean(
@@ -172,19 +59,20 @@ const activeMining = computed(() =>
   )
 );
 
-const { error: sourcesError } = await useAsyncData(() =>
-  $leadminerStore.getMiningSources()
-);
-
 onMounted(() => {
-  if (sourcesError.value) {
-    throw sourcesError.value;
+  const { error, provider } = $route.query;
+  if (error !== 'oauth-consent') {
+    return;
   }
 
-  const { miningSources } = $leadminerStore;
-  sourceModel.value = miningSources.find(
-    ({ email }) => $user.value && email === $user.value.email
-  );
+  useRouter().replace({ query: {} });
+  $leadminerStore.activeMiningSource = {
+    type: provider as MiningSourceType,
+    email: provider as string,
+    isValid: false,
+  };
+  consentSource.value = $leadminerStore.activeMiningSource;
+  showConsentSideBar.value = true;
 });
 
 async function getBoxes() {
@@ -194,114 +82,17 @@ async function getBoxes() {
     $leadminerStore.isLoadingBoxes = false;
   } catch (err) {
     $leadminerStore.isLoadingBoxes = false;
-    throw err;
+    showConsentSideBar.value = true;
   }
 }
 
-watch(sourceModel, (selectedSource) => {
-  $leadminerStore.boxes = [];
-  $leadminerStore.selectedBoxes = [];
-  $leadminerStore.activeMiningSource = selectedSource;
-});
-
-const boxes = computed(() => $leadminerStore.boxes);
-const selectedBoxes = computed<string[]>(() => $leadminerStore.selectedBoxes);
-const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined
-);
-
-const totalEmails = computed<number>(() => {
-  if (boxes.value[0]) {
-    return objectScan(['**.{total}'], {
-      joined: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      filterFn: ({ parent, property, value, context }: any) => {
-        if (
-          property === 'total' &&
-          parent.path &&
-          selectedBoxes.value.includes(parent.path)
-        ) {
-          context.sum += value;
-        }
-      },
-    })(boxes.value, { sum: 0 }).sum;
-  }
-  return 0;
-});
-
-function openMiningSettings() {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  miningSettingsRef.value!.open();
-}
-
-async function handleNavigation(value: number | string) {
-  if (value === 3 && !activeMining.value && !$leadminerStore.boxes.length) {
+async function handleNavigation({ index }: StepperChangeEvent) {
+  if (index === 1 && !activeMining.value && !$leadminerStore.boxes.length) {
     await getBoxes();
-  }
-}
-
-async function stopMining() {
-  $leadminerStore.isLoadingStopMining = true;
-  try {
-    await $leadminerStore.stopMining();
-    $quasar.notify({
-      message: $leadminerStore.infoMessage,
-      color: 'positive',
-      icon: 'check',
-    });
-    $leadminerStore.isLoadingStopMining = false;
-    stepperContractedHeader.value = false;
-  } catch (error) {
-    $leadminerStore.isLoadingStopMining = false;
-    stepperContractedHeader.value = false;
-    throw error;
-  }
-}
-
-// eslint-disable-next-line consistent-return
-async function startMining() {
-  if (selectedBoxes.value.length === 0) {
-    openMiningSettings();
-    $quasar.notify({
-      message: 'Please select at least one folder to start mining.',
-      color: 'warning',
-      icon: 'error',
-    });
-    return;
-  }
-  $leadminerStore.isLoadingStartMining = true;
-  try {
-    await $leadminerStore.startMining();
-    await $leadminerStore.syncUserCredits();
-    $quasar.notify({
-      message: $leadminerStore.infoMessage,
-      color: 'positive',
-      icon: 'check',
-    });
-    $leadminerStore.isLoadingStartMining = false;
-    stepperContractedHeader.value = true;
-  } catch (error) {
-    const provider = $leadminerStore.activeMiningSource?.type;
-    if (
-      error instanceof FetchError &&
-      error.response?.status === 401 &&
-      provider &&
-      ['google', 'azure'].includes(provider)
-    ) {
-      $router.push(await redirectOauthConsentPage());
-    } else {
-      $leadminerStore.isLoadingStartMining = false;
-      stepperContractedHeader.value = true;
-      throw error;
-    }
   }
 }
 </script>
 <style>
-.q-dialog__inner--minimized > div {
-  max-width: 1000px;
-}
-
 .bg-banner-color {
   background: linear-gradient(
     135deg,

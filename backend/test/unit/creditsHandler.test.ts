@@ -1,16 +1,16 @@
 import {
-  jest,
-  beforeEach,
   afterEach,
-  expect,
+  beforeEach,
   describe,
-  it
+  expect,
+  it,
+  jest
 } from '@jest/globals';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
-import CreditsHandler from '../../src/services/credits/creditHandler';
 import SupabaseUsers from '../../src/db/supabase/users';
 import { Profile } from '../../src/db/types';
+import CreditsHandler from '../../src/services/credits/creditHandler';
 
 const ENV_CONTACT_CREDITS = 10;
 const MOCKED_DB = new Map<string, Partial<Profile>>([]);
@@ -63,7 +63,7 @@ describe('CreditsHandler', () => {
         5
       );
 
-      expect(result.insufficientCredits).toBe(false);
+      expect(result.hasDeficientCredits).toBe(false);
       expect(result.requestedUnits).toBe(units);
       expect(result.availableUnits).toBe(units);
     });
@@ -80,7 +80,7 @@ describe('CreditsHandler', () => {
         units
       );
 
-      expect(result.insufficientCredits).toBe(false);
+      expect(result.hasDeficientCredits).toBe(false);
       expect(result.requestedUnits).toBe(units);
       expect(result.availableUnits).toBe(correctAvialableUnits);
     });
@@ -92,7 +92,7 @@ describe('CreditsHandler', () => {
         units
       );
 
-      expect(result.insufficientCredits).toBe(true);
+      expect(result.hasDeficientCredits).toBe(true);
       expect(result.requestedUnits).toBe(units);
       expect(result.availableUnits).toBe(0);
     });

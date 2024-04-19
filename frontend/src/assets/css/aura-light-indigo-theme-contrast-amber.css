@@ -59,7 +59,7 @@
   font-display: swap;
   font-style: normal;
   font-named-instance: 'Regular';
-  src: url('./fonts/Inter-roman.var.woff2?v=3.19') format('woff2');
+  src: url('../fonts/Inter-roman.var.woff2?v=3.19') format('woff2');
 }
 @font-face {
   font-family: 'Inter var';
@@ -67,7 +67,7 @@
   font-display: swap;
   font-style: italic;
   font-named-instance: 'Italic';
-  src: url('./fonts/Inter-italic.var.woff2?v=3.19') format('woff2');
+  src: url('../fonts/Inter-italic.var.woff2?v=3.19') format('woff2');
 }
 :root {
   --blue-50: #f5f9ff;
@@ -11061,17 +11061,17 @@
   @keyframes p-progress-spinner-color {
     100%,
     0% {
-      stroke: #dc2626;
+      stroke: #ffffff;
     }
     40% {
-      stroke: #2563eb;
+      stroke: #fbbf24;
     }
     66% {
-      stroke: #16a34a;
+      stroke: #fbbf24;
     }
     80%,
     90% {
-      stroke: #ca8a04;
+      stroke: #ffffff;
     }
   }
   .p-ripple {

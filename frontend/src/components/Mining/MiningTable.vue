@@ -3,19 +3,20 @@
     ref="CreditsDialogRef"
     engagement-type="contacts"
     action-type="download"
-    @secondary-action="exportTable"
+    @secondary-action="exportTable(true)"
   />
   <DataTable
-    v-model:selection="selectedContacts"
-    v-model:filters="filters"
+    ref="TableRef"
+    :selection="selectedContacts"
+    :filters="filters"
     resizable-columns
     reorderable-columns
     show-gridlines
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
-    :scroll-height="!isFullscreen ? '37vh' : ''"
     scrollable
+    :scroll-height="scrollHeight"
     size="small"
     striped-rows
     :select-all="selectAll"
@@ -42,21 +43,27 @@
         </div>
       </div>
     </template>
-    <template #loading>{{ loadingLabel }}</template>
+    <template #loading>
+      <div class="text-center">
+        <ProgressSpinner />
+        <div class="font-semibold text-white">{{ loadingLabel }}</div>
+      </div>
+    </template>
     <template #header>
       <div class="flex items-center gap-1">
-        <Button
-          icon="pi pi-external-link"
-          label="Export CSV"
-          :disable="isExportDisabled"
-          @click="verifyExport"
-        />
-        <Button
-          type="button"
-          :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
-          text
-          @click="refreshTable()"
-        />
+        <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
+        <div
+          v-tooltip.top="
+            isExportDisabled && 'Select at least one contact to export'
+          "
+        >
+          <Button
+            icon="pi pi-external-link"
+            label="Export CSV"
+            :disabled="isExportDisabled"
+            @click="exportTable()"
+          />
+        </div>
         <div>
           <template v-if="implicitlySelectedContactsLength !== contactsLength">
             {{ implicitlySelectedContactsLength }} /
@@ -104,12 +111,16 @@
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div v-tooltip.left="'- Less than 3 years \n- GDPR Proof'">
+              <div
+                v-tooltip.left="
+                  `- Less than ${recentYearsAgo} years \n- GDPR Proof`
+                "
+              >
                 Recent contacts
               </div>
               <InputSwitch
                 v-model="recentToggle"
-                @update:model-value="onRecentToggle(3)"
+                @update:model-value="onRecentToggle"
               />
             </li>
             <Divider class="my-0" />
@@ -136,7 +147,17 @@
     </template>
 
     <!-- Select -->
-    <Column selection-mode="multiple" />
+    <Column
+      selection-mode="multiple"
+      style="width: 38px"
+      :pt="{
+        rowCheckbox: {
+          root: {
+            style: { 'z-index': 0 },
+          },
+        },
+      }"
+    />
 
     <!-- Contacts -->
     <Column field="contacts">
@@ -384,10 +405,12 @@ import {
   type User,
 } from '@supabase/supabase-js';
 import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
+import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
+
 import { exportFile } from 'quasar';
 import { useLeadminerStore } from '../../stores/leadminer';
 import type { Contact } from '../../types/contact';
@@ -542,9 +565,6 @@ watch(searchContactModel, (newValue: string) => {
 });
 
 const filteredContacts = ref<Contact[]>([]);
-function onFilter(event: DataTableFilterEvent) {
-  filteredContacts.value = event.filteredValue;
-}
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
 /* *** Settings *** */
@@ -552,34 +572,87 @@ const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
+
 const validToggle = ref(true); // status: valid
-function onValidToggle() {
-  filters.value.status.value = validToggle.value ? ['VALID'] : null;
+function onValidToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    validToggle.value = toggle;
+  }
+  if (filters.value.status.value === null) {
+    filters.value.status.value = [];
+  }
+  if (!filters.value.status.value.includes('VALID') && validToggle.value) {
+    filters.value.status.value.push('VALID');
+  } else if (
+    filters.value.status.value.includes('VALID') &&
+    !validToggle.value
+  ) {
+    filters.value.status.value = filters.value.status.value.filter(
+      (item: string) => item !== 'VALID'
+    );
+  }
 }
+watch(
+  () => filters.value.status.value,
+  (newStatusValue) => {
+    validToggle.value = newStatusValue?.includes('VALID');
+  }
+);
+
 const discussionsToggle = ref(true); // replies: >=1
-function onDiscussionsToggle() {
+function onDiscussionsToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    discussionsToggle.value = toggle;
+  }
   filters.value.replied_conversations.value = discussionsToggle.value
     ? 1
     : null;
 }
+watch(
+  () => filters.value.replied_conversations.value,
+  (newRepliesValue) => {
+    discussionsToggle.value = newRepliesValue === 1;
+  }
+);
 
 const recentToggle = ref(true); // recency: <3 years
-function onRecentToggle(yearsAgo: number) {
+const recentYearsAgo = 3;
+function onRecentToggle(toggle?: boolean) {
+  if (toggle !== undefined) {
+    recentToggle.value = toggle;
+  }
+  filters.value.recency.constraints?.splice(1);
   filters.value.recency.constraints[0].value = recentToggle.value
-    ? new Date(new Date().setFullYear(new Date().getFullYear() - yearsAgo))
+    ? new Date(
+        new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+      )
     : null;
 }
+
+watch(
+  () => filters.value.recency.constraints,
+  (newRecencyConstraints) => {
+    recentToggle.value =
+      newRecencyConstraints.length === 1 &&
+      newRecencyConstraints[0].value?.toLocaleDateString() ===
+        new Date(
+          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+        ).toLocaleDateString();
+  },
+  { deep: true }
+);
+
 function clearFilter() {
-  validToggle.value = false;
-  discussionsToggle.value = false;
-  recentToggle.value = false;
   searchContactModel.value = '';
+  onValidToggle(false);
+  onDiscussionsToggle(false);
+  onRecentToggle(false);
   initFilters();
 }
 function initDefaultFilters() {
-  onValidToggle();
-  onDiscussionsToggle();
-  onRecentToggle(3);
+  onValidToggle(true);
+  onDiscussionsToggle(true);
+  onRecentToggle(true);
 }
 initDefaultFilters();
 const defaultOnFilters = computed(
@@ -588,6 +661,10 @@ const defaultOnFilters = computed(
     Number(discussionsToggle.value) +
     Number(recentToggle.value)
 );
+
+function onFilter(event: DataTableFilterEvent) {
+  filteredContacts.value = event.filteredValue;
+}
 
 function setupSubscription() {
   // We are 100% sure that the user is authenticated in this component
@@ -685,16 +762,13 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
+    initDefaultFilters();
     isLoading.value = false;
   }
 });
 
 await useAsyncData('refine', () => refineContacts());
 await useAsyncData('contacts', () => syncTable());
-
-onUnmounted(() => {
-  clearInterval(refreshInterval);
-});
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
@@ -720,94 +794,6 @@ const onRowUnselect = () => {
   selectAll.value = false;
 };
 
-function copyContact(name: string, email: string) {
-  $toast.add({
-    severity: 'success',
-    summary: 'Contact copied',
-    detail: 'This contact email address has been copied to your clipboard',
-    life: 3000,
-  });
-  navigator.clipboard.writeText(
-    name && name !== '' ? `${name} <${email}>` : `<${email}>`
-  );
-}
-
-/* *** Export CSV *** */
-
-const { $api } = useNuxtApp();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
-const isExportDisabled = computed(
-  () =>
-    rows.value.length === 0 ||
-    activeMiningTask.value ||
-    leadminerStore.loadingStatusDns
-);
-function getFileName() {
-  const { email } = $user.value as User;
-  const currentDatetime = new Date().toISOString().slice(0, 10);
-  const fileName = `leadminer-${email}-${currentDatetime}`;
-  return fileName;
-}
-async function exportTable() {
-  await $api('/imap/export/csv', {
-    async onResponse({ response }) {
-      if (response.status === 204) {
-        return;
-      }
-      const status = exportFile(
-        `${getFileName()}.csv`,
-        response._data,
-        'text/csv'
-      );
-
-      if (status !== true) {
-        throw new Error('Browser denied file download...');
-      }
-
-      await leadminerStore.syncUserCredits();
-
-      $toast.add({
-        severity: 'success',
-        summary: 'Emails exported successfully',
-        life: 3000,
-      });
-    },
-  });
-}
-
-const openCreditModel = ({
-  total,
-  available,
-}: {
-  total: number;
-  available: number;
-}) => {
-  if (total === undefined || available === undefined) {
-    return $toast.add({
-      severity: 'error',
-      summary: 'Error when verifying export CSV',
-      life: 3000,
-    });
-  }
-  return CreditsDialogRef.value?.openModal(total, available);
-};
-
-async function verifyExport() {
-  await $api('/imap/export/csv/verify', {
-    async onResponse({ response }) {
-      if (response.status === 204) {
-        return;
-      }
-
-      if (response.status !== 206) {
-        await exportTable();
-      } else {
-        openCreditModel(response._data);
-      }
-    },
-  });
-}
-
 const implicitlySelectedContacts = computed(() => {
   // If (Filter) & (No selection) : user implicitly selected all filtered contacts
   if (
@@ -830,18 +816,114 @@ const implicitlySelectedContactsLength = computed(
   () => implicitlySelectedContacts.value.length
 );
 
+function copyContact(name: string, email: string) {
+  $toast.add({
+    severity: 'success',
+    summary: 'Contact copied',
+    detail: 'This contact email address has been copied to your clipboard',
+    life: 3000,
+  });
+  navigator.clipboard.writeText(
+    name && name !== '' ? `${name} <${email}>` : `<${email}>`
+  );
+}
+
+/* *** Export CSV *** */
+
+const { $api } = useNuxtApp();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+const isExportDisabled = computed(
+  () =>
+    rows.value.length === 0 ||
+    activeMiningTask.value ||
+    leadminerStore.loadingStatusDns ||
+    !implicitlySelectedContactsLength.value
+);
+function getFileName() {
+  const { email } = $user.value as User;
+  const currentDatetime = new Date().toISOString().slice(0, 10);
+  const fileName = `leadminer-${email}-${currentDatetime}`;
+  return fileName;
+}
+
+const openCreditModel = (
+  hasDeficientCredits: boolean,
+  {
+    total,
+    available,
+    availableAlready,
+  }: {
+    total: number;
+    available: number;
+    availableAlready: number;
+  }
+) => {
+  if (total === undefined || available === undefined) {
+    return $toast.add({
+      severity: 'error',
+      summary: 'Error when verifying export CSV',
+      life: 3000,
+    });
+  }
+  return CreditsDialogRef.value?.openModal(
+    hasDeficientCredits,
+    total,
+    available,
+    availableAlready ?? 0
+  );
+};
+
+async function exportTable(partialExport = false) {
+  const contactsToExport = implicitlySelectedContacts.value.map(
+    (item: Contact) => item.email
+  );
+  await $api('/export/csv', {
+    method: 'POST',
+    body: {
+      partialExport,
+      contactsToExport: JSON.stringify(contactsToExport),
+    },
+    async onResponse({ response }) {
+      if (response.status === 402 || response.status === 266) {
+        openCreditModel(response.status === 402, response._data);
+        return;
+      }
+
+      if (response.status === 200 || response.status === 206) {
+        const status = exportFile(
+          `${getFileName()}.csv`,
+          response._data,
+          'text/csv'
+        );
+
+        if (status !== true) {
+          throw new Error('Browser denied file download...');
+        }
+
+        await leadminerStore.syncUserCredits();
+
+        $toast.add({
+          severity: 'success',
+          summary: 'Emails exported successfully',
+          life: 3000,
+        });
+      }
+    },
+  });
+}
+
 const isFullscreen = ref(false);
 
 const visibleColumns = ref(['contacts', 'occurrence']);
 onMounted(() => {
-  const windowInnerWidth = window.innerWidth;
+  const windowWidth = window.innerWidth;
 
   visibleColumns.value = [
     'contacts',
-    ...(windowInnerWidth > 550 ? ['occurrence'] : []),
-    ...(windowInnerWidth > 700 ? ['recency'] : []),
-    ...(windowInnerWidth > 800 ? ['tags'] : []),
-    ...(windowInnerWidth > 950 ? ['status'] : []),
+    ...(windowWidth > 550 ? ['occurrence'] : []),
+    ...(windowWidth > 700 ? ['recency'] : []),
+    ...(windowWidth > 800 ? ['tags'] : []),
+    ...(windowWidth > 950 ? ['status'] : []),
   ];
 });
 const visibleColumnsOptions = [
@@ -864,6 +946,41 @@ function onSelectColumnsChange() {
     visibleColumns.value.push('contacts');
   }
 }
+
+/* Table dynamic Height */
+const TableRef = ref();
+const tablePosTop = ref<number>(
+  TableRef.value?.$el.getBoundingClientRect().top ?? 0
+);
+const windowHeight = ref<number>(window?.innerHeight ?? 0);
+function onWindowHeightChange() {
+  windowHeight.value = window.innerHeight ?? 0;
+}
+
+const tableHeight = ref('37vh');
+const scrollHeight = computed(() =>
+  !isFullscreen.value ? tableHeight.value : ''
+);
+
+onMounted(() => {
+  window.addEventListener('resize', onWindowHeightChange);
+  function observeTop() {
+    const resizeObserver = new ResizeObserver(() => {
+      tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
+    });
+    resizeObserver.observe(TableRef.value?.$el);
+  }
+  observeTop();
+
+  watchEffect(() => {
+    tableHeight.value = `${windowHeight.value - tablePosTop.value - 140}px`;
+  });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onWindowHeightChange);
+  clearInterval(refreshInterval);
+});
 </script>
 
 <style>
@@ -875,7 +992,7 @@ function onSelectColumnsChange() {
 }
 .fullscreenTable {
   position: fixed;
-  z-index: 4;
+  z-index: 3;
   background-color: white;
   max-width: 100vw;
   max-height: 100vh;
@@ -890,18 +1007,8 @@ function onSelectColumnsChange() {
   z-index: 3 !important;
 }
 
-/* PrimeVue bugs Table fixes */
 /* 
-  DataTable: Checkbox in a row behind the header is clickable
-  https://github.com/primefaces/primevue/issues/5483 
-  theme.css:4049 
-*/
-.p-datatable-scrollable-table > .p-datatable-thead {
-  top: 0;
-  z-index: 2;
-}
-/* 
-  DataTable - table is leaking up behind table header
+  PrimeVue fix DataTable - table is leaking up behind table header
   https://github.com/primefaces/primevue-tailwind/issues/197
   tailwind.css:2 
 */

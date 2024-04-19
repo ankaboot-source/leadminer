@@ -13,13 +13,22 @@ export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refine_persons($1)';
 
-  private static readonly SELECT_CONTACTS_SQL =
-    'SELECT * FROM get_contacts_table($1)';
-
   private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
     SELECT email 
     FROM persons
     WHERE user_id = $1 and status IS NULL
+    `;
+
+  private static readonly SELECT_CONTACTS_SQL =
+    'SELECT * FROM get_contacts_table($1)';
+
+  private static readonly SELECT_EXPORTED_CONTACTS = `
+    SELECT contacts.* 
+    FROM get_contacts_table($1) contacts
+      JOIN engagement e
+        ON e.email = contacts.email
+        AND e.user_id = $1
+        AND e.engagement_type = 'CSV'
     `;
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
@@ -32,13 +41,26 @@ export default class PgContacts implements Contacts {
     WHERE e.email IS NULL;
     `;
 
-  private static readonly SELECT_EXPORTED_CONTACTS = `
+  private static readonly SELECT_CONTACTS_BY_EMAILS =
+    'SELECT * FROM get_contacts_table_by_emails($1,$2)';
+
+  private static readonly SELECT_EXPORTED_CONTACTS_BY_EMAILS = `
     SELECT contacts.* 
-    FROM get_contacts_table($1) contacts
+    FROM get_contacts_table_by_emails($1,$2) contacts
       JOIN engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
+    `;
+
+  private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS = `
+    SELECT contacts.* 
+    FROM get_contacts_table_by_emails($1,$2) contacts
+      LEFT JOIN engagement e
+        ON e.email = contacts.email
+        AND e.user_id = $1
+        AND e.engagement_type = 'CSV'
+    WHERE e.email IS NULL;
     `;
 
   private static readonly UPDATE_PERSON_STATUS_BULK = `
@@ -215,6 +237,20 @@ export default class PgContacts implements Contacts {
     }
   }
 
+  async getUnverifiedEmails(userId: string): Promise<string[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_UNVERIFIED_EMAILS_SQL,
+        [userId]
+      );
+
+      return rows.map((r) => r.email);
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getContacts(userId: string): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [
@@ -228,14 +264,13 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getUnverifiedEmails(userId: string): Promise<string[]> {
+  async getExportedContacts(userId: string): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(
-        PgContacts.SELECT_UNVERIFIED_EMAILS_SQL,
+        PgContacts.SELECT_EXPORTED_CONTACTS,
         [userId]
       );
-
-      return rows.map((r) => r.email);
+      return rows;
     } catch (error) {
       this.logger.error(error);
       return [];
@@ -256,12 +291,49 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getExportedContacts(userId: string): Promise<Contact[]> {
+  async getSelectedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]> {
     try {
       const { rows } = await this.pool.query(
-        PgContacts.SELECT_EXPORTED_CONTACTS,
-        [userId]
+        PgContacts.SELECT_CONTACTS_BY_EMAILS,
+        [userId, emails]
       );
+
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getSelectedExportedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_EXPORTED_CONTACTS_BY_EMAILS,
+        [userId, emails]
+      );
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getSelectedNonExportedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS,
+        [userId, emails]
+      );
+
       return rows;
     } catch (error) {
       this.logger.error(error);
