@@ -52,7 +52,7 @@ const { error: sourcesError } = useAsyncData(() =>
 );
 
 onMounted(() => {
-  if (sourcesError) {
+  if (sourcesError.value) {
     throw new Error('Failed to fetch mining sources');
   }
 });
