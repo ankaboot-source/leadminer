@@ -1,35 +1,33 @@
 <template>
-  <div v-if="sourceOptions.length" class="flex flex-col space-y-2">
-    <span>Pick a source of contacts to mine</span>
-    <Dropdown
-      v-model="sourceModel"
-      checkmark
-      :options="sourceOptions"
-      option-label="email"
-      placeholder="email"
-    />
-  </div>
-  <div class="space-y-2 pt-3">
-    <div>
-      <span v-if="!sourceOptions.length">Add a new email provider</span>
-      <span v-else>Or add a new email provider</span>
-    </div>
-    <div class="flex gap-2">
-      <oauth-source icon="pi pi-google" label="Google" source="google" />
-      <oauth-source
-        icon="pi pi-microsoft"
-        label="Microsoft or Outlook"
-        source="azure"
+  <div class="flex flex-col md:flex-row gap-2 md:gap-8">
+    <div v-if="sourceOptions.length" class="w-full flex flex-col gap-3">
+      <p>Pick a source of contacts to mine</p>
+      <Dropdown
+        v-model="sourceModel"
+        checkmark
+        :options="sourceOptions"
+        option-label="email"
+        placeholder="email"
+        @update:model-value="onSourceChange"
       />
-      <imap-source />
     </div>
-    <div class="flex justify-end">
-      <Button
-        :disabled="!sourceModel"
-        severity="contrast"
-        label="Continue with this email account"
-        @click="nextCallback()"
-      />
+    <div v-if="sourceOptions.length">
+      <Divider layout="vertical" class="hidden md:flex"><b>OR</b></Divider>
+      <Divider layout="horizontal" class="flex md:hidden" align="center"
+        ><b>OR</b></Divider
+      >
+    </div>
+    <div class="w-full flex flex-col gap-3">
+      <span>Add a new email provider</span>
+      <div class="flex flex-col md:flex-row gap-2 flex-wrap">
+        <oauth-source icon="pi pi-google" label="Google" source="google" />
+        <oauth-source
+          icon="pi pi-microsoft"
+          label="Microsoft or Outlook"
+          source="azure"
+        />
+        <imap-source />
+      </div>
     </div>
   </div>
 </template>
@@ -44,45 +42,25 @@ const { nextCallback } = defineProps<{
   nextCallback: Function;
 }>();
 
-const $route = useRoute();
-const $user = useSupabaseUser();
 const $leadminerStore = useLeadminerStore();
 
-const sourceModel = ref<MiningSource>();
+const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
-const skipToMining = computed(() => $route.query.source);
-const { error: sourcesError } = await useAsyncData(() =>
-  $leadminerStore.getMiningSources()
+const { error: sourcesError } = useAsyncData(() =>
+  $leadminerStore.fetchMiningSources()
 );
 
-const { miningSources } = $leadminerStore;
-
 onMounted(() => {
-  useRouter().replace({ query: {} });
-  if (sourcesError.value) {
-    throw sourcesError.value;
-  }
-
-  sourceModel.value = miningSources.find(
-    ({ email }) => email === $user.value?.email
-  );
-
-  if (skipToMining.value) {
-    sourceModel.value = miningSources.find(
-      ({ email }) => email === skipToMining.value
-    );
-    $leadminerStore.boxes = [];
-    $leadminerStore.selectedBoxes = [];
-    $leadminerStore.activeMiningSource = sourceModel.value;
-
-    nextCallback();
+  if (sourcesError) {
+    throw new Error('Failed to fetch mining sources');
   }
 });
 
-watch(sourceModel, (selectedSource) => {
+function onSourceChange(source: MiningSource) {
   $leadminerStore.boxes = [];
   $leadminerStore.selectedBoxes = [];
-  $leadminerStore.activeMiningSource = selectedSource;
-});
+  $leadminerStore.activeMiningSource = source;
+  nextCallback();
+}
 </script>

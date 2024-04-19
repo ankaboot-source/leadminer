@@ -83,10 +83,18 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   }
 
   /**
+   * Retrieves a mining source from the Pinia store by email.
+   * @param email - The email address of the mining source to retrieve.
+   */
+  function getMiningSourceByEmail(email: string) {
+    return miningSources.value.find((source) => source.email === email);
+  }
+
+  /**
    * Retrieves mining sources.
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
-  async function getMiningSources() {
+  async function fetchMiningSources() {
     try {
       isLoadingSources.value = true;
 
@@ -104,12 +112,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
-  async function getBoxes() {
+  async function fetchInbox() {
     try {
       if (!activeMiningSource.value) {
         return;
       }
-
+      isLoadingBoxes.value = true;
       loadingStatusbox.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
@@ -136,12 +144,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         activeMiningSource.value,
         true
       );
+      isLoadingBoxes.value = false;
     } catch (err) {
       miningSources.value = updateMiningSourcesValidity(
         miningSources.value,
         activeMiningSource.value as MiningSource,
         false
       );
+      isLoadingBoxes.value = false;
       loadingStatusbox.value = false;
       throw err;
     }
@@ -168,7 +178,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (!sessionData.session?.access_token) {
         return;
       }
-
+      isLoadingStartMining.value = true;
       const { data } = await $api<{ data: MiningTask }>(
         `/imap/mine/${sessionData.session.user.id}`,
         {
@@ -212,15 +222,17 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         }
       );
 
+      status.value = '';
       miningTask.value = task;
       loadingStatus.value = false;
       loadingStatusDns.value = false;
-      status.value = '';
+      isLoadingStartMining.value = false;
       infoMessage.value = 'Mining has started';
     } catch (err) {
+      status.value = '';
       loadingStatus.value = false;
       loadingStatusDns.value = false;
-      status.value = '';
+      isLoadingStartMining.value = false;
       sse.closeConnection();
       throw err;
     }
@@ -232,15 +244,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    */
   async function stopMining() {
     try {
-      const { data: session } = await useSupabaseClient().auth.getUser();
+      const user = useSupabaseUser().value;
 
-      if (!session.user || !miningTask.value) {
+      if (!user || !miningTask.value) {
         return;
       }
+      isLoadingStopMining.value = true;
 
       const { miningId } = miningTask.value;
 
-      await $api(`/imap/mine/${session.user.id}/${miningId}`, {
+      await $api(`/imap/mine/${user.id}/${miningId}`, {
         method: 'DELETE',
       });
 
@@ -249,18 +262,20 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       infoMessage.value = 'Mining has stopped';
       fetchingFinished.value = true;
       extractionFinished.value = true;
+      isLoadingStopMining.value = false;
     } catch (err) {
-      // Reset values and rethrow error
       status.value = '';
       fetchingFinished.value = true;
       extractionFinished.value = true;
+      isLoadingStopMining.value = false;
       throw err;
     }
   }
 
   return {
-    getMiningSources,
-    getBoxes,
+    getMiningSourceByEmail,
+    fetchMiningSources,
+    fetchInbox,
     startMining,
     stopMining,
     $reset,

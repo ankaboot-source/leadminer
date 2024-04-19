@@ -174,7 +174,7 @@ const activeMiningTask = computed(
 async function onRefreshImapTree() {
   try {
     $leadminerStore.isLoadingBoxes = true;
-    await $leadminerStore.getBoxes();
+    await $leadminerStore.fetchInbox();
     $leadminerStore.isLoadingBoxes = false;
   } catch (err) {
     $leadminerStore.isLoadingBoxes = false;

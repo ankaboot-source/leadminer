@@ -1,5 +1,5 @@
 <template>
-  <Sidebar v-model:visible="show" class="h-auto" position="top">
+  <Sidebar v-model:visible="show" class="h-auto" position="top" :dismissable="false">
     <template #container>
       <div class="grid gap-3 p-8">
         <span class="text-xl font-bold merriweather"
@@ -8,8 +8,8 @@
         <span>
           We apologize for the inconvenience. It seems like you have declined to
           grant authorization for us to access your
-          <span v-if="source && source.type === 'google'">Google</span>
-          <span v-else-if="source && source.type === 'azure'">Outlook</span>
+          <span v-if="provider && provider === 'google'">Google</span>
+          <span v-else-if="provider && provider === 'azure'">Outlook</span>
           <span v-else>Google or Outlook</span> mailbox. Without authorization,
           we are unable to extract, clean, and enrich contacts from your
           mailbox.
@@ -60,24 +60,20 @@
   </Sidebar>
 </template>
 <script setup lang="ts">
-import { type MiningSource, type OAuthMiningSource } from '@/types/mining';
+import { type MiningSourceType, type OAuthMiningSource } from '@/types/mining';
 
 const show = defineModel<boolean>('show');
-const source = defineModel<MiningSource>('source');
 const stepper = defineModel<number>('stepper');
+const provider = defineModel<MiningSourceType>('provider');
 
 function close() {
   show.value = false;
-  if (source.value) {
-    source.value.isValid = false;
-  }
-  source.value = undefined;
   stepper.value = 0;
 }
 
 function refreshOAuth() {
-  if (source.value && ['google', 'azure'].includes(source.value.type)) {
-    addOAuthAccount(source.value.type as OAuthMiningSource);
+  if (provider.value && ['google', 'azure'].includes(provider.value)) {
+    addOAuthAccount(provider.value as OAuthMiningSource);
   } else {
     navigateTo('/dashboard');
   }

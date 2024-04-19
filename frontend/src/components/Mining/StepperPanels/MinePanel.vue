@@ -23,11 +23,10 @@
     </template>
   </ProgressCard>
 
-  <mining-settings
-    ref="miningSettingsRef"
+  <!-- <mining-settings
     :total-emails="totalEmails"
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
-  />
+  /> -->
   <div class="flex pt-6 justify-between">
     <Button
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
@@ -83,8 +82,10 @@ import { FetchError } from 'ofetch';
 
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
+import type { MiningSource } from '~/types/mining';
 
-const { nextCallback, prevCallback } = defineProps<{
+const { nextCallback, prevCallback, miningSource } = defineProps<{
+  miningSource: MiningSource;
   // skipcq: JS-0296
   nextCallback: Function;
   // skipcq: JS-0296
@@ -125,11 +126,10 @@ const totalEmails = computed<number>(() => {
 const scannedEmails = computed(() => $leadminerStore.scannedEmails);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
-const fetchingFinished = computed(() => $leadminerStore.fetchingFinished);
 const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 
 const extractionProgress = computed(() =>
-  fetchingFinished.value
+  $leadminerStore.fetchingFinished
     ? extractedEmails.value / scannedEmails.value || 0
     : extractedEmails.value / totalEmails.value || 0
 );
@@ -140,6 +140,23 @@ const progressTooltip = computed(
       ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
       </div>`
 );
+
+onMounted(async () => {
+  if (
+    activeMiningTask.value ||
+    $leadminerStore.isLoadingBoxes ||
+    $leadminerStore.isLoadingStartMining ||
+    $leadminerStore.isLoadingStopMining
+  ) {
+    return;
+  }
+
+  try {
+    await $leadminerStore.fetchInbox();
+  } catch (err) {
+    useMiningConsentSidebar().show(miningSource.type);
+  }
+});
 
 watch(extractionFinished, (finished) => {
   if (!canceled.value && finished) {
@@ -171,7 +188,6 @@ async function startMining() {
     });
     return;
   }
-  $leadminerStore.isLoadingStartMining = true;
   try {
     await $leadminerStore.startMining();
     await $leadminerStore.syncUserCredits();
@@ -182,17 +198,13 @@ async function startMining() {
       group: 'mining',
       life: 3000,
     });
-    $leadminerStore.isLoadingStartMining = false;
   } catch (error) {
-    $leadminerStore.isLoadingStartMining = false;
-    const provider = $leadminerStore.activeMiningSource?.type;
     if (
       error instanceof FetchError &&
       error.response?.status === 401 &&
-      provider &&
-      ['google', 'azure'].includes(provider)
+      $leadminerStore.activeMiningSource
     ) {
-      navigateTo(await redirectOauthConsentPage());
+      useMiningConsentSidebar().show($leadminerStore.activeMiningSource.type);
     } else {
       throw error;
     }
@@ -201,21 +213,14 @@ async function startMining() {
 
 async function haltMining() {
   canceled.value = true;
-  $leadminerStore.isLoadingStopMining = true;
-  try {
-    await $leadminerStore.stopMining();
-    $leadminerStore.fetchingFinished = false;
-    $toast.add({
-      severity: 'success',
-      summary: 'Mining Stopped',
-      detail: 'Your mining is successfully canceled.',
-      group: 'mining',
-      life: 3000,
-    });
-    $leadminerStore.isLoadingStopMining = false;
-  } catch (error) {
-    $leadminerStore.isLoadingStopMining = false;
-    throw error;
-  }
+  await $leadminerStore.stopMining();
+
+  $toast.add({
+    severity: 'success',
+    summary: 'Mining Stopped',
+    detail: 'Your mining is successfully canceled.',
+    group: 'mining',
+    life: 3000,
+  });
 }
 </script>
