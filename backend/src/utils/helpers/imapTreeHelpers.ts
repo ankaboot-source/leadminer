@@ -14,9 +14,7 @@ export function createFlatTreeFromImap(
   Object.entries(imapTree).forEach(([folderLabel, folderDetails]) => {
     const folder = {
       label: folderLabel,
-      path: currentParent
-        ? `${currentParent.path}/${folderLabel}`
-        : folderLabel,
+      key: currentParent ? `${currentParent.key}/${folderLabel}` : folderLabel,
       parent: currentParent,
       attribs: folderDetails.attribs
     };
@@ -45,7 +43,7 @@ export function addTotalPerFolder(
   const promises = folders.map(
     (folder) =>
       new Promise((resolve, reject) => {
-        imapConnection.status(folder.path, (err, box) => {
+        imapConnection.status(folder.key, (err, box) => {
           if (err) {
             reject(err);
           }
@@ -77,6 +75,8 @@ export function buildFinalTree(flatTree: FlatTree[], userEmail: string) {
   let totalInEmail = 0;
 
   for (const box of flatTree) {
+    box.key = box.key.toString();
+
     if (box.parent) {
       if (box.parent.children) {
         box.parent.children.push(box);
@@ -92,6 +92,11 @@ export function buildFinalTree(flatTree: FlatTree[], userEmail: string) {
   }
 
   return [
-    { label: userEmail, children: [...readableTree], total: totalInEmail }
+    {
+      label: userEmail,
+      children: [...readableTree],
+      total: totalInEmail,
+      key: ''
+    }
   ];
 }

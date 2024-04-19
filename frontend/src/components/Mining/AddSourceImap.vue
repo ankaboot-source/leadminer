@@ -7,7 +7,7 @@
     @click="openImapCredentialsDialog"
   />
   <Dialog
-    v-model:visible="showImapCredentialsDialog"
+    :visible="showImapCredentialsDialog"
     modal
     header="Sign-in with IMAP"
     class="md:w-[30rem]"
@@ -55,8 +55,8 @@
   </Dialog>
 </template>
 <script setup lang="ts">
-import { isValidEmail } from '@/utils/email';
 import { useLeadminerStore } from '@/stores/leadminer';
+import { isValidEmail } from '@/utils/email';
 
 const { $api } = useNuxtApp();
 const leadminerStore = useLeadminerStore();

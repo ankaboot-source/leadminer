@@ -7,8 +7,8 @@
   />
   <DataTable
     ref="TableRef"
-    v-model:selection="selectedContacts"
-    v-model:filters="filters"
+    :selection="selectedContacts"
+    :filters="filters"
     resizable-columns
     reorderable-columns
     show-gridlines
@@ -64,12 +64,6 @@
             @click="exportTable()"
           />
         </div>
-        <Button
-          type="button"
-          :icon="isLoading ? 'pi pi-refresh pi-spin' : 'pi pi-refresh'"
-          text
-          @click="refreshTable()"
-        />
         <div>
           <template v-if="implicitlySelectedContactsLength !== contactsLength">
             {{ implicitlySelectedContactsLength }} /
