@@ -38,7 +38,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     // eslint-disable-next-line no-console
     console.error(error);
     const toastService = usePVToastService();
-    console.log(message);
     toastService.add({
       summary: 'Oops!',
       severity: 'error',
