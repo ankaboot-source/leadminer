@@ -58,15 +58,6 @@
 <script setup lang="ts">
 import TreeCard from '@/components/cards/TreeCard.vue';
 
-const settingsOptions = ref([
-  {
-    label: 'Mailbox Folders',
-    value: 'mailbox_folders',
-    icon: 'pi pi-inbox',
-  },
-]);
-const settingsTab = ref(settingsOptions.value[0]);
-
 const props = defineProps({
   totalEmails: { type: Number, required: true },
   isLoadingBoxes: { type: Boolean, required: true },
@@ -75,7 +66,6 @@ const props = defineProps({
 const $leadminerStore = useLeadminerStore();
 
 const isVisible = ref(false);
-const menuVisible = ref(true);
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
 const miningSources = [$leadminerStore.activeMiningSource];
 
@@ -101,10 +91,6 @@ async function onRefreshImapTree() {
 
 function onMiningSourceChanged() {
   onRefreshImapTree();
-}
-
-function toggleMenu() {
-  menuVisible.value = !menuVisible.value;
 }
 
 function open() {
