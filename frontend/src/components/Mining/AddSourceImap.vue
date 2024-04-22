@@ -7,7 +7,7 @@
     @click="openImapCredentialsDialog"
   />
   <Dialog
-    :visible="showImapCredentialsDialog"
+    v-model:visible="showImapCredentialsDialog"
     modal
     header="Sign-in with IMAP"
     class="md:w-[30rem]"
