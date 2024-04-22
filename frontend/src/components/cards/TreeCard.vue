@@ -2,13 +2,13 @@
   <Tree
     v-model:value="leadminerStore.boxes"
     v-model:selection-keys="leadminerStore.selectedBoxes"
-    :expanded-keys="expandedKeys"
+    v-model:expanded-keys="expandedKeys"
     selection-mode="checkbox"
   >
     <template #default="{ node }">
       {{ node.label }}
       <Badge
-        v-if="node.key === '' || node.key! in expandedKeys"
+        v-if="node.key! in expandedKeys"
         v-tooltip="'Total emails in this folder'"
         severity="secondary"
       >
