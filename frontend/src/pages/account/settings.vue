@@ -21,7 +21,6 @@
             v-model="fullName"
             class="w-full md:w-30rem"
             type="text"
-            placeholder="Full name"
             required
           />
         </div>
@@ -35,7 +34,6 @@
             class="w-full"
             :invalid="!Boolean(email) && !isValidEmail(email)"
             type="email"
-            placeholder="Email address"
             required
             aria-describedby="email-help"
           />
@@ -48,7 +46,6 @@
             v-model="password"
             class="w-full"
             :input-style="{ width: '100%' }"
-            placeholder="password"
             toggle-mask
             required
             :invalid="Boolean(password) && !isValidPassword(password)"
