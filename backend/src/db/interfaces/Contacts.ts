@@ -17,17 +17,14 @@ export interface Contacts {
     emailStatus: { status: Status; email: string }[]
   ): Promise<boolean>;
   getUnverifiedEmails(userId: string): Promise<string[]>;
-  getContacts(userId: string): Promise<Contact[]>;
-  getExportedContacts(userId: string): Promise<Contact[]>;
-  getNonExportedContacts(userId: string): Promise<Contact[]>;
-  getSelectedContacts(userId: string, emails: string[]): Promise<Contact[]>;
-  getSelectedExportedContacts(
+  getContacts(userId: string, emails?: string[] | null): Promise<Contact[]>;
+  getExportedContacts(
     userId: string,
-    emails: string[]
+    emails?: string[] | null
   ): Promise<Contact[]>;
-  getSelectedNonExportedContacts(
+  getNonExportedContacts(
     userId: string,
-    emails: string[]
+    emails?: string[] | null
   ): Promise<Contact[]>;
   registerExportedContacts(contactIds: string[], userId: string): Promise<void>;
 }

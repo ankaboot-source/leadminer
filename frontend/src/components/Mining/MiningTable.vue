@@ -65,7 +65,7 @@
           />
         </div>
         <div>
-          <template v-if="implicitlySelectedContactsLength !== contactsLength">
+          <template v-if="!implicitSelectAll">
             {{ implicitlySelectedContactsLength }} /
           </template>
           {{ contactsLength }} Contacts
@@ -411,8 +411,8 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
-import type { Contact } from '@/types/contact';
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import type { Contact } from '@/types/contact';
 import { saveCSVFile } from '~/utils/csv';
 
 const $toast = useToast();
@@ -814,6 +814,10 @@ const implicitlySelectedContactsLength = computed(
   () => implicitlySelectedContacts.value.length
 );
 
+const implicitSelectAll = computed(
+  () => implicitlySelectedContactsLength.value === contactsLength.value
+);
+
 function copyContact(name: string, email: string) {
   $toast.add({
     severity: 'success',
@@ -872,14 +876,18 @@ const openCreditModel = (
 };
 
 async function exportTable(partialExport = false) {
-  const contactsToExport = implicitlySelectedContacts.value.map(
-    (item: Contact) => item.email
-  );
+  // if !contactsToExport, then export all contacts
+  const contactsToExport = implicitSelectAll.value
+    ? null
+    : JSON.stringify(
+        implicitlySelectedContacts.value.map((item: Contact) => item.email)
+      );
+
   await $api('/export/csv', {
     method: 'POST',
     body: {
       partialExport,
-      contactsToExport: JSON.stringify(contactsToExport),
+      contactsToExport,
     },
     async onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {

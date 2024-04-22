@@ -28,19 +28,16 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       const partialExport = req.body.partialExport ?? false;
-      const contactsToExport = JSON.parse(req.body.contactsToExport);
+      const contactsToExport: string[] | null = req.body.contactsToExport
+        ? JSON.parse(req.body.contactsToExport)
+        : null;
       let statusCode = 200;
-
-      if (!contactsToExport.length) {
-        statusCode = 204; // 204 No Content
-        return res.sendStatus(statusCode);
-      }
 
       try {
         if (!ENV.ENABLE_CREDIT || !ENV.CONTACT_CREDIT) {
           // No need to Verify Credits, Export.
 
-          const selectedContacts = await contacts.getSelectedContacts(
+          const selectedContacts = await contacts.getContacts(
             user.id,
             contactsToExport
           );
@@ -61,13 +58,15 @@ export default function initializeContactsController(
         }
 
         // Verify
-        const newContacts = await contacts.getSelectedNonExportedContacts(
+        const newContacts = await contacts.getNonExportedContacts(
           user.id,
           contactsToExport
         );
 
-        const previousExportedContacts =
-          await contacts.getSelectedExportedContacts(user.id, contactsToExport);
+        const previousExportedContacts = await contacts.getExportedContacts(
+          user.id,
+          contactsToExport
+        );
 
         // Verify Credits
         const creditHandler = new CreditsHandler(

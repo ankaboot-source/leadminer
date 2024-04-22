@@ -251,55 +251,17 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getContacts(userId: string): Promise<Contact[]> {
-    try {
-      const { rows } = await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [
-        userId
-      ]);
-
-      return rows;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
-  }
-
-  async getExportedContacts(userId: string): Promise<Contact[]> {
-    try {
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_EXPORTED_CONTACTS,
-        [userId]
-      );
-      return rows;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
-  }
-
-  async getNonExportedContacts(userId: string): Promise<Contact[]> {
-    try {
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_NON_EXPORTED_CONTACTS,
-        [userId]
-      );
-
-      return rows;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
-  }
-
-  async getSelectedContacts(
+  async getContacts(
     userId: string,
-    emails: string[]
+    emails?: string[] | null
   ): Promise<Contact[]> {
     try {
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_CONTACTS_BY_EMAILS,
-        [userId, emails]
-      );
+      const { rows } = emails
+        ? await this.pool.query(PgContacts.SELECT_CONTACTS_BY_EMAILS, [
+            userId,
+            emails
+          ])
+        : await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [userId]);
 
       return rows;
     } catch (error) {
@@ -308,15 +270,17 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getSelectedExportedContacts(
+  async getExportedContacts(
     userId: string,
-    emails: string[]
+    emails?: string[] | null
   ): Promise<Contact[]> {
     try {
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_EXPORTED_CONTACTS_BY_EMAILS,
-        [userId, emails]
-      );
+      const { rows } = emails
+        ? await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS_BY_EMAILS, [
+            userId,
+            emails
+          ])
+        : await this.pool.query(PgContacts.SELECT_EXPORTED_CONTACTS, [userId]);
       return rows;
     } catch (error) {
       this.logger.error(error);
@@ -324,15 +288,19 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getSelectedNonExportedContacts(
+  async getNonExportedContacts(
     userId: string,
-    emails: string[]
+    emails?: string[] | null
   ): Promise<Contact[]> {
     try {
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS,
-        [userId, emails]
-      );
+      const { rows } = emails
+        ? await this.pool.query(
+            PgContacts.SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS,
+            [userId, emails]
+          )
+        : await this.pool.query(PgContacts.SELECT_NON_EXPORTED_CONTACTS, [
+            userId
+          ]);
 
       return rows;
     } catch (error) {
