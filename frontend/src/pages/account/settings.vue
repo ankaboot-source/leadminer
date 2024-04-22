@@ -1,8 +1,8 @@
 <template>
-  <div class="mx-4">
-    <div class="flex items-center">
+  <div class="grid gap-2">
+    <div>
       <Button
-        class="bg-white border-none text-black"
+        class="bg-white border-none text-black m-0 p-0"
         icon="pi pi-arrow-left"
         style="font-size: 2rem"
         label="Settings"
@@ -10,7 +10,7 @@
       />
     </div>
 
-    <h6>Profile Information</h6>
+    <h6 class="text-xl font-semibold">Profile Information</h6>
     <form class="grid gap-4" @submit="updateProfile">
       <div class="grid gap-2">
         <div>
@@ -19,7 +19,7 @@
           >
           <InputText
             v-model="fullName"
-            class="w-full md:w-30rem mb-5"
+            class="w-full md:w-30rem"
             type="text"
             placeholder="Full name"
             required
@@ -56,19 +56,23 @@
         </div>
       </div>
 
-      <Button type="submit" label="Update" :loading="isLoading" />
+      <Button
+        class="w-full md:w-56 gap-4 justify-center"
+        type="submit"
+        label="Update"
+        :loading="isLoading"
+      />
     </form>
-    <br />
 
     <!-- Delete Account Section -->
-    <div>
-      <h6>Delete Account</h6>
+    <div class="grid gap-2 mt-2">
+      <h6 class="text-xl font-semibold -mb-2">Delete Account</h6>
       <p>
         You can permanently delete your account including your mined data. You
         can't undo this action.
       </p>
       <Button
-        class="max-lg:w-full gap-4 max-lg:justify-center"
+        class="w-full md:w-56 gap-4 justify-center"
         severity="danger"
         @click="showWarning"
         ><span class="material-icons" style="font-size: 1.5rem">delete</span
