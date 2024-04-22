@@ -878,7 +878,7 @@ const openCreditModel = (
 async function exportTable(partialExport = false) {
   // if !contactsToExport, then export all contacts
   const contactsToExport = implicitSelectAll.value
-    ? null
+    ? undefined
     : JSON.stringify(
         implicitlySelectedContacts.value.map((item: Contact) => item.email)
       );

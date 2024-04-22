@@ -251,10 +251,7 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async getContacts(
-    userId: string,
-    emails?: string[] | null
-  ): Promise<Contact[]> {
+  async getContacts(userId: string, emails?: string[]): Promise<Contact[]> {
     try {
       const { rows } = emails
         ? await this.pool.query(PgContacts.SELECT_CONTACTS_BY_EMAILS, [
@@ -272,7 +269,7 @@ export default class PgContacts implements Contacts {
 
   async getExportedContacts(
     userId: string,
-    emails?: string[] | null
+    emails?: string[]
   ): Promise<Contact[]> {
     try {
       const { rows } = emails
@@ -290,7 +287,7 @@ export default class PgContacts implements Contacts {
 
   async getNonExportedContacts(
     userId: string,
-    emails?: string[] | null
+    emails?: string[]
   ): Promise<Contact[]> {
     try {
       const { rows } = emails

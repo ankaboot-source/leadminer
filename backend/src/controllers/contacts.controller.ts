@@ -28,9 +28,9 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       const partialExport = req.body.partialExport ?? false;
-      const contactsToExport: string[] | null = req.body.contactsToExport
+      const contactsToExport: string[] | undefined = req.body.contactsToExport
         ? JSON.parse(req.body.contactsToExport)
-        : null;
+        : undefined;
       let statusCode = 200;
 
       try {
