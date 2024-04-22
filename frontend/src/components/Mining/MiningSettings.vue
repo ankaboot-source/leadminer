@@ -47,10 +47,14 @@
           />
           <div class="grow" />
 
-          <Chip v-tooltip="'Email messages selected'">
+          <Badge
+            v-tooltip="'Email messages selected'"
+            size="large"
+            severity="secondary"
+          >
             {{ totalEmails }}
             <i class="pi pi-envelope ml-1.5" />
-          </Chip>
+          </Badge>
         </div>
         <Dropdown
           v-if="$leadminerStore.activeMiningSource"
