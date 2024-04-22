@@ -14,6 +14,14 @@ const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
   503: 'Service is temporarily unavailable. Please check your connection or try again later.',
 };
 
+const usePVToastService = () => {
+  const nuxtApp = useNuxtApp();
+  const getToast: typeof useToast = () =>
+    nuxtApp.vueApp.config.globalProperties.$toast;
+  const toastService = getToast();
+  return toastService;
+};
+
 export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.config.errorHandler = (error) => {
     let message = ERROR_STATUS_MESSAGES[500];
@@ -29,10 +37,13 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
     // eslint-disable-next-line no-console
     console.error(error);
-    useToast().add({
+    const toastService = usePVToastService();
+    console.log(message);
+    toastService.add({
       summary: 'Oops!',
       severity: 'error',
-      detail: message,
+      detail: message ?? 'Something went wrong.',
+      life: 3000,
     });
   };
 });
