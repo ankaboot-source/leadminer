@@ -42,8 +42,8 @@ export default function initializeApp(
 
   app.use(corsMiddleware);
 
-  app.use(json());
-  app.use(urlencoded({ extended: true }));
+  app.use(json({ limit: '5mb' }));
+  app.use(urlencoded({ limit: '5mb', extended: true }));
 
   app.disable('x-powered-by');
 
