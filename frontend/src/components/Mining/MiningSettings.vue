@@ -1,6 +1,6 @@
 <template>
   <Dialog
-    :visible="isVisible"
+    v-model:visible="isVisible"
     modal
     dismissable-mask
     maximizable
@@ -34,22 +34,20 @@
       </Listbox>
 
       <div class="grow p-3">
-        <div class="row items-center">
+        <div class="flex items-center gap-2">
           <div class="text-h6">Select folders to mine</div>
           <Button
             rounded
+            outlined
+            class="size-8"
             icon="pi pi-refresh"
-            class="ml-1.5"
             :loading="props.isLoadingBoxes"
             :disabled="activeMiningSource === undefined"
             @click="onRefreshImapTree"
           />
           <div class="grow" />
 
-          <Chip
-            v-tooltip="'Email messages selected'"
-            class="bg-primary text-white"
-          >
+          <Chip v-tooltip="'Email messages selected'">
             {{ totalEmails }}
             <i class="pi pi-envelope ml-1.5" />
           </Chip>
@@ -116,7 +114,7 @@ const activeMiningTask = computed(
 async function onRefreshImapTree() {
   try {
     $leadminerStore.isLoadingBoxes = true;
-    await $leadminerStore.getBoxes();
+    await $leadminerStore.fetchInbox();
     $leadminerStore.isLoadingBoxes = false;
   } catch (err) {
     $leadminerStore.isLoadingBoxes = false;

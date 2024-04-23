@@ -1,6 +1,6 @@
 <template>
-  <NuxtLayout name="app">
+  <div>
     <mining-stepper />
     <mining-table />
-  </NuxtLayout>
+  </div>
 </template>

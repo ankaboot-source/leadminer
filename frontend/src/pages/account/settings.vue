@@ -1,119 +1,117 @@
 <template>
-  <NuxtLayout name="app" class="q-px-md">
+  <div class="mx-4">
     <div class="flex items-center">
-      <q-btn flat icon="arrow_back" round @click="goToDashboard()" />
-      <div class="text-h4">Settings</div>
+      <Button
+        class="bg-white border-none text-black"
+        icon="pi pi-arrow-left"
+        style="font-size: 2rem"
+        label="Settings"
+        @click="goToDashboard()"
+      />
     </div>
-    <h2 class="text-h6 q-mt-xs">Profile Information</h2>
-    <q-form class="q-gutter-sm flex column" @submit="updateProfile">
-      <q-input v-model="fullName" outlined label="Full Name" />
-      <q-input
-        v-model="email"
-        :disable="isSocialLogin"
-        outlined
-        label="Email"
-      />
-      <q-input
-        v-model="password"
-        outlined
-        hide-bottom-space
-        label="Password"
-        :disable="isSocialLogin"
-        :rules="passwordRules"
-        :type="isPwd ? 'password' : 'text'"
-      >
-        <template #append>
-          <q-icon
-            :name="isPwd ? 'visibility_off' : 'visibility'"
-            class="cursor-pointer"
-            @click="isPwd = !isPwd"
+
+    <h6>Profile Information</h6>
+    <form class="grid gap-4" @submit="updateProfile">
+      <div class="grid gap-2">
+        <div>
+          <label class="block text-900 text-md font-medium mb-2" for=""
+            >Full Name</label
+          >
+          <InputText
+            v-model="fullName"
+            class="w-full md:w-30rem mb-5"
+            type="text"
+            placeholder="Full name"
+            required
           />
-        </template>
-      </q-input>
-      <q-btn
-        no-caps
-        type="submit"
-        :loading="isLoading"
-        class="text-h6"
-        label="Update"
-        color="primary"
-        unelevated
-      />
-    </q-form>
+        </div>
+        <div>
+          <label class="block text-900 text-md font-medium mb-2" for="email"
+            >Email</label
+          >
+          <InputText
+            v-model="email"
+            :disabled="isSocialLogin"
+            class="w-full"
+            :invalid="!Boolean(email) && !isValidEmail(email)"
+            type="email"
+            placeholder="Email address"
+            required
+            aria-describedby="email-help"
+          />
+        </div>
+        <div>
+          <label class="block text-900 text-md font-medium mb-2" for="password"
+            >Password</label
+          >
+          <Password
+            v-model="password"
+            class="w-full"
+            :input-style="{ width: '100%' }"
+            placeholder="password"
+            toggle-mask
+            required
+            :invalid="Boolean(password) && !isValidPassword(password)"
+          />
+        </div>
+      </div>
+
+      <Button type="submit" label="Update" :loading="isLoading" />
+    </form>
     <br />
+
     <!-- Delete Account Section -->
     <div>
-      <h2 class="text-h6 q-mb-xs">Delete Account</h2>
-      <p class="text-body1">
+      <h6>Delete Account</h6>
+      <p>
         You can permanently delete your account including your mined data. You
         can't undo this action.
       </p>
-      <q-btn
-        no-caps
-        class="text-h6"
-        icon="delete"
-        label="Delete my account"
-        color="negative"
-        unelevated
+      <Button
+        class="max-lg:w-full gap-4 max-lg:justify-center"
+        severity="danger"
         @click="showWarning"
-      />
+        ><span class="material-icons" style="font-size: 1.5rem">delete</span
+        ><span>Delete my account</span>
+      </Button>
     </div>
 
     <!-- Warning model Section -->
-    <q-dialog v-model="showDeleteModal">
-      <q-card>
-        <q-card-section class="row items-center q-card-actions">
-          <p class="text-h6 q-ma-none q-mr-md">
-            ⚠️ Deleting your account is permanent. You will lose all your mining
-            data.
-          </p>
-          <q-space />
-          <div class="absolute-top-right">
-            <q-btn
-              v-close-popup
-              class="q-ma-sm q-pa-sm"
-              flat
-              icon="close"
-              size="sm"
-              color="grey-7"
-            />
-          </div>
-        </q-card-section>
-        <q-separator />
-        <!-- Buttons -->
-        <q-card-actions align="right" class="q-pa-md q-pr-lg">
-          <q-btn
-            no-caps
-            unelevated
-            padding="sm md"
-            class="secondary-button text-h6"
-            label="Cancel"
-            @click="closeWarning"
-          />
-          <q-btn
-            no-caps
-            unelevated
-            padding="sm md"
-            color="negative"
-            class="text-h6"
-            label="Delete"
-            :loading="isLoading"
-            @click="deleteAccount"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-  </NuxtLayout>
+    <Dialog
+      v-model:visible="showDeleteModal"
+      modal
+      header="Delete account"
+      :style="{ width: '25rem' }"
+    >
+      <span class="p-text-secondary block mb-5"
+        >Deleting your account is permanent. You will lose all your mining
+        data.</span
+      >
+      <div class="flex flex-row-reverse justify-content-start gap-2">
+        <Button
+          type="button"
+          label="Delete"
+          severity="danger"
+          :loading="isLoading"
+          @click="deleteAccount"
+        ></Button>
+        <Button
+          type="button"
+          label="Cancel"
+          severity="secondary"
+          @click="closeWarning"
+        ></Button>
+      </div>
+    </Dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useQuasar } from 'quasar';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { logout } from '@/utils/auth';
-import { passwordRules } from '@/utils/password';
 
-const $quasar = useQuasar();
+const $toast = useToast();
 const $router = useRouter();
 
 const userId = ref('');
@@ -121,7 +119,6 @@ const email = ref('');
 const fullName = ref('');
 const password = ref('');
 
-const isPwd = ref(true);
 const isLoading = ref(false);
 
 const showDeleteModal = ref(false);
@@ -138,10 +135,11 @@ onMounted(async () => {
     .single();
 
   if (!session || !profile) {
-    $quasar.notify({
-      message: 'Session is expired.',
-      color: 'negative',
-      icon: 'error',
+    $toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Session is expired.',
+      life: 3000,
     });
     await useSupabaseClient().auth.signOut();
     return;
@@ -198,11 +196,13 @@ async function updateProfile() {
 
     await useSupabaseClient().auth.refreshSession();
 
-    $quasar.notify({
-      message: 'Profile information updated successfully',
-      color: 'positive',
-      icon: 'check',
+    $toast.add({
+      severity: 'success',
+      summary: 'Update information',
+      detail: 'Profile information updated successfully',
+      life: 3000,
     });
+
     isLoading.value = false;
   } catch (err) {
     isLoading.value = false;
@@ -224,5 +224,3 @@ async function deleteAccount() {
   }
 }
 </script>
-~/src/utils/auth~/src/utils/password~/src/utils/auth~/src/utils/password
-~~/utils/auth~~/utils/password

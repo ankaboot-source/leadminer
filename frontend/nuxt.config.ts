@@ -5,9 +5,7 @@ export default defineNuxtConfig({
   srcDir: 'src',
   imports: {
     autoImport: true,
-  },
-  eslint: {
-    lintOnStart: false,
+    dirs: ['stores'],
   },
   $development: {
     devtools: { enabled: true },
@@ -15,14 +13,19 @@ export default defineNuxtConfig({
       port: 8082,
     },
     typescript: {
-      // Enable after removing quasar
-      typeCheck: false,
+      typeCheck: true,
     },
   },
   app: {
     head: {
       titleTemplate: `${pkg.productName}`,
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
+        },
+      ],
     },
   },
   runtimeConfig: {
@@ -40,25 +43,16 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxt/test-utils/module',
-    '@nuxtjs/eslint-module',
     '@nuxtjs/i18n',
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
     'nuxt-primevue',
-    'nuxt-quasar-ui',
   ],
   primevue: {
     cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
     components: {
       exclude: ['Editor', 'Chart'],
-    },
-  },
-  quasar: {
-    plugins: ['Notify'],
-    sassVariables: '~/assets/css/quasar.variables.scss',
-    extras: {
-      fontIcons: ['material-icons', 'mdi-v5', 'fontawesome-v5'],
     },
   },
   i18n: {
