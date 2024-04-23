@@ -2,8 +2,9 @@
   <div class="grid gap-2">
     <div class="flex">
       <Button
-        class="bg-white border-none text-black"
         unstyled
+        plain
+        text
         icon="pi pi-arrow-left"
         @click="goToDashboard()"
       />
@@ -14,9 +15,7 @@
     <form class="grid gap-4" @submit="updateProfile">
       <div class="grid gap-2">
         <div>
-          <label class="block text-900 text-md font-medium mb-2" for=""
-            >Full Name</label
-          >
+          <label class="block text-md font-medium mb-2">Full Name</label>
           <InputText
             v-model="fullName"
             class="w-full md:w-30rem"
@@ -25,7 +24,7 @@
           />
         </div>
         <div>
-          <label class="block text-900 text-md font-medium mb-2" for="email"
+          <label class="block text-md font-medium mb-2" for="email"
             >Email</label
           >
           <InputText
@@ -39,7 +38,7 @@
           />
         </div>
         <div>
-          <label class="block text-900 text-md font-medium mb-2" for="password"
+          <label class="block text-md font-medium mb-2" for="password"
             >Password</label
           >
           <Password
