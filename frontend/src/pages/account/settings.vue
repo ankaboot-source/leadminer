@@ -1,13 +1,13 @@
 <template>
   <div class="grid gap-2">
-    <div>
+    <div class="flex">
       <Button
         class="bg-white border-none text-black m-0 p-0"
+        unstyled
         icon="pi pi-arrow-left"
-        style="font-size: 2rem"
-        label="Settings"
         @click="goToDashboard()"
       />
+      <h2 class="text-3xl">Settings</h2>
     </div>
 
     <h6 class="text-xl font-semibold">Profile Information</h6>
@@ -54,7 +54,7 @@
       </div>
 
       <Button
-        class="w-full md:w-56 gap-4 justify-center"
+        class="w-full md:w-56 gap-4"
         type="submit"
         label="Update"
         :loading="isLoading"
