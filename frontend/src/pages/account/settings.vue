@@ -1,13 +1,7 @@
 <template>
   <div class="grid gap-2">
     <div class="flex">
-      <Button
-        unstyled
-        plain
-        text
-        icon="pi pi-arrow-left"
-        @click="goToDashboard()"
-      />
+      <Button unstyled icon="pi pi-arrow-left" @click="goToDashboard()" />
       <h2 class="text-3xl">Settings</h2>
     </div>
 
