@@ -17,17 +17,8 @@ export interface Contacts {
     emailStatus: { status: Status; email: string }[]
   ): Promise<boolean>;
   getUnverifiedEmails(userId: string): Promise<string[]>;
-  getContacts(userId: string): Promise<Contact[]>;
-  getExportedContacts(userId: string): Promise<Contact[]>;
-  getNonExportedContacts(userId: string): Promise<Contact[]>;
-  getSelectedContacts(userId: string, emails: string[]): Promise<Contact[]>;
-  getSelectedExportedContacts(
-    userId: string,
-    emails: string[]
-  ): Promise<Contact[]>;
-  getSelectedNonExportedContacts(
-    userId: string,
-    emails: string[]
-  ): Promise<Contact[]>;
+  getContacts(userId: string, emails?: string[]): Promise<Contact[]>;
+  getExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
+  getNonExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
   registerExportedContacts(contactIds: string[], userId: string): Promise<void>;
 }
