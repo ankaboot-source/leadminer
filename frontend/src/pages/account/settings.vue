@@ -2,7 +2,7 @@
   <div class="grid gap-2">
     <div class="flex">
       <Button
-        class="bg-white border-none text-black m-0 p-0"
+        class="bg-white border-none text-black"
         unstyled
         icon="pi pi-arrow-left"
         @click="goToDashboard()"
