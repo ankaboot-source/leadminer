@@ -1,24 +1,27 @@
 <template>
-  <div class="grid md:flex gap-2">
-    <Button
+  <div class="grid gap-4 md:flex md:gap-0">
+    <div
       v-tooltip.bottom="{
         value: `${CREDITS_PER_EMAIL} credit per email / ${CREDITS_PER_CONTACT} credits per contact`,
         showDelay: 0,
         hideDelay: 300,
       }"
-      class="flex justify-center md:justify-start cursor-default md:w-[155px]"
-      :class="creditsBadgeState"
-      outlined
-      severity="danger"
-      disabled
     >
-      <PhosphorCoin class="h-[1.5rem] mr-2" />
-      <span :class="creditsBadgeTextAnimation">
-        {{ formattedCredits }}
-      </span>
-    </Button>
+      <Button
+        class="flex justify-center w-full cursor-default md:rounded-r-none"
+        :class="creditsBadgeState"
+        outlined
+        severity="danger"
+        disabled
+      >
+        <PhosphorCoin class="h-[1.5rem] mr-2" />
+        <span :class="creditsBadgeTextAnimation">
+          {{ formattedCredits }}
+        </span>
+      </Button>
+    </div>
     <Button
-      class="flex space-x-1 items-center justify-center md:justify-normal text-white"
+      class="flex space-x-1 items-center justify-center md:rounded-l-none"
       severity="contrast"
       size="small"
       @click="refillCreditsOrUpgrade"
