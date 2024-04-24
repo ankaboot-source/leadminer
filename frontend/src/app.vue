@@ -56,8 +56,8 @@ useSupabaseClient().auth.onAuthStateChange((event) => {
   }
 
   if (event === 'SIGNED_OUT') {
-    $router.push('/auth/login');
     $store.$reset();
+    $router.push('/auth/login');
   }
 });
 

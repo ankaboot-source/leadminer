@@ -1,15 +1,24 @@
 <template>
-  <Panel class="mb-4" header="Start a new mining" toggleable>
+  <Panel
+    class="mb-4"
+    :header="panelHeader"
+    toggleable
+    :collapsed="collapsePannel"
+  >
     <Stepper v-model:active-step="stepper" linear>
-      <StepperPanel header="Select source">
+      <StepperPanel header="Source">
         <template #content="{ nextCallback }">
-          <SourcePanel :next-callback="nextCallback" />
+          <SourcePanel
+            v-model:title="panelHeader"
+            :next-callback="nextCallback"
+          />
         </template>
       </StepperPanel>
 
       <StepperPanel header="Mine">
         <template #content="{ prevCallback, nextCallback }">
           <MinePanel
+            v-model:title="panelHeader"
             :mining-source="$leadminerStore.activeMiningSource!"
             :next-callback="nextCallback"
             :prev-callback="prevCallback"
@@ -18,7 +27,10 @@
       </StepperPanel>
       <StepperPanel header="Clean">
         <template #content="{ prevCallback }">
-          <CleanPanel :prev-callback="prevCallback" />
+          <CleanPanel
+            v-model:title="panelHeader"
+            :prev-callback="prevCallback"
+          />
         </template>
       </StepperPanel>
     </Stepper>
@@ -43,7 +55,10 @@ const $route = useRoute();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 
+const panelHeader = ref('');
 const stepper = ref();
+
+const collapsePannel = ref(false);
 
 const { error, provider, source } = $route.query;
 
@@ -61,6 +76,7 @@ if (source) {
 
 onMounted(() => {
   useRouter().replace({ query: {} });
+  collapsePannel.value = $leadminerStore.extractedEmails > 0;
 });
 </script>
 <style>
