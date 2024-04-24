@@ -765,8 +765,8 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
-await useAsyncData('refine', () => refineContacts());
-await useAsyncData('contacts', () => syncTable());
+useAsyncData('refine', () => refineContacts());
+useAsyncData('contacts', () => syncTable());
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);

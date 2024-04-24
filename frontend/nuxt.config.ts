@@ -3,10 +3,12 @@ import pkg from './package.json';
 
 export default defineNuxtConfig({
   srcDir: 'src',
+
   imports: {
     autoImport: true,
     dirs: ['stores'],
   },
+
   $development: {
     devtools: { enabled: true },
     devServer: {
@@ -16,6 +18,7 @@ export default defineNuxtConfig({
       typeCheck: true,
     },
   },
+
   app: {
     head: {
       titleTemplate: `${pkg.productName}`,
@@ -28,6 +31,7 @@ export default defineNuxtConfig({
       ],
     },
   },
+
   runtimeConfig: {
     public: {
       SERVER_ENDPOINT: process.env.SERVER_ENDPOINT,
@@ -41,6 +45,7 @@ export default defineNuxtConfig({
       EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
     },
   },
+
   modules: [
     '@nuxt/test-utils/module',
     '@nuxtjs/i18n',
@@ -49,16 +54,19 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'nuxt-primevue',
   ],
+
   primevue: {
     cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
     components: {
       exclude: ['Editor', 'Chart'],
     },
   },
+
   i18n: {
     locales: ['en', 'fr'],
     defaultLocale: 'en',
   },
+
   postcss: {
     plugins: {
       autoprefixer: {
@@ -75,11 +83,13 @@ export default defineNuxtConfig({
       },
     },
   },
+
   css: [
     'primeicons/primeicons.css',
     '~/assets/themes/aura/aura-light/indigo/theme.scss',
     '~/assets/css/app.scss',
   ],
+
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
     key: process.env.SUPABASE_ANON_KEY,
