@@ -11,7 +11,6 @@
         <div>
           <label class="block text-md font-medium mb-2">Full Name</label>
           <InputText v-model="fullName" class="w-full md:w-30rem" type="text" />
-
         </div>
         <div>
           <label class="block text-md font-medium mb-2" for="email"
