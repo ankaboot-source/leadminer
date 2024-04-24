@@ -1,5 +1,10 @@
 <template>
-  <Panel class="mb-4" :header="panelHeader" toggleable>
+  <Panel
+    class="mb-4"
+    :header="panelHeader"
+    toggleable
+    :collapsed="collapsePannel"
+  >
     <Stepper v-model:active-step="stepper" linear>
       <StepperPanel header="Source">
         <template #content="{ nextCallback }">
@@ -53,6 +58,8 @@ const $leadminerStore = useLeadminerStore();
 const panelHeader = ref('');
 const stepper = ref();
 
+const collapsePannel = ref(false);
+
 const { error, provider, source } = $route.query;
 
 if (source) {
@@ -69,6 +76,7 @@ if (source) {
 
 onMounted(() => {
   useRouter().replace({ query: {} });
+  collapsePannel.value = $leadminerStore.extractedEmails > 0;
 });
 </script>
 <style>

@@ -728,6 +728,8 @@ async function getContacts(userId: string): Promise<Contact[]> {
     throw error;
   }
 
+  leadminerStore.extractedEmails = [...data].length;
+
   return data ? convertDates(data) : [];
 }
 
