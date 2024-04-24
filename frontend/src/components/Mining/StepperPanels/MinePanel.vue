@@ -43,6 +43,7 @@
           $leadminerStore.isLoadingBoxes
         "
         class="text-black"
+        severity="secondary"
         label="Fine tune mining"
         outlined
         @click="openMiningSettings"
@@ -140,9 +141,9 @@ const extractionProgress = computed(() =>
 
 const progressTooltip = computed(
   () =>
-    `<div class='text-xs'>Mined / Total emails
+    `Mined / Total emails
       ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
-      </div>`
+      `
 );
 
 onMounted(async () => {
