@@ -4,7 +4,7 @@
       <AppLogo />
     </RouterLink>
 
-    <div class="md:flex md:items-center md:gap-1 max-md:hidden">
+    <div class="hidden md:flex md:items-center md:gap-1">
       <CreditsCounter v-if="shouldShowCreditsBadge" />
       <div v-show="shouldShowSettings">
         <Button
@@ -20,36 +20,29 @@
 
     <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />
 
-    <Sidebar v-model:visible="visible">
+    <Sidebar v-model:visible="visible" class="p-3.5">
       <template #container>
-        <div class="absolute flex flex-column h-screen px-6">
-          <div class="w-full">
-            <div
-              class="flex align-items-center justify-content-between pt-3.5 pb-10 flex-shrink-0"
-            >
-              <RouterLink to="/dashboard">
-                <AppLogo />
-              </RouterLink>
-            </div>
+        <div class="flex flex-column">
+          <RouterLink to="/dashboard">
+            <AppLogo />
+          </RouterLink>
+        </div>
 
-            <CreditsCounter v-if="shouldShowCreditsBadge" />
-          </div>
-          <div class="overflow-y-auto"></div>
-
-          <div class="overflow-y-auto w-full"></div>
-          <div class="mt-auto w-full mb-4">
-            <Button
-              class="w-full pl-10 text-lowercase justify-center"
-              text
-              @click="navigateTo('/account/settings')"
-            >
-              {{ $user?.email }}
-            </Button>
-            <Button class="w-full flex justify-center gap-2" @click="logout()">
-              Logout
-              <i class="pi pi-sign-out"></i>
-            </Button>
-          </div>
+        <div class="overflow-y-auto mt-10">
+          <CreditsCounter v-if="shouldShowCreditsBadge" />
+        </div>
+        <div class="mt-auto w-full">
+          <Button
+            class="w-full pl-10 text-lowercase justify-center"
+            text
+            @click="navigateTo('/account/settings')"
+          >
+            {{ $user?.email }}
+          </Button>
+          <Button class="w-full flex justify-center gap-2" @click="logout()">
+            Logout
+            <i class="pi pi-sign-out"></i>
+          </Button>
         </div>
       </template>
     </Sidebar>
