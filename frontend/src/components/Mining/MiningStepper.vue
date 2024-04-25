@@ -1,24 +1,26 @@
 <template>
-  <Panel
-    class="mb-4"
-    :header="panelHeader"
-    toggleable
-    :collapsed="collapsePannel"
-  >
+  <Panel class="mb-4" toggleable :collapsed="collapsePannel">
+    <template #header>
+      <Button
+        severity="secondary"
+        unstyled
+        @click="collapsePannel = !collapsePannel"
+      >
+        <span class="font-semibold">
+          Mine contacts from your email account
+        </span>
+      </Button>
+    </template>
     <Stepper v-model:active-step="stepper" linear>
       <StepperPanel header="Source">
         <template #content="{ nextCallback }">
-          <SourcePanel
-            v-model:title="panelHeader"
-            :next-callback="nextCallback"
-          />
+          <SourcePanel :next-callback="nextCallback" />
         </template>
       </StepperPanel>
 
       <StepperPanel header="Mine">
         <template #content="{ prevCallback, nextCallback }">
           <MinePanel
-            v-model:title="panelHeader"
             :mining-source="$leadminerStore.activeMiningSource!"
             :next-callback="nextCallback"
             :prev-callback="prevCallback"
@@ -27,10 +29,7 @@
       </StepperPanel>
       <StepperPanel header="Clean">
         <template #content="{ prevCallback }">
-          <CleanPanel
-            v-model:title="panelHeader"
-            :prev-callback="prevCallback"
-          />
+          <CleanPanel :prev-callback="prevCallback" />
         </template>
       </StepperPanel>
     </Stepper>
@@ -55,10 +54,9 @@ const $route = useRoute();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 
-const panelHeader = ref('');
 const stepper = ref();
 
-const collapsePannel = ref(false);
+const collapsePannel = ref(true);
 
 const { error, provider, source } = $route.query;
 

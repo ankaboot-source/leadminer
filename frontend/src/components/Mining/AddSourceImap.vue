@@ -1,7 +1,6 @@
 <template>
   <Button
     outlined
-    class="rounded-none border-black text-slate-700"
     label="Other email provider (IMAP)"
     icon="pi pi-inbox"
     @click="openImapCredentialsDialog"
