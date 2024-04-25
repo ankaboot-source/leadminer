@@ -44,12 +44,10 @@
           label="Cancel"
           severity="secondary"
           @click="showImapCredentialsDialog = false"
-        ></Button>
-        <Button
-          type="button"
-          label="Save"
-          @click="onSubmitImapCredentials"
-        ></Button>
+        >
+        </Button>
+        <Button type="button" label="Save" @click="onSubmitImapCredentials">
+        </Button>
       </div>
     </div>
   </Dialog>

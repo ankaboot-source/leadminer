@@ -7,9 +7,9 @@
   >
     <template #container>
       <div class="grid gap-4 px-8 py-4 text-base">
-        <span class="text-lg md:text-xl font-bold merriweather"
-          >🔐 Authorization Required</span
-        >
+        <span class="text-lg md:text-xl font-bold merriweather">
+          🔐 Authorization Required
+        </span>
         <span>
           It seems like you have declined to grant authorization for us to
           access your
@@ -34,13 +34,14 @@
                   securely and used solely for the purposes of providing you
                   with the best contact mining experience in full compliance
                   with the GDPR.
-                  <a
+                  <NuxtLink
+                    class="text-indigo-500"
                     href="https://www.leadminer.io/data-privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Read our Data Privacy Policy for more information</a
-                  >.
+                    Read our Data Privacy Policy for more information.
+                  </NuxtLink>
                 </span>
               </div>
             </div>

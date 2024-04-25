@@ -54,8 +54,9 @@
           class="w-full md:w-56 gap-4 justify-center"
           severity="danger"
           @click="showWarning"
-          ><span class="material-icons" style="font-size: 1.5rem">delete</span
-          ><span>Delete my account</span>
+        >
+          <span class="material-icons">delete</span>
+          <span>Delete my account</span>
         </Button>
       </div>
     </Panel>
@@ -67,10 +68,9 @@
       header="Delete account"
       :style="{ width: '25rem' }"
     >
-      <span class="p-text-secondary block mb-5"
-        >Deleting your account is permanent. You will lose all your mining
-        data.</span
-      >
+      <span class="p-text-secondary block mb-5">
+        Deleting your account is permanent. You will lose all your mining data.
+      </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">
         <Button
           type="button"
@@ -78,13 +78,15 @@
           severity="danger"
           :loading="isLoading"
           @click="deleteAccount"
-        ></Button>
+        >
+        </Button>
         <Button
           type="button"
           label="Cancel"
           severity="secondary"
           @click="closeWarning"
-        ></Button>
+        >
+        </Button>
       </div>
     </Dialog>
   </div>

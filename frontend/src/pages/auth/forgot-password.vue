@@ -23,8 +23,9 @@
             v-if="!!email && !isValidEmail(email)"
             id="email-help"
             class="text-red-400 text-left pl-4"
-            >Please enter a valid email</small
           >
+            Please enter a valid email
+          </small>
         </div>
       </div>
       <Button
@@ -34,7 +35,9 @@
       />
       <p>
         Back to
-        <NuxtLink to="/auth/login" class="font-bold link"> Sign in </NuxtLink>
+        <NuxtLink to="/auth/login" class="font-bold text-indigo-500">
+          Sign in
+        </NuxtLink>
       </p>
     </div>
   </ClientOnly>

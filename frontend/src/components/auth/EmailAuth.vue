@@ -16,8 +16,9 @@
           v-if="!!email && !isValidEmail(email)"
           id="email-help"
           class="text-red-400 text-left pl-4"
-          >Please enter a valid email</small
         >
+          Please enter a valid email
+        </small>
       </div>
       <div class="grid gap-1">
         <label class="text-left" for="password">Password</label>
@@ -65,8 +66,9 @@
           v-if="!!password && !isValidPassword(password)"
           id="password-help"
           class="text-red-400 text-left pl-4"
-          >Please enter a valid password</small
         >
+          Please enter a valid password
+        </small>
       </div>
       <div class="pt-3">
         <Button
@@ -97,8 +99,9 @@
               v-if="!!email && !isValidEmail(email)"
               id="email-help"
               class="text-red-400 text-left pl-4"
-              >Please enter a valid email</small
             >
+              Please enter a valid email
+            </small>
           </div>
           <div class="grid gap-1">
             <label class="text-left" for="password">Password</label>
@@ -116,13 +119,14 @@
               v-if="!!password && !isValidPassword(password)"
               id="password-help"
               class="text-red-400 text-left pl-4"
-              >Please enter a valid password</small
             >
+              Please enter a valid password
+            </small>
           </div>
         </div>
-        <NuxtLink class="text-right" to="/auth/forgot-password">
-          Forgot your password?</NuxtLink
-        >
+        <NuxtLink class="text-right text-indigo-500" to="/auth/forgot-password">
+          Forgot your password?
+        </NuxtLink>
       </div>
       <div class="pt-1">
         <Button

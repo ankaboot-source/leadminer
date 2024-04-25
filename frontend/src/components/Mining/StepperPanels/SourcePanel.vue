@@ -13,9 +13,9 @@
     </div>
     <div v-if="sourceOptions.length">
       <Divider layout="vertical" class="hidden md:flex"><b>OR</b></Divider>
-      <Divider layout="horizontal" class="flex md:hidden" align="center"
-        ><b>OR</b></Divider
-      >
+      <Divider layout="horizontal" class="flex md:hidden" align="center">
+        <b>OR</b>
+      </Divider>
     </div>
     <div class="w-full flex flex-col gap-3">
       <span>Add a new email provider</span>
