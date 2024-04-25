@@ -79,11 +79,16 @@
           @click="clearFilter()"
         />
         <!-- Settings -->
-        <Button
-          icon="pi pi-sliders-h"
-          :badge="defaultOnFilters ? defaultOnFilters.toString() : undefined"
-          @click="toggleSettingsPanel"
-        />
+        <Button @click="toggleSettingsPanel">
+          <span class="p-button-label">
+            <i
+              v-if="defaultOnFilters > 0"
+              v-badge="defaultOnFilters.toString()"
+              class="pi pi-sliders-h"
+            />
+            <i v-else class="pi pi-sliders-h" />
+          </span>
+        </Button>
         <OverlayPanel ref="settingsPanel">
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
             <li class="flex justify-between">
@@ -993,7 +998,6 @@ onUnmounted(() => {
 .fullscreenTable {
   position: fixed;
   z-index: 3;
-  background-color: white;
   max-width: 100vw;
   max-height: 100vh;
   top: 0;
