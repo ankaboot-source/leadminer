@@ -10,12 +10,7 @@
       <div class="grid gap-2">
         <div>
           <label class="block text-md font-medium mb-2">Full Name</label>
-          <InputText
-            v-model="fullName"
-            class="w-full md:w-30rem"
-            type="text"
-            required
-          />
+          <InputText v-model="fullName" class="w-full md:w-30rem" type="text" />
         </div>
         <div>
           <label class="block text-md font-medium mb-2" for="email"
@@ -27,7 +22,6 @@
             class="w-full"
             :invalid="!Boolean(email) && !isValidEmail(email)"
             type="email"
-            required
             aria-describedby="email-help"
           />
         </div>
@@ -40,7 +34,6 @@
             class="w-full"
             :input-style="{ width: '100%' }"
             toggle-mask
-            required
             :invalid="Boolean(password) && !isValidPassword(password)"
           />
         </div>
