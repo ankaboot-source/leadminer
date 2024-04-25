@@ -998,6 +998,7 @@ onUnmounted(() => {
 .fullscreenTable {
   position: fixed;
   z-index: 3;
+  background-color: white;
   max-width: 100vw;
   max-height: 100vh;
   top: 0;
