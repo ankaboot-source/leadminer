@@ -34,7 +34,7 @@
       />
       <p>
         Back to
-        <NuxtLink to="/auth/login" class="font-bold text-[#6366f1]">
+        <NuxtLink to="/auth/login" class="font-bold text-blue-500">
           Sign in
         </NuxtLink>
       </p>

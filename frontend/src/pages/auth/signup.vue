@@ -16,7 +16,7 @@
 
       <span>
         Already have an account?
-        <NuxtLink to="/auth/login" class="font-bold text-[#6366f1]">
+        <NuxtLink to="/auth/login" class="font-bold text-blue-500">
           Sign in
         </NuxtLink>
       </span>
@@ -24,7 +24,7 @@
       <span class="text-gray-700 full-width font-[merriweather]">
         By signing up, you agree to the
         <a
-          class="text-[#6366f1]"
+          class="text-blue-500"
           href="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
@@ -34,7 +34,7 @@
         and
         <Button unstyled link
           ><a
-            class="text-[#6366f1]"
+            class="text-blue-500"
             href="https://www.leadminer.io/data-privacy"
             target="_blank"
             rel="noopener noreferrer"
