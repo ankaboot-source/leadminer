@@ -136,9 +136,6 @@ const { nextCallback, prevCallback, miningSource } = defineProps<{
   prevCallback: Function;
 }>();
 
-const title = defineModel<string>('title');
-title.value = 'Mine contacts from your email account';
-
 const $toast = useToast();
 const $leadminerStore = useLeadminerStore();
 

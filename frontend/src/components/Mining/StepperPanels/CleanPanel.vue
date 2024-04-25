@@ -39,9 +39,6 @@ const { prevCallback } = defineProps<{
   prevCallback: Function;
 }>();
 
-const title = defineModel<string>('title');
-title.value = 'Clean your contacts from unreachable email address';
-
 const $toast = useToast();
 const $leadminerStore = useLeadminerStore();
 
