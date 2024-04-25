@@ -585,7 +585,6 @@ function toggleSettingsPanel(event: Event) {
 
 const validToggle = ref(true); // status: valid
 function onValidToggle(toggle?: boolean) {
-  console.log(filters.value.status.value);
   if (toggle !== undefined) {
     validToggle.value = toggle;
   }
