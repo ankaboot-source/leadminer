@@ -3,7 +3,6 @@
     outlined
     :icon="icon"
     :label="label"
-    class="rounded-none border-black text-slate-700"
     @click="addOAuthAccount(source)"
   />
 </template>

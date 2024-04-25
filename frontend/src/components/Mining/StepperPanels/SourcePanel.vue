@@ -7,15 +7,13 @@
         checkmark
         :options="sourceOptions"
         option-label="email"
-        placeholder="email"
+        placeholder="email address"
         @update:model-value="onSourceChange"
       />
     </div>
     <div v-if="sourceOptions.length">
-      <Divider layout="vertical" class="hidden md:flex"><b>OR</b></Divider>
-      <Divider layout="horizontal" class="flex md:hidden" align="center"
-        ><b>OR</b></Divider
-      >
+      <Separator layout="vertical" content="or" class="hidden md:flex" />
+      <Separator layout="horizontal" content="or" class="flex md:hidden" />
     </div>
     <div class="w-full flex flex-col gap-3">
       <span>Add a new email provider</span>
@@ -41,9 +39,6 @@ const { nextCallback } = defineProps<{
   // skipcq: JS-0296
   nextCallback: Function;
 }>();
-
-const title = defineModel<string>('title');
-title.value = 'Start a new mining';
 
 const $leadminerStore = useLeadminerStore();
 
