@@ -16,12 +16,15 @@
 
       <span>
         Already have an account?
-        <NuxtLink to="/auth/login" class="font-bold"> Sign in </NuxtLink>
+        <NuxtLink to="/auth/login" class="font-bold text-[#6366f1]">
+          Sign in
+        </NuxtLink>
       </span>
 
       <span class="text-gray-700 full-width font-[merriweather]">
         By signing up, you agree to the
         <a
+          class="text-[#6366f1]"
           href="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
@@ -29,12 +32,15 @@
           Terms of Service
         </a>
         and
-        <a
-          href="https://www.leadminer.io/data-privacy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Data Privacy Policy</a
+        <Button unstyled link
+          ><a
+            class="text-[#6366f1]"
+            href="https://www.leadminer.io/data-privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Data Privacy Policy</a
+          ></Button
         >. You also agree to receive information and offers relevant to our
         services via email.
       </span>
