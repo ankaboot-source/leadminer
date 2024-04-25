@@ -728,6 +728,8 @@ async function getContacts(userId: string): Promise<Contact[]> {
     throw error;
   }
 
+  leadminerStore.extractedEmails = [...data].length;
+
   return data ? convertDates(data) : [];
 }
 
@@ -765,8 +767,8 @@ watch(activeMiningTask, async (isActive) => {
   }
 });
 
-await useAsyncData('refine', () => refineContacts());
-await useAsyncData('contacts', () => syncTable());
+useAsyncData('refine', () => refineContacts());
+useAsyncData('contacts', () => syncTable());
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);

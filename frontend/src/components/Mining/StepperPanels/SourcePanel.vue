@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col md:flex-row gap-2 md:gap-8">
     <div v-if="sourceOptions.length" class="w-full flex flex-col gap-3">
-      <p>Pick a source of contacts to mine</p>
+      <p>Pick an email address to mine</p>
       <Dropdown
         v-model="sourceModel"
         checkmark
@@ -41,6 +41,9 @@ const { nextCallback } = defineProps<{
   // skipcq: JS-0296
   nextCallback: Function;
 }>();
+
+const title = defineModel<string>('title');
+title.value = 'Start a new mining';
 
 const $leadminerStore = useLeadminerStore();
 

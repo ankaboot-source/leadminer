@@ -1,8 +1,8 @@
 <template>
   <div class="py-3.5 flex justify-between">
-    <RouterLink to="/dashboard">
+    <NuxtLink to="/dashboard">
       <AppLogo />
-    </RouterLink>
+    </NuxtLink>
 
     <div class="hidden md:flex md:items-center md:gap-1">
       <CreditsCounter v-if="shouldShowCreditsBadge" />

@@ -6,26 +6,27 @@
     :dismissable="false"
   >
     <template #container>
-      <div class="grid gap-3 p-8">
-        <span class="text-xl font-bold merriweather"
+      <div class="grid gap-4 px-8 py-4 text-base">
+        <span class="text-lg md:text-xl font-bold merriweather"
           >🔐 Authorization Required</span
         >
         <span>
-          We apologize for the inconvenience. It seems like you have declined to
-          grant authorization for us to access your
+          It seems like you have declined to grant authorization for us to
+          access your
           <span v-if="provider && provider === 'google'">Google</span>
           <span v-else-if="provider && provider === 'azure'">Outlook</span>
           <span v-else>Google or Outlook</span> mailbox. Without authorization,
-          we are unable to extract, clean, and enrich contacts from your
-          mailbox.
+          we are unable to extract contacts from your mailbox.
         </span>
 
-        <Card class="bg-green-50">
+        <Card class="bg-green-50 text-base">
           <template #content>
-            <div class="grid grid-flow-col gap-3 items-center">
-              <img class="size-20" src="/icons/gdpr.png" alt="gdpr-logo" />
+            <div class="grid grid-flow-row md:grid-flow-col gap-3 items-center">
+              <div class="flex justify-center">
+                <img class="size-16" src="/icons/gdpr.png" alt="gdpr-logo" />
+              </div>
               <div>
-                <div class="text-lg font-medium">Your data is yours only</div>
+                <p class="md:text-lg font-medium">Your data is yours only</p>
                 <span>
                   We assure you that we will not use your data commercially or
                   share it with any third parties without your explicit
@@ -46,9 +47,8 @@
           </template>
         </Card>
         <div>
-          For any questions or assistance, our support team is here to help at
-          <a href="mailto:support@leadminer.io">support@leadminer.io</a>. Keep
-          your data secure and take control of your contact mining journey!🔒💪
+          Keep your data secure and take control of your contact mining
+          journey!🔒💪
         </div>
 
         <div class="flex justify-end gap-2">
