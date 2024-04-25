@@ -1,21 +1,19 @@
 <template>
   <div class="flex flex-col md:flex-row gap-2 md:gap-8">
     <div v-if="sourceOptions.length" class="w-full flex flex-col gap-3">
-      <p>Pick a source of contacts to mine</p>
+      <p>Pick an email address to mine</p>
       <Dropdown
         v-model="sourceModel"
         checkmark
         :options="sourceOptions"
         option-label="email"
-        placeholder="email"
+        placeholder="email address"
         @update:model-value="onSourceChange"
       />
     </div>
     <div v-if="sourceOptions.length">
-      <Divider layout="vertical" class="hidden md:flex"><b>OR</b></Divider>
-      <Divider layout="horizontal" class="flex md:hidden" align="center"
-        ><b>OR</b></Divider
-      >
+      <Separator layout="vertical" content="or" class="hidden md:flex" />
+      <Separator layout="horizontal" content="or" class="flex md:hidden" />
     </div>
     <div class="w-full flex flex-col gap-3">
       <span>Add a new email provider</span>

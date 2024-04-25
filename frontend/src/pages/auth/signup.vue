@@ -10,7 +10,7 @@
 
       <div>
         <SocialAuth />
-        <HorizontalSeparator content="or sign up with email" />
+        <Separator layout="horizontal" content="or sign up with email" />
         <EmailAuth state="signup" />
       </div>
 
@@ -48,5 +48,5 @@
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
-import HorizontalSeparator from '@/components/HorizontalSeparator.vue';
+import Separator from '@/components/Separator.vue';
 </script>

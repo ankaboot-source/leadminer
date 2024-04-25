@@ -19,7 +19,7 @@
           {{ convertSeconds(getElapsedTime()) }}.
         </div>
         <div v-else>
-          Estimated mining time:
+          Estimated time:
           {{ estimatedRemainingTimeConverted }}
         </div>
       </slot>

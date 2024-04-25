@@ -1,7 +1,18 @@
 <template>
-  <Panel class="mb-4" header="Start a new mining" toggleable>
+  <Panel class="mb-4" toggleable :collapsed="collapsePannel">
+    <template #header>
+      <Button
+        severity="secondary"
+        unstyled
+        @click="collapsePannel = !collapsePannel"
+      >
+        <span class="font-semibold">
+          Mine contacts from your email account
+        </span>
+      </Button>
+    </template>
     <Stepper v-model:active-step="stepper" linear>
-      <StepperPanel header="Select source">
+      <StepperPanel header="Source">
         <template #content="{ nextCallback }">
           <SourcePanel :next-callback="nextCallback" />
         </template>
@@ -45,6 +56,8 @@ const $leadminerStore = useLeadminerStore();
 
 const stepper = ref();
 
+const collapsePannel = ref(true);
+
 const { error, provider, source } = $route.query;
 
 if (source) {
@@ -61,6 +74,7 @@ if (source) {
 
 onMounted(() => {
   useRouter().replace({ query: {} });
+  collapsePannel.value = $leadminerStore.extractedEmails > 0;
 });
 </script>
 <style>

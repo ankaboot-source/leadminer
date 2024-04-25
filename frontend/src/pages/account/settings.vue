@@ -1,32 +1,19 @@
 <template>
-  <div class="mx-4">
-    <div class="flex items-center">
-      <Button
-        class="bg-white border-none text-black"
-        icon="pi pi-arrow-left"
-        style="font-size: 2rem"
-        label="Settings"
-        @click="goToDashboard()"
-      />
+  <div class="grid gap-2">
+    <div class="flex">
+      <Button unstyled icon="pi pi-arrow-left" @click="goToDashboard()" />
+      <h2 class="text-3xl">Settings</h2>
     </div>
 
-    <h6>Profile Information</h6>
+    <h6 class="text-xl font-semibold">Profile Information</h6>
     <form class="grid gap-4" @submit="updateProfile">
       <div class="grid gap-2">
         <div>
-          <label class="block text-900 text-md font-medium mb-2" for=""
-            >Full Name</label
-          >
-          <InputText
-            v-model="fullName"
-            class="w-full md:w-30rem mb-5"
-            type="text"
-            placeholder="Full name"
-            required
-          />
+          <label class="block text-md font-medium mb-2">Full Name</label>
+          <InputText v-model="fullName" class="w-full md:w-30rem" type="text" />
         </div>
         <div>
-          <label class="block text-900 text-md font-medium mb-2" for="email"
+          <label class="block text-md font-medium mb-2" for="email"
             >Email</label
           >
           <InputText
@@ -35,40 +22,40 @@
             class="w-full"
             :invalid="!Boolean(email) && !isValidEmail(email)"
             type="email"
-            placeholder="Email address"
-            required
             aria-describedby="email-help"
           />
         </div>
         <div>
-          <label class="block text-900 text-md font-medium mb-2" for="password"
+          <label class="block text-md font-medium mb-2" for="password"
             >Password</label
           >
           <Password
             v-model="password"
             class="w-full"
             :input-style="{ width: '100%' }"
-            placeholder="password"
             toggle-mask
-            required
             :invalid="Boolean(password) && !isValidPassword(password)"
           />
         </div>
       </div>
 
-      <Button type="submit" label="Update" :loading="isLoading" />
+      <Button
+        class="w-full md:w-56 gap-4"
+        type="submit"
+        label="Update"
+        :loading="isLoading"
+      />
     </form>
-    <br />
 
     <!-- Delete Account Section -->
-    <div>
-      <h6>Delete Account</h6>
+    <div class="grid gap-2 mt-2">
+      <h6 class="text-xl font-semibold -mb-2">Delete Account</h6>
       <p>
         You can permanently delete your account including your mined data. You
         can't undo this action.
       </p>
       <Button
-        class="max-lg:w-full gap-4 max-lg:justify-center"
+        class="w-full md:w-56 gap-4 justify-center"
         severity="danger"
         @click="showWarning"
         ><span class="material-icons" style="font-size: 1.5rem">delete</span

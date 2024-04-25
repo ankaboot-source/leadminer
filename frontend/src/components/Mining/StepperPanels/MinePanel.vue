@@ -1,14 +1,9 @@
 <template>
-  <p class="text-center text-xl font-bold">
-    Mine contacts from your email account
-  </p>
-
   <ProgressCard
     v-if="boxes"
     :status="activeMiningTask"
     :total="totalEmails"
     :progress="extractionProgress"
-    progress-title="We're deep in the mines now..."
     :progress-tooltip="progressTooltip"
   >
     <template #progress-title>
@@ -28,7 +23,53 @@
     :total-emails="totalEmails"
     :is-loading-boxes="$leadminerStore.isLoadingBoxes"
   />
-  <div class="flex pt-6 justify-between">
+  <div id="mobile-buttons" class="flex flex-col gap-2 pt-6 md:hidden">
+    <Button
+      v-if="!activeMiningTask"
+      :disabled="
+        activeMiningTask ||
+        $leadminerStore.isLoadingStartMining ||
+        $leadminerStore.isLoadingBoxes
+      "
+      :loading="$leadminerStore.isLoadingStartMining"
+      severity="contrast"
+      class="border-solid border-2 border-black"
+      label="Start mining now!"
+      loading-icon="pi pi-spinner"
+      @click="startMining"
+    >
+    </Button>
+    <Button
+      v-else
+      :loading="$leadminerStore?.isLoadingStartMining"
+      class="border-solid border-2 border-black"
+      severity="contrast"
+      icon="pi pi-stop"
+      icon-pos="right"
+      label="Halt mining"
+      @click="haltMining"
+    />
+    <Button
+      :disabled="
+        activeMiningTask ||
+        $leadminerStore.isLoadingStartMining ||
+        $leadminerStore.isLoadingBoxes
+      "
+      class="text-black"
+      severity="secondary"
+      label="Fine tune mining"
+      outlined
+      @click="openMiningSettings"
+    >
+    </Button>
+    <Button
+      :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
+      severity="secondary"
+      label="Back"
+      @click="prevCallback()"
+    />
+  </div>
+  <div class="hidden md:flex pt-6 justify-between">
     <Button
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
       severity="secondary"
@@ -43,6 +84,7 @@
           $leadminerStore.isLoadingBoxes
         "
         class="text-black"
+        severity="secondary"
         label="Fine tune mining"
         outlined
         @click="openMiningSettings"
@@ -140,9 +182,9 @@ const extractionProgress = computed(() =>
 
 const progressTooltip = computed(
   () =>
-    `<div class='text-xs'>Mined / Total emails
+    `Mined / Total emails
       ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
-      </div>`
+      `
 );
 
 onMounted(async () => {

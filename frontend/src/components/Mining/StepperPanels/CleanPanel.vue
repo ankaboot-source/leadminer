@@ -1,9 +1,4 @@
 <template>
-  <div class="text-center">
-    <p class="text-xl font-bold">
-      Clean your contacts from unreachable email address
-    </p>
-  </div>
   <ProgressCard
     :status="activeTask"
     :total="contactsToVerify"
@@ -20,7 +15,7 @@
   <div class="flex pt-6 justify-end">
     <Button
       v-if="activeTask"
-      class="border-solid border-2 border-black"
+      class="w-full md:w-max border-solid border-2 border-black"
       severity="contrast"
       icon="pi pi-stop"
       icon-pos="right"
@@ -29,6 +24,7 @@
     />
     <Button
       v-else
+      class="w-full md:w-max"
       severity="secondary"
       label="Start a new mining"
       @click="prevCallback()"
