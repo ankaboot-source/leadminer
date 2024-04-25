@@ -121,7 +121,7 @@
           </div>
         </div>
         <NuxtLink
-          class="text-right text-[#6366f1] font-bold"
+          class="text-right text-indigo-500 font-bold"
           to="/auth/forgot-password"
         >
           Forgot your password?</NuxtLink
