@@ -10,8 +10,14 @@ export default function initializeImapRoutes(
 ) {
   const router = Router();
 
-  const { getImapBoxes } = initializeImapController(miningSources);
+  const { getImapBoxes, imapAutoConfig } =
+    initializeImapController(miningSources);
 
+  router.get(
+    '/config/:email',
+    initializeAuthMiddleware(authResolver),
+    imapAutoConfig
+  );
   router.post('/boxes', initializeAuthMiddleware(authResolver), getImapBoxes);
 
   return router;
