@@ -36,7 +36,7 @@
                   with the GDPR.
                   <NuxtLink
                     class="text-indigo-500"
-                    href="https://www.leadminer.io/data-privacy"
+                    to="https://www.leadminer.io/data-privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -49,7 +49,7 @@
         </Card>
         <div>
           For any questions or assistance, our support team is here to help at
-          <NuxtLink class="text-indigo-500" href="mailto:support@leadminer.io">
+          <NuxtLink class="text-indigo-500" to="mailto:support@leadminer.io">
             support@leadminer.io.
           </NuxtLink>
           Keep your data secure and take control of your contact mining

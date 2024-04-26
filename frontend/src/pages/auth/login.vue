@@ -26,7 +26,7 @@
         By signing in, you agree to the
         <NuxtLink
           class="text-indigo-500"
-          href="https://www.leadminer.io/terms-of-service"
+          to="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -35,7 +35,7 @@
         and
         <NuxtLink
           class="text-indigo-500"
-          href="https://www.leadminer.io/data-privacy"
+          to="https://www.leadminer.io/data-privacy"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -48,7 +48,6 @@
 </template>
 
 <script setup lang="ts">
-import { NuxtLink } from '#build/components';
 import EmailAuth from '@/components/auth/EmailAuth.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';

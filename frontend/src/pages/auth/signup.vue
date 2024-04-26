@@ -25,7 +25,7 @@
         By signing up, you agree to the
         <NuxtLink
           class="text-indigo-500"
-          href="https://www.leadminer.io/terms-of-service"
+          to="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -33,7 +33,7 @@
         </NuxtLink>
         and<NuxtLink
           class="text-indigo-500"
-          href="https://www.leadminer.io/data-privacy"
+          to="https://www.leadminer.io/data-privacy"
           target="_blank"
           rel="noopener noreferrer"
         >
