@@ -34,12 +34,13 @@
                   securely and used solely for the purposes of providing you
                   with the best contact mining experience in full compliance
                   with the GDPR.
-                  <a
+                  <NuxtLink
+                    class="text-indigo-500"
                     href="https://www.leadminer.io/data-privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Read our Data Privacy Policy for more information</a
+                    Read our Data Privacy Policy for more information</NuxtLink
                   >.
                 </span>
               </div>
@@ -47,6 +48,10 @@
           </template>
         </Card>
         <div>
+          For any questions or assistance, our support team is here to help at
+          <NuxtLink class="text-indigo-500" href="mailto:support@leadminer.io">
+            support@leadminer.io.
+          </NuxtLink>
           Keep your data secure and take control of your contact mining
           journey!🔒💪
         </div>

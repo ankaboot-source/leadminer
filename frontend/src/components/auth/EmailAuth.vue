@@ -120,7 +120,10 @@
             >
           </div>
         </div>
-        <NuxtLink class="text-right" to="/auth/forgot-password">
+        <NuxtLink
+          class="text-right text-indigo-500 font-bold"
+          to="/auth/forgot-password"
+        >
           Forgot your password?</NuxtLink
         >
       </div>
