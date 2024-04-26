@@ -5,7 +5,7 @@
         <label class="text-left" for="email">Email</label>
         <InputText
           v-model="email"
-          :invalid="!!email && !isValidEmail(email)"
+          :invalid="Boolean(email) && !isValidEmail(email)"
           type="email"
           required
           aria-describedby="email-help"
@@ -13,7 +13,7 @@
           @focusout="emailFocus = false"
         />
         <small
-          v-if="!!email && !isValidEmail(email)"
+          v-if="Boolean(email) && !isValidEmail(email)"
           id="email-help"
           class="text-red-400 text-left pl-4"
         >
@@ -89,14 +89,14 @@
             <label class="text-left" for="email">Email</label>
             <InputText
               v-model="email"
-              :invalid="!!email && !isValidEmail(email)"
+              :invalid="Boolean(email) && !isValidEmail(email)"
               type="email"
               required
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
             />
             <small
-              v-if="!!email && !isValidEmail(email)"
+              v-if="Boolean(email) && !isValidEmail(email)"
               id="email-help"
               class="text-red-400 text-left pl-4"
             >
