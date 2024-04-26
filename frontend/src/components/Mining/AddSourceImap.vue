@@ -16,20 +16,21 @@
         <label for="email">Email</label>
         <InputText
           v-model="imapEmail"
+          :disabled="loadingSave"
           :invalid="!!imapEmail && !isValidEmail(imapEmail)"
           class="w-full"
-          @update:model-value="getImapConfigs"
+          @focusout="getImapConfigs(imapEmail)"
         />
       </div>
       <div class="w-full flex flex-col gap-1">
         <label for="password">Password</label>
         <InputText v-model="imapPassword" class="w-full" type="password" />
       </div>
-      <div class="w-full flex flex-col gap-1">
+      <div v-if="showAdvancedImapSettings" class="w-full flex flex-col gap-1">
         <label for="host">Host</label>
         <InputText v-model="imapHost" class="w-full" />
       </div>
-      <div class="w-full flex flex-col gap-1">
+      <div v-if="showAdvancedImapSettings" class="w-full flex flex-col gap-1">
         <label for="port">Port</label>
         <InputNumber
           v-model="imapPort"
@@ -37,6 +38,13 @@
           class="w-full"
           :invalid="!(imapPort > 0 && imapPort <= 65536)"
         />
+      </div>
+      <div
+        v-if="showAdvancedImapSettings"
+        class="w-full flex flex-row items-center gap-1"
+      >
+        <Checkbox v-model="imapSecureConnection" :binary="true" />
+        <label for="port">TLS/SSL</label>
       </div>
       <div class="flex justify-end w-full gap-2 pt-4">
         <Button
@@ -47,7 +55,7 @@
         ></Button>
         <Button
           type="button"
-          label="Save"
+          label="Connect"
           :loading="loadingSave"
           :disabled="disableSave"
           @click="onSubmitImapCredentials"
@@ -57,29 +65,25 @@
   </Dialog>
 </template>
 <script setup lang="ts">
+import { FetchError } from 'ofetch';
 import { useLeadminerStore } from '@/stores/leadminer';
 import { isValidEmail } from '@/utils/email';
 
 const { $api } = useNuxtApp();
-const leadminerStore = useLeadminerStore();
+const $toast = useToast();
+const $user = useSupabaseUser();
+const $leadminerStore = useLeadminerStore();
 
-const imapHost = ref('');
 const imapEmail = ref('');
-const imapPort = ref(993);
 const imapPassword = ref('');
-const imapUseSsl = ref(true);
+const imapHost = ref('');
+const imapPort = ref(993);
+const imapSecureConnection = ref(true);
+
 const loadingSave = ref(false);
+const showAdvancedImapSettings = ref(false);
 
-const isLoadingImapCredentialsCheck = ref(false);
 const showImapCredentialsDialog = ref(false);
-
-function openImapCredentialsDialog() {
-  showImapCredentialsDialog.value = true;
-}
-
-function closeImapCredentialsDialog() {
-  showImapCredentialsDialog.value = false;
-}
 
 const disableSave = computed(() =>
   Boolean(
@@ -89,13 +93,34 @@ const disableSave = computed(() =>
   )
 );
 
+function showAdvancedSettings() {
+  showAdvancedImapSettings.value = true;
+  imapHost.value = '';
+}
+
+function closeImapCredentialsDialog() {
+  showImapCredentialsDialog.value = false;
+}
+
+async function openImapCredentialsDialog() {
+  showImapCredentialsDialog.value = true;
+  if (!imapEmail.value.length && $user.value) {
+    imapEmail.value = $user.value.email as string;
+    await getImapConfigs(imapEmail.value);
+  }
+}
+
 async function getImapConfigs(email: string) {
   if (!isValidEmail(email)) {
     return;
   }
   loadingSave.value = true;
   try {
-    const configs: {
+    const {
+      host,
+      port,
+      secure,
+    }: {
       host: string;
       port: number;
       secure: boolean;
@@ -103,20 +128,25 @@ async function getImapConfigs(email: string) {
       method: 'GET',
     });
 
-    if (configs) {
-      imapHost.value = configs.host;
-      imapPort.value = Number(configs.port);
-      imapUseSsl.value = configs.secure;
+    if (host && port && secure) {
+      imapHost.value = host;
+      imapPort.value = Number(port);
+      imapSecureConnection.value = secure;
+      showAdvancedImapSettings.value = false;
+    } else {
+      showAdvancedSettings();
     }
+
     loadingSave.value = false;
   } catch (e) {
     loadingSave.value = false;
+    showAdvancedSettings();
     throw e;
   }
 }
 
 async function onSubmitImapCredentials() {
-  isLoadingImapCredentialsCheck.value = true;
+  loadingSave.value = true;
 
   try {
     await $api('/imap/mine/sources/imap', {
@@ -129,12 +159,21 @@ async function onSubmitImapCredentials() {
       },
     });
 
-    await leadminerStore.fetchMiningSources();
+    await $leadminerStore.fetchMiningSources();
     closeImapCredentialsDialog();
-    isLoadingImapCredentialsCheck.value = false;
+    loadingSave.value = false;
   } catch (err) {
-    isLoadingImapCredentialsCheck.value = false;
-    throw err;
+    loadingSave.value = false;
+
+    if (err instanceof FetchError) {
+      $toast.add({
+        severity: 'error',
+        summary: 'Sign-in with IMAP',
+        detail: err.data.details.message,
+      });
+    } else {
+      throw err;
+    }
   }
 }
 </script>
