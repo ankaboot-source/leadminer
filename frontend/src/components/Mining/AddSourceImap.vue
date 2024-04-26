@@ -170,6 +170,7 @@ async function onSubmitImapCredentials() {
         severity: 'error',
         summary: 'Sign-in with IMAP',
         detail: err.data.details.message,
+        life: 3000
       });
     } else {
       throw err;
