@@ -18,6 +18,7 @@
           v-model="imapEmail"
           :invalid="!!imapEmail && !isValidEmail(imapEmail)"
           class="w-full"
+          @update:model-value="getImapConfigs"
         />
       </div>
       <div class="w-full flex flex-col gap-1">
@@ -43,10 +44,14 @@
           label="Cancel"
           severity="secondary"
           @click="showImapCredentialsDialog = false"
-        >
-        </Button>
-        <Button type="button" label="Save" @click="onSubmitImapCredentials">
-        </Button>
+        ></Button>
+        <Button
+          type="button"
+          label="Save"
+          :loading="loadingSave"
+          :disabled="disableSave"
+          @click="onSubmitImapCredentials"
+        ></Button>
       </div>
     </div>
   </Dialog>
@@ -62,6 +67,8 @@ const imapHost = ref('');
 const imapEmail = ref('');
 const imapPort = ref(993);
 const imapPassword = ref('');
+const imapUseSsl = ref(true);
+const loadingSave = ref(false);
 
 const isLoadingImapCredentialsCheck = ref(false);
 const showImapCredentialsDialog = ref(false);
@@ -72,6 +79,40 @@ function openImapCredentialsDialog() {
 
 function closeImapCredentialsDialog() {
   showImapCredentialsDialog.value = false;
+}
+
+const disableSave = computed(() =>
+  Boolean(
+    !imapEmail.value.length ||
+      !imapHost.value.length ||
+      !imapPassword.value.length
+  )
+);
+
+async function getImapConfigs(email: string) {
+  if (!isValidEmail(email)) {
+    return;
+  }
+  loadingSave.value = true;
+  try {
+    const configs: {
+      host: string;
+      port: number;
+      secure: boolean;
+    } = await $api(`/imap/config/${email}`, {
+      method: 'GET',
+    });
+
+    if (configs) {
+      imapHost.value = configs.host;
+      imapPort.value = Number(configs.port);
+      imapUseSsl.value = configs.secure;
+    }
+    loadingSave.value = false;
+  } catch (e) {
+    loadingSave.value = false;
+    throw e;
+  }
 }
 
 async function onSubmitImapCredentials() {

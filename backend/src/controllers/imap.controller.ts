@@ -9,6 +9,7 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './helpers';
+import ImapConfigDiscover from '../services/imap/ImapConfigDetector';
 
 export default function initializeImapController(miningSources: MiningSources) {
   return {
@@ -104,6 +105,16 @@ export default function initializeImapController(miningSources: MiningSources) {
           await imapConnectionProvider?.releaseConnection(imapConnection);
         }
         await imapConnectionProvider?.cleanPool();
+      }
+    },
+    async imapAutoConfig(req: Request, res: Response, next: NextFunction) {
+      const { email } = req.params;
+
+      try {
+        const config = await new ImapConfigDiscover().getImapConfig(email);
+        return res.json({ ...config });
+      } catch (error) {
+        return next(error);
       }
     }
   };
