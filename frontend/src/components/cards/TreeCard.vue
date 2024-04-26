@@ -8,7 +8,7 @@
     <template #default="{ node }">
       {{ node.label }}
       <Badge>
-        {{ node.total ? node.total : node.cumulativeTotal }}
+        {{ (node.total ? node.total : node.cumulativeTotal).toLocaleString() }}
       </Badge>
     </template>
   </Tree>
