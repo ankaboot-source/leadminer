@@ -18,35 +18,6 @@
           <span v-else>Google or Outlook</span> mailbox. Without authorization,
           we are unable to extract contacts from your mailbox.
         </span>
-
-        <Card class="bg-green-50 text-base">
-          <template #content>
-            <div class="grid grid-flow-row md:grid-flow-col gap-3 items-center">
-              <div class="flex justify-center">
-                <img class="size-16" src="/icons/gdpr.png" alt="gdpr-logo" />
-              </div>
-              <div>
-                <p class="md:text-lg font-medium">Your data is yours only</p>
-                <span>
-                  We assure you that we will not use your data commercially or
-                  share it with any third parties without your explicit
-                  permission. Please be assured that your data will be handled
-                  securely and used solely for the purposes of providing you
-                  with the best contact mining experience in full compliance
-                  with the GDPR.
-                  <NuxtLink
-                    class="text-indigo-500"
-                    to="https://www.leadminer.io/data-privacy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Read our Data Privacy Policy for more information</NuxtLink
-                  >.
-                </span>
-              </div>
-            </div>
-          </template>
-        </Card>
         <div>
           For any questions or assistance, our support team is here to help at
           <NuxtLink class="text-indigo-500" to="mailto:support@leadminer.io">
