@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error - because it's an old package
 import autoDetect from 'imap-autoconfig';
 
 interface Config {
@@ -41,7 +41,7 @@ export default class ImapConfigDiscover {
         email,
         '',
         this.caching,
-        (err: any, data: ImapConfig) => {
+        (err: unknown, data: ImapConfig) => {
           if (err) {
             reject(err);
           } else {
