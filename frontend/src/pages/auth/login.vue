@@ -49,6 +49,7 @@
 </template>
 
 <script setup lang="ts">
+import { NuxtLink } from '#build/components';
 import EmailAuth from '@/components/auth/EmailAuth.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';

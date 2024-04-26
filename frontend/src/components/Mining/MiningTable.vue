@@ -38,7 +38,7 @@
     <template #empty>
       <div class="text-center py-5">
         <div class="font-semibold">No contacts found</div>
-        <div v-if="defaultOnFilters !== 0 && contactsLength !== 0">
+        <div v-if="areToggledFilters !== 0 && contactsLength !== 0">
           Try clearing filters
         </div>
       </div>
@@ -72,6 +72,7 @@
         </div>
         <div class="grow" />
         <Button
+          :disabled="isDefaultFilters"
           type="button"
           icon="pi pi-filter-slash"
           label="Clear"
@@ -79,11 +80,16 @@
           @click="clearFilter()"
         />
         <!-- Settings -->
-        <Button
-          icon="pi pi-sliders-h"
-          :badge="defaultOnFilters ? defaultOnFilters.toString() : undefined"
-          @click="toggleSettingsPanel"
-        />
+        <Button @click="toggleSettingsPanel">
+          <span class="p-button-label">
+            <i
+              v-if="areToggledFilters > 0"
+              v-badge="areToggledFilters.toString()"
+              class="pi pi-sliders-h"
+            />
+            <i v-else class="pi pi-sliders-h" />
+          </span>
+        </Button>
         <OverlayPanel ref="settingsPanel">
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
             <li class="flex justify-between">
@@ -480,67 +486,73 @@ const ANY_SELECTED = ref('ANY_SELECTED');
 FilterService.register(ANY_SELECTED.value, (value, filter) =>
   !filter ? true : filter.some((item: string) => value.includes(item))
 );
+const defaultFilters = {
+  global: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+
+  // Contacts
+  name: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  email: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+
+  // Recency
+  recency: {
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+  },
+
+  // Occurrence
+  occurrence: {
+    value: null,
+    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+  },
+
+  // Replies
+  replied_conversations: {
+    value: null,
+    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+  },
+
+  // Tags
+  tags: { value: null, matchMode: ANY_SELECTED.value },
+
+  // Status
+  status: { value: [], matchMode: FilterMatchMode.IN },
+
+  // Recipient
+  recipient: {
+    value: null,
+    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+  },
+
+  // Sender
+  sender: {
+    value: null,
+    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+  },
+
+  // Seniority
+  seniority: {
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+  },
+};
+
 const initFilters = () => {
-  filters.value = {
-    global: {
-      value: null,
-      matchMode: FilterMatchMode.CONTAINS,
-    },
-
-    // Contacts
-    name: {
-      value: null,
-      matchMode: FilterMatchMode.CONTAINS,
-    },
-    email: {
-      value: null,
-      matchMode: FilterMatchMode.CONTAINS,
-    },
-
-    // Recency
-    recency: {
-      operator: FilterOperator.AND,
-      constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-    },
-
-    // Occurrence
-    occurrence: {
-      value: null,
-      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-    },
-
-    // Replies
-    replied_conversations: {
-      value: null,
-      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-    },
-
-    // Tags
-    tags: { value: null, matchMode: ANY_SELECTED.value },
-
-    // Status
-    status: { value: null, matchMode: FilterMatchMode.IN },
-
-    // Recipient
-    recipient: {
-      value: null,
-      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-    },
-
-    // Sender
-    sender: {
-      value: null,
-      matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-    },
-
-    // Seniority
-    seniority: {
-      operator: FilterOperator.AND,
-      constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-    },
-  };
+  filters.value = JSON.parse(JSON.stringify(defaultFilters));
 };
 initFilters();
+
+const isDefaultFilters = computed(
+  () => JSON.stringify(filters.value) === JSON.stringify(defaultFilters)
+);
 
 // skipcq: JS-0323
 function debounce<T extends (...args: any[]) => any>(
@@ -647,13 +659,13 @@ function clearFilter() {
   onRecentToggle(false);
   initFilters();
 }
-function initDefaultFilters() {
+function initToggleFilters() {
   onValidToggle(true);
   onDiscussionsToggle(true);
   onRecentToggle(true);
 }
-initDefaultFilters();
-const defaultOnFilters = computed(
+initToggleFilters();
+const areToggledFilters = computed(
   () =>
     Number(validToggle.value) +
     Number(discussionsToggle.value) +
@@ -762,7 +774,7 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
-    initDefaultFilters();
+    initToggleFilters();
     isLoading.value = false;
   }
 });

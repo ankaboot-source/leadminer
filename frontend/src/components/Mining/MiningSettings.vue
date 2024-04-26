@@ -23,7 +23,7 @@
       <div class="grow" />
 
       <Badge v-tooltip="'Email messages selected'" size="large">
-        {{ totalEmails }}
+        {{ totalEmails.toLocaleString() }}
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
     </div>
