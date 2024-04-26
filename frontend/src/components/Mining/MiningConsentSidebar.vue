@@ -7,9 +7,9 @@
   >
     <template #container>
       <div class="grid gap-4 px-8 py-4 text-base">
-        <span class="text-lg md:text-xl font-bold merriweather"
-          >🔐 Authorization Required</span
-        >
+        <span class="text-lg md:text-xl font-bold merriweather">
+          🔐 Authorization Required
+        </span>
         <span>
           It seems like you have declined to grant authorization for us to
           access your

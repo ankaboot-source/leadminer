@@ -39,8 +39,9 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          Data Privacy Policy </NuxtLink
-        >. You also agree to receive information and offers relevant to our
+          Data Privacy Policy.
+        </NuxtLink>
+        You also agree to receive information and offers relevant to our
         services via email.
       </span>
     </div>

@@ -31,14 +31,16 @@
         >
           Terms of Service
         </NuxtLink>
-        and<NuxtLink
+        and
+        <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/data-privacy"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Data Privacy Policy</NuxtLink
-        >. You also agree to receive information and offers relevant to our
+          Data Privacy Policy.
+        </NuxtLink>
+        You also agree to receive information and offers relevant to our
         services via email.
       </span>
     </div>

@@ -1,67 +1,65 @@
 <template>
   <div class="grid gap-2">
-    <div class="flex">
-      <Button unstyled icon="pi pi-arrow-left" @click="goToDashboard()" />
-      <h2 class="text-3xl">Settings</h2>
-    </div>
+    <Panel header="Profile Information">
+      <form class="grid gap-4" @submit="updateProfile">
+        <div class="grid gap-2">
+          <div>
+            <label class="block mb-2">Full Name</label>
+            <InputText
+              v-model="fullName"
+              class="w-full md:w-30rem"
+              type="text"
+            />
+          </div>
+          <div>
+            <label class="block mb-2" for="email">Email</label>
+            <InputText
+              v-model="email"
+              :disabled="isSocialLogin"
+              class="w-full"
+              :invalid="!Boolean(email) && !isValidEmail(email)"
+              type="email"
+              aria-describedby="email-help"
+            />
+          </div>
+          <div>
+            <label class="block mb-2" for="password">Password</label>
+            <Password
+              v-model="password"
+              class="w-full"
+              :input-style="{ width: '100%' }"
+              toggle-mask
+              :invalid="Boolean(password) && !isValidPassword(password)"
+            />
+          </div>
+        </div>
 
-    <h6 class="text-xl font-semibold">Profile Information</h6>
-    <form class="grid gap-4" @submit="updateProfile">
-      <div class="grid gap-2">
-        <div>
-          <label class="block text-md font-medium mb-2">Full Name</label>
-          <InputText v-model="fullName" class="w-full md:w-30rem" type="text" />
-        </div>
-        <div>
-          <label class="block text-md font-medium mb-2" for="email"
-            >Email</label
-          >
-          <InputText
-            v-model="email"
-            :disabled="isSocialLogin"
-            class="w-full"
-            :invalid="!Boolean(email) && !isValidEmail(email)"
-            type="email"
-            aria-describedby="email-help"
-          />
-        </div>
-        <div>
-          <label class="block text-md font-medium mb-2" for="password"
-            >Password</label
-          >
-          <Password
-            v-model="password"
-            class="w-full"
-            :input-style="{ width: '100%' }"
-            toggle-mask
-            :invalid="Boolean(password) && !isValidPassword(password)"
-          />
-        </div>
-      </div>
-
-      <Button
-        class="w-full md:w-56 gap-4"
-        type="submit"
-        label="Update"
-        :loading="isLoading"
-      />
-    </form>
+        <Button
+          class="w-full md:w-56 gap-4"
+          type="submit"
+          label="Update"
+          :loading="isLoading"
+        />
+      </form>
+    </Panel>
 
     <!-- Delete Account Section -->
-    <div class="grid gap-2 mt-2">
-      <h6 class="text-xl font-semibold -mb-2">Delete Account</h6>
-      <p>
-        You can permanently delete your account including your mined data. You
-        can't undo this action.
-      </p>
-      <Button
-        class="w-full md:w-56 gap-4 justify-center"
-        severity="danger"
-        @click="showWarning"
-        ><span class="material-icons" style="font-size: 1.5rem">delete</span
-        ><span>Delete my account</span>
-      </Button>
-    </div>
+    <Panel header="Delete Account">
+      <div class="grid gap-2">
+        <p>
+          You can permanently delete your account including your mined data. You
+          can't undo this action.
+        </p>
+        <Button
+          class="w-full md:w-56 gap-4 justify-center"
+          severity="danger"
+          @click="showWarning"
+        >
+          <span class="material-icons">delete</span>
+          <span>Delete my account</span>
+        </Button>
+      </div>
+    </Panel>
 
     <!-- Warning model Section -->
     <Dialog
@@ -70,10 +68,9 @@
       header="Delete account"
       :style="{ width: '25rem' }"
     >
-      <span class="p-text-secondary block mb-5"
-        >Deleting your account is permanent. You will lose all your mining
-        data.</span
-      >
+      <span class="p-text-secondary block mb-5">
+        Deleting your account is permanent. You will lose all your mining data.
+      </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">
         <Button
           type="button"
@@ -81,13 +78,15 @@
           severity="danger"
           :loading="isLoading"
           @click="deleteAccount"
-        ></Button>
+        >
+        </Button>
         <Button
           type="button"
           label="Cancel"
           severity="secondary"
           @click="closeWarning"
-        ></Button>
+        >
+        </Button>
       </div>
     </Dialog>
   </div>
@@ -95,11 +94,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { logout } from '@/utils/auth';
 
 const $toast = useToast();
-const $router = useRouter();
 
 const userId = ref('');
 const email = ref('');
@@ -147,10 +144,6 @@ function showWarning() {
 
 function closeWarning() {
   showDeleteModal.value = false;
-}
-
-function goToDashboard() {
-  $router.push('/dashboard');
 }
 
 async function updateProfile() {

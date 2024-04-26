@@ -27,9 +27,7 @@
       @click="refillCreditsOrUpgrade"
     >
       <span class="font-semibold">Refill</span>
-      <span class="material-icons" style="font-size: 1.3rem"
-        >rocket_launch</span
-      >
+      <span class="material-icons"> rocket_launch </span>
     </Button>
   </div>
 </template>
