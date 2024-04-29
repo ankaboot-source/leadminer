@@ -1,7 +1,7 @@
 <template>
   <div class="grid gap-2">
     <Panel header="Profile Information">
-      <form class="grid gap-4" @submit="updateProfile">
+      <div class="grid gap-4">
         <div class="grid gap-2">
           <div>
             <label class="block mb-2">Full Name</label>
@@ -39,8 +39,9 @@
           type="submit"
           label="Update"
           :loading="isLoading"
+          @click="updateProfile"
         />
-      </form>
+      </div>
     </Panel>
 
     <!-- Delete Account Section -->
