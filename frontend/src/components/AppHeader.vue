@@ -6,27 +6,25 @@
 
     <div class="hidden md:flex md:items-center md:gap-1">
       <CreditsCounter v-if="shouldShowCreditsBadge" />
-      <div v-show="shouldShowSettings">
-        <Button
-          class="text-lowercase"
-          text
-          @click="navigateTo('/account/settings')"
-        >
-          {{ $user?.email }}
-        </Button>
-      </div>
+      <Button
+        class="text-lowercase"
+        text
+        @click="navigateTo('/account/settings')"
+      >
+        {{ $user?.email }}
+      </Button>
       <Button icon="pi pi-sign-out" text @click="logout()" />
     </div>
 
     <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />
 
     <Sidebar v-model:visible="visible" class="p-3.5">
-      <template #container>
-        <div class="flex flex-column">
-          <RouterLink to="/dashboard">
+      <template #container="{ closeCallback }">
+        <Button unstyled class="flex flex-column" @click="closeCallback">
+          <NuxtLink to="/dashboard">
             <AppLogo />
-          </RouterLink>
-        </div>
+          </NuxtLink>
+        </Button>
 
         <div class="overflow-y-auto mt-10">
           <CreditsCounter v-if="shouldShowCreditsBadge" />
@@ -35,9 +33,11 @@
           <Button
             class="w-full pl-10 text-lowercase justify-center"
             text
-            @click="navigateTo('/account/settings')"
+            @click="closeCallback"
           >
-            {{ $user?.email }}
+            <NuxtLink to="/account/settings">
+              {{ $user?.email }}
+            </NuxtLink>
           </Button>
           <Button class="w-full flex justify-center gap-2" @click="logout()">
             Logout
@@ -55,11 +55,9 @@ import CreditsCounter from './Credits/CreditsCounter.vue';
 import AppLogo from './AppLogo.vue';
 
 const $user = useSupabaseUser();
-const $route = useRoute();
 
 const visible = ref(false);
 
-const shouldShowSettings = computed(() => $route.path !== '/account/settings');
 const shouldShowCreditsBadge = useRuntimeConfig().public.ENABLE_CREDIT;
 </script>
 

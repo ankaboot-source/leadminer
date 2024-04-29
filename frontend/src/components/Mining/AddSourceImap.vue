@@ -17,7 +17,7 @@
         <InputText
           v-model="imapEmail"
           :disabled="loadingSave"
-          :invalid="!!imapEmail && !isValidEmail(imapEmail)"
+          :invalid="isInvalidEmail(imapEmail)"
           class="w-full"
           @focusout="getImapConfigs(imapEmail)"
         />
@@ -102,14 +102,6 @@ function closeImapCredentialsDialog() {
   showImapCredentialsDialog.value = false;
 }
 
-async function openImapCredentialsDialog() {
-  showImapCredentialsDialog.value = true;
-  if (!imapEmail.value.length && $user.value) {
-    imapEmail.value = $user.value.email as string;
-    await getImapConfigs(imapEmail.value);
-  }
-}
-
 async function getImapConfigs(email: string) {
   if (!isValidEmail(email)) {
     return;
@@ -145,6 +137,14 @@ async function getImapConfigs(email: string) {
   }
 }
 
+async function openImapCredentialsDialog() {
+  showImapCredentialsDialog.value = true;
+  if (!imapEmail.value.length && $user.value) {
+    imapEmail.value = $user.value.email as string;
+    await getImapConfigs(imapEmail.value);
+  }
+}
+
 async function onSubmitImapCredentials() {
   loadingSave.value = true;
 
@@ -170,7 +170,7 @@ async function onSubmitImapCredentials() {
         severity: 'error',
         summary: 'Sign-in with IMAP',
         detail: err.data.details.message,
-        life: 3000
+        life: 3000,
       });
     } else {
       throw err;

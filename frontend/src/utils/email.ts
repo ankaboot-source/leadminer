@@ -1,8 +1,8 @@
 const EMAIL_PATTERN =
   /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/;
 
-export const isValidEmail = (str: string) => EMAIL_PATTERN.test(str);
+export const isValidEmail = (email: string) =>
+  Boolean(email) && EMAIL_PATTERN.test(email);
 
-export const emailRules = [
-  (val: string) => isValidEmail(val) || 'Please insert a valid email address',
-];
+export const isInvalidEmail = (email: string) =>
+  Boolean(email) && !EMAIL_PATTERN.test(email);
