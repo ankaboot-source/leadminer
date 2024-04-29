@@ -39,7 +39,6 @@
           type="submit"
           label="Update"
           :loading="isLoading"
-          @click="updateProfile"
         />
       </form>
     </Panel>
