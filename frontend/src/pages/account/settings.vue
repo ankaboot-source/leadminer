@@ -17,7 +17,7 @@
               v-model="email"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="!Boolean(email) && !isValidEmail(email)"
+              :invalid="isInvalidEmail(email)"
               type="email"
               aria-describedby="email-help"
             />
@@ -29,7 +29,7 @@
               class="w-full"
               :input-style="{ width: '100%' }"
               toggle-mask
-              :invalid="Boolean(password) && !isValidPassword(password)"
+              :invalid="isInvalidPassword(password)"
             />
           </div>
         </div>
@@ -39,6 +39,7 @@
           type="submit"
           label="Update"
           :loading="isLoading"
+          @click="updateProfile"
         />
       </form>
     </Panel>

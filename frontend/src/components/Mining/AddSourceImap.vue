@@ -16,7 +16,7 @@
         <label for="email">Email</label>
         <InputText
           v-model="imapEmail"
-          :invalid="!!imapEmail && !isValidEmail(imapEmail)"
+          :invalid="isInvalidEmail(imapEmail)"
           class="w-full"
           @update:model-value="getImapConfigs"
         />

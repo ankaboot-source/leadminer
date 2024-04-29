@@ -5,7 +5,7 @@
         <label class="text-left" for="email">Email</label>
         <InputText
           v-model="email"
-          :invalid="Boolean(email) && !isValidEmail(email)"
+          :invalid="isInvalidEmail(email)"
           type="email"
           required
           aria-describedby="email-help"
@@ -13,7 +13,7 @@
           @focusout="emailFocus = false"
         />
         <small
-          v-if="Boolean(email) && !isValidEmail(email)"
+          v-if="isInvalidEmail(email)"
           id="email-help"
           class="text-red-400 text-left pl-4"
         >
@@ -27,7 +27,7 @@
           :input-style="{ width: '100%' }"
           toggle-mask
           required
-          :invalid="!!password && !isValidPassword(password)"
+          :invalid="isInvalidPassword(password)"
           aria-describedby="password-help"
           @focusin="passwordFocus = true"
           @focusout="passwordFocus = false"
@@ -63,7 +63,7 @@
           </template>
         </Password>
         <small
-          v-if="!!password && !isValidPassword(password)"
+          v-if="isInvalidPassword(password)"
           id="password-help"
           class="text-red-400 text-left pl-4"
         >
@@ -89,14 +89,14 @@
             <label class="text-left" for="email">Email</label>
             <InputText
               v-model="email"
-              :invalid="Boolean(email) && !isValidEmail(email)"
+              :invalid="isInvalidEmail(email)"
               type="email"
               required
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
             />
             <small
-              v-if="Boolean(email) && !isValidEmail(email)"
+              v-if="isInvalidEmail(email)"
               id="email-help"
               class="text-red-400 text-left pl-4"
             >
@@ -113,10 +113,9 @@
               :feedback="false"
               @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
-            >
-            </Password>
+            />
             <small
-              v-if="!!password && !isValidPassword(password)"
+              v-if="isInvalidPassword(password)"
               id="password-help"
               class="text-red-400 text-left pl-4"
             >
@@ -143,9 +142,6 @@
 </template>
 
 <script setup lang="ts">
-import { isValidEmail } from '@/utils/email';
-import { isValidPassword } from '@/utils/password';
-
 const { state } = withDefaults(
   defineProps<{
     state: 'login' | 'signup';

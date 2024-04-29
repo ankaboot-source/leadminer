@@ -1,14 +1,15 @@
 <template>
-  <div class="grid gap-4 md:flex md:gap-0">
+  <div class="max-md:w-full flex gap-0">
     <div
       v-tooltip.bottom="{
-        value: `${CREDITS_PER_EMAIL} credit per email / ${CREDITS_PER_CONTACT} credits per contact`,
+        value: `${CREDITS_PER_EMAIL} credit per contact`,
         showDelay: 0,
         hideDelay: 300,
       }"
+      class="w-full"
     >
       <Button
-        class="flex justify-center w-full cursor-default md:rounded-r-none"
+        class="w-full flex justify-center cursor-default rounded-r-none"
         :class="creditsBadgeState"
         outlined
         severity="danger"
@@ -21,7 +22,7 @@
       </Button>
     </div>
     <Button
-      class="flex space-x-1 items-center justify-center md:rounded-l-none"
+      class="w-40 flex space-x-1 items-center justify-center rounded-l-none"
       severity="contrast"
       size="small"
       @click="refillCreditsOrUpgrade"
@@ -35,7 +36,6 @@
 <script setup lang="ts">
 import {
   CREDITS_MIN_THRESHOLD,
-  CREDITS_PER_CONTACT,
   CREDITS_PER_EMAIL,
   refillCreditsOrUpgrade,
 } from '@/utils/credits';
