@@ -227,7 +227,7 @@ export default function initializeMiningController(
         res.status(500);
 
         if (error instanceof ImapAuthError) {
-          return res.status(error.status).json(error)
+          return res.status(error.status).json(error);
         }
 
         return next(error);

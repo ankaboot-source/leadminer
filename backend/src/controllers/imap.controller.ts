@@ -95,7 +95,7 @@ export default function initializeImapController(miningSources: MiningSources) {
         const generatedError = generateErrorObjectFromImapError(err);
 
         if (generatedError instanceof ImapAuthError) {
-          return res.status(generatedError.status).send(generatedError)
+          return res.status(generatedError.status).send(generatedError);
         }
         return next(generatedError);
       } finally {

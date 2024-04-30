@@ -121,7 +121,7 @@ function closeImapCredentialsDialog() {
   showImapCredentialsDialog.value = false;
 }
 
-async function openImapCredentialsDialog() {
+function openImapCredentialsDialog() {
   showImapCredentialsDialog.value = true;
 }
 
