@@ -1,14 +1,13 @@
 <template>
   <div class="flex flex-col md:flex-row gap-2 md:gap-8">
     <div v-if="sourceOptions.length" class="w-full flex flex-col gap-3">
-      <p>Pick an email address to mine</p>
+      <p>Pick an exsiting email address to mine</p>
       <Dropdown
         v-model="sourceModel"
         checkmark
         :options="sourceOptions"
         option-label="email"
         placeholder="email address"
-        @update:model-value="onSourceChange"
       />
     </div>
     <div v-if="sourceOptions.length">
@@ -24,7 +23,7 @@
           label="Microsoft or Outlook"
           source="azure"
         />
-        <imap-source />
+        <imap-source v-model:source="sourceModel" />
       </div>
     </div>
   </div>
@@ -45,6 +44,13 @@ const $leadminerStore = useLeadminerStore();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
+function onSourceChange(source: MiningSource) {
+  $leadminerStore.boxes = [];
+  $leadminerStore.selectedBoxes = [];
+  $leadminerStore.activeMiningSource = source;
+  nextCallback();
+}
+
 const { error: sourcesError } = useAsyncData(() =>
   $leadminerStore.fetchMiningSources()
 );
@@ -55,10 +61,9 @@ onMounted(() => {
   }
 });
 
-function onSourceChange(source: MiningSource) {
-  $leadminerStore.boxes = [];
-  $leadminerStore.selectedBoxes = [];
-  $leadminerStore.activeMiningSource = source;
-  nextCallback();
-}
+watch(sourceModel, (source) => {
+  if (source) {
+    onSourceChange(source);
+  }
+});
 </script>

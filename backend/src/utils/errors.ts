@@ -1,17 +1,21 @@
-type ImapFieldError = Record<string, string | string[]>;
-
 export interface ErrorResponse {
   message: string;
   stack?: string;
-  details?: string | Record<string, string> | ImapFieldError;
+  details?: string | Record<string, string>;
 }
 
 export class ImapAuthError extends Error {
-  fieldErrors?: ImapFieldError;
+  message: string;
 
-  constructor(message: string, errors?: ImapFieldError) {
+  status: number;
+
+  fields?: string[];
+
+  constructor(message: string, status: number, fields: string[]) {
     super(message);
     this.name = 'ImapAuthError';
-    this.fieldErrors = errors;
+    this.message = message;
+    this.status = status;
+    this.fields = fields;
   }
 }

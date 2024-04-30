@@ -10,6 +10,7 @@ import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './helpers';
 import ImapConfigDiscover from '../services/imap/ImapConfigDetector';
+import { ImapAuthError } from '../utils/errors';
 
 export default function initializeImapController(miningSources: MiningSources) {
   return {
@@ -91,14 +92,11 @@ export default function initializeImapController(miningSources: MiningSources) {
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (err) {
-        if (
-          err instanceof Error &&
-          err.message.toLowerCase().startsWith('invalid credentials')
-        ) {
-          return res.status(401).json({ message: err.message });
-        }
-
         const generatedError = generateErrorObjectFromImapError(err);
+
+        if (generatedError instanceof ImapAuthError) {
+          return res.status(generatedError.status).send(generatedError);
+        }
         return next(generatedError);
       } finally {
         if (imapConnection) {

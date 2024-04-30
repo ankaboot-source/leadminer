@@ -12,7 +12,7 @@
           <label class="text-left" for="email">Email</label>
           <InputText
             v-model="email"
-            :invalid="isInvalidEmail(email)"
+            :invalid="isInvalidEmailPattern(email)"
             type="email"
             required
             aria-describedby="email-help"
@@ -20,7 +20,7 @@
             @focusout="emailFocus = false"
           />
           <small
-            v-if="isInvalidEmail(email)"
+            v-if="isInvalidEmailPattern(email)"
             id="email-help"
             class="text-red-400 text-left pl-4"
           >
