@@ -5,6 +5,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'AUTHENTICATIONFAILED',
     {
+      status: 401,
       fields: ['email', 'password'],
       message:
         'Authentication failed. Please check your email and password and try again.'
@@ -13,6 +14,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'EAUTH',
     {
+      status: 401,
       fields: ['email', 'password'],
       message:
         'Authentication failed. Please check your username and password and try again.'
@@ -21,6 +23,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'ENOTFOUND',
     {
+      status: 404,
       fields: ['host'],
       message: 'Host not found. Please check the server address and try again.'
     }
@@ -28,6 +31,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'ECONNREFUSED',
     {
+      status: 503,
       fields: ['host', 'port'],
       message:
         'Connection was refused by the server. Please check if the server is running and if there are no firewalls blocking the connection.'
@@ -36,6 +40,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'EAI_AGAIN',
     {
+      status: 503,
       fields: ['host'],
       message: 'Cannot resolve. Please verify the hostname and try again.'
     }
@@ -43,6 +48,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'CONNECTION_TIMEOUT',
     {
+      status: 408,
       fields: ['host', 'port'],
       message: 'Timed out while connecting to server.'
     }
@@ -65,16 +71,13 @@ export function generateErrorObjectFromImapError(error: any) {
     errorMessage = IMAP_ERROR_CODES.get('CONNECTION_TIMEOUT');
   }
 
-  if (errorMessage) {
-    const fieldError = {
-      fields: errorMessage.fields,
-      message: errorMessage.message
-    };
-    const newError = new ImapAuthError('Imap connection error', fieldError);
-    return newError;
-  }
-
-  return error;
+  return errorMessage
+    ? new ImapAuthError(
+        errorMessage.message,
+        errorMessage.status,
+        errorMessage.fields
+      )
+    : error;
 }
 
 /**

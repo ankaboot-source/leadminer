@@ -12,6 +12,7 @@ import {
   generateErrorObjectFromImapError,
   validateImapCredentials
 } from './helpers';
+import { ImapAuthError } from '../utils/errors';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -224,6 +225,11 @@ export default function initializeMiningController(
           .send({ message: 'IMAP mining source added successfully' });
       } catch (error) {
         res.status(500);
+
+        if (error instanceof ImapAuthError) {
+          return res.status(error.status).json(error)
+        }
+
         return next(error);
       }
     },
