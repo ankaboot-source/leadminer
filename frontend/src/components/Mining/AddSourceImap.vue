@@ -92,9 +92,9 @@ const imapSource = defineModel<MiningSource>('source');
 const imapDialog = ref(false);
 const imapAdvancedSettings = ref(false);
 
-const imapEmail = ref<string>($user.value?.email!);
-const imapPassword = ref<string | undefined>();
-const imapHost = ref<string | undefined>();
+const imapEmail = ref<string>($user.value?.email ?? '');
+const imapPassword = ref<string>('');
+const imapHost = ref<string>('');
 const imapPort = ref(993);
 const imapSecureConnection = ref(true);
 
@@ -111,13 +111,13 @@ const invalidEmailInput = (email: string | undefined) =>
   formErrors.email.value || !email?.length || isInvalidEmailPattern(email);
 
 const invalidImapPassword = (password: string | undefined) =>
-  formErrors.password.value || !password || password.length === 0;
+  formErrors.password.value || !password?.length || password.length === 0;
 
 const isInvalidImapPort = (port: number) =>
   formErrors.port.value || !(port > 0 && port <= 65536);
 
 const invalidImapHost = (host: string | undefined) =>
-  formErrors.host.value || !host || host.length === 0;
+  formErrors.host.value || !host?.length || host.length === 0;
 
 const resetAdvancedSettings = (): void => {
   imapHost.value = '';
