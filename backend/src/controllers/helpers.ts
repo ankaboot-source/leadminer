@@ -48,7 +48,7 @@ const IMAP_ERROR_CODES = new Map([
   [
     'CONNECTION_TIMEOUT',
     {
-      status: 408,
+      status: 500,
       fields: ['host', 'port'],
       message: 'Timed out while connecting to server.'
     }
