@@ -60,11 +60,10 @@
           <Button
             class="mr-2"
             icon="pi pi-external-link"
-            :label="windowWidth > 768 ? 'Export CSV' : undefined"
+            :label="screenSize.md ? 'Export CSV' : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
-          >
-          </Button>
+          />
         </div>
         <div>
           <template v-if="!implicitSelectAll">
@@ -76,11 +75,10 @@
         <Button
           :disabled="isDefaultFilters"
           icon="pi pi-filter-slash"
-          :label="windowWidth > 768 ? 'Clear' : undefined"
+          :label="screenSize.md ? 'Clear' : undefined"
           outlined
           @click="clearFilter()"
-        >
-        </Button>
+        />
         <!-- Settings -->
         <Button @click="toggleSettingsPanel">
           <span class="p-button-label">
@@ -972,6 +970,17 @@ function onWindowResize() {
   windowHeight.value = window.innerHeight ?? 0;
   windowWidth.value = window.innerWidth ?? 0;
 }
+
+const screenSize = computed(() => {
+  const width = windowWidth.value;
+  return {
+    sm: width > 640,
+    md: width > 768,
+    lg: width > 1024,
+    xl: width > 1280,
+    '2xl': width > 1536,
+  };
+});
 
 const tableHeight = ref('37vh');
 const scrollHeight = computed(() =>
