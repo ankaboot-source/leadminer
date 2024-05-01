@@ -110,7 +110,9 @@ export default function initializeImapController(miningSources: MiningSources) {
 
       try {
         const config = await new ImapConfigDiscover().getImapConfig(email);
-        return res.json({ ...config });
+        return Object.keys(config).length === 0
+          ? res.sendStatus(404)
+          : res.json({ ...config });
       } catch (error) {
         return next(error);
       }
