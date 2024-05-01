@@ -12,18 +12,20 @@ export const useScreenStore = defineStore({
       xl: false,
       '2xl': false,
     },
+    resizeListenerAdded: false,
   }),
   actions: {
     init() {
-      const handleResize = () => {
-        this.height = window.innerHeight ?? 0;
-        this.width = window.innerWidth ?? 0;
-        this.updateSize();
-      };
-
-      handleResize();
-
-      window.addEventListener('resize', handleResize);
+      this.handleResize();
+      if (!this.resizeListenerAdded) {
+        window.addEventListener('resize', this.handleResize);
+        this.resizeListenerAdded = true;
+      }
+    },
+    handleResize() {
+      this.height = window.innerHeight ?? 0;
+      this.width = window.innerWidth ?? 0;
+      this.updateSize();
     },
     updateSize() {
       this.size = {
@@ -33,6 +35,12 @@ export const useScreenStore = defineStore({
         xl: this.width > 1280,
         '2xl': this.width > 1536,
       };
+    },
+    destroy() {
+      if (this.resizeListenerAdded) {
+        window.removeEventListener('resize', this.handleResize);
+        this.resizeListenerAdded = false;
+      }
     },
   },
 });

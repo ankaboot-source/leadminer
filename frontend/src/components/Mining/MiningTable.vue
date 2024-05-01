@@ -985,6 +985,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  screenStore.destroy();
   clearInterval(refreshInterval);
 });
 </script>
