@@ -3,10 +3,10 @@
     outlined
     label="Other email provider (IMAP)"
     icon="pi pi-inbox"
-    @click="openImapCredentialsDialog"
+    @click="imapDialog = true"
   />
   <Dialog
-    v-model:visible="showImapCredentialsDialog"
+    v-model:visible="imapDialog"
     modal
     header="Sign-in with IMAP"
     class="md:w-[30rem]"
@@ -17,8 +17,9 @@
         <InputText
           v-model="imapEmail"
           :disabled="loadingSave"
-          :invalid="isInvalidEmailInput(imapEmail)"
+          :invalid="invalidEmailInput(imapEmail)"
           class="w-full"
+          @click="resetAdvancedSettings"
         />
       </div>
       <div class="w-full flex flex-col gap-1">
@@ -27,35 +28,39 @@
           v-model="imapPassword"
           class="w-full"
           type="password"
-          :invalid="invalidPassword"
+          :invalid="invalidImapPassword(imapPassword)"
         />
       </div>
-      <div v-if="showAdvancedImapSettings" class="w-full flex flex-col gap-1">
-        <label for="host">Host</label>
-        <InputText v-model="imapHost" class="w-full" :invalid="invalidHost" />
-      </div>
-      <div v-if="showAdvancedImapSettings" class="w-full flex flex-col gap-1">
-        <label for="port">Port</label>
-        <InputNumber
-          v-model="imapPort"
-          show-buttons
-          class="w-full"
-          :invalid="isInvalidImapPort(imapPort)"
-        />
-      </div>
-      <div
-        v-if="showAdvancedImapSettings"
-        class="w-full flex flex-row items-center gap-1"
-      >
-        <Checkbox v-model="imapSecureConnection" :binary="true" />
-        <label for="port">TLS/SSL</label>
-      </div>
+      <template v-if="imapAdvancedSettings">
+        <div class="w-full flex flex-col gap-1">
+          <label for="host">Host</label>
+          <InputText
+            v-model="imapHost"
+            class="w-full"
+            :invalid="invalidImapHost(imapHost)"
+          />
+        </div>
+        <div class="w-full flex flex-col gap-1">
+          <label for="port">Port</label>
+          <InputNumber
+            v-model="imapPort"
+            show-buttons
+            class="w-full"
+            :invalid="isInvalidImapPort(imapPort)"
+          />
+        </div>
+        <div class="w-full flex flex-row items-center gap-1">
+          <Checkbox v-model="imapSecureConnection" :binary="true" />
+          <label for="port">TLS/SSL</label>
+        </div>
+      </template>
+
       <div class="flex justify-end w-full gap-2 pt-4">
         <Button
           type="button"
           label="Cancel"
           severity="secondary"
-          @click="closeImapCredentialsDialog"
+          @click="closeDialog()"
         ></Button>
         <Button
           type="button"
@@ -72,95 +77,84 @@ import { FetchError } from 'ofetch';
 import { isInvalidEmailPattern } from '@/utils/email';
 import type { MiningSource } from '~/types/mining';
 
+interface ImapConfigs {
+  host: string;
+  port: number;
+  secure: boolean;
+}
+
 const { $api } = useNuxtApp();
 const $toast = useToast();
 const $user = useSupabaseUser();
 
 const imapSource = defineModel<MiningSource>('source');
 
-const imapEmail = ref<string | undefined>($user.value?.email);
+const imapDialog = ref(false);
+const imapAdvancedSettings = ref(false);
+
+const imapEmail = ref<string>($user.value?.email!);
 const imapPassword = ref<string | undefined>();
 const imapHost = ref<string | undefined>();
 const imapPort = ref(993);
 const imapSecureConnection = ref(true);
 
-const invalidEmail = ref(false);
-const invalidPassword = ref(false);
-const invalidHost = ref(false);
-const invalidPort = ref(false);
+const formErrors: Record<string, Ref> = {
+  email: ref(false),
+  password: ref(false),
+  host: ref(false),
+  port: ref(false),
+};
 
 const loadingSave = ref(false);
 
-const showAdvancedImapSettings = ref(false);
-const showImapCredentialsDialog = ref(false);
+const invalidEmailInput = (email: string | undefined) =>
+  formErrors.email.value || !email?.length || isInvalidEmailPattern(email);
 
-function isInvalidEmailInput(email: string | undefined) {
-  return !email?.length || invalidEmail.value || isInvalidEmailPattern(email);
-}
+const invalidImapPassword = (password: string | undefined) =>
+  formErrors.password.value || !password || password.length === 0;
 
-function isInvalidImapPort(port: number) {
-  return invalidPort.value || !(port > 0 && port <= 65536);
-}
+const isInvalidImapPort = (port: number) =>
+  formErrors.port.value || !(port > 0 && port <= 65536);
 
-function showAdvancedSettings() {
+const invalidImapHost = (host: string | undefined) =>
+  formErrors.host.value || !host || host.length === 0;
+
+const resetAdvancedSettings = (): void => {
   imapHost.value = '';
   imapPort.value = 993;
-  showAdvancedImapSettings.value = true;
-}
+};
 
 function resetFormErrors() {
-  invalidEmail.value = false;
-  invalidPassword.value = false;
-  invalidHost.value = false;
-  invalidPort.value = false;
-}
-
-function closeImapCredentialsDialog() {
-  resetFormErrors();
-  showAdvancedImapSettings.value = false;
-  showImapCredentialsDialog.value = false;
-}
-
-function openImapCredentialsDialog() {
-  showImapCredentialsDialog.value = true;
-}
-
-function showFormErrors(fields: string[]) {
-  fields.forEach((field) => {
-    if (field === 'email') {
-      invalidEmail.value = true;
-    }
-
-    if (field === 'password') {
-      invalidPassword.value = true;
-    }
-
-    if (field === 'host') {
-      invalidHost.value = true;
-    }
-
-    if (field === 'port') {
-      invalidPort.value = true;
-    }
+  Object.values(formErrors).forEach((error) => {
+    error.value = false;
   });
 }
 
-async function getImapConfigsForEmail(email: string) {
-  let configs =
-    imapHost.value && imapPort.value
-      ? {
-          host: imapHost.value,
-          port: imapPort.value,
-          secure: imapSecureConnection.value,
-        }
-      : null;
+const closeDialog = (): void => {
+  // reset for errors
+  resetFormErrors();
+  imapAdvancedSettings.value = false;
+  imapDialog.value = false;
+  imapEmail.value = $user.value?.email as string;
+};
 
-  configs = configs ?? (await $api(`/imap/config/${email}`, { method: 'GET' }));
-  return configs;
+function handleImapConfigsNotDetected() {
+  $toast.add({
+    severity: 'warn',
+    summary: 'Sign-in with IMAP',
+    detail:
+      'Unable to detect your IMAP configuration. Please add them manually.',
+    life: 5000,
+  });
+  imapAdvancedSettings.value = true;
 }
 
-function handleImapAuthenticationErrors(err: FetchError): void {
-  showFormErrors(err.data?.fields ?? []);
+function handleAuthenticationErrors(err: FetchError) {
+  if (err.data?.fields) {
+    err.data?.fields.forEach((field: string) => {
+      formErrors[field].value = true;
+    });
+  }
   $toast.add({
     severity: 'error',
     summary: 'Sign-in with IMAP',
@@ -169,30 +163,39 @@ function handleImapAuthenticationErrors(err: FetchError): void {
   });
 }
 
-async function onSubmitImapCredentials() {
+async function getImapConfigsForEmail(
+  email: string
+): Promise<ImapConfigs | null> {
   try {
-    if (!imapEmail.value) {
-      invalidEmail.value = true;
-      return;
-    }
+    const configs =
+      imapHost.value && imapPort.value
+        ? {
+            host: imapHost.value,
+            port: imapPort.value,
+            secure: imapSecureConnection.value,
+          }
+        : await $api<ImapConfigs>(`/imap/config/${email}`, { method: 'GET' });
 
+    return configs;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function onSubmitImapCredentials() {
+  loadingSave.value = true;
+  try {
     resetFormErrors();
-    loadingSave.value = true;
-
     const configs = await getImapConfigsForEmail(imapEmail.value);
 
     if (!configs) {
       loadingSave.value = false;
-      $toast.add({
-        severity: 'warn',
-        summary: 'Sign-in with IMAP',
-        detail:
-          'Unable to detect your IMAP configuration. Please add them manually.',
-        life: 5000,
-      });
-      showAdvancedSettings();
+      handleImapConfigsNotDetected();
       return;
     }
+
+    imapHost.value = configs.host;
+    imapPort.value = configs.port;
 
     await $api('/imap/mine/sources/imap', {
       method: 'POST',
@@ -203,21 +206,20 @@ async function onSubmitImapCredentials() {
       },
     });
 
-    // Update UI on success
-    loadingSave.value = false;
-    closeImapCredentialsDialog();
     imapSource.value = {
       type: 'imap',
       email: imapEmail.value,
       isValid: true,
     };
+    closeDialog();
   } catch (err) {
-    loadingSave.value = false;
     if (err instanceof FetchError) {
-      handleImapAuthenticationErrors(err);
+      handleAuthenticationErrors(err);
     } else {
       throw err;
     }
+  } finally {
+    loadingSave.value = false;
   }
 }
 </script>
