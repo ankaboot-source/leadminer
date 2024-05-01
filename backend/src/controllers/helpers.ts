@@ -94,10 +94,6 @@ export async function validateImapCredentials(
   password: string,
   port: number
 ) {
-  if ([host, email, password, port].some((param) => param === undefined)) {
-    throw new TypeError('Invalid parameters.');
-  }
-
   let connection = null;
   let connectionProvider: ImapConnectionProvider | null = null;
 
@@ -116,70 +112,4 @@ export async function validateImapCredentials(
     }
     await connectionProvider?.cleanPool();
   }
-}
-
-/**
- * Validates and extracts IMAP parameters from the request body.
- *
- * @param {object} body - The request body object containing the email, host, tls, port, and password.
- * @throws {Error} If any required parameter is missing or invalid, or if there is an error connecting to the IMAP server.
- */
-export function validateAndExtractImapParametersFromBody({
-  host,
-  email,
-  password,
-  tls,
-  port
-}: {
-  host: string;
-  email: string;
-  password: string;
-  tls: boolean;
-  port: number;
-}) {
-  const validationRules = [
-    {
-      fields: ['host'],
-      message: 'Host parameter is missing or invalid',
-      value: host,
-      validation: (value: any) => typeof value === 'string'
-    },
-    {
-      fields: ['email'],
-      message: 'Email parameter is missing or invalid',
-      value: email,
-      validation: (value: any) => typeof value === 'string'
-    },
-    {
-      fields: ['password'],
-      message: 'Password parameter is missing or invalid',
-      value: password,
-      validation: (value: any) => typeof value === 'string'
-    },
-    {
-      fields: ['tls'],
-      message: 'TLS parameter is missing or invalid',
-      value: tls,
-      validation: (value: any) => typeof value === 'boolean'
-    },
-    {
-      fields: ['port'],
-      message: 'Port parameter is missing or invalid',
-      value: port,
-      validation: (value: any) => !Number.isNaN(value)
-    }
-  ];
-
-  const errors = validationRules
-    .filter(({ value, validation }) => !validation(value))
-    .map(({ fields, message }) => ({ fields, message }));
-
-  if (errors.length > 0) {
-    const err: any = new Error('Validation errors');
-    err.errors = errors;
-    err.code = 400;
-    throw err;
-  }
-
-  return { email, host, tls, port, password };
 }
