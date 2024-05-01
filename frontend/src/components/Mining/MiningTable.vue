@@ -970,7 +970,7 @@ const scrollHeight = computed(() =>
   !isFullscreen.value ? tableHeight.value : ''
 );
 
-onMounted(async () => {
+onMounted(() => {
   function observeTop() {
     const resizeObserver = new ResizeObserver(() => {
       tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
