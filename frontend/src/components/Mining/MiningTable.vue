@@ -58,11 +58,13 @@
           "
         >
           <Button
+            class="mr-2"
             icon="pi pi-external-link"
-            label="Export CSV"
+            :label="windowWidth > 768 ? 'Export CSV' : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
-          />
+          >
+          </Button>
         </div>
         <div>
           <template v-if="!implicitSelectAll">
@@ -73,12 +75,12 @@
         <div class="grow" />
         <Button
           :disabled="isDefaultFilters"
-          type="button"
           icon="pi pi-filter-slash"
-          label="Clear"
+          :label="windowWidth > 768 ? 'Clear' : undefined"
           outlined
           @click="clearFilter()"
-        />
+        >
+        </Button>
         <!-- Settings -->
         <Button @click="toggleSettingsPanel">
           <span class="p-button-label">
@@ -965,8 +967,10 @@ const tablePosTop = ref<number>(
   TableRef.value?.$el.getBoundingClientRect().top ?? 0
 );
 const windowHeight = ref<number>(window?.innerHeight ?? 0);
-function onWindowHeightChange() {
+const windowWidth = ref<number>(window?.innerWidth ?? 0);
+function onWindowResize() {
   windowHeight.value = window.innerHeight ?? 0;
+  windowWidth.value = window.innerWidth ?? 0;
 }
 
 const tableHeight = ref('37vh');
@@ -975,7 +979,7 @@ const scrollHeight = computed(() =>
 );
 
 onMounted(() => {
-  window.addEventListener('resize', onWindowHeightChange);
+  window.addEventListener('resize', onWindowResize);
   function observeTop() {
     const resizeObserver = new ResizeObserver(() => {
       tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
@@ -990,7 +994,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', onWindowHeightChange);
+  window.removeEventListener('resize', onWindowResize);
   clearInterval(refreshInterval);
 });
 </script>
