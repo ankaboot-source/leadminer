@@ -4,8 +4,8 @@
     modal
     dismissable-mask
     :maximizable="screenStore?.size?.md"
-    :style="{ width: '60vw', height: '70vh' }"
     :pt:root:class="{ 'p-dialog-maximized': !screenStore?.size?.md }"
+    :style="{ width: '60vw', height: '70vh' }"
     pt:content:class="grow p-3 border-y border-slate-200"
     pt:footer:class="p-3"
     header="Fine-tune your mining"
