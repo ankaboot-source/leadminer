@@ -591,21 +591,28 @@ function onValidToggle(toggle?: boolean) {
   if (filters.value.status.value === null) {
     filters.value.status.value = [];
   }
-  if (!filters.value.status.value.includes('VALID') && validToggle.value) {
-    filters.value.status.value.push('VALID');
+
+  if (
+    !(
+      filters.value.status.value.length === 1 &&
+      filters.value.status.value[0] === 'VALID'
+    ) &&
+    validToggle.value
+  ) {
+    filters.value.status.value = ['VALID'];
   } else if (
-    filters.value.status.value.includes('VALID') &&
+    filters.value.status.value.length === 1 &&
+    filters.value.status.value[0] === 'VALID' &&
     !validToggle.value
   ) {
-    filters.value.status.value = filters.value.status.value.filter(
-      (item: string) => item !== 'VALID'
-    );
+    filters.value.status.value = [];
   }
 }
 watch(
   () => filters.value.status.value,
   (newStatusValue) => {
-    validToggle.value = newStatusValue?.includes('VALID');
+    validToggle.value =
+      newStatusValue.length === 1 && newStatusValue[0] === 'VALID';
   }
 );
 
