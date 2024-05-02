@@ -182,14 +182,6 @@ async function getImapConfigsForEmail(
   }
 }
 
-async function openImapCredentialsDialog() {
-  showImapCredentialsDialog.value = true;
-  if (!imapEmail.value.length && $user.value) {
-    imapEmail.value = $user.value.email as string;
-    await getImapConfigs(imapEmail.value);
-  }
-}
-
 async function onSubmitImapCredentials() {
   loadingSave.value = true;
   try {
