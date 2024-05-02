@@ -30,6 +30,7 @@
               :input-style="{ width: '100%' }"
               toggle-mask
               :invalid="isInvalidPassword(password)"
+              autocomplete="off"
             />
           </div>
         </div>
@@ -149,12 +150,13 @@ function closeWarning() {
 
 async function updateProfile() {
   isLoading.value = true;
-  try {
-    const canChangeEmailPassword = Boolean(isSocialLogin.value);
 
-    if (canChangeEmailPassword && password.value.length > 0) {
+  const { value: user } = useSupabaseUser();
+
+  try {
+    if (password.value.length) {
       const { error } = await useSupabaseClient().auth.updateUser({
-        email: email.value,
+        email: user?.email !== email.value ? email.value : undefined,
         password: password.value,
       });
 
@@ -162,11 +164,12 @@ async function updateProfile() {
         throw error;
       }
     }
-    const { error } = await useSupabaseClient()
+
+    const { error } = await useSupabaseClient<{
+      full_name: string;
+    }>()
       .from('profiles')
-      // @ts-expect-error - Issue with @nuxt/supabase typing
       .update({
-        email: canChangeEmailPassword ? email.value : undefined,
         full_name: fullName.value,
       })
       .eq('user_id', userId.value);
@@ -177,9 +180,18 @@ async function updateProfile() {
 
     await useSupabaseClient().auth.refreshSession();
 
+    if (user?.email !== email.value) {
+      $toast.add({
+        severity: 'info',
+        summary: 'Email address updated',
+        detail: 'Please check your email to confirm the new email address.',
+        life: 3000,
+      });
+    }
+
     $toast.add({
       severity: 'success',
-      summary: 'Update information',
+      summary: 'Profile updated',
       detail: 'Profile information updated successfully',
       life: 3000,
     });
@@ -197,7 +209,7 @@ async function deleteAccount() {
     await $api('/auth/users', {
       method: 'DELETE',
     });
-    await logout();
+    logout();
     isLoading.value = false;
   } catch (err) {
     isLoading.value = false;
