@@ -1,6 +1,6 @@
 import { sse } from './sse';
 
-export async function logout() {
+export function logout() {
   sse.closeConnection();
   useLeadminerStore().$reset();
   navigateTo('/auth/login');
