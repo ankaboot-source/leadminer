@@ -58,8 +58,9 @@
           "
         >
           <Button
+            class="mr-2"
             icon="pi pi-external-link"
-            label="Export CSV"
+            :label="screenStore.size.md ? 'Export CSV' : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
@@ -73,9 +74,8 @@
         <div class="grow" />
         <Button
           :disabled="isDefaultFilters"
-          type="button"
           icon="pi pi-filter-slash"
-          label="Clear"
+          :label="screenStore.size.md ? 'Clear' : undefined"
           outlined
           @click="clearFilter()"
         />
@@ -927,15 +927,15 @@ async function exportTable(partialExport = false) {
 const isFullscreen = ref(false);
 
 const visibleColumns = ref(['contacts', 'occurrence']);
+const screenStore = useScreenStore();
 onMounted(() => {
-  const windowWidth = window.innerWidth;
-
+  screenStore.init();
   visibleColumns.value = [
     'contacts',
-    ...(windowWidth > 550 ? ['occurrence'] : []),
-    ...(windowWidth > 700 ? ['recency'] : []),
-    ...(windowWidth > 800 ? ['tags'] : []),
-    ...(windowWidth > 950 ? ['status'] : []),
+    ...(screenStore.width > 550 ? ['occurrence'] : []),
+    ...(screenStore.width > 700 ? ['recency'] : []),
+    ...(screenStore.width > 800 ? ['tags'] : []),
+    ...(screenStore.width > 950 ? ['status'] : []),
   ];
 });
 const visibleColumnsOptions = [
@@ -964,10 +964,6 @@ const TableRef = ref();
 const tablePosTop = ref<number>(
   TableRef.value?.$el.getBoundingClientRect().top ?? 0
 );
-const windowHeight = ref<number>(window?.innerHeight ?? 0);
-function onWindowHeightChange() {
-  windowHeight.value = window.innerHeight ?? 0;
-}
 
 const tableHeight = ref('37vh');
 const scrollHeight = computed(() =>
@@ -975,7 +971,6 @@ const scrollHeight = computed(() =>
 );
 
 onMounted(() => {
-  window.addEventListener('resize', onWindowHeightChange);
   function observeTop() {
     const resizeObserver = new ResizeObserver(() => {
       tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
@@ -985,12 +980,12 @@ onMounted(() => {
   observeTop();
 
   watchEffect(() => {
-    tableHeight.value = `${windowHeight.value - tablePosTop.value - 140}px`;
+    tableHeight.value = `${screenStore.height - tablePosTop.value - 140}px`;
   });
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', onWindowHeightChange);
+  screenStore.destroy();
   clearInterval(refreshInterval);
 });
 </script>
