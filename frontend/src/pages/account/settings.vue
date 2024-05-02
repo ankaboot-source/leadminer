@@ -17,7 +17,7 @@
               v-model="email"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="isInvalidEmail(email)"
+              :invalid="isInvalidEmailPattern(email)"
               type="email"
               aria-describedby="email-help"
             />

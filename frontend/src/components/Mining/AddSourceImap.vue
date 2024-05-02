@@ -3,10 +3,10 @@
     outlined
     label="Other email provider (IMAP)"
     icon="pi pi-inbox"
-    @click="openImapCredentialsDialog"
+    @click="imapDialog = true"
   />
   <Dialog
-    v-model:visible="showImapCredentialsDialog"
+    v-model:visible="imapDialog"
     modal
     header="Sign-in with IMAP"
     class="md:w-[30rem]"
@@ -17,47 +17,55 @@
         <InputText
           v-model="imapEmail"
           :disabled="loadingSave"
-          :invalid="isInvalidEmail(imapEmail)"
+          :invalid="invalidEmailInput(imapEmail)"
           class="w-full"
-          @focusout="getImapConfigs(imapEmail)"
+          @click="resetAdvancedSettings"
         />
       </div>
       <div class="w-full flex flex-col gap-1">
         <label for="password">Password</label>
-        <InputText v-model="imapPassword" class="w-full" type="password" />
-      </div>
-      <div v-if="showAdvancedImapSettings" class="w-full flex flex-col gap-1">
-        <label for="host">Host</label>
-        <InputText v-model="imapHost" class="w-full" />
-      </div>
-      <div v-if="showAdvancedImapSettings" class="w-full flex flex-col gap-1">
-        <label for="port">Port</label>
-        <InputNumber
-          v-model="imapPort"
-          show-buttons
+        <InputText
+          v-model="imapPassword"
           class="w-full"
-          :invalid="!(imapPort > 0 && imapPort <= 65536)"
+          type="password"
+          :invalid="invalidImapPassword(imapPassword)"
         />
       </div>
-      <div
-        v-if="showAdvancedImapSettings"
-        class="w-full flex flex-row items-center gap-1"
-      >
-        <Checkbox v-model="imapSecureConnection" :binary="true" />
-        <label for="port">TLS/SSL</label>
-      </div>
+      <template v-if="imapAdvancedSettings">
+        <div class="w-full flex flex-col gap-1">
+          <label for="host">Host</label>
+          <InputText
+            v-model="imapHost"
+            class="w-full"
+            :invalid="invalidImapHost(imapHost)"
+          />
+        </div>
+        <div class="w-full flex flex-col gap-1">
+          <label for="port">Port</label>
+          <InputNumber
+            v-model="imapPort"
+            show-buttons
+            class="w-full"
+            :invalid="isInvalidImapPort(imapPort)"
+          />
+        </div>
+        <div class="w-full flex flex-row items-center gap-1">
+          <Checkbox v-model="imapSecureConnection" :binary="true" />
+          <label for="port">TLS/SSL</label>
+        </div>
+      </template>
+
       <div class="flex justify-end w-full gap-2 pt-4">
         <Button
           type="button"
           label="Cancel"
           severity="secondary"
-          @click="showImapCredentialsDialog = false"
+          @click="closeDialog()"
         ></Button>
         <Button
           type="button"
           label="Connect"
           :loading="loadingSave"
-          :disabled="disableSave"
           @click="onSubmitImapCredentials"
         ></Button>
       </div>
@@ -66,74 +74,111 @@
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
-import { useLeadminerStore } from '@/stores/leadminer';
-import { isValidEmail } from '@/utils/email';
+import { isInvalidEmailPattern } from '@/utils/email';
+import type { MiningSource } from '~/types/mining';
+
+interface ImapConfigs {
+  host: string;
+  port: number;
+  secure: boolean;
+}
 
 const { $api } = useNuxtApp();
 const $toast = useToast();
 const $user = useSupabaseUser();
-const $leadminerStore = useLeadminerStore();
 
-const imapEmail = ref('');
-const imapPassword = ref('');
-const imapHost = ref('');
+const imapSource = defineModel<MiningSource>('source');
+
+const imapDialog = ref(false);
+const imapAdvancedSettings = ref(false);
+
+const imapEmail = ref<string>($user.value?.email ?? '');
+const imapPassword = ref<string>('');
+const imapHost = ref<string>('');
 const imapPort = ref(993);
 const imapSecureConnection = ref(true);
 
+const formErrors: Record<string, Ref> = {
+  email: ref(false),
+  password: ref(false),
+  host: ref(false),
+  port: ref(false),
+};
+
 const loadingSave = ref(false);
-const showAdvancedImapSettings = ref(false);
 
-const showImapCredentialsDialog = ref(false);
+const invalidEmailInput = (email: string | undefined) =>
+  formErrors.email.value || !email?.length || isInvalidEmailPattern(email);
 
-const disableSave = computed(() =>
-  Boolean(
-    !imapEmail.value.length ||
-      !imapHost.value.length ||
-      !imapPassword.value.length
-  )
-);
+const invalidImapPassword = (password: string | undefined) =>
+  formErrors.password.value || !password?.length || password.length === 0;
 
-function showAdvancedSettings() {
-  showAdvancedImapSettings.value = true;
+const isInvalidImapPort = (port: number) =>
+  formErrors.port.value || !(port > 0 && port <= 65536);
+
+const invalidImapHost = (host: string | undefined) =>
+  formErrors.host.value || !host?.length || host.length === 0;
+
+const resetAdvancedSettings = (): void => {
   imapHost.value = '';
+  imapPort.value = 993;
+};
+
+function resetFormErrors() {
+  Object.values(formErrors).forEach((error) => {
+    error.value = false;
+  });
 }
 
-function closeImapCredentialsDialog() {
-  showImapCredentialsDialog.value = false;
+const closeDialog = (): void => {
+  // reset for errors
+  resetFormErrors();
+  imapAdvancedSettings.value = false;
+  imapDialog.value = false;
+  imapEmail.value = $user.value?.email as string;
+};
+
+function handleImapConfigsNotDetected() {
+  $toast.add({
+    severity: 'warn',
+    summary: 'Sign-in with IMAP',
+    detail:
+      'Unable to detect your IMAP configuration. Please add them manually.',
+    life: 5000,
+  });
+  imapAdvancedSettings.value = true;
 }
 
-async function getImapConfigs(email: string) {
-  if (!isValidEmail(email)) {
-    return;
-  }
-  loadingSave.value = true;
-  try {
-    const {
-      host,
-      port,
-      secure,
-    }: {
-      host: string;
-      port: number;
-      secure: boolean;
-    } = await $api(`/imap/config/${email}`, {
-      method: 'GET',
+function handleAuthenticationErrors(err: FetchError) {
+  if (err.data?.fields) {
+    err.data?.fields.forEach((field: string) => {
+      formErrors[field].value = true;
     });
+  }
+  $toast.add({
+    severity: 'error',
+    summary: 'Sign-in with IMAP',
+    detail: err.data.message,
+    life: 5000,
+  });
+}
 
-    if (host && port && secure) {
-      imapHost.value = host;
-      imapPort.value = Number(port);
-      imapSecureConnection.value = secure;
-      showAdvancedImapSettings.value = false;
-    } else {
-      showAdvancedSettings();
-    }
+async function getImapConfigsForEmail(
+  email: string
+): Promise<ImapConfigs | null> {
+  try {
+    const configs =
+      imapHost.value && imapPort.value
+        ? {
+            host: imapHost.value,
+            port: imapPort.value,
+            secure: imapSecureConnection.value,
+          }
+        : await $api<ImapConfigs>(`/imap/config/${email}`, { method: 'GET' });
 
-    loadingSave.value = false;
-  } catch (e) {
-    loadingSave.value = false;
-    showAdvancedSettings();
-    throw e;
+    return configs;
+  } catch (err) {
+    return null;
   }
 }
 
@@ -147,34 +192,42 @@ async function openImapCredentialsDialog() {
 
 async function onSubmitImapCredentials() {
   loadingSave.value = true;
-
   try {
+    resetFormErrors();
+    const configs = await getImapConfigsForEmail(imapEmail.value);
+
+    if (!configs) {
+      loadingSave.value = false;
+      handleImapConfigsNotDetected();
+      return;
+    }
+
+    imapHost.value = configs.host;
+    imapPort.value = configs.port;
+
     await $api('/imap/mine/sources/imap', {
       method: 'POST',
       body: {
         email: imapEmail.value,
-        host: imapHost.value,
-        port: imapPort.value,
         password: imapPassword.value,
+        ...configs,
       },
     });
 
-    await $leadminerStore.fetchMiningSources();
-    closeImapCredentialsDialog();
-    loadingSave.value = false;
+    imapSource.value = {
+      type: 'imap',
+      email: imapEmail.value,
+      isValid: true,
+    };
+    closeDialog();
   } catch (err) {
-    loadingSave.value = false;
-
     if (err instanceof FetchError) {
-      $toast.add({
-        severity: 'error',
-        summary: 'Sign-in with IMAP',
-        detail: err.data.details.message,
-        life: 3000,
-      });
+      handleAuthenticationErrors(err);
     } else {
       throw err;
     }
+  } finally {
+    loadingSave.value = false;
   }
 }
 </script>

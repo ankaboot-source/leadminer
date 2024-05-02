@@ -12,6 +12,7 @@ import {
   generateErrorObjectFromImapError,
   validateImapCredentials
 } from './helpers';
+import { ImapAuthError } from '../utils/errors';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -206,8 +207,17 @@ export default function initializeMiningController(
       next: NextFunction
     ) {
       const user = res.locals.user as User;
-
       const { email, host, password, port } = req.body;
+
+      const missingParams = Object.entries({ host, email, password, port })
+        .filter(([, value]) => value === undefined)
+        .map(([key]) => key);
+
+      if (missingParams.length) {
+        res.status(400).json({
+          message: `Missing required parameters ${missingParams.join(', ')}`
+        });
+      }
 
       try {
         // Connect to validate connection before creating the pool.
@@ -223,6 +233,10 @@ export default function initializeMiningController(
           .status(201)
           .send({ message: 'IMAP mining source added successfully' });
       } catch (error) {
+        if (error instanceof ImapAuthError) {
+          return res.status(error.status).json({ ...error });
+        }
+
         res.status(500);
         return next(error);
       }

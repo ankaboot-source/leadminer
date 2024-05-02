@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
-import { ErrorResponse, ImapAuthError } from '../utils/errors';
+import { ErrorResponse } from '../utils/errors';
 
 export default function errorHandler(
   error: Error,
@@ -19,10 +19,5 @@ export default function errorHandler(
       response.stack = error.stack;
     }
   }
-
-  if (error instanceof ImapAuthError && error.fieldErrors) {
-    response.details = error.fieldErrors;
-  }
-
   return res.status(code).send({ ...response });
 }
