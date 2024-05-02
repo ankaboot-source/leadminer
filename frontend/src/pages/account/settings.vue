@@ -182,8 +182,8 @@ async function updateProfile() {
 
     if (user?.email !== email.value) {
       $toast.add({
-        severity: 'success',
-        summary: 'Update information',
+        severity: 'info',
+        summary: 'Email address updated',
         detail: 'Please check your email to confirm the new email address.',
         life: 3000,
       });
@@ -191,7 +191,7 @@ async function updateProfile() {
 
     $toast.add({
       severity: 'success',
-      summary: 'Update information',
+      summary: 'Profile updated',
       detail: 'Profile information updated successfully',
       life: 3000,
     });
@@ -209,7 +209,7 @@ async function deleteAccount() {
     await $api('/auth/users', {
       method: 'DELETE',
     });
-    await logout();
+    logout();
     isLoading.value = false;
   } catch (err) {
     isLoading.value = false;
