@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout :name="useSupabaseUser().value ? 'default' : 'auth'">
+  <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
   <Toast />
@@ -41,23 +41,17 @@
 </template>
 
 <script setup lang="ts">
-import { useLeadminerStore } from './stores/leadminer';
-
-const SKIP_DASHBOARD_REDIRECT = ['/oauth-consent-error', '/account'];
-const $router = useRouter();
-const $store = useLeadminerStore();
-
 useSupabaseClient().auth.onAuthStateChange((event) => {
-  if (
-    event === 'SIGNED_IN' &&
-    !SKIP_DASHBOARD_REDIRECT.includes($router.currentRoute.value.path)
-  ) {
-    $router.push('/dashboard');
-  }
+  switch (event) {
+    case 'SIGNED_IN':
+      navigateTo('/dashboard');
+      break;
+    case 'SIGNED_OUT':
+      logout();
+      break;
 
-  if (event === 'SIGNED_OUT') {
-    $store.$reset();
-    $router.push('/auth/login');
+    default:
+      break;
   }
 });
 
