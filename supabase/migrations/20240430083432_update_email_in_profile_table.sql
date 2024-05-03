@@ -4,18 +4,10 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY definer SET search_path = public
 AS $$
-DECLARE
-  user_email text;
 BEGIN
-  SELECT email
-  INTO user_email
-  FROM auth.users
-  WHERE id = auth.uid()
-  LIMIT 1;
-
   UPDATE public.profiles
-  SET email = user_email
-  WHERE auth.uid() = user_id;
+  SET email = new.email
+  WHERE user_id = auth.uid();
   RETURN NEW;
 END;
 $$;
