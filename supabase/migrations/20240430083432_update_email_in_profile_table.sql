@@ -7,7 +7,7 @@ AS $$
 BEGIN
   UPDATE public.profiles
   SET email = new.email
-  WHERE user_id = auth.uid();
+  WHERE user_id = new.id;
   RETURN NEW;
 END;
 $$;
