@@ -10,12 +10,14 @@ describe('getOAuthImapConfigByEmail', () => {
 
   it('Should return the imap config for a supported email domain', () => {
     expect(getOAuthImapConfigByEmail('test@gmail.com')).toEqual({
+      tls: true,
       host: 'imap.gmail.com',
       port: 993
     });
 
     expect(getOAuthImapConfigByEmail('test@outlook.com')).toEqual({
       host: 'outlook.office365.com',
+      tls: true,
       port: 993
     });
   });
