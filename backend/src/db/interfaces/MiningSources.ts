@@ -3,6 +3,7 @@ export interface ImapMiningSourceCredentials {
   password: string;
   host: string;
   port: number;
+  tls: true;
 }
 
 export type OAuthMiningSourceProvider = 'azure' | 'google';

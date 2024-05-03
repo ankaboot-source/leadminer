@@ -39,12 +39,13 @@ class ImapConnectionProvider {
       const email = this.imapConfig.user;
       const xoauth2Token = generateXOauthToken(token, email);
 
-      const { host, port } = getOAuthImapConfigByEmail(email);
+      const { host, port, tls } = getOAuthImapConfigByEmail(email);
       const tlsOptions = { host, port, servername: host };
 
       this.imapConfig = {
         host,
         port,
+        tls,
         tlsOptions,
         xoauth2: xoauth2Token,
         ...this.imapConfig
@@ -59,11 +60,12 @@ class ImapConnectionProvider {
    * Builds the configuration for connecting to a mail server using a username and password.
    * @param host - The host name or IP address of the mail server
    * @param password - User's password
+   * @param tls - Perform implicit TLS connection?
    * @param port - The port number to connect to the server on (optional, defaults to 993)
    * @returns - The object for the connection
    * @throws {TypeError} - If any parameter is invalid
    */
-  withPassword(host: string, password: string, port = 993) {
+  withPassword(host: string, password: string, tls: boolean, port = 993) {
     if (!host || !password) {
       throw new TypeError(
         'Invalid parameters. Host and password must be non-empty strings and port must be a number.'
@@ -75,6 +77,7 @@ class ImapConnectionProvider {
       password,
       host,
       port,
+      tls,
       tlsOptions: {
         port,
         host,

@@ -75,6 +75,7 @@ export default function initializeImapController(miningSources: MiningSources) {
             : new ImapConnectionProvider(data.email).withPassword(
                 data.host,
                 data.password,
+                data.tls,
                 data.port
               );
 
@@ -110,9 +111,9 @@ export default function initializeImapController(miningSources: MiningSources) {
 
       try {
         const config = await new ImapConfigDiscover().getImapConfig(email);
-        return Object.keys(config).length === 0
-          ? res.sendStatus(404)
-          : res.json({ ...config });
+        return config && Object.keys(config).length !== 0
+          ? res.json({ ...config })
+          : res.sendStatus(404);
       } catch (error) {
         return next(error);
       }

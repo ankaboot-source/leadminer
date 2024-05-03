@@ -21,16 +21,19 @@ type Provider = 'google' | 'azure';
 interface ImapConfig {
   host: string;
   port: number;
+  tls: boolean;
 }
 
 const PROVIDER_CONFIG: Record<Provider, ImapConfig> = {
   google: {
     host: 'imap.gmail.com',
-    port: 993
+    port: 993,
+    tls: true
   },
   azure: {
     host: 'outlook.office365.com',
-    port: 993
+    port: 993,
+    tls: true
   }
 };
 

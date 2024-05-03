@@ -207,9 +207,15 @@ export default function initializeMiningController(
       next: NextFunction
     ) {
       const user = res.locals.user as User;
-      const { email, host, password, port } = req.body;
+      const { email, host, password, port, secure } = req.body;
 
-      const missingParams = Object.entries({ host, email, password, port })
+      const missingParams = Object.entries({
+        email,
+        host,
+        password,
+        port,
+        secure
+      })
         .filter(([, value]) => value === undefined)
         .map(([key]) => key);
 
@@ -221,12 +227,12 @@ export default function initializeMiningController(
 
       try {
         // Connect to validate connection before creating the pool.
-        await validateImapCredentials(host, email, password, port);
+        await validateImapCredentials(host, email, password, port, secure);
         await miningSources.upsert({
           userId: user.id,
           email,
           type: 'imap',
-          credentials: { email, host, password, port }
+          credentials: { email, host, password, port, tls: secure }
         });
 
         return res
@@ -294,6 +300,7 @@ export default function initializeMiningController(
             ).withPassword(
               miningSourceCredentials.host,
               miningSourceCredentials.password,
+              miningSourceCredentials.tls,
               miningSourceCredentials.port
             );
 
