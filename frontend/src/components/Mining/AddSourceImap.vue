@@ -66,7 +66,9 @@
           type="button"
           label="Connect"
           :loading="loadingSave"
-          :disabled="isInvalidEmailPattern(imapEmail) || imapPassword.length === 0"
+          :disabled="
+            isInvalidEmailPattern(imapEmail) || imapPassword.length === 0
+          "
           @click="onSubmitImapCredentials"
         ></Button>
       </div>
@@ -123,7 +125,7 @@ const invalidImapHost = (host: string | undefined) =>
 const resetAdvancedSettings = (): void => {
   imapHost.value = '';
   imapPort.value = 993;
-  imapSecureConnection.value = true
+  imapSecureConnection.value = true;
 };
 
 function resetFormErrors() {
@@ -152,10 +154,10 @@ function handleImapConfigsNotDetected() {
 }
 
 function handleAuthenticationErrors(err: FetchError) {
-  if (err.data?.fields) {    
+  if (err.data?.fields) {
     err.data?.fields.forEach((field: string) => {
       if (['host', 'port'].includes(field)) {
-        imapAdvancedSettings.value = true
+        imapAdvancedSettings.value = true;
       }
       formErrors[field].value = true;
     });
