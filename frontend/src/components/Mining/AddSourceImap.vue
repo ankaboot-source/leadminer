@@ -66,6 +66,7 @@
           type="button"
           label="Connect"
           :loading="loadingSave"
+          :disabled="isInvalidEmailPattern(imapEmail) || imapPassword.length === 0"
           @click="onSubmitImapCredentials"
         ></Button>
       </div>
@@ -122,6 +123,7 @@ const invalidImapHost = (host: string | undefined) =>
 const resetAdvancedSettings = (): void => {
   imapHost.value = '';
   imapPort.value = 993;
+  imapSecureConnection.value = true
 };
 
 function resetFormErrors() {
@@ -150,11 +152,15 @@ function handleImapConfigsNotDetected() {
 }
 
 function handleAuthenticationErrors(err: FetchError) {
-  if (err.data?.fields) {
+  if (err.data?.fields) {    
     err.data?.fields.forEach((field: string) => {
+      if (['host', 'port'].includes(field)) {
+        imapAdvancedSettings.value = true
+      }
       formErrors[field].value = true;
     });
   }
+
   $toast.add({
     severity: 'error',
     summary: 'Sign-in with IMAP',
@@ -196,6 +202,7 @@ async function onSubmitImapCredentials() {
 
     imapHost.value = configs.host;
     imapPort.value = configs.port;
+    imapSecureConnection.value = configs.secure;
 
     await $api('/imap/mine/sources/imap', {
       method: 'POST',
