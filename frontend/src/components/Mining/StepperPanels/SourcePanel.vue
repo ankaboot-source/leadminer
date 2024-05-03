@@ -7,11 +7,21 @@
       <p>Pick an existing email address to mine</p>
       <Dropdown
         v-model="sourceModel"
-        class="border-[#bcbdf9]"
         checkmark
         :options="sourceOptions"
         option-label="email"
         placeholder="email address"
+        :pt="{
+          root: {
+            class: 'border-[#bcbdf9]',
+          },
+          input: {
+            class: 'text-indigo-500',
+          },
+          trigger: {
+            class: 'text-indigo-500',
+          },
+        }"
       />
     </div>
     <div v-if="sourceOptions.length">
