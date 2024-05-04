@@ -59,12 +59,12 @@ describe('generateErrorObjectFromImapError', () => {
       )}`, () => {
         const result = generateErrorObjectFromImapError(error);
         if (description === 'unknown') {
-          return expect(result).toEqual(error);
+          expect(result).toEqual(error);
+        } else {
+          expect(result).toBeInstanceOf(ImapAuthError);
+          expect(result.status).toEqual(expectedStatus);
+          expect(result.fields).toEqual(expectedFields);
         }
-
-        expect(result).toBeInstanceOf(ImapAuthError);
-        expect(result.status).toEqual(expectedStatus);
-        expect(result.fields).toEqual(expectedFields);
       });
     }
   );
