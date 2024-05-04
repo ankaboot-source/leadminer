@@ -12,14 +12,15 @@
         option-label="email"
         placeholder="email address"
         :pt="{
-          root: {
-            class: 'border-[#bcbdf9]',
+          trigger: {
+            class: 'text-indigo-500',
           },
+
           input: {
             class: 'text-indigo-500',
           },
-          trigger: {
-            class: 'text-indigo-500',
+          root: {
+            class: 'border-[#bcbdf9]',
           },
         }"
       />
