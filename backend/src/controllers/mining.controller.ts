@@ -240,7 +240,9 @@ export default function initializeMiningController(
           .send({ message: 'IMAP mining source added successfully' });
       } catch (error) {
         if (error instanceof ImapAuthError) {
-          return res.status(error.status).json({ ...error });
+          return res
+            .status(error.status)
+            .json({ message: error.message, fields: error.fields });
         }
 
         res.status(500);

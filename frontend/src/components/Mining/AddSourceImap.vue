@@ -20,6 +20,7 @@
           :invalid="invalidEmailInput(imapEmail)"
           class="w-full"
           @click="resetAdvancedSettings"
+          @update:model-value="imapAdvancedSettings = false"
         />
       </div>
       <div class="w-full flex flex-col gap-1">

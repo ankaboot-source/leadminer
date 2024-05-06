@@ -21,6 +21,14 @@ const IMAP_ERROR_CODES = new Map([
     }
   ],
   [
+    'authentication-app-password',
+    {
+      status: 401,
+      fields: ['password'],
+      message: 'Application-specific password is required.'
+    }
+  ],
+  [
     'socket',
     {
       status: 503,
@@ -53,6 +61,10 @@ export function generateErrorObjectFromImapError(error: any) {
 
   if (error.message?.toLowerCase().includes('logging in is disabled')) {
     errorMessage = IMAP_ERROR_CODES.get('authentication-disabled');
+  }
+
+  if (error.message?.toLowerCase().includes('application-specific password')) {
+    errorMessage = IMAP_ERROR_CODES.get('authentication-app-password');
   }
 
   return errorMessage

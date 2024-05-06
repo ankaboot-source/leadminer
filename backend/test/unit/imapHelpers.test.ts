@@ -8,42 +8,64 @@ jest.mock('../../src/config', () => ({
 }));
 
 describe('generateErrorObjectFromImapError', () => {
-  it('should handle authentication error with status 401 and fields ["email", "password"]', () => {
-    const error = { source: 'authentication' };
-    const result = generateErrorObjectFromImapError(error);
-    expect(result).toBeInstanceOf(ImapAuthError);
-    expect(result.status).toEqual(401);
-    expect(result.fields).toEqual(['email', 'password']);
-  });
+  const testCases = [
+    {
+      description: 'authentication error',
+      error: { source: 'authentication' },
+      expectedStatus: 401,
+      expectedFields: ['email', 'password']
+    },
+    {
+      description: 'authentication-disabled error',
+      error: { message: 'Logging in is disabled' },
+      expectedStatus: 402,
+      expectedFields: ['host', 'port']
+    },
+    {
+      description: 'application-specific-password error',
+      error: {
+        source: 'authentication',
+        message: 'application-specific password is required'
+      },
+      expectedStatus: 401,
+      expectedFields: ['password']
+    },
+    {
+      description: 'connect error',
+      error: { source: 'socket' },
+      expectedStatus: 503,
+      expectedFields: ['host', 'port']
+    },
+    {
+      description: 'timeout error',
+      error: { source: 'timeout' },
+      expectedStatus: 504,
+      expectedFields: ['host', 'port']
+    },
+    {
+      description: 'unknown',
+      error: { source: 'unknown', message: 'Unknown error occurred' }
+    },
+    {
+      description: 'unknown',
+      error: {}
+    }
+  ];
 
-  it('should handle authentication-disabled error with status 402 and fields ["host", "port"]', () => {
-    const error = { message: 'Logging in is disabled' };
-    const result = generateErrorObjectFromImapError(error);
-    expect(result).toBeInstanceOf(ImapAuthError);
-    expect(result.status).toEqual(402);
-    expect(result.fields).toEqual(['host', 'port']);
-  });
-
-  it('should handle connect error with status 503 and fields ["host", "port"]', () => {
-    const error = { source: 'socket' };
-    const result = generateErrorObjectFromImapError(error);
-    expect(result).toBeInstanceOf(ImapAuthError);
-    expect(result.status).toEqual(503);
-    expect(result.fields).toEqual(['host', 'port']);
-  });
-
-  it('should handle timeout error with status 504 and fields ["host", "port"]', () => {
-    const error = { source: 'timeout' };
-    const result = generateErrorObjectFromImapError(error);
-    expect(result).toBeInstanceOf(ImapAuthError);
-    expect(result.status).toEqual(504);
-    expect(result.fields).toEqual(['host', 'port']);
-  });
-
-  it('should return undefined status and fields for unknown error', () => {
-    const error = { source: 'unknown', message: 'Unknown error occurred' };
-    const result = generateErrorObjectFromImapError(error);
-    expect(result.status).toBeUndefined();
-    expect(result.fields).toBeUndefined();
-  });
+  testCases.forEach(
+    ({ description, error, expectedStatus, expectedFields }) => {
+      it(`should handle ${description} with status ${expectedStatus} and fields ${JSON.stringify(
+        expectedFields
+      )}`, () => {
+        const result = generateErrorObjectFromImapError(error);
+        if (description === 'unknown') {
+          expect(result).toEqual(error);
+        } else {
+          expect(result).toBeInstanceOf(ImapAuthError);
+          expect(result.status).toEqual(expectedStatus);
+          expect(result.fields).toEqual(expectedFields);
+        }
+      });
+    }
+  );
 });
