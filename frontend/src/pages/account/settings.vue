@@ -161,7 +161,16 @@ async function updateProfile() {
       });
 
       if (error) {
-        throw error;
+        $toast.add({
+          severity: 'error',
+          summary: 'Oops!',
+          detail: error.message,
+          life: 3000,
+        });
+
+        isLoading.value = false;
+
+        return;
       }
     }
 
