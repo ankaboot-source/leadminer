@@ -85,7 +85,7 @@ export default function initializeContactsController(
           };
           return res.status(statusCode).json(response);
         }
-        if (hasInsufficientCredits) {
+        if (hasInsufficientCredits && newContacts.length) {
           statusCode = 206; // 206 Partial Content
           if (!partialExport) {
             statusCode = 266; // 266 Confirm Partial Content
