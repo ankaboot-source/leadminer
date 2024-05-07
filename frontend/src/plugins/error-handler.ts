@@ -31,6 +31,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     if (error instanceof FetchError && error.response) {
+      if (error.response.status === 402) return; // Handled by the Credits component
       message =
         error.response._data.message ??
         ERROR_STATUS_MESSAGES[error.response.status];
