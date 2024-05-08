@@ -164,7 +164,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         {
           method: 'POST',
           body: {
-            boxes: Object.keys(selectedBoxes.value).slice(1),
+            boxes: Object.keys(selectedBoxes.value).filter((box) => box !== ''),
             miningSource: activeMiningSource.value,
           },
         }

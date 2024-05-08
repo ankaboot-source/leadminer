@@ -221,7 +221,9 @@ function openMiningSettings() {
 
 // eslint-disable-next-line consistent-return
 async function startMining() {
-  if (Object.keys(selectedBoxes.value).slice(1).length === 0) {
+  if (
+    Object.keys(selectedBoxes.value).filter((box) => box !== '').length === 0
+  ) {
     openMiningSettings();
     $toast.add({
       severity: 'error',
