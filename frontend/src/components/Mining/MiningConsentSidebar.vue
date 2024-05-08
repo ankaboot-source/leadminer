@@ -13,9 +13,15 @@
         <span>
           It seems like you have declined to grant authorization for us to
           access your
-          <span v-if="provider && provider === 'google'">Google</span>
-          <span v-else-if="provider && provider === 'azure'">Outlook</span>
-          <span v-else>Google or Outlook</span> mailbox. Without authorization,
+          <span v-if="provider === MiningSources.GOOGLE">Google mailbox</span>
+          <span v-else-if="provider === MiningSources.AZURE"
+            >Outlook mailbox</span
+          >
+          <span v-else-if="provider === MiningSources.IMAP"
+            >mailbox using IMAP</span
+          >
+
+          <span v-else>Google or Outlook mailbox</span>. Without authorization,
           we are unable to extract contacts from your mailbox.
         </span>
         <div>
@@ -41,22 +47,25 @@
   </Sidebar>
 </template>
 <script setup lang="ts">
-import { type MiningSourceType, type OAuthMiningSource } from '@/types/mining';
+import { MiningSources, type OAuthMiningSource } from '@/types/mining';
 
 const show = defineModel<boolean>('show');
-const stepper = defineModel<number>('stepper');
-const provider = defineModel<MiningSourceType>('provider');
+const provider = defineModel<MiningSources>('provider');
 
 function close() {
   show.value = false;
-  stepper.value = 0;
+  useMiningStepper().go(0);
 }
 
 function refreshOAuth() {
-  if (provider.value && ['google', 'azure'].includes(provider.value)) {
-    addOAuthAccount(provider.value as OAuthMiningSource);
-  } else {
-    navigateTo('/dashboard');
+  switch (provider.value) {
+    case MiningSources.GOOGLE:
+    case MiningSources.AZURE:
+      addOAuthAccount(provider.value as OAuthMiningSource);
+      break;
+    default:
+      close();
+      break;
   }
 }
 </script>

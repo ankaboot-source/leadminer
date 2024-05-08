@@ -11,33 +11,22 @@
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="stepper" linear>
+    <Stepper v-model:active-step="$stepper.index">
       <StepperPanel header="Source">
-        <template #content="{ nextCallback }">
-          <SourcePanel :next-callback="nextCallback" />
-        </template>
+        <SourcePanel ref="sourcePanel" />
       </StepperPanel>
 
       <StepperPanel header="Mine">
-        <template #content="{ prevCallback, nextCallback }">
-          <MinePanel
-            :mining-source="$leadminerStore.activeMiningSource!"
-            :next-callback="nextCallback"
-            :prev-callback="prevCallback"
-          />
-        </template>
+        <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
       </StepperPanel>
       <StepperPanel header="Clean">
-        <template #content="{ prevCallback }">
-          <CleanPanel :prev-callback="prevCallback" />
-        </template>
+        <CleanPanel />
       </StepperPanel>
     </Stepper>
   </Panel>
   <MiningConsentSidebar
     v-model:show="$consentSidebar.status"
     v-model:provider="$consentSidebar.provider"
-    v-model:stepper="stepper"
   />
 </template>
 
@@ -48,33 +37,27 @@ import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
-import type { MiningSourceType } from '~/types/mining';
+import { MiningSources } from '~/types/mining';
 
 const $route = useRoute();
+const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 
-const stepper = ref();
-
+const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 const collapsePannel = ref(true);
 
 const { error, provider, source } = $route.query;
-
-if (source) {
-  await $leadminerStore.fetchMiningSources();
-  $leadminerStore.activeMiningSource = $leadminerStore.getMiningSourceByEmail(
-    source as string
-  );
-  if ($leadminerStore.activeMiningSource) {
-    stepper.value = 1;
-  }
-} else if (error === 'oauth-consent') {
-  $consentSidebar.show(provider as MiningSourceType);
-}
+collapsePannel.value = !source && $leadminerStore.totalMinedContacts > 0;
 
 onMounted(() => {
   useRouter().replace({ query: {} });
-  collapsePannel.value = $leadminerStore.extractedEmails > 0;
+
+  if (source) {
+    sourcePanel.value?.selectSource(source as string);
+  } else if (error === 'oauth-consent') {
+    $consentSidebar.show(provider as MiningSources);
+  }
 });
 </script>
 <style>

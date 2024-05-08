@@ -38,6 +38,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const createdContacts = ref(0);
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
+  const totalMinedContacts = ref(0);
   const status = ref('');
   const scannedBoxes = ref<string[]>([]);
   const statistics = ref({});
@@ -67,7 +68,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     totalFetchedEmails.value = 0;
     verifiedContacts.value = 0;
     createdContacts.value = 0;
-
+    totalMinedContacts.value = 0
     status.value = '';
     scannedBoxes.value = [];
     statistics.value = {};
@@ -119,6 +120,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (!activeMiningSource.value) {
         return;
       }
+
       isLoadingBoxes.value = true;
       loadingStatusbox.value = true;
       boxes.value = [];
@@ -303,6 +305,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     verifiedContacts,
     fetchingFinished,
     extractionFinished,
+    totalMinedContacts,
     status,
     scannedBoxes,
     statistics,
