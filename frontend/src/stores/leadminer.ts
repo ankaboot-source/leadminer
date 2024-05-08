@@ -19,60 +19,51 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
 
-  const errorMessage = ref('');
-  const infoMessage = ref('');
-
   const isLoadingStartMining = ref(false);
   const isLoadingStopMining = ref(false);
   const isLoadingBoxes = ref(false);
 
-  const isLoadingSources = ref(false);
   const loadingStatus = ref(false);
   const loadingStatusDns = ref(false);
-  const loadingStatusbox = ref(false);
 
+  const totalMinedContacts = ref(0);
   const extractedEmails = ref(0);
   const scannedEmails = ref(0);
-  const totalFetchedEmails = ref(0);
   const verifiedContacts = ref(0);
   const createdContacts = ref(0);
+
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
-  const totalMinedContacts = ref(0);
-  const status = ref('');
-  const scannedBoxes = ref<string[]>([]);
-  const statistics = ref({});
 
   const errors = ref({});
 
-  function $reset() {
+  function $resetMining() {
     miningTask.value = undefined;
-    miningSources.value = [];
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];
 
-    errorMessage.value = '';
-    infoMessage.value = '';
-
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
     isLoadingBoxes.value = false;
-    isLoadingSources.value = false;
     loadingStatus.value = false;
     loadingStatusDns.value = false;
-    loadingStatusbox.value = false;
 
+    totalMinedContacts.value = 0;
     extractedEmails.value = 0;
     scannedEmails.value = 0;
-    totalFetchedEmails.value = 0;
     verifiedContacts.value = 0;
     createdContacts.value = 0;
-    totalMinedContacts.value = 0;
-    status.value = '';
-    scannedBoxes.value = [];
-    statistics.value = {};
+
+    fetchingFinished.value = false;
+    extractionFinished.value = false;
+
     errors.value = {};
+  }
+
+  function $reset() {
+    miningSources.value = [];
+    $resetMining();
   }
 
   /**
@@ -98,21 +89,12 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * @throws {Error} Throws an error if there is an issue while retrieving mining sources.
    */
   async function fetchMiningSources() {
-    try {
-      isLoadingSources.value = true;
+    const { sources } = await $api<{
+      message: string;
+      sources: MiningSource[];
+    }>('/imap/mine/sources');
 
-      const { sources } = await $api<{
-        message: string;
-        sources: MiningSource[];
-      }>('/imap/mine/sources');
-
-      miningSources.value = sources ?? [];
-
-      isLoadingSources.value = false;
-    } catch (err) {
-      isLoadingSources.value = false;
-      throw err;
-    }
+    miningSources.value = sources ?? [];
   }
 
   async function fetchInbox() {
@@ -122,7 +104,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       }
 
       isLoadingBoxes.value = true;
-      loadingStatusbox.value = true;
       boxes.value = [];
       selectedBoxes.value = [];
 
@@ -139,7 +120,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (folders) {
         boxes.value = [...folders];
         selectedBoxes.value = getDefaultSelectedFolders(folders);
-        infoMessage.value = 'Successfully retrieved IMAP boxes.';
       }
 
       miningSources.value = updateMiningSourcesValidity(
@@ -155,7 +135,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         false
       );
       isLoadingBoxes.value = false;
-      loadingStatusbox.value = false;
       throw err;
     }
   }
@@ -173,8 +152,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     createdContacts.value = 0;
     fetchingFinished.value = false;
     extractionFinished.value = false;
-    statistics.value = 'f';
-    scannedBoxes.value = [];
 
     try {
       const { data: sessionData } = await useSupabaseClient().auth.getSession();
@@ -209,7 +186,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
             sse.closeConnection();
           },
           onFetchingDone: (totalFetched) => {
-            totalFetchedEmails.value = totalFetched;
+            scannedEmails.value = totalFetched;
             fetchingFinished.value = true;
           },
           onExtractionDone: (totalExtracted) => {
@@ -225,14 +202,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         }
       );
 
-      status.value = '';
       miningTask.value = task;
       loadingStatus.value = false;
       loadingStatusDns.value = false;
       isLoadingStartMining.value = false;
-      infoMessage.value = 'Mining has started';
     } catch (err) {
-      status.value = '';
       loadingStatus.value = false;
       loadingStatusDns.value = false;
       isLoadingStartMining.value = false;
@@ -261,13 +235,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       });
 
       miningTask.value = undefined;
-      status.value = '';
-      infoMessage.value = 'Mining has stopped';
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
     } catch (err) {
-      status.value = '';
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
@@ -276,29 +247,29 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   }
 
   return {
-    getMiningSourceByEmail,
-    fetchMiningSources,
     fetchInbox,
+    fetchMiningSources,
+    getMiningSourceByEmail,
+
     startMining,
     stopMining,
-    $reset,
     syncUserCredits,
+
+    $reset,
+    $resetMining,
+
     userCredits,
     miningTask,
     miningSources,
     activeMiningSource,
     boxes,
     selectedBoxes,
-    errorMessage,
-    infoMessage,
     isLoadingStartMining,
     isLoadingStopMining,
     isLoadingBoxes,
-    isLoadingSources,
     loadingStatus,
     loadingStatusDns,
-    loadingStatusbox,
-    totalFetchedEmails,
+
     extractedEmails,
     scannedEmails,
     createdContacts,
@@ -306,9 +277,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished,
     extractionFinished,
     totalMinedContacts,
-    status,
-    scannedBoxes,
-    statistics,
     errors,
   };
 });
