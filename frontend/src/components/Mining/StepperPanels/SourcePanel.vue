@@ -46,24 +46,24 @@
           label="Microsoft or Outlook"
           source="azure"
         />
-        <imap-source v-model:source="sourceModel" />
+        <imap-source
+          v-model:source="sourceModel"
+          v-model:show="showImapDialog"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { MiningSource } from '~/types/mining';
+import { MiningSources, type MiningSource } from '~/types/mining';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 
-const { nextCallback } = defineProps<{
-  // skipcq: JS-0296
-  nextCallback: Function;
-}>();
-
+const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 
+const showImapDialog = ref(false);
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
@@ -71,7 +71,29 @@ function onSourceChange(source: MiningSource) {
   $leadminerStore.boxes = [];
   $leadminerStore.selectedBoxes = [];
   $leadminerStore.activeMiningSource = source;
-  nextCallback();
+  $stepper.next();
+}
+
+watch(sourceModel, (source) => {
+  if (source) {
+    onSourceChange(source);
+  }
+});
+
+function selectSource(source: MiningSources | string) {
+  switch (source) {
+    case MiningSources.IMAP:
+      showImapDialog.value = true;
+      break;
+
+    default: {
+      const miningSource = $leadminerStore.getMiningSourceByEmail(source);
+      if (miningSource) {
+        onSourceChange(miningSource);
+      }
+      break;
+    }
+  }
 }
 
 const { error: sourcesError } = useAsyncData(() =>
@@ -84,9 +106,7 @@ onMounted(() => {
   }
 });
 
-watch(sourceModel, (source) => {
-  if (source) {
-    onSourceChange(source);
-  }
+defineExpose({
+  selectSource,
 });
 </script>

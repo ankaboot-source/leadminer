@@ -3,10 +3,10 @@
     outlined
     label="Other email provider (IMAP)"
     icon="pi pi-inbox"
-    @click="imapDialog = true"
+    @click="show = true"
   />
   <Dialog
-    v-model:visible="imapDialog"
+    v-model:visible="show"
     modal
     header="Sign-in with IMAP"
     class="md:w-[30rem]"
@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
 import { isInvalidEmailPattern } from '@/utils/email';
-import type { MiningSource } from '~/types/mining';
+import { MiningSources, type MiningSource } from '~/types/mining';
 
 interface ImapConfigs {
   host: string;
@@ -87,13 +87,14 @@ interface ImapConfigs {
   secure: boolean;
 }
 
+const show = defineModel<boolean>('show');
+
 const { $api } = useNuxtApp();
 const $toast = useToast();
 const $user = useSupabaseUser();
 
 const imapSource = defineModel<MiningSource>('source');
 
-const imapDialog = ref(false);
 const imapAdvancedSettings = ref(false);
 
 const imapEmail = ref<string>($user.value?.email ?? '');
@@ -139,7 +140,7 @@ const closeDialog = (): void => {
   // reset for errors
   resetFormErrors();
   imapAdvancedSettings.value = false;
-  imapDialog.value = false;
+  show.value = false;
   imapEmail.value = $user.value?.email as string;
 };
 
@@ -217,7 +218,7 @@ async function onSubmitImapCredentials() {
     });
 
     imapSource.value = {
-      type: 'imap',
+      type: MiningSources.IMAP,
       email: imapEmail.value,
       isValid: true,
     };

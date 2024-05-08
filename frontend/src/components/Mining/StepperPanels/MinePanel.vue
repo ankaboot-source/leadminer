@@ -66,7 +66,7 @@
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
       severity="secondary"
       label="Back"
-      @click="prevCallback()"
+      @click="$stepper.prev()"
     />
   </div>
   <div class="hidden md:flex pt-6 justify-between">
@@ -74,7 +74,7 @@
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
       severity="secondary"
       label="Back"
-      @click="prevCallback()"
+      @click="$stepper.prev()"
     />
     <div class="flex gap-2">
       <Button
@@ -128,15 +128,12 @@ import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 import type { MiningSource } from '~/types/mining';
 
-const { nextCallback, prevCallback, miningSource } = defineProps<{
+const { miningSource } = defineProps<{
   miningSource: MiningSource;
-  // skipcq: JS-0296
-  nextCallback: Function;
-  // skipcq: JS-0296
-  prevCallback: Function;
 }>();
 
 const $toast = useToast();
+const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 
 const canceled = ref<boolean>(false);
@@ -213,7 +210,7 @@ watch(extractionFinished, (finished) => {
       group: 'mining',
       life: 5000,
     });
-    nextCallback();
+    $stepper.next();
   }
 });
 

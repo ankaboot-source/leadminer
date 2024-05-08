@@ -756,6 +756,7 @@ async function syncTable() {
   loadingLabel.value = 'Syncing...';
   const user = $user.value as User;
   rows.value = await getContacts(user.id);
+  leadminerStore.totalMinedContacts = rows.value.length;
   isLoading.value = false;
 }
 
