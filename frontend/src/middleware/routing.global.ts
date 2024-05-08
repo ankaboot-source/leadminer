@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const $router = useRouter();
   const $supabase = useSupabaseClient();
-  const {session} = (await $supabase.auth.getSession()).data;
+  const { session } = (await $supabase.auth.getSession()).data;
 
   if (session && to.path.startsWith('/auth')) {
     return navigateTo('/dashboard');

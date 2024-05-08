@@ -68,7 +68,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     totalFetchedEmails.value = 0;
     verifiedContacts.value = 0;
     createdContacts.value = 0;
-    totalMinedContacts.value = 0
+    totalMinedContacts.value = 0;
     status.value = '';
     scannedBoxes.value = [];
     statistics.value = {};
