@@ -19,6 +19,33 @@ export default function initializeMiningController(
   miningSources: MiningSources
 ) {
   return {
+    async addMiningSource(req: Request, res: Response, next: NextFunction) {
+      const {provider, provider_token: providerToken} = req.body;
+      const {user} = res.locals;
+
+      const sevenHours = 7 * 60 * 60 * 1000;
+
+      try {
+
+        await miningSources.upsert({
+          userId: user.id,
+          email: user.email,
+          credentials: {
+            email: user.email,
+            accessToken: providerToken,
+            refreshToken: "",
+            provider: provider,
+            expiresAt: sevenHours
+          },
+          type: provider
+        });
+
+        return res.status(200)
+      } catch(error) {
+        return next(error);
+      }
+    },
+
     createGoogleMiningSource(_req: Request, res: Response) {
       const user = res.locals.user as User;
       const authorizationUri = googleOAuth2Client.authorizeURL({
@@ -88,7 +115,7 @@ export default function initializeMiningController(
             email,
             credentials: {
               email,
-              accessToken: "ya29.a0AXooCguSsnjE4Zx45Z-pn9-rmcAbOeeSgbaJvnub30pcZjm_fCeu4-P1-_SB2EOKrofrgFWBU64lx6ckMj-yuuJ0x3qhX9sIqKnsrd49YMWQXwsqYuoqkPTB6naq9X9oX4s3v9NTj-CFmaCtO8Mhrp5HRRDZ-Eta7JKHaCgYKAQgSARMSFQHGX2Mieydb9JE2fwBfcFj7BpfPQA0171",
+              accessToken,
               refreshToken,
               provider: 'google',
               expiresAt
