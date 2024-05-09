@@ -99,7 +99,7 @@ export default function initializeImapController(miningSources: MiningSources) {
         ) {
           return res
             .status(error?.output?.payload?.statusCode)
-            .send(logger.info(error?.output?.payload?.error));
+            .send(error?.output?.payload?.error);
         }
 
         const generatedError = generateErrorObjectFromImapError(error);

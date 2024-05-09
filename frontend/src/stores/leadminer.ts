@@ -128,17 +128,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         true
       );
       isLoadingBoxes.value = false;
-    } catch (err: any) {
-      if (!(err?.statusCode === 502 || err?.statusCode === 503)) {
-        miningSources.value = updateMiningSourcesValidity(
-          miningSources.value,
-          activeMiningSource.value as MiningSource,
-          false
-        );
-      }
+    } catch (error) {
+      miningSources.value = updateMiningSourcesValidity(
+        miningSources.value,
+        activeMiningSource.value as MiningSource,
+        false
+      );
 
       isLoadingBoxes.value = false;
-      throw err;
+      throw error;
     }
   }
 
