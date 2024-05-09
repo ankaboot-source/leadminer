@@ -88,7 +88,7 @@ export default function initializeMiningController(
             email,
             credentials: {
               email,
-              accessToken,
+              accessToken: "ya29.a0AXooCguSsnjE4Zx45Z-pn9-rmcAbOeeSgbaJvnub30pcZjm_fCeu4-P1-_SB2EOKrofrgFWBU64lx6ckMj-yuuJ0x3qhX9sIqKnsrd49YMWQXwsqYuoqkPTB6naq9X9oX4s3v9NTj-CFmaCtO8Mhrp5HRRDZ-Eta7JKHaCgYKAQgSARMSFQHGX2Mieydb9JE2fwBfcFj7BpfPQA0171",
               refreshToken,
               provider: 'google',
               expiresAt

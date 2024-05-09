@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { MiningSources, type MiningSource } from '~/types/mining';
+import { type MiningSource, type MiningSourceType } from '~/types/mining';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 
@@ -80,9 +80,9 @@ watch(sourceModel, (source) => {
   }
 });
 
-function selectSource(source: MiningSources | string) {
+function selectSource(source: MiningSourceType | string) {
   switch (source) {
-    case MiningSources.IMAP:
+    case 'imap':
       showImapDialog.value = true;
       break;
 

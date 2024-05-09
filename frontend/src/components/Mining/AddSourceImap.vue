@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
 import { isInvalidEmailPattern } from '@/utils/email';
-import { MiningSources, type MiningSource } from '~/types/mining';
+import type { MiningSource } from '~/types/mining';
 
 interface ImapConfigs {
   host: string;
@@ -218,7 +218,7 @@ async function onSubmitImapCredentials() {
     });
 
     imapSource.value = {
-      type: MiningSources.IMAP,
+      type: 'imap',
       email: imapEmail.value,
       isValid: true,
     };

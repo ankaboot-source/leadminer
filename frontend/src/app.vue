@@ -41,12 +41,25 @@
 </template>
 
 <script setup lang="ts">
-useSupabaseClient().auth.onAuthStateChange((event) => {
+useSupabaseClient().auth.onAuthStateChange((event, session) => {
+  if (session && session.provider_token) {
+    window.localStorage.setItem('oauth_provider_token', session.provider_token);
+  }
+
+  if (session && session.provider_refresh_token) {
+    window.localStorage.setItem(
+      'oauth_provider_refresh_token',
+      session.provider_refresh_token
+    );
+  }
+
   switch (event) {
     case 'SIGNED_IN':
       navigateTo('/dashboard');
       break;
     case 'SIGNED_OUT':
+      window.localStorage.removeItem('oauth_provider_token');
+      window.localStorage.removeItem('oauth_provider_refresh_token');
       logout();
       break;
 

@@ -37,7 +37,7 @@ import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
-import { MiningSources } from '~/types/mining';
+import type { MiningSourceType } from '~/types/mining';
 
 const $route = useRoute();
 const $stepper = useMiningStepper();
@@ -56,7 +56,7 @@ onMounted(() => {
   if (source) {
     sourcePanel.value?.selectSource(source as string);
   } else if (error === 'oauth-consent') {
-    $consentSidebar.show(provider as MiningSources);
+    $consentSidebar.show(provider as MiningSourceType);
   }
 });
 </script>
