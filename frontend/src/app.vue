@@ -41,11 +41,11 @@
 </template>
 
 <script setup lang="ts">
-useSupabaseClient().auth.onAuthStateChange((event, session) => {
+useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   if (session && session.provider_token) {
     window.localStorage.setItem('oauth_provider_token', session.provider_token);
     const { $api } = useNuxtApp();
-    $api('/imap/mine/sources', {
+    await $api('/imap/mine/sources', {
       method: 'post',
       body: {
         provider: session.user.app_metadata.provider,

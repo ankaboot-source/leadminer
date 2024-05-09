@@ -23,10 +23,9 @@ export default function initializeMiningController(
       const {provider, provider_token: providerToken} = req.body;
       const {user} = res.locals;
 
-      const sevenHours = 7 * 60 * 60 * 1000;
-
+      const expiresAt = new Date().setHours(new Date().getHours() + 7) 
       try {
-
+        // TODO: better error handling 
         await miningSources.upsert({
           userId: user.id,
           email: user.email,
@@ -35,12 +34,12 @@ export default function initializeMiningController(
             accessToken: providerToken,
             refreshToken: "",
             provider: provider,
-            expiresAt: sevenHours
+            expiresAt
           },
           type: provider
         });
 
-        return res.status(200)
+        return res.sendStatus(200)
       } catch(error) {
         return next(error);
       }
