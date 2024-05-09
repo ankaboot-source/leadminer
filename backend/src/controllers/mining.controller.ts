@@ -8,11 +8,11 @@ import googleOAuth2Client from '../services/OAuth2/google';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
+import { ImapAuthError } from '../utils/errors';
 import {
   generateErrorObjectFromImapError,
   validateImapCredentials
 } from './helpers';
-import { ImapAuthError } from '../utils/errors';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,

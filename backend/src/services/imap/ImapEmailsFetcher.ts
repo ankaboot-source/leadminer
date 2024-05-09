@@ -116,6 +116,7 @@ export default class ImapEmailsFetcher {
       const folders = this.folders.filter(
         (folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder)
       );
+
       const totalPromises = folders.map(
         (folder) =>
           new Promise<number>((resolve, reject) => {
