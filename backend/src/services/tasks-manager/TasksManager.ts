@@ -1,6 +1,7 @@
 // eslint-disable-next-line max-classes-per-file
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
+import SupabaseTasks from '../../db/supabase/tasks';
 import {
   EMAILS_STREAM_CONSUMER_GROUP,
   MESSAGES_STREAM_CONSUMER_GROUP,
@@ -12,21 +13,20 @@ import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import { ImapEmailsFetcherOptions } from '../imap/types';
 import {
   MiningTask,
-  TaskProgressType,
+  RedactedTask,
   RedisCommand,
   StreamInfo,
   Task,
+  TaskCategory,
   TaskExtract,
   TaskFetch,
   TaskProgress,
-  TaskVerify,
-  TaskCategory,
-  TaskType,
+  TaskProgressType,
   TaskStatus,
-  RedactedTask
+  TaskType,
+  TaskVerify
 } from './types';
 import { redactSensitiveData } from './utils';
-import SupabaseTasks from '../../db/supabase/tasks';
 
 export default class TasksManager {
   /**

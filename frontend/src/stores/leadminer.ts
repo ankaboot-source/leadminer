@@ -128,14 +128,15 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         true
       );
       isLoadingBoxes.value = false;
-    } catch (err) {
+    } catch (error) {
       miningSources.value = updateMiningSourcesValidity(
         miningSources.value,
         activeMiningSource.value as MiningSource,
         false
       );
+
       isLoadingBoxes.value = false;
-      throw err;
+      throw error;
     }
   }
 
@@ -164,7 +165,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         {
           method: 'POST',
           body: {
-            boxes: Object.keys(selectedBoxes.value).slice(1),
+            boxes: Object.keys(selectedBoxes.value).filter((box) => box !== ''),
             miningSource: activeMiningSource.value,
           },
         }

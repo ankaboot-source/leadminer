@@ -116,13 +116,14 @@ export default class ImapEmailsFetcher {
       const folders = this.folders.filter(
         (folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder)
       );
+
       const totalPromises = folders.map(
         (folder) =>
           new Promise<number>((resolve, reject) => {
             // Opening a box will explicitly close the previously opened one if it exists.
-            imapConnection?.openBox(folder, true, (err, box) => {
-              if (err) {
-                reject(err);
+            imapConnection?.openBox(folder, true, (error, box) => {
+              if (error) {
+                reject(error);
               } else {
                 resolve(box.messages.total);
               }
@@ -131,7 +132,9 @@ export default class ImapEmailsFetcher {
       );
 
       // Calculate the total number of messages across all folders.
-      const totalArray = await Promise.all(totalPromises);
+      const totalArray = await Promise.all(totalPromises).catch((error) => {
+        throw error;
+      });
 
       for (const val of totalArray) {
         total += val;

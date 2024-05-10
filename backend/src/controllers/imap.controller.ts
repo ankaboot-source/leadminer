@@ -5,12 +5,12 @@ import { MiningSources } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
+import ImapConfigDiscover from '../services/imap/ImapConfigDetector';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
+import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './helpers';
-import ImapConfigDiscover from '../services/imap/ImapConfigDetector';
-import { ImapAuthError } from '../utils/errors';
 
 export default function initializeImapController(miningSources: MiningSources) {
   return {
@@ -92,8 +92,17 @@ export default function initializeImapController(miningSources: MiningSources) {
         return res.status(200).send({
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
-      } catch (err) {
-        const generatedError = generateErrorObjectFromImapError(err);
+      } catch (error: any) {
+        if (
+          error?.output?.payload?.statusCode === 502 ||
+          error?.output?.payload?.statusCode === 503
+        ) {
+          return res
+            .status(error?.output?.payload?.statusCode)
+            .send(error?.output?.payload?.error);
+        }
+
+        const generatedError = generateErrorObjectFromImapError(error);
 
         if (generatedError instanceof ImapAuthError) {
           return res.status(generatedError.status).send(generatedError);
