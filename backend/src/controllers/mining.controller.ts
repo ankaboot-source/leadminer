@@ -20,27 +20,28 @@ export default function initializeMiningController(
 ) {
   return {
     async addMiningSource(req: Request, res: Response, next: NextFunction) {
-      const {provider, provider_token: providerToken} = req.body;
-      const {user} = res.locals;
+      const { provider, provider_token: providerToken } = req.body;
+      const { user } = res.locals;
 
-      const expiresAt = new Date().setHours(new Date().getHours() + 7) 
+      // Add seven hours to current date
+      const expiresAt = new Date().setHours(new Date().getHours() + 7);
       try {
-        // TODO: better error handling 
+        // TODO: better error handling
         await miningSources.upsert({
           userId: user.id,
           email: user.email,
           credentials: {
             email: user.email,
             accessToken: providerToken,
-            refreshToken: "",
-            provider: provider,
+            refreshToken: '',
+            provider,
             expiresAt
           },
           type: provider
         });
 
-        return res.sendStatus(200)
-      } catch(error) {
+        return res.sendStatus(200);
+      } catch (error) {
         return next(error);
       }
     },

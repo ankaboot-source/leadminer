@@ -35,7 +35,6 @@ export default function initializeImapController(miningSources: MiningSources) {
         }
         if ('accessToken' in data) {
           const { provider, accessToken, refreshToken, expiresAt } = data;
-          console.log(data)
           const client =
             provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
 
@@ -46,7 +45,10 @@ export default function initializeImapController(miningSources: MiningSources) {
           });
 
           if (token.expired(1000)) {
-            // TODO: also check refresh_token otherwise if expired return status(401, message tokan has expired)
+            if (!refreshToken)
+              return res.status(401).send({
+                data: { message: 'Token has expired' }
+              });
             const { token: newToken } = await token.refresh();
             // eslint-disable-next-line @typescript-eslint/naming-convention
             const { access_token, refresh_token, expires_at } = newToken as {
@@ -95,7 +97,6 @@ export default function initializeImapController(miningSources: MiningSources) {
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (err) {
-        console.log(err);
         const generatedError = generateErrorObjectFromImapError(err);
 
         if (generatedError instanceof ImapAuthError) {
