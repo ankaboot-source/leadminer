@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
-  if (session && session.provider_token) {
+  if (session?.provider_token) {
     window.localStorage.setItem('oauth_provider_token', session.provider_token);
     const { $api } = useNuxtApp();
     await $api('/imap/mine/sources', {
@@ -54,7 +54,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
     });
   }
 
-  if (session && session.provider_refresh_token) {
+  if (session?.provider_refresh_token) {
     window.localStorage.setItem(
       'oauth_provider_refresh_token',
       session.provider_refresh_token

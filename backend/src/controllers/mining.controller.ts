@@ -28,7 +28,7 @@ export default function initializeMiningController(
       try {
         if (!user) return res.status(401);
 
-        if (!providerToken) res.status(400);
+        if (!providerToken) return res.status(400);
 
         await miningSources.upsert({
           userId: user.id,
