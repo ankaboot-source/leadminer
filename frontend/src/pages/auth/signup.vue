@@ -1,6 +1,6 @@
 <template>
   <ClientOnly>
-    <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]" flat>
+    <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
       <div class="flex flex-col space-y-1.5">
         <span class="text-4xl font-bold font-[Merriweather]">
           Create your account

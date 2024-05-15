@@ -155,6 +155,8 @@ const $toast = useToast();
 
 const $supabase = useSupabaseClient();
 
+const $router = useRouter();
+
 const email = ref('');
 const emailFocus = ref(false);
 
@@ -212,11 +214,16 @@ async function signUp() {
     if (error) {
       throw error;
     }
+
     $toast.add({
       severity: 'success',
       summary: 'Sign up Successfully',
       detail: `We have sent a confirmation email to ${email.value}`,
       life: 3000,
+    });
+    await $router.push({
+      path: '/auth/success',
+      query: { email: email.value },
     });
   } catch (error) {
     if (error instanceof Error) {
