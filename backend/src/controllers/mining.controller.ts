@@ -26,7 +26,10 @@ export default function initializeMiningController(
       // Add seven hours to current date
       const expiresAt = new Date().setHours(new Date().getHours() + 7);
       try {
-        // TODO: better error handling
+        if (!user) return res.status(401);
+
+        if (!providerToken) res.status(400);
+
         await miningSources.upsert({
           userId: user.id,
           email: user.email,
