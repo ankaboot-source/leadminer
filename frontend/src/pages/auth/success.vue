@@ -21,7 +21,13 @@
 <script setup lang="ts">
 const $route = useRoute();
 const { email } = $route.query;
-
+onBeforeMount(() => {
+  const unauthorized = window.history.state.back !== '/auth/signup' || !email;
+  if (unauthorized) {
+    const $router = useRouter();
+    $router.replace('/auth');
+  }
+});
 const messages = {
   header: 'Almost done',
   message1: 'We sent an email to',
