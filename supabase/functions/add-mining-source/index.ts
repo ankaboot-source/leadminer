@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
       },
     );
   } catch (error) {
-    Logger.error(`error.message`);
+    Logger.error(error.message);
 
     return new Response(
       JSON.stringify(error),
