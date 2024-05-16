@@ -166,21 +166,18 @@ const totalEmails = computed<number>(() => {
   return 0;
 });
 
-const scannedEmails = computed(() => $leadminerStore.scannedEmails);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
 const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 
-const extractionProgress = computed(() =>
-  $leadminerStore.fetchingFinished
-    ? extractedEmails.value / scannedEmails.value || 0
-    : extractedEmails.value / totalEmails.value || 0
+const extractionProgress = computed(
+  () => extractedEmails.value / totalEmails.value || 0
 );
 
 const progressTooltip = computed(
   () =>
     `Mined / Total emails
-      ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
+      ${extractedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
       `
 );
 

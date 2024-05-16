@@ -26,7 +26,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const loadingStatus = ref(false);
   const loadingStatusDns = ref(false);
 
-  const totalMinedContacts = ref(0);
   const extractedEmails = ref(0);
   const scannedEmails = ref(0);
   const verifiedContacts = ref(0);
@@ -49,7 +48,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     loadingStatus.value = false;
     loadingStatusDns.value = false;
 
-    totalMinedContacts.value = 0;
     extractedEmails.value = 0;
     scannedEmails.value = 0;
     verifiedContacts.value = 0;
@@ -277,7 +275,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     verifiedContacts,
     fetchingFinished,
     extractionFinished,
-    totalMinedContacts,
     errors,
   };
 });
