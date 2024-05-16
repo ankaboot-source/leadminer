@@ -43,15 +43,6 @@
 <script setup lang="ts">
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   if (session?.provider_token) {
-    window.localStorage.setItem('oauth_provider_token', session.provider_token);
-    // const { $api } = useNuxtApp();
-    // await $api('/imap/mine/sources', {
-    //   method: 'post',
-    //   body: {
-    //     provider: session.user.app_metadata.provider,
-    //     provider_token: session.provider_token,
-    //   },
-    // });
     await useSupabaseClient().functions.invoke('add-mining-source', {
       method: 'POST',
       body: {

@@ -1,36 +1,7 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-import { createClient } from "@supabase/supabase-js";
-import { Pool, PoolClient } from "postgres";
-import { Logger } from "../_shared/logger.ts";
-import { MiningSource, MiningSourceType } from "../_shared/types.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-
-const upsert = async (connection: PoolClient, {
-  userId,
-  credentials,
-  email,
-  type,
-}: MiningSource) => {
-  try {
-    const LEADMINER_API_HASH_SECRET = Deno.env.get("LEADMINER_API_HASH_SECRET");
-
-    await connection.queryObject`
-INSERT INTO mining_sources ("user_id","email","type","credentials")
-VALUES(${userId}, '${email}', ${type},pgp_sym_encrypt(${
-      JSON.stringify(credentials)
-    }, ${LEADMINER_API_HASH_SECRET}))
-ON CONFLICT (email, user_id)
-DO UPDATE SET credentials=excluded.credentials,type=excluded.type;
-    `;
-  } catch (error) {
-    if (error instanceof Error) {
-      Logger.error(`Failed upserting credentials ${error}`);
-    }
-    throw error;
-  }
-};
+import Logger from "../_shared/logger.ts";
+import corsHeaders from "../_shared/cors.ts";
+import createSupabaseClient from "../_shared/supabase-client.ts";
+import createSupabaseAdmin from "../_shared/supabase-admin.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -38,10 +9,13 @@ Deno.serve(async (req: Request) => {
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const databaseUrl = Deno.env.get("DATABASE_URL");
 
-  if (!supabaseUrl || !supabaseAnonKey || !databaseUrl) {
+  if (
+    !supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !databaseUrl
+  ) {
     Logger.error("Missing environment variables.");
 
     return new Response(
@@ -63,19 +37,22 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ error: "No authorization header passed" }),
       {
-        status: 500,
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: authorization,
-      },
-    },
-  });
+  const client = createSupabaseClient(
+    supabaseUrl,
+    supabaseAnonKey,
+    authorization,
+  );
+
+  const admin = createSupabaseAdmin(
+    supabaseUrl,
+    supabaseServiceRoleKey,
+  );
 
   const { provider, provider_token: providerToken } = await req.json();
 
@@ -89,7 +66,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user }, error } = await client.auth.getUser();
 
   if (error) {
     Logger.error(error.message);
@@ -116,7 +93,7 @@ Deno.serve(async (req: Request) => {
   const expiresAt = new Date().setHours(new Date().getHours() + 7);
 
   try {
-    await supabase.from("mining_sources").upsert({
+    await admin.from("mining_sources").upsert({
       user_id: user.id,
       email: user.email as string,
       credentials: {
@@ -126,7 +103,7 @@ Deno.serve(async (req: Request) => {
         provider,
         expiresAt,
       },
-      type: provider as MiningSourceType,
+      type: provider,
     });
 
     return new Response(
@@ -148,15 +125,3 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/add-mining-source' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/
