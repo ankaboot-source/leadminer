@@ -42,30 +42,20 @@
 
 <script setup lang="ts">
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
-  if (session?.provider_token) {
-    await useSupabaseClient().functions.invoke('add-mining-source', {
-      method: 'POST',
-      body: {
-        provider: session.user.app_metadata.provider,
-        provider_token: session.provider_token,
-      },
-    });
-  }
-
-  if (session?.provider_refresh_token) {
-    window.localStorage.setItem(
-      'oauth_provider_refresh_token',
-      session.provider_refresh_token
-    );
-  }
-
   switch (event) {
     case 'SIGNED_IN':
+      if (session?.provider_token) {
+        await useSupabaseClient().functions.invoke('add-mining-source', {
+          method: 'POST',
+          body: {
+            provider: session.user.app_metadata.provider,
+            provider_token: session.provider_token,
+          },
+        });
+      }
       navigateTo('/dashboard');
       break;
     case 'SIGNED_OUT':
-      window.localStorage.removeItem('oauth_provider_token');
-      window.localStorage.removeItem('oauth_provider_refresh_token');
       logout();
       break;
 

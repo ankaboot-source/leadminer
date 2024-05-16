@@ -1,6 +1,5 @@
 {
-    "imports": {
-        "supabase": "https://esm.sh/@supabase/supabase-js@2.43.2",
-        "postgres": "https://deno.land/x/postgres@v0.17.0/mod.ts"
-    }
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.43.2"
+  }
 }
