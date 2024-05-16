@@ -11,7 +11,7 @@
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="$stepper.index">
+    <Stepper v-model:active-step="$stepper.index" linear>
       <StepperPanel header="Source">
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
@@ -44,11 +44,14 @@ const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 
+const { collapsed } = defineProps<{
+  collapsed: boolean;
+}>();
+
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
-const collapsePannel = ref(true);
+const collapsePannel = ref(collapsed);
 
 const { error, provider, source } = $route.query;
-collapsePannel.value = !source && $leadminerStore.totalMinedContacts > 0;
 
 onMounted(() => {
   useRouter().replace({ query: {} });
