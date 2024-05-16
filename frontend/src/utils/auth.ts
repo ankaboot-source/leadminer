@@ -2,6 +2,6 @@ import { sse } from './sse';
 
 export function logout() {
   sse.closeConnection();
-  useLeadminerStore().$reset();
+  useResetStore().all();
   navigateTo('/auth/login');
 }

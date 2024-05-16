@@ -13,10 +13,16 @@ export const useMiningConsentSidebar = defineStore(
       provider.value = sourceType;
     }
 
+    function $reset() {
+      status.value = false;
+      provider.value = undefined;
+    }
+
     return {
       status,
       provider,
       show,
+      $reset,
     };
   }
 );
