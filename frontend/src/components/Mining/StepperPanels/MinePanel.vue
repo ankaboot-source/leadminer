@@ -166,12 +166,13 @@ const totalEmails = computed<number>(() => {
   return 0;
 });
 
+const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
-const extractionFinished = computed(() => $leadminerStore.extractionFinished);
-
-const extractionProgress = computed(
-  () => extractedEmails.value / totalEmails.value || 0
+const extractionProgress = computed(() =>
+  $leadminerStore.fetchingFinished && !canceled
+    ? extractedEmails.value / $leadminerStore.scannedEmails || 0
+    : extractedEmails.value / totalEmails.value || 0
 );
 
 const progressTooltip = computed(
@@ -235,6 +236,7 @@ async function startMining() {
     });
     return;
   }
+  canceled.value = false;
   try {
     await $leadminerStore.startMining();
     await $leadminerStore.syncUserCredits();

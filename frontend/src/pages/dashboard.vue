@@ -7,13 +7,11 @@
 <script setup lang="ts">
 import { type Contact } from '~/types/contact';
 
-const $leadminerStore = useLeadminerStore();
 const $user = useSupabaseUser();
 
 const contact = ref<Contact[]>([]);
 
 if ($user.value) {
   contact.value = await getContacts($user.value.id);
-  $leadminerStore.extractedEmails = contact.value.length;
 }
 </script>
