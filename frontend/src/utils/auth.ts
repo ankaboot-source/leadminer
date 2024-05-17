@@ -1,14 +1,9 @@
-import { sse } from './sse';
 import Cookies from 'js-cookie';
+import { sse } from './sse';
 
 export function clearAllData() {
-  // Clear all cookies
   const allCookies = Cookies.get();
-  for (const cookie in allCookies) {
-    Cookies.remove(cookie);
-  }
-
-  // Clear localStorage
+  Object.keys(allCookies).forEach((cookie) => Cookies.remove(cookie));
   localStorage.clear();
 }
 
@@ -18,4 +13,3 @@ export function logout() {
   clearAllData();
   useRouter().push('/auth/login');
 }
-
