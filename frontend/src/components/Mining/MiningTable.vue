@@ -423,6 +423,10 @@ import { saveCSVFile } from '~/utils/csv';
 
 const $toast = useToast();
 
+const { tableData } = defineProps<{
+  tableData: Contact[];
+}>();
+
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
 const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
 
@@ -461,8 +465,8 @@ function getTagColor(tag: string) {
 }
 
 const leadminerStore = useLeadminerStore();
-const rows = ref<Contact[]>([]);
-const isLoading = ref(true);
+const rows = ref<Contact[]>(tableData);
+const isLoading = ref(false);
 const loadingLabel = ref('');
 const contacts = computed(() => rows.value);
 const contactsLength = computed(() => contacts.value?.length);
@@ -725,38 +729,10 @@ async function refineContacts() {
   }
 }
 
-function convertDates(data: Contact[]) {
-  return [...data].map((d) => {
-    if (d.recency) {
-      d.recency = new Date(d.recency);
-    }
-    if (d.seniority) {
-      d.seniority = new Date(d.seniority);
-    }
-    return d;
-  });
-}
-async function getContacts(userId: string): Promise<Contact[]> {
-  const { data, error } = await $supabaseClient.rpc(
-    'get_contacts_table',
-    // @ts-expect-error: Issue with @nuxt/supabase typing
-    { userid: userId }
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  leadminerStore.extractedEmails = [...data].length;
-
-  return data ? convertDates(data) : [];
-}
-
 async function syncTable() {
   loadingLabel.value = 'Syncing...';
   const user = $user.value as User;
   rows.value = await getContacts(user.id);
-  leadminerStore.totalMinedContacts = rows.value.length;
   isLoading.value = false;
 }
 
@@ -786,9 +762,6 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = false;
   }
 });
-
-useAsyncData('refine', () => refineContacts());
-useAsyncData('contacts', () => syncTable());
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
