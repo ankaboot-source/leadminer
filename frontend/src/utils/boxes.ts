@@ -1,6 +1,5 @@
 // @ts-expect-error missing types definition file
 import objectScan from 'object-scan';
-import type { TreeSelectionKeys } from 'primevue/tree';
 
 export interface BoxNode {
   key: string;
@@ -27,7 +26,7 @@ export const EMAIL_EXCLUDED_FOLDERS = [
  * @returns The filtered array of boxes
  */
 export function getDefaultSelectedFolders(boxes: BoxNode[]) {
-  const filteredBoxes: TreeSelectionKeys = [];
+  const filteredBoxes: string[] = [];
   objectScan(['**.key'], {
     joined: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,14 +42,7 @@ export function getDefaultSelectedFolders(boxes: BoxNode[]) {
         .some((name) => EMAIL_EXCLUDED_FOLDERS.includes(name));
 
       if (!isExcluded) {
-        // Format to be like PrimeVue's TreeSelectionKeys
-        const checked = attribs && !attribs.includes('\\HasChildren');
-        const partialChecked = !checked;
-
-        filteredBoxes[key] = {
-          checked,
-          partialChecked,
-        };
+        filteredBoxes.push(key);
       }
     },
   })(boxes);

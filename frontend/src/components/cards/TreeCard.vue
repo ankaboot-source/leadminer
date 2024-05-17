@@ -1,12 +1,16 @@
 <template>
   <Tree
     v-model:value="leadminerStore.boxes"
-    v-model:selection-keys="leadminerStore.selectedBoxes"
     v-model:expanded-keys="expandedKeys"
-    selection-mode="checkbox"
     class="px-0"
   >
     <template #default="{ node }">
+      <Checkbox
+        v-model="leadminerStore.selectedBoxes"
+        class="align-middle mr-2"
+        :value="node.key"
+      />
+
       {{ node.label }}
       <Badge>
         {{ (node.total ? node.total : node.cumulativeTotal).toLocaleString() }}
