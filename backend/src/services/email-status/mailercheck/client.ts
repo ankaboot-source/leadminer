@@ -1,12 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
-import { logError } from '../../../utils/axios';
 import Bottleneck from 'bottleneck';
+import { logError } from '../../../utils/axios';
 
 export default class MailerCheckClient {
   private static readonly baseURL = 'https://app.mailercheck.com/api/';
 
   private readonly api: AxiosInstance;
+
   private readonly rate_limit_handler: Bottleneck;
 
   constructor({ apiToken }: Config, private readonly logger: Logger) {
@@ -27,7 +28,7 @@ export default class MailerCheckClient {
     try {
       const { data } = await this.rate_limit_handler.schedule(
         async () =>
-          await this.api.post<{ status: MailerCheckResult }>('check/single', {
+          this.api.post<{ status: MailerCheckResult }>('check/single', {
             email
           })
       );
@@ -40,9 +41,13 @@ export default class MailerCheckClient {
 
   async createList({ emails, name }: CreateListInput): Promise<number> {
     try {
-      const { data: { data: {id}} } = await this.rate_limit_handler.schedule(
+      const {
+        data: {
+          data: { id }
+        }
+      } = await this.rate_limit_handler.schedule(
         async () =>
-          await this.api.post<{data: ListResponse}>('lists', {
+          this.api.post<{ data: ListResponse }>('lists', {
             emails,
             name
           })
@@ -57,7 +62,7 @@ export default class MailerCheckClient {
   async startListVerification(listId: number): Promise<void> {
     try {
       await this.rate_limit_handler.schedule(
-        async () => await this.api.put(`lists/${listId}/verify`)
+        async () => this.api.put(`lists/${listId}/verify`)
       );
     } catch (error) {
       logError(error, '[MailerCheck:startListVerification]', this.logger);
@@ -68,7 +73,7 @@ export default class MailerCheckClient {
   async getListStatus(listId: number): Promise<StatusName> {
     try {
       const { data } = await this.rate_limit_handler.schedule(
-        async () => await this.api.get<ListResponse>(`lists/${listId}`)
+        async () => this.api.get<ListResponse>(`lists/${listId}`)
       );
       return data.status.name;
     } catch (error) {
@@ -92,7 +97,7 @@ export default class MailerCheckClient {
       };
       const { data } = await this.rate_limit_handler.schedule(
         async () =>
-          await this.api.get<ListVerificationResult>(
+          this.api.get<ListVerificationResult>(
             `lists/${listId}/results`,
             { params }
           )
