@@ -1,19 +1,21 @@
 import { sse } from './sse';
+import Cookies from 'js-cookie';
 
-const clearAllCookies = () => {
-  const cookies = document.cookie.split(';');
-
-  for (const cookie of cookies) {
-    const eqPos = cookie.indexOf('=');
-    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+export function clearAllData() {
+  // Clear all cookies
+  const allCookies = Cookies.get();
+  for (const cookie in allCookies) {
+    Cookies.remove(cookie);
   }
-};
+
+  // Clear localStorage
+  localStorage.clear();
+}
 
 export function logout() {
   sse.closeConnection();
   useResetStore().all();
-  clearAllCookies();
-  navigateTo('/auth/login');
+  clearAllData();
+  useRouter().push('/auth/login');
 }
 
