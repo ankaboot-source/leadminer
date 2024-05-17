@@ -26,11 +26,10 @@ export default class MailerCheckClient {
 
   async verifyEmail(email: string): Promise<MailerCheckResult> {
     try {
-      const { data } = await this.rate_limit_handler.schedule(
-        async () =>
-          this.api.post<{ status: MailerCheckResult }>('check/single', {
-            email
-          })
+      const { data } = await this.rate_limit_handler.schedule(() =>
+        this.api.post<{ status: MailerCheckResult }>('check/single', {
+          email
+        })
       );
       return data.status;
     } catch (error) {
@@ -45,12 +44,11 @@ export default class MailerCheckClient {
         data: {
           data: { id }
         }
-      } = await this.rate_limit_handler.schedule(
-        async () =>
-          this.api.post<{ data: ListResponse }>('lists', {
-            emails,
-            name
-          })
+      } = await this.rate_limit_handler.schedule(() =>
+        this.api.post<{ data: ListResponse }>('lists', {
+          emails,
+          name
+        })
       );
       return id;
     } catch (error) {
@@ -61,8 +59,8 @@ export default class MailerCheckClient {
 
   async startListVerification(listId: number): Promise<void> {
     try {
-      await this.rate_limit_handler.schedule(
-        async () => this.api.put(`lists/${listId}/verify`)
+      await this.rate_limit_handler.schedule(() =>
+        this.api.put(`lists/${listId}/verify`)
       );
     } catch (error) {
       logError(error, '[MailerCheck:startListVerification]', this.logger);
@@ -72,8 +70,8 @@ export default class MailerCheckClient {
 
   async getListStatus(listId: number): Promise<StatusName> {
     try {
-      const { data } = await this.rate_limit_handler.schedule(
-        async () => this.api.get<ListResponse>(`lists/${listId}`)
+      const { data } = await this.rate_limit_handler.schedule(() =>
+        this.api.get<ListResponse>(`lists/${listId}`)
       );
       return data.status.name;
     } catch (error) {
@@ -95,12 +93,10 @@ export default class MailerCheckClient {
         limit,
         page
       };
-      const { data } = await this.rate_limit_handler.schedule(
-        async () =>
-          this.api.get<ListVerificationResult>(
-            `lists/${listId}/results`,
-            { params }
-          )
+      const { data } = await this.rate_limit_handler.schedule(() =>
+        this.api.get<ListVerificationResult>(`lists/${listId}/results`, {
+          params
+        })
       );
 
       return {
