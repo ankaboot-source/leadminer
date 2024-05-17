@@ -156,7 +156,8 @@ const totalEmails = computed<number>(() => {
         if (
           property === 'total' &&
           parent.key &&
-          parent.key in selectedBoxes.value
+          parent.key in selectedBoxes.value &&
+          selectedBoxes.value[parent.key].checked
         ) {
           context.sum += value;
         }
@@ -227,7 +228,9 @@ function openMiningSettings() {
 // eslint-disable-next-line consistent-return
 async function startMining() {
   if (
-    Object.keys(selectedBoxes.value).filter((box) => box !== '').length === 0
+    Object.keys(selectedBoxes.value).filter(
+      (key) => selectedBoxes.value[key].checked && key !== ''
+    ).length === 0
   ) {
     openMiningSettings();
     $toast.add({
