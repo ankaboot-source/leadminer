@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
 import type { Profile } from '@/types/user';
@@ -16,7 +17,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningSources = ref<MiningSource[]>([]);
   const activeMiningSource = ref<MiningSource | undefined>();
   const boxes = ref<BoxNode[]>([]);
-  const selectedBoxes = ref<string[]>([]);
+  const selectedBoxes = ref<TreeSelectionKeys>([]);
 
   const isLoadingStartMining = ref(false);
   const isLoadingStopMining = ref(false);
@@ -164,7 +165,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         {
           method: 'POST',
           body: {
-            boxes: selectedBoxes.value.filter((box) => box !== ''),
+            boxes: Object.keys(selectedBoxes.value).filter((box) => box !== ''),
             miningSource: activeMiningSource.value,
           },
         }

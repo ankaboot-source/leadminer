@@ -122,6 +122,7 @@
 // @ts-expect-error "No type definitions"
 import objectScan from 'object-scan';
 import { FetchError } from 'ofetch';
+import type { TreeSelectionKeys } from 'primevue/tree';
 
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
@@ -139,7 +140,9 @@ const canceled = ref<boolean>(false);
 const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
 
 const boxes = computed(() => $leadminerStore.boxes);
-const selectedBoxes = computed(() => $leadminerStore.selectedBoxes);
+const selectedBoxes = computed<TreeSelectionKeys>(
+  () => $leadminerStore.selectedBoxes
+);
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined
 );
@@ -153,7 +156,7 @@ const totalEmails = computed<number>(() => {
         if (
           property === 'total' &&
           parent.key &&
-          selectedBoxes.value.includes(parent.key)
+          parent.key in selectedBoxes.value
         ) {
           context.sum += value;
         }
@@ -223,7 +226,9 @@ function openMiningSettings() {
 
 // eslint-disable-next-line consistent-return
 async function startMining() {
-  if (selectedBoxes.value.filter((box) => box !== '').length === 0) {
+  if (
+    Object.keys(selectedBoxes.value).filter((box) => box !== '').length === 0
+  ) {
     openMiningSettings();
     $toast.add({
       severity: 'error',
