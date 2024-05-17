@@ -1,14 +1,8 @@
 export type OAuthMiningSource = 'azure' | 'google';
 export type MiningSourceType = OAuthMiningSource | 'imap';
 
-export enum MiningSources {
-  GOOGLE = 'google',
-  AZURE = 'azure',
-  IMAP = 'imap',
-}
-
 export interface MiningSource {
-  type: MiningSources;
+  type: MiningSourceType;
   email: string;
   isValid?: boolean;
 }

@@ -45,6 +45,10 @@ export default function initializeImapController(miningSources: MiningSources) {
           });
 
           if (token.expired(1000)) {
+            if (!refreshToken)
+              return res.status(401).send({
+                data: { message: 'Token has expired' }
+              });
             const { token: newToken } = await token.refresh();
             // eslint-disable-next-line @typescript-eslint/naming-convention
             const { access_token, refresh_token, expires_at } = newToken as {
