@@ -18,7 +18,7 @@ export default class MailerCheckClient {
     });
 
     this.rate_limit_handler = new Bottleneck({
-      maxConcurrent: 10, // allow 10 requests to be sent at a time
+      maxConcurrent: 1, // allow 1 request to be sent at a time
       minTime: 1000 / 60 // Ensure that at most 60 requests are sent per minute
     });
   }
