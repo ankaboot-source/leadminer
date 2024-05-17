@@ -33,7 +33,10 @@ async function loginWithOAuth(provider: Provider) {
       provider,
       options: {
         skipBrowserRedirect: false,
-        scopes: 'email',
+        scopes:
+          provider === 'azure'
+            ? 'https://outlook.office.com/IMAP.AccessAsUser.All'
+            : 'https://mail.google.com/',
       },
     });
     if (error) {
