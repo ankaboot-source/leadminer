@@ -11,7 +11,7 @@
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="$stepper.index">
+    <Stepper v-model:active-step="$stepper.index" linear>
       <StepperPanel header="Source">
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
@@ -37,18 +37,21 @@ import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
-import { MiningSources } from '~/types/mining';
+import type { MiningSourceType } from '~/types/mining';
 
 const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 
+const { collapsed } = defineProps<{
+  collapsed: boolean;
+}>();
+
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
-const collapsePannel = ref(true);
+const collapsePannel = ref(collapsed);
 
 const { error, provider, source } = $route.query;
-collapsePannel.value = !source && $leadminerStore.totalMinedContacts > 0;
 
 onMounted(() => {
   useRouter().replace({ query: {} });
@@ -56,7 +59,7 @@ onMounted(() => {
   if (source) {
     sourcePanel.value?.selectSource(source as string);
   } else if (error === 'oauth-consent') {
-    $consentSidebar.show(provider as MiningSources);
+    $consentSidebar.show(provider as MiningSourceType);
   }
 });
 </script>

@@ -1,22 +1,28 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { MiningSources } from '~/types/mining';
+import { type MiningSourceType } from '~/types/mining';
 
 export const useMiningConsentSidebar = defineStore(
   'mining-consent-sidebar',
   () => {
     const status = ref(false);
-    const provider = ref<MiningSources>();
+    const provider = ref<MiningSourceType>();
 
-    function show(sourceType: MiningSources) {
+    function show(sourceType: MiningSourceType) {
       status.value = true;
       provider.value = sourceType;
+    }
+
+    function $reset() {
+      status.value = false;
+      provider.value = undefined;
     }
 
     return {
       status,
       provider,
       show,
+      $reset,
     };
   }
 );

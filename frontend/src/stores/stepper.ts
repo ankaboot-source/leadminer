@@ -16,10 +16,15 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
     index.value = step;
   }
 
+  function $reset() {
+    index.value = 0;
+  }
+
   return {
     index,
     next,
     prev,
     go,
+    $reset,
   };
 });

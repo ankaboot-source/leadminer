@@ -24,6 +24,7 @@
     "@nuxtjs/i18n": "^8.2.0",
     "@nuxtjs/supabase": "^1.1.7",
     "@nuxtjs/tailwindcss": "^6.11.4",
+    "@types/js-cookie": "^3.0.6",
     "eslint": "^8.57.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^9.1.0",
@@ -40,6 +41,7 @@
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
     "@pinia/nuxt": "^0.5.1",
+    "js-cookie": "^3.0.5",
     "nitropack": "^2.9.4",
     "object-scan": "^19.0.5",
     "pinia": "^2.1.7",
