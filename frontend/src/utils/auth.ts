@@ -7,9 +7,14 @@ export function clearAllData() {
   localStorage.clear();
 }
 
-export function logout() {
+export function signOutManually() {
   sse.closeConnection();
   useResetStore().all();
   clearAllData();
   useRouter().push('/auth/login');
+  useSupabaseUser(); // To refresh $user in AppHeader
+}
+
+export async function signOut() {
+  await useSupabaseClient().auth.signOut();
 }
