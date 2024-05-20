@@ -97,8 +97,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 
-import { logout } from '@/utils/auth';
-
 const $toast = useToast();
 
 const userId = ref('');
@@ -128,7 +126,7 @@ onMounted(async () => {
       detail: 'Session is expired.',
       life: 3000,
     });
-    await useSupabaseClient().auth.signOut();
+    await signOut();
     return;
   }
 
@@ -219,7 +217,13 @@ async function deleteAccount() {
     await $api('/auth/users', {
       method: 'DELETE',
     });
-    logout();
+    signOutManually();
+    $toast.add({
+      severity: 'success',
+      summary: 'Account deleted',
+      detail: 'Your account has been deleted successfully',
+      life: 3000,
+    });
     isLoading.value = false;
   } catch (err) {
     isLoading.value = false;

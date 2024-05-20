@@ -41,6 +41,8 @@
 </template>
 
 <script setup lang="ts">
+import { signOutManually } from './utils/auth';
+
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
     case 'SIGNED_IN':
@@ -56,7 +58,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
       navigateTo('/dashboard');
       break;
     case 'SIGNED_OUT':
-      logout();
+      signOutManually();
       break;
 
     default:
