@@ -67,9 +67,7 @@
           type="button"
           label="Connect"
           :loading="loadingSave"
-          :disabled="
-            isInvalidEmailPattern(imapEmail) || imapPassword.length === 0
-          "
+          :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
           @click="onSubmitImapCredentials"
         ></Button>
       </div>
@@ -78,7 +76,8 @@
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
-import { isInvalidEmailPattern } from '@/utils/email';
+
+import { isInvalidEmail } from '@/utils/email';
 import type { MiningSource } from '~/types/mining';
 
 interface ImapConfigs {
@@ -113,7 +112,7 @@ const formErrors: Record<string, Ref> = {
 const loadingSave = ref(false);
 
 const invalidEmailInput = (email: string | undefined) =>
-  formErrors.email.value || !email?.length || isInvalidEmailPattern(email);
+  formErrors.email.value || !email?.length || isInvalidEmail(email);
 
 const invalidImapPassword = (password: string | undefined) =>
   formErrors.password.value || !password?.length || password.length === 0;

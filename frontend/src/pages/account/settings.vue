@@ -17,7 +17,7 @@
               v-model="email"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="isInvalidEmailPattern(email)"
+              :invalid="isInvalidEmail(email)"
               type="email"
               aria-describedby="email-help"
             />
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+
 import { logout } from '@/utils/auth';
 
 const $toast = useToast();
