@@ -91,7 +91,6 @@ const show = defineModel<boolean>('show');
 const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
-const $supabaseClient = useSupabaseClient();
 const imapSource = defineModel<MiningSource>('source');
 
 const imapAdvancedSettings = ref(false);

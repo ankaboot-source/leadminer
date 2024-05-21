@@ -19,8 +19,12 @@ export default function initializeMiningController(
   miningSources: MiningSources
 ) {
   return {
-    async addOAuthMiningSource(req: Request, res: Response, next: NextFunction) {
-      const user = res.locals
+    async addOAuthMiningSource(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) {
+      const user = res.locals;
       const { provider, providerToken } = req.body;
 
       if (!provider) {
