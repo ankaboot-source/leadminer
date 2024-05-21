@@ -40,16 +40,8 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const client = createSupabaseClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    authorization,
-  );
-
-  const admin = createSupabaseAdmin(
-    supabaseUrl,
-    supabaseServiceRoleKey,
-  );
+  const admin = createSupabaseAdmin();
+  const client = createSupabaseClient(authorization);
 
   const { provider, provider_token: providerToken } = await req.json();
 

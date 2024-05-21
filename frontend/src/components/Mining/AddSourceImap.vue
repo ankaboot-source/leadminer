@@ -88,10 +88,10 @@ interface ImapConfigs {
 
 const show = defineModel<boolean>('show');
 
-const { $api } = useNuxtApp();
 const $toast = useToast();
+const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
-
+const $supabaseClient = useSupabaseClient();
 const imapSource = defineModel<MiningSource>('source');
 
 const imapAdvancedSettings = ref(false);
@@ -183,7 +183,12 @@ async function getImapConfigsForEmail(
             port: imapPort.value,
             secure: imapSecureConnection.value,
           }
-        : await $api<ImapConfigs>(`/imap/config/${email}`, { method: 'GET' });
+        : (
+            await $supabaseClient.functions.invoke<ImapConfigs>(
+              `imap/config/${email}`,
+              { method: 'GET' }
+            )
+          ).data;
 
     return configs;
   } catch (err) {
