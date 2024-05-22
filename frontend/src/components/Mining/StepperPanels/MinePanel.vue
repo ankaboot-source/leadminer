@@ -196,8 +196,13 @@ onMounted(async () => {
 
   try {
     await $leadminerStore.fetchInbox();
-  } catch (err) {
-    useMiningConsentSidebar().show(miningSource.type);
+  } catch (error: any) {
+    if (error?.statusCode === 502 || error?.statusCode === 503) {
+      $stepper.prev();
+      throw error;
+    } else {
+      useMiningConsentSidebar().show(miningSource.type);
+    }
   }
 });
 
@@ -221,7 +226,9 @@ function openMiningSettings() {
 
 // eslint-disable-next-line consistent-return
 async function startMining() {
-  if (Object.keys(selectedBoxes.value).slice(1).length === 0) {
+  if (
+    Object.keys(selectedBoxes.value).filter((box) => box !== '').length === 0
+  ) {
     openMiningSettings();
     $toast.add({
       severity: 'error',

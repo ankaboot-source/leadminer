@@ -19,5 +19,5 @@
 import { useLeadminerStore } from '@/stores/leadminer';
 
 const leadminerStore = useLeadminerStore();
-const expandedKeys = ref({});
+const expandedKeys = ref({ '': true });
 </script>

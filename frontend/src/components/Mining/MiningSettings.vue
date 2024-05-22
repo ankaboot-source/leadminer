@@ -28,24 +28,10 @@
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
     </div>
-    <Dropdown
-      v-if="$leadminerStore.activeMiningSource"
-      v-model="$leadminerStore.activeMiningSource.email"
-      :options="miningSources"
-      option-value="email"
-      option-label="email"
-      class="mt-3 w-full"
-      disabled
-      @update:model-value="onMiningSourceChanged"
-    />
-    <p v-else class="m-0">
-      Please ensure you have at least one mining source selected.
-    </p>
     <TreeCard
       v-if="shouldShowTreeCard"
       :class="{ disabled: activeMiningTask }"
     />
-
     <template #footer>
       <Button label="Save" @click="close" />
     </template>
@@ -65,7 +51,6 @@ const isVisible = ref(false);
 const screenStore = useScreenStore();
 
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
-const miningSources = [$leadminerStore.activeMiningSource];
 const boxes = computed(() => $leadminerStore.boxes);
 const shouldShowTreeCard = computed(
   () => boxes.value.length > 0 && !props.isLoadingBoxes
@@ -83,10 +68,6 @@ async function onRefreshImapTree() {
     $leadminerStore.isLoadingBoxes = false;
     throw err;
   }
-}
-
-function onMiningSourceChanged() {
-  onRefreshImapTree();
 }
 
 function open() {
