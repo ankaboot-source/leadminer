@@ -109,6 +109,7 @@ export default defineNuxtConfig({
         '/auth/forgot-password',
         '/auth/success',
         '/credits-success',
+        '/account/settings',
       ],
     },
   },
