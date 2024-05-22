@@ -112,6 +112,8 @@ const isSocialLogin = ref(false);
 const { $api } = useNuxtApp();
 
 onMounted(async () => {
+  useRouter().replace({ query: {} });
+
   const { session } = (await useSupabaseClient().auth.getSession()).data;
 
   const { data: profile } = await useSupabaseClient()
