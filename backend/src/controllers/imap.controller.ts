@@ -1,6 +1,7 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import Connection from 'imap';
+import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
 import { MiningSources } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
@@ -116,6 +117,27 @@ export default function initializeImapController(miningSources: MiningSources) {
           await imapConnectionProvider?.releaseConnection(imapConnection);
         }
         await imapConnectionProvider?.cleanPool();
+      }
+    },
+
+    async getImapConfigFromEmail(
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) {
+      const { email } = req.params;
+
+      if (!email) {
+        return res
+          .status(400)
+          .json({ message: 'Missing required param email.' });
+      }
+
+      try {
+        const config = await new IMAPSettingsDetector().detect(email);
+        return config;
+      } catch (err) {
+        return next(err);
       }
     }
   };
