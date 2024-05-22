@@ -67,9 +67,7 @@
           type="button"
           label="Connect"
           :loading="loadingSave"
-          :disabled="
-            isInvalidEmailPattern(imapEmail) || imapPassword.length === 0
-          "
+          :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
           @click="onSubmitImapCredentials"
         ></Button>
       </div>
@@ -78,7 +76,7 @@
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
-import { isInvalidEmailPattern } from '@/utils/email';
+import { isInvalidEmail } from '@/utils/email';
 import type { MiningSource } from '~/types/mining';
 
 interface ImapConfigs {
@@ -89,10 +87,10 @@ interface ImapConfigs {
 
 const show = defineModel<boolean>('show');
 
-const { $api } = useNuxtApp();
 const $toast = useToast();
+const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
-
+const $supabaseClient = useSupabaseClient();
 const imapSource = defineModel<MiningSource>('source');
 
 const imapAdvancedSettings = ref(false);
@@ -113,7 +111,7 @@ const formErrors: Record<string, Ref> = {
 const loadingSave = ref(false);
 
 const invalidEmailInput = (email: string | undefined) =>
-  formErrors.email.value || !email?.length || isInvalidEmailPattern(email);
+  formErrors.email.value || !email?.length || isInvalidEmail(email);
 
 const invalidImapPassword = (password: string | undefined) =>
   formErrors.password.value || !password?.length || password.length === 0;
@@ -184,7 +182,12 @@ async function getImapConfigsForEmail(
             port: imapPort.value,
             secure: imapSecureConnection.value,
           }
-        : await $api<ImapConfigs>(`/imap/config/${email}`, { method: 'GET' });
+        : (
+            await $supabaseClient.functions.invoke<ImapConfigs>(
+              `imap/config/${email}`,
+              { method: 'GET' }
+            )
+          ).data;
 
     return configs;
   } catch (err) {

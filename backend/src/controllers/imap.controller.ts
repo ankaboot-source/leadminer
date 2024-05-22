@@ -5,7 +5,6 @@ import { MiningSources } from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
-import ImapConfigDiscover from '../services/imap/ImapConfigDetector';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
@@ -117,18 +116,6 @@ export default function initializeImapController(miningSources: MiningSources) {
           await imapConnectionProvider?.releaseConnection(imapConnection);
         }
         await imapConnectionProvider?.cleanPool();
-      }
-    },
-    async imapAutoConfig(req: Request, res: Response, next: NextFunction) {
-      const { email } = req.params;
-
-      try {
-        const config = await new ImapConfigDiscover().getImapConfig(email);
-        return config && Object.keys(config).length !== 0
-          ? res.json({ ...config })
-          : res.sendStatus(404);
-      } catch (error) {
-        return next(error);
       }
     }
   };

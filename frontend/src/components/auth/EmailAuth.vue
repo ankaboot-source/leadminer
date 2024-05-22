@@ -5,7 +5,7 @@
         <label class="text-left" for="email">Email</label>
         <InputText
           v-model="email"
-          :invalid="isInvalidEmailPattern(email)"
+          :invalid="isInvalidEmail(email)"
           type="email"
           required
           aria-describedby="email-help"
@@ -13,7 +13,7 @@
           @focusout="emailFocus = false"
         />
         <small
-          v-if="isInvalidEmailPattern(email)"
+          v-if="isInvalidEmail(email)"
           id="email-help"
           class="text-red-400 text-left pl-4"
         >
@@ -89,14 +89,14 @@
             <label class="text-left" for="email">Email</label>
             <InputText
               v-model="email"
-              :invalid="isInvalidEmailPattern(email)"
+              :invalid="isInvalidEmail(email)"
               type="email"
               required
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
             />
             <small
-              v-if="isInvalidEmailPattern(email)"
+              v-if="isInvalidEmail(email)"
               id="email-help"
               class="text-red-400 text-left pl-4"
             >
@@ -155,6 +155,8 @@ const $toast = useToast();
 
 const $supabase = useSupabaseClient();
 
+const $router = useRouter();
+
 const email = ref('');
 const emailFocus = ref(false);
 
@@ -212,11 +214,16 @@ async function signUp() {
     if (error) {
       throw error;
     }
+
     $toast.add({
       severity: 'success',
       summary: 'Sign up Successfully',
       detail: `We have sent a confirmation email to ${email.value}`,
       life: 3000,
+    });
+    await $router.push({
+      path: '/auth/success',
+      query: { email: email.value },
     });
   } catch (error) {
     if (error instanceof Error) {

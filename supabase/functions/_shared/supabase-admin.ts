@@ -1,10 +1,10 @@
 import { createClient } from "supabase";
 
-const createSupabaseAdmin = (supabaseUrl: string, supabaseKey: string) => {
+export function createSupabaseAdmin() {
   return createClient(
-    supabaseUrl,
-    supabaseKey,
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
-};
+}
 
 export default createSupabaseAdmin;

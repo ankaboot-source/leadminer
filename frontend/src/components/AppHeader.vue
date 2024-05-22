@@ -40,7 +40,7 @@
                 </NuxtLink>
               </Button>
               <Button class="w-full flex justify-center gap-2" @click="signOut">
-                Logout
+                Sign out
                 <i class="pi pi-sign-out"></i>
               </Button>
             </div>
@@ -52,18 +52,13 @@
 </template>
 
 <script setup lang="ts">
-import CreditsCounter from './Credits/CreditsCounter.vue';
 import AppLogo from './AppLogo.vue';
+import CreditsCounter from './Credits/CreditsCounter.vue';
 
-const $supabase = useSupabaseClient();
 const $user = useSupabaseUser();
 
 const visible = ref(false);
 const showCreditsBadge = useRuntimeConfig().public.ENABLE_CREDIT;
-
-async function signOut() {
-  await $supabase.auth.signOut();
-}
 </script>
 
 <style scoped>

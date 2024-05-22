@@ -17,7 +17,7 @@
               v-model="email"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="isInvalidEmailPattern(email)"
+              :invalid="isInvalidEmail(email)"
               type="email"
               aria-describedby="email-help"
             />
@@ -96,7 +96,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { logout } from '@/utils/auth';
 
 const $toast = useToast();
 
@@ -127,7 +126,7 @@ onMounted(async () => {
       detail: 'Session is expired.',
       life: 3000,
     });
-    await useSupabaseClient().auth.signOut();
+    await signOut();
     return;
   }
 
@@ -218,7 +217,13 @@ async function deleteAccount() {
     await $api('/auth/users', {
       method: 'DELETE',
     });
-    logout();
+    signOutManually();
+    $toast.add({
+      severity: 'success',
+      summary: 'Account deleted',
+      detail: 'Your account has been deleted successfully',
+      life: 3000,
+    });
     isLoading.value = false;
   } catch (err) {
     isLoading.value = false;

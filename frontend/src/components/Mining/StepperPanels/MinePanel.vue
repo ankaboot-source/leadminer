@@ -156,7 +156,8 @@ const totalEmails = computed<number>(() => {
         if (
           property === 'total' &&
           parent.key &&
-          parent.key in selectedBoxes.value
+          parent.key in selectedBoxes.value &&
+          selectedBoxes.value[parent.key].checked
         ) {
           context.sum += value;
         }
@@ -166,21 +167,19 @@ const totalEmails = computed<number>(() => {
   return 0;
 });
 
-const scannedEmails = computed(() => $leadminerStore.scannedEmails);
+const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
-const extractionFinished = computed(() => $leadminerStore.extractionFinished);
-
 const extractionProgress = computed(() =>
-  $leadminerStore.fetchingFinished
-    ? extractedEmails.value / scannedEmails.value || 0
+  $leadminerStore.fetchingFinished && !canceled
+    ? extractedEmails.value / $leadminerStore.scannedEmails || 0
     : extractedEmails.value / totalEmails.value || 0
 );
 
 const progressTooltip = computed(
   () =>
     `Mined / Total emails
-      ${scannedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
+      ${extractedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
       `
 );
 
@@ -227,7 +226,9 @@ function openMiningSettings() {
 // eslint-disable-next-line consistent-return
 async function startMining() {
   if (
-    Object.keys(selectedBoxes.value).filter((box) => box !== '').length === 0
+    Object.keys(selectedBoxes.value).filter(
+      (key) => selectedBoxes.value[key].checked && key !== ''
+    ).length === 0
   ) {
     openMiningSettings();
     $toast.add({
@@ -238,6 +239,7 @@ async function startMining() {
     });
     return;
   }
+  canceled.value = false;
   try {
     await $leadminerStore.startMining();
     await $leadminerStore.syncUserCredits();
