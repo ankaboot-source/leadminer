@@ -135,7 +135,9 @@ export default function initializeImapController(miningSources: MiningSources) {
 
       try {
         const config = await new IMAPSettingsDetector().detect(email);
-        return config;
+        return config
+          ? res.status(200).json({ ...config })
+          : res.sendStatus(404);
       } catch (err) {
         return next(err);
       }
