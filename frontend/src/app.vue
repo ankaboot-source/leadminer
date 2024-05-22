@@ -43,11 +43,13 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 
+const { $api } = useNuxtApp();
+
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
     case 'SIGNED_IN':
       if (session?.provider_token) {
-        await useSupabaseClient().functions.invoke('add-mining-source', {
+        await $api('/mining/oauth', {
           method: 'POST',
           body: {
             provider: session.user.app_metadata.provider,
