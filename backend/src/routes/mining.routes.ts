@@ -29,7 +29,7 @@ export default function initializeMiningRoutes(
 
   router.get('/mine/sources', authMiddleware, getMiningSources);
 
-  router.post('/mine/sources', authMiddleware, addMiningSource)
+  router.post('/mine/sources', authMiddleware, addMiningSource);
   router.post('/mine/sources/google', authMiddleware, createGoogleMiningSource);
   router.get('/mine/sources/google/callback', createGoogleMiningSourceCallback);
 
