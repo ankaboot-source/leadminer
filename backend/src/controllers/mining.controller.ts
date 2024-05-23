@@ -24,8 +24,8 @@ export default function initializeMiningController(
       res: Response,
       next: NextFunction
     ) {
-      const user = res.locals;
-      const { provider, providerToken } = req.body;
+      const { user } = res.locals;
+      const { provider, provider_token: providerToken } = req.body;
 
       if (!provider) {
         return res.status(400).json({ message: 'provider is missing.' });

@@ -47,9 +47,9 @@ const { $api } = useNuxtApp();
 
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
-    case 'SIGNED_IN':
+    case 'INITIAL_SESSION':
       if (session?.provider_token) {
-        await $api('/mining/oauth', {
+        await $api('/imap/mine/sources/oauth', {
           method: 'POST',
           body: {
             provider: session.user.app_metadata.provider,
@@ -57,6 +57,8 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
           },
         });
       }
+      break;
+    case 'SIGNED_IN':
       navigateTo('/dashboard');
       break;
     case 'SIGNED_OUT':
