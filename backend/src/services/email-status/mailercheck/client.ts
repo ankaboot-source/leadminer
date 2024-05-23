@@ -26,7 +26,6 @@ export default class MailerCheckClient {
       const { data } = await this.rate_limit_handler(() => this.api.post<{ status: MailerCheckResult }>('check/single', {
           email
         }));
-      console.log(data);
       return data.status;
     } catch (error) {
       logError(error, '[MailerCheck:checkEmail]', this.logger);
