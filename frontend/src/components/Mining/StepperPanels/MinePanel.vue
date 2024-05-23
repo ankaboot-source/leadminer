@@ -3,6 +3,8 @@
     v-if="boxes"
     :status="activeMiningTask"
     :total="totalEmails"
+    :rate="parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130"
+    :started="taskStartedAt"
     :progress="extractionProgress"
     :progress-tooltip="progressTooltip"
   >
@@ -146,6 +148,7 @@ const selectedBoxes = computed<TreeSelectionKeys>(
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined
 );
+const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
   if (boxes.value[0]) {

@@ -8,7 +8,7 @@
 
     <div id="progress-time">
       <slot name="progress-time">
-        <div v-if="progressStatus">
+        <div v-if="progressStartedAt">
           {{ estimatedRemainingTimeConverted }}
           <span v-if="estimatedRemainingTimeConverted != 'Almost set!'">
             left
@@ -53,19 +53,15 @@
 import { convertSeconds, timeConversionRounded } from '@/utils/time';
 
 const props = defineProps({
-  status: { type: Boolean, default: false },
   total: { type: Number, default: 0 },
   progress: { type: Number, default: 0 },
+  started: { type: Number, default: 0 },
+  rate: { type: Number, default: 0 },
   progressTitle: { type: String, default: '' },
   progressTooltip: { type: String, default: '' },
 });
 
-let startTime: number;
-
-const averageExtractionRate =
-  parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) ?? 130;
-
-const progressStatus = computed(() => props.status);
+const progressStartedAt = computed(() => props.started);
 const progressValue = computed(() => Math.round(props.progress * 100));
 const progressPercentage = computed(() => Math.floor(progressValue.value));
 const progressColor = computed(() =>
@@ -73,30 +69,27 @@ const progressColor = computed(() =>
 );
 
 function getElapsedTime() {
-  return Math.floor((performance.now() - startTime || 0) / 1000);
+  return Math.floor((performance.now() - progressStartedAt.value || 0) / 1000);
 }
 
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
-  const estimatedRemainingTime =
-    props.progress !== 0
-      ? Math.floor((1 / props.progress) * elapsedTime) - elapsedTime
-      : Math.round(props.total / averageExtractionRate);
+
+  if (props.progress === 0 || elapsedTime === 0) {
+    return Math.round(props.total / props.rate);
+  }
+
+  let estimatedRemainingTime =
+    Math.floor((1 / props.progress) * elapsedTime) - elapsedTime;
+
+  if (estimatedRemainingTime < 0) {
+    estimatedRemainingTime = 0;
+  }
+
   return estimatedRemainingTime;
 }
 
 const estimatedRemainingTimeConverted = computed(() =>
   timeConversionRounded(getEstimatedRemainingTime()).join(' ')
 );
-
-watch(progressStatus, (active) => {
-  if (active) {
-    startTime = performance.now();
-    // eslint-disable-next-line no-console
-    console.log('Progress: Started');
-  } else {
-    // eslint-disable-next-line no-console
-    console.log('Progress: Stopped, time elapsed:', getElapsedTime(), 's');
-  }
-});
 </script>
