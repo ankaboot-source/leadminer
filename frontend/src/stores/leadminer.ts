@@ -14,6 +14,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const userCredits = ref(0);
 
   const miningTask = ref<MiningTask | undefined>();
+  const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const activeMiningSource = ref<MiningSource | undefined>();
   const boxes = ref<BoxNode[]>([]);
@@ -38,6 +39,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   function $resetMining() {
     miningTask.value = undefined;
+    miningStartedAt.value = undefined;
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];
@@ -184,6 +186,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           },
           onClose: () => {
             miningTask.value = undefined;
+            miningStartedAt.value = undefined;
             sse.closeConnection();
           },
           onFetchingDone: (totalFetched) => {
@@ -204,6 +207,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       );
 
       miningTask.value = task;
+      miningStartedAt.value = performance.now();
       loadingStatus.value = false;
       loadingStatusDns.value = false;
       isLoadingStartMining.value = false;
@@ -236,6 +240,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       });
 
       miningTask.value = undefined;
+      miningStartedAt.value = undefined;
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
@@ -261,6 +266,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     userCredits,
     miningTask,
+    miningStartedAt,
     miningSources,
     activeMiningSource,
     boxes,

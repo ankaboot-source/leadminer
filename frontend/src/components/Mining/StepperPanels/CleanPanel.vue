@@ -2,6 +2,8 @@
   <ProgressCard
     :status="activeTask"
     :total="contactsToVerify"
+    :rate="2"
+    :started="taskStartedAt"
     :progress="verificationProgress"
     :progress-tooltip="progressTooltip"
   >
@@ -39,7 +41,7 @@ const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 
 const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
-
+const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
@@ -53,7 +55,7 @@ const verificationProgress = computed(
 
 const progressTooltip = computed(
   () =>
-    `Verified emails: ${contactsToVerify.value.toLocaleString()}/${verifiedContacts.value.toLocaleString()}`
+    `Verified emails: ${verifiedContacts.value.toLocaleString()}/${contactsToVerify.value.toLocaleString()}`
 );
 
 function cleaningDoneNotification() {
