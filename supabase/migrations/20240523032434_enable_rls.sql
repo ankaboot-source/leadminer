@@ -4,11 +4,11 @@ alter table "public"."messages_1" enable row level security;
 
 alter table "public"."messages_2" enable row level security;
 
-alter table "public"."pointsofcontacts_0" enable row level security;
+alter table "public"."pointsofcontact_0" enable row level security;
 
-alter table "public"."pointsofcontacts_1" enable row level security;
+alter table "public"."pointsofcontact_1" enable row level security;
 
-alter table "public"."pointsofcontacts_2" enable row level security;
+alter table "public"."pointsofcontact_2" enable row level security;
 
 alter table "public"."tags_0" enable row level security;
 
@@ -17,64 +17,37 @@ alter table "public"."tags_1" enable row level security;
 alter table "public"."tags_2" enable row level security;
 
 create policy "Enable select for users based on user_id"
-on "public"."messages_0"
+on "public"."messages"
 as permissive
 for select
 to public
-using ((auth.uid() = user_id));
+using ((select auth.uid()) = user_id);
 
 create policy "Enable select for users based on user_id"
-on "public"."messages_1"
+on "public"."persons"
 as permissive
 for select
 to public
-using ((auth.uid() = user_id));
+using ((select auth.uid()) = user_id);
 
 create policy "Enable select for users based on user_id"
-on "public"."messages_2"
+on "public"."pointsofcontact"
 as permissive
 for select
 to public
-using ((auth.uid() = user_id));
+using ((select auth.uid()) = user_id);
+
+create policy "Allow all operations for authenticated users on their own data"
+on "public"."refinedpersons"
+as permissive
+for all
+to public
+using ((select auth.uid()) = userid)
+with check ((select auth.uid()) = userid);
 
 create policy "Enable select for users based on user_id"
-on "public"."pointsofcontacts_0"
+on "public"."tags"
 as permissive
 for select
 to public
-using ((auth.uid() = user_id));
-
-create policy "Enable select for users based on user_id"
-on "public"."pointsofcontacts_1"
-as permissive
-for select
-to public
-using ((auth.uid() = user_id));
-
-create policy "Enable select for users based on user_id"
-on "public"."pointsofcontacts_2"
-as permissive
-for select
-to public
-using ((auth.uid() = user_id));
-
-create policy "Enable select for users based on user_id"
-on "public"."tags_0"
-as permissive
-for select
-to public
-using ((auth.uid() = user_id));
-
-create policy "Enable select for users based on user_id"
-on "public"."tags_1"
-as permissive
-for select
-to public
-using ((auth.uid() = user_id));
-
-create policy "Enable select for users based on user_id"
-on "public"."tags_2"
-as permissive
-for select
-to public
-using ((auth.uid() = user_id));
+using ((select auth.uid()) = user_id);
