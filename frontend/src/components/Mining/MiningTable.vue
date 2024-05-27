@@ -200,6 +200,7 @@
         </div>
       </template>
     </Column>
+    <!-- Source -->
     <Column
       v-if="visibleColumns.includes('source')"
       field="source"
@@ -213,7 +214,7 @@
         </div>
       </template>
       <template #filter="{ filterModel }">
-        <InputNumber v-model="filterModel.value" />
+        <InputText v-model="filterModel.value" />
       </template>
     </Column>
     <!-- Occurrence -->
@@ -221,6 +222,7 @@
       v-if="visibleColumns.includes('occurrence')"
       field="occurrence"
       sortable
+      data-type="numeric"
       :show-filter-operator="false"
       :show-add-button="false"
     >
