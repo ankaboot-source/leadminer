@@ -31,10 +31,10 @@ on "public"."refinedpersons";
 drop policy if exists "Enable select for users based on user_id"
 on "public"."tags";
 
-drop policy if exists "Users can view their own data."
+drop policy if exists "Users can view their own data"
 on profiles;
 
-drop policy if exists "Users can update their own data."
+drop policy if exists "Users can update their own data"
 on profiles;
 
 create policy "Users can view their own data"
@@ -60,13 +60,6 @@ to public
 using ((select auth.uid()) = user_id);
 
 create policy "Enable select for users based on user_id"
-on "public"."persons"
-as permissive
-for select
-to public
-using ((select auth.uid()) = user_id);
-
-create policy "Enable select for users based on user_id"
 on "public"."pointsofcontact"
 as permissive
 for select
@@ -75,6 +68,13 @@ using ((select auth.uid()) = user_id);
 
 create policy "Enable select for users based on user_id"
 on "public"."tags"
+as permissive
+for select
+to public
+using ((select auth.uid()) = user_id);
+
+create policy "Enable select for users based on user_id"
+on "public"."persons"
 as permissive
 for select
 to public
