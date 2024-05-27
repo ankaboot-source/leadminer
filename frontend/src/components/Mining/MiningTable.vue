@@ -200,7 +200,23 @@
         </div>
       </template>
     </Column>
-
+    <!-- Source -->
+    <Column
+      v-if="visibleColumns.includes('source')"
+      field="source"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="'The email inbox this contact is mined from'">
+          Source
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
     <!-- Occurrence -->
     <Column
       v-if="visibleColumns.includes('occurrence')"
@@ -498,6 +514,10 @@ const defaultFilters = {
 
   // Contacts
   name: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  source: {
     value: null,
     matchMode: FilterMatchMode.CONTAINS,
   },
@@ -920,6 +940,7 @@ onMounted(() => {
   ];
 });
 const visibleColumnsOptions = [
+  { label: 'Source', value: 'source' },
   { label: 'contacts', value: 'contacts' },
   { label: 'occurrence', value: 'occurrence' },
   { label: 'recency', value: 'recency' },
