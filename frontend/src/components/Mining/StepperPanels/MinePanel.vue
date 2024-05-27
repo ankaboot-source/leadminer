@@ -245,7 +245,6 @@ async function startMining() {
   canceled.value = false;
   try {
     await $leadminerStore.startMining();
-    await $leadminerStore.syncUserCredits();
     $toast.add({
       severity: 'success',
       summary: 'Mining Started',

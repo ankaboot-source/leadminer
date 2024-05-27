@@ -893,7 +893,6 @@ async function exportTable(partialExport = false) {
       if (response.status === 200 || response.status === 206) {
         saveCSVFile(response._data, `${getFileName()}.csv`);
 
-        await leadminerStore.syncUserCredits();
         $toast.add({
           severity: 'success',
           summary: 'CSV Export',
