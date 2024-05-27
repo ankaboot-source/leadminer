@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
-import type { Profile } from '@/types/user';
 import { updateMiningSourcesValidity } from '@/utils/sources';
 import { type MiningSource, type MiningTask } from '../types/mining';
 import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
@@ -10,8 +9,6 @@ import { sse } from '../utils/sse';
 
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api } = useNuxtApp();
-
-  const userCredits = ref(0);
 
   const miningTask = ref<MiningTask | undefined>();
   const miningStartedAt = ref<number | undefined>();
@@ -64,16 +61,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   function $reset() {
     miningSources.value = [];
     $resetMining();
-  }
-
-  /**
-   * Synchronizes user credits with the backend.
-   */
-  async function syncUserCredits() {
-    const { credits } = (
-      await useSupabaseClient().from('profiles').select('*').single()
-    ).data as unknown as Profile;
-    userCredits.value = credits;
   }
 
   /**
@@ -259,12 +246,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     startMining,
     stopMining,
-    syncUserCredits,
 
     $reset,
     $resetMining,
 
-    userCredits,
     miningTask,
     miningStartedAt,
     miningSources,

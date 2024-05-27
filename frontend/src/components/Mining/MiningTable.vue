@@ -904,7 +904,7 @@ async function exportTable(partialExport = false) {
       partialExport,
       contactsToExport,
     },
-    async onResponse({ response }) {
+    onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
         openCreditModel(response.status === 402, response._data);
         return;
@@ -913,7 +913,6 @@ async function exportTable(partialExport = false) {
       if (response.status === 200 || response.status === 206) {
         saveCSVFile(response._data, `${getFileName()}.csv`);
 
-        await leadminerStore.syncUserCredits();
         $toast.add({
           severity: 'success',
           summary: 'CSV Export',
