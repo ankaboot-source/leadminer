@@ -1,1 +1,1 @@
-DROP TRIGGER "deduct_user_credits_trigger" ON "tasks";
+DROP TRIGGER "deduct_user_credits_trigger" ON "public.tasks";
