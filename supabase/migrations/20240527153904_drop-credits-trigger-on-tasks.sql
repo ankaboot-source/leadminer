@@ -1,0 +1,1 @@
+DROP TRIGGER deduct_user_credits_trigger;

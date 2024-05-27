@@ -52,6 +52,34 @@ to public
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
+create policy "Enable select for users based on user_id"
+on "public"."messages"
+as permissive
+for select
+to public
+using ((select auth.uid()) = user_id);
+
+create policy "Enable select for users based on user_id"
+on "public"."persons"
+as permissive
+for select
+to public
+using ((select auth.uid()) = user_id);
+
+create policy "Enable select for users based on user_id"
+on "public"."pointsofcontact"
+as permissive
+for select
+to public
+using ((select auth.uid()) = user_id);
+
+create policy "Enable select for users based on user_id"
+on "public"."tags"
+as permissive
+for select
+to public
+using ((select auth.uid()) = user_id);
+
 create policy "Allow all operations for authenticated users on their own data"
 on "public"."refinedpersons"
 as permissive
