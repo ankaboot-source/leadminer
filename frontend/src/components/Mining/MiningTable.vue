@@ -884,7 +884,7 @@ async function exportTable(partialExport = false) {
       partialExport,
       contactsToExport,
     },
-    async onResponse({ response }) {
+    onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
         openCreditModel(response.status === 402, response._data);
         return;
