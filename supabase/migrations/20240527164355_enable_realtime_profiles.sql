@@ -1,1 +1,1 @@
-alter publication supabase_realtime add table publis.profiles;
+alter publication supabase_realtime add table public.profiles;
