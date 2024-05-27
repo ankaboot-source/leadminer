@@ -57,5 +57,5 @@ on "public"."refinedpersons"
 as permissive
 for all
 to public
-using ((select auth.uid()) = user_id)
-with check ((select auth.uid()) = user_id);
+using ((select auth.uid()) = userid)
+with check ((select auth.uid()) = userid);
