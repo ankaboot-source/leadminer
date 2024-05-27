@@ -53,6 +53,3 @@ as permissive
 for select
 to public
 using ((auth.uid() = user_id));
-
-
-
