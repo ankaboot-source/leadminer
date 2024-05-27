@@ -16,38 +16,47 @@ alter table "public"."tags_1" enable row level security;
 
 alter table "public"."tags_2" enable row level security;
 
-create policy "Enable select for users based on user_id"
-on "public"."messages"
-as permissive
-for select
-to public
-using ((select auth.uid()) = user_id);
+drop policy "Enable select for users based on user_id"
+on "public"."messages";
 
-create policy "Enable select for users based on user_id"
-on "public"."persons"
-as permissive
-for select
-to public
-using ((select auth.uid()) = user_id);
+drop policy "Enable select for users based on user_id"
+on "public"."persons";
 
-create policy "Enable select for users based on user_id"
-on "public"."pointsofcontact"
+drop policy "Enable select for users based on user_id"
+on "public"."pointsofcontact";
+
+drop policy "Allow all operations for authenticated users on their own data"
+on "public"."refinedpersons";
+
+drop policy "Enable select for users based on user_id"
+on "public"."tags";
+
+drop policy "Users can view their own data."
+on profiles;
+
+drop policy "Users can update their own data."
+on profiles;
+
+create policy "Users can view their own data"
+on "public"."profiles"
 as permissive
 for select
 to public
-using ((select auth.uid()) = user_id);
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+create policy "Users can update their own data"
+on "public"."profiles"
+as permissive
+for update
+to public
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
 
 create policy "Allow all operations for authenticated users on their own data"
 on "public"."refinedpersons"
 as permissive
 for all
 to public
-using ((select auth.uid()) = userid)
-with check ((select auth.uid()) = userid);
-
-create policy "Enable select for users based on user_id"
-on "public"."tags"
-as permissive
-for select
-to public
-using ((select auth.uid()) = user_id);
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
