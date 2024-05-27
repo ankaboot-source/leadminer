@@ -16,25 +16,25 @@ alter table "public"."tags_1" enable row level security;
 
 alter table "public"."tags_2" enable row level security;
 
-drop policy "Enable select for users based on user_id"
+drop policy if exists "Enable select for users based on user_id"
 on "public"."messages";
 
-drop policy "Enable select for users based on user_id"
+drop policy if exists "Enable select for users based on user_id"
 on "public"."persons";
 
-drop policy "Enable select for users based on user_id"
+drop policy if exists "Enable select for users based on user_id"
 on "public"."pointsofcontact";
 
-drop policy "Allow all operations for authenticated users on their own data"
+drop policy if exists "Allow all operations for authenticated users on their own data"
 on "public"."refinedpersons";
 
-drop policy "Enable select for users based on user_id"
+drop policy if exists "Enable select for users based on user_id"
 on "public"."tags";
 
-drop policy "Users can view their own data."
+drop policy if exists "Users can view their own data."
 on profiles;
 
-drop policy "Users can update their own data."
+drop policy if exists "Users can update their own data."
 on profiles;
 
 create policy "Users can view their own data"
