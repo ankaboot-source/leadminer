@@ -204,6 +204,10 @@ async function loginWithEmailAndPassword() {
 async function signUp() {
   isLoading.value = true;
   try {
+    if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
+      throw Error('Invalid email or password');
+    }
+
     const { error } = await $supabase.auth.signUp({
       email: email.value,
       password: password.value,
