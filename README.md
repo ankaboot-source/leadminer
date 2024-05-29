@@ -32,21 +32,11 @@ To run Leadminer, follow these steps:
 
 > **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "PROVIDER_NAME" if integrating Google OAuth and "azure" if integrating Azure.
 
-### Configure Email Verification:
+### Configure Reacher:
 
-We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.com) as part of our email verification process. You can configure either one or both.
+We use [Reacher](https://reacher.email/) as our email verification API. You can either use the SaaS version or self host it. Follow [their official documentation](https://help.reacher.email/) for more details on how to configure it.
 
-- **Configure Reacher:**
-
-You can either use the SaaS version of Reacher or self-host it. Follow [Reacher's official documentation](https://help.reacher.email/) for detailed configuration instructions.
-
-> **Note:** Leadminer is configured by default to use a Mock server of Reacher for ease of use. 
->
-> Check the `### REACHER ###` section in the `.env` file.
-
-- **Configure MailerCheck:**
-
-MailerCheck is a SaaS solution. Create an account and add the API key to the environment variables. see `.env.example` detailed instructions.
+> **Note:** Leadminer is configured by default to use a Mock server of Reacher for ease of use (Check the `### REACHER ###` section in the env file).
 
 ### Run using docker-compose
 
@@ -67,6 +57,20 @@ Docker is the recommended solution for self-hosting Leadminer thanks to its conv
    ```
 
 1. Navigate to `localhost:8080`.
+
+## Contributing
+
+Thank you for considering contributing to this project! Pull requests are welcome and encouraged. To contribute, please follow the guidelines below:
+
+### General Guidelines
+
+1. Fork this [repository](https://github.com/ankaboot-source/leadminer)
+2. Create a branch for your feature or bug fix (`git checkout -b feature/fooBar`)
+3. Commit your changes (`git commit -am 'Add some fooBar'`)
+4. Push to the branch (`git push origin feature/fooBar`)
+5. Create a new Pull Request
+
+For major changes or new features, it is recommended to open an issue first to discuss and get feedback from the maintainers and the community. Also make sure to update or create tests as appropriate to maintain the code quality and ensure that the project functions as expected.
 
 ### Running the Project Locally (Dev mode)
 
@@ -97,11 +101,11 @@ To run the project in your local environment, follow the steps below:
    ```sh
    # Start the Redis container (You can skip this step if you want to use your local instance)
    docker-compose -f docker-compose.dev.yml up
-   
+
    # Start the backend in development mode
    npm run dev:backend-api
    npm run dev:backend-worker
-   
+
    # Start the frontend in development mode
    npm run dev:frontend
    ```
@@ -125,10 +129,6 @@ npx supabase db diff --use-migra -f <name_of_migration>
 # Stop supabase services once you're done
 npx supabase stop
 ```
-
-### Contributing
-
-Thank you for taking the time to contribute! Please refer to our [CONTRIBUTING.md](https://github.com/ankaboot-source/leadminer/blob/main/CONTRIBUTING.md) for guidelines and more information on how to get started.
 
 ## Roadmap
 
