@@ -80,6 +80,13 @@ for select
 to public
 using ((select auth.uid()) = user_id);
 
+create policy "Enable update for users based on user_id"
+on "public"."persons"
+as permissive
+for update
+to public
+using ((select auth.uid()) = user_id);
+
 create policy "Allow all operations for authenticated users on their own data"
 on "public"."refinedpersons"
 as permissive
