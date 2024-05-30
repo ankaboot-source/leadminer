@@ -183,7 +183,7 @@ async function getImapConfigsForEmail(
             secure: imapSecureConnection.value,
           }
         : (
-            await $supabaseSaaS.functions.invoke<ImapConfigs>(
+            await $supabaseSaaS().functions.invoke<ImapConfigs>(
               `/imap/config/${email}`,
               {
                 method: 'GET',
