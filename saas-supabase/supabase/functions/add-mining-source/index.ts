@@ -3,7 +3,7 @@ import Logger from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
-} from "../_shared/supabase-saas.ts";
+} from "../_shared/supabase-leadminer.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {

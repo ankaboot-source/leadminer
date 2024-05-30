@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { createSupabaseClient } from "./supabase-saas.ts";
+import { createSupabaseClient } from "./supabase-leadminer.ts";
 
 export async function authorizeUser(
   req: Request,
