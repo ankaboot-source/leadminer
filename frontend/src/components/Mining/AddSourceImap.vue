@@ -182,9 +182,14 @@ async function getImapConfigsForEmail(
             port: imapPort.value,
             secure: imapSecureConnection.value,
           }
-        : await $api<ImapConfigs | null>(`/imap/config/${email}`, {
-            method: 'GET',
-          });
+        : (
+            await $supabaseSaaS.functions.invoke<ImapConfigs>(
+              `/imap/config/${email}`,
+              {
+                method: 'GET',
+              }
+            )
+          ).data;
     return configs;
   } catch (err) {
     return null;
