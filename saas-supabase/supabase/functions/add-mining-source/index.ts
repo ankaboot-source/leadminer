@@ -10,9 +10,9 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL_SAAS");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY_SAAS");
-  const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY_SAAS");
+  const supabaseUrl = Deno.env.get("LEADMINER_PROJECT_URL");
+  const supabaseAnonKey = Deno.env.get("LEADMINER_ANON_KEY");
+  const supabaseServiceRoleKey = Deno.env.get("LEADMINER_SECRET_TOKEN");
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
     Logger.error("Missing environment variables.");
