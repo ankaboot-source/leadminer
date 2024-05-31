@@ -103,7 +103,7 @@ export default function initializeEmailVerificationProcessor(
 ) {
   return {
     processStreamData: async (message: EmailVerificationData[]) =>
-      await emailVerificationHandlerWithBulk(
+      emailVerificationHandlerWithBulk(
         message,
         contacts,
         emailStatusCache,
