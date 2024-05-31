@@ -5,6 +5,7 @@ import MailerCheckClient from './mailercheck/client';
 import RandomEmailStatusVerifier from './random';
 import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
+import { EmailVerifierType } from './types';
 
 interface Config extends ReacherConfig, MailerCheckConfig {}
 
@@ -55,7 +56,75 @@ export default class EmailStatusVerifierFactory {
     }
   }
 
-  getVerifier(email: string): EmailStatusVerifier {
+  getEmailVerifiers(
+    emails: string[]
+  ): Map<EmailVerifierType, [EmailStatusVerifier, string[]]> {
+    const verifiersWithEmails = new Map<
+      EmailVerifierType,
+      [EmailStatusVerifier, string[]]
+    >();
+
+    const emailGroups = {
+      reacher: [] as string[],
+      mailercheck: [] as string[],
+      random: [] as string[]
+    };
+
+    emails.forEach((email) => {
+      const verifier = this.getEmailVerifier(email);
+      switch (verifier.constructor.name) {
+        case 'ReacherEmailStatusVerifier':
+          emailGroups.reacher.push(email);
+          break;
+        case 'MailerCheckEmailStatusVerifier':
+          emailGroups.mailercheck.push(email);
+          break;
+        default:
+          emailGroups.random.push(email);
+          break;
+      }
+    });
+
+    const addVerifierEmails = (
+      type: EmailVerifierType,
+      verifier: EmailStatusVerifier,
+      emailList: string[]
+    ) => {
+      if (emailList.length > 0) {
+        verifiersWithEmails.set(type, [verifier, emailList]);
+      }
+    };
+
+    if (emailGroups.random.length > 0) {
+      addVerifierEmails(
+        'random',
+        this.randomEmailStatusVerifier,
+        emailGroups.random
+      );
+    } else {
+      if (emailGroups.reacher.length > 0 && this.reacherEmailStatusVerifier) {
+        addVerifierEmails(
+          'reacher',
+          this.reacherEmailStatusVerifier,
+          emailGroups.reacher
+        );
+      }
+      if (
+        emailGroups.mailercheck.length > 0 &&
+        this.mailerCheckEmailStatusVerifier
+      ) {
+        addVerifierEmails(
+          'mailercheck',
+          this.mailerCheckEmailStatusVerifier,
+          emailGroups.mailercheck
+        );
+      }
+    }
+
+    return verifiersWithEmails;
+  }
+
+  getEmailVerifier(email: string): EmailStatusVerifier {
     if (
       this.reacherEmailStatusVerifier &&
       this.mailerCheckEmailStatusVerifier
