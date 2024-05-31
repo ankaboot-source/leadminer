@@ -102,7 +102,7 @@ export default function initializeEmailVerificationProcessor(
   emailStatusVerifier: EmailStatusVerifierFactory
 ) {
   return {
-    processStreamData: async (message: EmailVerificationData[]) =>
+    processStreamData: (message: EmailVerificationData[]) =>
       emailVerificationHandlerWithBulk(
         message,
         contacts,
