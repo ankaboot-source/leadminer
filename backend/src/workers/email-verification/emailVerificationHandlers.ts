@@ -10,34 +10,87 @@ export interface EmailVerificationData {
 }
 
 /**
- * Performs verification on the provided emails then caches and writes the results to db.
- * @param data - The verification data.
+ * Performs verification either in bulk or single checks on the provided emails,
+ * then caches and writes the results to the database.
+ *
+ * @param data - Array of verification data, containing { userId, email }.
  * @param contacts - The contacts db accessor.
  * @param emailStatusCache - The emails status cache accessor.
- * @param emailStatusVerifierFactory - The email verification service.
+ * @param emailStatusVerifierFactory - The factory providing email verification services.
  */
-async function emailVerificationHandler(
-  { userId, email }: EmailVerificationData,
+async function emailVerificationHandlerWithBulk(
+  verificationData: EmailVerificationData[],
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
   emailStatusVerifierFactory: EmailStatusVerifierFactory
 ) {
+  const waitingForVerification = new Map();
+
   try {
-    const existingStatus = await emailStatusCache.get(email);
-    if (!existingStatus) {
-      const statusResult = await emailStatusVerifierFactory
-        .getVerifier(email)
-        .verify(email);
-      logger.debug('Got verification results from verifier', {
-        statusResult
-      });
-      await Promise.allSettled([
-        emailStatusCache.set(email, statusResult),
-        contacts.updateSinglePersonStatus(email, userId, statusResult)
-      ]);
-    } else {
-      await contacts.updateSinglePersonStatus(email, userId, existingStatus);
-    }
+    const verificationChecks = verificationData.map(
+      async ({ userId, email }) => {
+        const existingStatus = await emailStatusCache.get(email);
+
+        if (existingStatus) {
+          logger.debug('[CACHED]: Got verification results from cache', {
+            existingStatus
+          });
+          await contacts.updateSinglePersonStatus(
+            email,
+            userId,
+            existingStatus
+          );
+        } else {
+          waitingForVerification.set(email, userId);
+        }
+      }
+    );
+    await Promise.allSettled(verificationChecks);
+
+    const verifiers = emailStatusVerifierFactory.getEmailVerifiers(
+      Array.from(waitingForVerification.keys())
+    );
+
+    const verifierPromises = Array.from(verifiers.entries()).map(
+      async ([verifierName, [verifier, emails]]) => {
+        try {
+          const verified =
+            verifierName === 'mailercheck'
+              ? await verifier.verifyMany(emails)
+              : await Promise.all(
+                  emails.map((email) => verifier.verify(email))
+                );
+
+          const updatePromises = verified.map(async (verificationStatus) => {
+            const { email } = verificationStatus;
+            const userId = waitingForVerification.get(email);
+            if (userId) {
+              await emailStatusCache.set(email, verificationStatus);
+              await contacts.updateSinglePersonStatus(
+                email,
+                userId,
+                verificationStatus
+              );
+              logger.debug(
+                `[${verifierName}]: Got verification results from verifier`,
+                {
+                  verificationStatus
+                }
+              );
+            }
+          });
+
+          await Promise.allSettled(updatePromises);
+        } catch (verifierError) {
+          logger.error(
+            `[${verifierName}]: Failed to verify emails`,
+            verifierError
+          );
+        }
+      }
+    );
+
+    await Promise.allSettled(verifierPromises);
   } catch (error) {
     logger.error('Failed when processing message from the stream', error);
   }
@@ -49,8 +102,8 @@ export default function initializeEmailVerificationProcessor(
   emailStatusVerifier: EmailStatusVerifierFactory
 ) {
   return {
-    processStreamData: (message: EmailVerificationData) =>
-      emailVerificationHandler(
+    processStreamData: (message: EmailVerificationData[]) =>
+      emailVerificationHandlerWithBulk(
         message,
         contacts,
         emailStatusCache,
