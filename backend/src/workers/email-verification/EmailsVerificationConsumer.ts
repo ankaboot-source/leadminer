@@ -16,7 +16,7 @@ export default class EmailVerificationConsumer {
     private readonly batchSize: number,
     private readonly emailProcessor: (
       data: EmailVerificationData[]
-    ) => Promise<number | void>,
+    ) => Promise<void>,
     private readonly redisClient: Redis,
     private readonly logger: Logger
   ) {

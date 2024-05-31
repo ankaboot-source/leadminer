@@ -32,14 +32,14 @@ async function emailVerificationHandlerWithBulk(
         const existingStatus = await emailStatusCache.get(email);
 
         if (existingStatus) {
+          logger.debug('[CACHED]: Got verification results from cache', {
+            existingStatus
+          });
           await contacts.updateSinglePersonStatus(
             email,
             userId,
             existingStatus
           );
-          logger.debug(`Updating email with verification result from cache`, {
-            existingStatus
-          });
         } else {
           waitingForVerification.set(email, userId);
         }
