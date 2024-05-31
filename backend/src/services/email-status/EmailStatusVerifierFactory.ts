@@ -1,11 +1,10 @@
 import { Logger } from 'winston';
-import { EmailStatusVerifier } from './EmailStatusVerifier';
+import { EmailStatusVerifier, EmailVerifierType } from './EmailStatusVerifier';
 import MailerCheckEmailStatusVerifier from './mailercheck';
 import MailerCheckClient from './mailercheck/client';
 import RandomEmailStatusVerifier from './random';
 import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
-import { EmailVerifierType } from './types';
 
 interface Config extends ReacherConfig, MailerCheckConfig {}
 
