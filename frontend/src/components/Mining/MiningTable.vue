@@ -336,8 +336,7 @@
       </template>
       <template #body="{ data }">
         <Tag
-          v-if="data.status"
-          :value="data.status"
+          :value="data.status ?? 'UNVERIFIED'"
           :severity="getStatusColor(data.status)"
         />
       </template>
@@ -345,12 +344,17 @@
         <MultiSelect
           v-model="filterModel.value"
           :options="statuses"
+          option-value="value"
+          option-label="label"
           placeholder="Any"
           class="p-column-filter"
           display="chip"
         >
           <template #option="{ option }">
-            <Tag :value="option" :severity="getStatusColor(option)" />
+            <Tag
+              :value="option.label"
+              :severity="getStatusColor(option.value)"
+            />
           </template>
         </MultiSelect>
       </template>
@@ -444,10 +448,15 @@ const { tableData } = defineProps<{
 }>();
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
-const statuses = ['UNKNOWN', 'INVALID', 'RISKY', 'VALID'];
+const statuses = [
+  { value: 'UNKNOWN', label: 'UNKNOWN' },
+  { value: 'INVALID', label: 'INVALID' },
+  { value: 'RISKY', label: 'RISKY' },
+  { value: 'VALID', label: 'VALID' },
+  { value: null, label: 'UNVERIFIED' },
+];
 
 function getStatusColor(status: string) {
-  if (!status) return undefined;
   switch (status) {
     case 'UNKNOWN':
       return 'secondary';
@@ -457,6 +466,8 @@ function getStatusColor(status: string) {
       return 'warning';
     case 'VALID':
       return 'success';
+    case null:
+      return 'secondary';
     default:
       return undefined;
   }
