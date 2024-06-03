@@ -30,7 +30,7 @@
               :input-style="{ width: '100%' }"
               toggle-mask
               :invalid="isInvalidPassword(password)"
-              autocomplete="off"
+              :input-props="{ autocomplete: 'off' }"
             />
           </div>
         </div>
