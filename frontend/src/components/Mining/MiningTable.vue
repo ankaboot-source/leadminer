@@ -336,7 +336,7 @@
       </template>
       <template #body="{ data }">
         <Tag
-          :value="data.status ?? 'UNVERIFIED'"
+          :value="getStatusLabel(data.status)"
           :severity="getStatusColor(data.status)"
         />
       </template>
@@ -351,10 +351,7 @@
           display="chip"
         >
           <template #option="{ option }">
-            <Tag
-              :value="option.label"
-              :severity="getStatusColor(option.value)"
-            />
+            <Tag :value="option.label" :severity="option.color" />
           </template>
         </MultiSelect>
       </template>
@@ -448,31 +445,29 @@ const { tableData } = defineProps<{
 }>();
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
-const statuses = [
-  { value: 'UNKNOWN', label: 'UNKNOWN' },
-  { value: 'INVALID', label: 'INVALID' },
-  { value: 'RISKY', label: 'RISKY' },
-  { value: 'VALID', label: 'VALID' },
-  { value: null, label: 'UNVERIFIED' },
+
+type Status = {
+  value: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | null;
+  label: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | 'UNVERIFIED';
+  color: 'success' | 'warning' | 'danger' | 'secondary';
+};
+
+const statuses: Status[] = [
+  { value: 'VALID', label: 'VALID', color: 'success' },
+  { value: 'RISKY', label: 'RISKY', color: 'warning' },
+  { value: 'INVALID', label: 'INVALID', color: 'danger' },
+  { value: 'UNKNOWN', label: 'UNKNOWN', color: 'secondary' },
+  { value: null, label: 'UNVERIFIED', color: 'secondary' },
 ];
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'UNKNOWN':
-      return 'secondary';
-    case 'INVALID':
-      return 'danger';
-    case 'RISKY':
-      return 'warning';
-    case 'VALID':
-      return 'success';
-    case null:
-      return 'secondary';
-    default:
-      return undefined;
-  }
+function getStatusColor(value: Status['value']): Status['color'] {
+  return (
+    statuses.find((status) => status.value === value)?.color ?? 'secondary'
+  );
 }
-
+function getStatusLabel(value: Status['value']): Status['label'] {
+  return value ?? 'UNVERIFIED';
+}
 function getTagColor(tag: string) {
   if (!tag) return undefined;
   switch (tag) {
