@@ -449,23 +449,23 @@ const { tableData } = defineProps<{
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
 const statuses = [
-  { value: 'UNKNOWN', label: 'UNKNOWN' },
-  { value: 'INVALID', label: 'INVALID' },
-  { value: 'RISKY', label: 'RISKY' },
   { value: 'VALID', label: 'VALID' },
+  { value: 'RISKY', label: 'RISKY' },
+  { value: 'INVALID', label: 'INVALID' },
+  { value: 'UNKNOWN', label: 'UNKNOWN' },
   { value: null, label: 'UNVERIFIED' },
 ];
 
 function getStatusColor(status: string) {
   switch (status) {
-    case 'UNKNOWN':
-      return 'secondary';
-    case 'INVALID':
-      return 'danger';
-    case 'RISKY':
-      return 'warning';
     case 'VALID':
       return 'success';
+    case 'RISKY':
+      return 'warning';
+    case 'INVALID':
+      return 'danger';
+    case 'UNKNOWN':
+      return 'secondary';
     case null:
       return 'secondary';
     default:
