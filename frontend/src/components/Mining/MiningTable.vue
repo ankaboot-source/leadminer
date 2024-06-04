@@ -336,8 +336,8 @@
       </template>
       <template #body="{ data }">
         <Tag
-          :value="getStatusByValue(data.status).label"
-          :severity="getStatusByValue(data.status).color"
+          :value="getStatusLabel(data.status)"
+          :severity="getStatusColor(data.status)"
         />
       </template>
       <template #filter="{ filterModel }">
@@ -460,8 +460,13 @@ const statuses: Status[] = [
   { value: null, label: 'UNVERIFIED', color: 'secondary' },
 ];
 
-function getStatusByValue(value: Status['value']): Status {
-  return statuses.find((status) => status.value === value) as Status;
+function getStatusColor(value: Status['value']): Status['color'] {
+  return (
+    statuses.find((status) => status.value === value)?.color ?? 'secondary'
+  );
+}
+function getStatusLabel(value: Status['value']): Status['label'] {
+  return value ?? 'UNVERIFIED';
 }
 function getTagColor(tag: string) {
   if (!tag) return undefined;
