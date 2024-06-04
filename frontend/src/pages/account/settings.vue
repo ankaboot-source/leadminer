@@ -102,6 +102,7 @@ const $toast = useToast();
 const userId = ref('');
 const email = ref('');
 const fullName = ref('');
+let oldFullName = '';
 const password = ref('');
 
 const isLoading = ref(false);
@@ -136,6 +137,7 @@ onMounted(async () => {
 
   userId.value = userid;
   fullName.value = userFullName;
+  oldFullName = userFullName;
   email.value = String(session.user.email);
   isSocialLogin.value = Boolean(providerToken);
 });
@@ -154,42 +156,15 @@ async function updateProfile() {
   const { value: user } = useSupabaseUser();
 
   try {
-    if (password.value.length) {
+    if (user?.email !== email.value) {
       const { error } = await useSupabaseClient().auth.updateUser({
         email: user?.email !== email.value ? email.value : undefined,
-        password: password.value,
       });
 
       if (error) {
-        $toast.add({
-          severity: 'error',
-          summary: 'Oops!',
-          detail: error.message,
-          life: 3000,
-        });
-
-        isLoading.value = false;
-
-        return;
+        throw error;
       }
-    }
 
-    const { error } = await useSupabaseClient<{
-      full_name: string;
-    }>()
-      .from('profiles')
-      .update({
-        full_name: fullName.value,
-      })
-      .eq('user_id', userId.value);
-
-    if (error) {
-      throw error;
-    }
-
-    await useSupabaseClient().auth.refreshSession();
-
-    if (user?.email !== email.value) {
       $toast.add({
         severity: 'info',
         summary: 'Email address updated',
@@ -198,17 +173,57 @@ async function updateProfile() {
       });
     }
 
+    if (password.value.length) {
+      const { error } = await useSupabaseClient().auth.updateUser({
+        password: password.value,
+      });
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    if (fullName.value.length && oldFullName !== fullName.value) {
+      const { error } = await useSupabaseClient<{
+        full_name: string;
+      }>()
+        .from('profiles')
+        .update({
+          full_name: fullName.value,
+        })
+        .eq('user_id', userId.value);
+
+      if (error) {
+        throw error;
+      }
+    }
+
+    await useSupabaseClient().auth.refreshSession();
+
+    if (
+      password.value.length ||
+      (fullName.value.length && oldFullName !== fullName.value)
+    ) {
+      $toast.add({
+        severity: 'success',
+        summary: 'Profile updated',
+        detail: 'Profile information updated successfully',
+        life: 3000,
+      });
+    }
+
+    isLoading.value = false;
+  } catch (error) {
     $toast.add({
-      severity: 'success',
-      summary: 'Profile updated',
-      detail: 'Profile information updated successfully',
+      severity: 'error',
+      summary: 'Oops!',
+      detail: (error as Error).message,
       life: 3000,
     });
 
     isLoading.value = false;
-  } catch (err) {
-    isLoading.value = false;
-    throw err;
+
+    throw error;
   }
 }
 
