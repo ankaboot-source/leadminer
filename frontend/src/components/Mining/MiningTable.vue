@@ -336,8 +336,8 @@
       </template>
       <template #body="{ data }">
         <Tag
-          :value="data.status ?? 'UNVERIFIED'"
-          :severity="getStatusColor(data.status)"
+          :value="getStatusByValue(data.status).label"
+          :severity="getStatusByValue(data.status).color"
         />
       </template>
       <template #filter="{ filterModel }">
@@ -446,13 +446,13 @@ const { tableData } = defineProps<{
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
 
-type status = {
+type Status = {
   value: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | null;
   label: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | 'UNVERIFIED';
   color: 'success' | 'warning' | 'danger' | 'secondary';
 };
 
-const statuses: status[] = [
+const statuses: Status[] = [
   { value: 'VALID', label: 'VALID', color: 'success' },
   { value: 'RISKY', label: 'RISKY', color: 'warning' },
   { value: 'INVALID', label: 'INVALID', color: 'danger' },
@@ -460,13 +460,9 @@ const statuses: status[] = [
   { value: null, label: 'UNVERIFIED', color: 'secondary' },
 ];
 
-function getStatusColor(value: status['value']): status['color'] {
-  return (
-    statuses.find((statusToFind) => statusToFind.value === value)?.color ??
-    'secondary'
-  );
+function getStatusByValue(value: Status['value']): Status {
+  return statuses.find((status) => status.value === value) as Status;
 }
-
 function getTagColor(tag: string) {
   if (!tag) return undefined;
   switch (tag) {
