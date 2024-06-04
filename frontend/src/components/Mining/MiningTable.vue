@@ -351,10 +351,7 @@
           display="chip"
         >
           <template #option="{ option }">
-            <Tag
-              :value="option.label"
-              :severity="getStatusColor(option.value)"
-            />
+            <Tag :value="option.label" :severity="option.color" />
           </template>
         </MultiSelect>
       </template>
@@ -448,29 +445,26 @@ const { tableData } = defineProps<{
 }>();
 
 const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
-const statuses = [
-  { value: 'VALID', label: 'VALID' },
-  { value: 'RISKY', label: 'RISKY' },
-  { value: 'INVALID', label: 'INVALID' },
-  { value: 'UNKNOWN', label: 'UNKNOWN' },
-  { value: null, label: 'UNVERIFIED' },
+
+type status = {
+  value: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | null;
+  label: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | 'UNVERIFIED';
+  color: 'success' | 'warning' | 'danger' | 'secondary';
+};
+
+const statuses: status[] = [
+  { value: 'VALID', label: 'VALID', color: 'success' },
+  { value: 'RISKY', label: 'RISKY', color: 'warning' },
+  { value: 'INVALID', label: 'INVALID', color: 'danger' },
+  { value: 'UNKNOWN', label: 'UNKNOWN', color: 'secondary' },
+  { value: null, label: 'UNVERIFIED', color: 'secondary' },
 ];
 
-function getStatusColor(status: string) {
-  switch (status) {
-    case 'VALID':
-      return 'success';
-    case 'RISKY':
-      return 'warning';
-    case 'INVALID':
-      return 'danger';
-    case 'UNKNOWN':
-      return 'secondary';
-    case null:
-      return 'secondary';
-    default:
-      return undefined;
-  }
+function getStatusColor(value: status['value']): status['color'] {
+  return (
+    statuses.find((statusToFind) => statusToFind.value === value)?.color ??
+    'secondary'
+  );
 }
 
 function getTagColor(tag: string) {
