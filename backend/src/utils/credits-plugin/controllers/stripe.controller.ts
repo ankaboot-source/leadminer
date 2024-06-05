@@ -37,12 +37,13 @@ export default function initializeStripePaymentController(
 
         const eventHandler = new StripeEventHandlerFactory(
           accountResolver,
-          stripeResolver
+          stripeResolver,
+          logger
         ).create(event.type, event);
 
         if (eventHandler) {
-          await eventHandler.handle();
           logger.info(`Handeling event type: ${event.type}`);
+          await eventHandler.handle();
         } else {
           logger.warn(`Unhandled event type: ${event.type}`);
         }
@@ -86,12 +87,17 @@ export default function initializeStripePaymentController(
           ...session.customer_details
         };
 
+        logger.debug(
+          '[after_payment_redirect]: Getting stripe customer details',
+          customer
+        );
+
         if (!customer?.email) {
           throw new Error('Request from Stripe is missing customer email');
         }
 
         const redirectParams: Record<string, string> = {
-          is_subscription: session.subscription ? 'true' : 'false'
+          is_subscription: 'false'
         };
 
         const plan = session.line_items?.data[0].price;
@@ -104,18 +110,25 @@ export default function initializeStripePaymentController(
 
         redirectParams.credits = credits.toString();
 
-        const userProfile = await accountResolver.getByEmail(customer.email);
+        let user = await accountResolver.getByEmail(customer.email);
 
-        if (!userProfile) {
-          const profile = await accountResolver.create(
-            customer.email,
-            customer.name
-          );
-          await accountResolver.update(profile.user_id, {
-            stripe_subscription_id: session.subscription as string,
+        if (!user) {
+          user = await accountResolver.create({
+            email: customer.email,
+            full_name: customer.name ?? '',
             stripe_customer_id: customer.id,
             credits
           });
+
+          logger.debug(
+            '[after_payment_redirect]: Created profile from customer details ',
+            {
+              email: customer.email,
+              stripe_customer_id: customer.id,
+              stripe_subscription_id: session.subscription as string,
+              credits
+            }
+          );
 
           const inviteUserError = await accountResolver.inviteUserByEmail(
             customer.email
@@ -123,17 +136,22 @@ export default function initializeStripePaymentController(
 
           if (inviteUserError instanceof Error) {
             logger.error(
-              `An error occurred when sending the invitation: ${inviteUserError.message}`
+              `[after_payment_redirect]: Failed to send signup invitation to "${user.email}".`
+            );
+          } else {
+            logger.debug(
+              `[after_payment_redirect]: Successfully sent signup invitation to "${user.email}"`
             );
           }
-
-          const actionLink = await accountResolver.generateMagicLink(
-            customer.email
-          );
-
-          redirectParams.redirect_to = actionLink;
         }
 
+        const actionLink = await accountResolver.generateMagicLink(user.email);
+
+        logger.debug(
+          `[after_payment_redirect]: Successfully created magiclink to signin for "${user.email}"`
+        );
+
+        redirectParams.redirect_to = actionLink;
         const redirectURL = `${baseUrl}?${new URLSearchParams(
           redirectParams
         ).toString()}`;
@@ -141,9 +159,8 @@ export default function initializeStripePaymentController(
         return res.redirect(redirectURL);
       } catch (error) {
         if (error instanceof Error) {
-          logger.error(`An error occurred: ${error.message}`);
+          logger.error(`[after_payment_redirect]: ${error.message}`);
         }
-
         return res.redirect(ENV.FRONTEND_HOST);
       }
     }
