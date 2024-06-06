@@ -56,13 +56,6 @@ import AppLogo from './AppLogo.vue';
 import CreditsCounter from './Credits/CreditsCounter.vue';
 
 const $user = useSupabaseUser();
-
 const visible = ref(false);
 const showCreditsBadge = useRuntimeConfig().public.ENABLE_CREDIT;
 </script>
-
-<style scoped>
-.bg-maincolor {
-  background-color: #f8f9fa;
-}
-</style>
