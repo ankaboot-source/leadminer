@@ -2,7 +2,9 @@
   <ClientOnly>
     <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
       <div>
-        <p class="text-4xl font-bold font-[Merriweather]">Welcome back!</p>
+        <p class="text-4xl font-bold font-[Merriweather]">
+          {{ $t('common.welcome') }}
+        </p>
       </div>
       <div>
         <EmailAuth state="login" />
