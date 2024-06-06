@@ -25,7 +25,7 @@ const schema = z.object({
   REDIS_PORT: number(),
   REDIS_TLS: boolean(),
   REDIS_CONSUMER_BATCH_SIZE: number(),
-
+  REDIS_EMAIL_VERIFICATION_CONSUMER_BATCH_SIZE: number(),
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
   SUPABASE_SECRET_PROJECT_TOKEN: z.string().nonempty(),

@@ -1,5 +1,6 @@
 import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
+import { EmailStatusResult } from '../../services/email-status/EmailStatusVerifier';
 import EmailStatusVerifierFactory from '../../services/email-status/EmailStatusVerifierFactory';
 import logger from '../../utils/logger';
 
@@ -53,13 +54,37 @@ async function emailVerificationHandlerWithBulk(
 
     const verifierPromises = Array.from(verifiers.entries()).map(
       async ([verifierName, [verifier, emails]]) => {
+        const startTime = performance.now();
         try {
+          logger.debug(
+            `[${verifier.constructor.name}]: Starting verification with ${emails.length} email`,
+            { started_at: startTime }
+          );
+
           const verified =
-            verifierName === 'mailercheck'
+            verifierName === 'mailercheck' && emails.length > 50
               ? await verifier.verifyMany(emails)
-              : await Promise.all(
-                  emails.map((email) => verifier.verify(email))
-                );
+              : (
+                  await Promise.allSettled(
+                    emails.map((email) => verifier.verify(email))
+                  )
+                )
+                  .filter(
+                    (
+                      promise
+                    ): promise is PromiseFulfilledResult<EmailStatusResult> =>
+                      promise.status === 'fulfilled'
+                  )
+                  .flatMap((promise) => promise.value);
+
+          logger.debug(
+            `[${verifier.constructor.name}]: Verification completed with ${verified.length} results`,
+            {
+              started_at: startTime,
+              stopped_at: performance.now(),
+              duration: performance.now() - startTime
+            }
+          );
 
           const updatePromises = verified.map(async (verificationStatus) => {
             const { email } = verificationStatus;
