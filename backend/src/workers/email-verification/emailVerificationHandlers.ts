@@ -62,7 +62,7 @@ async function emailVerificationHandlerWithBulk(
           );
 
           const verified =
-            verifierName === 'mailercheck' && emails.length > 50
+            verifierName === 'mailercheck' && emails.length > 100
               ? await verifier.verifyMany(emails)
               : (
                   await Promise.allSettled(
