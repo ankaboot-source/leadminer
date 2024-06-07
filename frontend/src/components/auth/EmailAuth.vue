@@ -17,11 +17,13 @@
           id="email-help"
           class="text-red-400 text-left pl-4"
         >
-          Please enter a valid email
+          {{ $t('auth.valid_email') }}
         </small>
       </div>
       <div class="grid gap-1">
-        <label class="text-left" for="password">Password</label>
+        <label class="text-left capitalize" for="password">{{
+          $t('auth.password')
+        }}</label>
         <Password
           v-model="password"
           :input-style="{ width: '100%' }"
@@ -33,31 +35,31 @@
           @focusout="passwordFocus = false"
         >
           <template #header>
-            <h6>Pick a password</h6>
+            <h6>{{ $t('auth.pick_password') }}</h6>
           </template>
           <template #footer>
             <Divider />
-            <p class="mt-2">Suggestions</p>
+            <p class="mt-2">{{ $t('auth.suggestions') }}</p>
             <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
               <li>
                 <i v-if="hasLowerCase" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
-                At least one lowercase
+                {{ $t('auth.suggestion_lowercase') }}
               </li>
               <li>
                 <i v-if="hasUpperCase" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
-                At least one uppercase
+                {{ $t('auth.suggestion_uppercase') }}
               </li>
               <li>
                 <i v-if="hasNumber" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
-                At least one numeric
+                {{ $t('auth.suggestion_numeric') }}
               </li>
               <li>
                 <i v-if="password.length >= 8" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
-                Minimum 8 characters
+                {{ $t('auth.suggestion_min_chars') }}
               </li>
             </ul>
           </template>
@@ -67,16 +69,16 @@
           id="password-help"
           class="text-red-400 text-left pl-4"
         >
-          Please enter a valid password
+          {{ $t('auth.valid_password') }}
         </small>
       </div>
       <div class="pt-3">
         <Button
           v-if="state === 'signup'"
           :loading="isLoading"
-          label="Sign up"
+          :label="$t('auth.sign_up')"
           size="large"
-          class="w-full"
+          class="w-full capitalize"
           severity="contrast"
           @click="signUp"
         />
@@ -100,11 +102,13 @@
               id="email-help"
               class="text-red-400 text-left pl-4"
             >
-              Please enter a valid email
+              {{ $t('auth.valid_email') }}
             </small>
           </div>
           <div class="grid gap-1">
-            <label class="text-left" for="password">Password</label>
+            <label class="text-left capitalize" for="password">{{
+              $t('auth.password')
+            }}</label>
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
@@ -119,20 +123,20 @@
               id="password-help"
               class="text-red-400 text-left pl-4"
             >
-              Please enter a valid password
+              {{ $t('auth.valid_password') }}
             </small>
           </div>
         </div>
         <NuxtLink class="text-right text-indigo-500" to="/auth/forgot-password">
-          Forgot your password?
+          {{ $t('auth.forgot_password') }}
         </NuxtLink>
       </div>
       <div class="pt-1">
         <Button
           v-if="state === 'login'"
           :loading="isLoading"
-          label="Sign in"
-          class="w-full"
+          :label="$t('auth.sign_in')"
+          class="w-full capitalize"
           size="large"
           @click="loginWithEmailAndPassword"
         />
@@ -142,6 +146,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 const { state } = withDefaults(
   defineProps<{
     state: 'login' | 'signup';
@@ -191,7 +198,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Sign in Failed',
+        summary: t('auth.sign_in_failed'),
         detail: error.message,
         life: 3000,
       });
@@ -205,7 +212,7 @@ async function signUp() {
   isLoading.value = true;
   try {
     if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
-      throw Error('Invalid login or password');
+      throw Error(t('auth.invalid_login'));
     }
 
     const { error } = await $supabase.auth.signUp({
@@ -221,8 +228,8 @@ async function signUp() {
 
     $toast.add({
       severity: 'success',
-      summary: 'Sign up Successfully',
-      detail: `We have sent a confirmation email to ${email.value}`,
+      summary: t('auth.sign_up_success'),
+      detail: t('auth.confirmation_email', { email: email.value }),
       life: 3000,
     });
     await $router.push({
@@ -233,7 +240,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Sign up Failed',
+        summary: t('auth.sign_up_failed'),
         detail: `${error.message}`,
         life: 3000,
       });
