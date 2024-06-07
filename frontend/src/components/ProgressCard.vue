@@ -53,10 +53,11 @@
 import { convertSeconds, timeConversionRounded } from '@/utils/time';
 
 const props = defineProps({
+  status: { type: Boolean, required: true },
+  rate: { type: Number, required: true },
   total: { type: Number, default: 0 },
   progress: { type: Number, default: 0 },
   started: { type: Number, default: 0 },
-  rate: { type: Number, default: 0 },
   progressTitle: { type: String, default: '' },
   progressTooltip: { type: String, default: '' },
 });
@@ -75,7 +76,7 @@ function getElapsedTime() {
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
 
-  if (props.progress === 0 || elapsedTime === 0) {
+  if (props.progress === 0 || props.progress < 0.1 || elapsedTime === 0) {
     return Math.round(props.total / props.rate);
   }
 
@@ -89,7 +90,24 @@ function getEstimatedRemainingTime() {
   return estimatedRemainingTime;
 }
 
-const estimatedRemainingTimeConverted = computed(() =>
-  timeConversionRounded(getEstimatedRemainingTime()).join(' ')
+function getEstimationString() {
+  return timeConversionRounded(getEstimatedRemainingTime()).join(' ');
+}
+
+const estimatedRemainingTimeConverted = ref(getEstimationString());
+
+const progressEstimator = setInterval(() => {
+  estimatedRemainingTimeConverted.value = getEstimationString();
+}, 2000);
+
+watch(
+  () => props.status,
+  (active) => {
+    if (!active) {
+    // eslint-disable-next-line no-console
+      console.info('Stopping progressEstimator');
+      clearInterval(progressEstimator);
+    }
+  }
 );
 </script>
