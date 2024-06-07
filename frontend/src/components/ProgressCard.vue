@@ -104,7 +104,7 @@ watch(
   () => props.status,
   (active) => {
     if (!active) {
-    // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console
       console.info('Stopping progressEstimator');
       clearInterval(progressEstimator);
     }
