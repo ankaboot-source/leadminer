@@ -1,5 +1,5 @@
 export default defineI18nConfig(() => ({
-  locale: navigator.language,
+  locale: 'en',
   fallbackLocale: 'en',
   messages: {
     en: {
