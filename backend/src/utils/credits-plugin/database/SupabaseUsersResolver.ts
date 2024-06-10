@@ -4,24 +4,27 @@ import { Profile, Users } from './interfaces/Users';
 export default class SupabaseUsers implements Users {
   constructor(private readonly supabaseClient: SupabaseClient) {}
 
-  async create(
-    customerEmail: string,
-    customerName: string | null | undefined
-  ): Promise<Profile> {
-    await this.supabaseClient.auth.admin.createUser({
-      email: customerEmail,
-      user_metadata: {
-        full_name: customerName
-      }
-    });
+  async create(profile: Partial<Profile>): Promise<Profile> {
+    const { email } = profile;
 
-    const profile = (await this.getByEmail(customerEmail)) ?? null;
-
-    if (profile === null) {
-      throw new Error('Failed to retrieve or create user.');
+    if (!email) {
+      throw new Error('User email is missing.');
     }
 
-    return profile;
+    const { data: user, error } =
+      await this.supabaseClient.auth.admin.createUser({ email });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const userProfile = await this.update(user.user.id, { ...profile });
+
+    if (userProfile === null) {
+      throw new Error('Failed to update user profile.');
+    }
+
+    return userProfile;
   }
 
   async update(

@@ -1,3 +1,5 @@
+export type EmailVerifierType = 'random' | 'mailercheck' | 'reacher';
+
 export interface Details {
   isDisposable?: boolean;
   isRole?: boolean;
@@ -10,7 +12,7 @@ export interface Details {
   hasPastDeliveryIssues?: boolean;
   isBlocked?: boolean;
   isNotFound?: boolean;
-  source?: 'reacher' | 'mailercheck';
+  source?: EmailVerifierType;
 }
 
 export enum Status {

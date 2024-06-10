@@ -49,7 +49,7 @@ const emailStreamsConsumer =
 const emailsStreamConsumer = new EmailVerificationConsumer(
   tasksManagementSubscriber,
   emailStreamsConsumer,
-  ENV.REDIS_CONSUMER_BATCH_SIZE,
+  ENV.REDIS_EMAIL_VERIFICATION_CONSUMER_BATCH_SIZE,
   processStreamData,
   redisClient,
   logger

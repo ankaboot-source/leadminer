@@ -44,7 +44,12 @@
 import { signOutManually } from './utils/auth';
 
 const { $api } = useNuxtApp();
+
+let previousAuthState = '';
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
+  if (previousAuthState === event) return;
+  previousAuthState = event;
+
   switch (event) {
     case 'INITIAL_SESSION':
       if (session?.provider_token) {
