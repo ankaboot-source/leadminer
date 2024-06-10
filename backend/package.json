@@ -53,7 +53,7 @@
     "pg-format": "^1.0.4",
     "quoted-printable": "^1.0.1",
     "simple-oauth2": "^5.0.0",
-    "stripe": "^13.5.0",
+    "stripe": "^13.11.0",
     "throttled-queue": "^2.1.4",
     "winston": "^3.10.0",
     "winston-loki": "^6.0.7",
