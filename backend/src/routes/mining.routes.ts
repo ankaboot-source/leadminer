@@ -21,15 +21,12 @@ export default function initializeMiningRoutes(
     createGoogleMiningSource,
     createGoogleMiningSourceCallback,
     createImapMiningSource,
-    getMiningSources,
-    addOAuthMiningSource
+    getMiningSources
   } = initializeMiningController(tasksManager, miningSource);
 
   const authMiddleware = initializeAuthMiddleware(authResolver);
 
   router.get('/mine/sources', authMiddleware, getMiningSources);
-
-  router.post('/mine/sources/oauth', authMiddleware, addOAuthMiningSource);
 
   router.post('/mine/sources/google', authMiddleware, createGoogleMiningSource);
   router.get('/mine/sources/google/callback', createGoogleMiningSourceCallback);
