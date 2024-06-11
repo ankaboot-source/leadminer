@@ -53,7 +53,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
     case 'INITIAL_SESSION':
       if (session?.provider_token) {
-        await $api('/imap/mine/sources/oauth', {
+        await useSupabaseClient().functions.invoke('add-mining-source', {
           method: 'POST',
           body: {
             provider: session.user.app_metadata.provider,
