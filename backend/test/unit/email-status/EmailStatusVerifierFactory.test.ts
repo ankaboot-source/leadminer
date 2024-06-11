@@ -43,9 +43,18 @@ const yahooEmails = [
   'leadminer-test4@yahoo.in'
 ];
 
+const mailercheckOnly = [
+  'test@wandoo.fr',
+  'test@free.fr',
+  'test@orange.fr',
+  'test@laposte.net',
+  'test@live.com'
+];
+
 const googleEmails = ['leadminer-test1@gmail.com'];
 
 const emails = [
+  ...mailercheckOnly,
   ...hotmailEmails,
   ...googleEmails,
   ...outlookEmails,
@@ -67,21 +76,16 @@ describe('getEmailVerifier', () => {
       );
     });
 
-    it.each(hotmailEmails)(
-      'should use Reacher for hotmail.* email %s',
-      (email) => {
-        const verifier = factory.getEmailVerifier(email);
-        expect(verifier).toBeInstanceOf(ReacherEmailStatusVerifier);
-      }
-    );
-
-    it.each([...googleEmails, ...outlookEmails, ...yahooEmails])(
-      'should use MailerCheck for other providers email %s',
-      (email) => {
-        const verifier = factory.getEmailVerifier(email);
-        expect(verifier).toBeInstanceOf(MailerCheckEmailStatusVerifier);
-      }
-    );
+    it.each([
+      ...mailercheckOnly,
+      ...hotmailEmails,
+      ...googleEmails,
+      ...outlookEmails,
+      ...yahooEmails
+    ])('should use MailerCheck for other providers email %s', (email) => {
+      const verifier = factory.getEmailVerifier(email);
+      expect(verifier).toBeInstanceOf(MailerCheckEmailStatusVerifier);
+    });
   });
 
   describe('EmailStatusVerifierFactory() with Reacher configured', () => {
@@ -97,6 +101,7 @@ describe('getEmailVerifier', () => {
     });
 
     it.each([
+      ...mailercheckOnly,
       ...googleEmails,
       ...yahooEmails,
       ...outlookEmails,
@@ -139,13 +144,16 @@ describe('getEmailVerifiers', () => {
     const result = factory.getEmailVerifiers(emails);
 
     expect(result.has('random')).toBeFalsy();
-    expect(result.get('reacher')).toEqual([
-      expect.any(ReacherEmailStatusVerifier),
-      hotmailEmails
-    ]);
+    expect(result.has('reacher')).toBeFalsy();
     expect(result.get('mailercheck')).toEqual([
       expect.any(MailerCheckEmailStatusVerifier),
-      [...googleEmails, ...outlookEmails, ...yahooEmails]
+      [
+        ...mailercheckOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ]
     ]);
   });
 

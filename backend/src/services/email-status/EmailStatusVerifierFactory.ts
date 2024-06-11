@@ -32,7 +32,8 @@ interface MailerCheckConfig {
 }
 
 export default class EmailStatusVerifierFactory {
-  private static readonly GOOGLE_HOTMAIL_DOMAIN_REGEX = /(?=(@hotmail))/;
+  private static readonly MAILER_CHECK_DOMAIN_REGEX =
+    /(?=(@hotmail|@gmail|@yahoo|@live|@outlook|@msn|@wandoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
 
   private readonly randomEmailStatusVerifier: EmailStatusVerifier;
 
@@ -128,9 +129,9 @@ export default class EmailStatusVerifierFactory {
       this.reacherEmailStatusVerifier &&
       this.mailerCheckEmailStatusVerifier
     ) {
-      return EmailStatusVerifierFactory.GOOGLE_HOTMAIL_DOMAIN_REGEX.test(email)
-        ? this.reacherEmailStatusVerifier
-        : this.mailerCheckEmailStatusVerifier;
+      return EmailStatusVerifierFactory.MAILER_CHECK_DOMAIN_REGEX.test(email)
+        ? this.mailerCheckEmailStatusVerifier
+        : this.reacherEmailStatusVerifier;
     }
 
     return (
