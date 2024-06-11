@@ -3,7 +3,7 @@ import Logger from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,
-} from "../_shared/supabase-leadminer.ts";
+} from "../_shared/supabase-self-hosted.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -78,18 +78,23 @@ Deno.serve(async (req: Request) => {
   const expiresAt = new Date().setHours(new Date().getHours() + 7);
 
   try {
-    await admin.from("mining_sources").upsert({
-      user_id: user.id,
-      email: user.email as string,
-      credentials: {
+    const { error } = await admin.rpc('upsert_mining_source', {
+      _user_id: user.id,
+      _email: user.email,
+      _type: provider,
+      _credentials: JSON.stringify({
         email: user.email as string,
         accessToken: providerToken,
         refreshToken: "",
         provider,
         expiresAt,
-      },
-      type: provider,
+      }),
+      _encryption_key: Deno.env.get("LEADMINER_HASH_SECRET")
     });
+
+    if (error) {
+      throw error
+    }
 
     return new Response(null, {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
