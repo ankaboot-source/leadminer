@@ -43,8 +43,6 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 
-const { $api } = useNuxtApp();
-
 let previousAuthState = '';
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   if (previousAuthState === event) return;
@@ -53,7 +51,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
     case 'INITIAL_SESSION':
       if (session?.provider_token) {
-        await $api('/imap/mine/sources/oauth', {
+        await $supabaseSaaS().functions.invoke('add-mining-source', {
           method: 'POST',
           body: {
             provider: session.user.app_metadata.provider,

@@ -17,5 +17,8 @@
   "license": "AGPL-3.0",
   "devDependencies": {
     "supabase": "^1.24.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4"
   }
 }
