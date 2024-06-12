@@ -37,6 +37,10 @@ async function loginWithOAuth(provider: Provider) {
           provider === 'azure'
             ? 'https://outlook.office.com/IMAP.AccessAsUser.All'
             : 'https://mail.google.com/',
+
+        queryParams: {
+          prompt: 'select_account',
+        },
       },
     });
     if (error) {
