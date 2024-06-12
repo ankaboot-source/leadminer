@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 export default defineNuxtPlugin({
   setup() {
     const api = $fetch.create({
@@ -10,10 +12,14 @@ export default defineNuxtPlugin({
         }
       },
     });
-    //
+
+    const url = useRuntimeConfig().public.SAAS_SUPABASE_PROJECT_URL!
+    const key = useRuntimeConfig().public.SAAS_SUPABASE_ANON_KEY
+    const supabaseSaas = createClient(url, key);
     return {
       provide: {
         api,
+        supabaseSaas
       },
     };
   },
