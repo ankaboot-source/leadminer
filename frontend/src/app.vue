@@ -47,7 +47,6 @@ const { $supabaseSaas } = useNuxtApp();
 let previousAuthState = '';
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   if (previousAuthState === event) return;
-  previousAuthState = event;
 
   switch (event) {
     case 'INITIAL_SESSION':
@@ -60,6 +59,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
           },
         });
       }
+      previousAuthState = 'SIGNED_IN';
       break;
     case 'SIGNED_IN':
       navigateTo('/dashboard');
