@@ -14,4 +14,5 @@ BEGIN
     SET credentials = EXCLUDED.credentials,
         type = EXCLUDED.type;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO extentions, public;
