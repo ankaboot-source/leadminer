@@ -31,14 +31,15 @@
         </svg>
       </div>
       <div class="text-4xl font-bold font-[Merriweather]">
-        {{ messages.header }}
+        {{ $t('auth.sign_up_success_header') }}
       </div>
     </div>
     <div>
       <p>
-        {{ messages.message1 }} <b>{{ email }}</b
+        {{ $t('auth.sign_up_success_message1') }}
+        <b>{{ email }}</b
         >.
-        {{ messages.message2 }}
+        {{ $t('auth.sign_up_success_message2') }}
       </p>
     </div>
   </div>
@@ -54,10 +55,4 @@ onBeforeMount(() => {
     $router.replace('/auth');
   }
 });
-const messages = {
-  header: 'Almost done',
-  message1: 'We sent an email to',
-  message2:
-    "It is a link that will sign you up. If you can't see this email, please check your spam folder.",
-};
 </script>

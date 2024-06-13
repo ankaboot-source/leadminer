@@ -2,17 +2,17 @@
   <div class="flex flex-col space-y-4">
     <div>
       <OAuthButton
-        label="Continue with Google"
+        :label="$t('auth.continue_with', { provider: 'Google' })"
         icon="pi pi-google"
-        class="w-full"
+        class="w-full capitalize"
         source="google"
       />
     </div>
     <div>
       <OAuthButton
-        label="Continue with Microsoft"
+        :label="$t('auth.continue_with', { provider: 'Microsoft' })"
         icon="pi pi-microsoft"
-        class="w-full"
+        class="w-full capitalize"
         source="azure"
       />
     </div>

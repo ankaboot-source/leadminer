@@ -51,11 +51,11 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/test-utils/module',
-    '@nuxtjs/i18n',
     '@nuxtjs/supabase',
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
     'nuxt-primevue',
+    '@nuxtjs/i18n',
   ],
 
   primevue: {

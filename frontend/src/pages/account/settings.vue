@@ -23,7 +23,9 @@
             />
           </div>
           <div>
-            <label class="block mb-2" for="password">Password</label>
+            <label class="block mb-2 capitalize" for="password">{{
+              $t('auth.password')
+            }}</label>
             <Password
               v-model="password"
               class="w-full"

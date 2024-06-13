@@ -2,46 +2,54 @@
   <ClientOnly>
     <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
       <div class="flex flex-col space-y-1.5">
-        <span class="text-4xl font-bold font-[Merriweather]">
-          Create your account
+        <span class="text-4xl font-bold font-[Merriweather] capitalize">
+          {{
+            `${$t('common.create')} ${$t('common.your')} ${$t(
+              'common.account'
+            )}`
+          }}
         </span>
-        <span class="text-xl">Discover hidden gems in your social network</span>
+        <span class="text-xl">{{ $t('auth.discover_gems') }}</span>
       </div>
 
       <div>
         <SocialAuth />
-        <Separator layout="horizontal" content="or sign up with email" />
+        <Separator
+          layout="horizontal"
+          :content="`${$t('common.or')} ${$t('auth.sign_up')} ${$t(
+            'common.by'
+          )} email`"
+        />
         <EmailAuth state="signup" />
       </div>
 
       <span>
-        Already have an account?
-        <NuxtLink to="/auth/login" class="font-bold text-indigo-500">
-          Sign in
+        {{ $t('auth.account_already') }}
+        <NuxtLink to="/auth/login" class="font-bold text-indigo-500 capitalize">
+          {{ $t('auth.sign_in') }}
         </NuxtLink>
       </span>
 
       <span class="text-gray-700 full-width font-[merriweather]">
-        By signing up, you agree to the
+        {{ $t('auth.sign_up_agree') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Terms of Service
+          {{ $t('auth.terms_of_service') }}
         </NuxtLink>
-        and
+        {{ $t('common.and') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/data-privacy"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Data Privacy Policy.
+          {{ $t('auth.data_privacy_policy') }}
         </NuxtLink>
-        You also agree to receive information and offers relevant to our
-        services via email.
+        {{ $t('auth.email_offers_agree') }}
       </span>
     </div>
   </ClientOnly>

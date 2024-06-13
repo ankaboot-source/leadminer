@@ -2,47 +2,53 @@
   <ClientOnly>
     <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
       <div>
-        <p class="text-4xl font-bold font-[Merriweather]">Welcome back!</p>
+        <p class="text-4xl font-bold font-[Merriweather]">
+          {{ $t('common.welcome_back') }}
+        </p>
       </div>
       <div>
         <EmailAuth state="login" />
 
         <Separator
           layout="horizontal"
-          content="or sign in with social account"
+          :content="`${$t('common.or')} ${$t('auth.sign_in')} ${$t(
+            'common.by'
+          )} email`"
         />
 
         <SocialAuth />
       </div>
 
       <span>
-        Don't have an account?
-        <NuxtLink to="/auth/signup" class="font-bold text-indigo-500">
-          Sign up
+        {{ $t('auth.no_account') }}
+        <NuxtLink
+          to="/auth/signup"
+          class="font-bold text-indigo-500 capitalize"
+        >
+          {{ $t('auth.sign_up') }}
         </NuxtLink>
       </span>
 
       <span class="text-gray-700 font-[merriweather]">
-        By signing in, you agree to the
+        {{ $t('auth.agree_sign_in') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/terms-of-service"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Terms of Service
+          {{ $t('auth.terms_of_service') }}
         </NuxtLink>
-        and
+        {{ $t('common.and') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/data-privacy"
           target="_blank"
           rel="noopener noreferrer"
         >
-          Data Privacy Policy.
+          {{ $t('auth.data_privacy_policy') }}
         </NuxtLink>
-        You also agree to receive information and offers relevant to our
-        services via email.
+        {{ $t('auth.email_offers_agree') }}
       </span>
     </div>
   </ClientOnly>

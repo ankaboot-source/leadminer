@@ -2,11 +2,11 @@
   <ClientOnly>
     <div class="m-auto grid text-center gap-6 max-w-[30rem]" flat>
       <div class="text-4xl font-bold font-[Merriweather]">
-        Forgot your password?
+        {{ $t('auth.forgot_password') }}
       </div>
       <div class="grid gap-6 w-full">
         <div class="text-lg">
-          Enter the email address associated with your account
+          {{ $t('auth.enter_associated_email') }}
         </div>
         <div class="grid gap-1">
           <label class="text-left" for="email">Email</label>
@@ -24,19 +24,19 @@
             id="email-help"
             class="text-red-400 text-left pl-4"
           >
-            Please enter a valid email
+            {{ $t('auth.valid_email') }}
           </small>
         </div>
       </div>
       <Button
-        label="Send reset instructions"
+        :label="$t('auth.send_reset_instructions')"
         size="large"
         @click="resetPassword"
       />
       <p>
-        Back to
+        {{ $t('common.back') }} {{ $t('common.to') }}
         <NuxtLink to="/auth/login" class="font-bold text-indigo-500">
-          Sign in
+          {{ $t('auth.sign_in') }}
         </NuxtLink>
       </p>
     </div>
@@ -48,6 +48,7 @@ import Button from 'primevue/button';
 
 const $toast = useToast();
 const $supabase = useSupabaseClient();
+const { t } = useI18n();
 
 const emailFocus = ref(false);
 const email = ref('');
@@ -65,16 +66,15 @@ async function resetPassword() {
     }
     $toast.add({
       severity: 'success',
-      summary: 'Reset Password Confirmed',
-      detail:
-        'If an account exists with this email address, you will receive password reset instructions',
+      summary: t('auth.reset_password_confirmed'),
+      detail: t('auth.reset_instructions_sent'),
       life: 3000,
     });
   } catch (error) {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: 'Reset Password Failed',
+        summary: t('auth.reset_password_failed'),
         detail: error.message,
         life: 3000,
       });
