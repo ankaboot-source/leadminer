@@ -14,6 +14,16 @@ export default defineI18nConfig(() => ({
         create: 'create',
         your: 'your',
         account: 'account',
+        cancel: 'cancel',
+        extract: 'extract',
+        clean: 'clean',
+        enrich: 'enrich',
+        start_mining: 'Start mining',
+        read_privacy_policy:
+          'Read our Data Privacy Policy for more information',
+        support_assistance:
+          'For any questions or assistance, our support team is here to help at',
+        mailbox: 'mailbox',
       },
       auth: {
         sign_in: 'sign in',
@@ -72,7 +82,16 @@ export default defineI18nConfig(() => ({
         create: 'créez',
         your: 'votre',
         account: 'compte',
-        continue_with: 'continuer avec {provider}',
+        cancel: 'annuler',
+        extract: 'extraire',
+        clean: 'nettoyer',
+        enrich: 'enrichir',
+        start_mining: "Commencer l'extraction",
+        read_privacy_policy:
+          "Consultez notre Politique de Confidentialité des Données pour plus d'informations",
+        support_assistance:
+          'Pour toute question ou assistance, notre équipe de support est là pour vous aider à',
+        mailbox: 'boîte aux lettres',
       },
       auth: {
         sign_in: 'se connecter',
