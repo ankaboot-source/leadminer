@@ -56,13 +56,13 @@ async function emailVerificationHandlerWithBulk(
       async ([verifierName, [verifier, emails]]) => {
         const startTime = performance.now();
         try {
-          logger.debug(
-            `[${verifier.constructor.name}]: Starting verification with ${emails.length} email`,
+          logger.info(
+            `[${verifierName}]: Starting verification with ${emails.length} email`,
             { started_at: startTime }
           );
 
           const verified =
-            verifierName === 'mailercheck' && emails.length > 50
+            verifierName === 'mailercheck' && emails.length > 100
               ? await verifier.verifyMany(emails)
               : (
                   await Promise.allSettled(
@@ -77,8 +77,8 @@ async function emailVerificationHandlerWithBulk(
                   )
                   .flatMap((promise) => promise.value);
 
-          logger.debug(
-            `[${verifier.constructor.name}]: Verification completed with ${verified.length} results`,
+          logger.info(
+            `[${verifierName}]: Verification completed with ${verified.length} results`,
             {
               started_at: startTime,
               stopped_at: performance.now(),

@@ -10,7 +10,7 @@ export interface StripeEventHandler {
 /**
  * Represents an invoice Stripe event with specific data properties.
  */
-export interface InvoiceEvent extends Stripe.Event {
+export interface InvoiceEvent {
   data: {
     object: Stripe.Invoice;
   };

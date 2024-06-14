@@ -2,7 +2,7 @@
   <ProgressCard
     :status="activeTask"
     :total="contactsToVerify"
-    :rate="2"
+    :rate="3"
     :started="taskStartedAt"
     :progress="verificationProgress"
     :progress-tooltip="progressTooltip"

@@ -55,7 +55,6 @@ export default defineI18nConfig(() => ({
         account_already: 'Already have an account?',
         discover_gems: 'Discover hidden gems in your social network',
         sign_up_agree: 'By signing up, you agree to the',
-
         sign_up_success_header: 'Almost done',
         sign_up_success_message1: 'We sent an email to',
         sign_up_success_message2:
@@ -66,7 +65,6 @@ export default defineI18nConfig(() => ({
         reset_password_failed: 'Reset Password Failed',
         reset_instructions_sent:
           'If an account exists with this email address, you will receive password reset instructions',
-
         continue_with: 'continue with {provider}',
       },
     },
