@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 
-const { $supabaseSaas } = useNuxtApp();
+const { $saasEdgeFunctions } = useNuxtApp();
 let previousAuthState = '';
 useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   if (previousAuthState === event) return;
@@ -51,7 +51,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
     case 'INITIAL_SESSION':
       if (session?.provider_token) {
-        await $supabaseSaas.functions.invoke('add-mining-source', {
+        await $saasEdgeFunctions('add-mining-source', {
           method: 'POST',
           body: {
             provider: session.user.app_metadata.provider,
