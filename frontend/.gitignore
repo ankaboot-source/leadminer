@@ -51,3 +51,6 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
+
+# Assets
+/src/assets
