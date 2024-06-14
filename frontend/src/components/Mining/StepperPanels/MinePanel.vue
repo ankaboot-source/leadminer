@@ -11,11 +11,11 @@
     <template #progress-title>
       <div v-if="$leadminerStore.isLoadingBoxes" class="flex items-center">
         <i class="pi pi-spin pi-spinner mr-1.5" />
-        Retrieving mailboxes...
+        {{ t('retrieving_mailboxes') }}
       </div>
       <div v-else-if="!$leadminerStore.miningTask">
         {{ totalEmails.toLocaleString() }}
-        email messages to mine.
+        {{ t('email_messages_to_mine') }}
       </div>
     </template>
   </ProgressCard>
@@ -36,7 +36,7 @@
       :loading="$leadminerStore.isLoadingStartMining"
       severity="contrast"
       class="border-solid border-2 border-black"
-      label="Start mining now!"
+      :label="t('start_mining_now')"
       loading-icon="pi pi-spinner"
       @click="startMining"
     >
@@ -48,7 +48,7 @@
       severity="contrast"
       icon="pi pi-stop"
       icon-pos="right"
-      label="Halt mining"
+      :label="t('halt_mining')"
       @click="haltMining"
     />
     <Button
@@ -59,7 +59,7 @@
       "
       class="text-black"
       severity="secondary"
-      label="Fine tune mining"
+      :label="t('fine_tune_mining')"
       outlined
       @click="openMiningSettings"
     >
@@ -67,7 +67,7 @@
     <Button
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
       severity="secondary"
-      label="Back"
+      :label="t('back')"
       @click="$stepper.prev()"
     />
   </div>
@@ -75,7 +75,7 @@
     <Button
       :disabled="activeMiningTask || $leadminerStore.isLoadingStartMining"
       severity="secondary"
-      label="Back"
+      :label="t('back')"
       @click="$stepper.prev()"
     />
     <div class="flex gap-2">
@@ -87,7 +87,7 @@
         "
         class="text-black"
         severity="secondary"
-        label="Fine tune mining"
+        :label="t('fine_tune_mining')"
         outlined
         @click="openMiningSettings"
       >
@@ -102,7 +102,7 @@
         :loading="$leadminerStore.isLoadingStartMining"
         severity="contrast"
         class="border-solid border-2 border-black"
-        label="Start mining now!"
+        :label="t('start_mining_now')"
         loading-icon="pi pi-spinner"
         @click="startMining"
       >
@@ -114,7 +114,7 @@
         severity="contrast"
         icon="pi pi-stop"
         icon-pos="right"
-        label="Halt mining"
+        :label="t('halt_mining')"
         @click="haltMining"
       />
     </div>
@@ -129,6 +129,10 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 import type { MiningSource } from '~/types/mining';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const { miningSource } = defineProps<{
   miningSource: MiningSource;
@@ -179,11 +183,11 @@ const extractionProgress = computed(() =>
     : extractedEmails.value / totalEmails.value || 0
 );
 
-const progressTooltip = computed(
-  () =>
-    `Mined / Total emails
-      ${extractedEmails.value.toLocaleString()} / ${totalEmails.value.toLocaleString()}
-      `
+const progressTooltip = computed(() =>
+  t('mined_total_emails', {
+    extractedEmails: extractedEmails.value.toLocaleString(),
+    totalEmails: totalEmails.value.toLocaleString(),
+  })
 );
 
 onMounted(async () => {
@@ -212,8 +216,10 @@ watch(extractionFinished, (finished) => {
   if (!canceled.value && finished) {
     $toast.add({
       severity: 'success',
-      summary: 'Mining done',
-      detail: `${extractedEmails.value} contacts extracted from your mailbox`,
+      summary: t('mining_done'),
+      detail: t('contacts_extracted', {
+        extractedEmails: extractedEmails.value,
+      }),
       group: 'mining',
       life: 5000,
     });
@@ -236,8 +242,8 @@ async function startMining() {
     openMiningSettings();
     $toast.add({
       severity: 'error',
-      summary: 'Select folders',
-      detail: 'Please select at least one folder to start mining.',
+      summary: t('select_folders'),
+      detail: t('select_at_least_one_folder'),
       life: 3000,
     });
     return;
@@ -247,8 +253,8 @@ async function startMining() {
     await $leadminerStore.startMining();
     $toast.add({
       severity: 'success',
-      summary: 'Mining Started',
-      detail: 'Your mining is successfully started.',
+      summary: t('mining_started'),
+      detail: t('mining_success'),
       group: 'mining',
       life: 3000,
     });
@@ -262,9 +268,8 @@ async function startMining() {
     } else {
       $toast.add({
         severity: 'error',
-        summary: 'Start Mining',
-        detail:
-          'Oops! We encountered an issue while trying to start your mining process.',
+        summary: t('start_mining'),
+        detail: t('mining_issue'),
         group: 'mining',
         life: 3000,
       });
@@ -278,10 +283,53 @@ async function haltMining() {
 
   $toast.add({
     severity: 'success',
-    summary: 'Mining Stopped',
-    detail: 'Your mining is successfully canceled.',
+    summary: t('mining_stopped'),
+    detail: t('mining_canceled'),
     group: 'mining',
     life: 3000,
   });
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "retrieving_mailboxes": "Retrieving mailboxes...",
+    "email_messages_to_mine": "email messages to mine.",
+    "start_mining_now": "Start mining now!",
+    "halt_mining": "Halt mining",
+    "fine_tune_mining": "Fine tune mining",
+    "back": "Back",
+    "mined_total_emails": "Mined / Total emails\n{extractedEmails} / {totalEmails}",
+    "mining_done": "Mining done",
+    "contacts_extracted": "{extractedEmails} contacts extracted from your mailbox",
+    "select_folders": "Select folders",
+    "select_at_least_one_folder": "Please select at least one folder to start mining.",
+    "mining_started": "Mining Started",
+    "mining_success": "Your mining is successfully started.",
+    "start_mining": "Start Mining",
+    "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
+    "mining_stopped": "Mining Stopped",
+    "mining_canceled": "Your mining is successfully canceled."
+  },
+  "fr": {
+    "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
+    "email_messages_to_mine": "messages électroniques à extraire.",
+    "start_mining_now": "Commencez l'extraction maintenant!",
+    "halt_mining": "Arrêter l'extraction",
+    "fine_tune_mining": "Affiner l'extraction",
+    "back": "Retour",
+    "mined_total_emails": "Extrait / Total des e-mails\n{extractedEmails} / {totalEmails}",
+    "mining_done": "Extraction terminée",
+    "contacts_extracted": "{extractedEmails} contacts extraits de votre boîte aux lettres",
+    "select_folders": "Sélectionnez des dossiers",
+    "select_at_least_one_folder": "Veuillez sélectionner au moins un dossier pour commencer l'extraction.",
+    "mining_started": "Extraction commencée",
+    "mining_success": "Votre extraction a été lancée avec succès.",
+    "start_mining": "Commencer l'extraction",
+    "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",
+    "mining_stopped": "Extraction arrêtée",
+    "mining_canceled": "Votre extraction a été annulée avec succès."
+  }
+}
+</i18n>

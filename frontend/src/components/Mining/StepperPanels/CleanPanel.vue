@@ -11,7 +11,7 @@
       <span class="pr-1">
         {{ contactsToVerify }}
       </span>
-      contacts to clean.
+      {{ t('contacts_to_clean') }}
     </template>
   </ProgressCard>
   <div class="flex pt-6 justify-end">
@@ -21,20 +21,24 @@
       severity="contrast"
       icon="pi pi-stop"
       icon-pos="right"
-      label="Halt cleaning"
+      :label="t('halt_cleaning')"
       @click="haltCleaning"
     />
     <Button
       v-else
       class="w-full md:w-max"
       severity="secondary"
-      label="Start a new mining"
+      :label="t('start_new_mining')"
       @click="startNewMining"
     />
   </div>
 </template>
 <script setup lang="ts">
 import ProgressCard from '@/components/ProgressCard.vue';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const $toast = useToast();
 const $stepper = useMiningStepper();
@@ -53,16 +57,20 @@ const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0
 );
 
-const progressTooltip = computed(
-  () =>
-    `Verified emails: ${verifiedContacts.value.toLocaleString()}/${contactsToVerify.value.toLocaleString()}`
+const progressTooltip = computed(() =>
+  t('contacts_verified', {
+    verifiedContacts: verifiedContacts.value.toLocaleString(),
+    contactsToVerify: contactsToVerify.value.toLocaleString(),
+  })
 );
 
 function cleaningDoneNotification() {
   $toast.add({
     severity: 'success',
-    summary: 'Cleaning done',
-    detail: `${verifiedContacts.value} contacts are verified.`,
+    summary: t('cleaning_done'),
+    detail: t('contacts_verified', {
+      verifiedContacts: verifiedContacts.value,
+    }),
     group: 'mining',
     life: 5000,
   });
@@ -86,8 +94,8 @@ async function haltCleaning() {
     await $leadminerStore.stopMining();
     $toast.add({
       severity: 'success',
-      summary: 'Cleaning Stopped',
-      detail: 'Your cleaning is successfully canceled.',
+      summary: t('cleaning_stopped'),
+      detail: t('cleaning_canceled'),
       group: 'mining',
       life: 3000,
     });
@@ -103,3 +111,28 @@ function startNewMining() {
   $stepper.go(0);
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "contacts_to_clean": "contacts to clean.",
+    "halt_cleaning": "Halt cleaning",
+    "start_new_mining": "Start a new mining",
+    "verified_emails": "Verified emails: {verifiedContacts}/{contactsToVerify}",
+    "cleaning_done": "Cleaning done",
+    "contacts_verified": "{verifiedContacts} contacts are verified.",
+    "cleaning_stopped": "Cleaning Stopped",
+    "cleaning_canceled": "Your cleaning is successfully canceled."
+  },
+  "fr": {
+    "contacts_to_clean": "contacts à nettoyer.",
+    "halt_cleaning": "Arrêter le nettoyage",
+    "start_new_mining": "Commencer une nouvelle extraction",
+    "verified_emails": "E-mails vérifiés : {verifiedContacts}/{contactsToVerify}",
+    "cleaning_done": "Nettoyage terminé",
+    "contacts_verified": "{verifiedContacts} contacts sont vérifiés.",
+    "cleaning_stopped": "Nettoyage arrêté",
+    "cleaning_canceled": "Votre nettoyage a été annulé avec succès."
+  }
+}
+</i18n>
