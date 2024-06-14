@@ -38,7 +38,7 @@
           <Button
             severity="secondary"
             class="secondary-button"
-            label="Cancel"
+            :label="$t('common.cancel')"
             @click="close()"
           />
           <Button
