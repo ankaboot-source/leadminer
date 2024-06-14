@@ -1,12 +1,13 @@
 <template>
-  <Dialog
-    v-model:visible="showModal"
-    modal
-    header="Oops! Running low on credits 😅"
-  >
+  <Dialog v-model:visible="showModal" modal :header="t('oops_low_credits')">
     <p class="m-0">
-      You don't have enough credits to {{ actionType }} all your
-      {{ formattedTotal }} {{ engagementType }}.
+      {{
+        t('not_enough_credits', {
+          actionType,
+          formattedTotal,
+          engagementType,
+        })
+      }}
     </p>
     <template #footer>
       <div class="flex justify-end gap-2">
@@ -19,7 +20,7 @@
           @click="executePartialAction"
         />
         <Button
-          label="Refill credits or Upgrade 🚀"
+          :label="t('refill_or_upgrade')"
           severity="success"
           @click="buyOrUpgrade"
         />
@@ -30,6 +31,10 @@
 
 <script setup lang="ts">
 import { refillCreditsOrUpgrade } from '@/utils/credits';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const emit = defineEmits(['secondary-action']);
 const { engagementType, actionType } = defineProps<{
@@ -67,8 +72,11 @@ const executePartialAction = async () => {
   await emit('secondary-action');
   closeModal();
 };
-const downloadActionLabel = computed(
-  () => `${actionType} only ${availableAlready.value + available.value}`
+const downloadActionLabel = computed(() =>
+  t('action_type_only', {
+    actionType,
+    available: availableAlready.value + available.value,
+  })
 );
 const buyOrUpgrade = () => {
   refillCreditsOrUpgrade();
@@ -78,3 +86,20 @@ defineExpose({
   openModal,
 });
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "oops_low_credits": "Oops! Running low on credits 😅",
+    "not_enough_credits": "You don't have enough credits to {actionType} all your {formattedTotal} {engagementType}.",
+    "refill_or_upgrade": "Refill credits or Upgrade 🚀",
+    "action_type_only": "{actionType} only {available}"
+  },
+  "fr": {
+    "oops_low_credits": "Oups! Crédits en baisse 😅",
+    "not_enough_credits": "Vous n'avez pas assez de crédits pour {actionType} tous vos {formattedTotal} {engagementType}.",
+    "refill_or_upgrade": "Recharger vos crédits ou Améliorez 🚀",
+    "action_type_only": "{actionType} seulement {available}"
+  }
+}
+</i18n>
