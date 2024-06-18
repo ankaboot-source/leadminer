@@ -58,7 +58,7 @@
           severity="danger"
           @click="showWarning"
         >
-          <span class="material-icons capitalize">{{ t('delete') }}</span>
+          <span class="material-icons">delete</span>
           <span>{{ t('delete_my_account') }}</span>
         </Button>
       </div>
