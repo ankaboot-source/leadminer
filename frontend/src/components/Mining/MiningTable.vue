@@ -37,9 +37,9 @@
   >
     <template #empty>
       <div class="text-center py-5">
-        <div class="font-semibold">No contacts found</div>
+        <div class="font-semibold">{{ t('no_contacts_found') }}</div>
         <div v-if="areToggledFilters !== 0 && contactsLength !== 0">
-          Try clearing filters
+          {{ t('try_clearing_filters') }}
         </div>
       </div>
     </template>
@@ -53,14 +53,12 @@
       <div class="flex items-center gap-1">
         <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
         <div
-          v-tooltip.top="
-            isExportDisabled && 'Select at least one contact to export'
-          "
+          v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
         >
           <Button
             class="mr-2"
             icon="pi pi-external-link"
-            :label="screenStore.size.md ? 'Export CSV' : undefined"
+            :label="screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
@@ -69,13 +67,13 @@
           <template v-if="!implicitSelectAll">
             {{ implicitlySelectedContactsLength }} /
           </template>
-          {{ contactsLength }} Contacts
+          {{ contactsLength }} {{ t('contacts') }}
         </div>
         <div class="grow" />
         <Button
           :disabled="isDefaultFilters"
           icon="pi pi-filter-slash"
-          :label="screenStore.size.md ? 'Clear' : undefined"
+          :label="screenStore.size.md ? t('clear') : undefined"
           outlined
           @click="clearFilter()"
         />
@@ -93,10 +91,8 @@
         <OverlayPanel ref="settingsPanel">
           <ul class="list-none p-0 m-0 flex flex-col gap-3">
             <li class="flex justify-between">
-              <div
-                v-tooltip.left="'Ensure the deliverability of your campaign'"
-              >
-                Only valid contacts
+              <div v-tooltip.left="t('ensure_deliverability')">
+                {{ t('only_valid_contacts') }}
               </div>
               <InputSwitch
                 v-model="validToggle"
@@ -104,12 +100,8 @@
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div
-                v-tooltip.left="
-                  'Contacts who previously engaged with you perform best'
-                "
-              >
-                At least one reply
+              <div v-tooltip.left="t('contacts_best_performance')">
+                {{ t('at_least_one_reply') }}
               </div>
               <InputSwitch
                 v-model="discussionsToggle"
@@ -117,12 +109,8 @@
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div
-                v-tooltip.left="
-                  `- Less than ${recentYearsAgo} years \n- GDPR Proof`
-                "
-              >
-                Recent contacts
+              <div v-tooltip.left="t('gdpr_proof', { recentYearsAgo })">
+                {{ t('recent_contacts') }}
               </div>
               <InputSwitch
                 v-model="recentToggle"
@@ -136,9 +124,9 @@
               :option-disabled="disabledColumns"
               option-label="label"
               option-value="value"
-              placeholder="Visible columns"
+              :placeholder="t('visible_columns')"
               style="width: 14rem"
-              selected-items-label="{0} Visible columns"
+              :selected-items-label="`{0} ${t('visible_columns')}`"
               :max-selected-labels="0"
               pt:option:class="capitalize"
               @change="onSelectColumnsChange"
@@ -168,13 +156,13 @@
     <!-- Contacts -->
     <Column field="contacts">
       <template #header>
-        <div class="pr-2">Contacts</div>
+        <div class="pr-2">{{ t('contacts') }}</div>
         <div class="p-column-filter p-fluid p-column-filter-menu">
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
               v-model="searchContactModel"
-              placeholder="Search contacts"
+              :placeholder="t('search_contacts')"
             />
           </IconField>
         </div>
@@ -193,7 +181,7 @@
               rounded
               text
               icon="pi pi-copy"
-              aria-label="Copy"
+              :aria-label="t('copy')"
               @click="copyContact(data.name, data.email)"
             />
           </div>
@@ -209,8 +197,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="'The email inbox this contact is mined from'">
-          Source
+        <div v-tooltip.top="t('source_definition')">
+          {{ t('source') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -227,8 +215,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="'Total occurrences of this contact'">
-          Occurrence
+        <div v-tooltip.top="t('occurence_definition')">
+          {{ t('occurrence') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -244,8 +232,8 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="'When was the last time this contact was seen'">
-          Recency
+        <div v-tooltip.top="t('recency_definition')">
+          {{ t('recency') }}
         </div>
       </template>
       <template #body="{ data }">
@@ -270,7 +258,7 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="'How many times this contact replied'">Replies</div>
+        <div v-tooltip.top="t('replies_definition')">{{ t('replies') }}</div>
       </template>
       <template #filter="{ filterModel }">
         <InputNumber v-model="filterModel.value" />
@@ -288,14 +276,14 @@
       :filter-menu-style="{ width: '14rem' }"
     >
       <template #header>
-        <div v-tooltip.top="'Categorize your contacts'">Tags</div>
+        <div v-tooltip.top="t('categorize_contacts')">{{ t('tags') }}</div>
       </template>
       <template #body="{ data }">
         <div class="flex flex-wrap gap-1">
           <Tag
             v-for="tag of data.tags"
             :key="tag"
-            :value="tag"
+            :value="getTagLabel(tag)"
             :class="getTagColor(tag)"
             class="capitalize"
           />
@@ -305,14 +293,16 @@
         <MultiSelect
           v-model="filterModel.value"
           :options="tags"
-          placeholder="Any"
+          option-value="value"
+          option-label="label"
+          :placeholder="t('any')"
           class="p-column-filter"
           display="chip"
         >
           <template #option="{ option }">
             <Tag
-              :value="option"
-              :class="getTagColor(option)"
+              :value="option.label"
+              :class="getTagColor(option.value)"
               class="capitalize"
             />
           </template>
@@ -332,7 +322,9 @@
       :filter-menu-style="{ width: '14rem' }"
     >
       <template #header>
-        <div v-tooltip.top="'How reachable is your contact'">Reachable</div>
+        <div v-tooltip.top="t('reachable_definition')">
+          {{ t('reachable') }}
+        </div>
       </template>
       <template #body="{ data }">
         <Tag
@@ -346,7 +338,7 @@
           :options="statuses"
           option-value="value"
           option-label="label"
-          placeholder="Any"
+          :placeholder="t('any')"
           class="p-column-filter"
           display="chip"
         >
@@ -367,8 +359,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="'How many times the contact has received emails'">
-          Recipient
+        <div v-tooltip.top="t('recipient_definition')">
+          {{ t('recepient') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -386,8 +378,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="'How many times the contact has sent emails'">
-          Sender
+        <div v-tooltip.top="t('sender_definition')">
+          {{ t('sender') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -403,8 +395,8 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="'Oldest date this contact has been seen'">
-          Seniority
+        <div v-tooltip.top="t('seniority_definition')">
+          {{ t('seniority') }}
         </div>
       </template>
       <template #body="{ data }">
@@ -438,26 +430,36 @@ import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import type { Contact } from '@/types/contact';
 import { saveCSVFile } from '~/utils/csv';
 
+const { t } = useI18n({
+  useScope: 'local',
+});
+
 const $toast = useToast();
 
 const { tableData } = defineProps<{
   tableData: Contact[];
 }>();
 
-const tags = ['professional', 'newsletter', 'personal', 'group', 'chat'];
+const tags = [
+  { value: 'professional', label: t('professional') },
+  { value: 'newsletter', label: t('newsletter') },
+  { value: 'personal', label: t('personal') },
+  { value: 'group', label: t('group') },
+  { value: 'chat', label: t('chat') },
+];
 
 type Status = {
   value: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | null;
-  label: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | 'UNVERIFIED';
+  label: string;
   color: 'success' | 'warning' | 'danger' | 'secondary';
 };
 
 const statuses: Status[] = [
-  { value: 'VALID', label: 'VALID', color: 'success' },
-  { value: 'RISKY', label: 'RISKY', color: 'warning' },
-  { value: 'INVALID', label: 'INVALID', color: 'danger' },
-  { value: 'UNKNOWN', label: 'UNKNOWN', color: 'secondary' },
-  { value: null, label: 'UNVERIFIED', color: 'secondary' },
+  { value: 'VALID', label: t('valid'), color: 'success' },
+  { value: 'RISKY', label: t('risky'), color: 'warning' },
+  { value: 'INVALID', label: t('invalid'), color: 'danger' },
+  { value: 'UNKNOWN', label: t('unknown'), color: 'secondary' },
+  { value: null, label: t('unverified'), color: 'secondary' },
 ];
 
 function getStatusColor(value: Status['value']): Status['color'] {
@@ -466,7 +468,9 @@ function getStatusColor(value: Status['value']): Status['color'] {
   );
 }
 function getStatusLabel(value: Status['value']): Status['label'] {
-  return value ?? 'UNVERIFIED';
+  return (
+    statuses.find((status) => status.value === value)?.label ?? t('unverified')
+  );
 }
 function getTagColor(tag: string) {
   if (!tag) return undefined;
@@ -484,6 +488,9 @@ function getTagColor(tag: string) {
     default:
       return undefined;
   }
+}
+function getTagLabel(value: string) {
+  return tags.find((tag) => tag.value === value)?.label ?? 'unknown';
 }
 
 const leadminerStore = useLeadminerStore();
@@ -743,7 +750,7 @@ function refreshTable() {
 }
 
 async function refineContacts() {
-  loadingLabel.value = 'Refining contacts...';
+  loadingLabel.value = t('refining_contacts');
   const user = $user.value;
   // @ts-expect-error: Issue with @nuxt/supabase typing
   const refine = await $supabaseClient.rpc('refine_persons', {
@@ -756,7 +763,7 @@ async function refineContacts() {
 }
 
 async function syncTable() {
-  loadingLabel.value = 'Syncing...';
+  loadingLabel.value = t('syncing');
   const user = $user.value as User;
   rows.value = await getContacts(user.id);
   isLoading.value = false;
@@ -842,8 +849,8 @@ const implicitSelectAll = computed(
 function copyContact(name: string, email: string) {
   $toast.add({
     severity: 'success',
-    summary: 'Contact copied',
-    detail: 'This contact email address has been copied to your clipboard',
+    summary: t('contact_copied'),
+    detail: t('contact_email_copied'),
     life: 3000,
   });
   navigator.clipboard.writeText(
@@ -884,7 +891,7 @@ const openCreditModel = (
   if (total === undefined || available === undefined) {
     return $toast.add({
       severity: 'error',
-      summary: 'Error when verifying export CSV',
+      summary: t('error_verifying_export_csv'),
       life: 3000,
     });
   }
@@ -921,8 +928,8 @@ async function exportTable(partialExport = false) {
 
         $toast.add({
           severity: 'success',
-          summary: 'CSV Export',
-          detail: 'Your contacts are successfully exported.',
+          summary: t('csv_export'),
+          detail: t('contacts_exported_successfully'),
           life: 3000,
         });
       }
@@ -945,16 +952,16 @@ onMounted(() => {
   ];
 });
 const visibleColumnsOptions = [
-  { label: 'Source', value: 'source' },
-  { label: 'contacts', value: 'contacts' },
-  { label: 'occurrence', value: 'occurrence' },
-  { label: 'recency', value: 'recency' },
-  { label: 'replies', value: 'replied_conversations' },
-  { label: 'tags', value: 'tags' },
-  { label: 'reachable', value: 'status' },
-  { label: 'recipient', value: 'recipient' },
-  { label: 'sender', value: 'sender' },
-  { label: 'seniority', value: 'seniority' },
+  { label: t('source'), value: 'source' },
+  { label: t('contacts'), value: 'contacts' },
+  { label: t('occurrence'), value: 'occurrence' },
+  { label: t('recency'), value: 'recency' },
+  { label: t('replies'), value: 'replied_conversations' },
+  { label: t('tags'), value: 'tags' },
+  { label: t('reachable'), value: 'status' },
+  { label: t('recipient'), value: 'recipient' },
+  { label: t('sender'), value: 'sender' },
+  { label: t('seniority'), value: 'seniority' },
 ];
 function disabledColumns(column: { label: string; value: string }) {
   return column.value === 'contacts';
@@ -1025,3 +1032,114 @@ table.p-datatable-table {
   border-collapse: separate;
 }
 </style>
+
+<i18n lang="json">
+{
+  "en": {
+    "no_contacts_found": "No contacts found",
+    "try_clearing_filters": "Try clearing filters",
+    "select_at_least_one_contact": "Select at least one contact to export",
+    "export_csv": "Export CSV",
+    "clear": "Clear",
+    "ensure_deliverability": "Ensure the deliverability of your campaign",
+    "only_valid_contacts": "Only valid contacts",
+    "contacts_best_performance": "Contacts who previously engaged with you perform best",
+    "at_least_one_reply": "At least one reply",
+    "gdpr_proof": "- Less than {recentYearsAgo} years \n- GDPR Proof",
+    "recent_contacts": "Recent contacts",
+    "visible_columns": "Visible columns",
+    "contacts": "Contacts",
+    "search_contacts": "Search contacts",
+    "source_definition": "The email inbox this contact is mined from",
+    "source": "Source",
+    "occurence_definition": "Total occurrences of this contact",
+    "occurrence": "Occurrence",
+    "recency": "Recency",
+    "recency_definition": "When was the last time this contact was seen",
+    "replies_definition": "How many times this contact replied",
+    "replies": "Replies",
+    "tags": "Tags",
+    "categorize_contacts": "Categorize your contacts",
+    "reachable_definition": "How reachable is your contact",
+    "reachable": "Reachable",
+    "recipient_definition": "How many times the contact has received emails",
+    "sender_definition": "How many times the contact has sent emails",
+    "seniority_definition": "Oldest date this contact has been seen",
+    "copy": "Copy",
+    "recipient": "Recipient",
+    "sender": "Sender",
+    "seniority": "Seniority",
+    "refining_contacts": "Refining contacts...",
+    "syncing": "Syncing...",
+    "contact_copied": "Contact copied",
+    "contact_email_copied": "This contact email address has been copied to your clipboard",
+    "error_verifying_export_csv": "Error when verifying export CSV",
+    "csv_export": "CSV Export",
+    "contacts_exported_successfully": "Your contacts are successfully exported.",
+    "valid": "VALID",
+    "risky": "RISKY",
+    "invalid": "INVALID",
+    "unknown": "UNKNOWN",
+    "unverified": "UNVERIFIED",
+    "professional": "Professional",
+    "newsletter": "Newsletter",
+    "personal": "Personal",
+    "group": "Group",
+    "chat": "Chat",
+    "any": "Any"
+  },
+  "fr": {
+    "no_contacts_found": "Aucun contact trouvé",
+    "try_clearing_filters": "Essayez de supprimer les filtres",
+    "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
+    "export_csv": "Exporter CSV",
+    "clear": "Effacer",
+    "ensure_deliverability": "Assurez la délivrabilité de votre campagne",
+    "only_valid_contacts": "Seulement des contacts valides",
+    "contacts_best_performance": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
+    "at_least_one_reply": "Au moins une réponse",
+    "gdpr_proof": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
+    "recent_contacts": "Contacts récents",
+    "visible_columns": "Colonnes visibles",
+    "contacts": "Contacts",
+    "search_contacts": "Rechercher des contacts",
+    "source_definition": "La boîte mail d'où ce contact est extrait",
+    "source": "Source",
+    "occurence_definition": "Occurrences totales de ce contact",
+    "occurrence": "Occurrence",
+    "recency": "Récence",
+    "recency_definition": "Dernière fois que ce contact a été vu",
+    "replies_definition": "Nombre de réponses de ce contact",
+    "replies": "Réponses",
+    "tags": "Tags",
+    "categorize_contacts": "Catégoriser vos contacts",
+    "reachable_definition": "Accessibilité de votre contact",
+    "reachable": "Joignable",
+    "recipient_definition": "Nombre de fois que le contact a reçu des emails",
+    "sender_definition": "Nombre de fois que le contact a envoyé des emails",
+    "seniority_definition": "La date la plus ancienne où ce contact a été vu",
+    "copy": "Copier",
+    "recipient": "Destinataire",
+    "sender": "Expéditeur",
+    "seniority": "Ancienneté",
+    "refining_contacts": "Affinement des contacts...",
+    "syncing": "Synchronisation...",
+    "contact_copied": "Contact copié",
+    "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
+    "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",
+    "csv_export": "Exportation CSV",
+    "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
+    "valid": "VALIDE",
+    "risky": "RISQUÉ",
+    "invalid": "INVALIDE",
+    "unknown": "INCONNU",
+    "unverified": "NON VÉRIFIÉ",
+    "professional": "Professionnel",
+    "newsletter": "Bulletin",
+    "personal": "Personnel",
+    "group": "Groupe",
+    "chat": "Chat",
+    "any": "N'importe lequel"
+  }
+}
+</i18n>

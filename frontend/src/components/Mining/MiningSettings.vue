@@ -11,7 +11,7 @@
     header="Fine-tune your mining"
   >
     <div class="flex items-center gap-2">
-      <div class="text-h6">Select folders to mine</div>
+      <div class="text-h6">{{ t('select_folders_to_mine') }}</div>
       <Button
         rounded
         outlined
@@ -23,7 +23,7 @@
       />
       <div class="grow" />
 
-      <Badge v-tooltip="'Email messages selected'" size="large">
+      <Badge :v-tooltip="t('email_messages_selected')" size="large">
         {{ totalEmails.toLocaleString() }}
         <i class="pi pi-envelope ml-1.5" />
       </Badge>
@@ -33,13 +33,17 @@
       :class="{ disabled: activeMiningTask }"
     />
     <template #footer>
-      <Button label="Save" @click="close" />
+      <Button :label="$t('common.save')" @click="close" />
     </template>
   </Dialog>
 </template>
 
 <script setup lang="ts">
 import TreeCard from '@/components/cards/TreeCard.vue';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const props = defineProps({
   totalEmails: { type: Number, required: true },
@@ -82,3 +86,16 @@ defineExpose({
   open,
 });
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "select_folders_to_mine": "Select folders to mine",
+    "email_messages_selected": "Email messages selected"
+  },
+  "fr": {
+    "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
+    "email_messages_selected": "Messages électroniques sélectionnés"
+  }
+}
+</i18n>
