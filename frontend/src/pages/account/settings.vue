@@ -1,10 +1,10 @@
 <template>
   <div class="grid gap-2">
-    <Panel header="Profile Information">
+    <Panel :header="t('profile_information')">
       <div class="grid gap-4">
         <div class="grid gap-2">
           <div>
-            <label class="block mb-2">Full Name</label>
+            <label class="block mb-2">{{ t('full_name') }}</label>
             <InputText
               v-model="fullName"
               class="w-full md:w-30rem"
@@ -40,7 +40,7 @@
         <Button
           class="w-full md:w-56 gap-4"
           type="submit"
-          label="Update"
+          :label="t('update')"
           :loading="isLoading"
           @click="updateProfile"
         />
@@ -48,19 +48,18 @@
     </Panel>
 
     <!-- Delete Account Section -->
-    <Panel header="Delete Account">
+    <Panel :header="t('delete_account')">
       <div class="grid gap-2">
         <p>
-          You can permanently delete your account including your mined data. You
-          can't undo this action.
+          {{ t('delete_warning') }}
         </p>
         <Button
           class="w-full md:w-56 gap-4 justify-center"
           severity="danger"
           @click="showWarning"
         >
-          <span class="material-icons">delete</span>
-          <span>Delete my account</span>
+          <span class="material-icons capitalize">{{ t('delete') }}</span>
+          <span>{{ t('delete_my_account') }}</span>
         </Button>
       </div>
     </Panel>
@@ -69,24 +68,25 @@
     <Dialog
       v-model:visible="showDeleteModal"
       modal
-      header="Delete account"
+      :header="t('delete_account')"
       :style="{ width: '25rem' }"
     >
       <span class="p-text-secondary block mb-5">
-        Deleting your account is permanent. You will lose all your mining data.
+        {{ t('delete_confirmation') }}
       </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">
         <Button
           type="button"
-          label="Delete"
+          :label="t('delete')"
           severity="danger"
+          class="capitalize"
           :loading="isLoading"
           @click="deleteAccount"
         >
         </Button>
         <Button
           type="button"
-          label="Cancel"
+          :label="$t('common.cancel')"
           severity="secondary"
           @click="closeWarning"
         >
@@ -98,6 +98,10 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const $toast = useToast();
 
@@ -126,8 +130,8 @@ onMounted(async () => {
   if (!session || !profile) {
     $toast.add({
       severity: 'error',
-      summary: 'Error',
-      detail: 'Session is expired.',
+      summary: t('error'),
+      detail: t('session_expired'),
       life: 3000,
     });
     await signOut();
@@ -169,8 +173,8 @@ async function updateProfile() {
 
       $toast.add({
         severity: 'info',
-        summary: 'Email address updated',
-        detail: 'Please check your email to confirm the new email address.',
+        summary: t('email_updated'),
+        detail: t('check_email_confirmation'),
         life: 3000,
       });
     }
@@ -208,8 +212,8 @@ async function updateProfile() {
     ) {
       $toast.add({
         severity: 'success',
-        summary: 'Profile updated',
-        detail: 'Profile information updated successfully',
+        summary: t('profile_updated'),
+        detail: t('profile_success'),
         life: 3000,
       });
     }
@@ -238,8 +242,8 @@ async function deleteAccount() {
     signOutManually();
     $toast.add({
       severity: 'success',
-      summary: 'Account deleted',
-      detail: 'Your account has been deleted successfully',
+      summary: t('account_deleted'),
+      detail: t('account_deleted_success'),
       life: 3000,
     });
     isLoading.value = false;
@@ -249,3 +253,44 @@ async function deleteAccount() {
   }
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "profile_information": "Profile Information",
+    "full_name": "Full Name",
+    "update": "update",
+    "delete": "delete",
+    "delete_warning": "You can permanently delete your account including your mined data. You can't undo this action.",
+    "delete_my_account": "Delete my account",
+    "delete_confirmation": "Deleting your account is permanent. You will lose all your mining data.",
+    "delete_account": "Delete account",
+    "account_deleted": "Account deleted",
+    "account_deleted_success": "Your account has been deleted successfully",
+    "error": "Error",
+    "session_expired": "Session is expired.",
+    "email_updated": "Email address updated",
+    "check_email_confirmation": "Please check your email to confirm the new email address.",
+    "profile_updated": "Profile updated",
+    "profile_success": "Profile information updated successfully"
+  },
+  "fr": {
+    "profile_information": "Informations du profil",
+    "full_name": "Nom et Prénom",
+    "update": "mettre à jour",
+    "delete": "supprimer",
+    "delete_warning": "Vous pouvez supprimer définitivement votre compte, y compris vos données extraites. Vous ne pouvez pas annuler cette action.",
+    "delete_my_account": "Supprimer mon compte",
+    "delete_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données d'extraction.",
+    "delete_account": "Supprimer le compte",
+    "account_deleted": "Compte supprimé",
+    "account_deleted_success": "Votre compte a été supprimé avec succès",
+    "error": "Erreur",
+    "session_expired": "La session est expirée.",
+    "email_updated": "Adresse e-mail mise à jour",
+    "check_email_confirmation": "Veuillez vérifier votre e-mail pour confirmer la nouvelle adresse e-mail.",
+    "profile_updated": "Profil mis à jour",
+    "profile_success": "Les informations du profil ont été mises à jour avec succès"
+  }
+}
+</i18n>

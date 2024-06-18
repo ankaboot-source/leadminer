@@ -10,16 +10,13 @@
       <slot name="progress-time">
         <div v-if="progressStartedAt">
           {{ estimatedRemainingTimeConverted }}
-          <span v-if="estimatedRemainingTimeConverted != 'Almost set!'">
-            left
-          </span>
         </div>
         <div v-else-if="progressPercentage === 100">
-          Finished in
+          {{ t('finished_in') }}
           {{ convertSeconds(getElapsedTime()) }}.
         </div>
         <div v-else>
-          Estimated time:
+          {{ t('estimated_time') }}
           {{ estimatedRemainingTimeConverted }}
         </div>
       </slot>
@@ -51,6 +48,10 @@
 
 <script setup lang="ts">
 import { convertSeconds, timeConversionRounded } from '@/utils/time';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const props = defineProps({
   status: { type: Boolean, required: true },
@@ -91,7 +92,7 @@ function getEstimatedRemainingTime() {
 }
 
 function getEstimationString() {
-  return timeConversionRounded(getEstimatedRemainingTime()).join(' ');
+  return timeConversionRounded(getEstimatedRemainingTime());
 }
 
 const estimatedRemainingTimeConverted = ref(getEstimationString());
@@ -111,3 +112,16 @@ watch(
   }
 );
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "finished_in": "Finished in",
+    "estimated_time": "Estimated time:"
+  },
+  "fr": {
+    "finished_in": "Terminé en",
+    "estimated_time": "Temps estimé:"
+  }
+}
+</i18n>

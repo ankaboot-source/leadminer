@@ -40,7 +40,7 @@
                 </NuxtLink>
               </Button>
               <Button class="w-full flex justify-center gap-2" @click="signOut">
-                Sign out
+                {{ $t('auth.sign_out') }}
                 <i class="pi pi-sign-out"></i>
               </Button>
             </div>
