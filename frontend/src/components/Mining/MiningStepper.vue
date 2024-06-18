@@ -31,8 +31,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
@@ -67,6 +65,16 @@ onMounted(() => {
   }
 });
 </script>
+
+<style>
+.bg-banner-color {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 230, 149, 0.5) 0%,
+    rgba(255, 248, 225, 0.5) 100%
+  );
+}
+</style>
 
 <i18n lang="json">
 {
