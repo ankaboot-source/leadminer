@@ -490,7 +490,6 @@ function getTagColor(tag: string) {
   }
 }
 function getTagLabel(value: string) {
-  console.log(value);
   return tags.find((tag) => tag.value === value)?.label ?? 'unknown';
 }
 
