@@ -24,6 +24,7 @@ export default defineI18nConfig(() => ({
         support_assistance:
           'For any questions or assistance, our support team is here to help at',
         mailbox: 'mailbox',
+        save: 'save',
       },
       auth: {
         sign_in: 'sign in',
@@ -90,6 +91,7 @@ export default defineI18nConfig(() => ({
         support_assistance:
           'Pour toute question ou assistance, notre équipe de support est là pour vous aider à',
         mailbox: 'boîte aux lettres',
+        save: 'sauvegarder',
       },
       auth: {
         sign_in: 'se connecter',
