@@ -7,19 +7,19 @@
         @click="collapsePannel = !collapsePannel"
       >
         <span class="font-semibold">
-          Mine contacts from your email account
+          {{ t('mine_contacts') }}
         </span>
       </Button>
     </template>
     <Stepper v-model:active-step="$stepper.index" linear>
-      <StepperPanel header="Source">
+      <StepperPanel :header="t('source')">
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
 
-      <StepperPanel header="Mine">
+      <StepperPanel :header="t('mine')">
         <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
       </StepperPanel>
-      <StepperPanel header="Clean">
+      <StepperPanel :header="t('clean')">
         <CleanPanel />
       </StepperPanel>
     </Stepper>
@@ -31,13 +31,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import type { MiningSourceType } from '~/types/mining';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 const $route = useRoute();
 const $stepper = useMiningStepper();
@@ -63,6 +65,7 @@ onMounted(() => {
   }
 });
 </script>
+
 <style>
 .bg-banner-color {
   background: linear-gradient(
@@ -72,3 +75,20 @@ onMounted(() => {
   );
 }
 </style>
+
+<i18n lang="json">
+{
+  "en": {
+    "mine_contacts": "Mine contacts from your email account",
+    "source": "Source",
+    "mine": "Mine",
+    "clean": "Clean"
+  },
+  "fr": {
+    "mine_contacts": "Extraire des contacts de votre compte email",
+    "source": "Source",
+    "mine": "Extraire",
+    "clean": "Nettoyer"
+  }
+}
+</i18n>

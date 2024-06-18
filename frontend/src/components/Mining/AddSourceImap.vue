@@ -1,14 +1,14 @@
 <template>
   <Button
     outlined
-    label="Other email provider (IMAP)"
+    :label="t('other_email_provider')"
     icon="pi pi-inbox"
     @click="show = true"
   />
   <Dialog
     v-model:visible="show"
     modal
-    header="Sign-in with IMAP"
+    :header="t('sign_in_with_imap')"
     class="md:w-[30rem]"
   >
     <div class="flex flex-col space-y-2">
@@ -36,7 +36,7 @@
       </div>
       <template v-if="imapAdvancedSettings">
         <div class="w-full flex flex-col gap-1">
-          <label for="host">Host</label>
+          <label for="host">{{ t('host') }}</label>
           <InputText
             v-model="imapHost"
             class="w-full"
@@ -44,7 +44,7 @@
           />
         </div>
         <div class="w-full flex flex-col gap-1">
-          <label for="port">Port</label>
+          <label for="port">{{ t('port') }}</label>
           <InputNumber
             v-model="imapPort"
             show-buttons
@@ -61,7 +61,8 @@
       <div class="flex justify-end w-full gap-2 pt-4">
         <Button
           type="button"
-          label="Cancel"
+          class="capitalize"
+          :label="$t('common.cancel')"
           severity="secondary"
           @click="closeDialog()"
         ></Button>
@@ -81,6 +82,10 @@ import { FetchError } from 'ofetch';
 
 import { isInvalidEmail } from '@/utils/email';
 import type { MiningSource } from '~/types/mining';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 interface ImapConfigs {
   host: string;
@@ -147,9 +152,8 @@ const closeDialog = (): void => {
 function handleImapConfigsNotDetected() {
   $toast.add({
     severity: 'warn',
-    summary: 'Sign-in with IMAP',
-    detail:
-      'Unable to detect your IMAP configuration. Please add them manually.',
+    summary: t('sign_in_with_imap'),
+    detail: t('unable_to_detect'),
     life: 5000,
   });
   imapAdvancedSettings.value = true;
@@ -167,7 +171,7 @@ function handleAuthenticationErrors(err: FetchError) {
 
   $toast.add({
     severity: 'error',
-    summary: 'Sign-in with IMAP',
+    summary: t('sign_in_with_imap'),
     detail: err.data.message,
     life: 5000,
   });
@@ -235,3 +239,22 @@ async function onSubmitImapCredentials() {
   }
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "other_email_provider": "Other email provider (IMAP)",
+    "sign_in_with_imap": "Sign-in with IMAP",
+    "host": "Host",
+    "port": "Port",
+    "unable_to_detect": "Unable to detect your IMAP configuration. Please add them manually."
+  },
+  "fr": {
+    "other_email_provider": "Autre fournisseur de messagerie (IMAP)",
+    "sign_in_with_imap": "Connexion avec IMAP",
+    "host": "Hôte",
+    "port": "Port",
+    "unable_to_detect": "Impossible de détecter votre configuration IMAP. Veuillez les ajouter manuellement."
+  }
+}
+</i18n>
