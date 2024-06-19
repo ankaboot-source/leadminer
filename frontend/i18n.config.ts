@@ -70,31 +70,6 @@ export default defineI18nConfig(() => ({
           'If an account exists with this email address, you will receive password reset instructions',
         continue_with: 'continue with {provider}',
       },
-      email_template: {
-        reset_password: {
-          prehead: 'Reset your leadminer password',
-          title: 'Reset Your Password',
-          body: {
-            p1: 'Tap the button below to reset your ',
-            p2: "account password. If you didn't request a new password, you can safely delete this email.",
-          },
-          button: 'Reset your password',
-        },
-        email_invite: {
-          prehead: 'Invitation to leadminer',
-          title: "You're Invited to Join",
-          body: {
-            p1: "You're invited to join ",
-            p2: "! We're excited to have you as part of our community. With our platform, you can effortlessly generate clean and enriched contacts directly from your mailbox. To get started, click the button below to accept the invitation and create your account.",
-            p3: 'If you did not expect this invitation from ',
-            p4: ', you can safely disregard this email.',
-          },
-          button: 'Accept Invitation',
-        },
-        regards: 'Best regards,',
-        footer:
-          "You received this email because we received a request for registration for your account. If you didn't request registration you can safely delete this email.",
-      },
     },
     fr: {
       common: {
@@ -162,31 +137,6 @@ export default defineI18nConfig(() => ({
         reset_instructions_sent:
           'Si un compte existe avec cette adresse e-mail, vous recevrez des instructions de réinitialisation du mot de passe',
         continue_with: 'continuer avec {provider}',
-      },
-      email_template: {
-        reset_password: {
-          prehead: 'Réinitialiser votre mot de passe leadminer',
-          title: 'Réinitialiser votre mot de passe',
-          body: {
-            p1: 'Appuyez sur le bouton ci-dessous pour réinitialiser votre ',
-            p2: "mot de passe de votre compte. Si vous n'avez pas demandé de nouveau mot de passe, vous pouvez supprimer cet e-mail en toute sécurité.",
-          },
-          button: 'Réinitialiser votre mot de passe',
-        },
-        email_invite: {
-          prehead: 'Invitation à leadminer',
-          title: 'Vous êtes invité à rejoindre',
-          body: {
-            p1: 'Vous êtes invités à rejoindre ',
-            p2: "! Nous sommes ravis que vous fassiez partie de notre communauté. Grâce à notre plateforme, vous pouvez générer sans effort des contacts propres et enrichis directement à partir de votre boîte aux lettres. Pour commencer, cliquez sur le bouton ci-dessous pour accepter l'invitation et créer votre compte.",
-            p3: "Si vous n'attendiez pas cette invitation de la part de ",
-            p4: ', vous pouvez ignorer cet e-mail en toute sécurité.',
-          },
-          button: "Accepter l'invitation",
-        },
-        regards: 'Cordialement,',
-        footer:
-          "Vous avez reçu cet e-mail parce que nous avons reçu une demande d'enregistrement pour votre compte. Si vous n'avez pas demandé d'enregistrement, vous pouvez supprimer cet e-mail en toute sécurité.",
       },
     },
   },

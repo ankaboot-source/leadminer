@@ -221,15 +221,15 @@ async function signUp() {
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
-          Prehead: t('email_template.email_confirmation.prehead'),
-          Title: t('email_template.email_confirmation.title'),
-          Body1: t('email_template.email_confirmation.body.p1'),
-          Body2: t('email_template.email_confirmation.body.p2'),
-          Body3: t('email_template.email_confirmation.body.p3'),
-          Body4: t('email_template.email_confirmation.body.p4'),
-          Button: t('email_template.email_confirmation.button'),
-          Regards: t('email_template.regards'),
-          Footer: t('email_template.footer'),
+          Prehead: t('prehead'),
+          Title: t('title'),
+          Body1: t('body.p1'),
+          Body2: t('body.p2'),
+          Body3: t('body.p3'),
+          Body4: t('body.p4'),
+          Button: t('button'),
+          Regards: t('regards'),
+          Footer: t('footer'),
         },
       },
     });
@@ -265,34 +265,30 @@ async function signUp() {
 <i18n lang="json">
 {
   "en": {
-    "email_confirmation": {
-      "prehead": "Confirm your signup to leadminer",
-      "title": "Confirm Your Email Address",
-      "body": {
-        "p1": "Welcome to ",
-        "p2": "! We're happy that you've selected us to help you generate clean and enriched contacts from your mailbox. Click the button below to confirm your email address and activate your account.",
-        "p3": "If you didn't sign up with ",
-        "p4": ", you can safely disregard this email."
-      },
-      "button": "Confirm your email",
-      "regards": "Best regards,",
-      "footer": "You received this email because we received a request for registration for your account. If you didn't request registration you can safely delete this email."
-    }
+    "prehead": "Confirm your signup to leadminer",
+    "title": "Confirm Your Email Address",
+    "body": {
+      "p1": "Welcome to ",
+      "p2": "! We're happy that you've selected us to help you generate clean and enriched contacts from your mailbox. Click the button below to confirm your email address and activate your account.",
+      "p3": "If you didn't sign up with ",
+      "p4": ", you can safely disregard this email."
+    },
+    "button": "Confirm your email",
+    "regards": "Best regards,",
+    "footer": "You received this email because we received a request for registration for your account. If you didn't request registration you can safely delete this email."
   },
   "fr": {
-    "email_confirmation": {
-      "prehead": "Confirmez votre inscription à leadminer",
-      "title": "Confirmez votre adresse e-mail",
-      "body": {
-        "p1": "Bienvenue à ",
-        "p2": "! Nous sommes heureux que vous nous ayez choisis pour vous aider à générer des contacts propres et enrichis à partir de votre boîte aux lettres. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.",
-        "p3": "Si vous ne vous êtes pas inscrit auprès de ",
-        "p4": ", vous pouvez ignorer cet e-mail en toute sécurité."
-      },
-      "button": "Confirmez votre e-mail",
-      "regards": "Cordialement,",
-      "footer": "Vous avez reçu cet e-mail parce que nous avons reçu une demande d'enregistrement pour votre compte. Si vous n'avez pas demandé d'enregistrement, vous pouvez supprimer cet e-mail en toute sécurité."
-    }
+    "prehead": "Confirmez votre inscription à leadminer",
+    "title": "Confirmez votre adresse e-mail",
+    "body": {
+      "p1": "Bienvenue à ",
+      "p2": "! Nous sommes heureux que vous nous ayez choisis pour vous aider à générer des contacts propres et enrichis à partir de votre boîte aux lettres. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.",
+      "p3": "Si vous ne vous êtes pas inscrit auprès de ",
+      "p4": ", vous pouvez ignorer cet e-mail en toute sécurité."
+    },
+    "button": "Confirmez votre e-mail",
+    "regards": "Cordialement,",
+    "footer": "Vous avez reçu cet e-mail parce que nous avons reçu une demande d'enregistrement pour votre compte. Si vous n'avez pas demandé d'enregistrement, vous pouvez supprimer cet e-mail en toute sécurité."
   }
 }
 </i18n>
