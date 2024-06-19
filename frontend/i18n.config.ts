@@ -27,6 +27,7 @@ export default defineI18nConfig(() => ({
           'For any questions or assistance, our support team is here to help at',
         mailbox: 'mailbox',
         save: 'save',
+        the_plural: 'the',
       },
       auth: {
         sign_in: 'Sign in',
@@ -106,6 +107,7 @@ export default defineI18nConfig(() => ({
           'Pour toute question ou assistance, notre équipe de support est là pour vous aider à',
         mailbox: 'boîte aux lettres',
         save: 'sauvegarder',
+        the_plural: 'les',
       },
       auth: {
         sign_in: 'Se connecter',

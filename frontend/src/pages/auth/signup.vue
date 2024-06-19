@@ -38,7 +38,7 @@
         >
           {{ $t('auth.terms_of_service') }}
         </NuxtLink>
-        {{ $t('common.and') }}
+        {{ $t('common.and') }} {{ $t('common.the_plural') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/data-privacy"
