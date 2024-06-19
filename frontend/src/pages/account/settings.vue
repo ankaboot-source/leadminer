@@ -165,6 +165,17 @@ async function updateProfile() {
     if (user?.email !== email.value) {
       const { error } = await useSupabaseClient().auth.updateUser({
         email: user?.email !== email.value ? email.value : undefined,
+        data: {
+          Prehead: t('email_template.change_email.prehead'),
+          Title: t('email_template.change_email.title'),
+          Body1: t('email_template.change_email.body.p1'),
+          Body2: t('email_template.change_email.body.p2'),
+          Body3: t('email_template.change_email.body.p3'),
+          Body4: t('email_template.change_email.body.p4'),
+          Button: t('email_template.change_email.button'),
+          Regards: t('email_template.regards'),
+          Footer: t('email_template.footer'),
+        },
       });
 
       if (error) {

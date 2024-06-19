@@ -220,6 +220,17 @@ async function signUp() {
       password: password.value,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          Prehead: t('email_template.email_confirmation.prehead'),
+          Title: t('email_template.email_confirmation.title'),
+          Body1: t('email_template.email_confirmation.body.p1'),
+          Body2: t('email_template.email_confirmation.body.p2'),
+          Body3: t('email_template.email_confirmation.body.p3'),
+          Body4: t('email_template.email_confirmation.body.p4'),
+          Button: t('email_template.email_confirmation.button'),
+          Regards: t('email_template.regards'),
+          Footer: t('email_template.footer'),
+        },
       },
     });
     if (error) {
