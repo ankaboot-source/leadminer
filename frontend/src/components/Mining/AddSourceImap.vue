@@ -24,9 +24,7 @@
         />
       </div>
       <div class="w-full flex flex-col gap-1">
-        <label class="capitalize" for="password">{{
-          $t('auth.password')
-        }}</label>
+        <label for="password">{{ $t('auth.password') }}</label>
         <InputText
           v-model="imapPassword"
           class="w-full"
