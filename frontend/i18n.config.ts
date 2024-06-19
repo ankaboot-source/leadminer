@@ -71,17 +71,6 @@ export default defineI18nConfig(() => ({
         continue_with: 'continue with {provider}',
       },
       email_template: {
-        email_confirmation: {
-          prehead: 'Confirm your signup to leadminer',
-          title: 'Confirm Your Email Address',
-          body: {
-            p1: 'Welcome to ',
-            p2: "! We're happy that you've selected us to help you generate clean and enriched contacts from your mailbox. Click the button below to confirm your email address and activate your account.",
-            p3: "If you didn't sign up with ",
-            p4: ', you can safely disregard this email.',
-          },
-          button: 'Confirm your email',
-        },
         reset_password: {
           prehead: 'Reset your leadminer password',
           title: 'Reset Your Password',
@@ -175,17 +164,6 @@ export default defineI18nConfig(() => ({
         continue_with: 'continuer avec {provider}',
       },
       email_template: {
-        email_confirmation: {
-          prehead: 'Confirmez votre inscription à leadminer',
-          title: 'Confirmez votre adresse e-mail',
-          body: {
-            p1: 'Bienvenue à ',
-            p2: '! Nous sommes heureux que vous nous ayez choisis pour vous aider à générer des contacts propres et enrichis à partir de votre boîte aux lettres. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.',
-            p3: 'Si vous ne vous êtes pas inscrit auprès de ',
-            p4: ', vous pouvez ignorer cet e-mail en toute sécurité.',
-          },
-          button: 'Confirmez votre e-mail',
-        },
         reset_password: {
           prehead: 'Réinitialiser votre mot de passe leadminer',
           title: 'Réinitialiser votre mot de passe',
