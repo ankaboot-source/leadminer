@@ -148,7 +148,14 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n();
+const { t } = useI18n({
+  useScope: 'local',
+});
+
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
+
 const { state } = withDefaults(
   defineProps<{
     state: 'login' | 'signup';
@@ -198,7 +205,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: t('auth.sign_in_failed'),
+        summary: $t('auth.sign_in_failed'),
         detail: error.message,
         life: 3000,
       });
@@ -212,7 +219,7 @@ async function signUp() {
   isLoading.value = true;
   try {
     if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
-      throw Error(t('auth.invalid_login'));
+      throw Error($t('auth.invalid_login'));
     }
 
     const { error } = await $supabase.auth.signUp({
@@ -220,6 +227,17 @@ async function signUp() {
       password: password.value,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: {
+          Prehead: t('prehead'),
+          Title: t('title'),
+          Body1: t('body.p1'),
+          Body2: t('body.p2'),
+          Body3: t('body.p3'),
+          Body4: t('body.p4'),
+          Button: t('button'),
+          Regards: $t('email_template.regards'),
+          Footer: $t('email_template.footer'),
+        },
       },
     });
     if (error) {
@@ -228,8 +246,8 @@ async function signUp() {
 
     $toast.add({
       severity: 'success',
-      summary: t('auth.sign_up_success'),
-      detail: t('auth.confirmation_email', { email: email.value }),
+      summary: $t('auth.sign_up_success'),
+      detail: $t('auth.confirmation_email', { email: email.value }),
       life: 3000,
     });
     await $router.push({
@@ -240,7 +258,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: t('auth.sign_up_failed'),
+        summary: $t('auth.sign_up_failed'),
         detail: `${error.message}`,
         life: 3000,
       });
@@ -250,3 +268,30 @@ async function signUp() {
   }
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "prehead": "Confirm your signup to leadminer",
+    "title": "Confirm Your Email Address",
+    "body": {
+      "p1": "Welcome to ",
+      "p2": "! We're happy that you've selected us to help you generate clean and enriched contacts from your mailbox. Click the button below to confirm your email address and activate your account.",
+      "p3": "If you didn't sign up with ",
+      "p4": ", you can safely disregard this email."
+    },
+    "button": "Confirm your email"
+  },
+  "fr": {
+    "prehead": "Confirmez votre inscription à leadminer",
+    "title": "Confirmez votre adresse e-mail",
+    "body": {
+      "p1": "Bienvenue à ",
+      "p2": "! Nous sommes heureux que vous nous ayez choisis pour vous aider à générer des contacts propres et enrichis à partir de votre boîte aux lettres. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.",
+      "p3": "Si vous ne vous êtes pas inscrit auprès de ",
+      "p4": ", vous pouvez ignorer cet e-mail en toute sécurité."
+    },
+    "button": "Confirmez votre e-mail"
+  }
+}
+</i18n>
