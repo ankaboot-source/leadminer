@@ -205,7 +205,7 @@ async function loginWithEmailAndPassword() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: t('auth.sign_in_failed'),
+        summary: $t('auth.sign_in_failed'),
         detail: error.message,
         life: 3000,
       });
@@ -219,7 +219,7 @@ async function signUp() {
   isLoading.value = true;
   try {
     if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
-      throw Error(t('auth.invalid_login'));
+      throw Error($t('auth.invalid_login'));
     }
 
     const { error } = await $supabase.auth.signUp({
@@ -246,8 +246,8 @@ async function signUp() {
 
     $toast.add({
       severity: 'success',
-      summary: t('auth.sign_up_success'),
-      detail: t('auth.confirmation_email', { email: email.value }),
+      summary: $t('auth.sign_up_success'),
+      detail: $t('auth.confirmation_email', { email: email.value }),
       life: 3000,
     });
     await $router.push({
@@ -258,7 +258,7 @@ async function signUp() {
     if (error instanceof Error) {
       $toast.add({
         severity: 'error',
-        summary: t('auth.sign_up_failed'),
+        summary: $t('auth.sign_up_failed'),
         detail: `${error.message}`,
         life: 3000,
       });
