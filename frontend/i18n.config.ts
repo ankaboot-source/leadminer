@@ -71,17 +71,6 @@ export default defineI18nConfig(() => ({
         continue_with: 'continue with {provider}',
       },
       email_template: {
-        change_email: {
-          prehead: 'Confirm your email change',
-          title: 'Confirm Your Email Change',
-          body: {
-            p1: 'Welcome to ',
-            p2: "! We're happy to assist you with keeping your account information up to date. You recently requested to change the email address associated with your ",
-            p3: ' account. Please click the button below to confirm your new email address and complete the update.',
-            p4: "If you didn't request this change, you can safely disregard this email. Your current email address will remain unchanged.",
-          },
-          button: 'Confirm Email Address',
-        },
         email_confirmation: {
           prehead: 'Confirm your signup to leadminer',
           title: 'Confirm Your Email Address',
@@ -186,17 +175,6 @@ export default defineI18nConfig(() => ({
         continue_with: 'continuer avec {provider}',
       },
       email_template: {
-        change_email: {
-          prehead: "Confirmez votre changement d'adresse e-mail",
-          title: "Confirmez votre changement d'adresse e-mail",
-          body: {
-            p1: 'Bienvenue à ',
-            p2: "! Nous sommes heureux de vous aider à mettre à jour les informations relatives à votre compte. Vous avez récemment demandé à changer l'adresse e-mail associée à votre ",
-            p3: ' compte. Veuillez cliquer sur le bouton ci-dessous pour confirmer votre nouvelle adresse e-mail et terminer la mise à jour.',
-            p4: "Si vous n'avez pas demandé ce changement, vous pouvez ignorer cet e-mail. Votre adresse e-mail actuelle restera inchangée.",
-          },
-          button: 'Confirmez votre adresse e-mail',
-        },
         email_confirmation: {
           prehead: 'Confirmez votre inscription à leadminer',
           title: 'Confirmez votre adresse e-mail',
