@@ -73,10 +73,7 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   }
 });
 
-const { setLocale } = useI18n();
-
 onNuxtReady(() => {
-  setLocale(window.navigator.language);
   // Adds posthog script tag
   const { POSTHOG_INSTANCE_ADDRESS, POSTHOG_API_KEY } =
     useRuntimeConfig().public;
