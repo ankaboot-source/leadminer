@@ -70,8 +70,8 @@ export default defineI18nConfig(() => ({
         reset_instructions_sent:
           'If an account exists with this email address, you will receive password reset instructions',
         continue_with: 'Continue with {provider}',
-        or_sign_in_with_social: 'ou se connecter avec votre compte',
-        or_sign_up_with_social: "ou s'inscrire avec votre compte",
+        or_sign_in_with_social: 'or sign-in by social login',
+        or_sign_up_with_social: 'or sign-up by social login',
       },
       email_template: {
         regards: 'Best regards,',
@@ -151,8 +151,8 @@ export default defineI18nConfig(() => ({
         reset_instructions_sent:
           'Si un compte existe avec cette adresse e-mail, vous recevrez des instructions de réinitialisation du mot de passe',
         continue_with: 'Continuer avec {provider}',
-        or_sign_in_with_social: 'or sign-in by social login',
-        or_sign_up_with_social: 'or sign-up by social login',
+        or_sign_in_with_social: 'ou se connecter avec votre compte',
+        or_sign_up_with_social: "ou s'inscrire avec votre compte",
       },
       email_template: {
         regards: 'Cordialement,',
