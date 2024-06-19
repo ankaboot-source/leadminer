@@ -4,7 +4,7 @@
       <OAuthButton
         :label="$t('auth.continue_with', { provider: 'Google' })"
         icon="pi pi-google"
-        class="w-full capitalize"
+        class="w-full"
         source="google"
       />
     </div>
@@ -12,7 +12,7 @@
       <OAuthButton
         :label="$t('auth.continue_with', { provider: 'Microsoft' })"
         icon="pi pi-microsoft"
-        class="w-full capitalize"
+        class="w-full"
         source="azure"
       />
     </div>

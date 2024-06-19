@@ -2,7 +2,7 @@
   <ClientOnly>
     <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
       <div class="flex flex-col space-y-1.5">
-        <span class="text-4xl font-bold font-[Merriweather] capitalize">
+        <span class="text-4xl font-bold font-[Merriweather]">
           {{
             `${$t('common.create')} ${$t('common.your')} ${$t(
               'common.account'
@@ -16,16 +16,14 @@
         <SocialAuth />
         <Separator
           layout="horizontal"
-          :content="`${$t('common.or')} ${$t('auth.sign_up')} ${$t(
-            'common.by'
-          )} email`"
+          :content="$t('auth.or_sign_up_with_social')"
         />
         <EmailAuth state="signup" />
       </div>
 
       <span>
         {{ $t('auth.account_already') }}
-        <NuxtLink to="/auth/login" class="font-bold text-indigo-500 capitalize">
+        <NuxtLink to="/auth/login" class="font-bold text-indigo-500">
           {{ $t('auth.sign_in') }}
         </NuxtLink>
       </span>
@@ -40,7 +38,7 @@
         >
           {{ $t('auth.terms_of_service') }}
         </NuxtLink>
-        {{ $t('common.and') }}
+        {{ $t('common.and') }} {{ $t('common.the_plural') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/data-privacy"

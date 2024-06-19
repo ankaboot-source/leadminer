@@ -23,7 +23,7 @@
             />
           </div>
           <div>
-            <label class="block mb-2 capitalize" for="password">{{
+            <label class="block mb-2" for="password">{{
               $t('auth.password')
             }}</label>
             <Password

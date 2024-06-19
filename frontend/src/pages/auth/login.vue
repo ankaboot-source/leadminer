@@ -11,9 +11,7 @@
 
         <Separator
           layout="horizontal"
-          :content="`${$t('common.or')} ${$t('auth.sign_in')} ${$t(
-            'common.by'
-          )} email`"
+          :content="$t('auth.or_sign_in_with_social')"
         />
 
         <SocialAuth />
@@ -21,10 +19,7 @@
 
       <span>
         {{ $t('auth.no_account') }}
-        <NuxtLink
-          to="/auth/signup"
-          class="font-bold text-indigo-500 capitalize"
-        >
+        <NuxtLink to="/auth/signup" class="font-bold text-indigo-500">
           {{ $t('auth.sign_up') }}
         </NuxtLink>
       </span>
@@ -39,7 +34,7 @@
         >
           {{ $t('auth.terms_of_service') }}
         </NuxtLink>
-        {{ $t('common.and') }}
+        {{ $t('common.and') }} {{ $t('common.the_plural') }}
         <NuxtLink
           class="text-indigo-500"
           to="https://www.leadminer.io/data-privacy"
