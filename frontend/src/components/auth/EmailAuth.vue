@@ -148,7 +148,14 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 
-const { t } = useI18n({ useScope: 'local' });
+const { t } = useI18n({
+  useScope: 'local',
+});
+
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
+
 const { state } = withDefaults(
   defineProps<{
     state: 'login' | 'signup';
@@ -228,8 +235,8 @@ async function signUp() {
           Body3: t('body.p3'),
           Body4: t('body.p4'),
           Button: t('button'),
-          Regards: t('regards'),
-          Footer: t('footer'),
+          Regards: $t('email_template.regards'),
+          Footer: $t('email_template.footer'),
         },
       },
     });
@@ -273,9 +280,7 @@ async function signUp() {
       "p3": "If you didn't sign up with ",
       "p4": ", you can safely disregard this email."
     },
-    "button": "Confirm your email",
-    "regards": "Best regards,",
-    "footer": "You received this email because we received a request for registration for your account. If you didn't request registration you can safely delete this email."
+    "button": "Confirm your email"
   },
   "fr": {
     "prehead": "Confirmez votre inscription à leadminer",
@@ -286,9 +291,7 @@ async function signUp() {
       "p3": "Si vous ne vous êtes pas inscrit auprès de ",
       "p4": ", vous pouvez ignorer cet e-mail en toute sécurité."
     },
-    "button": "Confirmez votre e-mail",
-    "regards": "Cordialement,",
-    "footer": "Vous avez reçu cet e-mail parce que nous avons reçu une demande d'enregistrement pour votre compte. Si vous n'avez pas demandé d'enregistrement, vous pouvez supprimer cet e-mail en toute sécurité."
+    "button": "Confirmez votre e-mail"
   }
 }
 </i18n>

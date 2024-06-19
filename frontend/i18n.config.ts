@@ -70,6 +70,11 @@ export default defineI18nConfig(() => ({
           'If an account exists with this email address, you will receive password reset instructions',
         continue_with: 'continue with {provider}',
       },
+      email_template: {
+        regards: 'Best regards,',
+        footer:
+          "You received this email because we received a request for your account. If you didn't request it, you can safely delete this email.",
+      },
     },
     fr: {
       common: {
@@ -137,6 +142,11 @@ export default defineI18nConfig(() => ({
         reset_instructions_sent:
           'Si un compte existe avec cette adresse e-mail, vous recevrez des instructions de réinitialisation du mot de passe',
         continue_with: 'continuer avec {provider}',
+      },
+      email_template: {
+        regards: 'Cordialement,',
+        footer:
+          "Vous avez reçu cet e-mail parce que nous avons reçu une demande concernant votre compte. Si vous ne l'avez pas demandé, vous pouvez supprimer cet e-mail en toute sécurité.",
       },
     },
   },

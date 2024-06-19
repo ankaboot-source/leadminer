@@ -103,6 +103,10 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
+
 const $toast = useToast();
 
 const userId = ref('');
@@ -173,8 +177,8 @@ async function updateProfile() {
           Body3: t('change_email.body.p3'),
           Body4: t('change_email.body.p4'),
           Button: t('change_email.button'),
-          Regards: t('change_email.regards'),
-          Footer: t('change_email.footer'),
+          Regards: $t('email_template.regards'),
+          Footer: $t('email_template.footer'),
         },
       });
 
@@ -293,9 +297,7 @@ async function deleteAccount() {
         "p3": " account. Please click the button below to confirm your new email address and complete the update.",
         "p4": "If you didn't request this change, you can safely disregard this email. Your current email address will remain unchanged."
       },
-      "button": "Confirm Email Address",
-      "regards": "Best regards,",
-      "footer": "You received this email because we received a request for registration for your account. If you didn't request registration you can safely delete this email."
+      "button": "Confirm Email Address"
     }
   },
   "fr": {
@@ -320,13 +322,11 @@ async function deleteAccount() {
       "title": "Confirmez votre changement d'adresse e-mail",
       "body": {
         "p1": "Bienvenue à ",
-        "p2": "! Nous sommes heureux de vous aider à mettre à jour les informations relatives à votre compte. Vous avez récemment demandé à changer l'adresse e-mail associée à votre ",
-        "p3": " compte. Veuillez cliquer sur le bouton ci-dessous pour confirmer votre nouvelle adresse e-mail et terminer la mise à jour.",
+        "p2": "! Nous sommes heureux de vous aider à mettre à jour les informations relatives à votre compte. Vous avez récemment demandé à changer l'adresse e-mail associée à votre compte ",
+        "p3": ". Veuillez cliquer sur le bouton ci-dessous pour confirmer votre nouvelle adresse e-mail et terminer la mise à jour.",
         "p4": "Si vous n'avez pas demandé ce changement, vous pouvez ignorer cet e-mail. Votre adresse e-mail actuelle restera inchangée."
       },
-      "button": "Confirmez votre adresse e-mail",
-      "regards": "Cordialement,",
-      "footer": "Vous avez reçu cet e-mail parce que nous avons reçu une demande d'enregistrement pour votre compte. Si vous n'avez pas demandé d'enregistrement, vous pouvez supprimer cet e-mail en toute sécurité."
+      "button": "Confirmez votre adresse e-mail"
     }
   }
 }
