@@ -75,6 +75,11 @@ export default defineI18nConfig(() => ({
         footer:
           "You received this email because we received a request for your account. If you didn't request it, you can safely delete this email.",
       },
+      time: {
+        hour: '{n} hour | {n} hours',
+        minute: '{n} minute | {n} minutes',
+        second: '{n} second | {n} seconds',
+      },
     },
     fr: {
       common: {
@@ -147,6 +152,11 @@ export default defineI18nConfig(() => ({
         regards: 'Cordialement,',
         footer:
           "Vous avez reçu cet e-mail parce que nous avons reçu une demande concernant votre compte. Si vous ne l'avez pas demandé, vous pouvez supprimer cet e-mail en toute sécurité.",
+      },
+      time: {
+        hour: '{n} heure | {n} heures',
+        minute: '{n} minute | {n} minutes',
+        second: '{n} seconde | {n} secondes',
       },
     },
   },
