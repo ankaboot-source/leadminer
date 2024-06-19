@@ -13,7 +13,7 @@ export default defineI18nConfig(() => ({
         with: 'with',
         back: 'back',
         to: 'to',
-        create: 'create',
+        create: 'Create',
         your: 'your',
         account: 'account',
         cancel: 'cancel',
@@ -29,9 +29,9 @@ export default defineI18nConfig(() => ({
         save: 'save',
       },
       auth: {
-        sign_in: 'sign in',
-        sign_out: 'sign out',
-        sign_up: 'sign up',
+        sign_in: 'Sign in',
+        sign_out: 'Sign out',
+        sign_up: 'Sign up',
         no_account: "Don't have an account?",
         forgot_password: 'Forgot your password?',
         agree_sign_in: 'By signing in, you agree to the',
@@ -42,7 +42,7 @@ export default defineI18nConfig(() => ({
         enter_associated_email:
           'Enter the email address associated with your account',
         valid_password: 'Please enter a valid password',
-        password: 'password',
+        password: 'Password',
         pick_password: 'Pick a password',
         suggestions: 'Suggestions',
         suggestion_lowercase: 'At least one lowercase',
@@ -68,7 +68,9 @@ export default defineI18nConfig(() => ({
         reset_password_failed: 'Reset Password Failed',
         reset_instructions_sent:
           'If an account exists with this email address, you will receive password reset instructions',
-        continue_with: 'continue with {provider}',
+        continue_with: 'Continue with {provider}',
+        or_sign_in_with_social: 'ou se connecter avec votre compte',
+        or_sign_up_with_social: "ou s'inscrire avec votre compte",
       },
       email_template: {
         regards: 'Best regards,',
@@ -83,14 +85,14 @@ export default defineI18nConfig(() => ({
     },
     fr: {
       common: {
-        welcome_back: 'Bienvenue!',
+        welcome_back: 'Bienvenue !',
         and: 'et',
         or: 'ou',
         by: 'par',
         with: 'avec',
         back: 'retour',
         to: 'à',
-        create: 'créez',
+        create: 'Créez',
         your: 'votre',
         account: 'compte',
         cancel: 'annuler',
@@ -106,9 +108,9 @@ export default defineI18nConfig(() => ({
         save: 'sauvegarder',
       },
       auth: {
-        sign_in: 'se connecter',
-        sign_out: 'se déconnecter',
-        sign_up: "s'inscrire",
+        sign_in: 'Se connecter',
+        sign_out: 'Se déconnecter',
+        sign_up: "S'inscrire",
         no_account: "Vous n'avez pas de compte?",
         forgot_password: 'Mot de passe oublié?',
         agree_sign_in: 'En vous connectant, vous acceptez les',
@@ -119,7 +121,7 @@ export default defineI18nConfig(() => ({
         enter_associated_email:
           'Enter the email address associated with your account',
         valid_password: 'Veuillez entrer un mot de passe valide',
-        password: 'mot de passe',
+        password: 'Mot de passe',
         pick_password: 'Choisissez un mot de passe',
         suggestions: 'Suggestions',
         suggestion_lowercase: 'Au moins une minuscule',
@@ -146,7 +148,9 @@ export default defineI18nConfig(() => ({
         reset_password_failed: 'Échec de la réinitialisation du mot de passe',
         reset_instructions_sent:
           'Si un compte existe avec cette adresse e-mail, vous recevrez des instructions de réinitialisation du mot de passe',
-        continue_with: 'continuer avec {provider}',
+        continue_with: 'Continuer avec {provider}',
+        or_sign_in_with_social: 'or sign-in by social login',
+        or_sign_up_with_social: 'or sign-up by social login',
       },
       email_template: {
         regards: 'Cordialement,',

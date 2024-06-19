@@ -21,7 +21,7 @@
         </small>
       </div>
       <div class="grid gap-1">
-        <label class="text-left capitalize" for="password">{{
+        <label class="text-left" for="password">{{
           $t('auth.password')
         }}</label>
         <Password
@@ -78,7 +78,7 @@
           :loading="isLoading"
           :label="$t('auth.sign_up')"
           size="large"
-          class="w-full capitalize"
+          class="w-full"
           severity="contrast"
           @click="signUp"
         />
@@ -106,7 +106,7 @@
             </small>
           </div>
           <div class="grid gap-1">
-            <label class="text-left capitalize" for="password">{{
+            <label class="text-left" for="password">{{
               $t('auth.password')
             }}</label>
             <Password
@@ -136,7 +136,7 @@
           v-if="state === 'login'"
           :loading="isLoading"
           :label="$t('auth.sign_in')"
-          class="w-full capitalize"
+          class="w-full"
           size="large"
           @click="loginWithEmailAndPassword"
         />
