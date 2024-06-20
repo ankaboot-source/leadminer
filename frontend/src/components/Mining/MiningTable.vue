@@ -708,7 +708,7 @@ function initToggleFilters() {
   onDiscussionsToggle(true);
   onRecentToggle(true);
 }
-initToggleFilters();
+
 const areToggledFilters = computed(
   () =>
     Number(validToggle.value) +
