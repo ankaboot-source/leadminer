@@ -76,12 +76,6 @@ function cleaningDoneNotification() {
   });
 }
 
-onMounted(() => {
-  if (verificationFinished.value) {
-    cleaningDoneNotification();
-  }
-});
-
 watch(verificationFinished, (finished) => {
   if (finished) {
     cleaningDoneNotification();
