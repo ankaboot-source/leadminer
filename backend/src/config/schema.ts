@@ -47,7 +47,7 @@ const schema = z.object({
   AZURE_SECRET: z.string().nonempty(),
 
   /* Email verification */
-  LOAD_BALANCE_VERIFIERS: z.boolean().default(false),
+  LOAD_BALANCE_VERIFIERS: boolean().default('false'),
 
   /* REACHER */
   REACHER_HOST: z
