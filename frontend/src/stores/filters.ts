@@ -70,7 +70,7 @@ const defaultFilters = {
 
 export const useFiltersStore = defineStore('filters', () => {
   const filters = ref(JSON.parse(JSON.stringify(defaultFilters)));
-  function initFilters() {
+  function $reset() {
     filters.value = JSON.parse(JSON.stringify(defaultFilters));
   }
   const isDefaultFilters = computed(
@@ -96,7 +96,7 @@ export const useFiltersStore = defineStore('filters', () => {
 
   return {
     filters,
-    initFilters,
+    $reset,
     isDefaultFilters,
     debouncedUpdate,
   };

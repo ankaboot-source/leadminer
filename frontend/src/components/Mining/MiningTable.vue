@@ -616,7 +616,7 @@ function toggleFilters(value = true) {
 function clearFilter() {
   searchContactModel.value = '';
   toggleFilters(false);
-  filtersStore.initFilters();
+  filtersStore.$reset();
 }
 
 const areToggledFilters = computed(
