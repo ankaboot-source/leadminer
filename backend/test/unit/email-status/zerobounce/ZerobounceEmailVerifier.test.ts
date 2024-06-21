@@ -305,7 +305,7 @@ describe('ZerobounceEmailStatusVerifier', () => {
       // Mock responses
       jest
         .spyOn(client, 'verifyEmail')
-        .mockImplementation(async (email) =>
+        .mockImplementation((email) =>
           Promise.resolve(sandbox[email.email_address])
         );
 
