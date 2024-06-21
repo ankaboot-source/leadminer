@@ -297,21 +297,23 @@ describe('ZerobounceEmailStatusVerifier', () => {
 
   beforeEach(() => {
     client = new ZerobounceClient(
-      { apiToken: ENV.ZEROBOUNCE_API_KEY! },
+      { apiToken: ENV.ZEROBOUNCE_API_KEY as string },
       logger
     );
 
     if (ENV.ZEROBOUNCE_API_KEY === 'sandbox') {
       // Mock responses
-      jest.spyOn(client, 'verifyEmail').mockImplementation(async (email) => sandbox[email.email_address]);
-
       jest
-        .spyOn(client, 'verifyEmailBulk')
-        .mockImplementation(async (emails) => ({
-            email_batch: emails.map(
-              ({ email_address: email }) => sandbox[email]
-            )
-          }));
+        .spyOn(client, 'verifyEmail')
+        .mockImplementation(async (email) =>
+          Promise.resolve(sandbox[email.email_address])
+        );
+
+      jest.spyOn(client, 'verifyEmailBulk').mockImplementation((emails) =>
+        Promise.resolve({
+          email_batch: emails.map(({ email_address: email }) => sandbox[email])
+        })
+      );
     }
     verifier = new ZerobounceEmailStatusVerifier(client, logger);
   });

@@ -12,12 +12,6 @@ import MockAdapter from 'axios-mock-adapter';
 import ZerobounceClient from '../../../../src/services/email-status/zerobounce/client';
 import sandbox from './sandbox';
 
-
-jest.mock('throttled-queue', () => jest.fn(() => {
-    const queue = jest.fn(async (fn: () => any) => fn());
-    return queue;
-  }));
-
 describe('ZerobounceClient', () => {
   let logger: Logger;
   let axiosAdapter: MockAdapter;
@@ -93,7 +87,6 @@ describe('ZerobounceClient', () => {
       await client.verifyEmailBulk([testcase]);
 
       expect(initiatedPostRequest).toBeTruthy();
-
     });
 
     test('Throws error when passing the maximum emails per request', async () => {
