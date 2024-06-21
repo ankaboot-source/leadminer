@@ -8,7 +8,7 @@
   <DataTable
     ref="TableRef"
     v-model:selection="selectedContacts"
-    v-model:filters="filters"
+    v-model:filters="filtersStore.filters"
     resizable-columns
     reorderable-columns
     show-gridlines
@@ -71,7 +71,7 @@
         </div>
         <div class="grow" />
         <Button
-          :disabled="isDefaultFilters"
+          :disabled="filtersStore.isDefaultFilters"
           icon="pi pi-filter-slash"
           :label="screenStore.size.md ? t('clear') : undefined"
           outlined
@@ -419,7 +419,6 @@ import {
   type RealtimePostgresChangesPayload,
   type User,
 } from '@supabase/supabase-js';
-import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
 import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
@@ -513,102 +512,14 @@ const $user = useSupabaseUser();
 const $supabaseClient = useSupabaseClient();
 
 /* *** Filters *** */
-const filters = ref();
+import { useFiltersStore } from '@/stores/filters';
+
+const filtersStore = useFiltersStore();
+
 const searchContactModel = ref('');
-const ANY_SELECTED = ref('ANY_SELECTED');
-FilterService.register(ANY_SELECTED.value, (value, filter) =>
-  !filter ? true : filter.some((item: string) => value.includes(item))
-);
-const defaultFilters = {
-  global: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
-  },
 
-  // Contacts
-  name: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
-  },
-  source: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
-  },
-  email: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
-  },
-
-  // Recency
-  recency: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-  },
-
-  // Occurrence
-  occurrence: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-  },
-
-  // Replies
-  replied_conversations: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-  },
-
-  // Tags
-  tags: { value: null, matchMode: ANY_SELECTED.value },
-
-  // Status
-  status: { value: [], matchMode: FilterMatchMode.IN },
-
-  // Recipient
-  recipient: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-  },
-
-  // Sender
-  sender: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
-  },
-
-  // Seniority
-  seniority: {
-    operator: FilterOperator.AND,
-    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
-  },
-};
-
-const initFilters = () => {
-  filters.value = JSON.parse(JSON.stringify(defaultFilters));
-};
-initFilters();
-
-const isDefaultFilters = computed(
-  () => JSON.stringify(filters.value) === JSON.stringify(defaultFilters)
-);
-
-// skipcq: JS-0323
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function _(...args: Parameters<T>): void {
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-const debouncedUpdate = debounce((newValue: string) => {
-  filters.value.global.value = newValue;
-}, 500);
 watch(searchContactModel, (newValue: string) => {
-  debouncedUpdate(newValue);
+  filtersStore.debouncedUpdate(newValue);
 });
 
 const filteredContacts = ref<Contact[]>([]);
@@ -620,63 +531,63 @@ function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
 
-const validToggle = ref(true); // status: valid
+const validToggle = ref(false); // status: valid
 function onValidToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     validToggle.value = toggle;
   }
-  if (filters.value.status.value === null) {
-    filters.value.status.value = [];
+  if (filtersStore.filters.status.value === null) {
+    filtersStore.filters.status.value = [];
   }
 
   if (
     !(
-      filters.value.status.value.length === 1 &&
-      filters.value.status.value[0] === 'VALID'
+      filtersStore.filters.status.value.length === 1 &&
+      filtersStore.filters.status.value[0] === 'VALID'
     ) &&
     validToggle.value
   ) {
-    filters.value.status.value = ['VALID'];
+    filtersStore.filters.status.value = ['VALID'];
   } else if (
-    filters.value.status.value.length === 1 &&
-    filters.value.status.value[0] === 'VALID' &&
+    filtersStore.filters.status.value.length === 1 &&
+    filtersStore.filters.status.value[0] === 'VALID' &&
     !validToggle.value
   ) {
-    filters.value.status.value = [];
+    filtersStore.filters.status.value = [];
   }
 }
 watch(
-  () => filters.value.status.value,
+  () => filtersStore.filters.status.value,
   (newStatusValue) => {
     validToggle.value =
       newStatusValue.length === 1 && newStatusValue[0] === 'VALID';
   }
 );
 
-const discussionsToggle = ref(true); // replies: >=1
+const discussionsToggle = ref(false); // replies: >=1
 function onDiscussionsToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     discussionsToggle.value = toggle;
   }
-  filters.value.replied_conversations.value = discussionsToggle.value
+  filtersStore.filters.replied_conversations.value = discussionsToggle.value
     ? 1
     : null;
 }
 watch(
-  () => filters.value.replied_conversations.value,
+  () => filtersStore.filters.replied_conversations.value,
   (newRepliesValue) => {
     discussionsToggle.value = newRepliesValue === 1;
   }
 );
 
-const recentToggle = ref(true); // recency: <3 years
+const recentToggle = ref(false); // recency: <3 years
 const recentYearsAgo = 3;
 function onRecentToggle(toggle?: boolean) {
   if (toggle !== undefined) {
     recentToggle.value = toggle;
   }
-  filters.value.recency.constraints?.splice(1);
-  filters.value.recency.constraints[0].value = recentToggle.value
+  filtersStore.filters.recency.constraints?.splice(1);
+  filtersStore.filters.recency.constraints[0].value = recentToggle.value
     ? new Date(
         new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
       )
@@ -684,7 +595,7 @@ function onRecentToggle(toggle?: boolean) {
 }
 
 watch(
-  () => filters.value.recency.constraints,
+  () => filtersStore.filters.recency.constraints,
   (newRecencyConstraints) => {
     recentToggle.value =
       newRecencyConstraints.length === 1 &&
@@ -696,17 +607,16 @@ watch(
   { deep: true }
 );
 
+function toggleFilters(value = true) {
+  onValidToggle(value);
+  onDiscussionsToggle(value);
+  onRecentToggle(value);
+}
+
 function clearFilter() {
   searchContactModel.value = '';
-  onValidToggle(false);
-  onDiscussionsToggle(false);
-  onRecentToggle(false);
-  initFilters();
-}
-function initToggleFilters() {
-  onValidToggle(true);
-  onDiscussionsToggle(true);
-  onRecentToggle(true);
+  toggleFilters(false);
+  filtersStore.$reset();
 }
 
 const areToggledFilters = computed(
@@ -791,7 +701,7 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
-    initToggleFilters();
+    toggleFilters();
     isLoading.value = false;
   }
 });
