@@ -46,6 +46,9 @@ const schema = z.object({
   AZURE_CLIENT_ID: z.string().nonempty(),
   AZURE_SECRET: z.string().nonempty(),
 
+  /* Email verification */
+  LOAD_BALANCE_VERIFIERS: z.boolean().default(false),
+
   /* REACHER */
   REACHER_HOST: z
     .string()
@@ -74,6 +77,9 @@ const schema = z.object({
 
   /* MAILERCHECK */
   MAILERCHECK_API_KEY: z.string().nonempty().optional(),
+
+  /* ZEROUBOUNCE */
+  ZEROBOUNCE_API_KEY: z.string().nonempty().optional(),
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),

@@ -1,6 +1,12 @@
-export type EmailVerifierType = 'random' | 'mailercheck' | 'reacher';
+export type EmailVerifierType =
+  | 'random'
+  | 'mailercheck'
+  | 'reacher'
+  | 'zerobounce';
 
 export interface Details {
+  status?: string;
+  sub_status?: string;
   isDisposable?: boolean;
   isRole?: boolean;
   isDisabled?: boolean;
