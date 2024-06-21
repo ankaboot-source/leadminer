@@ -607,18 +607,16 @@ watch(
   { deep: true }
 );
 
-function clearFilter() {
-  searchContactModel.value = '';
-  onValidToggle(false);
-  onDiscussionsToggle(false);
-  onRecentToggle(false);
-  filtersStore.initFilters();
+function toggleFilters(value = true) {
+  onValidToggle(value);
+  onDiscussionsToggle(value);
+  onRecentToggle(value);
 }
 
-function initToggleFilters() {
-  onValidToggle(true);
-  onDiscussionsToggle(true);
-  onRecentToggle(true);
+function clearFilter() {
+  searchContactModel.value = '';
+  toggleFilters(false);
+  filtersStore.initFilters();
 }
 
 const areToggledFilters = computed(
@@ -703,7 +701,7 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
-    initToggleFilters();
+    toggleFilters();
     isLoading.value = false;
   }
 });
