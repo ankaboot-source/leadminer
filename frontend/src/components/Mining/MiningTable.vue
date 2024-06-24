@@ -38,7 +38,9 @@
     <template #empty>
       <div class="text-center py-5">
         <div class="font-semibold">{{ t('no_contacts_found') }}</div>
-        <div v-if="areToggledFilters !== 0 && contactsLength !== 0">
+        <div
+          v-if="filtersStore.areToggledFilters !== 0 && contactsLength !== 0"
+        >
           {{ t('try_clearing_filters') }}
         </div>
       </div>
@@ -75,14 +77,14 @@
           icon="pi pi-filter-slash"
           :label="screenStore.size.md ? t('clear') : undefined"
           outlined
-          @click="clearFilter()"
+          @click="filtersStore.clearFilter()"
         />
         <!-- Settings -->
         <Button @click="toggleSettingsPanel">
           <span class="p-button-label">
             <i
-              v-if="areToggledFilters > 0"
-              v-badge="areToggledFilters.toString()"
+              v-if="filtersStore.areToggledFilters > 0"
+              v-badge="filtersStore.areToggledFilters.toString()"
               class="pi pi-sliders-h"
             />
             <i v-else class="pi pi-sliders-h" />
@@ -95,8 +97,8 @@
                 {{ t('only_valid_contacts') }}
               </div>
               <InputSwitch
-                v-model="validToggle"
-                @update:model-value="onValidToggle"
+                v-model="filtersStore.validToggle"
+                @update:model-value="filtersStore.onValidToggle"
               />
             </li>
             <li class="flex justify-between gap-2">
@@ -104,17 +106,23 @@
                 {{ t('at_least_one_reply') }}
               </div>
               <InputSwitch
-                v-model="discussionsToggle"
-                @update:model-value="onDiscussionsToggle"
+                v-model="filtersStore.discussionsToggle"
+                @update:model-value="filtersStore.onDiscussionsToggle"
               />
             </li>
             <li class="flex justify-between gap-2">
-              <div v-tooltip.left="t('gdpr_proof', { recentYearsAgo })">
+              <div
+                v-tooltip.left="
+                  t('gdpr_proof', {
+                    recentYearsAgo: filtersStore.recentYearsAgo,
+                  })
+                "
+              >
                 {{ t('recent_contacts') }}
               </div>
               <InputSwitch
-                v-model="recentToggle"
-                @update:model-value="onRecentToggle"
+                v-model="filtersStore.recentToggle"
+                @update:model-value="filtersStore.onRecentToggle"
               />
             </li>
             <Divider class="my-0" />
@@ -161,7 +169,7 @@
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
-              v-model="searchContactModel"
+              v-model="filtersStore.searchContactModel"
               :placeholder="t('search_contacts')"
             />
           </IconField>
@@ -516,12 +524,6 @@ import { useFiltersStore } from '@/stores/filters';
 
 const filtersStore = useFiltersStore();
 
-const searchContactModel = ref('');
-
-watch(searchContactModel, (newValue: string) => {
-  filtersStore.debouncedUpdate(newValue);
-});
-
 const filteredContacts = ref<Contact[]>([]);
 const filteredContactsLength = computed(() => filteredContacts.value.length);
 
@@ -530,101 +532,6 @@ const settingsPanel = ref();
 function toggleSettingsPanel(event: Event) {
   settingsPanel.value.toggle(event);
 }
-
-const validToggle = ref(false); // status: valid
-function onValidToggle(toggle?: boolean) {
-  if (toggle !== undefined) {
-    validToggle.value = toggle;
-  }
-  if (filtersStore.filters.status.value === null) {
-    filtersStore.filters.status.value = [];
-  }
-
-  if (
-    !(
-      filtersStore.filters.status.value.length === 1 &&
-      filtersStore.filters.status.value[0] === 'VALID'
-    ) &&
-    validToggle.value
-  ) {
-    filtersStore.filters.status.value = ['VALID'];
-  } else if (
-    filtersStore.filters.status.value.length === 1 &&
-    filtersStore.filters.status.value[0] === 'VALID' &&
-    !validToggle.value
-  ) {
-    filtersStore.filters.status.value = [];
-  }
-}
-watch(
-  () => filtersStore.filters.status.value,
-  (newStatusValue) => {
-    validToggle.value =
-      newStatusValue.length === 1 && newStatusValue[0] === 'VALID';
-  }
-);
-
-const discussionsToggle = ref(false); // replies: >=1
-function onDiscussionsToggle(toggle?: boolean) {
-  if (toggle !== undefined) {
-    discussionsToggle.value = toggle;
-  }
-  filtersStore.filters.replied_conversations.value = discussionsToggle.value
-    ? 1
-    : null;
-}
-watch(
-  () => filtersStore.filters.replied_conversations.value,
-  (newRepliesValue) => {
-    discussionsToggle.value = newRepliesValue === 1;
-  }
-);
-
-const recentToggle = ref(false); // recency: <3 years
-const recentYearsAgo = 3;
-function onRecentToggle(toggle?: boolean) {
-  if (toggle !== undefined) {
-    recentToggle.value = toggle;
-  }
-  filtersStore.filters.recency.constraints?.splice(1);
-  filtersStore.filters.recency.constraints[0].value = recentToggle.value
-    ? new Date(
-        new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
-      )
-    : null;
-}
-
-watch(
-  () => filtersStore.filters.recency.constraints,
-  (newRecencyConstraints) => {
-    recentToggle.value =
-      newRecencyConstraints.length === 1 &&
-      newRecencyConstraints[0].value?.toLocaleDateString() ===
-        new Date(
-          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
-        ).toLocaleDateString();
-  },
-  { deep: true }
-);
-
-function toggleFilters(value = true) {
-  onValidToggle(value);
-  onDiscussionsToggle(value);
-  onRecentToggle(value);
-}
-
-function clearFilter() {
-  searchContactModel.value = '';
-  toggleFilters(false);
-  filtersStore.$reset();
-}
-
-const areToggledFilters = computed(
-  () =>
-    Number(validToggle.value) +
-    Number(discussionsToggle.value) +
-    Number(recentToggle.value)
-);
 
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
@@ -681,7 +588,7 @@ async function syncTable() {
 
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
-    clearFilter();
+    filtersStore.clearFilter();
     // If mining is active, update refined persons every 3 seconds
     setupSubscription();
     subscription.subscribe();
@@ -701,7 +608,7 @@ watch(activeMiningTask, async (isActive) => {
     isLoading.value = true;
     await refineContacts();
     await syncTable();
-    toggleFilters();
+    filtersStore.toggleFilters();
     isLoading.value = false;
   }
 });

@@ -90,14 +90,125 @@ export const useFiltersStore = defineStore('filters', () => {
       timeout = setTimeout(() => func(...args), wait);
     };
   }
+
   const debouncedUpdate = debounce((newValue: string) => {
     filters.value.global.value = newValue;
   }, 500);
+  const searchContactModel = ref('');
+
+  watch(searchContactModel, (newValue: string) => {
+    debouncedUpdate(newValue);
+  });
+
+  const validToggle = ref(false); // status: valid
+  function onValidToggle(toggle?: boolean) {
+    if (toggle !== undefined) {
+      validToggle.value = toggle;
+    }
+    if (filters.value.status.value === null) {
+      filters.value.status.value = [];
+    }
+
+    if (
+      !(
+        filters.value.status.value.length === 1 &&
+        filters.value.status.value[0] === 'VALID'
+      ) &&
+      validToggle.value
+    ) {
+      filters.value.status.value = ['VALID'];
+    } else if (
+      filters.value.status.value.length === 1 &&
+      filters.value.status.value[0] === 'VALID' &&
+      !validToggle.value
+    ) {
+      filters.value.status.value = [];
+    }
+  }
+  watch(
+    () => filters.value.status.value,
+    (newStatusValue) => {
+      validToggle.value =
+        newStatusValue.length === 1 && newStatusValue[0] === 'VALID';
+    }
+  );
+
+  const discussionsToggle = ref(false); // replies: >=1
+  function onDiscussionsToggle(toggle?: boolean) {
+    if (toggle !== undefined) {
+      discussionsToggle.value = toggle;
+    }
+    filters.value.replied_conversations.value = discussionsToggle.value
+      ? 1
+      : null;
+  }
+  watch(
+    () => filters.value.replied_conversations.value,
+    (newRepliesValue) => {
+      discussionsToggle.value = newRepliesValue === 1;
+    }
+  );
+
+  const recentToggle = ref(false); // recency: <3 years
+  const recentYearsAgo = 3;
+  function onRecentToggle(toggle?: boolean) {
+    if (toggle !== undefined) {
+      recentToggle.value = toggle;
+    }
+    filters.value.recency.constraints?.splice(1);
+    filters.value.recency.constraints[0].value = recentToggle.value
+      ? new Date(
+          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+        )
+      : null;
+  }
+
+  watch(
+    () => filters.value.recency.constraints,
+    (newRecencyConstraints) => {
+      recentToggle.value =
+        newRecencyConstraints.length === 1 &&
+        newRecencyConstraints[0].value?.toLocaleDateString() ===
+          new Date(
+            new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+          ).toLocaleDateString();
+    },
+    { deep: true }
+  );
+
+  function toggleFilters(value = true) {
+    onValidToggle(value);
+    onDiscussionsToggle(value);
+    onRecentToggle(value);
+  }
+
+  function clearFilter() {
+    searchContactModel.value = '';
+    toggleFilters(false);
+    $reset();
+  }
+
+  const areToggledFilters = computed(
+    () =>
+      Number(validToggle.value) +
+      Number(discussionsToggle.value) +
+      Number(recentToggle.value)
+  );
 
   return {
     filters,
     $reset,
     isDefaultFilters,
-    debouncedUpdate,
+    searchContactModel,
+    areToggledFilters,
+    toggleFilters,
+    clearFilter,
+    validToggle,
+    onValidToggle,
+    discussionsToggle,
+    onDiscussionsToggle,
+    recentToggle,
+    recentYearsAgo,
+    onRecentToggle,
   };
 });
