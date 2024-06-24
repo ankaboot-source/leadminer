@@ -79,7 +79,6 @@
           type="button"
           :label="t('delete')"
           severity="danger"
-          class="capitalize"
           :loading="isLoading"
           @click="deleteAccount"
         >
@@ -274,8 +273,8 @@ async function deleteAccount() {
   "en": {
     "profile_information": "Profile Information",
     "full_name": "Full Name",
-    "update": "update",
-    "delete": "delete",
+    "update": "Update",
+    "delete": "Delete",
     "delete_warning": "You can permanently delete your account including your mined data. You can't undo this action.",
     "delete_my_account": "Delete my account",
     "delete_confirmation": "Deleting your account is permanent. You will lose all your mining data.",
@@ -303,8 +302,8 @@ async function deleteAccount() {
   "fr": {
     "profile_information": "Informations du profil",
     "full_name": "Nom et Prénom",
-    "update": "mettre à jour",
-    "delete": "supprimer",
+    "update": "Mettre à jour",
+    "delete": "Supprimer",
     "delete_warning": "Vous pouvez supprimer définitivement votre compte, y compris vos données extraites. Vous ne pouvez pas annuler cette action.",
     "delete_my_account": "Supprimer mon compte",
     "delete_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données d'extraction.",
