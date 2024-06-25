@@ -201,6 +201,7 @@ async function loginWithEmailAndPassword() {
     if (error) {
       throw error;
     }
+    await navigateTo({ path: '/dashboard' });
   } catch (error) {
     if (error instanceof Error) {
       $toast.add({
