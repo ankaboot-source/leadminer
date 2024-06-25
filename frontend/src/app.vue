@@ -44,10 +44,8 @@
 import { signOutManually } from './utils/auth';
 
 const { $saasEdgeFunctions } = useNuxtApp();
-let previousAuthState = '';
-useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
-  if (previousAuthState === event) return;
 
+useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
     case 'INITIAL_SESSION':
       if (session?.provider_token) {
@@ -59,11 +57,8 @@ useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
           },
         });
       }
-      previousAuthState = 'SIGNED_IN';
       break;
-    case 'SIGNED_IN':
-      navigateTo('/dashboard');
-      break;
+
     case 'SIGNED_OUT':
       signOutManually();
       break;
