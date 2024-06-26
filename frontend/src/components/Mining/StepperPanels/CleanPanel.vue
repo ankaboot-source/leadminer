@@ -131,7 +131,7 @@ function startNewMining() {
     "contacts_verified": "{verifiedContacts} contacts are verified.",
     "cleaning_stopped": "Cleaning Stopped",
     "cleaning_canceled": "Your cleaning is successfully canceled.",
-    "cleaning_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled."
+    "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
   },
   "fr": {
     "contacts_to_clean": "contacts à nettoyer.",
