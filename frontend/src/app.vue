@@ -12,7 +12,7 @@
             'is-done': toastProps.message?.summary?.includes('done'),
             'pi pi-check': toastProps.message?.severity === 'success',
             'pi pi-info-circle': toastProps.message?.severity === 'info',
-            'pi-exclamation-triangle': toastProps.message?.severity === 'warn',
+            'pi pi-exclamation-circle': toastProps.message?.severity === 'warn',
             'pi pi-times-circle': toastProps.message?.severity === 'error',
           },
         ],

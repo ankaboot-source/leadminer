@@ -12,7 +12,7 @@ export default class RedisQueuedEmailsCache implements QueuedEmailsCache {
   }
 
   async add(email: string): Promise<boolean> {
-    const existingEmail = await this.redisClient.zscore('emails', email);
+    const existingEmail = await this.redisClient.zscore(this.key, email);
     if (existingEmail === null) {
       await this.redisClient.zadd(this.key, Date.now(), email);
       return true;

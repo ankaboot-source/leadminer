@@ -34,6 +34,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { FetchError } from 'ofetch';
 import ProgressCard from '@/components/ProgressCard.vue';
 
 const { t } = useI18n({
@@ -84,6 +85,7 @@ watch(verificationFinished, (finished) => {
 
 async function haltCleaning() {
   $leadminerStore.isLoadingStopMining = true;
+
   try {
     await $leadminerStore.stopMining();
     $toast.add({
@@ -96,7 +98,19 @@ async function haltCleaning() {
     $leadminerStore.isLoadingStopMining = false;
   } catch (error) {
     $leadminerStore.isLoadingStopMining = false;
-    throw error;
+    if (error instanceof FetchError && error.response?.status === 404) {
+      $toast.add({
+        severity: 'warn',
+        summary: t('cleaning_stopped'),
+        detail: t('cleaning_already_canceled'),
+        group: 'mining',
+        life: 5000,
+      });
+      $leadminerStore.miningTask = undefined;
+      $leadminerStore.miningStartedAt = undefined;
+    } else {
+      throw error;
+    }
   }
 }
 
@@ -116,7 +130,8 @@ function startNewMining() {
     "cleaning_done": "Cleaning done",
     "contacts_verified": "{verifiedContacts} contacts are verified.",
     "cleaning_stopped": "Cleaning Stopped",
-    "cleaning_canceled": "Your cleaning is successfully canceled."
+    "cleaning_canceled": "Your cleaning is successfully canceled.",
+    "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
   },
   "fr": {
     "contacts_to_clean": "contacts à nettoyer.",
@@ -126,7 +141,8 @@ function startNewMining() {
     "cleaning_done": "Nettoyage terminé",
     "contacts_verified": "{verifiedContacts} contacts sont vérifiés.",
     "cleaning_stopped": "Nettoyage arrêté",
-    "cleaning_canceled": "Votre nettoyage a été annulé avec succès."
+    "cleaning_canceled": "Votre nettoyage a été annulé avec succès.",
+    "cleaning_already_canceled": "Il semble que vous essayez d'annuler une opération de nettoyage qui est déjà annulée."
   }
 }
 </i18n>

@@ -81,6 +81,7 @@ export interface ZerobounceEmailValidationResult {
   zipcode: string | null;
   country: string | null;
   processed_at: string;
+  error?: string;
 }
 
 /**
@@ -95,7 +96,8 @@ interface EmailObject {
  * The response from a batch email validation request to Zerobounce API.
  */
 interface EmailValidationResponse {
-  email_batch: ZerobounceEmailValidationResult[];
+  email_batch: ZerobounceEmailValidationResult[] | [];
+  errors?: { email_address: string; error: string }[];
 }
 
 export default class ZerobounceClient {
