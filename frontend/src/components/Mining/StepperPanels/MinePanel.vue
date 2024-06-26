@@ -279,15 +279,30 @@ async function startMining() {
 
 async function haltMining() {
   canceled.value = true;
-  await $leadminerStore.stopMining();
-
-  $toast.add({
-    severity: 'success',
-    summary: t('mining_stopped'),
-    detail: t('mining_canceled'),
-    group: 'mining',
-    life: 3000,
-  });
+  try {
+    await $leadminerStore.stopMining();
+    $toast.add({
+      severity: 'success',
+      summary: t('mining_stopped'),
+      detail: t('mining_canceled'),
+      group: 'mining',
+      life: 3000,
+    });
+  } catch (error) {
+    if (error instanceof FetchError && error.response?.status === 404) {
+      $toast.add({
+        severity: 'warn',
+        summary: t('mining_stopped'),
+        detail: t('mining_already_canceled'),
+        group: 'mining',
+        life: 5000,
+      });
+      $leadminerStore.miningTask = undefined;
+      $leadminerStore.miningStartedAt = undefined;
+    } else {
+      throw error;
+    }
+  }
 }
 </script>
 
@@ -310,7 +325,8 @@ async function haltMining() {
     "start_mining": "Start Mining",
     "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
     "mining_stopped": "Mining Stopped",
-    "mining_canceled": "Your mining is successfully canceled."
+    "mining_canceled": "Your mining is successfully canceled.",
+    "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled."
   },
   "fr": {
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
@@ -329,7 +345,8 @@ async function haltMining() {
     "start_mining": "Commencer l'extraction",
     "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",
     "mining_stopped": "Extraction arrêtée",
-    "mining_canceled": "Votre extraction a été annulée avec succès."
+    "mining_canceled": "Votre extraction a été annulée avec succès.",
+    "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée."
   }
 }
 </i18n>
