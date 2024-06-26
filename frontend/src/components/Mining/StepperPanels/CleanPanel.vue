@@ -123,7 +123,7 @@ function startNewMining() {
 <i18n lang="json">
 {
   "en": {
-    "contacts_to_clean": "contacts to clean.",
+    "contacts_to_clean": "estimated contacts to clean.",
     "halt_cleaning": "Halt cleaning",
     "start_new_mining": "Start a new mining",
     "verified_emails": "Verified emails: {verifiedContacts}/{contactsToVerify}",
@@ -134,7 +134,7 @@ function startNewMining() {
     "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
   },
   "fr": {
-    "contacts_to_clean": "contacts à nettoyer.",
+    "contacts_to_clean": "contacts estimés à nettoyer",
     "halt_cleaning": "Arrêter le nettoyage",
     "start_new_mining": "Commencer une nouvelle extraction",
     "verified_emails": "E-mails vérifiés : {verifiedContacts}/{contactsToVerify}",
