@@ -1,0 +1,63 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispath:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout leadminer code
+      uses: actions/checkout@v4
+
+    - name: Clone leadminer.io
+      run: git clone https://github.com/ankaboot-source/leadminer.io.git
+      env:
+        GITHUB_TOKEN: ${{ secrets.DEPLOY_PAT }}
+
+    - name: Setup leadminer-commercial
+      run: |
+        chmod +x "leadminer.io/leadminer-integration.sh"
+        "leadminer.io/leadminer-integration.sh" . https://${{ secrets.DEPLOY_PAT }}@github.com:ankaboot-source/leadminer-commercial.git
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+
+    - name: Build and push frontend image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./frontend/Dockerfile
+        push: true
+        tags: ankabootorg/leadminer-frontend:latest
+
+#    - name: Build and push backend image
+#      uses: docker/build-push-action@v6
+#      with:
+#        context: ./backend/api.Dockerfile
+#        push: true
+#        tags: ankabootorg/leadminer-backend:latest
+
+#    - name: Build and push worker image
+#      uses: docker/build-push-action@v6
+#      with:
+#        context: ./backend/worker.Dockerfile
+#        push: true
+#        tags: ankabootorg/leadminer-worker:latest
+
+#    - name: Build and push worker image
+#      uses: docker/build-push-action@v6
+#      with:
+#        context: ./backend/email-verification-worker.Dockerfile
+#        push: true
+#        tags: ankabootorg/leadminer-email-verification-worker:latest
+
