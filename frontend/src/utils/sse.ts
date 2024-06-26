@@ -63,6 +63,9 @@ class SSE {
             onCreatedContacts(parseInt(data));
           }
         },
+        onerror: (err: unknown) => {
+          throw err;
+        },
         signal: this.ctrl.signal,
         openWhenHidden: true,
       }
