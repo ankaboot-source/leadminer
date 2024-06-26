@@ -21,11 +21,19 @@ export default class ZerobounceEmailStatusVerifier
         email_address: email,
         ip_address: ''
       });
+
+      if (result.error) {
+        throw new Error('Insufficient Credits.');
+      }
+
       return {
         email,
         ...zerobounceResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
+      if (error instanceof Error && error.message === 'Insufficient Credits.') {
+        throw error;
+      }
       return {
         email,
         status: Status.UNKNOWN,
@@ -52,11 +60,25 @@ export default class ZerobounceEmailStatusVerifier
       batches.map(async (batch) => {
         try {
           const response = await this.client.verifyEmailBulk(batch);
+          if (
+            response.errors &&
+            response.errors[0].error ===
+              'Invalid API Key or your account ran out of credits'
+          ) {
+            throw new Error('Insufficient Credits.');
+          }
+
           return response.email_batch.map((emailResult) => ({
             email: emailResult.address,
             ...zerobounceResultToEmailStatusResultMapper(emailResult)
           }));
         } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message === 'Insufficient Credits.'
+          ) {
+            throw error;
+          }
           return this.defaultBulkResults(
             batch.map((emailObj) => emailObj.email_address)
           );

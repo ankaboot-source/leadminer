@@ -1,4 +1,5 @@
 import { Logger } from 'winston';
+import { AxiosError } from 'axios';
 import {
   EmailStatusResult,
   EmailStatusVerifier,
@@ -27,6 +28,9 @@ export default class MailerCheckEmailStatusVerifier
         ...mailerCheckResultToEmailStatusResultMapper(result)
       };
     } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 402) {
+        throw new Error('Insufficient Credits.');
+      }
       return {
         email,
         status: Status.UNKNOWN,
@@ -65,6 +69,9 @@ export default class MailerCheckEmailStatusVerifier
         ...mailerCheckResultToEmailStatusResultMapper(result)
       }));
     } catch (error) {
+      if (error instanceof AxiosError && error.response?.status === 402) {
+        throw new Error('Insufficient Credits.');
+      }
       return this.defaultBulkResults(emails);
     }
   }
