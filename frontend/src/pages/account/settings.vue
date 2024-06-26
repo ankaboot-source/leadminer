@@ -113,6 +113,7 @@ const userId = ref('');
 const email = ref('');
 const fullName = ref('');
 let oldFullName = '';
+let isUpdated = false;
 const password = ref('');
 
 const isLoading = ref(false);
@@ -202,6 +203,8 @@ async function updateProfile() {
       if (error) {
         throw error;
       }
+
+      isUpdated = true;
     }
 
     if (fullName.value.length && oldFullName !== fullName.value) {
@@ -217,14 +220,14 @@ async function updateProfile() {
       if (error) {
         throw error;
       }
+
+      oldFullName = fullName.value;
+      isUpdated = true;
     }
 
     await useSupabaseClient().auth.refreshSession();
 
-    if (
-      password.value.length ||
-      (fullName.value.length && oldFullName !== fullName.value)
-    ) {
+    if (isUpdated) {
       $toast.add({
         severity: 'success',
         summary: t('profile_updated'),
