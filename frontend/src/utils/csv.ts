@@ -17,18 +17,14 @@ export function saveCSVFile(data: Blob, filename: string) {
 
   link.href = window.URL.createObjectURL(blob);
   link.setAttribute('download', filename);
-
   // Check for "download" attribute support;
   // If not supported, open this in new window
   if (typeof link.download === 'undefined') {
     link.setAttribute('target', '_blank');
   }
-
   link.classList.add('hidden');
-
   link.style.position = 'fixed'; // avoid scrolling to bottom
   document.body.appendChild(link);
-
   try {
     link.click();
     clean(link);
