@@ -12,13 +12,13 @@ jobs:
       uses: actions/checkout@v4
 
     - name: (DEBUG) List files after checkout
-      run: ls l
+      run: ls -l
 
     - name: Clone leadminer.io
       run: git clone https://${{ secrets.DEPLOY_PAT }}@github.com/ankaboot-source/leadminer.io.git
 
     - name: (DEBUG) List files after cloning leadminer.io
-      run: ls lR
+      run: ls -lR
 
     - name: Setup leadminer-commercial
       run: |
