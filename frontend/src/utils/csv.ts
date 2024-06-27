@@ -10,7 +10,8 @@ function clean(link: HTMLAnchorElement) {
  * @param {string} filename - The filename for the downloaded CSV file.
  */
 export function saveCSVFile(data: Blob, filename: string) {
-  const blob: Blob = new Blob([data], { type: 'text/csv' });
+  const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+  const blob = new Blob([bom, data], { type: 'text/csv' });
   const link: HTMLAnchorElement = document.createElement('a');
 
   link.href = window.URL.createObjectURL(blob);
