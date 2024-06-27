@@ -12,9 +12,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Clone leadminer.io
-      run: git clone https://github.com/ankaboot-source/leadminer.io.git
-      env:
-        GITHUB_TOKEN: ${{ secrets.DEPLOY_PAT }}
+      run: git clone https://${{ secrets.DEPLOY_PAT }}@github.com/ankaboot-source/leadminer.io.git
 
     - name: Setup leadminer-commercial
       run: |
