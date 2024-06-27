@@ -40,6 +40,7 @@ jobs:
     - name: Build and push frontend image
       uses: docker/build-push-action@v6
       with:
-        context: ./frontend/Dockerfile
+        context: ./frontend
+        file: ./frontend/Dockerfile
         push: true
         tags: ankabootorg/leadminer-frontend:latest
