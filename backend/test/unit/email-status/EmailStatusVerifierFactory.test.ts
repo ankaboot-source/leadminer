@@ -72,7 +72,6 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
     it.each([
       ...mailercheckOnly,
       ...hotmailEmails,
-      ...googleEmails,
       ...outlookEmails,
       ...yahooEmails
     ])(
@@ -94,7 +93,6 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
     it.each([
       ...mailercheckOnly,
       ...hotmailEmails,
-      ...googleEmails,
       ...outlookEmails,
       ...yahooEmails
     ])(
@@ -115,7 +113,6 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
     it.each([
       ...mailercheckOnly,
       ...hotmailEmails,
-      ...googleEmails,
       ...outlookEmails,
       ...yahooEmails
     ])(
@@ -177,17 +174,14 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       ).getEmailVerifiers(emails);
 
       expect(result.has('random')).toBeFalsy();
-      expect(result.has('reacher')).toBeFalsy();
       expect(result.has('mailercheck')).toBeFalsy();
+      expect(result.get('reacher')).toEqual([
+        expect.any(ReacherEmailStatusVerifier),
+        [...googleEmails]
+      ]);
       expect(result.get('zerobounce')).toEqual([
         expect.any(ZerobounceEmailStatusVerifier),
-        [
-          ...mailercheckOnly,
-          ...hotmailEmails,
-          ...googleEmails,
-          ...outlookEmails,
-          ...yahooEmails
-        ]
+        [...mailercheckOnly, ...hotmailEmails, ...outlookEmails, ...yahooEmails]
       ]);
     });
 
@@ -202,17 +196,14 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       ).getEmailVerifiers(emails);
 
       expect(result.has('random')).toBeFalsy();
-      expect(result.has('reacher')).toBeFalsy();
       expect(result.has('zerobounce')).toBeFalsy();
+      expect(result.get('reacher')).toEqual([
+        expect.any(ReacherEmailStatusVerifier),
+        [...googleEmails]
+      ]);
       expect(result.get('mailercheck')).toEqual([
         expect.any(MailerCheckEmailStatusVerifier),
-        [
-          ...mailercheckOnly,
-          ...hotmailEmails,
-          ...googleEmails,
-          ...outlookEmails,
-          ...yahooEmails
-        ]
+        [...mailercheckOnly, ...hotmailEmails, ...outlookEmails, ...yahooEmails]
       ]);
     });
 
@@ -304,8 +295,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifier('test@gmail.com');
-      const verifier2 = factory.getEmailVerifier('test@gmail.com');
+      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
+      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
       expect(verifier1.constructor.name).not.toEqual(
         verifier2.constructor.name
       );
@@ -321,8 +312,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifier('test@gmail.com');
-      const verifier2 = factory.getEmailVerifier('test@gmail.com');
+      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
+      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
 
       expect(verifier1).toBeInstanceOf(ZerobounceEmailStatusVerifier);
       expect(verifier2).toBeInstanceOf(ZerobounceEmailStatusVerifier);
@@ -338,8 +329,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifier('test@gmail.com');
-      const verifier2 = factory.getEmailVerifier('test@gmail.com');
+      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
+      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
 
       expect(verifier1).toBeInstanceOf(MailerCheckEmailStatusVerifier);
       expect(verifier2).toBeInstanceOf(MailerCheckEmailStatusVerifier);
@@ -354,8 +345,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifier('test@gmail.com');
-      const verifier2 = factory.getEmailVerifier('test@gmail.com');
+      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
+      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
 
       expect(verifier1).toBeInstanceOf(ReacherEmailStatusVerifier);
       expect(verifier2).toBeInstanceOf(ReacherEmailStatusVerifier);
@@ -374,8 +365,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifiers(['test@gmail.com']);
-      const verifier2 = factory.getEmailVerifiers(['test@gmail.com']);
+      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
+      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
 
       expect(Array.from(verifier1.keys())[0]).not.toEqual(
         Array.from(verifier2.keys())[0]
@@ -392,8 +383,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifiers(['test@gmail.com']);
-      const verifier2 = factory.getEmailVerifiers(['test@gmail.com']);
+      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
+      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
 
       expect(verifier1.has('zerobounce')).toBeTruthy();
       expect(verifier2.has('zerobounce')).toBeTruthy();
@@ -409,8 +400,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifiers(['test@gmail.com']);
-      const verifier2 = factory.getEmailVerifiers(['test@gmail.com']);
+      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
+      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
 
       expect(verifier1.has('mailercheck')).toBeTruthy();
       expect(verifier2.has('mailercheck')).toBeTruthy();
@@ -425,8 +416,8 @@ describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
         logger
       );
 
-      const verifier1 = factory.getEmailVerifiers(['test@gmail.com']);
-      const verifier2 = factory.getEmailVerifiers(['test@gmail.com']);
+      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
+      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
 
       expect(verifier1.has('reacher')).toBeTruthy();
       expect(verifier2.has('reacher')).toBeTruthy();

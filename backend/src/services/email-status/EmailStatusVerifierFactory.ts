@@ -41,7 +41,7 @@ interface ZerobounceConfig {
 
 export default class EmailStatusVerifierFactory {
   private static readonly MAILER_CHECK_DOMAIN_REGEX =
-    /(?=(@hotmail|@gmail|@yahoo|@live|@outlook|@msn|@wandoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
+    /(?=(@hotmail|@yahoo|@live|@outlook|@msn|@wandoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
 
   private currentVerifierIndex = 0;
 
