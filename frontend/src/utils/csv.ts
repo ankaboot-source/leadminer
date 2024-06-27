@@ -2,6 +2,7 @@ function clean(link: HTMLAnchorElement) {
   setTimeout(() => {
     window.URL.revokeObjectURL(link.href);
   }, 10000);
+  document.body.removeChild(link);
 }
 
 /**
@@ -24,9 +25,8 @@ export function saveCSVFile(data: Blob, filename: string) {
   }
 
   link.classList.add('hidden');
-  link.style.position = 'fixed'; // avoid scrolling to bottom
-  document.body.appendChild(link);
 
+  link.style.position = 'fixed'; // avoid scrolling to bottom
   document.body.appendChild(link);
 
   try {
