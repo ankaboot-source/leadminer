@@ -11,13 +11,22 @@ jobs:
     - name: Checkout leadminer code
       uses: actions/checkout@v4
 
+    - name: (DEBUG) List files after checkout
+      run: ls l
+
     - name: Clone leadminer.io
       run: git clone https://${{ secrets.DEPLOY_PAT }}@github.com/ankaboot-source/leadminer.io.git
+
+    - name: (DEBUG) List files after cloning leadminer.io
+      run: ls lR
 
     - name: Setup leadminer-commercial
       run: |
         chmod +x "leadminer.io/leadminer-integration.sh"
         "leadminer.io/leadminer-integration.sh" . https://${{ secrets.DEPLOY_PAT }}@github.com/ankaboot-source/leadminer-commercial.git
+
+    - name: (DEBUG) List files after leadminer-commercial setup
+      run: ls -lR
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
