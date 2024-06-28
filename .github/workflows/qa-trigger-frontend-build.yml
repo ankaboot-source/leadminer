@@ -1,12 +1,12 @@
-name: Trigger QA deployment
+name: Trigger QA deployment [frontend build]
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-    paths-ignore:
-      - '.github/workflows/**'
+    paths:
+      - 'frontend/**'
 
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
         run: |
           repo_owner="ankaboot-source"
           repo_name="leadminer.io"
-          event_type="trigger-qa"
+          event_type="trigger-qa-frontend-build"
 
           curl -L \
             -X POST \
