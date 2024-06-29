@@ -52,7 +52,7 @@
     "pg": "^8.11.5",
     "pg-format": "^1.0.4",
     "quoted-printable": "^1.0.1",
-    "simple-oauth2": "^5.0.0",
+    "simple-oauth2": "^5.0.1",
     "stripe": "^13.11.0",
     "throttled-queue": "^2.1.4",
     "winston": "^3.13.0",
