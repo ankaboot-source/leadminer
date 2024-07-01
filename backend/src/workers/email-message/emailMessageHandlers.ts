@@ -1,3 +1,4 @@
+import { PostgrestError } from '@supabase/supabase-js';
 import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
@@ -69,7 +70,7 @@ async function emailMessageHandler(
     try {
       emails = await contacts.create(extractedContacts, userId);
     } catch (e) {
-      if ((e as any).code !== '23505') throw e; // 23505: duplicate key error
+      if ((e as PostgrestError).code !== '23505') throw e; // 23505: duplicate key error
       // continue treating contacts with null status
       emails = (
         await contacts.getContacts(
