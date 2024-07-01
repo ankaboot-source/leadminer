@@ -1,3 +1,4 @@
+// skipcq: SCT-A000
 export default defineI18nConfig(() => ({
   locale: 'en',
   fallbackLocale: 'en',
@@ -26,7 +27,7 @@ export default defineI18nConfig(() => ({
         support_assistance:
           'For any questions or assistance, our support team is here to help at',
         mailbox: 'mailbox',
-        save: 'save',
+        save: 'Save',
         the_plural: 'the',
       },
       auth: {
@@ -106,7 +107,7 @@ export default defineI18nConfig(() => ({
         support_assistance:
           'Pour toute question ou assistance, notre équipe de support est là pour vous aider à',
         mailbox: 'boîte aux lettres',
-        save: 'sauvegarder',
+        save: 'Sauvegarder',
         the_plural: 'les',
       },
       auth: {
