@@ -223,7 +223,7 @@ export default class PgContacts implements Contacts {
       return Array.from(insertedEmails);
     } catch (e) {
       this.logger.error('Error when inserting contact', e);
-      return [];
+      throw e;
     }
   }
 
@@ -259,7 +259,6 @@ export default class PgContacts implements Contacts {
             emails
           ])
         : await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [userId]);
-
       return rows;
     } catch (error) {
       this.logger.error(error);

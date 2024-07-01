@@ -64,8 +64,22 @@ async function emailMessageHandler(
 
   try {
     const extractedContacts = await message.getContacts();
-    const emails = await contacts.create(extractedContacts, userId);
 
+    let emails: string[] = [];
+    try {
+      emails = await contacts.create(extractedContacts, userId);
+    } catch (e) {
+      if ((e as any).code !== '23505') throw e; // 23505: duplicate key error
+      // continue treating contacts with null status
+      emails = (
+        await contacts.getContacts(
+          userId,
+          extractedContacts.persons.map((contact) => contact.person.email)
+        )
+      )
+        .filter((contact) => contact.status === null)
+        .map((contact) => contact.email);
+    }
     if (emails.length > 0) {
       const input = (await queuedEmailsCache.addMany(emails)).addedElements.map(
         (e) => ({
