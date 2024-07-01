@@ -48,12 +48,12 @@ jobs:
         with:
           coverage-file: backend/coverage/coverage-summary.json
           access-token: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Update DeepSource code coverage
-      #   run: |
-      #     curl https://deepsource.io/cli | sh
-      #     ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
-      #   env:
-      #     DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+      - name: Update DeepSource code coverage
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/coverage-summary.json
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
   frontend:
     needs: changes
