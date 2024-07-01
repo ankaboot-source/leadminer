@@ -76,9 +76,7 @@ async function emailMessageHandler(
           userId,
           extractedContacts.persons.map((contact) => contact.person.email)
         )
-      )
-        .filter((contact) => contact.status === null)
-        .map((contact) => contact.email);
+      ).map((contact) => contact.email);
     }
     if (emails.length > 0) {
       const input = (await queuedEmailsCache.addMany(emails)).addedElements.map(
