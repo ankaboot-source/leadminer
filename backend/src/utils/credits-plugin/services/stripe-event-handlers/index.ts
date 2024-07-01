@@ -1,9 +1,9 @@
 import Stripe from 'stripe';
 import { Logger } from 'winston';
-import { StripeEventHandler, InvoiceEvent } from './interfaces';
-import InvoicePaymentSucceeded from './handlers/InvoicePaymentSucceeded';
 import { Users } from '../../database/interfaces/Users';
 import StripeEventHandlerBase from './handlers/base';
+import InvoicePaymentSucceeded from './handlers/InvoicePaymentSucceeded';
+import { InvoiceEvent, StripeEventHandler } from './interfaces';
 
 /**
  * Factory class for creating Stripe event handlers.
@@ -30,7 +30,7 @@ export default class StripeEventHandlerFactory extends StripeEventHandlerBase {
     switch (eventType) {
       case 'invoice.payment_succeeded':
         return new InvoicePaymentSucceeded(
-          event as InvoiceEvent,
+          event as unknown as InvoiceEvent,
           this.userResolver,
           this.stripeClient,
           this.logger
