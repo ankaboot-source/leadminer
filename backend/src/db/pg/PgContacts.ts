@@ -44,6 +44,9 @@ export default class PgContacts implements Contacts {
   private static readonly SELECT_CONTACTS_BY_EMAILS =
     'SELECT * FROM get_contacts_table_by_emails($1,$2) group by email';
 
+  private static readonly SELECT_CONTACTS_BY_EMAILS_UNVERIFIED =
+    'SELECT * FROM get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
+
   private static readonly SELECT_EXPORTED_CONTACTS_BY_EMAILS = `
     SELECT contacts.* 
     FROM get_contacts_table_by_emails($1,$2) contacts
@@ -223,7 +226,7 @@ export default class PgContacts implements Contacts {
       return Array.from(insertedEmails);
     } catch (e) {
       this.logger.error('Error when inserting contact', e);
-      return [];
+      throw e;
     }
   }
 
@@ -259,7 +262,22 @@ export default class PgContacts implements Contacts {
             emails
           ])
         : await this.pool.query(PgContacts.SELECT_CONTACTS_SQL, [userId]);
+      return rows;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
 
+  async getUnverifiedContacts(
+    userId: string,
+    emails: string[]
+  ): Promise<Contact[]> {
+    try {
+      const { rows } = await this.pool.query(
+        PgContacts.SELECT_CONTACTS_BY_EMAILS_UNVERIFIED,
+        [userId, emails]
+      );
       return rows;
     } catch (error) {
       this.logger.error(error);
