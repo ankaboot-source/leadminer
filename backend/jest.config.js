@@ -3,7 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   testPathIgnorePatterns: ['dist/', 'src/'],
-  coverageReporters: ['json-summary'],
+  coverageReporters: ['json-summary', 'lcov'],
   collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
   transform: {
     '^.+\\.(t|j)s$': [
