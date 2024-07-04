@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   changes:
@@ -46,6 +47,10 @@ jobs:
         run: cd backend && npm run prettier
       - name: Run unit tests
         run: cd backend && npm run test-ci:unit
+      
+      - name: debug
+        run: cd backend && ls -R
+      
       - uses: jgillick/test-coverage-reporter@main
         with:
           coverage-file: backend/coverage/coverage-summary.json
