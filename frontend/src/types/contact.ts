@@ -26,4 +26,11 @@ export interface Contact {
   seniority?: Date;
   alternate_names?: string[];
   tags?: Tag[];
+  image?: string;
+  address?: string;
+  same_as?: string[];
+  given_name?: string;
+  family_name?: string;
+  job_title?: string;
+  works_for?: string;
 }
