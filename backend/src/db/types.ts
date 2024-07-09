@@ -75,8 +75,15 @@ export interface Contact {
   personid?: string;
   recency?: Date;
   seniority?: Date;
-  alternate_names?: string[];
   tags?: Tag[];
+  given_name?: string;
+  family_name?: string;
+  alternate_names?: string[];
+  address?: string;
+  works_for?: string;
+  job_title?: string;
+  same_as?: string[];
+  image?: string;
 }
 
 export interface Profile {

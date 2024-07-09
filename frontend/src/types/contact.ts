@@ -24,13 +24,13 @@ export interface Contact {
   personid?: string;
   recency?: Date;
   seniority?: Date;
-  alternate_names?: string[];
   tags?: Tag[];
-  image?: string;
-  address?: string;
-  same_as?: string[];
   given_name?: string;
   family_name?: string;
-  job_title?: string;
+  alternate_names?: string[];
+  address?: string;
   works_for?: string;
+  job_title?: string;
+  same_as?: string[];
+  image?: string;
 }

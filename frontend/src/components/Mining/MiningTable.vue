@@ -9,18 +9,17 @@
     v-model:visible="contactSidebarVisible"
     position="right"
     pt:root:class="w-1/3"
-    pt:header:class="pb-0"
   >
     <template #header><span class="grow" /> </template>
     <div class="p-sidebar-header px-4 pt-0">
-      <div class="flex items-center gap-2 grow w-full text-xl">
+      <div class="flex items-center gap-2 grow w-full">
         <img
           v-if="contactInformation.image && !editingContact"
           :src="contactInformation.image"
           class="size-20"
         />
         <span class="w-full">
-          <div v-if="!editingContact" class="font-medium">
+          <div v-if="!editingContact" class="font-medium text-2xl">
             {{ contactInformation.name }}
           </div>
           <InputText
@@ -29,7 +28,7 @@
             class="w-full grow"
             size="large"
           />
-          <div :class="{ 'text-lg': editingContact }">
+          <div :class="{ 'font-medium': editingContact }">
             {{ contactInformation.email }}
           </div>
           <div v-if="!editingContact" class="flex gap-2 grow pt-1">
@@ -54,6 +53,7 @@
         text
         icon="pi pi-copy"
         size="large"
+        class="text-2xl"
         :aria-label="t('copy')"
         @click="copyContact(contactInformation.email, contactInformation.name)"
       />
@@ -79,6 +79,7 @@
             <div v-if="!editingContact">
               {{ contactInformation.family_name }}
             </div>
+
             <InputText
               v-else
               v-model="contactInformation.family_name"
@@ -87,6 +88,28 @@
           </td>
         </tr>
         <tr class="p-row-even">
+          <td class="font-medium">Alternate names</td>
+          <td>
+            <div v-if="!editingContact">
+              {{ contactInformation.alternate_names?.join(', ') }}
+            </div>
+            <Chips
+              v-else
+              v-model="contactInformation.alternate_names"
+              separator=","
+              class="w-full"
+              pt:container:class="w-full"
+            />
+
+            <!-- <Textarea
+              v-else
+              v-model="contactInformation.alternate_names"
+              class="w-full"
+            /> -->
+          </td>
+        </tr>
+
+        <tr class="p-row-odd">
           <td class="font-medium">Location</td>
           <td>
             <div v-if="!editingContact">{{ contactInformation.address }}</div>
@@ -97,50 +120,8 @@
             />
           </td>
         </tr>
-        <tr class="p-row-odd">
-          <td class="font-medium">Alternate names</td>
-          <td>
-            <div v-if="!editingContact">
-              {{ contactInformation.alternate_names?.join(', ') }}
-            </div>
-            <Textarea
-              v-else
-              v-model="contactInformation.alternate_names"
-              class="w-full"
-            />
-          </td>
-        </tr>
-        <template v-if="editingContact">
-          <tr class="p-row-even">
-            <td class="font-medium">Same as</td>
-            <td>
-              <Textarea
-                v-model="contactInformation.same_as"
-                class="w-full"
-                rows="5"
-              />
-            </td>
-          </tr>
 
-          <tr class="p-row-odd">
-            <td class="font-medium">Avatar URL</td>
-            <td>
-              <InputText v-model="contactInformation.image" class="w-full" />
-            </td>
-          </tr>
-        </template>
         <tr class="p-row-even">
-          <td class="font-medium">Job title</td>
-          <td>
-            <div v-if="!editingContact">{{ contactInformation.job_title }}</div>
-            <InputText
-              v-else
-              v-model="contactInformation.job_title"
-              class="w-full"
-            />
-          </td>
-        </tr>
-        <tr class="p-row-odd">
           <td class="font-medium">Works for</td>
           <td>
             <div v-if="!editingContact">{{ contactInformation.works_for }}</div>
@@ -151,6 +132,52 @@
             />
           </td>
         </tr>
+        <tr class="p-row-odd">
+          <td class="font-medium">Job title</td>
+          <td>
+            <div v-if="!editingContact">{{ contactInformation.job_title }}</div>
+            <InputText
+              v-else
+              v-model="contactInformation.job_title"
+              class="w-full"
+            />
+          </td>
+        </tr>
+
+        <template v-if="editingContact">
+          <tr class="p-row-even">
+            <td class="font-medium">Same as</td>
+            <td class="overflow-x-auto">
+              <Chips
+                v-model="contactInformation.same_as"
+                separator=","
+                class="w-full overflow-x-auto"
+                pt:container:class="w-full overflow-x-auto "
+              >
+                <template #chip="slotProps">
+                  <i
+                    :class="`pi pi-${getSameAsIcon(slotProps.value)}`"
+                    class="pr-1"
+                  />
+                  <span>{{ slotProps.value }} </span>
+                </template>
+              </Chips>
+
+              <!-- <Textarea
+                v-model="contactInformation.same_as"
+                class="w-full"
+                rows="5"
+              /> -->
+            </td>
+          </tr>
+
+          <tr class="p-row-odd">
+            <td class="font-medium">Avatar URL</td>
+            <td>
+              <InputText v-model="contactInformation.image" class="w-full" />
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
@@ -603,6 +630,116 @@
         />
       </template>
     </Column>
+
+    <!-- Given name -->
+    <Column
+      v-if="visibleColumns.includes('given_name')"
+      field="given_name"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('given_name_definition')">
+          {{ t('given_name') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Family name -->
+    <Column
+      v-if="visibleColumns.includes('family_name')"
+      field="family_name"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('family_name_definition')">
+          {{ t('family_name') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Alternate names -->
+    <Column
+      v-if="visibleColumns.includes('alternate_names')"
+      field="alternate_names"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('alternate_names_definition')">
+          {{ t('alternate_names') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Address -->
+    <Column
+      v-if="visibleColumns.includes('address')"
+      field="address"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('address_definition')">
+          {{ t('address') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Works for -->
+    <Column
+      v-if="visibleColumns.includes('works_for')"
+      field="works_for"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('works_for_definition')">
+          {{ t('works_for') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Job title	 -->
+    <Column
+      v-if="visibleColumns.includes('job_title')"
+      field="job_title"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('job_title_definition')">
+          {{ t('job_title') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+    <!-- same_as?: string[];
+    image?: string; -->
   </DataTable>
 </template>
 
@@ -1012,7 +1149,14 @@ const visibleColumnsOptions = [
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
+  { label: t('given_name'), value: 'given_name' },
+  { label: t('family_name'), value: 'family_name' },
+  { label: t('alternate_names'), value: 'alternate_names' },
+  { label: t('address'), value: 'address' },
+  { label: t('works_for'), value: 'works_for' },
+  { label: t('job_title'), value: 'job_title' },
 ];
+
 function disabledColumns(column: { label: string; value: string }) {
   return column.value === 'contacts';
 }

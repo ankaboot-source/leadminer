@@ -60,7 +60,15 @@ export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
     conversations: contact.conversations,
     repliedConversations: contact.replied_conversations,
     tags: contact.tags?.join('\n'),
-    status: contact.status
+    status: contact.status,
+    given_name: contact.given_name,
+    family_name: contact.family_name,
+    alternate_names: contact.alternate_names?.join('\n'),
+    address: contact.address,
+    works_for: contact.works_for,
+    job_title: contact.job_title,
+    same_as: contact.same_as?.join('\n'),
+    image: contact.image
   }));
 
   return getCsvStr(
@@ -75,7 +83,15 @@ export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
       { key: 'conversations', header: 'Conversations' },
       { key: 'repliedConversations', header: 'Replies' },
       { key: 'tags', header: 'Tags' },
-      { key: 'status', header: 'Reachable' }
+      { key: 'status', header: 'Reachable' },
+      { key: 'given_name', header: 'Given name' },
+      { key: 'family_name', header: 'Family name' },
+      { key: 'alternate_names', header: 'Alternate names' },
+      { key: 'address', header: 'Location' },
+      { key: 'works_for', header: 'Works for' },
+      { key: 'job_title', header: 'Job title' },
+      { key: 'same_as', header: 'Same as' },
+      { key: 'image', header: 'Avatar URL' }
     ],
     csvData,
     csvSeparator
