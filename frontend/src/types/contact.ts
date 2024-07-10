@@ -34,3 +34,9 @@ export interface Contact {
   same_as?: string[];
   image?: string;
 }
+
+export interface ContactEdit
+  extends Omit<Contact, 'alternate_names' | 'same_as'> {
+  alternate_names?: string[] | string;
+  same_as?: string[] | string;
+}

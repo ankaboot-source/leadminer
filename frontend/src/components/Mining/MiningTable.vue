@@ -5,6 +5,7 @@
     action-type="download"
     @secondary-action="exportTable(true)"
   />
+
   <Sidebar
     v-model:visible="contactSidebarVisible"
     position="right"
@@ -19,29 +20,38 @@
           class="size-20"
         />
         <span class="w-full">
-          <div v-if="!editingContact" class="font-medium text-2xl">
+          <div
+            v-if="contactInformation.name && !editingContact"
+            class="font-medium text-2xl"
+          >
             {{ contactInformation.name }}
           </div>
           <InputText
-            v-else
-            v-model="contactInformation.name"
+            v-if="editingContact"
+            v-model="contactInformationEdit.name"
             class="w-full grow"
             size="large"
           />
-          <div :class="{ 'font-medium': editingContact }">
+          <div
+            :class="{
+              'font-medium': editingContact,
+              'font-medium text-2xl':
+                !contactInformation.name && !editingContact,
+            }"
+          >
             {{ contactInformation.email }}
           </div>
-          <div v-if="!editingContact" class="flex gap-2 grow pt-1">
+          <div
+            v-if="contactInformation.same_as?.length && !editingContact"
+            class="flex gap-2 grow pt-1"
+          >
             <NuxtLink
-              v-for="same_as in contactInformation.same_as"
-              :to="same_as"
+              v-for="(same_as, index) in contactInformation.same_as"
+              :key="index"
               target="_blank"
               rel="noopener"
             >
-              <i
-                :class="`pi pi-${getSameAsIcon(same_as)}`"
-                class="text-xl self-center"
-              />
+              <i :class="`pi pi-${getSameAsIcon(same_as)}`" class="text-xl" />
             </NuxtLink>
           </div>
         </span>
@@ -61,20 +71,20 @@
     <table class="p-datatable p-datatable-striped table">
       <tbody class="p-datatable-tbody">
         <tr class="p-row-even">
-          <td class="font-medium w-3/12">Given name</td>
+          <td class="font-medium w-3/12">{{ t('contactI18n.given_name') }}</td>
           <td>
             <div v-if="!editingContact">
               {{ contactInformation.given_name }}
             </div>
             <InputText
               v-else
-              v-model="contactInformation.given_name"
+              v-model="contactInformationEdit.given_name"
               class="w-full"
             />
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">Family name</td>
+          <td class="font-medium">{{ t('contactI18n.family_name') }}</td>
           <td class="w-full">
             <div v-if="!editingContact">
               {{ contactInformation.family_name }}
@@ -82,63 +92,55 @@
 
             <InputText
               v-else
-              v-model="contactInformation.family_name"
+              v-model="contactInformationEdit.family_name"
               class="w-full"
             />
           </td>
         </tr>
         <tr class="p-row-even">
-          <td class="font-medium">Alternate names</td>
+          <td class="font-medium">{{ t('contactI18n.alternate_names') }}</td>
           <td>
             <div v-if="!editingContact">
               {{ contactInformation.alternate_names?.join(', ') }}
             </div>
-            <Chips
+            <Textarea
               v-else
-              v-model="contactInformation.alternate_names"
-              separator=","
+              v-model="contactInformationEdit.alternate_names as string"
               class="w-full"
-              pt:container:class="w-full"
             />
-
-            <!-- <Textarea
-              v-else
-              v-model="contactInformation.alternate_names"
-              class="w-full"
-            /> -->
           </td>
         </tr>
 
         <tr class="p-row-odd">
-          <td class="font-medium">Location</td>
+          <td class="font-medium">{{ t('contactI18n.address') }}</td>
           <td>
             <div v-if="!editingContact">{{ contactInformation.address }}</div>
             <InputText
               v-else
-              v-model="contactInformation.address"
+              v-model="contactInformationEdit.address"
               class="w-full"
             />
           </td>
         </tr>
 
         <tr class="p-row-even">
-          <td class="font-medium">Works for</td>
+          <td class="font-medium">{{ t('contactI18n.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contactInformation.works_for }}</div>
             <InputText
               v-else
-              v-model="contactInformation.works_for"
+              v-model="contactInformationEdit.works_for"
               class="w-full"
             />
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">Job title</td>
+          <td class="font-medium">{{ t('contactI18n.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contactInformation.job_title }}</div>
             <InputText
               v-else
-              v-model="contactInformation.job_title"
+              v-model="contactInformationEdit.job_title"
               class="w-full"
             />
           </td>
@@ -146,35 +148,22 @@
 
         <template v-if="editingContact">
           <tr class="p-row-even">
-            <td class="font-medium">Same as</td>
-            <td class="overflow-x-auto">
-              <Chips
-                v-model="contactInformation.same_as"
-                separator=","
-                class="w-full overflow-x-auto"
-                pt:container:class="w-full overflow-x-auto "
-              >
-                <template #chip="slotProps">
-                  <i
-                    :class="`pi pi-${getSameAsIcon(slotProps.value)}`"
-                    class="pr-1"
-                  />
-                  <span>{{ slotProps.value }} </span>
-                </template>
-              </Chips>
-
-              <!-- <Textarea
-                v-model="contactInformation.same_as"
+            <td class="font-medium">{{ t('contactI18n.same_as') }}</td>
+            <td>
+              <Textarea
+                v-model="contactInformationEdit.same_as as string"
                 class="w-full"
-                rows="5"
-              /> -->
+              />
             </td>
           </tr>
 
           <tr class="p-row-odd">
-            <td class="font-medium">Avatar URL</td>
+            <td class="font-medium">{{ t('contactI18n.image') }}</td>
             <td>
-              <InputText v-model="contactInformation.image" class="w-full" />
+              <InputText
+                v-model="contactInformationEdit.image"
+                class="w-full"
+              />
             </td>
           </tr>
         </template>
@@ -191,14 +180,14 @@
           icon-pos="right"
           icon="pi pi-pen-to-square"
           :label="t('Edit')"
-          @click="editingContact = true"
+          @click="editContactInformations()"
         />
       </template>
       <template v-else>
         <Button
           label="Cancel"
           severity="secondary"
-          @click="editingContact = false"
+          @click="cancelContactInformations()"
         />
         <Button
           label="Save"
@@ -207,6 +196,7 @@
       </template>
     </div>
   </Sidebar>
+
   <DataTable
     ref="TableRef"
     v-model:selection="selectedContacts"
@@ -269,9 +259,13 @@
         </div>
         <div>
           <template v-if="!implicitSelectAll">
-            {{ implicitlySelectedContactsLength }} /
+            {{
+              new Intl.NumberFormat().format(implicitlySelectedContactsLength)
+            }}
+            /
           </template>
-          {{ contactsLength }} {{ t('contacts') }}
+          {{ new Intl.NumberFormat().format(contactsLength) }}
+          {{ t('contacts') }}
         </div>
         <div class="grow" />
         <Button
@@ -379,21 +373,37 @@
       </template>
       <template #body="{ data }">
         <div class="flex justify-between items-center">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 grow">
             <img
-              v-if="Math.round(Math.random() * 0.75)"
+              v-if="data.image && visibleColumns.includes('image')"
               :src="contactInformation.image"
               style="width: 48px"
               class="cursor-pointer"
               @click="openContactInformation(data)"
             />
             <span>
-              <template v-if="data.name">
+              <template v-if="data.name && visibleColumns.includes('name')">
                 <div class="font-medium">{{ data.name }}</div>
                 <div>{{ data.email }}</div>
               </template>
               <div v-else class="font-medium">{{ data.email }}</div>
             </span>
+          </div>
+          <div
+            v-if="data.same_as && visibleColumns.includes('same_as')"
+            class="flex gap-2 pt-1 pr-6"
+          >
+            <template v-for="(same_as, index) in contactInformation.same_as">
+              <NuxtLink
+                v-if="Math.round(Math.random() * 0.75)"
+                :key="index"
+                :to="same_as"
+                target="_blank"
+                rel="noopener"
+              >
+                <i :class="`pi pi-${getSameAsIcon(same_as)}`" class="text-xl" />
+              </NuxtLink>
+            </template>
           </div>
           <div>
             <Button
@@ -403,7 +413,6 @@
               :aria-label="t('contact_information')"
               @click="openContactInformation(data)"
             />
-            <!-- pi-address-book -->
           </div>
         </div>
       </template>
@@ -640,8 +649,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('given_name_definition')">
-          {{ t('given_name') }}
+        <div v-tooltip.top="t('contactI18n.given_name_definition')">
+          {{ t('contactI18n.given_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -658,8 +667,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('family_name_definition')">
-          {{ t('family_name') }}
+        <div v-tooltip.top="t('contactI18n.family_name_definition')">
+          {{ t('contactI18n.family_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -676,8 +685,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('alternate_names_definition')">
-          {{ t('alternate_names') }}
+        <div v-tooltip.top="t('contactI18n.alternate_names_definition')">
+          {{ t('contactI18n.alternate_names') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -694,8 +703,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('address_definition')">
-          {{ t('address') }}
+        <div v-tooltip.top="t('contactI18n.address_definition')">
+          {{ t('contactI18n.address') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -712,8 +721,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('works_for_definition')">
-          {{ t('works_for') }}
+        <div v-tooltip.top="t('contactI18n.works_for_definition')">
+          {{ t('contactI18n.works_for') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -730,16 +739,14 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('job_title_definition')">
-          {{ t('job_title') }}
+        <div v-tooltip.top="t('contactI18n.job_title_definition')">
+          {{ t('contactI18n.job_title') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
         <InputText v-model="filterModel.value" />
       </template>
     </Column>
-    <!-- same_as?: string[];
-    image?: string; -->
   </DataTable>
 </template>
 
@@ -756,7 +763,7 @@ import type {
 } from 'primevue/datatable';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
-import type { Contact } from '@/types/contact';
+import type { Contact, ContactEdit } from '@/types/contact';
 import { saveCSVFile } from '~/utils/csv';
 
 const { t } = useI18n({
@@ -769,42 +776,42 @@ const { tableData } = defineProps<{
   tableData: Contact[];
 }>();
 
-const contactInformation = ref<Contact>({
-  id: '',
-  userid: '',
-  status: null,
-  name: 'Ioni Bowcher',
-  given_name: 'Ioni',
-  family_name: 'Bowcher',
-  email: 'ioni.bowcher@gmail.com',
-  image:
-    'https://www.primefaces.org/cdn/primevue/images/avatar/ionibowcher.png',
-  address: 'Tunis',
-  alternate_names: ['Ioni', 'Bowcher', 'Iona'],
-  same_as: [
-    'https://www.linkedin.com/in/Bowcher-15079z216/',
-    'https://www.facebook.com/Bowcher-15079z216/',
-    'https://twitter.com/Bowcher-15079z216/',
-    'https://instagram.com/Bowcher-15079z216/',
-  ],
-  job_title: 'Software Engineer',
-  works_for: 'Ankaboot.io',
-});
-function getSameAsIcon(url: string) {
-  return (
-    url.match(/\.?(twitter|linkedin|facebook|instagram)\./)?.[1] ??
-    'external-link'
-  );
-}
+// const contactInformation = ref<Contact>({
+//   id: '',
+//   userid: '',
+//   status: null,
+//   name: 'Ioni Bowcher',
+//   given_name: 'Ioni',
+//   family_name: 'Bowcher',
+//   email: 'ioni.bowcher@gmail.com',
+//   image:
+//     'https://www.primefaces.org/cdn/primevue/images/avatar/ionibowcher.png',
+//   address: 'Tunis',
+//   alternate_names: ['Ioni', 'Bowcher', 'Iona'],
+//   same_as: [
+//     'https://www.linkedin.com/in/Bowcher-15079z216/',
+//     'https://www.facebook.com/Bowcher-15079z216/',
+//     'https://twitter.com/Bowcher-15079z216/',
+//     'https://instagram.com/Bowcher-15079z216/',
+//     'https://www.Bowcher-15079z216.com/',
+//   ],
+//   job_title: 'Software Engineer',
+//   works_for: 'Ankaboot.io',
+// });
+const contactInformation = ref<Contact>();
+const contactInformationEdit = ref<ContactEdit>();
+
 const contactSidebarVisible = ref(false);
 const editingContact = ref(false);
+
 function openContactInformation(data: Contact) {
   console.log(data);
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== null) {
-      contactInformation.value[key] = value;
-    }
-  });
+  // Object.entries(data).forEach(([key, value]) => {
+  //   if (value !== null) {
+  //     contactInformation.value[key] = value;
+  //   }
+  // });
+  contactInformation.value = JSON.parse(JSON.stringify(data));
   contactSidebarVisible.value = true;
 }
 
@@ -817,6 +824,33 @@ function saveContactInformations(contact: Contact) {
     life: 3000,
   });
 }
+
+function editContactInformations() {
+  contactInformationEdit.value = JSON.parse(
+    JSON.stringify(contactInformation.value)
+  );
+
+  contactInformationEdit.value.alternate_names =
+    contactInformation.value.alternate_names?.join('\n');
+  contactInformationEdit.value.same_as =
+    contactInformation.value.same_as?.join('\n');
+  editingContact.value = true;
+  console.log({
+    contactInformation: contactInformation.value,
+    contactInformationEdit: contactInformationEdit.value,
+  });
+}
+function cancelContactInformations() {
+  editingContact.value = false;
+}
+
+function getSameAsIcon(url: string) {
+  return (
+    url.match(/\.?(twitter|linkedin|facebook|instagram)\./)?.[1] ??
+    'external-link'
+  );
+}
+
 const tags = [
   { value: 'professional', label: t('professional') },
   { value: 'newsletter', label: t('newsletter') },
@@ -1126,12 +1160,15 @@ async function exportTable(partialExport = false) {
 
 const isFullscreen = ref(false);
 
-const visibleColumns = ref(['contacts', 'occurrence']);
+const visibleColumns = ref(['contacts']);
 const screenStore = useScreenStore();
 onMounted(() => {
   screenStore.init();
   visibleColumns.value = [
     'contacts',
+    'name',
+    'same_as',
+    'image',
     ...(screenStore.width > 550 ? ['occurrence'] : []),
     ...(screenStore.width > 700 ? ['recency'] : []),
     ...(screenStore.width > 800 ? ['tags'] : []),
@@ -1139,8 +1176,8 @@ onMounted(() => {
   ];
 });
 const visibleColumnsOptions = [
-  { label: t('source'), value: 'source' },
   { label: t('contacts'), value: 'contacts' },
+  { label: t('source'), value: 'source' },
   { label: t('occurrence'), value: 'occurrence' },
   { label: t('recency'), value: 'recency' },
   { label: t('replies'), value: 'replied_conversations' },
@@ -1149,12 +1186,15 @@ const visibleColumnsOptions = [
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
-  { label: t('given_name'), value: 'given_name' },
-  { label: t('family_name'), value: 'family_name' },
-  { label: t('alternate_names'), value: 'alternate_names' },
-  { label: t('address'), value: 'address' },
-  { label: t('works_for'), value: 'works_for' },
-  { label: t('job_title'), value: 'job_title' },
+  { label: t('contactI18n.given_name'), value: 'given_name' },
+  { label: t('contactI18n.family_name'), value: 'family_name' },
+  { label: t('contactI18n.alternate_names'), value: 'alternate_names' },
+  { label: t('contactI18n.address'), value: 'address' },
+  { label: t('contactI18n.works_for'), value: 'works_for' },
+  { label: t('contactI18n.job_title'), value: 'job_title' },
+  { label: t('contactI18n.name'), value: 'name' },
+  { label: t('contactI18n.same_as'), value: 'same_as' },
+  { label: t('contactI18n.image'), value: 'image' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -1281,7 +1321,24 @@ table.p-datatable-table {
     "group": "Group",
     "chat": "Chat",
     "any": "Any",
-    "contact_information": "Contact Information"
+    "contact_information": "Contact Information",
+    "contactI18n": {
+      "name": "Full name",
+      "given_name": "Given Name",
+      "family_name": "Family Name",
+      "alternate_names": "Alternate Names",
+      "address": "Location",
+      "works_for": "Works For",
+      "job_title": "Job Title",
+      "same_as": "Same As",
+      "image": "Avatar URL",
+      "given_name_definition": "The given name of this contact",
+      "family_name_definition": "The family name of this contact",
+      "alternate_names_definition": "Other names this contact goes by",
+      "address_definition": "The location of this contact",
+      "works_for_definition": "Organization this contact works for",
+      "job_title_definition": "The job title of this contact"
+    }
   },
   "fr": {
     "no_contacts_found": "Aucun contact trouvé",
