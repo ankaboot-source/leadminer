@@ -20,7 +20,7 @@ export default class PgContacts implements Contacts {
     `;
 
   private static readonly SELECT_CONTACTS_SQL =
-    'SELECT * FROM get_contacts_table($1) group by email';
+    'SELECT * FROM get_contacts_table($1)';
 
   private static readonly SELECT_EXPORTED_CONTACTS = `
     SELECT contacts.* 
@@ -42,7 +42,7 @@ export default class PgContacts implements Contacts {
     `;
 
   private static readonly SELECT_CONTACTS_BY_EMAILS =
-    'SELECT * FROM get_contacts_table_by_emails($1,$2) group by email';
+    'SELECT * FROM get_contacts_table_by_emails($1,$2)';
 
   private static readonly SELECT_CONTACTS_BY_EMAILS_UNVERIFIED =
     'SELECT * FROM get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
