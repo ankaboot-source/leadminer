@@ -6,196 +6,7 @@
     @secondary-action="exportTable(true)"
   />
 
-  <Sidebar
-    v-model:visible="contactSidebarVisible"
-    position="right"
-    pt:root:class="w-1/3"
-  >
-    <template #header><span class="grow" /> </template>
-    <div class="p-sidebar-header px-4 pt-0">
-      <div class="flex items-center gap-2 grow w-full">
-        <img
-          v-if="contactInformation.image && !editingContact"
-          :src="contactInformation.image"
-          class="size-20"
-        />
-        <span class="w-full">
-          <div
-            v-if="contactInformation.name && !editingContact"
-            class="font-medium text-2xl"
-          >
-            {{ contactInformation.name }}
-          </div>
-          <InputText
-            v-if="editingContact"
-            v-model="contactInformationEdit.name"
-            class="w-full grow"
-            size="large"
-          />
-          <div
-            :class="{
-              'font-medium': editingContact,
-              'font-medium text-2xl':
-                !contactInformation.name && !editingContact,
-            }"
-          >
-            {{ contactInformation.email }}
-          </div>
-          <div
-            v-if="contactInformation.same_as?.length && !editingContact"
-            class="flex gap-2 grow pt-1"
-          >
-            <NuxtLink
-              v-for="(same_as, index) in contactInformation.same_as"
-              :key="index"
-              target="_blank"
-              rel="noopener"
-            >
-              <i :class="`pi pi-${getSameAsIcon(same_as)}`" class="text-xl" />
-            </NuxtLink>
-          </div>
-        </span>
-      </div>
-      <span class="grow" />
-      <Button
-        v-if="!editingContact"
-        rounded
-        text
-        icon="pi pi-copy"
-        size="large"
-        class="text-2xl"
-        :aria-label="t('copy')"
-        @click="copyContact(contactInformation.email, contactInformation.name)"
-      />
-    </div>
-    <table class="p-datatable p-datatable-striped table">
-      <tbody class="p-datatable-tbody">
-        <tr class="p-row-even">
-          <td class="font-medium w-3/12">{{ t('contactI18n.given_name') }}</td>
-          <td>
-            <div v-if="!editingContact">
-              {{ contactInformation.given_name }}
-            </div>
-            <InputText
-              v-else
-              v-model="contactInformationEdit.given_name"
-              class="w-full"
-            />
-          </td>
-        </tr>
-        <tr class="p-row-odd">
-          <td class="font-medium">{{ t('contactI18n.family_name') }}</td>
-          <td class="w-full">
-            <div v-if="!editingContact">
-              {{ contactInformation.family_name }}
-            </div>
-
-            <InputText
-              v-else
-              v-model="contactInformationEdit.family_name"
-              class="w-full"
-            />
-          </td>
-        </tr>
-        <tr class="p-row-even">
-          <td class="font-medium">{{ t('contactI18n.alternate_names') }}</td>
-          <td>
-            <div v-if="!editingContact">
-              {{ contactInformation.alternate_names?.join(', ') }}
-            </div>
-            <Textarea
-              v-else
-              v-model="contactInformationEdit.alternate_names as string"
-              class="w-full"
-            />
-          </td>
-        </tr>
-
-        <tr class="p-row-odd">
-          <td class="font-medium">{{ t('contactI18n.address') }}</td>
-          <td>
-            <div v-if="!editingContact">{{ contactInformation.address }}</div>
-            <InputText
-              v-else
-              v-model="contactInformationEdit.address"
-              class="w-full"
-            />
-          </td>
-        </tr>
-
-        <tr class="p-row-even">
-          <td class="font-medium">{{ t('contactI18n.works_for') }}</td>
-          <td>
-            <div v-if="!editingContact">{{ contactInformation.works_for }}</div>
-            <InputText
-              v-else
-              v-model="contactInformationEdit.works_for"
-              class="w-full"
-            />
-          </td>
-        </tr>
-        <tr class="p-row-odd">
-          <td class="font-medium">{{ t('contactI18n.job_title') }}</td>
-          <td>
-            <div v-if="!editingContact">{{ contactInformation.job_title }}</div>
-            <InputText
-              v-else
-              v-model="contactInformationEdit.job_title"
-              class="w-full"
-            />
-          </td>
-        </tr>
-
-        <template v-if="editingContact">
-          <tr class="p-row-even">
-            <td class="font-medium">{{ t('contactI18n.same_as') }}</td>
-            <td>
-              <Textarea
-                v-model="contactInformationEdit.same_as as string"
-                class="w-full"
-              />
-            </td>
-          </tr>
-
-          <tr class="p-row-odd">
-            <td class="font-medium">{{ t('contactI18n.image') }}</td>
-            <td>
-              <InputText
-                v-model="contactInformationEdit.image"
-                class="w-full"
-              />
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
-    <div className="grid grid-cols-2 gap-2 items-center pt-4">
-      <template v-if="!editingContact">
-        <Button label="Enrich" severity="contrast" icon-pos="right">
-          <template #icon
-            ><span class="p-button-icon p-button-icon-right">💎</span>
-          </template>
-        </Button>
-        <Button
-          icon-pos="right"
-          icon="pi pi-pen-to-square"
-          :label="t('Edit')"
-          @click="editContactInformations()"
-        />
-      </template>
-      <template v-else>
-        <Button
-          label="Cancel"
-          severity="secondary"
-          @click="cancelContactInformations()"
-        />
-        <Button
-          label="Save"
-          @click="saveContactInformations(contactInformation)"
-        />
-      </template>
-    </div>
-  </Sidebar>
+  <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
 
   <DataTable
     ref="TableRef"
@@ -376,7 +187,7 @@
           <div class="flex items-center gap-2 grow">
             <img
               v-if="data.image && visibleColumns.includes('image')"
-              :src="contactInformation.image"
+              :src="data.image"
               style="width: 48px"
               class="cursor-pointer"
               @click="openContactInformation(data)"
@@ -393,17 +204,20 @@
             v-if="data.same_as && visibleColumns.includes('same_as')"
             class="flex gap-2 pt-1 pr-6"
           >
-            <template v-for="(same_as, index) in contactInformation.same_as">
-              <NuxtLink
-                v-if="Math.round(Math.random() * 0.75)"
-                :key="index"
-                :to="same_as"
-                target="_blank"
-                rel="noopener"
-              >
-                <i :class="`pi pi-${getSameAsIcon(same_as)}`" class="text-xl" />
-              </NuxtLink>
-            </template>
+            <NuxtLink
+              v-for="(same_as, index) in data.same_as"
+              :key="index"
+              :to="same_as"
+              target="_blank"
+              rel="noopener"
+            >
+              <i
+                :class="`pi pi-${$contactInformationSidebar.getSameAsIcon(
+                  same_as
+                )}`"
+                class="text-xl"
+              />
+            </NuxtLink>
           </div>
           <div>
             <Button
@@ -763,7 +577,8 @@ import type {
 } from 'primevue/datatable';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
-import type { Contact, ContactEdit } from '@/types/contact';
+import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
+import type { Contact } from '@/types/contact';
 import { saveCSVFile } from '~/utils/csv';
 
 const { t } = useI18n({
@@ -776,79 +591,10 @@ const { tableData } = defineProps<{
   tableData: Contact[];
 }>();
 
-// const contactInformation = ref<Contact>({
-//   id: '',
-//   userid: '',
-//   status: null,
-//   name: 'Ioni Bowcher',
-//   given_name: 'Ioni',
-//   family_name: 'Bowcher',
-//   email: 'ioni.bowcher@gmail.com',
-//   image:
-//     'https://www.primefaces.org/cdn/primevue/images/avatar/ionibowcher.png',
-//   address: 'Tunis',
-//   alternate_names: ['Ioni', 'Bowcher', 'Iona'],
-//   same_as: [
-//     'https://www.linkedin.com/in/Bowcher-15079z216/',
-//     'https://www.facebook.com/Bowcher-15079z216/',
-//     'https://twitter.com/Bowcher-15079z216/',
-//     'https://instagram.com/Bowcher-15079z216/',
-//     'https://www.Bowcher-15079z216.com/',
-//   ],
-//   job_title: 'Software Engineer',
-//   works_for: 'Ankaboot.io',
-// });
-const contactInformation = ref<Contact>();
-const contactInformationEdit = ref<ContactEdit>();
-
-const contactSidebarVisible = ref(false);
-const editingContact = ref(false);
+const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 function openContactInformation(data: Contact) {
-  console.log(data);
-  // Object.entries(data).forEach(([key, value]) => {
-  //   if (value !== null) {
-  //     contactInformation.value[key] = value;
-  //   }
-  // });
-  contactInformation.value = JSON.parse(JSON.stringify(data));
-  contactSidebarVisible.value = true;
-}
-
-function saveContactInformations(contact: Contact) {
-  console.log(contact);
-  editingContact.value = false;
-  $toast.add({
-    severity: 'success',
-    summary: "Contact's informations saved",
-    life: 3000,
-  });
-}
-
-function editContactInformations() {
-  contactInformationEdit.value = JSON.parse(
-    JSON.stringify(contactInformation.value)
-  );
-
-  contactInformationEdit.value.alternate_names =
-    contactInformation.value.alternate_names?.join('\n');
-  contactInformationEdit.value.same_as =
-    contactInformation.value.same_as?.join('\n');
-  editingContact.value = true;
-  console.log({
-    contactInformation: contactInformation.value,
-    contactInformationEdit: contactInformationEdit.value,
-  });
-}
-function cancelContactInformations() {
-  editingContact.value = false;
-}
-
-function getSameAsIcon(url: string) {
-  return (
-    url.match(/\.?(twitter|linkedin|facebook|instagram)\./)?.[1] ??
-    'external-link'
-  );
+  $contactInformationSidebar.show(data);
 }
 
 const tags = [
@@ -1066,18 +812,6 @@ const implicitlySelectedContactsLength = computed(
 const implicitSelectAll = computed(
   () => implicitlySelectedContactsLength.value === contactsLength.value
 );
-
-function copyContact(email: string, name?: string) {
-  $toast.add({
-    severity: 'success',
-    summary: t('contact_copied'),
-    detail: t('contact_email_copied'),
-    life: 3000,
-  });
-  navigator.clipboard.writeText(
-    name && name !== '' ? `${name} <${email}>` : `<${email}>`
-  );
-}
 
 /* *** Export CSV *** */
 
