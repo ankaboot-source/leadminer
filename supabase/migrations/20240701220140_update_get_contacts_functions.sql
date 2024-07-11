@@ -1,3 +1,4 @@
+DROP FUNCTION get_contacts_table;
 CREATE OR REPLACE FUNCTION get_contacts_table(userid uuid) RETURNS TABLE (
   source TEXT,
   email TEXT,
@@ -60,6 +61,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP FUNCTION get_contacts_table_by_emails;
 CREATE OR REPLACE FUNCTION get_contacts_table_by_emails(userid uuid, emails TEXT []) RETURNS TABLE (
   source TEXT,
   email TEXT,
