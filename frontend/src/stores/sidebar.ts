@@ -46,9 +46,15 @@ export const useMiningContactInformationSidebar = defineStore(
     }
 
     function getSameAsIcon(url: string) {
-      return (
-        url.match(/\.?(twitter|linkedin|facebook|instagram)\./)?.[1] ?? 'globe'
-      );
+      const match = url.match(
+        /\.?(twitter|linkedin|facebook|instagram|x)\./
+      )?.[1];
+
+      if (match === 'x') {
+        return 'twitter';
+      }
+
+      return match ?? 'globe';
     }
 
     return {
