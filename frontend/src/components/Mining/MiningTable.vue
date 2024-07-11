@@ -1126,7 +1126,24 @@ table.p-datatable-table {
     "group": "Groupe",
     "chat": "Chat",
     "any": "N'importe lequel",
-    "contact_information": "Information de contact"
+    "contact_information": "Information de contact",
+    "contactI18n": {
+      "name": "Nom complet",
+      "given_name": "Prénom",
+      "family_name": "Nom de famille",
+      "alternate_names": "Autres noms",
+      "address": "Adresse",
+      "works_for": "Travaille pour",
+      "job_title": "Titre du poste",
+      "same_as": "Même que",
+      "image": "URL de l'avatar",
+      "given_name_definition": "Le prénom de ce contact",
+      "family_name_definition": "Le nom de famille de ce contact",
+      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
+      "address_definition": "L'emplacement de ce contact",
+      "works_for_definition": "Organisation pour laquelle ce contact travaille",
+      "job_title_definition": "Le titre du poste de ce contact"
+    }
   }
 }
 </i18n>

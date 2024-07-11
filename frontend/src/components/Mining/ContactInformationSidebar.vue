@@ -1,5 +1,9 @@
 <template>
-  <Sidebar v-model:visible="show" position="right" pt:root:class="w-1/3">
+  <Sidebar
+    v-model:visible="show"
+    position="right"
+    pt:root:class="md:w-1/2 xl:w-1/3 w-full"
+  >
     <template #header><span class="grow" /> </template>
     <div class="p-sidebar-header px-4 pt-0">
       <div class="flex items-center gap-2 grow w-full">
@@ -170,7 +174,10 @@
 </template>
 
 <script setup lang="ts">
+import type { User } from '@supabase/supabase-js';
+
 import type { Contact, ContactEdit } from '@/types/contact';
+import { updateContact } from '~/utils/contacts';
 
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
@@ -185,9 +192,13 @@ const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
 
-function saveContactInformations() {
-  console.log(contactEdit);
+const $user = useSupabaseUser();
+
+async function saveContactInformations() {
   editingContact.value = false;
+  const user = $user.value as User;
+
+  await updateContact(user.id, contactEdit.value);
   $toast.add({
     severity: 'success',
     summary: "Contact's informations saved",
@@ -197,15 +208,12 @@ function saveContactInformations() {
 
 function editContactInformations() {
   contactEdit.value = JSON.parse(JSON.stringify(contact.value));
-
   contactEdit.value.alternate_names =
     contact.value?.alternate_names?.join('\n');
   contactEdit.value.same_as = contact.value?.same_as?.join('\n');
   editingContact.value = true;
-  console.log({
-    contact: contact.value,
-  });
 }
+
 function cancelContactInformations() {
   editingContact.value = false;
 }
@@ -222,3 +230,46 @@ function copyContact(email: string, name?: string) {
   );
 }
 </script>
+
+<i18n lang="json">
+{
+  "en": {
+    "contactI18n": {
+      "name": "Full name",
+      "given_name": "Given Name",
+      "family_name": "Family Name",
+      "alternate_names": "Alternate Names",
+      "address": "Location",
+      "works_for": "Works For",
+      "job_title": "Job Title",
+      "same_as": "Same As",
+      "image": "Avatar URL",
+      "given_name_definition": "The given name of this contact",
+      "family_name_definition": "The family name of this contact",
+      "alternate_names_definition": "Other names this contact goes by",
+      "address_definition": "The location of this contact",
+      "works_for_definition": "Organization this contact works for",
+      "job_title_definition": "The job title of this contact"
+    }
+  },
+  "fr": {
+    "contactI18n": {
+      "name": "Nom complet",
+      "given_name": "Prénom",
+      "family_name": "Nom de famille",
+      "alternate_names": "Autres noms",
+      "address": "Adresse",
+      "works_for": "Travaille pour",
+      "job_title": "Titre du poste",
+      "same_as": "Même que",
+      "image": "URL de l'avatar",
+      "given_name_definition": "Le prénom de ce contact",
+      "family_name_definition": "Le nom de famille de ce contact",
+      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
+      "address_definition": "L'emplacement de ce contact",
+      "works_for_definition": "Organisation pour laquelle ce contact travaille",
+      "job_title_definition": "Le titre du poste de ce contact"
+    }
+  }
+}
+</i18n>
