@@ -189,7 +189,7 @@
               v-if="data.image && visibleColumns.includes('image')"
               :src="data.image"
               style="width: 48px"
-              class="cursor-pointer"
+              class="cursor-pointer rounded-full"
               @click="openContactInformation(data)"
             />
             <span>

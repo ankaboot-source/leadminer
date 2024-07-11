@@ -10,7 +10,7 @@
         <img
           v-if="contact.image && !editingContact"
           :src="contact.image"
-          class="size-20"
+          class="size-20 rounded-full"
         />
         <span class="w-full">
           <div
@@ -22,7 +22,7 @@
           <InputText
             v-if="editingContact"
             v-model="contactEdit.name"
-            class="w-full grow"
+            class="w-full grow mb-2"
             size="large"
           />
           <div
@@ -82,7 +82,6 @@
             <div v-if="!editingContact">
               {{ contact.family_name }}
             </div>
-
             <InputText
               v-else
               v-model="contactEdit.family_name"
@@ -98,7 +97,8 @@
             </div>
             <Textarea
               v-else
-              v-model="contactEdit.alternate_names as string"
+              v-model="(contactEdit.alternate_names as string)"
+              rows="3"
               class="w-full"
             />
           </td>
@@ -132,8 +132,9 @@
             <td class="font-medium">{{ t('contactI18n.same_as') }}</td>
             <td>
               <Textarea
-                v-model="contactEdit.same_as as string"
+                v-model="(contactEdit.same_as as string)"
                 class="w-full"
+                rows="3"
               />
             </td>
           </tr>
