@@ -30,7 +30,7 @@
   "license": "GNU AGPL v3",
   "dependencies": {
     "@ankaboot.io/imap-autoconfig": "^0.0.2",
-    "@sentry/node": "^7.116.0",
+    "@sentry/node": "^7.118.0",
     "@sentry/tracing": "^7.116.0",
     "@supabase/supabase-js": "^2.43.4",
     "axios": "^1.6.4",
