@@ -11,13 +11,13 @@ export type TaskProgressType =
 export enum TaskType {
   Fetch = 'fetch',
   Extract = 'extract',
-  Enrich = 'enrich'
+  Clean = 'clean'
 }
 
 export enum TaskCategory {
   Mining = 'mining',
-  Enrich = 'enrich',
-  Activate = 'activate'
+  Enriching = 'enriching',
+  Cleaning = 'cleaning'
 }
 
 export enum TaskStatus {
@@ -85,9 +85,9 @@ export interface TaskExtract extends Task {
   };
 }
 
-export interface TaskVerify extends Task {
-  category: TaskCategory.Enrich;
-  type: TaskType.Enrich;
+export interface TaskClean extends Task {
+  category: TaskCategory.Cleaning;
+  type: TaskType.Clean;
   details: {
     miningId: string;
     stream: StreamInfo;
@@ -104,7 +104,7 @@ export interface MiningTask {
   process: {
     fetch: TaskFetch;
     extract: TaskExtract;
-    enrich: TaskVerify;
+    clean: TaskClean;
   };
   stream: StreamInfo;
   progress: TaskProgress;

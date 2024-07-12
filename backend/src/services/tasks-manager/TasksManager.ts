@@ -24,7 +24,7 @@ import {
   TaskProgressType,
   TaskStatus,
   TaskType,
-  TaskVerify
+  TaskClean
 } from './types';
 import { redactSensitiveData } from './utils';
 
@@ -169,10 +169,10 @@ export default class TasksManager {
               }
             }
           },
-          enrich: {
+          clean: {
             userId,
-            category: TaskCategory.Enrich,
-            type: TaskType.Enrich,
+            category: TaskCategory.Cleaning,
+            type: TaskType.Clean,
             status: TaskStatus.Running,
             details: {
               miningId,
@@ -195,15 +195,15 @@ export default class TasksManager {
       };
 
       const { progress, process } = miningTask;
-      const { fetch, extract, enrich } = process as {
+      const { fetch, extract, clean } = process as {
         fetch: TaskFetch;
         extract: TaskExtract;
-        enrich: TaskVerify;
+        clean: TaskClean;
       };
 
       progress.totalMessages = fetch.details.progress.totalMessages;
 
-      (await this.tasksResolver.create([fetch, extract, enrich]))?.forEach(
+      (await this.tasksResolver.create([fetch, extract, clean]))?.forEach(
         (task) => {
           const { id: TaskId, started_at: startedAt } = task;
           miningTask.process[`${task.type}`].id = TaskId;
@@ -350,15 +350,15 @@ export default class TasksManager {
     }
 
     const { progressHandlerSSE, process } = task;
-    const { fetch, extract, enrich } = process as {
+    const { fetch, extract, clean } = process as {
       fetch: TaskFetch;
       extract: TaskExtract;
-      enrich: TaskVerify;
+      clean: TaskClean;
     };
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
-      ...enrich.details.progress
+      ...clean.details.progress
     };
 
     const eventName = `${progressType}-${miningId}`;
@@ -426,7 +426,7 @@ export default class TasksManager {
 
       case 'createdContacts':
       case 'verifiedContacts':
-        update('enrich', progressType);
+        update('clean', progressType);
         break;
 
       default:
@@ -448,15 +448,15 @@ export default class TasksManager {
       return undefined;
     }
 
-    const { fetch, extract, enrich } = task.process as {
+    const { fetch, extract, clean } = task.process as {
       fetch: TaskFetch;
       extract: TaskExtract;
-      enrich: TaskVerify;
+      clean: TaskClean;
     };
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
-      ...enrich.details.progress
+      ...clean.details.progress
     };
 
     logger.debug('Task progress update', {
@@ -481,7 +481,7 @@ export default class TasksManager {
       progress.verifiedContacts >= progress.createdContacts;
 
     if (status) {
-      await this.stopTask([enrich]);
+      await this.stopTask([clean]);
       await this.deleteTask(miningId);
     }
 

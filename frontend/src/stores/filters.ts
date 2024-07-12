@@ -16,11 +16,13 @@ const defaultFilters = {
     value: null,
     matchMode: FilterMatchMode.CONTAINS,
   },
-  source: {
+  email: {
     value: null,
     matchMode: FilterMatchMode.CONTAINS,
   },
-  email: {
+
+  // Source
+  source: {
     value: null,
     matchMode: FilterMatchMode.CONTAINS,
   },
@@ -65,6 +67,31 @@ const defaultFilters = {
   seniority: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+  },
+
+  given_name: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  family_name: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  alternate_names: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  address: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  works_for: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
+  },
+  job_title: {
+    value: null,
+    matchMode: FilterMatchMode.CONTAINS,
   },
 };
 

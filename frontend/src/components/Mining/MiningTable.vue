@@ -5,6 +5,7 @@
     action-type="download"
     @secondary-action="exportTable(true)"
   />
+  <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
   <DataTable
     ref="TableRef"
     v-model:selection="selectedContacts"
@@ -67,9 +68,13 @@
         </div>
         <div>
           <template v-if="!implicitSelectAll">
-            {{ implicitlySelectedContactsLength }} /
+            {{
+              new Intl.NumberFormat().format(implicitlySelectedContactsLength)
+            }}
+            /
           </template>
-          {{ contactsLength }} {{ t('contacts') }}
+          {{ new Intl.NumberFormat().format(contactsLength) }}
+          {{ t('contacts') }}
         </div>
         <div class="grow" />
         <Button
@@ -177,20 +182,48 @@
       </template>
       <template #body="{ data }">
         <div class="flex justify-between items-center">
-          <div>
-            <template v-if="data.name">
-              <div class="font-medium">{{ data.name }}</div>
-              <div>{{ data.email }}</div>
-            </template>
-            <div v-else class="font-medium">{{ data.email }}</div>
+          <div class="flex items-center gap-2 grow">
+            <img
+              v-if="data.image && visibleColumns.includes('image')"
+              :src="data.image"
+              style="width: 48px"
+              class="cursor-pointer rounded-full"
+              @click="openContactInformation(data)"
+            />
+            <span>
+              <template v-if="data.name && visibleColumns.includes('name')">
+                <div class="font-medium">{{ data.name }}</div>
+                <div>{{ data.email }}</div>
+              </template>
+              <div v-else class="font-medium">{{ data.email }}</div>
+            </span>
+          </div>
+          <div
+            v-if="data.same_as && visibleColumns.includes('same_as')"
+            class="flex gap-2 pt-1 pr-6"
+          >
+            <NuxtLink
+              v-for="(same_as, index) in data.same_as"
+              :key="index"
+              :to="same_as"
+              target="_blank"
+              rel="noopener"
+            >
+              <i
+                :class="`pi pi-${$contactInformationSidebar.getSameAsIcon(
+                  same_as
+                )}`"
+                class="text-xl"
+              />
+            </NuxtLink>
           </div>
           <div>
             <Button
               rounded
               text
-              icon="pi pi-copy"
-              :aria-label="t('copy')"
-              @click="copyContact(data.name, data.email)"
+              icon="pi pi-id-card"
+              :aria-label="t('contact_information')"
+              @click="openContactInformation(data)"
             />
           </div>
         </div>
@@ -418,15 +451,119 @@
         />
       </template>
     </Column>
+
+    <!-- Given name -->
+    <Column
+      v-if="visibleColumns.includes('given_name')"
+      field="given_name"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('contactI18n.given_name_definition')">
+          {{ t('contactI18n.given_name') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Family name -->
+    <Column
+      v-if="visibleColumns.includes('family_name')"
+      field="family_name"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('contactI18n.family_name_definition')">
+          {{ t('contactI18n.family_name') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Alternate names -->
+    <Column
+      v-if="visibleColumns.includes('alternate_names')"
+      field="alternate_names"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('contactI18n.alternate_names_definition')">
+          {{ t('contactI18n.alternate_names') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Address -->
+    <Column
+      v-if="visibleColumns.includes('address')"
+      field="address"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('contactI18n.address_definition')">
+          {{ t('contactI18n.address') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Works for -->
+    <Column
+      v-if="visibleColumns.includes('works_for')"
+      field="works_for"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('contactI18n.works_for_definition')">
+          {{ t('contactI18n.works_for') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
+
+    <!-- Job title	 -->
+    <Column
+      v-if="visibleColumns.includes('job_title')"
+      field="job_title"
+      sortable
+      :show-filter-operator="false"
+      :show-add-button="false"
+    >
+      <template #header>
+        <div v-tooltip.top="t('contactI18n.job_title_definition')">
+          {{ t('contactI18n.job_title') }}
+        </div>
+      </template>
+      <template #filter="{ filterModel }">
+        <InputText v-model="filterModel.value" />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
 <script setup lang="ts">
-import {
-  type RealtimeChannel,
-  type RealtimePostgresChangesPayload,
-  type User,
-} from '@supabase/supabase-js';
+import { type RealtimeChannel, type User } from '@supabase/supabase-js';
 import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
@@ -434,6 +571,7 @@ import type {
 } from 'primevue/datatable';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
 import type { Contact } from '@/types/contact';
 import { saveCSVFile } from '~/utils/csv';
 
@@ -446,6 +584,12 @@ const $toast = useToast();
 const { tableData } = defineProps<{
   tableData: Contact[];
 }>();
+
+const $contactInformationSidebar = useMiningContactInformationSidebar();
+
+function openContactInformation(data: Contact) {
+  $contactInformationSidebar.show(data);
+}
 
 const tags = [
   { value: 'professional', label: t('professional') },
@@ -500,14 +644,17 @@ function getTagLabel(value: string) {
   return tags.find((tag) => tag.value === value)?.label ?? 'unknown';
 }
 
+const $contactsStore = useContactsStore();
 const leadminerStore = useLeadminerStore();
-const rows = ref<Contact[]>(tableData);
+
+$contactsStore.setContacts(tableData);
+
 const isLoading = ref(false);
 const loadingLabel = ref('');
-const contacts = computed(() => rows.value);
+const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
 
-let contactsCache = new Map<string, Contact>();
+const contactsCache = new Map<string, Contact>();
 
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
@@ -537,31 +684,13 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 
-function setupSubscription() {
-  // We are 100% sure that the user is authenticated in this component
-  const user = $user.value;
-  subscription = $supabaseClient.channel('*').on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'persons',
-      filter: `user_id=eq.${user?.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const hasNewContacts = contactCacheLength > contactsLength.value;
 
   if (hasNewContacts) {
     isLoading.value = true;
-    rows.value = Array.from(contactsCache.values());
+    $contactsStore.refreshContacts();
     isLoading.value = false;
   }
 }
@@ -582,7 +711,7 @@ async function refineContacts() {
 async function syncTable() {
   loadingLabel.value = t('syncing');
   const user = $user.value as User;
-  rows.value = await getContacts(user.id);
+  $contactsStore.setContacts(await getContacts(user.id));
   isLoading.value = false;
 }
 
@@ -590,11 +719,7 @@ watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     filtersStore.clearFilter();
     // If mining is active, update refined persons every 3 seconds
-    setupSubscription();
-    subscription.subscribe();
-    if (contactsLength.value > 0) {
-      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
-    }
+    $contactsStore.subscribeRealtime($user.value!);
     refreshInterval = window.setInterval(() => {
       refreshTable();
     }, 5000);
@@ -663,25 +788,13 @@ const implicitSelectAll = computed(
   () => implicitlySelectedContactsLength.value === contactsLength.value
 );
 
-function copyContact(name: string, email: string) {
-  $toast.add({
-    severity: 'success',
-    summary: t('contact_copied'),
-    detail: t('contact_email_copied'),
-    life: 3000,
-  });
-  navigator.clipboard.writeText(
-    name && name !== '' ? `${name} <${email}>` : `<${email}>`
-  );
-}
-
 /* *** Export CSV *** */
 
 const { $api } = useNuxtApp();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 const isExportDisabled = computed(
   () =>
-    rows.value.length === 0 ||
+    contacts.value.length === 0 ||
     activeMiningTask.value ||
     leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value
@@ -756,12 +869,15 @@ async function exportTable(partialExport = false) {
 
 const isFullscreen = ref(false);
 
-const visibleColumns = ref(['contacts', 'occurrence']);
+const visibleColumns = ref(['contacts']);
 const screenStore = useScreenStore();
 onMounted(() => {
   screenStore.init();
   visibleColumns.value = [
     'contacts',
+    'name',
+    'same_as',
+    'image',
     ...(screenStore.width > 550 ? ['occurrence'] : []),
     ...(screenStore.width > 700 ? ['recency'] : []),
     ...(screenStore.width > 800 ? ['tags'] : []),
@@ -769,8 +885,8 @@ onMounted(() => {
   ];
 });
 const visibleColumnsOptions = [
-  { label: t('source'), value: 'source' },
   { label: t('contacts'), value: 'contacts' },
+  { label: t('source'), value: 'source' },
   { label: t('occurrence'), value: 'occurrence' },
   { label: t('recency'), value: 'recency' },
   { label: t('replies'), value: 'replied_conversations' },
@@ -779,7 +895,17 @@ const visibleColumnsOptions = [
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
+  { label: t('contactI18n.given_name'), value: 'given_name' },
+  { label: t('contactI18n.family_name'), value: 'family_name' },
+  { label: t('contactI18n.alternate_names'), value: 'alternate_names' },
+  { label: t('contactI18n.address'), value: 'address' },
+  { label: t('contactI18n.works_for'), value: 'works_for' },
+  { label: t('contactI18n.job_title'), value: 'job_title' },
+  { label: t('contactI18n.name'), value: 'name' },
+  { label: t('contactI18n.same_as'), value: 'same_as' },
+  { label: t('contactI18n.image'), value: 'image' },
 ];
+
 function disabledColumns(column: { label: string; value: string }) {
   return column.value === 'contacts';
 }
@@ -903,7 +1029,25 @@ table.p-datatable-table {
     "personal": "Personal",
     "group": "Group",
     "chat": "Chat",
-    "any": "Any"
+    "any": "Any",
+    "contact_information": "Contact Information",
+    "contactI18n": {
+      "name": "Full name",
+      "given_name": "Given Name",
+      "family_name": "Family Name",
+      "alternate_names": "Alternate Names",
+      "address": "Location",
+      "works_for": "Works For",
+      "job_title": "Job Title",
+      "same_as": "Same As",
+      "image": "Avatar URL",
+      "given_name_definition": "The given name of this contact",
+      "family_name_definition": "The family name of this contact",
+      "alternate_names_definition": "Other names this contact goes by",
+      "address_definition": "The location of this contact",
+      "works_for_definition": "Organization this contact works for",
+      "job_title_definition": "The job title of this contact"
+    }
   },
   "fr": {
     "no_contacts_found": "Aucun contact trouvé",
@@ -956,7 +1100,25 @@ table.p-datatable-table {
     "personal": "Personnel",
     "group": "Groupe",
     "chat": "Chat",
-    "any": "N'importe lequel"
+    "any": "N'importe lequel",
+    "contact_information": "Information de contact",
+    "contactI18n": {
+      "name": "Nom complet",
+      "given_name": "Prénom",
+      "family_name": "Nom de famille",
+      "alternate_names": "Autres noms",
+      "address": "Adresse",
+      "works_for": "Travaille pour",
+      "job_title": "Titre du poste",
+      "same_as": "Même que",
+      "image": "URL de l'avatar",
+      "given_name_definition": "Le prénom de ce contact",
+      "family_name_definition": "Le nom de famille de ce contact",
+      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
+      "address_definition": "L'emplacement de ce contact",
+      "works_for_definition": "Organisation pour laquelle ce contact travaille",
+      "job_title_definition": "Le titre du poste de ce contact"
+    }
   }
 }
 </i18n>
