@@ -65,10 +65,15 @@
         @click="copyContact(contact.email, contact.name)"
       />
     </div>
-    <table class="p-datatable p-datatable-striped table">
+    <table
+      class="p-datatable p-datatable-striped w-full"
+      style="display: table"
+    >
       <tbody class="p-datatable-tbody">
         <tr class="p-row-even">
-          <td class="font-medium w-3/12">{{ t('contactI18n.given_name') }}</td>
+          <td class="font-medium w-4/12">
+            {{ t('contactI18n.given_name') }}
+          </td>
           <td>
             <div v-if="!editingContact">
               {{ contact.given_name }}
@@ -90,7 +95,9 @@
           </td>
         </tr>
         <tr class="p-row-even">
-          <td class="font-medium">{{ t('contactI18n.alternate_names') }}</td>
+          <td class="font-medium">
+            {{ t('contactI18n.alternate_names') }}
+          </td>
           <td>
             <div v-if="!editingContact">
               {{ contact.alternate_names?.join(', ') }}
@@ -148,6 +155,7 @@
         </template>
       </tbody>
     </table>
+
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
         <Button label="Enrich" severity="contrast" icon-pos="right">
