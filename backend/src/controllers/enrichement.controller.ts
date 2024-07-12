@@ -1,32 +1,42 @@
 import { NextFunction, Request, Response } from 'express';
-import { Redis } from 'ioredis';
-import { VoilanorbertEmailEnricher } from '../services/email-enrichment/voilanorbert';
-import Voilanorbert from '../services/email-enrichment/voilanorbert/client';
-import logger from '../utils/logger';
 import supabaseClient from '../utils/supabase';
 import ENV from '../config';
 import CreditsHandler from '../services/credits/creditHandler';
 import { Users } from '../db/interfaces/Users';
+import emailEnrichementService from '../services/email-enrichment';
 
-export default function initializeEnrichementController(
-  userResolver: Users,
-  redisClient: Redis
-) {
-  const CACHING_KEY = 'enrich';
+export default function initializeEnrichementController(userResolver: Users) {
   return {
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
       const { emails }: { emails: string[] } = req.body;
-
-      if (!emails || !Array.isArray(emails)) {
-        return res
-          .status(400)
-          .json({ message: 'Parameter emails:string[] is required.' });
-      }
-
       try {
+        if (!Array.isArray(emails) || !emails.length) {
+          return res
+            .status(400)
+            .json({ message: 'Parameter "emails" must be a list of emails' });
+        }
+
+        const { data, error: engagementError } = await supabaseClient
+          .from('engagement')
+          .select('email')
+          .match({ user_id: user.id, engagement_type: 'ENRICH' });
+
+        if (engagementError) {
+          throw new Error(engagementError.message);
+        }
+
+        const enrichedContacts = data.map((record) => record.email as string);
+        const contactsToEnrich = emails.filter(
+          (email) => !enrichedContacts.includes(email)
+        );
+
+        if (!contactsToEnrich.length) {
+          return res.status(200).json({ alreadyEnriched: true });
+        }
+
         if (ENV.ENABLE_CREDIT) {
-          const creditHandler = new CreditsHandler(
+          const creditsService = new CreditsHandler(
             userResolver,
             ENV.CONTACT_CREDIT
           );
@@ -34,108 +44,185 @@ export default function initializeEnrichementController(
             hasDeficientCredits,
             hasInsufficientCredits,
             availableUnits
-          } = await creditHandler.validate(user.id, emails.length);
+          } = await creditsService.validate(user.id, contactsToEnrich.length);
 
           if (hasDeficientCredits || hasInsufficientCredits) {
             const response = {
-              total: emails.length,
+              total: contactsToEnrich.length,
               available: Math.floor(availableUnits)
             };
             return res
-              .status(creditHandler.DEFICIENT_CREDITS_STATUS)
+              .status(creditsService.DEFICIENT_CREDITS_STATUS)
               .json(response);
           }
         }
 
-        const enricher = new VoilanorbertEmailEnricher(
-          new Voilanorbert(
-            {
-              username: ENV.VOILANORBERT_USERNAME!,
-              apiToken: ENV.VOILANORBERT_API_KEY!
-            },
-            logger
-          ),
-          logger
-        );
-
-        const result = await enricher.enrichWebhook(
-          emails,
-          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook`
-        );
-
-        await redisClient.hset(
-          CACHING_KEY,
-          result.token,
-          JSON.stringify({
-            token: result.token,
-            userId: user.id,
-            createdAt: Date.now()
+        const { data: task, error } = await supabaseClient
+          .from('tasks')
+          .insert({
+            user_id: user.id,
+            status: 'running',
+            type: 'enrich',
+            category: 'enriching'
           })
+          .select('id')
+          .single();
+
+        const enricher = emailEnrichementService.getEmailEnricher();
+        const { token } = await enricher.enrichWebhook(
+          contactsToEnrich,
+          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${task?.id}`
         );
 
-        return res.status(200).json({ ...result });
+        const details = {
+          taskId: task?.id,
+          userId: user.id,
+          webhookSecretToken: token,
+          total: contactsToEnrich.length
+        };
+
+        await supabaseClient
+          .from('tasks')
+          .update({
+            details: JSON.stringify({
+              userId: user.id,
+              webhookSecretToken: token,
+              total: contactsToEnrich.length
+            })
+          })
+          .eq('id', task?.id);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        return res.status(200).json(details);
       } catch (err) {
         return next(err);
       }
     },
 
     async webhook(req: Request, res: Response, next: NextFunction) {
-      const data = req.body;
+      const { id: taskId } = req.params;
+      const { token: webhookToken } = req.body;
 
       try {
-        const enricher = new VoilanorbertEmailEnricher(
-          new Voilanorbert(
-            {
-              username: ENV.VOILANORBERT_USERNAME!,
-              apiToken: ENV.VOILANORBERT_API_KEY!
-            },
-            logger
-          ),
-          logger
-        );
+        const enricher = emailEnrichementService.getEmailEnricher();
 
-        const verification = await redisClient.hget(CACHING_KEY, data.token);
+        const { data: task, error } = await supabaseClient
+          .from('tasks')
+          .select('*')
+          .eq('id', taskId)
+          .single();
 
-        if (verification === null) {
-          return res.sendStatus(404);
+        if (error) {
+          throw new Error(error.message);
         }
 
-        const { userId, token } = JSON.parse(verification);
+        if (!task) {
+          return res.status(404).send({
+            message: `Enrichement with id ${webhookToken} not found.`
+          });
+        }
 
-        if (userId !== userId.id || token !== data.token) {
+        const { userId, webhookSecretToken: cachedWebhookToken } = JSON.parse(
+          task.details
+        );
+
+        if (webhookToken !== cachedWebhookToken) {
           return res.sendStatus(401);
         }
 
-        const enrichementResult = enricher.webhookHandler(data);
+        const enrichementResult = enricher.enrichementMapper(req.body);
 
-        await Promise.allSettled(
-          enrichementResult.map(async (result) =>
-            supabaseClient
-              .from('persons')
-              .update({
-                image: result.image.length ? result.image : undefined,
-                name: result.fullName.length ? result.fullName : undefined,
-                works_for: result.organization.length
-                  ? result.organization
-                  : undefined,
-                job_title: result.role.length ? result.role : undefined,
-                location: result.location.length ? result.location : undefined,
-                same_as: result.same_as.length ? result.same_as : undefined
-              })
-              .eq('user_id', userId)
+        await Promise.all(
+          enrichementResult.map(
+            async ({
+              email,
+              name,
+              image,
+              address,
+              jobTitle,
+              organization,
+              givenName,
+              familyName,
+              sameAs
+            }) => {
+              const { data: organizationData, error: upsertError } =
+                organization
+                  ? await supabaseClient
+                      .from('organizations')
+                      .upsert({ name: organization })
+                      .select('id')
+                      .single()
+                  : { data: null, error: null };
+
+              if (upsertError) {
+                throw new Error(upsertError.message);
+              }
+
+              const { error: updateError } = await supabaseClient
+                .from('persons')
+                .update({
+                  image,
+                  address,
+                  name,
+                  given_name: givenName,
+                  family_name: familyName,
+                  job_title: jobTitle,
+                  works_for: organizationData?.id,
+                  same_as: sameAs
+                })
+                .match({ user_id: userId, email });
+
+              if (updateError) {
+                throw new Error(updateError.message);
+              }
+
+              const { error: EngagementError } = await supabaseClient
+                .from('engagement')
+                .upsert({
+                  email,
+                  user_id: userId,
+                  engagement_type: 'ENRICH'
+                });
+
+              if (EngagementError) {
+                throw new Error(EngagementError.message);
+              }
+            }
           )
         );
+
+        const { error: updateTaskError } = await supabaseClient
+          .from('tasks')
+          .update({
+            status: 'done',
+            stopped_at: new Date().toISOString()
+          })
+          .eq('id', taskId);
+
+        if (updateTaskError) {
+          throw new Error(updateTaskError.message);
+        }
 
         if (ENV.ENABLE_CREDIT) {
           const creditHandler = new CreditsHandler(
             userResolver,
             ENV.CONTACT_CREDIT
           );
-          await creditHandler.validate(userId, enrichementResult.length);
+          await creditHandler.deduct(userId, enrichementResult.length);
         }
 
-        return res.sendStatus(200);
+        return res.status(200);
       } catch (err) {
+        await supabaseClient
+          .from('tasks')
+          .update({
+            status: 'canceled',
+            stopped_at: new Date().toISOString()
+          })
+          .eq('id', taskId);
         return next(err);
       }
     }
