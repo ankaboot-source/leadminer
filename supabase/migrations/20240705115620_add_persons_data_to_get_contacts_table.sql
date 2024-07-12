@@ -179,6 +179,52 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE FUNCTION update_contact_by_email(
+	user_id uuid,
+    email TEXT,
+    given_name TEXT DEFAULT NULL,
+    family_name TEXT DEFAULT NULL,
+    alternate_names TEXT[] DEFAULT NULL,
+    address TEXT DEFAULT NULL,
+    works_for TEXT DEFAULT NULL,
+    job_title TEXT DEFAULT NULL,
+    same_as TEXT[] DEFAULT NULL,
+    image TEXT DEFAULT NULL
+)
+RETURNS VOID
+AS
+$$
+DECLARE
+    organization_id uuid;
+BEGIN
+    IF works_for IS NOT NULL THEN
+        SELECT id INTO organization_id
+        FROM organizations
+        WHERE name = works_for
+        LIMIT 1;
+        
+        IF NOT FOUND THEN
+            INSERT INTO organizations (name)
+            VALUES (works_for)
+            RETURNING id INTO organization_id;
+        END IF;
+    END IF;
+    UPDATE persons p
+    SET
+        given_name = update_contact_by_email.given_name,
+        family_name = update_contact_by_email.family_name,
+        alternate_names = update_contact_by_email.alternate_names,
+        address = update_contact_by_email.address,
+        works_for = organization_id,
+        job_title = update_contact_by_email.job_title,
+        same_as = update_contact_by_email.same_as,
+        image = update_contact_by_email.image
+    WHERE p.email = update_contact_by_email.email
+		AND p.user_id = update_contact_by_email.user_id;
+END;
+$$
+LANGUAGE plpgsql;
+
 -- Add RLS: Enable update for users based on user_id
 create policy "Enable update for users based on user_id" on "public"."persons" as permissive for update to public using ((( SELECT auth.uid() AS uid) = user_id))with check ((( SELECT auth.uid() AS uid) = user_id));
 
