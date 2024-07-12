@@ -38,13 +38,15 @@ export async function updateContact(userId: string, contact: ContactEdit) {
       given_name: contact.given_name || null,
       family_name: contact.family_name || null,
       alternate_names: contact.alternate_names
-        ? (contact?.alternate_names as String)?.split('\n')
+        ? (contact?.alternate_names as String)
+            ?.split('\n')
+            .filter((item) => item.length)
         : null,
       address: contact.address || null,
       works_for: contact.works_for || null,
       job_title: contact.job_title || null,
       same_as: contact.same_as
-        ? (contact.same_as as String)?.split('\n')
+        ? (contact.same_as as String)?.split('\n').filter((item) => item.length)
         : null,
       image: contact.image || null,
     }
