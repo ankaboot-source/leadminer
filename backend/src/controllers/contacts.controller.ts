@@ -41,6 +41,7 @@ export default function initializeContactsController(
             user.id,
             contactsToExport
           );
+
           if (!selectedContacts.length) {
             statusCode = 204; // 204 No Content
             return res.sendStatus(statusCode);

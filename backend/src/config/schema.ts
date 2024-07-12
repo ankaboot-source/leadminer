@@ -81,6 +81,10 @@ const schema = z.object({
   /* ZEROUBOUNCE */
   ZEROBOUNCE_API_KEY: z.string().nonempty().optional(),
 
+  /* VOILANORBERT */
+  VOILANORBERT_USERNAME: z.string().nonempty().optional(),
+  VOILANORBERT_API_KEY: z.string().nonempty().optional(),
+
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
   CONTACT_CREDIT: number().optional().default(1),

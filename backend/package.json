@@ -8,6 +8,7 @@
     "test:integration": "jest ./test/integration",
     "test-ci:unit": "jest ./test/unit --coverage",
     "dev-api": "nodemon src/server.ts",
+    "dev-mock-external-services": "nodemon src/mocks/enrichement/server.ts",
     "dev-worker": "nodemon src/messageWorker.ts",
     "dev-email-worker": "nodemon src/emailVerificationWorker.ts",
     "dev:webhook-listener": "stripe listen --forward-to http://localhost:8081/api/payment/stripe/webhook",
@@ -51,6 +52,7 @@
     "nodemon": "^3.1.0",
     "pg": "^8.11.5",
     "pg-format": "^1.0.4",
+    "qs": "^6.12.2",
     "quoted-printable": "^1.0.1",
     "simple-oauth2": "^5.0.0",
     "stripe": "^13.11.0",
@@ -59,7 +61,8 @@
     "winston-loki": "^6.1.2",
     "xoauth2": "^1.2.0",
     "zod": "^3.23.8",
-    "zod-error": "^1.5.0"
+    "zod-error": "^1.5.0",
+    "@faker-js/faker": "^8.4.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",

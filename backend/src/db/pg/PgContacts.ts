@@ -73,7 +73,7 @@ export default class PgContacts implements Contacts {
     WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO engagement (user_id, email, engagement_type) VALUES %L ON CONFLICT (email, user_id) DO NOTHING;';
+    'INSERT INTO engagement (user_id, email, engagement_type) VALUES %L ON  CONFLICT (email, user_id, engagement_type) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
     INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
