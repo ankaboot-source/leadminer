@@ -1,7 +1,8 @@
 export default defineNuxtPlugin({
   setup() {
+    const publicConfig = useRuntimeConfig().public;
     const api = $fetch.create({
-      baseURL: `${useRuntimeConfig().public.SERVER_ENDPOINT}/api`,
+      baseURL: `${publicConfig.SERVER_ENDPOINT}/api`,
       async onRequest({ options }) {
         const token = (await useSupabaseClient().auth.getSession()).data.session
           ?.access_token;
