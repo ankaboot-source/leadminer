@@ -199,6 +199,7 @@
 import type { RealtimeChannel, User } from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit, ContactEditCleaned } from '@/types/contact';
+import { useContactsStore } from '~/stores/contacts';
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
@@ -229,7 +230,7 @@ function isValidURL(url: string) {
   }
 }
 const isValidSameAs = computed(() =>
-  (contactEdit.value?.same_as as String)
+  (contactEdit.value?.same_as as string)
     ?.split('\n')
     .filter((item) => item.length)
     .every(isValidURL)
@@ -258,7 +259,7 @@ async function saveContactInformations() {
     given_name: contactEdit.value.given_name || null,
     family_name: contactEdit.value.family_name || null,
     alternate_names: contactEdit.value.alternate_names
-      ? (contactEdit.value?.alternate_names as String)
+      ? (contactEdit.value?.alternate_names as string)
           ?.split('\n')
           .filter((item) => item.length)
       : null,
@@ -266,7 +267,7 @@ async function saveContactInformations() {
     works_for: contactEdit.value.works_for || null,
     job_title: contactEdit.value.job_title || null,
     same_as: contactEdit.value.same_as
-      ? (contactEdit.value.same_as as String)
+      ? (contactEdit.value.same_as as string)
           ?.split('\n')
           .filter((item) => item.length)
       : null,

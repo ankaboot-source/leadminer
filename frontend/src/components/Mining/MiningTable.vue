@@ -572,7 +572,9 @@ import type {
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
+import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
+import { useContactsStore } from '~/stores/contacts';
 import { saveCSVFile } from '~/utils/csv';
 
 const { t } = useI18n({
@@ -670,7 +672,6 @@ const $user = useSupabaseUser();
 const $supabaseClient = useSupabaseClient();
 
 /* *** Filters *** */
-import { useFiltersStore } from '@/stores/filters';
 
 const filtersStore = useFiltersStore();
 
