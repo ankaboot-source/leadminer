@@ -9,13 +9,15 @@ interface Config {
 }
 
 export default class Voilanorbert {
-  private static readonly baseURL: 'https://api.voilanorbert.com/2018-01-08/enrich/';
+  private static readonly baseURL =
+    'http://127.0.0.1:8083/voilanorbert/2018-01-08/enrich/';
 
   private readonly api: AxiosInstance;
 
   constructor({ username, apiToken }: Config, private readonly logger: Logger) {
     this.api = axios.create({
       baseURL: Voilanorbert.baseURL,
+      headers: {},
       auth: {
         username,
         password: apiToken
@@ -30,20 +32,15 @@ export default class Voilanorbert {
         success: boolean;
         token: string;
       }>(
-        'https://api.voilanorbert.com/2018-01-08/enrich/upload',
+        '/upload',
         qs.stringify({
           data: emails.join(','),
           webhook
         })
       );
-
-      if (!data.success) {
-        throw new Error('Failed to upload emails to enrichement.');
-      }
-
       return data;
     } catch (error) {
-      logError(error, '[Voilanorbert:enrich]', this.logger);
+      logError(error, `[${this.constructor.name}:enrich]`, this.logger);
       throw error;
     }
   }

@@ -1,18 +1,25 @@
 export type EnricherType = 'voilanorbert';
-
-export type SocialMediaTypes = 'facebook' | 'twitter' | 'linkedin';
-
+interface EnrichWebhookResopnse {
+  status: string;
+  success: boolean;
+  token: string;
+}
 export interface EnricherResult {
   email: string;
-  fullName: string;
-  image: string;
-  role: string;
-  organization: string;
-  location: string;
-  same_as: string[];
+  name?: string;
+  image?: string;
+  address?: string;
+  jobTitle?: string;
+  organization?: string;
+  givenName?: string;
+  familyName?: string;
+  sameAs?: string[];
 }
 
 export interface EmailEnricher {
-  enrichWebhook(emails: string[], webhook: string): Promise<any>;
-  webhookHandler(data: Record<string, any>): EnricherResult[];
+  enrichWebhook(
+    emails: string[],
+    webhook: string
+  ): Promise<EnrichWebhookResopnse>;
+  enrichementMapper(data: unknown): EnricherResult[];
 }

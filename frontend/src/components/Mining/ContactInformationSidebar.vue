@@ -165,7 +165,13 @@
 
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
-        <Button label="Enrich" severity="contrast" icon-pos="right">
+        <Button
+          label="Enrich"
+          severity="contrast"
+          icon-pos="right"
+          :loading="loadButtonEnrich"
+          @click="enrichContact(contact.email)"
+        >
           <template #icon
             ><span class="p-button-icon p-button-icon-right">💎</span>
           </template>
@@ -190,17 +196,20 @@
 </template>
 
 <script setup lang="ts">
-import type { User } from '@supabase/supabase-js';
+import type { RealtimeChannel, User } from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit, ContactEditCleaned } from '@/types/contact';
 
+const $toast = useToast();
+const { $api } = useNuxtApp();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
-const $toast = useToast();
+let subscription: RealtimeChannel;
+const $contactStore = useContactsStore();
 
 const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
@@ -208,6 +217,8 @@ const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
 
 const $user = useSupabaseUser();
+
+const loadButtonEnrich = ref(false);
 function isValidURL(url: string) {
   try {
     // eslint-disable-next-line no-new
@@ -299,11 +310,79 @@ function onHide() {
   editingContact.value = false;
   $contactInformationSidebar.$reset();
 }
+
+async function enrichContact(email: string) {
+  loadButtonEnrich.value = true;
+  $contactStore.subscribeRealtime($user.value!);
+  setTimeout(() => {
+    $contactStore.unsubscribeRealtime();
+  }, 10000);
+
+  const response = await $api<{
+    taskId: string;
+    userId?: string;
+    webhookSecretToken?: string;
+    total?: string;
+    alreadyEnriched?: boolean;
+  }>('/enrichement/enrichAsync', {
+    method: 'POST',
+    body: {
+      emails: [email],
+    },
+  });
+
+  if (response.alreadyEnriched) {
+    loadButtonEnrich.value = false;
+    $toast.add({
+      severity: 'success',
+      summary: t('enrich_contact'),
+      detail: t('contact_already_exists'),
+      life: 3000,
+    });
+  } else {
+    $toast.add({
+      severity: 'success',
+      summary: t('enrich_contact'),
+      detail: t('contact_enriched'),
+      life: 3000,
+    });
+    // subscription = useSupabaseClient()
+    //   .channel('enrichement-tracker')
+    //   .on(
+    //     'postgres_changes',
+    //     {
+    //       event: '*',
+    //       schema: 'public',
+    //       table: 'tasks',
+    //       filter: `id=eq.${response.taskId}`,
+    //     },
+    //     (payload: RealtimePostgresChangesPayload<any>) => {
+    //       loadButtonEnrich.value = false
+    //       $toast.add({
+    //         severity: 'success',
+    //         summary: t('enrich_contact'),
+    //         detail: t('contact_enriched'),
+    //         life: 3000,
+    //       });
+    //       subscription.unsubscribe()
+    //     }
+    //   );
+    // subscription.subscribe()
+  }
+}
+
+onUnmounted(() => {
+  loadButtonEnrich.value = false;
+  subscription.unsubscribe();
+});
 </script>
 
 <i18n lang="json">
 {
   "en": {
+    "enrich_contact": "Enrich contact",
+    "contact_enriched": "You're contact is succufully enriched.",
+    "contact_already_exists": "This contact is already enriched.",
     "copy": "Copy",
     "contact_copied": "Contact copied",
     "contact_email_copied": "This contact email address has been copied to your clipboard",
@@ -312,6 +391,9 @@ function onHide() {
     "url_invalid_detail": "Please enter a valid URL"
   },
   "fr": {
+    "enrich_contact": "Enrichir le contact",
+    "contact_enriched": "Votre contact a été enrichi avec succès.",
+    "contact_already_exists": "La fiche contact est déjà enrichie",
     "copy": "Copier",
     "contact_copied": "Contact copié",
     "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",

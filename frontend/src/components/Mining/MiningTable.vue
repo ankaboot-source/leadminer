@@ -5,9 +5,7 @@
     action-type="download"
     @secondary-action="exportTable(true)"
   />
-
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
-
   <DataTable
     ref="TableRef"
     v-model:selection="selectedContacts"
@@ -565,11 +563,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  type RealtimeChannel,
-  type RealtimePostgresChangesPayload,
-  type User,
-} from '@supabase/supabase-js';
+import { type RealtimeChannel, type User } from '@supabase/supabase-js';
 import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
@@ -653,14 +647,17 @@ function getTagLabel(value: string) {
   return tags.find((tag) => tag.value === value)?.label ?? 'unknown';
 }
 
+const $contactsStore = useContactsStore();
 const leadminerStore = useLeadminerStore();
-const rows = ref<Contact[]>(tableData);
+
+$contactsStore.setContacts(tableData);
+
 const isLoading = ref(false);
 const loadingLabel = ref('');
-const contacts = computed(() => rows.value);
+const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
 
-let contactsCache = new Map<string, Contact>();
+const contactsCache = new Map<string, Contact>();
 
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
@@ -690,31 +687,13 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 
-function setupSubscription() {
-  // We are 100% sure that the user is authenticated in this component
-  const user = $user.value;
-  subscription = $supabaseClient.channel('*').on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'persons',
-      filter: `user_id=eq.${user?.id}`,
-    },
-    (payload: RealtimePostgresChangesPayload<Contact>) => {
-      const newContact = payload.new as Contact;
-      contactsCache.set(newContact.email, newContact);
-    }
-  );
-}
-
 function refreshTable() {
   const contactCacheLength = contactsCache.size;
   const hasNewContacts = contactCacheLength > contactsLength.value;
 
   if (hasNewContacts) {
     isLoading.value = true;
-    rows.value = Array.from(contactsCache.values());
+    $contactsStore.refreshContacts();
     isLoading.value = false;
   }
 }
@@ -735,7 +714,7 @@ async function refineContacts() {
 async function syncTable() {
   loadingLabel.value = t('syncing');
   const user = $user.value as User;
-  rows.value = await getContacts(user.id);
+  $contactsStore.setContacts(await getContacts(user.id));
   isLoading.value = false;
 }
 
@@ -743,11 +722,7 @@ watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     filtersStore.clearFilter();
     // If mining is active, update refined persons every 3 seconds
-    setupSubscription();
-    subscription.subscribe();
-    if (contactsLength.value > 0) {
-      contactsCache = new Map(rows.value.map((row) => [row.email, row]));
-    }
+    $contactsStore.subscribeRealtime($user.value!);
     refreshInterval = window.setInterval(() => {
       refreshTable();
     }, 5000);
@@ -822,7 +797,7 @@ const { $api } = useNuxtApp();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 const isExportDisabled = computed(
   () =>
-    rows.value.length === 0 ||
+    contacts.value.length === 0 ||
     activeMiningTask.value ||
     leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value

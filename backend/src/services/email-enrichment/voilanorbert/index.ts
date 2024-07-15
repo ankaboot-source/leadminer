@@ -26,36 +26,48 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
-  async enrichWebhook(emails: string[], webhook: string): Promise<any> {
-    const response = await this.client.enrich(emails, webhook);
-    return response;
+  async enrichWebhook(emails: string[], webhook: string) {
+    try {
+      const response = await this.client.enrich(emails, webhook);
+
+      if (!response.success) {
+        throw new Error('Failed to upload emails to enrichement.');
+      }
+
+      return response;
+    } catch (err) {
+      throw new Error((err as Error).message);
+    }
   }
 
-  webhookHandler(enrichedData: VoilanorbertWebhookResult): EnricherResult[] {
+  enrichementMapper(enrichedData: VoilanorbertWebhookResult): EnricherResult[] {
     this.logger.info(
-      `[${this.constructor.name}]-[webhookHandler]: Parsing enrichement results`
+      `[${this.constructor.name}]-[enrichementMapper]: Parsing enrichement results`,
+      enrichedData
     );
     const { results } = enrichedData;
-    const enriched = results.map(
-      ({
-        email,
-        fullName,
-        organization,
-        title,
-        facebook,
-        linkedin,
-        twitter,
-        location
-      }) => ({
-        email: email ?? '',
-        image: '',
-        fullName: fullName ?? '',
-        organization: organization ?? '',
-        role: title ?? '',
-        location: location ?? '',
-        same_as: [facebook, linkedin, twitter].filter(Boolean)
-      })
-    );
+    const enriched = results
+      .map(
+        ({
+          email,
+          fullName,
+          organization,
+          title,
+          facebook,
+          linkedin,
+          twitter,
+          location
+        }) => ({
+          image: undefined,
+          email: email ?? undefined,
+          name: fullName ?? undefined,
+          address: location ?? undefined,
+          organization: organization ?? undefined,
+          jobTitle: title ?? undefined,
+          sameAs: [facebook, linkedin, twitter].filter(Boolean)
+        })
+      )
+      .filter(({ email }) => email !== 'Email');
     return enriched;
   }
 }
