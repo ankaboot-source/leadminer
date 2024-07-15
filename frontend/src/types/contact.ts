@@ -35,8 +35,28 @@ export interface Contact {
   image?: string;
 }
 
-export interface ContactEdit
-  extends Omit<Contact, 'alternate_names' | 'same_as'> {
-  alternate_names?: string[] | string;
-  same_as?: string[] | string;
+export interface ContactEdit {
+  email: string;
+  name?: string | null;
+  given_name?: string | null;
+  family_name?: string | null;
+  alternate_names?: string[] | string | null;
+  address?: string | null;
+  works_for?: string | null;
+  job_title?: string | null;
+  same_as?: string[] | string | null;
+  image?: string | null;
+}
+
+export interface ContactEditCleaned {
+  email: string;
+  name?: string | null;
+  given_name?: string | null;
+  family_name?: string | null;
+  alternate_names?: string[] | null;
+  address?: string | null;
+  works_for?: string | null;
+  job_title?: string | null;
+  same_as?: string[] | null;
+  image?: string | null;
 }
