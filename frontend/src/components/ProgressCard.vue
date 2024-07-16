@@ -97,20 +97,22 @@ function getEstimationString() {
 
 const estimatedRemainingTimeConverted = ref(getEstimationString());
 
-const progressEstimator = setInterval(() => {
-  estimatedRemainingTimeConverted.value = getEstimationString();
-}, 2000);
+onMounted(() => {
+  const progressEstimator = setInterval(() => {
+    estimatedRemainingTimeConverted.value = getEstimationString();
+  }, 2000);
 
-watch(
-  () => props.status,
-  (active) => {
-    if (!active) {
-      // eslint-disable-next-line no-console
-      console.info('Stopping progressEstimator');
-      clearInterval(progressEstimator);
+  watch(
+    () => props.status,
+    (active) => {
+      if (!active) {
+        // eslint-disable-next-line no-console
+        console.info('Stopping progressEstimator');
+        clearInterval(progressEstimator);
+      }
     }
-  }
-);
+  );
+});
 </script>
 
 <i18n lang="json">

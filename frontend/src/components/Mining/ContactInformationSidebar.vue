@@ -3,6 +3,7 @@
     v-model:visible="show"
     position="right"
     pt:root:class="md:w-1/2 xl:w-1/3 w-full"
+    @hide="() => onHide()"
   >
     <template #header><span class="grow" /> </template>
     <div class="p-sidebar-header px-4 pt-0">
@@ -22,6 +23,7 @@
           <InputText
             v-if="editingContact"
             v-model="contactEdit.name"
+            :placeholder="$t('contactI18n.name')"
             class="w-full grow mb-2"
             size="large"
           />
@@ -72,7 +74,7 @@
       <tbody class="p-datatable-tbody">
         <tr class="p-row-even">
           <td class="font-medium w-4/12">
-            {{ t('contactI18n.given_name') }}
+            {{ $t('contactI18n.given_name') }}
           </td>
           <td>
             <div v-if="!editingContact">
@@ -82,7 +84,7 @@
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ t('contactI18n.family_name') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.family_name') }}</td>
           <td class="w-full">
             <div v-if="!editingContact">
               {{ contact.family_name }}
@@ -96,7 +98,7 @@
         </tr>
         <tr class="p-row-even">
           <td class="font-medium">
-            {{ t('contactI18n.alternate_names') }}
+            {{ $t('contactI18n.alternate_names') }}
           </td>
           <td>
             <div v-if="!editingContact">
@@ -112,7 +114,7 @@
         </tr>
 
         <tr class="p-row-odd">
-          <td class="font-medium">{{ t('contactI18n.address') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.address') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.address }}</div>
             <InputText v-else v-model="contactEdit.address" class="w-full" />
@@ -120,14 +122,14 @@
         </tr>
 
         <tr class="p-row-even">
-          <td class="font-medium">{{ t('contactI18n.works_for') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.works_for }}</div>
             <InputText v-else v-model="contactEdit.works_for" class="w-full" />
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ t('contactI18n.job_title') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.job_title }}</div>
             <InputText v-else v-model="contactEdit.job_title" class="w-full" />
@@ -136,20 +138,25 @@
 
         <template v-if="editingContact">
           <tr class="p-row-even">
-            <td class="font-medium">{{ t('contactI18n.same_as') }}</td>
+            <td class="font-medium">{{ $t('contactI18n.same_as') }}</td>
             <td>
               <Textarea
                 v-model="(contactEdit.same_as as string)"
                 class="w-full"
                 rows="3"
+                :invalid="!isValidSameAs"
               />
             </td>
           </tr>
 
           <tr class="p-row-odd">
-            <td class="font-medium">{{ t('contactI18n.image') }}</td>
+            <td class="font-medium">{{ $t('contactI18n.image') }}</td>
             <td>
-              <InputText v-model="contactEdit.image" class="w-full" />
+              <InputText
+                v-model="contactEdit.image"
+                class="w-full"
+                :invalid="!isValidAvatar"
+              />
             </td>
           </tr>
         </template>
@@ -192,7 +199,7 @@
 import type { RealtimeChannel, User } from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit } from '@/types/contact';
-import { updateContact } from '~/utils/contacts';
+import { useContactsStore } from '~/stores/contacts';
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
@@ -213,15 +220,66 @@ const editingContact = ref(false);
 const $user = useSupabaseUser();
 
 const loadButtonEnrich = ref(false);
+function isValidURL(url: string) {
+  try {
+    // eslint-disable-next-line no-new
+    new URL(url);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+const isValidSameAs = computed(() => {
+  if (!contactEdit.value?.same_as) return true;
+  return (contactEdit.value?.same_as as string)
+    ?.split('\n')
+    .filter((item) => item.length)
+    .every(isValidURL);
+});
+
+const isValidAvatar = computed(() => {
+  if (!contactEdit.value?.image) return true;
+  return isValidURL(contactEdit.value?.image as string);
+});
 
 async function saveContactInformations() {
-  editingContact.value = false;
   const user = $user.value as User;
 
-  await updateContact(user.id, contactEdit.value);
+  if (!isValidSameAs.value || !isValidAvatar.value) {
+    $toast.add({
+      severity: 'error',
+      summary: t('url_invalid_summary'),
+      detail: t('url_invalid_detail'),
+      life: 3000,
+    });
+    return;
+  }
+
+  const contactCleaned = {
+    email: contactEdit.value.email,
+    given_name: contactEdit.value.given_name || undefined,
+    family_name: contactEdit.value.family_name || undefined,
+    alternate_names: contactEdit.value.alternate_names
+      ? (contactEdit.value?.alternate_names as string)
+          ?.split('\n')
+          .filter((item) => item.length)
+      : undefined,
+    address: contactEdit.value.address || undefined,
+    works_for: contactEdit.value.works_for || undefined,
+    job_title: contactEdit.value.job_title || undefined,
+    same_as: contactEdit.value.same_as
+      ? (contactEdit.value.same_as as string)
+          ?.split('\n')
+          .filter((item) => item.length)
+      : undefined,
+    image: contactEdit.value.image || undefined,
+  };
+
+  await updateContact(user.id, contactCleaned);
+  editingContact.value = false;
   $toast.add({
     severity: 'success',
-    summary: "Contact's informations saved",
+    summary: t('contact_saved'),
     life: 3000,
   });
 }
@@ -248,6 +306,11 @@ function copyContact(email: string, name?: string) {
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`
   );
+}
+
+function onHide() {
+  editingContact.value = false;
+  $contactInformationSidebar.$reset();
 }
 
 async function enrichContact(email: string) {
@@ -322,45 +385,23 @@ onUnmounted(() => {
     "enrich_contact": "Enrich contact",
     "contact_enriched": "You're contact is succufully enriched.",
     "contact_already_exists": "This contact is already enriched.",
-    "contactI18n": {
-      "name": "Full name",
-      "given_name": "Given Name",
-      "family_name": "Family Name",
-      "alternate_names": "Alternate Names",
-      "address": "Location",
-      "works_for": "Works For",
-      "job_title": "Job Title",
-      "same_as": "Same As",
-      "image": "Avatar URL",
-      "given_name_definition": "The given name of this contact",
-      "family_name_definition": "The family name of this contact",
-      "alternate_names_definition": "Other names this contact goes by",
-      "address_definition": "The location of this contact",
-      "works_for_definition": "Organization this contact works for",
-      "job_title_definition": "The job title of this contact"
-    }
+    "copy": "Copy",
+    "contact_copied": "Contact copied",
+    "contact_email_copied": "This contact email address has been copied to your clipboard",
+    "contact_saved": "Contact's informations saved",
+    "url_invalid_summary": "Invalid URL",
+    "url_invalid_detail": "Please enter a valid URL"
   },
   "fr": {
     "enrich_contact": "Enrichir le contact",
     "contact_enriched": "Votre contact a été enrichi avec succès.",
     "contact_already_exists": "La fiche contact est déjà enrichie",
-    "contactI18n": {
-      "name": "Nom complet",
-      "given_name": "Prénom",
-      "family_name": "Nom de famille",
-      "alternate_names": "Autres noms",
-      "address": "Adresse",
-      "works_for": "Travaille pour",
-      "job_title": "Titre du poste",
-      "same_as": "Même que",
-      "image": "URL de l'avatar",
-      "given_name_definition": "Le prénom de ce contact",
-      "family_name_definition": "Le nom de famille de ce contact",
-      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
-      "address_definition": "L'emplacement de ce contact",
-      "works_for_definition": "Organisation pour laquelle ce contact travaille",
-      "job_title_definition": "Le titre du poste de ce contact"
-    }
+    "copy": "Copier",
+    "contact_copied": "Contact copié",
+    "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
+    "contact_saved": "Informations du contact enregistrées",
+    "url_invalid_summary": "URL invalide",
+    "url_invalid_detail": "Veuillez saisir une URL valide"
   }
 }
 </i18n>
