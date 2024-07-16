@@ -35,8 +35,15 @@ export interface Contact {
   image?: string;
 }
 
-export interface ContactEdit
-  extends Omit<Contact, 'alternate_names' | 'same_as'> {
+export interface ContactEdit {
+  email: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
   alternate_names?: string[] | string;
+  address?: string;
+  works_for?: string;
+  job_title?: string;
   same_as?: string[] | string;
+  image?: string;
 }

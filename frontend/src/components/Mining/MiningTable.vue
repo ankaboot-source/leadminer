@@ -137,11 +137,11 @@
               :option-disabled="disabledColumns"
               option-label="label"
               option-value="value"
-              :placeholder="t('visible_columns')"
               style="width: 14rem"
-              :selected-items-label="`{0} ${t('visible_columns')}`"
+              :selected-items-label="
+                t('visible_columns', visibleColumns.length)
+              "
               :max-selected-labels="0"
-              pt:option:class="capitalize"
               @change="onSelectColumnsChange"
             />
           </ul>
@@ -461,8 +461,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('contactI18n.given_name_definition')">
-          {{ t('contactI18n.given_name') }}
+        <div v-tooltip.top="$t('contactI18n.given_name_definition')">
+          {{ $t('contactI18n.given_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -479,8 +479,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('contactI18n.family_name_definition')">
-          {{ t('contactI18n.family_name') }}
+        <div v-tooltip.top="$t('contactI18n.family_name_definition')">
+          {{ $t('contactI18n.family_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -497,8 +497,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('contactI18n.alternate_names_definition')">
-          {{ t('contactI18n.alternate_names') }}
+        <div v-tooltip.top="$t('contactI18n.alternate_names_definition')">
+          {{ $t('contactI18n.alternate_names') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -515,8 +515,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('contactI18n.address_definition')">
-          {{ t('contactI18n.address') }}
+        <div v-tooltip.top="$t('contactI18n.address_definition')">
+          {{ $t('contactI18n.address') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -533,8 +533,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('contactI18n.works_for_definition')">
-          {{ t('contactI18n.works_for') }}
+        <div v-tooltip.top="$t('contactI18n.works_for_definition')">
+          {{ $t('contactI18n.works_for') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -551,8 +551,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('contactI18n.job_title_definition')">
-          {{ t('contactI18n.job_title') }}
+        <div v-tooltip.top="$t('contactI18n.job_title_definition')">
+          {{ $t('contactI18n.job_title') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -572,11 +572,16 @@ import type {
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
+import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
+import { useContactsStore } from '~/stores/contacts';
 import { saveCSVFile } from '~/utils/csv';
 
 const { t } = useI18n({
   useScope: 'local',
+});
+const { t: $t } = useI18n({
+  useScope: 'global',
 });
 
 const $toast = useToast();
@@ -667,7 +672,6 @@ const $user = useSupabaseUser();
 const $supabaseClient = useSupabaseClient();
 
 /* *** Filters *** */
-import { useFiltersStore } from '@/stores/filters';
 
 const filtersStore = useFiltersStore();
 
@@ -885,7 +889,7 @@ onMounted(() => {
   ];
 });
 const visibleColumnsOptions = [
-  { label: t('contacts'), value: 'contacts' },
+  { label: t('emails'), value: 'contacts' },
   { label: t('source'), value: 'source' },
   { label: t('occurrence'), value: 'occurrence' },
   { label: t('recency'), value: 'recency' },
@@ -895,15 +899,15 @@ const visibleColumnsOptions = [
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
-  { label: t('contactI18n.given_name'), value: 'given_name' },
-  { label: t('contactI18n.family_name'), value: 'family_name' },
-  { label: t('contactI18n.alternate_names'), value: 'alternate_names' },
-  { label: t('contactI18n.address'), value: 'address' },
-  { label: t('contactI18n.works_for'), value: 'works_for' },
-  { label: t('contactI18n.job_title'), value: 'job_title' },
-  { label: t('contactI18n.name'), value: 'name' },
-  { label: t('contactI18n.same_as'), value: 'same_as' },
-  { label: t('contactI18n.image'), value: 'image' },
+  { label: $t('contactI18n.given_name'), value: 'given_name' },
+  { label: $t('contactI18n.family_name'), value: 'family_name' },
+  { label: $t('contactI18n.alternate_names'), value: 'alternate_names' },
+  { label: $t('contactI18n.address'), value: 'address' },
+  { label: $t('contactI18n.works_for'), value: 'works_for' },
+  { label: $t('contactI18n.job_title'), value: 'job_title' },
+  { label: $t('contactI18n.name'), value: 'name' },
+  { label: $t('contactI18n.same_as'), value: 'same_as' },
+  { label: $t('contactI18n.image'), value: 'image' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -990,8 +994,9 @@ table.p-datatable-table {
     "at_least_one_reply": "At least one reply",
     "gdpr_proof": "- Less than {recentYearsAgo} years \n- GDPR Proof",
     "recent_contacts": "Recent contacts",
-    "visible_columns": "Visible columns",
+    "visible_columns": "{n} Visible field | {n} Visible fields",
     "contacts": "Contacts",
+    "emails": "Emails",
     "search_contacts": "Search contacts",
     "source_definition": "The email inbox this contact is mined from",
     "source": "Source",
@@ -1008,14 +1013,11 @@ table.p-datatable-table {
     "recipient_definition": "How many times the contact has received emails",
     "sender_definition": "How many times the contact has sent emails",
     "seniority_definition": "Oldest date this contact has been seen",
-    "copy": "Copy",
     "recipient": "Recipient",
     "sender": "Sender",
     "seniority": "Seniority",
     "refining_contacts": "Refining contacts...",
     "syncing": "Syncing...",
-    "contact_copied": "Contact copied",
-    "contact_email_copied": "This contact email address has been copied to your clipboard",
     "error_verifying_export_csv": "Error when verifying export CSV",
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
@@ -1030,24 +1032,7 @@ table.p-datatable-table {
     "group": "Group",
     "chat": "Chat",
     "any": "Any",
-    "contact_information": "Contact Information",
-    "contactI18n": {
-      "name": "Full name",
-      "given_name": "Given Name",
-      "family_name": "Family Name",
-      "alternate_names": "Alternate Names",
-      "address": "Location",
-      "works_for": "Works For",
-      "job_title": "Job Title",
-      "same_as": "Same As",
-      "image": "Avatar URL",
-      "given_name_definition": "The given name of this contact",
-      "family_name_definition": "The family name of this contact",
-      "alternate_names_definition": "Other names this contact goes by",
-      "address_definition": "The location of this contact",
-      "works_for_definition": "Organization this contact works for",
-      "job_title_definition": "The job title of this contact"
-    }
+    "contact_information": "Contact Information"
   },
   "fr": {
     "no_contacts_found": "Aucun contact trouvé",
@@ -1061,8 +1046,9 @@ table.p-datatable-table {
     "at_least_one_reply": "Au moins une réponse",
     "gdpr_proof": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
     "recent_contacts": "Contacts récents",
-    "visible_columns": "Colonnes visibles",
+    "visible_columns": "{n} Champ visible | {n} Champs visibles",
     "contacts": "Contacts",
+    "emails": "Emails",
     "search_contacts": "Rechercher des contacts",
     "source_definition": "La boîte mail d'où ce contact est extrait",
     "source": "Source",
@@ -1079,14 +1065,11 @@ table.p-datatable-table {
     "recipient_definition": "Nombre de fois que le contact a reçu des emails",
     "sender_definition": "Nombre de fois que le contact a envoyé des emails",
     "seniority_definition": "La date la plus ancienne où ce contact a été vu",
-    "copy": "Copier",
     "recipient": "Destinataire",
     "sender": "Expéditeur",
     "seniority": "Ancienneté",
     "refining_contacts": "Affinement des contacts...",
     "syncing": "Synchronisation...",
-    "contact_copied": "Contact copié",
-    "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
     "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
@@ -1101,24 +1084,7 @@ table.p-datatable-table {
     "group": "Groupe",
     "chat": "Chat",
     "any": "N'importe lequel",
-    "contact_information": "Information de contact",
-    "contactI18n": {
-      "name": "Nom complet",
-      "given_name": "Prénom",
-      "family_name": "Nom de famille",
-      "alternate_names": "Autres noms",
-      "address": "Adresse",
-      "works_for": "Travaille pour",
-      "job_title": "Titre du poste",
-      "same_as": "Même que",
-      "image": "URL de l'avatar",
-      "given_name_definition": "Le prénom de ce contact",
-      "family_name_definition": "Le nom de famille de ce contact",
-      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
-      "address_definition": "L'emplacement de ce contact",
-      "works_for_definition": "Organisation pour laquelle ce contact travaille",
-      "job_title_definition": "Le titre du poste de ce contact"
-    }
+    "contact_information": "Information de contact"
   }
 }
 </i18n>
