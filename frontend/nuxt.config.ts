@@ -9,6 +9,16 @@ export default defineNuxtConfig({
     dirs: ['stores'],
   },
 
+  build: {
+    analyze: {
+      gzipSize: true,
+    },
+  },
+
+  nitro: {
+    compressPublicAssets: true,
+  },
+
   $development: {
     devtools: { enabled: true },
     devServer: {
