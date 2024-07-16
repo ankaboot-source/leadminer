@@ -461,8 +461,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('given_name_definition')">
-          {{ $t('given_name') }}
+        <div v-tooltip.top="$t('contactI18n.given_name_definition')">
+          {{ $t('contactI18n.given_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -479,8 +479,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('family_name_definition')">
-          {{ $t('family_name') }}
+        <div v-tooltip.top="$t('contactI18n.family_name_definition')">
+          {{ $t('contactI18n.family_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -497,8 +497,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('alternate_names_definition')">
-          {{ $t('alternate_names') }}
+        <div v-tooltip.top="$t('contactI18n.alternate_names_definition')">
+          {{ $t('contactI18n.alternate_names') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -515,8 +515,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('address_definition')">
-          {{ $t('address') }}
+        <div v-tooltip.top="$t('contactI18n.address_definition')">
+          {{ $t('contactI18n.address') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -533,8 +533,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('works_for_definition')">
-          {{ $t('works_for') }}
+        <div v-tooltip.top="$t('contactI18n.works_for_definition')">
+          {{ $t('contactI18n.works_for') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -551,8 +551,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('job_title_definition')">
-          {{ $t('job_title') }}
+        <div v-tooltip.top="$t('contactI18n.job_title_definition')">
+          {{ $t('contactI18n.job_title') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -899,15 +899,15 @@ const visibleColumnsOptions = [
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
-  { label: $t('given_name'), value: 'given_name' },
-  { label: $t('family_name'), value: 'family_name' },
-  { label: $t('alternate_names'), value: 'alternate_names' },
-  { label: $t('address'), value: 'address' },
-  { label: $t('works_for'), value: 'works_for' },
-  { label: $t('job_title'), value: 'job_title' },
-  { label: $t('name'), value: 'name' },
-  { label: $t('same_as'), value: 'same_as' },
-  { label: $t('image'), value: 'image' },
+  { label: $t('contactI18n.given_name'), value: 'given_name' },
+  { label: $t('contactI18n.family_name'), value: 'family_name' },
+  { label: $t('contactI18n.alternate_names'), value: 'alternate_names' },
+  { label: $t('contactI18n.address'), value: 'address' },
+  { label: $t('contactI18n.works_for'), value: 'works_for' },
+  { label: $t('contactI18n.job_title'), value: 'job_title' },
+  { label: $t('contactI18n.name'), value: 'name' },
+  { label: $t('contactI18n.same_as'), value: 'same_as' },
+  { label: $t('contactI18n.image'), value: 'image' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {

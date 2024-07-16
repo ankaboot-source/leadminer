@@ -37,26 +37,13 @@ export interface Contact {
 
 export interface ContactEdit {
   email: string;
-  name?: string | null;
-  given_name?: string | null;
-  family_name?: string | null;
-  alternate_names?: string[] | string | null;
-  address?: string | null;
-  works_for?: string | null;
-  job_title?: string | null;
-  same_as?: string[] | string | null;
-  image?: string | null;
-}
-
-export interface ContactEditCleaned {
-  email: string;
-  name?: string | null;
-  given_name?: string | null;
-  family_name?: string | null;
-  alternate_names?: string[] | null;
-  address?: string | null;
-  works_for?: string | null;
-  job_title?: string | null;
-  same_as?: string[] | null;
-  image?: string | null;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  alternate_names?: string[] | string;
+  address?: string;
+  works_for?: string;
+  job_title?: string;
+  same_as?: string[] | string;
+  image?: string;
 }

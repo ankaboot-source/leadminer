@@ -23,7 +23,7 @@
           <InputText
             v-if="editingContact"
             v-model="contactEdit.name"
-            :placeholder="$t('name')"
+            :placeholder="$t('contactI18n.name')"
             class="w-full grow mb-2"
             size="large"
           />
@@ -74,7 +74,7 @@
       <tbody class="p-datatable-tbody">
         <tr class="p-row-even">
           <td class="font-medium w-4/12">
-            {{ $t('given_name') }}
+            {{ $t('contactI18n.given_name') }}
           </td>
           <td>
             <div v-if="!editingContact">
@@ -84,7 +84,7 @@
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('family_name') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.family_name') }}</td>
           <td class="w-full">
             <div v-if="!editingContact">
               {{ contact.family_name }}
@@ -98,7 +98,7 @@
         </tr>
         <tr class="p-row-even">
           <td class="font-medium">
-            {{ $t('alternate_names') }}
+            {{ $t('contactI18n.alternate_names') }}
           </td>
           <td>
             <div v-if="!editingContact">
@@ -114,7 +114,7 @@
         </tr>
 
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('address') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.address') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.address }}</div>
             <InputText v-else v-model="contactEdit.address" class="w-full" />
@@ -122,14 +122,14 @@
         </tr>
 
         <tr class="p-row-even">
-          <td class="font-medium">{{ $t('works_for') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.works_for }}</div>
             <InputText v-else v-model="contactEdit.works_for" class="w-full" />
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('job_title') }}</td>
+          <td class="font-medium">{{ $t('contactI18n.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.job_title }}</div>
             <InputText v-else v-model="contactEdit.job_title" class="w-full" />
@@ -138,7 +138,7 @@
 
         <template v-if="editingContact">
           <tr class="p-row-even">
-            <td class="font-medium">{{ $t('same_as') }}</td>
+            <td class="font-medium">{{ $t('contactI18n.same_as') }}</td>
             <td>
               <Textarea
                 v-model="(contactEdit.same_as as string)"
@@ -150,7 +150,7 @@
           </tr>
 
           <tr class="p-row-odd">
-            <td class="font-medium">{{ $t('image') }}</td>
+            <td class="font-medium">{{ $t('contactI18n.image') }}</td>
             <td>
               <InputText
                 v-model="contactEdit.image"
@@ -198,7 +198,7 @@
 <script setup lang="ts">
 import type { RealtimeChannel, User } from '@supabase/supabase-js';
 
-import type { Contact, ContactEdit, ContactEditCleaned } from '@/types/contact';
+import type { Contact, ContactEdit } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
 
 const $toast = useToast();
@@ -229,12 +229,13 @@ function isValidURL(url: string) {
     return false;
   }
 }
-const isValidSameAs = computed(() =>
-  (contactEdit.value?.same_as as string)
+const isValidSameAs = computed(() => {
+  if (!contactEdit.value?.same_as) return true;
+  return (contactEdit.value?.same_as as string)
     ?.split('\n')
     .filter((item) => item.length)
-    .every(isValidURL)
-);
+    .every(isValidURL);
+});
 
 const isValidAvatar = computed(() => {
   if (!contactEdit.value?.image) return true;
@@ -254,24 +255,24 @@ async function saveContactInformations() {
     return;
   }
 
-  const contactCleaned: ContactEditCleaned = {
+  const contactCleaned = {
     email: contactEdit.value.email,
-    given_name: contactEdit.value.given_name || null,
-    family_name: contactEdit.value.family_name || null,
+    given_name: contactEdit.value.given_name || undefined,
+    family_name: contactEdit.value.family_name || undefined,
     alternate_names: contactEdit.value.alternate_names
       ? (contactEdit.value?.alternate_names as string)
           ?.split('\n')
           .filter((item) => item.length)
-      : null,
-    address: contactEdit.value.address || null,
-    works_for: contactEdit.value.works_for || null,
-    job_title: contactEdit.value.job_title || null,
+      : undefined,
+    address: contactEdit.value.address || undefined,
+    works_for: contactEdit.value.works_for || undefined,
+    job_title: contactEdit.value.job_title || undefined,
     same_as: contactEdit.value.same_as
       ? (contactEdit.value.same_as as string)
           ?.split('\n')
           .filter((item) => item.length)
-      : null,
-    image: contactEdit.value.image || null,
+      : undefined,
+    image: contactEdit.value.image || undefined,
   };
 
   await updateContact(user.id, contactCleaned);
