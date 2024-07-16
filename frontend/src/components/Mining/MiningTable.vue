@@ -658,7 +658,7 @@ const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
 
-const $user = useSupabaseUser();
+const $user = useSupabaseUser() as Ref<User>;
 const $supabaseClient = useSupabaseClient();
 
 /* *** Filters *** */
@@ -694,7 +694,7 @@ async function refineContacts() {
 
 async function syncTable() {
   loadingLabel.value = t('syncing');
-  const user = $user.value as User;
+  const user = $user.value;
   $contactsStore.setContacts(await getContacts(user.id));
   isLoading.value = false;
 }
@@ -702,8 +702,6 @@ async function syncTable() {
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     filtersStore.clearFilter();
-    // If mining is active, update refined persons every 3 seconds
-    $contactsStore.subscribeRealtime($user.value!);
   } else {
     isLoading.value = true;
     await refineContacts();
@@ -775,7 +773,7 @@ const isExportDisabled = computed(
     !implicitlySelectedContactsLength.value
 );
 function getFileName() {
-  const { email } = $user.value as User;
+  const { email } = $user.value;
   const currentDatetime = new Date().toISOString().slice(0, 10);
   const fileName = `leadminer-${email}-${currentDatetime}`;
   return fileName;
@@ -912,7 +910,7 @@ onMounted(() => {
   watchEffect(() => {
     tableHeight.value = `${screenStore.height - tablePosTop.value - 140}px`;
   });
-  $contactsStore.subscribeRealtime($user.value!);
+  $contactsStore.subscribeRealtime($user.value);
 });
 
 onUnmounted(() => {

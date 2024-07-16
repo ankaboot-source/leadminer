@@ -212,7 +212,7 @@ const { t } = useI18n({
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
-const $user = useSupabaseUser();
+const $user = useSupabaseUser() as Ref<User>;
 
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
@@ -309,7 +309,7 @@ function startRealtimeEnrichementTask(userId: string, email: string) {
 async function enrichContact(email: string) {
   loadButtonEnrich.value = true;
   try {
-    startRealtimeEnrichementTask($user.value?.id!, email);
+    startRealtimeEnrichementTask($user.value.id, email);
     const { alreadyEnriched } = await $api<EnrichContactResponse>(
       '/enrichement/enrichAsync',
       {
@@ -343,7 +343,7 @@ function editContactInformations() {
 }
 
 async function saveContactInformations() {
-  const user = $user.value as User;
+  const user = $user.value;
   editingContact.value = false;
   await updateContact(user.id, contactEdit.value);
   showNotification('success', "Contact's informations saved", '');
