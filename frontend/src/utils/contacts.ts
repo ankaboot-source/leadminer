@@ -1,4 +1,4 @@
-import type { Contact, ContactEditCleaned } from '~/types/contact';
+import type { Contact, ContactEdit } from '~/types/contact';
 
 function convertDates(data: Contact[]) {
   return [...data].map((d) => {
@@ -27,10 +27,7 @@ export async function getContacts(userId: string): Promise<Contact[]> {
   return data ? convertDates(data) : [];
 }
 
-export async function updateContact(
-  userId: string,
-  contact: ContactEditCleaned
-) {
+export async function updateContact(userId: string, contact: ContactEdit) {
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient.rpc(
     'update_contact_by_email',
