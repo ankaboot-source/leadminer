@@ -19,7 +19,7 @@ import {
   TaskClean,
   TaskExtract,
   TaskFetch,
-  TaskStatus,
+  TaskStatus
 } from '../../src/services/tasks-manager/types';
 import {
   flickrBase58IdGenerator,
