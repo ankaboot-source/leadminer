@@ -189,41 +189,149 @@
 </template>
 
 <script setup lang="ts">
-import type { RealtimeChannel, User } from '@supabase/supabase-js';
+import type {
+  RealtimeChannel,
+  User,
+  RealtimePostgresChangesPayload,
+} from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit } from '@/types/contact';
 import { updateContact } from '~/utils/contacts';
 
-const $toast = useToast();
-const { $api } = useNuxtApp();
-const $contactInformationSidebar = useMiningContactInformationSidebar();
+type EnrichContactResponse = {
+  taskId: string;
+  userId?: string;
+  webhookSecretToken?: string;
+  total?: string;
+  alreadyEnriched?: boolean;
+};
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
-let subscription: RealtimeChannel;
-const $contactStore = useContactsStore();
+const $toast = useToast();
+const { $api } = useNuxtApp();
+const $user = useSupabaseUser();
+
+const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
-
-const $user = useSupabaseUser();
-
 const loadButtonEnrich = ref(false);
 
-async function saveContactInformations() {
-  editingContact.value = false;
-  const user = $user.value as User;
+let subscription: RealtimeChannel;
 
-  await updateContact(user.id, contactEdit.value);
+function showNotification(
+  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
+  summary: string,
+  detail: string
+) {
   $toast.add({
-    severity: 'success',
-    summary: "Contact's informations saved",
+    severity,
+    summary,
+    detail,
     life: 3000,
   });
+}
+
+watch(show, (value) => {
+  if (value) return;
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+  loadButtonEnrich.value = false;
+});
+
+function startRealtimeEnrichementTask(userId: string, email: string) {
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+  subscription = useSupabaseClient()
+    .channel('enrichement-tracker')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tasks',
+        filter: `category=eq.${'enriching'}`,
+      },
+      (
+        payload: RealtimePostgresChangesPayload<{
+          status: 'running' | 'done' | 'canceled';
+        }>
+      ) => {
+        const task = payload.new as { status: 'done' | 'canceled' };
+        switch (task.status) {
+          case 'done':
+            loadButtonEnrich.value = false;
+            showNotification(
+              'success',
+              t('notification.summary'),
+              t('notification.enrichment_completed')
+            );
+            break;
+          case 'canceled':
+            loadButtonEnrich.value = false;
+            showNotification(
+              'error',
+              t('notification.summary'),
+              t('notification.enrichment_canceled')
+            );
+            break;
+          default:
+            break;
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'persons',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload: RealtimePostgresChangesPayload<Contact>) => {
+        const updatedContact = payload.new as Contact;
+        if (updatedContact.email !== email) {
+          return;
+        }
+        $contactInformationSidebar.contact = updatedContact;
+      }
+    );
+  subscription.subscribe();
+}
+
+async function enrichContact(email: string) {
+  loadButtonEnrich.value = true;
+  try {
+    startRealtimeEnrichementTask($user.value?.id!, email);
+    const { alreadyEnriched } = await $api<EnrichContactResponse>(
+      '/enrichement/enrichAsync',
+      {
+        method: 'POST',
+        body: {
+          emails: [email],
+        },
+      }
+    );
+
+    if (alreadyEnriched) {
+      loadButtonEnrich.value = false;
+      showNotification(
+        'info',
+        t('notification.summary'),
+        t('notification.already_enriched')
+      );
+    }
+  } catch (err) {
+    loadButtonEnrich.value = false;
+    throw err;
+  }
 }
 
 function editContactInformations() {
@@ -234,94 +342,33 @@ function editContactInformations() {
   editingContact.value = true;
 }
 
+async function saveContactInformations() {
+  const user = $user.value as User;
+  editingContact.value = false;
+  await updateContact(user.id, contactEdit.value);
+  showNotification('success', "Contact's informations saved", '');
+}
+
 function cancelContactInformations() {
   editingContact.value = false;
 }
 
 function copyContact(email: string, name?: string) {
-  $toast.add({
-    severity: 'success',
-    summary: t('contact_copied'),
-    detail: t('contact_email_copied'),
-    life: 3000,
-  });
+  showNotification('success', t('contact_copied'), t('contact_email_copied'));
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`
   );
 }
-
-async function enrichContact(email: string) {
-  loadButtonEnrich.value = true;
-  $contactStore.subscribeRealtime($user.value!);
-  setTimeout(() => {
-    $contactStore.unsubscribeRealtime();
-  }, 10000);
-
-  const response = await $api<{
-    taskId: string;
-    userId?: string;
-    webhookSecretToken?: string;
-    total?: string;
-    alreadyEnriched?: boolean;
-  }>('/enrichement/enrichAsync', {
-    method: 'POST',
-    body: {
-      emails: [email],
-    },
-  });
-
-  if (response.alreadyEnriched) {
-    loadButtonEnrich.value = false;
-    $toast.add({
-      severity: 'success',
-      summary: t('enrich_contact'),
-      detail: t('contact_already_exists'),
-      life: 3000,
-    });
-  } else {
-    $toast.add({
-      severity: 'success',
-      summary: t('enrich_contact'),
-      detail: t('contact_enriched'),
-      life: 3000,
-    });
-    // subscription = useSupabaseClient()
-    //   .channel('enrichement-tracker')
-    //   .on(
-    //     'postgres_changes',
-    //     {
-    //       event: '*',
-    //       schema: 'public',
-    //       table: 'tasks',
-    //       filter: `id=eq.${response.taskId}`,
-    //     },
-    //     (payload: RealtimePostgresChangesPayload<any>) => {
-    //       loadButtonEnrich.value = false
-    //       $toast.add({
-    //         severity: 'success',
-    //         summary: t('enrich_contact'),
-    //         detail: t('contact_enriched'),
-    //         life: 3000,
-    //       });
-    //       subscription.unsubscribe()
-    //     }
-    //   );
-    // subscription.subscribe()
-  }
-}
-
-onUnmounted(() => {
-  loadButtonEnrich.value = false;
-  subscription.unsubscribe();
-});
 </script>
-
 <i18n lang="json">
 {
   "en": {
-    "enrich_contact": "Enrich contact",
-    "contact_enriched": "You're contact is succufully enriched.",
-    "contact_already_exists": "This contact is already enriched.",
+    "notification": {
+      "summary": "Enrich Contact",
+      "enrichment_completed": "Your contact has been successfully enriched.",
+      "enrichment_canceled": "Your contact enrichment has been canceled.",
+      "already_enriched": "This contact is already enriched."
+    },
     "contactI18n": {
       "name": "Full name",
       "given_name": "Given Name",
@@ -341,9 +388,12 @@ onUnmounted(() => {
     }
   },
   "fr": {
-    "enrich_contact": "Enrichir le contact",
-    "contact_enriched": "Votre contact a été enrichi avec succès.",
-    "contact_already_exists": "La fiche contact est déjà enrichie",
+    "notification": {
+      "summary": "Enrichir le Contact",
+      "enrichment_completed": "Votre contact a été enrichi avec succès.",
+      "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
+      "already_enriched": "Ce contact est déjà enrichi."
+    },
     "contactI18n": {
       "name": "Nom complet",
       "given_name": "Prénom",

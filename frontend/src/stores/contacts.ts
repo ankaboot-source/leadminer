@@ -46,7 +46,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     syncInterval = window.setInterval(() => {
       refreshContacts();
-    }, 5000);
+    }, 3000);
 
     subscription.subscribe();
   }

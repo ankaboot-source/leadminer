@@ -563,7 +563,7 @@
 </template>
 
 <script setup lang="ts">
-import { type RealtimeChannel, type User } from '@supabase/supabase-js';
+import { type User } from '@supabase/supabase-js';
 import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
@@ -654,14 +654,9 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
 
-const contactsCache = new Map<string, Contact>();
-
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
-
-let refreshInterval: number;
-let subscription: RealtimeChannel;
 
 const $user = useSupabaseUser();
 const $supabaseClient = useSupabaseClient();
@@ -682,17 +677,6 @@ function toggleSettingsPanel(event: Event) {
 
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
-}
-
-function refreshTable() {
-  const contactCacheLength = contactsCache.size;
-  const hasNewContacts = contactCacheLength > contactsLength.value;
-
-  if (hasNewContacts) {
-    isLoading.value = true;
-    $contactsStore.refreshContacts();
-    isLoading.value = false;
-  }
 }
 
 async function refineContacts() {
@@ -720,16 +704,7 @@ watch(activeMiningTask, async (isActive) => {
     filtersStore.clearFilter();
     // If mining is active, update refined persons every 3 seconds
     $contactsStore.subscribeRealtime($user.value!);
-    refreshInterval = window.setInterval(() => {
-      refreshTable();
-    }, 5000);
   } else {
-    // Close realtime and re-open again later
-    if (subscription) {
-      await subscription.unsubscribe();
-    }
-    clearInterval(refreshInterval);
-    contactsCache.clear();
     isLoading.value = true;
     await refineContacts();
     await syncTable();
@@ -871,19 +846,6 @@ const isFullscreen = ref(false);
 
 const visibleColumns = ref(['contacts']);
 const screenStore = useScreenStore();
-onMounted(() => {
-  screenStore.init();
-  visibleColumns.value = [
-    'contacts',
-    'name',
-    'same_as',
-    'image',
-    ...(screenStore.width > 550 ? ['occurrence'] : []),
-    ...(screenStore.width > 700 ? ['recency'] : []),
-    ...(screenStore.width > 800 ? ['tags'] : []),
-    ...(screenStore.width > 950 ? ['status'] : []),
-  ];
-});
 const visibleColumnsOptions = [
   { label: t('contacts'), value: 'contacts' },
   { label: t('source'), value: 'source' },
@@ -927,23 +889,35 @@ const scrollHeight = computed(() =>
   !isFullscreen.value ? tableHeight.value : ''
 );
 
-onMounted(() => {
-  function observeTop() {
-    const resizeObserver = new ResizeObserver(() => {
-      tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
-    });
-    resizeObserver.observe(TableRef.value?.$el);
-  }
-  observeTop();
+function observeTop() {
+  const resizeObserver = new ResizeObserver(() => {
+    tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
+  });
+  resizeObserver.observe(TableRef.value?.$el);
+}
 
+onMounted(() => {
+  screenStore.init();
+  visibleColumns.value = [
+    'contacts',
+    'name',
+    'same_as',
+    'image',
+    ...(screenStore.width > 550 ? ['occurrence'] : []),
+    ...(screenStore.width > 700 ? ['recency'] : []),
+    ...(screenStore.width > 800 ? ['tags'] : []),
+    ...(screenStore.width > 950 ? ['status'] : []),
+  ];
+  observeTop();
   watchEffect(() => {
     tableHeight.value = `${screenStore.height - tablePosTop.value - 140}px`;
   });
+  $contactsStore.subscribeRealtime($user.value!);
 });
 
 onUnmounted(() => {
   screenStore.destroy();
-  clearInterval(refreshInterval);
+  $contactsStore.unsubscribeRealtime();
 });
 </script>
 
