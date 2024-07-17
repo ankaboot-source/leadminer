@@ -60,7 +60,7 @@ router.post(
       });
       return res;
     } catch (err) {
-      // @ts-ignore
+      // eslint-disable-next-line no-console
       console.log((err as Error).message);
       return err;
     }

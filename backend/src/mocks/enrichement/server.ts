@@ -17,7 +17,7 @@ app.use(urlencoded({ limit: '5mb', extended: true }));
 app.use('/voilanorbert', voilanorbertRoutes);
 
 app.listen(SERVER_PORT, () => {
-  // @ts-ignore
+  // eslint-disable-next-line no-console
   console.log(
     `Started mocks server for local development.
     ${coloredLog(colors.cyan, 'Server:')} http://127.0.0.1:${SERVER_PORT}

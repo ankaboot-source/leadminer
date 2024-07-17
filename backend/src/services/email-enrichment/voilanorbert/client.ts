@@ -10,7 +10,7 @@ interface Config {
 
 export default class Voilanorbert {
   private static readonly baseURL =
-    'http://127.0.0.1:8083/voilanorbert/2018-01-08/enrich/';
+    'https://api.voilanorbert.com/2018-01-08/enrich';
 
   private readonly api: AxiosInstance;
 

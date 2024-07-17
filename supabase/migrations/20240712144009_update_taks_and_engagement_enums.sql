@@ -28,13 +28,12 @@ alter publication supabase_realtime add table public.tasks;
 -- Enable row level security for the 'tasks' table
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 
-create policy "Enable select for users based on user_id"
+CREATE policy "Enable select for users based on user_id"
 on "public"."tasks"
 as permissive
 for select
 to public
 using ((select auth.uid()) = user_id);
-
 
 CREATE TABLE engagement (
     user_id uuid not null,

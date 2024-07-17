@@ -4,9 +4,207 @@ import ENV from '../config';
 import CreditsHandler from '../services/credits/creditHandler';
 import { Users } from '../db/interfaces/Users';
 import emailEnrichementService from '../services/email-enrichment';
+import { Contact } from '../db/types';
+
+/**
+ * Queries enriched emails for a given user.
+ * @param userId - The ID of the user.
+ * @returns List of enriched email addresses.
+ * @throws Error if there is an issue fetching data from the database.
+ */
+async function getEnrichedEmails(userId: string) {
+  const { data: emails, error } = await supabaseClient
+    .from('engagement')
+    .select('email')
+    .match({ user_id: userId, engagement_type: 'ENRICH' })
+    .returns<{ email: string }[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return emails.map((record) => record.email);
+}
+
+/**
+ * Starts a new enrichment task.
+ * @param userId - The ID of the user.
+ * @returns The newly created task.
+ * @throws Error if there is an issue creating the task in the database.
+ */
+async function startEnrichmentTask(userId: string) {
+  const { data: task, error } = await supabaseClient
+    .from('tasks')
+    .insert({
+      user_id: userId,
+      status: 'running',
+      type: 'enrich',
+      category: 'enriching'
+    })
+    .select('id')
+    .single<{ id: string }>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return task;
+}
+
+/**
+ * Retrieves an enrichment task by its ID.
+ * @param taskId - The ID of the task.
+ * @returns The task data.
+ * @throws Error if there is an issue fetching the task from the database.
+ */
+async function getEnrichmentTask(taskId: string) {
+  const { data: task, error } = await supabaseClient
+    .from('tasks')
+    .select('*')
+    .eq('id', taskId)
+    .single<{
+      id: string;
+      details: {
+        userId: string;
+        enrichmentToken: string;
+        result?: {
+          total?: number;
+          enriched?: number;
+        };
+      };
+    }>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return task;
+}
+
+/**
+ * Updates an enrichment task with the given status and details.
+ * @param taskId - The ID of the task.
+ * @param status - The new status of the task.
+ * @param details - Optional details to update the task with.
+ * @throws Error if there is an issue updating the task in the database.
+ */
+async function updateEnrichmentTask(
+  taskId: string,
+  status: 'running' | 'done' | 'canceled',
+  details?: {
+    userId: string;
+    enrichmentToken: string;
+    result?: {
+      total?: number;
+      enriched?: number;
+    };
+  }
+) {
+  const { error } = await supabaseClient
+    .from('tasks')
+    .update({
+      status,
+      details,
+      stopped_at: ['done', 'canceled'].includes(status)
+        ? new Date().toISOString()
+        : null
+    })
+    .eq('id', taskId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+/**
+ * Retrieves or creates an organization by name.
+ * @param name - The name of the organization.
+ * @returns The organization data.
+ * @throws Error if there is an issue fetching or creating the organization in the database.
+ */
+async function getOrCreateOrganization(name: string) {
+  const { data: existingOrganization } = await supabaseClient
+    .from('organizations')
+    .select('id')
+    .eq('name', name)
+    .single();
+
+  if (existingOrganization) {
+    return existingOrganization;
+  }
+
+  const { data: createdOrganization, error: upsertError } = await supabaseClient
+    .from('organizations')
+    .upsert({ name })
+    .select('id')
+    .single();
+
+  if (upsertError) {
+    throw new Error(upsertError.message);
+  }
+
+  return createdOrganization;
+}
+
+/**
+ * Enriches a contact with the provided data.
+ * @param userId - The ID of the user.
+ * @param contact - The contact data to enrich.
+ * @throws Error if there is an issue updating the contact in the database.
+ */
+async function enrichContact(
+  userId: string,
+  {
+    email,
+    name,
+    image,
+    address,
+    job_title,
+    works_for,
+    given_name,
+    family_name,
+    same_as
+  }: Partial<Contact>
+) {
+  const organization = works_for
+    ? await getOrCreateOrganization(works_for)
+    : undefined;
+
+  const { error: updateError } = await supabaseClient
+    .from('persons')
+    .update({
+      name,
+      image,
+      same_as,
+      address,
+      job_title,
+      given_name,
+      family_name,
+      works_for: organization?.id
+    })
+    .match({ user_id: userId, email });
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  const { error: engagementError } = await supabaseClient
+    .from('engagement')
+    .upsert({
+      email,
+      user_id: userId,
+      engagement_type: 'ENRICH'
+    });
+
+  if (engagementError) {
+    throw new Error(engagementError.message);
+  }
+}
 
 export default function initializeEnrichementController(userResolver: Users) {
   return {
+    /**
+     * Creates an Enrichment task for a list of emails.
+     */
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
       const { emails }: { emails: string[] } = req.body;
@@ -17,16 +215,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             .json({ message: 'Parameter "emails" must be a list of emails' });
         }
 
-        const { data, error: engagementError } = await supabaseClient
-          .from('engagement')
-          .select('email')
-          .match({ user_id: user.id, engagement_type: 'ENRICH' });
-
-        if (engagementError) {
-          throw new Error(engagementError.message);
-        }
-
-        const enrichedContacts = data.map((record) => record.email as string);
+        const enrichedContacts = await getEnrichedEmails(user.id);
         const contactsToEnrich = emails.filter(
           (email) => !enrichedContacts.includes(email)
         );
@@ -57,172 +246,94 @@ export default function initializeEnrichementController(userResolver: Users) {
           }
         }
 
-        const { data: task, error } = await supabaseClient
-          .from('tasks')
-          .insert({
-            user_id: user.id,
-            status: 'running',
-            type: 'enrich',
-            category: 'enriching'
-          })
-          .select('id')
-          .single();
-
         const enricher = emailEnrichementService.getEmailEnricher();
+        const enrichmentTask = await startEnrichmentTask(user.id);
+
         const { token } = await enricher.enrichWebhook(
           contactsToEnrich,
-          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${task?.id}`
+          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`
         );
 
-        const details = {
-          taskId: task?.id,
+        await updateEnrichmentTask(enrichmentTask.id, 'running', {
           userId: user.id,
-          webhookSecretToken: token,
+          enrichmentToken: token,
+          result: {
+            total: contactsToEnrich.length
+          }
+        });
+
+        return res.status(200).json({
+          taskId: enrichmentTask.id,
           total: contactsToEnrich.length
-        };
-
-        await supabaseClient
-          .from('tasks')
-          .update({
-            details: JSON.stringify({
-              userId: user.id,
-              webhookSecretToken: token,
-              total: contactsToEnrich.length
-            })
-          })
-          .eq('id', task?.id);
-
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        return res.status(200).json(details);
+        });
       } catch (err) {
         return next(err);
       }
     },
 
+    /**
+     * Handles webhook callbacks for enrichment tasks.
+     */
     async webhook(req: Request, res: Response, next: NextFunction) {
       const { id: taskId } = req.params;
-      const { token: webhookToken } = req.body;
+      const { token: enrichmentToken } = req.body;
 
       try {
         const enricher = emailEnrichementService.getEmailEnricher();
 
-        const { data: task, error } = await supabaseClient
-          .from('tasks')
-          .select('*')
-          .eq('id', taskId)
-          .single();
+        const { id, details } = await getEnrichmentTask(taskId);
+        const { userId: cachedUserId, enrichmentToken: cachedEnrichmentToken } =
+          details;
 
-        if (error) {
-          throw new Error(error.message);
-        }
-
-        if (!task) {
+        if (!id) {
           return res.status(404).send({
-            message: `Enrichement with id ${webhookToken} not found.`
+            message: `Enrichement with id ${enrichmentToken} not found.`
           });
         }
 
-        const { userId, webhookSecretToken: cachedWebhookToken } = JSON.parse(
-          task.details
-        );
-
-        if (webhookToken !== cachedWebhookToken) {
-          return res.sendStatus(401);
+        if (enrichmentToken !== cachedEnrichmentToken) {
+          return res
+            .status(401)
+            .json({ message: 'You are not authorized to use this token' });
         }
 
         const enrichementResult = enricher.enrichementMapper(req.body);
 
         await Promise.all(
-          enrichementResult.map(
-            async ({
-              email,
-              name,
-              image,
-              address,
-              jobTitle,
-              organization,
-              givenName,
-              familyName,
-              sameAs
-            }) => {
-              const { data: organizationData, error: upsertError } =
-                organization
-                  ? await supabaseClient
-                      .from('organizations')
-                      .upsert({ name: organization })
-                      .select('id')
-                      .single()
-                  : { data: null, error: null };
-
-              if (upsertError) {
-                throw new Error(upsertError.message);
-              }
-
-              const { error: updateError } = await supabaseClient
-                .from('persons')
-                .update({
-                  image,
-                  address,
-                  name,
-                  given_name: givenName,
-                  family_name: familyName,
-                  job_title: jobTitle,
-                  works_for: organizationData?.id,
-                  same_as: sameAs
-                })
-                .match({ user_id: userId, email });
-
-              if (updateError) {
-                throw new Error(updateError.message);
-              }
-
-              const { error: EngagementError } = await supabaseClient
-                .from('engagement')
-                .upsert({
-                  email,
-                  user_id: userId,
-                  engagement_type: 'ENRICH'
-                });
-
-              if (EngagementError) {
-                throw new Error(EngagementError.message);
-              }
-            }
+          enrichementResult.map((contact) =>
+            enrichContact(cachedUserId, {
+              image: contact.image,
+              email: contact.email,
+              name: contact.name,
+              same_as: contact.sameAs,
+              address: contact.address,
+              job_title: contact.jobTitle,
+              given_name: contact.givenName,
+              family_name: contact.familyName,
+              works_for: contact.organization
+            })
           )
         );
 
-        const { error: updateTaskError } = await supabaseClient
-          .from('tasks')
-          .update({
-            status: 'done',
-            stopped_at: new Date().toISOString()
-          })
-          .eq('id', taskId);
-
-        if (updateTaskError) {
-          throw new Error(updateTaskError.message);
-        }
+        await updateEnrichmentTask(taskId, 'done', {
+          ...details,
+          result: {
+            ...details.result,
+            enriched: enrichementResult.length
+          }
+        });
 
         if (ENV.ENABLE_CREDIT) {
           const creditHandler = new CreditsHandler(
             userResolver,
             ENV.CONTACT_CREDIT
           );
-          await creditHandler.deduct(userId, enrichementResult.length);
+          await creditHandler.deduct(cachedUserId, enrichementResult.length);
         }
 
         return res.status(200);
       } catch (err) {
-        await supabaseClient
-          .from('tasks')
-          .update({
-            status: 'canceled',
-            stopped_at: new Date().toISOString()
-          })
-          .eq('id', taskId);
+        await updateEnrichmentTask(taskId, 'canceled');
         return next(err);
       }
     }

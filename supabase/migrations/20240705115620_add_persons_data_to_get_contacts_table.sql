@@ -225,9 +225,6 @@ END;
 $$
 LANGUAGE plpgsql;
 
--- Add RLS: Enable update for users based on user_id
-create policy "Enable update for users based on user_id" on "public"."persons" as permissive for update to public using ((( SELECT auth.uid() AS uid) = user_id))with check ((( SELECT auth.uid() AS uid) = user_id));
-
 -- Add RLS: Enable read access for all users and insert for authenticated users only
 create policy "Enable insert for authenticated users only" on "public"."organizations" as permissive for insert to authenticated with check (true);
 create policy "Enable read access for all users" on "public"."organizations" as permissive for select to authenticated using (true);

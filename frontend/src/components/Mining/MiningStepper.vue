@@ -22,6 +22,9 @@
       <StepperPanel :header="t('clean')">
         <CleanPanel />
       </StepperPanel>
+      <StepperPanel :header="t('enrich')">
+        <EnrichPanel />
+      </StepperPanel>
     </Stepper>
   </Panel>
   <MiningConsentSidebar
@@ -33,6 +36,7 @@
 <script setup lang="ts">
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import EnrichPanel from '@/components/Mining/StepperPanels/EnrichPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import type { MiningSourceType } from '~/types/mining';
@@ -82,13 +86,15 @@ onMounted(() => {
     "mine_contacts": "Mine contacts from your email account",
     "source": "Source",
     "mine": "Mine",
-    "clean": "Clean"
+    "clean": "Clean",
+    "enrich": "Enrich"
   },
   "fr": {
     "mine_contacts": "Extraire des contacts de votre compte email",
     "source": "Source",
     "mine": "Extraire",
-    "clean": "Nettoyer"
+    "clean": "Clean",
+    "enrich": "Enrichir"
   }
 }
 </i18n>

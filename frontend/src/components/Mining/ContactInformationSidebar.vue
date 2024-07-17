@@ -196,29 +196,36 @@
 </template>
 
 <script setup lang="ts">
-import type { RealtimeChannel, User } from '@supabase/supabase-js';
+import type {
+  RealtimeChannel,
+  User,
+  RealtimePostgresChangesPayload,
+} from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit } from '@/types/contact';
-import { useContactsStore } from '~/stores/contacts';
 
-const $toast = useToast();
-const { $api } = useNuxtApp();
-const $contactInformationSidebar = useMiningContactInformationSidebar();
+type EnrichContactResponse = {
+  taskId: string;
+  userId?: string;
+  webhookSecretToken?: string;
+  total?: string;
+  alreadyEnriched?: boolean;
+};
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
-let subscription: RealtimeChannel;
-const $contactStore = useContactsStore();
+const $toast = useToast();
+const { $api } = useNuxtApp();
+const $user = useSupabaseUser() as Ref<User>;
+
+const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
-
-const $user = useSupabaseUser();
-
 const loadButtonEnrich = ref(false);
 function isValidURL(url: string) {
   try {
@@ -242,16 +249,140 @@ const isValidAvatar = computed(() => {
   return isValidURL(contactEdit.value?.image as string);
 });
 
+let subscription: RealtimeChannel;
+
+function showNotification(
+  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
+  summary: string,
+  detail: string
+) {
+  $toast.add({
+    severity,
+    summary,
+    detail,
+    life: 3000,
+  });
+}
+
+watch(show, (value) => {
+  if (value) return;
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+  loadButtonEnrich.value = false;
+});
+
+function startRealtimeEnrichementTask(userId: string, email: string) {
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+  subscription = useSupabaseClient()
+    .channel('enrichement-tracker')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tasks',
+        filter: `category=eq.${'enriching'}`,
+      },
+      (
+        payload: RealtimePostgresChangesPayload<{
+          status: 'running' | 'done' | 'canceled';
+        }>
+      ) => {
+        const task = payload.new as { status: 'done' | 'canceled' };
+        switch (task.status) {
+          case 'done':
+            loadButtonEnrich.value = false;
+            showNotification(
+              'success',
+              t('notification.summary'),
+              t('notification.enrichment_completed')
+            );
+            break;
+          case 'canceled':
+            loadButtonEnrich.value = false;
+            showNotification(
+              'error',
+              t('notification.summary'),
+              t('notification.enrichment_canceled')
+            );
+            break;
+          default:
+            break;
+        }
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'persons',
+        filter: `user_id=eq.${userId}`,
+      },
+      (payload: RealtimePostgresChangesPayload<Contact>) => {
+        const updatedContact = payload.new as Contact;
+        if (updatedContact.email !== email) {
+          return;
+        }
+        $contactInformationSidebar.contact = updatedContact;
+      }
+    );
+  subscription.subscribe();
+}
+
+async function enrichContact(email: string) {
+  loadButtonEnrich.value = true;
+  try {
+    startRealtimeEnrichementTask($user.value.id, email);
+    const { alreadyEnriched } = await $api<EnrichContactResponse>(
+      '/enrichement/enrichAsync',
+      {
+        method: 'POST',
+        body: {
+          emails: [email],
+        },
+      }
+    );
+
+    if (alreadyEnriched) {
+      loadButtonEnrich.value = false;
+      showNotification(
+        'info',
+        t('notification.summary'),
+        t('notification.already_enriched')
+      );
+    }
+  } catch (err) {
+    loadButtonEnrich.value = false;
+    throw err;
+  }
+}
+
+function onHide() {
+  editingContact.value = false;
+  $contactInformationSidebar.$reset();
+}
+
+function editContactInformations() {
+  contactEdit.value = JSON.parse(JSON.stringify(contact.value));
+  contactEdit.value.alternate_names =
+    contact.value?.alternate_names?.join('\n');
+  contactEdit.value.same_as = contact.value?.same_as?.join('\n');
+  editingContact.value = true;
+}
+
 async function saveContactInformations() {
   const user = $user.value as User;
 
   if (!isValidSameAs.value || !isValidAvatar.value) {
-    $toast.add({
-      severity: 'error',
-      summary: t('url_invalid_summary'),
-      detail: t('url_invalid_detail'),
-      life: 3000,
-    });
+    showNotification(
+      'error',
+      t('url_invalid_summary'),
+      t('url_invalid_detail')
+    );
     return;
   }
 
@@ -277,19 +408,7 @@ async function saveContactInformations() {
 
   await updateContact(user.id, contactCleaned);
   editingContact.value = false;
-  $toast.add({
-    severity: 'success',
-    summary: t('contact_saved'),
-    life: 3000,
-  });
-}
-
-function editContactInformations() {
-  contactEdit.value = JSON.parse(JSON.stringify(contact.value));
-  contactEdit.value.alternate_names =
-    contact.value?.alternate_names?.join('\n');
-  contactEdit.value.same_as = contact.value?.same_as?.join('\n');
-  editingContact.value = true;
+  showNotification('success', t('contact_saved'), '');
 }
 
 function cancelContactInformations() {
@@ -297,94 +416,38 @@ function cancelContactInformations() {
 }
 
 function copyContact(email: string, name?: string) {
-  $toast.add({
-    severity: 'success',
-    summary: t('contact_copied'),
-    detail: t('contact_email_copied'),
-    life: 3000,
-  });
+  showNotification('success', t('contact_copied'), t('contact_email_copied'));
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`
   );
 }
-
-function onHide() {
-  editingContact.value = false;
-  $contactInformationSidebar.$reset();
-}
-
-async function enrichContact(email: string) {
-  loadButtonEnrich.value = true;
-  $contactStore.subscribeRealtime($user.value!);
-  setTimeout(() => {
-    $contactStore.unsubscribeRealtime();
-  }, 10000);
-
-  const response = await $api<{
-    taskId: string;
-    userId?: string;
-    webhookSecretToken?: string;
-    total?: string;
-    alreadyEnriched?: boolean;
-  }>('/enrichement/enrichAsync', {
-    method: 'POST',
-    body: {
-      emails: [email],
-    },
-  });
-
-  if (response.alreadyEnriched) {
-    loadButtonEnrich.value = false;
-    $toast.add({
-      severity: 'success',
-      summary: t('enrich_contact'),
-      detail: t('contact_already_exists'),
-      life: 3000,
-    });
-  } else {
-    $toast.add({
-      severity: 'success',
-      summary: t('enrich_contact'),
-      detail: t('contact_enriched'),
-      life: 3000,
-    });
-    // subscription = useSupabaseClient()
-    //   .channel('enrichement-tracker')
-    //   .on(
-    //     'postgres_changes',
-    //     {
-    //       event: '*',
-    //       schema: 'public',
-    //       table: 'tasks',
-    //       filter: `id=eq.${response.taskId}`,
-    //     },
-    //     (payload: RealtimePostgresChangesPayload<any>) => {
-    //       loadButtonEnrich.value = false
-    //       $toast.add({
-    //         severity: 'success',
-    //         summary: t('enrich_contact'),
-    //         detail: t('contact_enriched'),
-    //         life: 3000,
-    //       });
-    //       subscription.unsubscribe()
-    //     }
-    //   );
-    // subscription.subscribe()
-  }
-}
-
-onUnmounted(() => {
-  loadButtonEnrich.value = false;
-  subscription.unsubscribe();
-});
 </script>
-
 <i18n lang="json">
 {
   "en": {
-    "enrich_contact": "Enrich contact",
-    "contact_enriched": "You're contact is succufully enriched.",
-    "contact_already_exists": "This contact is already enriched.",
+    "notification": {
+      "summary": "Enrich Contact",
+      "enrichment_completed": "Your contact has been successfully enriched.",
+      "enrichment_canceled": "Your contact enrichment has been canceled.",
+      "already_enriched": "This contact is already enriched."
+    },
+    "contactI18n": {
+      "name": "Full name",
+      "given_name": "Given Name",
+      "family_name": "Family Name",
+      "alternate_names": "Alternate Names",
+      "address": "Location",
+      "works_for": "Works For",
+      "job_title": "Job Title",
+      "same_as": "Same As",
+      "image": "Avatar URL",
+      "given_name_definition": "The given name of this contact",
+      "family_name_definition": "The family name of this contact",
+      "alternate_names_definition": "Other names this contact goes by",
+      "address_definition": "The location of this contact",
+      "works_for_definition": "Organization this contact works for",
+      "job_title_definition": "The job title of this contact"
+    },
     "copy": "Copy",
     "contact_copied": "Contact copied",
     "contact_email_copied": "This contact email address has been copied to your clipboard",
@@ -393,9 +456,29 @@ onUnmounted(() => {
     "url_invalid_detail": "Please enter a valid URL"
   },
   "fr": {
-    "enrich_contact": "Enrichir le contact",
-    "contact_enriched": "Votre contact a été enrichi avec succès.",
-    "contact_already_exists": "La fiche contact est déjà enrichie",
+    "notification": {
+      "summary": "Enrichir le Contact",
+      "enrichment_completed": "Votre contact a été enrichi avec succès.",
+      "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
+      "already_enriched": "Ce contact est déjà enrichi."
+    },
+    "contactI18n": {
+      "name": "Nom complet",
+      "given_name": "Prénom",
+      "family_name": "Nom de famille",
+      "alternate_names": "Autres noms",
+      "address": "Adresse",
+      "works_for": "Travaille pour",
+      "job_title": "Titre du poste",
+      "same_as": "Même que",
+      "image": "URL de l'avatar",
+      "given_name_definition": "Le prénom de ce contact",
+      "family_name_definition": "Le nom de famille de ce contact",
+      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
+      "address_definition": "L'emplacement de ce contact",
+      "works_for_definition": "Organisation pour laquelle ce contact travaille",
+      "job_title_definition": "Le titre du poste de ce contact"
+    },
     "copy": "Copier",
     "contact_copied": "Contact copié",
     "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",
