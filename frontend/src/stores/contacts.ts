@@ -29,7 +29,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contacts.value = Array.from(cache.values());
   }
 
-  async function subscribeRealtime(user: User) {
+  function subscribeRealtime(user: User) {
     subscription = useSupabaseClient()
       .channel('*')
       .on(

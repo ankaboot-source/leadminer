@@ -5,8 +5,9 @@
       {{ t('text.contacts_to_enrich') }}
     </div>
     <div id="progress-time">
-      <span v-if="activeTask" class="pr-1"> {{ t('text.estimated_time') }} </span>
-      
+      <span v-if="activeTask" class="pr-1">
+        {{ t('text.estimated_time') }}
+      </span>
     </div>
   </div>
 
@@ -86,7 +87,7 @@ const $toast = useToast();
 const $contactStore = useContactsStore();
 
 const activeTask = ref(true);
-const currentProgress = ref<number | undefined>()
+const currentProgress = ref<number | undefined>();
 const progressMode = computed(() =>
   activeTask.value ? 'indeterminate' : 'determinate'
 );
@@ -148,7 +149,7 @@ function startEnrichmentRealtimeListener() {
               );
             }
             activeTask.value = false;
-            currentProgress.value = 100
+            currentProgress.value = 100;
             break;
 
           case 'canceled':
