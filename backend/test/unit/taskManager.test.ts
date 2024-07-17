@@ -16,10 +16,10 @@ import {
   MiningTask,
   RedactedTask,
   TaskCategory,
+  TaskClean,
   TaskExtract,
   TaskFetch,
-  TaskStatus,
-  TaskVerify
+  TaskStatus
 } from '../../src/services/tasks-manager/types';
 import {
   flickrBase58IdGenerator,
@@ -118,7 +118,7 @@ describe('Test TaskManager helper functions', () => {
         process: {
           fetch: {} as TaskFetch,
           extract: {} as TaskExtract,
-          enrich: {} as TaskVerify
+          clean: {} as TaskClean
         },
         progress: {
           totalMessages: 100,
@@ -275,8 +275,8 @@ describe('TasksManager', () => {
               status: TaskStatus.Running
             }),
             expect.objectContaining({
-              type: 'enrich',
-              category: TaskCategory.Enrich,
+              type: 'clean',
+              category: TaskCategory.Cleaning,
               status: TaskStatus.Running
             })
           ])
@@ -333,8 +333,8 @@ describe('TasksManager', () => {
         );
         expect(tasksResolver.update).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: 'enrich',
-            category: TaskCategory.Enrich,
+            type: 'clean',
+            category: TaskCategory.Cleaning,
             status: TaskStatus.Canceled
           })
         );

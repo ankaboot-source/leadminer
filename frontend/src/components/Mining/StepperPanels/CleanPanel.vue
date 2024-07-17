@@ -24,13 +24,25 @@
       :label="t('halt_cleaning')"
       @click="haltCleaning"
     />
-    <Button
-      v-else
-      class="w-full md:w-max"
-      severity="secondary"
-      :label="t('start_new_mining')"
-      @click="startNewMining"
-    />
+    <div v-else class="space-x-2">
+      <Button
+        class="w-full md:w-max"
+        severity="secondary"
+        :label="t('start_new_mining')"
+        @click="startNewMining"
+      />
+      <Button
+        class="w-full md:w-max border-solid border-2 border-black"
+        severity="contrast"
+        :label="t('enrich_contacts')"
+        :disabled="useContactsStore().filtered.length === 0"
+        @click="$stepper.next()"
+      >
+        <template #icon
+          ><span class="p-button-icon p-button-icon-right">💎</span>
+        </template>
+      </Button>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -123,6 +135,7 @@ function startNewMining() {
 <i18n lang="json">
 {
   "en": {
+    "enrich_contacts": "Enrich your contacts",
     "contacts_to_clean": "estimated contacts to clean.",
     "halt_cleaning": "Halt cleaning",
     "start_new_mining": "Start a new mining",
@@ -134,6 +147,7 @@ function startNewMining() {
     "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
   },
   "fr": {
+    "enrich_contacts": "Enrichissez vos contacts",
     "contacts_to_clean": "contacts estimés à nettoyer",
     "halt_cleaning": "Arrêter le nettoyage",
     "start_new_mining": "Commencer une nouvelle extraction",
