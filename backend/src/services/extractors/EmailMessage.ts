@@ -250,7 +250,6 @@ export default class EmailMessage {
           const person: Person = {
             name: validContact.name,
             email: validContact.email.address,
-            givenName: validContact.name,
             identifiers: [validContact.email.identifier]
           };
 

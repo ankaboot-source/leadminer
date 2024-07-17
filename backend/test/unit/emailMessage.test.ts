@@ -329,7 +329,6 @@ describe('Email Message', () => {
           person: {
             name: 'Leadminer',
             email: 'leadminer@leadminer.io',
-            givenName: 'Leadminer',
             identifiers: ['leadminer']
           },
           pointOfContact: {
