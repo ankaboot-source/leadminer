@@ -361,6 +361,11 @@ async function enrichContact(email: string) {
   }
 }
 
+function onHide() {
+  editingContact.value = false;
+  $contactInformationSidebar.$reset();
+}
+
 function editContactInformations() {
   contactEdit.value = JSON.parse(JSON.stringify(contact.value));
   contactEdit.value.alternate_names =
@@ -415,10 +420,6 @@ function copyContact(email: string, name?: string) {
   navigator.clipboard.writeText(
     name && name !== '' ? `${name} <${email}>` : `<${email}>`
   );
-}
-function onHide() {
-  editingContact.value = false;
-  $contactInformationSidebar.$reset();
 }
 </script>
 <i18n lang="json">
