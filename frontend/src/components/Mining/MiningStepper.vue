@@ -11,7 +11,7 @@
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="$stepper.index">
+    <Stepper v-model:active-step="$stepper.index" linear>
       <StepperPanel :header="t('source')">
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
@@ -86,13 +86,15 @@ onMounted(() => {
     "mine_contacts": "Mine contacts from your email account",
     "source": "Source",
     "mine": "Mine",
-    "clean": "Clean"
+    "clean": "Clean",
+    "enrich": "Enrich"
   },
   "fr": {
     "mine_contacts": "Extraire des contacts de votre compte email",
     "source": "Source",
     "mine": "Extraire",
-    "clean": "Nettoyer"
+    "clean": "Clean",
+    "enrich": "Enrichir"
   }
 }
 </i18n>

@@ -47,6 +47,7 @@
       class="w-full md:w-max"
       severity="secondary"
       :label="t('button.start_new_mining')"
+      @click="startNewMining"
     />
   </div>
 </template>
@@ -84,7 +85,9 @@ const { t } = useI18n({
 const { $api } = useNuxtApp();
 
 const $toast = useToast();
+const $stepper = useMiningStepper();
 const $contactStore = useContactsStore();
+const $leadminerStore = useLeadminerStore();
 
 const activeTask = ref(true);
 const currentProgress = ref<number | undefined>();
@@ -94,6 +97,11 @@ const progressMode = computed(() =>
 const progressColor = computed(() =>
   activeTask.value ? 'bg-amber-400' : 'bg-green-600'
 );
+
+function startNewMining() {
+  $leadminerStore.$resetMining();
+  $stepper.go(0);
+}
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
@@ -217,8 +225,8 @@ onUnmounted(() => {
       "contacts_to_enrich": "contacts to enrich"
     },
     "button": {
-      "halt_enrichment": "Cancel enrichment.",
-      "start_new_mining": "Start a new mining."
+      "halt_enrichment": "Cancel enrichment",
+      "start_new_mining": "Start a new mining"
     }
   },
   "fr": {
@@ -235,8 +243,8 @@ onUnmounted(() => {
       "contacts_to_enrich": "contacts à enrichir"
     },
     "button": {
-      "halt_enrichment": "Annuler l'enrichissement.",
-      "start_new_mining": "Commencer une nouvelle extraction."
+      "halt_enrichment": "Annuler l'enrichissement",
+      "start_new_mining": "Commencer une nouvelle extraction"
     }
   }
 }
