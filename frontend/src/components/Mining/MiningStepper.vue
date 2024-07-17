@@ -11,7 +11,7 @@
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="$stepper.index" linear>
+    <Stepper v-model:active-step="$stepper.index">
       <StepperPanel :header="t('source')">
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
@@ -21,6 +21,9 @@
       </StepperPanel>
       <StepperPanel :header="t('clean')">
         <CleanPanel />
+      </StepperPanel>
+      <StepperPanel :header="t('enrich')">
+        <EnrichPanel />
       </StepperPanel>
     </Stepper>
   </Panel>
@@ -33,6 +36,7 @@
 <script setup lang="ts">
 import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
 import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import EnrichPanel from '@/components/Mining/StepperPanels/EnrichPanel.vue';
 import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import type { MiningSourceType } from '~/types/mining';

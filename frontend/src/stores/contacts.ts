@@ -12,7 +12,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let syncInterval: number;
   let subscription: RealtimeChannel;
   let cache = new Map<string, Contact>();
+
   const contacts = ref<Contact[]>([]);
+  const filtered = ref<Contact[]>([]);
 
   function setContacts(newContacts: Contact[]) {
     contacts.value = newContacts;
@@ -40,7 +42,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
         },
         (payload: RealtimePostgresChangesPayload<Contact>) => {
           const newContact = payload.new as Contact;
-          cache.set(newContact.email, newContact);
+          const cachedContact = cache.get(newContact.email);
+          cache.set(newContact.email, { ...cachedContact, ...newContact });
         }
       );
 
@@ -64,6 +67,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   return {
     cache,
     contacts,
+    filtered,
     setContacts,
     refreshContacts,
     subscribeRealtime,

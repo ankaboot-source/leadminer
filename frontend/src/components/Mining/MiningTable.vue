@@ -681,6 +681,7 @@ function toggleSettingsPanel(event: Event) {
 
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
+  $contactsStore.filtered = event.filteredValue;
 }
 
 async function refineContacts() {
