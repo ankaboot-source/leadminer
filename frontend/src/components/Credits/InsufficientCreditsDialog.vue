@@ -48,9 +48,7 @@ const total = ref(0);
 const available = ref(0);
 const availableAlready = ref(0);
 
-const formattedTotal = computed(() =>
-  new Intl.NumberFormat().format(total.value)
-);
+const formattedTotal = computed(() => total.value.toLocaleString());
 
 const closeModal = () => {
   showModal.value = false;

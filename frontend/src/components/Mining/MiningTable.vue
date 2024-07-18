@@ -68,12 +68,10 @@
         </div>
         <div>
           <template v-if="!implicitSelectAll">
-            {{
-              new Intl.NumberFormat().format(implicitlySelectedContactsLength)
-            }}
+            {{ implicitlySelectedContactsLength.toLocaleString() }}
             /
           </template>
-          {{ new Intl.NumberFormat().format(contactsLength) }}
+          {{ contactsLength.toLocaleString() }}
           {{ t('contacts') }}
         </div>
         <div class="grow" />
