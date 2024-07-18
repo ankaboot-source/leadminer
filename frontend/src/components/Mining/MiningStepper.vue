@@ -1,12 +1,16 @@
 <template>
-  <Panel class="mb-4" toggleable :collapsed="collapsePanel">
+  <Panel v-model:collapsed="collapsePanel" class="mb-4" toggleable>
     <template #header>
       <Button
         severity="secondary"
         unstyled
         @click="collapsePanel = !collapsePanel"
       >
-        <span class="font-semibold">
+        <span class="font-semibold flex items-center gap-2">
+          <i
+            v-if="collapsePanel && activeMining"
+            class="pi pi-spin pi-spinner text-lg"
+          />
           {{ t('mine_contacts') }}
         </span>
       </Button>
@@ -101,6 +105,7 @@ const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
+const activeMining = computed(() => $leadminerStore.miningTask !== undefined);
 
 const { collapsed } = defineProps<{
   collapsed: boolean;
@@ -108,7 +113,6 @@ const { collapsed } = defineProps<{
 
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 const collapsePanel = ref(collapsed);
-
 const { error, provider, source } = $route.query;
 
 onMounted(() => {
