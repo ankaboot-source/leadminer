@@ -1,11 +1,11 @@
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
   User,
 } from '@supabase/supabase-js';
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+
 import type { Contact } from '@/types/contact';
 
 export const useContactsStore = defineStore('contacts-store', () => {
@@ -64,6 +64,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
   }
 
+  function $reset() {
+    contacts.value = [];
+    filtered.value = [];
+    unsubscribeRealtime();
+  }
+
   return {
     cache,
     contacts,
@@ -72,5 +78,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     refreshContacts,
     subscribeRealtime,
     unsubscribeRealtime,
+    $reset,
   };
 });

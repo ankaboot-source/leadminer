@@ -4,11 +4,7 @@
       <span class="pr-1"> {{ $contactStore.filtered.length }} </span>
       {{ t('text.contacts_to_enrich') }}
     </div>
-    <div id="progress-time">
-      <span v-if="activeTask" class="pr-1">
-        {{ t('text.estimated_time') }}
-      </span>
-    </div>
+    <div id="progress-time" class="hidden md:block"></div>
   </div>
 
   <Divider
@@ -23,6 +19,10 @@
   />
   <div class="flex flex-col justify-center">
     <ProgressBar
+      v-tooltip.bottom="{
+        value: activeTask ? t('text.estimated_time') : undefined,
+        escape: false,
+      }"
       :mode="progressMode"
       :value="currentProgress"
       :pt="{
@@ -221,7 +221,7 @@ onUnmounted(() => {
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
     },
     "text": {
-      "estimated_time": "This process may take a while, hang tight!",
+      "estimated_time": "Enriching your contacts, hang tight!",
       "contacts_to_enrich": "contacts to enrich"
     },
     "button": {
@@ -239,7 +239,7 @@ onUnmounted(() => {
       "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
     },
     "text": {
-      "estimated_time": "Ce processus peut prendre un certain temps, accrochez-vous !",
+      "estimated_time": "En train d'enrichir vos contacts, accrochez-vous !",
       "contacts_to_enrich": "contacts à enrichir"
     },
     "button": {

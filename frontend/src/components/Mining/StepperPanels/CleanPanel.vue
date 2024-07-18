@@ -9,7 +9,7 @@
   >
     <template #progress-title>
       <span class="pr-1">
-        {{ contactsToVerify }}
+        {{ contactsToVerify.toLocaleString() }}
       </span>
       {{ t('contacts_to_clean') }}
     </template>
@@ -47,6 +47,7 @@
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
+
 import ProgressCard from '@/components/ProgressCard.vue';
 
 const { t } = useI18n({
@@ -82,7 +83,7 @@ function cleaningDoneNotification() {
     severity: 'success',
     summary: t('cleaning_done'),
     detail: t('contacts_verified', {
-      verifiedContacts: verifiedContacts.value,
+      verifiedContacts: verifiedContacts.value.toLocaleString(),
     }),
     group: 'mining',
     life: 5000,

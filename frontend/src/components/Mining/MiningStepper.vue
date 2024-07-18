@@ -1,28 +1,80 @@
 <template>
-  <Panel class="mb-4" toggleable :collapsed="collapsePannel">
+  <Panel class="mb-4" toggleable :collapsed="collapsePanel">
     <template #header>
       <Button
         severity="secondary"
         unstyled
-        @click="collapsePannel = !collapsePannel"
+        @click="collapsePanel = !collapsePanel"
       >
         <span class="font-semibold">
           {{ t('mine_contacts') }}
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="$stepper.index" linear>
-      <StepperPanel :header="t('source')">
+    <Stepper
+      v-model:active-step="$stepper.index"
+      linear
+      pt:stepperpanel:header:class="pointer-events-auto md:pointer-events-none"
+    >
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('source')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >1</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('source') }}
+            </span>
+          </button>
+        </template>
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
 
-      <StepperPanel :header="t('mine')">
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('mine')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >2</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('mine') }}
+            </span>
+          </button>
+        </template>
         <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
       </StepperPanel>
-      <StepperPanel :header="t('clean')">
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('clean')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >3</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('clean') }}
+            </span>
+          </button>
+        </template>
         <CleanPanel />
       </StepperPanel>
-      <StepperPanel :header="t('enrich')">
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('enrich')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >4</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('enrich') }}
+            </span>
+          </button>
+        </template>
         <EnrichPanel />
       </StepperPanel>
     </Stepper>
@@ -55,7 +107,7 @@ const { collapsed } = defineProps<{
 }>();
 
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
-const collapsePannel = ref(collapsed);
+const collapsePanel = ref(collapsed);
 
 const { error, provider, source } = $route.query;
 
@@ -69,16 +121,6 @@ onMounted(() => {
   }
 });
 </script>
-
-<style>
-.bg-banner-color {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 230, 149, 0.5) 0%,
-    rgba(255, 248, 225, 0.5) 100%
-  );
-}
-</style>
 
 <i18n lang="json">
 {
