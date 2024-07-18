@@ -6,7 +6,7 @@
       </slot>
     </div>
 
-    <div id="progress-time">
+    <div id="progress-time" class="hidden md:block">
       <slot name="progress-time">
         <div v-if="progressStartedAt">
           {{ estimatedRemainingTimeConverted }}
