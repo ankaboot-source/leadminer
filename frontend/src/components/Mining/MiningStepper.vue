@@ -1,10 +1,10 @@
 <template>
-  <Panel class="mb-4" toggleable :collapsed="collapsePannel">
+  <Panel class="mb-4" toggleable :collapsed="collapsePanel">
     <template #header>
       <Button
         severity="secondary"
         unstyled
-        @click="collapsePannel = !collapsePannel"
+        @click="collapsePanel = !collapsePanel"
       >
         <span class="font-semibold">
           {{ t('mine_contacts') }}
@@ -107,7 +107,7 @@ const { collapsed } = defineProps<{
 }>();
 
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
-const collapsePannel = ref(collapsed);
+const collapsePanel = ref(collapsed);
 
 const { error, provider, source } = $route.query;
 
