@@ -14,7 +14,7 @@
     <Stepper
       v-model:active-step="$stepper.index"
       linear
-      :pt:stepperpanel:header:class="'pointer-events-auto md:pointer-events-none'"
+      pt:stepperpanel:header:class="pointer-events-auto md:pointer-events-none"
     >
       <StepperPanel>
         <template #header>
