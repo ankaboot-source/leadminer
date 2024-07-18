@@ -42,6 +42,7 @@
             <NuxtLink
               v-for="(same_as, index) in contact.same_as"
               :key="index"
+              :to="same_as"
               target="_blank"
               rel="noopener"
             >
@@ -198,8 +199,8 @@
 <script setup lang="ts">
 import type {
   RealtimeChannel,
-  User,
   RealtimePostgresChangesPayload,
+  User,
 } from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit } from '@/types/contact';
