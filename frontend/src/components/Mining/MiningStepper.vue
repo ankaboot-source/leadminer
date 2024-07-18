@@ -11,18 +11,70 @@
         </span>
       </Button>
     </template>
-    <Stepper v-model:active-step="$stepper.index" linear>
-      <StepperPanel :header="t('source')">
+    <Stepper
+      v-model:active-step="$stepper.index"
+      linear
+      :pt:stepperpanel:header:class="'pointer-events-auto md:pointer-events-none'"
+    >
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('source')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >1</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('source') }}
+            </span>
+          </button>
+        </template>
         <SourcePanel ref="sourcePanel" />
       </StepperPanel>
 
-      <StepperPanel :header="t('mine')">
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('mine')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >2</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('mine') }}
+            </span>
+          </button>
+        </template>
         <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
       </StepperPanel>
-      <StepperPanel :header="t('clean')">
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('clean')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >3</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('clean') }}
+            </span>
+          </button>
+        </template>
         <CleanPanel />
       </StepperPanel>
-      <StepperPanel :header="t('enrich')">
+      <StepperPanel>
+        <template #header>
+          <button class="p-stepper-action cursor-default">
+            <span
+              v-tooltip.top="t('enrich')"
+              class="p-stepper-number pointer-events-auto md:pointer-events-none"
+              >4</span
+            >
+            <span class="p-stepper-title hidden md:block">
+              {{ t('enrich') }}
+            </span>
+          </button>
+        </template>
         <EnrichPanel />
       </StepperPanel>
     </Stepper>
@@ -69,16 +121,6 @@ onMounted(() => {
   }
 });
 </script>
-
-<style>
-.bg-banner-color {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 230, 149, 0.5) 0%,
-    rgba(255, 248, 225, 0.5) 100%
-  );
-}
-</style>
 
 <i18n lang="json">
 {
