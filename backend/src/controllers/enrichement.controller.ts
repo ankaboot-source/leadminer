@@ -207,7 +207,8 @@ export default function initializeEnrichementController(userResolver: Users) {
      */
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
-      const { partial, emails }: { partial:boolean, emails: string[] } = req.body;
+      const { partial, emails }: { partial: boolean; emails: string[] } =
+        req.body;
       try {
         if (!Array.isArray(emails) || !emails.length) {
           return res
