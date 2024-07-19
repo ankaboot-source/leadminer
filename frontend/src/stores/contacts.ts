@@ -40,8 +40,18 @@ export const useContactsStore = defineStore('contacts-store', () => {
           table: 'persons',
           filter: `user_id=eq.${user?.id}`,
         },
-        (payload: RealtimePostgresChangesPayload<Contact>) => {
+        async (payload: RealtimePostgresChangesPayload<Contact>) => {
           const newContact = payload.new as Contact;
+
+          if (newContact.works_for) {
+            const { data } = await useSupabaseClient()
+              .from('organizations')
+              .select('name')
+              .eq('id', newContact.works_for)
+              .single<{ name: string }>();
+            newContact.works_for = data ? data.name : newContact.works_for;
+          }
+
           const cachedContact = cache.get(newContact.email);
           cache.set(newContact.email, { ...cachedContact, ...newContact });
         }
@@ -74,10 +84,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
     cache,
     contacts,
     filtered,
+    $reset,
     setContacts,
     refreshContacts,
     subscribeRealtime,
     unsubscribeRealtime,
-    $reset,
   };
 });

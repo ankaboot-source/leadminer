@@ -10,10 +10,12 @@ import { sse } from '../utils/sse';
 export const useLeadminerStore = defineStore('leadminer', () => {
   const { $api } = useNuxtApp();
 
+  const activeEnrichment = ref(false);
+  const activeMiningSource = ref<MiningSource | undefined>();
+
   const miningTask = ref<MiningTask | undefined>();
   const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
-  const activeMiningSource = ref<MiningSource | undefined>();
   const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
 
@@ -250,6 +252,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     $reset,
     $resetMining,
 
+    activeEnrichment,
     miningTask,
     miningStartedAt,
     miningSources,

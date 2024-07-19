@@ -1,4 +1,10 @@
 <template>
+  <CreditsDialog
+    ref="CreditsDialogRef"
+    engagement-type="contacts"
+    action-type="enrich"
+    @secondary-action="startEnrichment(true)"
+  />
   <div class="flex justify-between items-center">
     <div id="progress-title">
       <span class="pr-1"> {{ $contactStore.filtered.length }} </span>
@@ -40,43 +46,39 @@
       icon="pi pi-stop"
       icon-pos="right"
       :label="t('button.halt_enrichment')"
-      @click="activeTask = !activeTask"
+      @click="enrichmentStopped"
     />
-    <Button
-      v-else
-      class="w-full md:w-max"
-      severity="secondary"
-      :label="t('button.start_new_mining')"
-      @click="startNewMining"
-    />
+    <div v-else>
+      <Button
+        class="w-full md:w-max"
+        severity="secondary"
+        :label="t('button.start_new_mining')"
+        @click="startNewMining"
+      />
+      <Button
+        class="w-full md:w-max border-solid border-2 border-black"
+        severity="contrast"
+        icon-pos="right"
+        :label="t('button.start_enrichment')"
+        @click="startEnrichment(false)"
+      >
+        <template #icon>
+          <span class="p-button-icon p-button-icon-right">💎</span>
+        </template>
+      </Button>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
-import type {
+import {
   RealtimeChannel,
-  RealtimePostgresChangesPayload,
+  type RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-
-type EnrichContactResponse = {
-  taskId: string;
-  userId?: string;
-  webhookSecretToken?: string;
-  total?: string;
-  alreadyEnriched?: boolean;
-};
-
-interface EnrichmentTask {
-  id: string;
-  status: 'running' | 'done' | 'canceled';
-  details: {
-    userId: string;
-    webhookSecretToken: string;
-    result: {
-      total: number;
-      enriched: number;
-    };
-  };
-}
+import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import {
+  type EnrichmentTask,
+  type EnrichContactResponse,
+} from '@/types/enrichment';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -91,6 +93,8 @@ const $leadminerStore = useLeadminerStore();
 
 const activeTask = ref(true);
 const currentProgress = ref<number | undefined>();
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+
 const progressMode = computed(() =>
   activeTask.value ? 'indeterminate' : 'determinate'
 );
@@ -118,9 +122,17 @@ function showNotification(
 
 let subscription: RealtimeChannel;
 
-function startEnrichmentRealtimeListener() {
-  return useSupabaseClient()
-    .channel('enrichement-tracker-bulk')
+function enrichmentStopped() {
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+  activeTask.value = false;
+  $leadminerStore.activeEnrichment = false;
+}
+
+function enrichmentStarted() {
+  subscription = useSupabaseClient()
+    .channel('enrichement-tracker')
     .on(
       'postgres_changes',
       {
@@ -131,8 +143,8 @@ function startEnrichmentRealtimeListener() {
       },
       (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
         const { status, details } = payload.new as EnrichmentTask;
-
         const { total, enriched } = details.result;
+
         switch (status) {
           case 'running':
             showNotification(
@@ -140,6 +152,7 @@ function startEnrichmentRealtimeListener() {
               t('notification.summary'),
               t('notification.enrichment_started', { total })
             );
+            enrichmentStarted();
             break;
 
           case 'done':
@@ -156,8 +169,8 @@ function startEnrichmentRealtimeListener() {
                 t('notification.no_additional_info')
               );
             }
-            activeTask.value = false;
             currentProgress.value = 100;
+            enrichmentStopped();
             break;
 
           case 'canceled':
@@ -166,7 +179,7 @@ function startEnrichmentRealtimeListener() {
               t('notification.summary'),
               t('notification.enrichment_canceled')
             );
-            activeTask.value = false;
+            enrichmentStopped();
             break;
 
           default:
@@ -174,39 +187,55 @@ function startEnrichmentRealtimeListener() {
         }
       }
     );
+  subscription.subscribe();
+  activeTask.value = true;
+  $leadminerStore.activeEnrichment = true;
 }
 
-async function startEnrichment() {
-  const { alreadyEnriched } = await $api<EnrichContactResponse>(
-    '/enrichement/enrichAsync',
-    {
+async function startEnrichment(partial: boolean) {
+  try {
+    enrichmentStarted();
+    await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
       method: 'POST',
       body: {
+        partial,
         emails: $contactStore.filtered.map((contact) => contact.email),
       },
-    }
-  );
+      onResponse({ response }) {
+        const { total, available, alreadyEnriched } = response._data;
 
-  if (alreadyEnriched) {
-    activeTask.value = false;
-    showNotification(
-      'info',
-      t('notification.summary'),
-      t('notification.already_enriched')
-    );
+        if (alreadyEnriched && response.status === 200) {
+          enrichmentStopped();
+          showNotification(
+            'info',
+            t('notification.summary'),
+            t('notification.already_enriched')
+          );
+        }
+
+        if (response.status === 402) {
+          enrichmentStopped();
+          CreditsDialogRef.value?.openModal(
+            available === 0,
+            total,
+            available,
+            0
+          );
+        }
+      },
+    });
+  } catch (err) {
+    enrichmentStopped();
+    throw err;
   }
 }
 
 onMounted(async () => {
-  subscription = startEnrichmentRealtimeListener();
-  subscription.subscribe();
-  await startEnrichment();
+  await startEnrichment(false);
 });
 
 onUnmounted(() => {
-  if (subscription) {
-    subscription.unsubscribe();
-  }
+  enrichmentStopped();
 });
 </script>
 <i18n lang="json">
@@ -225,6 +254,7 @@ onUnmounted(() => {
       "contacts_to_enrich": "contacts to enrich"
     },
     "button": {
+      "start_enrichment": "Enrich your contacts",
       "halt_enrichment": "Cancel enrichment",
       "start_new_mining": "Start a new mining"
     }
@@ -243,6 +273,7 @@ onUnmounted(() => {
       "contacts_to_enrich": "contacts à enrichir"
     },
     "button": {
+      "start_enrichment": "Enrichissez vos contacts",
       "halt_enrichment": "Annuler l'enrichissement",
       "start_new_mining": "Commencer une nouvelle extraction"
     }
