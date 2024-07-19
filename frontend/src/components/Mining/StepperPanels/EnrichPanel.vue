@@ -7,8 +7,12 @@
   />
   <div class="flex justify-between items-center">
     <div id="progress-title">
-      <span class="pr-1"> {{ $contactStore.filtered.length }} </span>
-      {{ t('text.contacts_to_enrich') }}
+      <span class="pr-1">
+        {{ activeTask ? contactsToEnrichLength : enrichedContacts }}
+      </span>
+      {{
+        activeTask ? t('text.contacts_to_enrich') : t('text.contacts_enriched')
+      }}
     </div>
     <div id="progress-time" class="hidden md:block"></div>
   </div>
@@ -92,6 +96,11 @@ const $contactStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 
 const activeTask = ref(true);
+const contactsToEnrich = ref<string[]>(
+  $contactStore.filtered.map((contact) => contact.email)
+);
+const contactsToEnrichLength = ref<number>(contactsToEnrich.value.length);
+const enrichedContacts = ref(0);
 const currentProgress = ref<number | undefined>();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
@@ -162,6 +171,7 @@ function enrichmentStarted() {
                 t('notification.summary'),
                 t('notification.enrichment_completed', { total, enriched })
               );
+              enrichedContacts.value = enriched;
             } else {
               showNotification(
                 'info',
@@ -199,7 +209,7 @@ async function startEnrichment(partial: boolean) {
       method: 'POST',
       body: {
         partial,
-        emails: $contactStore.filtered.map((contact) => contact.email),
+        emails: contactsToEnrich.value,
       },
       onResponse({ response }) {
         const { total, available, alreadyEnriched } = response._data;
@@ -215,6 +225,7 @@ async function startEnrichment(partial: boolean) {
 
         if (response.status === 402) {
           enrichmentStopped();
+          contactsToEnrichLength.value = available;
           CreditsDialogRef.value?.openModal(
             available === 0,
             total,
@@ -251,7 +262,8 @@ onUnmounted(() => {
     },
     "text": {
       "estimated_time": "Enriching your contacts, hang tight!",
-      "contacts_to_enrich": "contacts to enrich"
+      "contacts_to_enrich": "contacts to enrich",
+      "contacts_enriched": "contacts enriched"
     },
     "button": {
       "start_enrichment": "Enrich your contacts",
@@ -270,7 +282,8 @@ onUnmounted(() => {
     },
     "text": {
       "estimated_time": "En train d'enrichir vos contacts, accrochez-vous !",
-      "contacts_to_enrich": "contacts à enrichir"
+      "contacts_to_enrich": "contacts à enrichir",
+      "contacts_enriched": "contacts enrichis"
     },
     "button": {
       "start_enrichment": "Enrichissez vos contacts",
