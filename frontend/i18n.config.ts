@@ -84,7 +84,7 @@ export default defineI18nConfig(() => ({
         minute: '{n} minute | {n} minutes',
         second: '{n} second | {n} seconds',
       },
-      contactI18n: {
+      contact: {
         name: 'Full name',
         given_name: 'Given Name',
         family_name: 'Family Name',
@@ -100,6 +100,20 @@ export default defineI18nConfig(() => ({
         address_definition: 'The location of this contact',
         works_for_definition: 'Organization this contact works for',
         job_title_definition: 'The job title of this contact',
+        status: {
+          valid: 'VALID',
+          risky: 'RISKY',
+          invalid: 'INVALID',
+          unknown: 'UNKNOWN',
+          unverified: 'UNVERIFIED',
+        },
+        tag: {
+          professional: 'Professional',
+          newsletter: 'Newsletter',
+          personal: 'Personal',
+          group: 'Group',
+          chat: 'Chat',
+        },
       },
     },
     fr: {
@@ -182,7 +196,7 @@ export default defineI18nConfig(() => ({
         minute: '{n} minute | {n} minutes',
         second: '{n} seconde | {n} secondes',
       },
-      contactI18n: {
+      contact: {
         name: 'Nom complet',
         given_name: 'Prénom',
         family_name: 'Nom de famille',
@@ -199,6 +213,20 @@ export default defineI18nConfig(() => ({
         address_definition: "L'emplacement de ce contact",
         works_for_definition: 'Organisation pour laquelle ce contact travaille',
         job_title_definition: 'Le titre du poste de ce contact',
+        status: {
+          valid: 'VALIDE',
+          risky: 'RISQUÉ',
+          invalid: 'INVALIDE',
+          unknown: 'INCONNU',
+          unverified: 'NON VÉRIFIÉ',
+        },
+        tag: {
+          professional: 'Professionnel',
+          newsletter: 'Bulletin',
+          personal: 'Personnel',
+          group: 'Groupe',
+          chat: 'Chat',
+        },
       },
     },
   },
