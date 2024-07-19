@@ -13,11 +13,7 @@
           :src="contact.image"
           class="size-20 rounded-full"
         />
-        <Badge
-          v-tooltip.top="getStatusLabel(contact.status)"
-          class="min-w-5 h-5 mt-1"
-          :severity="getStatusColor(contact.status)"
-        />
+
         <span class="w-full">
           <div
             v-if="contact.name && !editingContact"
@@ -38,7 +34,12 @@
               'font-medium text-2xl': !contact.name && !editingContact,
             }"
           >
-            {{ contact.email }}
+            <Badge
+              v-tooltip.top="getStatusLabel(contact.status)"
+              class="min-w-4 h-4 align-middle mr-1"
+              :severity="getStatusColor(contact.status)"
+            />
+            <span class="align-middle">{{ contact.email }}</span>
           </div>
           <div
             v-if="contact.same_as?.length && !editingContact"
@@ -172,7 +173,7 @@
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
         <Button
-          label="Enrich"
+          :label="$t('common.enrich')"
           severity="contrast"
           icon-pos="right"
           :loading="loadButtonEnrich"
@@ -185,7 +186,7 @@
         <Button
           icon-pos="right"
           icon="pi pi-pen-to-square"
-          :label="t('Edit')"
+          :label="$t('common.edit')"
           @click="editContactInformations()"
         />
       </template>

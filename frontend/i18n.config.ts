@@ -20,7 +20,8 @@ export default defineI18nConfig(() => ({
         cancel: 'Cancel',
         extract: 'extract',
         clean: 'clean',
-        enrich: 'enrich',
+        enrich: 'Enrich',
+        edit: 'Edit',
         start_mining: 'Start mining',
         read_privacy_policy:
           'Read our Data Privacy Policy for more information',
@@ -131,7 +132,8 @@ export default defineI18nConfig(() => ({
         cancel: 'Annuler',
         extract: 'extraire',
         clean: 'nettoyer',
-        enrich: 'enrichir',
+        enrich: 'Enrichir',
+        edit: 'Modifier',
         start_mining: "Commencer l'extraction",
         read_privacy_policy:
           "Consultez notre Politique de Confidentialité des Données pour plus d'informations",
