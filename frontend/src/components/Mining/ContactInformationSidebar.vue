@@ -8,15 +8,15 @@
     <template #header><span class="grow" /> </template>
     <div class="p-sidebar-header px-4 pt-0">
       <div class="flex items-center gap-2 grow w-full">
-        <Badge
-          v-tooltip.top="getStatusLabel(contact.status)"
-          class="min-w-5 h-5"
-          :severity="getStatusColor(contact.status)"
-        />
         <img
           v-if="contact.image && !editingContact"
           :src="contact.image"
           class="size-20 rounded-full"
+        />
+        <Badge
+          v-tooltip.top="getStatusLabel(contact.status)"
+          class="min-w-5 h-5 mt-1"
+          :severity="getStatusColor(contact.status)"
         />
         <span class="w-full">
           <div
