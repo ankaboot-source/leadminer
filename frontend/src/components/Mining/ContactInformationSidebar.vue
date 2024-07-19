@@ -8,6 +8,11 @@
     <template #header><span class="grow" /> </template>
     <div class="p-sidebar-header px-4 pt-0">
       <div class="flex items-center gap-2 grow w-full">
+        <Badge
+          v-tooltip.top="getStatusLabel(contact.status)"
+          class="min-w-5 h-5"
+          :severity="getStatusColor(contact.status)"
+        />
         <img
           v-if="contact.image && !editingContact"
           :src="contact.image"
@@ -23,7 +28,7 @@
           <InputText
             v-if="editingContact"
             v-model="contactEdit.name"
-            :placeholder="$t('contactI18n.name')"
+            :placeholder="$t('contact.name')"
             class="w-full grow mb-2"
             size="large"
           />
@@ -42,6 +47,7 @@
             <NuxtLink
               v-for="(same_as, index) in contact.same_as"
               :key="index"
+              :to="same_as"
               target="_blank"
               rel="noopener"
             >
@@ -74,7 +80,7 @@
       <tbody class="p-datatable-tbody">
         <tr class="p-row-even">
           <td class="font-medium w-4/12">
-            {{ $t('contactI18n.given_name') }}
+            {{ $t('contact.given_name') }}
           </td>
           <td>
             <div v-if="!editingContact">
@@ -84,7 +90,7 @@
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('contactI18n.family_name') }}</td>
+          <td class="font-medium">{{ $t('contact.family_name') }}</td>
           <td class="w-full">
             <div v-if="!editingContact">
               {{ contact.family_name }}
@@ -98,7 +104,7 @@
         </tr>
         <tr class="p-row-even">
           <td class="font-medium">
-            {{ $t('contactI18n.alternate_names') }}
+            {{ $t('contact.alternate_names') }}
           </td>
           <td>
             <div v-if="!editingContact">
@@ -114,7 +120,7 @@
         </tr>
 
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('contactI18n.address') }}</td>
+          <td class="font-medium">{{ $t('contact.address') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.address }}</div>
             <InputText v-else v-model="contactEdit.address" class="w-full" />
@@ -122,14 +128,14 @@
         </tr>
 
         <tr class="p-row-even">
-          <td class="font-medium">{{ $t('contactI18n.works_for') }}</td>
+          <td class="font-medium">{{ $t('contact.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.works_for }}</div>
             <InputText v-else v-model="contactEdit.works_for" class="w-full" />
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('contactI18n.job_title') }}</td>
+          <td class="font-medium">{{ $t('contact.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.job_title }}</div>
             <InputText v-else v-model="contactEdit.job_title" class="w-full" />
@@ -138,7 +144,7 @@
 
         <template v-if="editingContact">
           <tr class="p-row-even">
-            <td class="font-medium">{{ $t('contactI18n.same_as') }}</td>
+            <td class="font-medium">{{ $t('contact.same_as') }}</td>
             <td>
               <Textarea
                 v-model="(contactEdit.same_as as string)"
@@ -150,7 +156,7 @@
           </tr>
 
           <tr class="p-row-odd">
-            <td class="font-medium">{{ $t('contactI18n.image') }}</td>
+            <td class="font-medium">{{ $t('contact.image') }}</td>
             <td>
               <InputText
                 v-model="contactEdit.image"
@@ -198,11 +204,15 @@
 <script setup lang="ts">
 import type {
   RealtimeChannel,
-  User,
   RealtimePostgresChangesPayload,
+  User,
 } from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit } from '@/types/contact';
+
+const { t } = useI18n({
+  useScope: 'local',
+});
 
 type EnrichContactResponse = {
   taskId: string;
@@ -211,10 +221,6 @@ type EnrichContactResponse = {
   total?: string;
   alreadyEnriched?: boolean;
 };
-
-const { t } = useI18n({
-  useScope: 'local',
-});
 
 const $toast = useToast();
 const { $api } = useNuxtApp();
@@ -431,7 +437,7 @@ function copyContact(email: string, name?: string) {
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "This contact is already enriched."
     },
-    "contactI18n": {
+    "contact": {
       "name": "Full name",
       "given_name": "Given Name",
       "family_name": "Family Name",
@@ -462,7 +468,7 @@ function copyContact(email: string, name?: string) {
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi."
     },
-    "contactI18n": {
+    "contact": {
       "name": "Nom complet",
       "given_name": "Prénom",
       "family_name": "Nom de famille",

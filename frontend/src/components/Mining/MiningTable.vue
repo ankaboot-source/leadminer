@@ -331,7 +331,7 @@
       <template #filter="{ filterModel }">
         <MultiSelect
           v-model="filterModel.value"
-          :options="tags"
+          :options="tags()"
           option-value="value"
           option-label="label"
           :placeholder="t('any')"
@@ -374,7 +374,7 @@
       <template #filter="{ filterModel }">
         <MultiSelect
           v-model="filterModel.value"
-          :options="statuses"
+          :options="statuses()"
           option-value="value"
           option-label="label"
           :placeholder="t('any')"
@@ -459,8 +459,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contactI18n.given_name_definition')">
-          {{ $t('contactI18n.given_name') }}
+        <div v-tooltip.top="$t('contact.given_name_definition')">
+          {{ $t('contact.given_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -477,8 +477,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contactI18n.family_name_definition')">
-          {{ $t('contactI18n.family_name') }}
+        <div v-tooltip.top="$t('contact.family_name_definition')">
+          {{ $t('contact.family_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -495,8 +495,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contactI18n.alternate_names_definition')">
-          {{ $t('contactI18n.alternate_names') }}
+        <div v-tooltip.top="$t('contact.alternate_names_definition')">
+          {{ $t('contact.alternate_names') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -513,8 +513,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contactI18n.address_definition')">
-          {{ $t('contactI18n.address') }}
+        <div v-tooltip.top="$t('contact.address_definition')">
+          {{ $t('contact.address') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -531,8 +531,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contactI18n.works_for_definition')">
-          {{ $t('contactI18n.works_for') }}
+        <div v-tooltip.top="$t('contact.works_for_definition')">
+          {{ $t('contact.works_for') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -549,8 +549,8 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contactI18n.job_title_definition')">
-          {{ $t('contactI18n.job_title') }}
+        <div v-tooltip.top="$t('contact.job_title_definition')">
+          {{ $t('contact.job_title') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -573,6 +573,7 @@ import ContactInformationSidebar from '@/components/Mining/ContactInformationSid
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
+import { statuses, tags } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
 
 const { t } = useI18n({
@@ -592,59 +593,6 @@ const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
-}
-
-const tags = [
-  { value: 'professional', label: t('professional') },
-  { value: 'newsletter', label: t('newsletter') },
-  { value: 'personal', label: t('personal') },
-  { value: 'group', label: t('group') },
-  { value: 'chat', label: t('chat') },
-];
-
-type Status = {
-  value: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | null;
-  label: string;
-  color: 'success' | 'warning' | 'danger' | 'secondary';
-};
-
-const statuses: Status[] = [
-  { value: 'VALID', label: t('valid'), color: 'success' },
-  { value: 'RISKY', label: t('risky'), color: 'warning' },
-  { value: 'INVALID', label: t('invalid'), color: 'danger' },
-  { value: 'UNKNOWN', label: t('unknown'), color: 'secondary' },
-  { value: null, label: t('unverified'), color: 'secondary' },
-];
-
-function getStatusColor(value: Status['value']): Status['color'] {
-  return (
-    statuses.find((status) => status.value === value)?.color ?? 'secondary'
-  );
-}
-function getStatusLabel(value: Status['value']): Status['label'] {
-  return (
-    statuses.find((status) => status.value === value)?.label ?? t('unverified')
-  );
-}
-function getTagColor(tag: string) {
-  if (!tag) return undefined;
-  switch (tag) {
-    case 'personal':
-      return 'bg-red-100 text-red-700';
-    case 'professional':
-      return 'bg-blue-100 text-blue-700';
-    case 'newsletter':
-      return 'p-tag-secondary';
-    case 'group':
-      return 'p-tag-secondary';
-    case 'chat':
-      return 'p-tag-secondary';
-    default:
-      return undefined;
-  }
-}
-function getTagLabel(value: string) {
-  return tags.find((tag) => tag.value === value)?.label ?? 'unknown';
 }
 
 const $contactsStore = useContactsStore();
@@ -858,15 +806,15 @@ const visibleColumnsOptions = [
   { label: t('recipient'), value: 'recipient' },
   { label: t('sender'), value: 'sender' },
   { label: t('seniority'), value: 'seniority' },
-  { label: $t('contactI18n.given_name'), value: 'given_name' },
-  { label: $t('contactI18n.family_name'), value: 'family_name' },
-  { label: $t('contactI18n.alternate_names'), value: 'alternate_names' },
-  { label: $t('contactI18n.address'), value: 'address' },
-  { label: $t('contactI18n.works_for'), value: 'works_for' },
-  { label: $t('contactI18n.job_title'), value: 'job_title' },
-  { label: $t('contactI18n.name'), value: 'name' },
-  { label: $t('contactI18n.same_as'), value: 'same_as' },
-  { label: $t('contactI18n.image'), value: 'image' },
+  { label: $t('contact.given_name'), value: 'given_name' },
+  { label: $t('contact.family_name'), value: 'family_name' },
+  { label: $t('contact.alternate_names'), value: 'alternate_names' },
+  { label: $t('contact.address'), value: 'address' },
+  { label: $t('contact.works_for'), value: 'works_for' },
+  { label: $t('contact.job_title'), value: 'job_title' },
+  { label: $t('contact.name'), value: 'name' },
+  { label: $t('contact.same_as'), value: 'same_as' },
+  { label: $t('contact.image'), value: 'image' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -992,16 +940,6 @@ table.p-datatable-table {
     "error_verifying_export_csv": "Error when verifying export CSV",
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
-    "valid": "VALID",
-    "risky": "RISKY",
-    "invalid": "INVALID",
-    "unknown": "UNKNOWN",
-    "unverified": "UNVERIFIED",
-    "professional": "Professional",
-    "newsletter": "Newsletter",
-    "personal": "Personal",
-    "group": "Group",
-    "chat": "Chat",
     "any": "Any",
     "contact_information": "Contact Information"
   },
@@ -1044,16 +982,6 @@ table.p-datatable-table {
     "error_verifying_export_csv": "Erreur lors de la vérification de l'exportation CSV",
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
-    "valid": "VALIDE",
-    "risky": "RISQUÉ",
-    "invalid": "INVALIDE",
-    "unknown": "INCONNU",
-    "unverified": "NON VÉRIFIÉ",
-    "professional": "Professionnel",
-    "newsletter": "Bulletin",
-    "personal": "Personnel",
-    "group": "Groupe",
-    "chat": "Chat",
     "any": "N'importe lequel",
     "contact_information": "Information de contact"
   }
