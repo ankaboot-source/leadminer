@@ -1,4 +1,9 @@
 <template>
+  <CreditsDialog
+    ref="CreditsDialogRef"
+    engagement-type="contacts"
+    action-type="enrich"
+  />
   <Sidebar
     v-model:visible="show"
     position="right"
@@ -176,7 +181,8 @@
           :label="$t('common.enrich')"
           severity="contrast"
           icon-pos="right"
-          :loading="loadButtonEnrich"
+          :loading="activeEnrichment"
+          :disabled="$leadminerStore.activeEnrichment"
           @click="enrichContact(contact.email)"
         >
           <template #icon
@@ -210,30 +216,30 @@ import type {
 } from '@supabase/supabase-js';
 
 import type { Contact, ContactEdit } from '@/types/contact';
+import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import {
+  type EnrichmentTask,
+  type EnrichContactResponse,
+} from '@/types/enrichment';
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
-type EnrichContactResponse = {
-  taskId: string;
-  userId?: string;
-  webhookSecretToken?: string;
-  total?: string;
-  alreadyEnriched?: boolean;
-};
-
 const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser() as Ref<User>;
 
+const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
-const loadButtonEnrich = ref(false);
+const activeEnrichment = ref(false);
+const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+
 function isValidURL(url: string) {
   try {
     // eslint-disable-next-line no-new
@@ -256,7 +262,8 @@ const isValidAvatar = computed(() => {
   return isValidURL(contactEdit.value?.image as string);
 });
 
-let subscription: RealtimeChannel;
+let personsSubscription: RealtimeChannel;
+let enrichmentSubscription: RealtimeChannel;
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
@@ -271,19 +278,46 @@ function showNotification(
   });
 }
 
-watch(show, (value) => {
-  if (value) return;
-  if (subscription) {
-    subscription.unsubscribe();
+function startRealtimePersons(userId: string, email: string) {
+  if (personsSubscription) {
+    personsSubscription.unsubscribe();
   }
-  loadButtonEnrich.value = false;
-});
+  personsSubscription = useSupabaseClient()
+    .channel('persons-tracker')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'persons',
+        filter: `user_id=eq.${userId}`,
+      },
+      async (payload: RealtimePostgresChangesPayload<Contact>) => {
+        const updatedContact = payload.new as Contact;
 
-function startRealtimeEnrichementTask(userId: string, email: string) {
-  if (subscription) {
-    subscription.unsubscribe();
+        if (updatedContact.email !== email) {
+          return;
+        }
+        if (updatedContact.works_for) {
+          const { data } = await useSupabaseClient()
+            .from('organizations')
+            .select('name')
+            .eq('id', updatedContact.works_for)
+            .single<{ name: string }>();
+          updatedContact.works_for = data
+            ? data.name
+            : updatedContact.works_for;
+        }
+        $contactInformationSidebar.contact = updatedContact;
+      }
+    );
+  personsSubscription.subscribe();
+}
+function startRealtimeEnrichementTask() {
+  if (enrichmentSubscription) {
+    enrichmentSubscription.unsubscribe();
   }
-  subscription = useSupabaseClient()
+  enrichmentSubscription = useSupabaseClient()
     .channel('enrichement-tracker')
     .on(
       'postgres_changes',
@@ -293,23 +327,28 @@ function startRealtimeEnrichementTask(userId: string, email: string) {
         table: 'tasks',
         filter: `category=eq.${'enriching'}`,
       },
-      (
-        payload: RealtimePostgresChangesPayload<{
-          status: 'running' | 'done' | 'canceled';
-        }>
-      ) => {
-        const task = payload.new as { status: 'done' | 'canceled' };
-        switch (task.status) {
+      (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
+        const { status, details } = payload.new as EnrichmentTask;
+        const { total, enriched } = details.result;
+        switch (status) {
           case 'done':
-            loadButtonEnrich.value = false;
-            showNotification(
-              'success',
-              t('notification.summary'),
-              t('notification.enrichment_completed')
-            );
+            if (enriched > 0) {
+              showNotification(
+                'success',
+                t('notification.summary'),
+                t('notification.enrichment_completed', { total, enriched })
+              );
+            } else {
+              showNotification(
+                'info',
+                t('notification.summary'),
+                t('notification.no_additional_info')
+              );
+            }
+            activeEnrichment.value = false;
             break;
           case 'canceled':
-            loadButtonEnrich.value = false;
+            activeEnrichment.value = false;
             showNotification(
               'error',
               t('notification.summary'),
@@ -320,53 +359,61 @@ function startRealtimeEnrichementTask(userId: string, email: string) {
             break;
         }
       }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'persons',
-        filter: `user_id=eq.${userId}`,
-      },
-      (payload: RealtimePostgresChangesPayload<Contact>) => {
-        const updatedContact = payload.new as Contact;
-        if (updatedContact.email !== email) {
-          return;
-        }
-        $contactInformationSidebar.contact = updatedContact;
-      }
     );
-  subscription.subscribe();
+  enrichmentSubscription.subscribe();
 }
 
 async function enrichContact(email: string) {
-  loadButtonEnrich.value = true;
+  activeEnrichment.value = true;
   try {
-    startRealtimeEnrichementTask($user.value.id, email);
-    const { alreadyEnriched } = await $api<EnrichContactResponse>(
-      '/enrichement/enrichAsync',
-      {
-        method: 'POST',
-        body: {
-          emails: [email],
-        },
-      }
-    );
+    startRealtimeEnrichementTask();
+    await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
+      method: 'POST',
+      body: {
+        emails: [email],
+      },
+      onResponse({ response }) {
+        const { total, available, alreadyEnriched } = response._data;
 
-    if (alreadyEnriched) {
-      loadButtonEnrich.value = false;
-      showNotification(
-        'info',
-        t('notification.summary'),
-        t('notification.already_enriched')
-      );
-    }
+        if (alreadyEnriched && response.status === 200) {
+          activeEnrichment.value = false;
+          showNotification(
+            'info',
+            t('notification.summary'),
+            t('notification.already_enriched')
+          );
+        }
+
+        if (response.status === 402) {
+          activeEnrichment.value = false;
+          CreditsDialogRef.value?.openModal(
+            available === 0,
+            total,
+            available,
+            0
+          );
+        }
+      },
+    });
   } catch (err) {
-    loadButtonEnrich.value = false;
+    activeEnrichment.value = false;
     throw err;
   }
 }
+
+watch(show, (value) => {
+  if (value) {
+    startRealtimePersons($user.value.id, contact.value.email);
+    return;
+  }
+  if (enrichmentSubscription) {
+    enrichmentSubscription.unsubscribe();
+  }
+  if (personsSubscription) {
+    personsSubscription.unsubscribe();
+  }
+  activeEnrichment.value = false;
+});
 
 function onHide() {
   editingContact.value = false;
@@ -434,9 +481,11 @@ function copyContact(email: string, name?: string) {
   "en": {
     "notification": {
       "summary": "Enrich Contact",
-      "enrichment_completed": "Your contact has been successfully enriched.",
+      "enrichment_started": "Enrichment is running for {total} contacts.",
+      "enrichment_completed": "{total}/{enriched} of your contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
-      "already_enriched": "This contact is already enriched."
+      "already_enriched": "Contacts you selected are already enriched.",
+      "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
     },
     "contact": {
       "name": "Full name",
@@ -465,9 +514,11 @@ function copyContact(email: string, name?: string) {
   "fr": {
     "notification": {
       "summary": "Enrichir le Contact",
-      "enrichment_completed": "Votre contact a été enrichi avec succès.",
+      "enrichment_started": "L'enrichissement est en cours pour ${total} contacts.",
+      "enrichment_completed": "${total}/${enriched} de vos contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
-      "already_enriched": "Ce contact est déjà enrichi."
+      "already_enriched": "Ce contact est déjà enrichi.",
+      "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
     },
     "contact": {
       "name": "Nom complet",

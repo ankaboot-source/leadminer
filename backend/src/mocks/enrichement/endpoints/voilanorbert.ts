@@ -29,6 +29,9 @@ router.post(
         channel: 'channel_token'
       });
 
+      await new Promise((resolve) => {
+        setTimeout(resolve, 5000);
+      });
       await axios.create().post(webhook, {
         token,
         id: faker.number.int({ min: 4, max: 8 }),
