@@ -23,75 +23,76 @@ const defaultFilters = {
 
   // Source
   source: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
 
-  // Recency
   recency: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
   },
 
-  // Occurrence
   occurrence: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    operator: FilterOperator.AND,
+    constraints: [
+      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
+    ],
   },
 
   // Replies
   replied_conversations: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    operator: FilterOperator.AND,
+    constraints: [
+      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
+    ],
   },
 
-  // Tags
   tags: { value: null, matchMode: ANY_SELECTED },
 
-  // Status
   status: { value: [], matchMode: FilterMatchMode.IN },
 
-  // Recipient
   recipient: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    operator: FilterOperator.AND,
+    constraints: [
+      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
+    ],
   },
 
-  // Sender
   sender: {
-    value: null,
-    matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO,
+    operator: FilterOperator.AND,
+    constraints: [
+      { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
+    ],
   },
 
-  // Seniority
   seniority: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
   },
 
   given_name: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
   family_name: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
   alternate_names: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
   address: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
   works_for: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
   job_title: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
 };
 

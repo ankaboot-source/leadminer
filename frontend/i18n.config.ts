@@ -91,7 +91,7 @@ export default defineI18nConfig(() => ({
         family_name: 'Family Name',
         alternate_names: 'Alternate Names',
         address: 'Location',
-        works_for: 'Works For',
+        works_for: 'Works for',
         job_title: 'Job Title',
         same_as: 'Same As',
         image: 'Avatar URL',
