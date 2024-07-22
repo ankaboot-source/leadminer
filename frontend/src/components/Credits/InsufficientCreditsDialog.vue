@@ -23,7 +23,11 @@
           :label="t('refill_or_upgrade')"
           severity="success"
           @click="buyOrUpgrade"
-        />
+        >
+          <template #icon>
+            <span class="p-button-icon p-button-icon-right">🚀</span>
+          </template>
+        </Button>
       </div>
     </template>
   </Dialog>
@@ -89,14 +93,14 @@ defineExpose({
 {
   "en": {
     "oops_low_credits": "Oops! Running low on credits 😅",
-    "not_enough_credits": "You don't have enough credits to {actionType} all your {formattedTotal} {engagementType}.",
-    "refill_or_upgrade": "Refill credits or Upgrade 🚀",
+    "not_enough_credits": "You don't have enough credits to {actionType} your {formattedTotal} {engagementType}.",
+    "refill_or_upgrade": "Refill credits or Upgrade",
     "action_type_only": "{actionType} only {available}"
   },
   "fr": {
     "oops_low_credits": "Oups! Crédits en baisse 😅",
     "not_enough_credits": "Vous n'avez pas assez de crédits pour {actionType} tous vos {formattedTotal} {engagementType}.",
-    "refill_or_upgrade": "Recharger vos crédits ou Améliorez 🚀",
+    "refill_or_upgrade": "Recharger vos crédits ou Améliorez",
     "action_type_only": "{actionType} seulement {available}"
   }
 }

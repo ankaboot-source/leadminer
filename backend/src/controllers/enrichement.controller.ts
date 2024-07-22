@@ -207,7 +207,8 @@ export default function initializeEnrichementController(userResolver: Users) {
      */
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
-      const { emails }: { emails: string[] } = req.body;
+      const { partial, emails }: { partial: boolean; emails: string[] } =
+        req.body;
       try {
         if (!Array.isArray(emails) || !emails.length) {
           return res
@@ -216,7 +217,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         }
 
         const enrichedContacts = await getEnrichedEmails(user.id);
-        const contactsToEnrich = emails.filter(
+        let contactsToEnrich = emails.filter(
           (email) => !enrichedContacts.includes(email)
         );
 
@@ -235,7 +236,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             availableUnits
           } = await creditsService.validate(user.id, contactsToEnrich.length);
 
-          if (hasDeficientCredits || hasInsufficientCredits) {
+          if (!partial && (hasDeficientCredits || hasInsufficientCredits)) {
             const response = {
               total: contactsToEnrich.length,
               available: Math.floor(availableUnits)
@@ -244,6 +245,7 @@ export default function initializeEnrichementController(userResolver: Users) {
               .status(creditsService.DEFICIENT_CREDITS_STATUS)
               .json(response);
           }
+          contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
         }
 
         const enricher = emailEnrichementService.getEmailEnricher();
