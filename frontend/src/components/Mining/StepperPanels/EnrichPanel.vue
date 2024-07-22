@@ -8,7 +8,11 @@
   <div class="flex justify-between items-center">
     <div id="progress-title">
       <span class="pr-1">
-        {{ activeTask ? contactsToEnrichLength : enrichedContacts }}
+        {{
+          activeTask
+            ? contactsToEnrichLength.toLocaleString()
+            : enrichedContacts.toLocaleString()
+        }}
       </span>
       {{
         activeTask ? t('text.contacts_to_enrich') : t('text.contacts_enriched')
@@ -50,7 +54,7 @@
       icon="pi pi-stop"
       icon-pos="right"
       :label="t('button.halt_enrichment')"
-      @click="enrichmentStopped"
+      @click="stopEnrichment"
     />
     <div v-else>
       <Button
@@ -131,7 +135,7 @@ function showNotification(
 
 let subscription: RealtimeChannel;
 
-function enrichmentStopped() {
+function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
@@ -139,7 +143,7 @@ function enrichmentStopped() {
   $leadminerStore.activeEnrichment = false;
 }
 
-function enrichmentStarted() {
+function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
     .channel('enrichement-tracker')
     .on(
@@ -159,9 +163,10 @@ function enrichmentStarted() {
             showNotification(
               'success',
               t('notification.summary'),
-              t('notification.enrichment_started', { total })
+              t('notification.enrichment_started', {
+                total: total.toLocaleString(),
+              })
             );
-            enrichmentStarted();
             break;
 
           case 'done':
@@ -169,7 +174,10 @@ function enrichmentStarted() {
               showNotification(
                 'success',
                 t('notification.summary'),
-                t('notification.enrichment_completed', { total, enriched })
+                t('notification.enrichment_completed', {
+                  total: total.toLocaleString(),
+                  enriched: enriched.toLocaleString(),
+                })
               );
               enrichedContacts.value = enriched;
             } else {
@@ -180,7 +188,7 @@ function enrichmentStarted() {
               );
             }
             currentProgress.value = 100;
-            enrichmentStopped();
+            stopEnrichment();
             break;
 
           case 'canceled':
@@ -189,7 +197,7 @@ function enrichmentStarted() {
               t('notification.summary'),
               t('notification.enrichment_canceled')
             );
-            enrichmentStopped();
+            stopEnrichment();
             break;
 
           default:
@@ -198,13 +206,13 @@ function enrichmentStarted() {
       }
     );
   subscription.subscribe();
-  activeTask.value = true;
-  $leadminerStore.activeEnrichment = true;
 }
 
 async function startEnrichment(partial: boolean) {
   try {
-    enrichmentStarted();
+    activeTask.value = true;
+    $leadminerStore.activeEnrichment = true;
+    setupEnrichmentRealtime();
     await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
       method: 'POST',
       body: {
@@ -215,7 +223,7 @@ async function startEnrichment(partial: boolean) {
         const { total, available, alreadyEnriched } = response._data;
 
         if (alreadyEnriched && response.status === 200) {
-          enrichmentStopped();
+          stopEnrichment();
           showNotification(
             'info',
             t('notification.summary'),
@@ -224,7 +232,7 @@ async function startEnrichment(partial: boolean) {
         }
 
         if (response.status === 402) {
-          enrichmentStopped();
+          stopEnrichment();
           contactsToEnrichLength.value = available;
           CreditsDialogRef.value?.openModal(
             available === 0,
@@ -236,7 +244,7 @@ async function startEnrichment(partial: boolean) {
       },
     });
   } catch (err) {
-    enrichmentStopped();
+    stopEnrichment();
     throw err;
   }
 }
@@ -246,7 +254,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  enrichmentStopped();
+  stopEnrichment();
 });
 </script>
 <i18n lang="json">
