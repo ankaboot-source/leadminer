@@ -59,14 +59,13 @@
           v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
         >
           <Button
-            class="mr-2"
             icon="pi pi-external-link"
             :label="screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
         </div>
-        <div>
+        <div class="ml-2">
           <template v-if="!implicitSelectAll">
             {{ implicitlySelectedContactsLength.toLocaleString() }}
             /
@@ -75,79 +74,85 @@
           {{ t('contacts') }}
         </div>
         <div class="grow" />
-        <Button
-          :disabled="filtersStore.isDefaultFilters"
-          icon="pi pi-filter-slash"
-          :label="screenStore.size.md ? t('clear') : undefined"
-          outlined
-          @click="filtersStore.clearFilter()"
-        />
+        <div>
+          <Button
+            :disabled="filtersStore.isDefaultFilters"
+            icon="pi pi-filter-slash"
+            :label="screenStore.size.md ? t('clear') : undefined"
+            outlined
+            @click="filtersStore.clearFilter()"
+          />
+        </div>
         <!-- Settings -->
-        <Button @click="toggleSettingsPanel">
-          <span class="p-button-label">
-            <i
-              v-if="filtersStore.areToggledFilters > 0"
-              v-badge="filtersStore.areToggledFilters.toString()"
-              class="pi pi-sliders-h"
-            />
-            <i v-else class="pi pi-sliders-h" />
-          </span>
-        </Button>
-        <OverlayPanel ref="settingsPanel">
-          <ul class="list-none p-0 m-0 flex flex-col gap-3">
-            <li class="flex justify-between">
-              <div v-tooltip.left="t('ensure_deliverability')">
-                {{ t('only_valid_contacts') }}
-              </div>
-              <InputSwitch
-                v-model="filtersStore.validToggle"
-                @update:model-value="filtersStore.onValidToggle"
+        <div>
+          <Button @click="toggleSettingsPanel">
+            <span class="p-button-label">
+              <i
+                v-if="filtersStore.areToggledFilters > 0"
+                v-badge="filtersStore.areToggledFilters.toString()"
+                class="pi pi-sliders-h"
               />
-            </li>
-            <li class="flex justify-between gap-2">
-              <div v-tooltip.left="t('contacts_best_performance')">
-                {{ t('at_least_one_reply') }}
-              </div>
-              <InputSwitch
-                v-model="filtersStore.discussionsToggle"
-                @update:model-value="filtersStore.onDiscussionsToggle"
-              />
-            </li>
-            <li class="flex justify-between gap-2">
-              <div
-                v-tooltip.left="
-                  t('gdpr_proof', {
-                    recentYearsAgo: filtersStore.recentYearsAgo,
-                  })
+              <i v-else class="pi pi-sliders-h" />
+            </span>
+          </Button>
+          <OverlayPanel ref="settingsPanel">
+            <ul class="list-none p-0 m-0 flex flex-col gap-3">
+              <li class="flex justify-between">
+                <div v-tooltip.left="t('ensure_deliverability')">
+                  {{ t('only_valid_contacts') }}
+                </div>
+                <InputSwitch
+                  v-model="filtersStore.validToggle"
+                  @update:model-value="filtersStore.onValidToggle"
+                />
+              </li>
+              <li class="flex justify-between gap-2">
+                <div v-tooltip.left="t('contacts_best_performance')">
+                  {{ t('at_least_one_reply') }}
+                </div>
+                <InputSwitch
+                  v-model="filtersStore.discussionsToggle"
+                  @update:model-value="filtersStore.onDiscussionsToggle"
+                />
+              </li>
+              <li class="flex justify-between gap-2">
+                <div
+                  v-tooltip.left="
+                    t('gdpr_proof', {
+                      recentYearsAgo: filtersStore.recentYearsAgo,
+                    })
+                  "
+                >
+                  {{ t('recent_contacts') }}
+                </div>
+                <InputSwitch
+                  v-model="filtersStore.recentToggle"
+                  @update:model-value="filtersStore.onRecentToggle"
+                />
+              </li>
+              <Divider class="my-0" />
+              <MultiSelect
+                v-model="visibleColumns"
+                :options="visibleColumnsOptions"
+                :option-disabled="disabledColumns"
+                option-label="label"
+                option-value="value"
+                style="width: 14rem"
+                :selected-items-label="
+                  t('visible_columns', visibleColumns.length)
                 "
-              >
-                {{ t('recent_contacts') }}
-              </div>
-              <InputSwitch
-                v-model="filtersStore.recentToggle"
-                @update:model-value="filtersStore.onRecentToggle"
+                :max-selected-labels="0"
+                @change="onSelectColumnsChange"
               />
-            </li>
-            <Divider class="my-0" />
-            <MultiSelect
-              v-model="visibleColumns"
-              :options="visibleColumnsOptions"
-              :option-disabled="disabledColumns"
-              option-label="label"
-              option-value="value"
-              style="width: 14rem"
-              :selected-items-label="
-                t('visible_columns', visibleColumns.length)
-              "
-              :max-selected-labels="0"
-              @change="onSelectColumnsChange"
-            />
-          </ul>
-        </OverlayPanel>
-        <Button
-          :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
-          @click="isFullscreen = !isFullscreen"
-        />
+            </ul>
+          </OverlayPanel>
+        </div>
+        <div>
+          <Button
+            :icon="`pi pi-window-${isFullscreen ? 'minimize' : 'maximize'}`"
+            @click="isFullscreen = !isFullscreen"
+          />
+        </div>
       </div>
     </template>
 
@@ -399,7 +404,7 @@
     >
       <template #header>
         <div v-tooltip.top="t('recipient_definition')">
-          {{ t('recepient') }}
+          {{ t('recipient') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
@@ -917,7 +922,7 @@ table.p-datatable-table {
     "contacts": "Contacts",
     "emails": "Emails",
     "search_contacts": "Search contacts",
-    "source_definition": "The email inbox this contact is mined from",
+    "source_definition": "The mailbox this contact has been mined from",
     "source": "Source",
     "occurence_definition": "Total occurrences of this contact",
     "occurrence": "Occurrence",
