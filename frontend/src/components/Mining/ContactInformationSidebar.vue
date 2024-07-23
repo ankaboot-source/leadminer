@@ -4,7 +4,7 @@
     engagement-type="contacts"
     action-type="enrich"
   />
-  <Sidebar
+  <Drawer
     v-model:visible="show"
     position="right"
     pt:root:class="md:w-1/2 xl:w-1/3 w-full"
@@ -205,7 +205,7 @@
         <Button label="Save" @click="saveContactInformations()" />
       </template>
     </div>
-  </Sidebar>
+  </Drawer>
 </template>
 
 <script setup lang="ts">
