@@ -1,5 +1,4 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const $router = useRouter();
   const $supabase = useSupabaseClient();
   const { session } = (await $supabase.auth.getSession()).data;
 
@@ -8,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (to.path.startsWith('/oauth-consent-error')) {
-    return $router.push({
+    return navigateTo({
       path: '/dashboard',
       query: {
         error: 'oauth-consent',
