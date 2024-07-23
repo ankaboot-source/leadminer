@@ -7,7 +7,7 @@ DROP TYPE engagement_type_enum;
 
 CREATE TYPE engagement_type_enum AS ENUM ('CSV', 'ENRICH');
 CREATE TYPE task_category_enum AS ENUM ('mining', 'enriching', 'cleaning');
-CREATE TYPE task_type_enum AS ENUM ('fetch', 'extract', 'edit', 'export', 'enrich');
+CREATE TYPE task_type_enum AS ENUM ('fetch', 'extract', 'edit', 'export', 'enrich', 'clean');
 
 CREATE TABLE tasks (
     id uuid NOT NULL DEFAULT uuid_generate_v4(),

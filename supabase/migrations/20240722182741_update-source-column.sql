@@ -1,6 +1,3 @@
-DROP TYPE engagement_type_enum;
-CREATE TYPE task_type_enum AS ENUM ('fetch', 'extract', 'edit', 'export', 'enrich', 'clean');
-
 -- 2. Recreate persons table & add RLS
 DROP TABLE "public"."persons" CASCADE;
 CREATE TABLE "public"."persons" (
