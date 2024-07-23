@@ -15,72 +15,43 @@
         </span>
       </Button>
     </template>
-    <Stepper
-      v-model:active-step="$stepper.index"
-      linear
-      pt:stepperpanel:header:class="pointer-events-auto md:pointer-events-none"
-    >
-      <StepperPanel>
-        <template #header>
-          <button class="p-stepper-action cursor-default">
-            <span
-              v-tooltip.top="t('source')"
-              class="p-stepper-number pointer-events-auto md:pointer-events-none"
-              >1</span
-            >
-            <span class="p-stepper-title hidden md:block">
-              {{ t('source') }}
-            </span>
-          </button>
-        </template>
-        <SourcePanel ref="sourcePanel" />
-      </StepperPanel>
-
-      <StepperPanel>
-        <template #header>
-          <button class="p-stepper-action cursor-default">
-            <span
-              v-tooltip.top="t('mine')"
-              class="p-stepper-number pointer-events-auto md:pointer-events-none"
-              >2</span
-            >
-            <span class="p-stepper-title hidden md:block">
-              {{ t('mine') }}
-            </span>
-          </button>
-        </template>
-        <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
-      </StepperPanel>
-      <StepperPanel>
-        <template #header>
-          <button class="p-stepper-action cursor-default">
-            <span
-              v-tooltip.top="t('clean')"
-              class="p-stepper-number pointer-events-auto md:pointer-events-none"
-              >3</span
-            >
-            <span class="p-stepper-title hidden md:block">
-              {{ t('clean') }}
-            </span>
-          </button>
-        </template>
-        <CleanPanel />
-      </StepperPanel>
-      <StepperPanel>
-        <template #header>
-          <button class="p-stepper-action cursor-default">
-            <span
-              v-tooltip.top="t('enrich')"
-              class="p-stepper-number pointer-events-auto md:pointer-events-none"
-              >4</span
-            >
-            <span class="p-stepper-title hidden md:block">
-              {{ t('enrich') }}
-            </span>
-          </button>
-        </template>
-        <EnrichPanel />
-      </StepperPanel>
+    <Stepper v-model:value="$stepper.index" linear>
+      <StepList>
+        <Step :value="1">
+          <span class="hidden md:block">
+            {{ t('source') }}
+          </span>
+        </Step>
+        <Step :value="2">
+          <span class="hidden md:block">
+            {{ t('mine') }}
+          </span>
+        </Step>
+        <Step :value="3">
+          <span class="hidden md:block">
+            {{ t('clean') }}
+          </span>
+        </Step>
+        <Step :value="4">
+          <span class="hidden md:block">
+            {{ t('enrich') }}
+          </span>
+        </Step>
+      </StepList>
+      <StepPanels>
+        <StepPanel :value="1">
+          <SourcePanel ref="sourcePanel" />
+        </StepPanel>
+        <StepPanel :value="2">
+          <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
+        </StepPanel>
+        <StepPanel :value="3">
+          <CleanPanel />
+        </StepPanel>
+        <StepPanel :value="4">
+          <EnrichPanel />
+        </StepPanel>
+      </StepPanels>
     </Stepper>
   </Panel>
   <MiningConsentSidebar
