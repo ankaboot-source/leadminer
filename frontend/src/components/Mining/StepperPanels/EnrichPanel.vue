@@ -9,13 +9,17 @@
     <div id="progress-title">
       <span class="pr-1">
         {{
-          activeTask
-            ? contactsToEnrichLength.toLocaleString()
-            : enrichedContacts.toLocaleString()
+          currentProgress === 100
+            ? enrichedContacts.toLocaleString()
+            : (
+                contactsToEnrichLengthPartial || contactsToEnrichLength
+              ).toLocaleString()
         }}
       </span>
       {{
-        activeTask ? t('text.contacts_to_enrich') : t('text.contacts_enriched')
+        currentProgress === 100
+          ? t('text.contacts_enriched')
+          : t('text.contacts_to_enrich')
       }}
     </div>
     <div id="progress-time" class="hidden md:block"></div>
@@ -100,10 +104,12 @@ const $contactStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 
 const activeTask = ref(true);
-const contactsToEnrich = ref<string[]>(
+const contactsToEnrich = computed(() =>
   $contactStore.filtered.map((contact) => contact.email)
 );
-const contactsToEnrichLength = ref<number>(contactsToEnrich.value.length);
+const contactsToEnrichLength = computed(() => contactsToEnrich.value.length);
+const contactsToEnrichLengthPartial = ref<number>(0);
+
 const enrichedContacts = ref(0);
 const currentProgress = ref<number | undefined>();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
@@ -115,6 +121,9 @@ const progressColor = computed(() =>
   activeTask.value ? 'bg-amber-400' : 'bg-green-600'
 );
 
+watch(contactsToEnrichLength, () => {
+  contactsToEnrichLengthPartial.value = 0;
+});
 function startNewMining() {
   $leadminerStore.$resetMining();
   $stepper.go(0);
@@ -233,7 +242,7 @@ async function startEnrichment(partial: boolean) {
 
         if (response.status === 402) {
           stopEnrichment();
-          contactsToEnrichLength.value = available;
+          contactsToEnrichLengthPartial.value = available;
           CreditsDialogRef.value?.openModal(
             available === 0,
             total,

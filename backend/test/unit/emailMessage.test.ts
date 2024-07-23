@@ -318,7 +318,7 @@ describe('Email Message', () => {
         mockEmailStatusCache,
         mockAllCatchDomainsCache,
         domainStatusVerification,
-        '',
+        'miningSource@leadminer.io',
         '',
         header,
         'body',
@@ -329,7 +329,8 @@ describe('Email Message', () => {
           person: {
             name: 'Leadminer',
             email: 'leadminer@leadminer.io',
-            identifiers: ['leadminer']
+            identifiers: ['leadminer'],
+            source: 'miningSource@leadminer.io'
           },
           pointOfContact: {
             name: 'Leadminer',

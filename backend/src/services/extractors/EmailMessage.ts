@@ -250,7 +250,8 @@ export default class EmailMessage {
           const person: Person = {
             name: validContact.name,
             email: validContact.email.address,
-            identifiers: [validContact.email.identifier]
+            identifiers: [validContact.email.identifier],
+            source: this.userEmail
           };
 
           const pointOfContact: PointOfContact = {
