@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import Aura from '@primevue/themes/aura';
 import pkg from './package.json';
 
 export default defineNuxtConfig({
@@ -62,14 +63,17 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/test-utils/module',
     '@nuxtjs/supabase',
-    '@nuxtjs/tailwindcss',
-    '@pinia/nuxt',
-    'nuxt-primevue',
     '@nuxtjs/i18n',
+    '@pinia/nuxt',
+    '@primevue/nuxt-module',
   ],
 
   primevue: {
-    cssLayerOrder: 'tailwind-base, primevue, tailwind-utilities',
+    options: {
+      theme: {
+        preset: Aura,
+      },
+    },
     components: {
       exclude: ['Editor', 'Chart'],
     },
@@ -88,6 +92,7 @@ export default defineNuxtConfig({
 
   postcss: {
     plugins: {
+      tailwindcss: {},
       autoprefixer: {
         overrideBrowserslist: [
           'last 4 Chrome versions',
@@ -103,10 +108,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: [
-    'primeicons/primeicons.css',
-    'primevue/resources/themes/aura-light-indigo/theme.css',
-  ],
+  css: ['primeicons/primeicons.css', '@/assets/css/main.css'],
 
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,

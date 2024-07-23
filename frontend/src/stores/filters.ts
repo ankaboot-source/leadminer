@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia';
-import { FilterMatchMode, FilterOperator, FilterService } from 'primevue/api';
+import {
+  FilterMatchMode,
+  FilterOperator,
+  FilterService,
+} from '@primevue/core/api';
 
 const ANY_SELECTED = 'ANY_SELECTED';
 FilterService.register(ANY_SELECTED, (value, filter) =>

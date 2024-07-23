@@ -18,7 +18,7 @@
       </div>
       <div id="mobile-navbar" class="flex md:hidden">
         <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />
-        <Sidebar v-model:visible="visible" class="p-3.5">
+        <Drawer v-model:visible="visible" class="p-3.5">
           <template #container="{ closeCallback }">
             <Button unstyled class="flex flex-column" @click="closeCallback">
               <NuxtLink to="/dashboard">
@@ -45,7 +45,7 @@
               </Button>
             </div>
           </template>
-        </Sidebar>
+        </Drawer>
       </div>
     </template>
   </div>
