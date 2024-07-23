@@ -57,14 +57,14 @@ export const tags = () => {
 type Status = {
   value: 'VALID' | 'RISKY' | 'INVALID' | 'UNKNOWN' | null;
   label: string;
-  color: 'success' | 'warning' | 'danger' | 'secondary';
+  color: 'success' | 'warn' | 'danger' | 'secondary';
 };
 
 export const statuses = () => {
   const { t } = useNuxtApp().$i18n;
   return [
     { value: 'VALID', label: t('contact.status.valid'), color: 'success' },
-    { value: 'RISKY', label: t('contact.status.risky'), color: 'warning' },
+    { value: 'RISKY', label: t('contact.status.risky'), color: 'warn' },
     { value: 'INVALID', label: t('contact.status.invalid'), color: 'danger' },
     {
       value: 'UNKNOWN',
