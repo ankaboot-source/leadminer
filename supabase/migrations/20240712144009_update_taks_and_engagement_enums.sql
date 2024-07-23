@@ -43,3 +43,13 @@ CREATE TABLE engagement (
     constraint engagement_pkey primary key (email, user_id, engagement_type),
     constraint engagement_user_id_fkey foreign key (user_id) references auth.users (id)
 );
+
+-- Enable row level security for the 'tasks' table
+ALTER TABLE public.engagement ENABLE ROW LEVEL SECURITY;
+
+CREATE policy "Enable select for users based on user_id"
+on "public"."engagement"
+as permissive
+for select
+to public
+using ((select auth.uid()) = user_id);
