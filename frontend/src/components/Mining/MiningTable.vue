@@ -95,13 +95,13 @@
               <i v-else class="pi pi-sliders-h" />
             </span>
           </Button>
-          <OverlayPanel ref="settingsPanel">
+          <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between">
                 <div v-tooltip.left="t('ensure_deliverability')">
                   {{ t('only_valid_contacts') }}
                 </div>
-                <InputSwitch
+                <ToggleSwitch
                   v-model="filtersStore.validToggle"
                   @update:model-value="filtersStore.onValidToggle"
                 />
@@ -110,7 +110,7 @@
                 <div v-tooltip.left="t('contacts_best_performance')">
                   {{ t('at_least_one_reply') }}
                 </div>
-                <InputSwitch
+                <ToggleSwitch
                   v-model="filtersStore.discussionsToggle"
                   @update:model-value="filtersStore.onDiscussionsToggle"
                 />
@@ -125,7 +125,7 @@
                 >
                   {{ t('recent_contacts') }}
                 </div>
-                <InputSwitch
+                <ToggleSwitch
                   v-model="filtersStore.recentToggle"
                   @update:model-value="filtersStore.onRecentToggle"
                 />
@@ -145,7 +145,7 @@
                 @change="onSelectColumnsChange"
               />
             </ul>
-          </OverlayPanel>
+          </Popover>
         </div>
         <div>
           <Button
@@ -284,7 +284,7 @@
         {{ data.recency?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
-        <Calendar
+        <DatePicker
           v-model="filterModel.value"
           show-icon
           class="p-column-filter"
@@ -447,7 +447,7 @@
         {{ data.seniority?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
-        <Calendar
+        <DatePicker
           v-model="filterModel.value"
           show-icon
           class="p-column-filter"

@@ -5,7 +5,7 @@
       class="w-full min-[1129px]:w-1/2 flex flex-col gap-3"
     >
       <p>{{ t('pick_existing_email') }}</p>
-      <Dropdown
+      <Select
         v-model="sourceModel"
         checkmark
         :options="sourceOptions"

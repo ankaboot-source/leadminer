@@ -1,5 +1,5 @@
 <template>
-  <Sidebar
+  <Drawer
     v-model:visible="show"
     class="h-auto"
     position="top"
@@ -50,7 +50,7 @@
         </div>
       </div>
     </template>
-  </Sidebar>
+  </Drawer>
 </template>
 <script setup lang="ts">
 import type { MiningSourceType, OAuthMiningSource } from '@/types/mining';

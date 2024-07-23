@@ -18,3 +18,4 @@ backend/config/production.yaml
 /dump.rdb
 backend/config/default.yml
 supabase/config.toml
+frontend-v4/*
