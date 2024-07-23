@@ -1,8 +1,8 @@
-import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import { ref } from 'vue';
 
 export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
-  const index = ref(0);
+  const index = ref(1);
 
   function next() {
     index.value += 1;
@@ -17,7 +17,7 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   }
 
   function $reset() {
-    index.value = 0;
+    index.value = 1;
   }
 
   return {
