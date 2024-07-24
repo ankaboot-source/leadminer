@@ -1,7 +1,7 @@
 <template>
   <div class="flex">
     <img class="logo h-8 mt-1" src="/icons/pickaxe.svg" />
-    <img class="ml-2 h-10" src="/logo/LogoWithoutIcon.png" />
+    <img class="ml-2 h-10 dark:invert" src="/logo/LogoWithoutIcon.png" />
   </div>
 </template>
 
