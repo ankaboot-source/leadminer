@@ -54,7 +54,7 @@ export default defineNuxtConfig({
       // Credits
       ENABLE_CREDIT: process.env.ENABLE_CREDIT,
       EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
-      // Supabase SaaS
+      // Supabase saas
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
     },
@@ -62,8 +62,8 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/test-utils/module',
-    '@nuxtjs/supabase',
     '@nuxtjs/i18n',
+    '@nuxtjs/supabase',
     '@pinia/nuxt',
     '@primevue/nuxt-module',
   ],
@@ -108,7 +108,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['primeicons/primeicons.css', '@/assets/css/main.css'],
+  css: ['primeicons/primeicons.css', '~/assets/css/tailwind.css'],
 
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
