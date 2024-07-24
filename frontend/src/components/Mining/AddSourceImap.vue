@@ -248,7 +248,7 @@ async function onSubmitImapCredentials() {
     "unable_to_detect": "Unable to detect your IMAP configuration. Please add them manually."
   },
   "fr": {
-    "other_email_provider": "Autre fournisseur de messagerie (IMAP)",
+    "other_email_provider": "Autre nouveau compte e-mail (IMAP)",
     "sign_in_with_imap": "Connexion avec IMAP",
     "host": "Hôte",
     "port": "Port",

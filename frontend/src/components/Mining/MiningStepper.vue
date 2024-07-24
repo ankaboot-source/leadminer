@@ -24,17 +24,17 @@
         </Step>
         <Step :value="2">
           <span class="hidden md:block">
-            {{ t('mine') }}
+            {{ $t('common.mine') }}
           </span>
         </Step>
         <Step :value="3">
           <span class="hidden md:block">
-            {{ t('clean') }}
+            {{ $t('common.clean') }}
           </span>
         </Step>
         <Step :value="4">
           <span class="hidden md:block">
-            {{ t('enrich') }}
+            {{ $t('common.enrich') }}
           </span>
         </Step>
       </StepList>
@@ -88,8 +88,8 @@ const { error, provider, source } = $route.query;
 
 onMounted(() => {
   useRouter().replace({ query: {} });
-
   if (source) {
+    collapsePanel.value = false;
     sourcePanel.value?.selectSource(source as string);
   } else if (error === 'oauth-consent') {
     $consentSidebar.show(provider as MiningSourceType);
@@ -101,17 +101,11 @@ onMounted(() => {
 {
   "en": {
     "mine_contacts": "Mine contacts from your email account",
-    "source": "Source",
-    "mine": "Mine",
-    "clean": "Clean",
-    "enrich": "Enrich"
+    "source": "Source"
   },
   "fr": {
     "mine_contacts": "Extraire des contacts de votre compte email",
-    "source": "Source",
-    "mine": "Extraire",
-    "clean": "Clean",
-    "enrich": "Enrichir"
+    "source": "Source"
   }
 }
 </i18n>

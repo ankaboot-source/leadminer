@@ -309,7 +309,7 @@ async function deleteAccount() {
     "delete": "Supprimer",
     "delete_warning": "Vous pouvez supprimer définitivement votre compte, y compris vos données extraites. Vous ne pouvez pas annuler cette action.",
     "delete_my_account": "Supprimer mon compte",
-    "delete_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données d'extraction.",
+    "delete_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données déjà extraites.",
     "delete_account": "Supprimer le compte",
     "account_deleted": "Compte supprimé",
     "account_deleted_success": "Votre compte a été supprimé avec succès",

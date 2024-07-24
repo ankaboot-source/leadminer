@@ -123,7 +123,7 @@ onMounted(() => {
   },
   "fr": {
     "finished_in": "Terminé en",
-    "estimated_time": "Temps estimé:"
+    "estimated_time": "Temps estimé :"
   }
 }
 </i18n>
