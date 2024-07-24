@@ -98,7 +98,7 @@ defineExpose({
     "action_type_only": "{actionType} only {available}"
   },
   "fr": {
-    "oops_low_credits": "Oups! Crédits en baisse 😅",
+    "oops_low_credits": "Oups ! Crédits en baisse 😅",
     "not_enough_credits": "Vous n'avez pas assez de crédits pour {actionType} tous vos {formattedTotal} {engagementType}.",
     "refill_or_upgrade": "Recharger vos crédits ou Améliorez",
     "action_type_only": "{actionType} seulement {available}"

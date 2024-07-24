@@ -198,11 +198,11 @@
       </template>
       <template v-else>
         <Button
-          label="Cancel"
+          :label="$t('common.cancel')"
           severity="secondary"
           @click="cancelContactInformations()"
         />
-        <Button label="Save" @click="saveContactInformations()" />
+        <Button :label="$t('common.save')" @click="saveContactInformations()" />
       </template>
     </div>
   </Drawer>
@@ -215,11 +215,11 @@ import type {
   User,
 } from '@supabase/supabase-js';
 
-import type { Contact, ContactEdit } from '@/types/contact';
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import type { Contact, ContactEdit } from '@/types/contact';
 import {
-  type EnrichmentTask,
   type EnrichContactResponse,
+  type EnrichmentTask,
 } from '@/types/enrichment';
 
 const { t } = useI18n({
@@ -487,23 +487,6 @@ function copyContact(email: string, name?: string) {
       "already_enriched": "Contacts you selected are already enriched.",
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
     },
-    "contact": {
-      "name": "Full name",
-      "given_name": "Given Name",
-      "family_name": "Family Name",
-      "alternate_names": "Alternate Names",
-      "address": "Location",
-      "works_for": "Works For",
-      "job_title": "Job Title",
-      "same_as": "Same As",
-      "image": "Avatar URL",
-      "given_name_definition": "The given name of this contact",
-      "family_name_definition": "The family name of this contact",
-      "alternate_names_definition": "Other names this contact goes by",
-      "address_definition": "The location of this contact",
-      "works_for_definition": "Organization this contact works for",
-      "job_title_definition": "The job title of this contact"
-    },
     "copy": "Copy",
     "contact_copied": "Contact copied",
     "contact_email_copied": "This contact email address has been copied to your clipboard",
@@ -519,23 +502,6 @@ function copyContact(email: string, name?: string) {
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
       "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
-    },
-    "contact": {
-      "name": "Nom complet",
-      "given_name": "Prénom",
-      "family_name": "Nom de famille",
-      "alternate_names": "Autres noms",
-      "address": "Adresse",
-      "works_for": "Travaille pour",
-      "job_title": "Titre du poste",
-      "same_as": "Même que",
-      "image": "URL de l'avatar",
-      "given_name_definition": "Le prénom de ce contact",
-      "family_name_definition": "Le nom de famille de ce contact",
-      "alternate_names_definition": "Autres noms par lesquels ce contact est connu",
-      "address_definition": "L'emplacement de ce contact",
-      "works_for_definition": "Organisation pour laquelle ce contact travaille",
-      "job_title_definition": "Le titre du poste de ce contact"
     },
     "copy": "Copier",
     "contact_copied": "Contact copié",
