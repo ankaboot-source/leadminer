@@ -40,6 +40,7 @@ export interface Person {
   familyName?: string;
   identifiers?: string[];
   alternateNames?: string[];
+  source: string;
 }
 
 export interface PointOfContact {

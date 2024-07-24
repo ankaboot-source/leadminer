@@ -70,7 +70,9 @@ export default defineNuxtConfig({
 
   primevue: {
     options: {
-      theme: Aura,
+      theme: {
+        preset: Aura,
+      },
     },
     components: {
       exclude: ['Editor', 'Chart'],
