@@ -8,7 +8,7 @@
     :style="{ width: '60vw', height: '70vh' }"
     pt:content:class="grow p-3 border-y border-slate-200"
     pt:footer:class="p-3"
-    header="Fine-tune your mining"
+    :header="t('fine_tune_mining')"
   >
     <div class="flex items-center gap-2">
       <div class="text-h6">{{ t('select_folders_to_mine') }}</div>
@@ -90,12 +90,14 @@ defineExpose({
 <i18n lang="json">
 {
   "en": {
+    "fine_tune_mining": "Fine-tune your mining",
     "select_folders_to_mine": "Select folders to mine",
     "email_messages_selected": "Email messages selected"
   },
   "fr": {
+    "fine_tune_mining": "Affinez l'extraction",
     "select_folders_to_mine": "Sélectionnez les dossiers à extraire",
-    "email_messages_selected": "Messages électroniques sélectionnés"
+    "email_messages_selected": "Emails sélectionnés"
   }
 }
 </i18n>
