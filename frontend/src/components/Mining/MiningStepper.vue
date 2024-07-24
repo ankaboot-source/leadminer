@@ -88,8 +88,8 @@ const { error, provider, source } = $route.query;
 
 onMounted(() => {
   useRouter().replace({ query: {} });
-
   if (source) {
+    collapsePanel.value = false;
     sourcePanel.value?.selectSource(source as string);
   } else if (error === 'oauth-consent') {
     $consentSidebar.show(provider as MiningSourceType);
