@@ -20,6 +20,7 @@ export default {
     },
     extend: {},
   },
+  // Types are still not supported:
   // eslint-disable-next-line global-require
   plugins: [require('tailwindcss-primeui')],
 };
