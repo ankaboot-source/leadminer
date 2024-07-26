@@ -329,7 +329,7 @@
             v-for="tag of data.tags"
             :key="tag"
             :value="getTagLabel(tag)"
-            :class="getTagColor(tag)"
+            :severity="getTagColor(tag)"
             class="capitalize"
           />
         </div>
@@ -347,7 +347,7 @@
           <template #option="{ option }">
             <Tag
               :value="option.label"
-              :class="getTagColor(option.value)"
+              :severity="getTagColor(option.value)"
               class="capitalize"
             />
           </template>
