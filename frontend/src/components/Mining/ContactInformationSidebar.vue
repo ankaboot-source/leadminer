@@ -7,7 +7,7 @@
   <Drawer
     v-model:visible="show"
     position="right"
-    pt:root:class="md:w-1/2 xl:w-1/3 w-full"
+    class="md:!w-1/2 xl:!w-1/3 !w-full"
     @hide="() => onHide()"
   >
     <template #header><span class="grow" /> </template>
