@@ -96,15 +96,15 @@ export function getTagColor(tag: string) {
   if (!tag) return undefined;
   switch (tag) {
     case 'personal':
-      return 'bg-red-100 text-red-700';
+      return 'danger';
     case 'professional':
-      return 'bg-blue-100 text-blue-700';
+      return 'info';
     case 'newsletter':
-      return 'p-tag-secondary';
+      return 'secondary';
     case 'group':
-      return 'p-tag-secondary';
+      return 'secondary';
     case 'chat':
-      return 'p-tag-secondary';
+      return 'secondary';
     default:
       return undefined;
   }
