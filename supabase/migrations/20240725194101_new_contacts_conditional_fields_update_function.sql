@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS update_contact_by_email;
+
 /**
  * enrich_contacts
  *
