@@ -66,6 +66,7 @@ async function getEnrichmentTask(taskId: string) {
       details: {
         userId: string;
         enrichmentToken: string;
+        updateEmptyFieldsOnly: boolean;
         result?: {
           total?: number;
           enriched?: number;
@@ -93,6 +94,7 @@ async function updateEnrichmentTask(
   details?: {
     userId: string;
     enrichmentToken: string;
+    updateEmptyFieldsOnly: boolean;
     result?: {
       total?: number;
       enriched?: number;
@@ -116,88 +118,41 @@ async function updateEnrichmentTask(
 }
 
 /**
- * Retrieves or creates an organization by name.
- * @param name - The name of the organization.
- * @returns The organization data.
- * @throws Error if there is an issue fetching or creating the organization in the database.
- */
-async function getOrCreateOrganization(name: string) {
-  const { data: existingOrganization } = await supabaseClient
-    .from('organizations')
-    .select('id')
-    .eq('name', name)
-    .single();
-
-  if (existingOrganization) {
-    return existingOrganization;
-  }
-
-  const { data: createdOrganization, error: upsertError } = await supabaseClient
-    .from('organizations')
-    .upsert({ name })
-    .select('id')
-    .single();
-
-  if (upsertError) {
-    throw new Error(upsertError.message);
-  }
-
-  return createdOrganization;
-}
-
-/**
  * Enriches a contact with the provided data.
  * @param userId - The ID of the user.
  * @param contact - The contact data to enrich.
  * @throws Error if there is an issue updating the contact in the database.
  */
 async function enrichContact(
-  userId: string,
-  {
-    email,
-    name,
-    image,
-    address,
-    job_title,
-    works_for,
-    given_name,
-    family_name,
-    same_as
-  }: Partial<Contact>
+  updateEmptyOnly: boolean,
+  contacts: Partial<Contact>[]
 ) {
-  const organization = works_for
-    ? await getOrCreateOrganization(works_for)
-    : undefined;
+  // update contacts
+  const { error } = await supabaseClient.rpc('enrich_contacts', {
+    p_contacts_data: contacts,
+    p_update_empty_fields_only: updateEmptyOnly ?? true
+  });
 
-  const { error: updateError } = await supabaseClient
-    .from('persons')
-    .update({
-      name,
-      image,
-      same_as,
-      address,
-      job_title,
-      given_name,
-      family_name,
-      works_for: organization?.id
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Update engagement table
+  await Promise.all(
+    contacts.map(async ({ email, user_id }) => {
+      const { error: engagementError } = await supabaseClient
+        .from('engagement')
+        .upsert({
+          email,
+          user_id,
+          engagement_type: 'ENRICH'
+        });
+
+      if (engagementError) {
+        throw new Error(engagementError.message);
+      }
     })
-    .match({ user_id: userId, email });
-
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
-
-  const { error: engagementError } = await supabaseClient
-    .from('engagement')
-    .upsert({
-      email,
-      user_id: userId,
-      engagement_type: 'ENRICH'
-    });
-
-  if (engagementError) {
-    throw new Error(engagementError.message);
-  }
+  );
 }
 
 export default function initializeEnrichementController(userResolver: Users) {
@@ -207,8 +162,15 @@ export default function initializeEnrichementController(userResolver: Users) {
      */
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
-      const { partial, emails }: { partial: boolean; emails: string[] } =
-        req.body;
+      const {
+        partial,
+        emails,
+        updateEmptyFieldsOnly
+      }: {
+        partial: boolean;
+        updateEmptyFieldsOnly: boolean;
+        emails: string[];
+      } = req.body;
       try {
         if (!Array.isArray(emails) || !emails.length) {
           return res
@@ -259,6 +221,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         await updateEnrichmentTask(enrichmentTask.id, 'running', {
           userId: user.id,
           enrichmentToken: token,
+          updateEmptyFieldsOnly,
           result: {
             total: contactsToEnrich.length
           }
@@ -284,8 +247,11 @@ export default function initializeEnrichementController(userResolver: Users) {
         const enricher = emailEnrichementService.getEmailEnricher();
 
         const { id, details } = await getEnrichmentTask(taskId);
-        const { userId: cachedUserId, enrichmentToken: cachedEnrichmentToken } =
-          details;
+        const {
+          userId: cachedUserId,
+          enrichmentToken: cachedEnrichmentToken,
+          updateEmptyFieldsOnly
+        } = details;
 
         if (!id) {
           return res.status(404).send({
@@ -300,21 +266,20 @@ export default function initializeEnrichementController(userResolver: Users) {
         }
 
         const enrichementResult = enricher.enrichementMapper(req.body);
-
-        await Promise.all(
-          enrichementResult.map((contact) =>
-            enrichContact(cachedUserId, {
-              image: contact.image,
-              email: contact.email,
-              name: contact.name,
-              same_as: contact.sameAs,
-              address: contact.address,
-              job_title: contact.jobTitle,
-              given_name: contact.givenName,
-              family_name: contact.familyName,
-              works_for: contact.organization
-            })
-          )
+        await enrichContact(
+          updateEmptyFieldsOnly,
+          enrichementResult.map((contact) => ({
+            user_id: cachedUserId,
+            image: contact.image,
+            email: contact.email,
+            name: contact.name,
+            same_as: contact.sameAs,
+            address: contact.address,
+            job_title: contact.jobTitle,
+            given_name: contact.givenName,
+            family_name: contact.familyName,
+            works_for: contact.organization
+          }))
         );
 
         await updateEnrichmentTask(taskId, 'done', {

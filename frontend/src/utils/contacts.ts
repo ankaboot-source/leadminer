@@ -30,11 +30,16 @@ export async function getContacts(userId: string): Promise<Contact[]> {
 export async function updateContact(userId: string, contact: ContactEdit) {
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient.rpc(
-    'update_contact_by_email',
+    'enrich_contacts',
     // @ts-expect-error: Issue with @nuxt/supabase typing
     {
-      user_id: userId,
-      ...contact,
+      p_contacts_data: [
+        {
+          user_id: userId,
+          ...contact,
+        },
+      ],
+      p_update_empty_fields_only: false,
     }
   );
 

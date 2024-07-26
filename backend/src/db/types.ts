@@ -63,7 +63,7 @@ export type EmailStatus = 'UNKNOWN' | 'RISKY' | 'VALID' | 'INVALID';
 
 export interface Contact {
   id: string;
-  userid: string;
+  user_id: string;
   email: string;
   engagement?: number;
   name?: string;
