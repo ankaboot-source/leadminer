@@ -28,6 +28,7 @@
     :global-filter-fields="['email', 'name']"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+    :current-page-report-template="`({currentPage} ${t('of')} {totalPages})`"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
     :loading="isLoading"
@@ -907,6 +908,7 @@ table.p-datatable-table {
 <i18n lang="json">
 {
   "en": {
+    "of": "of",
     "no_contacts_found": "No contacts found",
     "try_clearing_filters": "Try clearing filters",
     "select_at_least_one_contact": "Select at least one contact to export",
@@ -949,10 +951,11 @@ table.p-datatable-table {
     "contact_information": "Contact Information"
   },
   "fr": {
+    "of": "sur",
     "no_contacts_found": "Aucun contact trouvé",
     "try_clearing_filters": "Essayez de supprimer les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
-    "export_csv": "Exporter CSV",
+    "export_csv": "Export CSV",
     "clear": "Vider",
     "ensure_deliverability": "Assurez la délivrabilité de votre campagne",
     "only_valid_contacts": "Seulement les contacts valides",

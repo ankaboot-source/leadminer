@@ -1,7 +1,7 @@
 <template>
   <Drawer
     v-model:visible="show"
-    class="h-auto"
+    class="!h-auto"
     position="top"
     :dismissable="false"
   >

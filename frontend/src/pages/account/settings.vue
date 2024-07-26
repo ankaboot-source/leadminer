@@ -38,7 +38,7 @@
         </div>
 
         <Button
-          class="w-full md:w-56 gap-4"
+          class="w-full md:w-60 gap-4"
           type="submit"
           :label="t('update')"
           :loading="isLoading"
@@ -54,7 +54,7 @@
           {{ t('delete_warning') }}
         </p>
         <Button
-          class="w-full md:w-56 gap-4 justify-center"
+          class="w-full md:w-60 gap-4 justify-center"
           severity="danger"
           @click="showWarning"
         >
