@@ -952,7 +952,7 @@ table.p-datatable-table {
     "no_contacts_found": "Aucun contact trouvé",
     "try_clearing_filters": "Essayez de supprimer les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
-    "export_csv": "Exporter CSV",
+    "export_csv": "Export CSV",
     "clear": "Vider",
     "ensure_deliverability": "Assurez la délivrabilité de votre campagne",
     "only_valid_contacts": "Seulement les contacts valides",
