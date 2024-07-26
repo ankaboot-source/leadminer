@@ -269,10 +269,10 @@ onUnmounted(() => {
 <i18n lang="json">
 {
   "en": {
-    "update_all": "Update All",
-    "update_empty": "Update Empty Fields",
+    "update_all": "Update all",
+    "update_empty": "Update empty fields",
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
-    "confirm_enrichment": "Confirm Contact Enrichment",
+    "confirm_enrichment": "Confirm contact enrichment",
     "notification": {
       "summary": "Enrich",
       "enrichment_started": "Enrichment is running for {total} contacts.",
