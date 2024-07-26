@@ -117,7 +117,6 @@ async function updateEnrichmentTask(
   }
 }
 
-
 /**
  * Enriches a contact with the provided data.
  * @param userId - The ID of the user.
