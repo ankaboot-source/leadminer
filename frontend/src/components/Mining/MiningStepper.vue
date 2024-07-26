@@ -17,38 +17,38 @@
     </template>
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
-        <Step :value="1">
+        <Step v-tooltip.bottom="t('source')" :value="1">
           <span class="hidden md:block">
             {{ t('source') }}
           </span>
         </Step>
-        <Step :value="2">
+        <Step v-tooltip.bottom="t('common.mine')" :value="2">
           <span class="hidden md:block">
             {{ $t('common.mine') }}
           </span>
         </Step>
-        <Step :value="3">
+        <Step v-tooltip.bottom="t('common.clean')" :value="3">
           <span class="hidden md:block">
             {{ $t('common.clean') }}
           </span>
         </Step>
-        <Step :value="4">
+        <Step v-tooltip.bottom="t('common.enrich')" :value="4">
           <span class="hidden md:block">
             {{ $t('common.enrich') }}
           </span>
         </Step>
       </StepList>
       <StepPanels>
-        <StepPanel :value="1">
+        <StepPanel v-if="$stepper.index === 1" :value="1">
           <SourcePanel ref="sourcePanel" />
         </StepPanel>
-        <StepPanel :value="2">
+        <StepPanel v-if="$stepper.index === 2" :value="2">
           <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
         </StepPanel>
-        <StepPanel :value="3">
+        <StepPanel v-if="$stepper.index === 3" :value="3">
           <CleanPanel />
         </StepPanel>
-        <StepPanel :value="4">
+        <StepPanel v-if="$stepper.index === 4" :value="4">
           <EnrichPanel />
         </StepPanel>
       </StepPanels>
