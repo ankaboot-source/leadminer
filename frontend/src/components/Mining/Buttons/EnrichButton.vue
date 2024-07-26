@@ -44,7 +44,7 @@
             @click="
               () => {
                 closeDialog();
-                startEnrichment(true);
+                startEnrichment(false);
               }
             "
           />
