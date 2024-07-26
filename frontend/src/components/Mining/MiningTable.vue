@@ -66,6 +66,13 @@
             @click="exportTable()"
           />
         </div>
+        <div>
+          <EnrichButton
+            :enrichment-realtime-callback="() => {}"
+            :enrichment-request-response-callback="() => {}"
+            :start-on-mounted="false"
+          />
+        </div>
         <div class="ml-2">
           <template v-if="!implicitSelectAll">
             {{ implicitlySelectedContactsLength.toLocaleString() }}
@@ -575,6 +582,7 @@ import type {
 } from 'primevue/datatable';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';

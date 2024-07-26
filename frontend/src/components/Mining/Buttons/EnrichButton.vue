@@ -7,20 +7,20 @@
   />
   <Dialog
     v-model:visible="dialogVisible"
+    modal
     :state="{
       maximized: true,
     }"
-    header="Confirm Contact Enrichment"
+    :header="t('confirm_enrichment')"
     class="w-full sm:w-[35rem]"
   >
     <p>
-      Updating the contact's information may overwrite the existing details. How
-      would you like to proceed?
+      {{ t('update_confirmation') }}
     </p>
     <template #footer>
       <div class="flex flex-col sm:flex-row justify-between w-full gap-2">
         <Button
-          label="Cancel"
+          :label="$t('common.cancel')"
           severity="secondary"
           class="w-full sm:w-auto order-3 sm:order-1"
           @click="closeDialog"
@@ -29,7 +29,7 @@
           class="flex flex-col gap-2 sm:flex-row w-full sm:w-auto order-1 sm:order-2"
         >
           <Button
-            label="Update Empty Fields"
+            :label="t('update_empty')"
             class="w-full sm:w-auto"
             @click="
               () => {
@@ -39,7 +39,7 @@
             "
           />
           <Button
-            label="Update All"
+            :label="t('update_all')"
             class="w-full sm:w-auto"
             @click="
               () => {
@@ -59,6 +59,7 @@
     icon="pi pi-stop"
     icon-pos="right"
     :label="t('button.halt_enrichment')"
+    :pt:label:class="'hidden md:block'"
     @click="stopEnrichment"
   />
   <Button
@@ -67,6 +68,7 @@
     severity="contrast"
     icon-pos="right"
     :label="t('button.start_enrichment')"
+    :pt:label:class="'hidden md:block'"
     @click="openDialog"
   >
     <template #icon>
@@ -79,10 +81,11 @@ import {
   RealtimeChannel,
   type RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
+
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import {
-  type EnrichmentTask,
   type EnrichContactResponse,
+  type EnrichmentTask,
 } from '@/types/enrichment';
 
 const { t } = useI18n({
@@ -266,6 +269,10 @@ onUnmounted(() => {
 <i18n lang="json">
 {
   "en": {
+    "update_all": "Update All",
+    "update_empty": "Update Empty Fields",
+    "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
+    "confirm_enrichment": "Confirm Contact Enrichment",
     "notification": {
       "summary": "Enrich",
       "enrichment_started": "Enrichment is running for {total} contacts.",
@@ -281,6 +288,10 @@ onUnmounted(() => {
     }
   },
   "fr": {
+    "update_all": "Tout mettre à jour",
+    "update_empty": "Mettre à jour les champs vides",
+    "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous proceder ?",
+    "confirm_enrichment": "Confirmer l'enrichissement des contacts",
     "notification": {
       "summary": "Enrichir",
       "enrichment_started": "L'enrichissement est en cours pour ${total} contacts.",
