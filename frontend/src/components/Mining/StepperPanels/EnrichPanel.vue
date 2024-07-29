@@ -126,7 +126,7 @@ watch(contactsToEnrichLength, () => {
 });
 function startNewMining() {
   $leadminerStore.$resetMining();
-  $stepper.go(0);
+  $stepper.go(1);
 }
 
 function showNotification(
@@ -272,7 +272,7 @@ onUnmounted(() => {
     "notification": {
       "summary": "Enrich Contact",
       "enrichment_started": "Enrichment is running for {total} contacts.",
-      "enrichment_completed": "{total}/{enriched} of your contacts has been successfully enriched.",
+      "enrichment_completed": "{enriched}/{total} of your contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
