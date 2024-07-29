@@ -98,23 +98,21 @@ const {
   startOnMounted,
   enrichmentRealtimeCallback,
   enrichmentRequestResponseCallback,
+  contactsToEnrich,
 } = defineProps<{
   startOnMounted: boolean;
   enrichmentRealtimeCallback: (
     payload: RealtimePostgresChangesPayload<EnrichmentTask>
   ) => void;
   enrichmentRequestResponseCallback: ({ response }: any) => void;
+  contactsToEnrich: string[];
 }>();
 
 const { $api } = useNuxtApp();
 
 const $toast = useToast();
-const $contactStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 
-const contactsToEnrich = computed(() =>
-  $contactStore.filtered.map((contact) => contact.email)
-);
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const dialogVisible = ref(false);
@@ -224,7 +222,7 @@ async function startEnrichment(partial: boolean) {
       method: 'POST',
       body: {
         partial,
-        emails: contactsToEnrich.value,
+        emails: contactsToEnrich,
       },
       onResponse({ response }) {
         enrichmentRequestResponseCallback({ response });

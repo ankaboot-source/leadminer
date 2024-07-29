@@ -177,6 +177,7 @@
           :start-on-mounted="false"
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
+          :contacts-to-enrich="[contact.email]"
         />
         <Button
           icon-pos="right"

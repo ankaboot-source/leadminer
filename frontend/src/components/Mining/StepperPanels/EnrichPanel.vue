@@ -52,6 +52,7 @@
       @click="startNewMining"
     />
     <EnrichButton
+      :contacts-to-enrich="contactsToEnrich"
       :v-model:enrichment-status="activeTask"
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
@@ -61,6 +62,7 @@
 </template>
 <script setup lang="ts">
 import { type RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import { type EnrichmentTask } from '@/types/enrichment';
 
