@@ -1,3 +1,5 @@
+const primeui = require('tailwindcss-primeui');
+
 export default {
   content: [
     './src/components/**/*.{js,vue,ts}',
@@ -20,7 +22,5 @@ export default {
     },
     extend: {},
   },
-  // Types are still not supported:
-  // eslint-disable-next-line global-require
-  plugins: [require('tailwindcss-primeui')],
+  plugins: [primeui],
 };
