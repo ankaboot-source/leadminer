@@ -1,4 +1,4 @@
-import primeui from 'tailwindcss';
+const primeui = require('tailwindcss-primeui');
 
 export default {
   content: [
