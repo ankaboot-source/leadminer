@@ -50,20 +50,7 @@
             v-if="contact.same_as?.length && !editingContact"
             class="flex gap-2 grow pt-1"
           >
-            <NuxtLink
-              v-for="(same_as, index) in contact.same_as"
-              :key="index"
-              :to="same_as"
-              target="_blank"
-              rel="noopener"
-            >
-              <i
-                :class="`pi pi-${$contactInformationSidebar.getSameAsIcon(
-                  same_as
-                )}`"
-                class="text-xl"
-              />
-            </NuxtLink>
+            <social-link :social-links="contact.same_as" />
           </div>
         </span>
       </div>
@@ -215,6 +202,7 @@ import type {
   User,
 } from '@supabase/supabase-js';
 
+import SocialLink from '@/components/icons/SocialLink.vue';
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import {
@@ -456,6 +444,7 @@ async function saveContactInformations() {
       ? (contactEdit.value.same_as as string)
           ?.split('\n')
           .filter((item) => item.length)
+          .join(',')
       : undefined,
     image: contactEdit.value.image || undefined,
   };
