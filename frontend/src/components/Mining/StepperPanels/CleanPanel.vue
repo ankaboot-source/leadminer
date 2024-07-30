@@ -34,7 +34,7 @@
       <Button
         class="w-full md:w-max border-solid border-2 border-black"
         severity="contrast"
-        :label="t('enrich_contacts')"
+        :label="t('enrich_contacts', useContactsStore().filtered.length)"
         :disabled="useContactsStore().filtered.length === 0"
         @click="$stepper.next()"
       >
@@ -136,7 +136,7 @@ function startNewMining() {
 <i18n lang="json">
 {
   "en": {
-    "enrich_contacts": "Enrich your contacts",
+    "enrich_contacts": "Enrich {n} contacts",
     "contacts_to_clean": "estimated contacts to clean.",
     "halt_cleaning": "Halt cleaning",
     "start_new_mining": "Start a new mining",
@@ -148,13 +148,13 @@ function startNewMining() {
     "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
   },
   "fr": {
-    "enrich_contacts": "Enrichissez vos contacts",
+    "enrich_contacts": "Enrichissez {n} contacts",
     "contacts_to_clean": "contacts estimés à nettoyer",
     "halt_cleaning": "Arrêter le nettoyage",
     "start_new_mining": "Commencer une nouvelle extraction",
     "verified_emails": "E-mails vérifiés : {verifiedContacts}/{contactsToVerify}",
     "cleaning_done": "Nettoyage terminé",
-    "contacts_verified": "{verifiedContacts} contacts sont vérifiés.",
+    "contacts_verified": "{verifiedContacts} contacts ont été vérifiés.",
     "cleaning_stopped": "Nettoyage arrêté",
     "cleaning_canceled": "Votre nettoyage a été annulé avec succès.",
     "cleaning_already_canceled": "Il semble que vous essayez d'annuler une opération de nettoyage qui est déjà annulée."
