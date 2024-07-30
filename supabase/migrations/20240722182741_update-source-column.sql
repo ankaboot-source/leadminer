@@ -46,10 +46,6 @@ using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
 -- 3. Re-establish real-time
-BEGIN;
-    DROP publication IF EXISTS supabase_realtime;
-    CREATE publication supabase_realtime WITH (publish = 'insert,update,delete');
-COMMIT;
 ALTER publication supabase_realtime ADD TABLE public.persons;
 
 -- Add persons data to get_contacts_table functions

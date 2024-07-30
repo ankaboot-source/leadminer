@@ -34,7 +34,7 @@ export default class Voilanorbert {
       }>(
         '/upload',
         qs.stringify({
-          data: emails.join(','),
+          data: emails.join('\n'),
           webhook
         })
       );

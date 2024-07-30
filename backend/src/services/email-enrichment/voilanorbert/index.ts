@@ -41,7 +41,7 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
   }
 
   enrichementMapper(enrichedData: VoilanorbertWebhookResult): EnricherResult[] {
-    this.logger.info(
+    this.logger.debug(
       `[${this.constructor.name}]-[enrichementMapper]: Parsing enrichement results`,
       enrichedData
     );
@@ -59,15 +59,21 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
           location
         }) => ({
           image: undefined,
-          email: email ?? undefined,
-          name: fullName ?? undefined,
-          address: location ?? undefined,
-          organization: organization ?? undefined,
-          jobTitle: title ?? undefined,
+          email,
+          name: fullName || undefined,
+          address: location || undefined,
+          organization: organization || undefined,
+          jobTitle: title || undefined,
           sameAs: [facebook, linkedin, twitter].filter(Boolean)
         })
       )
-      .filter(({ email }) => email !== 'Email');
+      .filter(
+        ({ email, name, address, organization, jobTitle, sameAs }) =>
+          email !== 'Email' &&
+          ![name, address, organization, jobTitle, sameAs].every(
+            (field) => field === undefined || field.length === 0
+          )
+      );
     return enriched;
   }
 }
