@@ -101,7 +101,7 @@
         "
         :loading="$leadminerStore.isLoadingStartMining"
         severity="contrast"
-        class="border-solid border-2 border-black"
+        class="border-solid border-2 border-black text-black"
         :label="t('start_mining_now')"
         loading-icon="pi pi-spinner"
         @click="startMining"
