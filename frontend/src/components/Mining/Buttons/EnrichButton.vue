@@ -299,7 +299,7 @@ onUnmounted(() => {
       "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
     },
     "button": {
-      "start_enrichment": "Enrichissez",
+      "start_enrichment": "Enrichir",
       "halt_enrichment": "Annuler l'enrichissement",
       "start_new_mining": "Commencer une nouvelle extraction"
     }

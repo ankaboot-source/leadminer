@@ -1,9 +1,9 @@
-import { defineStore } from 'pinia';
 import {
   FilterMatchMode,
   FilterOperator,
   FilterService,
 } from '@primevue/core/api';
+import { defineStore } from 'pinia';
 
 const ANY_SELECTED = 'ANY_SELECTED';
 FilterService.register(ANY_SELECTED, (value, filter) =>
@@ -165,19 +165,22 @@ export const useFiltersStore = defineStore('filters', () => {
     }
   );
 
-  const discussionsToggle = ref(false); // replies: >=1
-  function onDiscussionsToggle(toggle?: boolean) {
+  const repliesToggle = ref(false); // replies: >=1
+  function onRepliesToggle(toggle?: boolean) {
     if (toggle !== undefined) {
-      discussionsToggle.value = toggle;
+      repliesToggle.value = toggle;
     }
-    filters.value.replied_conversations.value = discussionsToggle.value
-      ? 1
-      : null;
+    filters.value.replied_conversations.constraints = [
+      { value: repliesToggle.value ? 1 : null, matchMode: 'gte' },
+    ];
   }
   watch(
-    () => filters.value.replied_conversations.value,
+    () => filters.value.replied_conversations.constraints,
     (newRepliesValue) => {
-      discussionsToggle.value = newRepliesValue === 1;
+      repliesToggle.value =
+        newRepliesValue.length === 1 &&
+        newRepliesValue[0].value === 1 &&
+        newRepliesValue[0].matchMode === 'gte';
     }
   );
 
@@ -210,7 +213,7 @@ export const useFiltersStore = defineStore('filters', () => {
 
   function toggleFilters(value = true) {
     onValidToggle(value);
-    onDiscussionsToggle(value);
+    onRepliesToggle(value);
     onRecentToggle(value);
   }
 
@@ -223,7 +226,7 @@ export const useFiltersStore = defineStore('filters', () => {
   const areToggledFilters = computed(
     () =>
       Number(validToggle.value) +
-      Number(discussionsToggle.value) +
+      Number(repliesToggle.value) +
       Number(recentToggle.value)
   );
 
@@ -237,8 +240,8 @@ export const useFiltersStore = defineStore('filters', () => {
     clearFilter,
     validToggle,
     onValidToggle,
-    discussionsToggle,
-    onDiscussionsToggle,
+    repliesToggle,
+    onRepliesToggle,
     recentToggle,
     recentYearsAgo,
     onRecentToggle,

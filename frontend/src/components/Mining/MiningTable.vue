@@ -98,11 +98,14 @@
         <div>
           <Button @click="toggleSettingsPanel">
             <span class="p-button-label">
-              <i
+              <OverlayBadge
                 v-if="filtersStore.areToggledFilters > 0"
-                v-badge="filtersStore.areToggledFilters.toString()"
-                class="pi pi-sliders-h"
-              />
+                :value="filtersStore.areToggledFilters"
+                :pt:pcbadge:root:class="'bg-white text-black outline-none '"
+              >
+                <i class="pi pi-sliders-h" />
+              </OverlayBadge>
+
               <i v-else class="pi pi-sliders-h" />
             </span>
           </Button>
@@ -122,8 +125,8 @@
                   {{ t('at_least_one_reply') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.discussionsToggle"
-                  @update:model-value="filtersStore.onDiscussionsToggle"
+                  v-model="filtersStore.repliesToggle"
+                  @update:model-value="filtersStore.onRepliesToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
