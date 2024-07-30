@@ -2,7 +2,8 @@
   <Drawer
     v-model:visible="show"
     position="right"
-    class="md:!w-1/2 xl:!w-1/3 !w-full"
+    class="md:!w-1/2 xl:!w-1/3"
+    style="width: 100%"
     @hide="() => onHide()"
   >
     <template #header><span class="grow" /> </template>
