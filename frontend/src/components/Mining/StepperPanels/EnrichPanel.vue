@@ -144,7 +144,6 @@ onUnmounted(() => {
       "contacts_enriched": "contacts enriched"
     },
     "button": {
-      "start_enrichment": "Enrich your contacts",
       "halt_enrichment": "Cancel enrichment",
       "start_new_mining": "Start a new mining"
     }
@@ -164,7 +163,6 @@ onUnmounted(() => {
       "contacts_enriched": "contacts enrichis"
     },
     "button": {
-      "start_enrichment": "Enrichissez vos contacts",
       "halt_enrichment": "Annuler l'enrichissement",
       "start_new_mining": "Commencer une nouvelle extraction"
     }
