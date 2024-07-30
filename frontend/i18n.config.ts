@@ -224,7 +224,7 @@ export default defineI18nConfig(() => ({
         },
         tag: {
           professional: 'Professionnel',
-          newsletter: 'Bulletin',
+          newsletter: 'Newsletter',
           personal: 'Personnel',
           group: 'Groupe',
           chat: 'Chat',

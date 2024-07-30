@@ -32,6 +32,8 @@
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
     :loading="isLoading"
+    sort-field="occurrence"
+    :sort-order="-1"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -64,6 +66,14 @@
             :label="screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
+          />
+        </div>
+        <div>
+          <EnrichButton
+            :contacts-to-enrich="contactsToExport"
+            :enrichment-realtime-callback="() => {}"
+            :enrichment-request-response-callback="() => {}"
+            :start-on-mounted="false"
           />
         </div>
         <div class="ml-2">
@@ -575,6 +585,7 @@ import type {
 } from 'primevue/datatable';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
@@ -763,19 +774,20 @@ const openCreditModel = (
   );
 };
 
+const contactsToExport = computed<string[]>(() =>
+  implicitlySelectedContacts.value.map((item: Contact) => item.email)
+);
+
 async function exportTable(partialExport = false) {
   // if !contactsToExport, then export all contacts
-  const contactsToExport = implicitSelectAll.value
-    ? undefined
-    : JSON.stringify(
-        implicitlySelectedContacts.value.map((item: Contact) => item.email)
-      );
 
   await $api('/export/csv', {
     method: 'POST',
     body: {
       partialExport,
-      contactsToExport,
+      contactsToExport: implicitSelectAll.value
+        ? undefined
+        : JSON.stringify(contactsToExport),
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
