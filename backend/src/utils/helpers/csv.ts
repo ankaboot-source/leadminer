@@ -59,7 +59,7 @@ export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
     recipient: contact.recipient,
     conversations: contact.conversations,
     repliedConversations: contact.replied_conversations,
-    tags: contact.tags?.join('\n'),
+    tags: contact.tags?.join(csvSeparator),
     status: contact.status,
     given_name: contact.given_name,
     family_name: contact.family_name,
