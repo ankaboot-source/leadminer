@@ -216,20 +216,7 @@
             v-if="data.same_as && visibleColumns.includes('same_as')"
             class="flex gap-2 pt-1 pr-6"
           >
-            <NuxtLink
-              v-for="(same_as, index) in data.same_as"
-              :key="index"
-              :to="same_as"
-              target="_blank"
-              rel="noopener"
-            >
-              <i
-                :class="`pi pi-${$contactInformationSidebar.getSameAsIcon(
-                  same_as
-                )}`"
-                class="text-xl"
-              />
-            </NuxtLink>
+            <social-links :social-links="data.same_as" />
           </div>
           <div>
             <Button
@@ -584,6 +571,7 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
+import SocialLinks from '@/components/icons/SocialLink.vue';
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';

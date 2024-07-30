@@ -45,24 +45,11 @@ export const useMiningContactInformationSidebar = defineStore(
       contact.value = undefined;
     }
 
-    function getSameAsIcon(url: string) {
-      const match = url.match(
-        /\.?(twitter|linkedin|facebook|instagram|x)\./
-      )?.[1];
-
-      if (match === 'x') {
-        return 'twitter';
-      }
-
-      return match ?? 'globe';
-    }
-
     return {
       status,
       contact,
       show,
       $reset,
-      getSameAsIcon,
     };
   }
 );

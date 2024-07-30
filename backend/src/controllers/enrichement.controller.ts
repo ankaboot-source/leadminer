@@ -129,7 +129,10 @@ async function enrichContact(
 ) {
   // update contacts
   const { error } = await supabaseClient.rpc('enrich_contacts', {
-    p_contacts_data: contacts,
+    p_contacts_data: contacts.map((contact) => ({
+      ...contact,
+      same_as: contact.same_as?.join(',')
+    })),
     p_update_empty_fields_only: updateEmptyOnly ?? true
   });
 
