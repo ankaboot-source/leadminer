@@ -1,10 +1,4 @@
 <template>
-  <CreditsDialog
-    ref="CreditsDialogRef"
-    engagement-type="contacts"
-    action-type="enrich"
-    @secondary-action="startEnrichment(true)"
-  />
   <div class="flex justify-between items-center">
     <div id="progress-title">
       <span class="pr-1">
@@ -52,53 +46,30 @@
   </div>
   <div class="flex pt-6 justify-end">
     <Button
-      v-if="activeTask"
-      class="w-full md:w-max border-solid border-2 border-black"
-      severity="contrast"
-      icon="pi pi-stop"
-      icon-pos="right"
-      :label="t('button.halt_enrichment')"
-      @click="stopEnrichment"
+      class="w-full md:w-max"
+      severity="secondary"
+      :label="t('button.start_new_mining')"
+      @click="startNewMining"
     />
-    <div v-else>
-      <Button
-        class="w-full md:w-max"
-        severity="secondary"
-        :label="t('button.start_new_mining')"
-        @click="startNewMining"
-      />
-      <Button
-        class="w-full md:w-max border-solid border-2 border-black"
-        severity="contrast"
-        icon-pos="right"
-        :label="t('button.start_enrichment')"
-        @click="startEnrichment(false)"
-      >
-        <template #icon>
-          <span class="p-button-icon p-button-icon-right">💎</span>
-        </template>
-      </Button>
-    </div>
+    <EnrichButton
+      :contacts-to-enrich="contactsToEnrich"
+      :v-model:enrichment-status="activeTask"
+      :start-on-mounted="true"
+      :enrichment-realtime-callback="enrichmentRealtimeCallback"
+      :enrichment-request-response-callback="enrichRequestResponseCallback"
+    />
   </div>
 </template>
 <script setup lang="ts">
-import {
-  RealtimeChannel,
-  type RealtimePostgresChangesPayload,
-} from '@supabase/supabase-js';
-import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
-import {
-  type EnrichmentTask,
-  type EnrichContactResponse,
-} from '@/types/enrichment';
+import { type RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
+import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
+import { type EnrichmentTask } from '@/types/enrichment';
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
-const { $api } = useNuxtApp();
-
-const $toast = useToast();
 const $stepper = useMiningStepper();
 const $contactStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
@@ -112,7 +83,6 @@ const contactsToEnrichLengthPartial = ref<number>(0);
 
 const enrichedContacts = ref(0);
 const currentProgress = ref<number | undefined>();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const progressMode = computed(() =>
   activeTask.value ? 'indeterminate' : 'determinate'
@@ -129,141 +99,32 @@ function startNewMining() {
   $stepper.go(0);
 }
 
-function showNotification(
-  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
-  summary: string,
-  detail: string
-) {
-  $toast.add({
-    severity,
-    summary,
-    detail,
-    life: 5000,
-  });
-}
-
-let subscription: RealtimeChannel;
-
-function stopEnrichment() {
-  if (subscription) {
-    subscription.unsubscribe();
+const enrichRequestResponseCallback = ({ response }: any) => {
+  const { available } = response._data;
+  if (response.status === 402) {
+    contactsToEnrichLengthPartial.value = available;
   }
-  activeTask.value = false;
-  $leadminerStore.activeEnrichment = false;
-}
+};
+const enrichmentRealtimeCallback = (
+  payload: RealtimePostgresChangesPayload<EnrichmentTask>
+) => {
+  const { status, details } = payload.new as EnrichmentTask;
+  const { enriched } = details.result;
 
-function setupEnrichmentRealtime() {
-  subscription = useSupabaseClient()
-    .channel('enrichement-tracker')
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tasks',
-        filter: `category=eq.${'enriching'}`,
-      },
-      (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
-        const { status, details } = payload.new as EnrichmentTask;
-        const { total, enriched } = details.result;
-
-        switch (status) {
-          case 'running':
-            showNotification(
-              'success',
-              t('notification.summary'),
-              t('notification.enrichment_started', {
-                total: total.toLocaleString(),
-              })
-            );
-            break;
-
-          case 'done':
-            if (enriched) {
-              showNotification(
-                'success',
-                t('notification.summary'),
-                t('notification.enrichment_completed', {
-                  total: total.toLocaleString(),
-                  enriched: enriched.toLocaleString(),
-                })
-              );
-              enrichedContacts.value = enriched;
-            } else {
-              showNotification(
-                'info',
-                t('notification.summary'),
-                t('notification.no_additional_info')
-              );
-            }
-            currentProgress.value = 100;
-            stopEnrichment();
-            break;
-
-          case 'canceled':
-            showNotification(
-              'error',
-              t('notification.summary'),
-              t('notification.enrichment_canceled')
-            );
-            stopEnrichment();
-            break;
-
-          default:
-            break;
-        }
+  switch (status) {
+    case 'done':
+      if (enriched) {
+        enrichedContacts.value = enriched;
       }
-    );
-  subscription.subscribe();
-}
-
-async function startEnrichment(partial: boolean) {
-  try {
-    activeTask.value = true;
-    $leadminerStore.activeEnrichment = true;
-    setupEnrichmentRealtime();
-    await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
-      method: 'POST',
-      body: {
-        partial,
-        emails: contactsToEnrich.value,
-      },
-      onResponse({ response }) {
-        const { total, available, alreadyEnriched } = response._data;
-
-        if (alreadyEnriched && response.status === 200) {
-          stopEnrichment();
-          showNotification(
-            'info',
-            t('notification.summary'),
-            t('notification.already_enriched')
-          );
-        }
-
-        if (response.status === 402) {
-          stopEnrichment();
-          contactsToEnrichLengthPartial.value = available;
-          CreditsDialogRef.value?.openModal(
-            available === 0,
-            total,
-            available,
-            0
-          );
-        }
-      },
-    });
-  } catch (err) {
-    stopEnrichment();
-    throw err;
+      currentProgress.value = 100;
+      break;
+    default:
+      break;
   }
-}
-
-onMounted(async () => {
-  await startEnrichment(false);
-});
+};
 
 onUnmounted(() => {
-  stopEnrichment();
+  activeTask.value = false;
 });
 </script>
 <i18n lang="json">

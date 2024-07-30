@@ -76,7 +76,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   function $reset() {
     contacts.value = [];
-    filtered.value = [];
     unsubscribeRealtime();
   }
 

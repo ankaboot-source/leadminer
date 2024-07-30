@@ -1,13 +1,9 @@
 <template>
-  <CreditsDialog
-    ref="CreditsDialogRef"
-    engagement-type="contacts"
-    action-type="enrich"
-  />
   <Drawer
     v-model:visible="show"
     position="right"
-    class="md:!w-1/2 xl:!w-1/3 !w-full"
+    class="md:!w-1/2 xl:!w-1/3"
+    style="width: 100%"
     @hide="() => onHide()"
   >
     <template #header><span class="grow" /> </template>
@@ -177,18 +173,13 @@
 
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
-        <Button
-          :label="$t('common.enrich')"
-          severity="contrast"
-          icon-pos="right"
-          :loading="activeEnrichment"
-          :disabled="$leadminerStore.activeEnrichment"
-          @click="enrichContact(contact.email)"
-        >
-          <template #icon
-            ><span class="p-button-icon p-button-icon-right">💎</span>
-          </template>
-        </Button>
+        <EnrichButton
+          v-model:enrichment-status="activeEnrichment"
+          :start-on-mounted="false"
+          :enrichment-realtime-callback="enrichmentRealtimeCallback"
+          :enrichment-request-response-callback="() => {}"
+          :contacts-to-enrich="[contact.email]"
+        />
         <Button
           icon-pos="right"
           icon="pi pi-pen-to-square"
@@ -215,22 +206,17 @@ import type {
   User,
 } from '@supabase/supabase-js';
 
-import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
-import {
-  type EnrichContactResponse,
-  type EnrichmentTask,
-} from '@/types/enrichment';
+import { type EnrichmentTask } from '@/types/enrichment';
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
 const $toast = useToast();
-const { $api } = useNuxtApp();
 const $user = useSupabaseUser() as Ref<User>;
 
-const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
@@ -238,7 +224,6 @@ const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
 const activeEnrichment = ref(false);
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 function isValidURL(url: string) {
   try {
@@ -263,7 +248,22 @@ const isValidAvatar = computed(() => {
 });
 
 let personsSubscription: RealtimeChannel;
-let enrichmentSubscription: RealtimeChannel;
+
+const enrichmentRealtimeCallback = (
+  payload: RealtimePostgresChangesPayload<EnrichmentTask>
+) => {
+  const { status } = payload.new as EnrichmentTask;
+  switch (status) {
+    case 'done':
+      activeEnrichment.value = false;
+      break;
+    case 'canceled':
+      activeEnrichment.value = false;
+      break;
+    default:
+      break;
+  }
+};
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
@@ -313,106 +313,15 @@ function startRealtimePersons(userId: string, email: string) {
     );
   personsSubscription.subscribe();
 }
-function startRealtimeEnrichementTask() {
-  if (enrichmentSubscription) {
-    enrichmentSubscription.unsubscribe();
-  }
-  enrichmentSubscription = useSupabaseClient()
-    .channel('enrichement-tracker')
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tasks',
-        filter: `category=eq.${'enriching'}`,
-      },
-      (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
-        const { status, details } = payload.new as EnrichmentTask;
-        const { total, enriched } = details.result;
-        switch (status) {
-          case 'done':
-            if (enriched > 0) {
-              showNotification(
-                'success',
-                t('notification.summary'),
-                t('notification.enrichment_completed', { total, enriched })
-              );
-            } else {
-              showNotification(
-                'info',
-                t('notification.summary'),
-                t('notification.no_additional_info')
-              );
-            }
-            activeEnrichment.value = false;
-            break;
-          case 'canceled':
-            activeEnrichment.value = false;
-            showNotification(
-              'error',
-              t('notification.summary'),
-              t('notification.enrichment_canceled')
-            );
-            break;
-          default:
-            break;
-        }
-      }
-    );
-  enrichmentSubscription.subscribe();
-}
-
-async function enrichContact(email: string) {
-  activeEnrichment.value = true;
-  try {
-    startRealtimeEnrichementTask();
-    await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
-      method: 'POST',
-      body: {
-        emails: [email],
-      },
-      onResponse({ response }) {
-        const { total, available, alreadyEnriched } = response._data;
-
-        if (alreadyEnriched && response.status === 200) {
-          activeEnrichment.value = false;
-          showNotification(
-            'info',
-            t('notification.summary'),
-            t('notification.already_enriched')
-          );
-        }
-
-        if (response.status === 402) {
-          activeEnrichment.value = false;
-          CreditsDialogRef.value?.openModal(
-            available === 0,
-            total,
-            available,
-            0
-          );
-        }
-      },
-    });
-  } catch (err) {
-    activeEnrichment.value = false;
-    throw err;
-  }
-}
 
 watch(show, (value) => {
   if (value) {
     startRealtimePersons($user.value.id, contact.value.email);
     return;
   }
-  if (enrichmentSubscription) {
-    enrichmentSubscription.unsubscribe();
-  }
   if (personsSubscription) {
     personsSubscription.unsubscribe();
   }
-  activeEnrichment.value = false;
 });
 
 function onHide() {
@@ -442,6 +351,7 @@ async function saveContactInformations() {
 
   const contactCleaned = {
     email: contactEdit.value.email,
+    name: contactEdit.value.name,
     given_name: contactEdit.value.given_name || undefined,
     family_name: contactEdit.value.family_name || undefined,
     alternate_names: contactEdit.value.alternate_names

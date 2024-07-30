@@ -304,7 +304,7 @@ async function deleteAccount() {
   },
   "fr": {
     "profile_information": "Informations du profil",
-    "full_name": "Nom et Prénom",
+    "full_name": "Prénom et Nom",
     "update": "Mettre à jour",
     "delete": "Supprimer",
     "delete_warning": "Vous pouvez supprimer définitivement votre compte, y compris vos données extraites. Vous ne pouvez pas annuler cette action.",
