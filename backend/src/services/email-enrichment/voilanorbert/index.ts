@@ -60,10 +60,10 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
         }) => ({
           image: undefined,
           email,
-          name: fullName.length ? fullName : undefined,
-          address: location.length ? location : undefined,
-          organization: organization.length ? organization : undefined,
-          jobTitle: title.length ? title : undefined,
+          name: fullName || undefined,
+          address: location || undefined,
+          organization: organization || undefined,
+          jobTitle: title || undefined,
           sameAs: [facebook, linkedin, twitter].filter(Boolean)
         })
       )
