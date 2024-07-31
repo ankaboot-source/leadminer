@@ -57,7 +57,7 @@
     severity="contrast"
     icon-pos="right"
     :label="t('button.start_enrichment')"
-    :pt:label:class="'hidden md:block'"
+    pt:label:class="hidden md:block"
     :disabled="enrichmentStatus"
     @click="openDialog"
   >
