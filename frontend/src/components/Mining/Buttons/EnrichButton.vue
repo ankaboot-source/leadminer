@@ -53,26 +53,19 @@
     </template>
   </Dialog>
   <Button
-    v-if="enrichmentStatus"
-    class="w-full md:w-max border-solid border-2 border-black"
-    severity="contrast"
-    icon="pi pi-stop"
-    icon-pos="right"
-    :label="t('button.halt_enrichment')"
-    :pt:label:class="'hidden md:block'"
-    @click="stopEnrichment"
-  />
-  <Button
-    v-else
-    class="w-full md:w-max border-solid border-2 border-black"
+    :class="{ 'border-solid border-2 border-black': bordered }"
     severity="contrast"
     icon-pos="right"
     :label="t('button.start_enrichment')"
-    :pt:label:class="'hidden md:block'"
+    pt:label:class="hidden md:block"
+    :disabled="enrichmentStatus"
     @click="openDialog"
   >
     <template #icon>
-      <span class="p-button-icon p-button-icon-right">💎</span>
+      <span class="p-button-icon p-button-icon-right">
+        <span v-if="!enrichmentStatus">💎</span>
+        <i v-else class="pi pi-spin pi-spinner mr-1.5" />
+      </span>
     </template>
   </Button>
 </template>
@@ -99,6 +92,8 @@ const {
   enrichmentRealtimeCallback,
   enrichmentRequestResponseCallback,
   contactsToEnrich,
+  bordered,
+  skipDialog,
 } = defineProps<{
   startOnMounted: boolean;
   enrichmentRealtimeCallback: (
@@ -106,6 +101,8 @@ const {
   ) => void;
   enrichmentRequestResponseCallback: ({ response }: any) => void;
   contactsToEnrich: string[];
+  bordered?: boolean;
+  skipDialog?: boolean;
 }>();
 
 const { $api } = useNuxtApp();
@@ -116,14 +113,6 @@ const $leadminerStore = useLeadminerStore();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const dialogVisible = ref(false);
-
-const openDialog = () => {
-  dialogVisible.value = true;
-};
-
-const closeDialog = () => {
-  dialogVisible.value = false;
-};
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
@@ -263,6 +252,15 @@ onMounted(async () => {
 onUnmounted(() => {
   stopEnrichment();
 });
+
+const openDialog = () => {
+  if (skipDialog) startEnrichment(false);
+  else dialogVisible.value = true;
+};
+
+const closeDialog = () => {
+  dialogVisible.value = false;
+};
 </script>
 <i18n lang="json">
 {

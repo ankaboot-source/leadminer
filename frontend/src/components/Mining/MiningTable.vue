@@ -101,7 +101,7 @@
               <OverlayBadge
                 v-if="filtersStore.areToggledFilters > 0"
                 :value="filtersStore.areToggledFilters"
-                :pt:pcbadge:root:class="'bg-white text-black outline-none '"
+                pt:pcbadge:root:class="bg-white text-black outline-none"
               >
                 <i class="pi pi-sliders-h" />
               </OverlayBadge>
