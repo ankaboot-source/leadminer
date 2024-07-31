@@ -165,6 +165,7 @@
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
           :contacts-to-enrich="[contact.email]"
+          :skip-dialog="skipDialog"
         />
         <Button
           icon-pos="right"
@@ -211,6 +212,20 @@ const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
 const activeEnrichment = ref(false);
+
+const skipDialog = computed(
+  () =>
+    !(
+      contact.value.given_name ||
+      contact.value.family_name ||
+      contact.value.alternate_names ||
+      contact.value.address ||
+      contact.value.works_for ||
+      contact.value.job_title ||
+      contact.value.same_as ||
+      contact.value.image
+    )
+);
 
 function isValidURL(url: string) {
   try {

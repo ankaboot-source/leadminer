@@ -66,7 +66,7 @@
         ></Button>
         <Button
           type="button"
-          label="Connect"
+          :label="t('connect')"
           :loading="loadingSave"
           :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
           @click="onSubmitImapCredentials"
@@ -245,14 +245,16 @@ async function onSubmitImapCredentials() {
     "sign_in_with_imap": "Sign-in with IMAP",
     "host": "Host",
     "port": "Port",
-    "unable_to_detect": "Unable to detect your IMAP configuration. Please add them manually."
+    "unable_to_detect": "Unable to detect your IMAP configuration. Please add them manually.",
+    "connect": "Connect"
   },
   "fr": {
     "other_email_provider": "Autre nouveau compte e-mail (IMAP)",
     "sign_in_with_imap": "Connexion avec IMAP",
     "host": "Hôte",
     "port": "Port",
-    "unable_to_detect": "Impossible de détecter votre configuration IMAP. Veuillez les ajouter manuellement."
+    "unable_to_detect": "Impossible de détecter votre configuration IMAP. Veuillez les ajouter manuellement.",
+    "connect": "Se connecter"
   }
 }
 </i18n>

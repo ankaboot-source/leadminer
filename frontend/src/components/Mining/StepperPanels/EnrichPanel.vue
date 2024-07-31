@@ -57,6 +57,7 @@
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
+      :bordered="true"
     />
   </div>
 </template>
