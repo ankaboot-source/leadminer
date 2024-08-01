@@ -32,6 +32,8 @@
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
     :loading="isLoading"
+    sort-field="occurrence"
+    :sort-order="-1"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -66,6 +68,14 @@
             @click="exportTable()"
           />
         </div>
+        <div>
+          <EnrichButton
+            :contacts-to-enrich="contactsToExport"
+            :enrichment-realtime-callback="() => {}"
+            :enrichment-request-response-callback="() => {}"
+            :start-on-mounted="false"
+          />
+        </div>
         <div class="ml-2">
           <template v-if="!implicitSelectAll">
             {{ implicitlySelectedContactsLength.toLocaleString() }}
@@ -88,11 +98,14 @@
         <div>
           <Button @click="toggleSettingsPanel">
             <span class="p-button-label">
-              <i
+              <OverlayBadge
                 v-if="filtersStore.areToggledFilters > 0"
-                v-badge="filtersStore.areToggledFilters.toString()"
-                class="pi pi-sliders-h"
-              />
+                :value="filtersStore.areToggledFilters"
+                pt:pcbadge:root:class="bg-white text-black outline-none"
+              >
+                <i class="pi pi-sliders-h" />
+              </OverlayBadge>
+
               <i v-else class="pi pi-sliders-h" />
             </span>
           </Button>
@@ -112,8 +125,8 @@
                   {{ t('at_least_one_reply') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.discussionsToggle"
-                  @update:model-value="filtersStore.onDiscussionsToggle"
+                  v-model="filtersStore.repliesToggle"
+                  @update:model-value="filtersStore.onRepliesToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
@@ -206,20 +219,7 @@
             v-if="data.same_as && visibleColumns.includes('same_as')"
             class="flex gap-2 pt-1 pr-6"
           >
-            <NuxtLink
-              v-for="(same_as, index) in data.same_as"
-              :key="index"
-              :to="same_as"
-              target="_blank"
-              rel="noopener"
-            >
-              <i
-                :class="`pi pi-${$contactInformationSidebar.getSameAsIcon(
-                  same_as
-                )}`"
-                class="text-xl"
-              />
-            </NuxtLink>
+            <social-links :social-links="data.same_as" />
           </div>
           <div>
             <Button
@@ -574,7 +574,9 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
+import SocialLinks from '@/components/icons/SocialLink.vue';
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
+import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
@@ -763,19 +765,20 @@ const openCreditModel = (
   );
 };
 
+const contactsToExport = computed<string[]>(() =>
+  implicitlySelectedContacts.value.map((item: Contact) => item.email)
+);
+
 async function exportTable(partialExport = false) {
   // if !contactsToExport, then export all contacts
-  const contactsToExport = implicitSelectAll.value
-    ? undefined
-    : JSON.stringify(
-        implicitlySelectedContacts.value.map((item: Contact) => item.email)
-      );
 
   await $api('/export/csv', {
     method: 'POST',
     body: {
       partialExport,
-      contactsToExport,
+      contactsToExport: implicitSelectAll.value
+        ? undefined
+        : JSON.stringify(contactsToExport),
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
