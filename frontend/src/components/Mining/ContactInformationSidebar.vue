@@ -17,7 +17,7 @@
         <span class="w-full">
           <div
             v-if="contact.name && !editingContact"
-            class="font-medium text-2xl"
+            class="font-medium text-2xl truncate w-full"
           >
             {{ contact.name }}
           </div>
@@ -39,7 +39,19 @@
               class="min-w-4 h-4 align-middle mr-1"
               :severity="getStatusColor(contact.status)"
             />
-            <span class="align-middle">{{ contact.email }}</span>
+            <span class="align-middle truncate max-w-[85%] inline-block">
+              {{ contact.email }}
+            </span>
+            <Button
+              v-if="!editingContact"
+              rounded
+              text
+              icon="pi pi-copy"
+              size="large"
+              class="text-2xl align-middle"
+              :aria-label="t('copy')"
+              @click="copyContact(contact.email, contact.name)"
+            />
           </div>
           <div
             v-if="contact.same_as?.length && !editingContact"
@@ -50,16 +62,6 @@
         </span>
       </div>
       <span class="grow" />
-      <Button
-        v-if="!editingContact"
-        rounded
-        text
-        icon="pi pi-copy"
-        size="large"
-        class="text-2xl"
-        :aria-label="t('copy')"
-        @click="copyContact(contact.email, contact.name)"
-      />
     </div>
     <table
       class="p-datatable p-datatable-striped w-full"
