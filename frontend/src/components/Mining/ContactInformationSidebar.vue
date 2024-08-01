@@ -17,7 +17,7 @@
         <span class="w-full">
           <div
             v-if="contact.name && !editingContact"
-            class="font-medium text-2xl"
+            class="font-medium text-2xl truncate w-full"
           >
             {{ contact.name }}
           </div>
