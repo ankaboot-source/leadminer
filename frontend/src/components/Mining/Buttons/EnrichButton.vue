@@ -87,14 +87,7 @@ const { t } = useI18n({
 
 const enrichmentStatus = defineModel<boolean>('enrichmentStatus');
 
-const {
-  startOnMounted,
-  enrichmentRealtimeCallback,
-  enrichmentRequestResponseCallback,
-  contactsToEnrich,
-  bordered,
-  skipDialog,
-} = defineProps<{
+const props = defineProps<{
   startOnMounted: boolean;
   enrichmentRealtimeCallback: (
     payload: RealtimePostgresChangesPayload<EnrichmentTask>
@@ -113,6 +106,15 @@ const $leadminerStore = useLeadminerStore();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 
 const dialogVisible = ref(false);
+
+const {
+  startOnMounted,
+  enrichmentRealtimeCallback,
+  enrichmentRequestResponseCallback,
+  bordered,
+  skipDialog,
+} = props;
+const contactsToEnrich = toRef(() => props.contactsToEnrich);
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
@@ -211,7 +213,7 @@ async function startEnrichment(partial: boolean) {
       method: 'POST',
       body: {
         partial,
-        emails: contactsToEnrich,
+        emails: contactsToEnrich.value,
       },
       onResponse({ response }) {
         enrichmentRequestResponseCallback({ response });

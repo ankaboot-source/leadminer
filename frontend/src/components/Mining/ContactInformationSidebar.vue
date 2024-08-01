@@ -218,6 +218,7 @@ const activeEnrichment = ref(false);
 const skipDialog = computed(
   () =>
     !(
+      contact.value.name ||
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_names ||
