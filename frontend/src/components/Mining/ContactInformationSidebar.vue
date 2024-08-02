@@ -34,15 +34,14 @@
               'font-medium text-xl md:text-2xl':
                 !contact.name && !editingContact,
             }"
+            class="flex items-center"
           >
             <Badge
               v-tooltip.top="getStatusLabel(contact.status)"
-              class="min-w-4 h-4 align-middle mr-1"
+              class="min-w-4 h-4 mr-1 flex-none"
               :severity="getStatusColor(contact.status)"
             />
-            <span
-              class="align-middle truncate max-w-[80%] lg:max-w-[85%] inline-block"
-            >
+            <span class="truncate">
               {{ contact.email }}
             </span>
             <Button
@@ -51,7 +50,7 @@
               text
               icon="pi pi-copy"
               size="large"
-              class="text-2xl align-middle"
+              class="text-2xl flex-none"
               :aria-label="t('copy')"
               @click="copyContact(contact.email, contact.name)"
             />
