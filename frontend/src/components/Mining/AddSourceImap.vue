@@ -56,21 +56,39 @@
         </div>
       </template>
 
-      <div class="flex justify-end w-full gap-2 pt-4">
-        <Button
-          type="button"
-          class="capitalize"
-          :label="$t('common.cancel')"
-          severity="secondary"
-          @click="closeDialog()"
-        ></Button>
-        <Button
-          type="button"
-          :label="t('connect')"
-          :loading="loadingSave"
-          :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
-          @click="onSubmitImapCredentials"
-        ></Button>
+      <div
+        class="flex flex-col sm:flex-row justify-between pt-4 sm:space-x-2 space-y-2 sm:space-y-0"
+      >
+        <div>
+          <Button
+            type="button"
+            class="w-full sm:w-auto"
+            :label="$t('common.cancel')"
+            severity="secondary"
+            @click="show = false"
+          ></Button>
+        </div>
+        <div
+          class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2"
+        >
+          <Button
+            v-if="!imapAdvancedSettings"
+            type="button"
+            class="w-full sm:w-auto"
+            :label="t('Button.advanced')"
+            :loading="loadingSave"
+            severity="secondary"
+            @click="imapAdvancedSettings = true"
+          />
+          <Button
+            type="button"
+            class="w-full sm:w-auto"
+            :label="t('Button.connect')"
+            :loading="loadingSave"
+            :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
+            @click="onSubmitImapCredentials"
+          />
+        </div>
       </div>
     </div>
   </Dialog>
@@ -139,13 +157,13 @@ function resetFormErrors() {
   });
 }
 
-const closeDialog = (): void => {
-  // reset for errors
-  resetFormErrors();
-  imapAdvancedSettings.value = false;
-  show.value = false;
-  imapEmail.value = $user.value?.email as string;
-};
+watch(show, (value) => {
+  if (!value) {
+    resetFormErrors();
+    imapAdvancedSettings.value = false;
+    imapEmail.value = $user.value?.email as string;
+  }
+});
 
 function handleImapConfigsNotDetected() {
   $toast.add({
@@ -225,7 +243,7 @@ async function onSubmitImapCredentials() {
       email: imapEmail.value,
       isValid: true,
     };
-    closeDialog();
+    show.value = false;
   } catch (err) {
     if (err instanceof FetchError) {
       handleAuthenticationErrors(err);
@@ -246,7 +264,10 @@ async function onSubmitImapCredentials() {
     "host": "Host",
     "port": "Port",
     "unable_to_detect": "Unable to detect your IMAP configuration. Please add them manually.",
-    "connect": "Connect"
+    "Button": {
+      "connect": "Connect",
+      "advanced": "Configure manually"
+    }
   },
   "fr": {
     "other_email_provider": "Autre nouveau compte e-mail (IMAP)",
@@ -254,7 +275,10 @@ async function onSubmitImapCredentials() {
     "host": "Hôte",
     "port": "Port",
     "unable_to_detect": "Impossible de détecter votre configuration IMAP. Veuillez les ajouter manuellement.",
-    "connect": "Se connecter"
+    "Button": {
+      "connect": "Se connecter",
+      "advanced": "Configurer manuellement"
+    }
   }
 }
 </i18n>

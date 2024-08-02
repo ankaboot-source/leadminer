@@ -100,12 +100,10 @@ function selectSource(source: MiningSourceType | string) {
   }
 }
 
-const { error: sourcesError } = useAsyncData(() =>
-  $leadminerStore.fetchMiningSources()
-);
-
-onMounted(() => {
-  if (sourcesError.value) {
+onMounted(async () => {
+  try {
+    await $leadminerStore.fetchMiningSources();
+  } catch (err) {
     throw new Error(t('fetch_sources_failed'));
   }
 });

@@ -61,12 +61,21 @@
 </template>
 
 <script setup lang="ts">
-import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
-import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
-import EnrichPanel from '@/components/Mining/StepperPanels/EnrichPanel.vue';
-import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import type { MiningSourceType } from '~/types/mining';
+
+const MiningConsentSidebar = defineAsyncComponent(
+  () => import('./MiningConsentSidebar.vue')
+);
+const MinePanel = defineAsyncComponent(
+  () => import('./StepperPanels/MinePanel.vue')
+);
+const CleanPanel = defineAsyncComponent(
+  () => import('./StepperPanels/CleanPanel.vue')
+);
+const EnrichPanel = defineAsyncComponent(
+  () => import('./StepperPanels/EnrichPanel.vue')
+);
 
 const { t } = useI18n({
   useScope: 'local',
@@ -78,16 +87,18 @@ const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 const activeMining = computed(() => $leadminerStore.miningTask !== undefined);
 
-const { collapsed } = defineProps<{
+const props = defineProps<{
   collapsed: boolean;
 }>();
 
+const collapsePanel = toRef(props, 'collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
-const collapsePanel = ref(collapsed);
 const { error, provider, source } = $route.query;
 
-onMounted(() => {
-  useRouter().replace({ query: {} });
+onNuxtReady(() => {
+  if (error ?? provider ?? source) {
+    useRouter().replace({ query: {} });
+  }
   if (source) {
     collapsePanel.value = false;
     sourcePanel.value?.selectSource(source as string);
