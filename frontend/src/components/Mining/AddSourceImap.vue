@@ -243,7 +243,7 @@ async function onSubmitImapCredentials() {
       email: imapEmail.value,
       isValid: true,
     };
-    show.value = false
+    show.value = false;
   } catch (err) {
     if (err instanceof FetchError) {
       handleAuthenticationErrors(err);
