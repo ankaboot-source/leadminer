@@ -9,13 +9,13 @@
     <div id="progress-time" class="hidden md:block">
       <slot name="progress-time">
         <div v-if="progressStartedAt">
-          {{ t('remaining_time', estimatedRemainingTimeConverted) }}
+          {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
         <div v-else-if="progressPercentage === 100">
-          {{ t('finished_in', convertSeconds(getElapsedTime())) }}
+          {{ t('finished_in', { t: convertSeconds(getElapsedTime()) }) }}
         </div>
         <div v-else>
-          {{ t('estimated_time', estimatedRemainingTimeConverted) }}
+          {{ t('estimated_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
       </slot>
     </div>
@@ -116,14 +116,14 @@ onMounted(() => {
 <i18n lang="json">
 {
   "en": {
-    "finished_in": "Finished in {n}",
-    "estimated_time": "Estimated time: {n}",
-    "remaining_time": "{n} remaining"
+    "finished_in": "Finished in {t}",
+    "estimated_time": "Estimated time: {t}",
+    "remaining_time": "{t} remaining"
   },
   "fr": {
-    "finished_in": "Terminé en {n}",
-    "estimated_time": "Temps estimé : {n}",
-    "remaining_time": "{n} restantes"
+    "finished_in": "Terminé en {t}",
+    "estimated_time": "Temps estimé : {t}",
+    "remaining_time": "{t} restantes"
   }
 }
 </i18n>

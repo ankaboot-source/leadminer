@@ -139,6 +139,13 @@ function stopEnrichment() {
   $leadminerStore.activeEnrichment = false;
 }
 
+const enrichmentMessage = (total: number) =>
+  total > 1
+    ? t('notification.enrichment_started_plural', {
+        total: total.toLocaleString(),
+      })
+    : t('notification.enrichment_started');
+
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
     .channel('enrichement-tracker')
@@ -161,9 +168,7 @@ function setupEnrichmentRealtime() {
             showNotification(
               'success',
               t('notification.summary'),
-              t('notification.enrichment_started', {
-                total: total.toLocaleString(),
-              })
+              enrichmentMessage(total)
             );
             break;
 
@@ -273,7 +278,8 @@ const closeDialog = () => {
     "confirm_enrichment": "Confirm contact enrichment",
     "notification": {
       "summary": "Enrich",
-      "enrichment_started": "Enrichment is running for {total} contacts.",
+      "enrichment_started": "Enrichment is running.",
+      "enrichment_started_plural": "Enrichment is running for {total} contacts.",
       "enrichment_completed": "{total}/{enriched} of your contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
@@ -292,7 +298,8 @@ const closeDialog = () => {
     "confirm_enrichment": "Confirmer l'enrichissement des contacts",
     "notification": {
       "summary": "Enrichir",
-      "enrichment_started": "L'enrichissement est en cours pour ${total} contacts.",
+      "enrichment_started": "L'enrichissement est en cours.",
+      "enrichment_started_plural": "L'enrichissement est en cours pour ${total} contacts.",
       "enrichment_completed": "${total}/${enriched} de vos contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",

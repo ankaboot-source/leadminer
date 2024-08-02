@@ -396,14 +396,6 @@ function copyContact(email: string, name?: string) {
 <i18n lang="json">
 {
   "en": {
-    "notification": {
-      "summary": "Enrich Contact",
-      "enrichment_started": "Enrichment is running for {total} contacts.",
-      "enrichment_completed": "{total}/{enriched} of your contacts has been successfully enriched.",
-      "enrichment_canceled": "Your contact enrichment has been canceled.",
-      "already_enriched": "Contacts you selected are already enriched.",
-      "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
-    },
     "copy": "Copy",
     "contact_copied": "Contact copied",
     "contact_email_copied": "This contact email address has been copied to your clipboard",
@@ -412,14 +404,6 @@ function copyContact(email: string, name?: string) {
     "url_invalid_detail": "Please enter a valid URL"
   },
   "fr": {
-    "notification": {
-      "summary": "Enrichir le Contact",
-      "enrichment_started": "L'enrichissement est en cours pour ${total} contacts.",
-      "enrichment_completed": "${total}/${enriched} de vos contacts ont été enrichis avec succès.",
-      "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
-      "already_enriched": "Ce contact est déjà enrichi.",
-      "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
-    },
     "copy": "Copier",
     "contact_copied": "Contact copié",
     "contact_email_copied": "L'adresse e-mail de ce contact a été copiée dans votre presse-papiers",

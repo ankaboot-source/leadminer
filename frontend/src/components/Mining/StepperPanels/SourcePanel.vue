@@ -123,7 +123,7 @@ defineExpose({
   },
   "fr": {
     "pick_existing_email": "Choisissez une adresse e-mail existante pour extraire",
-    "add_new_email_provider": "Ajouter un nouveau nouveau compte e-mail",
+    "add_new_email_provider": "Ajouter un nouveau compte e-mail",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
     "email_address": "adresse e-mail"
   }
