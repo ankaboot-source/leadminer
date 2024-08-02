@@ -64,7 +64,7 @@ const provider = defineModel<MiningSourceType>('provider');
 
 function close() {
   show.value = false;
-  useMiningStepper().go(0);
+  useMiningStepper().go(1);
 }
 
 function refreshOAuth() {

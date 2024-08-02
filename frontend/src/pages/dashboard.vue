@@ -1,17 +1,22 @@
 <template>
   <div class="flex flex-col grow">
-    <mining-stepper :collapsed="contact.length > 0" />
-    <mining-table :table-data="contact" />
+    <mining-stepper :collapsed="collapsedStepper" />
+    <MiningTable />
   </div>
 </template>
 <script setup lang="ts">
-import { type Contact } from '~/types/contact';
+const MiningTable = defineAsyncComponent(
+  () => import('../components/Mining/Table/MiningTable.vue')
+);
 
-const $user = useSupabaseUser();
+const collapsedStepper = ref(false);
 
-const contact = ref<Contact[]>([]);
-
-if ($user.value) {
-  contact.value = await getContacts($user.value.id);
-}
+onNuxtReady(async () => {
+  const $user = useSupabaseUser();
+  if ($user.value) {
+    const contacts = await getContacts($user.value.id);
+    useContactsStore().setContacts(contacts);
+    collapsedStepper.value = contacts.length > 0;
+  }
+});
 </script>
