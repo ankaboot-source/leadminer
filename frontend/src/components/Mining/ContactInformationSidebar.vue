@@ -373,7 +373,6 @@ async function saveContactInformations() {
       ? (contactEdit.value.same_as as string)
           ?.split('\n')
           .filter((item) => item.length)
-          .join(',')
       : undefined,
     image: contactEdit.value.image || undefined,
   };

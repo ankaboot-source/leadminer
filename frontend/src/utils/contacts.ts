@@ -29,6 +29,19 @@ export async function getContacts(userId: string): Promise<Contact[]> {
 
 export async function updateContact(userId: string, contact: ContactEdit) {
   const $supabaseClient = useSupabaseClient();
+
+  const socialLinks = contact.same_as;
+
+  const { error: LinksError } = await $supabaseClient
+    .from('persons')
+    .update({ same_as: socialLinks || null })
+    .match({ user_id: userId, email: contact.email });
+
+  if (LinksError) {
+    throw new Error(LinksError.message);
+  }
+
+  delete contact.same_as;
   const { error } = await $supabaseClient.rpc(
     'enrich_contacts',
     // @ts-expect-error: Issue with @nuxt/supabase typing

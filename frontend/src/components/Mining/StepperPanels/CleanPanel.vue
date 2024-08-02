@@ -129,7 +129,7 @@ async function haltCleaning() {
 
 function startNewMining() {
   $leadminerStore.$resetMining();
-  $stepper.go(0);
+  $stepper.go(1);
 }
 </script>
 
