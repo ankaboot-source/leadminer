@@ -6,7 +6,9 @@
     @secondary-action="exportTable(true)"
   />
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
+  <TableSkeleton v-if="!showTable" />
   <DataTable
+    v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
     v-model:filters="filtersStore.filters"
@@ -574,15 +576,26 @@ import type {
   DataTableSelectAllChangeEvent,
 } from 'primevue/datatable';
 
-import SocialLinks from '@/components/icons/SocialLink.vue';
-import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
-import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
-import ContactInformationSidebar from '@/components/Mining/ContactInformationSidebar.vue';
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
 import { statuses, tags } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
+
+const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
+
+const SocialLinks = defineAsyncComponent(
+  () => import('../../icons/SocialLink.vue')
+);
+const CreditsDialog = defineAsyncComponent(
+  () => import('../../Credits/InsufficientCreditsDialog.vue')
+);
+const EnrichButton = defineAsyncComponent(
+  () => import('../Buttons/EnrichButton.vue')
+);
+const ContactInformationSidebar = defineAsyncComponent(
+  () => import('../ContactInformationSidebar.vue')
+);
 
 const { t } = useI18n({
   useScope: 'local',
@@ -593,32 +606,27 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 
-const { tableData } = defineProps<{
-  tableData: Contact[];
-}>();
-
-const $contactInformationSidebar = useMiningContactInformationSidebar();
-
-function openContactInformation(data: Contact) {
-  $contactInformationSidebar.show(data);
-}
-
+const $user = useSupabaseUser() as Ref<User>;
+const $supabaseClient = useSupabaseClient();
 const $contactsStore = useContactsStore();
 const leadminerStore = useLeadminerStore();
-
-$contactsStore.setContacts(tableData);
+const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const isLoading = ref(false);
+const showTable = ref(false);
 const loadingLabel = ref('');
-const contacts = computed(() => $contactsStore.contacts);
-const contactsLength = computed(() => contacts.value?.length);
+const contacts = computed(() =>
+  showTable.value ? $contactsStore.contacts : []
+);
+const contactsLength = computed(() => contacts.value.length);
 
 const activeMiningTask = computed(
   () => leadminerStore.miningTask !== undefined
 );
 
-const $user = useSupabaseUser() as Ref<User>;
-const $supabaseClient = useSupabaseClient();
+function openContactInformation(data: Contact) {
+  $contactInformationSidebar.show(data);
+}
 
 /* *** Filters *** */
 
@@ -854,7 +862,7 @@ function observeTop() {
   resizeObserver.observe(TableRef.value?.$el);
 }
 
-onMounted(() => {
+onNuxtReady(() => {
   screenStore.init();
   visibleColumns.value = [
     'contacts',
@@ -871,6 +879,9 @@ onMounted(() => {
     tableHeight.value = `${screenStore.height - tablePosTop.value - 140}px`;
   });
   $contactsStore.subscribeRealtime($user.value);
+  setTimeout(() => {
+    showTable.value = true;
+  }, 5000);
 });
 
 onUnmounted(() => {
