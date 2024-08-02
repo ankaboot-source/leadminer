@@ -273,7 +273,7 @@ const closeDialog = () => {
 {
   "en": {
     "update_all": "Update all",
-    "update_empty": "Update empty fields",
+    "update_empty": "Fill empty fields",
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment",
     "notification": {
@@ -293,8 +293,8 @@ const closeDialog = () => {
   },
   "fr": {
     "update_all": "Tout mettre à jour",
-    "update_empty": "Mettre à jour les champs vides",
-    "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous proceder ?",
+    "update_empty": "Remplir les champs vides",
+    "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
     "confirm_enrichment": "Confirmer l'enrichissement des contacts",
     "notification": {
       "summary": "Enrichir",
