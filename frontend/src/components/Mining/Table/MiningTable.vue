@@ -15,6 +15,7 @@
     resizable-columns
     reorderable-columns
     show-gridlines
+    pt:tablecontainer:class="grow"
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
@@ -967,7 +968,7 @@ table.p-datatable-table {
   "fr": {
     "of": "sur",
     "no_contacts_found": "Aucun contact trouvé",
-    "try_clearing_filters": "Essayez de supprimer les filtres",
+    "try_clearing_filters": "Essayez de vider les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
     "export_csv": "Export CSV",
     "clear": "Vider",
