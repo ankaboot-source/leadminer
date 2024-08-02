@@ -17,7 +17,7 @@
         <span class="w-full">
           <div
             v-if="contact.name && !editingContact"
-            class="font-medium text-2xl truncate w-full"
+            class="font-medium text-xl md:text-2xl truncate w-full"
           >
             {{ contact.name }}
           </div>
@@ -31,7 +31,8 @@
           <div
             :class="{
               'font-medium': editingContact,
-              'font-medium text-2xl': !contact.name && !editingContact,
+              'font-medium text-xl md:text-2xl':
+                !contact.name && !editingContact,
             }"
           >
             <Badge
@@ -39,8 +40,13 @@
               class="min-w-4 h-4 align-middle mr-1"
               :severity="getStatusColor(contact.status)"
             />
-            <span class="align-middle truncate max-w-[85%] inline-block">
+            <!-- <span class="align-middle truncate max-w-[85%] inline-block">
               {{ contact.email }}
+            </span> -->
+            <span
+              class="align-middle truncate max-w-[80%] lg:max-w-[85%] inline-block"
+            >
+              honeypot.honeypot.honeypot.honeypot@leadminder.io
             </span>
             <Button
               v-if="!editingContact"
