@@ -198,7 +198,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between gap-2 items-center">
           <div class="flex items-center gap-2 grow">
             <img
               v-if="data.image && visibleColumns.includes('image')"
