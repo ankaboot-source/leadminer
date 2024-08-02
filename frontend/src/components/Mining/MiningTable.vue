@@ -13,6 +13,7 @@
     resizable-columns
     reorderable-columns
     show-gridlines
+    pt:tablecontainer:class="grow"
     row-hover
     highlight-on-select
     :class="isFullscreen ? 'fullscreenTable' : ''"
