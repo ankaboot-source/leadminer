@@ -59,15 +59,15 @@ export function exportContactsToCSV(contacts: Contact[], csvSeparator = ',') {
     recipient: contact.recipient,
     conversations: contact.conversations,
     repliedConversations: contact.replied_conversations,
-    tags: contact.tags?.join(','),
+    tags: contact.tags?.join(', '),
     status: contact.status,
     given_name: contact.given_name,
     family_name: contact.family_name,
-    alternate_names: contact.alternate_names?.join(','),
+    alternate_names: contact.alternate_names?.join(', '),
     address: contact.address,
     works_for: contact.works_for,
     job_title: contact.job_title,
-    same_as: contact.same_as?.join(','),
+    same_as: contact.same_as?.join(', '),
     image: contact.image
   }));
 
