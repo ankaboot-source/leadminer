@@ -103,7 +103,7 @@
               <OverlayBadge
                 v-if="filtersStore.areToggledFilters > 0"
                 :value="filtersStore.areToggledFilters"
-                :pt:pcbadge:root:class="'bg-white text-black outline-none '"
+                pt:pcbadge:root:class="bg-white text-black outline-none"
               >
                 <i class="pi pi-sliders-h" />
               </OverlayBadge>
@@ -200,7 +200,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between gap-2 items-center">
           <div class="flex items-center gap-2 grow">
             <img
               v-if="data.image && visibleColumns.includes('image')"

@@ -276,7 +276,7 @@ async function onSubmitImapCredentials() {
     "port": "Port",
     "unable_to_detect": "Impossible de détecter votre configuration IMAP. Veuillez les ajouter manuellement.",
     "Button": {
-      "connect": "Connecter",
+      "connect": "Se connecter",
       "advanced": "Configurer manuellement"
     }
   }
