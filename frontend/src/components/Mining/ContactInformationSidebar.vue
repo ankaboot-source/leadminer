@@ -17,7 +17,7 @@
         <span class="w-full">
           <div
             v-if="contact.name && !editingContact"
-            class="font-medium text-2xl truncate w-full"
+            class="font-medium text-xl md:text-2xl truncate w-full"
           >
             {{ contact.name }}
           </div>
@@ -31,15 +31,17 @@
           <div
             :class="{
               'font-medium': editingContact,
-              'font-medium text-2xl': !contact.name && !editingContact,
+              'font-medium text-xl md:text-2xl':
+                !contact.name && !editingContact,
             }"
+            class="flex items-center"
           >
             <Badge
               v-tooltip.top="getStatusLabel(contact.status)"
-              class="min-w-4 h-4 align-middle mr-1"
+              class="min-w-4 h-4 mr-1 flex-none"
               :severity="getStatusColor(contact.status)"
             />
-            <span class="align-middle truncate max-w-[85%] inline-block">
+            <span class="truncate">
               {{ contact.email }}
             </span>
             <Button
@@ -48,7 +50,7 @@
               text
               icon="pi pi-copy"
               size="large"
-              class="text-2xl align-middle"
+              class="text-2xl flex-none"
               :aria-label="t('copy')"
               @click="copyContact(contact.email, contact.name)"
             />
@@ -69,7 +71,7 @@
     >
       <tbody class="p-datatable-tbody">
         <tr class="p-row-even">
-          <td class="font-medium w-4/12">
+          <td class="md:font-medium w-4/12">
             {{ $t('contact.given_name') }}
           </td>
           <td>
@@ -80,7 +82,7 @@
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('contact.family_name') }}</td>
+          <td class="md:font-medium">{{ $t('contact.family_name') }}</td>
           <td class="w-full">
             <div v-if="!editingContact">
               {{ contact.family_name }}
@@ -93,7 +95,7 @@
           </td>
         </tr>
         <tr class="p-row-even">
-          <td class="font-medium">
+          <td class="md:font-medium">
             {{ $t('contact.alternate_names') }}
           </td>
           <td>
@@ -110,7 +112,7 @@
         </tr>
 
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('contact.address') }}</td>
+          <td class="md:font-medium">{{ $t('contact.address') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.address }}</div>
             <InputText v-else v-model="contactEdit.address" class="w-full" />
@@ -118,14 +120,14 @@
         </tr>
 
         <tr class="p-row-even">
-          <td class="font-medium">{{ $t('contact.works_for') }}</td>
+          <td class="md:font-medium">{{ $t('contact.works_for') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.works_for }}</div>
             <InputText v-else v-model="contactEdit.works_for" class="w-full" />
           </td>
         </tr>
         <tr class="p-row-odd">
-          <td class="font-medium">{{ $t('contact.job_title') }}</td>
+          <td class="md:font-medium">{{ $t('contact.job_title') }}</td>
           <td>
             <div v-if="!editingContact">{{ contact.job_title }}</div>
             <InputText v-else v-model="contactEdit.job_title" class="w-full" />
@@ -134,7 +136,7 @@
 
         <template v-if="editingContact">
           <tr class="p-row-even">
-            <td class="font-medium">{{ $t('contact.same_as') }}</td>
+            <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
             <td>
               <Textarea
                 v-model="(contactEdit.same_as as string)"
@@ -146,7 +148,7 @@
           </tr>
 
           <tr class="p-row-odd">
-            <td class="font-medium">{{ $t('contact.image') }}</td>
+            <td class="md:font-medium">{{ $t('contact.image') }}</td>
             <td>
               <InputText
                 v-model="contactEdit.image"
