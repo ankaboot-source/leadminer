@@ -131,14 +131,6 @@ onUnmounted(() => {
 <i18n lang="json">
 {
   "en": {
-    "notification": {
-      "summary": "Enrich Contact",
-      "enrichment_started": "Enrichment is running for {total} contacts.",
-      "enrichment_completed": "{enriched}/{total} of your contacts has been successfully enriched.",
-      "enrichment_canceled": "Your contact enrichment has been canceled.",
-      "already_enriched": "Contacts you selected are already enriched.",
-      "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
-    },
     "text": {
       "estimated_time": "Enriching your contacts, hang tight!",
       "contacts_to_enrich": "contacts to enrich",
@@ -150,14 +142,6 @@ onUnmounted(() => {
     }
   },
   "fr": {
-    "notification": {
-      "summary": "Enrichir le Contact",
-      "enrichment_started": "L'enrichissement est en cours pour ${total} contacts.",
-      "enrichment_completed": "${total}/${enriched} de vos contacts ont été enrichis avec succès.",
-      "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
-      "already_enriched": "Ce contact est déjà enrichi.",
-      "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
-    },
     "text": {
       "estimated_time": "En train d'enrichir vos contacts, accrochez-vous !",
       "contacts_to_enrich": "contacts à enrichir",

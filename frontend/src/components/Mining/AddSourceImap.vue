@@ -249,7 +249,7 @@ async function onSubmitImapCredentials() {
     "connect": "Connect"
   },
   "fr": {
-    "other_email_provider": "Autre nouveau compte e-mail (IMAP)",
+    "other_email_provider": "Autre compte e-mail (IMAP)",
     "sign_in_with_imap": "Connexion avec IMAP",
     "host": "Hôte",
     "port": "Port",
