@@ -29,35 +29,46 @@ export async function getContacts(userId: string): Promise<Contact[]> {
 
 export async function updateContact(userId: string, contact: ContactEdit) {
   const $supabaseClient = useSupabaseClient();
+  if (contact.works_for) {
+    const { error: updateOrganizationError } = await $supabaseClient.rpc(
+      'enrich_contacts',
+      // @ts-expect-error: Issue with @nuxt/supabase typing
+      {
+        p_contacts_data: [
+          {
+            user_id: userId,
+            email: contact.email,
+            works_for: contact.works_for,
+          },
+        ],
+        p_update_empty_fields_only: false,
+      }
+    );
 
-  const socialLinks = contact.same_as;
-
-  const { error: LinksError } = await $supabaseClient
-    .from('persons')
-    .update({ same_as: socialLinks || null })
-    .match({ user_id: userId, email: contact.email });
-
-  if (LinksError) {
-    throw new Error(LinksError.message);
+    if (updateOrganizationError) {
+      throw updateOrganizationError;
+    }
+    delete contact.works_for;
   }
 
-  delete contact.same_as;
-  const { error } = await $supabaseClient.rpc(
-    'enrich_contacts',
-    // @ts-expect-error: Issue with @nuxt/supabase typing
-    {
-      p_contacts_data: [
-        {
-          user_id: userId,
-          ...contact,
-        },
-      ],
-      p_update_empty_fields_only: false,
-    }
-  );
+  const { error: UpdateContactError } = await $supabaseClient
+    .from('persons')
+    .update({
+      name: contact.name,
+      email: contact.email,
+      given_name: contact.given_name || null,
+      family_name: contact.family_name || null,
+      alternate_names: contact.alternate_names || null,
+      address: contact.address || null,
+      works_for: contact.works_for || null,
+      job_title: contact.job_title || null,
+      same_as: contact.same_as || null,
+      image: contact.image || null,
+    })
+    .match({ user_id: userId, email: contact.email });
 
-  if (error) {
-    throw error;
+  if (UpdateContactError) {
+    throw new Error(UpdateContactError.message);
   }
 }
 
