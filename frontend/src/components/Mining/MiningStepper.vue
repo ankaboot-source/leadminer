@@ -87,11 +87,8 @@ const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 const activeMining = computed(() => $leadminerStore.miningTask !== undefined);
 
-const props = defineProps<{
-  collapsed: boolean;
-}>();
+const collapsePanel = defineModel<boolean>('collapsed');
 
-const collapsePanel = toRef(props, 'collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 const { error, provider, source } = $route.query;
 
