@@ -365,6 +365,7 @@ async function saveContactInformations() {
       ? (contactEdit.value?.alternate_names as string)
           ?.split('\n')
           .filter((item) => item.length)
+          .join(',')
       : undefined,
     address: contactEdit.value.address || undefined,
     works_for: contactEdit.value.works_for || undefined,
@@ -373,6 +374,7 @@ async function saveContactInformations() {
       ? (contactEdit.value.same_as as string)
           ?.split('\n')
           .filter((item) => item.length)
+          .join(',')
       : undefined,
     image: contactEdit.value.image || undefined,
   };
