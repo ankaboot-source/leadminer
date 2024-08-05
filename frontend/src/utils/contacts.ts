@@ -51,7 +51,7 @@ export async function updateContact(userId: string, contact: ContactEdit) {
     delete contact.works_for;
   }
   const { error: UpdateContactError } = await $supabaseClient
-  .from('persons')
+    .from('persons')
     // @ts-expect-error: Issue with @nuxt/supabase typing
     .update({
       name: contact.name,
