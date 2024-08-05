@@ -271,9 +271,9 @@ const closeDialog = () => {
 </script>
 <i18n lang="json">
 {
-  "en": {
-    "update_all": "Update all",
-    "update_empty": "Update empty fields",
+  "ens": {
+    "update_all": "Fill all",
+    "update_empty": "Fill empty fields",
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment",
     "notification": {
@@ -291,9 +291,9 @@ const closeDialog = () => {
       "start_new_mining": "Start a new mining"
     }
   },
-  "fr": {
-    "update_all": "Tout mettre à jour",
-    "update_empty": "Mettre à jour les champs vides",
+  "en": {
+    "update_all": "Remplir tout",
+    "update_empty": "Remplir les champs vides",
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous proceder ?",
     "confirm_enrichment": "Confirmer l'enrichissement des contacts",
     "notification": {
