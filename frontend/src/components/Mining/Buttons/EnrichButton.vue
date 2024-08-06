@@ -294,7 +294,7 @@ const closeDialog = () => {
   "fr": {
     "update_all": "Remplir tout",
     "update_empty": "Remplir les champs vides",
-    "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous proceder ?",
+    "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
     "confirm_enrichment": "Confirmer l'enrichissement des contacts",
     "notification": {
       "summary": "Enrichir",
