@@ -54,8 +54,7 @@ export async function updateContact(userId: string, contact: ContactEdit) {
     .from('persons')
     // @ts-expect-error: Issue with @nuxt/supabase typing
     .update({
-      name: contact.name,
-      email: contact.email,
+      name: contact.name || null,
       given_name: contact.given_name || null,
       family_name: contact.family_name || null,
       alternate_names: contact.alternate_names || null,
