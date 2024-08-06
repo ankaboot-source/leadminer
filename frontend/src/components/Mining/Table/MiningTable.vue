@@ -41,6 +41,7 @@
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
+    @value-change="showTableFirstTime"
   >
     <template #empty>
       <div class="text-center py-5">
@@ -613,10 +614,12 @@ const leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const isLoading = ref(false);
+const loadTable = ref(false);
 const showTable = ref(false);
+
 const loadingLabel = ref('');
 const contacts = computed(() =>
-  showTable.value ? $contactsStore.contacts : []
+  loadTable.value ? $contactsStore.contacts : []
 );
 const contactsLength = computed(() => contacts.value.length);
 
@@ -626,6 +629,15 @@ const activeMiningTask = computed(
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
+}
+
+function showTableFirstTime() {
+  if (showTable.value) {
+    return;
+  }
+  nextTick(() => {
+    showTable.value = true;
+  });
 }
 
 /* *** Filters *** */
@@ -892,7 +904,7 @@ onNuxtReady(() => {
   });
   $contactsStore.subscribeRealtime($user.value);
   setTimeout(() => {
-    showTable.value = true;
+    loadTable.value = true;
   }, 5000);
 });
 

@@ -272,7 +272,7 @@ const closeDialog = () => {
 <i18n lang="json">
 {
   "en": {
-    "update_all": "Update all",
+    "update_all": "Fill all",
     "update_empty": "Fill empty fields",
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment",
@@ -292,7 +292,7 @@ const closeDialog = () => {
     }
   },
   "fr": {
-    "update_all": "Tout mettre à jour",
+    "update_all": "Remplir tout",
     "update_empty": "Remplir les champs vides",
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
     "confirm_enrichment": "Confirmer l'enrichissement des contacts",
