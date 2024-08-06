@@ -355,27 +355,24 @@ async function saveContactInformations() {
     );
     return;
   }
+  const alternateNames = (contactEdit.value?.alternate_names as string)
+    ?.split('\n')
+    .filter((item) => item.length);
+
+  const sameAs = (contactEdit.value.same_as as string)
+    ?.split('\n')
+    .filter((item) => item.length);
 
   const contactCleaned = {
     email: contactEdit.value.email,
-    name: contactEdit.value.name,
+    name: contactEdit.value.name || undefined,
     given_name: contactEdit.value.given_name || undefined,
     family_name: contactEdit.value.family_name || undefined,
-    alternate_names: contactEdit.value.alternate_names
-      ? (contactEdit.value?.alternate_names as string)
-          ?.split('\n')
-          .filter((item) => item.length)
-          .join(',')
-      : undefined,
+    alternate_names: alternateNames.length ? alternateNames : undefined,
     address: contactEdit.value.address || undefined,
     works_for: contactEdit.value.works_for || undefined,
     job_title: contactEdit.value.job_title || undefined,
-    same_as: contactEdit.value.same_as
-      ? (contactEdit.value.same_as as string)
-          ?.split('\n')
-          .filter((item) => item.length)
-          .join(',')
-      : undefined,
+    same_as: sameAs.length ? sameAs : undefined,
     image: contactEdit.value.image || undefined,
   };
 

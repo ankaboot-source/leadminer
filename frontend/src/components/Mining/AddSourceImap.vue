@@ -8,8 +8,9 @@
   <Dialog
     v-model:visible="show"
     modal
+    :draggable="false"
     :header="t('sign_in_with_imap')"
-    class="md:w-[30rem]"
+    class="md:w-[35rem]"
   >
     <div class="flex flex-col space-y-2">
       <div class="w-full flex flex-col gap-1">
@@ -76,7 +77,6 @@
             type="button"
             class="w-full sm:w-auto"
             :label="t('Button.advanced')"
-            :loading="loadingSave"
             severity="secondary"
             @click="imapAdvancedSettings = true"
           />
