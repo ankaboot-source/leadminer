@@ -52,7 +52,6 @@
       @click="startNewMining"
     />
     <EnrichButton
-      :contacts-to-enrich="contactsToEnrich"
       :v-model:enrichment-status="activeTask"
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
@@ -72,14 +71,12 @@ const { t } = useI18n({
 });
 
 const $stepper = useMiningStepper();
-const $contactStore = useContactsStore();
+const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 
 const activeTask = ref(true);
-const contactsToEnrich = computed(() =>
-  $contactStore.filtered.map((contact) => contact.email)
-);
-const contactsToEnrichLength = computed(() => contactsToEnrich.value.length);
+
+const contactsToEnrichLength = computed(() => $contactsStore.selectedLength);
 const contactsToEnrichLengthPartial = ref<number>(0);
 
 const enrichedContacts = ref(0);
@@ -95,6 +92,7 @@ const progressColor = computed(() =>
 watch(contactsToEnrichLength, () => {
   contactsToEnrichLengthPartial.value = 0;
 });
+
 function startNewMining() {
   $leadminerStore.$resetMining();
   $stepper.go(1);

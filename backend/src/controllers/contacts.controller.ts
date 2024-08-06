@@ -28,9 +28,18 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       const partialExport = req.body.partialExport ?? false;
-      const contactsToExport: string[] | undefined = req.body.contactsToExport
-        ? JSON.parse(req.body.contactsToExport)
-        : undefined;
+      const { contactsToExport }: { contactsToExport: string[] | undefined } =
+        req.body;
+      if (
+        contactsToExport !== undefined &&
+        (!Array.isArray(contactsToExport) || !contactsToExport.length)
+      ) {
+        return res.status(400).json({
+          message:
+            'Parameter "contactsToExport" must be a non-empty list of emails or undefined'
+        });
+      }
+
       let statusCode = 200;
 
       try {

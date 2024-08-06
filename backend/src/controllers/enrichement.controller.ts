@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
-import supabaseClient from '../utils/supabase';
 import ENV from '../config';
-import CreditsHandler from '../services/credits/creditHandler';
 import { Users } from '../db/interfaces/Users';
-import emailEnrichementService from '../services/email-enrichment';
 import { Contact } from '../db/types';
+import CreditsHandler from '../services/credits/creditHandler';
+import emailEnrichementService from '../services/email-enrichment';
+import supabaseClient from '../utils/supabase';
 
 /**
  * Queries enriched emails for a given user.
@@ -17,6 +17,26 @@ async function getEnrichedEmails(userId: string) {
     .from('engagement')
     .select('email')
     .match({ user_id: userId, engagement_type: 'ENRICH' })
+    .returns<{ email: string }[]>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return emails.map((record) => record.email);
+}
+
+/**
+ * Queries emails for a given user.
+ * @param userId - The ID of the user.
+ * @returns List of enriched email addresses.
+ * @throws Error if there is an issue fetching data from the database.
+ */
+async function getEmails(userId: string) {
+  const { data: emails, error } = await supabaseClient
+    .from('persons')
+    .select('email')
+    .match({ user_id: userId })
     .returns<{ email: string }[]>();
 
   if (error) {
@@ -167,7 +187,7 @@ export default function initializeEnrichementController(userResolver: Users) {
       const { user } = res.locals;
       const {
         partial,
-        emails,
+        emails: emailsReq,
         updateEmptyFieldsOnly
       }: {
         partial: boolean;
@@ -175,12 +195,16 @@ export default function initializeEnrichementController(userResolver: Users) {
         emails: string[];
       } = req.body;
       try {
-        if (!Array.isArray(emails) || !emails.length) {
-          return res
-            .status(400)
-            .json({ message: 'Parameter "emails" must be a list of emails' });
+        if (
+          emailsReq !== undefined &&
+          (!Array.isArray(emailsReq) || !emailsReq.length)
+        ) {
+          return res.status(400).json({
+            message:
+              'Parameter "emails" must be a non-empty list of emails or undefined'
+          });
         }
-
+        const emails = emailsReq ?? (await getEmails(user.id));
         const enrichedContacts = await getEnrichedEmails(user.id);
         let contactsToEnrich = emails.filter(
           (email) => !enrichedContacts.includes(email)

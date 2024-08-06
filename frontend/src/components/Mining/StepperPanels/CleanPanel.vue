@@ -34,8 +34,8 @@
       <Button
         class="w-full md:w-max border-solid border-2 border-black"
         severity="contrast"
-        :label="t('enrich_contacts', useContactsStore().filtered.length)"
-        :disabled="useContactsStore().filtered.length === 0"
+        :label="t('enrich_contacts', $contactsStore.selectedLength)"
+        :disabled="$contactsStore.selectedLength === 0"
         @click="$stepper.next()"
       >
         <template #icon
@@ -57,7 +57,7 @@ const { t } = useI18n({
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
-
+const $contactsStore = useContactsStore();
 const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);

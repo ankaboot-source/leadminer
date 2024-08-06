@@ -14,8 +14,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let cache = new Map<string, Contact>();
 
   const contacts = ref<Contact[]>([]);
-  const filtered = ref<Contact[]>([]);
-
+  const selected = ref<String[] | undefined>(undefined);
+  const selectedLength = ref<number>(0);
   function setContacts(newContacts: Contact[]) {
     contacts.value = newContacts;
     if (contacts.value.length) {
@@ -76,13 +76,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   function $reset() {
     contacts.value = [];
+    selected.value = undefined;
+    selectedLength.value = 0;
     unsubscribeRealtime();
   }
 
   return {
     cache,
     contacts,
-    filtered,
+    selected,
+    selectedLength,
     $reset,
     setContacts,
     refreshContacts,
