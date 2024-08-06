@@ -29,7 +29,7 @@ async function getEnrichedEmails(userId: string) {
 /**
  * Queries emails for a given user.
  * @param userId - The ID of the user.
- * @returns List of enriched email addresses.
+ * @returns List of email addresses.
  * @throws Error if there is an issue fetching data from the database.
  */
 async function getEmails(userId: string) {
