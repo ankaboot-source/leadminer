@@ -73,7 +73,6 @@
         </div>
         <div>
           <EnrichButton
-            :contacts-to-enrich="contactsToExport"
             :enrichment-realtime-callback="() => {}"
             :enrichment-request-response-callback="() => {}"
             :start-on-mounted="false"
@@ -644,7 +643,6 @@ function toggleSettingsPanel(event: Event) {
 
 function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
-  $contactsStore.filtered = event.filteredValue;
 }
 
 async function refineContacts() {
@@ -721,6 +719,7 @@ const implicitlySelectedContacts = computed(() => {
   // If (selection of All or None) && (No filter) : user implicitly selected all contacts
   return contacts.value;
 });
+
 const implicitlySelectedContactsLength = computed(
   () => implicitlySelectedContacts.value.length
 );
@@ -728,6 +727,24 @@ const implicitlySelectedContactsLength = computed(
 const implicitSelectAll = computed(
   () => implicitlySelectedContactsLength.value === contactsLength.value
 );
+
+const contactsToExport = computed<string[] | undefined>(() =>
+  implicitSelectAll.value
+    ? undefined
+    : implicitlySelectedContacts.value.map((item: Contact) => item.email)
+);
+
+watch(
+  contactsToExport,
+  () => {
+    $contactsStore.selected = contactsToExport.value;
+  },
+  { deep: true, immediate: true }
+);
+
+watch(implicitlySelectedContactsLength, () => {
+  $contactsStore.selectedLength = implicitlySelectedContactsLength.value;
+});
 
 /* *** Export CSV *** */
 
@@ -774,10 +791,6 @@ const openCreditModel = (
   );
 };
 
-const contactsToExport = computed<string[]>(() =>
-  implicitlySelectedContacts.value.map((item: Contact) => item.email)
-);
-
 async function exportTable(partialExport = false) {
   // if !contactsToExport, then export all contacts
 
@@ -785,9 +798,7 @@ async function exportTable(partialExport = false) {
     method: 'POST',
     body: {
       partialExport,
-      contactsToExport: implicitSelectAll.value
-        ? undefined
-        : JSON.stringify(contactsToExport),
+      contactsToExport: contactsToExport.value,
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
