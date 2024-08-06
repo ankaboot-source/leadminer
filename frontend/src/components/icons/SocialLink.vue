@@ -22,21 +22,11 @@ const { socialLinks } = defineProps<{
 }>();
 
 function getSameAsIcon(url: string) {
-  const domain = url
-    .toLowerCase()
-    .replace(/^(https?:\/\/)?(www\.)?/, '')
-    .split('/')[0];
-  const match = domain.match(
-    /^(twitter|x|linkedin|facebook|instagram)(?:\.com)?$/
-  );
-
-  if (match) {
-    // Special case for 'x.com'
-    if (match[1] === 'x') {
-      return 'twitter';
-    }
-    return match[1];
+  const domain = new URL(url).hostname.split('.')[0];
+  const match = domain.match(/^(twitter|linkedin|facebook|instagram|x)$/i)?.[0];
+  if (match === 'x') {
+    return 'twitter';
   }
-  return 'globe';
+  return match ?? 'globe';
 }
 </script>
