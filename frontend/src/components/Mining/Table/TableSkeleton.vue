@@ -7,7 +7,7 @@
     striped-rows
     paginator
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    current-page-report-template="({currentPage} of {totalPages})"
+    :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="150"
   >
     <template #header>
