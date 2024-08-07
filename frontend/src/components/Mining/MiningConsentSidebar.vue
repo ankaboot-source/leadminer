@@ -7,7 +7,7 @@
   >
     <template #container>
       <div class="grid gap-4 px-8 py-4 text-base">
-        <span class="text-lg md:text-xl font-bold font-[Merriweather]">
+        <span class="text-lg md:text-xl font-bold font-serif">
           {{ t('authorization_required') }}
         </span>
         <span>

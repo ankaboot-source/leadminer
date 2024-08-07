@@ -12,14 +12,19 @@
         class: 'text-xs ml-1',
       }"
       :class="`pi pi-${getSameAsIcon(link)}`"
-      class="text-xl"
+      class="text-md md:text-xl"
     />
   </NuxtLink>
 </template>
 <script setup lang="ts">
-const { socialLinks } = defineProps<{
+const props = defineProps<{
   socialLinks: string[];
+  small: boolean;
 }>();
+
+const socialLinks = props.small
+  ? props.socialLinks.slice(0, 3)
+  : props.socialLinks;
 
 function getSameAsIcon(url: string) {
   const domain = new URL(url).hostname.split('.')[0];

@@ -1,7 +1,7 @@
 <template>
   <ClientOnly>
     <div class="m-auto grid text-center gap-6 max-w-[30rem]" flat>
-      <div class="text-4xl font-bold font-[Merriweather]">
+      <div class="text-4xl font-bold font-serif">
         {{ $t('auth.forgot_password') }}
       </div>
       <div class="grid gap-6 w-full">
