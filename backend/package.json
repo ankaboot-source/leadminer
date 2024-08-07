@@ -34,7 +34,7 @@
     "@faker-js/faker": "^8.4.1",
     "@sentry/node": "^7.118.0",
     "@sentry/tracing": "^7.116.0",
-    "@supabase/supabase-js": "^2.43.5",
+    "@supabase/supabase-js": "^2.44.4",
     "axios": "^1.6.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
