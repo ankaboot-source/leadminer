@@ -11,7 +11,12 @@
     :state="{
       maximized: true,
     }"
-    :header="t('confirm_enrichment')"
+    :header="
+      t(
+        'confirm_enrichment',
+        contactsToEnrich?.length ?? $contactsStore.selectedLength
+      )
+    "
     class="w-full sm:w-[35rem]"
   >
     <p>
@@ -275,7 +280,7 @@ const closeDialog = () => {
     "update_all": "Fill all",
     "update_empty": "Fill empty fields",
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
-    "confirm_enrichment": "Confirm contact enrichment",
+    "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
       "summary": "Enrich",
       "enrichment_started": "Enrichment is running.",
@@ -295,7 +300,7 @@ const closeDialog = () => {
     "update_all": "Remplir tout",
     "update_empty": "Remplir les champs vides",
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
-    "confirm_enrichment": "Confirmer l'enrichissement des contacts",
+    "confirm_enrichment": "Confirmer l'enrichissement de contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
       "enrichment_started": "L'enrichissement est en cours.",
