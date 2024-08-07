@@ -3,25 +3,9 @@
     <NuxtPage />
   </NuxtLayout>
   <Toast />
-  <Toast
-    group="mining"
-    :pt="{
-      icon: ({ props: toastProps }) => ({
-        class: [
-          {
-            'is-done': toastProps.message?.summary?.includes('done'),
-            'pi pi-check': toastProps.message?.severity === 'success',
-            'pi pi-info-circle': toastProps.message?.severity === 'info',
-            'pi pi-exclamation-circle': toastProps.message?.severity === 'warn',
-            'pi pi-times-circle': toastProps.message?.severity === 'error',
-          },
-        ],
-      }),
-    }"
-  >
-    <template #icon="{ class: className }">
+  <Toast group="achievment">
+    <template #messageicon>
       <svg
-        v-if="className.includes('is-done')"
         width="24"
         height="24"
         viewBox="0 0 24 24"
@@ -35,7 +19,6 @@
           fill="black"
         />
       </svg>
-      <i v-else :class="className"></i>
     </template>
   </Toast>
 </template>

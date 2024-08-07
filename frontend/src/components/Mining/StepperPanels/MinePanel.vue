@@ -220,7 +220,7 @@ watch(extractionFinished, (finished) => {
       detail: t('contacts_extracted', {
         extractedEmails: extractedEmails.value,
       }),
-      group: 'mining',
+      group: 'achievment',
       life: 5000,
     });
     $stepper.next();
@@ -255,7 +255,6 @@ async function startMining() {
       severity: 'success',
       summary: t('mining_started'),
       detail: t('mining_success'),
-      group: 'mining',
       life: 3000,
     });
   } catch (error) {
@@ -270,7 +269,6 @@ async function startMining() {
         severity: 'error',
         summary: t('start_mining'),
         detail: t('mining_issue'),
-        group: 'mining',
         life: 3000,
       });
     }
@@ -285,7 +283,6 @@ async function haltMining() {
       severity: 'success',
       summary: t('mining_stopped'),
       detail: t('mining_canceled'),
-      group: 'mining',
       life: 3000,
     });
   } catch (error) {
@@ -294,7 +291,6 @@ async function haltMining() {
         severity: 'warn',
         summary: t('mining_stopped'),
         detail: t('mining_already_canceled'),
-        group: 'mining',
         life: 5000,
       });
       $leadminerStore.miningTask = undefined;

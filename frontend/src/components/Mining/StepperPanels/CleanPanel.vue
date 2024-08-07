@@ -85,7 +85,7 @@ function cleaningDoneNotification() {
     detail: t('contacts_verified', {
       verifiedContacts: verifiedContacts.value.toLocaleString(),
     }),
-    group: 'mining',
+    group: 'achievment',
     life: 5000,
   });
 }
@@ -105,7 +105,6 @@ async function haltCleaning() {
       severity: 'success',
       summary: t('cleaning_stopped'),
       detail: t('cleaning_canceled'),
-      group: 'mining',
       life: 3000,
     });
     $leadminerStore.isLoadingStopMining = false;
@@ -116,7 +115,6 @@ async function haltCleaning() {
         severity: 'warn',
         summary: t('cleaning_stopped'),
         detail: t('cleaning_already_canceled'),
-        group: 'mining',
         life: 5000,
       });
       $leadminerStore.miningTask = undefined;
