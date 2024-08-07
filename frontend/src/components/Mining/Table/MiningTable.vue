@@ -31,7 +31,7 @@
     :global-filter-fields="['email', 'name']"
     removable-sort
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-    :current-page-report-template="`({currentPage} ${t('of')} {totalPages})`"
+    :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
     :loading="isLoading"

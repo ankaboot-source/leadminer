@@ -368,11 +368,11 @@ async function saveContactInformations() {
     name: contactEdit.value.name || undefined,
     given_name: contactEdit.value.given_name || undefined,
     family_name: contactEdit.value.family_name || undefined,
-    alternate_names: alternateNames.length ? alternateNames : undefined,
+    alternate_names: alternateNames?.length ? alternateNames : undefined,
     address: contactEdit.value.address || undefined,
     works_for: contactEdit.value.works_for || undefined,
     job_title: contactEdit.value.job_title || undefined,
-    same_as: sameAs.length ? sameAs : undefined,
+    same_as: sameAs?.length ? sameAs : undefined,
     image: contactEdit.value.image || undefined,
   };
 

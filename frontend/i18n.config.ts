@@ -30,6 +30,7 @@ export default defineI18nConfig(() => ({
         mailbox: 'mailbox',
         save: 'Save',
         the_plural: 'the',
+        of: 'of',
       },
       auth: {
         sign_in: 'Sign in',
@@ -142,6 +143,7 @@ export default defineI18nConfig(() => ({
         mailbox: 'boîte aux lettres',
         save: 'Sauvegarder',
         the_plural: 'les',
+        of: 'sur',
       },
       auth: {
         sign_in: 'Se connecter',
