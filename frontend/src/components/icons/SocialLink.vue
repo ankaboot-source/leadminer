@@ -12,7 +12,7 @@
         class: 'text-xs ml-1',
       }"
       :class="`pi pi-${getSameAsIcon(link)}`"
-      class="text-xl"
+      class="text-md md:text-xl"
     />
   </NuxtLink>
 </template>
