@@ -1,5 +1,5 @@
 <template>
-  <div class="py-3.5 flex justify-between">
+  <div class="py-3.5 flex justify-between bg-white md:bg-transparent">
     <NuxtLink to="/dashboard">
       <AppLogo />
     </NuxtLink>

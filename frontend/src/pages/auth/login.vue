@@ -1,30 +1,32 @@
 <template>
-  <ClientOnly>
-    <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
-      <div>
-        <p class="text-4xl font-bold font-[Merriweather]">
-          {{ $t('common.welcome_back') }}
-        </p>
-      </div>
-      <div>
-        <EmailAuth state="login" />
+  <div
+    class="w-full space-y-2 md:space-y-4 max-w-lg m-auto px-4 md:px-10 text-center"
+  >
+    <div>
+      <p class="text-4xl font-bold font-serif capitalize">
+        {{ $t('common.welcome_back') }}
+      </p>
+    </div>
 
-        <Separator
-          layout="horizontal"
-          :content="$t('auth.or_sign_in_with_social')"
-        />
+    <div>
+      <EmailAuth state="login" />
 
-        <SocialAuth />
-      </div>
+      <Separator
+        layout="horizontal"
+        :content="$t('auth.or_sign_in_with_social')"
+      />
 
+      <SocialAuth />
+    </div>
+
+    <div class="grid gap-2">
       <span>
         {{ $t('auth.no_account') }}
         <NuxtLink to="/auth/signup" class="font-bold text-indigo-500">
           {{ $t('auth.sign_up') }}
         </NuxtLink>
       </span>
-
-      <span class="text-gray-700 font-[merriweather]">
+      <span class="text-gray-700 font-serif">
         {{ $t('auth.agree_sign_in') }}
         <NuxtLink
           class="text-indigo-500"
@@ -46,7 +48,7 @@
         {{ $t('auth.email_offers_agree') }}
       </span>
     </div>
-  </ClientOnly>
+  </div>
 </template>
 
 <script setup lang="ts">

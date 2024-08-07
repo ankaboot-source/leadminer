@@ -30,7 +30,7 @@
           />
         </svg>
       </div>
-      <div class="text-4xl font-bold font-[Merriweather]">
+      <div class="text-4xl font-bold font-serif">
         {{ $t('auth.sign_up_success_header') }}
       </div>
     </div>

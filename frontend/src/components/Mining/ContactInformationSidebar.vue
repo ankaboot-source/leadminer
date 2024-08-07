@@ -6,18 +6,18 @@
     @hide="() => onHide()"
   >
     <template #header><span class="grow" /> </template>
-    <div class="p-sidebar-header px-4 pt-0">
-      <div class="flex items-center gap-2 grow w-full">
+    <div class="px-4">
+      <div class="flex items-center gap-2">
         <img
           v-if="contact.image && !editingContact"
           :src="contact.image"
           class="size-20 rounded-full"
         />
 
-        <span class="w-full">
+        <span class="w-3/4">
           <div
             v-if="contact.name && !editingContact"
-            class="font-medium text-xl md:text-2xl truncate w-full"
+            class="font-medium text-xl md:text-2xl truncate"
           >
             {{ contact.name }}
           </div>
@@ -34,11 +34,11 @@
               'font-medium text-xl md:text-2xl':
                 !contact.name && !editingContact,
             }"
-            class="flex items-center"
+            class="flex items-center gap-2"
           >
             <Badge
               v-tooltip.top="getStatusLabel(contact.status)"
-              class="min-w-4 h-4 mr-1 flex-none"
+              class="min-w-4 h-4 flex-none"
               :severity="getStatusColor(contact.status)"
             />
             <span class="truncate">
@@ -50,7 +50,7 @@
               text
               icon="pi pi-copy"
               size="large"
-              class="text-2xl flex-none"
+              class="text-2xl flex-none -ml-2"
               :aria-label="t('copy')"
               @click="copyContact(contact.email, contact.name)"
             />
@@ -59,7 +59,7 @@
             v-if="contact.same_as?.length && !editingContact"
             class="flex gap-2 grow pt-1"
           >
-            <social-link :social-links="contact.same_as" />
+            <social-link :social-links="contact.same_as" :small="false" />
           </div>
         </span>
       </div>

@@ -201,8 +201,8 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex justify-between gap-2 items-center">
-          <div class="flex items-center gap-2 grow">
+        <div class="flex justify-between gap-3 items-center">
+          <div class="flex items-center gap-2 max-sm:w-[60vw] md:grow">
             <img
               v-if="data.image && visibleColumns.includes('image')"
               :src="data.image"
@@ -210,19 +210,29 @@
               class="cursor-pointer rounded-full"
               @click="openContactInformation(data)"
             />
-            <span>
+            <span
+              :class="
+                data.image && visibleColumns.includes('image')
+                  ? 'max-sm:w-4/5'
+                  : 'max-sm:w-full'
+              "
+            >
               <template v-if="data.name && visibleColumns.includes('name')">
-                <div class="font-medium">{{ data.name }}</div>
-                <div>{{ data.email }}</div>
+                <div class="font-medium max-sm:truncate">
+                  {{ data.name }}
+                </div>
+                <div class="max-sm:truncate">{{ data.email }}</div>
               </template>
-              <div v-else class="font-medium">{{ data.email }}</div>
+              <div v-else class="font-medium max-sm:truncate">
+                {{ data.email }}
+              </div>
             </span>
           </div>
           <div
             v-if="data.same_as && visibleColumns.includes('same_as')"
-            class="flex gap-2 pt-1 pr-6"
+            class="flex gap-2"
           >
-            <social-links :social-links="data.same_as" />
+            <social-links :social-links="data.same_as" :small="true" />
           </div>
           <div>
             <Button
