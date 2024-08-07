@@ -4,6 +4,7 @@
     show-gridlines
     striped-rows
     paginator
+    size="small"
     scroll-height="flex"
     pt:tablecontainer:class="grow"
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
