@@ -1,11 +1,11 @@
 <template>
   <DataTable
-    ref="TableRef"
     :value="contacts"
     show-gridlines
-    size="small"
     striped-rows
     paginator
+    scroll-height="flex"
+    pt:tablecontainer:class="grow"
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="150"

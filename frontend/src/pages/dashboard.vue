@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col grow">
     <mining-stepper v-model:collapsed="collapsedStepper" />
     <MiningTable />
   </div>
