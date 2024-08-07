@@ -231,7 +231,7 @@
             v-if="data.same_as && visibleColumns.includes('same_as')"
             class="flex gap-2"
           >
-            <social-links :social-links="data.same_as" />
+            <social-links :social-links="data.same_as" :small="true" />
           </div>
           <div>
             <Button

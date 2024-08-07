@@ -59,7 +59,7 @@
             v-if="contact.same_as?.length && !editingContact"
             class="flex gap-2 grow pt-1"
           >
-            <social-link :social-links="contact.same_as" />
+            <social-link :social-links="contact.same_as" :small="false" />
           </div>
         </span>
       </div>
@@ -374,7 +374,6 @@ async function saveContactInformations() {
       ? (contactEdit.value.same_as as string)
           ?.split('\n')
           .filter((item) => item.length)
-          .join(',')
       : undefined,
     image: contactEdit.value.image || undefined,
   };

@@ -17,9 +17,14 @@
   </NuxtLink>
 </template>
 <script setup lang="ts">
-const { socialLinks } = defineProps<{
+const props = defineProps<{
   socialLinks: string[];
+  small: boolean;
 }>();
+
+const socialLinks = props.small
+  ? props.socialLinks.slice(0, 3)
+  : props.socialLinks;
 
 function getSameAsIcon(url: string) {
   const match = url.match(/\.?(twitter|linkedin|facebook|instagram|x)\./)?.[1];
