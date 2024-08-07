@@ -67,7 +67,7 @@
         >
           <Button
             icon="pi pi-external-link"
-            :label="screenStore.size.md ? t('export_csv') : undefined"
+            :label="$screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
@@ -92,7 +92,7 @@
           <Button
             :disabled="filtersStore.isDefaultFilters"
             icon="pi pi-filter-slash"
-            :label="screenStore.size.md ? t('clear') : undefined"
+            :label="$screenStore.size.md ? t('clear') : undefined"
             outlined
             @click="filtersStore.clearFilter()"
           />
@@ -620,7 +620,7 @@ const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
 const $supabaseClient = useSupabaseClient();
 const $contactsStore = useContactsStore();
-const leadminerStore = useLeadminerStore();
+const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const isLoading = ref(false);
@@ -634,20 +634,11 @@ const contacts = computed(() =>
 const contactsLength = computed(() => contacts.value.length);
 
 const activeMiningTask = computed(
-  () => leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined
 );
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
-}
-
-function showTableFirstTime() {
-  if (showTable.value) {
-    return;
-  }
-  nextTick(() => {
-    showTable.value = true;
-  });
 }
 
 /* *** Filters *** */
@@ -776,7 +767,7 @@ const isExportDisabled = computed(
   () =>
     contacts.value.length === 0 ||
     activeMiningTask.value ||
-    leadminerStore.loadingStatusDns ||
+    $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value
 );
 function getFileName() {
@@ -845,7 +836,7 @@ async function exportTable(partialExport = false) {
 const isFullscreen = ref(false);
 
 const visibleColumns = ref(['contacts']);
-const screenStore = useScreenStore();
+const $screenStore = useScreenStore();
 const visibleColumnsOptions = [
   { label: t('emails'), value: 'contacts' },
   { label: t('source'), value: 'source' },
@@ -897,29 +888,38 @@ function observeTop() {
 }
 
 onNuxtReady(() => {
-  screenStore.init();
+  $screenStore.init();
   visibleColumns.value = [
     'contacts',
     'name',
     'same_as',
     'image',
-    ...(screenStore.width > 550 ? ['occurrence'] : []),
-    ...(screenStore.width > 700 ? ['recency'] : []),
-    ...(screenStore.width > 800 ? ['tags'] : []),
-    ...(screenStore.width > 950 ? ['status'] : []),
+    ...($screenStore.width > 550 ? ['occurrence'] : []),
+    ...($screenStore.width > 700 ? ['recency'] : []),
+    ...($screenStore.width > 800 ? ['tags'] : []),
+    ...($screenStore.width > 950 ? ['status'] : []),
   ];
-  observeTop();
-  watchEffect(() => {
-    tableHeight.value = `${screenStore.height - tablePosTop.value - 140}px`;
-  });
   $contactsStore.subscribeRealtime($user.value);
   setTimeout(() => {
     loadTable.value = true;
   }, 5000);
 });
 
+function showTableFirstTime() {
+  if (showTable.value) {
+    return;
+  }
+  observeTop();
+  watchEffect(() => {
+    tableHeight.value = `${$screenStore.height - tablePosTop.value - 140}px`;
+  });
+  nextTick(() => {
+    showTable.value = true;
+  });
+}
+
 onUnmounted(() => {
-  screenStore.destroy();
+  $screenStore.destroy();
   $contactsStore.unsubscribeRealtime();
 });
 </script>
