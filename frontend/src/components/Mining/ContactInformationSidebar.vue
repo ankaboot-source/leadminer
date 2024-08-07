@@ -6,7 +6,7 @@
     @hide="() => onHide()"
   >
     <template #header><span class="grow" /> </template>
-    <div class="p-sidebar-header px-4">
+    <div class="px-4">
       <div class="flex items-center gap-2">
         <img
           v-if="contact.image && !editingContact"
