@@ -41,7 +41,6 @@
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
-    @value-change="showTableFirstTime"
   >
     <template #empty>
       <div class="text-center py-5">
@@ -84,7 +83,7 @@
             {{ implicitlySelectedContactsLength.toLocaleString() }}
             /
           </template>
-          {{ contactsLength.toLocaleString() }}
+          {{ contactsLength?.toLocaleString() }}
           {{ t('contacts') }}
         </div>
         <div class="grow" />
@@ -631,7 +630,7 @@ const loadingLabel = ref('');
 const contacts = computed(() =>
   loadTable.value ? $contactsStore.contacts : []
 );
-const contactsLength = computed(() => contacts.value.length);
+const contactsLength = computed(() => contacts.value?.length);
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined
@@ -715,6 +714,7 @@ const onRowUnselect = () => {
 };
 
 const implicitlySelectedContacts = computed(() => {
+  if (contacts.value === undefined) return [];
   // If (Filter) & (No selection) : user implicitly selected all filtered contacts
   if (
     selectedContactsLength.value === 0 &&
@@ -765,7 +765,7 @@ const { $api } = useNuxtApp();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 const isExportDisabled = computed(
   () =>
-    contacts.value.length === 0 ||
+    contactsLength.value === 0 ||
     activeMiningTask.value ||
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value
@@ -900,23 +900,25 @@ onNuxtReady(() => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   $contactsStore.subscribeRealtime($user.value);
+  watch(
+    contactsLength,
+    () => {
+      if (contactsLength.value !== undefined) {
+        observeTop();
+        watchEffect(() => {
+          tableHeight.value = `${
+            $screenStore.height - tablePosTop.value - 140
+          }px`;
+        });
+        showTable.value = true;
+      }
+    },
+    { immediate: true, once: true }
+  );
   setTimeout(() => {
     loadTable.value = true;
   }, 5000);
 });
-
-function showTableFirstTime() {
-  if (showTable.value) {
-    return;
-  }
-  observeTop();
-  watchEffect(() => {
-    tableHeight.value = `${$screenStore.height - tablePosTop.value - 140}px`;
-  });
-  nextTick(() => {
-    showTable.value = true;
-  });
-}
 
 onUnmounted(() => {
   $screenStore.destroy();
