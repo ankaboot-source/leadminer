@@ -27,11 +27,17 @@ const socialLinks = props.small
   : props.socialLinks;
 
 function getSameAsIcon(url: string) {
-  const domain = new URL(url).hostname.split('.')[0];
-  const match = domain.match(/^(twitter|linkedin|facebook|instagram|x)$/i)?.[0];
-  if (match === 'x') {
-    return 'twitter';
+  try {
+    const domain = new URL(url).hostname.split('.')[0];
+    const match = domain.match(
+      /^(twitter|linkedin|facebook|instagram|x)$/i
+    )?.[0];
+    if (match === 'x') {
+      return 'twitter';
+    }
+    return match ?? 'globe';
+  } catch {
+    return 'globe';
   }
-  return match ?? 'globe';
 }
 </script>
