@@ -882,17 +882,19 @@ const scrollHeight = computed(() =>
 );
 
 function observeTop() {
-  const resizeObserver = new ResizeObserver(() => {
-    tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
-  });
-  resizeObserver.observe(TableRef.value?.$el);
+  if (TableRef.value) {
+    const resizeObserver = new ResizeObserver(() => {
+      tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
+    });
+    resizeObserver.observe(TableRef.value?.$el);
+  }
 }
 
 function showTableFirstTime() {
   if (!showTable.value && contactsLength.value !== undefined) {
     observeTop();
     watchEffect(() => {
-      tableHeight.value = `${$screenStore.height - tablePosTop.value - 140}px`;
+      tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
     });
     showTable.value = true;
   }
