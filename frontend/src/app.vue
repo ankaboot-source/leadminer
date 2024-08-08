@@ -3,7 +3,7 @@
     <NuxtPage />
   </NuxtLayout>
   <Toast />
-  <Toast group="achievment">
+  <Toast group="achievement">
     <template #messageicon>
       <svg
         width="24"

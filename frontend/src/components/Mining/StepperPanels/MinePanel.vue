@@ -212,7 +212,7 @@ watch(extractionFinished, (finished) => {
       detail: t('contacts_extracted', {
         extractedEmails: extractedEmails.value,
       }),
-      group: 'achievment',
+      group: 'achievement',
       life: 5000,
     });
     $stepper.next();
