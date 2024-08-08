@@ -20,7 +20,6 @@
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "@nuxt/eslint-config": "^0.2.0",
-    "@nuxt/image": "^1.7.0",
     "@nuxt/test-utils": "^3.12.0",
     "@nuxtjs/i18n": "^8.3.1",
     "@nuxtjs/supabase": "^1.2.2",
@@ -44,6 +43,7 @@
   },
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
+    "@nuxt/image": "^1.7.0",
     "@pinia/nuxt": "^0.5.1",
     "@primevue/themes": "^4.0.1",
     "@supabase/supabase-js": "^2.43.4",
