@@ -13,7 +13,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let subscription: RealtimeChannel;
   let cache = new Map<string, Contact>();
 
-  const contacts = ref<Contact[]>([]);
+  const contacts = ref<Contact[] | undefined>(undefined);
   const selected = ref<String[] | undefined>(undefined);
   const selectedLength = ref<number>(0);
   function setContacts(newContacts: Contact[]) {
@@ -75,7 +75,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   function $reset() {
-    contacts.value = [];
+    contacts.value = undefined;
     selected.value = undefined;
     selectedLength.value = 0;
     unsubscribeRealtime();
