@@ -300,7 +300,7 @@ const closeDialog = () => {
     "update_all": "Remplir tout",
     "update_empty": "Remplir les champs vides",
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
-    "confirm_enrichment": "Confirmer l'enrichissement de contact | Confirmer l'enrichissement des {n} contacts",
+    "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
       "enrichment_started": "L'enrichissement est en cours.",
