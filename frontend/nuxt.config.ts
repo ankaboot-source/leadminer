@@ -66,7 +66,6 @@ export default defineNuxtConfig({
     '@nuxtjs/supabase',
     '@pinia/nuxt',
     '@primevue/nuxt-module',
-    '@nuxt/image',
   ],
 
   primevue: {
