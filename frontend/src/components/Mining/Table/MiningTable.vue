@@ -41,6 +41,7 @@
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
+    @value-change="showTableFirstTime"
   >
     <template #empty>
       <div class="text-center py-5">
@@ -886,6 +887,16 @@ function observeTop() {
   });
   resizeObserver.observe(TableRef.value?.$el);
 }
+const dataIsAvailable = computed(() => contactsLength.value !== undefined);
+function showTableFirstTime() {
+  if (!showTable.value && dataIsAvailable.value) {
+    observeTop();
+    watchEffect(() => {
+      tableHeight.value = `${$screenStore.height - tablePosTop.value - 140}px`;
+    });
+    showTable.value = true;
+  }
+}
 
 onNuxtReady(() => {
   $screenStore.init();
@@ -900,21 +911,6 @@ onNuxtReady(() => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   $contactsStore.subscribeRealtime($user.value);
-  watch(
-    contactsLength,
-    () => {
-      if (contactsLength.value !== undefined) {
-        observeTop();
-        watchEffect(() => {
-          tableHeight.value = `${
-            $screenStore.height - tablePosTop.value - 140
-          }px`;
-        });
-        showTable.value = true;
-      }
-    },
-    { immediate: true, once: true }
-  );
   setTimeout(() => {
     loadTable.value = true;
   }, 5000);
