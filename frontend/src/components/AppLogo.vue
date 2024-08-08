@@ -1,7 +1,7 @@
 <template>
   <div class="flex">
-    <NuxtImg class="logo size-8 mt-1" src="/icons/pickaxe.svg" />
-    <NuxtImg class="ml-2 w-40" src="/logo/LogoWithoutIcon.png" />
+    <Image class="logo mt-1" image-class="size-8" src="/icons/pickaxe.svg" />
+    <Image class="ml-2" image-class="w-40" src="/logo/LogoWithoutIcon.png" />
   </div>
 </template>
 
