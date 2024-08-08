@@ -53,7 +53,7 @@
     "nodemon": "^3.1.0",
     "pg": "^8.11.5",
     "pg-format": "^1.0.4",
-    "qs": "^6.12.2",
+    "qs": "^6.12.3",
     "quoted-printable": "^1.0.1",
     "simple-oauth2": "^5.0.1",
     "stripe": "^13.11.0",
