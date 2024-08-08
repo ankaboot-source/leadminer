@@ -1,6 +1,6 @@
 <template>
   <DataTable
-    :value="contacts"
+    :value="[{}, {}, {}, {}, {}, {}, {}]"
     show-gridlines
     striped-rows
     paginator
@@ -127,5 +127,4 @@
 </template>
 <script setup lang="ts">
 const $screenStore = useScreenStore();
-const contacts = ref([{}, {}, {}, {}, {}, {}, {}]);
 </script>
