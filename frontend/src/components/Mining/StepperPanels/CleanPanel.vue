@@ -85,7 +85,7 @@ function cleaningDoneNotification() {
     detail: t('contacts_verified', {
       verifiedContacts: verifiedContacts.value.toLocaleString(),
     }),
-    group: 'achievment',
+    group: 'achievement',
     life: 5000,
   });
 }

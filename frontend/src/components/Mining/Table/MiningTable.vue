@@ -41,6 +41,7 @@
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
+    @value-change="showTableFirstTime"
   >
     <template #empty>
       <div class="text-center py-5">
@@ -202,11 +203,10 @@
       <template #body="{ data }">
         <div class="flex justify-between gap-3 items-center">
           <div class="flex items-center gap-2 max-sm:w-[60vw] md:grow">
-            <img
+            <NuxtImg
               v-if="data.image && visibleColumns.includes('image')"
               :src="data.image"
-              style="width: 48px"
-              class="cursor-pointer rounded-full"
+              class="cursor-pointer size-12 rounded-full"
               @click="openContactInformation(data)"
             />
             <span
@@ -886,6 +886,16 @@ function observeTop() {
   });
   resizeObserver.observe(TableRef.value?.$el);
 }
+const dataIsAvailable = computed(() => contactsLength.value !== undefined);
+function showTableFirstTime() {
+  if (!showTable.value && dataIsAvailable.value) {
+    observeTop();
+    watchEffect(() => {
+      tableHeight.value = `${$screenStore.height - tablePosTop.value - 140}px`;
+    });
+    showTable.value = true;
+  }
+}
 
 onNuxtReady(() => {
   $screenStore.init();
@@ -900,21 +910,6 @@ onNuxtReady(() => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   $contactsStore.subscribeRealtime($user.value);
-  watch(
-    contactsLength,
-    () => {
-      if (contactsLength.value !== undefined) {
-        observeTop();
-        watchEffect(() => {
-          tableHeight.value = `${
-            $screenStore.height - tablePosTop.value - 140
-          }px`;
-        });
-        showTable.value = true;
-      }
-    },
-    { immediate: true, once: true }
-  );
   setTimeout(() => {
     loadTable.value = true;
   }, 5000);

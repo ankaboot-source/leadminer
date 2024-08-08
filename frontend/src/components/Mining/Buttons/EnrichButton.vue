@@ -124,12 +124,14 @@ const contactsToEnrich = toRef(() => props.contactsToEnrich);
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
   summary: string,
-  detail: string
+  detail: string,
+  group?: 'achievement'
 ) {
   $toast.add({
     severity,
     summary,
     detail,
+    group,
     life: 5000,
   });
 }
@@ -143,13 +145,6 @@ function stopEnrichment() {
   enrichmentStatus.value = false;
   $leadminerStore.activeEnrichment = false;
 }
-
-const enrichmentMessage = (total: number) =>
-  total > 1
-    ? t('notification.enrichment_started_plural', {
-        total: total.toLocaleString(),
-      })
-    : t('notification.enrichment_started');
 
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
@@ -169,14 +164,6 @@ function setupEnrichmentRealtime() {
         const { total, enriched } = details.result;
 
         switch (status) {
-          case 'running':
-            showNotification(
-              'success',
-              t('notification.summary'),
-              enrichmentMessage(total)
-            );
-            break;
-
           case 'done':
             if (enriched) {
               showNotification(
@@ -185,7 +172,8 @@ function setupEnrichmentRealtime() {
                 t('notification.enrichment_completed', {
                   total: total.toLocaleString(),
                   enriched: enriched.toLocaleString(),
-                })
+                }),
+                'achievement'
               );
             } else {
               showNotification(
@@ -196,7 +184,6 @@ function setupEnrichmentRealtime() {
             }
             stopEnrichment();
             break;
-
           case 'canceled':
             showNotification(
               'error',
@@ -237,7 +224,6 @@ async function startEnrichment(partial: boolean) {
             t('notification.already_enriched')
           );
         }
-
         if (response.status === 402) {
           stopEnrichment();
           CreditsDialogRef.value?.openModal(
@@ -297,10 +283,10 @@ const closeDialog = () => {
     }
   },
   "fr": {
-    "update_all": "Remplir tout",
+    "update_all": "Tout remplir",
     "update_empty": "Remplir les champs vides",
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
-    "confirm_enrichment": "Confirmer l'enrichissement de contact | Confirmer l'enrichissement des {n} contacts",
+    "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
       "enrichment_started": "L'enrichissement est en cours.",
