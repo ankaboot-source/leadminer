@@ -29,18 +29,14 @@
     <Button
       v-if="!activeMiningTask"
       :disabled="
-        activeMiningTask ||
-        $leadminerStore.isLoadingStartMining ||
-        $leadminerStore.isLoadingBoxes
+        $leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining
       "
       :loading="$leadminerStore.isLoadingStartMining"
       severity="contrast"
       class="border-solid border-2 border-black"
       :label="t('start_mining_now')"
-      loading-icon="pi pi-spinner"
       @click="startMining"
-    >
-    </Button>
+    />
     <Button
       v-else
       :loading="$leadminerStore?.isLoadingStartMining"
@@ -95,18 +91,14 @@
       <Button
         v-if="!activeMiningTask"
         :disabled="
-          activeMiningTask ||
-          $leadminerStore.isLoadingStartMining ||
-          $leadminerStore.isLoadingBoxes
+          $leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining
         "
         :loading="$leadminerStore.isLoadingStartMining"
         severity="contrast"
         class="border-solid border-2 border-black"
         :label="t('start_mining_now')"
-        loading-icon="pi pi-spinner"
         @click="startMining"
-      >
-      </Button>
+      />
       <Button
         v-else
         :loading="$leadminerStore?.isLoadingStartMining"
@@ -220,7 +212,7 @@ watch(extractionFinished, (finished) => {
       detail: t('contacts_extracted', {
         extractedEmails: extractedEmails.value,
       }),
-      group: 'achievment',
+      group: 'achievement',
       life: 5000,
     });
     $stepper.next();

@@ -112,7 +112,7 @@ onNuxtReady(() => {
     "source": "Source"
   },
   "fr": {
-    "mine_contacts": "Extraire des contacts de votre compte email",
+    "mine_contacts": "Extraire des contacts de votre email",
     "source": "Source"
   }
 }

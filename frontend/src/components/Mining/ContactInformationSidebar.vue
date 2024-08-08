@@ -8,12 +8,11 @@
     <template #header><span class="grow" /> </template>
     <div class="px-4">
       <div class="flex items-center gap-2">
-        <img
+        <NuxtImg
           v-if="contact.image && !editingContact"
           :src="contact.image"
           class="size-20 rounded-full"
         />
-
         <span class="w-3/4">
           <div
             v-if="contact.name && !editingContact"
