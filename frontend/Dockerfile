@@ -26,7 +26,7 @@ ENV SAAS_SUPABASE_ANON_KEY ${SAAS_SUPABASE_ANON_KEY}
 WORKDIR /frontend
 COPY . .
 
-RUN npm install && npm run build
+RUN npm install && npx nuxi@latest module add @nuxt/image && npm run build
 
 EXPOSE 3000
 
