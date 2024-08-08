@@ -203,11 +203,10 @@
       <template #body="{ data }">
         <div class="flex justify-between gap-3 items-center">
           <div class="flex items-center gap-2 max-sm:w-[60vw] md:grow">
-            <Image
+            <NuxtImg
               v-if="data.image && visibleColumns.includes('image')"
               :src="data.image"
-              class="cursor-pointer"
-              image-class="size-12 rounded-full"
+              class="cursor-pointer size-12 rounded-full"
               @click="openContactInformation(data)"
             />
             <span
