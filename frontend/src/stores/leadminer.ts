@@ -194,7 +194,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       );
 
       miningTask.value = task;
-      miningStartedAt.value = Date.now();
+      miningStartedAt.value = performance.now();
       loadingStatus.value = false;
       loadingStatusDns.value = false;
       isLoadingStartMining.value = false;
