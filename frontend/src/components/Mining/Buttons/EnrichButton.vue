@@ -161,7 +161,7 @@ function setupEnrichmentRealtime() {
         enrichmentRealtimeCallback(payload);
 
         const { status, details } = payload.new as EnrichmentTask;
-        const { total, enriched } = details.result;
+        const { enriched } = details.result;
 
         switch (status) {
           case 'done':
