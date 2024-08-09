@@ -65,16 +65,16 @@ import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
 import type { MiningSourceType } from '~/types/mining';
 
 const MiningConsentSidebar = defineAsyncComponent(
-  () => import('./MiningConsentSidebar.vue')
+  () => import('./MiningConsentSidebar.vue'),
 );
 const MinePanel = defineAsyncComponent(
-  () => import('./StepperPanels/MinePanel.vue')
+  () => import('./StepperPanels/MinePanel.vue'),
 );
 const CleanPanel = defineAsyncComponent(
-  () => import('./StepperPanels/CleanPanel.vue')
+  () => import('./StepperPanels/CleanPanel.vue'),
 );
 const EnrichPanel = defineAsyncComponent(
-  () => import('./StepperPanels/EnrichPanel.vue')
+  () => import('./StepperPanels/EnrichPanel.vue'),
 );
 
 const { t } = useI18n({

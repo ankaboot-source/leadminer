@@ -26,7 +26,7 @@ export const useMiningConsentSidebar = defineStore(
       show,
       $reset,
     };
-  }
+  },
 );
 
 export const useMiningContactInformationSidebar = defineStore(
@@ -51,5 +51,5 @@ export const useMiningContactInformationSidebar = defineStore(
       show,
       $reset,
     };
-  }
+  },
 );

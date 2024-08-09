@@ -8,7 +8,7 @@ async function testRegexSafety(regexSource: string, regexFlags: string) {
   if (diagnostics.status === 'vulnerable') {
     const vulParts = diagnostics.hotspot.map(
       (i) =>
-        ` index(${i.start}, ${i.end}): ${regexSource.slice(i.start, i.end)}`
+        ` index(${i.start}, ${i.end}): ${regexSource.slice(i.start, i.end)}`,
     );
 
     const messageError = `

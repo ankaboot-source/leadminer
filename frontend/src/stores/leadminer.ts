@@ -114,14 +114,14 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       miningSources.value = updateMiningSourcesValidity(
         miningSources.value,
         activeMiningSource.value,
-        true
+        true,
       );
       isLoadingBoxes.value = false;
     } catch (error) {
       miningSources.value = updateMiningSourcesValidity(
         miningSources.value,
         activeMiningSource.value as MiningSource,
-        false
+        false,
       );
 
       isLoadingBoxes.value = false;
@@ -155,11 +155,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           method: 'POST',
           body: {
             boxes: Object.keys(selectedBoxes.value).filter(
-              (key) => selectedBoxes.value[key].checked && key !== ''
+              (key) => selectedBoxes.value[key].checked && key !== '',
             ),
             miningSource: activeMiningSource.value,
           },
-        }
+        },
       );
 
       const task = data;
@@ -191,7 +191,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           onCreatedContacts: (totalCreated) => {
             createdContacts.value = totalCreated;
           },
-        }
+        },
       );
 
       miningTask.value = task;

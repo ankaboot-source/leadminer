@@ -194,7 +194,7 @@ function handleAuthenticationErrors(err: FetchError) {
 }
 
 async function getImapConfigsForEmail(
-  email: string
+  email: string,
 ): Promise<ImapConfigs | null> {
   try {
     const configs =

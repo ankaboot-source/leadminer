@@ -32,7 +32,7 @@ class SSE {
       onExtractionDone: (totalExtracted: number) => void;
       onCreatedContacts: (totalCreated: number) => void;
       onVerifiedContacts: (totalVerified: number) => void;
-    }
+    },
   ) {
     this.closeConnection();
     this.ctrl = new AbortController();
@@ -68,7 +68,7 @@ class SSE {
         },
         signal: this.ctrl.signal,
         openWhenHidden: true,
-      }
+      },
     );
   }
 }

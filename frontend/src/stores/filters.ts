@@ -7,7 +7,7 @@ import { defineStore } from 'pinia';
 
 const ANY_SELECTED = 'ANY_SELECTED';
 FilterService.register(ANY_SELECTED, (value, filter) =>
-  !filter ? true : filter.some((item: string) => value.includes(item))
+  !filter ? true : filter.some((item: string) => value.includes(item)),
 );
 const defaultFilters = {
   global: {
@@ -106,13 +106,13 @@ export const useFiltersStore = defineStore('filters', () => {
     filters.value = JSON.parse(JSON.stringify(defaultFilters));
   }
   const isDefaultFilters = computed(
-    () => JSON.stringify(filters.value) === JSON.stringify(defaultFilters)
+    () => JSON.stringify(filters.value) === JSON.stringify(defaultFilters),
   );
 
   // skipcq: JS-0323
   function debounce<T extends (...args: any[]) => any>(
     func: T,
-    wait: number
+    wait: number,
   ): (...args: Parameters<T>) => void {
     let timeout: ReturnType<typeof setTimeout> | null = null;
     return function _(...args: Parameters<T>): void {
@@ -162,7 +162,7 @@ export const useFiltersStore = defineStore('filters', () => {
     (newStatusValue) => {
       validToggle.value =
         newStatusValue.length === 1 && newStatusValue[0] === 'VALID';
-    }
+    },
   );
 
   const repliesToggle = ref(false); // replies: >=1
@@ -181,7 +181,7 @@ export const useFiltersStore = defineStore('filters', () => {
         newRepliesValue.length === 1 &&
         newRepliesValue[0].value === 1 &&
         newRepliesValue[0].matchMode === 'gte';
-    }
+    },
   );
 
   const recentToggle = ref(false); // recency: <3 years
@@ -193,7 +193,7 @@ export const useFiltersStore = defineStore('filters', () => {
     filters.value.recency.constraints?.splice(1);
     filters.value.recency.constraints[0].value = recentToggle.value
       ? new Date(
-          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+          new Date().setFullYear(new Date().getFullYear() - recentYearsAgo),
         )
       : null;
   }
@@ -205,10 +205,10 @@ export const useFiltersStore = defineStore('filters', () => {
         newRecencyConstraints.length === 1 &&
         newRecencyConstraints[0].value?.toLocaleDateString() ===
           new Date(
-            new Date().setFullYear(new Date().getFullYear() - recentYearsAgo)
+            new Date().setFullYear(new Date().getFullYear() - recentYearsAgo),
           ).toLocaleDateString();
     },
-    { deep: true }
+    { deep: true },
   );
 
   function toggleFilters(value = true) {
@@ -227,7 +227,7 @@ export const useFiltersStore = defineStore('filters', () => {
     () =>
       Number(validToggle.value) +
       Number(repliesToggle.value) +
-      Number(recentToggle.value)
+      Number(recentToggle.value),
   );
 
   return {

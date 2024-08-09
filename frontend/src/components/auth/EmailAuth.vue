@@ -162,7 +162,7 @@ const { state } = withDefaults(
   }>(),
   {
     state: 'login',
-  }
+  },
 );
 
 const $toast = useToast();
@@ -178,15 +178,15 @@ const password = ref('');
 const passwordFocus = ref(false);
 
 const hasLowerCase = computed(
-  () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value)
+  () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value),
 );
 
 const hasUpperCase = computed(
-  () => Boolean(password.value) && /.*[A-Z]+.*/g.test(password.value)
+  () => Boolean(password.value) && /.*[A-Z]+.*/g.test(password.value),
 );
 
 const hasNumber = computed(
-  () => Boolean(password.value) && /.*[0-9]+.*/g.test(password.value)
+  () => Boolean(password.value) && /.*[0-9]+.*/g.test(password.value),
 );
 
 const isLoading = ref(false);

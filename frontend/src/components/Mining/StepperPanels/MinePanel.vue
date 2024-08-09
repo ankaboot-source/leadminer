@@ -15,7 +15,7 @@
       </div>
       <div v-else-if="!$leadminerStore.miningTask">
         {{ totalEmails.toLocaleString() }}
-        {{ t('email_messages_to_mine') }}
+        {{ t('email_messages_to_mine', totalEmails) }}
       </div>
     </template>
   </ProgressCard>
@@ -139,10 +139,10 @@ const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
 
 const boxes = computed(() => $leadminerStore.boxes);
 const selectedBoxes = computed<TreeSelectionKeys>(
-  () => $leadminerStore.selectedBoxes
+  () => $leadminerStore.selectedBoxes,
 );
 const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined,
 );
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
@@ -172,14 +172,14 @@ const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 const extractionProgress = computed(() =>
   $leadminerStore.fetchingFinished && !canceled
     ? extractedEmails.value / $leadminerStore.scannedEmails || 0
-    : extractedEmails.value / totalEmails.value || 0
+    : extractedEmails.value / totalEmails.value || 0,
 );
 
 const progressTooltip = computed(() =>
   t('mined_total_emails', {
     extractedEmails: extractedEmails.value.toLocaleString(),
     totalEmails: totalEmails.value.toLocaleString(),
-  })
+  }),
 );
 
 onMounted(async () => {
@@ -228,7 +228,7 @@ function openMiningSettings() {
 async function startMining() {
   if (
     Object.keys(selectedBoxes.value).filter(
-      (key) => selectedBoxes.value[key].checked && key !== ''
+      (key) => selectedBoxes.value[key].checked && key !== '',
     ).length === 0
   ) {
     openMiningSettings();
@@ -298,7 +298,7 @@ async function haltMining() {
 {
   "en": {
     "retrieving_mailboxes": "Retrieving mailboxes...",
-    "email_messages_to_mine": "email messages to mine.",
+    "email_messages_to_mine": "email message to mine. | email messages to mine.",
     "start_mining_now": "Start mining now!",
     "halt_mining": "Halt mining",
     "fine_tune_mining": "Fine tune mining",
@@ -318,7 +318,7 @@ async function haltMining() {
   },
   "fr": {
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
-    "email_messages_to_mine": "email à extraire.",
+    "email_messages_to_mine": "email à extraire. | emails à extraire",
     "start_mining_now": "Lancer maintenant l'extraction !",
     "halt_mining": "Arrêter l'extraction",
     "fine_tune_mining": "Affiner l'extraction",

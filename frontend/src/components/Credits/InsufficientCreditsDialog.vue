@@ -61,7 +61,7 @@ function openModal(
   hasDeficientCredits: boolean,
   totalUnits: number,
   availableUnits: number,
-  availableAlreadyUnits: number
+  availableAlreadyUnits: number,
 ) {
   total.value = totalUnits;
   available.value = availableUnits;
@@ -78,7 +78,7 @@ const downloadActionLabel = computed(() =>
   t('action_type_only', {
     actionType,
     available: availableAlready.value + available.value,
-  })
+  }),
 );
 const buyOrUpgrade = () => {
   refillCreditsOrUpgrade();

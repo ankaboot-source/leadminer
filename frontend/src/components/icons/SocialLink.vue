@@ -30,7 +30,7 @@ function getSameAsIcon(url: string) {
   try {
     const domain = new URL(url).hostname.split('.')[0];
     const match = domain.match(
-      /^(twitter|linkedin|facebook|instagram|x)$/i
+      /^(twitter|linkedin|facebook|instagram|x)$/i,
     )?.[0];
     if (match === 'x') {
       return 'twitter';
