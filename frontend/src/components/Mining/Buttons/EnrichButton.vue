@@ -268,8 +268,6 @@ const closeDialog = () => {
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
       "summary": "Enrich",
-      "enrichment_started": "Enrichment is running.",
-      "enrichment_started_plural": "Enrichment is running for {total} contacts.",
       "enrichment_completed": "{enriched} of your contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
@@ -288,8 +286,6 @@ const closeDialog = () => {
     "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
-      "enrichment_started": "L'enrichissement est en cours.",
-      "enrichment_started_plural": "L'enrichissement est en cours pour ${total} contacts.",
       "enrichment_completed": "$${enriched} de vos contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
