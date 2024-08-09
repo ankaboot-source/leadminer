@@ -170,7 +170,6 @@ function setupEnrichmentRealtime() {
                 'success',
                 t('notification.summary'),
                 t('notification.enrichment_completed', {
-                  total: total.toLocaleString(),
                   enriched: enriched.toLocaleString(),
                 }),
                 'achievement',
@@ -271,7 +270,7 @@ const closeDialog = () => {
       "summary": "Enrich",
       "enrichment_started": "Enrichment is running.",
       "enrichment_started_plural": "Enrichment is running for {total} contacts.",
-      "enrichment_completed": "{total}/{enriched} of your contacts has been successfully enriched.",
+      "enrichment_completed": "{enriched} of your contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
@@ -291,7 +290,7 @@ const closeDialog = () => {
       "summary": "Enrichir",
       "enrichment_started": "L'enrichissement est en cours.",
       "enrichment_started_plural": "L'enrichissement est en cours pour ${total} contacts.",
-      "enrichment_completed": "${total}/${enriched} de vos contacts ont été enrichis avec succès.",
+      "enrichment_completed": "$${enriched} de vos contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
       "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
