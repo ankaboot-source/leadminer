@@ -629,7 +629,7 @@ const showTable = ref(false);
 
 const loadingLabel = ref('');
 const contacts = computed(() =>
-  loadTable.value ? $contactsStore.contacts : []
+  loadTable.value ? $contactsStore.contacts : undefined
 );
 const contactsLength = computed(() => contacts.value?.length);
 
@@ -882,22 +882,30 @@ const scrollHeight = computed(() =>
 );
 
 function observeTop() {
-  const resizeObserver = new ResizeObserver(() => {
-    tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
-  });
-  resizeObserver.observe(TableRef.value?.$el);
+  if (TableRef.value) {
+    const resizeObserver = new ResizeObserver(() => {
+      tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
+    });
+    resizeObserver.observe(TableRef.value?.$el);
+  }
 }
-const dataIsAvailable = computed(() => contactsLength.value !== undefined);
+
 function showTableFirstTime() {
-  if (!showTable.value && dataIsAvailable.value) {
+  if (!showTable.value && contactsLength.value !== undefined) {
     observeTop();
     watchEffect(() => {
-      tableHeight.value = `${$screenStore.height - tablePosTop.value - 140}px`;
+      tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
     });
     showTable.value = true;
   }
 }
-
+watch(
+  () => contactsLength.value,
+  () => {
+    if (contactsLength.value !== undefined) showTableFirstTime();
+  },
+  { deep: true, immediate: true }
+);
 onNuxtReady(() => {
   $screenStore.init();
   visibleColumns.value = [
