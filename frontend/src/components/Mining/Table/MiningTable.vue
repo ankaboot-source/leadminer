@@ -201,48 +201,56 @@
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex justify-between gap-3 items-center">
-          <div class="flex items-center gap-2 max-sm:w-[60vw] md:grow">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
             <Image
               v-if="data.image && visibleColumns.includes('image')"
               :src="data.image"
-              class="cursor-pointer"
+              class="cursor-pointer flex-none"
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
             />
-            <span
+            <div
+              class="flex items-center gap-2"
               :class="
                 data.image && visibleColumns.includes('image')
-                  ? 'max-sm:w-4/5'
-                  : 'max-sm:w-full'
+                  ? 'max-xl:w-[30vw] max-lg:w-[40vw]'
+                  : 'max-xl:w-[45vw] max-lg:w-[55vw]'
               "
             >
-              <template v-if="data.name && visibleColumns.includes('name')">
-                <div class="font-medium max-sm:truncate">
+              <div
+                :class="
+                  data.image && visibleColumns.includes('image')
+                    ? 'max-lg:max-w-[40vw]'
+                    : 'max-lg:max-w-[55vw]'
+                "
+              >
+                <div class="font-medium max-lg:truncate">
                   {{ data.name }}
                 </div>
-                <div class="max-sm:truncate">{{ data.email }}</div>
-              </template>
-              <div v-else class="font-medium max-sm:truncate">
-                {{ data.email }}
+                <div
+                  class="max-sm:truncate"
+                  :class="!data.name ? 'font-medium' : ''"
+                >
+                  {{ data.email }}
+                </div>
               </div>
-            </span>
+              <div
+                v-if="data.same_as && visibleColumns.includes('same_as')"
+                class="flex gap-2"
+              >
+                <social-links :social-links="data.same_as" :small="true" />
+              </div>
+            </div>
           </div>
-          <div
-            v-if="data.same_as && visibleColumns.includes('same_as')"
-            class="flex gap-2"
-          >
-            <social-links :social-links="data.same_as" :small="true" />
-          </div>
-          <div>
-            <Button
-              rounded
-              text
-              icon="pi pi-id-card"
-              :aria-label="t('contact_information')"
-              @click="openContactInformation(data)"
-            />
-          </div>
+
+          <Button
+            rounded
+            text
+            icon="pi pi-id-card"
+            :aria-label="t('contact_information')"
+            @click="openContactInformation(data)"
+          />
         </div>
       </template>
     </Column>

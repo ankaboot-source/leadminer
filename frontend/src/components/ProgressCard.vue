@@ -8,7 +8,7 @@
 
     <div id="progress-time" class="hidden md:block">
       <slot name="progress-time">
-        <div v-if="progressStartedAt">
+        <div v-if="progressPercentage < 100">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
         <div v-else-if="progressPercentage === 100">
@@ -75,7 +75,7 @@ function getElapsedTime() {
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();
 
-  if (props.progress === 0 || props.progress < 0.1 || elapsedTime === 0) {
+  if (props.progress < 0.1 || elapsedTime === 0) {
     return Math.round(props.total / props.rate);
   }
 
