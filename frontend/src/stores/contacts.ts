@@ -20,7 +20,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contacts.value = newContacts;
     if (contacts.value.length) {
       cache = new Map(
-        contacts.value.map((contact) => [contact.email, contact])
+        contacts.value.map((contact) => [contact.email, contact]),
       );
     }
   }
@@ -54,7 +54,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
           const cachedContact = cache.get(newContact.email);
           cache.set(newContact.email, { ...cachedContact, ...newContact });
-        }
+        },
       );
 
     syncInterval = window.setInterval(() => {

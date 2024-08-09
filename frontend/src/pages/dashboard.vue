@@ -6,7 +6,7 @@
 </template>
 <script setup lang="ts">
 const MiningTable = defineAsyncComponent(
-  () => import('../components/Mining/Table/MiningTable.vue')
+  () => import('../components/Mining/Table/MiningTable.vue'),
 );
 
 const collapsedStepper = ref(false);

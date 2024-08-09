@@ -604,16 +604,16 @@ import { saveCSVFile } from '~/utils/csv';
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 
 const SocialLinks = defineAsyncComponent(
-  () => import('../../icons/SocialLink.vue')
+  () => import('../../icons/SocialLink.vue'),
 );
 const CreditsDialog = defineAsyncComponent(
-  () => import('../../Credits/InsufficientCreditsDialog.vue')
+  () => import('../../Credits/InsufficientCreditsDialog.vue'),
 );
 const EnrichButton = defineAsyncComponent(
-  () => import('../Buttons/EnrichButton.vue')
+  () => import('../Buttons/EnrichButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
-  () => import('../ContactInformationSidebar.vue')
+  () => import('../ContactInformationSidebar.vue'),
 );
 
 const { t } = useI18n({
@@ -637,12 +637,12 @@ const showTable = ref(false);
 
 const loadingLabel = ref('');
 const contacts = computed(() =>
-  loadTable.value ? $contactsStore.contacts : undefined
+  loadTable.value ? $contactsStore.contacts : undefined,
 );
 const contactsLength = computed(() => contacts.value?.length);
 
 const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined,
 );
 
 function openContactInformation(data: Contact) {
@@ -743,17 +743,17 @@ const implicitlySelectedContacts = computed(() => {
 });
 
 const implicitlySelectedContactsLength = computed(
-  () => implicitlySelectedContacts.value.length
+  () => implicitlySelectedContacts.value.length,
 );
 
 const implicitSelectAll = computed(
-  () => implicitlySelectedContactsLength.value === contactsLength.value
+  () => implicitlySelectedContactsLength.value === contactsLength.value,
 );
 
 const contactsToExport = computed<string[] | undefined>(() =>
   implicitSelectAll.value
     ? undefined
-    : implicitlySelectedContacts.value.map((item: Contact) => item.email)
+    : implicitlySelectedContacts.value.map((item: Contact) => item.email),
 );
 
 watch(
@@ -761,7 +761,7 @@ watch(
   () => {
     $contactsStore.selected = contactsToExport.value;
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: true },
 );
 
 watch(implicitlySelectedContactsLength, () => {
@@ -777,7 +777,7 @@ const isExportDisabled = computed(
     contactsLength.value === 0 ||
     activeMiningTask.value ||
     $leadminerStore.loadingStatusDns ||
-    !implicitlySelectedContactsLength.value
+    !implicitlySelectedContactsLength.value,
 );
 function getFileName() {
   const { email } = $user.value;
@@ -796,7 +796,7 @@ const openCreditModel = (
     total: number;
     available: number;
     availableAlready: number;
-  }
+  },
 ) => {
   if (total === undefined || available === undefined) {
     return $toast.add({
@@ -809,7 +809,7 @@ const openCreditModel = (
     hasDeficientCredits,
     total,
     available,
-    availableAlready ?? 0
+    availableAlready ?? 0,
   );
 };
 
@@ -881,12 +881,12 @@ function onSelectColumnsChange() {
 /* Table dynamic Height */
 const TableRef = ref();
 const tablePosTop = ref<number>(
-  TableRef.value?.$el.getBoundingClientRect().top ?? 0
+  TableRef.value?.$el.getBoundingClientRect().top ?? 0,
 );
 
 const tableHeight = ref('37vh');
 const scrollHeight = computed(() =>
-  !isFullscreen.value ? tableHeight.value : ''
+  !isFullscreen.value ? tableHeight.value : '',
 );
 
 function observeTop() {
@@ -912,7 +912,7 @@ watch(
   () => {
     if (contactsLength.value !== undefined) showTableFirstTime();
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: true },
 );
 onNuxtReady(() => {
   $screenStore.init();

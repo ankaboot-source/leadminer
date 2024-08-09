@@ -10,7 +10,7 @@ import type { MiningSource } from '~/types/mining';
 export function updateMiningSourcesValidity(
   miningSources: MiningSource[],
   activeMiningSource: MiningSource,
-  isValid: boolean
+  isValid: boolean,
 ) {
   /**
    * Updates the validity of mining sources based on the provided active mining source.
