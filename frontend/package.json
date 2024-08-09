@@ -52,6 +52,7 @@
     "pinia": "^2.1.7",
     "prettier": "^2.8.7",
     "primeicons": "^7.0.0",
-    "primevue": "^4.0.1"
+    "primevue": "^4.0.1",
+    "tailwindcss-primeui": "^0.3.4"
   }
 }

@@ -8,7 +8,7 @@
 
     <div id="progress-time" class="hidden md:block">
       <slot name="progress-time">
-        <div v-if="progressStartedAt">
+        <div v-if="progressPercentage < 100">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
         <div v-else-if="progressPercentage === 100">
