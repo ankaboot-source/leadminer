@@ -38,6 +38,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   function $resetMining() {
     miningTask.value = undefined;
+    miningStartedAt.value = 0;
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];

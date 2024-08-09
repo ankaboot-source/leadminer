@@ -8,7 +8,7 @@
 
     <div id="progress-time" class="hidden md:block">
       <slot name="progress-time">
-        <div v-if="stillInprogress">
+        <div v-if="progressStartedAt">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
         <div v-else-if="progressPercentage === 100">
@@ -64,9 +64,6 @@ const props = defineProps({
 const progressStartedAt = computed(() => props.started);
 const progressValue = computed(() => Math.round(props.progress * 100));
 const progressPercentage = computed(() => Math.floor(progressValue.value));
-const stillInprogress = computed(
-  () => props.started && progressPercentage.value < 100
-);
 const progressColor = computed(() =>
   progressPercentage.value < 100 ? 'bg-amber-400' : 'bg-green-600'
 );
