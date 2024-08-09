@@ -14,7 +14,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const activeMiningSource = ref<MiningSource | undefined>();
 
   const miningTask = ref<MiningTask | undefined>();
-  const miningStartedAt = ref<number>();
+  const miningStartedAt = ref<number | undefined>();
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<TreeSelectionKeys>([]);

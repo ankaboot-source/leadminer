@@ -69,7 +69,7 @@ const progressColor = computed(() =>
 );
 
 function getElapsedTime() {
-  return Math.floor((performance.now() - progressStartedAt.value) / 1000);
+  return Math.floor((performance.now() - progressStartedAt.value || 0) / 1000);
 }
 
 function getEstimatedRemainingTime() {
