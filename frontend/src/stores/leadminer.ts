@@ -175,7 +175,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           },
           onClose: () => {
             miningTask.value = undefined;
-            miningStartedAt.value = undefined;
             sse.closeConnection();
           },
           onFetchingDone: (totalFetched) => {
@@ -229,7 +228,6 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       });
 
       miningTask.value = undefined;
-      miningStartedAt.value = undefined;
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;

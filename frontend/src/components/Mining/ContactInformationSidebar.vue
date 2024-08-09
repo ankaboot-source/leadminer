@@ -7,14 +7,14 @@
   >
     <template #header><span class="grow" /> </template>
     <div class="px-4">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 w-full">
         <Image
           v-if="contact.image && !editingContact"
           :src="contact.image"
           class="rounded-full"
           image-class="size-20"
         />
-        <span class="w-3/4">
+        <span :class="contact.image && !editingContact ? 'w-3/4' : 'w-full'">
           <div
             v-if="contact.name && !editingContact"
             class="font-medium text-xl md:text-2xl truncate"
@@ -34,16 +34,18 @@
               'font-medium text-xl md:text-2xl':
                 !contact.name && !editingContact,
             }"
-            class="flex items-center gap-2"
+            class="w-full flex items-center gap-2 max-lg:justify-between"
           >
-            <Badge
-              v-tooltip.top="getStatusLabel(contact.status)"
-              class="min-w-4 h-4 flex-none"
-              :severity="getStatusColor(contact.status)"
-            />
-            <span class="truncate">
-              {{ contact.email }}
-            </span>
+            <div class="flex items-center gap-2">
+              <Badge
+                v-tooltip.top="getStatusLabel(contact.status)"
+                class="min-w-4 h-4 flex-none"
+                :severity="getStatusColor(contact.status)"
+              />
+              <span class="truncate">
+                {{ contact.email }}
+              </span>
+            </div>
             <Button
               v-if="!editingContact"
               rounded
