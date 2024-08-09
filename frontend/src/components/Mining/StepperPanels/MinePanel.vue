@@ -15,7 +15,7 @@
       </div>
       <div v-else-if="!$leadminerStore.miningTask">
         {{ totalEmails.toLocaleString() }}
-        {{ t('email_messages_to_mine',totalEmails) }}
+        {{ t('email_messages_to_mine', totalEmails) }}
       </div>
     </template>
   </ProgressCard>
