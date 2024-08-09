@@ -139,10 +139,10 @@ const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
 
 const boxes = computed(() => $leadminerStore.boxes);
 const selectedBoxes = computed<TreeSelectionKeys>(
-  () => $leadminerStore.selectedBoxes
+  () => $leadminerStore.selectedBoxes,
 );
 const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined,
 );
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
@@ -172,14 +172,14 @@ const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 const extractionProgress = computed(() =>
   $leadminerStore.fetchingFinished && !canceled
     ? extractedEmails.value / $leadminerStore.scannedEmails || 0
-    : extractedEmails.value / totalEmails.value || 0
+    : extractedEmails.value / totalEmails.value || 0,
 );
 
 const progressTooltip = computed(() =>
   t('mined_total_emails', {
     extractedEmails: extractedEmails.value.toLocaleString(),
     totalEmails: totalEmails.value.toLocaleString(),
-  })
+  }),
 );
 
 onMounted(async () => {
@@ -228,7 +228,7 @@ function openMiningSettings() {
 async function startMining() {
   if (
     Object.keys(selectedBoxes.value).filter(
-      (key) => selectedBoxes.value[key].checked && key !== ''
+      (key) => selectedBoxes.value[key].checked && key !== '',
     ).length === 0
   ) {
     openMiningSettings();

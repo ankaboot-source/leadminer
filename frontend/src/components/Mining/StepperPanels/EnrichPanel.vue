@@ -83,10 +83,10 @@ const enrichedContacts = ref(0);
 const currentProgress = ref<number | undefined>();
 
 const progressMode = computed(() =>
-  activeTask.value ? 'indeterminate' : 'determinate'
+  activeTask.value ? 'indeterminate' : 'determinate',
 );
 const progressColor = computed(() =>
-  activeTask.value ? 'bg-amber-400' : 'bg-green-600'
+  activeTask.value ? 'bg-amber-400' : 'bg-green-600',
 );
 
 watch(contactsToEnrichLength, () => {
@@ -105,7 +105,7 @@ const enrichRequestResponseCallback = ({ response }: any) => {
   }
 };
 const enrichmentRealtimeCallback = (
-  payload: RealtimePostgresChangesPayload<EnrichmentTask>
+  payload: RealtimePostgresChangesPayload<EnrichmentTask>,
 ) => {
   const { status, details } = payload.new as EnrichmentTask;
   const { enriched } = details.result;

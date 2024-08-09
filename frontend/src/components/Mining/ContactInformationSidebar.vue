@@ -104,7 +104,7 @@
             </div>
             <Textarea
               v-else
-              v-model="(contactEdit.alternate_names as string)"
+              v-model="contactEdit.alternate_names as string"
               rows="3"
               class="w-full"
             />
@@ -139,7 +139,7 @@
             <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
             <td>
               <Textarea
-                v-model="(contactEdit.same_as as string)"
+                v-model="contactEdit.same_as as string"
                 class="w-full"
                 rows="3"
                 :invalid="!isValidSameAs"
@@ -229,7 +229,7 @@ const skipDialog = computed(
       contact.value.job_title ||
       contact.value.same_as ||
       contact.value.image
-    )
+    ),
 );
 
 function isValidURL(url: string) {
@@ -257,7 +257,7 @@ const isValidAvatar = computed(() => {
 let personsSubscription: RealtimeChannel;
 
 const enrichmentRealtimeCallback = (
-  payload: RealtimePostgresChangesPayload<EnrichmentTask>
+  payload: RealtimePostgresChangesPayload<EnrichmentTask>,
 ) => {
   const { status } = payload.new as EnrichmentTask;
   switch (status) {
@@ -275,7 +275,7 @@ const enrichmentRealtimeCallback = (
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
   summary: string,
-  detail: string
+  detail: string,
 ) {
   $toast.add({
     severity,
@@ -316,7 +316,7 @@ function startRealtimePersons(userId: string, email: string) {
             : updatedContact.works_for;
         }
         $contactInformationSidebar.contact = updatedContact;
-      }
+      },
     );
   personsSubscription.subscribe();
 }
@@ -351,7 +351,7 @@ async function saveContactInformations() {
     showNotification(
       'error',
       t('url_invalid_summary'),
-      t('url_invalid_detail')
+      t('url_invalid_detail'),
     );
     return;
   }
@@ -388,7 +388,7 @@ function cancelContactInformations() {
 function copyContact(email: string, name?: string) {
   showNotification('success', t('contact_copied'), t('contact_email_copied'));
   navigator.clipboard.writeText(
-    name && name !== '' ? `${name} <${email}>` : `<${email}>`
+    name && name !== '' ? `${name} <${email}>` : `<${email}>`,
   );
 }
 </script>

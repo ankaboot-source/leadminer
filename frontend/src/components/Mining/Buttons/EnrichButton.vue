@@ -14,7 +14,7 @@
     :header="
       t(
         'confirm_enrichment',
-        contactsToEnrich?.length ?? $contactsStore.selectedLength
+        contactsToEnrich?.length ?? $contactsStore.selectedLength,
       )
     "
     class="w-full sm:w-[35rem]"
@@ -95,7 +95,7 @@ const enrichmentStatus = defineModel<boolean>('enrichmentStatus');
 const props = defineProps<{
   startOnMounted: boolean;
   enrichmentRealtimeCallback: (
-    payload: RealtimePostgresChangesPayload<EnrichmentTask>
+    payload: RealtimePostgresChangesPayload<EnrichmentTask>,
   ) => void;
   enrichmentRequestResponseCallback: ({ response }: any) => void;
   contactsToEnrich?: string[];
@@ -125,7 +125,7 @@ function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
   summary: string,
   detail: string,
-  group?: 'achievement'
+  group?: 'achievement',
 ) {
   $toast.add({
     severity,
@@ -173,13 +173,13 @@ function setupEnrichmentRealtime() {
                   total: total.toLocaleString(),
                   enriched: enriched.toLocaleString(),
                 }),
-                'achievement'
+                'achievement',
               );
             } else {
               showNotification(
                 'info',
                 t('notification.summary'),
-                t('notification.no_additional_info')
+                t('notification.no_additional_info'),
               );
             }
             stopEnrichment();
@@ -188,7 +188,7 @@ function setupEnrichmentRealtime() {
             showNotification(
               'error',
               t('notification.summary'),
-              t('notification.enrichment_canceled')
+              t('notification.enrichment_canceled'),
             );
             stopEnrichment();
             break;
@@ -196,7 +196,7 @@ function setupEnrichmentRealtime() {
           default:
             break;
         }
-      }
+      },
     );
   subscription.subscribe();
 }
@@ -221,7 +221,7 @@ async function startEnrichment(partial: boolean) {
           showNotification(
             'info',
             t('notification.summary'),
-            t('notification.already_enriched')
+            t('notification.already_enriched'),
           );
         }
         if (response.status === 402) {
@@ -230,7 +230,7 @@ async function startEnrichment(partial: boolean) {
             available === 0,
             total,
             available,
-            0
+            0,
           );
         }
       },

@@ -5,7 +5,7 @@
         <span class="text-4xl font-bold font-[Merriweather]">
           {{
             `${$t('common.create')} ${$t('common.your')} ${$t(
-              'common.account'
+              'common.account',
             )}`
           }}
         </span>

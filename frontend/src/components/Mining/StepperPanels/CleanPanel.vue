@@ -65,17 +65,17 @@ const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
 const verificationFinished = computed(
   () =>
     verifiedContacts.value > 0 &&
-    verifiedContacts.value === contactsToVerify.value
+    verifiedContacts.value === contactsToVerify.value,
 );
 const verificationProgress = computed(
-  () => verifiedContacts.value / contactsToVerify.value || 0
+  () => verifiedContacts.value / contactsToVerify.value || 0,
 );
 
 const progressTooltip = computed(() =>
   t('contacts_verified', {
     verifiedContacts: verifiedContacts.value.toLocaleString(),
     contactsToVerify: contactsToVerify.value.toLocaleString(),
-  })
+  }),
 );
 
 function cleaningDoneNotification() {

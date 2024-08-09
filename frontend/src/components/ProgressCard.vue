@@ -65,7 +65,7 @@ const progressStartedAt = computed(() => props.started);
 const progressValue = computed(() => Math.round(props.progress * 100));
 const progressPercentage = computed(() => Math.floor(progressValue.value));
 const progressColor = computed(() =>
-  progressPercentage.value < 100 ? 'bg-amber-400' : 'bg-green-600'
+  progressPercentage.value < 100 ? 'bg-amber-400' : 'bg-green-600',
 );
 
 function getElapsedTime() {
@@ -108,7 +108,7 @@ onMounted(() => {
         console.info('Stopping progressEstimator');
         clearInterval(progressEstimator);
       }
-    }
+    },
   );
 });
 </script>

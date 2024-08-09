@@ -6,7 +6,7 @@ export async function addOAuthAccount(provider: OAuthMiningSource) {
     `/imap/mine/sources/${provider}`,
     {
       method: 'POST',
-    }
+    },
   );
 
   if (authorizationUri) {

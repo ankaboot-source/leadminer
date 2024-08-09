@@ -57,10 +57,10 @@ const screenStore = useScreenStore();
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
 const boxes = computed(() => $leadminerStore.boxes);
 const shouldShowTreeCard = computed(
-  () => boxes.value.length > 0 && !props.isLoadingBoxes
+  () => boxes.value.length > 0 && !props.isLoadingBoxes,
 );
 const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined
+  () => $leadminerStore.miningTask !== undefined,
 );
 
 async function onRefreshImapTree() {
