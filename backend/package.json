@@ -58,7 +58,7 @@
     "simple-oauth2": "^5.0.1",
     "stripe": "^13.11.0",
     "throttled-queue": "^2.1.4",
-    "winston": "^3.13.0",
+    "winston": "^3.13.1",
     "winston-loki": "^6.1.2",
     "xoauth2": "^1.2.0",
     "zod": "^3.23.8",
