@@ -921,7 +921,7 @@ const stopShowTableFirstTimeWatcher = watch(
       if (contactsLength.value > 0) {
         observeTop();
         watchEffect(() => {
-          tableHeight.value = `${Math.max($screenStore.height - tablePosTop.value - 120)}px`;
+          tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
         });
         try {
           stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
