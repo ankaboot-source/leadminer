@@ -2,41 +2,40 @@
   <Drawer
     v-model:visible="show"
     class="h-auto"
-    position="top"
+    :position="$screenStore.size.sm ? 'top' : 'full'"
     :dismissable="false"
+    :showCloseIcon="false"
+    :blockScroll="true"
+    :header="t('authorization_required')"
+    pt:footer:class="pt-0"
   >
-    <template #container>
-      <div class="grid gap-4 px-8 py-4 text-base">
-        <span class="text-lg md:text-xl font-bold font-serif">
-          {{ t('authorization_required') }}
-        </span>
-        <span>
-          {{ t('authorization_declined') }}
-          {{ t('no_authorization_contacts') }}
-        </span>
-
-        <div>
-          {{ $t('common.support_assistance') }}
-          <NuxtLink class="text-indigo-500" to="mailto:support@leadminer.io">
-            support@leadminer.io.
-          </NuxtLink>
-          {{ t('keep_data_secure') }}
-        </div>
-
-        <div class="flex justify-end gap-2">
-          <Button
-            severity="secondary"
-            class="secondary-button capitalize"
-            :label="$t('common.cancel')"
-            @click="close()"
-          />
-          <Button
-            severity="primary"
-            class="capitalize"
-            :label="t('authorize')"
-            @click="refreshOAuth"
-          />
-        </div>
+    <div class="grid gap-4 px-8 pt-4 text-base">
+      <span>
+        {{ t('authorization_declined') }}
+        {{ t('no_authorization_contacts') }}
+      </span>
+      <div>
+        {{ $t('common.support_assistance') }}
+        <NuxtLink class="text-indigo-500" to="mailto:support@leadminer.io">
+          support@leadminer.io.
+        </NuxtLink>
+        {{ t('keep_data_secure') }}
+      </div>
+    </div>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <Button
+          severity="secondary"
+          class="secondary-button capitalize"
+          :label="$t('common.cancel')"
+          @click="close()"
+        />
+        <Button
+          severity="primary"
+          class="capitalize"
+          :label="t('authorize')"
+          @click="refreshOAuth"
+        />
       </div>
     </template>
   </Drawer>
@@ -50,6 +49,8 @@ const { t } = useI18n({
 });
 
 const show = defineModel<boolean>('show');
+const $screenStore = useScreenStore();
+
 const provider = defineModel<MiningSourceType>('provider');
 
 function close() {

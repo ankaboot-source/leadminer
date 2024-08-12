@@ -11,8 +11,7 @@
         <Image
           v-if="contact.image && !editingContact"
           :src="contact.image"
-          class="rounded-full"
-          image-class="size-20"
+          image-class="size-20 rounded-full"
         />
         <span :class="contact.image && !editingContact ? 'w-3/4' : 'w-full'">
           <div

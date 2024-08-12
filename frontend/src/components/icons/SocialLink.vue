@@ -28,7 +28,8 @@ const socialLinks = props.small
 
 function getSameAsIcon(url: string) {
   try {
-    const domain = new URL(url).hostname.split('.')[0];
+    const domainArray = new URL(url).hostname.split('.');
+    const domain = domainArray.length > 2 ? domainArray[1] : domainArray[0];
     const match = domain.match(
       /^(twitter|linkedin|facebook|instagram|x)$/i,
     )?.[0];
