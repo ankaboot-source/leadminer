@@ -6,12 +6,11 @@
     @secondary-action="exportTable(true)"
   />
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
-  <TableSkeleton v-if="!showTable" />
   <DataTable
-    v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
     v-model:filters="filtersStore.filters"
+    :loading="isLoading"
     resizable-columns
     reorderable-columns
     show-gridlines
@@ -34,16 +33,14 @@
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
-    :loading="isLoading"
     sort-field="occurrence"
     :sort-order="-1"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
-    @value-change="showTableFirstTime"
   >
-    <template #empty>
+    <template v-if="!isLoading" #empty>
       <div class="text-center py-5">
         <div class="font-semibold">{{ t('no_contacts_found') }}</div>
         <div
@@ -80,11 +77,14 @@
           />
         </div>
         <div class="ml-2">
-          <template v-if="!implicitSelectAll">
-            {{ implicitlySelectedContactsLength.toLocaleString() }}
-            /
+          <i v-if="isLoading" class="pi pi-spin pi-spinner" />
+          <template v-else>
+            <template v-if="!implicitSelectAll">
+              {{ implicitlySelectedContactsLength.toLocaleString() }}
+              /
+            </template>
+            {{ contactsLength?.toLocaleString() }}
           </template>
-          {{ contactsLength?.toLocaleString() }}
           {{ t('contacts') }}
         </div>
         <div class="grow" />
@@ -608,8 +608,6 @@ import {
 } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
 
-const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
-
 const SocialLinks = defineAsyncComponent(
   () => import('../../icons/SocialLink.vue'),
 );
@@ -638,14 +636,9 @@ const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
-const isLoading = ref(false);
-const loadTable = ref(false);
-const showTable = ref(false);
-
+const isLoading = ref(true);
 const loadingLabel = ref('');
-const contacts = computed(() =>
-  loadTable.value ? $contactsStore.contacts : undefined,
-);
+const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
 
 const activeMiningTask = computed(
@@ -690,7 +683,6 @@ async function syncTable() {
   loadingLabel.value = t('syncing');
   const user = $user.value;
   $contactsStore.setContacts(await getContacts(user.id));
-  isLoading.value = false;
 }
 
 watch(activeMiningTask, async (isActive) => {
@@ -887,40 +879,62 @@ function onSelectColumnsChange() {
 
 /* Table dynamic Height */
 const TableRef = ref();
-const tablePosTop = ref<number>(
-  TableRef.value?.$el.getBoundingClientRect().top ?? 0,
-);
+const tablePosTop = ref(0);
 
-const tableHeight = ref('37vh');
+const tableHeight = ref('0px');
 const scrollHeight = computed(() =>
-  !isFullscreen.value ? tableHeight.value : '',
+  !isFullscreen.value
+    ? tableHeight.value !== '0px'
+      ? tableHeight.value
+      : 'flex'
+    : '',
 );
 
 function observeTop() {
-  if (TableRef.value) {
-    const resizeObserver = new ResizeObserver(() => {
-      tablePosTop.value = TableRef.value?.$el.getBoundingClientRect().top;
-    });
-    resizeObserver.observe(TableRef.value?.$el);
-  }
+  const stopWatch = watch(
+    () => TableRef.value,
+    (newValue) => {
+      if (newValue) {
+        const resizeObserver = new ResizeObserver(() => {
+          tablePosTop.value = newValue.$el.getBoundingClientRect().top;
+        });
+        resizeObserver.observe(newValue.$el);
+        try {
+          stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error: ReferenceError) {
+          /* empty */
+        }
+      }
+    },
+    { immediate: true },
+  );
 }
 
-function showTableFirstTime() {
-  if (!showTable.value && contactsLength.value !== undefined) {
-    observeTop();
-    watchEffect(() => {
-      tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
-    });
-    showTable.value = true;
-  }
-}
-watch(
+const stopShowTableFirstTimeWatcher = watch(
   () => contactsLength.value,
   () => {
-    if (contactsLength.value !== undefined) showTableFirstTime();
+    if (contactsLength.value !== undefined) {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+      if (contactsLength.value > 0) {
+        observeTop();
+        watchEffect(() => {
+          tableHeight.value = `${Math.max($screenStore.height - tablePosTop.value - 120)}px`;
+        });
+        try {
+          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error: ReferenceError) {
+          /* empty */
+        }
+      }
+    }
   },
   { deep: true, immediate: true },
 );
+
 onNuxtReady(() => {
   $screenStore.init();
   visibleColumns.value = [
@@ -934,9 +948,6 @@ onNuxtReady(() => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   $contactsStore.subscribeRealtime($user.value);
-  setTimeout(() => {
-    loadTable.value = true;
-  }, 5000);
 });
 
 onUnmounted(() => {
