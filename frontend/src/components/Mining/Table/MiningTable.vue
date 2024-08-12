@@ -40,8 +40,8 @@
     @row-select="onRowSelect"
     @row-unselect="onRowUnselect"
   >
-    <template v-if="!isLoading" #empty>
-      <div class="text-center py-5">
+    <template #empty>
+      <div v-if="!isLoading" class="text-center py-5">
         <div class="font-semibold">{{ t('no_contacts_found') }}</div>
         <div
           v-if="filtersStore.areToggledFilters !== 0 && contactsLength !== 0"
@@ -51,7 +51,8 @@
       </div>
     </template>
     <template #loading>
-      <div class="text-center">
+      <TableSkeleton v-if="tablePosTop === 0" />
+      <div v-else class="text-center">
         <ProgressSpinner />
         <div class="font-semibold text-white">{{ loadingLabel }}</div>
       </div>
@@ -607,6 +608,8 @@ import {
   getStatusColor,
 } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
+
+const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 
 const SocialLinks = defineAsyncComponent(
   () => import('../../icons/SocialLink.vue'),
