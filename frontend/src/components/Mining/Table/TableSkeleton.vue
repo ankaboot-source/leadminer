@@ -5,6 +5,7 @@
     striped-rows
     paginator
     size="small"
+    class="h-full bg-white border-x"
     scroll-height="flex"
     pt:tablecontainer:class="grow"
     paginator-template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
@@ -14,20 +15,10 @@
     <template #header>
       <div class="flex items-center gap-1">
         <div>
-          <Skeleton
-            v-if="$screenStore.size.md"
-            height="2rem"
-            width="5rem"
-          ></Skeleton>
-          <Skeleton v-else size="1.5rem"></Skeleton>
+          <Skeleton height="2rem" width="2rem" class="md:!w-20"></Skeleton>
         </div>
         <div>
-          <Skeleton
-            v-if="$screenStore.size.md"
-            height="2rem"
-            width="5rem"
-          ></Skeleton>
-          <Skeleton v-else size="1.5rem"></Skeleton>
+          <Skeleton height="2rem" width="2rem" class="md:!w-20"></Skeleton>
         </div>
         <div class="ml-2 flex items-center gap-1">
           <Skeleton width="2rem" height="0.5rem"></Skeleton>
@@ -35,25 +26,18 @@
         </div>
         <div class="grow" />
         <div>
-          <Skeleton
-            v-if="$screenStore.size.md"
-            height="2rem"
-            width="5rem"
-          ></Skeleton>
-          <Skeleton v-else size="1.5rem"></Skeleton>
+          <Skeleton height="2rem" width="2rem" class="md:!w-20"></Skeleton>
         </div>
         <div>
-          <Skeleton v-if="$screenStore.size.md" size="2rem"></Skeleton>
-          <Skeleton v-else size="1.5rem"></Skeleton>
+          <Skeleton size="2rem"></Skeleton>
         </div>
         <div>
-          <Skeleton v-if="$screenStore.size.md" size="2rem"></Skeleton>
-          <Skeleton v-else size="1.5rem"></Skeleton>
+          <Skeleton size="2rem"></Skeleton>
         </div>
       </div>
     </template>
     <!-- Checkbox -->
-    <Column style="width: 38px">
+    <Column style="width: 38px" class="hidden md:table-cell">
       <template #header>
         <Skeleton size="1.2rem"></Skeleton>
       </template>
@@ -65,66 +49,36 @@
     <Column>
       <template #header>
         <div>
-          <Skeleton
-            v-if="$screenStore.size.md"
-            height="2rem"
-            width="16rem"
-          ></Skeleton>
-          <Skeleton v-else height="1.5rem" width="10rem"></Skeleton>
+          <Skeleton height="2rem" width="8rem" class="md:!w-64"></Skeleton>
         </div>
       </template>
       <template #body>
         <div class="flex justify-between items-center">
           <div class="flex items-center gap-2 grow">
-            <Skeleton
-              v-if="$screenStore.size.md"
-              shape="circle"
-              size="2rem"
-            ></Skeleton>
-            <Skeleton v-else shape="circle" size="1.5rem"></Skeleton>
+            <Skeleton shape="circle" size="2rem"></Skeleton>
             <span>
               <div class="flex pb-3">
-                <Skeleton
-                  v-if="$screenStore.size.md"
-                  height="0.5rem"
-                  width="5rem"
-                ></Skeleton>
-                <Skeleton v-else height="0.5rem" width="3rem"></Skeleton>
+                <Skeleton height="0.5rem" width="5rem"></Skeleton>
               </div>
-              <Skeleton
-                v-if="$screenStore.size.md"
-                height="0.5rem"
-                width="10rem"
-              ></Skeleton>
-              <Skeleton v-else height="0.5rem" width="5rem"></Skeleton>
+              <Skeleton height="0.5rem" width="10rem"></Skeleton>
             </span>
           </div>
-          <div v-if="$screenStore.size.md" class="flex gap-2 pt-1 pl-2">
+          <div class="flex gap-2 pt-1 pl-2">
             <Skeleton shape="circle" size="2rem"></Skeleton>
             <Skeleton shape="circle" size="2rem"></Skeleton>
             <Skeleton size="2rem"></Skeleton>
-          </div>
-          <div v-else class="flex gap-2 pt-1 pl-2">
-            <Skeleton shape="circle" size="1.5rem"></Skeleton>
-            <Skeleton shape="circle" size="1.5rem"></Skeleton>
-            <Skeleton size="1.5rem"></Skeleton>
           </div>
         </div>
       </template>
     </Column>
     <!-- Other -->
-    <div v-if="$screenStore.size.md">
-      <Column v-for="n in 5" :key="n">
-        <template #header>
-          <Skeleton></Skeleton>
-        </template>
-        <template #body>
-          <Skeleton></Skeleton>
-        </template>
-      </Column>
-    </div>
+    <Column class="hidden md:table-cell">
+      <template #header>
+        <Skeleton></Skeleton>
+      </template>
+      <template #body>
+        <Skeleton></Skeleton>
+      </template>
+    </Column>
   </DataTable>
 </template>
-<script setup lang="ts">
-const $screenStore = useScreenStore();
-</script>
