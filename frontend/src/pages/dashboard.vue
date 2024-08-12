@@ -16,7 +16,8 @@ onNuxtReady(async () => {
   if ($user.value) {
     const contacts = await getContacts($user.value.id);
     useContactsStore().setContacts(contacts);
-    collapsedStepper.value = contacts.length > 0;
+    collapsedStepper.value =
+      contacts.length > 0 && useMiningStepper().index === 1;
   }
 });
 </script>
