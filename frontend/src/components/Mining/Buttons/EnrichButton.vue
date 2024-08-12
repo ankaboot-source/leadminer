@@ -242,7 +242,7 @@ async function startEnrichment(partial: boolean) {
 
 onMounted(async () => {
   if (startOnMounted) {
-    await startEnrichment(false);
+    await startEnrichment(true);
   }
 });
 
