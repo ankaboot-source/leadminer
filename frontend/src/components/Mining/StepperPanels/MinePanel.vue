@@ -243,12 +243,6 @@ async function startMining() {
   canceled.value = false;
   try {
     await $leadminerStore.startMining();
-    $toast.add({
-      severity: 'success',
-      summary: t('mining_started'),
-      detail: t('mining_success'),
-      life: 3000,
-    });
   } catch (error) {
     if (
       error instanceof FetchError &&

@@ -2,7 +2,7 @@
   <ClientOnly>
     <div class="m-auto text-center flex flex-col space-y-6 max-w-[30rem]">
       <div class="flex flex-col space-y-1.5">
-        <span class="text-4xl font-bold font-[Merriweather]">
+        <span class="text-4xl font-bold font-serif">
           {{
             `${$t('common.create')} ${$t('common.your')} ${$t(
               'common.account',
@@ -28,7 +28,7 @@
         </NuxtLink>
       </span>
 
-      <span class="text-gray-700 full-width font-[merriweather]">
+      <span class="text-gray-700 full-width font-serif">
         {{ $t('auth.sign_up_agree') }}
         <NuxtLink
           class="text-indigo-500"

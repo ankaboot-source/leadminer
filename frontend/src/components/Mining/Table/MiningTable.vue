@@ -225,13 +225,13 @@
                     : 'max-lg:max-w-[55vw]'
                 "
               >
-                <div class="font-medium max-lg:truncate">
+                <div
+                  v-if="data.name && visibleColumns.includes('name')"
+                  class="font-medium max-lg:truncate"
+                >
                   {{ data.name }}
                 </div>
-                <div
-                  class="max-sm:truncate"
-                  :class="!data.name ? 'font-medium' : ''"
-                >
+                <div class="max-sm:truncate">
                   {{ data.email }}
                 </div>
               </div>
@@ -598,7 +598,14 @@ import type {
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
-import { statuses, tags } from '~/utils/contacts';
+import {
+  statuses,
+  tags,
+  getTagLabel,
+  getTagColor,
+  getStatusLabel,
+  getStatusColor,
+} from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
