@@ -881,13 +881,9 @@ function onSelectColumnsChange() {
 const TableRef = ref();
 const tablePosTop = ref(0);
 
-const tableHeight = ref('0px');
+const tableHeight = ref('flex');
 const scrollHeight = computed(() =>
-  !isFullscreen.value
-    ? tableHeight.value !== '0px'
-      ? tableHeight.value
-      : 'flex'
-    : '',
+  !isFullscreen.value ? tableHeight.value : '',
 );
 
 function observeTop() {
