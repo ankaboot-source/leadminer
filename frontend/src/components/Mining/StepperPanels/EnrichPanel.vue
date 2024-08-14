@@ -57,6 +57,7 @@
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
       :bordered="true"
+      :skip-dialog="true"
     />
   </div>
 </template>
