@@ -10,7 +10,7 @@
     modal
     :draggable="false"
     :header="t('sign_in_with_imap')"
-    class="md:w-[35rem]"
+    class="w-full md:w-[35rem] max-h-full h-full md:h-auto"
   >
     <div class="flex flex-col space-y-2">
       <div class="w-full flex flex-col gap-1">
