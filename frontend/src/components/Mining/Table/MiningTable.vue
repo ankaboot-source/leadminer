@@ -221,9 +221,10 @@
             >
               <div
                 :class="
-                  data.image && visibleColumns.includes('image')
-                    ? 'max-lg:max-w-[40vw]'
-                    : 'max-lg:max-w-[55vw]'
+                  getContactColumnClasses(
+                    data.image && visibleColumns.includes('image'),
+                    data.same_as && visibleColumns.includes('same_as'),
+                  )
                 "
               >
                 <div
@@ -238,20 +239,28 @@
               </div>
               <div
                 v-if="data.same_as && visibleColumns.includes('same_as')"
-                class="flex gap-2"
+                class="flex md:hidden gap-2"
               >
                 <social-links :social-links="data.same_as" :small="true" />
               </div>
             </div>
           </div>
 
-          <Button
-            rounded
-            text
-            icon="pi pi-id-card"
-            :aria-label="t('contact_information')"
-            @click="openContactInformation(data)"
-          />
+          <div class="flex gap-2 items-center">
+            <div
+              v-if="data.same_as && visibleColumns.includes('same_as')"
+              class="hidden md:flex gap-2"
+            >
+              <social-links :social-links="data.same_as" :small="true" />
+            </div>
+            <Button
+              rounded
+              text
+              icon="pi pi-id-card"
+              :aria-label="t('contact_information')"
+              @click="openContactInformation(data)"
+            />
+          </div>
         </div>
       </template>
     </Column>
@@ -644,6 +653,16 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
 
+const getContactColumnClasses = (
+  imageCondition: boolean,
+  sameAsCondition: boolean,
+) => {
+  if (imageCondition && sameAsCondition) return 'max-lg:max-w-[40vw]';
+  if (imageCondition) return 'max-lg:max-w-[60vw]';
+  if (sameAsCondition) return 'max-lg:max-w-[55vw]';
+  return 'max-lg:max-w-[75vw]';
+};
+
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
 );
@@ -920,7 +939,9 @@ const stopShowTableFirstTimeWatcher = watch(
       if (contactsLength.value > 0) {
         observeTop();
         watchEffect(() => {
-          tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
+          tableHeight.value = `${
+            $screenStore.height - tablePosTop.value - 120
+          }px`;
         });
         try {
           stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
