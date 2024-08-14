@@ -11,9 +11,11 @@
         <Image
           v-if="contact.image && !editingContact"
           :src="contact.image"
-          image-class="size-20 rounded-full"
+          image-class="size-16 md:size-20 rounded-full"
         />
-        <span :class="contact.image && !editingContact ? 'w-3/4' : 'w-full'">
+        <span
+          :class="contact.image && !editingContact ? 'max-w-[75%]' : 'w-full'"
+        >
           <div
             v-if="contact.name && !editingContact"
             class="font-medium text-xl md:text-2xl truncate"
@@ -33,9 +35,14 @@
               'font-medium text-xl md:text-2xl':
                 !contact.name && !editingContact,
             }"
-            class="w-full flex items-center gap-2 max-lg:justify-between"
+            class="flex items-center gap-2 max-lg:justify-between"
           >
-            <div class="flex items-center gap-2">
+            <div
+              class="flex items-center gap-2"
+              :class="
+                contact.image && !editingContact ? 'max-w-[90%]' : 'w-full'
+              "
+            >
               <Badge
                 v-tooltip.top="getStatusLabel(contact.status)"
                 class="min-w-4 h-4 flex-none"
