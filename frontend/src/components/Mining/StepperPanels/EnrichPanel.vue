@@ -57,6 +57,7 @@
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
       :bordered="true"
+      :skip-dialog="true"
     />
   </div>
 </template>
@@ -116,6 +117,7 @@ const enrichmentRealtimeCallback = (
         enrichedContacts.value = enriched;
       }
       currentProgress.value = 100;
+      activeTask.value = false;
       break;
     default:
       break;
