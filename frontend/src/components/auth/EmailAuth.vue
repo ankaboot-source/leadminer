@@ -11,6 +11,7 @@
           aria-describedby="email-help"
           @focusin="emailFocus = true"
           @focusout="emailFocus = false"
+          @keypress.enter="signUp"
         />
         <small
           v-if="isInvalidEmail(email)"
@@ -33,6 +34,7 @@
           aria-describedby="password-help"
           @focusin="passwordFocus = true"
           @focusout="passwordFocus = false"
+          @keypress.enter="signUp"
         >
           <template #header>
             <h6>{{ $t('auth.pick_password') }}</h6>
@@ -96,6 +98,7 @@
               required
               @focusin="emailFocus = true"
               @focusout="emailFocus = false"
+              @keypress.enter="loginWithEmailAndPassword"
             />
             <small
               v-if="isInvalidEmail(email)"
@@ -117,6 +120,7 @@
               :feedback="false"
               @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
+              @keypress.enter="loginWithEmailAndPassword"
             />
             <small
               v-if="isInvalidPassword(password)"
@@ -147,6 +151,8 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
+import { isInvalidEmail } from '@/utils/email';
+import { isInvalidPassword } from '@/utils/password';
 
 const { t } = useI18n({
   useScope: 'local',
