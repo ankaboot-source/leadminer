@@ -29,6 +29,17 @@ export const useMiningConsentSidebar = defineStore(
   },
 );
 
+export const useImapDialog = defineStore('imap-dialog', () => {
+  const showImapDialog = ref(false);
+  function $reset() {
+    showImapDialog.value = false;
+  }
+  return {
+    showImapDialog,
+    $reset,
+  };
+});
+
 export const useMiningContactInformationSidebar = defineStore(
   'contact-information-sidebar',
   () => {

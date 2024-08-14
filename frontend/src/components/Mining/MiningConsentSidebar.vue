@@ -4,8 +4,8 @@
     class="h-auto"
     :position="$screenStore.size.sm ? 'top' : 'full'"
     :dismissable="false"
-    :showCloseIcon="false"
-    :blockScroll="true"
+    :show-close-icon="false"
+    :block-scroll="true"
     :header="t('authorization_required')"
     pt:footer:class="pt-0"
   >
@@ -50,6 +50,7 @@ const { t } = useI18n({
 
 const show = defineModel<boolean>('show');
 const $screenStore = useScreenStore();
+const $imapDialogStore = useImapDialog();
 
 const provider = defineModel<MiningSourceType>('provider');
 
@@ -57,7 +58,10 @@ function close() {
   show.value = false;
   useMiningStepper().go(1);
 }
-
+function showImapDialog() {
+  $imapDialogStore.showImapDialog = true;
+  close();
+}
 function refreshOAuth() {
   switch (provider.value) {
     case 'google':
@@ -65,7 +69,7 @@ function refreshOAuth() {
       addOAuthAccount(provider.value as OAuthMiningSource);
       break;
     default:
-      close();
+      showImapDialog();
       break;
   }
 }
