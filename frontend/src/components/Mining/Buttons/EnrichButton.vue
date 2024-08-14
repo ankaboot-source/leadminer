@@ -174,6 +174,7 @@ function setupEnrichmentRealtime() {
                 }),
                 'achievement',
               );
+              enrichmentStatus.value = false;
             } else {
               showNotification(
                 'info',

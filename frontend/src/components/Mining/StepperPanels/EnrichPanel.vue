@@ -116,6 +116,7 @@ const enrichmentRealtimeCallback = (
         enrichedContacts.value = enriched;
       }
       currentProgress.value = 100;
+      activeTask.value = false;
       break;
     default:
       break;
