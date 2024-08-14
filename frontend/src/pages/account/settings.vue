@@ -98,6 +98,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 
+import { isInvalidEmail } from '@/utils/email';
+import { isInvalidPassword } from '@/utils/password';
+
 const { t } = useI18n({
   useScope: 'local',
 });

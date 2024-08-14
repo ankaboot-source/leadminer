@@ -18,6 +18,7 @@
             aria-describedby="email-help"
             @focusin="emailFocus = true"
             @focusout="emailFocus = false"
+            @keypress.enter="resetPassword"
           />
           <small
             v-if="isInvalidEmail(email)"
@@ -45,6 +46,8 @@
 
 <script setup lang="ts">
 import Button from 'primevue/button';
+
+import { isInvalidEmail } from '@/utils/email';
 
 const $toast = useToast();
 const $supabase = useSupabaseClient();
