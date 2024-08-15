@@ -251,7 +251,10 @@ async function startMining() {
       error.response?.status === 401 &&
       $leadminerStore.activeMiningSource
     ) {
-      useMiningConsentSidebar().show($leadminerStore.activeMiningSource.type);
+      useMiningConsentSidebar().show(
+        $leadminerStore.activeMiningSource.type,
+        $leadminerStore.activeMiningSource.email,
+      );
     } else {
       $toast.add({
         severity: 'error',
