@@ -4,15 +4,34 @@ import { ref } from 'vue';
 import type { Contact } from '@/types/contact';
 import { type MiningSourceType } from '~/types/mining';
 
+export const useImapDialog = defineStore('imap-dialog', () => {
+  const $user = useSupabaseUser();
+  const imapEmail = ref($user.value?.email ?? '');
+
+  const showImapDialog = ref(false);
+  function $reset() {
+    showImapDialog.value = false;
+    imapEmail.value = '';
+  }
+  return {
+    showImapDialog,
+    imapEmail,
+    $reset,
+  };
+});
+
 export const useMiningConsentSidebar = defineStore(
   'mining-consent-sidebar',
   () => {
     const status = ref(false);
     const provider = ref<MiningSourceType>();
 
-    function show(sourceType: MiningSourceType) {
+    function show(sourceType: MiningSourceType, email?: string) {
       status.value = true;
       provider.value = sourceType;
+      if (email) {
+        useImapDialog().imapEmail = email;
+      }
     }
 
     function $reset() {
@@ -28,17 +47,6 @@ export const useMiningConsentSidebar = defineStore(
     };
   },
 );
-
-export const useImapDialog = defineStore('imap-dialog', () => {
-  const showImapDialog = ref(false);
-  function $reset() {
-    showImapDialog.value = false;
-  }
-  return {
-    showImapDialog,
-    $reset,
-  };
-});
 
 export const useMiningContactInformationSidebar = defineStore(
   'contact-information-sidebar',

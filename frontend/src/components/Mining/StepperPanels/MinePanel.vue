@@ -3,7 +3,7 @@
     v-if="boxes"
     :status="activeMiningTask"
     :total="totalEmails"
-    :rate="parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130"
+    :rate="AVERAGE_EXTRACTION_RATE"
     :started="taskStartedAt"
     :progress="extractionProgress"
     :progress-tooltip="progressTooltip"
@@ -134,6 +134,8 @@ const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 
+const AVERAGE_EXTRACTION_RATE =
+  parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
 const canceled = ref<boolean>(false);
 const miningSettingsRef = ref<InstanceType<typeof MiningSettings>>();
 
@@ -199,7 +201,7 @@ onMounted(async () => {
       $stepper.prev();
       throw error;
     } else {
-      useMiningConsentSidebar().show(miningSource.type);
+      useMiningConsentSidebar().show(miningSource.type, miningSource.email);
     }
   }
 });
@@ -249,7 +251,10 @@ async function startMining() {
       error.response?.status === 401 &&
       $leadminerStore.activeMiningSource
     ) {
-      useMiningConsentSidebar().show($leadminerStore.activeMiningSource.type);
+      useMiningConsentSidebar().show(
+        $leadminerStore.activeMiningSource.type,
+        $leadminerStore.activeMiningSource.email,
+      );
     } else {
       $toast.add({
         severity: 'error',
