@@ -12,56 +12,45 @@
           v-if="contact.image && !editingContact"
           :src="contact.image"
           image-class="size-16 md:size-20 rounded-full"
+          class="flex-none"
         />
-        <span
-          :class="contact.image && !editingContact ? 'max-w-[75%]' : 'w-full'"
-        >
-          <div
-            v-if="contact.name && !editingContact"
-            class="font-medium text-xl md:text-2xl truncate"
-          >
-            {{ contact.name }}
-          </div>
-          <InputText
-            v-if="editingContact"
-            v-model="contactEdit.name"
-            :placeholder="$t('contact.name')"
-            class="w-full grow mb-2"
-            size="large"
-          />
-          <div
-            :class="{
-              'font-medium': editingContact,
-              'font-medium text-xl md:text-2xl':
-                !contact.name && !editingContact,
-            }"
-            class="flex items-center gap-2 max-lg:justify-between"
-          >
+        <div class="grow truncate">
+          <div class="grow truncate">
             <div
-              class="flex items-center gap-2"
-              :class="
-                contact.image && !editingContact ? 'max-w-[90%]' : 'w-full'
-              "
+              v-if="contact.name && !editingContact"
+              class="font-medium text-xl md:text-2xl truncate"
             >
-              <Badge
-                v-tooltip.top="getStatusLabel(contact.status)"
-                class="min-w-4 h-4 flex-none"
-                :severity="getStatusColor(contact.status)"
-              />
-              <span class="truncate">
-                {{ contact.email }}
-              </span>
+              {{ contact.name }}
             </div>
-            <Button
-              v-if="!editingContact"
-              rounded
-              text
-              icon="pi pi-copy"
+            <InputText
+              v-if="editingContact"
+              v-model="contactEdit.name"
+              :placeholder="$t('contact.name')"
               size="large"
-              class="text-2xl flex-none -ml-2"
-              :aria-label="t('copy')"
-              @click="copyContact(contact.email, contact.name)"
+              class="w-full"
             />
+            <div class="flex gap-1">
+              <div class="max-lg:grow gap-2 flex items-center truncate">
+                <Badge
+                  v-tooltip.top="getStatusLabel(contact.status)"
+                  class="min-w-4 h-4 flex-none"
+                  :severity="getStatusColor(contact.status)"
+                />
+                <div class="truncate">
+                  {{ contact.email }}
+                </div>
+              </div>
+              <Button
+                v-if="!editingContact"
+                rounded
+                text
+                icon="pi pi-copy"
+                size="large"
+                class="text-2xl flex-none -ml-2"
+                :aria-label="t('copy')"
+                @click="copyContact(contact.email, contact.name)"
+              />
+            </div>
           </div>
           <div
             v-if="contact.same_as?.length && !editingContact"
@@ -69,9 +58,8 @@
           >
             <social-link :social-links="contact.same_as" :small="false" />
           </div>
-        </span>
+        </div>
       </div>
-      <span class="grow" />
     </div>
     <table
       class="p-datatable p-datatable-striped w-full"

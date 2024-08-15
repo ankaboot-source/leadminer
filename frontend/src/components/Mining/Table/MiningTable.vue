@@ -190,20 +190,21 @@
     <!-- Contacts -->
     <Column field="contacts">
       <template #header>
-        <div class="pr-2">{{ t('contacts') }}</div>
-        <div class="p-column-filter p-fluid p-column-filter-menu">
+        <div class="pr-2 hidden md:block">{{ t('contacts') }}</div>
+        <div class="grow p-column-filter p-fluid p-column-filter-menu">
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
               v-model="filtersStore.searchContactModel"
               :placeholder="t('search_contacts')"
+              class="w-full"
             />
           </IconField>
         </div>
       </template>
       <template #body="{ data }">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2">
+          <div class="max-w-[70vw] flex items-center gap-2">
             <Image
               v-if="data.image && visibleColumns.includes('image')"
               :src="data.image"
@@ -211,42 +212,20 @@
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
             />
-            <div
-              class="flex items-center gap-2"
-              :class="
-                data.image && visibleColumns.includes('image')
-                  ? 'max-xl:w-[30vw] max-lg:w-[40vw]'
-                  : 'max-xl:w-[45vw] max-lg:w-[55vw]'
-              "
-            >
-              <div
-                :class="
-                  getContactColumnClasses(
-                    data.image && visibleColumns.includes('image'),
-                    data.same_as && visibleColumns.includes('same_as'),
-                  )
-                "
-              >
-                <div
-                  v-if="data.name && visibleColumns.includes('name')"
-                  class="font-medium max-lg:truncate"
-                >
-                  {{ data.name }}
-                </div>
-                <div class="max-sm:truncate">
-                  {{ data.email }}
-                </div>
-              </div>
-              <div
-                v-if="data.same_as && visibleColumns.includes('same_as')"
-                class="flex md:hidden gap-2"
-              >
-                <social-links :social-links="data.same_as" :small="true" />
+            <div class="truncate">
+              <div class="font-medium truncate">{{ data.name }}</div>
+              <div class="truncate" :class="!data.name ? 'font-medium' : ''">
+                {{ data.email }}
               </div>
             </div>
+            <div
+              v-if="data.same_as && visibleColumns.includes('same_as')"
+              class="flex md:hidden gap-2"
+            >
+              <social-links :social-links="data.same_as" :small="true" />
+            </div>
           </div>
-
-          <div class="flex gap-2 items-center">
+          <div class="flex items-center">
             <div
               v-if="data.same_as && visibleColumns.includes('same_as')"
               class="hidden md:flex gap-2"
@@ -652,16 +631,6 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
-
-const getContactColumnClasses = (
-  imageCondition: boolean,
-  sameAsCondition: boolean,
-) => {
-  if (imageCondition && sameAsCondition) return 'max-lg:max-w-[40vw]';
-  if (imageCondition) return 'max-lg:max-w-[60vw]';
-  if (sameAsCondition) return 'max-lg:max-w-[55vw]';
-  return 'max-lg:max-w-[75vw]';
-};
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
