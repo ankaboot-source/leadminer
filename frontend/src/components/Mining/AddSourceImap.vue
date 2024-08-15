@@ -208,7 +208,8 @@ async function getImapConfigsForEmail(
             method: 'GET',
           });
     return configs;
-  } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (error) {
     return null;
   }
 }
