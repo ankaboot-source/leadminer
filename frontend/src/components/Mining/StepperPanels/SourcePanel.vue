@@ -48,7 +48,7 @@
         />
         <imap-source
           v-model:source="sourceModel"
-          v-model:show="showImapDialog"
+          v-model:show="$imapDialogStore.showImapDialog"
         />
       </div>
     </div>
@@ -67,7 +67,7 @@ const { t } = useI18n({
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 
-const showImapDialog = ref(false);
+const $imapDialogStore = useImapDialog();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
@@ -87,7 +87,7 @@ watch(sourceModel, (source) => {
 function selectSource(source: MiningSourceType | string) {
   switch (source) {
     case 'imap':
-      showImapDialog.value = true;
+      $imapDialogStore.showImapDialog = true;
       break;
 
     default: {
@@ -103,7 +103,8 @@ function selectSource(source: MiningSourceType | string) {
 onMounted(async () => {
   try {
     await $leadminerStore.fetchMiningSources();
-  } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (error) {
     throw new Error(t('fetch_sources_failed'));
   }
 });

@@ -632,6 +632,16 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contacts);
 const contactsLength = computed(() => contacts.value?.length);
 
+const getContactColumnClasses = (
+  imageCondition: boolean,
+  sameAsCondition: boolean,
+) => {
+  if (imageCondition && sameAsCondition) return 'max-lg:max-w-[40vw]';
+  if (imageCondition) return 'max-lg:max-w-[60vw]';
+  if (sameAsCondition) return 'max-lg:max-w-[55vw]';
+  return 'max-lg:max-w-[75vw]';
+};
+
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
 );

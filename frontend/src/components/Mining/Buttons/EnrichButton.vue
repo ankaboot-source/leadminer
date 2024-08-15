@@ -170,10 +170,12 @@ function setupEnrichmentRealtime() {
                 'success',
                 t('notification.summary'),
                 t('notification.enrichment_completed', {
+                  n: enriched,
                   enriched: enriched.toLocaleString(),
                 }),
                 'achievement',
               );
+              enrichmentStatus.value = false;
             } else {
               showNotification(
                 'info',
@@ -268,7 +270,7 @@ const closeDialog = () => {
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
       "summary": "Enrich",
-      "enrichment_completed": "{enriched} of your contacts has been successfully enriched.",
+      "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
@@ -286,7 +288,7 @@ const closeDialog = () => {
     "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
-      "enrichment_completed": "$${enriched} de vos contacts ont été enrichis avec succès.",
+      "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
       "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
