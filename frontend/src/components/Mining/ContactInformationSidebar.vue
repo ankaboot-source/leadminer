@@ -375,6 +375,7 @@ async function saveContactInformations() {
   await updateContact(user.id, contactCleaned);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
+  $contactInformationSidebar.show(contactCleaned as Contact);
 }
 
 function cancelContactInformations() {
