@@ -678,6 +678,7 @@ async function syncTable() {
 
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
+    $leadminerStore.cleaningFinished = false;
     filtersStore.clearFilter();
   } else {
     isLoading.value = true;
@@ -685,6 +686,7 @@ watch(activeMiningTask, async (isActive) => {
     await syncTable();
     filtersStore.toggleFilters();
     isLoading.value = false;
+    $leadminerStore.cleaningFinished = true;
   }
 });
 

@@ -35,11 +35,15 @@
         class="w-full md:w-max border-solid border-2 border-black"
         severity="contrast"
         :label="t('enrich_contacts', $contactsStore.selectedLength)"
-        :disabled="$contactsStore.selectedLength === 0 || !verificationFinished"
+        :disabled="
+          $contactsStore.selectedLength === 0 ||
+          !verificationFinished ||
+          !$leadminerStore.cleaningFinished
+        "
         @click="$stepper.next()"
       >
-        <template #icon
-          ><span class="p-button-icon p-button-icon-right">💎</span>
+        <template #icon>
+          <span class="p-button-icon p-button-icon-right">💎</span>
         </template>
       </Button>
     </div>
