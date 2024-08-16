@@ -33,6 +33,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
+  const cleaningFinished = ref(false);
 
   const errors = ref({});
 
@@ -226,15 +227,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       await $api(`/imap/mine/${user.id}/${miningId}`, {
         method: 'DELETE',
       });
-
       miningTask.value = undefined;
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
+      cleaningFinished.value = true;
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;
       isLoadingStopMining.value = false;
+      cleaningFinished.value = true;
       throw err;
     }
   }
@@ -262,13 +264,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     isLoadingBoxes,
     loadingStatus,
     loadingStatusDns,
-
     extractedEmails,
     scannedEmails,
     createdContacts,
     verifiedContacts,
     fetchingFinished,
     extractionFinished,
+    cleaningFinished,
     errors,
   };
 });
