@@ -33,7 +33,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
   const fetchingFinished = ref(true);
   const extractionFinished = ref(true);
-  const cleaningFinished = ref(false);
+  const cleaningFinished = ref(true);
 
   const errors = ref({});
 
@@ -55,10 +55,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     verifiedContacts.value = 0;
     createdContacts.value = 0;
 
-    fetchingFinished.value = false;
-    extractionFinished.value = false;
+    fetchingFinished.value = true;
+    extractionFinished.value = true;
+    cleaningFinished.value = true;
+
     activeEnrichment.value = false;
-    cleaningFinished.value = false;
 
     errors.value = {};
   }
@@ -233,13 +234,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       miningTask.value = undefined;
       fetchingFinished.value = true;
       extractionFinished.value = true;
-      isLoadingStopMining.value = false;
       cleaningFinished.value = true;
+      isLoadingStopMining.value = false;
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;
-      isLoadingStopMining.value = false;
       cleaningFinished.value = true;
+      isLoadingStopMining.value = false;
       throw err;
     }
   }

@@ -8,7 +8,7 @@
       >
         <span class="font-semibold flex items-center gap-2">
           <i
-            v-if="collapsePanel && activeMining"
+            v-if="collapsePanel && activeTask"
             class="pi pi-spin pi-spinner text-lg"
           />
           {{ t('mine_contacts') }}
@@ -85,7 +85,12 @@ const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
-const activeMining = computed(() => $leadminerStore.miningTask !== undefined);
+const activeTask = computed(
+  () =>
+    $leadminerStore.miningTask !== undefined ||
+    !$leadminerStore.cleaningFinished ||
+    $leadminerStore.activeEnrichment,
+);
 
 const collapsePanel = defineModel<boolean>('collapsed');
 
