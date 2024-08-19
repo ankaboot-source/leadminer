@@ -8,7 +8,8 @@
       >
         <span class="font-semibold flex items-center gap-2">
           <i
-            v-if="collapsePanel && activeMining"
+            v-if="collapsePanel && activeTask"
+            v-tooltip.top="spinnerText"
             class="pi pi-spin pi-spinner text-lg"
           />
           {{ t('mine_contacts') }}
@@ -85,12 +86,35 @@ const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
-const activeMining = computed(() => $leadminerStore.miningTask !== undefined);
+const activeTask = computed(
+  () =>
+    $leadminerStore.miningTask !== undefined ||
+    $leadminerStore.isLoadingBoxes ||
+    !$leadminerStore.cleaningFinished ||
+    $leadminerStore.activeEnrichment,
+);
 
 const collapsePanel = defineModel<boolean>('collapsed');
-
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
+
 const { error, provider, source } = $route.query;
+
+const spinnerText = computed(() => {
+  if (!(collapsePanel.value && activeTask.value)) return undefined;
+  if ($leadminerStore.miningTask !== undefined) {
+    return t('mining');
+  }
+  if ($leadminerStore.isLoadingBoxes) {
+    return t('retrieving_mailboxes');
+  }
+  if (!$leadminerStore.cleaningFinished) {
+    return t('cleaning');
+  }
+  if ($leadminerStore.activeEnrichment) {
+    return t('enriching');
+  }
+  return undefined;
+});
 
 onNuxtReady(() => {
   if (error ?? provider ?? source) {
@@ -109,11 +133,19 @@ onNuxtReady(() => {
 {
   "en": {
     "mine_contacts": "Mine contacts from your email account",
-    "source": "Source"
+    "source": "Source",
+    "mining": "Mining",
+    "cleaning": "Cleaning",
+    "enriching": "Enriching",
+    "retrieving_mailboxes": "Retrieving mailboxes..."
   },
   "fr": {
     "mine_contacts": "Extraire des contacts de votre email",
-    "source": "Source"
+    "source": "Source",
+    "mining": "Extraction",
+    "cleaning": "Nettoyage",
+    "enriching": "Enrichissement",
+    "retrieving_mailboxes": "Récupération des boîtes aux lettres..."
   }
 }
 </i18n>
