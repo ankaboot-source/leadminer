@@ -197,6 +197,7 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { type EnrichmentTask } from '@/types/enrichment';
+import { getStatusLabel, getStatusColor } from '@/utils/contacts';
 
 const { t } = useI18n({
   useScope: 'local',
