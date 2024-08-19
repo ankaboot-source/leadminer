@@ -44,7 +44,8 @@ export const CHAT_EMAIL_ADDRESS_INCLUDES = [
   '@reply.linkedin.com',
   '@messagerie.leboncoin.fr',
   '@mail.2dehands.beto',
-  '@reply.facebook.com'
+  '@reply.facebook.com',
+  'reply.'
 ];
 export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@campaigns.',
