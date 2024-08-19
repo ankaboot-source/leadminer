@@ -2,7 +2,7 @@
   <CreditsDialog
     ref="CreditsDialogRef"
     engagement-type="contacts"
-    action-type="download"
+    action-type="export"
     @secondary-action="exportTable(true)"
   />
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
@@ -74,7 +74,6 @@
           <EnrichButton
             :enrichment-realtime-callback="() => {}"
             :enrichment-request-response-callback="() => {}"
-            :start-on-mounted="false"
           />
         </div>
         <div class="ml-2">
