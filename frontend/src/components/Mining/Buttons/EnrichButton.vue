@@ -90,10 +90,8 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
-const enrichmentStatus = defineModel<boolean>('enrichmentStatus');
-
 const props = defineProps<{
-  startOnMounted: boolean;
+  startOnMounted?: boolean;
   enrichmentRealtimeCallback: (
     payload: RealtimePostgresChangesPayload<EnrichmentTask>,
   ) => void;
@@ -142,7 +140,6 @@ function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
-  enrichmentStatus.value = false;
   $leadminerStore.activeEnrichment = false;
 }
 
@@ -176,7 +173,6 @@ function setupEnrichmentRealtime() {
                 'achievement',
               );
               $leadminerStore.activeEnrichment = false;
-              enrichmentStatus.value = false;
             } else {
               showNotification(
                 'info',
@@ -205,7 +201,6 @@ function setupEnrichmentRealtime() {
 
 async function startEnrichment(partial: boolean) {
   try {
-    enrichmentStatus.value = true;
     $leadminerStore.activeEnrichment = true;
     setupEnrichmentRealtime();
     await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
@@ -247,10 +242,6 @@ onMounted(async () => {
   if (startOnMounted) {
     await startEnrichment(true);
   }
-});
-
-onUnmounted(() => {
-  stopEnrichment();
 });
 
 const openDialog = () => {

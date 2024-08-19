@@ -74,7 +74,6 @@
           <EnrichButton
             :enrichment-realtime-callback="() => {}"
             :enrichment-request-response-callback="() => {}"
-            :start-on-mounted="false"
           />
         </div>
         <div class="ml-2">
