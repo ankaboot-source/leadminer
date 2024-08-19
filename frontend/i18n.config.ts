@@ -141,7 +141,7 @@ export default defineI18nConfig(() => ({
         support_assistance:
           'Pour toute question ou assistance, notre équipe de support est là pour vous aider à',
         mailbox: 'boîte aux lettres',
-        save: 'Sauvegarder',
+        save: 'Enregistrer',
         the_plural: 'les',
         of: 'sur',
       },

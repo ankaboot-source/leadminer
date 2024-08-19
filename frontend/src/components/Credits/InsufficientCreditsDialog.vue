@@ -3,9 +3,9 @@
     <p class="m-0">
       {{
         t('not_enough_credits', {
-          actionType,
+          actionType: t(actionType),
           formattedTotal,
-          engagementType,
+          engagementType: t(engagementType),
         })
       }}
     </p>
@@ -20,9 +20,9 @@
           @click="executePartialAction"
         />
         <Button
-          :label="t('refill_or_upgrade')"
+          :label="t('refill')"
           severity="success"
-          @click="buyOrUpgrade"
+          @click="refillCredits()"
         >
           <template #icon>
             <span class="p-button-icon p-button-icon-right">🚀</span>
@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { refillCreditsOrUpgrade } from '@/utils/credits';
+import { refillCredits } from '@/utils/credits';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -42,8 +42,8 @@ const { t } = useI18n({
 
 const emit = defineEmits(['secondary-action']);
 const { engagementType, actionType } = defineProps<{
-  engagementType: string;
-  actionType: string;
+  engagementType: 'contacts';
+  actionType: 'export' | 'enrich';
 }>();
 
 const showModal = ref(false);
@@ -76,13 +76,10 @@ const executePartialAction = async () => {
 };
 const downloadActionLabel = computed(() =>
   t('action_type_only', {
-    actionType,
+    actionType: t(actionType),
     available: availableAlready.value + available.value,
   }),
 );
-const buyOrUpgrade = () => {
-  refillCreditsOrUpgrade();
-};
 
 defineExpose({
   openModal,
@@ -94,14 +91,20 @@ defineExpose({
   "en": {
     "oops_low_credits": "Oops! Running low on credits 😅",
     "not_enough_credits": "You don't have enough credits to {actionType} your {formattedTotal} {engagementType}.",
-    "refill_or_upgrade": "Refill credits or Upgrade",
-    "action_type_only": "{actionType} only {available}"
+    "refill": "Refill credits",
+    "action_type_only": "{actionType} only {available}",
+    "export": "export",
+    "contacts": "contacts",
+    "enrich": "enrich"
   },
   "fr": {
-    "oops_low_credits": "Oups ! Crédits en baisse 😅",
-    "not_enough_credits": "Vous n'avez pas assez de crédits pour {actionType} tous vos {formattedTotal} {engagementType}.",
-    "refill_or_upgrade": "Recharger vos crédits ou Améliorez",
-    "action_type_only": "{actionType} seulement {available}"
+    "oops_low_credits": "Oups ! Crédits trop bas 😅",
+    "not_enough_credits": "Vous n'avez pas assez de crédits pour {actionType} vos {formattedTotal} {engagementType}.",
+    "refill": "Recharger vos crédits",
+    "action_type_only": "{actionType} seulement {available}",
+    "export": "exporter",
+    "contacts": "contacts",
+    "enrich": "enrichir"
   }
 }
 </i18n>

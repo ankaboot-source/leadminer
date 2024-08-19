@@ -32,7 +32,9 @@
   <div class="flex flex-col justify-center">
     <ProgressBar
       v-tooltip.bottom="{
-        value: activeTask ? t('text.estimated_time') : undefined,
+        value: $leadminerStore.activeEnrichment
+          ? t('text.estimated_time')
+          : undefined,
         escape: false,
       }"
       :mode="progressMode"
@@ -52,7 +54,6 @@
       @click="startNewMining"
     />
     <EnrichButton
-      :v-model:enrichment-status="activeTask"
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
@@ -75,8 +76,6 @@ const $stepper = useMiningStepper();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 
-const activeTask = ref(true);
-
 const contactsToEnrichLength = computed(() => $contactsStore.selectedLength);
 const contactsToEnrichLengthPartial = ref<number>(0);
 
@@ -84,10 +83,10 @@ const enrichedContacts = ref(0);
 const currentProgress = ref<number | undefined>();
 
 const progressMode = computed(() =>
-  activeTask.value ? 'indeterminate' : 'determinate',
+  $leadminerStore.activeEnrichment ? 'indeterminate' : 'determinate',
 );
 const progressColor = computed(() =>
-  activeTask.value ? 'bg-amber-400' : 'bg-green-600',
+  $leadminerStore.activeEnrichment ? 'bg-amber-400' : 'bg-green-600',
 );
 
 watch(contactsToEnrichLength, () => {
@@ -117,16 +116,12 @@ const enrichmentRealtimeCallback = (
         enrichedContacts.value = enriched;
       }
       currentProgress.value = 100;
-      activeTask.value = false;
+      $leadminerStore.activeEnrichment = false;
       break;
     default:
       break;
   }
 };
-
-onUnmounted(() => {
-  activeTask.value = false;
-});
 </script>
 <i18n lang="json">
 {

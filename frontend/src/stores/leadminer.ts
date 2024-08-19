@@ -57,6 +57,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
     fetchingFinished.value = false;
     extractionFinished.value = false;
+    activeEnrichment.value = false;
 
     errors.value = {};
   }

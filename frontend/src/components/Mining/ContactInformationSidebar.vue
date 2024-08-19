@@ -160,8 +160,6 @@
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
         <EnrichButton
-          v-model:enrichment-status="activeEnrichment"
-          :start-on-mounted="false"
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
           :contacts-to-enrich="[contact.email]"
@@ -197,6 +195,7 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { type EnrichmentTask } from '@/types/enrichment';
+import { getStatusLabel, getStatusColor } from '@/utils/contacts';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -211,7 +210,7 @@ const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
-const activeEnrichment = ref(false);
+const $leadminerStore = useLeadminerStore();
 
 const skipDialog = computed(
   () =>
@@ -258,10 +257,10 @@ const enrichmentRealtimeCallback = (
   const { status } = payload.new as EnrichmentTask;
   switch (status) {
     case 'done':
-      activeEnrichment.value = false;
+      $leadminerStore.activeEnrichment = false;
       break;
     case 'canceled':
-      activeEnrichment.value = false;
+      $leadminerStore.activeEnrichment = false;
       break;
     default:
       break;
