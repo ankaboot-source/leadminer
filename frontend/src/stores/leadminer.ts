@@ -58,6 +58,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished.value = false;
     extractionFinished.value = false;
     activeEnrichment.value = false;
+    cleaningFinished.value = false;
 
     errors.value = {};
   }
@@ -144,6 +145,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     createdContacts.value = 0;
     fetchingFinished.value = false;
     extractionFinished.value = false;
+    cleaningFinished.value = false;
 
     try {
       const { data: sessionData } = await useSupabaseClient().auth.getSession();
