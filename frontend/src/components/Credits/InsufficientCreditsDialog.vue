@@ -43,7 +43,7 @@ const { t } = useI18n({
 const emit = defineEmits(['secondary-action']);
 const { engagementType, actionType } = defineProps<{
   engagementType: 'contacts';
-  actionType: 'export';
+  actionType: 'export' | 'enrich';
 }>();
 
 const showModal = ref(false);
@@ -94,7 +94,8 @@ defineExpose({
     "refill": "Refill credits",
     "action_type_only": "{actionType} only {available}",
     "export": "export",
-    "contacts": "contacts"
+    "contacts": "contacts",
+    "enrich": "enrich"
   },
   "fr": {
     "oops_low_credits": "Oups ! Crédits trop bas 😅",
@@ -102,7 +103,8 @@ defineExpose({
     "refill": "Recharger vos crédits",
     "action_type_only": "{actionType} seulement {available}",
     "export": "exporter",
-    "contacts": "contacts"
+    "contacts": "contacts",
+    "enrich": "enrichir"
   }
 }
 </i18n>
