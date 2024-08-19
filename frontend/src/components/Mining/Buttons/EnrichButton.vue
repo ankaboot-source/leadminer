@@ -63,12 +63,12 @@
     icon-pos="right"
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
-    :disabled="enrichmentStatus"
+    :disabled="$leadminerStore.activeEnrichment"
     @click="openDialog"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
-        <span v-if="!enrichmentStatus">💎</span>
+        <span v-if="!$leadminerStore.activeEnrichment">💎</span>
         <i v-else class="pi pi-spin pi-spinner mr-1.5" />
       </span>
     </template>
@@ -175,6 +175,7 @@ function setupEnrichmentRealtime() {
                 }),
                 'achievement',
               );
+              $leadminerStore.activeEnrichment = false;
               enrichmentStatus.value = false;
             } else {
               showNotification(
