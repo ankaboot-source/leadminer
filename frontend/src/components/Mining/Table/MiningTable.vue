@@ -517,6 +517,9 @@
       <template #filter="{ filterModel }">
         <InputText v-model="filterModel.value" />
       </template>
+      <template #body="{ data }">
+        <div>{{ data.alternate_names?.join(', ') }}</div>
+      </template>
     </Column>
 
     <!-- Address -->
