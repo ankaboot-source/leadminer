@@ -28,7 +28,7 @@
           id="email-help"
           class="text-red-400 text-left pl-4"
         >
-          {{ $t('common.email_require') }}
+          {{ $t('common.email_required') }}
         </small>
       </div>
       <div class="grid gap-1">
@@ -91,7 +91,7 @@
           id="email-help"
           class="text-red-400 text-left pl-4"
         >
-          {{ $t('common.password_require') }}
+          {{ $t('common.password_required') }}
         </small>
       </div>
       <div class="pt-3">
@@ -135,7 +135,7 @@
               id="email-help"
               class="text-red-400 text-left pl-4"
             >
-              {{ $t('common.email_require') }}
+              {{ $t('common.email_required') }}
             </small>
           </div>
           <div class="grid gap-1">
@@ -170,7 +170,7 @@
               id="email-help"
               class="text-red-400 text-left pl-4"
             >
-              {{ $t('common.password_require') }}
+              {{ $t('common.password_required') }}
             </small>
           </div>
         </div>
@@ -243,9 +243,7 @@ const hasNumber = computed(
 
 const isLoading = ref(false);
 
-async function loginWithEmailAndPassword() {
-  isLoading.value = true;
-
+function checkRequiredFields(): boolean {
   if (!email.value) {
     validateEmailRequired.value = false;
   }
@@ -256,6 +254,15 @@ async function loginWithEmailAndPassword() {
 
   if (!email.value || !password.value) {
     isLoading.value = false;
+  }
+
+  return !email.value || !password.value;
+}
+
+async function loginWithEmailAndPassword() {
+  isLoading.value = true;
+
+  if (checkRequiredFields()) {
     return;
   }
 
@@ -285,16 +292,7 @@ async function loginWithEmailAndPassword() {
 async function signUp() {
   isLoading.value = true;
 
-  if (!email.value) {
-    validateEmailRequired.value = false;
-  }
-
-  if (!password.value) {
-    validatePasswordRequired.value = false;
-  }
-
-  if (!email.value || !password.value) {
-    isLoading.value = false;
+  if (checkRequiredFields()) {
     return;
   }
 
