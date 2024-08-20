@@ -1,6 +1,6 @@
 import { Logger } from 'winston';
-import Voilanorbert from './client';
 import { EmailEnricher, EnricherResult } from '../EmailEnricher';
+import Voilanorbert from './client';
 
 export interface VoilanorbertEnrichmentResult {
   email: string;
