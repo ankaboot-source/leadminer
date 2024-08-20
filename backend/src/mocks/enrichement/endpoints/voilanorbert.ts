@@ -1,6 +1,6 @@
+import { faker } from '@faker-js/faker';
 import axios from 'axios';
 import { Request, Response, Router } from 'express';
-import { faker } from '@faker-js/faker';
 import { SERVER_PORT } from '../config';
 
 const router = Router();
@@ -10,7 +10,7 @@ router.post(
   async (req: Request, res: Response) => {
     const { data, webhook } = req.body;
 
-    const emails = data.split(',');
+    const emails = data.split('\n');
     const token = faker.string.nanoid();
 
     try {
