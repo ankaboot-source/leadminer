@@ -10,7 +10,7 @@ router.post(
   async (req: Request, res: Response) => {
     const { data, webhook } = req.body;
 
-    const emails = data.split(/,|\n/).filter(Boolean);
+    const emails = data.split('\n');
     const token = faker.string.nanoid();
 
     try {
