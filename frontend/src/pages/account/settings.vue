@@ -6,7 +6,7 @@
           <div>
             <label class="block mb-2">{{ t('full_name') }}</label>
             <InputText
-              v-model="fullName"
+              v-model="fullnameInput"
               class="w-full md:w-30rem"
               type="text"
             />
@@ -14,10 +14,10 @@
           <div>
             <label class="block mb-2" for="email">Email</label>
             <InputText
-              v-model="email"
+              v-model="emailInput"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="isInvalidEmail(email)"
+              :invalid="isInvalidEmail(emailInput)"
               type="email"
               aria-describedby="email-help"
             />
@@ -27,11 +27,11 @@
               $t('auth.password')
             }}</label>
             <Password
-              v-model="password"
+              v-model="passwordInput"
               class="w-full"
               :input-style="{ width: '100%' }"
               toggle-mask
-              :invalid="isInvalidPassword(password)"
+              :invalid="isInvalidPassword(passwordInput)"
               :input-props="{ autocomplete: 'new-password' }"
             />
           </div>
@@ -42,7 +42,8 @@
           type="submit"
           :label="t('update')"
           :loading="isLoading"
-          @click="updateProfile"
+          :disabled="disableUpdateButton"
+          @click="updateUserDetailsButton"
         />
       </div>
     </Panel>
@@ -96,10 +97,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-
+import type { UserAttributes } from '@supabase/supabase-js';
 import { isInvalidEmail } from '@/utils/email';
 import { isInvalidPassword } from '@/utils/password';
+import type { Profile } from '~/types/user';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -111,49 +112,43 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 
-const userId = ref('');
-const email = ref('');
-const fullName = ref('');
-let oldFullName = '';
-let isUpdated = false;
-const password = ref('');
-
-const isLoading = ref(false);
-
-const showDeleteModal = ref(false);
-const isSocialLogin = ref(false);
-
 const { $api } = useNuxtApp();
 
-onMounted(async () => {
-  useRouter().replace({ query: {} });
-  const { session } = (await useSupabaseClient().auth.getSession()).data;
-
-  const { data: profile } = await useSupabaseClient()
+const { data: profile } = await useAsyncData('get-profile', async () => {
+  const $user = useSupabaseUser();
+  const { data, error } = await useSupabaseClient()
     .from('profiles')
     .select('*')
-    .single();
+    .single<Profile>();
 
-  if (!session || !profile) {
-    $toast.add({
-      severity: 'error',
-      summary: t('error'),
-      detail: t('session_expired'),
-      life: 3000,
-    });
-    await signOut();
-    return;
+  if (error) {
+    throw error;
   }
 
-  const { provider_token: providerToken } = session;
-  const { user_id: userid, full_name: userFullName } = profile;
-
-  userId.value = userid;
-  fullName.value = userFullName;
-  oldFullName = userFullName;
-  email.value = String(session.user.email);
-  isSocialLogin.value = Boolean(providerToken);
+  return {
+    isSocialLogin: $user.value.app_metadata.provider !== 'email',
+    ...data,
+  };
 });
+
+if (profile.value === null) {
+  throw new Error(' Error getting profile information.');
+}
+
+const isLoading = ref(false);
+const showDeleteModal = ref(false);
+
+const emailInput = ref(profile.value.email);
+const fullnameInput = ref(profile.value.full_name);
+const passwordInput = ref('');
+const isSocialLogin = ref(profile.value.isSocialLogin);
+
+const disableUpdateButton = computed(
+  () =>
+    emailInput.value === profile.value?.email &&
+    fullnameInput.value === profile.value?.full_name &&
+    passwordInput.value.length === 0,
+);
 
 function showWarning() {
   showDeleteModal.value = true;
@@ -163,82 +158,80 @@ function closeWarning() {
   showDeleteModal.value = false;
 }
 
-async function updateProfile() {
-  isLoading.value = true;
+async function updateUserAccount(userAccount: UserAttributes) {
+  const { error: accountUpdateError } =
+    await useSupabaseClient().auth.updateUser({ ...userAccount });
 
-  const { value: user } = useSupabaseUser();
+  if (accountUpdateError) {
+    throw accountUpdateError;
+  }
 
+  $toast.add({
+    severity: 'info',
+    summary: t('email_updated'),
+    detail: t('check_email_confirmation'),
+    life: 3000,
+  });
+}
+
+async function updateUserProfile(userProfile: Partial<Profile>) {
+  const { error: emailUpdateError } = await useSupabaseClient<Profile>()
+    .from('profiles')
+    .update({ ...userProfile })
+    .eq('user_id', profile.value?.user_id);
+
+  if (emailUpdateError) {
+    throw emailUpdateError;
+  }
+
+  $toast.add({
+    severity: 'success',
+    summary: t('profile_updated'),
+    detail: t('profile_success'),
+    life: 3000,
+  });
+}
+
+async function updateUserDetailsButton() {
   try {
-    if (user?.email !== email.value) {
-      const { error } = await useSupabaseClient().auth.updateUser({
-        email: user?.email !== email.value ? email.value : undefined,
-        data: {
-          Prehead: t('change_email.prehead'),
-          Title: t('change_email.title'),
-          Body1: t('change_email.body.p1'),
-          Body2: t('change_email.body.p2'),
-          Body3: t('change_email.body.p3'),
-          Body4: t('change_email.body.p4'),
-          Button: t('change_email.button'),
-          Regards: $t('email_template.regards'),
-          Footer: $t('email_template.footer'),
-        },
-      });
+    isLoading.value = true;
 
-      if (error) {
-        throw error;
-      }
+    const userAccount: UserAttributes = {};
+    const userProfile: Partial<Profile> = {};
 
-      $toast.add({
-        severity: 'info',
-        summary: t('email_updated'),
-        detail: t('check_email_confirmation'),
-        life: 3000,
-      });
+    const { email: currentEmail, full_name: currentFullName } =
+      profile.value as Profile;
+
+    if (emailInput.value !== currentEmail) {
+      // used changed his email
+      userAccount.email = emailInput.value;
+      userAccount.data = {
+        Prehead: t('change_email.prehead'),
+        Title: t('change_email.title'),
+        Body1: t('change_email.body.p1'),
+        Body2: t('change_email.body.p2'),
+        Body3: t('change_email.body.p3'),
+        Body4: t('change_email.body.p4'),
+        Button: t('change_email.button'),
+        Regards: $t('email_template.regards'),
+        Footer: $t('email_template.footer'),
+      };
     }
 
-    if (password.value.length) {
-      const { error } = await useSupabaseClient().auth.updateUser({
-        password: password.value,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      isUpdated = true;
+    if (passwordInput.value.length) {
+      userAccount.password = passwordInput.value;
     }
 
-    if (fullName.value.length && oldFullName !== fullName.value) {
-      const { error } = await useSupabaseClient<{
-        full_name: string;
-      }>()
-        .from('profiles')
-        .update({
-          full_name: fullName.value,
-        })
-        .eq('user_id', userId.value);
-
-      if (error) {
-        throw error;
-      }
-
-      oldFullName = fullName.value;
-      isUpdated = true;
+    if (fullnameInput.value !== currentFullName) {
+      userProfile.full_name = fullnameInput.value;
     }
 
-    await useSupabaseClient().auth.refreshSession();
-
-    if (isUpdated) {
-      $toast.add({
-        severity: 'success',
-        summary: t('profile_updated'),
-        detail: t('profile_success'),
-        life: 3000,
-      });
+    if (Object.keys(userAccount).length) {
+      await updateUserAccount(userAccount);
     }
-
-    isLoading.value = false;
+    if (Object.keys(userProfile).length) {
+      await updateUserProfile(userProfile);
+    }
   } catch (error) {
     $toast.add({
       severity: 'error',
@@ -246,10 +239,8 @@ async function updateProfile() {
       detail: (error as Error).message,
       life: 3000,
     });
-
+  } finally {
     isLoading.value = false;
-
-    throw error;
   }
 }
 
