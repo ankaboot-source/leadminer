@@ -5,11 +5,14 @@
         <label class="text-left" for="email">Email</label>
         <InputText
           v-model="email"
-          :invalid="isInvalidEmail(email)"
+          :invalid="isInvalidEmail(email) || !validateEmailRequired"
           type="email"
           required
           aria-describedby="email-help"
-          @focusin="emailFocus = true"
+          @focusin="
+            emailFocus = true;
+            validateEmailRequired = true;
+          "
           @focusout="emailFocus = false"
           @keypress.enter="signUp"
         />
@@ -19,6 +22,13 @@
           class="text-red-400 text-left pl-4"
         >
           {{ $t('auth.valid_email') }}
+        </small>
+        <small
+          v-if="!validateEmailRequired"
+          id="email-help"
+          class="text-red-400 text-left pl-4"
+        >
+          {{ $t('common.email_required') }}
         </small>
       </div>
       <div class="grid gap-1">
@@ -30,9 +40,12 @@
           :input-style="{ width: '100%' }"
           toggle-mask
           required
-          :invalid="isInvalidPassword(password)"
+          :invalid="isInvalidPassword(password) || !validatePasswordRequired"
           aria-describedby="password-help"
-          @focusin="passwordFocus = true"
+          @focusin="
+            passwordFocus = true;
+            validatePasswordRequired = true;
+          "
           @focusout="passwordFocus = false"
           @keypress.enter="signUp"
         >
@@ -73,6 +86,13 @@
         >
           {{ $t('auth.valid_password') }}
         </small>
+        <small
+          v-if="!validatePasswordRequired"
+          id="email-help"
+          class="text-red-400 text-left pl-4"
+        >
+          {{ $t('common.password_required') }}
+        </small>
       </div>
       <div class="pt-3">
         <Button
@@ -93,10 +113,13 @@
             <label class="text-left" for="email">Email</label>
             <InputText
               v-model="email"
-              :invalid="isInvalidEmail(email)"
+              :invalid="isInvalidEmail(email) || !validateEmailRequired"
               type="email"
               required
-              @focusin="emailFocus = true"
+              @focusin="
+                emailFocus = true;
+                validateEmailRequired = true;
+              "
               @focusout="emailFocus = false"
               @keypress.enter="loginWithEmailAndPassword"
             />
@@ -107,6 +130,13 @@
             >
               {{ $t('auth.valid_email') }}
             </small>
+            <small
+              v-if="!validateEmailRequired"
+              id="email-help"
+              class="text-red-400 text-left pl-4"
+            >
+              {{ $t('common.email_required') }}
+            </small>
           </div>
           <div class="grid gap-1">
             <label class="text-left" for="password">{{
@@ -115,10 +145,16 @@
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
+              :invalid="
+                isInvalidPassword(password) || !validatePasswordRequired
+              "
               toggle-mask
               required
               :feedback="false"
-              @focusin="passwordFocus = true"
+              @focusin="
+                passwordFocus = true;
+                validatePasswordRequired = true;
+              "
               @focusout="passwordFocus = false"
               @keypress.enter="loginWithEmailAndPassword"
             />
@@ -128,6 +164,13 @@
               class="text-red-400 text-left pl-4"
             >
               {{ $t('auth.valid_password') }}
+            </small>
+            <small
+              v-if="!validatePasswordRequired"
+              id="email-help"
+              class="text-red-400 text-left pl-4"
+            >
+              {{ $t('common.password_required') }}
             </small>
           </div>
         </div>
@@ -183,6 +226,9 @@ const emailFocus = ref(false);
 const password = ref('');
 const passwordFocus = ref(false);
 
+const validateEmailRequired = ref(true);
+const validatePasswordRequired = ref(true);
+
 const hasLowerCase = computed(
   () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value),
 );
@@ -197,8 +243,29 @@ const hasNumber = computed(
 
 const isLoading = ref(false);
 
+function checkRequiredFields(): boolean {
+  if (!email.value) {
+    validateEmailRequired.value = false;
+  }
+
+  if (!password.value) {
+    validatePasswordRequired.value = false;
+  }
+
+  if (!email.value || !password.value) {
+    isLoading.value = false;
+  }
+
+  return !email.value || !password.value;
+}
+
 async function loginWithEmailAndPassword() {
   isLoading.value = true;
+
+  if (checkRequiredFields()) {
+    return;
+  }
+
   try {
     const { error } = await $supabase.auth.signInWithPassword({
       email: email.value,
@@ -213,7 +280,7 @@ async function loginWithEmailAndPassword() {
       $toast.add({
         severity: 'error',
         summary: $t('auth.sign_in_failed'),
-        detail: error.message,
+        detail: $t('auth.invalid_login'),
         life: 3000,
       });
     }
@@ -224,6 +291,11 @@ async function loginWithEmailAndPassword() {
 
 async function signUp() {
   isLoading.value = true;
+
+  if (checkRequiredFields()) {
+    return;
+  }
+
   try {
     if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
       throw Error($t('auth.invalid_login'));

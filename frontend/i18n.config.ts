@@ -31,6 +31,8 @@ export default defineI18nConfig(() => ({
         save: 'Save',
         the_plural: 'the',
         of: 'of',
+        email_required: 'Email is required',
+        password_required: 'Password is required',
       },
       auth: {
         sign_in: 'Sign in',
@@ -55,7 +57,7 @@ export default defineI18nConfig(() => ({
         suggestion_min_chars: 'Minimum 8 characters',
         valid_email: 'Please enter a valid email',
         sign_in_failed: 'Sign in Failed',
-        invalid_login: 'Invalid login or password',
+        invalid_login: 'Invalid email or password',
         sign_up_success: 'Sign up Successfully',
         confirmation_email: 'We have sent a confirmation email to {email}',
         sign_up_failed: 'Sign up Failed',
@@ -144,6 +146,8 @@ export default defineI18nConfig(() => ({
         save: 'Enregistrer',
         the_plural: 'les',
         of: 'sur',
+        email_required: 'Email est obligatoire',
+        password_required: 'Mot de passe est obligatoire',
       },
       auth: {
         sign_in: 'Se connecter',
