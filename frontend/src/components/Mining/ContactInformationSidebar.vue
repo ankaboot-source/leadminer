@@ -195,7 +195,7 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { type EnrichmentTask } from '@/types/enrichment';
-import { getStatusLabel, getStatusColor } from '@/utils/contacts';
+import { getStatusColor, getStatusLabel } from '@/utils/contacts';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -215,7 +215,6 @@ const $leadminerStore = useLeadminerStore();
 const skipDialog = computed(
   () =>
     !(
-      contact.value.name ||
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_names ||
@@ -232,6 +231,7 @@ function isValidURL(url: string) {
     // eslint-disable-next-line no-new
     new URL(url);
     return true;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
     return false;
   }

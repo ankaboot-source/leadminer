@@ -144,7 +144,7 @@ async function updateEnrichmentTask(
  * @throws Error if there is an issue updating the contact in the database.
  */
 async function enrichContact(
-  updateEmptyOnly: boolean,
+  updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>[]
 ) {
   // update contacts
@@ -153,7 +153,7 @@ async function enrichContact(
       ...contact,
       same_as: contact.same_as?.join(',')
     })),
-    p_update_empty_fields_only: updateEmptyOnly ?? true
+    p_update_empty_fields_only: updateEmptyFieldsOnly ?? true
   });
 
   if (error) {
@@ -186,14 +186,13 @@ export default function initializeEnrichementController(userResolver: Users) {
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
       const {
-        partial,
-        emails: emailsReq,
-        updateEmptyFieldsOnly
+        updateEmptyFieldsOnly,
+        emails: emailsReq
       }: {
-        partial: boolean;
         updateEmptyFieldsOnly: boolean;
         emails: string[];
       } = req.body;
+
       try {
         if (
           emailsReq !== undefined &&
@@ -225,7 +224,10 @@ export default function initializeEnrichementController(userResolver: Users) {
             availableUnits
           } = await creditsService.validate(user.id, contactsToEnrich.length);
 
-          if (!partial && (hasDeficientCredits || hasInsufficientCredits)) {
+          if (
+            !updateEmptyFieldsOnly &&
+            (hasDeficientCredits || hasInsufficientCredits)
+          ) {
             const response = {
               total: contactsToEnrich.length,
               available: Math.floor(availableUnits)
@@ -308,7 +310,6 @@ export default function initializeEnrichementController(userResolver: Users) {
             works_for: contact.organization
           }))
         );
-
         await updateEnrichmentTask(taskId, 'done', {
           ...details,
           result: {
