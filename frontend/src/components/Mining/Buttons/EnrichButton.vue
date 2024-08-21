@@ -199,14 +199,14 @@ function setupEnrichmentRealtime() {
   subscription.subscribe();
 }
 
-async function startEnrichment(partial: boolean) {
+async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     $leadminerStore.activeEnrichment = true;
     setupEnrichmentRealtime();
     await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
       method: 'POST',
       body: {
-        partial,
+        updateEmptyFieldsOnly,
         emails: contactsToEnrich.value ?? $contactsStore.selected,
       },
       onResponse({ response }) {
