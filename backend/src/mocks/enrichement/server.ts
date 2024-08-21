@@ -19,14 +19,13 @@ app.use('/voilanorbert', voilanorbertRoutes);
 app.listen(SERVER_PORT, () => {
   // eslint-disable-next-line no-console
   console.log(
-    `Started mocks server for local development.
-    ${coloredLog(colors.cyan, 'Server:')} http://127.0.0.1:${SERVER_PORT}
+    `Started mock servers for local development.
     ${coloredLog(
       colors.cyan,
-      'Voilanorbert:'
+      '- Voilanorbert:'
     )} http://127.0.0.1:${SERVER_PORT}/voilanorbert
-        ${coloredLog(colors.cyan, 'Api key:')} ${VOILANORBERT_API_TOKEN}
-        ${coloredLog(colors.cyan, 'Username:')} ${VOILANORBERT_USERNAME}
+        ${coloredLog(colors.cyan, '- Api key:')} ${VOILANORBERT_API_TOKEN}
+        ${coloredLog(colors.cyan, '- Username:')} ${VOILANORBERT_USERNAME}
   `
   );
 });
