@@ -4,6 +4,7 @@ import qs from 'qs';
 import { logError } from '../../../utils/axios';
 
 interface Config {
+  url: string;
   username: string;
   apiToken: string;
 }
@@ -14,9 +15,12 @@ export default class Voilanorbert {
 
   private readonly api: AxiosInstance;
 
-  constructor({ username, apiToken }: Config, private readonly logger: Logger) {
+  constructor(
+    { url, username, apiToken }: Config,
+    private readonly logger: Logger
+  ) {
     this.api = axios.create({
-      baseURL: Voilanorbert.baseURL,
+      baseURL: url ?? Voilanorbert.baseURL,
       headers: {},
       auth: {
         username,

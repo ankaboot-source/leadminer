@@ -12,98 +12,137 @@ Leadminer is a tool to mine and transmute raw and passive emails from your own e
 
 ## How to run?
 
-To run Leadminer, follow these steps:
+This project integrates with external services for full functionality. You can skip setting these up if you're running in development mode. See [development setup](#running-locally).
 
-### Supabase instance:
+### Setup email-verification services:
 
-- Create a Supabase account [here](https://supabase.com/dashboard/sign-up) and create a project.
-- Obtain the following three values from your dashboard:
-  - **Project URL**: Found under Settings -> API in the "Project URL" section.
-  - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
-  - **Project Anon key**: Found under Settings -> API in the "Project API keys" section. Use the `anon` `public` key.
-  - **Postgres Connection string**: Found under Settings -> Database in the "Connection string" section. Select the URI option.
+We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.com) for email verification. Configure one or both.
 
-### Configure OAuth:
+- **Reacher:** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
 
-- Enable third-party providers in your Supabase dashboard. Refer to the [documentation](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
-- Create a third-party provider OAuth app:
-  - Under the "Social Auth" section, select the provider you want to configure and follow the provided [instructions](https://supabase.com/docs/guides/auth#providers).
-  - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://localhost:8081/api/imap/mine/sources/PROVIDER_NAME/callback`.
+  > **Note:**  Refer to [.env.master.prod](./.env.master.prod) and [.env.master.dev](./.env.master.dev) according to your environment
 
-> **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "PROVIDER_NAME" if integrating Google OAuth and "azure" if integrating Azure.
+- **MailerCheck:** Sign up, then update `MAILERCHECK_API_KEY` in the `.env` file.
 
-### Configure Email Verification:
+  > Refer to [.env.master.prod](./.env.master.prod) for guidance.
 
-We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.com) as part of our email verification process. You can configure either one or both.
+### Setup contact-enrichment services:
 
-- **Configure Reacher:**
+We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sign up for an account and update `## CONTACT ENRICHMENT ##` section in the `.env` file. 
 
-You can either use the SaaS version of Reacher or self-host it. Follow [Reacher's official documentation](https://help.reacher.email/) for detailed configuration instructions.
+>  See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
 
-> **Note:** Leadminer is configured by default to use a Mock server of Reacher for ease of use. 
->
-> Check the `### REACHER ###` section in the `.env` file.
+### Running in production
 
-- **Configure MailerCheck:**
+1. **Setup Supabase Instance:**
 
-MailerCheck is a SaaS solution. Create an account and add the API key to the environment variables. see `.env.example` detailed instructions.
+   - Create an account [here](https://supabase.com/dashboard/sign-up) and create a project.
+   - Obtain the following values from your dashboard:
+     - **Project URL**: Found under Settings -> API in the "Project URL" section.
+     - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
+     - **Project Anon key**: Found under Settings -> API in the "Project API keys" section. Use the `anon` `public` key.
+     - **Postgres Connection string**: Found under Settings -> Database in the "Connection string" section. Select the URI option.
 
-### Run using docker-compose
+   - Configuring authentication with OAuth:
 
-Docker is the recommended solution for self-hosting Leadminer thanks to its convenience and ease of use.
+     > **Note:** Currently, Leadminer only supports Google and Azure as third-party OAuth providers. Use "google" for the "PROVIDER_NAME" if integrating Google OAuth and "azure" if integrating Azure.
 
-1. Clone the repository and enter `leadminer` folder
+     - Enable third-party providers in your Supabase dashboard. Refer to the [documentation](https://supabase.com/docs/guides/auth#configure-third-party-providers) for instructions.
 
-1. Copy [.env.example](/.env.example) to `.env` and add the missing required environment variables
+     - Under the "Social Auth" section, select the provider you want to configure and follow the provided [instructions](https://supabase.com/docs/guides/auth#providers).
+     - After creating an OAuth app, go to your app dashboard and add the following URI under the "REDIRECT URI's" section: `http://localhost:8081/api/imap/mine/sources/PROVIDER_NAME/callback`.
 
-   ```sh
-   cp .env.example .env
-   ```
+   - **Install supabase-cli:**
 
-1. Start docker-compose:
+     ```shell
+     cd leadminer && npm i
+     ```
 
-   ```sh
+   - **Deploy migrations and [edge-functions]():**
+
+     ```shell
+     # Refer to https://supabase.com/docs/reference/cli/supabase-login
+     supabase login
+     # Refer to https://supabase.com/docs/reference/cli/supabase-link
+     supabase link --project-ref <supabase_project_id>
+     # Refer to https://supabase.com/docs/reference/cli/supabase-db-push
+     supabase db push 
+     # Refer to https://supabase.com/docs/guides/functions/deploy
+     supabase functions deploy
+     ```
+
+2. **Setup Environment Variables:**
+
+   You'll be configuring your environment variables from scratch, along with setting up all required services:
+
+   1. Copy the production environment files  [`.env.master.prod`](./.env.master.prod) [./supabase/functions/env.prod](./supabase/functions/.env.prod):
+
+      ```shell
+      cp .env.master.prod .env
+      cp ./supabase/functions/.env.prod ./supabase/functions/.env
+      ```
+
+   2. Deploy your [Supabase secrets](https://supabase.com/docs/guides/functions/secrets):
+
+      ```shell
+      supabase secrets set --env-file ./supabase/functions/.env
+      ```
+
+3. **Start docker-compose then navigate to `localhost:8080`:**
+
+   ```shell
    docker-compose up --build --force-recreate
    ```
 
-1. Navigate to `localhost:8080`.
-
-### Running the Project Locally (Dev mode)
+### Running Locally
 
 To run the project in your local environment, follow the steps below:
 
-1. Install the required dependencies by running the following command:
+1. **Install the required dependencies:**
 
    ```sh
    npm run install-deps
    ```
 
-2. Start the Supabase services and take note of the Supabase project token for the next step. Run the following command:
+2. **Start Supabase services:**
+
+   > Refer to [config.toml](./supabase/config.toml) file to tweak your local supabase.
 
    ```sh
    npm run dev:supabase
    ```
 
-3. Create the `.env` files by executing the command below.
+3. **Setup Environment Variables:**
 
-   > This will create `.env` files in the `/frontend` and `/backend` directories. Make sure to set the missing required variables in these files.
+   We provide preconfigured environment files optimized for development that includes keys, mocks, and more: 
 
-   ```sh
-   cp /frontend/.env.example /frontend/.env && cp /backend/.env.example /backend/.env
+   > Note: If you encounter issues during sign-in and sign-up using OAuth, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running in production](#running-in-production) to learn how you can create your own OAuth credentials.
+
+   1. Run the bellow commands, expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions`
+
+      ```shell
+      cp ./supabase/functions/.env.dev ./supabase/functions/.env # edge-functions variables
+      npm run dev:generate-env # backend and frontend variables
+      ```
+
+4. **Start Redis services:**
+
+   If you prefer to run a Redis container, use the command below. Otherwise, ensure Redis is installed on your machine and skip this step.
+
+   > Note: If you encounter issues connecting to the redis container, make sure to update `REDIS_HOST` in the `.env` file.
+
+   ```shell
+   docker-compose -f docker-compose.dev.yml up
    ```
 
-4. Start your environment by running the following commands:
+5. **Start your environment:**
 
    ```sh
-   # Start the Redis container (You can skip this step if you want to use your local instance)
-   docker-compose -f docker-compose.dev.yml up
-   
-   # Start the backend in development mode
-   npm run dev:backend-api
-   npm run dev:backend-worker
-   
-   # Start the frontend in development mode
-   npm run dev:frontend
+   npm run dev:frontend # Start frontend
+   npm run dev:backend-api	# Start backend api
+   npm run dev:backend-worker # Start email extraction worker
+   npm run dev:backend-email-worker # Start email verification worker
+   npm run dev:backend-mock-external-services	# Start mocks for external services such as voilanorbert, mailercheck...
    ```
 
 **Generating a new migration for schema changes:**

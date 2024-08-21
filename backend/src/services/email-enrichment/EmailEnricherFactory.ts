@@ -8,6 +8,7 @@ interface Config extends VoilanorbertConfig {
 }
 
 interface VoilanorbertConfig {
+  VOILANORBERT_URL?: string;
   VOILANORBERT_USERNAME?: string;
   VOILANORBERT_API_KEY?: string;
 }
@@ -20,9 +21,14 @@ export default class EmailEnricherFactory {
   private voilanorbertEmailEnricher?: EmailEnricher;
 
   constructor(private readonly config: Config, logger: Logger) {
-    if (config.VOILANORBERT_API_KEY && config.VOILANORBERT_USERNAME) {
+    if (
+      config.VOILANORBERT_URL &&
+      config.VOILANORBERT_API_KEY &&
+      config.VOILANORBERT_USERNAME
+    ) {
       this.createVoilanorbertEmailEnricher(
         {
+          VOILANORBERT_URL: config.VOILANORBERT_URL,
           VOILANORBERT_API_KEY: config.VOILANORBERT_API_KEY,
           VOILANORBERT_USERNAME: config.VOILANORBERT_USERNAME
         },
@@ -67,13 +73,22 @@ export default class EmailEnricherFactory {
 
   private createVoilanorbertEmailEnricher(
     {
+      VOILANORBERT_URL,
       VOILANORBERT_API_KEY,
       VOILANORBERT_USERNAME
-    }: { VOILANORBERT_API_KEY: string; VOILANORBERT_USERNAME: string },
+    }: {
+      VOILANORBERT_URL: string;
+      VOILANORBERT_API_KEY: string;
+      VOILANORBERT_USERNAME: string;
+    },
     logger: Logger
   ) {
     const client = new Voilanorbert(
-      { apiToken: VOILANORBERT_API_KEY, username: VOILANORBERT_USERNAME },
+      {
+        url: VOILANORBERT_URL,
+        apiToken: VOILANORBERT_API_KEY,
+        username: VOILANORBERT_USERNAME
+      },
       logger
     );
 
