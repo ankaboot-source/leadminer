@@ -11,7 +11,7 @@ interface Config {
 
 export default class Voilanorbert {
   private static readonly baseURL =
-    'https://api.voilanorbert.com/2018-01-08/enrich';
+    'https://api.voilanorbert.com/2018-01-08/';
 
   private readonly api: AxiosInstance;
 
@@ -36,7 +36,7 @@ export default class Voilanorbert {
         success: boolean;
         token: string;
       }>(
-        '/upload',
+        '/enrich/upload',
         qs.stringify({
           data: emails.join('\n'),
           webhook
