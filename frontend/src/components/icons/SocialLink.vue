@@ -22,9 +22,9 @@ const props = defineProps<{
   small: boolean;
 }>();
 
-const socialLinks = props.small
-  ? props.socialLinks.slice(0, 3)
-  : props.socialLinks;
+const socialLinks = toRef(() =>
+  props.small ? props.socialLinks.slice(0, 3) : props.socialLinks,
+);
 
 function getSameAsIcon(url: string) {
   try {
