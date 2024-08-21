@@ -200,6 +200,9 @@ import { getStatusColor, getStatusLabel } from '@/utils/contacts';
 const { t } = useI18n({
   useScope: 'local',
 });
+const { t: $t } = useI18n({
+  useScope: 'global',
+});
 
 const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
@@ -231,8 +234,7 @@ function isValidURL(url: string) {
     // eslint-disable-next-line no-new
     new URL(url);
     return true;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch {
     return false;
   }
 }
