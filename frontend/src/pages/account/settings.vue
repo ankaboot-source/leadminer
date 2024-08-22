@@ -6,7 +6,7 @@
           <div>
             <label class="block mb-2">{{ t('full_name') }}</label>
             <InputText
-              v-model="fullnameInput"
+              v-model="fullName"
               class="w-full md:w-30rem"
               type="text"
             />
@@ -14,10 +14,10 @@
           <div>
             <label class="block mb-2" for="email">Email</label>
             <InputText
-              v-model="emailInput"
+              v-model="email"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="isInvalidEmail(emailInput)"
+              :invalid="isInvalidEmail(email)"
               type="email"
               aria-describedby="email-help"
             />
@@ -27,11 +27,11 @@
               $t('auth.password')
             }}</label>
             <Password
-              v-model="passwordInput"
+              v-model="password"
               class="w-full"
               :input-style="{ width: '100%' }"
               toggle-mask
-              :invalid="isInvalidPassword(passwordInput)"
+              :invalid="isInvalidPassword(password)"
               :input-props="{ autocomplete: 'new-password' }"
             />
           </div>
@@ -42,8 +42,7 @@
           type="submit"
           :label="t('update')"
           :loading="isLoading"
-          :disabled="disableUpdateButton"
-          @click="updateUserDetailsButton"
+          @click="updateProfile"
         />
       </div>
     </Panel>
@@ -97,10 +96,10 @@
 </template>
 
 <script setup lang="ts">
-import type { UserAttributes } from '@supabase/supabase-js';
+import { onMounted, ref } from 'vue';
+
 import { isInvalidEmail } from '@/utils/email';
 import { isInvalidPassword } from '@/utils/password';
-import type { Profile } from '~/types/user';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -112,43 +111,49 @@ const { t: $t } = useI18n({
 
 const $toast = useToast();
 
-const { $api } = useNuxtApp();
-
-const { data: profile } = await useAsyncData('get-profile', async () => {
-  const $user = useSupabaseUser();
-  const { data, error } = await useSupabaseClient()
-    .from('profiles')
-    .select('*')
-    .single<Profile>();
-
-  if (error) {
-    throw error;
-  }
-
-  return {
-    isSocialLogin: $user.value.app_metadata.provider !== 'email',
-    ...data,
-  };
-});
-
-if (profile.value === null) {
-  throw new Error(' Error getting profile information.');
-}
+const userId = ref('');
+const email = ref('');
+const fullName = ref('');
+let oldFullName = '';
+let isUpdated = false;
+const password = ref('');
 
 const isLoading = ref(false);
+
 const showDeleteModal = ref(false);
+const isSocialLogin = ref(false);
 
-const emailInput = ref(profile.value.email);
-const fullnameInput = ref(profile.value.full_name);
-const passwordInput = ref('');
-const isSocialLogin = ref(profile.value.isSocialLogin);
+const { $api } = useNuxtApp();
 
-const disableUpdateButton = computed(
-  () =>
-    emailInput.value === profile.value?.email &&
-    fullnameInput.value === profile.value?.full_name &&
-    passwordInput.value.length === 0,
-);
+onMounted(async () => {
+  useRouter().replace({ query: {} });
+  const { session } = (await useSupabaseClient().auth.getSession()).data;
+
+  const { data: profile } = await useSupabaseClient()
+    .from('profiles')
+    .select('*')
+    .single();
+
+  if (!session || !profile) {
+    $toast.add({
+      severity: 'error',
+      summary: t('error'),
+      detail: t('session_expired'),
+      life: 3000,
+    });
+    await signOut();
+    return;
+  }
+
+  const { provider_token: providerToken } = session;
+  const { user_id: userid, full_name: userFullName } = profile;
+
+  userId.value = userid;
+  fullName.value = userFullName;
+  oldFullName = userFullName;
+  email.value = String(session.user.email);
+  isSocialLogin.value = Boolean(providerToken);
+});
 
 function showWarning() {
   showDeleteModal.value = true;
@@ -158,80 +163,82 @@ function closeWarning() {
   showDeleteModal.value = false;
 }
 
-async function updateUserAccount(userAccount: UserAttributes) {
-  const { error: accountUpdateError } =
-    await useSupabaseClient().auth.updateUser({ ...userAccount });
+async function updateProfile() {
+  isLoading.value = true;
 
-  if (accountUpdateError) {
-    throw accountUpdateError;
-  }
+  const { value: user } = useSupabaseUser();
 
-  $toast.add({
-    severity: 'info',
-    summary: t('email_updated'),
-    detail: t('check_email_confirmation'),
-    life: 3000,
-  });
-}
-
-async function updateUserProfile(userProfile: Partial<Profile>) {
-  const { error: emailUpdateError } = await useSupabaseClient<Profile>()
-    .from('profiles')
-    .update({ ...userProfile })
-    .eq('user_id', profile.value?.user_id);
-
-  if (emailUpdateError) {
-    throw emailUpdateError;
-  }
-
-  $toast.add({
-    severity: 'success',
-    summary: t('profile_updated'),
-    detail: t('profile_success'),
-    life: 3000,
-  });
-}
-
-async function updateUserDetailsButton() {
   try {
-    isLoading.value = true;
+    if (user?.email !== email.value) {
+      const { error } = await useSupabaseClient().auth.updateUser({
+        email: user?.email !== email.value ? email.value : undefined,
+        data: {
+          Prehead: t('change_email.prehead'),
+          Title: t('change_email.title'),
+          Body1: t('change_email.body.p1'),
+          Body2: t('change_email.body.p2'),
+          Body3: t('change_email.body.p3'),
+          Body4: t('change_email.body.p4'),
+          Button: t('change_email.button'),
+          Regards: $t('email_template.regards'),
+          Footer: $t('email_template.footer'),
+        },
+      });
 
-    const userAccount: UserAttributes = {};
-    const userProfile: Partial<Profile> = {};
+      if (error) {
+        throw error;
+      }
 
-    const { email: currentEmail, full_name: currentFullName } =
-      profile.value as Profile;
-
-    if (emailInput.value !== currentEmail) {
-      // used changed his email
-      userAccount.email = emailInput.value;
-      userAccount.data = {
-        Prehead: t('change_email.prehead'),
-        Title: t('change_email.title'),
-        Body1: t('change_email.body.p1'),
-        Body2: t('change_email.body.p2'),
-        Body3: t('change_email.body.p3'),
-        Body4: t('change_email.body.p4'),
-        Button: t('change_email.button'),
-        Regards: $t('email_template.regards'),
-        Footer: $t('email_template.footer'),
-      };
+      $toast.add({
+        severity: 'info',
+        summary: t('email_updated'),
+        detail: t('check_email_confirmation'),
+        life: 3000,
+      });
     }
 
-    if (passwordInput.value.length) {
-      userAccount.password = passwordInput.value;
+    if (password.value.length) {
+      const { error } = await useSupabaseClient().auth.updateUser({
+        password: password.value,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      isUpdated = true;
     }
 
-    if (fullnameInput.value !== currentFullName) {
-      userProfile.full_name = fullnameInput.value;
+    if (fullName.value.length && oldFullName !== fullName.value) {
+      const { error } = await useSupabaseClient<{
+        full_name: string;
+      }>()
+        .from('profiles')
+        .update({
+          full_name: fullName.value,
+        })
+        .eq('user_id', userId.value);
+
+      if (error) {
+        throw error;
+      }
+
+      oldFullName = fullName.value;
+      isUpdated = true;
     }
 
-    if (Object.keys(userAccount).length) {
-      await updateUserAccount(userAccount);
+    await useSupabaseClient().auth.refreshSession();
+
+    if (isUpdated) {
+      $toast.add({
+        severity: 'success',
+        summary: t('profile_updated'),
+        detail: t('profile_success'),
+        life: 3000,
+      });
     }
-    if (Object.keys(userProfile).length) {
-      await updateUserProfile(userProfile);
-    }
+
+    isLoading.value = false;
   } catch (error) {
     $toast.add({
       severity: 'error',
@@ -239,8 +246,10 @@ async function updateUserDetailsButton() {
       detail: (error as Error).message,
       life: 3000,
     });
-  } finally {
+
     isLoading.value = false;
+
+    throw error;
   }
 }
 
