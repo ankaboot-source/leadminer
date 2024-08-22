@@ -6,7 +6,7 @@
         <InputText
           v-model="email"
           :invalid="
-            isInvalidEmail(email) ||
+            isInvalidEmailSyntax(email) ||
             !validateEmailRequired ||
             invalidEmail ||
             isEmailExist
@@ -31,7 +31,7 @@
             {{ $t('auth.invalid_login') }}
           </small>
         </template>
-        <template v-else-if="isInvalidEmail(email)">
+        <template v-else-if="isInvalidEmailSyntax(email)">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_email') }}
           </small>
@@ -57,7 +57,7 @@
           toggle-mask
           required
           :invalid="
-            isInvalidPassword(password) ||
+            isInvalidPasswordSyntax(password) ||
             !validatePasswordRequired ||
             invalidPassword
           "
@@ -107,7 +107,7 @@
             {{ $t('auth.invalid_login') }}
           </small>
         </template>
-        <template v-else-if="isInvalidPassword(password)">
+        <template v-else-if="isInvalidPasswordSyntax(password)">
           <small id="password-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_password') }}
           </small>
@@ -138,7 +138,9 @@
             <InputText
               v-model="email"
               :invalid="
-                isInvalidEmail(email) || !validateEmailRequired || invalidEmail
+                isInvalidEmailSyntax(email) ||
+                !validateEmailRequired ||
+                invalidEmail
               "
               type="email"
               required
@@ -157,7 +159,7 @@
                 {{ $t('auth.invalid_login') }}
               </small>
             </template>
-            <template v-else-if="isInvalidEmail(email)">
+            <template v-else-if="isInvalidEmailSyntax(email)">
               <small id="email-help" class="text-red-400 text-left pl-4">
                 {{ $t('auth.valid_email') }}
               </small>
@@ -176,7 +178,7 @@
               v-model="password"
               :input-style="{ width: '100%' }"
               :invalid="
-                isInvalidPassword(password) ||
+                isInvalidPasswordSyntax(password) ||
                 !validatePasswordRequired ||
                 invalidPassword
               "
@@ -198,7 +200,7 @@
                 {{ $t('auth.invalid_login') }}
               </small>
             </template>
-            <template v-else-if="isInvalidPassword(password)">
+            <template v-else-if="isInvalidPasswordSyntax(password)">
               <small id="password-help" class="text-red-400 text-left pl-4">
                 {{ $t('auth.valid_password') }}
               </small>
@@ -230,8 +232,8 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { isInvalidEmail } from '@/utils/email';
-import { isInvalidPassword } from '@/utils/password';
+import { isInvalidEmail as isInvalidEmailSyntax } from '@/utils/email';
+import { isInvalidPassword as isInvalidPasswordSyntax } from '@/utils/password';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -282,6 +284,11 @@ const hasNumber = computed(
 
 const isLoading = ref(false);
 
+function setInvalidInputs(invalid: boolean) {
+  invalidEmail.value = invalid;
+  invalidPassword.value = invalid;
+}
+
 function checkRequiredFields(): boolean {
   if (!email.value) {
     validateEmailRequired.value = false;
@@ -301,8 +308,7 @@ function checkRequiredFields(): boolean {
 async function loginWithEmailAndPassword() {
   isLoading.value = true;
 
-  invalidEmail.value = false;
-  invalidPassword.value = false;
+  setInvalidInputs(false);
 
   if (checkRequiredFields()) {
     return;
@@ -319,8 +325,7 @@ async function loginWithEmailAndPassword() {
     await navigateTo({ path: '/dashboard' });
   } catch (error) {
     if (error instanceof Error) {
-      invalidEmail.value = true;
-      invalidPassword.value = true;
+      setInvalidInputs(true);
 
       $toast.add({
         severity: 'error',
@@ -337,15 +342,17 @@ async function loginWithEmailAndPassword() {
 async function signUp() {
   isLoading.value = true;
 
-  invalidEmail.value = false;
-  invalidPassword.value = false;
+  setInvalidInputs(false);
 
   if (checkRequiredFields()) {
     return;
   }
 
   try {
-    if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
+    if (
+      isInvalidEmailSyntax(email.value) ||
+      isInvalidPasswordSyntax(password.value)
+    ) {
       throw Error($t('auth.invalid_login'));
     }
 
@@ -386,8 +393,7 @@ async function signUp() {
       if (error.message === 'User already registered') {
         isEmailExist.value = true;
       } else {
-        invalidEmail.value = true;
-        invalidPassword.value = true;
+        setInvalidInputs(true);
       }
 
       $toast.add({

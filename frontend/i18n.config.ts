@@ -194,7 +194,7 @@ export default defineI18nConfig(() => ({
         continue_with: 'Continuer avec {provider}',
         or_sign_in_with_social: 'ou se connecter avec votre compte',
         or_sign_up_with_social: "ou s'inscrire avec votre compte",
-        user_exist: 'Utilisateur déjà enregistré',
+        user_exist: 'Utilisateur déjà inscrit',
       },
       email_template: {
         regards: 'Cordialement,',
