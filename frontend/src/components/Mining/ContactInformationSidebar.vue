@@ -160,8 +160,6 @@
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
         <EnrichButton
-          v-model:enrichment-status="activeEnrichment"
-          :start-on-mounted="false"
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
           :contacts-to-enrich="[contact.email]"
@@ -197,9 +195,13 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import { type EnrichmentTask } from '@/types/enrichment';
+import { getStatusColor, getStatusLabel } from '@/utils/contacts';
 
 const { t } = useI18n({
   useScope: 'local',
+});
+const { t: $t } = useI18n({
+  useScope: 'global',
 });
 
 const $toast = useToast();
@@ -211,12 +213,11 @@ const show = defineModel<boolean>('show');
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
-const activeEnrichment = ref(false);
+const $leadminerStore = useLeadminerStore();
 
 const skipDialog = computed(
   () =>
     !(
-      contact.value.name ||
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_names ||
@@ -233,7 +234,7 @@ function isValidURL(url: string) {
     // eslint-disable-next-line no-new
     new URL(url);
     return true;
-  } catch (_) {
+  } catch {
     return false;
   }
 }
@@ -258,10 +259,10 @@ const enrichmentRealtimeCallback = (
   const { status } = payload.new as EnrichmentTask;
   switch (status) {
     case 'done':
-      activeEnrichment.value = false;
+      $leadminerStore.activeEnrichment = false;
       break;
     case 'canceled':
-      activeEnrichment.value = false;
+      $leadminerStore.activeEnrichment = false;
       break;
     default:
       break;
@@ -375,6 +376,7 @@ async function saveContactInformations() {
   await updateContact(user.id, contactCleaned);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
+  $contactInformationSidebar.show(contactCleaned as Contact);
 }
 
 function cancelContactInformations() {

@@ -4,19 +4,23 @@ import qs from 'qs';
 import { logError } from '../../../utils/axios';
 
 interface Config {
+  url: string;
   username: string;
   apiToken: string;
 }
 
 export default class Voilanorbert {
   private static readonly baseURL =
-    'https://api.voilanorbert.com/2018-01-08/enrich';
+    'https://api.voilanorbert.com/2018-01-08/';
 
   private readonly api: AxiosInstance;
 
-  constructor({ username, apiToken }: Config, private readonly logger: Logger) {
+  constructor(
+    { url, username, apiToken }: Config,
+    private readonly logger: Logger
+  ) {
     this.api = axios.create({
-      baseURL: Voilanorbert.baseURL,
+      baseURL: url ?? Voilanorbert.baseURL,
       headers: {},
       auth: {
         username,
@@ -32,7 +36,7 @@ export default class Voilanorbert {
         success: boolean;
         token: string;
       }>(
-        '/upload',
+        '/enrich/upload',
         qs.stringify({
           data: emails.join('\n'),
           webhook

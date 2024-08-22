@@ -63,12 +63,12 @@
     icon-pos="right"
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
-    :disabled="enrichmentStatus"
+    :disabled="$leadminerStore.activeEnrichment"
     @click="openDialog"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
-        <span v-if="!enrichmentStatus">💎</span>
+        <span v-if="!$leadminerStore.activeEnrichment">💎</span>
         <i v-else class="pi pi-spin pi-spinner mr-1.5" />
       </span>
     </template>
@@ -90,10 +90,8 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
-const enrichmentStatus = defineModel<boolean>('enrichmentStatus');
-
 const props = defineProps<{
-  startOnMounted: boolean;
+  startOnMounted?: boolean;
   enrichmentRealtimeCallback: (
     payload: RealtimePostgresChangesPayload<EnrichmentTask>,
   ) => void;
@@ -142,7 +140,6 @@ function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
-  enrichmentStatus.value = false;
   $leadminerStore.activeEnrichment = false;
 }
 
@@ -175,7 +172,7 @@ function setupEnrichmentRealtime() {
                 }),
                 'achievement',
               );
-              enrichmentStatus.value = false;
+              $leadminerStore.activeEnrichment = false;
             } else {
               showNotification(
                 'info',
@@ -202,15 +199,14 @@ function setupEnrichmentRealtime() {
   subscription.subscribe();
 }
 
-async function startEnrichment(partial: boolean) {
+async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
-    enrichmentStatus.value = true;
     $leadminerStore.activeEnrichment = true;
     setupEnrichmentRealtime();
     await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
       method: 'POST',
       body: {
-        partial,
+        updateEmptyFieldsOnly,
         emails: contactsToEnrich.value ?? $contactsStore.selected,
       },
       onResponse({ response }) {
@@ -246,10 +242,6 @@ onMounted(async () => {
   if (startOnMounted) {
     await startEnrichment(true);
   }
-});
-
-onUnmounted(() => {
-  stopEnrichment();
 });
 
 const openDialog = () => {
