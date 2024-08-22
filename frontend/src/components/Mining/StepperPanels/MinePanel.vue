@@ -15,7 +15,11 @@
       </div>
       <div v-else-if="!$leadminerStore.miningTask">
         {{ totalEmails.toLocaleString() }}
-        {{ t('email_messages_to_mine', totalEmails) }}
+        {{
+          extractionProgress < 1
+            ? t('email_messages_to_mine', totalEmails)
+            : t('email_messages_mined', totalEmails)
+        }}
       </div>
     </template>
   </ProgressCard>
@@ -298,6 +302,7 @@ async function haltMining() {
   "en": {
     "retrieving_mailboxes": "Retrieving mailboxes...",
     "email_messages_to_mine": "email message to mine. | email messages to mine.",
+    "email_messages_mined": "email message mined. | email messages mined.",
     "start_mining_now": "Start mining now!",
     "halt_mining": "Halt mining",
     "fine_tune_mining": "Fine tune mining",
@@ -318,6 +323,7 @@ async function haltMining() {
   "fr": {
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
     "email_messages_to_mine": "email à extraire. | emails à extraire",
+    "email_messages_mined": "email extrait. | emails extraits",
     "start_mining_now": "Lancer maintenant l'extraction !",
     "halt_mining": "Arrêter l'extraction",
     "fine_tune_mining": "Affiner l'extraction",
