@@ -644,8 +644,8 @@ const $contactInformationSidebar = useMiningContactInformationSidebar();
 const isLoading = ref(true);
 const loadingLabel = ref('');
 
-let contacts = ref();
-let contactsLength = ref(0);
+const contacts = computed(() => $contactsStore.contacts);
+const contactsLength = computed(() => contacts.value?.length);
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
@@ -917,7 +917,36 @@ function observeTop() {
   );
 }
 
-onNuxtReady(() => {
+const stopShowTableFirstTimeWatcher = watch(
+  () => contactsLength.value,
+  () => {
+    if (contactsLength.value !== undefined) {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+      if (contactsLength.value > 0) {
+        observeTop();
+        watchEffect(() => {
+          tableHeight.value = `${
+            $screenStore.height - tablePosTop.value - 120
+          }px`;
+        });
+        try {
+          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
+          /* empty */
+        }
+      }
+    }
+  },
+  { deep: true, immediate: true },
+);
+
+onNuxtReady(async () => {
   $screenStore.init();
   visibleColumns.value = [
     'contacts',
@@ -929,21 +958,22 @@ onNuxtReady(() => {
     ...($screenStore.width > 800 ? ['tags'] : []),
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
-  $contactsStore.subscribeRealtime($user.value);
-  contacts = computed(() => $contactsStore.contacts);
-  contactsLength = computed(() => contacts.value?.length);
-  if (contactsLength.value > 0) {
-    observeTop();
-    watchEffect(() => {
-      tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
-    });
+  const $stepper = useMiningStepper();
+  const fetchedContacts = await getContacts($user.value.id);
+
+  if ($stepper.index === 1 && fetchedContacts.length > 0) {
+    $stepper.hide();
   }
+
+  $contactsStore.setContacts(fetchedContacts);
+  $contactsStore.subscribeRealtime($user.value);
+
   isLoading.value = false;
 });
 
 onUnmounted(() => {
   $screenStore.destroy();
-  $contactsStore.unsubscribeRealtime();
+  $contactsStore.$reset();
 });
 </script>
 

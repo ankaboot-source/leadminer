@@ -70,10 +70,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (subscription) {
       subscription.unsubscribe();
     }
-
     if (syncInterval) {
       clearInterval(syncInterval);
     }
+    cache = new Map<string, Contact>();
   }
 
   function $reset() {
