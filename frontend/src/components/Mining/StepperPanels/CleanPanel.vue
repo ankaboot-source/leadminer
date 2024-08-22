@@ -8,10 +8,12 @@
     :progress-tooltip="progressTooltip"
   >
     <template #progress-title>
-      <span class="pr-1">
-        {{ contactsToVerify.toLocaleString() }}
-      </span>
-      {{ t('contacts_to_clean') }}
+      {{ contactsToVerify.toLocaleString() }}
+      {{
+        verificationProgress < 1
+          ? t('contacts_to_clean', contactsToVerify)
+          : t('contacts_cleaned', contactsToVerify)
+      }}
     </template>
   </ProgressCard>
   <div class="flex pt-6 justify-end">
@@ -139,7 +141,8 @@ function startNewMining() {
 {
   "en": {
     "enrich_contacts": "Enrich {n} contacts",
-    "contacts_to_clean": "estimated contacts to clean.",
+    "contacts_to_clean": "estimated contact to clean. | estimated contacts to clean.",
+    "contacts_cleaned": "contact cleaned. | contacts cleaned.",
     "halt_cleaning": "Halt cleaning",
     "start_new_mining": "Start a new mining",
     "verified_emails": "Verified emails: {verifiedContacts}/{contactsToVerify}",
@@ -151,7 +154,8 @@ function startNewMining() {
   },
   "fr": {
     "enrich_contacts": "Enrichissez {n} contacts",
-    "contacts_to_clean": "contacts estimés à nettoyer",
+    "contacts_to_clean": "contact estimé à nettoyer | contacts estimés à nettoyer",
+    "contacts_cleaned": "contact nettoyé. | contacts nettoyés.",
     "halt_cleaning": "Arrêter le nettoyage",
     "start_new_mining": "Commencer une nouvelle extraction",
     "verified_emails": "E-mails vérifiés : {verifiedContacts}/{contactsToVerify}",
