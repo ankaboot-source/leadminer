@@ -77,6 +77,7 @@ export default defineI18nConfig(() => ({
         continue_with: 'Continue with {provider}',
         or_sign_in_with_social: 'or sign-in by social login',
         or_sign_up_with_social: 'or sign-up by social login',
+        user_exist: 'User already registered',
       },
       email_template: {
         regards: 'Best regards,',
@@ -193,6 +194,7 @@ export default defineI18nConfig(() => ({
         continue_with: 'Continuer avec {provider}',
         or_sign_in_with_social: 'ou se connecter avec votre compte',
         or_sign_up_with_social: "ou s'inscrire avec votre compte",
+        user_exist: 'Utilisateur déjà inscrit',
       },
       email_template: {
         regards: 'Cordialement,',

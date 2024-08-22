@@ -12,7 +12,7 @@
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
         </div>
         <div v-else-if="progressPercentage === 100">
-          {{ t('finished_in', { t: convertSeconds(getElapsedTime()) }) }}
+          {{ t('finished_in', { t: convertSeconds(finishedTime) }) }}
         </div>
         <div v-else>
           {{ t('estimated_time', { t: estimatedRemainingTimeConverted }) }}
@@ -68,9 +68,17 @@ const progressColor = computed(() =>
   progressPercentage.value < 100 ? 'bg-amber-400' : 'bg-green-600',
 );
 
+const finishedTime = ref(0);
+
 function getElapsedTime() {
   return Math.floor((performance.now() - progressStartedAt.value || 0) / 1000);
 }
+
+watchEffect(() => {
+  if (progressPercentage.value === 100 && finishedTime.value === 0) {
+    finishedTime.value = getElapsedTime();
+  }
+});
 
 function getEstimatedRemainingTime() {
   const elapsedTime = getElapsedTime();

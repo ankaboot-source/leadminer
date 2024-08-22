@@ -5,31 +5,47 @@
         <label class="text-left" for="email">Email</label>
         <InputText
           v-model="email"
-          :invalid="isInvalidEmail(email) || !validateEmailRequired"
+          :invalid="
+            isInvalidEmailSyntax(email) ||
+            !validateEmailRequired ||
+            invalidEmail ||
+            isEmailExist
+          "
           type="email"
           required
           aria-describedby="email-help"
-          @focusin="
-            emailFocus = true;
-            validateEmailRequired = true;
+          @input="
+            () => {
+              invalidEmail = false;
+              isEmailExist = false;
+              validateEmailRequired = true;
+            }
           "
+          @focusin="emailFocus = true"
           @focusout="emailFocus = false"
           @keypress.enter="signUp"
         />
-        <small
-          v-if="isInvalidEmail(email)"
-          id="email-help"
-          class="text-red-400 text-left pl-4"
-        >
-          {{ $t('auth.valid_email') }}
-        </small>
-        <small
-          v-if="!validateEmailRequired"
-          id="email-help"
-          class="text-red-400 text-left pl-4"
-        >
-          {{ $t('common.email_required') }}
-        </small>
+
+        <template v-if="invalidEmail">
+          <small id="password-help" class="text-red-400 text-left pl-4">
+            {{ $t('auth.invalid_login') }}
+          </small>
+        </template>
+        <template v-else-if="isInvalidEmailSyntax(email)">
+          <small id="email-help" class="text-red-400 text-left pl-4">
+            {{ $t('auth.valid_email') }}
+          </small>
+        </template>
+        <template v-else-if="!validateEmailRequired">
+          <small id="email-help" class="text-red-400 text-left pl-4">
+            {{ $t('common.email_required') }}
+          </small>
+        </template>
+        <template v-else-if="isEmailExist">
+          <small id="email-help" class="text-red-400 text-left pl-4">
+            {{ $t('auth.user_exist') }}
+          </small>
+        </template>
       </div>
       <div class="grid gap-1">
         <label class="text-left" for="password">{{
@@ -40,12 +56,19 @@
           :input-style="{ width: '100%' }"
           toggle-mask
           required
-          :invalid="isInvalidPassword(password) || !validatePasswordRequired"
-          aria-describedby="password-help"
-          @focusin="
-            passwordFocus = true;
-            validatePasswordRequired = true;
+          :invalid="
+            isInvalidPasswordSyntax(password) ||
+            !validatePasswordRequired ||
+            invalidPassword
           "
+          aria-describedby="password-help"
+          @input="
+            () => {
+              invalidPassword = false;
+              validatePasswordRequired = true;
+            }
+          "
+          @focusin="passwordFocus = true"
           @focusout="passwordFocus = false"
           @keypress.enter="signUp"
         >
@@ -79,20 +102,21 @@
             </ul>
           </template>
         </Password>
-        <small
-          v-if="isInvalidPassword(password)"
-          id="password-help"
-          class="text-red-400 text-left pl-4"
-        >
-          {{ $t('auth.valid_password') }}
-        </small>
-        <small
-          v-if="!validatePasswordRequired"
-          id="email-help"
-          class="text-red-400 text-left pl-4"
-        >
-          {{ $t('common.password_required') }}
-        </small>
+        <template v-if="invalidPassword">
+          <small id="password-help" class="text-red-400 text-left pl-4">
+            {{ $t('auth.invalid_login') }}
+          </small>
+        </template>
+        <template v-else-if="isInvalidPasswordSyntax(password)">
+          <small id="password-help" class="text-red-400 text-left pl-4">
+            {{ $t('auth.valid_password') }}
+          </small>
+        </template>
+        <template v-else-if="!validatePasswordRequired">
+          <small id="email-help" class="text-red-400 text-left pl-4">
+            {{ $t('common.password_required') }}
+          </small>
+        </template>
       </div>
       <div class="pt-3">
         <Button
@@ -113,30 +137,38 @@
             <label class="text-left" for="email">Email</label>
             <InputText
               v-model="email"
-              :invalid="isInvalidEmail(email) || !validateEmailRequired"
+              :invalid="
+                isInvalidEmailSyntax(email) ||
+                !validateEmailRequired ||
+                invalidEmail
+              "
               type="email"
               required
-              @focusin="
-                emailFocus = true;
-                validateEmailRequired = true;
+              @input="
+                () => {
+                  invalidEmail = false;
+                  validateEmailRequired = true;
+                }
               "
+              @focusin="emailFocus = true"
               @focusout="emailFocus = false"
               @keypress.enter="loginWithEmailAndPassword"
             />
-            <small
-              v-if="isInvalidEmail(email)"
-              id="email-help"
-              class="text-red-400 text-left pl-4"
-            >
-              {{ $t('auth.valid_email') }}
-            </small>
-            <small
-              v-if="!validateEmailRequired"
-              id="email-help"
-              class="text-red-400 text-left pl-4"
-            >
-              {{ $t('common.email_required') }}
-            </small>
+            <template v-if="invalidEmail">
+              <small id="password-help" class="text-red-400 text-left pl-4">
+                {{ $t('auth.invalid_login') }}
+              </small>
+            </template>
+            <template v-else-if="isInvalidEmailSyntax(email)">
+              <small id="email-help" class="text-red-400 text-left pl-4">
+                {{ $t('auth.valid_email') }}
+              </small>
+            </template>
+            <template v-else-if="!validateEmailRequired">
+              <small id="email-help" class="text-red-400 text-left pl-4">
+                {{ $t('common.email_required') }}
+              </small>
+            </template>
           </div>
           <div class="grid gap-1">
             <label class="text-left" for="password">{{
@@ -146,32 +178,38 @@
               v-model="password"
               :input-style="{ width: '100%' }"
               :invalid="
-                isInvalidPassword(password) || !validatePasswordRequired
+                isInvalidPasswordSyntax(password) ||
+                !validatePasswordRequired ||
+                invalidPassword
               "
               toggle-mask
               required
               :feedback="false"
-              @focusin="
-                passwordFocus = true;
-                validatePasswordRequired = true;
+              @input="
+                () => {
+                  invalidPassword = false;
+                  validatePasswordRequired = true;
+                }
               "
+              @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
               @keypress.enter="loginWithEmailAndPassword"
             />
-            <small
-              v-if="isInvalidPassword(password)"
-              id="password-help"
-              class="text-red-400 text-left pl-4"
-            >
-              {{ $t('auth.valid_password') }}
-            </small>
-            <small
-              v-if="!validatePasswordRequired"
-              id="email-help"
-              class="text-red-400 text-left pl-4"
-            >
-              {{ $t('common.password_required') }}
-            </small>
+            <template v-if="invalidPassword">
+              <small id="password-help" class="text-red-400 text-left pl-4">
+                {{ $t('auth.invalid_login') }}
+              </small>
+            </template>
+            <template v-else-if="isInvalidPasswordSyntax(password)">
+              <small id="password-help" class="text-red-400 text-left pl-4">
+                {{ $t('auth.valid_password') }}
+              </small>
+            </template>
+            <template v-else-if="!validatePasswordRequired">
+              <small id="email-help" class="text-red-400 text-left pl-4">
+                {{ $t('common.password_required') }}
+              </small>
+            </template>
           </div>
         </div>
         <NuxtLink class="text-right text-indigo-500" to="/auth/forgot-password">
@@ -194,8 +232,8 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { isInvalidEmail } from '@/utils/email';
-import { isInvalidPassword } from '@/utils/password';
+import { isInvalidEmail as isInvalidEmailSyntax } from '@/utils/email';
+import { isInvalidPassword as isInvalidPasswordSyntax } from '@/utils/password';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -228,6 +266,9 @@ const passwordFocus = ref(false);
 
 const validateEmailRequired = ref(true);
 const validatePasswordRequired = ref(true);
+const isEmailExist = ref(false);
+const invalidEmail = ref(false);
+const invalidPassword = ref(false);
 
 const hasLowerCase = computed(
   () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value),
@@ -242,6 +283,11 @@ const hasNumber = computed(
 );
 
 const isLoading = ref(false);
+
+function setInvalidInputs(invalid: boolean) {
+  invalidEmail.value = invalid;
+  invalidPassword.value = invalid;
+}
 
 function checkRequiredFields(): boolean {
   if (!email.value) {
@@ -262,6 +308,8 @@ function checkRequiredFields(): boolean {
 async function loginWithEmailAndPassword() {
   isLoading.value = true;
 
+  setInvalidInputs(false);
+
   if (checkRequiredFields()) {
     return;
   }
@@ -277,6 +325,8 @@ async function loginWithEmailAndPassword() {
     await navigateTo({ path: '/dashboard' });
   } catch (error) {
     if (error instanceof Error) {
+      setInvalidInputs(true);
+
       $toast.add({
         severity: 'error',
         summary: $t('auth.sign_in_failed'),
@@ -292,12 +342,17 @@ async function loginWithEmailAndPassword() {
 async function signUp() {
   isLoading.value = true;
 
+  setInvalidInputs(false);
+
   if (checkRequiredFields()) {
     return;
   }
 
   try {
-    if (isInvalidEmail(email.value) || isInvalidPassword(password.value)) {
+    if (
+      isInvalidEmailSyntax(email.value) ||
+      isInvalidPasswordSyntax(password.value)
+    ) {
       throw Error($t('auth.invalid_login'));
     }
 
@@ -335,10 +390,18 @@ async function signUp() {
     });
   } catch (error) {
     if (error instanceof Error) {
+      if (error.message === 'User already registered') {
+        isEmailExist.value = true;
+      } else {
+        setInvalidInputs(true);
+      }
+
       $toast.add({
         severity: 'error',
         summary: $t('auth.sign_up_failed'),
-        detail: `${error.message}`,
+        detail: $t(
+          isEmailExist.value ? 'auth.user_exist' : 'auth.invalid_login',
+        ),
         life: 3000,
       });
     }
