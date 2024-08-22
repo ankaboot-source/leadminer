@@ -95,10 +95,20 @@ max_frequency = "1s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `twitch`, `twitter`, `slack`, `spotify`.
 [auth.external.google]
-enabled = false
+enabled = true
 # Default google credentials for local development only.
-client_id = "865693030337-f16qkf77kq5499ee47jq6ruog7it2idv.apps.googleusercontent.com"
-secret = "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"
+client_id = "576299956482-5jdo6vnoi78t84hmv6g6j28egeg63b3f.apps.googleusercontent.com"
+secret = "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"
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
+[auth.external.azure]
+enabled = true
+# Default google credentials for local development only.
+client_id = "1ee6bd18-c687-40ec-970e-6ca00b4e8e96"
+secret = "ST_8Q~-k_qxVDWYCKUG.k8KX7sTg10t7W6RK4dkJ"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,

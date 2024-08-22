@@ -26,7 +26,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   function refreshContacts() {
-    contacts.value = Array.from(cache.values());
+    if (contacts.value?.length !== Array.from(cache.values()).length) {
+      contacts.value = Array.from(cache.values());
+    }
   }
 
   function subscribeRealtime(user: User) {

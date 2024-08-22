@@ -2,7 +2,7 @@
   <CreditsDialog
     ref="CreditsDialogRef"
     engagement-type="contacts"
-    action-type="download"
+    action-type="export"
     @secondary-action="exportTable(true)"
   />
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
@@ -74,7 +74,6 @@
           <EnrichButton
             :enrichment-realtime-callback="() => {}"
             :enrichment-request-response-callback="() => {}"
-            :start-on-mounted="false"
           />
         </div>
         <div class="ml-2">
@@ -632,8 +631,9 @@ const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const isLoading = ref(true);
 const loadingLabel = ref('');
-const contacts = computed(() => $contactsStore.contacts);
-const contactsLength = computed(() => contacts.value?.length);
+
+let contacts = ref();
+let contactsLength = ref(0);
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
@@ -893,8 +893,10 @@ function observeTop() {
         resizeObserver.observe(newValue.$el);
         try {
           stopWatch(); // This throws a ReferenceError once its called before it has been initialized.
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error: ReferenceError) {
+        } catch (error) {
+          if (!(error instanceof ReferenceError)) {
+            throw error;
+          }
           /* empty */
         }
       }
@@ -902,32 +904,6 @@ function observeTop() {
     { immediate: true },
   );
 }
-
-const stopShowTableFirstTimeWatcher = watch(
-  () => contactsLength.value,
-  () => {
-    if (contactsLength.value !== undefined) {
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
-      if (contactsLength.value > 0) {
-        observeTop();
-        watchEffect(() => {
-          tableHeight.value = `${
-            $screenStore.height - tablePosTop.value - 120
-          }px`;
-        });
-        try {
-          stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error: ReferenceError) {
-          /* empty */
-        }
-      }
-    }
-  },
-  { deep: true, immediate: true },
-);
 
 onNuxtReady(() => {
   $screenStore.init();
@@ -942,6 +918,15 @@ onNuxtReady(() => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   $contactsStore.subscribeRealtime($user.value);
+  contacts = computed(() => $contactsStore.contacts);
+  contactsLength = computed(() => contacts.value?.length);
+  if (contactsLength.value > 0) {
+    observeTop();
+    watchEffect(() => {
+      tableHeight.value = `${$screenStore.height - tablePosTop.value - 120}px`;
+    });
+  }
+  isLoading.value = false;
 });
 
 onUnmounted(() => {
