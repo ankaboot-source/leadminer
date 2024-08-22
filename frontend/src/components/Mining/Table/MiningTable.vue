@@ -212,8 +212,20 @@
               @click="openContactInformation(data)"
             />
             <div class="truncate">
-              <div class="font-medium truncate">{{ data.name }}</div>
-              <div class="truncate" :class="!data.name ? 'font-medium' : ''">
+              <div
+                v-if="data.name && visibleColumns.includes('name')"
+                class="font-medium truncate"
+              >
+                {{ data.name }}
+              </div>
+              <div
+                class="truncate"
+                :class="
+                  !data.name && visibleColumns.includes('name')
+                    ? 'font-medium'
+                    : ''
+                "
+              >
                 {{ data.email }}
               </div>
             </div>
@@ -590,12 +602,12 @@ import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import { useContactsStore } from '~/stores/contacts';
 import {
+  getStatusColor,
+  getStatusLabel,
+  getTagColor,
+  getTagLabel,
   statuses,
   tags,
-  getTagLabel,
-  getTagColor,
-  getStatusLabel,
-  getStatusColor,
 } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
 
