@@ -10,8 +10,7 @@ interface Config {
 }
 
 export default class Voilanorbert {
-  private static readonly baseURL =
-    'https://api.voilanorbert.com/2018-01-08/';
+  private static readonly baseURL = 'https://api.voilanorbert.com/2018-01-08/';
 
   private readonly api: AxiosInstance;
 
