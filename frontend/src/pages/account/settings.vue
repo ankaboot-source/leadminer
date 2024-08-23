@@ -203,7 +203,7 @@ async function updateUserDetailsButton() {
       profile.value as Profile;
 
     if (emailInput.value !== currentEmail) {
-      // used changed his email
+      // user changed his email
       userAccount.email = emailInput.value;
       userAccount.data = {
         Prehead: t('change_email.prehead'),
