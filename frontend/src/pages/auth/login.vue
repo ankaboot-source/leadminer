@@ -26,33 +26,14 @@
           {{ $t('auth.sign_up') }}
         </NuxtLink>
       </span>
-      <span class="text-gray-700 font-serif">
-        {{ $t('auth.agree_sign_in') }}
-        <NuxtLink
-          class="text-indigo-500"
-          to="https://www.leadminer.io/terms-of-service"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {{ $t('auth.terms_of_service') }}
-        </NuxtLink>
-        {{ $t('common.and') }} {{ $t('common.the_plural') }}
-        <NuxtLink
-          class="text-indigo-500"
-          to="https://www.leadminer.io/data-privacy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {{ $t('auth.data_privacy_policy') }}
-        </NuxtLink>
-        {{ $t('auth.email_offers_agree') }}
-      </span>
+      <LegalInformation auth-mode="sign-in" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
+import LegalInformation from '@/components/auth/legalInformation.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
 </script>

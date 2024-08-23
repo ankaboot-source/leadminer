@@ -65,6 +65,11 @@
       </div>
     </Panel>
 
+    <!-- Legal Account Section -->
+    <Panel :header="$t('auth.legal_information')">
+      <LegalInformation />
+    </Panel>
+
     <!-- Warning model Section -->
     <Dialog
       v-model:visible="showDeleteModal"
@@ -98,6 +103,8 @@
 
 <script setup lang="ts">
 import type { UserAttributes } from '@supabase/supabase-js';
+
+import LegalInformation from '@/components/auth/legalInformation.vue';
 import { isInvalidEmail } from '@/utils/email';
 import { isInvalidPassword } from '@/utils/password';
 import type { Profile } from '~/types/user';
