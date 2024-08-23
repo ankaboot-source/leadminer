@@ -200,9 +200,6 @@ import { getStatusColor, getStatusLabel } from '@/utils/contacts';
 const { t } = useI18n({
   useScope: 'local',
 });
-const { t: $t } = useI18n({
-  useScope: 'global',
-});
 
 const $toast = useToast();
 const $user = useSupabaseUser() as Ref<User>;
