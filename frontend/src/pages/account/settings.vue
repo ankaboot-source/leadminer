@@ -67,7 +67,7 @@
 
     <!-- Legal Account Section -->
     <Panel :header="$t('auth.legal_information')">
-      <legalInformation />
+      <LegalInformation />
     </Panel>
 
     <!-- Warning model Section -->
@@ -102,10 +102,11 @@
 </template>
 
 <script setup lang="ts">
-import legalInformation from '@/components/auth/legalInformation.vue';
+import type { UserAttributes } from '@supabase/supabase-js';
+
+import LegalInformation from '@/components/auth/legalInformation.vue';
 import { isInvalidEmail } from '@/utils/email';
 import { isInvalidPassword } from '@/utils/password';
-import type { UserAttributes } from '@supabase/supabase-js';
 import type { Profile } from '~/types/user';
 
 const { t } = useI18n({

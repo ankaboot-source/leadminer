@@ -1,5 +1,5 @@
 <template>
-  <div class="text-gray-700 full-width font-serif">
+  <div class="text-gray-700 font-serif">
     <div>{{ t('legal_information_1') }}</div>
     <div v-if="!authMode">
       <div>{{ t('legal_information_2') }}</div>

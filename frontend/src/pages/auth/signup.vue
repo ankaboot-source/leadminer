@@ -27,14 +27,14 @@
           {{ $t('auth.sign_in') }}
         </NuxtLink>
       </span>
-      <legalInformation auth-mode="sign-up" />
+      <LegalInformation auth-mode="sign-up" />
     </div>
   </ClientOnly>
 </template>
 
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
-import legalInformation from '@/components/auth/legalInformation.vue';
+import LegalInformation from '@/components/auth/legalInformation.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
 </script>
