@@ -58,6 +58,14 @@
           >
             <social-link :social-links="contact.same_as" :small="false" />
           </div>
+          <div v-if="contact.tags?.length" class="flex space-x-2">
+            <Tag
+              v-for="(tag, index) in contact.tags"
+              :key="index"
+              :value="getTagLabel(tag)"
+              :severity="getTagColor(tag)"
+            ></Tag>
+          </div>
         </div>
       </div>
     </div>
