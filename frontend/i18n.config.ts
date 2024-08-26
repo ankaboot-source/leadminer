@@ -40,11 +40,7 @@ export default defineI18nConfig(() => ({
         sign_up: 'Sign up',
         no_account: "Don't have an account?",
         forgot_password: 'Forgot your password?',
-        agree_sign_in: 'By signing in, you agree to the',
-        terms_of_service: 'Terms of Service',
-        data_privacy_policy: 'Data Privacy Policy.',
-        email_offers_agree:
-          'You also agree to receive information and offers relevant to our services via email.',
+        legal_information: 'Legal information',
         enter_associated_email:
           'Enter the email address associated with your account',
         valid_password: 'Please enter a valid password',
@@ -63,7 +59,6 @@ export default defineI18nConfig(() => ({
         sign_up_failed: 'Sign up Failed',
         account_already: 'Already have an account?',
         discover_gems: 'Discover hidden gems in your social network',
-        sign_up_agree: 'By signing up, you agree to the',
         sign_up_success_header: 'Almost done',
         sign_up_success_message1: 'We sent an email to',
         sign_up_success_message2:
@@ -156,11 +151,7 @@ export default defineI18nConfig(() => ({
         sign_up: "S'inscrire",
         no_account: "Vous n'avez pas de compte ?",
         forgot_password: 'Mot de passe oublié ?',
-        agree_sign_in: 'En vous connectant, vous acceptez les',
-        terms_of_service: "Conditions d'utilisation",
-        data_privacy_policy: 'Politique de confidentialité.',
-        email_offers_agree:
-          'Vous acceptez également de recevoir des informations et des offres pertinentes pour nos services par e-mail.',
+        legal_information: 'Informations contractuelles',
         enter_associated_email:
           "Saisir l'adresse email associée à votre compte",
         valid_password: 'Veuillez entrer un mot de passe valide',
@@ -180,7 +171,6 @@ export default defineI18nConfig(() => ({
         sign_up_failed: "Échec de l'inscription",
         account_already: 'Vous avez déjà un compte ?',
         discover_gems: 'Découvrez des trésors cachés dans votre réseau social',
-        sign_up_agree: 'En vous inscrivant, vous acceptez les',
         sign_up_success_header: 'Presque terminé',
         sign_up_success_message1: 'Nous avons envoyé un e-mail à',
         sign_up_success_message2:

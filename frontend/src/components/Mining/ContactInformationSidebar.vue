@@ -239,8 +239,7 @@ function isValidURL(url: string) {
     // eslint-disable-next-line no-new
     new URL(url);
     return true;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  } catch {
     return false;
   }
 }

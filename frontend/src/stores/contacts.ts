@@ -26,7 +26,9 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   function refreshContacts() {
-    contacts.value = Array.from(cache.values());
+    if (contacts.value?.length !== Array.from(cache.values()).length) {
+      contacts.value = Array.from(cache.values());
+    }
   }
 
   function subscribeRealtime(user: User) {
@@ -68,10 +70,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (subscription) {
       subscription.unsubscribe();
     }
-
     if (syncInterval) {
       clearInterval(syncInterval);
     }
+    cache = new Map<string, Contact>();
   }
 
   function $reset() {
