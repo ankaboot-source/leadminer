@@ -48,17 +48,17 @@
                 size="large"
                 class="text-2xl flex-none -ml-2"
                 :aria-label="t('copy')"
-                @click="copyContact(contact.email, contact.name)"
+                @click="copyContact(contact.email, contact.name ?? undefined)"
               />
             </div>
           </div>
           <div
             v-if="contact.same_as?.length && !editingContact"
-            class="flex gap-2 grow pt-1"
+            class="flex gap-2 grow"
           >
             <social-link :social-links="contact.same_as" :small="false" />
           </div>
-          <div v-if="contact.tags?.length" class="flex space-x-2">
+          <div v-if="contact.tags?.length" class="flex pt-1 space-x-2">
             <Tag
               v-for="(tag, index) in contact.tags"
               :key="index"
