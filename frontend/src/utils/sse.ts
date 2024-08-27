@@ -12,7 +12,6 @@ class SSE {
     }
   }
 
-   
   initConnection(
     miningId: string,
     token: string,

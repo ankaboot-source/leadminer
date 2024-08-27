@@ -933,7 +933,6 @@ const stopShowTableFirstTimeWatcher = watch(
         });
         try {
           stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-           
         } catch (error) {
           if (!(error instanceof ReferenceError)) {
             throw error;
