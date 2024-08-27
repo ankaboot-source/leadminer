@@ -77,14 +77,11 @@
 <script setup lang="ts">
 import type {
   RealtimeChannel,
-  type RealtimePostgresChangesPayload,
+  RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
-import type {
-  EnrichContactResponse,
-  EnrichmentTask,
-} from '@/types/enrichment';
+import type { EnrichContactResponse, EnrichmentTask } from '@/types/enrichment';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -95,6 +92,7 @@ const props = defineProps<{
   enrichmentRealtimeCallback: (
     payload: RealtimePostgresChangesPayload<EnrichmentTask>,
   ) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enrichmentRequestResponseCallback: ({ response }: any) => void;
   contactsToEnrich?: string[];
   bordered?: boolean;
