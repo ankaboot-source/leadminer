@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 import type { Contact } from '@/types/contact';
-import { type MiningSourceType } from '~/types/mining';
+import type { MiningSourceType } from '~/types/mining';
 
 export const useImapDialog = defineStore('imap-dialog', () => {
   const $user = useSupabaseUser();

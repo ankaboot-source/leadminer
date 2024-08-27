@@ -591,7 +591,7 @@
 </template>
 
 <script setup lang="ts">
-import { type User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
@@ -933,7 +933,6 @@ const stopShowTableFirstTimeWatcher = watch(
         });
         try {
           stopShowTableFirstTimeWatcher(); // This throws a ReferenceError once its called before it has been initialized.
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           if (!(error instanceof ReferenceError)) {
             throw error;

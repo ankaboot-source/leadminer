@@ -12,7 +12,6 @@ class SSE {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initConnection(
     miningId: string,
     token: string,

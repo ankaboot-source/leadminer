@@ -1,4 +1,4 @@
-import { type OAuthMiningSource } from '@/types/mining';
+import type { OAuthMiningSource } from '@/types/mining';
 
 export async function addOAuthAccount(provider: OAuthMiningSource) {
   const { $api } = useNuxtApp();

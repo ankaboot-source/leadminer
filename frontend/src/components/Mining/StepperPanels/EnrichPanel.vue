@@ -63,10 +63,10 @@
   </div>
 </template>
 <script setup lang="ts">
-import { type RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
-import { type EnrichmentTask } from '@/types/enrichment';
+import type { EnrichmentTask } from '@/types/enrichment';
 
 const { t } = useI18n({
   useScope: 'local',

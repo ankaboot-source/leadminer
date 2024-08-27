@@ -14,7 +14,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let cache = new Map<string, Contact>();
 
   const contacts = ref<Contact[] | undefined>(undefined);
-  const selected = ref<String[] | undefined>(undefined);
+  const selected = ref<string[] | undefined>(undefined);
   const selectedLength = ref<number>(0);
   function setContacts(newContacts: Contact[]) {
     contacts.value = newContacts;

@@ -110,6 +110,7 @@ export const useFiltersStore = defineStore('filters', () => {
   );
 
   // skipcq: JS-0323
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function debounce<T extends (...args: any[]) => any>(
     func: T,
     wait: number,

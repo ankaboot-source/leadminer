@@ -176,7 +176,7 @@ const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
 const extractionProgress = computed(() =>
-  $leadminerStore.fetchingFinished && !canceled
+  $leadminerStore.fetchingFinished && !canceled.value
     ? extractedEmails.value / $leadminerStore.scannedEmails || 0
     : extractedEmails.value / totalEmails.value || 0,
 );
@@ -226,11 +226,9 @@ watch(extractionFinished, (finished) => {
 });
 
 function openMiningSettings() {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   miningSettingsRef.value!.open();
 }
 
-// eslint-disable-next-line consistent-return
 async function startMining() {
   if (
     Object.keys(selectedBoxes.value).filter(

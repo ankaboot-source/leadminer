@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import { type MiningSource, type MiningSourceType } from '~/types/mining';
+import type { MiningSource, MiningSourceType } from '~/types/mining';
 
 const { t } = useI18n({
   useScope: 'local',
