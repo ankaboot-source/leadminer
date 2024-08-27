@@ -75,15 +75,15 @@
   </Button>
 </template>
 <script setup lang="ts">
-import {
+import type {
   RealtimeChannel,
   type RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 
 import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
-import {
-  type EnrichContactResponse,
-  type EnrichmentTask,
+import type {
+  EnrichContactResponse,
+  EnrichmentTask,
 } from '@/types/enrichment';
 
 const { t } = useI18n({
