@@ -28,6 +28,9 @@ export default defineNuxtConfig({
     typescript: {
       typeCheck: true,
     },
+    eslint: {
+      checker: true,
+    },
   },
 
   app: {
@@ -61,6 +64,7 @@ export default defineNuxtConfig({
   },
 
   modules: [
+    '@nuxt/eslint',
     '@nuxt/test-utils/module',
     '@nuxtjs/i18n',
     '@nuxtjs/supabase',
@@ -133,4 +137,6 @@ export default defineNuxtConfig({
       ],
     },
   },
+
+  compatibilityDate: '2024-08-26',
 });
