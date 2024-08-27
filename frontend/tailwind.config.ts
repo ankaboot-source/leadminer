@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const primeui = require('tailwindcss-primeui');
 
 export default {
@@ -18,6 +19,9 @@ export default {
       lg: '1024px',
       xl: '1280px',
       '2xl': '1536px',
+    },
+    fontFamily: {
+      serif: ['Merriweather', 'serif'],
     },
     extend: {},
   },

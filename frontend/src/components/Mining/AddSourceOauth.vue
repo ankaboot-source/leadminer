@@ -7,7 +7,7 @@
   />
 </template>
 <script setup lang="ts">
-import { type OAuthMiningSource } from '@/types/mining';
+import type { OAuthMiningSource } from '@/types/mining';
 import { addOAuthAccount } from '@/utils/oauth';
 
 const { label, icon, source } = defineProps<{

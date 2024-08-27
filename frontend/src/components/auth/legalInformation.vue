@@ -1,20 +1,20 @@
 <template>
   <div class="text-gray-700 font-serif">
-    <div>{{ t('legal_information_1') }}</div>
-    <div v-if="!authMode">
-      <div>{{ t('legal_information_2') }}</div>
-      <div>
-        {{ t('legal_information_3') }}
-        <NuxtLink
-          class="text-indigo-500"
-          to="https://www.gnu.org/licenses/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          https://www.gnu.org/licenses/</NuxtLink
-        >.
-      </div>
-    </div>
+    <span>{{ t('legal_information_1') }}</span>
+    <br v-if="!authMode" />
+    <span>{{ t('legal_information_2') }}</span>
+    <br v-if="!authMode" />
+    <span>
+      {{ t('legal_information_3') }}
+      <NuxtLink
+        class="text-indigo-500"
+        to="https://www.gnu.org/licenses/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        https://www.gnu.org/licenses/</NuxtLink
+      >.
+    </span>
   </div>
 </template>
 
