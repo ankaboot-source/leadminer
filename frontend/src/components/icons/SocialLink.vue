@@ -22,7 +22,7 @@ const props = defineProps<{
   small: boolean;
 }>();
 
-const socialLinks = toRef(() =>
+const socialLinks = computed(() =>
   props.small ? props.socialLinks.slice(0, 3) : props.socialLinks,
 );
 
