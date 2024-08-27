@@ -226,11 +226,9 @@ watch(extractionFinished, (finished) => {
 });
 
 function openMiningSettings() {
-   
   miningSettingsRef.value!.open();
 }
 
- 
 async function startMining() {
   if (
     Object.keys(selectedBoxes.value).filter(
