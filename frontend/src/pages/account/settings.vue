@@ -17,7 +17,7 @@
               v-model="emailInput"
               :disabled="isSocialLogin"
               class="w-full"
-              :invalid="isInvalidEmail(emailInput)"
+              :invalid="isInvalidEmail(emailInput ?? '')"
               type="email"
               aria-describedby="email-help"
             />
@@ -107,7 +107,7 @@ import type { UserAttributes } from '@supabase/supabase-js';
 import LegalInformation from '@/components/auth/legalInformation.vue';
 import { isInvalidEmail } from '@/utils/email';
 import { isInvalidPassword } from '@/utils/password';
-import type { Profile } from '~/types/user';
+import type { Profile } from '~/types/profile';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -138,17 +138,17 @@ const { data: profile } = await useAsyncData('get-profile', async () => {
   };
 });
 
-if (profile.value === null) {
-  throw new Error(' Error getting profile information.');
+if (!useSupabaseSession().value) {
+  navigateTo('/');
 }
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
 
-const emailInput = ref(profile.value.email);
-const fullnameInput = ref(profile.value.full_name);
+const emailInput = ref(profile.value?.email);
+const fullnameInput = ref(profile.value?.full_name);
 const passwordInput = ref('');
-const isSocialLogin = ref(profile.value.isSocialLogin);
+const isSocialLogin = ref(profile.value?.isSocialLogin);
 
 const disableUpdateButton = computed(
   () =>
