@@ -1,4 +1,5 @@
-import type { Contact, ContactEdit } from '~/types/contact';
+import type { Contact } from '~/types/contact';
+import type { Organization } from '~/types/organization';
 
 function convertDates(data: Contact[]) {
   return [...data].map((d) => {
@@ -12,7 +13,7 @@ function convertDates(data: Contact[]) {
   });
 }
 
-export async function getContacts(userId: string): Promise<Contact[]> {
+export async function getContacts(userId: string) {
   const $supabaseClient = useSupabaseClient();
   const { data, error } = await $supabaseClient.rpc(
     'get_contacts_table',
@@ -27,47 +28,82 @@ export async function getContacts(userId: string): Promise<Contact[]> {
   return data ? convertDates(data) : [];
 }
 
-export async function updateContact(userId: string, contact: ContactEdit) {
+/**
+ * Retrieves an organization by its name from the `organizations` table.
+ *
+ * @param organizationName - The name of the organization to retrieve.
+ * @param selectFields - An array of fields to select from the organization record.
+ * @returns The organization object if found, or `null` if not.
+ * @throws Will throw an error if the query fails.
+ */
+export async function getOrganization(
+  match: { name: string } | { id: string },
+  selectFields: (keyof Organization)[],
+) {
   const $supabaseClient = useSupabaseClient();
-  if (contact.works_for) {
-    const { error: updateOrganizationError } = await $supabaseClient.rpc(
-      'enrich_contacts',
-      // @ts-expect-error: Issue with @nuxt/supabase typing
-      {
-        p_contacts_data: [
-          {
-            user_id: userId,
-            email: contact.email,
-            works_for: contact.works_for,
-          },
-        ],
-        p_update_empty_fields_only: false,
-      },
-    );
+  const { data: existingOrg, error } = await $supabaseClient
+    .from('organizations')
+    .select(selectFields.join(','))
+    .match(match)
+    .single<Organization>();
 
-    if (updateOrganizationError) {
-      throw updateOrganizationError;
-    }
-    delete contact.works_for;
+  if (error) {
+    throw error;
   }
-  const { error: UpdateContactError } = await $supabaseClient
+
+  return existingOrg ?? null;
+}
+
+/**
+ * Creates a new organization in the `organizations` table with the specified name.
+ *
+ * @param organizationName - The name of the organization to create.
+ * @param selectFields - An array of fields to select from the newly created organization record.
+ * @returns The newly created organization object, or `null` if creation fails.
+ * @throws Will throw an error if the insertion fails.
+ */
+export async function createOrganization(
+  organizationName: string,
+  selectFields: (keyof Organization)[],
+) {
+  const $supabaseClient = useSupabaseClient();
+  const { data: newOrg, error } = await $supabaseClient
+    .from('organizations')
+    // @ts-expect-error: Issue with @nuxt/supabase typing
+    .insert({ name: organizationName })
+    .select(selectFields.join(','))
+    .single<Organization>();
+
+  if (error) {
+    throw error;
+  }
+
+  return newOrg ?? null;
+}
+
+export async function updateContact(userId: string, contact: Partial<Contact>) {
+  const $supabaseClient = useSupabaseClient();
+
+  if (contact.works_for) {
+    contact.works_for =
+      (
+        (await getOrganization({ name: contact.works_for }, ['id'])) ??
+        (await createOrganization(contact.works_for, ['id']))
+      ).id || null;
+  }
+
+  if (!contact.email) {
+    throw new Error('Email is required for updating a contact');
+  }
+
+  const { error } = await $supabaseClient
     .from('persons')
     // @ts-expect-error: Issue with @nuxt/supabase typing
-    .update({
-      name: contact.name || null,
-      given_name: contact.given_name || null,
-      family_name: contact.family_name || null,
-      alternate_names: contact.alternate_names || null,
-      address: contact.address || null,
-      works_for: contact.works_for || null,
-      job_title: contact.job_title || null,
-      same_as: contact.same_as || null,
-      image: contact.image || null,
-    })
+    .update(contact)
     .match({ user_id: userId, email: contact.email });
 
-  if (UpdateContactError) {
-    throw new Error(UpdateContactError.message);
+  if (error) {
+    throw error;
   }
 }
 
