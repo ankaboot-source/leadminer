@@ -202,7 +202,7 @@ import type {
 import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
-import { type EnrichmentTask } from '@/types/enrichment';
+import type { EnrichmentTask } from '@/types/enrichment';
 import { getStatusColor, getStatusLabel } from '@/utils/contacts';
 
 const { t } = useI18n({
@@ -236,7 +236,6 @@ const skipDialog = computed(
 
 function isValidURL(url: string) {
   try {
-    // eslint-disable-next-line no-new
     new URL(url);
     return true;
   } catch {

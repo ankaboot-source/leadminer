@@ -3,7 +3,7 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
 import { updateMiningSourcesValidity } from '@/utils/sources';
-import { type MiningSource, type MiningTask } from '../types/mining';
+import type { MiningSource, MiningTask } from '../types/mining';
 import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
