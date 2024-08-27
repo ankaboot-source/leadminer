@@ -176,7 +176,10 @@ export default class PgContacts implements Contacts {
           'SELECT email FROM persons WHERE user_id = $1 AND email = $2;',
           [userId, person.email]
         );
-        if (selectResults === 0) {
+        if (
+          selectResults === 0 &&
+          !tags.some((tag) => ['newsletter', 'role'].includes(tag.name))
+        ) {
           insertedEmails.add(person.email);
         }
 
