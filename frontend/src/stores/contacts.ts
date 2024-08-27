@@ -7,33 +7,38 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 import type { Contact } from '@/types/contact';
+import { getOrganization } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   let syncInterval: number;
   let subscription: RealtimeChannel;
-  let cache = new Map<string, Contact>();
 
+  const cachedWaitingToBeSynced = new Set();
+  const cachedContacts = new Map<string, Contact>();
   const contacts = ref<Contact[] | undefined>(undefined);
   const selected = ref<string[] | undefined>(undefined);
+
   const selectedLength = ref<number>(0);
   function setContacts(newContacts: Contact[]) {
     contacts.value = newContacts;
     if (contacts.value.length) {
-      cache = new Map(
-        contacts.value.map((contact) => [contact.email, contact]),
-      );
+      cachedContacts.clear();
+      contacts.value.forEach((contact) => {
+        cachedContacts.set(contact.email, contact);
+      });
     }
   }
 
   function refreshContacts() {
-    if (contacts.value?.length !== Array.from(cache.values()).length) {
-      contacts.value = Array.from(cache.values());
+    if (cachedWaitingToBeSynced.size > 0) {
+      cachedWaitingToBeSynced.clear();
+      contacts.value = Array.from(cachedContacts.values());
     }
   }
 
   function subscribeRealtime(user: User) {
     subscription = useSupabaseClient()
-      .channel('*')
+      .channel('contacts-table')
       .on(
         'postgres_changes',
         {
@@ -46,22 +51,23 @@ export const useContactsStore = defineStore('contacts-store', () => {
           const newContact = payload.new as Contact;
 
           if (newContact.works_for) {
-            const { data } = await useSupabaseClient()
-              .from('organizations')
-              .select('name')
-              .eq('id', newContact.works_for)
-              .single<{ name: string }>();
-            newContact.works_for = data ? data.name : newContact.works_for;
+            const org = await getOrganization({ id: newContact.works_for }, [
+              'name',
+            ]);
+            newContact.works_for = org ? org.name : newContact.works_for;
           }
 
-          const cachedContact = cache.get(newContact.email);
-          cache.set(newContact.email, { ...cachedContact, ...newContact });
+          cachedWaitingToBeSynced.add(newContact.email);
+          cachedContacts.set(newContact.email, {
+            ...cachedContacts.get(newContact.email),
+            ...newContact,
+          });
         },
       );
 
     syncInterval = window.setInterval(() => {
       refreshContacts();
-    }, 3000);
+    }, 2000);
 
     subscription.subscribe();
   }
@@ -73,7 +79,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (syncInterval) {
       clearInterval(syncInterval);
     }
-    cache = new Map<string, Contact>();
+    cachedWaitingToBeSynced.clear();
+    cachedContacts.clear();
   }
 
   function $reset() {
@@ -84,7 +91,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
   }
 
   return {
-    cache,
     contacts,
     selected,
     selectedLength,

@@ -13,8 +13,16 @@ export interface Contact {
   id: string;
   userid: string;
   email: string;
+  name: string | null;
+  given_name: string | null;
+  family_name: string | null;
+  alternate_names: string[] | null;
+  address: string | null;
+  works_for: string | null;
+  job_title: string | null;
+  same_as: string[] | null;
+  image: string | null;
   engagement?: number;
-  name?: string;
   sender?: string;
   recipient?: string;
   conversations?: number;
@@ -25,25 +33,17 @@ export interface Contact {
   recency?: Date;
   seniority?: Date;
   tags?: Tag[];
-  given_name?: string;
-  family_name?: string;
-  alternate_names?: string[];
-  address?: string;
-  works_for?: string;
-  job_title?: string;
-  same_as?: string[];
-  image?: string;
 }
 
 export interface ContactEdit {
   email: string;
-  name?: string;
-  given_name?: string;
-  family_name?: string;
-  alternate_names?: string[] | string;
-  address?: string;
-  works_for?: string;
-  job_title?: string;
-  same_as?: string[] | string;
-  image?: string;
+  name: string | null;
+  given_name: string | null;
+  family_name: string | null;
+  alternate_names: string | null;
+  address: string | null;
+  works_for: string | null;
+  job_title: string | null;
+  same_as: string | null;
+  image: string | null;
 }

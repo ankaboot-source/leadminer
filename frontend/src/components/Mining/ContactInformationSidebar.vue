@@ -48,17 +48,17 @@
                 size="large"
                 class="text-2xl flex-none -ml-2"
                 :aria-label="t('copy')"
-                @click="copyContact(contact.email, contact.name)"
+                @click="copyContact(contact.email, contact.name ?? undefined)"
               />
             </div>
           </div>
           <div
             v-if="contact.same_as?.length && !editingContact"
-            class="flex gap-2 grow pt-1"
+            class="flex gap-2 grow"
           >
             <social-link :social-links="contact.same_as" :small="false" />
           </div>
-          <div v-if="contact.tags?.length" class="flex space-x-2">
+          <div v-if="contact.tags?.length" class="flex pt-1 space-x-2">
             <Tag
               v-for="(tag, index) in contact.tags"
               :key="index"
@@ -203,22 +203,40 @@ import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
 import type { EnrichmentTask } from '@/types/enrichment';
-import { getStatusColor, getStatusLabel } from '@/utils/contacts';
+import {
+  getOrganization,
+  getStatusColor,
+  getStatusLabel,
+  getTagColor,
+  getTagLabel,
+} from '@/utils/contacts';
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
 const $toast = useToast();
+const $leadminerStore = useLeadminerStore();
 const $user = useSupabaseUser() as Ref<User>;
-
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
 const show = defineModel<boolean>('show');
+
 const contact = computed(() => $contactInformationSidebar.contact as Contact);
-const contactEdit = ref<ContactEdit>(contact.value);
 const editingContact = ref(false);
-const $leadminerStore = useLeadminerStore();
+const contactEdit = ref<ContactEdit>({
+  ...contact.value,
+  alternate_names: contact.value?.alternate_names?.join('\n') ?? null,
+  same_as: contact.value?.same_as?.join('\n') ?? null,
+});
+
+watch(contact, (newContact) => {
+  contactEdit.value = {
+    ...newContact,
+    alternate_names: newContact?.alternate_names?.join('\n') ?? null,
+    same_as: newContact?.same_as?.join('\n') ?? null,
+  };
+});
 
 const skipDialog = computed(
   () =>
@@ -307,14 +325,10 @@ function startRealtimePersons(userId: string, email: string) {
           return;
         }
         if (updatedContact.works_for) {
-          const { data } = await useSupabaseClient()
-            .from('organizations')
-            .select('name')
-            .eq('id', updatedContact.works_for)
-            .single<{ name: string }>();
-          updatedContact.works_for = data
-            ? data.name
-            : updatedContact.works_for;
+          const org = await getOrganization({ id: updatedContact.works_for }, [
+            'name',
+          ]);
+          updatedContact.works_for = org ? org.name : updatedContact.works_for;
         }
         $contactInformationSidebar.contact = updatedContact;
       },
@@ -338,16 +352,10 @@ function onHide() {
 }
 
 function editContactInformations() {
-  contactEdit.value = JSON.parse(JSON.stringify(contact.value));
-  contactEdit.value.alternate_names =
-    contact.value?.alternate_names?.join('\n');
-  contactEdit.value.same_as = contact.value?.same_as?.join('\n');
   editingContact.value = true;
 }
 
 async function saveContactInformations() {
-  const user = $user.value as User;
-
   if (!isValidSameAs.value || !isValidAvatar.value) {
     showNotification(
       'error',
@@ -356,31 +364,68 @@ async function saveContactInformations() {
     );
     return;
   }
-  const alternateNames = (contactEdit.value?.alternate_names as string)
+
+  const transformSameAs = contactEdit.value.same_as
+    ?.split('\n')
+    .filter((item) => item.length);
+  const transformAlternateNames = contactEdit.value.alternate_names
     ?.split('\n')
     .filter((item) => item.length);
 
-  const sameAs = (contactEdit.value.same_as as string)
-    ?.split('\n')
-    .filter((item) => item.length);
-
-  const contactCleaned = {
-    email: contactEdit.value.email,
-    name: contactEdit.value.name || undefined,
-    given_name: contactEdit.value.given_name || undefined,
-    family_name: contactEdit.value.family_name || undefined,
-    alternate_names: alternateNames?.length ? alternateNames : undefined,
-    address: contactEdit.value.address || undefined,
-    works_for: contactEdit.value.works_for || undefined,
-    job_title: contactEdit.value.job_title || undefined,
-    same_as: sameAs?.length ? sameAs : undefined,
-    image: contactEdit.value.image || undefined,
+  const originalContactCopy = contact.value;
+  const editedContactCopy: Contact = {
+    ...contact.value,
+    ...contactEdit.value,
+    same_as: transformSameAs?.length ? transformSameAs : null,
+    alternate_names: transformAlternateNames?.length
+      ? transformAlternateNames
+      : null,
   };
 
-  await updateContact(user.id, contactCleaned);
+  const contactToUpdate: Partial<Contact> = {
+    email: editedContactCopy.email,
+    alternate_names:
+      JSON.stringify(originalContactCopy.alternate_names) !==
+      JSON.stringify(editedContactCopy.alternate_names)
+        ? editedContactCopy.alternate_names || null
+        : undefined,
+    same_as:
+      JSON.stringify(originalContactCopy.same_as) !==
+      JSON.stringify(editedContactCopy.same_as)
+        ? editedContactCopy.same_as || null
+        : undefined,
+    name:
+      originalContactCopy.name !== editedContactCopy.name
+        ? editedContactCopy.name || null
+        : undefined,
+    given_name:
+      originalContactCopy.given_name !== editedContactCopy.given_name
+        ? editedContactCopy.given_name || null
+        : undefined,
+    family_name:
+      originalContactCopy.family_name !== editedContactCopy.family_name
+        ? editedContactCopy.family_name || null
+        : undefined,
+    address:
+      originalContactCopy.address !== editedContactCopy.address
+        ? editedContactCopy.address || null
+        : undefined,
+    works_for:
+      originalContactCopy.works_for !== editedContactCopy.works_for
+        ? editedContactCopy.works_for || null
+        : undefined,
+    job_title:
+      originalContactCopy.job_title !== editedContactCopy.job_title
+        ? editedContactCopy.job_title || null
+        : undefined,
+    image:
+      originalContactCopy.image !== editedContactCopy.image
+        ? editedContactCopy.image || null
+        : undefined,
+  };
+  await updateContact($user.value.id, contactToUpdate);
   editingContact.value = false;
   showNotification('success', t('contact_saved'), '');
-  $contactInformationSidebar.show(contactCleaned as Contact);
 }
 
 function cancelContactInformations() {
