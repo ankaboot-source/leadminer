@@ -7,7 +7,7 @@ import {
 } from '../../services/email-status/EmailStatusVerifier';
 import { REACHABILITY } from '../../utils/constants';
 import { Contacts } from '../interfaces/Contacts';
-import { Contact, ExtractionResult } from '../types';
+import { Contact, ExtractionResult, Tag } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
@@ -157,8 +157,7 @@ export default class PgContacts implements Contacts {
 
   async create({ message, persons }: ExtractionResult, userId: string) {
     try {
-      const insertedEmails = new Set<string>();
-
+      const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
         message.channel,
         message.folderPath,
@@ -176,11 +175,8 @@ export default class PgContacts implements Contacts {
           'SELECT email FROM persons WHERE user_id = $1 AND email = $2;',
           [userId, person.email]
         );
-        if (
-          selectResults === 0 &&
-          !tags.some((tag) => ['newsletter', 'role'].includes(tag.name))
-        ) {
-          insertedEmails.add(person.email);
+        if (selectResults === 0) {
+          insertedContacts.add({ email: person.email, tags });
         }
 
         // eslint-disable-next-line no-await-in-loop
@@ -227,7 +223,7 @@ export default class PgContacts implements Contacts {
         ]);
       }
 
-      return Array.from(insertedEmails);
+      return Array.from(insertedContacts);
     } catch (e) {
       this.logger.error('Error when inserting contact', e);
       throw e;
