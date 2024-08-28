@@ -2,10 +2,13 @@ import {
   EmailStatusResult,
   Status
 } from '../../services/email-status/EmailStatusVerifier';
-import { Contact, ExtractionResult } from '../types';
+import { Contact, ExtractionResult, Tag } from '../types';
 
 export interface Contacts {
-  create(contact: ExtractionResult, userId: string): Promise<string[]>;
+  create(
+    contact: ExtractionResult,
+    userId: string
+  ): Promise<{ email: string; tags: Tag[] }[]>;
   refine(userId: string): Promise<boolean>;
   updateSinglePersonStatus(
     personEmail: string,

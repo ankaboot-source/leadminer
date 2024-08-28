@@ -34,9 +34,9 @@ async function getEnrichedEmails(userId: string) {
  */
 async function getEmails(userId: string) {
   const { data: emails, error } = await supabaseClient
-    .from('persons')
+    .from('refinedpersons')
     .select('email')
-    .match({ user_id: userId })
+    .match({ userid: userId })
     .returns<{ email: string }[]>();
 
   if (error) {

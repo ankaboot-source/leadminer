@@ -645,7 +645,7 @@ const isLoading = ref(true);
 const loadingLabel = ref('');
 
 const contacts = computed(() => $contactsStore.contacts);
-const contactsLength = computed(() => contacts.value?.length);
+const contactsLength = computed(() => $contactsStore.contactsLength);
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
