@@ -4,7 +4,7 @@ import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
 import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditHandler';
+import CreditsHandler from '../services/credits/creditsHandler';
 import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
@@ -28,15 +28,17 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       const partialExport = req.body.partialExport ?? false;
-      const { contactsToExport }: { contactsToExport: string[] | undefined } =
-        req.body;
+      const {
+        emails: contactsToExport,
+        all
+      }: { emails: string[] | undefined; all: Boolean } = req.body;
+
       if (
-        contactsToExport !== undefined &&
+        !all &&
         (!Array.isArray(contactsToExport) || !contactsToExport.length)
       ) {
         return res.status(400).json({
-          message:
-            'Parameter "contactsToExport" must be a non-empty list of emails or undefined'
+          message: 'Parameter "emails" must be a non-empty list of emails'
         });
       }
 
@@ -79,15 +81,15 @@ export default function initializeContactsController(
         );
 
         // Verify Credits
-        const creditHandler = new CreditsHandler(
+        const creditsHandler = new CreditsHandler(
           userResolver,
           ENV.CONTACT_CREDIT
         );
         const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
-          await creditHandler.validate(user.id, newContacts.length);
+          await creditsHandler.validate(user.id, newContacts.length);
 
         if (hasDeficientCredits && !previousExportedContacts.length) {
-          statusCode = creditHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
+          statusCode = creditsHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
           const response = {
             total: newContacts.length + previousExportedContacts.length,
             available: Math.floor(availableUnits),
@@ -126,7 +128,7 @@ export default function initializeContactsController(
             availableContacts.map(({ email }) => email),
             user.id
           );
-          await creditHandler.deduct(user.id, availableUnits);
+          await creditsHandler.deduct(user.id, availableUnits);
         }
 
         return res
