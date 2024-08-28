@@ -187,25 +187,24 @@ export default function initializeEnrichementController(userResolver: Users) {
       const { user } = res.locals;
       const {
         updateEmptyFieldsOnly,
-        emails: emailsReq,
+        emails,
         all
       }: {
         updateEmptyFieldsOnly: boolean;
-        emails: string[];
+        emails?: string[];
         all: boolean;
       } = req.body;
 
       try {
-        if (!all && (!Array.isArray(emailsReq) || !emailsReq.length)) {
+        if (!all && (!Array.isArray(emails) || !emails.length)) {
           return res.status(400).json({
             message: 'Parameter "emails" must be a non-empty list of emails'
           });
         }
-
-        const emails = emailsReq ?? (await getEmails(user.id));
-        const enrichedContacts = await getEnrichedEmails(user.id);
-        let contactsToEnrich = emails.filter(
-          (email) => !enrichedContacts.includes(email)
+        const emailsToEnrich = all ? await getEmails(user.id) : emails;
+        const enrichedEmails = await getEnrichedEmails(user.id);
+        let contactsToEnrich = emailsToEnrich!.filter(
+          (email) => !enrichedEmails.includes(email)
         );
 
         if (!contactsToEnrich.length) {
