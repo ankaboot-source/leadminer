@@ -28,14 +28,17 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
       const partialExport = req.body.partialExport ?? false;
-      const { emails, all }: { emails?: string[]; all: Boolean } = req.body;
+      const {
+        emails,
+        exportAllContacts
+      }: { emails?: string[]; exportAllContacts: Boolean } = req.body;
 
-      if (!all && (!Array.isArray(emails) || !emails.length)) {
+      if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
         return res.status(400).json({
           message: 'Parameter "emails" must be a non-empty list of emails'
         });
       }
-      const contactsToExport = all ? undefined : emails;
+      const contactsToExport = exportAllContacts ? undefined : emails;
       let statusCode = 200;
       try {
         if (!ENV.ENABLE_CREDIT || !ENV.CONTACT_CREDIT) {

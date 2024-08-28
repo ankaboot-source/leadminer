@@ -826,7 +826,7 @@ async function exportTable(partialExport = false) {
     body: {
       partialExport,
       emails: contactsToExport.value,
-      all: contactsToExport.value === undefined,
+      exportAllContacts: contactsToExport.value === undefined,
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
