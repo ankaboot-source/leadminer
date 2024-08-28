@@ -11,13 +11,19 @@ export default class RedisQueuedEmailsCache implements QueuedEmailsCache {
     await this.redisClient.del(this.key);
   }
 
+  /**
+   * Adds a new email.
+   * @param email - The email to be added.
+   * @returns `true` if the email was successfully added, or `false` if the email already exists.
+   */
   async add(email: string): Promise<boolean> {
-    const existingEmail = await this.redisClient.zscore(this.key, email);
-    if (existingEmail === null) {
-      await this.redisClient.zadd(this.key, Date.now(), email);
-      return true;
-    }
-    return false;
+    const result = await this.redisClient.zadd(
+      this.key,
+      'NX',
+      Date.now(),
+      email
+    );
+    return result === 1;
   }
 
   async addMany(emails: string[]) {
@@ -33,7 +39,6 @@ export default class RedisQueuedEmailsCache implements QueuedEmailsCache {
         rejectedElements.push(email);
       }
     }
-
     return { addedElements, rejectedElements };
   }
 

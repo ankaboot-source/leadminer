@@ -16,6 +16,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const cachedWaitingToBeSynced = new Set();
   const cachedContacts = new Map<string, Contact>();
   const contacts = ref<Contact[] | undefined>(undefined);
+  const contactsLength = computed(() => contacts.value?.length);
+
   const selected = ref<string[] | undefined>(undefined);
 
   const selectedLength = ref<number>(0);
@@ -94,6 +96,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contacts,
     selected,
     selectedLength,
+    contactsLength,
     $reset,
     setContacts,
     refreshContacts,
