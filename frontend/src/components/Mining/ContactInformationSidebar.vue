@@ -171,6 +171,7 @@
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
           :contacts-to-enrich="[contact.email]"
+          :enrich-all-contacts="false"
           :skip-dialog="skipDialog"
         />
         <Button
@@ -240,16 +241,14 @@ watch(contact, (newContact) => {
 
 const skipDialog = computed(
   () =>
-    !Boolean(
-      contact.value.given_name ||
+    !(contact.value.given_name ||
         contact.value.family_name ||
         contact.value.alternate_names ||
         contact.value.address ||
         contact.value.works_for ||
         contact.value.job_title ||
         contact.value.same_as ||
-        contact.value.image,
-    ),
+        contact.value.image),
 );
 
 function isValidURL(url: string) {

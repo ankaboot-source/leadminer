@@ -1,7 +1,9 @@
 <template>
   <CreditsDialog
     ref="CreditsDialogRef"
-    engagement-type="contacts"
+    :engagement-type="
+      contactsToEnrich && contactsToEnrich?.length > 1 ? 'contacts' : 'contact'
+    "
     action-type="enrich"
     @secondary-action="startEnrichment(true)"
   />
@@ -28,7 +30,7 @@
           :label="$t('common.cancel')"
           severity="secondary"
           class="w-full sm:w-auto order-3 sm:order-1"
-          @click="closeDialog"
+          @click="closeEnrichmentConfirmationDialog"
         />
         <div
           class="flex flex-col gap-2 sm:flex-row w-full sm:w-auto order-1 sm:order-2"
@@ -38,7 +40,7 @@
             class="w-full sm:w-auto"
             @click="
               () => {
-                closeDialog();
+                closeEnrichmentConfirmationDialog();
                 startEnrichment(true);
               }
             "
@@ -48,7 +50,7 @@
             class="w-full sm:w-auto"
             @click="
               () => {
-                closeDialog();
+                closeEnrichmentConfirmationDialog();
                 startEnrichment(false);
               }
             "
@@ -64,7 +66,7 @@
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
     :disabled="$leadminerStore.activeEnrichment"
-    @click="openDialog"
+    @click="openEnrichmentConfirmationDialog"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
@@ -94,6 +96,7 @@ const props = defineProps<{
   ) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enrichmentRequestResponseCallback: ({ response }: any) => void;
+  enrichAllContacts: boolean;
   contactsToEnrich?: string[];
   bordered?: boolean;
   skipDialog?: boolean;
@@ -102,6 +105,7 @@ const props = defineProps<{
 const { $api } = useNuxtApp();
 
 const $toast = useToast();
+const $profile = useSupabaseUserProfile();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
@@ -113,10 +117,11 @@ const {
   enrichmentRealtimeCallback,
   enrichmentRequestResponseCallback,
   bordered,
-  skipDialog,
 } = props;
-const skipDialog = toRef(() => props.skipDialog);
+
+const enrichAllContacts = toRef(() => props.enrichAllContacts);
 const contactsToEnrich = toRef(() => props.contactsToEnrich);
+const skipDialog = toRef(() => props.skipDialog);
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
@@ -205,9 +210,9 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
       method: 'POST',
       body: {
+        enrichAllContacts: enrichAllContacts.value,
         updateEmptyFieldsOnly,
-        emails: contactsToEnrich.value ?? $contactsStore.selected,
-        enrichAllContacts: $contactsStore.selected === undefined,
+        emails: contactsToEnrich.value,
       },
       onResponse({ response }) {
         enrichmentRequestResponseCallback({ response });
@@ -223,18 +228,13 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
         }
         if (response.status === 402) {
           stopEnrichment();
-          CreditsDialogRef.value?.openModal(
-            available === 0,
-            total,
-            available,
-            0,
-          );
+          openCreditsDialog(available, total);
         }
       },
     });
   } catch (err) {
     stopEnrichment();
-    throw err;
+    throw err
   }
 }
 
@@ -244,12 +244,18 @@ onMounted(async () => {
   }
 });
 
-const openDialog = () => {
-  if (skipDialog) startEnrichment(false);
+const openCreditsDialog = (available: number, total: number) => {
+  CreditsDialogRef.value?.openModal(true, total, available, 0);
+};
+
+const openEnrichmentConfirmationDialog = () => {
+  if ($profile.value?.credits === 0 && contactsToEnrich.value?.length) {
+    openCreditsDialog(0, contactsToEnrich.value?.length);
+  } else if (skipDialog.value) startEnrichment(false);
   else dialogVisible.value = true;
 };
 
-const closeDialog = () => {
+const closeEnrichmentConfirmationDialog = () => {
   dialogVisible.value = false;
 };
 </script>
