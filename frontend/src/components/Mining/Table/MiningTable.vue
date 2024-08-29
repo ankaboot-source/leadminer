@@ -74,7 +74,9 @@
           <EnrichButton
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
-            :contacts-to-enrich="$contactsStore.selected"
+            :contacts-to-enrich="
+              $contactsStore.selected ?? (contacts as unknown as string[])
+            "
             :enrich-all-contacts="$contactsStore.selected === undefined"
           />
         </div>

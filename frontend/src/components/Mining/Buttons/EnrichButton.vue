@@ -63,7 +63,10 @@
     icon-pos="right"
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
-    :disabled="$leadminerStore.activeEnrichment"
+    :disabled="
+      $leadminerStore.activeEnrichment ||
+      (!enrichAllContacts && !contactsToEnrich?.length)
+    "
     @click="openEnrichmentConfirmationDialog"
   >
     <template #icon>
@@ -212,9 +215,9 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
       method: 'POST',
       body: {
-        enrichAllContacts: enrichAllContacts.value,
         updateEmptyFieldsOnly,
-        emails: contactsToEnrich.value,
+        enrichAllContacts: enrichAllContacts.value,
+        emails: enrichAllContacts.value ? undefined : contactsToEnrich.value,
       },
       onResponse({ response }) {
         enrichmentRequestResponseCallback({ response });
