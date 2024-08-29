@@ -1,9 +1,7 @@
 <template>
   <CreditsDialog
     ref="CreditsDialogRef"
-    :engagement-type="
-      contactsToEnrich && contactsToEnrich?.length > 1 ? 'contacts' : 'contact'
-    "
+    engagement-type="contact"
     action-type="enrich"
     @secondary-action="startEnrichment(true)"
   />
