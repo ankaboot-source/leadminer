@@ -115,6 +115,7 @@ const {
   bordered,
   skipDialog,
 } = props;
+const skipDialog = toRef(() => props.skipDialog);
 const contactsToEnrich = toRef(() => props.contactsToEnrich);
 
 function showNotification(
