@@ -68,7 +68,16 @@ async function emailMessageHandler(
 
     let emails: string[] = [];
     try {
-      emails = await contacts.create(extractedContacts, userId);
+      emails = (await contacts.create(extractedContacts, userId))
+        .filter(
+          // filter out unreachable emails
+          (contact) =>
+            !contact.tags.some(
+              (tag) =>
+                ['newsletter', 'role'].includes(tag.name) || tag.reachable >= 3
+            )
+        )
+        .map((contact) => contact.email);
     } catch (e) {
       if ((e as PostgrestError).code === '23505') {
         // 23505: duplicate key error
@@ -77,7 +86,17 @@ async function emailMessageHandler(
             userId,
             extractedContacts.persons.map((contact) => contact.person.email)
           )
-        ).map((contact) => contact.email);
+        )
+          .filter(
+            // filter out unreachable emails
+            (contact) =>
+              !contact.tags?.some(
+                (tag) =>
+                  ['newsletter', 'role'].includes(tag.name) ||
+                  tag.reachable >= 3
+              )
+          )
+          .map((contact) => contact.email);
       } else {
         throw e;
       }
