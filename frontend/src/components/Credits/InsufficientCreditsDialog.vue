@@ -12,11 +12,11 @@
     <template #footer>
       <div class="flex justify-end gap-2">
         <Button
-          v-if="showDownloadButton"
+          v-if="showActionButton"
           outlined
           severity="secondary"
           pt:label:class="capitalize"
-          :label="downloadActionLabel"
+          :label="actionLabel"
           @click="executePartialAction"
         />
         <Button
@@ -47,7 +47,7 @@ const { engagementType, actionType } = defineProps<{
 }>();
 
 const showModal = ref(false);
-const showDownloadButton = ref(true);
+const showActionButton = ref(true);
 const total = ref(0);
 const available = ref(0);
 const availableAlready = ref(0);
@@ -67,14 +67,14 @@ function openModal(
   available.value = availableUnits;
   availableAlready.value = availableAlreadyUnits;
 
-  showDownloadButton.value = !hasDeficientCredits;
+  showActionButton.value = !hasDeficientCredits;
   showModal.value = true;
 }
 const executePartialAction = async () => {
   await emit('secondary-action');
   closeModal();
 };
-const downloadActionLabel = computed(() =>
+const actionLabel = computed(() =>
   t('action_type_only', {
     actionType: t(actionType),
     available: availableAlready.value + available.value,

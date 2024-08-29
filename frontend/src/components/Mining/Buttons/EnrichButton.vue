@@ -207,6 +207,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
       body: {
         updateEmptyFieldsOnly,
         emails: contactsToEnrich.value ?? $contactsStore.selected,
+        enrichAllContacts: $contactsStore.selected === undefined,
       },
       onResponse({ response }) {
         enrichmentRequestResponseCallback({ response });
