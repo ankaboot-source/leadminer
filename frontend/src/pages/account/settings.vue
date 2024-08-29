@@ -118,7 +118,6 @@ const { t: $t } = useI18n({
 });
 
 const $toast = useToast();
-const $route = useRoute();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
 const $session = useSupabaseSession();
