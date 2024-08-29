@@ -241,14 +241,16 @@ watch(contact, (newContact) => {
 
 const skipDialog = computed(
   () =>
-    !(contact.value.given_name ||
-        contact.value.family_name ||
-        contact.value.alternate_names ||
-        contact.value.address ||
-        contact.value.works_for ||
-        contact.value.job_title ||
-        contact.value.same_as ||
-        contact.value.image),
+    !(
+      contact.value.given_name ||
+      contact.value.family_name ||
+      contact.value.alternate_names ||
+      contact.value.address ||
+      contact.value.works_for ||
+      contact.value.job_title ||
+      contact.value.same_as ||
+      contact.value.image
+    ),
 );
 
 function isValidURL(url: string) {

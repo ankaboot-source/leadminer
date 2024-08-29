@@ -199,7 +199,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         let emailsToEnrich: string[];
 
         if (enrichAllContacts) {
-          emailsToEnrich = await getEmails(user.id)
+          emailsToEnrich = await getEmails(user.id);
         } else {
           if (!Array.isArray(emails) || !emails.length) {
             return res.status(400).json({
@@ -210,7 +210,9 @@ export default function initializeEnrichementController(userResolver: Users) {
         }
 
         const enrichedEmails = new Set(await getEnrichedEmails(user.id));
-        let contactsToEnrich = emailsToEnrich.filter(email => !enrichedEmails.has(email));
+        let contactsToEnrich = emailsToEnrich.filter(
+          (email) => !enrichedEmails.has(email)
+        );
 
         if (!contactsToEnrich.length) {
           return res.status(200).json({ alreadyEnriched: true });
@@ -227,9 +229,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             availableUnits
           } = await creditsHandler.validate(user.id, contactsToEnrich.length);
 
-          if (
-            hasDeficientCredits || hasInsufficientCredits
-          ) {
+          if (hasDeficientCredits || hasInsufficientCredits) {
             const response = {
               total: contactsToEnrich.length,
               available: Math.floor(availableUnits)

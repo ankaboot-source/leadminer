@@ -234,7 +234,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     });
   } catch (err) {
     stopEnrichment();
-    throw err
+    throw err;
   }
 }
 
