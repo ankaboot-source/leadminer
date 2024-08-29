@@ -330,7 +330,10 @@ function startRealtimePersons(userId: string, email: string) {
           ]);
           updatedContact.works_for = org ? org.name : updatedContact.works_for;
         }
-        $contactInformationSidebar.contact = updatedContact;
+        $contactInformationSidebar.contact = {
+          ...$contactInformationSidebar.contact,
+          ...updatedContact,
+        };
       },
     );
   personsSubscription.subscribe();
