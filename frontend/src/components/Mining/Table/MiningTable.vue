@@ -821,13 +821,12 @@ const openCreditModel = (
 };
 
 async function exportTable(partialExport = false) {
-  // if !contactsToExport, then export all contacts
-
   await $api('/export/csv', {
     method: 'POST',
     body: {
       partialExport,
-      contactsToExport: contactsToExport.value,
+      emails: contactsToExport.value,
+      exportAllContacts: contactsToExport.value === undefined,
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {

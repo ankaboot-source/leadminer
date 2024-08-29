@@ -10,7 +10,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
 import SupabaseUsers from '../../src/db/supabase/users';
 import { Profile } from '../../src/db/types';
-import CreditsHandler from '../../src/services/credits/creditHandler';
+import CreditsHandler from '../../src/services/credits/creditsHandler';
 
 const ENV_CONTACT_CREDITS = 10;
 const MOCKED_DB = new Map<string, Partial<Profile>>([]);
