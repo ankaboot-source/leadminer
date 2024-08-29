@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
 import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditHandler';
+import CreditsHandler from '../services/credits/creditsHandler';
 import emailEnrichementService from '../services/email-enrichment';
 import supabaseClient from '../utils/supabase';
 
@@ -187,26 +187,27 @@ export default function initializeEnrichementController(userResolver: Users) {
       const { user } = res.locals;
       const {
         updateEmptyFieldsOnly,
-        emails: emailsReq
+        emails,
+        enrichAllContacts
       }: {
         updateEmptyFieldsOnly: boolean;
-        emails: string[];
+        emails?: string[];
+        enrichAllContacts: boolean;
       } = req.body;
 
       try {
-        if (
-          emailsReq !== undefined &&
-          (!Array.isArray(emailsReq) || !emailsReq.length)
-        ) {
+        if (!enrichAllContacts && (!Array.isArray(emails) || !emails.length)) {
           return res.status(400).json({
-            message:
-              'Parameter "emails" must be a non-empty list of emails or undefined'
+            message: 'Parameter "emails" must be a non-empty list of emails'
           });
         }
-        const emails = emailsReq ?? (await getEmails(user.id));
-        const enrichedContacts = await getEnrichedEmails(user.id);
-        let contactsToEnrich = emails.filter(
-          (email) => !enrichedContacts.includes(email)
+        const emailsToEnrich = enrichAllContacts
+          ? await getEmails(user.id)
+          : emails;
+        const enrichedEmails = await getEnrichedEmails(user.id);
+        // skipcq: JS-0339 - Its throwing 'emailsToEnrich' is possibly 'undefined' due to 'emails'. However there is a condition where parameter "emails" must be a non-empty list of emails.
+        let contactsToEnrich = emailsToEnrich!.filter(
+          (email) => !enrichedEmails.includes(email)
         );
 
         if (!contactsToEnrich.length) {
@@ -214,7 +215,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         }
 
         if (ENV.ENABLE_CREDIT) {
-          const creditsService = new CreditsHandler(
+          const creditsHandler = new CreditsHandler(
             userResolver,
             ENV.CONTACT_CREDIT
           );
@@ -222,7 +223,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             hasDeficientCredits,
             hasInsufficientCredits,
             availableUnits
-          } = await creditsService.validate(user.id, contactsToEnrich.length);
+          } = await creditsHandler.validate(user.id, contactsToEnrich.length);
 
           if (
             !updateEmptyFieldsOnly &&
@@ -233,7 +234,7 @@ export default function initializeEnrichementController(userResolver: Users) {
               available: Math.floor(availableUnits)
             };
             return res
-              .status(creditsService.DEFICIENT_CREDITS_STATUS)
+              .status(creditsHandler.DEFICIENT_CREDITS_STATUS)
               .json(response);
           }
           contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
@@ -319,11 +320,11 @@ export default function initializeEnrichementController(userResolver: Users) {
         });
 
         if (ENV.ENABLE_CREDIT) {
-          const creditHandler = new CreditsHandler(
+          const creditsHandler = new CreditsHandler(
             userResolver,
             ENV.CONTACT_CREDIT
           );
-          await creditHandler.deduct(cachedUserId, enrichementResult.length);
+          await creditsHandler.deduct(cachedUserId, enrichementResult.length);
         }
 
         return res.status(200);
