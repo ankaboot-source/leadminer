@@ -205,6 +205,7 @@ export default function initializeEnrichementController(userResolver: Users) {
           ? await getEmails(user.id)
           : emails;
         const enrichedEmails = await getEnrichedEmails(user.id);
+        // skipcq: JS-0339 - Its throwing 'emailsToEnrich' is possibly 'undefined' due to 'emails'. However there is a condition where parameter "emails" must be a non-empty list of emails.
         let contactsToEnrich = emailsToEnrich!.filter(
           (email) => !enrichedEmails.includes(email)
         );

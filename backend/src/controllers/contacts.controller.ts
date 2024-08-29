@@ -31,7 +31,7 @@ export default function initializeContactsController(
       const {
         emails,
         exportAllContacts
-      }: { emails?: string[]; exportAllContacts: Boolean } = req.body;
+      }: { emails?: string[]; exportAllContacts: boolean } = req.body;
 
       if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
         return res.status(400).json({
