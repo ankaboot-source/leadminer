@@ -5,7 +5,7 @@ import type { Profile } from '~/types/profile';
 
 export default defineNuxtPlugin({
   name: 'supabase-profile-listener',
-  async setup() {
+  setup() {
     const $supabaseClient = useSupabaseClient();
 
     $supabaseClient.auth.onAuthStateChange(async (_, session) => {

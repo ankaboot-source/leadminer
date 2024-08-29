@@ -203,6 +203,10 @@ function setupEnrichmentRealtime() {
   subscription.subscribe();
 }
 
+const openCreditsDialog = (available: number, total: number) => {
+  CreditsDialogRef.value?.openModal(true, total, available, 0);
+};
+
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     $leadminerStore.activeEnrichment = true;
@@ -243,10 +247,6 @@ onMounted(async () => {
     await startEnrichment(true);
   }
 });
-
-const openCreditsDialog = (available: number, total: number) => {
-  CreditsDialogRef.value?.openModal(true, total, available, 0);
-};
 
 const openEnrichmentConfirmationDialog = () => {
   if ($profile.value?.credits === 0 && contactsToEnrich.value?.length) {
