@@ -235,7 +235,7 @@ import { useI18n } from 'vue-i18n';
 import { isInvalidEmail as isInvalidEmailSyntax } from '@/utils/email';
 import { isInvalidPassword as isInvalidPasswordSyntax } from '@/utils/password';
 
-const { getBrowserLocale } = useI18n({
+const { t } = useI18n({
   useScope: 'local',
 });
 
@@ -362,7 +362,15 @@ async function signUp() {
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
-          EmailTemplate: supabaseEmailsI18n.get(getBrowserLocale() || 'en'),
+          Prehead: t('prehead'),
+          Title: t('title'),
+          Body1: t('body.p1'),
+          Body2: t('body.p2'),
+          Body3: t('body.p3'),
+          Body4: t('body.p4'),
+          Button: t('button'),
+          Regards: $t('email_template.regards'),
+          Footer: $t('email_template.footer'),
         },
       },
     });
