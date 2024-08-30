@@ -26,35 +26,22 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 
-const { getBrowserLocale } = useI18n();
-const $user = useSupabaseUser();
-const $session = useSupabaseSession();
-const $supabaseClient = useSupabaseClient();
 const { $saasEdgeFunctions } = useNuxtApp();
 
-onMounted(async () => {
-  if ($user.value && !$user.value.user_metadata.EmailTemplate) {
-    $supabaseClient.auth.updateUser({
-      data: {
-        ...$user.value.app_metadata,
-        EmailTemplate: supabaseEmailsI18n.get(getBrowserLocale() || 'en'),
-      },
-    });
-  }
-
-  if ($session.value && $session?.value.provider_token) {
-    await $saasEdgeFunctions('add-mining-source', {
-      method: 'POST',
-      body: {
-        provider: session.user.app_metadata.provider,
-        provider_token: session.provider_token,
-      },
-    });
-  }
-});
-
-$supabaseClient.auth.onAuthStateChange((event) => {
+useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
   switch (event) {
+    case 'INITIAL_SESSION':
+      if (session?.provider_token) {
+        await $saasEdgeFunctions('add-mining-source', {
+          method: 'POST',
+          body: {
+            provider: session.user.app_metadata.provider,
+            provider_token: session.provider_token,
+          },
+        });
+      }
+      break;
+
     case 'SIGNED_OUT':
       signOutManually();
       break;
