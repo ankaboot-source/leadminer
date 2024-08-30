@@ -5,7 +5,7 @@
         t('not_enough_credits', {
           actionType: t(actionType),
           formattedTotal,
-          engagementType: t(engagementType),
+          engagementType: t(engagementType, total),
         })
       }}
     </p>
@@ -42,7 +42,7 @@ const { t } = useI18n({
 
 const emit = defineEmits(['secondary-action']);
 const { engagementType, actionType } = defineProps<{
-  engagementType: 'contacts';
+  engagementType: 'contact';
   actionType: 'export' | 'enrich';
 }>();
 
@@ -94,7 +94,7 @@ defineExpose({
     "refill": "Refill credits",
     "action_type_only": "{actionType} only {available}",
     "export": "export",
-    "contacts": "contacts",
+    "contact": "contact | contacts",
     "enrich": "enrich"
   },
   "fr": {
@@ -103,7 +103,7 @@ defineExpose({
     "refill": "Recharger vos crédits",
     "action_type_only": "{actionType} seulement {available}",
     "export": "exporter",
-    "contacts": "contacts",
+    "contact": "contact | contacts",
     "enrich": "enrichir"
   }
 }

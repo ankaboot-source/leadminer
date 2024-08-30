@@ -57,6 +57,7 @@
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
+      :contacts-to-enrich="$contactsStore.selected"
       :bordered="true"
       :skip-dialog="true"
     />

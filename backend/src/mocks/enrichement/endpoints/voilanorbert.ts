@@ -36,28 +36,30 @@ router.post(
         token,
         id: faker.number.int({ min: 4, max: 8 }),
         results: [
-          {
-            email: 'Email',
-            title: ' Full Name',
-            organization: ' Job Title',
-            location: ' Organization',
-            twitter: ' Location',
-            linkedin: ' Twitter',
-            facebook: ' Linkedin',
-            error_msg: ' Facebook'
-          },
-          ...emails.map((email: string) => ({
-            email,
-
-            fullName: faker.person.fullName(),
-            title: faker.person.jobTitle(),
-            organization: faker.company.name(),
-            location: faker.location.city(),
-            twitter: faker.image.avatar(),
-            linkedin: faker.image.avatar(),
-            facebook: faker.image.avatar(),
-            error_msg: faker.lorem.sentence()
-          }))
+          ...emails.map((email: string) =>
+            email.length
+              ? {
+                  email,
+                  fullName: faker.person.fullName(),
+                  title: faker.person.jobTitle(),
+                  organization: faker.company.name(),
+                  location: faker.location.city(),
+                  twitter: faker.image.avatar(),
+                  linkedin: faker.image.avatar(),
+                  facebook: faker.image.avatar(),
+                  error_msg: faker.lorem.sentence()
+                }
+              : {
+                  email: 'Email',
+                  title: ' Full Name',
+                  organization: ' Job Title',
+                  location: ' Organization',
+                  twitter: ' Location',
+                  linkedin: ' Twitter',
+                  facebook: ' Linkedin',
+                  error_msg: ' Facebook'
+                }
+          )
         ],
         file_url: `http://localhost:${SERVER_PORT}/2018-01-08/enrich/${token}/download`
       });
