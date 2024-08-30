@@ -53,7 +53,7 @@ onMounted(async () => {
   }
 });
 
-$supabaseClient.auth.onAuthStateChange(async (event) => {
+$supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
       signOutManually();
