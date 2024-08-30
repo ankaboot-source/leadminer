@@ -118,42 +118,27 @@ const { t: $t } = useI18n({
 });
 
 const $toast = useToast();
-
 const { $api } = useNuxtApp();
+const $user = useSupabaseUser();
+const $session = useSupabaseSession();
+const $profile = useSupabaseUserProfile();
 
-const { data: profile } = await useAsyncData('get-profile', async () => {
-  const $user = useSupabaseUser();
-  const { data, error } = await useSupabaseClient()
-    .from('profiles')
-    .select('*')
-    .single<Profile>();
-
-  if (error) {
-    throw error;
-  }
-
-  return {
-    isSocialLogin: $user.value.app_metadata.provider !== 'email',
-    ...data,
-  };
+onNuxtReady(() => {
+  if (!$session.value) navigateTo('/');
 });
-
-if (!useSupabaseSession().value) {
-  navigateTo('/');
-}
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
 
-const emailInput = ref(profile.value?.email);
-const fullnameInput = ref(profile.value?.full_name);
+const emailInput = ref($profile.value?.email);
+const fullnameInput = ref($profile.value?.full_name);
 const passwordInput = ref('');
-const isSocialLogin = ref(profile.value?.isSocialLogin);
+const isSocialLogin = ref($user.value?.app_metadata.provider === 'email');
 
 const disableUpdateButton = computed(
   () =>
-    emailInput.value === profile.value?.email &&
-    fullnameInput.value === profile.value?.full_name &&
+    emailInput.value === $profile.value?.email &&
+    fullnameInput.value === $profile.value?.full_name &&
     passwordInput.value.length === 0,
 );
 
@@ -185,7 +170,7 @@ async function updateUserProfile(userProfile: Partial<Profile>) {
   const { error: emailUpdateError } = await useSupabaseClient<Profile>()
     .from('profiles')
     .update({ ...userProfile })
-    .eq('user_id', profile.value?.user_id);
+    .eq('user_id', $profile.value?.user_id);
 
   if (emailUpdateError) {
     throw emailUpdateError;
@@ -207,7 +192,7 @@ async function updateUserDetailsButton() {
     const userProfile: Partial<Profile> = {};
 
     const { email: currentEmail, full_name: currentFullName } =
-      profile.value as Profile;
+      $profile.value as Profile;
 
     if (emailInput.value !== currentEmail) {
       // user changed his email

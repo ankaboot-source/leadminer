@@ -171,6 +171,7 @@
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
           :contacts-to-enrich="[contact.email]"
+          :enrich-all-contacts="false"
           :skip-dialog="skipDialog"
         />
         <Button
@@ -330,7 +331,10 @@ function startRealtimePersons(userId: string, email: string) {
           ]);
           updatedContact.works_for = org ? org.name : updatedContact.works_for;
         }
-        $contactInformationSidebar.contact = updatedContact;
+        $contactInformationSidebar.contact = {
+          ...$contactInformationSidebar.contact,
+          ...updatedContact,
+        };
       },
     );
   personsSubscription.subscribe();

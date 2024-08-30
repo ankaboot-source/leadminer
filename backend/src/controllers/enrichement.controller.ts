@@ -186,28 +186,32 @@ export default function initializeEnrichementController(userResolver: Users) {
     async enrich(req: Request, res: Response, next: NextFunction) {
       const { user } = res.locals;
       const {
-        updateEmptyFieldsOnly,
         emails,
-        enrichAllContacts
+        enrichAllContacts,
+        updateEmptyFieldsOnly
       }: {
-        updateEmptyFieldsOnly: boolean;
         emails?: string[];
         enrichAllContacts: boolean;
+        updateEmptyFieldsOnly: boolean;
       } = req.body;
 
       try {
-        if (!enrichAllContacts && (!Array.isArray(emails) || !emails.length)) {
-          return res.status(400).json({
-            message: 'Parameter "emails" must be a non-empty list of emails'
-          });
+        let emailsToEnrich: string[];
+
+        if (enrichAllContacts) {
+          emailsToEnrich = await getEmails(user.id);
+        } else {
+          if (!Array.isArray(emails) || !emails.length) {
+            return res.status(400).json({
+              message: 'Parameter "emails" must be a non-empty list of emails'
+            });
+          }
+          emailsToEnrich = emails;
         }
-        const emailsToEnrich = enrichAllContacts
-          ? await getEmails(user.id)
-          : emails;
-        const enrichedEmails = await getEnrichedEmails(user.id);
-        // skipcq: JS-0339 - Its throwing 'emailsToEnrich' is possibly 'undefined' due to 'emails'. However there is a condition where parameter "emails" must be a non-empty list of emails.
-        let contactsToEnrich = emailsToEnrich!.filter(
-          (email) => !enrichedEmails.includes(email)
+
+        const enrichedEmails = new Set(await getEnrichedEmails(user.id));
+        let contactsToEnrich = emailsToEnrich.filter(
+          (email) => !enrichedEmails.has(email)
         );
 
         if (!contactsToEnrich.length) {
@@ -225,10 +229,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             availableUnits
           } = await creditsHandler.validate(user.id, contactsToEnrich.length);
 
-          if (
-            !updateEmptyFieldsOnly &&
-            (hasDeficientCredits || hasInsufficientCredits)
-          ) {
+          if (hasDeficientCredits || hasInsufficientCredits) {
             const response = {
               total: contactsToEnrich.length,
               available: Math.floor(availableUnits)

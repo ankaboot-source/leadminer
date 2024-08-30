@@ -72,8 +72,12 @@
         </div>
         <div>
           <EnrichButton
-            :enrichment-realtime-callback="() => {}"
-            :enrichment-request-response-callback="() => {}"
+            :enrichment-realtime-callback="emptyFunction"
+            :enrichment-request-response-callback="emptyFunction"
+            :contacts-to-enrich="
+              $contactsStore.selected ?? (contacts as unknown as string[])
+            "
+            :enrich-all-contacts="$contactsStore.selected === undefined"
           />
         </div>
         <div class="ml-2">
@@ -632,6 +636,8 @@ const { t } = useI18n({
 const { t: $t } = useI18n({
   useScope: 'global',
 });
+
+const emptyFunction = () => {};
 
 const $toast = useToast();
 
