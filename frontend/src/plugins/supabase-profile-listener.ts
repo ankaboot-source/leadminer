@@ -37,7 +37,6 @@ export default defineNuxtPlugin({
           },
         )
         .subscribe();
-      $supabaseClient.from('profiles').select('*').single();
     });
   },
 });
