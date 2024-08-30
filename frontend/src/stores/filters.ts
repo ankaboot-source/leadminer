@@ -9,23 +9,29 @@ const ANY_SELECTED = 'ANY_SELECTED';
 FilterService.register(ANY_SELECTED, (value, filter) =>
   !filter ? true : filter.some((item: string) => value.includes(item)),
 );
+
+const fullnameToggle = ref(false); // fullname: NOT_EMPTY
+
+const NOT_EMPTY = 'NOT_EMPTY';
+FilterService.register(NOT_EMPTY, (value, filter) => {
+  if (!fullnameToggle.value) return true;
+  return !(
+    (filter || !filter) &&
+    (value === undefined || value === null || value === '')
+  );
+});
+
 const defaultFilters = {
   global: {
     value: null,
     matchMode: FilterMatchMode.CONTAINS,
   },
 
-  // Contacts
   name: {
     value: null,
-    matchMode: FilterMatchMode.CONTAINS,
-  },
-  email: {
-    value: null,
-    matchMode: FilterMatchMode.CONTAINS,
+    matchMode: NOT_EMPTY,
   },
 
-  // Source
   source: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
@@ -212,10 +218,38 @@ export const useFiltersStore = defineStore('filters', () => {
     { deep: true },
   );
 
-  function toggleFilters(value = true) {
-    onValidToggle(value);
-    onRepliesToggle(value);
-    onRecentToggle(value);
+  function onFullnameToggle(toggle?: boolean) {
+    if (toggle !== undefined) {
+      fullnameToggle.value = toggle;
+      filters.value.name.value = toggle || null;
+    }
+  }
+
+  type togglesType = {
+    valid: boolean;
+    recent: boolean;
+    fullname: boolean;
+    replies: boolean;
+  };
+  const defaultToggles = {
+    valid: true,
+    recent: true,
+    fullname: true,
+    replies: false,
+  };
+  function toggleFilters(toggles: togglesType | boolean = defaultToggles) {
+    if (typeof toggles === 'boolean') {
+      toggles = {
+        valid: toggles,
+        recent: toggles,
+        fullname: toggles,
+        replies: toggles,
+      };
+    }
+    onValidToggle(toggles.valid);
+    onRecentToggle(toggles.recent);
+    onFullnameToggle(toggles.fullname);
+    onRepliesToggle(toggles.replies);
   }
 
   function clearFilter() {
@@ -227,8 +261,9 @@ export const useFiltersStore = defineStore('filters', () => {
   const areToggledFilters = computed(
     () =>
       Number(validToggle.value) +
-      Number(repliesToggle.value) +
-      Number(recentToggle.value),
+      Number(recentToggle.value) +
+      Number(fullnameToggle.value) +
+      Number(repliesToggle.value),
   );
 
   return {
@@ -246,5 +281,7 @@ export const useFiltersStore = defineStore('filters', () => {
     recentToggle,
     recentYearsAgo,
     onRecentToggle,
+    fullnameToggle,
+    onFullnameToggle,
   };
 });
