@@ -12,7 +12,8 @@ export function signOutManually() {
   useResetStore().all();
   clearAllData();
   useRouter().push('/auth/login');
-  useSupabaseUser(); // To refresh $user in AppHeader
+  /// @ts-expect-error supabase type bug (https://github.com/nuxt-modules/supabase/issues/406)
+  useSupabaseUser().value = null; // updates $user in AppHeader
 }
 
 export async function signOut() {
