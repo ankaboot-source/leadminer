@@ -14,13 +14,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let subscription: RealtimeChannel;
 
   const cachedWaitingToBeSynced = new Set();
-  const cachedContacts = new Map<string, Contact>();
+  let cachedContacts = new Map<string, Contact>();
   const contacts = ref<Contact[] | undefined>(undefined);
   const contactsLength = computed(() => contacts.value?.length);
-
   const selected = ref<string[] | undefined>(undefined);
-
   const selectedLength = ref<number>(0);
+
   function setContacts(newContacts: Contact[]) {
     contacts.value = newContacts;
     if (contacts.value.length) {
@@ -36,6 +35,17 @@ export const useContactsStore = defineStore('contacts-store', () => {
       cachedWaitingToBeSynced.clear();
       contacts.value = Array.from(cachedContacts.values());
     }
+  }
+
+  function upsertTop(
+    email: string,
+    contact: Contact,
+    map: Map<string, Contact>,
+  ) {
+    map.delete(email);
+    const arr = Array.from(map);
+    arr.splice(0, 0, [email, contact]);
+    return new Map(arr);
   }
 
   function subscribeRealtime(user: User) {
@@ -60,10 +70,15 @@ export const useContactsStore = defineStore('contacts-store', () => {
           }
 
           cachedWaitingToBeSynced.add(newContact.email);
-          cachedContacts.set(newContact.email, {
-            ...cachedContacts.get(newContact.email),
-            ...newContact,
-          });
+
+          cachedContacts = upsertTop(
+            newContact.email,
+            {
+              ...cachedContacts.get(newContact.email),
+              ...newContact,
+            },
+            cachedContacts,
+          );
         },
       );
 
