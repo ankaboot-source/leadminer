@@ -45,7 +45,10 @@ BEGIN
       rp.recipient as recipient_col,
       rp.conversations as conversations_col,
       rp.replied_conversations as replied_conversations_col,
-      rp.tags as tags_col
+      rp.tags as tags_col,
+      ROW_NUMBER() OVER (
+        PARTITION BY p.email
+      ) AS rn
     FROM
       persons p
     INNER JOIN
@@ -79,7 +82,9 @@ BEGIN
     replied_conversations_col AS replied_conversations,
     tags_col AS tags
   FROM
-    ExportedContacts;
+    ExportedContacts
+  WHERE
+    rn = 1;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -128,7 +133,10 @@ BEGIN
       rp.recipient as recipient_col,
       rp.conversations as conversations_col,
       rp.replied_conversations as replied_conversations_col,
-      rp.tags as tags_col
+      rp.tags as tags_col,
+      ROW_NUMBER() OVER (
+      PARTITION BY p.email
+      ) AS rn
     FROM
       persons p
     INNER JOIN
@@ -164,6 +172,8 @@ BEGIN
     replied_conversations_col AS replied_conversations,
     tags_col AS tags
   FROM
-    ExportedContacts;
+    ExportedContacts
+  WHERE
+    rn = 1;
 END;
 $$ LANGUAGE plpgsql;
