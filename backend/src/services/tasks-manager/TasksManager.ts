@@ -18,13 +18,13 @@ import {
   StreamInfo,
   Task,
   TaskCategory,
+  TaskClean,
   TaskExtract,
   TaskFetch,
   TaskProgress,
   TaskProgressType,
   TaskStatus,
-  TaskType,
-  TaskClean
+  TaskType
 } from './types';
 import { redactSensitiveData } from './utils';
 
@@ -482,7 +482,11 @@ export default class TasksManager {
 
     if (status) {
       await this.stopTask([clean]);
-      await this.deleteTask(miningId);
+      try {
+        await this.deleteTask(miningId);
+      } catch (error) {
+        logger.error(error);
+      }
     }
 
     return status;
