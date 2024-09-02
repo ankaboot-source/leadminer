@@ -59,7 +59,7 @@ export default class EmailEnricherFactory {
 
       if (!enricher) {
         throw new Error(
-          `Enricher with type <${enricherType}> nricher not found.`
+          `Enricher with type <${enricherType}> enricher not found.`
         );
       }
 
