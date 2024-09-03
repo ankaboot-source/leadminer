@@ -1,3 +1,4 @@
+import Connection from 'imap';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import logger from '../utils/logger';
@@ -80,30 +81,60 @@ export function generateErrorObjectFromImapError(error: any) {
 /**
  * Checks if the given IMAP credentials are valid by attempting to connect to the server.
  * @param host - The IMAP server hostname.
- * @param email - The email address to log in with.
+ * @param login - The email address or the username to log in with.
  * @param password - The password to use for authentication.
  * @param port - The port number to connect to.
  * @throws {Error} - If there was an error connecting to the server or authenticating with the given credentials.
- * @returns A promise that resolves to a `login` string, which is the `email`, if unauthorized, then `username`.
+ * @returns A promise that resolves to {connectionProvider, connection}
  */
 export async function validateImapCredentials(
+  host: string,
+  login: string,
+  password: string,
+  port: number,
+  tls: boolean
+): Promise<{
+  connectionProvider: ImapConnectionProvider;
+  connection: Connection;
+}> {
+  const connectionProvider = new ImapConnectionProvider(login).withPassword(
+    host,
+    password,
+    tls,
+    port
+  );
+  const connection = await connectionProvider.acquireConnection();
+  return { connectionProvider, connection };
+}
+
+/**
+ * Checks if the given IMAP credentials are valid by attempting to connect to the server.
+ * If invalid then try username instead of email.
+ * @param host - The IMAP server hostname.
+ * @param email - The email address to log in with.
+ * @param password - The password to use for authentication.
+ * @param port - The port number to connect to.
+ * @throws {Error} - If there was an error connecting to the server or authenticating with the given/created credentials.
+ * @returns A promise that resolves to a `login` string, which is the `email`, if unauthorized then `username`.
+ */
+export async function getValidImapLogin(
   host: string,
   email: string,
   password: string,
   port: number,
   tls: boolean
 ): Promise<string> {
-  let connection = null;
+  let connection: Connection | null = null;
   let connectionProvider: ImapConnectionProvider | null = null;
   let login = email;
   try {
-    connectionProvider = new ImapConnectionProvider(login).withPassword(
+    ({ connectionProvider, connection } = await validateImapCredentials(
       host,
+      login,
       password,
-      tls,
-      port
-    );
-    connection = await connectionProvider.acquireConnection();
+      port,
+      tls
+    ));
     return login;
   } catch (error) {
     try {
@@ -113,13 +144,14 @@ export async function validateImapCredentials(
       [login] = email.split('@');
       if (login === email) throw error;
       logger.error('Failed to log in, trying username instead of email...');
-      connectionProvider = new ImapConnectionProvider(login).withPassword(
+      ({ connectionProvider, connection } = await validateImapCredentials(
         host,
+        login,
         password,
-        tls,
-        port
-      );
-      connection = await connectionProvider.acquireConnection();
+        port,
+        tls
+      ));
+
       return login;
     } catch (err) {
       throw generateErrorObjectFromImapError(err);
