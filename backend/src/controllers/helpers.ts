@@ -118,8 +118,8 @@ export async function validateImapCredentials(
         port
       );
       connection = await connectionProvider.acquireConnection();
-    } catch (error) {
-      throw generateErrorObjectFromImapError(error);
+    } catch (err) {
+      throw generateErrorObjectFromImapError(err);
     }
   } finally {
     if (connection) {
