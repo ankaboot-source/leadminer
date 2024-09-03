@@ -84,6 +84,7 @@ export function generateErrorObjectFromImapError(error: any) {
  * @param password - The password to use for authentication.
  * @param port - The port number to connect to.
  * @throws {Error} - If there was an error connecting to the server or authenticating with the given credentials.
+ * @returns A promise that resolves to a `login` string, which is the `email`, if unauthorized, then `username`.
  */
 export async function validateImapCredentials(
   host: string,
@@ -91,7 +92,7 @@ export async function validateImapCredentials(
   password: string,
   port: number,
   tls: boolean
-) {
+): Promise<string> {
   let connection = null;
   let connectionProvider: ImapConnectionProvider | null = null;
   let login = email;
@@ -103,6 +104,7 @@ export async function validateImapCredentials(
       port
     );
     connection = await connectionProvider.acquireConnection();
+    return login;
   } catch (error) {
     try {
       // If Unauthorized, try username.
@@ -118,6 +120,7 @@ export async function validateImapCredentials(
         port
       );
       connection = await connectionProvider.acquireConnection();
+      return login;
     } catch (err) {
       throw generateErrorObjectFromImapError(err);
     }
@@ -126,6 +129,5 @@ export async function validateImapCredentials(
       await connectionProvider?.releaseConnection(connection);
     }
     await connectionProvider?.cleanPool();
-    return login;
   }
 }
