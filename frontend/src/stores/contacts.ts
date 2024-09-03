@@ -56,7 +56,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
   }
 
-  function refreshContacts() {
+  function applyCachedContacts() {
     if (cachedContacts.value.length > 0) {
       contacts.value = cachedContacts.value;
       cachedContacts.value = [];
@@ -81,7 +81,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       );
 
     syncInterval = window.setInterval(() => {
-      refreshContacts();
+      applyCachedContacts();
     }, 2000);
 
     subscription.subscribe();
@@ -92,6 +92,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
       subscription.unsubscribe();
     }
     if (syncInterval) {
+      applyCachedContacts();
       clearInterval(syncInterval);
     }
   }
