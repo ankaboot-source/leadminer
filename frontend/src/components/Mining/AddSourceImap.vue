@@ -230,30 +230,14 @@ async function onSubmitImapCredentials() {
     imapPort.value = configs.port;
     imapSecureConnection.value = configs.secure;
 
-    try {
-      await $api('/imap/mine/sources/imap', {
-        method: 'POST',
-        body: {
-          email: imapEmail.value,
-          password: imapPassword.value,
-          ...configs,
-        },
-      });
-    } catch (error) {
-      // If Unauthorized, try username.
-      if (!(error instanceof FetchError && error.status === 401)) throw error;
-      const username = imapEmail.value.split('@')[0];
-      if (username === imapEmail.value) throw error;
-      console.error('Failed to log in, trying username instead of email...');
-      await $api('/imap/mine/sources/imap', {
-        method: 'POST',
-        body: {
-          email: username,
-          password: imapPassword.value,
-          ...configs,
-        },
-      });
-    }
+    await $api('/imap/mine/sources/imap', {
+      method: 'POST',
+      body: {
+        email: imapEmail.value,
+        password: imapPassword.value,
+        ...configs,
+      },
+    });
 
     imapSource.value = {
       type: 'imap',

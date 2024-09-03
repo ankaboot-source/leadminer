@@ -102,8 +102,24 @@ export async function validateImapCredentials(
       port
     );
     connection = await connectionProvider.acquireConnection();
-  } catch (err) {
-    throw generateErrorObjectFromImapError(err);
+  } catch (error) {
+    try {
+      // If Unauthorized, try username.
+      if (!(error instanceof ImapAuthError && error.status === 401))
+        throw error;
+      const username = email.split('@')[0];
+      if (username === email) throw error;
+      console.error('Failed to log in, trying username instead of email...');
+      connectionProvider = new ImapConnectionProvider(username).withPassword(
+        host,
+        password,
+        tls,
+        port
+      );
+      connection = await connectionProvider.acquireConnection();
+    } catch (error) {
+      throw generateErrorObjectFromImapError(error);
+    }
   } finally {
     if (connection) {
       await connectionProvider?.releaseConnection(connection);
