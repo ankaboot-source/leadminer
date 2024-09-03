@@ -1,5 +1,6 @@
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
+import logger from '../utils/logger';
 
 const IMAP_ERROR_CODES = new Map([
   [
@@ -109,7 +110,7 @@ export async function validateImapCredentials(
         throw error;
       const username = email.split('@')[0];
       if (username === email) throw error;
-      console.error('Failed to log in, trying username instead of email...');
+      logger.error('Failed to log in, trying username instead of email...');
       connectionProvider = new ImapConnectionProvider(username).withPassword(
         host,
         password,
