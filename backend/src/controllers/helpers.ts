@@ -110,7 +110,7 @@ export async function validateImapCredentials(
       // If Unauthorized, try username.
       if (!(error instanceof ImapAuthError && error.status === 401))
         throw error;
-      login = email.split('@')[0];
+      [login] = email.split('@');
       if (login === email) throw error;
       logger.error('Failed to log in, trying username instead of email...');
       connectionProvider = new ImapConnectionProvider(login).withPassword(
