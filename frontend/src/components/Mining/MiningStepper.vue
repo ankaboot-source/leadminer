@@ -8,7 +8,7 @@
       >
         <span class="font-semibold flex items-center gap-2">
           <i
-            v-if="collapsePanel && activeTask"
+            v-if="collapsePanel && $leadminerStore.activeTask"
             v-tooltip.top="spinnerText"
             class="pi pi-spin pi-spinner text-lg"
           />
@@ -86,13 +86,6 @@ const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
-const activeTask = computed(
-  () =>
-    $leadminerStore.miningTask !== undefined ||
-    $leadminerStore.isLoadingBoxes ||
-    !$leadminerStore.cleaningFinished ||
-    $leadminerStore.activeEnrichment,
-);
 
 const collapsePanel = defineModel<boolean>('collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
@@ -100,7 +93,7 @@ const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 const { error, provider, source } = $route.query;
 
 const spinnerText = computed(() => {
-  if (!(collapsePanel.value && activeTask.value)) return undefined;
+  if (!(collapsePanel.value && $leadminerStore.activeTask)) return undefined;
   if ($leadminerStore.miningTask !== undefined) {
     return t('mining');
   }
