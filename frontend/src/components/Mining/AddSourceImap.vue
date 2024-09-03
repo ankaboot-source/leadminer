@@ -175,7 +175,7 @@ function handleImapConfigsNotDetected() {
   imapAdvancedSettings.value = true;
 }
 
-async function handleAuthenticationErrors(error: FetchError) {
+function handleAuthenticationErrors(error: FetchError) {
   if (error.data?.fields) {
     error.data?.fields.forEach((field: string) => {
       if (['host', 'port'].includes(field)) {
@@ -247,7 +247,7 @@ async function onSubmitImapCredentials() {
     show.value = false;
   } catch (error) {
     if (error instanceof FetchError) {
-      await handleAuthenticationErrors(error);
+      handleAuthenticationErrors(error);
     } else {
       throw error;
     }
