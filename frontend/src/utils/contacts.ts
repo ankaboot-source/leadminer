@@ -45,7 +45,7 @@ export async function getOrganization(
     .from('organizations')
     .select(selectFields.join(','))
     .match(match)
-    .single<Organization>();
+    .maybeSingle<Organization>();
 
   if (error) {
     throw error;
