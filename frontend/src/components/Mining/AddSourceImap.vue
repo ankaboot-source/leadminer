@@ -244,7 +244,7 @@ async function onSubmitImapCredentials() {
       if (!(error instanceof FetchError && error.status === 401)) throw error;
       const username = imapEmail.value.split('@')[0];
       if (username === imapEmail.value) throw error;
-      console.log('Failed to log in, trying username instead of email...');
+      console.error('Failed to log in, trying username instead of email...');
       await $api('/imap/mine/sources/imap', {
         method: 'POST',
         body: {
