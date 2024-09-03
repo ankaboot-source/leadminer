@@ -94,9 +94,9 @@ export async function validateImapCredentials(
 ) {
   let connection = null;
   let connectionProvider: ImapConnectionProvider | null = null;
-
+  let login = email;
   try {
-    connectionProvider = new ImapConnectionProvider(email).withPassword(
+    connectionProvider = new ImapConnectionProvider(login).withPassword(
       host,
       password,
       tls,
@@ -108,10 +108,10 @@ export async function validateImapCredentials(
       // If Unauthorized, try username.
       if (!(error instanceof ImapAuthError && error.status === 401))
         throw error;
-      const username = email.split('@')[0];
-      if (username === email) throw error;
+      login = email.split('@')[0];
+      if (login === email) throw error;
       logger.error('Failed to log in, trying username instead of email...');
-      connectionProvider = new ImapConnectionProvider(username).withPassword(
+      connectionProvider = new ImapConnectionProvider(login).withPassword(
         host,
         password,
         tls,
@@ -126,5 +126,6 @@ export async function validateImapCredentials(
       await connectionProvider?.releaseConnection(connection);
     }
     await connectionProvider?.cleanPool();
+    return login;
   }
 }

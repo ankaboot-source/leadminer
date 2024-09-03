@@ -227,12 +227,18 @@ export default function initializeMiningController(
 
       try {
         // Connect to validate connection before creating the pool.
-        await validateImapCredentials(host, email, password, port, secure);
+        const login = await validateImapCredentials(
+          host,
+          email,
+          password,
+          port,
+          secure
+        );
         await miningSources.upsert({
           userId: user.id,
           email,
           type: 'imap',
-          credentials: { email, host, password, port, tls: secure }
+          credentials: { email: login, host, password, port, tls: secure }
         });
 
         return res
