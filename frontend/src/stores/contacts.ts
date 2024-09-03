@@ -13,28 +13,53 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let syncInterval: number;
   let subscription: RealtimeChannel;
 
-  const cachedWaitingToBeSynced = new Set();
-  const cachedContacts = new Map<string, Contact>();
   const contacts = ref<Contact[] | undefined>(undefined);
   const contactsLength = computed(() => contacts.value?.length);
-
   const selected = ref<string[] | undefined>(undefined);
-
   const selectedLength = ref<number>(0);
+
+  const $leadminerStore = useLeadminerStore();
+  const activeTask = computed(() => $leadminerStore.activeTask);
+  const cachedContacts = ref<Contact[]>([]);
+
   function setContacts(newContacts: Contact[]) {
     contacts.value = newContacts;
-    if (contacts.value.length) {
-      cachedContacts.clear();
-      contacts.value.forEach((contact) => {
-        cachedContacts.set(contact.email, contact);
-      });
+  }
+
+  function upsertTop(newContact: Contact, oldContacts: Contact[]) {
+    const index = oldContacts.findIndex(
+      (contact) => contact.email === newContact.email,
+    );
+    const oldContact = oldContacts[index];
+
+    if (index !== -1) {
+      oldContacts.splice(index, 1);
+    }
+    oldContacts.unshift({ ...oldContact, ...newContact });
+  }
+
+  async function handleNewContact(newContact: Contact) {
+    if (!contacts.value) return;
+
+    if (newContact.works_for) {
+      const org = await getOrganization({ id: newContact.works_for }, ['name']);
+      newContact.works_for = org ? org.name : newContact.works_for;
+    }
+    if (activeTask.value) {
+      // Cache to render periodically
+      if (cachedContacts.value.length === 0)
+        cachedContacts.value = JSON.parse(JSON.stringify(contacts.value));
+      upsertTop(newContact, cachedContacts.value);
+    } else {
+      // Render instantly
+      upsertTop(newContact, contacts.value);
     }
   }
 
-  function refreshContacts() {
-    if (cachedWaitingToBeSynced.size > 0) {
-      cachedWaitingToBeSynced.clear();
-      contacts.value = Array.from(cachedContacts.values());
+  function applyCachedContacts() {
+    if (cachedContacts.value.length > 0) {
+      contacts.value = cachedContacts.value;
+      cachedContacts.value = [];
     }
   }
 
@@ -51,24 +76,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
         },
         async (payload: RealtimePostgresChangesPayload<Contact>) => {
           const newContact = payload.new as Contact;
-
-          if (newContact.works_for) {
-            const org = await getOrganization({ id: newContact.works_for }, [
-              'name',
-            ]);
-            newContact.works_for = org ? org.name : newContact.works_for;
-          }
-
-          cachedWaitingToBeSynced.add(newContact.email);
-          cachedContacts.set(newContact.email, {
-            ...cachedContacts.get(newContact.email),
-            ...newContact,
-          });
+          await handleNewContact(newContact);
         },
       );
 
     syncInterval = window.setInterval(() => {
-      refreshContacts();
+      applyCachedContacts();
     }, 2000);
 
     subscription.subscribe();
@@ -79,16 +92,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
       subscription.unsubscribe();
     }
     if (syncInterval) {
+      applyCachedContacts();
       clearInterval(syncInterval);
     }
-    cachedWaitingToBeSynced.clear();
-    cachedContacts.clear();
   }
 
   function $reset() {
     contacts.value = undefined;
     selected.value = undefined;
     selectedLength.value = 0;
+    cachedContacts.value = [];
     unsubscribeRealtime();
   }
 
@@ -99,7 +112,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     contactsLength,
     $reset,
     setContacts,
-    refreshContacts,
     subscribeRealtime,
     unsubscribeRealtime,
   };
