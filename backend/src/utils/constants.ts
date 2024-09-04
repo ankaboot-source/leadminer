@@ -56,6 +56,7 @@ export const NEWSLETTER_EMAIL_ADDRESS_INCLUDES = [
   '@substack.io'
 ]; // add newletter domains;
 export const GROUP_EMAIL_ADDRESS_INCLUDES = [
+  '@list.',
   '@lists.',
   '@listes.',
   '@sympa.',
@@ -65,7 +66,6 @@ export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@groups.google.com',
   '@yahoogroupes.fr',
   '@googlegroups.fr',
-  '@list.attac.org',
   '@framagroupes.org',
   'sympa-request@',
   'sympa@'
