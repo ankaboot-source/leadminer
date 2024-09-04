@@ -61,5 +61,6 @@ export async function getEmailTemplate(language: string) {
     return data;
   } catch (error) {
     console.error('Failed to fetch email template:', error);
+    return;
   }
 }

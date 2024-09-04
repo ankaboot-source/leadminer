@@ -146,7 +146,7 @@ export default defineNuxtPlugin({
       startAuthenticationWatcher();
     }
 
-    $supabaseClient.auth.onAuthStateChange(async (_, session) => {
+    $supabaseClient.auth.onAuthStateChange((_, session) => {
       if (session) {
         authenticated.value = true;
       } else {
