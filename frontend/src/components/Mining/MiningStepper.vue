@@ -8,7 +8,7 @@
       >
         <span class="font-semibold flex items-center gap-2">
           <i
-            v-if="collapsePanel && activeTask"
+            v-if="collapsePanel && $leadminerStore.activeTask"
             v-tooltip.top="spinnerText"
             class="pi pi-spin pi-spinner text-lg"
           />
@@ -18,39 +18,50 @@
     </template>
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
-        <Step v-tooltip.bottom="t('source')" :value="1">
-          <span class="hidden md:block">
-            {{ t('source') }}
-          </span>
+        <Step v-slot="{ active, value }" as-child :value="1">
+          <StepWithTooltip
+            :step-number="value"
+            :is-active="active"
+            :title="t('source')"
+          />
         </Step>
-        <Step v-tooltip.bottom="t('common.mine')" :value="2">
-          <span class="hidden md:block">
-            {{ $t('common.mine') }}
-          </span>
+        <Step v-slot="{ active, value }" as-child :value="2">
+          <StepWithTooltip
+            :step-number="value"
+            :is-active="active"
+            :title="t('common.mine')"
+          />
         </Step>
-        <Step v-tooltip.bottom="t('common.clean')" :value="3">
-          <span class="hidden md:block">
-            {{ $t('common.clean') }}
-          </span>
+        <Step v-slot="{ active, value }" as-child :value="3">
+          <StepWithTooltip
+            :step-number="value"
+            :is-active="active"
+            :title="t('common.clean')"
+          />
         </Step>
-        <Step v-tooltip.bottom="t('common.enrich')" :value="4">
-          <span class="hidden md:block">
-            {{ $t('common.enrich') }}
-          </span>
+        <Step v-slot="{ active, value }" as-child :value="4">
+          <StepWithTooltip
+            :step-number="value"
+            :is-active="active"
+            :title="t('common.enrich')"
+          />
         </Step>
       </StepList>
       <StepPanels>
-        <StepPanel v-if="$stepper.index === 1" :value="1">
-          <SourcePanel ref="sourcePanel" />
+        <StepPanel v-slot="{ active }" :value="1">
+          <SourcePanel v-if="active" ref="sourcePanel" />
         </StepPanel>
-        <StepPanel v-if="$stepper.index === 2" :value="2">
-          <MinePanel :mining-source="$leadminerStore.activeMiningSource!" />
+        <StepPanel v-slot="{ active }" :value="2">
+          <MinePanel
+            v-if="active"
+            :mining-source="$leadminerStore.activeMiningSource!"
+          />
         </StepPanel>
-        <StepPanel v-if="$stepper.index === 3" :value="3">
-          <CleanPanel />
+        <StepPanel v-slot="{ active }" :value="3">
+          <CleanPanel v-if="active" />
         </StepPanel>
-        <StepPanel v-if="$stepper.index === 4" :value="4">
-          <EnrichPanel />
+        <StepPanel v-slot="{ active }" :value="4">
+          <EnrichPanel v-if="active" />
         </StepPanel>
       </StepPanels>
     </Stepper>
@@ -78,6 +89,10 @@ const EnrichPanel = defineAsyncComponent(
   () => import('./StepperPanels/EnrichPanel.vue'),
 );
 
+const StepWithTooltip = defineAsyncComponent(
+  () => import('./StepperPanels/StepWithPopover.vue'),
+);
+
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -86,13 +101,6 @@ const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
-const activeTask = computed(
-  () =>
-    $leadminerStore.miningTask !== undefined ||
-    $leadminerStore.isLoadingBoxes ||
-    !$leadminerStore.cleaningFinished ||
-    $leadminerStore.activeEnrichment,
-);
 
 const collapsePanel = defineModel<boolean>('collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
@@ -100,7 +108,7 @@ const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 const { error, provider, source } = $route.query;
 
 const spinnerText = computed(() => {
-  if (!(collapsePanel.value && activeTask.value)) return undefined;
+  if (!(collapsePanel.value && $leadminerStore.activeTask)) return undefined;
   if ($leadminerStore.miningTask !== undefined) {
     return t('mining');
   }

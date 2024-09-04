@@ -1,7 +1,7 @@
 <template>
   <CreditsDialog
     ref="CreditsDialogRef"
-    engagement-type="contacts"
+    engagement-type="contact"
     action-type="export"
     @secondary-action="exportTable(true)"
   />
@@ -119,8 +119,8 @@
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
               <li class="flex justify-between">
-                <div v-tooltip.left="t('ensure_deliverability')">
-                  {{ t('only_valid_contacts') }}
+                <div v-tooltip.left="t('toggle_valid_tooltip')">
+                  {{ t('toggle_valid_label') }}
                 </div>
                 <ToggleSwitch
                   v-model="filtersStore.validToggle"
@@ -128,27 +128,36 @@
                 />
               </li>
               <li class="flex justify-between gap-2">
-                <div v-tooltip.left="t('contacts_best_performance')">
-                  {{ t('at_least_one_reply') }}
+                <div v-tooltip.left="t('toggle_fullname_tooltip')">
+                  {{ t('toggle_fullname_label') }}
                 </div>
                 <ToggleSwitch
-                  v-model="filtersStore.repliesToggle"
-                  @update:model-value="filtersStore.onRepliesToggle"
+                  v-model="filtersStore.fullnameToggle"
+                  @update:model-value="filtersStore.onFullnameToggle"
                 />
               </li>
               <li class="flex justify-between gap-2">
                 <div
                   v-tooltip.left="
-                    t('gdpr_proof', {
+                    t('toggle_recent_tooltip', {
                       recentYearsAgo: filtersStore.recentYearsAgo,
                     })
                   "
                 >
-                  {{ t('recent_contacts') }}
+                  {{ t('toggle_recent_label') }}
                 </div>
                 <ToggleSwitch
                   v-model="filtersStore.recentToggle"
                   @update:model-value="filtersStore.onRecentToggle"
+                />
+              </li>
+              <li class="flex justify-between gap-2">
+                <div v-tooltip.left="t('toggle_replies_tooltip')">
+                  {{ t('toggle_replies_label') }}
+                </div>
+                <ToggleSwitch
+                  v-model="filtersStore.repliesToggle"
+                  @update:model-value="filtersStore.onRepliesToggle"
                 />
               </li>
               <Divider class="my-0" />
@@ -1019,12 +1028,14 @@ table.p-datatable-table {
     "select_at_least_one_contact": "Select at least one contact to export",
     "export_csv": "Export CSV",
     "clear": "Clear",
-    "ensure_deliverability": "Ensure the deliverability of your campaign",
-    "only_valid_contacts": "Only valid contacts",
-    "contacts_best_performance": "Contacts who previously engaged with you perform best",
-    "at_least_one_reply": "At least one reply",
-    "gdpr_proof": "- Less than {recentYearsAgo} years \n- GDPR Proof",
-    "recent_contacts": "Recent contacts",
+    "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
+    "toggle_valid_label": "Only valid contacts",
+    "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
+    "toggle_replies_label": "At least one reply",
+    "toggle_fullname_label": "Only with fullname",
+    "toggle_fullname_tooltip": "Named contacts engage more",
+    "toggle_recent_tooltip": "- Less than {recentYearsAgo} years \n- GDPR Proof",
+    "toggle_recent_label": "Recent contacts",
     "visible_columns": "{n} Visible field | {n} Visible fields",
     "contacts": "Contacts",
     "emails": "Emails",
@@ -1062,12 +1073,14 @@ table.p-datatable-table {
     "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
     "export_csv": "Export CSV",
     "clear": "Vider",
-    "ensure_deliverability": "Assurez la délivrabilité de votre campagne",
-    "only_valid_contacts": "Seulement les contacts valides",
-    "contacts_best_performance": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
-    "at_least_one_reply": "Au moins une réponse",
-    "gdpr_proof": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
-    "recent_contacts": "Contacts récents",
+    "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
+    "toggle_valid_label": "Seulement les contacts valides",
+    "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
+    "toggle_replies_label": "Au moins une réponse",
+    "toggle_fullname_label": "Seulement avec nom complet",
+    "toggle_fullname_tooltip": "Les contacts connus par leur nom répondent davantage",
+    "toggle_recent_tooltip": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
+    "toggle_recent_label": "Contacts récents",
     "visible_columns": "{n} Champ visible | {n} Champs visibles",
     "contacts": "Contacts",
     "emails": "Emails",
