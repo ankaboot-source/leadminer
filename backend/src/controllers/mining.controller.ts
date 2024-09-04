@@ -9,10 +9,7 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
-import {
-  generateErrorObjectFromImapError,
-  validateImapCredentials
-} from './helpers';
+import { generateErrorObjectFromImapError, getValidImapLogin } from './helpers';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -226,13 +223,19 @@ export default function initializeMiningController(
       }
 
       try {
-        // Connect to validate connection before creating the pool.
-        await validateImapCredentials(host, email, password, port, secure);
+        // Validate & Get the valid IMAP login connection before creating the pool.
+        const login = await getValidImapLogin(
+          host,
+          email,
+          password,
+          port,
+          secure
+        );
         await miningSources.upsert({
           userId: user.id,
           email,
           type: 'imap',
-          credentials: { email, host, password, port, tls: secure }
+          credentials: { email: login, host, password, port, tls: secure }
         });
 
         return res
