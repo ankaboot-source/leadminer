@@ -67,7 +67,7 @@ export const GROUP_EMAIL_ADDRESS_INCLUDES = [
   '@googlegroups.fr',
   '@list.attac.org',
   '@framagroupes.org',
-  'sympa-request',
+  'sympa-request@',
   'sympa@'
 ];
 export const TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES = [
