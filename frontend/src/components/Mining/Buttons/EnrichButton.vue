@@ -121,7 +121,7 @@ const {
 } = props;
 
 const enrichAllContacts = toRef(() => props.enrichAllContacts);
-const contactsToEnrich = toRef(() => props.contactsToEnrich);
+const contactsToEnrich = toRef(() => props.contactsToEnrich || []);
 const skipDialog = toRef(() => props.skipDialog);
 
 function showNotification(
@@ -250,10 +250,15 @@ onMounted(async () => {
 });
 
 const openEnrichmentConfirmationDialog = () => {
-  if ($profile.value?.credits === 0 && contactsToEnrich.value?.length) {
+  const noCredits = $profile.value?.credits === 0;
+  const moreContactsThanCredits =
+    contactsToEnrich.value.length > ($profile.value?.credits ?? 0);
+
+  if (noCredits || moreContactsThanCredits) {
     openCreditsDialog(0, contactsToEnrich.value?.length);
-  } else if (skipDialog.value) startEnrichment(false);
-  else dialogVisible.value = true;
+  } else if (skipDialog.value) {
+    startEnrichment(false);
+  } else dialogVisible.value = true;
 };
 
 const closeEnrichmentConfirmationDialog = () => {
