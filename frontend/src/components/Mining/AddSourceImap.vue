@@ -175,9 +175,9 @@ function handleImapConfigsNotDetected() {
   imapAdvancedSettings.value = true;
 }
 
-function handleAuthenticationErrors(err: FetchError) {
-  if (err.data?.fields) {
-    err.data?.fields.forEach((field: string) => {
+function handleAuthenticationErrors(error: FetchError) {
+  if (error.data?.fields) {
+    error.data?.fields.forEach((field: string) => {
       if (['host', 'port'].includes(field)) {
         imapAdvancedSettings.value = true;
       }
@@ -188,7 +188,7 @@ function handleAuthenticationErrors(err: FetchError) {
   $toast.add({
     severity: 'error',
     summary: t('sign_in_with_imap'),
-    detail: err.data.message,
+    detail: error.data.message,
     life: 5000,
   });
 }
@@ -245,11 +245,11 @@ async function onSubmitImapCredentials() {
       isValid: true,
     };
     show.value = false;
-  } catch (err) {
-    if (err instanceof FetchError) {
-      handleAuthenticationErrors(err);
+  } catch (error) {
+    if (error instanceof FetchError) {
+      handleAuthenticationErrors(error);
     } else {
-      throw err;
+      throw error;
     }
   } finally {
     loadingSave.value = false;
