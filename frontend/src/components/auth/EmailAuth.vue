@@ -362,7 +362,7 @@ async function signUp() {
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
-          EmailTemplate: supabaseEmailsI18n.get(getBrowserLocale() || 'en'),
+          EmailTemplate: await getEmailTemplate(getBrowserLocale() || 'en'),
         },
       },
     });
