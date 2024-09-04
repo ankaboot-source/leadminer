@@ -35,7 +35,7 @@
     "@sentry/node": "^7.118.0",
     "@sentry/tracing": "^7.119.0",
     "@supabase/supabase-js": "^2.45.0",
-    "axios": "^1.7.3",
+    "axios": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "csv-stringify": "^6.5.1",
