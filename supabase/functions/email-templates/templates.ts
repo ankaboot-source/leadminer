@@ -108,7 +108,7 @@ const supabaseEmailsI18n: LanguageEmailTemplates = new Map([
                 Body1:
                     'Appuyez sur le bouton ci-dessous pour réinitialiser le mot de passe de votre compte',
                 Body2:
-                    "𝐥𝐞𝐚𝐝𝐦𝐢𝐧𝐞𝐫. Si vous n'avez pas demandé un nouveau mot de passe, vous pouvez supprimer cet e-mail en toute sécurité.",
+                    "Si vous n'avez pas demandé un nouveau mot de passe, vous pouvez supprimer cet e-mail en toute sécurité.",
                 Button: 'Confirmez votre e-mail',
                 Regards: 'Cordialement,',
                 Footer:
