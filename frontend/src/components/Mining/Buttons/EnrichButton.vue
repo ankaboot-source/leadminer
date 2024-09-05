@@ -250,10 +250,16 @@ onMounted(async () => {
 });
 
 const openEnrichmentConfirmationDialog = () => {
-  if ($profile.value?.credits === 0 && contactsToEnrich.value?.length) {
-    openCreditsDialog(0, contactsToEnrich.value?.length);
-  } else if (skipDialog.value) startEnrichment(false);
-  else dialogVisible.value = true;
+  const noCredits = $profile.value?.credits === 0;
+  const moreContactsThanCredits =
+    contactsToEnrich.value &&
+    contactsToEnrich.value?.length > ($profile.value?.credits ?? 0);
+
+  if (noCredits || moreContactsThanCredits) {
+    openCreditsDialog(0, contactsToEnrich.value?.length ?? 0);
+  } else if (skipDialog.value) {
+    startEnrichment(false);
+  } else dialogVisible.value = true;
 };
 
 const closeEnrichmentConfirmationDialog = () => {
