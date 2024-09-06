@@ -100,7 +100,7 @@ export default defineNuxtPlugin({
           provider: $user.value.app_metadata.provider,
           providerToken: $session.value.provider_token,
           emailTemplate: $user.value.user_metadata.EmailTemplate,
-          language: navigator.language.split('-')[0]
+          language: navigator.language.split('-')[0],
         };
 
         if (provider && providerToken) {
