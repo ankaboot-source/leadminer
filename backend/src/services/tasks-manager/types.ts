@@ -64,7 +64,9 @@ export interface TaskFetch extends Task {
   instance: ImapEmailsFetcher;
   details: {
     miningId: string;
-    stream: StreamInfo;
+    stream: {
+      messagesStreamName: string;
+    };
     progress: {
       totalMessages: number;
       fetched: number;
@@ -78,7 +80,11 @@ export interface TaskExtract extends Task {
   type: TaskType.Extract;
   details: {
     miningId: string;
-    stream: StreamInfo;
+    stream: {
+      messagesStreamName: string;
+      messagesConsumerGroupName: string;
+      emailsStreamName: string;
+    };
     progress: {
       extracted: number;
     };
@@ -90,7 +96,10 @@ export interface TaskClean extends Task {
   type: TaskType.Clean;
   details: {
     miningId: string;
-    stream: StreamInfo;
+    stream: {
+      emailsStreamName: string;
+      emailsConsumerGroupName: string;
+    };
     progress: {
       verifiedContacts: number;
       createdContacts: number;
@@ -106,14 +115,19 @@ export interface MiningTask {
     extract: TaskExtract;
     clean: TaskClean;
   };
-  stream: StreamInfo;
   progress: TaskProgress;
   progressHandlerSSE: RealtimeSSE;
   startedAt: number;
 }
 
+/**
+ * Represents a task with sensitive data removed.
+ */
 export interface RedactedTask {
   userId: string;
   miningId: string;
+  processes: {
+    [K in TaskType]?: string;
+  };
   progress: TaskProgress;
 }
