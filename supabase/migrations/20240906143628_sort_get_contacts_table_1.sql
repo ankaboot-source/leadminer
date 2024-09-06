@@ -54,11 +54,11 @@ BEGIN
     INNER JOIN
       refinedpersons rp ON rp.email = p.email
     LEFT JOIN
-		  organizations o ON o.id = p.works_for
+	  organizations o ON o.id = p.works_for
     WHERE
       p.user_id = get_contacts_table.userid
     ORDER BY 
-      rp.occurrence DESC, rp.recency DESC, GREATEST(rp.updated_at, p.updated_at) DESC
+      rp.occurrence DESC, rp.recency DESC
 	  )
   SELECT
     source_col AS source,
@@ -148,7 +148,7 @@ BEGIN
     AND
       p.email = ANY(get_contacts_table_by_emails.emails)
 	ORDER BY 
-      rp.occurrence DESC, rp.recency DESC, GREATEST(rp.updated_at, p.updated_at) DESC
+      rp.occurrence DESC, rp.recency DESC
   )
   SELECT
     source_col AS source,
