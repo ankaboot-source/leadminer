@@ -33,8 +33,6 @@
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
-    sort-field="occurrence"
-    :sort-order="-1"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
