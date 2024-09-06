@@ -228,8 +228,9 @@ export default class TasksManager {
       fetch.instance.start();
 
       await Promise.all(
-        [extract, clean].map(async (p) =>
-          this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
+        [extract, clean].map(
+          (p) =>
+            this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
         )
       );
 

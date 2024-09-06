@@ -360,15 +360,13 @@ export default function initializeMiningController(
         endEntireTask
       }: {
         processes: string[];
-        endEntireTask: Boolean;
+        endEntireTask: boolean;
       } = req.body;
 
       if (!endEntireTask && !Array.isArray(processes)) {
-        return res
-          .status(400)
-          .json({
-            error: { message: 'processes should be an array of strings' }
-          });
+        return res.status(400).json({
+          error: { message: 'processes should be an array of strings' }
+        });
       }
 
       try {
