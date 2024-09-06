@@ -1,4 +1,4 @@
--- Order by occurrence, recency, updated_at, 
+-- Order by occurrence, recency, updated_at
 
 DROP FUNCTION get_contacts_table;
 CREATE OR REPLACE FUNCTION get_contacts_table(userid uuid) RETURNS TABLE (
@@ -58,7 +58,7 @@ BEGIN
     WHERE
       p.user_id = get_contacts_table.userid
     ORDER BY 
-      rp.occurrence, rp.recency DESC, GREATEST(rp.updated_at, p.updated_at) DESC
+      rp.occurrence DESC, rp.recency DESC, GREATEST(rp.updated_at, p.updated_at) DESC
 	  )
   SELECT
     source_col AS source,
@@ -148,7 +148,7 @@ BEGIN
     AND
       p.email = ANY(get_contacts_table_by_emails.emails)
 	ORDER BY 
-      rp.occurrence, rp.recency DESC, GREATEST(rp.updated_at, p.updated_at) DESC
+      rp.occurrence DESC, rp.recency DESC, GREATEST(rp.updated_at, p.updated_at) DESC
   )
   SELECT
     source_col AS source,
