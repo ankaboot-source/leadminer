@@ -54,7 +54,7 @@ BEGIN
     INNER JOIN
       refinedpersons rp ON rp.email = p.email
     LEFT JOIN
-	  organizations o ON o.id = p.works_for
+      organizations o ON o.id = p.works_for
     WHERE
       p.user_id = get_contacts_table.userid
     ORDER BY 
@@ -142,7 +142,7 @@ BEGIN
     INNER JOIN
       refinedpersons rp ON rp.email = p.email
     LEFT JOIN
-		  organizations o ON o.id = p.works_for
+      organizations o ON o.id = p.works_for
     WHERE
       p.user_id = get_contacts_table_by_emails.userid
     AND
