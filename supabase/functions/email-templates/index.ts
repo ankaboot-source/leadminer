@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify(template), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });    
+    });
   }
 
   const authorization = req.headers.get("Authorization");
@@ -78,7 +78,12 @@ Deno.serve(async (req) => {
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         user.id,
         {
-          user_metadata: { EmailTemplate: supabaseEmailsI18n.get(language) }
+          user_metadata: { 
+            EmailTemplate: {
+              language,
+              ...supabaseEmailsI18n.get(language)
+            }
+          }
         }
       );
 
