@@ -106,7 +106,7 @@ async function haltCleaning() {
   $leadminerStore.isLoadingStopMining = true;
 
   try {
-    await $leadminerStore.stopMining();
+    await $leadminerStore.stopMining(true, null);
     $toast.add({
       severity: 'success',
       summary: t('cleaning_stopped'),

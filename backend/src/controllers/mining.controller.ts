@@ -355,6 +355,19 @@ export default function initializeMiningController(
       }
 
       const { id: taskId } = req.params;
+      const {
+        processes,
+        endEntireTask
+      }: {
+        processes: string[];
+        endEntireTask: boolean;
+      } = req.body;
+
+      if (!endEntireTask && !Array.isArray(processes)) {
+        return res.status(400).json({
+          error: { message: 'processes should be an array of strings' }
+        });
+      }
 
       try {
         const task = tasksManager.getActiveTask(taskId);
@@ -365,7 +378,13 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        const deletedTask = await tasksManager.deleteTask(taskId);
+        let deletedTask;
+        if (endEntireTask) {
+          deletedTask = await tasksManager.deleteTask(taskId, null);
+        } else {
+          deletedTask = await tasksManager.deleteTask(taskId, processes);
+        }
+
         return res.status(200).json({ data: deletedTask });
       } catch (err) {
         res.status(404);

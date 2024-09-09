@@ -38,7 +38,7 @@ export default function initializeMiningRoutes(
 
   router.post('/mine/:userId', authMiddleware, startMining);
   router.get('/mine/:userId/:id', authMiddleware, getMiningTask);
-  router.delete('/mine/:userId/:id', authMiddleware, stopMiningTask);
+  router.post('/mine/:userId/:id', authMiddleware, stopMiningTask);
 
   return router;
 }

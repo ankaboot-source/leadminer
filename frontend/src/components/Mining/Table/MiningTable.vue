@@ -314,7 +314,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency?.toLocaleDateString() }}
+        {{ data.recency ? data.recency?.toLocaleDateString() : data.recency }}
       </template>
       <template #filter="{ filterModel }">
         <DatePicker

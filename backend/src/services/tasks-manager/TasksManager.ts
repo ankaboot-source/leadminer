@@ -120,7 +120,12 @@ export default class TasksManager {
   }: ImapEmailsFetcherOptions) {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
-      const { messagesStreamName } = stream;
+      const {
+        messagesStreamName,
+        messagesConsumerGroupName,
+        emailsStreamName,
+        emailsConsumerGroupName
+      } = stream;
 
       const fetcher = this.emailFetcherFactory.create({
         imapConnectionProvider,
@@ -135,7 +140,6 @@ export default class TasksManager {
       const progressHandlerSSE = this.sseBroadcasterFactory.create();
 
       const miningTask: MiningTask = {
-        stream,
         userId,
         miningId,
         progressHandlerSSE,
@@ -148,7 +152,9 @@ export default class TasksManager {
             instance: fetcher,
             details: {
               miningId,
-              stream,
+              stream: {
+                messagesStreamName
+              },
               progress: {
                 totalMessages: await fetcher.getTotalMessages(),
                 folders: fetcher.folders,
@@ -163,7 +169,11 @@ export default class TasksManager {
             status: TaskStatus.Running,
             details: {
               miningId,
-              stream,
+              stream: {
+                messagesStreamName,
+                messagesConsumerGroupName,
+                emailsStreamName
+              },
               progress: {
                 extracted: 0
               }
@@ -176,7 +186,10 @@ export default class TasksManager {
             status: TaskStatus.Running,
             details: {
               miningId,
-              stream,
+              stream: {
+                emailsStreamName,
+                emailsConsumerGroupName
+              },
               progress: {
                 verifiedContacts: 0,
                 createdContacts: 0
@@ -214,7 +227,11 @@ export default class TasksManager {
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
       fetch.instance.start();
 
-      await this.pubsubSendMessage(miningId, 'REGISTER', stream);
+      await Promise.all(
+        [extract, clean].map((p) =>
+          this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
+        )
+      );
 
       this.redisSubscriber.subscribe(miningId, (err) => {
         if (err) {
@@ -261,37 +278,50 @@ export default class TasksManager {
   }
 
   /**
-   * Deletes a mining task with a given mining ID.
+   * Deletes a mining task or specific processes within a task.
    *
-   * @param miningId - The mining ID of the task to delete.
-   * @returns The deleted task.
-   * @throws {Error} Throws an error if the task with the given mining ID does not exist.
+   * @param miningId - The unique identifier of the mining task to delete.
+   * @param processIds - Optional array of process IDs to delete. If not provided, the entire task will be deleted.
+   * @returns A redacted version of the deleted task, with sensitive information removed.
+   * @throws {Error} If the task doesn't exist or if processIds is not an array of strings.
    */
-  async deleteTask(miningId: string): Promise<RedactedTask> {
+  async deleteTask(
+    miningId: string,
+    processIds: string[] | null
+  ): Promise<RedactedTask> {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (!task) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
+    if (processIds && !Array.isArray(processIds)) {
+      throw new Error('processIds must be an array of strings');
     }
 
-    const { progressHandlerSSE, stream, startedAt, progress, process } = task;
-    const tasks = Object.values(process).filter((p) => !p.stoppedAt);
+    if (!task) {
+      throw new Error(`Task with mining ID ${miningId} does not exist.`);
+    }
+
+    const { progressHandlerSSE, startedAt, progress, process } = task;
 
     try {
-      this.ACTIVE_MINING_TASKS.delete(miningId);
-      progressHandlerSSE.stop();
-      // Stop all associated tasks and mark them as canceled
-      await this.stopTask(tasks, true);
-      await this.pubsubSendMessage(miningId, 'DELETE', stream);
+      // Determine if we're ending the entire task or just specific processes
+      const endEntireTask = !processIds || processIds.length === 0;
+      const processesToStop = Object.values(process).filter((p) =>
+        endEntireTask
+          ? !p.stoppedAt
+          : !p.stoppedAt && p.id && processIds?.includes(p.id)
+      );
+
+      if (endEntireTask) {
+        // Clean up task resources and close SSE connection
+        this.ACTIVE_MINING_TASKS.delete(miningId);
+        progressHandlerSSE.stop();
+      }
+
+      await this.stopTask(processesToStop, true);
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
-    logger.info(
-      `Mining task took ${((performance.now() - startedAt) / 1000).toFixed(
-        2
-      )} seconds`,
-      progress
-    );
+    const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
+    logger.info(`Mining task completed in ${duration} seconds`, progress);
     return redactSensitiveData(task);
   }
 
@@ -303,9 +333,7 @@ export default class TasksManager {
    * @returns A Promise that resolves when all tasks have been stopped and updated.
    */
   private async stopTask(tasks: Task[], canceled = false): Promise<void> {
-    const stopPromises = [];
-
-    for (const task of tasks) {
+    const stopPromises = tasks.map(async (task) => {
       task.stoppedAt = new Date().toUTCString();
 
       if (task.duration === undefined && task.startedAt) {
@@ -318,11 +346,16 @@ export default class TasksManager {
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
 
       if (task.type === 'fetch') {
-        stopPromises.push((task as TaskFetch).instance.stop());
+        await (task as TaskFetch).instance.stop();
       }
 
-      stopPromises.push(this.tasksResolver.update(task));
-    }
+      await this.pubsubSendMessage(
+        task.details.miningId,
+        'DELETE',
+        task.details.stream
+      );
+      await this.tasksResolver.update(task);
+    });
 
     await Promise.all(stopPromises);
   }
@@ -483,7 +516,7 @@ export default class TasksManager {
     if (status) {
       await this.stopTask([clean]);
       try {
-        await this.deleteTask(miningId);
+        await this.deleteTask(miningId, null);
       } catch (error) {
         logger.error(error);
       }
@@ -496,53 +529,36 @@ export default class TasksManager {
    * Sends a message to the Pub/Sub system for managing streams.
    *
    * @param miningId - The ID of the mining operation.
-   * @param command - The command to execute. Valid options are 'register' or 'delete'.
-   * @param streamName - The name of the stream.
-   * @param consumerGroupName - The name of the consumer group.
+   * @param command - The command to execute. Valid options are 'REGISTER' or 'DELETE'.
+   * @param stream - An object containing stream information.
    * @throws {Error} Throws an error if an invalid command is provided.
    */
   private async pubsubSendMessage(
     miningId: string,
     command: RedisCommand,
-    {
-      messagesConsumerGroupName,
-      messagesStreamName,
-      emailsConsumerGroupName,
-      emailsStreamName
-    }: StreamInfo
+    stream: Partial<StreamInfo>
   ) {
+    // The order of values is determined by the createTask() method
+    const [streamName, consumerGroup] = Object.values(stream);
+
+    if (!consumerGroup || !streamName) {
+      return;
+    }
+
     switch (command) {
       case 'REGISTER': {
         await this.redisPublisher.xgroup(
           'CREATE',
-          messagesStreamName,
-          messagesConsumerGroupName,
-          '$',
-          'MKSTREAM'
-        );
-        await this.redisPublisher.xgroup(
-          'CREATE',
-          emailsStreamName,
-          emailsConsumerGroupName,
+          streamName,
+          consumerGroup,
           '$',
           'MKSTREAM'
         );
         break;
       }
       case 'DELETE': {
-        await this.redisPublisher.xgroup(
-          'DESTROY',
-          messagesStreamName,
-          messagesConsumerGroupName
-        );
-        await this.redisPublisher.del(messagesStreamName);
-
-        await this.redisPublisher.xgroup(
-          'DESTROY',
-          emailsStreamName,
-          emailsConsumerGroupName
-        );
-        await this.redisPublisher.del(emailsStreamName);
+        await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroup);
+        await this.redisPublisher.del(streamName);
         break;
       }
       default:
@@ -551,10 +567,7 @@ export default class TasksManager {
     const message = {
       miningId,
       command,
-      messagesStreamName,
-      messagesConsumerGroupName,
-      emailsStreamName,
-      emailsConsumerGroupName
+      ...stream
     };
     await this.redisPublisher.publish(
       REDIS_PUBSUB_COMMUNICATION_CHANNEL,

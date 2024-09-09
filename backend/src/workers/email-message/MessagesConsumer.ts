@@ -44,26 +44,28 @@ export default class MessagesConsumer {
 
     this.taskManagementSubscriber.subscribe(
       async ({ miningId, command, messagesStreamName, emailsStreamName }) => {
-        if (command === 'REGISTER') {
-          const queuedEmailsCache = new RedisQueuedEmailsCache(
-            redisClient,
-            miningId
-          );
-          const emailsStreamProducer =
-            new RedisStreamProducer<EmailVerificationData>(
+        if (messagesStreamName && emailMessagesStreamsConsumer) {
+          if (command === 'REGISTER') {
+            const queuedEmailsCache = new RedisQueuedEmailsCache(
               redisClient,
-              emailsStreamName,
-              this.logger
+              miningId
             );
-          this.activeStreams.set(messagesStreamName, {
-            emailsStreamProducer,
-            queuedEmailsCache
-          });
-        } else {
-          const streamEntry = this.activeStreams.get(messagesStreamName);
-          if (streamEntry) {
-            await streamEntry.queuedEmailsCache.destroy();
-            this.activeStreams.delete(messagesStreamName);
+            const emailsStreamProducer =
+              new RedisStreamProducer<EmailVerificationData>(
+                redisClient,
+                emailsStreamName,
+                this.logger
+              );
+            this.activeStreams.set(messagesStreamName, {
+              emailsStreamProducer,
+              queuedEmailsCache
+            });
+          } else {
+            const streamEntry = this.activeStreams.get(messagesStreamName);
+            if (streamEntry) {
+              await streamEntry.queuedEmailsCache.destroy();
+              this.activeStreams.delete(messagesStreamName);
+            }
           }
         }
 
@@ -71,7 +73,8 @@ export default class MessagesConsumer {
           metadata: {
             miningId,
             command,
-            messagesStreamName
+            messagesStreamName,
+            emailsStreamName
           }
         });
       }
