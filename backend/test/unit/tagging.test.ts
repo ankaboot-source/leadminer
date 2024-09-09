@@ -363,7 +363,7 @@ describe('test engines.EmailTaggingEngine', () => {
           source: 'refined#email_address'
         },
         {
-          reachable: 3,
+          reachable: 2,
           name: 'role',
           source: 'refined#email_address'
         }
@@ -513,7 +513,7 @@ describe('test engines.EmailTaggingEngine', () => {
           source: 'refined#email_address'
         },
         {
-          reachable: 3,
+          reachable: 2,
           name: 'role',
           source: 'refined#email_address'
         }
