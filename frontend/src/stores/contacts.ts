@@ -10,7 +10,7 @@ import type { Contact } from '@/types/contact';
 import { getOrganization } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
-  let syncInterval: number;
+  let syncInterval: ReturnType<typeof setInterval>;
   let subscription: RealtimeChannel;
 
   const contacts = ref<Contact[] | undefined>(undefined);
@@ -80,10 +80,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
         },
       );
 
-    syncInterval = window.setInterval(() => {
-      applyCachedContacts();
-    }, 2000);
-
+    setSyncInterval();
     subscription.subscribe();
   }
 
@@ -93,16 +90,27 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
     if (syncInterval) {
       applyCachedContacts();
-      clearInterval(syncInterval);
+      clearSyncInterval();
     }
   }
 
+  function setSyncInterval() {
+    cachedContacts.value = [];
+    syncInterval = setInterval(() => {
+      applyCachedContacts();
+    }, 2000);
+  }
+
+  function clearSyncInterval() {
+    clearInterval(syncInterval);
+  }
+
   function $reset() {
+    unsubscribeRealtime();
     contacts.value = undefined;
     selected.value = undefined;
     selectedLength.value = 0;
     cachedContacts.value = [];
-    unsubscribeRealtime();
   }
 
   return {
@@ -114,5 +122,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     setContacts,
     subscribeRealtime,
     unsubscribeRealtime,
+    setSyncInterval,
+    clearSyncInterval,
   };
 });
