@@ -119,7 +119,7 @@ export default class PgContacts implements Contacts {
           format(PgContacts.INSERT_TAGS_SQL, [
             [
               'role',
-              REACHABILITY.UNSURE,
+              REACHABILITY.MANY_OR_INDIRECT_PERSON,
               'email-verification',
               userId,
               personEmail
