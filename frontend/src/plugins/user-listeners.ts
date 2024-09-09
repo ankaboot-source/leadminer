@@ -96,10 +96,11 @@ export default defineNuxtPlugin({
           return;
         }
 
-        const { provider, providerToken, hasEmailTemplate } = {
+        const { provider, providerToken, emailTemplate, language } = {
           provider: $user.value.app_metadata.provider,
           providerToken: $session.value.provider_token,
-          hasEmailTemplate: $user.value.user_metadata.EmailTemplate,
+          emailTemplate: $user.value.user_metadata.EmailTemplate,
+          language: navigator.language.split('-')[0],
         };
 
         if (provider && providerToken) {
@@ -110,11 +111,11 @@ export default defineNuxtPlugin({
           );
         }
 
-        if (!hasEmailTemplate) {
+        if (!emailTemplate || emailTemplate.language !== language) {
           await updateUserEmailTemplatesI18n(
             $saasEdgeFunctions,
             $supabaseClient,
-            navigator.language.split('-')[0],
+            language,
           );
         }
 

@@ -24,10 +24,12 @@ export default class EmailVerificationConsumer {
 
     this.taskManagementSubscriber.subscribe(
       ({ miningId, command, emailsStreamName }) => {
-        if (command === 'REGISTER') {
-          this.activeStreams.add(emailsStreamName);
-        } else {
-          this.activeStreams.delete(emailsStreamName);
+        if (emailsStreamName) {
+          if (command === 'REGISTER') {
+            this.activeStreams.add(emailsStreamName);
+          } else {
+            this.activeStreams.delete(emailsStreamName);
+          }
         }
 
         this.logger.debug('Received PubSub signal.', {

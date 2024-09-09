@@ -225,7 +225,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
    * Stops the mining process.
    * @throws {Error} Throws an error if there is an issue while stopping the mining process.
    */
-  async function stopMining() {
+  async function stopMining(
+    endEntireTask: boolean,
+    processes: string[] | null,
+  ) {
     try {
       const user = useSupabaseUser().value;
 
@@ -237,13 +240,20 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       const { miningId } = miningTask.value;
 
       await $api(`/imap/mine/${user.id}/${miningId}`, {
-        method: 'DELETE',
+        method: 'POST',
+        body: {
+          endEntireTask,
+          processes,
+        },
       });
-      miningTask.value = undefined;
-      fetchingFinished.value = true;
-      extractionFinished.value = true;
-      cleaningFinished.value = true;
-      isLoadingStopMining.value = false;
+
+      if (endEntireTask) {
+        miningTask.value = undefined;
+        fetchingFinished.value = true;
+        extractionFinished.value = true;
+        cleaningFinished.value = true;
+        isLoadingStopMining.value = false;
+      }
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;
