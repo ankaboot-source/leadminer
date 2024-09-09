@@ -115,6 +115,7 @@ export const tags = () => {
     { value: 'personal', label: t('contact.tag.personal') },
     { value: 'group', label: t('contact.tag.group') },
     { value: 'chat', label: t('contact.tag.chat') },
+    { value: 'role', label: t('contact.tag.role') },
   ];
 };
 
@@ -163,6 +164,8 @@ export function getTagColor(tag: string) {
     case 'group':
       return 'secondary';
     case 'chat':
+      return 'secondary';
+    case 'role':
       return 'secondary';
     default:
       return undefined;
