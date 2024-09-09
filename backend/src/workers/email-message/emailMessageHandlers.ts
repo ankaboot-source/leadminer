@@ -74,7 +74,7 @@ async function emailMessageHandler(
           (contact) =>
             !contact.tags.some(
               (tag) =>
-                ['newsletter', 'role'].includes(tag.name) || tag.reachable >= 3
+                ['newsletter'].includes(tag.name) || tag.reachable >= 3
             )
         )
         .map((contact) => contact.email);
@@ -92,7 +92,7 @@ async function emailMessageHandler(
             (contact) =>
               !contact.tags?.some(
                 (tag) =>
-                  ['newsletter', 'role'].includes(tag.name) ||
+                  ['newsletter'].includes(tag.name) ||
                   tag.reachable >= 3
               )
           )
