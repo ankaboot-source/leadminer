@@ -48,8 +48,8 @@ BEGIN
       rp.conversations as conversations_col,
       rp.replied_conversations as replied_conversations_col,
       rp.tags as tags_col,
-	  p.updated_at as updated_at_col,
-	  p.created_at as created_at_col,
+      p.updated_at as updated_at_col,
+      p.created_at as created_at_col,
       ROW_NUMBER() OVER (
         PARTITION BY p.email
       ) AS rn
@@ -85,8 +85,8 @@ BEGIN
     conversations_col AS conversations,
     replied_conversations_col AS replied_conversations,
     tags_col AS tags,
-	updated_at_col AS updated_at,
-	created_at_col AS created_at
+    updated_at_col AS updated_at,
+    created_at_col AS created_at
   FROM
     ExportedContacts
   WHERE
@@ -181,8 +181,8 @@ BEGIN
     conversations_col AS conversations,
     replied_conversations_col AS replied_conversations,
     tags_col AS tags,
-	updated_at_col AS updated_at,
-	created_at_col AS created_at
+    updated_at_col AS updated_at,
+    created_at_col AS created_at
   FROM
     ExportedContacts
   WHERE
