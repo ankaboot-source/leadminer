@@ -211,7 +211,7 @@ onMounted(async () => {
 });
 
 watch(extractionFinished, (finished) => {
-  if (canceled.value && finished) {
+  if (finished || canceled.value) {
     $toast.add({
       severity: 'success',
       summary: t('mining_done'),
