@@ -699,9 +699,11 @@ async function refineContacts() {
 }
 
 async function syncTable() {
+  $contactsStore.clearSyncInterval();
   loadingLabel.value = t('syncing');
   const user = $user.value;
   $contactsStore.setContacts(await getContacts(user.id));
+  $contactsStore.setSyncInterval();
 }
 
 watch(activeMiningTask, async (isActive) => {
