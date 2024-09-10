@@ -33,6 +33,8 @@ export interface Contact {
   recency?: Date;
   seniority?: Date;
   tags?: Tag[];
+  updated_at?: Date;
+  created_at?: Date;
 }
 
 export interface ContactEdit {

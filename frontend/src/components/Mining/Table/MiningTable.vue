@@ -598,6 +598,58 @@
         <InputText v-model="filterModel.value" />
       </template>
     </Column>
+
+    <!-- Updated at -->
+    <Column
+      v-if="visibleColumns.includes('updated_at')"
+      field="updated_at"
+      sortable
+      data-type="date"
+    >
+      <template #header>
+        <div v-tooltip.top="t('updated_at_definition')">
+          {{ t('updated_at') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        {{ data.updated_at?.toLocaleDateString() ?? data.updated_at }}
+      </template>
+      <template #filter="{ filterModel }">
+        <DatePicker
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
+      </template>
+    </Column>
+
+    <!-- Created at -->
+    <Column
+      v-if="visibleColumns.includes('created_at')"
+      field="created_at"
+      sortable
+      data-type="date"
+    >
+      <template #header>
+        <div v-tooltip.top="t('created_at_definition')">
+          {{ t('created_at') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        {{
+          data.created_at
+            ? data.created_at?.toLocaleDateString()
+            : data.created_at
+        }}
+      </template>
+      <template #filter="{ filterModel }">
+        <DatePicker
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
@@ -887,6 +939,8 @@ const visibleColumnsOptions = [
   { label: $t('contact.name'), value: 'name' },
   { label: $t('contact.same_as'), value: 'same_as' },
   { label: $t('contact.image'), value: 'image' },
+  { label: $t('contact.updated_at'), value: 'updated_at' },
+  { label: $t('contact.created_at'), value: 'created_at' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
