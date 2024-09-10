@@ -11,7 +11,7 @@ export const EmailStatusScore: Record<EmailStatus, number> = {
 
 export interface Contact {
   id: string;
-  userid: string;
+  user_id: string;
   email: string;
   name: string | null;
   given_name: string | null;

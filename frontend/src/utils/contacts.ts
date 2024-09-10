@@ -24,7 +24,7 @@ export async function getContacts(userId: string) {
   const { data, error } = await $supabaseClient.rpc(
     'get_contacts_table',
     // @ts-expect-error: Issue with @nuxt/supabase typing
-    { userid: userId },
+    { user_id: userId },
   );
 
   if (error) {

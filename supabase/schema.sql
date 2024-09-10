@@ -66,18 +66,18 @@ CREATE TYPE "public"."task_type_enum" AS ENUM (
 
 ALTER TYPE "public"."task_type_enum" OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."delete_user_data"("userid" "uuid") RETURNS "void"
+CREATE OR REPLACE FUNCTION "public"."delete_user_data"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
 DECLARE
   owner_id uuid;
 BEGIN
-  owner_id = delete_user_data.userid;
+  owner_id = delete_user_data.user_id;
   DELETE FROM messages msg WHERE msg.user_id = owner_id;
   DELETE FROM persons p WHERE p.user_id = owner_id;
   DELETE FROM pointsofcontact poc WHERE poc.user_id = owner_id;
   DELETE FROM tags t WHERE t.user_id = owner_id;
-  DELETE FROM refinedpersons r WHERE r.userid = owner_id;
+  DELETE FROM refinedpersons r WHERE r.user_id = owner_id;
   DELETE from mining_sources ms WHERE ms.user_id = owner_id;
   DELETE from engagement eg WHERE eg.user_id = owner_id;
 
@@ -85,7 +85,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."delete_user_data"("userid" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."delete_user_data"("user_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean DEFAULT true) RETURNS "void"
     LANGUAGE "plpgsql"
@@ -186,7 +186,7 @@ $$;
 
 ALTER FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("userid" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "address" "text", "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
+CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "address" "text", "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -224,7 +224,7 @@ BEGIN
     LEFT JOIN
       organizations o ON o.id = p.works_for
     WHERE
-      p.user_id = get_contacts_table.userid
+      p.user_id = get_contacts_table.user_id
     ORDER BY 
       rp.occurrence DESC, rp.recency DESC
 	  )
@@ -258,9 +258,9 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."get_contacts_table"("userid" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."get_contacts_table"("user_id" "uuid") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("userid" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "address" "text", "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
+CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "address" "text", "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -298,7 +298,7 @@ BEGIN
     LEFT JOIN
       organizations o ON o.id = p.works_for
     WHERE
-      p.user_id = get_contacts_table_by_emails.userid
+      p.user_id = get_contacts_table_by_emails.user_id
     AND
       p.email = ANY(get_contacts_table_by_emails.emails)
 	ORDER BY 
@@ -334,7 +334,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."get_contacts_table_by_emails"("userid" "uuid", "emails" "text"[]) OWNER TO "postgres";
+ALTER FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_grouped_tags_by_person"("_userid" "uuid") RETURNS TABLE("email" "text", "tags" "text"[], "tags_reachability" integer[])
     LANGUAGE "plpgsql"
@@ -382,18 +382,18 @@ CREATE OR REPLACE FUNCTION "public"."populate_refined"("_userid" "uuid") RETURNS
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
-  INSERT INTO refinedpersons(userid, tags, name, email, status, created_at, updated_at)
+  INSERT INTO refinedpersons(user_id, tags, name, email, status, created_at, updated_at)
     SELECT populate_refined._userid, t.tags, p.name, p.email, p.status, p.created_at, p.updated_at
     FROM public.persons p
     INNER JOIN public.get_grouped_tags_by_person(_userid) AS t ON t.email = p.email
     WHERE p.user_id=populate_refined._userid
-    ON conflict(email, userid) do nothing;
+    ON conflict(email, user_id) do nothing;
 END;
 $$;
 
 ALTER FUNCTION "public"."populate_refined"("_userid" "uuid") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."refine_persons"("userid" "uuid") RETURNS "void"
+CREATE OR REPLACE FUNCTION "public"."refine_persons"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$ 
 DECLARE
@@ -449,9 +449,9 @@ BEGIN
 
             FROM pointsofcontact poc
             JOIN messages m ON poc.message_id = m.message_id
-            JOIN get_grouped_tags_by_person(refine_persons.userid) gt on poc.person_email = gt.email
+            JOIN get_grouped_tags_by_person(refine_persons.user_id) gt on poc.person_email = gt.email
             WHERE
-            poc.user_id = refine_persons.userid
+            poc.user_id = refine_persons.user_id
             WINDOW grouped_by_email AS (PARTITION BY person_email)
         ) subquery
     )
@@ -463,11 +463,11 @@ BEGIN
             email = record_row.person_email;
 
         INSERT INTO public. refinedpersons (
-            userid, email, occurrence, recency, seniority,
+            user_id, email, occurrence, recency, seniority,
             sender, recipient, conversations, replied_conversations, tags
         )
         VALUES (
-            refine_persons.userid,
+            refine_persons.user_id,
             record_row.person_email,
             record_row.occurrence,
             record_row.recency,
@@ -483,7 +483,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."refine_persons"("userid" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."refine_persons"("user_id" "uuid") OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_email_in_profile_table"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -716,7 +716,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."refinedpersons" (
-    "userid" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL,
     "engagement" integer,
     "occurrence" integer,
     "tags" "text"[],
@@ -849,7 +849,7 @@ ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("user_id");
 
 ALTER TABLE ONLY "public"."refinedpersons"
-    ADD CONSTRAINT "refinedpersons_pkey" PRIMARY KEY ("email", "userid");
+    ADD CONSTRAINT "refinedpersons_pkey" PRIMARY KEY ("email", "user_id");
 
 ALTER TABLE ONLY "public"."tags"
     ADD CONSTRAINT "tags_pkey" PRIMARY KEY ("person_email", "name", "user_id");
@@ -900,7 +900,7 @@ ALTER TABLE ONLY "public"."organizations"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
-CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" USING ((( SELECT "auth"."uid"() AS "uid") = "userid")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "userid"));
+CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 CREATE POLICY "Enable insert for authenticated users only" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
 
@@ -988,24 +988,24 @@ RESET SESSION AUTHORIZATION;
 SET SESSION AUTHORIZATION "postgres";
 RESET SESSION AUTHORIZATION;
 
-GRANT ALL ON FUNCTION "public"."delete_user_data"("userid" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."delete_user_data"("userid" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."delete_user_data"("userid" "uuid") TO "service_role";
+GRANT ALL ON FUNCTION "public"."delete_user_data"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."delete_user_data"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete_user_data"("user_id" "uuid") TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) TO "anon";
 GRANT ALL ON FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."get_contacts_table"("userid" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."get_contacts_table"("userid" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."get_contacts_table"("userid" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_contacts_table"("userid" "uuid") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."get_contacts_table"("user_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_contacts_table"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_contacts_table"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_contacts_table"("user_id" "uuid") TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."get_contacts_table_by_emails"("userid" "uuid", "emails" "text"[]) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."get_contacts_table_by_emails"("userid" "uuid", "emails" "text"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."get_contacts_table_by_emails"("userid" "uuid", "emails" "text"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_contacts_table_by_emails"("userid" "uuid", "emails" "text"[]) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."get_grouped_tags_by_person"("_userid" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_grouped_tags_by_person"("_userid" "uuid") TO "authenticated";
@@ -1020,10 +1020,10 @@ GRANT ALL ON FUNCTION "public"."populate_refined"("_userid" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."populate_refined"("_userid" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."populate_refined"("_userid" "uuid") TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."refine_persons"("userid" "uuid") FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."refine_persons"("userid" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."refine_persons"("userid" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."refine_persons"("userid" "uuid") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."refine_persons"("user_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."refine_persons"("user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."refine_persons"("user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."refine_persons"("user_id" "uuid") TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."update_email_in_profile_table"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."update_email_in_profile_table"() TO "anon";

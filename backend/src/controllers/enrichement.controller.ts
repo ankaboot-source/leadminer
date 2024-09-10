@@ -36,7 +36,7 @@ async function getEmails(userId: string) {
   const { data: emails, error } = await supabaseClient
     .from('refinedpersons')
     .select('email')
-    .match({ userid: userId })
+    .match({ user_id: userId })
     .returns<{ email: string }[]>();
 
   if (error) {

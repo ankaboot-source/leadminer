@@ -742,7 +742,7 @@ async function refineContacts() {
   const user = $user.value;
   // @ts-expect-error: Issue with @nuxt/supabase typing
   const refine = await $supabaseClient.rpc('refine_persons', {
-    userid: user?.id,
+    user_id: user?.id,
   });
 
   if (refine.error) {
