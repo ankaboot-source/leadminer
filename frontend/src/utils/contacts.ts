@@ -1,13 +1,19 @@
 import type { Contact } from '~/types/contact';
 import type { Organization } from '~/types/organization';
 
-function convertDates(data: Contact[]) {
+export function convertDates(data: Contact[]) {
   return [...data].map((d) => {
     if (d.recency) {
       d.recency = new Date(d.recency);
     }
     if (d.seniority) {
       d.seniority = new Date(d.seniority);
+    }
+    if (d.updated_at) {
+      d.updated_at = new Date(d.updated_at);
+    }
+    if (d.created_at) {
+      d.created_at = new Date(d.created_at);
     }
     return d;
   });
