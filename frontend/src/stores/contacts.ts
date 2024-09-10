@@ -7,7 +7,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
 import type { Contact } from '@/types/contact';
-import { getOrganization } from '~/utils/contacts';
+import { convertDates, getOrganization } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
   let syncInterval: ReturnType<typeof setInterval>;
@@ -40,7 +40,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
   async function handleNewContact(newContact: Contact) {
     if (!contacts.value) return;
-
+    newContact = convertDates([newContact])[0];
     if (newContact.works_for) {
       const org = await getOrganization({ id: newContact.works_for }, ['name']);
       newContact.works_for = org ? org.name : newContact.works_for;
