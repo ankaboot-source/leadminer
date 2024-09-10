@@ -102,8 +102,8 @@ export default defineI18nConfig(() => ({
         address_definition: 'The location of this contact',
         works_for_definition: 'Organization this contact works for',
         job_title_definition: 'The job title of this contact',
-        updated_at_definition: '',
-        created_at_definition: '',
+        updated_at_definition: 'Last update date',
+        created_at_definition: 'The creation date of this contact',
         status: {
           valid: 'VALID',
           risky: 'RISKY',
@@ -219,8 +219,8 @@ export default defineI18nConfig(() => ({
           'Autres noms par lesquels ce contact est connu',
         address_definition: "L'emplacement de ce contact",
         works_for_definition: 'Organisation pour laquelle ce contact travaille',
-        updated_at_definition: '',
-        created_at_definition: '',
+        updated_at_definition: 'Dernière date de modification',
+        created_at_definition: 'La date de creation de ce contact',
         job_title_definition: 'Le titre du poste de ce contact',
         status: {
           valid: 'VALIDE',
