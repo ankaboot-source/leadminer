@@ -149,7 +149,7 @@ BEGIN
         name = COALESCE(persons.name, new_name::TEXT),
         url = COALESCE(persons.url, (contact_record->>'url')::TEXT),
         image = COALESCE(persons.image, (contact_record->>'image')::TEXT),
-        address = COALESCE(persons.address, (contact_record->>'address')::TEXT),
+        location = COALESCE(persons.location, string_to_array(contact_record->>'location', ',')::TEXT[]),
         alternate_names = COALESCE(persons.alternate_names, (new_alternate_names)::TEXT[]),
         same_as = COALESCE(persons.same_as, string_to_array(contact_record->>'same_as', ',')::TEXT[]),
         given_name = COALESCE(persons.given_name, (contact_record->>'given_name')::TEXT),
@@ -167,7 +167,7 @@ BEGIN
         name = COALESCE(new_name::TEXT, persons.name),
         url = COALESCE((contact_record->>'url')::TEXT, persons.url),
         image = COALESCE((contact_record->>'image')::TEXT, persons.image),
-        address = COALESCE((contact_record->>'address')::TEXT, persons.address),
+        location = COALESCE(string_to_array(contact_record->>'location', ',')::TEXT[], persons.location),
         alternate_names = COALESCE((new_alternate_names)::TEXT[], persons.alternate_names),
         same_as = COALESCE(string_to_array(contact_record->>'same_as', ',')::TEXT[], persons.same_as),
         given_name = COALESCE((contact_record->>'given_name')::TEXT, persons.given_name),
@@ -186,7 +186,7 @@ $$;
 
 ALTER FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "address" "text", "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
+CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -197,7 +197,7 @@ BEGIN
       p.name as name_col,
       p.status as status_col,
       p.image as image_col,
-      p.address as address_col,
+      p.location as location_col,
       p.alternate_names as alternate_names_col,
       p.same_as as same_as_col,
       p.given_name as given_name_col,
@@ -212,8 +212,8 @@ BEGIN
       rp.conversations as conversations_col,
       rp.replied_conversations as replied_conversations_col,
       rp.tags as tags_col,
-	  p.updated_at as updated_at_col,
-	  p.created_at as created_at_col,
+      p.updated_at as updated_at_col,
+      p.created_at as created_at_col,
       ROW_NUMBER() OVER (
         PARTITION BY p.email
       ) AS rn
@@ -234,7 +234,7 @@ BEGIN
     name_col AS name,
     status_col AS status,
     image_col as image,
-    address_col as address,
+    location_col as location,
     alternate_names_col as alternate_names,
     same_as_col as same_as,
     given_name_col as given_name,
@@ -260,7 +260,7 @@ $$;
 
 ALTER FUNCTION "public"."get_contacts_table"("user_id" "uuid") OWNER TO "postgres";
 
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "address" "text", "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
+CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -271,7 +271,7 @@ BEGIN
       p.name as name_col,
       p.status as status_col,
       p.image as image_col,
-      p.address as address_col,
+      p.location as location_col,
       p.alternate_names as alternate_names_col,
       p.same_as as same_as_col,
       p.given_name as given_name_col,
@@ -287,7 +287,7 @@ BEGIN
       rp.replied_conversations as replied_conversations_col,
       rp.tags as tags_col,
       p.updated_at as updated_at_col,
-	  p.created_at as created_at_col,
+      p.created_at as created_at_col,
       ROW_NUMBER() OVER (
       PARTITION BY p.email
       ) AS rn
@@ -310,7 +310,7 @@ BEGIN
     name_col AS name,
     status_col AS status,
     image_col as image,
-    address_col as address,
+    location_col as location,
     alternate_names_col as alternate_names,
     same_as_col as same_as,
     given_name_col as given_name,
@@ -604,7 +604,7 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text" NOT NULL,
     "alternate_name" "text",
-    "address" "text",
+    "location" "text"[],
     "url" "text",
     "legal_name" "text",
     "telephone" "text",
@@ -622,7 +622,7 @@ CREATE TABLE IF NOT EXISTS "public"."persons" (
     "user_id" "uuid" NOT NULL,
     "url" "text",
     "image" "text",
-    "address" "text",
+    "location" "text"[],
     "alternate_names" "text"[],
     "same_as" "text"[],
     "given_name" "text",
