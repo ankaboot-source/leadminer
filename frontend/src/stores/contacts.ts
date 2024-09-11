@@ -17,7 +17,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const selectedContactsCount = ref<number>(0);
 
   const contactCount = computed(() => contactsList.value?.length);
-  const activeTask = computed(() => $leadminerStore.activeTask);
+  const isMiningTaskActive = computed(() => $leadminerStore.activeTask);
 
   let realtimeChannel: RealtimeChannel | null = null;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -49,14 +49,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Refines contacts in database.
    */
   async function refineContacts() {
-    await unsubscribeFromRealtimeUpdates();
     const { error } = await $supabase.rpc(
       'refine_persons',
       // @ts-expect-error: Issue with @nuxt/supabase typing
       { userid: $user.value?.id },
     );
     if (error) throw error;
-    // subscribeToRealtimeUpdates();
   }
 
   function upsertTop(newContact: Contact, oldContacts: Contact[]) {
@@ -80,7 +78,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
 
     const [newContact] = convertDates([contact]);
     const { works_for: organizationId } = newContact;
-    const isMiningTaskActive = activeTask.value;
 
     if (organizationId) {
       const organization = await getOrganization({ id: organizationId }, [
@@ -90,7 +87,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
 
     // If a mining task is active, cache the contacts for periodic rendering
-    if (isMiningTaskActive) {
+    if (isMiningTaskActive.value) {
       if (cachedContactsList.value.length === 0) {
         cachedContactsList.value = JSON.parse(
           JSON.stringify(contactsList.value),

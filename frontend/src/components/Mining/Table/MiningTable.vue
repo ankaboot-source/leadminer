@@ -655,7 +655,6 @@
 
 <script setup lang="ts">
 import type { User } from '@supabase/supabase-js';
-import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
@@ -742,6 +741,10 @@ watch(activeMiningTask, async (isActive) => {
     filtersStore.clearFilter();
   } else {
     isLoading.value = true;
+    /**
+     * Disable realtime; protects table from rendering multiple times
+     */
+    await $contactsStore.unsubscribeFromRealtimeUpdates();
 
     loadingLabel.value = t('refining_contacts');
     await $contactsStore.refineContacts();
@@ -753,6 +756,11 @@ watch(activeMiningTask, async (isActive) => {
 
     isLoading.value = false;
     $leadminerStore.cleaningFinished = true;
+
+    /**
+     * Subscribe again after the table is rendered
+     */
+    $contactsStore.subscribeToRealtimeUpdates();
   }
 });
 
