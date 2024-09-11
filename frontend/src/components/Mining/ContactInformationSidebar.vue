@@ -116,10 +116,17 @@
         </tr>
 
         <tr class="p-row-odd">
-          <td class="md:font-medium">{{ $t('contact.address') }}</td>
+          <td class="md:font-medium">{{ $t('contact.location') }}</td>
           <td>
-            <div v-if="!editingContact">{{ contact.address }}</div>
-            <InputText v-else v-model="contactEdit.address" class="w-full" />
+            <div v-if="!editingContact">
+              {{ contact.location?.join(', ') }}
+            </div>
+            <Textarea
+              v-else
+              v-model="contactEdit.location as string"
+              rows="3"
+              class="w-full"
+            />
           </td>
         </tr>
 
@@ -229,6 +236,7 @@ const contactEdit = ref<ContactEdit>({
   ...contact.value,
   alternate_names: contact.value?.alternate_names?.join('\n') ?? null,
   same_as: contact.value?.same_as?.join('\n') ?? null,
+  location: contact.value?.location?.join('\n') ?? null,
 });
 
 watch(contact, (newContact) => {
@@ -236,6 +244,7 @@ watch(contact, (newContact) => {
     ...newContact,
     alternate_names: newContact?.alternate_names?.join('\n') ?? null,
     same_as: newContact?.same_as?.join('\n') ?? null,
+    location: newContact?.location?.join('\n') ?? null,
   };
 });
 
@@ -245,7 +254,7 @@ const skipDialog = computed(
       contact.value.given_name ||
       contact.value.family_name ||
       contact.value.alternate_names ||
-      contact.value.address ||
+      contact.value.location ||
       contact.value.works_for ||
       contact.value.job_title ||
       contact.value.same_as ||
@@ -369,21 +378,18 @@ async function saveContactInformations() {
     return;
   }
 
-  const transformSameAs = contactEdit.value.same_as
-    ?.split('\n')
-    .filter((item) => item.length);
-  const transformAlternateNames = contactEdit.value.alternate_names
-    ?.split('\n')
-    .filter((item) => item.length);
+  function transformStringToArray(string: string | null): string[] | null {
+    const array = string?.split('\n').filter((item) => item.length);
+    return array?.length ? array : null;
+  }
 
   const originalContactCopy = contact.value;
   const editedContactCopy: Contact = {
     ...contact.value,
     ...contactEdit.value,
-    same_as: transformSameAs?.length ? transformSameAs : null,
-    alternate_names: transformAlternateNames?.length
-      ? transformAlternateNames
-      : null,
+    same_as: transformStringToArray(contactEdit.value.same_as),
+    alternate_names: transformStringToArray(contactEdit.value.alternate_names),
+    location: transformStringToArray(contactEdit.value.location),
   };
 
   const contactToUpdate: Partial<Contact> = {
@@ -410,9 +416,10 @@ async function saveContactInformations() {
       originalContactCopy.family_name !== editedContactCopy.family_name
         ? editedContactCopy.family_name || null
         : undefined,
-    address:
-      originalContactCopy.address !== editedContactCopy.address
-        ? editedContactCopy.address || null
+    location:
+      JSON.stringify(originalContactCopy.location) !==
+      JSON.stringify(editedContactCopy.location)
+        ? editedContactCopy.location || null
         : undefined,
     works_for:
       originalContactCopy.works_for !== editedContactCopy.works_for

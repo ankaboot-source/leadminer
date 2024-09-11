@@ -305,7 +305,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             email: contact.email,
             name: contact.name,
             same_as: contact.sameAs,
-            address: contact.address,
+            location: contact.location,
             job_title: contact.jobTitle,
             given_name: contact.givenName,
             family_name: contact.familyName,

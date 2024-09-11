@@ -85,7 +85,7 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","address","same_as","given_name","family_name","job_title","identifiers","user_id","status", "verification_details", "source")
+    INSERT INTO persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id","status", "verification_details", "source")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, $14)
     ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
     RETURNING persons.email, persons.status;`;
@@ -185,7 +185,7 @@ export default class PgContacts implements Contacts {
           person.email,
           person.url,
           person.image,
-          person.address,
+          person.location,
           person.sameAs,
           person.givenName,
           person.familyName,

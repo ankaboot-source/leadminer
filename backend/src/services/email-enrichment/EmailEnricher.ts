@@ -8,7 +8,7 @@ export interface EnricherResult {
   email: string;
   name?: string;
   image?: string;
-  address?: string;
+  location?: string[];
   jobTitle?: string;
   organization?: string;
   givenName?: string;

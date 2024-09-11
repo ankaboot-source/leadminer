@@ -81,7 +81,7 @@ const defaultFilters = {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
-  address: {
+  location: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
