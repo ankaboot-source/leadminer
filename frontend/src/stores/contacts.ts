@@ -1,29 +1,60 @@
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
-  User,
 } from '@supabase/supabase-js';
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
-
 import type { Contact } from '@/types/contact';
 import { convertDates, getOrganization } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
-  let syncInterval: ReturnType<typeof setInterval>;
-  let subscription: RealtimeChannel;
-
-  const contacts = ref<Contact[] | undefined>(undefined);
-  const contactsLength = computed(() => contacts.value?.length);
-  const selected = ref<string[] | undefined>(undefined);
-  const selectedLength = ref<number>(0);
-
+  const $user = useSupabaseUser();
+  const $supabase = useSupabaseClient();
   const $leadminerStore = useLeadminerStore();
-  const activeTask = computed(() => $leadminerStore.activeTask);
-  const cachedContacts = ref<Contact[]>([]);
 
-  function setContacts(newContacts: Contact[]) {
-    contacts.value = newContacts;
+  const contactsList = ref<Contact[] | undefined>(undefined);
+  const cachedContactsList = ref<Contact[]>([]);
+
+  const selectedEmails = ref<string[] | undefined>(undefined);
+  const selectedContactsCount = ref<number>(0);
+
+  const contactCount = computed(() => contactsList.value?.length);
+  const isMiningTaskActive = computed(() => $leadminerStore.activeTask);
+
+  let realtimeChannel: RealtimeChannel | null = null;
+  let syncIntervalId: ReturnType<typeof setInterval> | null = null;
+
+  /**
+   * Load contacts from database to store.
+   */
+  async function loadContacts() {
+    const { data, error } = await $supabase.rpc(
+      'get_contacts_table',
+      // @ts-expect-error: Issue with @nuxt/supabase typing
+      { userid: $user.value?.id },
+    );
+
+    if (error) throw error;
+    contactsList.value = convertDates(data);
+  }
+
+  /**
+   * Loads contacts from db and restarts SyncInterval.
+   */
+  async function reloadContacts() {
+    clearSyncInterval();
+    await loadContacts();
+    startSyncInterval();
+  }
+
+  /**
+   * Refines contacts in database.
+   */
+  async function refineContacts() {
+    const { error } = await $supabase.rpc(
+      'refine_persons',
+      // @ts-expect-error: Issue with @nuxt/supabase typing
+      { userid: $user.value?.id },
+    );
+    if (error) throw error;
   }
 
   function upsertTop(newContact: Contact, oldContacts: Contact[]) {
@@ -38,33 +69,52 @@ export const useContactsStore = defineStore('contacts-store', () => {
     oldContacts.unshift({ ...oldContact, ...newContact });
   }
 
-  async function handleNewContact(newContact: Contact) {
-    if (!contacts.value) return;
-    newContact = convertDates([newContact])[0];
-    if (newContact.works_for) {
-      const org = await getOrganization({ id: newContact.works_for }, ['name']);
-      newContact.works_for = org ? org.name : newContact.works_for;
+  /**
+   * Handles a new contact from realtime.
+   * @param contact - The new contact object.
+   */
+  async function processNewContact(contact: Contact) {
+    if (!contactsList.value) return;
+
+    const [newContact] = convertDates([contact]);
+    const { works_for: organizationId } = newContact;
+
+    if (organizationId) {
+      const organization = await getOrganization({ id: organizationId }, [
+        'name',
+      ]);
+      newContact.works_for = organization ? organization.name : organizationId;
     }
-    if (activeTask.value) {
-      // Cache to render periodically
-      if (cachedContacts.value.length === 0)
-        cachedContacts.value = JSON.parse(JSON.stringify(contacts.value));
-      upsertTop(newContact, cachedContacts.value);
+
+    // If a mining task is active, cache the contacts for periodic rendering
+    if (isMiningTaskActive.value) {
+      if (cachedContactsList.value.length === 0) {
+        cachedContactsList.value = JSON.parse(
+          JSON.stringify(contactsList.value),
+        );
+      }
+      upsertTop(newContact, cachedContactsList.value);
     } else {
-      // Render instantly
-      upsertTop(newContact, contacts.value);
+      // Otherwise, update the contacts instantly
+      upsertTop(newContact, contactsList.value);
     }
   }
 
+  /**
+   * Applies cached contacts to the main contacts list.
+   */
   function applyCachedContacts() {
-    if (cachedContacts.value.length > 0) {
-      contacts.value = cachedContacts.value;
-      cachedContacts.value = [];
+    if (cachedContactsList.value.length > 0) {
+      contactsList.value = cachedContactsList.value;
+      cachedContactsList.value = [];
     }
   }
 
-  function subscribeRealtime(user: User) {
-    subscription = useSupabaseClient()
+  /**
+   * Subscribes to real-time updates for contacts.
+   */
+  function subscribeToRealtimeUpdates() {
+    realtimeChannel = useSupabaseClient()
       .channel('contacts-table')
       .on(
         'postgres_changes',
@@ -72,57 +122,72 @@ export const useContactsStore = defineStore('contacts-store', () => {
           event: '*',
           schema: 'public',
           table: 'persons',
-          filter: `user_id=eq.${user?.id}`,
+          filter: `user_id=eq.${$user.value?.id}`,
         },
         async (payload: RealtimePostgresChangesPayload<Contact>) => {
           const newContact = payload.new as Contact;
-          await handleNewContact(newContact);
+          await processNewContact(newContact);
         },
       );
 
-    setSyncInterval();
-    subscription.subscribe();
+    startSyncInterval();
+    realtimeChannel.subscribe();
   }
 
-  function unsubscribeRealtime() {
-    if (subscription) {
-      subscription.unsubscribe();
+  /**
+   * Unsubscribes from real-time updates and clears the sync interval.
+   */
+  async function unsubscribeFromRealtimeUpdates() {
+    if (realtimeChannel) {
+      await realtimeChannel.unsubscribe();
+      await $supabase.removeChannel(realtimeChannel);
     }
-    if (syncInterval) {
+    if (syncIntervalId) {
       applyCachedContacts();
       clearSyncInterval();
     }
   }
 
-  function setSyncInterval() {
-    cachedContacts.value = [];
-    syncInterval = setInterval(() => {
+  /**
+   * Starts the sync interval to periodically apply cached contacts.
+   */
+  function startSyncInterval() {
+    cachedContactsList.value = [];
+    syncIntervalId = setInterval(() => {
       applyCachedContacts();
     }, 2000);
   }
 
+  /**
+   * Clears the sync interval.
+   */
   function clearSyncInterval() {
-    clearInterval(syncInterval);
+    if (syncIntervalId) clearInterval(syncIntervalId);
   }
 
+  /**
+   * Resets the store.
+   */
   function $reset() {
-    unsubscribeRealtime();
-    contacts.value = undefined;
-    selected.value = undefined;
-    selectedLength.value = 0;
-    cachedContacts.value = [];
+    unsubscribeFromRealtimeUpdates();
+    contactsList.value = undefined;
+    selectedEmails.value = undefined;
+    selectedContactsCount.value = 0;
   }
+  cachedContactsList.value = [];
 
   return {
-    contacts,
-    selected,
-    selectedLength,
-    contactsLength,
+    contactsList,
+    selectedEmails,
+    selectedContactsCount,
+    contactCount,
     $reset,
-    setContacts,
-    subscribeRealtime,
-    unsubscribeRealtime,
-    setSyncInterval,
+    loadContacts,
+    reloadContacts,
+    refineContacts,
+    subscribeToRealtimeUpdates,
+    unsubscribeFromRealtimeUpdates,
+    startSyncInterval,
     clearSyncInterval,
   };
 });
