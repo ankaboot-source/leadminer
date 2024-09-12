@@ -66,7 +66,7 @@ function refreshOAuth() {
   switch (provider.value) {
     case 'google':
     case 'azure':
-      addOAuthAccount(provider.value as OAuthMiningSource);
+      signInWithOAuth(provider.value as OAuthMiningSource);
       break;
     default:
       showImapDialog();
