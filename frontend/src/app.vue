@@ -26,26 +26,13 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 
-const { $saasEdgeFunctions } = useNuxtApp();
+const $supabaseClient = useSupabaseClient();
 
-useSupabaseClient().auth.onAuthStateChange(async (event, session) => {
+$supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
-    case 'INITIAL_SESSION':
-      if (session?.provider_token) {
-        await $saasEdgeFunctions('add-mining-source', {
-          method: 'POST',
-          body: {
-            provider: session.user.app_metadata.provider,
-            provider_token: session.provider_token,
-          },
-        });
-      }
-      break;
-
     case 'SIGNED_OUT':
       signOutManually();
       break;
-
     default:
       break;
   }

@@ -116,9 +116,9 @@ describe('Test TaskManager helper functions', () => {
         miningId:
           'test-id-51fd-4e0f-b3bd-325664dd51e0-f6494f8d-a96a-4f80-8a62-a081e57d5f14',
         process: {
-          fetch: {} as TaskFetch,
-          extract: {} as TaskExtract,
-          clean: {} as TaskClean
+          fetch: { id: '325664dd51e0' } as TaskFetch,
+          extract: { id: 'f6494f8d' } as TaskExtract,
+          clean: { id: 'a081e57d5f14' } as TaskClean
         },
         progress: {
           totalMessages: 100,
@@ -127,12 +127,6 @@ describe('Test TaskManager helper functions', () => {
           verifiedContacts: 5,
           createdContacts: 10
         },
-        stream: {
-          messagesStreamName: 'test-messages-stream-name',
-          messagesConsumerGroupName: 'test-messages-consumer-group-name',
-          emailsStreamName: 'test-emails-stream-name',
-          emailsConsumerGroupName: 'test-emails-consumer-stream-name'
-        },
         progressHandlerSSE: {} as RealtimeSSE,
         startedAt: performance.now()
       };
@@ -140,6 +134,11 @@ describe('Test TaskManager helper functions', () => {
       const redactedTask: RedactedTask = {
         userId: mockedTask.userId,
         miningId: mockedTask.miningId,
+        processes: {
+          fetch: '325664dd51e0',
+          extract: 'f6494f8d',
+          clean: 'a081e57d5f14'
+        },
         progress: {
           totalMessages: mockedTask.progress.totalMessages,
           fetched: mockedTask.progress.fetched,

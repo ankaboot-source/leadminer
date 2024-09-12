@@ -1,5 +1,27 @@
-import Cookies from 'js-cookie';
 import { sse } from './sse';
+import Cookies from 'js-cookie';
+import type { Provider } from '@supabase/supabase-js';
+
+export async function signInWithOAuth(provider: Provider) {
+  const $supabase = useSupabaseClient();
+  const { error } = await $supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      skipBrowserRedirect: false,
+      scopes:
+        provider === 'azure'
+          ? 'https://outlook.office.com/IMAP.AccessAsUser.All'
+          : 'https://mail.google.com/',
+
+      queryParams: {
+        prompt: 'select_account',
+      },
+    },
+  });
+  if (error) {
+    throw error;
+  }
+}
 
 export function clearAllData() {
   const allCookies = Cookies.get();
@@ -12,10 +34,13 @@ export function signOutManually() {
   useResetStore().all();
   clearAllData();
   useRouter().push('/auth/login');
-  /// @ts-expect-error supabase type bug (https://github.com/nuxt-modules/supabase/issues/406)
   useSupabaseUser().value = null; // updates $user in AppHeader
 }
 
 export async function signOut() {
-  await useSupabaseClient().auth.signOut();
+  const { error } = await useSupabaseClient().auth.signOut();
+
+  if (error) {
+    throw error;
+  }
 }

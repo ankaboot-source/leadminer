@@ -26,29 +26,24 @@ const defaultFilters = {
     value: null,
     matchMode: FilterMatchMode.CONTAINS,
   },
-
   name: {
     value: null,
     matchMode: NOT_EMPTY,
   },
-
   source: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
-
   recency: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
   },
-
   occurrence: {
     operator: FilterOperator.AND,
     constraints: [
       { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
     ],
   },
-
   // Replies
   replied_conversations: {
     operator: FilterOperator.AND,
@@ -56,30 +51,24 @@ const defaultFilters = {
       { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
     ],
   },
-
   tags: { value: null, matchMode: ANY_SELECTED },
-
   status: { value: [], matchMode: FilterMatchMode.IN },
-
   recipient: {
     operator: FilterOperator.AND,
     constraints: [
       { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
     ],
   },
-
   sender: {
     operator: FilterOperator.AND,
     constraints: [
       { value: null, matchMode: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
     ],
   },
-
   seniority: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
   },
-
   given_name: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
@@ -103,6 +92,14 @@ const defaultFilters = {
   job_title: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
+  },
+  updated_at: {
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
+  },
+  created_at: {
+    operator: FilterOperator.AND,
+    constraints: [{ value: null, matchMode: FilterMatchMode.DATE_AFTER }],
   },
 };
 

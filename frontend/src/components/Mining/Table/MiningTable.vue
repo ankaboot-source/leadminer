@@ -33,8 +33,6 @@
     :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
     :rows="150"
     :rows-per-page-options="[150, 500, 1000]"
-    sort-field="occurrence"
-    :sort-order="-1"
     @filter="onFilter($event)"
     @select-all-change="onSelectAllChange"
     @row-select="onRowSelect"
@@ -75,9 +73,9 @@
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
             :contacts-to-enrich="
-              $contactsStore.selected ?? (contacts as unknown as string[])
+              $contactsStore.selectedEmails ?? (contacts as unknown as string[])
             "
-            :enrich-all-contacts="$contactsStore.selected === undefined"
+            :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
           />
         </div>
         <div class="ml-2">
@@ -294,7 +292,7 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('occurence_definition')">
+        <div v-tooltip.top="t('occurrence_definition')">
           {{ t('occurrence') }}
         </div>
       </template>
@@ -600,12 +598,63 @@
         <InputText v-model="filterModel.value" />
       </template>
     </Column>
+
+    <!-- Updated at -->
+    <Column
+      v-if="visibleColumns.includes('updated_at')"
+      field="updated_at"
+      sortable
+      data-type="date"
+    >
+      <template #header>
+        <div v-tooltip.top="t('updated_at_definition')">
+          {{ t('updated_at') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        {{ data.updated_at?.toLocaleDateString() ?? data.updated_at }}
+      </template>
+      <template #filter="{ filterModel }">
+        <DatePicker
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
+      </template>
+    </Column>
+
+    <!-- Created at -->
+    <Column
+      v-if="visibleColumns.includes('created_at')"
+      field="created_at"
+      sortable
+      data-type="date"
+    >
+      <template #header>
+        <div v-tooltip.top="t('created_at_definition')">
+          {{ t('created_at') }}
+        </div>
+      </template>
+      <template #body="{ data }">
+        {{
+          data.created_at
+            ? data.created_at?.toLocaleDateString()
+            : data.created_at
+        }}
+      </template>
+      <template #filter="{ filterModel }">
+        <DatePicker
+          v-model="filterModel.value"
+          show-icon
+          class="p-column-filter"
+        />
+      </template>
+    </Column>
   </DataTable>
 </template>
 
 <script setup lang="ts">
 import type { User } from '@supabase/supabase-js';
-import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
@@ -651,7 +700,6 @@ const emptyFunction = () => {};
 const $toast = useToast();
 
 const $user = useSupabaseUser() as Ref<User>;
-const $supabaseClient = useSupabaseClient();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
@@ -659,8 +707,8 @@ const $contactInformationSidebar = useMiningContactInformationSidebar();
 const isLoading = ref(true);
 const loadingLabel = ref('');
 
-const contacts = computed(() => $contactsStore.contacts);
-const contactsLength = computed(() => $contactsStore.contactsLength);
+const contacts = computed(() => $contactsStore.contactsList);
+const contactsLength = computed(() => $contactsStore.contactCount);
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
@@ -687,36 +735,32 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 
-async function refineContacts() {
-  loadingLabel.value = t('refining_contacts');
-  const user = $user.value;
-  // @ts-expect-error: Issue with @nuxt/supabase typing
-  const refine = await $supabaseClient.rpc('refine_persons', {
-    userid: user?.id,
-  });
-
-  if (refine.error) {
-    throw refine.error;
-  }
-}
-
-async function syncTable() {
-  loadingLabel.value = t('syncing');
-  const user = $user.value;
-  $contactsStore.setContacts(await getContacts(user.id));
-}
-
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     $leadminerStore.cleaningFinished = false;
     filtersStore.clearFilter();
   } else {
     isLoading.value = true;
-    await refineContacts();
-    await syncTable();
+    /**
+     * Disable realtime; protects table from rendering multiple times
+     */
+    await $contactsStore.unsubscribeFromRealtimeUpdates();
+
+    loadingLabel.value = t('refining_contacts');
+    await $contactsStore.refineContacts();
+
+    loadingLabel.value = t('syncing');
+    await $contactsStore.reloadContacts();
+
     filtersStore.toggleFilters();
+
     isLoading.value = false;
     $leadminerStore.cleaningFinished = true;
+
+    /**
+     * Subscribe again after the table is rendered
+     */
+    $contactsStore.subscribeToRealtimeUpdates();
   }
 });
 
@@ -781,13 +825,13 @@ const contactsToExport = computed<string[] | undefined>(() =>
 watch(
   contactsToExport,
   () => {
-    $contactsStore.selected = contactsToExport.value;
+    $contactsStore.selectedEmails = contactsToExport.value;
   },
   { deep: true, immediate: true },
 );
 
 watch(implicitlySelectedContactsLength, () => {
-  $contactsStore.selectedLength = implicitlySelectedContactsLength.value;
+  $contactsStore.selectedContactsCount = implicitlySelectedContactsLength.value;
 });
 
 /* *** Export CSV *** */
@@ -887,6 +931,8 @@ const visibleColumnsOptions = [
   { label: $t('contact.name'), value: 'name' },
   { label: $t('contact.same_as'), value: 'same_as' },
   { label: $t('contact.image'), value: 'image' },
+  { label: $t('contact.updated_at'), value: 'updated_at' },
+  { label: $t('contact.created_at'), value: 'created_at' },
 ];
 
 function disabledColumns(column: { label: string; value: string }) {
@@ -972,14 +1018,17 @@ onNuxtReady(async () => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   const $stepper = useMiningStepper();
-  const fetchedContacts = await getContacts($user.value.id);
 
-  if ($stepper.index === 1 && fetchedContacts.length > 0) {
+  await $contactsStore.loadContacts();
+
+  if (
+    $stepper.index === 1 &&
+    $contactsStore.contactsList &&
+    $contactsStore.contactsList.length > 0
+  ) {
     $stepper.hide();
   }
-
-  $contactsStore.setContacts(fetchedContacts);
-  $contactsStore.subscribeRealtime($user.value);
+  $contactsStore.subscribeToRealtimeUpdates();
 
   isLoading.value = false;
 });
@@ -1042,7 +1091,7 @@ table.p-datatable-table {
     "search_contacts": "Search contacts",
     "source_definition": "The mailbox this contact has been mined from",
     "source": "Source",
-    "occurence_definition": "Total occurrences of this contact",
+    "occurrence_definition": "Total occurrences of this contact",
     "occurrence": "Occurrence",
     "recency": "Recency",
     "recency_definition": "When was the last time this contact was seen",

@@ -18,9 +18,14 @@ export interface FetcherStatus {
   status: string;
 }
 
+export type ProcessType = 'fetch' | 'extract' | 'clean';
+
 export interface MiningTask {
   userId: string;
   miningId: string;
+  processes: {
+    [key in ProcessType]: string;
+  };
   progress: MiningProgress;
   fetcher: FetcherStatus;
 }

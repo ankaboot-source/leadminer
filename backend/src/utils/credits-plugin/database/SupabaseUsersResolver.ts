@@ -74,15 +74,17 @@ export default class SupabaseUsers implements Users {
     const { error: inviteUserError } =
       await this.supabaseClient.auth.admin.inviteUserByEmail(userEmail, {
         data: {
-          Prehead: 'Invitation to leadminer',
-          Title: "You're Invited to Join",
-          Body1: "You're invited to join ",
-          Body2:
-            "! We're excited to have you as part of our community. With our platform, you can effortlessly generate clean and enriched contacts directly from your mailbox. To get started, click the button below to accept the invitation and create your account.",
-          Button: 'Accept Invitation',
-          Regards: 'Best regards,',
-          Footer:
-            "You received this email because we received a request for your account. If you didn't request it, you can safely delete this email."
+          Invite: {
+            Prehead: 'Invitation to leadminer',
+            Title: "You're Invited to Join",
+            Body1: "You're invited to join ",
+            Body2:
+              "! We're excited to have you as part of our community. With our platform, you can effortlessly generate clean and enriched contacts directly from your mailbox. To get started, click the button below to accept the invitation and create your account.",
+            Button: 'Accept Invitation',
+            Regards: 'Best regards,',
+            Footer:
+              "You received this email because we received a request for your account. If you didn't request it, you can safely delete this email."
+          }
         }
       });
 
