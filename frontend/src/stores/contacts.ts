@@ -23,6 +23,16 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
+   * Applies cached contacts to the main contacts list.
+   */
+  function applyCachedContacts() {
+    if (cachedContactsList.value.length > 0) {
+      contactsList.value = cachedContactsList.value;
+      cachedContactsList.value = [];
+    }
+  }
+
+  /**
    * Starts the sync interval to periodically apply cached contacts.
    */
   function startSyncInterval() {
@@ -113,16 +123,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
     } else {
       // Otherwise, update the contacts instantly
       upsertTop(newContact, contactsList.value);
-    }
-  }
-
-  /**
-   * Applies cached contacts to the main contacts list.
-   */
-  function applyCachedContacts() {
-    if (cachedContactsList.value.length > 0) {
-      contactsList.value = cachedContactsList.value;
-      cachedContactsList.value = [];
     }
   }
 

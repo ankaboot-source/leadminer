@@ -334,15 +334,17 @@ export default class TasksManager {
    */
   private async stopTask(tasks: Task[], canceled = false): Promise<void> {
     const stopPromises = tasks.map(async (task) => {
+      // eslint-disable-next-line no-param-reassign
       task.stoppedAt = new Date().toUTCString();
 
       if (task.duration === undefined && task.startedAt) {
         const startedAt = new Date(task.startedAt).getTime();
         const stoppedAt = new Date(task.stoppedAt).getTime();
         const durationInMilliSeconds = stoppedAt - startedAt;
+        // eslint-disable-next-line no-param-reassign
         task.duration = durationInMilliSeconds;
       }
-
+      // eslint-disable-next-line no-param-reassign
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
 
       if (task.type === 'fetch') {
