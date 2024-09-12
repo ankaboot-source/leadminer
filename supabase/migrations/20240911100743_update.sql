@@ -2,27 +2,27 @@ ALTER TABLE organizations
 RENAME COLUMN address TO location;
 
 ALTER TABLE organizations
-ALTER COLUMN location TYPE TEXT[]
-	USING case 
-		when location is null then null 
-			else ARRAY[location] 
-		end;
-
+ALTER COLUMN location
+TYPE TEXT[] USING case
+  when location is null then null
+  else ARRAY[location]
+end;
 
 ALTER TABLE persons
 RENAME COLUMN address TO location;
 
 ALTER TABLE persons
-ALTER COLUMN location TYPE TEXT[]
-	USING case 
-		when location is null then null 
-			else ARRAY[location] 
-		end;
+ALTER COLUMN location
+TYPE TEXT[] USING case
+  when location is null then null
+  else ARRAY[location]
+end;
 
-
-CREATE OR REPLACE FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean DEFAULT true) RETURNS "void"
-	LANGUAGE "plpgsql"
-	AS $$
+CREATE
+OR REPLACE FUNCTION "public"."enrich_contacts" (
+  "p_contacts_data" "jsonb" [],
+  "p_update_empty_fields_only" boolean DEFAULT true
+) RETURNS "void" LANGUAGE "plpgsql" AS $$
 DECLARE
 	contact_record JSONB;
   organization_id UUID;
@@ -118,9 +118,32 @@ END;
 $$;
 
 DROP FUNCTION get_contacts_table;
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
-	LANGUAGE "plpgsql"
-	AS $$
+
+CREATE
+OR REPLACE FUNCTION "public"."get_contacts_table" ("user_id" "uuid") RETURNS TABLE (
+  "source" "text",
+  "email" "text",
+  "name" "text",
+  "status" "text",
+  "image" "text",
+  "location" "text" [],
+  "alternate_names" "text" [],
+  "same_as" "text" [],
+  "given_name" "text",
+  "family_name" "text",
+  "job_title" "text",
+  "works_for" "text",
+  "recency" timestamp with time zone,
+  "seniority" timestamp with time zone,
+  "occurrence" integer,
+  "sender" integer,
+  "recipient" integer,
+  "conversations" integer,
+  "replied_conversations" integer,
+  "tags" "text" [],
+  "updated_at" timestamp without time zone,
+  "created_at" timestamp without time zone
+) LANGUAGE "plpgsql" AS $$
 BEGIN
   RETURN QUERY WITH ExportedContacts AS (
 	SELECT
@@ -191,9 +214,32 @@ END;
 $$;
 
 DROP FUNCTION get_contacts_table_by_emails;
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
-	LANGUAGE "plpgsql"
-	AS $$
+
+CREATE
+OR REPLACE FUNCTION "public"."get_contacts_table_by_emails" ("user_id" "uuid", "emails" "text" []) RETURNS TABLE (
+  "source" "text",
+  "email" "text",
+  "name" "text",
+  "status" "text",
+  "image" "text",
+  "location" "text" [],
+  "alternate_names" "text" [],
+  "same_as" "text" [],
+  "given_name" "text",
+  "family_name" "text",
+  "job_title" "text",
+  "works_for" "text",
+  "recency" timestamp with time zone,
+  "seniority" timestamp with time zone,
+  "occurrence" integer,
+  "sender" integer,
+  "recipient" integer,
+  "conversations" integer,
+  "replied_conversations" integer,
+  "tags" "text" [],
+  "updated_at" timestamp without time zone,
+  "created_at" timestamp without time zone
+) LANGUAGE "plpgsql" AS $$
 BEGIN
   RETURN QUERY WITH ExportedContacts AS (
 	SELECT
