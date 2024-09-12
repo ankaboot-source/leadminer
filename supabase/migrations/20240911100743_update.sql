@@ -20,8 +20,6 @@ ALTER COLUMN location TYPE TEXT[]
 		end;
 
 
-ALTER FUNCTION "public"."delete_user_data"("user_id" "uuid") OWNER TO "postgres";
-
 CREATE OR REPLACE FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean DEFAULT true) RETURNS "void"
 	LANGUAGE "plpgsql"
 	AS $$
@@ -119,8 +117,6 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) OWNER TO "postgres";
-
 DROP FUNCTION get_contacts_table;
 CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
 	LANGUAGE "plpgsql"
@@ -193,8 +189,6 @@ BEGIN
 	rn = 1;
 END;
 $$;
-
-ALTER FUNCTION "public"."get_contacts_table"("user_id" "uuid") OWNER TO "postgres";
 
 DROP FUNCTION get_contacts_table_by_emails;
 CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
