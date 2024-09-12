@@ -108,7 +108,7 @@
             </div>
             <Textarea
               v-else
-              v-model="contactEdit.alternate_names as string"
+              v-model="contactEdit.alternate_names"
               rows="3"
               class="w-full"
             />
@@ -123,7 +123,7 @@
             </div>
             <Textarea
               v-else
-              v-model="contactEdit.location as string"
+              v-model="contactEdit.location"
               rows="3"
               class="w-full"
             />
@@ -150,7 +150,7 @@
             <td class="md:font-medium">{{ $t('contact.same_as') }}</td>
             <td>
               <Textarea
-                v-model="contactEdit.same_as as string"
+                v-model="contactEdit.same_as"
                 class="w-full"
                 rows="3"
                 :invalid="!isValidSameAs"
