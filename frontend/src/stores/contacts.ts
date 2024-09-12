@@ -89,9 +89,8 @@ export const useContactsStore = defineStore('contacts-store', () => {
     // If a mining task is active, cache the contacts for periodic rendering
     if (isMiningTaskActive.value) {
       if (cachedContactsList.value.length === 0) {
-        cachedContactsList.value = JSON.parse(
-          JSON.stringify(contactsList.value),
-        );
+        const contactsCopy = JSON.parse(JSON.stringify(contactsList.value));
+        cachedContactsList.value = convertDates(contactsCopy);
       }
       upsertTop(newContact, cachedContactsList.value);
     } else {
