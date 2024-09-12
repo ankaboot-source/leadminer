@@ -1,3 +1,4 @@
+import { AuthSessionMissingError } from '@supabase/supabase-js';
 import { FetchError } from 'ofetch';
 
 interface ErrorStatusMessages {
@@ -23,8 +24,25 @@ const usePVToastService = () => {
 };
 
 export default defineNuxtPlugin((nuxtApp) => {
+  const toastService = usePVToastService();
+
   nuxtApp.vueApp.config.errorHandler = (error) => {
     let message = ERROR_STATUS_MESSAGES[500];
+
+    /**
+     * Handle session inactivity
+     */
+    const unauthorizedRequest =
+      error instanceof FetchError && error.response?.status === 401;
+    if (error instanceof AuthSessionMissingError || unauthorizedRequest) {
+      toastService.add({
+        summary: 'Session Expired',
+        severity: 'warn',
+        detail: 'You have been logged out due to inactivity.',
+        life: 5000,
+      });
+      return signOutManually();
+    }
 
     if (error instanceof FetchError && error.message === 'Network Error') {
       message = ERROR_STATUS_MESSAGES[503];
@@ -38,7 +56,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
     // eslint-disable-next-line no-console
     console.error(error);
-    const toastService = usePVToastService();
     toastService.add({
       summary: 'Oops!',
       severity: 'error',
