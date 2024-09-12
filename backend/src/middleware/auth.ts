@@ -16,7 +16,7 @@ export default function initializeAuthMiddleware(authResolver: AuthResolver) {
 
       if (!user) {
         return res
-          .status(403)
+          .status(401)
           .json({ message: 'No token found, authorization denied' });
       }
 

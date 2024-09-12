@@ -15,8 +15,7 @@
 import Button from 'primevue/button';
 import type { Provider } from '@supabase/supabase-js';
 import { ref } from 'vue';
-
-const $supabase = useSupabaseClient();
+import { signInWithOAuth } from '~/utils/auth';
 
 const { label, icon, source } = defineProps<{
   label: string;
@@ -29,23 +28,7 @@ const isLoading = ref(false);
 async function loginWithOAuth(provider: Provider) {
   isLoading.value = true;
   try {
-    const { error } = await $supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        skipBrowserRedirect: false,
-        scopes:
-          provider === 'azure'
-            ? 'https://outlook.office.com/IMAP.AccessAsUser.All'
-            : 'https://mail.google.com/',
-
-        queryParams: {
-          prompt: 'select_account',
-        },
-      },
-    });
-    if (error) {
-      throw error;
-    }
+    await signInWithOAuth(provider);
   } catch (error) {
     if (error instanceof Error) {
       throw Error(error.message);

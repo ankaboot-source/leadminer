@@ -23,6 +23,33 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
+   * Applies cached contacts to the main contacts list.
+   */
+  function applyCachedContacts() {
+    if (cachedContactsList.value.length > 0) {
+      contactsList.value = cachedContactsList.value;
+      cachedContactsList.value = [];
+    }
+  }
+
+  /**
+   * Starts the sync interval to periodically apply cached contacts.
+   */
+  function startSyncInterval() {
+    cachedContactsList.value = [];
+    syncIntervalId = setInterval(() => {
+      applyCachedContacts();
+    }, 2000);
+  }
+
+  /**
+   * Clears the sync interval.
+   */
+  function clearSyncInterval() {
+    if (syncIntervalId) clearInterval(syncIntervalId);
+  }
+
+  /**
    * Load contacts from database to store.
    */
   async function loadContacts() {
@@ -89,24 +116,13 @@ export const useContactsStore = defineStore('contacts-store', () => {
     // If a mining task is active, cache the contacts for periodic rendering
     if (isMiningTaskActive.value) {
       if (cachedContactsList.value.length === 0) {
-        cachedContactsList.value = JSON.parse(
-          JSON.stringify(contactsList.value),
-        );
+        const contactsCopy = JSON.parse(JSON.stringify(contactsList.value));
+        cachedContactsList.value = convertDates(contactsCopy);
       }
       upsertTop(newContact, cachedContactsList.value);
     } else {
       // Otherwise, update the contacts instantly
       upsertTop(newContact, contactsList.value);
-    }
-  }
-
-  /**
-   * Applies cached contacts to the main contacts list.
-   */
-  function applyCachedContacts() {
-    if (cachedContactsList.value.length > 0) {
-      contactsList.value = cachedContactsList.value;
-      cachedContactsList.value = [];
     }
   }
 
@@ -146,23 +162,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
       applyCachedContacts();
       clearSyncInterval();
     }
-  }
-
-  /**
-   * Starts the sync interval to periodically apply cached contacts.
-   */
-  function startSyncInterval() {
-    cachedContactsList.value = [];
-    syncIntervalId = setInterval(() => {
-      applyCachedContacts();
-    }, 2000);
-  }
-
-  /**
-   * Clears the sync interval.
-   */
-  function clearSyncInterval() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
   }
 
   /**
