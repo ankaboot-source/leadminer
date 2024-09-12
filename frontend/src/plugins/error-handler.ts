@@ -57,9 +57,9 @@ export default defineNuxtPlugin((nuxtApp) => {
       if (isNetworkError(error)) {
         message = ERROR_STATUS_MESSAGES[503];
       } else if (isFetchError(error) && error.response) {
-      /**
-       * Handle more general errors except 402 because it's handled by Credits component
-       */
+        /**
+         * Handle more general errors except 402 because it's handled by Credits component
+         */
         if (error.response.status !== 402) {
           message =
             error.response._data.message ??
