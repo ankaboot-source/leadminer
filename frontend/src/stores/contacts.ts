@@ -23,6 +23,23 @@ export const useContactsStore = defineStore('contacts-store', () => {
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
+   * Starts the sync interval to periodically apply cached contacts.
+   */
+  function startSyncInterval() {
+    cachedContactsList.value = [];
+    syncIntervalId = setInterval(() => {
+      applyCachedContacts();
+    }, 2000);
+  }
+
+  /**
+   * Clears the sync interval.
+   */
+  function clearSyncInterval() {
+    if (syncIntervalId) clearInterval(syncIntervalId);
+  }
+
+  /**
    * Load contacts from database to store.
    */
   async function loadContacts() {
@@ -145,23 +162,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
       applyCachedContacts();
       clearSyncInterval();
     }
-  }
-
-  /**
-   * Starts the sync interval to periodically apply cached contacts.
-   */
-  function startSyncInterval() {
-    cachedContactsList.value = [];
-    syncIntervalId = setInterval(() => {
-      applyCachedContacts();
-    }, 2000);
-  }
-
-  /**
-   * Clears the sync interval.
-   */
-  function clearSyncInterval() {
-    if (syncIntervalId) clearInterval(syncIntervalId);
   }
 
   /**

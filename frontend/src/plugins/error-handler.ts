@@ -29,38 +29,53 @@ export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.config.errorHandler = (error) => {
     let message = ERROR_STATUS_MESSAGES[500];
 
+    const isFetchError = (err: unknown): err is FetchError =>
+      err instanceof FetchError;
+
+    const isUnauthorized = (err: unknown) =>
+      error instanceof AuthSessionMissingError ||
+      (isFetchError(err) && err.response?.status === 401);
+
+    const isNetworkError = (err: unknown) =>
+      isFetchError(err) && err.message === 'Network Error';
+
     /**
      * Handle session inactivity
      */
-    const unauthorizedRequest =
-      error instanceof FetchError && error.response?.status === 401;
-    if (error instanceof AuthSessionMissingError || unauthorizedRequest) {
+    if (isUnauthorized(error)) {
       toastService.add({
         summary: 'Session Expired',
         severity: 'warn',
         detail: 'You have been logged out due to inactivity.',
         life: 5000,
       });
-      return signOutManually();
-    }
+      signOutManually();
+    } else {
+      /**
+       * Handle network is disconnected
+       */
+      if (isNetworkError(error)) {
+        message = ERROR_STATUS_MESSAGES[503];
+      } else if (isFetchError(error) && error.response) {
+      /**
+       * Handle more general errors except 402 because it's handled by Credits component
+       */
+        if (error.response.status !== 402) {
+          message =
+            error.response._data.message ??
+            ERROR_STATUS_MESSAGES[error.response.status];
+        }
+      }
 
-    if (error instanceof FetchError && error.message === 'Network Error') {
-      message = ERROR_STATUS_MESSAGES[503];
-    }
+      toastService.add({
+        summary: 'Oops!',
+        severity: 'error',
+        detail: message ?? 'Something went wrong.',
+        life: 3000,
+      });
 
-    if (error instanceof FetchError && error.response) {
-      if (error.response.status === 402) return; // Handled by the Credits component
-      message =
-        error.response._data.message ??
-        ERROR_STATUS_MESSAGES[error.response.status];
+      // eslint-disable-next-line no-console
+      console.error(error);
     }
-    // eslint-disable-next-line no-console
-    console.error(error);
-    toastService.add({
-      summary: 'Oops!',
-      severity: 'error',
-      detail: message ?? 'Something went wrong.',
-      life: 3000,
-    });
   };
 });
