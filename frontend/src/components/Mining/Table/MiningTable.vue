@@ -73,9 +73,9 @@
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
             :contacts-to-enrich="
-              $contactsStore.selected ?? (contacts as unknown as string[])
+              $contactsStore.selectedEmails ?? (contacts as unknown as string[])
             "
-            :enrich-all-contacts="$contactsStore.selected === undefined"
+            :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
           />
         </div>
         <div class="ml-2">
@@ -292,7 +292,7 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('occurence_definition')">
+        <div v-tooltip.top="t('occurrence_definition')">
           {{ t('occurrence') }}
         </div>
       </template>
@@ -314,7 +314,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency ? data.recency?.toLocaleDateString() : data.recency }}
+        {{ data.recency?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
         <DatePicker
@@ -658,7 +658,6 @@
 
 <script setup lang="ts">
 import type { User } from '@supabase/supabase-js';
-import type DataTable from 'primevue/datatable';
 import type {
   DataTableFilterEvent,
   DataTableSelectAllChangeEvent,
@@ -704,7 +703,6 @@ const emptyFunction = () => {};
 const $toast = useToast();
 
 const $user = useSupabaseUser() as Ref<User>;
-const $supabaseClient = useSupabaseClient();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 const $contactInformationSidebar = useMiningContactInformationSidebar();
@@ -712,8 +710,8 @@ const $contactInformationSidebar = useMiningContactInformationSidebar();
 const isLoading = ref(true);
 const loadingLabel = ref('');
 
-const contacts = computed(() => $contactsStore.contacts);
-const contactsLength = computed(() => $contactsStore.contactsLength);
+const contacts = computed(() => $contactsStore.contactsList);
+const contactsLength = computed(() => $contactsStore.contactCount);
 
 const activeMiningTask = computed(
   () => $leadminerStore.miningTask !== undefined,
@@ -740,38 +738,32 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 
-async function refineContacts() {
-  loadingLabel.value = t('refining_contacts');
-  const user = $user.value;
-  // @ts-expect-error: Issue with @nuxt/supabase typing
-  const refine = await $supabaseClient.rpc('refine_persons', {
-    user_id: user?.id,
-  });
-
-  if (refine.error) {
-    throw refine.error;
-  }
-}
-
-async function syncTable() {
-  $contactsStore.clearSyncInterval();
-  loadingLabel.value = t('syncing');
-  const user = $user.value;
-  $contactsStore.setContacts(await getContacts(user.id));
-  $contactsStore.setSyncInterval();
-}
-
 watch(activeMiningTask, async (isActive) => {
   if (isActive) {
     $leadminerStore.cleaningFinished = false;
     filtersStore.clearFilter();
   } else {
     isLoading.value = true;
-    await refineContacts();
-    await syncTable();
+    /**
+     * Disable realtime; protects table from rendering multiple times
+     */
+    await $contactsStore.unsubscribeFromRealtimeUpdates();
+
+    loadingLabel.value = t('refining_contacts');
+    await $contactsStore.refineContacts();
+
+    loadingLabel.value = t('syncing');
+    await $contactsStore.reloadContacts();
+
     filtersStore.toggleFilters();
+
     isLoading.value = false;
     $leadminerStore.cleaningFinished = true;
+
+    /**
+     * Subscribe again after the table is rendered
+     */
+    $contactsStore.subscribeToRealtimeUpdates();
   }
 });
 
@@ -836,13 +828,13 @@ const contactsToExport = computed<string[] | undefined>(() =>
 watch(
   contactsToExport,
   () => {
-    $contactsStore.selected = contactsToExport.value;
+    $contactsStore.selectedEmails = contactsToExport.value;
   },
   { deep: true, immediate: true },
 );
 
 watch(implicitlySelectedContactsLength, () => {
-  $contactsStore.selectedLength = implicitlySelectedContactsLength.value;
+  $contactsStore.selectedContactsCount = implicitlySelectedContactsLength.value;
 });
 
 /* *** Export CSV *** */
@@ -1029,14 +1021,17 @@ onNuxtReady(async () => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
   const $stepper = useMiningStepper();
-  const fetchedContacts = await getContacts($user.value.id);
 
-  if ($stepper.index === 1 && fetchedContacts.length > 0) {
+  await $contactsStore.loadContacts();
+
+  if (
+    $stepper.index === 1 &&
+    $contactsStore.contactsList &&
+    $contactsStore.contactsList.length > 0
+  ) {
     $stepper.hide();
   }
-
-  $contactsStore.setContacts(fetchedContacts);
-  $contactsStore.subscribeRealtime($user.value);
+  $contactsStore.subscribeToRealtimeUpdates();
 
   isLoading.value = false;
 });
@@ -1099,7 +1094,7 @@ table.p-datatable-table {
     "search_contacts": "Search contacts",
     "source_definition": "The mailbox this contact has been mined from",
     "source": "Source",
-    "occurence_definition": "Total occurrences of this contact",
+    "occurrence_definition": "Total occurrences of this contact",
     "occurrence": "Occurrence",
     "recency": "Recency",
     "recency_definition": "When was the last time this contact was seen",
