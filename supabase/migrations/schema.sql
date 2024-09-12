@@ -794,29 +794,29 @@ ALTER TABLE ONLY "public"."organizations"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
-CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 CREATE POLICY "Enable insert for authenticated users only" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
 
 CREATE POLICY "Enable read access for all users" ON "public"."organizations" FOR SELECT TO "authenticated" USING (true);
 
-CREATE POLICY "Enable select for users based on user_id" ON "public"."engagement" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable select for users based on user_id" ON "public"."engagement" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable select for users based on user_id" ON "public"."messages" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable select for users based on user_id" ON "public"."messages" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable select for users based on user_id" ON "public"."persons" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable select for users based on user_id" ON "public"."persons" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable select for users based on user_id" ON "public"."pointsofcontact" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable select for users based on user_id" ON "public"."pointsofcontact" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable select for users based on user_id" ON "public"."tags" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable select for users based on user_id" ON "public"."tags" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable select for users based on user_id" ON "public"."tasks" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable select for users based on user_id" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Enable update for users based on user_id" ON "public"."persons" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable update for users based on user_id" ON "public"."persons" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Users can update their own data" ON "public"."profiles" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Users can update their own data" ON "public"."profiles" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
-CREATE POLICY "Users can view their own data" ON "public"."profiles" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Users can view their own data" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
 ALTER TABLE "public"."domains" ENABLE ROW LEVEL SECURITY;
 

@@ -1,3 +1,6 @@
+ALTER TABLE refinedpersons 
+RENAME COLUMN userid TO user_id;
+
 ALTER TABLE organizations
 RENAME COLUMN address TO location;
 
@@ -310,3 +313,66 @@ BEGIN
 	rn = 1;
 END;
 $$;
+
+ALTER POLICY "Allow all operations for authenticated users on their own data" 
+ON "public"."refinedpersons" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) 
+WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable insert for authenticated users only" 
+ON "public"."organizations" 
+TO "authenticated"
+WITH CHECK (true);
+
+ALTER POLICY "Enable read access for all users" 
+ON "public"."organizations" 
+TO "authenticated"
+USING (true);
+
+ALTER POLICY "Enable select for users based on user_id" 
+ON "public"."engagement" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable select for users based on user_id" 
+ON "public"."messages" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable select for users based on user_id" 
+ON "public"."persons" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable select for users based on user_id" 
+ON "public"."pointsofcontact" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable select for users based on user_id" 
+ON "public"."tags" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable select for users based on user_id" 
+ON "public"."tasks" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Enable update for users based on user_id" 
+ON "public"."persons" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) 
+WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Users can update their own data" 
+ON "public"."profiles" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) 
+WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER POLICY "Users can view their own data" 
+ON "public"."profiles" 
+TO "authenticated"
+USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
