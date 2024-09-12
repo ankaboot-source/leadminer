@@ -292,7 +292,7 @@
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="t('occurence_definition')">
+        <div v-tooltip.top="t('occurrence_definition')">
           {{ t('occurrence') }}
         </div>
       </template>
@@ -314,7 +314,7 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{ data.recency ? data.recency?.toLocaleDateString() : data.recency }}
+        {{ data.recency?.toLocaleDateString() }}
       </template>
       <template #filter="{ filterModel }">
         <DatePicker
@@ -1091,7 +1091,7 @@ table.p-datatable-table {
     "search_contacts": "Search contacts",
     "source_definition": "The mailbox this contact has been mined from",
     "source": "Source",
-    "occurence_definition": "Total occurrences of this contact",
+    "occurrence_definition": "Total occurrences of this contact",
     "occurrence": "Occurrence",
     "recency": "Recency",
     "recency_definition": "When was the last time this contact was seen",

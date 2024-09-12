@@ -1,3 +1,4 @@
+import { AuthSessionMissingError } from '@supabase/supabase-js';
 import { FetchError } from 'ofetch';
 
 interface ErrorStatusMessages {
@@ -23,27 +24,58 @@ const usePVToastService = () => {
 };
 
 export default defineNuxtPlugin((nuxtApp) => {
+  const toastService = usePVToastService();
+
   nuxtApp.vueApp.config.errorHandler = (error) => {
     let message = ERROR_STATUS_MESSAGES[500];
 
-    if (error instanceof FetchError && error.message === 'Network Error') {
-      message = ERROR_STATUS_MESSAGES[503];
-    }
+    const isFetchError = (err: unknown): err is FetchError =>
+      err instanceof FetchError;
 
-    if (error instanceof FetchError && error.response) {
-      if (error.response.status === 402) return; // Handled by the Credits component
-      message =
-        error.response._data.message ??
-        ERROR_STATUS_MESSAGES[error.response.status];
+    const isUnauthorized = (err: unknown) =>
+      error instanceof AuthSessionMissingError ||
+      (isFetchError(err) && err.response?.status === 401);
+
+    const isNetworkError = (err: unknown) =>
+      isFetchError(err) && err.message === 'Network Error';
+
+    /**
+     * Handle session inactivity
+     */
+    if (isUnauthorized(error)) {
+      toastService.add({
+        summary: 'Session Expired',
+        severity: 'warn',
+        detail: 'You have been logged out due to inactivity.',
+        life: 5000,
+      });
+      signOutManually();
+    } else {
+      /**
+       * Handle network is disconnected
+       */
+      if (isNetworkError(error)) {
+        message = ERROR_STATUS_MESSAGES[503];
+      } else if (isFetchError(error) && error.response) {
+        /**
+         * Handle more general errors except 402 because it's handled by Credits component
+         */
+        if (error.response.status !== 402) {
+          message =
+            error.response._data.message ??
+            ERROR_STATUS_MESSAGES[error.response.status];
+        }
+      }
+
+      toastService.add({
+        summary: 'Oops!',
+        severity: 'error',
+        detail: message ?? 'Something went wrong.',
+        life: 3000,
+      });
+
+      // eslint-disable-next-line no-console
+      console.error(error);
     }
-    // eslint-disable-next-line no-console
-    console.error(error);
-    const toastService = usePVToastService();
-    toastService.add({
-      summary: 'Oops!',
-      severity: 'error',
-      detail: message ?? 'Something went wrong.',
-      life: 3000,
-    });
   };
 });

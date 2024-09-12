@@ -59,6 +59,7 @@
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import type { MiningSource, MiningSourceType } from '~/types/mining';
+import { FetchError } from 'ofetch';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -103,9 +104,12 @@ function selectSource(source: MiningSourceType | string) {
 onMounted(async () => {
   try {
     await $leadminerStore.fetchMiningSources();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
-    throw new Error(t('fetch_sources_failed'));
+    if (error instanceof FetchError && error.response?.status === 401) {
+      throw error;
+    } else {
+      throw new Error(t('fetch_sources_failed'));
+    }
   }
 });
 

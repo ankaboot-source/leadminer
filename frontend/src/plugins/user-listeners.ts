@@ -14,7 +14,7 @@ import type { $Fetch } from 'nitropack';
  * @returns A promise that resolves to the user's profile data.
  * @throws An error if fetching the profile fails.
  */
-async function getCurrentUserProfile(client: SupabaseClient): Promise<Profile> {
+async function getCurrentUserProfile(client: SupabaseClient) {
   const { data, error } = await client
     .from('profiles')
     .select('*')
@@ -77,11 +77,8 @@ async function updateUserEmailTemplatesI18n(
 export default defineNuxtPlugin({
   name: 'user-listeners',
   async setup() {
-    const $user = useSupabaseUser();
-    const $session = useSupabaseSession();
     const $supabaseClient = useSupabaseClient();
     const $currentProfile = useSupabaseUserProfile();
-    const $saasEdgeFunctions = useNuxtApp().$saasEdgeFunctions as $Fetch;
 
     let channel: RealtimeChannel | null;
     const authenticated = ref(false);
@@ -90,6 +87,10 @@ export default defineNuxtPlugin({
      * Starts watching for authentication changes.
      */
     const startAuthenticationWatcher = () => {
+      const $user = useSupabaseUser();
+      const $session = useSupabaseSession();
+      const $saasEdgeFunctions = useNuxtApp().$saasEdgeFunctions as $Fetch;
+
       watch(authenticated, async (auth) => {
         if (!auth) {
           if (channel) await $supabaseClient.removeChannel(channel);
@@ -97,9 +98,9 @@ export default defineNuxtPlugin({
         }
 
         const { provider, providerToken, emailTemplate, language } = {
-          provider: $user.value.app_metadata.provider,
-          providerToken: $session.value.provider_token,
-          emailTemplate: $user.value.user_metadata.EmailTemplate,
+          provider: $user.value?.app_metadata.provider,
+          providerToken: $session.value?.provider_token,
+          emailTemplate: $user.value?.user_metadata.EmailTemplate,
           language: navigator.language.split('-')[0],
         };
 
@@ -125,7 +126,7 @@ export default defineNuxtPlugin({
             event: '*',
             schema: 'public',
             table: 'profiles',
-            filter: `user_id=eq.${$user.value.id}`,
+            filter: `user_id=eq.${$user.value?.id}`,
           },
           (payload: RealtimePostgresChangesPayload<Profile>) => {
             $currentProfile.value = payload.new as Profile;
@@ -139,7 +140,7 @@ export default defineNuxtPlugin({
      * Fetches and assigns the user profile on the server
      * to avoid empty fields in "settings" during hard refresh.
      */
-    if ($session.value) {
+    if ((await $supabaseClient.auth.getUser()).data.user) {
       $currentProfile.value = await getCurrentUserProfile($supabaseClient);
     }
 
