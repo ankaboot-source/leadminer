@@ -108,7 +108,7 @@ export default class EmailMessageTagging implements TaggingEngine {
       emailTags.push({
         source: this.tagSourceFromEmailAddress,
         name: 'role',
-        reachable: REACHABILITY.UNSURE
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       });
     }
 

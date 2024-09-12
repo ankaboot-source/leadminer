@@ -1,13 +1,19 @@
 import type { Contact } from '~/types/contact';
 import type { Organization } from '~/types/organization';
 
-function convertDates(data: Contact[]) {
+export function convertDates(data: Contact[]) {
   return [...data].map((d) => {
     if (d.recency) {
       d.recency = new Date(d.recency);
     }
     if (d.seniority) {
       d.seniority = new Date(d.seniority);
+    }
+    if (d.updated_at) {
+      d.updated_at = new Date(d.updated_at);
+    }
+    if (d.created_at) {
+      d.created_at = new Date(d.created_at);
     }
     return d;
   });
@@ -115,6 +121,7 @@ export const tags = () => {
     { value: 'personal', label: t('contact.tag.personal') },
     { value: 'group', label: t('contact.tag.group') },
     { value: 'chat', label: t('contact.tag.chat') },
+    { value: 'role', label: t('contact.tag.role') },
   ];
 };
 
@@ -163,6 +170,8 @@ export function getTagColor(tag: string) {
     case 'group':
       return 'secondary';
     case 'chat':
+      return 'secondary';
+    case 'role':
       return 'secondary';
     default:
       return undefined;

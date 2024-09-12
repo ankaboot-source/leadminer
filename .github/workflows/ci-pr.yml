@@ -55,7 +55,7 @@ jobs:
         with:
           coverage-file: backend/coverage/coverage-summary.json
           access-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Report results to DeepSource [backend]
+      - name: Update DeepSource code coverage
         run: |
           curl https://deepsource.io/cli | sh
           ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
@@ -77,17 +77,5 @@ jobs:
         run: cd frontend && npm run lint
       - name: Check formatting
         run: cd frontend && npm run prettier
-      - name: Run test coverage
-        run: cd backend && npm run coverage
-
-      - name: debug
-        run: cd backend && ls -R
-
-      - name: Report results to DeepSource [frontend]
-        run: |
-          curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./frontend/coverage/*.info
-        env:
-          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
       # - name: Run unit tests (One day)
       #   run: cd frontend && npm run test:unit

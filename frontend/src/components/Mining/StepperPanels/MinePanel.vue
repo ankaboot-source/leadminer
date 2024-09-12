@@ -211,7 +211,7 @@ onMounted(async () => {
 });
 
 watch(extractionFinished, (finished) => {
-  if (!canceled.value && finished) {
+  if (finished || canceled.value) {
     $toast.add({
       severity: 'success',
       summary: t('mining_done'),
@@ -271,7 +271,17 @@ async function startMining() {
 async function haltMining() {
   canceled.value = true;
   try {
-    await $leadminerStore.stopMining();
+    const processes = [
+      $leadminerStore.miningTask?.processes.fetch,
+      $leadminerStore.miningTask?.processes.extract,
+    ].filter(Boolean) as string[];
+
+    const cancelEntireTask = processes.length === 0;
+
+    await $leadminerStore.stopMining(
+      cancelEntireTask,
+      cancelEntireTask ? null : processes,
+    );
     $toast.add({
       severity: 'success',
       summary: t('mining_stopped'),

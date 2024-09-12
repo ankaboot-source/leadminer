@@ -12,9 +12,13 @@ import { MiningTask, RedactedTask } from './types';
  * @returns - A new task object with sensitive data removed.
  */
 export function redactSensitiveData(task: MiningTask): RedactedTask {
+  const processes = Object.fromEntries(
+    Object.entries(task.process).map(([name, p]) => [name, p.id])
+  );
   return {
     userId: task.userId,
     miningId: task.miningId,
+    processes,
     progress: {
       ...task.progress
     }

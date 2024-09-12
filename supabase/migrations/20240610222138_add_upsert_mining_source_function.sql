@@ -1,4 +1,5 @@
 -- Create the new function
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 CREATE OR REPLACE FUNCTION upsert_mining_source(
     _user_id uuid,
     _email text,
@@ -15,4 +16,4 @@ BEGIN
         type = EXCLUDED.type;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
-SET search_path TO extentions, public;
+SET search_path TO extensions, public;
