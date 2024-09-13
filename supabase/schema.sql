@@ -4,11 +4,9 @@ CREATE TABLE "public"."domains" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text",
     "last_check" timestamp with time zone,
-    "email_server_type" "text"
+    "email_server_type" "text",
+    PRIMARY KEY ("id")
 );
-
-ALTER TABLE ONLY "public"."domains"
-    ADD CONSTRAINT "domains_pkey" PRIMARY KEY ("id");
 
 ALTER TABLE "public"."domains" ENABLE ROW LEVEL SECURITY;
 
@@ -20,16 +18,12 @@ CREATE TYPE "public"."engagement_type_enum" AS ENUM (
 );
 
 CREATE TABLE "public"."engagement" (
-    "user_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id"),
     "engagement_type" "public"."engagement_type_enum" NOT NULL,
     "engagement_created_at" timestamp with time zone DEFAULT "now"(),
-    "email" "text" NOT NULL
+    "email" "text" NOT NULL,
+    PRIMARY KEY ("email", "user_id", "engagement_type")
 );
-
-ALTER TABLE ONLY "public"."engagement"
-    ADD CONSTRAINT "engagement_pkey" PRIMARY KEY ("email", "user_id", "engagement_type");
-ALTER TABLE ONLY "public"."engagement"
-    ADD CONSTRAINT "engagement_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
 
 CREATE POLICY "Enable select for users based on user_id" ON "public"."engagement" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
@@ -45,7 +39,8 @@ CREATE TABLE "public"."messages" (
     "list_id" "text",
     "message_id" "text" NOT NULL,
     "references" "text"[],
-    "conversation" boolean
+    "conversation" boolean,
+    PRIMARY KEY ("message_id", "user_id")
 )
 PARTITION BY HASH ("user_id");
 
@@ -57,7 +52,8 @@ CREATE TABLE "public"."messages_0" (
     "list_id" "text",
     "message_id" "text" NOT NULL,
     "references" "text"[],
-    "conversation" boolean
+    "conversation" boolean,
+    PRIMARY KEY ("message_id", "user_id")
 );
 CREATE TABLE "public"."messages_1" (
     "channel" "text",
@@ -68,6 +64,7 @@ CREATE TABLE "public"."messages_1" (
     "message_id" "text" NOT NULL,
     "references" "text"[],
     "conversation" boolean
+    PRIMARY KEY ("message_id", "user_id")
 );
 CREATE TABLE "public"."messages_2" (
     "channel" "text",
@@ -78,20 +75,12 @@ CREATE TABLE "public"."messages_2" (
     "message_id" "text" NOT NULL,
     "references" "text"[],
     "conversation" boolean
+    PRIMARY KEY ("message_id", "user_id")
 );
 
 ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_0" FOR VALUES WITH (modulus 3, remainder 0);
 ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_1" FOR VALUES WITH (modulus 3, remainder 1);
 ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_2" FOR VALUES WITH (modulus 3, remainder 2);
-
-ALTER TABLE ONLY "public"."messages"
-    ADD CONSTRAINT "messages_pkey" PRIMARY KEY ("message_id", "user_id");
-ALTER TABLE ONLY "public"."messages_0"
-    ADD CONSTRAINT "messages_0_pkey" PRIMARY KEY ("message_id", "user_id");
-ALTER TABLE ONLY "public"."messages_1"
-    ADD CONSTRAINT "messages_1_pkey" PRIMARY KEY ("message_id", "user_id");
-ALTER TABLE ONLY "public"."messages_2"
-    ADD CONSTRAINT "messages_2_pkey" PRIMARY KEY ("message_id", "user_id");
 
 ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_0_pkey";
 ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_1_pkey";
@@ -111,13 +100,9 @@ CREATE TABLE "public"."mining_sources" (
     "credentials" "bytea" NOT NULL,
     "email" "text" NOT NULL,
     "type" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL
+    "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id"),
+    PRIMARY KEY ("email", "user_id")
 );
-
-ALTER TABLE ONLY "public"."mining_sources"
-    ADD CONSTRAINT "mining_sources_pkey" PRIMARY KEY ("email", "user_id");
-ALTER TABLE ONLY "public"."mining_sources"
-    ADD CONSTRAINT "mining_sources_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
 
 ALTER TABLE "public"."mining_sources" ENABLE ROW LEVEL SECURITY;
 
@@ -135,13 +120,9 @@ CREATE TABLE "public"."organizations" (
     "email" "text",
     "image" "text",
     "founder" "uuid",
-    "_domain" "uuid"
+    "_domain" "uuid" REFERENCES "public"."domains"("id"),
+    PRIMARY KEY ("id")
 );
-
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations__domain_fkey" FOREIGN KEY ("_domain") REFERENCES "public"."domains"("id");
 
 CREATE POLICY "Enable insert for authenticated users only" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
 
@@ -170,11 +151,9 @@ CREATE TABLE "public"."persons" (
     "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
     "source" "text" NOT NULL,
     "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
-    "verification_details" "json"
+    "verification_details" "json",
+    PRIMARY KEY ("email", "user_id", "source")
 );
-
-ALTER TABLE ONLY "public"."persons"
-    ADD CONSTRAINT "persons_pkey" PRIMARY KEY ("email", "user_id", "source");
 
 CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
 
@@ -198,7 +177,8 @@ CREATE TABLE "public"."pointsofcontact" (
     "cc" boolean,
     "bcc" boolean,
     "body" boolean,
-    "person_email" "text"
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
 )
 PARTITION BY HASH ("user_id");
 
@@ -213,7 +193,8 @@ CREATE TABLE "public"."pointsofcontact_0" (
     "cc" boolean,
     "bcc" boolean,
     "body" boolean,
-    "person_email" "text"
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
 );
 CREATE TABLE "public"."pointsofcontact_1" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
@@ -226,7 +207,8 @@ CREATE TABLE "public"."pointsofcontact_1" (
     "cc" boolean,
     "bcc" boolean,
     "body" boolean,
-    "person_email" "text"
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
 );
 CREATE TABLE "public"."pointsofcontact_2" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
@@ -239,22 +221,13 @@ CREATE TABLE "public"."pointsofcontact_2" (
     "cc" boolean,
     "bcc" boolean,
     "body" boolean,
-    "person_email" "text"
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
 );
 
 ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_0" FOR VALUES WITH (modulus 3, remainder 0);
 ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_1" FOR VALUES WITH (modulus 3, remainder 1);
 ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_2" FOR VALUES WITH (modulus 3, remainder 2);
-
-ALTER TABLE ONLY "public"."pointsofcontact"
-    ADD CONSTRAINT "pointsofcontact_pkey" PRIMARY KEY ("id", "user_id");
-ALTER TABLE ONLY "public"."pointsofcontact_0"
-    ADD CONSTRAINT "pointsofcontact_0_pkey" PRIMARY KEY ("id", "user_id");
-ALTER TABLE ONLY "public"."pointsofcontact_1"
-    ADD CONSTRAINT "pointsofcontact_1_pkey" PRIMARY KEY ("id", "user_id");
-ALTER TABLE ONLY "public"."pointsofcontact_2"
-    ADD CONSTRAINT "pointsofcontact_2_pkey" PRIMARY KEY ("id", "user_id");
-
 
 ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_0_pkey";
 ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_1_pkey";
@@ -271,18 +244,14 @@ ALTER TABLE "public"."pointsofcontact_2" ENABLE ROW LEVEL SECURITY;
 -- Table profiles
 
 CREATE TABLE "public"."profiles" (
-    "user_id" "uuid" NOT NULL,
+    "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id") ON DELETE CASCADE,
     "full_name" "text",
     "credits" integer DEFAULT 0,
     "stripe_customer_id" "text",
     "email" "text",
-    "stripe_subscription_id" "text"
+    "stripe_subscription_id" "text",
+    PRIMARY KEY ("user_id")
 );
-
-ALTER TABLE ONLY "public"."profiles"
-    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("user_id");
-ALTER TABLE ONLY "public"."profiles"
-    ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 CREATE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -329,12 +298,10 @@ CREATE TABLE "public"."refinedpersons" (
     "replied_conversations" integer,
     "seniority" timestamp with time zone,
     "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    PRIMARY KEY ("email", "user_id")
 );
 
-ALTER TABLE ONLY "public"."refinedpersons"
-    ADD CONSTRAINT "refinedpersons_pkey" PRIMARY KEY ("email", "user_id");
-    
 CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
 
 CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
@@ -348,7 +315,8 @@ CREATE TABLE "public"."tags" (
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "reachable" integer,
-    "source" "text"
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
 )
 PARTITION BY HASH ("user_id");
 
@@ -357,35 +325,29 @@ CREATE TABLE "public"."tags_0" (
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "reachable" integer,
-    "source" "text"
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
 );
 CREATE TABLE "public"."tags_1" (
     "person_email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "reachable" integer,
-    "source" "text"
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
 );
 CREATE TABLE "public"."tags_2" (
     "person_email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "reachable" integer,
-    "source" "text"
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
 );
 
 ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_0" FOR VALUES WITH (modulus 3, remainder 0);
 ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_1" FOR VALUES WITH (modulus 3, remainder 1);
 ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_2" FOR VALUES WITH (modulus 3, remainder 2);
-
-ALTER TABLE ONLY "public"."tags"
-    ADD CONSTRAINT "tags_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-ALTER TABLE ONLY "public"."tags_0"
-    ADD CONSTRAINT "tags_0_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-ALTER TABLE ONLY "public"."tags_1"
-    ADD CONSTRAINT "tags_1_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-ALTER TABLE ONLY "public"."tags_2"
-    ADD CONSTRAINT "tags_2_pkey" PRIMARY KEY ("person_email", "name", "user_id");
 
 ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_0_pkey";
 ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_1_pkey";
@@ -430,11 +392,9 @@ CREATE TABLE "public"."tasks" (
     "details" "jsonb",
     "duration" integer,
     "stopped_at" timestamp with time zone,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    PRIMARY KEY ("id")
 );
-
-ALTER TABLE ONLY "public"."tasks"
-    ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
 
 CREATE POLICY "Enable select for users based on user_id" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
