@@ -1,0 +1,21 @@
+{
+  "name": "leadminer",
+  "version": "1.0.0",
+  "description": "leadminer",
+  "private": true,
+  "scripts": {
+    "install-deps": "npm i && npm run install-deps:backend && npm run install-deps:frontend",
+    "install-deps:backend": "npm i --prefix ./backend",
+    "install-deps:frontend": "npm i --prefix ./frontend",
+    "dev:supabase": "supabase start",
+    "dev:frontend": "npm run dev --prefix ./frontend",
+    "dev:backend-api": "npm run dev-api --prefix ./backend",
+    "dev:backend-worker": "npm run dev-worker --prefix ./backend",
+    "dev:backend-email-worker": "npm run dev-email-worker --prefix ./backend"
+  },
+  "author": "ankaboot",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "supabase": "^1.24.0"
+  }
+}

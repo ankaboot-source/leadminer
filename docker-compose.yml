@@ -1,0 +1,66 @@
+version: "3.1"
+
+services:
+  redis:
+    image: redis:alpine
+    command: --port ${REDIS_PORT}
+    restart: always
+
+  leadminer-api:
+    image: leadminer-api:git
+    container_name: leadminer_api
+    build:
+      context: backend
+      dockerfile: api.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    ports:
+      - ${LEADMINER_API_PORT}:${LEADMINER_API_PORT}
+
+  leadminer-worker:
+    image: leadminer-worker:git
+    container_name: leadminer_worker
+    build:
+      context: backend
+      dockerfile: worker.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  leadminer-email-worker:
+    image: leadminer-email-worker:git
+    container_name: leadminer_email_worker
+    build:
+      context: backend
+      dockerfile: email-verification-worker.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  leadminer-frontend:
+    image: leadminer-frontend:git
+    container_name: nuxt_frontend
+    build:
+      context: frontend
+      args:
+        SERVER_ENDPOINT: ${LEADMINER_API_HOST}
+        SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL}
+        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+        AVERAGE_EXTRACTION_RATE: ${AVERAGE_EXTRACTION_RATE}
+        BANNER_IMAGE_URL: ${BANNER_IMAGE_URL}
+        POSTHOG_API_KEY: ${POSTHOG_API_KEY}
+        POSTHOG_INSTANCE_ADDRESS: ${POSTHOG_INSTANCE_ADDRESS}
+        ENABLE_CREDIT: ${ENABLE_CREDIT}
+        EXTERNAL_REFILL_CREDITS_LINK: ${EXTERNAL_REFILL_CREDITS_LINK}
+        SAAS_SUPABASE_PROJECT_URL: ${SAAS_SUPABASE_PROJECT_URL}
+        SAAS_SUPABASE_ANON_KEY: ${SAAS_SUPABASE_ANON_KEY}
+
+    ports:
+      - 8020:3000
+    restart: always
+    depends_on:
+      - leadminer-api

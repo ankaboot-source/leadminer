@@ -1,0 +1,237 @@
+<template>
+  <Button
+    outlined
+    label="Other email provider (IMAP)"
+    icon="pi pi-inbox"
+    @click="show = true"
+  />
+  <Dialog
+    v-model:visible="show"
+    modal
+    header="Sign-in with IMAP"
+    class="md:w-[30rem]"
+  >
+    <div class="flex flex-col space-y-2">
+      <div class="w-full flex flex-col gap-1">
+        <label for="email">Email</label>
+        <InputText
+          v-model="imapEmail"
+          :disabled="loadingSave"
+          :invalid="invalidEmailInput(imapEmail)"
+          class="w-full"
+          @click="resetAdvancedSettings"
+          @update:model-value="imapAdvancedSettings = false"
+        />
+      </div>
+      <div class="w-full flex flex-col gap-1">
+        <label class="capitalize" for="password">{{
+          $t('auth.password')
+        }}</label>
+        <InputText
+          v-model="imapPassword"
+          class="w-full"
+          type="password"
+          :invalid="invalidImapPassword(imapPassword)"
+        />
+      </div>
+      <template v-if="imapAdvancedSettings">
+        <div class="w-full flex flex-col gap-1">
+          <label for="host">Host</label>
+          <InputText
+            v-model="imapHost"
+            class="w-full"
+            :invalid="invalidImapHost(imapHost)"
+          />
+        </div>
+        <div class="w-full flex flex-col gap-1">
+          <label for="port">Port</label>
+          <InputNumber
+            v-model="imapPort"
+            show-buttons
+            class="w-full"
+            :invalid="isInvalidImapPort(imapPort)"
+          />
+        </div>
+        <div class="w-full flex flex-row items-center gap-1">
+          <Checkbox v-model="imapSecureConnection" :binary="true" />
+          <label for="port">TLS/SSL</label>
+        </div>
+      </template>
+
+      <div class="flex justify-end w-full gap-2 pt-4">
+        <Button
+          type="button"
+          label="Cancel"
+          severity="secondary"
+          @click="closeDialog()"
+        ></Button>
+        <Button
+          type="button"
+          label="Connect"
+          :loading="loadingSave"
+          :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
+          @click="onSubmitImapCredentials"
+        ></Button>
+      </div>
+    </div>
+  </Dialog>
+</template>
+<script setup lang="ts">
+import { FetchError } from 'ofetch';
+
+import { isInvalidEmail } from '@/utils/email';
+import type { MiningSource } from '~/types/mining';
+
+interface ImapConfigs {
+  host: string;
+  port: number;
+  secure: boolean;
+}
+
+const show = defineModel<boolean>('show');
+
+const $toast = useToast();
+const { $api } = useNuxtApp();
+const $user = useSupabaseUser();
+const imapSource = defineModel<MiningSource>('source');
+
+const imapAdvancedSettings = ref(false);
+
+const imapEmail = ref<string>($user.value?.email ?? '');
+const imapPassword = ref<string>('');
+const imapHost = ref<string>('');
+const imapPort = ref(993);
+const imapSecureConnection = ref(true);
+
+const formErrors: Record<string, Ref> = {
+  email: ref(false),
+  password: ref(false),
+  host: ref(false),
+  port: ref(false),
+};
+
+const loadingSave = ref(false);
+
+const invalidEmailInput = (email: string | undefined) =>
+  formErrors.email.value || !email?.length || isInvalidEmail(email);
+
+const invalidImapPassword = (password: string | undefined) =>
+  formErrors.password.value || !password?.length || password.length === 0;
+
+const isInvalidImapPort = (port: number) =>
+  formErrors.port.value || !(port > 0 && port <= 65536);
+
+const invalidImapHost = (host: string | undefined) =>
+  formErrors.host.value || !host?.length || host.length === 0;
+
+const resetAdvancedSettings = (): void => {
+  imapHost.value = '';
+  imapPort.value = 993;
+  imapSecureConnection.value = true;
+};
+
+function resetFormErrors() {
+  Object.values(formErrors).forEach((error) => {
+    error.value = false;
+  });
+}
+
+const closeDialog = (): void => {
+  // reset for errors
+  resetFormErrors();
+  imapAdvancedSettings.value = false;
+  show.value = false;
+  imapEmail.value = $user.value?.email as string;
+};
+
+function handleImapConfigsNotDetected() {
+  $toast.add({
+    severity: 'warn',
+    summary: 'Sign-in with IMAP',
+    detail:
+      'Unable to detect your IMAP configuration. Please add them manually.',
+    life: 5000,
+  });
+  imapAdvancedSettings.value = true;
+}
+
+function handleAuthenticationErrors(err: FetchError) {
+  if (err.data?.fields) {
+    err.data?.fields.forEach((field: string) => {
+      if (['host', 'port'].includes(field)) {
+        imapAdvancedSettings.value = true;
+      }
+      formErrors[field].value = true;
+    });
+  }
+
+  $toast.add({
+    severity: 'error',
+    summary: 'Sign-in with IMAP',
+    detail: err.data.message,
+    life: 5000,
+  });
+}
+
+async function getImapConfigsForEmail(
+  email: string
+): Promise<ImapConfigs | null> {
+  try {
+    const configs =
+      imapHost.value && imapPort.value
+        ? {
+            host: imapHost.value,
+            port: imapPort.value,
+            secure: imapSecureConnection.value,
+          }
+        : await $api<ImapConfigs | null>(`/imap/config/${email}`, {
+            method: 'GET',
+          });
+    return configs;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function onSubmitImapCredentials() {
+  loadingSave.value = true;
+  try {
+    resetFormErrors();
+    const configs = await getImapConfigsForEmail(imapEmail.value);
+
+    if (!configs) {
+      loadingSave.value = false;
+      handleImapConfigsNotDetected();
+      return;
+    }
+
+    imapHost.value = configs.host;
+    imapPort.value = configs.port;
+    imapSecureConnection.value = configs.secure;
+
+    await $api('/imap/mine/sources/imap', {
+      method: 'POST',
+      body: {
+        email: imapEmail.value,
+        password: imapPassword.value,
+        ...configs,
+      },
+    });
+
+    imapSource.value = {
+      type: 'imap',
+      email: imapEmail.value,
+      isValid: true,
+    };
+    closeDialog();
+  } catch (err) {
+    if (err instanceof FetchError) {
+      handleAuthenticationErrors(err);
+    } else {
+      throw err;
+    }
+  } finally {
+    loadingSave.value = false;
+  }
+}
+</script>

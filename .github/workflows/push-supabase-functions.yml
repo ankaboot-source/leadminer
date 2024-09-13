@@ -1,0 +1,26 @@
+name: Push Supabase functions to leadminer.io
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'saas-supabase/functions/**'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Push supabase functions to leadminer.io
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_PAT }}
+        with:
+          source_file: 'saas-supabase/supabase'
+          destination_repo: 'ankaboot-source/leadminer.io'
+          destination_folder: './saas-supabase'
+          user_email: 'deploy@leadminer.io'
+          user_name: 'deploy-bot'
+          commit_message: 'Updating supabase functions'

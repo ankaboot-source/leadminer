@@ -1,0 +1,38 @@
+version = 1
+
+test_patterns = ["backend/test/unit/**/*.test.js"]
+
+exclude_patterns = [
+  "**/node_modules/",
+  "**/package-lock.json",
+  "frontend/dist",
+  "frontend/public",
+  "backend/logs",
+  "backend/coverage",
+  "backend/.nyc_output"
+]
+
+[[analyzers]]
+name = "test-coverage"
+enabled = false
+
+[[analyzers]]
+name = "sql"
+
+[[analyzers]]
+name = "secrets"
+
+[[analyzers]]
+name = "docker"
+
+  [analyzers.meta]
+  dockerfile_paths = [
+    "backend/Dockerfile",
+    "frontend/Dockerfile"
+  ]
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  plugins = ["vue"]

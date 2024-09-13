@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.43.2",
+    "express": "npm:express",
+    "cors": "npm:cors"
+  }
+}

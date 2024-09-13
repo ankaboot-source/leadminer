@@ -1,0 +1,1 @@
+DROP TRIGGER IF EXISTS "deduct_user_credits_trigger" ON tasks;

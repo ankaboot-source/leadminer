@@ -1,0 +1,174 @@
+{
+  "emailBody": "\n    -------- Forwarded Message --------\n    Subject: \tFwd: Fiches de paie\n    Date: \tTue, 5 Apr 2022 16:46:20 +0200\n    From: \tBadreddine Ladjemi <badredine.ladjemi@gmail.com>\n    To: \tyoussri <youssri@flyweight.tech>\n    \n    \n    \n    \n    ---------- Forwarded message ---------\n    From: Wafa BELAIDI <wapakaaca.idea@lmmmmaaaac.com.tn>\n    Date: Tue, Apr 5, 2022 at 4:43 PM\n    Subject: Fiches de paie\n    To: Badreddine Ladjemi <badredine.ladjemi@gmail.com>\n    \n    \n    Bonne réception\n    \n    \n    \n    -- \n    Badreddine LADJEMI\n    \n    tel/signal: +33 6 24 33 44 42\n    tel/whatsapp: +216 98 793 002\n    matrix: baderdean@matrix.org <a href=\"mailto:name.lastname@gmail.com\">contact me</a>",
+  "randomEmails": "email@example.com email@subdomain.example.com email@subdomain-example.com firstname.lastname@example.com firstname-lastame@example.com firstname+lastame@example.com firstname--lastname@example.com test.1@example.com firstname.lastname+test@example.com test.5.tester@example.com 1234567890@example.com email@example.name email@llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch.name email@example.TRAVELERSINSURANCE firstname++lastame@example.com firstname..lastame@example.com  email@example.com emailexample.com email@-example.com email@example..com email.@gmail.c email@example.commmmmmmmmmmmmmmmmmmmss email@example.123 email@123.123.123.123 email@[123.123.123.123] email@111.222.333.44444 ++++++++++++@gmail.co こんにちは@example.com email@example..com <a href=\"mailto:name.lastname@gmail.com\">contact me</a>",
+  "validrandomEmails": "email@example.com email@subdomain.example.com email@subdomain-example.com firstname.lastname@example.com firstname-lastame@example.com firstname+lastame@example.com firstname--lastname@example.com test.1@example.com firstname.lastname+test@example.com test.5.tester@example.com 1234567890@example.com email@example.name email@llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch.name email@example.TRAVELERSINSURANCE name.lastname@gmail.com",
+  "EmailNameTest": [
+    "<leadminerTeam@ankaboot.fr>, leadminer team <leadminer-team@leadminer.io>, لغة عربية jhjhd azertyuiop!azertyuiop@leadminer.io, لغة english عربية <leadminer-team@leadminer.io>, русский язык <leadminer-team@leadminer.io>, لغة عربية <leadminer-team@leadminer.io>"
+  ],
+  "OneEmailNameTest": ["<leadminerTeam@ankaboot.fr>"],
+  "expectedEmailNameAddress": [
+    {
+      "address": "leadminerteam@ankaboot.fr",
+      "identifier": "leadminerTeam",
+      "domain": "ankaboot.fr"
+    },
+
+    {
+      "name": "leadminer team",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
+    },
+    {
+      "name": "لغة english عربية",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
+    },
+
+    {
+      "name": "русский язык",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
+    },
+    {
+      "name": "لغة عربية",
+      "address": "leadminer-team@leadminer.io",
+      "identifier": "leadminer-team",
+      "domain": "leadminer.io"
+    }
+  ],
+  "minedDataExample": [
+    { "email": { "name": "", "address": "leadminer-team@leadminer.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer2.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer3.io" } },
+    { "email": { "name": "", "address": "leadminer-team@leadminer4.io" } }
+  ],
+  "expectedForBodyExtraction": [
+    "badredine.ladjemi@gmail.com",
+    "youssri@flyweight.tech",
+    "wapakaaca.idea@lmmmmaaaac.com.tn",
+    "baderdean@matrix.org",
+    "name.lastname@gmail.com"
+  ],
+  "dataForFormat": [
+    { "name": "", "address": "badredine.ladjemi@gmail.com" },
+    { "name": "", "address": "youssri@flyweight.tech" },
+    { "name": "", "address": "wapakaaca.idea@lmmmmaaaac.com.tn" },
+    { "name": "", "address": "badredine.ladjemi@gmail.com" },
+    { "name": "", "address": "baderdean@matrix.org" }
+  ],
+  "testPath": [
+    { "label": "Brouillons" },
+    { "label": "Corbeille" },
+    {
+      "label": "INBOX",
+      "children": [
+        {
+          "label": "test",
+          "children": [
+            {
+              "label": "test2"
+            }
+          ]
+        }
+      ]
+    },
+    { "label": "Spam" }
+  ],
+  "FormatForBody": "",
+  "NoReply": [
+    "send-as-noreply@leadminer.io",
+    "noreply@leadminer.io",
+    "no-reply@leadminer.io",
+    "notifications-noreply@leadminer.io",
+    "accusereception@leadminer.io",
+    "support@leadminer.io",
+    "maildaemon@leadminer.io",
+    "notifications@leadminer.io"
+  ],
+  "ReadyData": [
+    { "email": { "name": "", "address": "leadminerTeam@ankaboot.fr" } },
+
+    {
+      "email": {
+        "name": "leadminer team",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+    {
+      "email": {
+        "name": "لغة عربية jhjhd",
+        "address": "azertyuiop!azertyuiop@leadminer.io"
+      }
+    },
+    {
+      "email": {
+        "name": "لغة english عربية",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+
+    {
+      "email": {
+        "name": "русский язык",
+        "address": "leadminer-team@leadminer.io"
+      }
+    },
+    {
+      "email": { "name": "لغة عربية", "address": "leadminer-team@leadminer.io" }
+    }
+  ],
+  "imapTreeExample": {
+    "Brouillons": {
+      "attribs": ["\\Drafts", "\\HasNoChildren"],
+      "delimiter": "/",
+      "children": null,
+      "parent": null
+    },
+    "INBOX": {
+      "attribs": ["\\HasChildren"],
+      "delimiter": "/",
+      "children": {
+        "mars": {
+          "attribs": ["\\Junk", "\\HasNoChildren"],
+          "delimiter": "/",
+          "children": null,
+          "parent": null
+        },
+        "Administratif": {
+          "attribs": ["\\Junk", "\\HasNoChildren"],
+          "delimiter": "/",
+          "children": null,
+          "parent": null
+        }
+      },
+      "parent": null
+    },
+    "Spam": {
+      "attribs": ["\\Junk", "\\HasNoChildren"],
+      "delimiter": "/",
+      "children": null,
+      "parent": null
+    }
+  },
+  "emailsHash": [
+    "leadminer@leadminer.io",
+    "9d18a49b21fc1eed4096d8c84eaebcddd03caa9eab536a885aac6a509a6b1edd"
+  ],
+  "queryExampleApi": {
+    "email": "leadminer",
+    "id": "123456789",
+    "token": "leaminer_123456789azertyuiop_",
+    "refresh_token": "/refresh_leadminer_token_123456789",
+    "access_token": "/access_leadminer_token_123456789"
+  },
+  "queryExampleImap": {
+    "email": "leadminer",
+    "id": "123456789",
+    "password": "_123456789azertyuiop_",
+    "host": "leadminer.io",
+    "port": "993"
+  }
+}

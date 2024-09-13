@@ -1,0 +1,38 @@
+name: Run CI checks
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+      - name: Install dependencies
+        run: cd backend && npm ci
+      - name: Check linting
+        run: cd backend && npm run lint
+      - name: Check formatting
+        run: cd backend && npm run prettier
+      - name: Run unit tests
+        run: cd backend && npm run test-ci:unit
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+      - name: Install dependencies
+        run: cd frontend && npm ci
+      - name: Check linting
+        run: cd frontend && npm run lint
+      - name: Check formatting
+        run: cd frontend && npm run prettier
+      # - name: Run unit tests (One day)
+      #   run: cd frontend && npm run test:unit

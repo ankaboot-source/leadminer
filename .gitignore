@@ -1,0 +1,20 @@
+# dependencies
+**/node_modules/
+/.vscode
+**/.nuxt
+# production
+/build
+.vscode
+**/.ncy_output/
+# misc
+.env
+**/.vscode/
+backend/.nyc_output
+frontend/coverage
+logs
+backend/app/out
+backend/out
+backend/config/production.yaml
+/dump.rdb
+backend/config/default.yml
+supabase/config.toml

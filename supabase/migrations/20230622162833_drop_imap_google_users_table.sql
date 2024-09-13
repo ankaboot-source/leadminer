@@ -1,0 +1,1 @@
+DROP TABLE imap_users, google_users;
