@@ -75,7 +75,7 @@ async function emailMessageHandler(
           (contact) =>
             !contact.tags.some(
               (tag) =>
-                'newsletter' === tag.name ||
+                tag.name === 'newsletter' ||
                 [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(tag.reachable)
             )
         )
@@ -94,7 +94,7 @@ async function emailMessageHandler(
             (contact) =>
               !contact.tags?.some(
                 (tag) =>
-                  'newsletter' === tag.name ||
+                  tag.name === 'newsletter' ||
                   [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(
                     tag.reachable
                   )
