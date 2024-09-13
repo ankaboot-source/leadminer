@@ -1,3 +1,4 @@
+import { REACHABILITY } from '../../utils/constants';
 import { MessageField } from '../extractors/types';
 
 export interface EmailMessageContent {
@@ -18,13 +19,13 @@ export type TagSource =
 
 export interface BasicTag {
   name: string;
-  reachable: number;
+  reachable: REACHABILITY;
   source: TagSource;
 }
 
 export interface HeaderTag {
   name: string;
-  reachable: number;
+  reachable: REACHABILITY;
   source: TagSource;
   fields: string[];
 }
@@ -32,7 +33,7 @@ export interface HeaderTag {
 export interface Tag {
   tag: {
     name: string;
-    reachable: number;
+    reachable: REACHABILITY;
   };
   prerequisiteConditions?: TaggingCondition[];
   /**

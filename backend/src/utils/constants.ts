@@ -33,10 +33,10 @@ export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
 // Tagging
 
 export enum REACHABILITY {
+  NONE = 0,
   DIRECT_PERSON = 1,
   MANY_OR_INDIRECT_PERSON = 2,
-  UNSURE = 3,
-  NONE = 0
+  UNSURE = 3
 }
 
 export const CHAT_EMAIL_ADDRESS_INCLUDES = [

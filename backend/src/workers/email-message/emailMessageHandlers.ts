@@ -5,6 +5,7 @@ import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
 import EmailMessage from '../../services/extractors/EmailMessage';
 import EmailTaggingEngine from '../../services/tagging';
+import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
 import logger from '../../utils/logger';
 import redis from '../../utils/redis';
@@ -73,7 +74,9 @@ async function emailMessageHandler(
           // filter out unreachable emails
           (contact) =>
             !contact.tags.some(
-              (tag) => ['newsletter'].includes(tag.name) || tag.reachable >= 3
+              (tag) =>
+                tag.name === 'newsletter' ||
+                [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(tag.reachable)
             )
         )
         .map((contact) => contact.email);
@@ -90,7 +93,11 @@ async function emailMessageHandler(
             // filter out unreachable emails
             (contact) =>
               !contact.tags?.some(
-                (tag) => ['newsletter'].includes(tag.name) || tag.reachable >= 3
+                (tag) =>
+                  tag.name === 'newsletter' ||
+                  [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(
+                    tag.reachable
+                  )
               )
           )
           .map((contact) => contact.email);
