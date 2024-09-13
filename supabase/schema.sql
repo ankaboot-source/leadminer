@@ -1,6 +1,6 @@
 -- Table domains
 
-CREATE TABLE IF NOT EXISTS "public"."domains" (
+CREATE TABLE "public"."domains" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text",
     "last_check" timestamp with time zone,
@@ -19,7 +19,7 @@ CREATE TYPE "public"."engagement_type_enum" AS ENUM (
     'ENRICH'
 );
 
-CREATE TABLE IF NOT EXISTS "public"."engagement" (
+CREATE TABLE "public"."engagement" (
     "user_id" "uuid" NOT NULL,
     "engagement_type" "public"."engagement_type_enum" NOT NULL,
     "engagement_created_at" timestamp with time zone DEFAULT "now"(),
@@ -37,7 +37,7 @@ ALTER TABLE "public"."engagement" ENABLE ROW LEVEL SECURITY;
 
 -- Table messages
 
-CREATE TABLE IF NOT EXISTS "public"."messages" (
+CREATE TABLE "public"."messages" (
     "channel" "text",
     "folder_path" "text",
     "date" timestamp with time zone,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS "public"."messages" (
 )
 PARTITION BY HASH ("user_id");
 
-CREATE TABLE IF NOT EXISTS "public"."messages_0" (
+CREATE TABLE "public"."messages_0" (
     "channel" "text",
     "folder_path" "text",
     "date" timestamp with time zone,
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS "public"."messages_0" (
     "references" "text"[],
     "conversation" boolean
 );
-CREATE TABLE IF NOT EXISTS "public"."messages_1" (
+CREATE TABLE "public"."messages_1" (
     "channel" "text",
     "folder_path" "text",
     "date" timestamp with time zone,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS "public"."messages_1" (
     "references" "text"[],
     "conversation" boolean
 );
-CREATE TABLE IF NOT EXISTS "public"."messages_2" (
+CREATE TABLE "public"."messages_2" (
     "channel" "text",
     "folder_path" "text",
     "date" timestamp with time zone,
@@ -106,7 +106,7 @@ ALTER TABLE "public"."messages_2" ENABLE ROW LEVEL SECURITY;
 
 -- Table mining_sources
 
-CREATE TABLE IF NOT EXISTS "public"."mining_sources" (
+CREATE TABLE "public"."mining_sources" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "credentials" "bytea" NOT NULL,
     "email" "text" NOT NULL,
@@ -124,7 +124,7 @@ ALTER TABLE "public"."mining_sources" ENABLE ROW LEVEL SECURITY;
 
 -- Table organizations
 
-CREATE TABLE IF NOT EXISTS "public"."organizations" (
+CREATE TABLE "public"."organizations" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text" NOT NULL,
     "alternate_name" "text",
@@ -152,7 +152,7 @@ ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
 
 -- Table persons
 
-CREATE TABLE IF NOT EXISTS "public"."persons" (
+CREATE TABLE "public"."persons" (
     "name" "text",
     "email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS "public"."persons" (
 ALTER TABLE ONLY "public"."persons"
     ADD CONSTRAINT "persons_pkey" PRIMARY KEY ("email", "user_id", "source");
 
-CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
+CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
 
 CREATE POLICY "Enable select for users based on user_id" ON "public"."persons" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 CREATE POLICY "Enable update for users based on user_id" ON "public"."persons" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
@@ -187,7 +187,7 @@ ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."persons";
 
 -- Table pointsofcontact
 
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact" (
+CREATE TABLE "public"."pointsofcontact" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "message_id" "text",
@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS "public"."pointsofcontact" (
 )
 PARTITION BY HASH ("user_id");
 
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_0" (
+CREATE TABLE "public"."pointsofcontact_0" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "message_id" "text",
@@ -215,7 +215,7 @@ CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_0" (
     "body" boolean,
     "person_email" "text"
 );
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_1" (
+CREATE TABLE "public"."pointsofcontact_1" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "message_id" "text",
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_1" (
     "body" boolean,
     "person_email" "text"
 );
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_2" (
+CREATE TABLE "public"."pointsofcontact_2" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "message_id" "text",
@@ -270,7 +270,7 @@ ALTER TABLE "public"."pointsofcontact_2" ENABLE ROW LEVEL SECURITY;
 
 -- Table profiles
 
-CREATE TABLE IF NOT EXISTS "public"."profiles" (
+CREATE TABLE "public"."profiles" (
     "user_id" "uuid" NOT NULL,
     "full_name" "text",
     "credits" integer DEFAULT 0,
@@ -284,7 +284,7 @@ ALTER TABLE ONLY "public"."profiles"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
-CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+CREATE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -295,7 +295,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."update_email_in_profile_table"() RETURNS "trigger"
+CREATE FUNCTION "public"."update_email_in_profile_table"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
@@ -316,7 +316,7 @@ ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."profiles";
 
 -- Table refinedpersons
 
-CREATE TABLE IF NOT EXISTS "public"."refinedpersons" (
+CREATE TABLE "public"."refinedpersons" (
     "user_id" "uuid" NOT NULL,
     "engagement" integer,
     "occurrence" integer,
@@ -335,7 +335,7 @@ CREATE TABLE IF NOT EXISTS "public"."refinedpersons" (
 ALTER TABLE ONLY "public"."refinedpersons"
     ADD CONSTRAINT "refinedpersons_pkey" PRIMARY KEY ("email", "user_id");
     
-CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
+CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
 
 CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
@@ -343,7 +343,7 @@ ALTER TABLE "public"."refinedpersons" ENABLE ROW LEVEL SECURITY;
 
 -- Table tags
 
-CREATE TABLE IF NOT EXISTS "public"."tags" (
+CREATE TABLE "public"."tags" (
     "person_email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
@@ -352,21 +352,21 @@ CREATE TABLE IF NOT EXISTS "public"."tags" (
 )
 PARTITION BY HASH ("user_id");
 
-CREATE TABLE IF NOT EXISTS "public"."tags_0" (
+CREATE TABLE "public"."tags_0" (
     "person_email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "reachable" integer,
     "source" "text"
 );
-CREATE TABLE IF NOT EXISTS "public"."tags_1" (
+CREATE TABLE "public"."tags_1" (
     "person_email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "reachable" integer,
     "source" "text"
 );
-CREATE TABLE IF NOT EXISTS "public"."tags_2" (
+CREATE TABLE "public"."tags_2" (
     "person_email" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
@@ -421,7 +421,7 @@ CREATE TYPE "public"."task_type_enum" AS ENUM (
     'clean'
 );
 
-CREATE TABLE IF NOT EXISTS "public"."tasks" (
+CREATE TABLE "public"."tasks" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid",
     "status" "public"."task_status_enum",
@@ -444,7 +444,7 @@ ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."tasks";
 
 -- Functions --
 
-CREATE OR REPLACE FUNCTION "public"."delete_user_data"("user_id" "uuid") RETURNS "void"
+CREATE FUNCTION "public"."delete_user_data"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
 DECLARE
@@ -463,7 +463,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean DEFAULT true) RETURNS "void"
+CREATE FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean DEFAULT true) RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
 DECLARE
@@ -560,7 +560,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
+CREATE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -632,7 +632,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
+CREATE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -706,7 +706,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."get_grouped_tags_by_person"("_userid" "uuid") RETURNS TABLE("email" "text", "tags" "text"[], "tags_reachability" integer[])
+CREATE FUNCTION "public"."get_grouped_tags_by_person"("_userid" "uuid") RETURNS TABLE("email" "text", "tags" "text"[], "tags_reachability" integer[])
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -733,7 +733,7 @@ BEGIN
 END
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."populate_refined"("_userid" "uuid") RETURNS "void"
+CREATE FUNCTION "public"."populate_refined"("_userid" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
 BEGIN
@@ -746,7 +746,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."refine_persons"("user_id" "uuid") RETURNS "void"
+CREATE FUNCTION "public"."refine_persons"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$ 
 DECLARE
@@ -836,7 +836,7 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."upsert_mining_source"("_user_id" "uuid", "_email" "text", "_type" "text", "_credentials" "text", "_encryption_key" "text") RETURNS "void"
+CREATE FUNCTION "public"."upsert_mining_source"("_user_id" "uuid", "_email" "text", "_type" "text", "_credentials" "text", "_encryption_key" "text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'extensions', 'public'
     AS $$
