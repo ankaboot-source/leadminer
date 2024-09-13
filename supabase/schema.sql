@@ -1,7 +1,381 @@
+-- Table domains
+
+CREATE TABLE IF NOT EXISTS "public"."domains" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "name" "text",
+    "last_check" timestamp with time zone,
+    "email_server_type" "text"
+);
+
+ALTER TABLE ONLY "public"."domains"
+    ADD CONSTRAINT "domains_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE "public"."domains" ENABLE ROW LEVEL SECURITY;
+
+-- Table engagement
+
 CREATE TYPE "public"."engagement_type_enum" AS ENUM (
     'CSV',
     'ENRICH'
 );
+
+CREATE TABLE IF NOT EXISTS "public"."engagement" (
+    "user_id" "uuid" NOT NULL,
+    "engagement_type" "public"."engagement_type_enum" NOT NULL,
+    "engagement_created_at" timestamp with time zone DEFAULT "now"(),
+    "email" "text" NOT NULL
+);
+
+ALTER TABLE ONLY "public"."engagement"
+    ADD CONSTRAINT "engagement_pkey" PRIMARY KEY ("email", "user_id", "engagement_type");
+ALTER TABLE ONLY "public"."engagement"
+    ADD CONSTRAINT "engagement_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+CREATE POLICY "Enable select for users based on user_id" ON "public"."engagement" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."engagement" ENABLE ROW LEVEL SECURITY;
+
+-- Table messages
+
+CREATE TABLE IF NOT EXISTS "public"."messages" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean
+)
+PARTITION BY HASH ("user_id");
+
+CREATE TABLE IF NOT EXISTS "public"."messages_0" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean
+);
+CREATE TABLE IF NOT EXISTS "public"."messages_1" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean
+);
+CREATE TABLE IF NOT EXISTS "public"."messages_2" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean
+);
+
+ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_0" FOR VALUES WITH (modulus 3, remainder 0);
+ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_1" FOR VALUES WITH (modulus 3, remainder 1);
+ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_2" FOR VALUES WITH (modulus 3, remainder 2);
+
+ALTER TABLE ONLY "public"."messages"
+    ADD CONSTRAINT "messages_pkey" PRIMARY KEY ("message_id", "user_id");
+ALTER TABLE ONLY "public"."messages_0"
+    ADD CONSTRAINT "messages_0_pkey" PRIMARY KEY ("message_id", "user_id");
+ALTER TABLE ONLY "public"."messages_1"
+    ADD CONSTRAINT "messages_1_pkey" PRIMARY KEY ("message_id", "user_id");
+ALTER TABLE ONLY "public"."messages_2"
+    ADD CONSTRAINT "messages_2_pkey" PRIMARY KEY ("message_id", "user_id");
+
+ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_0_pkey";
+ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_1_pkey";
+ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_2_pkey";
+
+CREATE POLICY "Enable select for users based on user_id" ON "public"."messages" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."messages" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."messages_0" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."messages_1" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."messages_2" ENABLE ROW LEVEL SECURITY;
+
+-- Table mining_sources
+
+CREATE TABLE IF NOT EXISTS "public"."mining_sources" (
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "credentials" "bytea" NOT NULL,
+    "email" "text" NOT NULL,
+    "type" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL
+);
+
+ALTER TABLE ONLY "public"."mining_sources"
+    ADD CONSTRAINT "mining_sources_pkey" PRIMARY KEY ("email", "user_id");
+ALTER TABLE ONLY "public"."mining_sources"
+    ADD CONSTRAINT "mining_sources_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
+
+ALTER TABLE "public"."mining_sources" ENABLE ROW LEVEL SECURITY;
+
+
+-- Table organizations
+
+CREATE TABLE IF NOT EXISTS "public"."organizations" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "name" "text" NOT NULL,
+    "alternate_name" "text",
+    "location" "text"[],
+    "url" "text",
+    "legal_name" "text",
+    "telephone" "text",
+    "email" "text",
+    "image" "text",
+    "founder" "uuid",
+    "_domain" "uuid"
+);
+
+ALTER TABLE ONLY "public"."organizations"
+    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
+ALTER TABLE ONLY "public"."organizations"
+    ADD CONSTRAINT "organizations__domain_fkey" FOREIGN KEY ("_domain") REFERENCES "public"."domains"("id");
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+CREATE POLICY "Enable read access for all users" ON "public"."organizations" FOR SELECT TO "authenticated" USING (true);
+
+ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
+
+
+-- Table persons
+
+CREATE TABLE IF NOT EXISTS "public"."persons" (
+    "name" "text",
+    "email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "url" "text",
+    "image" "text",
+    "location" "text"[],
+    "alternate_names" "text"[],
+    "same_as" "text"[],
+    "given_name" "text",
+    "family_name" "text",
+    "job_title" "text",
+    "works_for" "uuid",
+    "identifiers" "text"[],
+    "status" "text",
+    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "source" "text" NOT NULL,
+    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "verification_details" "json"
+);
+
+ALTER TABLE ONLY "public"."persons"
+    ADD CONSTRAINT "persons_pkey" PRIMARY KEY ("email", "user_id", "source");
+
+CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
+
+CREATE POLICY "Enable select for users based on user_id" ON "public"."persons" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable update for users based on user_id" ON "public"."persons" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."persons" ENABLE ROW LEVEL SECURITY;
+
+ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."persons";
+
+-- Table pointsofcontact
+
+CREATE TABLE IF NOT EXISTS "public"."pointsofcontact" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text"
+)
+PARTITION BY HASH ("user_id");
+
+CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_0" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text"
+);
+CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_1" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text"
+);
+CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_2" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text"
+);
+
+ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_0" FOR VALUES WITH (modulus 3, remainder 0);
+ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_1" FOR VALUES WITH (modulus 3, remainder 1);
+ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_2" FOR VALUES WITH (modulus 3, remainder 2);
+
+ALTER TABLE ONLY "public"."pointsofcontact"
+    ADD CONSTRAINT "pointsofcontact_pkey" PRIMARY KEY ("id", "user_id");
+ALTER TABLE ONLY "public"."pointsofcontact_0"
+    ADD CONSTRAINT "pointsofcontact_0_pkey" PRIMARY KEY ("id", "user_id");
+ALTER TABLE ONLY "public"."pointsofcontact_1"
+    ADD CONSTRAINT "pointsofcontact_1_pkey" PRIMARY KEY ("id", "user_id");
+ALTER TABLE ONLY "public"."pointsofcontact_2"
+    ADD CONSTRAINT "pointsofcontact_2_pkey" PRIMARY KEY ("id", "user_id");
+
+
+ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_0_pkey";
+ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_1_pkey";
+ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_2_pkey";
+
+CREATE POLICY "Enable select for users based on user_id" ON "public"."pointsofcontact" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."pointsofcontact" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."pointsofcontact_0" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."pointsofcontact_1" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."pointsofcontact_2" ENABLE ROW LEVEL SECURITY;
+
+
+-- Table profiles
+
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+    "user_id" "uuid" NOT NULL,
+    "full_name" "text",
+    "credits" integer DEFAULT 0,
+    "stripe_customer_id" "text",
+    "email" "text",
+    "stripe_subscription_id" "text"
+);
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("user_id");
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+CREATE POLICY "Users can update their own data" ON "public"."profiles" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Users can view their own data" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+
+ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."profiles";
+
+-- Table refinedpersons
+
+CREATE TABLE IF NOT EXISTS "public"."refinedpersons" (
+    "user_id" "uuid" NOT NULL,
+    "engagement" integer,
+    "occurrence" integer,
+    "tags" "text"[],
+    "email" "text" NOT NULL,
+    "recency" timestamp with time zone,
+    "sender" integer,
+    "recipient" integer,
+    "conversations" integer,
+    "replied_conversations" integer,
+    "seniority" timestamp with time zone,
+    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE ONLY "public"."refinedpersons"
+    ADD CONSTRAINT "refinedpersons_pkey" PRIMARY KEY ("email", "user_id");
+    
+CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
+
+CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."refinedpersons" ENABLE ROW LEVEL SECURITY;
+
+-- Table tags
+
+CREATE TABLE IF NOT EXISTS "public"."tags" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text"
+)
+PARTITION BY HASH ("user_id");
+
+CREATE TABLE IF NOT EXISTS "public"."tags_0" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text"
+);
+CREATE TABLE IF NOT EXISTS "public"."tags_1" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text"
+);
+CREATE TABLE IF NOT EXISTS "public"."tags_2" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text"
+);
+
+ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_0" FOR VALUES WITH (modulus 3, remainder 0);
+ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_1" FOR VALUES WITH (modulus 3, remainder 1);
+ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_2" FOR VALUES WITH (modulus 3, remainder 2);
+
+ALTER TABLE ONLY "public"."tags"
+    ADD CONSTRAINT "tags_pkey" PRIMARY KEY ("person_email", "name", "user_id");
+ALTER TABLE ONLY "public"."tags_0"
+    ADD CONSTRAINT "tags_0_pkey" PRIMARY KEY ("person_email", "name", "user_id");
+ALTER TABLE ONLY "public"."tags_1"
+    ADD CONSTRAINT "tags_1_pkey" PRIMARY KEY ("person_email", "name", "user_id");
+ALTER TABLE ONLY "public"."tags_2"
+    ADD CONSTRAINT "tags_2_pkey" PRIMARY KEY ("person_email", "name", "user_id");
+
+ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_0_pkey";
+ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_1_pkey";
+ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_2_pkey";
+
+CREATE POLICY "Enable select for users based on user_id" ON "public"."tags" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."tags_0" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."tags_1" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."tags_2" ENABLE ROW LEVEL SECURITY;
+
+-- Table tasks
 
 CREATE TYPE "public"."task_category_enum" AS ENUM (
     'mining',
@@ -23,6 +397,29 @@ CREATE TYPE "public"."task_type_enum" AS ENUM (
     'enrich',
     'clean'
 );
+
+CREATE TABLE IF NOT EXISTS "public"."tasks" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid",
+    "status" "public"."task_status_enum",
+    "category" "public"."task_category_enum" NOT NULL,
+    "type" "public"."task_type_enum" NOT NULL,
+    "details" "jsonb",
+    "duration" integer,
+    "stopped_at" timestamp with time zone,
+    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+ALTER TABLE ONLY "public"."tasks"
+    ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
+
+CREATE POLICY "Enable select for users based on user_id" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "public"."tasks" ENABLE ROW LEVEL SECURITY;
+
+ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."tasks";
+
+-- Functions --
 
 CREATE OR REPLACE FUNCTION "public"."delete_user_data"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
@@ -452,417 +849,6 @@ BEGIN
         type = EXCLUDED.type;
 END;
 $$;
-
-CREATE TABLE IF NOT EXISTS "public"."domains" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "name" "text",
-    "last_check" timestamp with time zone,
-    "email_server_type" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."engagement" (
-    "user_id" "uuid" NOT NULL,
-    "engagement_type" "public"."engagement_type_enum" NOT NULL,
-    "engagement_created_at" timestamp with time zone DEFAULT "now"(),
-    "email" "text" NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "public"."messages" (
-    "channel" "text",
-    "folder_path" "text",
-    "date" timestamp with time zone,
-    "user_id" "uuid" NOT NULL,
-    "list_id" "text",
-    "message_id" "text" NOT NULL,
-    "references" "text"[],
-    "conversation" boolean
-)
-PARTITION BY HASH ("user_id");
-
-CREATE TABLE IF NOT EXISTS "public"."messages_0" (
-    "channel" "text",
-    "folder_path" "text",
-    "date" timestamp with time zone,
-    "user_id" "uuid" NOT NULL,
-    "list_id" "text",
-    "message_id" "text" NOT NULL,
-    "references" "text"[],
-    "conversation" boolean
-);
-
-CREATE TABLE IF NOT EXISTS "public"."messages_1" (
-    "channel" "text",
-    "folder_path" "text",
-    "date" timestamp with time zone,
-    "user_id" "uuid" NOT NULL,
-    "list_id" "text",
-    "message_id" "text" NOT NULL,
-    "references" "text"[],
-    "conversation" boolean
-);
-
-CREATE TABLE IF NOT EXISTS "public"."messages_2" (
-    "channel" "text",
-    "folder_path" "text",
-    "date" timestamp with time zone,
-    "user_id" "uuid" NOT NULL,
-    "list_id" "text",
-    "message_id" "text" NOT NULL,
-    "references" "text"[],
-    "conversation" boolean
-);
-
-CREATE TABLE IF NOT EXISTS "public"."mining_sources" (
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "credentials" "bytea" NOT NULL,
-    "email" "text" NOT NULL,
-    "type" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "public"."organizations" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "name" "text" NOT NULL,
-    "alternate_name" "text",
-    "location" "text"[],
-    "url" "text",
-    "legal_name" "text",
-    "telephone" "text",
-    "email" "text",
-    "image" "text",
-    "founder" "uuid",
-    "_domain" "uuid"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."persons" (
-    "name" "text",
-    "email" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "url" "text",
-    "image" "text",
-    "location" "text"[],
-    "alternate_names" "text"[],
-    "same_as" "text"[],
-    "given_name" "text",
-    "family_name" "text",
-    "job_title" "text",
-    "works_for" "uuid",
-    "identifiers" "text"[],
-    "status" "text",
-    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
-    "source" "text" NOT NULL,
-    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
-    "verification_details" "json"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "message_id" "text",
-    "name" "text",
-    "from" boolean,
-    "reply_to" boolean,
-    "to" boolean,
-    "cc" boolean,
-    "bcc" boolean,
-    "body" boolean,
-    "person_email" "text"
-)
-PARTITION BY HASH ("user_id");
-
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_0" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "message_id" "text",
-    "name" "text",
-    "from" boolean,
-    "reply_to" boolean,
-    "to" boolean,
-    "cc" boolean,
-    "bcc" boolean,
-    "body" boolean,
-    "person_email" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_1" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "message_id" "text",
-    "name" "text",
-    "from" boolean,
-    "reply_to" boolean,
-    "to" boolean,
-    "cc" boolean,
-    "bcc" boolean,
-    "body" boolean,
-    "person_email" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."pointsofcontact_2" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "message_id" "text",
-    "name" "text",
-    "from" boolean,
-    "reply_to" boolean,
-    "to" boolean,
-    "cc" boolean,
-    "bcc" boolean,
-    "body" boolean,
-    "person_email" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."profiles" (
-    "user_id" "uuid" NOT NULL,
-    "full_name" "text",
-    "credits" integer DEFAULT 0,
-    "stripe_customer_id" "text",
-    "email" "text",
-    "stripe_subscription_id" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."refinedpersons" (
-    "user_id" "uuid" NOT NULL,
-    "engagement" integer,
-    "occurrence" integer,
-    "tags" "text"[],
-    "email" "text" NOT NULL,
-    "recency" timestamp with time zone,
-    "sender" integer,
-    "recipient" integer,
-    "conversations" integer,
-    "replied_conversations" integer,
-    "seniority" timestamp with time zone,
-    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS "public"."tags" (
-    "person_email" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "reachable" integer,
-    "source" "text"
-)
-PARTITION BY HASH ("user_id");
-
-CREATE TABLE IF NOT EXISTS "public"."tags_0" (
-    "person_email" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "reachable" integer,
-    "source" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."tags_1" (
-    "person_email" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "reachable" integer,
-    "source" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."tags_2" (
-    "person_email" "text" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "name" "text" NOT NULL,
-    "reachable" integer,
-    "source" "text"
-);
-
-CREATE TABLE IF NOT EXISTS "public"."tasks" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
-    "user_id" "uuid",
-    "status" "public"."task_status_enum",
-    "category" "public"."task_category_enum" NOT NULL,
-    "type" "public"."task_type_enum" NOT NULL,
-    "details" "jsonb",
-    "duration" integer,
-    "stopped_at" timestamp with time zone,
-    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_0" FOR VALUES WITH (modulus 3, remainder 0);
-
-ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_1" FOR VALUES WITH (modulus 3, remainder 1);
-
-ALTER TABLE ONLY "public"."messages" ATTACH PARTITION "public"."messages_2" FOR VALUES WITH (modulus 3, remainder 2);
-
-ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_0" FOR VALUES WITH (modulus 3, remainder 0);
-
-ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_1" FOR VALUES WITH (modulus 3, remainder 1);
-
-ALTER TABLE ONLY "public"."pointsofcontact" ATTACH PARTITION "public"."pointsofcontact_2" FOR VALUES WITH (modulus 3, remainder 2);
-
-ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_0" FOR VALUES WITH (modulus 3, remainder 0);
-
-ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_1" FOR VALUES WITH (modulus 3, remainder 1);
-
-ALTER TABLE ONLY "public"."tags" ATTACH PARTITION "public"."tags_2" FOR VALUES WITH (modulus 3, remainder 2);
-
-ALTER TABLE ONLY "public"."domains"
-    ADD CONSTRAINT "domains_pkey" PRIMARY KEY ("id");
-
-ALTER TABLE ONLY "public"."engagement"
-    ADD CONSTRAINT "engagement_pkey" PRIMARY KEY ("email", "user_id", "engagement_type");
-
-ALTER TABLE ONLY "public"."messages"
-    ADD CONSTRAINT "messages_pkey" PRIMARY KEY ("message_id", "user_id");
-
-ALTER TABLE ONLY "public"."messages_0"
-    ADD CONSTRAINT "messages_0_pkey" PRIMARY KEY ("message_id", "user_id");
-
-ALTER TABLE ONLY "public"."messages_1"
-    ADD CONSTRAINT "messages_1_pkey" PRIMARY KEY ("message_id", "user_id");
-
-ALTER TABLE ONLY "public"."messages_2"
-    ADD CONSTRAINT "messages_2_pkey" PRIMARY KEY ("message_id", "user_id");
-
-ALTER TABLE ONLY "public"."mining_sources"
-    ADD CONSTRAINT "mining_sources_pkey" PRIMARY KEY ("email", "user_id");
-
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
-
-ALTER TABLE ONLY "public"."persons"
-    ADD CONSTRAINT "persons_pkey" PRIMARY KEY ("email", "user_id", "source");
-
-ALTER TABLE ONLY "public"."pointsofcontact"
-    ADD CONSTRAINT "pointsofcontact_pkey" PRIMARY KEY ("id", "user_id");
-
-ALTER TABLE ONLY "public"."pointsofcontact_0"
-    ADD CONSTRAINT "pointsofcontact_0_pkey" PRIMARY KEY ("id", "user_id");
-
-ALTER TABLE ONLY "public"."pointsofcontact_1"
-    ADD CONSTRAINT "pointsofcontact_1_pkey" PRIMARY KEY ("id", "user_id");
-
-ALTER TABLE ONLY "public"."pointsofcontact_2"
-    ADD CONSTRAINT "pointsofcontact_2_pkey" PRIMARY KEY ("id", "user_id");
-
-ALTER TABLE ONLY "public"."profiles"
-    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("user_id");
-
-ALTER TABLE ONLY "public"."refinedpersons"
-    ADD CONSTRAINT "refinedpersons_pkey" PRIMARY KEY ("email", "user_id");
-
-ALTER TABLE ONLY "public"."tags"
-    ADD CONSTRAINT "tags_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-
-ALTER TABLE ONLY "public"."tags_0"
-    ADD CONSTRAINT "tags_0_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-
-ALTER TABLE ONLY "public"."tags_1"
-    ADD CONSTRAINT "tags_1_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-
-ALTER TABLE ONLY "public"."tags_2"
-    ADD CONSTRAINT "tags_2_pkey" PRIMARY KEY ("person_email", "name", "user_id");
-
-ALTER TABLE ONLY "public"."tasks"
-    ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
-
-ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_0_pkey";
-
-ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_1_pkey";
-
-ALTER INDEX "public"."messages_pkey" ATTACH PARTITION "public"."messages_2_pkey";
-
-ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_0_pkey";
-
-ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_1_pkey";
-
-ALTER INDEX "public"."pointsofcontact_pkey" ATTACH PARTITION "public"."pointsofcontact_2_pkey";
-
-ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_0_pkey";
-
-ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_1_pkey";
-
-ALTER INDEX "public"."tags_pkey" ATTACH PARTITION "public"."tags_2_pkey";
-
-CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
-
-CREATE OR REPLACE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
-
-ALTER TABLE ONLY "public"."engagement"
-    ADD CONSTRAINT "engagement_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
-
-ALTER TABLE ONLY "public"."mining_sources"
-    ADD CONSTRAINT "mining_sources_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id");
-
-ALTER TABLE ONLY "public"."organizations"
-    ADD CONSTRAINT "organizations__domain_fkey" FOREIGN KEY ("_domain") REFERENCES "public"."domains"("id");
-
-ALTER TABLE ONLY "public"."profiles"
-    ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable insert for authenticated users only" ON "public"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
-
-CREATE POLICY "Enable read access for all users" ON "public"."organizations" FOR SELECT TO "authenticated" USING (true);
-
-CREATE POLICY "Enable select for users based on user_id" ON "public"."engagement" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable select for users based on user_id" ON "public"."messages" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable select for users based on user_id" ON "public"."persons" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable select for users based on user_id" ON "public"."pointsofcontact" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable select for users based on user_id" ON "public"."tags" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable select for users based on user_id" ON "public"."tasks" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Enable update for users based on user_id" ON "public"."persons" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Users can update their own data" ON "public"."profiles" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-CREATE POLICY "Users can view their own data" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-ALTER TABLE "public"."domains" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."engagement" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."messages" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."messages_0" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."messages_1" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."messages_2" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."mining_sources" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."organizations" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."persons" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."pointsofcontact" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."pointsofcontact_0" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."pointsofcontact_1" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."pointsofcontact_2" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."refinedpersons" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."tags" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."tags_0" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."tags_1" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."tags_2" ENABLE ROW LEVEL SECURITY;
-
-ALTER TABLE "public"."tasks" ENABLE ROW LEVEL SECURITY;
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."persons";
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."profiles";
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."tasks";
 
 REVOKE ALL ON FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."get_contacts_table"("user_id" "uuid") FROM PUBLIC;
