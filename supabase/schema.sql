@@ -284,6 +284,29 @@ ALTER TABLE ONLY "public"."profiles"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+    INSERT INTO public.profiles (user_id, email, full_name)
+    VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name');
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."update_email_in_profile_table"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  UPDATE public.profiles
+  SET email = new.email
+  WHERE user_id = new.id;
+  RETURN NEW;
+END;
+$$;
+
 CREATE POLICY "Users can update their own data" ON "public"."profiles" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 CREATE POLICY "Users can view their own data" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 
@@ -710,17 +733,6 @@ BEGIN
 END
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-    INSERT INTO public.profiles (user_id, email, full_name)
-    VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name');
-  RETURN NEW;
-END;
-$$;
-
 CREATE OR REPLACE FUNCTION "public"."populate_refined"("_userid" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -821,18 +833,6 @@ BEGIN
         )
         ON CONFLICT DO NOTHING;
     END LOOP;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION "public"."update_email_in_profile_table"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-  UPDATE public.profiles
-  SET email = new.email
-  WHERE user_id = new.id;
-  RETURN NEW;
 END;
 $$;
 
