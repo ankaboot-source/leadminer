@@ -36,7 +36,7 @@ async function getEmails(userId: string) {
   const { data: emails, error } = await supabaseClient
     .from('refinedpersons')
     .select('email')
-    .match({ userid: userId })
+    .match({ user_id: userId })
     .returns<{ email: string }[]>();
 
   if (error) {
@@ -151,7 +151,8 @@ async function enrichContact(
   const { error } = await supabaseClient.rpc('enrich_contacts', {
     p_contacts_data: contacts.map((contact) => ({
       ...contact,
-      same_as: contact.same_as?.join(',')
+      same_as: contact.same_as?.join(','),
+      location: contact.location?.join(',')
     })),
     p_update_empty_fields_only: updateEmptyFieldsOnly ?? true
   });
@@ -305,7 +306,7 @@ export default function initializeEnrichementController(userResolver: Users) {
             email: contact.email,
             name: contact.name,
             same_as: contact.sameAs,
-            address: contact.address,
+            location: contact.location,
             job_title: contact.jobTitle,
             given_name: contact.givenName,
             family_name: contact.familyName,

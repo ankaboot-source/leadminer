@@ -1,1 +1,0 @@
-alter table "public"."persons" add column "identifiers" text[];

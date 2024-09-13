@@ -61,16 +61,16 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
           image: undefined,
           email,
           name: fullName || undefined,
-          address: location || undefined,
+          location: [location].filter(Boolean) || undefined,
           organization: organization || undefined,
           jobTitle: title || undefined,
           sameAs: [facebook, linkedin, twitter].filter(Boolean)
         })
       )
       .filter(
-        ({ email, name, address, organization, jobTitle, sameAs }) =>
+        ({ email, name, location, organization, jobTitle, sameAs }) =>
           email !== 'Email' &&
-          ![name, address, organization, jobTitle, sameAs].every(
+          ![name, location, organization, jobTitle, sameAs].every(
             (field) => field === undefined || field.length === 0
           )
       );

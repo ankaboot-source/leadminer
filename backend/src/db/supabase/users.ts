@@ -63,7 +63,7 @@ export default class SupabaseUsers implements Users {
   async deleteUserData(userId: string) {
     try {
       const { error } = await this.client.rpc('delete_user_data', {
-        userid: userId
+        user_id: userId
       });
 
       if (error) {

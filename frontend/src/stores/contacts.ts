@@ -1,8 +1,8 @@
+import type { Contact } from '@/types/contact';
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
-import type { Contact } from '@/types/contact';
 import { convertDates, getOrganization } from '~/utils/contacts';
 
 export const useContactsStore = defineStore('contacts-store', () => {
@@ -56,7 +56,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { data, error } = await $supabase.rpc(
       'get_contacts_table',
       // @ts-expect-error: Issue with @nuxt/supabase typing
-      { userid: $user.value?.id },
+      { user_id: $user.value?.id },
     );
 
     if (error) throw error;
@@ -79,7 +79,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { error } = await $supabase.rpc(
       'refine_persons',
       // @ts-expect-error: Issue with @nuxt/supabase typing
-      { userid: $user.value?.id },
+      { user_id: $user.value?.id },
     );
     if (error) throw error;
   }

@@ -545,21 +545,24 @@
       </template>
     </Column>
 
-    <!-- Address -->
+    <!-- Location -->
     <Column
-      v-if="visibleColumns.includes('address')"
-      field="address"
+      v-if="visibleColumns.includes('location')"
+      field="location"
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
     >
       <template #header>
-        <div v-tooltip.top="$t('contact.address_definition')">
-          {{ $t('contact.address') }}
+        <div v-tooltip.top="$t('contact.location_definition')">
+          {{ $t('contact.location') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
         <InputText v-model="filterModel.value" />
+      </template>
+      <template #body="{ data }">
+        <div>{{ data.location?.join(', ') }}</div>
       </template>
     </Column>
 
@@ -925,7 +928,7 @@ const visibleColumnsOptions = [
   { label: $t('contact.given_name'), value: 'given_name' },
   { label: $t('contact.family_name'), value: 'family_name' },
   { label: $t('contact.alternate_names'), value: 'alternate_names' },
-  { label: $t('contact.address'), value: 'address' },
+  { label: $t('contact.location'), value: 'location' },
   { label: $t('contact.works_for'), value: 'works_for' },
   { label: $t('contact.job_title'), value: 'job_title' },
   { label: $t('contact.name'), value: 'name' },
