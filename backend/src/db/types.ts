@@ -4,6 +4,7 @@ import {
   TaskStatus,
   TaskType
 } from '../services/tasks-manager/types';
+import { REACHABILITY } from '../utils/constants';
 
 export interface ExtractionResult {
   message: Message;
@@ -55,7 +56,7 @@ export interface PointOfContact {
 
 export interface Tag {
   name: string;
-  reachable: number;
+  reachable: REACHABILITY;
   source: string;
 }
 

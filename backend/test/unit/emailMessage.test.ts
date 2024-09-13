@@ -5,6 +5,7 @@ import RedisEmailStatusCache from '../../src/services/cache/redis/RedisEmailStat
 import EmailMessage from '../../src/services/extractors/EmailMessage';
 import { DomainStatusVerificationFunction } from '../../src/services/extractors/types';
 import { BasicTag, TaggingEngine } from '../../src/services/tagging/types';
+import { REACHABILITY } from '../../src/utils/constants';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
@@ -20,18 +21,18 @@ const taggingEngine: TaggingEngine = {
       tags.push({
         name: 'transactional',
         source: 'refined#message_header',
-        reachable: 3
+        reachable: REACHABILITY.UNSURE
       });
       tags.push({
         name: 'no-reply',
         source: 'refined#email_address',
-        reachable: 3
+        reachable: REACHABILITY.UNSURE
       });
     } else {
       tags.push({
         name: 'professional',
         source: 'refined#email_address',
-        reachable: 1
+        reachable: REACHABILITY.DIRECT_PERSON
       });
     }
 
@@ -345,7 +346,7 @@ describe('Email Message', () => {
             {
               name: 'professional',
               source: 'refined#email_address',
-              reachable: 1
+              reachable: REACHABILITY.DIRECT_PERSON
             }
           ]
         }

@@ -1,23 +1,25 @@
-import { describe, it, beforeEach, expect } from '@jest/globals';
-import {
-  groupEmailMessage,
-  chatEmailMessage,
-  newsletterEmailMessage,
-  transactionalEmailMessage
-} from '../../src/services/tagging/tags';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import EmailTaggingEngine from '../../src/services/tagging';
 import HasHeaderField from '../../src/services/tagging/conditions/HasHeaderField';
 import HasHeaderFieldStartsWith from '../../src/services/tagging/conditions/HasHeaderFieldStartsWith';
 import HasHeaderWithValues from '../../src/services/tagging/conditions/HasHeaderFieldWithValues';
 import HasNoHeaderField from '../../src/services/tagging/conditions/HasNoHeaderField';
 import {
+  chatEmailMessage,
+  groupEmailMessage,
+  newsletterEmailMessage,
+  transactionalEmailMessage
+} from '../../src/services/tagging/tags';
+import {
   CHAT_EMAIL_ADDRESS_INCLUDES,
   GROUP_EMAIL_ADDRESS_INCLUDES,
   NEWSLETTER_EMAIL_ADDRESS_INCLUDES,
   NOREPLY_EMAIL_ADDRESS_INCLUDES,
+  REACHABILITY,
   ROLE_EMAIL_ADDRESS_INCLUDES,
   TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES
 } from '../../src/utils/constants';
+
 import { BasicTag, DomainType, Tag } from '../../src/services/tagging/types';
 
 /**
@@ -220,7 +222,7 @@ describe('test engines.EmailTaggingEngine', () => {
       const output: BasicTag = {
         source: 'refined#message_header',
         name: 'transactional',
-        reachable: 0
+        reachable: REACHABILITY.NONE
       };
 
       testTagsCommonLogic(input, output);
@@ -231,7 +233,7 @@ describe('test engines.EmailTaggingEngine', () => {
       const output: BasicTag = {
         source: 'refined#message_header',
         name: 'newsletter',
-        reachable: 3
+        reachable: REACHABILITY.UNSURE
       };
 
       testTagsCommonLogic(input, output);
@@ -245,7 +247,7 @@ describe('test engines.EmailTaggingEngine', () => {
         expect(tags).toEqual([
           {
             name: 'group',
-            reachable: 2,
+            reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
             source: 'refined#message_header',
             fields: ['list-post']
           }
@@ -258,7 +260,7 @@ describe('test engines.EmailTaggingEngine', () => {
       const output: BasicTag = {
         source: 'refined#message_header',
         name: 'group',
-        reachable: 2
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       };
 
       testTagsCommonLogic(input, output);
@@ -269,7 +271,7 @@ describe('test engines.EmailTaggingEngine', () => {
       const output: BasicTag = {
         source: 'refined#message_header',
         name: 'chat',
-        reachable: 2
+        reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON
       };
 
       testTagsCommonLogic(input, output);
@@ -280,7 +282,7 @@ describe('test engines.EmailTaggingEngine', () => {
     describe('Testing no-reply email addresses tagging', () => {
       const expectedOutputTags: BasicTag[] = [
         {
-          reachable: 0,
+          reachable: REACHABILITY.NONE,
           name: 'no-reply',
           source: 'refined#email_address'
         }
@@ -316,7 +318,7 @@ describe('test engines.EmailTaggingEngine', () => {
       const emailsToTest = generateEmails(TRANSACTIONAL_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
-          reachable: 0,
+          reachable: REACHABILITY.NONE,
           name: 'transactional',
           source: 'refined#email_address'
         }
@@ -337,7 +339,7 @@ describe('test engines.EmailTaggingEngine', () => {
       const emailsToTest = generateEmails(NEWSLETTER_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
-          reachable: 3,
+          reachable: REACHABILITY.UNSURE,
           name: 'newsletter',
           source: 'refined#email_address'
         }
@@ -358,12 +360,12 @@ describe('test engines.EmailTaggingEngine', () => {
       const emailsToTest = generateEmails(ROLE_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'role',
           source: 'refined#email_address'
         }
@@ -384,12 +386,12 @@ describe('test engines.EmailTaggingEngine', () => {
       const emailsToTest = generateEmails(CHAT_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'chat',
           source: 'refined#email_address'
         }
@@ -410,12 +412,12 @@ describe('test engines.EmailTaggingEngine', () => {
       const emailsToTest = generateEmails(GROUP_EMAIL_ADDRESS_INCLUDES);
       const expectedOutputTags: BasicTag[] = [
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'group',
           source: 'refined#email_address'
         }
@@ -447,12 +449,12 @@ describe('test engines.EmailTaggingEngine', () => {
       };
       const expectedTags = [
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'group',
           source: 'refined#message_header'
         }
@@ -479,12 +481,12 @@ describe('test engines.EmailTaggingEngine', () => {
       };
       const expectedTags = [
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'group',
           source: 'refined#message_header'
         }
@@ -508,12 +510,12 @@ describe('test engines.EmailTaggingEngine', () => {
       };
       const expectedTags = [
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'role',
           source: 'refined#email_address'
         }
@@ -555,19 +557,19 @@ describe('test engines.EmailTaggingEngine', () => {
 
       expect(tagsFromReplyTo).toEqual([
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         },
         {
-          reachable: 2,
+          reachable: REACHABILITY.MANY_OR_INDIRECT_PERSON,
           name: 'chat',
           source: 'refined#message_header'
         }
       ]);
       expect(tagsFromListPost).toEqual([
         {
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           name: 'professional',
           source: 'refined#email_address'
         }
@@ -595,7 +597,7 @@ describe('test engines.EmailTaggingEngine', () => {
         field: ''
       });
       const expectedTag = {
-        reachable: 0,
+        reachable: REACHABILITY.NONE,
         source: 'refined#email_address'
       };
 
@@ -636,12 +638,12 @@ describe('test engines.EmailTaggingEngine', () => {
       expect(transactionalTag).toEqual([
         {
           name: 'professional',
-          reachable: 1,
+          reachable: REACHABILITY.DIRECT_PERSON,
           source: 'refined#email_address'
         },
         {
           name: 'transactional',
-          reachable: 0,
+          reachable: REACHABILITY.NONE,
           source: 'refined#message_header'
         }
       ]);

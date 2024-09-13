@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { REACHABILITY } from '../../utils/constants';
 import { Details, Status } from '../email-status/EmailStatusVerifier';
 
 export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
@@ -86,7 +87,7 @@ export interface ContactLead {
 
 export interface ContactTag {
   name: string;
-  reachable: number;
+  reachable: REACHABILITY;
   source: string;
 }
 
