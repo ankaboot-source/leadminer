@@ -275,6 +275,13 @@ BEGIN
 END;
 $$;
 
+CREATE TRIGGER on_auth_user_created_updated  
+  AFTER INSERT ON "auth"."users"  
+  FOR EACH ROW EXECUTE FUNCTION PROCEDURE "public"."handle_new_user"();  
+CREATE TRIGGER update_email_in_profile_table_trigger
+  AFTER UPDATE ON "auth"."users"
+  EXECUTE PROCEDURE "public"."update_email_in_profile_table"();
+
 REVOKE ALL ON FUNCTION "public"."handle_new_user"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."update_email_in_profile_table"() FROM PUBLIC;
 
