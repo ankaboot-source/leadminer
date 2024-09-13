@@ -12,8 +12,6 @@ BEGIN
   DELETE FROM refinedpersons r WHERE r.user_id = owner_id;
   DELETE from mining_sources ms WHERE ms.user_id = owner_id;
   DELETE from engagement eg WHERE eg.user_id = owner_id;
-
-  
 END;
 $$;
 
