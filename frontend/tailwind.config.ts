@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-
+// skipcq: JS-0359
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const primeui = require('tailwindcss-primeui');
 

@@ -57,7 +57,9 @@ const props = defineProps({
   total: { type: Number, default: 0 },
   progress: { type: Number, default: 0 },
   started: { type: Number, default: 0 },
+  // skipcq: JS-0715 - Is used in the template
   progressTitle: { type: String, default: '' },
+  // skipcq: JS-0715 - Is used in the template
   progressTooltip: { type: String, default: '' },
 });
 

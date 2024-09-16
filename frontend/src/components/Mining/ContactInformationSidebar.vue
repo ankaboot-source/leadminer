@@ -264,6 +264,7 @@ const skipDialog = computed(
 
 function isValidURL(url: string) {
   try {
+    // skipcq: JS-R1002 - instantiating unused object as the url validity checker
     new URL(url);
     return true;
   } catch {
