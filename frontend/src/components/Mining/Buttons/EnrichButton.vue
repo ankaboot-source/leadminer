@@ -14,7 +14,7 @@
     :header="
       t(
         'confirm_enrichment',
-        contactsToEnrich?.length ?? $contactsStore.selectedLength,
+        contactsToEnrich?.length ?? $contactsStore.selectedContactsCount,
       )
     "
     class="w-full sm:w-[35rem]"

@@ -36,9 +36,9 @@
       <Button
         class="w-full md:w-max border-solid border-2 border-black"
         severity="contrast"
-        :label="t('enrich_contacts', $contactsStore.selectedLength)"
+        :label="t('enrich_contacts', $contactsStore.selectedContactsCount)"
         :disabled="
-          $contactsStore.selectedLength === 0 ||
+          $contactsStore.selectedContactsCount === 0 ||
           !verificationFinished ||
           !$leadminerStore.cleaningFinished
         "

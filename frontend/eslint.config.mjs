@@ -31,4 +31,15 @@ export default withNuxt({
     'prefer-destructuring': ['error', { object: true, array: false }],
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
   },
+  ignores: [
+    '/node_modules',
+    '/.output',
+    '/.nuxt',
+    '.eslintrc.js',
+    '/src-ssr',
+    // Ignore files for PNPM, NPM and YARN
+    'pnpm-lock.yaml',
+    'package-lock.json',
+    'yarn.lock',
+  ],
 });
