@@ -57,7 +57,8 @@
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
-      :contacts-to-enrich="$contactsStore.selected"
+      :enrich-all-contacts="false"
+      :contacts-to-enrich="$contactsStore.selectedEmails"
       :bordered="true"
       :skip-dialog="true"
     />
@@ -77,7 +78,9 @@ const $stepper = useMiningStepper();
 const $contactsStore = useContactsStore();
 const $leadminerStore = useLeadminerStore();
 
-const contactsToEnrichLength = computed(() => $contactsStore.selectedLength);
+const contactsToEnrichLength = computed(
+  () => $contactsStore.selectedContactsCount,
+);
 const contactsToEnrichLengthPartial = ref<number>(0);
 
 const enrichedContacts = ref(0);
