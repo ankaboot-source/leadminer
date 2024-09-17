@@ -32,6 +32,7 @@
   <div id="mobile-buttons" class="flex flex-col gap-2 pt-6 md:hidden">
     <Button
       v-if="!activeMiningTask"
+      id="mine-stepper"
       :disabled="
         $leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining
       "

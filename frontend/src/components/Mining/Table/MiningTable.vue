@@ -62,6 +62,7 @@
           v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
         >
           <Button
+            id="export-csv"
             icon="pi pi-external-link"
             :label="$screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"

@@ -6,6 +6,7 @@
         icon="pi pi-google"
         class="w-full"
         source="google"
+        :auth-mode="authMode"
       />
     </div>
     <div>
@@ -14,6 +15,7 @@
         icon="pi pi-microsoft"
         class="w-full"
         source="azure"
+        :auth-mode="authMode"
       />
     </div>
   </div>
@@ -21,4 +23,8 @@
 
 <script setup lang="ts">
 import OAuthButton from '@/components/auth/OAuthButton.vue';
+import type { authModes } from '@/types/auth';
+const { authMode } = defineProps<{
+  authMode: authModes;
+}>();
 </script>

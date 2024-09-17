@@ -13,12 +13,12 @@
       </div>
 
       <div>
-        <SocialAuth />
+        <SocialAuth auth-mode="sign-up" />
         <Separator
           layout="horizontal"
           :content="$t('auth.or_sign_up_with_social')"
         />
-        <EmailAuth state="signup" />
+        <EmailAuth auth-mode="sign-up" />
       </div>
 
       <span>

@@ -9,14 +9,14 @@
     </div>
 
     <div>
-      <EmailAuth state="login" />
+      <EmailAuth auth-mode="sign-in" />
 
       <Separator
         layout="horizontal"
         :content="$t('auth.or_sign_in_with_social')"
       />
 
-      <SocialAuth />
+      <SocialAuth auth-mode="sign-in" />
     </div>
 
     <div class="grid gap-2">

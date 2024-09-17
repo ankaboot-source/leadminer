@@ -20,6 +20,7 @@
           @click="executePartialAction"
         />
         <Button
+          id="refill-modal"
           :label="t('refill')"
           severity="success"
           @click="refillCredits()"
