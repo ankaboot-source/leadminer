@@ -15,10 +15,6 @@ exclude_patterns = [
 [[analyzers]]
 name = "test-coverage"
 enabled = true
-exclude_patterns = [
-  "frontend/**"
-]
-
 
 [[analyzers]]
 name = "sql"
