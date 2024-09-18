@@ -5,25 +5,35 @@
       class="w-full min-[1129px]:w-1/2 flex flex-col gap-3"
     >
       <p>{{ t('pick_existing_email') }}</p>
-      <Select
-        v-model="sourceModel"
-        checkmark
-        :options="sourceOptions"
-        option-label="email"
-        :placeholder="t('email_address')"
-        :pt="{
-          trigger: {
-            class: 'text-indigo-500',
-          },
-
-          input: {
-            class: 'text-indigo-500',
-          },
-          root: {
-            class: 'border-[#bcbdf9]',
-          },
-        }"
-      />
+      <div class="flex flex-col min-[1129px]:flex-row gap-2">
+        <Select
+          v-model="sourceModel"
+          :options="sourceOptions"
+          class="flex-grow min-w-0"
+          option-label="email"
+          :placeholder="t('email_address')"
+          :pt="{
+            trigger: {
+              class: 'text-indigo-500 ',
+            },
+            input: {
+              class: 'text-indigo-500 ',
+            },
+            root: {
+              class: 'border-[#bcbdf9] ',
+            },
+          }"
+          @change="extractContacts()"
+        />
+        <Button
+          id="extract-source"
+          :disabled="!sourceModel"
+          severity="contrast"
+          class="font-semibold whitespace-nowrap flex-shrink-0"
+          :label="t('extract_contacts')"
+          @click="extractContacts()"
+        />
+      </div>
     </div>
     <div v-if="sourceOptions.length">
       <Separator
@@ -58,8 +68,8 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import type { MiningSource, MiningSourceType } from '~/types/mining';
 import { FetchError } from 'ofetch';
+import type { MiningSource, MiningSourceType } from '~/types/mining';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -72,18 +82,17 @@ const $imapDialogStore = useImapDialog();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
+function extractContacts() {
+  if (sourceModel.value) {
+    onSourceChange(sourceModel.value);
+  }
+}
 function onSourceChange(source: MiningSource) {
   $leadminerStore.boxes = [];
   $leadminerStore.selectedBoxes = [];
   $leadminerStore.activeMiningSource = source;
   $stepper.next();
 }
-
-watch(sourceModel, (source) => {
-  if (source) {
-    onSourceChange(source);
-  }
-});
 
 function selectSource(source: MiningSourceType | string) {
   switch (source) {
@@ -104,6 +113,7 @@ function selectSource(source: MiningSourceType | string) {
 onMounted(async () => {
   try {
     await $leadminerStore.fetchMiningSources();
+    sourceModel.value = sourceOptions?.value[0];
   } catch (error) {
     if (error instanceof FetchError && error.response?.status === 401) {
       throw error;
@@ -124,13 +134,15 @@ defineExpose({
     "pick_existing_email": "Pick an existing email address to mine",
     "add_new_email_provider": "Add a new email provider",
     "fetch_sources_failed": "Failed to fetch mining sources",
-    "email_address": "email address"
+    "email_address": "email address",
+    "extract_contacts": "Extract contacts"
   },
   "fr": {
     "pick_existing_email": "Choisissez une adresse e-mail existante pour l’extraction",
     "add_new_email_provider": "Ajouter un nouveau compte e-mail",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
-    "email_address": "adresse e-mail"
+    "email_address": "adresse e-mail",
+    "extract_contacts": "Extraire les contacts"
   }
 }
 </i18n>
