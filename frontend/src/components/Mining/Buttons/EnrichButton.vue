@@ -58,6 +58,7 @@
     </template>
   </Dialog>
   <Button
+    :id="`${source}-enrich-button`"
     :class="{ 'border-solid border-2 border-black': bordered }"
     severity="contrast"
     icon-pos="right"
@@ -101,6 +102,7 @@ const props = defineProps<{
   contactsToEnrich?: string[];
   bordered?: boolean;
   skipDialog?: boolean;
+  source?: 'stepper' | 'datatable' | 'contact';
 }>();
 
 const { $api } = useNuxtApp();

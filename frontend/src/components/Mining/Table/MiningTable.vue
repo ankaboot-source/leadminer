@@ -71,6 +71,7 @@
         </div>
         <div>
           <EnrichButton
+          source="datatable"
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
             :contacts-to-enrich="
