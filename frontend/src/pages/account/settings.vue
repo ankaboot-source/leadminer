@@ -82,6 +82,7 @@
       </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">
         <Button
+          id="delete-account-button"
           type="button"
           :label="t('delete')"
           severity="danger"
