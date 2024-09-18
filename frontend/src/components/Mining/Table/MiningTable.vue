@@ -699,6 +699,7 @@ const { t: $t } = useI18n({
   useScope: 'global',
 });
 
+// skipcq: JS-0321
 const emptyFunction = () => {};
 
 const $toast = useToast();
