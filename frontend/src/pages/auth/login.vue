@@ -9,14 +9,14 @@
     </div>
 
     <div>
-      <EmailAuth state="login" />
+      <EmailAuth auth-mode="sign-in" />
 
       <Separator
         layout="horizontal"
         :content="$t('auth.or_sign_in_with_social')"
       />
 
-      <SocialAuth />
+      <SocialAuth auth-mode="sign-in" />
     </div>
 
     <div class="grid gap-2">
@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
-import LegalInformation from '@/components/auth/legalInformation.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
+import LegalInformation from '~/components/auth/LegalInformation.vue';
 </script>

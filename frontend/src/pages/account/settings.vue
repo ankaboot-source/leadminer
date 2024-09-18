@@ -82,6 +82,7 @@
       </span>
       <div class="flex flex-row-reverse justify-content-start gap-2">
         <Button
+          id="delete-account-button"
           type="button"
           :label="t('delete')"
           severity="danger"
@@ -104,9 +105,9 @@
 <script setup lang="ts">
 import type { UserAttributes } from '@supabase/supabase-js';
 
-import LegalInformation from '@/components/auth/legalInformation.vue';
 import { isInvalidEmail } from '@/utils/email';
 import { isInvalidPassword } from '@/utils/password';
+import LegalInformation from '~/components/auth/LegalInformation.vue';
 import type { Profile } from '~/types/profile';
 
 const { t } = useI18n({

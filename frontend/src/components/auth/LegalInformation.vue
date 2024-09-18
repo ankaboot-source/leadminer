@@ -19,12 +19,13 @@
 </template>
 
 <script setup lang="ts">
+import type { authModes } from '@/types/auth';
 const { t } = useI18n({
   useScope: 'local',
 });
 
 const { authMode } = defineProps<{
-  authMode?: 'sign-up' | 'sign-in';
+  authMode?: authModes;
 }>();
 </script>
 

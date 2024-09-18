@@ -1,6 +1,6 @@
 <template>
   <div class="card flex flex-col space-y-2">
-    <template v-if="state === 'signup'">
+    <template v-if="authMode === 'sign-up'">
       <div class="grid gap-1">
         <label class="text-left" for="email">Email</label>
         <InputText
@@ -120,7 +120,8 @@
       </div>
       <div class="pt-3">
         <Button
-          v-if="state === 'signup'"
+          v-if="authMode === 'sign-up'"
+          :id="`${authMode}-button`"
           :loading="isLoading"
           :label="$t('auth.sign_up')"
           size="large"
@@ -218,7 +219,8 @@
       </div>
       <div class="pt-1">
         <Button
-          v-if="state === 'login'"
+          v-if="authMode === 'sign-in'"
+          :id="`${authMode}-button`"
           :loading="isLoading"
           :label="$t('auth.sign_in')"
           class="w-full"
@@ -231,9 +233,10 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
+import type { authModes } from '@/types/auth';
 import { isInvalidEmail as isInvalidEmailSyntax } from '@/utils/email';
 import { isInvalidPassword as isInvalidPasswordSyntax } from '@/utils/password';
+import { useI18n } from 'vue-i18n';
 
 const { getBrowserLocale } = useI18n({
   useScope: 'local',
@@ -243,14 +246,9 @@ const { t: $t } = useI18n({
   useScope: 'global',
 });
 
-const { state } = withDefaults(
-  defineProps<{
-    state: 'login' | 'signup';
-  }>(),
-  {
-    state: 'login',
-  },
-);
+const { authMode = 'sign-in' } = defineProps<{
+  authMode: authModes;
+}>();
 
 const $toast = useToast();
 

@@ -62,6 +62,7 @@
           v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
         >
           <Button
+            id="export-csv"
             icon="pi pi-external-link"
             :label="$screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
@@ -70,6 +71,7 @@
         </div>
         <div>
           <EnrichButton
+            source="datatable"
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
             :contacts-to-enrich="
@@ -698,6 +700,7 @@ const { t: $t } = useI18n({
   useScope: 'global',
 });
 
+// skipcq: JS-0321
 const emptyFunction = () => {};
 
 const $toast = useToast();

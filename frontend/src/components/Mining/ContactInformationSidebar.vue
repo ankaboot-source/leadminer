@@ -175,6 +175,7 @@
     <div className="grid grid-cols-2 gap-2 items-center pt-4">
       <template v-if="!editingContact">
         <EnrichButton
+          source="contact"
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
           :contacts-to-enrich="[contact.email]"

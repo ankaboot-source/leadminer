@@ -14,7 +14,12 @@
         >
           {{ $user?.email }}
         </Button>
-        <Button icon="pi pi-sign-out" text @click="signOut" />
+        <Button
+          icon="pi pi-sign-out"
+          text
+          class="sign-out-button"
+          @click="signOut"
+        />
       </div>
       <div id="mobile-navbar" class="flex md:hidden">
         <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />

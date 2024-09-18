@@ -13,12 +13,12 @@
       </div>
 
       <div>
-        <SocialAuth />
+        <SocialAuth auth-mode="sign-up" />
         <Separator
           layout="horizontal"
           :content="$t('auth.or_sign_up_with_social')"
         />
-        <EmailAuth state="signup" />
+        <EmailAuth auth-mode="sign-up" />
       </div>
 
       <span>
@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
-import LegalInformation from '@/components/auth/legalInformation.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
+import LegalInformation from '~/components/auth/LegalInformation.vue';
 </script>

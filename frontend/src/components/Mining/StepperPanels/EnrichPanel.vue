@@ -54,6 +54,7 @@
       @click="startNewMining"
     />
     <EnrichButton
+      source="stepper"
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
