@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import EmailAuth from '@/components/auth/EmailAuth.vue';
-import LegalInformation from '@/components/auth/legalInformation.vue';
 import SocialAuth from '@/components/auth/SocialAuth.vue';
 import Separator from '@/components/Separator.vue';
+import LegalInformation from '~/components/auth/LegalInformation.vue';
 </script>
