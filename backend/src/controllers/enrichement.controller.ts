@@ -1,10 +1,9 @@
-import { NextFunction, Request, Response } from 'express';
-import ENV from '../config';
-import { Users } from '../db/interfaces/Users';
-import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditsHandler';
-import emailEnrichementService from '../services/email-enrichment';
-import supabaseClient from '../utils/supabase';
+import { NextFunction, Request, Response } from "express";
+import ENV from "../config";
+import { Users } from "../db/interfaces/Users";
+import { Contact } from "../db/types";
+import emailEnrichementService from "../services/email-enrichment";
+import supabaseClient from "../utils/supabase";
 
 /**
  * Queries enriched emails for a given user.
@@ -14,9 +13,9 @@ import supabaseClient from '../utils/supabase';
  */
 async function getEnrichedEmails(userId: string) {
   const { data: emails, error } = await supabaseClient
-    .from('engagement')
-    .select('email')
-    .match({ user_id: userId, engagement_type: 'ENRICH' })
+    .from("engagement")
+    .select("email")
+    .match({ user_id: userId, engagement_type: "ENRICH" })
     .returns<{ email: string }[]>();
 
   if (error) {
@@ -34,8 +33,8 @@ async function getEnrichedEmails(userId: string) {
  */
 async function getEmails(userId: string) {
   const { data: emails, error } = await supabaseClient
-    .from('refinedpersons')
-    .select('email')
+    .from("refinedpersons")
+    .select("email")
     .match({ user_id: userId })
     .returns<{ email: string }[]>();
 
@@ -54,14 +53,14 @@ async function getEmails(userId: string) {
  */
 async function startEnrichmentTask(userId: string) {
   const { data: task, error } = await supabaseClient
-    .from('tasks')
+    .from("tasks")
     .insert({
       user_id: userId,
-      status: 'running',
-      type: 'enrich',
-      category: 'enriching'
+      status: "running",
+      type: "enrich",
+      category: "enriching",
     })
-    .select('id')
+    .select("id")
     .single<{ id: string }>();
 
   if (error) {
@@ -78,9 +77,9 @@ async function startEnrichmentTask(userId: string) {
  */
 async function getEnrichmentTask(taskId: string) {
   const { data: task, error } = await supabaseClient
-    .from('tasks')
-    .select('*')
-    .eq('id', taskId)
+    .from("tasks")
+    .select("*")
+    .eq("id", taskId)
     .single<{
       id: string;
       details: {
@@ -110,7 +109,7 @@ async function getEnrichmentTask(taskId: string) {
  */
 async function updateEnrichmentTask(
   taskId: string,
-  status: 'running' | 'done' | 'canceled',
+  status: "running" | "done" | "canceled",
   details?: {
     userId: string;
     enrichmentToken: string;
@@ -119,18 +118,18 @@ async function updateEnrichmentTask(
       total?: number;
       enriched?: number;
     };
-  }
+  },
 ) {
   const { error } = await supabaseClient
-    .from('tasks')
+    .from("tasks")
     .update({
       status,
       details,
-      stopped_at: ['done', 'canceled'].includes(status)
+      stopped_at: ["done", "canceled"].includes(status)
         ? new Date().toISOString()
-        : null
+        : null,
     })
-    .eq('id', taskId);
+    .eq("id", taskId);
 
   if (error) {
     throw new Error(error.message);
@@ -145,16 +144,16 @@ async function updateEnrichmentTask(
  */
 async function enrichContact(
   updateEmptyFieldsOnly: boolean,
-  contacts: Partial<Contact>[]
+  contacts: Partial<Contact>[],
 ) {
   // update contacts
-  const { error } = await supabaseClient.rpc('enrich_contacts', {
+  const { error } = await supabaseClient.rpc("enrich_contacts", {
     p_contacts_data: contacts.map((contact) => ({
       ...contact,
-      same_as: contact.same_as?.join(','),
-      location: contact.location?.join(',')
+      same_as: contact.same_as?.join(","),
+      location: contact.location?.join(","),
     })),
-    p_update_empty_fields_only: updateEmptyFieldsOnly ?? true
+    p_update_empty_fields_only: updateEmptyFieldsOnly ?? true,
   });
 
   if (error) {
@@ -165,17 +164,17 @@ async function enrichContact(
   await Promise.all(
     contacts.map(async ({ email, user_id }) => {
       const { error: engagementError } = await supabaseClient
-        .from('engagement')
+        .from("engagement")
         .upsert({
           email,
           user_id,
-          engagement_type: 'ENRICH'
+          engagement_type: "ENRICH",
         });
 
       if (engagementError) {
         throw new Error(engagementError.message);
       }
-    })
+    }),
   );
 }
 
@@ -189,7 +188,7 @@ export default function initializeEnrichementController(userResolver: Users) {
       const {
         emails,
         enrichAllContacts,
-        updateEmptyFieldsOnly
+        updateEmptyFieldsOnly,
       }: {
         emails?: string[];
         enrichAllContacts: boolean;
@@ -204,7 +203,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         } else {
           if (!Array.isArray(emails) || !emails.length) {
             return res.status(400).json({
-              message: 'Parameter "emails" must be a non-empty list of emails'
+              message: 'Parameter "emails" must be a non-empty list of emails',
             });
           }
           emailsToEnrich = emails;
@@ -212,7 +211,7 @@ export default function initializeEnrichementController(userResolver: Users) {
 
         const enrichedEmails = new Set(await getEnrichedEmails(user.id));
         let contactsToEnrich = emailsToEnrich.filter(
-          (email) => !enrichedEmails.has(email)
+          (email) => !enrichedEmails.has(email),
         );
 
         if (!contactsToEnrich.length) {
@@ -220,26 +219,32 @@ export default function initializeEnrichementController(userResolver: Users) {
         }
 
         if (ENV.ENABLE_CREDIT) {
-          const creditsHandler = new CreditsHandler(
-            userResolver,
-            ENV.CONTACT_CREDIT
+          const { data, error } = await supabaseClient.functions.invoke(
+            "credits-manager/validate",
+            {
+              method: "POST",
+              body: {
+                partial: false,
+                user_id: user.id,
+                requested_units: contactsToEnrich?.length,
+              },
+            },
           );
-          const {
-            hasDeficientCredits,
-            hasInsufficientCredits,
-            availableUnits
-          } = await creditsHandler.validate(user.id, contactsToEnrich.length);
 
-          if (hasDeficientCredits || hasInsufficientCredits) {
-            const response = {
-              total: contactsToEnrich.length,
-              available: Math.floor(availableUnits)
-            };
-            return res
-              .status(creditsHandler.DEFICIENT_CREDITS_STATUS)
-              .json(response);
+          if (error) {
+            throw new Error(error.message);
           }
-          contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
+
+          const { status_code, available } = data;
+
+          if (status_code !== 200) {
+            return res.status(status_code).json({
+              available,
+              total: contactsToEnrich.length,
+            });
+          }
+
+          contactsToEnrich = contactsToEnrich.slice(0, available);
         }
 
         const enricher = emailEnrichementService.getEmailEnricher();
@@ -247,21 +252,21 @@ export default function initializeEnrichementController(userResolver: Users) {
 
         const { token } = await enricher.enrichWebhook(
           contactsToEnrich,
-          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`
+          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`,
         );
 
-        await updateEnrichmentTask(enrichmentTask.id, 'running', {
+        await updateEnrichmentTask(enrichmentTask.id, "running", {
           userId: user.id,
           enrichmentToken: token,
           updateEmptyFieldsOnly,
           result: {
-            total: contactsToEnrich.length
-          }
+            total: contactsToEnrich.length,
+          },
         });
 
         return res.status(200).json({
           taskId: enrichmentTask.id,
-          total: contactsToEnrich.length
+          total: contactsToEnrich.length,
         });
       } catch (err) {
         return next(err);
@@ -282,19 +287,19 @@ export default function initializeEnrichementController(userResolver: Users) {
         const {
           userId: cachedUserId,
           enrichmentToken: cachedEnrichmentToken,
-          updateEmptyFieldsOnly
+          updateEmptyFieldsOnly,
         } = details;
 
         if (!id) {
           return res.status(404).send({
-            message: `Enrichement with id ${enrichmentToken} not found.`
+            message: `Enrichement with id ${enrichmentToken} not found.`,
           });
         }
 
         if (enrichmentToken !== cachedEnrichmentToken) {
           return res
             .status(401)
-            .json({ message: 'You are not authorized to use this token' });
+            .json({ message: "You are not authorized to use this token" });
         }
 
         const enrichementResult = enricher.enrichementMapper(req.body);
@@ -310,30 +315,35 @@ export default function initializeEnrichementController(userResolver: Users) {
             job_title: contact.jobTitle,
             given_name: contact.givenName,
             family_name: contact.familyName,
-            works_for: contact.organization
-          }))
+            works_for: contact.organization,
+          })),
         );
-        await updateEnrichmentTask(taskId, 'done', {
+        await updateEnrichmentTask(taskId, "done", {
           ...details,
           result: {
             ...details.result,
-            enriched: enrichementResult.length
-          }
+            enriched: enrichementResult.length,
+          },
         });
 
         if (ENV.ENABLE_CREDIT) {
-          const creditsHandler = new CreditsHandler(
-            userResolver,
-            ENV.CONTACT_CREDIT
+          await supabaseClient.functions.invoke(
+            "credits-manager/deduct",
+            {
+              method: "POST",
+              body: {
+                user_id: cachedUserId,
+                requested_units: enrichementResult.length,
+              },
+            },
           );
-          await creditsHandler.deduct(cachedUserId, enrichementResult.length);
         }
 
         return res.status(200);
       } catch (err) {
-        await updateEnrichmentTask(taskId, 'canceled');
+        await updateEnrichmentTask(taskId, "canceled");
         return next(err);
       }
-    }
+    },
   };
 }

@@ -1,28 +1,28 @@
-import { User } from '@supabase/supabase-js';
-import { NextFunction, Request, Response } from 'express';
-import ENV from '../config';
-import { Contacts } from '../db/interfaces/Contacts';
-import { Users } from '../db/interfaces/Users';
-import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditsHandler';
+import { User } from "@supabase/supabase-js";
+import { NextFunction, Request, Response, response } from "express";
+import ENV from "../config";
+import { Contacts } from "../db/interfaces/Contacts";
+import { Users } from "../db/interfaces/Users";
+import { Contact } from "../db/types";
 import {
   exportContactsToCSV,
-  getLocalizedCsvSeparator
-} from '../utils/helpers/csv';
+  getLocalizedCsvSeparator,
+} from "../utils/helpers/csv";
+import supabaseClient from "../utils/supabase";
 
 async function exportToCSV(
   contactsToExport: Contact[],
   delimiterOption: string | undefined,
-  localeFromHeader: string | undefined
+  localeFromHeader: string | undefined,
 ) {
-  const csvSeparator =
-    delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader ?? '');
+  const csvSeparator = delimiterOption ??
+    getLocalizedCsvSeparator(localeFromHeader ?? "");
   const csvData = await exportContactsToCSV(contactsToExport, csvSeparator);
   return csvData;
 }
 export default function initializeContactsController(
   contacts: Contacts,
-  userResolver: Users
+  userResolver: Users,
 ) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
@@ -30,110 +30,118 @@ export default function initializeContactsController(
       const partialExport = req.body.partialExport ?? false;
       const {
         emails,
-        exportAllContacts
+        exportAllContacts,
       }: { emails?: string[]; exportAllContacts: boolean } = req.body;
 
       if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
         return res.status(400).json({
-          message: 'Parameter "emails" must be a non-empty list of emails'
+          message: 'Parameter "emails" must be a non-empty list of emails',
         });
       }
+
       const contactsToExport = exportAllContacts ? undefined : emails;
-      let statusCode = 200;
+
       try {
-        if (!ENV.ENABLE_CREDIT || !ENV.CONTACT_CREDIT) {
-          // No need to Verify Credits, Export.
-
-          const selectedContacts = await contacts.getContacts(
-            user.id,
-            contactsToExport
-          );
-
-          if (!selectedContacts.length) {
-            statusCode = 204; // 204 No Content
-            return res.sendStatus(statusCode);
-          }
-
-          const csvData = await exportToCSV(
-            selectedContacts,
-            req.query.delimiter ? String(req.query.delimiter) : undefined,
-            req.headers['accept-language']
-          );
-          return res
-            .header('Content-Type', 'text/csv')
-            .status(statusCode)
-            .send(csvData);
-        }
-
-        // Verify
         const newContacts = await contacts.getNonExportedContacts(
           user.id,
-          contactsToExport
+          contactsToExport,
         );
 
         const previousExportedContacts = await contacts.getExportedContacts(
           user.id,
-          contactsToExport
+          contactsToExport,
         );
 
-        // Verify Credits
-        const creditsHandler = new CreditsHandler(
-          userResolver,
-          ENV.CONTACT_CREDIT
-        );
-        const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
-          await creditsHandler.validate(user.id, newContacts.length);
+        if (!newContacts.length && !previousExportedContacts.length) {
+          return res.sendStatus(204);
+        }
 
-        if (hasDeficientCredits && !previousExportedContacts.length) {
-          statusCode = creditsHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
-          const response = {
-            total: newContacts.length + previousExportedContacts.length,
-            available: Math.floor(availableUnits),
-            availableAlready: previousExportedContacts.length
-          };
-          return res.status(statusCode).json(response);
+        if (!ENV.ENABLE_CREDIT || newContacts.length === 0) {
+          const csvData = await exportToCSV(
+            [
+              ...previousExportedContacts,
+              ...newContacts,
+            ],
+            req.query.delimiter ? String(req.query.delimiter) : undefined,
+            req.headers["accept-language"],
+          );
+
+          return res
+            .header("Content-Type", "text/csv")
+            .status(200)
+            .send(csvData);
         }
-        if (hasInsufficientCredits && newContacts.length) {
-          statusCode = 206; // 206 Partial Content
-          if (!partialExport) {
-            statusCode = 266; // 266 Confirm Partial Content
-            res.statusMessage = 'Confirm Partial Content';
-            const response = {
-              total: newContacts.length + previousExportedContacts.length,
-              available: Math.floor(availableUnits),
-              availableAlready: previousExportedContacts.length
-            };
-            return res.status(statusCode).json(response);
-          }
+
+        const { data, error } = await supabaseClient.functions.invoke(
+          "credits-manager/validate",
+          {
+            method: "POST",
+            body: {
+              partial: true,
+              user_id: user.id,
+              requested_units: newContacts?.length,
+              registered_units: previousExportedContacts.length,
+            },
+          },
+        );
+
+        if (error) {
+          throw new Error(error.message);
         }
-        // Verified, Export.
-        const availableContacts = newContacts.slice(0, availableUnits);
+
+        const { status_code, available } = data;
+        const responseData = {
+          total: newContacts.length + previousExportedContacts.length,
+          available: Math.floor(available),
+          availableAlready: previousExportedContacts.length,
+        };
+
+        switch (status_code) {
+          case 402:
+            return res.status(402).json({ ...responseData });
+
+          case 206:
+            if (partialExport) break;
+            res.statusMessage = "266 Confirm Partial Content";
+            return res.status(266).json({ ...responseData });
+        }
+
+        const availableContacts = newContacts.slice(0, available);
         const selectedContacts = [
+          ...newContacts.slice(0, available),
           ...previousExportedContacts,
-          ...availableContacts
         ];
-
         const csvData = await exportToCSV(
           selectedContacts,
           req.query.delimiter ? String(req.query.delimiter) : undefined,
-          req.headers['accept-language']
+          req.headers["accept-language"],
+        );
+
+        await contacts.registerExportedContacts(
+          availableContacts.map(({ email }) => email),
+          user.id,
         );
 
         if (availableContacts.length) {
-          await contacts.registerExportedContacts(
-            availableContacts.map(({ email }) => email),
-            user.id
+          await supabaseClient.functions.invoke(
+            "credits-manager/deduct",
+            {
+              method: "POST",
+              body: {
+                user_id: user.id,
+                requested_units: availableContacts.length,
+              },
+            },
           );
-          await creditsHandler.deduct(user.id, availableUnits);
         }
 
         return res
-          .header('Content-Type', 'text/csv')
-          .status(statusCode)
+          .header("Content-Type", "text/csv")
+          .status(200)
           .send(csvData);
       } catch (error) {
         return next(error);
       }
-    }
+    },
   };
 }
