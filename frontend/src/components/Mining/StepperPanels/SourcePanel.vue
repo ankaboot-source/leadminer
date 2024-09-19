@@ -29,7 +29,7 @@
           id="extract-source"
           :disabled="!sourceModel"
           severity="contrast"
-          class="font-semibold whitespace-nowrap flex-shrink-0"
+          class="font-semibold flex-shrink-0 border-solid border-2 border-black"
           :label="t('extract_contacts')"
           @click="extractContacts()"
         />
