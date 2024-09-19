@@ -1,7 +1,10 @@
 {
   "imports": {
+    "shared/": "./_shared/",
     "supabase": "https://esm.sh/@supabase/supabase-js@2.45.3",
     "express": "npm:express",
-    "cors": "npm:cors"
+    "cors": "npm:cors",
+    "zod": "https://deno.land/x/zod/mod.ts",
+    "zod-error": "npm:zod-error"
   }
 }

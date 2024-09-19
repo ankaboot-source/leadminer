@@ -1,20 +1,22 @@
 import { createClient } from "supabase";
+import ENV from "./config.ts";
+import { Database } from "shared/database.ts";
 
 export function createSupabaseAdmin() {
-  return createClient(
-    Deno.env.get("LEADMINER_PROJECT_URL")!,
-    Deno.env.get("LEADMINER_SECRET_TOKEN")!
+  return createClient<Database>(
+    ENV.LEADMINER_PROJECT_URL,
+    ENV.LEADMINER_SECRET_TOKEN,
   );
 }
 
 export function createSupabaseClient(authorization = "") {
-  return createClient(
-    Deno.env.get("LEADMINER_PROJECT_URL")!,
-    Deno.env.get("LEADMINER_ANON_KEY")!,
+  return createClient<Database>(
+    ENV.LEADMINER_PROJECT_URL,
+    ENV.LEADMINER_ANON_KEY,
     {
       global: {
         headers: { Authorization: authorization },
       },
-    }
+    },
   );
 }

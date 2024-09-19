@@ -1,20 +1,21 @@
 import { createClient } from "supabase";
+import ENV from "./config.ts";
+
+export function createSupabaseAdmin() {
+  return createClient(
+    ENV.SUPABASE_URL,
+    ENV.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
 
 export function createSupabaseClient(authorization = "") {
   return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
+    ENV.SUPABASE_URL,
+    ENV.SUPABASE_ANON_KEY,
     {
       global: {
         headers: { Authorization: authorization },
       },
     }
-  );
-}
-
-export function createSupabaseAdmin() {
-  return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 }

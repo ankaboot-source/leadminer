@@ -1,0 +1,39 @@
+{
+    "folders": [
+        {
+            "name": "leadminer-root",
+            "path": "./"
+        },
+        {
+            "name": "backend",
+            "path": "./backend/"
+        },
+        {
+            "name": "frontend",
+            "path": "./frontend/"
+        },
+        {
+            "name": "supabase-migrations",
+            "path": "./supabase/migrations"
+        },
+        {
+            "name": "supabase-functions",
+            "path": "./supabase/functions"
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            ".nuxt": true,
+            "frontend/": true,
+            "backend/": true,
+            "node_modules/": true,
+            "supabase/.temp": true,
+            "supabase/.branches": true,
+            "supabase/functions/": true,
+            "supabase/migrations/": true,
+            
+        },
+        "deno.importMap": "./supabase/functions/import_map.json",
+        "deno.enable": false
+    }
+}
