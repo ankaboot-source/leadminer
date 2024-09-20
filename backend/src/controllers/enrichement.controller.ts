@@ -222,7 +222,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         if (ENV.ENABLE_CREDIT) {
           const creditsHandler = new CreditsHandler(
             userResolver,
-            ENV.CONTACT_CREDIT
+            ENV.CREDITS_PER_CONTACT
           );
           const {
             hasDeficientCredits,
@@ -324,7 +324,7 @@ export default function initializeEnrichementController(userResolver: Users) {
         if (ENV.ENABLE_CREDIT) {
           const creditsHandler = new CreditsHandler(
             userResolver,
-            ENV.CONTACT_CREDIT
+            ENV.CREDITS_PER_CONTACT
           );
           await creditsHandler.deduct(cachedUserId, enrichementResult.length);
         }
