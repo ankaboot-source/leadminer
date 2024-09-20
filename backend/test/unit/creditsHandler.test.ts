@@ -12,7 +12,7 @@ import SupabaseUsers from '../../src/db/supabase/users';
 import { Profile } from '../../src/db/types';
 import CreditsHandler from '../../src/services/credits/creditsHandler';
 
-const ENV_CONTACT_CREDITS = 10;
+const ENV_CREDITS_PER_CONTACT = 10;
 const MOCKED_DB = new Map<string, Partial<Profile>>([]);
 
 jest.mock('../../src/db/supabase/users', () =>
@@ -47,7 +47,7 @@ describe('CreditsHandler', () => {
 
     creditsHandler = new CreditsHandler(
       mockedSupabaseUser,
-      ENV_CONTACT_CREDITS
+      ENV_CREDITS_PER_CONTACT
     );
   });
 
@@ -72,7 +72,7 @@ describe('CreditsHandler', () => {
       const units = 5;
       const userCredits = MOCKED_DB.get(USER_ID_WITH_FEWER_CREDITS)?.credits;
       const correctAvialableUnits = userCredits
-        ? userCredits / ENV_CONTACT_CREDITS
+        ? userCredits / ENV_CREDITS_PER_CONTACT
         : 0;
 
       const result = await creditsHandler.validate(
@@ -104,7 +104,8 @@ describe('CreditsHandler', () => {
         ?.credits as number;
       const unitsToDeduct = 5;
 
-      const calcultedCredit = userCredits - unitsToDeduct * ENV_CONTACT_CREDITS;
+      const calcultedCredit =
+        userCredits - unitsToDeduct * ENV_CREDITS_PER_CONTACT;
       const updatedUserAccount = await creditsHandler.deduct(
         USER_ID_WITH_ENOUGH_CREDITS,
         unitsToDeduct
