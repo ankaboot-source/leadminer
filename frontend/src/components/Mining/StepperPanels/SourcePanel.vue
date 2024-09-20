@@ -82,18 +82,17 @@ const $imapDialogStore = useImapDialog();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
-function extractContacts() {
-  if (sourceModel.value) {
-    onSourceChange(sourceModel.value);
-  }
-}
 function onSourceChange(source: MiningSource) {
   $leadminerStore.boxes = [];
   $leadminerStore.selectedBoxes = [];
   $leadminerStore.activeMiningSource = source;
   $stepper.next();
 }
-
+function extractContacts() {
+  if (sourceModel.value) {
+    onSourceChange(sourceModel.value);
+  }
+}
 function selectSource(source: MiningSourceType | string) {
   switch (source) {
     case 'imap':
