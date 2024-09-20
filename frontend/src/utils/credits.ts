@@ -18,7 +18,9 @@ export const CreditsDialog = showCreditsBadge
   ? defineAsyncComponent(() => import('~/components/Credits/CreditsDialog.vue'))
   : null;
 
-export const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
+export const CreditsDialogRef = ref<InstanceType<
+  NonNullable<typeof CreditsDialog>
+> | null>();
 export const openCreditsDialog = (
   hasDeficientCredits: boolean,
   totalUnits: number,
