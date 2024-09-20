@@ -9,6 +9,7 @@
     "install-deps:frontend": "npm i --prefix ./frontend",
     "dev:generate-env": "bash ./generate_env.sh .env.master.dev",
     "dev:supabase": "supabase start",
+    "dev:supabase-functions": "supabase functions serve",
     "dev:frontend": "npm run dev --prefix ./frontend",
     "dev:backend-api": "npm run dev-api --prefix ./backend",
     "dev:backend-worker": "npm run dev-worker --prefix ./backend",

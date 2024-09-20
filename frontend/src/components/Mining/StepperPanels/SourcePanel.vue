@@ -29,7 +29,7 @@
           id="extract-source"
           :disabled="!sourceModel"
           severity="contrast"
-          class="font-semibold whitespace-nowrap flex-shrink-0"
+          class="font-semibold flex-shrink-0 border-solid border-2 border-black"
           :label="t('extract_contacts')"
           @click="extractContacts()"
         />
@@ -82,18 +82,17 @@ const $imapDialogStore = useImapDialog();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
-function extractContacts() {
-  if (sourceModel.value) {
-    onSourceChange(sourceModel.value);
-  }
-}
 function onSourceChange(source: MiningSource) {
   $leadminerStore.boxes = [];
   $leadminerStore.selectedBoxes = [];
   $leadminerStore.activeMiningSource = source;
   $stepper.next();
 }
-
+function extractContacts() {
+  if (sourceModel.value) {
+    onSourceChange(sourceModel.value);
+  }
+}
 function selectSource(source: MiningSourceType | string) {
   switch (source) {
     case 'imap':

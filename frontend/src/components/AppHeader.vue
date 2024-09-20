@@ -6,7 +6,7 @@
 
     <template v-if="$user">
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
-        <CreditsCounter v-if="showCreditsBadge" />
+        <component :is="CreditsCounter" />
         <Button
           class="text-lowercase"
           text
@@ -32,7 +32,7 @@
             </Button>
 
             <div class="overflow-y-auto mt-10">
-              <CreditsCounter v-if="showCreditsBadge" />
+              <component :is="CreditsCounter" />
             </div>
             <div class="mt-auto w-full">
               <Button
@@ -58,9 +58,6 @@
 
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
-import CreditsCounter from './Credits/CreditsCounter.vue';
-
 const $user = useSupabaseUser();
 const visible = ref(false);
-const showCreditsBadge = useRuntimeConfig().public.ENABLE_CREDIT;
 </script>

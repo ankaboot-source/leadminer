@@ -1,5 +1,6 @@
 <template>
-  <CreditsDialog
+  <component
+    :is="CreditsDialog"
     ref="CreditsDialogRef"
     engagement-type="contact"
     action-type="export"
@@ -667,6 +668,11 @@ import type {
 
 import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
+import {
+  CreditsDialog,
+  CreditsDialogRef,
+  openCreditsDialog,
+} from '@/utils/credits';
 import { useContactsStore } from '~/stores/contacts';
 import {
   getStatusColor,
@@ -683,9 +689,7 @@ const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 const SocialLinks = defineAsyncComponent(
   () => import('../../icons/SocialLink.vue'),
 );
-const CreditsDialog = defineAsyncComponent(
-  () => import('../../Credits/InsufficientCreditsDialog.vue'),
-);
+
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),
 );
@@ -843,7 +847,6 @@ watch(implicitlySelectedContactsLength, () => {
 /* *** Export CSV *** */
 
 const { $api } = useNuxtApp();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
 const isExportDisabled = computed(
   () =>
     contactsLength.value === 0 ||
@@ -877,7 +880,7 @@ const openCreditModel = (
       life: 3000,
     });
   }
-  return CreditsDialogRef.value?.openModal(
+  return openCreditsDialog(
     hasDeficientCredits,
     total,
     available,

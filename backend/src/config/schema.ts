@@ -88,7 +88,7 @@ const schema = z.object({
 
   /* CREDITS */
   ENABLE_CREDIT: boolean().default('false'),
-  CONTACT_CREDIT: number().optional().default(1),
+  CREDITS_PER_CONTACT: number().optional().default(1),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });

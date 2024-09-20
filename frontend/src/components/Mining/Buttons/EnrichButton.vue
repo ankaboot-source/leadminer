@@ -1,5 +1,6 @@
 <template>
-  <CreditsDialog
+  <component
+    :is="CreditsDialog"
     ref="CreditsDialogRef"
     engagement-type="contact"
     action-type="enrich"
@@ -66,7 +67,8 @@
     pt:label:class="hidden md:block"
     :disabled="
       $leadminerStore.activeEnrichment ||
-      (!enrichAllContacts && !contactsToEnrich?.length)
+      (!enrichAllContacts && !contactsToEnrich?.length) ||
+      (enrichAllContacts && !$contactsStore.selectedContactsCount)
     "
     @click="openEnrichmentConfirmationDialog"
   >
@@ -84,8 +86,12 @@ import type {
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
 
-import CreditsDialog from '@/components/Credits/InsufficientCreditsDialog.vue';
 import type { EnrichContactResponse, EnrichmentTask } from '@/types/enrichment';
+import {
+  CreditsDialog,
+  CreditsDialogRef,
+  openCreditsDialog,
+} from '@/utils/credits';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -108,11 +114,8 @@ const props = defineProps<{
 const { $api } = useNuxtApp();
 
 const $toast = useToast();
-const $profile = useSupabaseUserProfile();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
-const CreditsDialogRef = ref<InstanceType<typeof CreditsDialog>>();
-
 const dialogVisible = ref(false);
 
 const {
@@ -206,10 +209,6 @@ function setupEnrichmentRealtime() {
   subscription.subscribe();
 }
 
-const openCreditsDialog = (available: number, total: number) => {
-  CreditsDialogRef.value?.openModal(true, total, available, 0);
-};
-
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     $leadminerStore.activeEnrichment = true;
@@ -235,7 +234,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
         }
         if (response.status === 402) {
           stopEnrichment();
-          openCreditsDialog(available, total);
+          openCreditsDialog(true, total, available, 0);
         }
       },
     });
@@ -252,14 +251,10 @@ onMounted(async () => {
 });
 
 const openEnrichmentConfirmationDialog = () => {
-  const noCredits = $profile.value?.credits === 0;
-  const moreContactsThanCredits =
-    contactsToEnrich.value &&
-    contactsToEnrich.value?.length > ($profile.value?.credits ?? 0);
+  const creditsDialogOpened = useCreditsDialog(contactsToEnrich.value);
+  if (creditsDialogOpened) return;
 
-  if (noCredits || moreContactsThanCredits) {
-    openCreditsDialog(0, contactsToEnrich.value?.length ?? 0);
-  } else if (skipDialog.value) {
+  if (skipDialog.value) {
     startEnrichment(false);
   } else dialogVisible.value = true;
 };

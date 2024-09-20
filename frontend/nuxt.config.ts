@@ -57,6 +57,7 @@ export default defineNuxtConfig({
       // Credits
       ENABLE_CREDIT: process.env.ENABLE_CREDIT,
       EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
+      CREDITS_PER_CONTACT: process.env.CREDITS_PER_CONTACT,
       // Supabase saas
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,

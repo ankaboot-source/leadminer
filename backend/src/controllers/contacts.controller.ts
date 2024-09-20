@@ -41,7 +41,7 @@ export default function initializeContactsController(
       const contactsToExport = exportAllContacts ? undefined : emails;
       let statusCode = 200;
       try {
-        if (!ENV.ENABLE_CREDIT || !ENV.CONTACT_CREDIT) {
+        if (!ENV.ENABLE_CREDIT || !ENV.CREDITS_PER_CONTACT) {
           // No need to Verify Credits, Export.
 
           const selectedContacts = await contacts.getContacts(
@@ -79,7 +79,7 @@ export default function initializeContactsController(
         // Verify Credits
         const creditsHandler = new CreditsHandler(
           userResolver,
-          ENV.CONTACT_CREDIT
+          ENV.CREDITS_PER_CONTACT
         );
         const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
           await creditsHandler.validate(user.id, newContacts.length);
