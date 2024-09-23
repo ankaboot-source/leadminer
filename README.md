@@ -1,40 +1,41 @@
 [![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/) [![DeepSource](https://deepsource.io/gh/ankaboot-source/leadminer.svg/?label=active+issues&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://deepsource.io/gh/ankaboot-source/leadminer/?ref=repository-badge) </a>[![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability)
 
-<div style="font-size:1.2rem;">
-  <div style="font-size:5rem;" align="center">⛏️</div>
-  <h1 align="center" style="border-bottom:0; margin:0;">Leadminer</h1>
+<div>
+  <div align="center">
+    <img width="125" height="125" src="https://app-qa.leadminer.io/icons/pickaxe.svg" alt="Leadminer Logo">
+  </div>
+  <h1 align="center">Leadminer</h1>
   <div align="center">
     <p>
     Leadminer is a tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
     </p>
-      <div style="display: inline-block; text-align: left;">
-      <ol>
-      <li>⛏️📧 Extract contacts from your mailbox</li>
-      <li>🧹💌 Clean your email list</li>
-      <li>🧑🏾‍🔬💎 Enrich your contact list</li>
-      </ol>
-      </div>
-    </ul>
+
   </div>
 </div>
 
-## Table of contents
+## ✨ Features
 
-- [How to run?](#how-to-run)
-  - [Setup email-verification services:](#setup-email-verification-services)
-  - [Setup contact-enrichment services:](#setup-contact-enrichment-services)
-  - [Running in production](#running-in-production)
+- ⛏️📧 Extract contacts from your mailbox
+- 🧹💌 Clean your email list
+- 🧑🏾‍🔬💎 Enrich your contact list
+
+## 📑 Table of contents
+
+- [📦 How to run?](#-how-to-run)
+  - [Setup email-verification services](#setup-email-verification-services)
+  - [Setup contact-enrichment services](#setup-contact-enrichment-services)
+  - [Running in Production](#running-in-production)
   - [Running Locally](#running-locally)
-  - [Contributing](#contributing)
-- [Roadmap](#roadmap)
-- [Support](#support)
-- [License](#license)
+- [🤝 Contributing](#-contributing)
+- [🎯 Roadmap](#-roadmap)
+- [🛠️ Support](#️-support)
+- [📜 License](#-license)
 
-## How to run?
+## 📦 How to run?
 
 This project integrates with external services for full functionality. You can skip setting these up if you're running in development mode. See [development setup](#running-locally).
 
-### Setup email-verification services:
+### Setup email-verification services
 
 We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.com) for email verification. Configure one or both.
 
@@ -46,14 +47,14 @@ We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.c
 
   > Refer to [.env.master.prod](./.env.master.prod) for guidance.
 
-### Setup contact-enrichment services:
+### Setup contact-enrichment services
 
 We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sign up for an account and update `## CONTACT ENRICHMENT ##` section in the `.env` file.
 
 > See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
 
 <details>
-<summary><h3 style="display:inline-block" id="running-in-production">Running in production</h3></summary>
+<summary><h3 style="display:inline-block" id="running-in-production">Running in Production</h3></summary>
 
 1. **Setup Supabase Instance:**
 
@@ -190,20 +191,20 @@ npx supabase stop
 
 </details>
 
-## Contributing
+## 🤝 Contributing
 
 Thank you for taking the time to contribute! Please refer to our [CONTRIBUTING.md](https://github.com/ankaboot-source/leadminer/blob/main/CONTRIBUTING.md) for guidelines and more information on how to get started.
 
-## Roadmap
+## 🎯 Roadmap
 
 For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates.
 
-## Support
+## 🛠️ Support
 
 If you encounter any issues, please check the [issues tab](https://github.com/ankaboot-source/leadminer/issues) to see if it has already been reported and resolved. Ensure that you are using the latest version before reporting an issue. If the problem persists, feel free to [open a new issue](https://github.com/ankaboot-source/leadminer/issues/new).
 
 Please note that this app is provided for free and without any guarantee or official support. If you require additional assistance, you can contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) for help.
 
-## License
+## 📜 License
 
 This software is [dual-licensed](DUAL-LICENSE.md) under [GNU AGPL v3](LICENSE).
