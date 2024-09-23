@@ -1,6 +1,6 @@
 [![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/) [![DeepSource](https://deepsource.io/gh/ankaboot-source/leadminer.svg/?label=active+issues&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://deepsource.io/gh/ankaboot-source/leadminer/?ref=repository-badge) </a>[![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability)
 
-# ⛏ Leadminer
+# ⛏️ Leadminer
 
 Leadminer is a tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
 
@@ -179,7 +179,7 @@ For any specific requests or suggestions regarding the roadmap, please feel free
 
 ## Support
 
-If you encounter any issues, please check the [issues tab](https://github.com/ankaboot-source/leadminer/issues) to see if it has already been reported and resolved. Ensure that you are using the latest version before reporting an issue. If the problem persists, feel free to open a new issue.
+If you encounter any issues, please check the [issues tab](https://github.com/ankaboot-source/leadminer/issues) to see if it has already been reported and resolved. Ensure that you are using the latest version before reporting an issue. If the problem persists, feel free to [open a new issue](https://github.com/ankaboot-source/leadminer/issues/new).
 
 Please note that this app is provided for free and without any guarantee or official support. If you require additional assistance, you can contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) for help.
 
