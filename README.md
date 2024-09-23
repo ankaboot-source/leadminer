@@ -171,10 +171,6 @@ Thank you for taking the time to contribute! Please refer to our [CONTRIBUTING.m
 
 ## Roadmap
 
-- [ ] New sources : LinkedIn, Instagram, Facebook Messenger
-- [ ] Enrich data : Get more relevant and actionable information about your contacts
-- [ ] Marketing automation : send emails directly from Leadminer with personalized templates
-
 For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates.
 
 ## Support
