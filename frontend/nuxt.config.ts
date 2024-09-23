@@ -64,6 +64,7 @@ export default defineNuxtConfig({
     '@nuxtjs/supabase',
     '@pinia/nuxt',
     '@primevue/nuxt-module',
+    'nuxt-mdi',
   ],
 
   primevue: {
@@ -110,7 +111,6 @@ export default defineNuxtConfig({
     'primeicons/primeicons.css',
     '~/assets/css/tailwind.css',
     '~/assets/css/app.scss',
-    'material-icons/iconfont/material-icons.css',
   ],
 
   supabase: {
