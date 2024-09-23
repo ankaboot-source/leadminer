@@ -1,29 +1,34 @@
 [![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/) [![DeepSource](https://deepsource.io/gh/ankaboot-source/leadminer.svg/?label=active+issues&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://deepsource.io/gh/ankaboot-source/leadminer/?ref=repository-badge) </a>[![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability)
 
-# ⛏️ Leadminer
-
-Leadminer is a tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
+<div style="font-size:1.2rem;">
+  <div style="font-size:5rem;" align="center">⛏️</div>
+  <h1 align="center" style="border-bottom:0; margin:0;">Leadminer</h1>
+  <div align="center">
+    <p>
+    Leadminer is a tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
+    </p>
+      <div style="display: inline-block; text-align: left;">
+      <ol>
+      <li>⛏️📧 Extract contacts from your mailbox</li>
+      <li>🧹💌 Clean your email list</li>
+      <li>🧑🏾‍🔬💎 Enrich your contact list</li>
+      </ol>
+      </div>
+    </ul>
+  </div>
+</div>
 
 ## Table of contents
 
-- [⛏️ Leadminer](#️-leadminer)
-  - [Table of contents](#table-of-contents)
-  - [Features](#features)
-  - [How to run?](#how-to-run)
-    - [Setup email-verification services:](#setup-email-verification-services)
-    - [Setup contact-enrichment services:](#setup-contact-enrichment-services)
-    - [Running in production](#running-in-production)
-    - [Running Locally](#running-locally)
-    - [Contributing](#contributing)
-  - [Roadmap](#roadmap)
-  - [Support](#support)
-  - [License](#license)
-
-## Features
-
-- ⛏️📧 Contacts extracting from your mailbox
-- 🧹💌 Email list cleaning
-- 🧑🏾‍🔬💎 Enrich your contact list
+- [How to run?](#how-to-run)
+  - [Setup email-verification services:](#setup-email-verification-services)
+  - [Setup contact-enrichment services:](#setup-contact-enrichment-services)
+  - [Running in production](#running-in-production)
+  - [Running Locally](#running-locally)
+  - [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [Support](#support)
+- [License](#license)
 
 ## How to run?
 
@@ -47,7 +52,8 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
 
 > See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
 
-### Running in production
+<details>
+<summary><h3 style="display:inline-block" id="running-in-production">Running in production</h3></summary>
 
 1. **Setup Supabase Instance:**
 
@@ -110,56 +116,57 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
    docker-compose up --build --force-recreate
    ```
 
-### Running Locally
+</details>
 
-To run the project in your local environment, follow the steps below:
+<details>
+<summary><h3 style="display:inline-block" id="running-locally">Running Locally</h3></summary>
 
-1. **Install the required dependencies:**
+1.  **Install the required dependencies:**
 
-   ```sh
-   npm run install-deps
-   ```
+    ```sh
+    npm run install-deps
+    ```
 
-2. **Start Supabase services:**
+2.  **Start Supabase services:**
 
-   > Refer to [config.toml](./supabase/config.toml) file to tweak your local supabase.
+    > Refer to [config.toml](./supabase/config.toml) file to tweak your local supabase.
 
-   ```sh
-   npm run dev:supabase
-   ```
+    ```sh
+    npm run dev:supabase
+    ```
 
-3. **Setup Environment Variables:**
+3.  **Setup Environment Variables:**
 
-   We provide preconfigured environment files optimized for development that includes keys, mocks, and more:
+    We provide preconfigured environment files optimized for development that includes keys, mocks, and more:
 
-   > Note: If you encounter issues during sign-in and sign-up using OAuth, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running in production](#running-in-production) to learn how you can create your own OAuth credentials.
+    > Note: If you encounter issues during sign-in and sign-up using OAuth, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running in production](#running-in-production) to learn how you can create your own OAuth credentials.
 
-   1. Run the bellow commands, expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions`
+    1.  Run the bellow commands, expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions`
 
-      ```shell
-      cp ./supabase/functions/.env.dev ./supabase/functions/.env # edge-functions variables
-      npm run dev:generate-env # backend and frontend variables
-      ```
+        ```shell
+        cp ./supabase/functions/.env.dev ./supabase/functions/.env # edge-functions variables
+        npm run dev:generate-env # backend and frontend variables
+        ```
 
-4. **Start Redis services:**
+4.  **Start Redis services:**
 
-   If you prefer to run a Redis container, use the command below. Otherwise, ensure Redis is installed on your machine and skip this step.
+    If you prefer to run a Redis container, use the command below. Otherwise, ensure Redis is installed on your machine and skip this step.
 
-   > Note: If you encounter issues connecting to the redis container, make sure to update `REDIS_HOST` in the `.env` file.
+    > Note: If you encounter issues connecting to the redis container, make sure to update `REDIS_HOST` in the `.env` file.
 
-   ```shell
-   docker-compose -f docker-compose.dev.yml up
-   ```
+    ```shell
+    docker-compose -f docker-compose.dev.yml up
+    ```
 
-5. **Start your environment:**
+5.  **Start your environment:**
 
-   ```sh
-   npm run dev:frontend # Start frontend
-   npm run dev:backend-api	# Start backend api
-   npm run dev:backend-worker # Start email extraction worker
-   npm run dev:backend-email-worker # Start email verification worker
-   npm run dev:backend-mock-external-services	# Start mocks for external services such as voilanorbert, mailercheck...
-   ```
+    ```sh
+    npm run dev:frontend # Start frontend
+    npm run dev:backend-api	# Start backend api
+    npm run dev:backend-worker # Start email extraction worker
+    npm run dev:backend-email-worker # Start email verification worker
+    npm run dev:backend-mock-external-services	# Start mocks for external services such as voilanorbert, mailercheck...
+    ```
 
 **Generating a new migration for schema changes:**
 
@@ -181,7 +188,9 @@ npx supabase db diff --use-migra -f <name_of_migration>
 npx supabase stop
 ```
 
-### Contributing
+</details>
+
+## Contributing
 
 Thank you for taking the time to contribute! Please refer to our [CONTRIBUTING.md](https://github.com/ankaboot-source/leadminer/blob/main/CONTRIBUTING.md) for guidelines and more information on how to get started.
 
