@@ -2,7 +2,7 @@
 
 <div>
   <div align="center">
-    <img width="125" height="125" src="https://app-qa.leadminer.io/icons/pickaxe.svg" alt="Leadminer Logo">
+    <img width="90" height="90" src="https://app-qa.leadminer.io/icons/pickaxe.svg" alt="Leadminer Logo">
   </div>
   <h1 align="center">Leadminer</h1>
   <div align="center">
