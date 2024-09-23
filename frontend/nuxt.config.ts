@@ -110,7 +110,6 @@ export default defineNuxtConfig({
   css: [
     'primeicons/primeicons.css',
     '~/assets/css/tailwind.css',
-    '~/assets/css/app.scss',
   ],
 
   supabase: {
