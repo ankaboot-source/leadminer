@@ -31,6 +31,7 @@
     "@types/js-cookie": "^3.0.6",
     "autoprefixer": "^10.4.20",
     "js-cookie": "^3.0.5",
+    "material-icons": "^1.13.12",
     "nitropack": "^2.9.7",
     "nuxt": "^3.13.2",
     "object-scan": "^19.0.5",

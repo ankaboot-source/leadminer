@@ -36,13 +36,6 @@ export default defineNuxtConfig({
   app: {
     head: {
       titleTemplate: `${pkg.productName}`,
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
-        },
-      ],
     },
   },
 
@@ -113,7 +106,12 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['primeicons/primeicons.css', '~/assets/css/tailwind.css'],
+  css: [
+    'primeicons/primeicons.css',
+    '~/assets/css/tailwind.css',
+    '~/assets/css/app.scss',
+    'material-icons/iconfont/material-icons.css',
+  ],
 
   supabase: {
     url: process.env.SUPABASE_PROJECT_URL,
