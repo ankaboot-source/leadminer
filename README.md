@@ -7,7 +7,7 @@
   <h1 align="center">Leadminer</h1>
   <div align="center">
     <p>
-    Leadminer is a tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
+    A tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
     </p>
 
   </div>
