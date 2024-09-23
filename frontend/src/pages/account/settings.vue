@@ -59,7 +59,7 @@
           severity="danger"
           @click="showWarning"
         >
-          <span class="material-icons">delete</span>
+          <MdiIcon icon="mdiDelete" size="1.5rem" />
           <span>{{ t('delete_my_account') }}</span>
         </Button>
       </div>
