@@ -24,8 +24,8 @@
 - [📦 How to run?](#-how-to-run)
   - [Setup email-verification services](#setup-email-verification-services)
   - [Setup contact-enrichment services](#setup-contact-enrichment-services)
-  - [Running in Production](#running-in-production)
-  - [Running Locally](#running-locally)
+  - [Running with Supabase SaaS](#running-with-supabase-saas)
+  - [Running with Supabase self-hosted](#running-with-supabase-self-hosted)
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
@@ -33,7 +33,7 @@
 
 ## 📦 How to run?
 
-This project integrates with external services for full functionality. You can skip setting these up if you're running in development mode. See [development setup](#running-locally).
+This project integrates with external services for full functionality. You can skip setting these up if you're running in development mode. See [development setup](#running-with-supabase-self-hosted).
 
 ### Setup email-verification services
 
@@ -54,7 +54,7 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
 > See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
 
 <details>
-<summary><h3 style="display:inline-block" id="running-in-production">Running in Production</h3></summary>
+<summary><h3 style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</h3></summary>
 
 1. **Setup Supabase Instance:**
 
@@ -120,7 +120,7 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
 </details>
 
 <details>
-<summary><h3 style="display:inline-block" id="running-locally">Running Locally</h3></summary>
+<summary><h3 style="display:inline-block" id="running-with-supabase-self-hosted">Running with Supabase self-hosted</h3></summary>
 
 1.  **Install the required dependencies:**
 
@@ -140,7 +140,7 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
 
     We provide preconfigured environment files optimized for development that includes keys, mocks, and more:
 
-    > Note: If you encounter issues during sign-in and sign-up using OAuth, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running in production](#running-in-production) to learn how you can create your own OAuth credentials.
+    > Note: If you encounter issues during sign-in and sign-up using OAuth, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
     1.  Run the bellow commands, expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions`
 
