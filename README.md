@@ -4,6 +4,21 @@
 
 Leadminer is a tool to mine and transmute raw and passive emails from your own email mailbox into actionable and qualified contacts.
 
+## Table of contents
+
+- [⛏️ Leadminer](#️-leadminer)
+  - [Table of contents](#table-of-contents)
+  - [Features](#features)
+  - [How to run?](#how-to-run)
+    - [Setup email-verification services:](#setup-email-verification-services)
+    - [Setup contact-enrichment services:](#setup-contact-enrichment-services)
+    - [Running in production](#running-in-production)
+    - [Running Locally](#running-locally)
+    - [Contributing](#contributing)
+  - [Roadmap](#roadmap)
+  - [Support](#support)
+  - [License](#license)
+
 ## Features
 
 - ⛏️📧 Contacts extracting from your mailbox
@@ -20,7 +35,7 @@ We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.c
 
 - **Reacher:** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
 
-  > **Note:**  Refer to [.env.master.prod](./.env.master.prod) and [.env.master.dev](./.env.master.dev) according to your environment
+  > **Note:** Refer to [.env.master.prod](./.env.master.prod) and [.env.master.dev](./.env.master.dev) according to your environment
 
 - **MailerCheck:** Sign up, then update `MAILERCHECK_API_KEY` in the `.env` file.
 
@@ -28,9 +43,9 @@ We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.c
 
 ### Setup contact-enrichment services:
 
-We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sign up for an account and update `## CONTACT ENRICHMENT ##` section in the `.env` file. 
+We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sign up for an account and update `## CONTACT ENRICHMENT ##` section in the `.env` file.
 
->  See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
+> See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
 
 ### Running in production
 
@@ -38,6 +53,7 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
 
    - Create an account [here](https://supabase.com/dashboard/sign-up) and create a project.
    - Obtain the following values from your dashboard:
+
      - **Project URL**: Found under Settings -> API in the "Project URL" section.
      - **Project API key**: Found under Settings -> API in the "Project API keys" section. Use the `service_role` secret.
      - **Project Anon key**: Found under Settings -> API in the "Project API keys" section. Use the `anon` `public` key.
@@ -66,7 +82,7 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
      # Refer to https://supabase.com/docs/reference/cli/supabase-link
      supabase link --project-ref <supabase_project_id>
      # Refer to https://supabase.com/docs/reference/cli/supabase-db-push
-     supabase db push 
+     supabase db push
      # Refer to https://supabase.com/docs/guides/functions/deploy
      supabase functions deploy
      ```
@@ -75,7 +91,7 @@ We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sig
 
    You'll be configuring your environment variables from scratch, along with setting up all required services:
 
-   1. Copy the production environment files  [`.env.master.prod`](./.env.master.prod) [./supabase/functions/env.prod](./supabase/functions/.env.prod):
+   1. Copy the production environment files [`.env.master.prod`](./.env.master.prod) [./supabase/functions/env.prod](./supabase/functions/.env.prod):
 
       ```shell
       cp .env.master.prod .env
@@ -114,7 +130,7 @@ To run the project in your local environment, follow the steps below:
 
 3. **Setup Environment Variables:**
 
-   We provide preconfigured environment files optimized for development that includes keys, mocks, and more: 
+   We provide preconfigured environment files optimized for development that includes keys, mocks, and more:
 
    > Note: If you encounter issues during sign-in and sign-up using OAuth, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running in production](#running-in-production) to learn how you can create your own OAuth credentials.
 
