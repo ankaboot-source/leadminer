@@ -17,13 +17,11 @@
 
 - ⛏️📧 Extract contacts from your mailbox
 - 🧹💌 Clean your email list
-- 🧑🏾‍🔬💎 Enrich your contact list
 
 ## 📑 Table of contents
 
 - [📦 How to run?](#-how-to-run)
   - [Setup email-verification services](#setup-email-verification-services)
-  - [Setup contact-enrichment services](#setup-contact-enrichment-services)
   - [Running with Supabase SaaS](#running-with-supabase-saas)
   - [Running with Supabase self-hosted](#running-with-supabase-self-hosted)
 - [🤝 Contributing](#-contributing)
@@ -35,7 +33,8 @@
 
 This project integrates with external services for full functionality. You can skip setting these up if you're running in development mode. See [development setup](#running-with-supabase-self-hosted).
 
-### Setup email-verification services
+<details>
+<summary><h3 style="display:inline-block" id="setup-email-verification-services">Setup email-verification services</h3></summary>
 
 We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.com) for email verification. Configure one or both.
 
@@ -47,11 +46,7 @@ We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.c
 
   > Refer to [.env.master.prod](./.env.master.prod) for guidance.
 
-### Setup contact-enrichment services
-
-We use [Voilanorbert](https://www.voilanorbert.com/) for contact enrichment. Sign up for an account and update `## CONTACT ENRICHMENT ##` section in the `.env` file.
-
-> See [.env.master.prod](./.env.master.prod) or [voilanorbert documentation](https://api.voilanorbert.com/2018-01-08/) for details.
+</details>
 
 <details>
 <summary><h3 style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</h3></summary>
