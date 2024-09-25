@@ -12,7 +12,7 @@ export interface EnrichmentTask {
   details: {
     userId: string;
     webhookSecretToken: string;
-    result: {
+    progress: {
       total: number;
       enriched: number;
     };

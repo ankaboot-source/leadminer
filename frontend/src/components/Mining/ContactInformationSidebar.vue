@@ -178,7 +178,7 @@
           source="contact"
           :enrichment-realtime-callback="enrichmentRealtimeCallback"
           :enrichment-request-response-callback="() => {}"
-          :contacts-to-enrich="[contact.email]"
+          :contacts-to-enrich="[contact]"
           :enrich-all-contacts="false"
           :skip-dialog="skipDialog"
         />
@@ -225,7 +225,6 @@ const { t } = useI18n({
 });
 
 const $toast = useToast();
-const $leadminerStore = useLeadminerStore();
 const $user = useSupabaseUser() as Ref<User>;
 const $contactInformationSidebar = useMiningContactInformationSidebar();
 
@@ -287,21 +286,7 @@ const isValidAvatar = computed(() => {
 
 let personsSubscription: RealtimeChannel;
 
-const enrichmentRealtimeCallback = (
-  payload: RealtimePostgresChangesPayload<EnrichmentTask>,
-) => {
-  const { status } = payload.new as EnrichmentTask;
-  switch (status) {
-    case 'done':
-      $leadminerStore.activeEnrichment = false;
-      break;
-    case 'canceled':
-      $leadminerStore.activeEnrichment = false;
-      break;
-    default:
-      break;
-  }
-};
+const enrichmentRealtimeCallback = () => {};
 
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',

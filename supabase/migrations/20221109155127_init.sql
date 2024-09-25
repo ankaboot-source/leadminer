@@ -1,5 +1,7 @@
--- Table domains
+-- EXTENTIONS
+create extension if not exists moddatetime schema extensions;
 
+-- Table domains
 CREATE TABLE "public"."domains" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text",
@@ -56,14 +58,14 @@ CREATE TABLE "public"."messages_0" (
     PRIMARY KEY ("message_id", "user_id")
 );
 CREATE TABLE "public"."messages_1" (
-    "channel" "text",
-    "folder_path" "text",
+    "channel" text,
+    "folder_path" text,
     "date" timestamp with time zone,
-    "user_id" "uuid" NOT NULL,
-    "list_id" "text",
-    "message_id" "text" NOT NULL,
-    "references" "text"[],
-    "conversation" boolean
+    "user_id" uuid NOT NULL,
+    "list_id" text,
+    "message_id" text NOT NULL,
+    "references" text[],
+    "conversation" boolean,
     PRIMARY KEY ("message_id", "user_id")
 );
 CREATE TABLE "public"."messages_2" (
@@ -74,7 +76,7 @@ CREATE TABLE "public"."messages_2" (
     "list_id" "text",
     "message_id" "text" NOT NULL,
     "references" "text"[],
-    "conversation" boolean
+    "conversation" boolean,
     PRIMARY KEY ("message_id", "user_id")
 );
 
@@ -155,7 +157,7 @@ CREATE TABLE "public"."persons" (
     PRIMARY KEY ("email", "user_id", "source")
 );
 
-CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
+CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."persons" FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
 
 CREATE POLICY "Enable select for users based on user_id" ON "public"."persons" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 CREATE POLICY "Enable update for users based on user_id" ON "public"."persons" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
@@ -246,41 +248,38 @@ ALTER TABLE "public"."pointsofcontact_2" ENABLE ROW LEVEL SECURITY;
 CREATE TABLE "public"."profiles" (
     "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id") ON DELETE CASCADE,
     "full_name" "text",
-    "credits" integer DEFAULT 0,
-    "stripe_customer_id" "text",
     "email" "text",
-    "stripe_subscription_id" "text",
     PRIMARY KEY ("user_id")
 );
 
-CREATE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
+CREATE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO public.profiles (user_id, email, full_name)
     VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name');
-  RETURN NEW;
+    RETURN NEW;
 END;
-$$;
-CREATE FUNCTION "public"."update_email_in_profile_table"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-  UPDATE public.profiles
-  SET email = new.email
-  WHERE user_id = new.id;
-  RETURN NEW;
-END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE TRIGGER on_auth_user_created_updated  
-  AFTER INSERT ON "auth"."users"  
-  FOR EACH ROW EXECUTE FUNCTION PROCEDURE "public"."handle_new_user"();  
+CREATE FUNCTION public.update_email_in_profile_table()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.profiles
+    SET email = NEW.email
+    WHERE user_id = NEW.id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE PROCEDURE public.handle_new_user();
+
 CREATE TRIGGER update_email_in_profile_table_trigger
-  AFTER UPDATE ON "auth"."users"
-  EXECUTE PROCEDURE "public"."update_email_in_profile_table"();
+AFTER UPDATE ON auth.users
+FOR EACH ROW
+EXECUTE PROCEDURE public.update_email_in_profile_table();
 
 REVOKE ALL ON FUNCTION "public"."handle_new_user"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."update_email_in_profile_table"() FROM PUBLIC;
@@ -311,7 +310,7 @@ CREATE TABLE "public"."refinedpersons" (
     PRIMARY KEY ("email", "user_id")
 );
 
-CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION "extensions"."moddatetime"('updated_at');
+CREATE TRIGGER "handle_updated_at" BEFORE UPDATE ON "public"."refinedpersons" FOR EACH ROW EXECUTE FUNCTION moddatetime('updated_at');
 
 CREATE POLICY "Allow all operations for authenticated users on their own data" ON "public"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
 

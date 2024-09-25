@@ -18,7 +18,7 @@ import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
 import { initCreditAndPaymentRoutes } from './utils/credits';
-import initializeEnrichementRoutes from './routes/enrichement.routes';
+import initializeEnrichmentRoutes from './routes/enrichment.routes';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -64,8 +64,8 @@ export default function initializeApp(
     initializeContactsRoutes(contacts, userResolver, authResolver)
   );
   app.use(
-    '/api/enrichement',
-    initializeEnrichementRoutes(userResolver, authResolver)
+    '/api/enrichment',
+    initializeEnrichmentRoutes(userResolver, authResolver)
   );
 
   if (ENV.SENTRY_DSN) {

@@ -12,12 +12,7 @@
     :state="{
       maximized: true,
     }"
-    :header="
-      t(
-        'confirm_enrichment',
-        contactsToEnrich?.length ?? $contactsStore.selectedContactsCount,
-      )
-    "
+    :header="t('confirm_enrichment', contactsToEnrich?.length ?? 0)"
     class="w-full sm:w-[35rem]"
   >
     <p>
@@ -87,6 +82,7 @@ import type {
 } from '@supabase/supabase-js';
 
 import type { EnrichContactResponse, EnrichmentTask } from '@/types/enrichment';
+import type { Contact } from '~/types/contact';
 import {
   CreditsDialog,
   CreditsDialogRef,
@@ -105,7 +101,7 @@ const props = defineProps<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enrichmentRequestResponseCallback: ({ response }: any) => void;
   enrichAllContacts: boolean;
-  contactsToEnrich?: string[];
+  contactsToEnrich?: Partial<Contact>[];
   bordered?: boolean;
   skipDialog?: boolean;
   source?: 'stepper' | 'datatable' | 'contact';
@@ -129,6 +125,23 @@ const enrichAllContacts = toRef(() => props.enrichAllContacts);
 const contactsToEnrich = toRef(() => props.contactsToEnrich);
 const skipDialog = toRef(() => props.skipDialog);
 
+const enrichmentCompleted = ref(false);
+const enrichmentTasks = ref<string[]>([]);
+const completedEnrichmentTasks = ref<string[]>([]);
+
+function updateEnrichmentProgress(id: string) {
+  completedEnrichmentTasks.value.push(id);
+  if (completedEnrichmentTasks.value.length >= enrichmentTasks.value.length) {
+    enrichmentCompleted.value = true;
+  }
+}
+
+watch(enrichmentCompleted, (value) => {
+  if (value) {
+    stopEnrichment();
+  }
+});
+
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
   summary: string,
@@ -150,12 +163,15 @@ function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
+  enrichmentTasks.value = [];
+  enrichmentCompleted.value = false;
+  completedEnrichmentTasks.value = [];
   $leadminerStore.activeEnrichment = false;
 }
 
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
-    .channel('enrichement-tracker')
+    .channel('enrichment-tracker')
     .on(
       'postgres_changes',
       {
@@ -167,22 +183,25 @@ function setupEnrichmentRealtime() {
       (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
         enrichmentRealtimeCallback(payload);
 
-        const { status, details } = payload.new as EnrichmentTask;
-        const { enriched } = details.result;
+        const { id, status, details } = payload.new as EnrichmentTask;
+        const { enriched } = details?.progress ?? {};
 
         switch (status) {
           case 'done':
+            updateEnrichmentProgress(id);
             if (enriched) {
               showNotification(
                 'success',
-                t('notification.summary'),
+                t('notification.summary', {
+                  completed: completedEnrichmentTasks.value.length,
+                  total: enrichmentTasks.value.length,
+                }),
                 t('notification.enrichment_completed', {
                   n: enriched,
                   enriched: enriched.toLocaleString(),
                 }),
                 'achievement',
               );
-              $leadminerStore.activeEnrichment = false;
             } else {
               showNotification(
                 'info',
@@ -190,15 +209,17 @@ function setupEnrichmentRealtime() {
                 t('notification.no_additional_info'),
               );
             }
-            stopEnrichment();
             break;
           case 'canceled':
+            updateEnrichmentProgress(id);
             showNotification(
               'error',
-              t('notification.summary'),
+              t('notification.summary', {
+                completed: completedEnrichmentTasks.value.length,
+                total: enrichmentTasks.value.length,
+              }),
               t('notification.enrichment_canceled'),
             );
-            stopEnrichment();
             break;
 
           default:
@@ -213,7 +234,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     $leadminerStore.activeEnrichment = true;
     setupEnrichmentRealtime();
-    await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
+    await $api<EnrichContactResponse>('/enrichment/enrichAsync', {
       method: 'POST',
       body: {
         updateEmptyFieldsOnly,
@@ -222,7 +243,30 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
       },
       onResponse({ response }) {
         enrichmentRequestResponseCallback({ response });
-        const { total, available, alreadyEnriched } = response._data;
+        const {
+          total,
+          available,
+          alreadyEnriched,
+          task_ids: tasks,
+        } = response._data;
+
+        if (tasks.length) {
+          enrichmentTasks.value = tasks;
+
+          for (const task of tasks) {
+            if (task.status === 'canceled') {
+              updateEnrichmentProgress(task.id);
+              showNotification(
+                'error',
+                t('notification.summary', {
+                  completed: completedEnrichmentTasks.value.length,
+                  total: enrichmentTasks.value.length,
+                }),
+                t('notification.enrichment_canceled'),
+              );
+            }
+          }
+        }
 
         if (alreadyEnriched && response.status === 200) {
           stopEnrichment();
@@ -251,7 +295,9 @@ onMounted(async () => {
 });
 
 const openEnrichmentConfirmationDialog = () => {
-  const creditsDialogOpened = useCreditsDialog(contactsToEnrich.value);
+  const creditsDialogOpened = useCreditsDialog(
+    contactsToEnrich.value?.map(({ email }) => email as string),
+  );
   if (creditsDialogOpened) return;
 
   if (skipDialog.value) {
@@ -271,7 +317,7 @@ const closeEnrichmentConfirmationDialog = () => {
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
-      "summary": "Enrich",
+      "summary": "Enrichment {completed}/{total}",
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
