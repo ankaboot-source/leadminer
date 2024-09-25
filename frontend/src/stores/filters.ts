@@ -145,19 +145,13 @@ export const useFiltersStore = defineStore('filters', () => {
       filters.value.status.value = [];
     }
 
-    if (
-      !(
-        filters.value.status.value.length === 1 &&
-        filters.value.status.value[0] === 'VALID'
-      ) &&
-      validToggle.value
-    ) {
-      filters.value.status.value = ['VALID'];
-    } else if (
+    const isValidStatus =
       filters.value.status.value.length === 1 &&
-      filters.value.status.value[0] === 'VALID' &&
-      !validToggle.value
-    ) {
+      filters.value.status.value[0] === 'VALID';
+
+    if (!isValidStatus && validToggle.value) {
+      filters.value.status.value = ['VALID'];
+    } else if (isValidStatus && !validToggle.value) {
       filters.value.status.value = [];
     }
   }
