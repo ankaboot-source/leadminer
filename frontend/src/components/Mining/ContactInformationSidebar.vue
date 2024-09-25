@@ -211,7 +211,6 @@ import type {
 import SocialLink from '@/components/icons/SocialLink.vue';
 import EnrichButton from '@/components/Mining/Buttons/EnrichButton.vue';
 import type { Contact, ContactEdit } from '@/types/contact';
-import type { EnrichmentTask } from '@/types/enrichment';
 import {
   getOrganization,
   getStatusColor,

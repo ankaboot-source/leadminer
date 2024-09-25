@@ -129,6 +129,18 @@ const enrichmentCompleted = ref(false);
 const enrichmentTasks = ref<string[]>([]);
 const completedEnrichmentTasks = ref<string[]>([]);
 
+let subscription: RealtimeChannel;
+
+function stopEnrichment() {
+  if (subscription) {
+    subscription.unsubscribe();
+  }
+  enrichmentTasks.value = [];
+  enrichmentCompleted.value = false;
+  completedEnrichmentTasks.value = [];
+  $leadminerStore.activeEnrichment = false;
+}
+
 function updateEnrichmentProgress(id: string) {
   completedEnrichmentTasks.value.push(id);
   if (completedEnrichmentTasks.value.length >= enrichmentTasks.value.length) {
@@ -155,18 +167,6 @@ function showNotification(
     group,
     life: 5000,
   });
-}
-
-let subscription: RealtimeChannel;
-
-function stopEnrichment() {
-  if (subscription) {
-    subscription.unsubscribe();
-  }
-  enrichmentTasks.value = [];
-  enrichmentCompleted.value = false;
-  completedEnrichmentTasks.value = [];
-  $leadminerStore.activeEnrichment = false;
 }
 
 function setupEnrichmentRealtime() {
