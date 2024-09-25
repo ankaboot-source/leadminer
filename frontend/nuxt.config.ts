@@ -36,13 +36,6 @@ export default defineNuxtConfig({
   app: {
     head: {
       titleTemplate: `${pkg.productName}`,
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/icon?family=Material+Icons',
-        },
-      ],
     },
   },
 
@@ -71,6 +64,7 @@ export default defineNuxtConfig({
     '@nuxtjs/supabase',
     '@pinia/nuxt',
     '@primevue/nuxt-module',
+    'nuxt-mdi',
   ],
 
   primevue: {

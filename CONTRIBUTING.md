@@ -1,7 +1,5 @@
 # Contributing to Leadminer
 
-Thank you for taking the time to contribute! ❤️
-
 First off, thank you for taking the time to contribute! ❤️
 
 We value all types of contributions and encourage everyone to get involved. Please refer to the [Table of Contents](#table-of-contents) to find the different ways you can help and detailed guidelines on how to contribute. Reading the relevant section before making your contribution will make it easier for the maintainers and enhance the overall experience for everyone. The community eagerly awaits your contributions! 🎉
