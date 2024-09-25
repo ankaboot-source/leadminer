@@ -208,11 +208,7 @@ export default class TasksManager {
       };
 
       const { progress, process } = miningTask;
-      const { fetch, extract, clean } = process as {
-        fetch: TaskFetch;
-        extract: TaskExtract;
-        clean: TaskClean;
-      };
+      const { fetch, extract, clean } = process;
 
       progress.totalMessages = fetch.details.progress.totalMessages;
 
@@ -278,6 +274,14 @@ export default class TasksManager {
   }
 
   /**
+   * Logs the task completion time and task progress.
+   */
+  static logTaskCompletion(startedAt: number, progress: TaskProgress): void {
+    const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
+    logger.info(`Mining task completed in ${duration} seconds`, progress);
+  }
+
+  /**
    * Deletes a mining task or specific processes within a task.
    *
    * @param miningId - The unique identifier of the mining task to delete.
@@ -289,12 +293,11 @@ export default class TasksManager {
     miningId: string,
     processIds: string[] | null
   ): Promise<RedactedTask> {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
     if (processIds && !Array.isArray(processIds)) {
       throw new Error('processIds must be an array of strings');
     }
 
+    const task = this.ACTIVE_MINING_TASKS.get(miningId);
     if (!task) {
       throw new Error(`Task with mining ID ${miningId} does not exist.`);
     }
@@ -320,9 +323,15 @@ export default class TasksManager {
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
-    const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
-    logger.info(`Mining task completed in ${duration} seconds`, progress);
+
+    TasksManager.logTaskCompletion(startedAt, progress);
     return redactSensitiveData(task);
+  }
+
+  static calculateTaskDuration(startedAt: string, stoppedAt: string): number {
+    const start = new Date(startedAt).getTime();
+    const stop = new Date(stoppedAt).getTime();
+    return stop - start;
   }
 
   /**
@@ -338,11 +347,11 @@ export default class TasksManager {
       task.stoppedAt = new Date().toUTCString();
 
       if (task.duration === undefined && task.startedAt) {
-        const startedAt = new Date(task.startedAt).getTime();
-        const stoppedAt = new Date(task.stoppedAt).getTime();
-        const durationInMilliSeconds = stoppedAt - startedAt;
         // eslint-disable-next-line no-param-reassign
-        task.duration = durationInMilliSeconds;
+        task.duration = TasksManager.calculateTaskDuration(
+          task.startedAt,
+          task.stoppedAt
+        );
       }
       // eslint-disable-next-line no-param-reassign
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
@@ -375,21 +384,14 @@ export default class TasksManager {
   ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (task === undefined) {
-      return;
-    }
-
-    if (!task.progressHandlerSSE) {
+    if (task === undefined || !task.progressHandlerSSE) {
       // No progress handler to send updates from.
       return;
     }
 
     const { progressHandlerSSE, process } = task;
-    const { fetch, extract, clean } = process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      clean: TaskClean;
-    };
+    const { fetch, extract, clean } = process;
+
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
@@ -416,40 +418,13 @@ export default class TasksManager {
     progressHandlerSSE.sendSSE(value, eventName);
   }
 
-  /**
-   * Updates the progress of a mining task with a given mining ID.
-   *
-   * @param miningId - The ID of the mining task to update the progress for.
-   * @param progressType - The type of progress to update.
-   * @param incrementBy - The amount to increment progress by (default is 1).
-   * @returns The updated progress or `undefined` if there is no task.
-   * @throws {Error} Throws an error if the task is not found.
-   */
-  private updateProgress(
-    miningId: string,
+  static updateTaskProgress(
     progressType: TaskProgressType,
-    incrementBy = 1
-  ): TaskProgress | undefined {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (!task) {
-      return undefined;
-    }
-
-    const { progress, process } = task;
-
-    const update = (
-      taskProperty: keyof typeof process,
+    update: (
+      taskProperty: string | number | symbol,
       progressProperty: keyof TaskProgress
-    ) => {
-      const taskProgress = process[taskProperty].details.progress as {
-        [key: string]: number;
-      };
-      taskProgress[progressProperty] =
-        (taskProgress[progressProperty] ?? 0) + incrementBy;
-      progress[progressProperty] = taskProgress[progressProperty];
-    };
-
+    ) => void
+  ) {
     switch (progressType) {
       case 'fetched':
         update('fetch', 'fetched');
@@ -466,6 +441,41 @@ export default class TasksManager {
 
       default:
     }
+  }
+
+  /**
+   * Updates the progress of a mining task with a given mining ID.
+   *
+   * @param miningId - The ID of the mining task to update the progress for.
+   * @param progressType - The type of progress to update.
+   * @param incrementBy - The amount to increment progress by (default is 1).
+   * @returns The updated progress or `undefined` if there is no task.
+   * @throws {Error} Throws an error if the task is not found.
+   */
+  private updateProgress(
+    miningId: string,
+    progressType: TaskProgressType,
+    incrementBy = 1
+  ): TaskProgress | undefined {
+    const task = this.ACTIVE_MINING_TASKS.get(miningId);
+
+    if (!task) return undefined;
+
+    const { progress, process } = task;
+
+    const update = (
+      taskProperty: keyof typeof process,
+      progressProperty: keyof TaskProgress
+    ) => {
+      const taskProgress = process[taskProperty].details.progress as {
+        [key: string]: number;
+      };
+      taskProgress[progressProperty] =
+        (taskProgress[progressProperty] ?? 0) + incrementBy;
+      progress[progressProperty] = taskProgress[progressProperty];
+    };
+
+    TasksManager.updateTaskProgress(progressType, () => update);
 
     return { ...progress };
   }
@@ -543,9 +553,7 @@ export default class TasksManager {
     // The order of values is determined by the createTask() method
     const [streamName, consumerGroup] = Object.values(stream);
 
-    if (!consumerGroup || !streamName) {
-      return;
-    }
+    if (!consumerGroup || !streamName) return;
 
     switch (command) {
       case 'REGISTER': {
