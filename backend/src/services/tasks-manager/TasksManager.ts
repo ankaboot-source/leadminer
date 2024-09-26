@@ -275,7 +275,10 @@ export default class TasksManager {
   /**
    * Logs the task completion time and task progress.
    */
-  static logTaskCompletion(startedAt: number, progress: TaskProgress): void {
+  private static logTaskCompletion(
+    startedAt: number,
+    progress: TaskProgress
+  ): void {
     const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
     logger.info(`Mining task completed in ${duration} seconds`, progress);
   }
@@ -327,7 +330,10 @@ export default class TasksManager {
     return redactSensitiveData(task);
   }
 
-  static calculateTaskDuration(startedAt: string, stoppedAt: string): number {
+  private static calculateTaskDuration(
+    startedAt: string,
+    stoppedAt: string
+  ): number {
     const start = new Date(startedAt).getTime();
     const stop = new Date(stoppedAt).getTime();
     return stop - start;
@@ -370,7 +376,7 @@ export default class TasksManager {
     await Promise.all(stopPromises);
   }
 
-  static getEventName(
+  private static getEventName(
     miningId: string,
     progressType: TaskProgressType,
     progress: TaskProgress,
@@ -431,7 +437,7 @@ export default class TasksManager {
     progressHandlerSSE.sendSSE(value, eventName);
   }
 
-  static updateTaskProgress(
+  private static updateTaskProgress(
     progressType: TaskProgressType,
     update: (
       taskProperty: string | number | symbol,
@@ -543,7 +549,7 @@ export default class TasksManager {
     return status;
   }
 
-  static async redisDelete(
+  private static async redisDelete(
     streamName: string,
     consumerGroup: string,
     taskInstance: TasksManager
@@ -556,7 +562,7 @@ export default class TasksManager {
     await taskInstance.redisPublisher.del(streamName);
   }
 
-  static async redisRegister(
+  private static async redisRegister(
     streamName: string,
     consumerGroup: string,
     taskInstance: TasksManager
