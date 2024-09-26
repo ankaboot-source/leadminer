@@ -62,11 +62,14 @@ export default class SupabaseUsers implements Users {
   }
 
   async getByEmail(email: string): Promise<Profile | null> {
-    return this.getProfileByColumn('email', email);
+    return await this.getProfileByColumn('email', email);
   }
 
   async getBySubscriptionId(subscriptionId: string): Promise<Profile | null> {
-    return this.getProfileByColumn('stripe_subscription_id', subscriptionId);
+    return await this.getProfileByColumn(
+      'stripe_subscription_id',
+      subscriptionId
+    );
   }
 
   async inviteUserByEmail(userEmail: string): Promise<true | Error> {
