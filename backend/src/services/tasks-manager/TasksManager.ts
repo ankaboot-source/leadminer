@@ -18,6 +18,7 @@ import {
   StreamInfo,
   Task,
   TaskCategory,
+  TaskExtract,
   TaskFetch,
   TaskProgress,
   TaskProgressType,
@@ -369,6 +370,30 @@ export default class TasksManager {
     await Promise.all(stopPromises);
   }
 
+  static getEventName(
+    miningId: string,
+    progressType: TaskProgressType,
+    progress: TaskProgress,
+    fetch: TaskFetch,
+    extract: TaskExtract
+  ) {
+    let eventName = `${progressType}-${miningId}`;
+
+    // If the fetching is completed, notify the clients that it has finished.
+    if (progressType === 'fetched' && fetch.stoppedAt) {
+      eventName = 'fetching-finished';
+    }
+
+    if (
+      progressType === 'extracted' &&
+      fetch.stoppedAt &&
+      (progress.extracted >= progress.fetched || extract.stoppedAt)
+    ) {
+      eventName = 'extraction-finished';
+    }
+    return eventName;
+  }
+
   /**
    * Notifies the client of the progress of a mining task with a given mining ID.
    *
@@ -393,21 +418,14 @@ export default class TasksManager {
       ...clean.details.progress
     };
 
-    let eventName = `${progressType}-${miningId}`;
     const value = progress[`${progressType}`];
-
-    // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched' && fetch.stoppedAt) {
-      eventName = 'fetching-finished';
-    }
-
-    if (
-      progressType === 'extracted' &&
-      fetch.stoppedAt &&
-      (progress.extracted >= progress.fetched || extract.stoppedAt)
-    ) {
-      eventName = 'extraction-finished';
-    }
+    const eventName = TasksManager.getEventName(
+      miningId,
+      progressType,
+      progress,
+      fetch,
+      extract
+    );
 
     // Send the progress to parties subscribed on SSE
     progressHandlerSSE.sendSSE(value, eventName);
