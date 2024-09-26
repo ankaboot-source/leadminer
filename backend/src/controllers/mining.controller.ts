@@ -48,7 +48,7 @@ function getAuthClient(provider: OAuthMiningSourceProvider) {
     case 'azure':
       return azureOAuth2Client;
     default:
-      throw Error('Not a valid OAuth provider');
+      throw new Error('Not a valid OAuth provider');
   }
 }
 
@@ -61,17 +61,21 @@ function getTokenConfig(provider: OAuthMiningSourceProvider) {
   };
 }
 
+type TokenType = {
+  refresh_token: string;
+  access_token: string;
+  id_token: string;
+  expires_at: number;
+};
+
 export default function initializeMiningController(
   tasksManager: TasksManager,
   miningSources: MiningSources
 ) {
   return {
-    createProviderMiningSource(
-      _req: Request,
-      res: Response,
-      provider: OAuthMiningSourceProvider
-    ) {
+    createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
+      const provider = req.params.provider as OAuthMiningSourceProvider;
 
       const authorizationUri = getAuthClient(provider).authorizeURL({
         ...getTokenConfig(provider),
@@ -81,12 +85,9 @@ export default function initializeMiningController(
       return res.json({ authorizationUri });
     },
 
-    async createProviderMiningSourceCallback(
-      req: Request,
-      res: Response,
-      provider: OAuthMiningSourceProvider
-    ) {
+    async createProviderMiningSourceCallback(req: Request, res: Response) {
       const { code, state } = req.query as { code: string; state: string };
+      const provider = req.params.provider as OAuthMiningSourceProvider;
 
       const tokenConfig = {
         ...getTokenConfig(provider),
@@ -102,42 +103,33 @@ export default function initializeMiningController(
           provider
         ].requiredScopes.every((scope) => approvedScopes.includes(scope));
 
-        if (hasApprovedAllScopes) {
-          // User has approved all the required scopes
-          const {
-            refresh_token: refreshToken,
-            access_token: accessToken,
-            id_token: idToken,
-            expires_at: expiresAt
-          } = token as {
-            refresh_token: string;
-            access_token: string;
-            id_token: string;
-            expires_at: number;
-          };
-          const { email } = decode(idToken) as { email: string };
-
-          await miningSources.upsert({
-            userId: state,
-            email,
-            credentials: {
-              email,
-              accessToken,
-              refreshToken,
-              provider,
-              expiresAt
-            },
-            type: provider
-          });
-
-          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
-        } else {
-          // User has not approved all the required scopes
-          res.redirect(
-            301,
-            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=${provider}&referrer=${state}`
-          );
+        if (!hasApprovedAllScopes) {
+          throw new Error(' User has not approved all the required scopes');
         }
+
+        // User has approved all the required scopes
+        const {
+          refresh_token: refreshToken,
+          access_token: accessToken,
+          id_token: idToken,
+          expires_at: expiresAt
+        } = token as TokenType;
+        const { email } = decode(idToken) as { email: string };
+
+        await miningSources.upsert({
+          userId: state,
+          email,
+          credentials: {
+            email,
+            accessToken,
+            refreshToken,
+            provider,
+            expiresAt
+          },
+          type: provider
+        });
+
+        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
       } catch (error) {
         res.redirect(
           301,

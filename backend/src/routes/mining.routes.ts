@@ -26,20 +26,16 @@ export default function initializeMiningRoutes(
 
   router.get('/mine/sources', authMiddleware, getMiningSources);
 
-  router.post('/mine/sources/google', authMiddleware, (req, res) =>
-    createProviderMiningSource(req, res, 'google')
-  );
-  router.get('/mine/sources/google/callback', (req, res) =>
-    createProviderMiningSourceCallback(req, res, 'google')
-  );
-
   router.post('/mine/sources/imap', authMiddleware, createImapMiningSource);
 
-  router.post('/mine/sources/azure', authMiddleware, (req, res) =>
-    createProviderMiningSource(req, res, 'azure')
+  router.post(
+    '/mine/sources/:provider',
+    authMiddleware,
+    createProviderMiningSource
   );
-  router.get('/mine/sources/azure/callback', (req, res) =>
-    createProviderMiningSourceCallback(req, res, 'azure')
+  router.get(
+    '/mine/sources/:provider/callback',
+    createProviderMiningSourceCallback
   );
 
   router.post('/mine/:userId', authMiddleware, startMining);
