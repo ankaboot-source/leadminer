@@ -45,31 +45,6 @@ export default class SupabaseUsers implements Users {
     return user;
   }
 
-  async getByEmail(email: string): Promise<Profile | null> {
-    const { data: user, error } = await this.supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('email', email);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-    return user[0] ?? null;
-  }
-
-  async getBySubscriptionId(subscriptionId: string): Promise<Profile | null> {
-    const { data: user, error } = await this.supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('stripe_subscription_id', subscriptionId);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return user[0] ?? null;
-  }
-
   async inviteUserByEmail(userEmail: string): Promise<true | Error> {
     const { error: inviteUserError } =
       await this.supabaseClient.auth.admin.inviteUserByEmail(userEmail, {
