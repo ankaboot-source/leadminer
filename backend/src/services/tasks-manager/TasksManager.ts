@@ -18,8 +18,6 @@ import {
   StreamInfo,
   Task,
   TaskCategory,
-  TaskClean,
-  TaskExtract,
   TaskFetch,
   TaskProgress,
   TaskProgressType,
@@ -488,16 +486,9 @@ export default class TasksManager {
    */
   private async hasCompleted(miningId: string): Promise<boolean | undefined> {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
+    if (!task) return undefined;
 
-    if (!task) {
-      return undefined;
-    }
-
-    const { fetch, extract, clean } = task.process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      clean: TaskClean;
-    };
+    const { fetch, extract, clean } = task.process;
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
@@ -537,6 +528,33 @@ export default class TasksManager {
     return status;
   }
 
+  static async redisDelete(
+    streamName: string,
+    consumerGroup: string,
+    taskInstance: TasksManager
+  ) {
+    await taskInstance.redisPublisher.xgroup(
+      'DESTROY',
+      streamName,
+      consumerGroup
+    );
+    await taskInstance.redisPublisher.del(streamName);
+  }
+
+  static async redisRegister(
+    streamName: string,
+    consumerGroup: string,
+    taskInstance: TasksManager
+  ) {
+    await taskInstance.redisPublisher.xgroup(
+      'CREATE',
+      streamName,
+      consumerGroup,
+      '$',
+      'MKSTREAM'
+    );
+  }
+
   /**
    * Sends a message to the Pub/Sub system for managing streams.
    *
@@ -557,18 +575,11 @@ export default class TasksManager {
 
     switch (command) {
       case 'REGISTER': {
-        await this.redisPublisher.xgroup(
-          'CREATE',
-          streamName,
-          consumerGroup,
-          '$',
-          'MKSTREAM'
-        );
+        await TasksManager.redisRegister(streamName, consumerGroup, this);
         break;
       }
       case 'DELETE': {
-        await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroup);
-        await this.redisPublisher.del(streamName);
+        await TasksManager.redisDelete(streamName, consumerGroup, this);
         break;
       }
       default:
