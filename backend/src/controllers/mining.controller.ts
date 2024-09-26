@@ -62,11 +62,41 @@ function getTokenConfig(provider: OAuthMiningSourceProvider) {
 }
 
 type TokenType = {
-  refresh_token: string;
-  access_token: string;
-  id_token: string;
-  expires_at: number;
+  refreshToken: string;
+  accessToken: string;
+  idToken: string;
+  expiresAt: number;
 };
+
+async function getTokenWithScopeValidation(
+  tokenConfig: {
+    code: string;
+    redirect_uri: string;
+    scope: string[];
+    access_type: string | undefined;
+    prompt: string | undefined;
+  },
+  provider: OAuthMiningSourceProvider
+) {
+  const { token } = await getAuthClient(provider).getToken(tokenConfig);
+
+  const approvedScopes = (token.scope as string).split(' ');
+
+  const hasApprovedAllScopes = providerScopes[provider].requiredScopes.every(
+    (scope) => approvedScopes.includes(scope)
+  );
+
+  if (!hasApprovedAllScopes) {
+    throw new Error(' User has not approved all the required scopes');
+  }
+
+  return {
+    refreshToken: token.refresh_token,
+    accessToken: token.access_token,
+    idToken: token.id_token,
+    expiresAt: token.expires_at
+  } as TokenType;
+}
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -95,25 +125,10 @@ export default function initializeMiningController(
       };
 
       try {
-        const { token } = await getAuthClient(provider).getToken(tokenConfig);
-
-        const approvedScopes = (token.scope as string).split(' ');
-
-        const hasApprovedAllScopes = providerScopes[
-          provider
-        ].requiredScopes.every((scope) => approvedScopes.includes(scope));
-
-        if (!hasApprovedAllScopes) {
-          throw new Error(' User has not approved all the required scopes');
-        }
+        const { refreshToken, accessToken, idToken, expiresAt } =
+          await getTokenWithScopeValidation(tokenConfig, provider);
 
         // User has approved all the required scopes
-        const {
-          refresh_token: refreshToken,
-          access_token: accessToken,
-          id_token: idToken,
-          expires_at: expiresAt
-        } = token as TokenType;
         const { email } = decode(idToken) as { email: string };
 
         await miningSources.upsert({
