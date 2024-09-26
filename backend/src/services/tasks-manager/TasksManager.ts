@@ -382,10 +382,7 @@ export default class TasksManager {
   ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (task === undefined || !task.progressHandlerSSE) {
-      // No progress handler to send updates from.
-      return;
-    }
+    if (task === undefined || !task.progressHandlerSSE) return; // No progress handler to send updates from.
 
     const { progressHandlerSSE, process } = task;
     const { fetch, extract, clean } = process;
@@ -396,12 +393,12 @@ export default class TasksManager {
       ...clean.details.progress
     };
 
-    const eventName = `${progressType}-${miningId}`;
+    let eventName = `${progressType}-${miningId}`;
     const value = progress[`${progressType}`];
 
     // If the fetching is completed, notify the clients that it has finished.
     if (progressType === 'fetched' && fetch.stoppedAt) {
-      progressHandlerSSE.sendSSE(value, 'fetching-finished');
+      eventName = 'fetching-finished';
     }
 
     if (
@@ -409,7 +406,7 @@ export default class TasksManager {
       fetch.stoppedAt &&
       (progress.extracted >= progress.fetched || extract.stoppedAt)
     ) {
-      progressHandlerSSE.sendSSE(value, 'extraction-finished');
+      eventName = 'extraction-finished';
     }
 
     // Send the progress to parties subscribed on SSE
