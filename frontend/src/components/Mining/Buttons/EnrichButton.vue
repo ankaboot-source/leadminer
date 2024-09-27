@@ -125,9 +125,8 @@ const enrichAllContacts = toRef(() => props.enrichAllContacts);
 const contactsToEnrich = toRef(() => props.contactsToEnrich);
 const skipDialog = toRef(() => props.skipDialog);
 
+const enrichmentTasks = new Map<string, EnrichmentTask>();
 const enrichmentCompleted = ref(false);
-const enrichmentTasks = ref<string[]>([]);
-const completedEnrichmentTasks = ref<string[]>([]);
 
 let subscription: RealtimeChannel;
 
@@ -135,21 +134,72 @@ function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
-  enrichmentTasks.value = [];
-  enrichmentCompleted.value = false;
-  completedEnrichmentTasks.value = [];
+  enrichmentTasks.clear();
   $leadminerStore.activeEnrichment = false;
 }
 
-function updateEnrichmentProgress(id: string) {
-  completedEnrichmentTasks.value.push(id);
-  if (completedEnrichmentTasks.value.length >= enrichmentTasks.value.length) {
+function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
+  for (const task of tasks) {
+    enrichmentTasks.set(task.id, task);
+  }
+
+  if (
+    !Array.from(enrichmentTasks.values()).some(
+      ({ status }) => status === 'running',
+    )
+  ) {
     enrichmentCompleted.value = true;
+  }
+}
+
+function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
+  let totalEnriched = 0;
+
+  const error = tasks.every((task) => {
+    if (task.status === 'canceled') {
+      console.error(`Task ${task.id} canceled: ${task.details.error}`);
+      return true;
+    }
+    return false;
+  });
+
+  if (error) {
+    showNotification(
+      'error',
+      t('notification.summary'),
+      t('notification.enrichment_canceled'),
+    );
+    return;
+  }
+
+  for (const task of tasks) {
+    if (task.status === 'done') {
+      totalEnriched += task.details.progress.enriched;
+    }
+  }
+
+  if (totalEnriched > 0) {
+    showNotification(
+      'success',
+      t('notification.summary'),
+      t('notification.enrichment_completed', {
+        n: totalEnriched,
+        enriched: totalEnriched.toLocaleString(),
+      }),
+      'achievement',
+    );
+  } else {
+    showNotification(
+      'info',
+      t('notification.summary'),
+      t('notification.no_additional_info'),
+    );
   }
 }
 
 watch(enrichmentCompleted, (value) => {
   if (value) {
+    handleEnrichmentNotification(Array.from(enrichmentTasks.values()));
     stopEnrichment();
   }
 });
@@ -182,106 +232,100 @@ function setupEnrichmentRealtime() {
       },
       (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
         enrichmentRealtimeCallback(payload);
-
-        const { id, status, details } = payload.new as EnrichmentTask;
-        const { enriched } = details?.progress ?? {};
-
-        switch (status) {
-          case 'done':
-            updateEnrichmentProgress(id);
-            if (enriched) {
-              showNotification(
-                'success',
-                t('notification.summary', {
-                  completed: completedEnrichmentTasks.value.length,
-                  total: enrichmentTasks.value.length,
-                }),
-                t('notification.enrichment_completed', {
-                  n: enriched,
-                  enriched: enriched.toLocaleString(),
-                }),
-                'achievement',
-              );
-            } else {
-              showNotification(
-                'info',
-                t('notification.summary'),
-                t('notification.no_additional_info'),
-              );
-            }
-            break;
-          case 'canceled':
-            updateEnrichmentProgress(id);
-            showNotification(
-              'error',
-              t('notification.summary', {
-                completed: completedEnrichmentTasks.value.length,
-                total: enrichmentTasks.value.length,
-              }),
-              t('notification.enrichment_canceled'),
-            );
-            break;
-
-          default:
-            break;
-        }
+        const task = payload.new as EnrichmentTask;
+        updateEnrichmentProgress([task]);
       },
     );
   subscription.subscribe();
 }
 
-async function startEnrichment(updateEmptyFieldsOnly: boolean) {
-  try {
-    $leadminerStore.activeEnrichment = true;
-    setupEnrichmentRealtime();
-    await $api<EnrichContactResponse>('/enrichment/enrichAsync', {
-      method: 'POST',
-      body: {
-        updateEmptyFieldsOnly,
-        enrichAllContacts: enrichAllContacts.value,
-        emails: enrichAllContacts.value ? undefined : contactsToEnrich.value,
-      },
-      onResponse({ response }) {
-        enrichmentRequestResponseCallback({ response });
-        const {
-          total,
-          available,
-          alreadyEnriched,
-          task_ids: tasks,
-        } = response._data;
+async function enrichPerson(
+  updateEmptyFieldsOnly: boolean,
+  contacts: Partial<Contact>,
+) {
+  await $api<EnrichContactResponse>('/enrich/person/', {
+    method: 'POST',
+    body: {
+      updateEmptyFieldsOnly,
+      enrichAllContacts: false,
+      contact: contacts,
+    },
+    onResponse({ response }) {
+      enrichmentRequestResponseCallback({ response });
+      const { total, available, alreadyEnriched, task } = response._data;
 
-        if (tasks.length) {
-          enrichmentTasks.value = tasks;
-
-          for (const task of tasks) {
-            if (task.status === 'canceled') {
-              updateEnrichmentProgress(task.id);
-              showNotification(
-                'error',
-                t('notification.summary', {
-                  completed: completedEnrichmentTasks.value.length,
-                  total: enrichmentTasks.value.length,
-                }),
-                t('notification.enrichment_canceled'),
-              );
-            }
-          }
-        }
-
-        if (alreadyEnriched && response.status === 200) {
+      if (response.status === 402) {
+        stopEnrichment();
+        openCreditsDialog(true, total, available, 0);
+        return;
+      } else if (response.status === 200) {
+        if (alreadyEnriched) {
           stopEnrichment();
           showNotification(
             'info',
             t('notification.summary'),
             t('notification.already_enriched'),
           );
+        } else if (task.id) {
+          updateEnrichmentProgress([task]);
         }
-        if (response.status === 402) {
+      }
+    },
+  });
+}
+
+async function enrichPersonBulk(
+  updateEmptyFieldsOnly: boolean,
+  enrichAll: boolean,
+  contacts: Partial<Contact>[],
+) {
+  await $api<EnrichContactResponse>('/enrich/person/bulk', {
+    method: 'POST',
+    body: {
+      updateEmptyFieldsOnly,
+      enrichAllContacts: enrichAll,
+      contacts: enrichAll ? undefined : contacts,
+    },
+    onResponse({ response }) {
+      enrichmentRequestResponseCallback({ response });
+      const { total, available, alreadyEnriched, tasks } = response._data;
+
+      if (response.status === 402) {
+        stopEnrichment();
+        openCreditsDialog(true, total, available, 0);
+        return;
+      } else if (response.status === 200) {
+        if (alreadyEnriched) {
           stopEnrichment();
-          openCreditsDialog(true, total, available, 0);
+          showNotification(
+            'info',
+            t('notification.summary'),
+            t('notification.already_enriched'),
+          );
+        } else if (tasks?.length) {
+          updateEnrichmentProgress(tasks);
         }
-      },
-    });
+      }
+    },
+  });
+}
+
+async function startEnrichment(updateEmptyFieldsOnly: boolean) {
+  try {
+    enrichmentTasks.clear();
+    enrichmentCompleted.value = false;
+    $leadminerStore.activeEnrichment = true;
+    setupEnrichmentRealtime();
+
+    if (contactsToEnrich.value?.length === 1) {
+      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value![0]);
+    } else {
+      await enrichPersonBulk(
+        updateEmptyFieldsOnly,
+        enrichAllContacts.value,
+        contactsToEnrich.value!,
+      );
+    }
   } catch (err) {
     stopEnrichment();
     throw err;
@@ -317,7 +361,7 @@ const closeEnrichmentConfirmationDialog = () => {
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
-      "summary": "Enrichment {completed}/{total}",
+      "summary": "Enrich",
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",

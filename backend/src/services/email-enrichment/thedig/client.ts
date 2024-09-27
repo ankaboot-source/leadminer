@@ -8,6 +8,23 @@ interface Config {
   apiToken: string;
 }
 
+export interface EnrichPersonResponse {
+  email: string;
+  name: string;
+  givenName: string;
+  familyName?: string;
+  alternateName?: string[];
+  image?: string;
+  jobTitle?: string;
+  organization?: string;
+  homeLocation?: string[];
+  workLocation?: string[];
+  sameAs?: string[];
+  identifier?: string[];
+  description?: string[];
+  error_msg?: string;
+}
+
 export default class TheDig {
   private readonly api: AxiosInstance;
 
@@ -20,7 +37,21 @@ export default class TheDig {
     });
   }
 
-  async enrich(persons: Person[], webhook: string) {
+  async enrich(person: Person) {
+    try {
+      const { data } = await this.api.post<EnrichPersonResponse>(
+        `/person/`,
+        person
+      );
+
+      return data;
+    } catch (error) {
+      logError(error, `[${this.constructor.name}:enrich]`, this.logger);
+      throw error;
+    }
+  }
+
+  async enrichBulk(persons: Person[], webhook: string) {
     try {
       const { data } = await this.api.post(
         `/person/bulk?endpoint=${webhook}`,
@@ -33,7 +64,7 @@ export default class TheDig {
         token: data as string
       };
     } catch (error) {
-      logError(error, `[${this.constructor.name}:enrich]`, this.logger);
+      logError(error, `[${this.constructor.name}:enrichBulk]`, this.logger);
       throw error;
     }
   }

@@ -64,7 +64,7 @@ export default function initializeApp(
     initializeContactsRoutes(contacts, userResolver, authResolver)
   );
   app.use(
-    '/api/enrichment',
+    '/api/enrich',
     initializeEnrichmentRoutes(userResolver, authResolver)
   );
 

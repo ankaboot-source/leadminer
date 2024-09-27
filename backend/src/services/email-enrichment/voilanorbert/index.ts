@@ -1,32 +1,28 @@
 import { Logger } from 'winston';
 import { EmailEnricher, EnricherResult, Person } from '../EmailEnricher';
-import Voilanorbert from './client';
+import Voilanorbert, { VoilanorbertWebhookResult } from './client';
 
-export interface VoilanorbertEnrichmentResult {
-  email: string;
-  fullName: string;
-  title: string;
-  organization: string;
-  location: string;
-  twitter: string;
-  linkedin: string;
-  facebook: string;
-  error_msg?: string;
-}
-
-export interface VoilanorbertWebhookResult {
-  id: string;
-  token: string;
-  results: VoilanorbertEnrichmentResult[];
-}
-
-export class VoilanorbertEmailEnricher implements EmailEnricher {
+export default class VoilanorbertEmailEnricher implements EmailEnricher {
   constructor(
     private readonly client: Voilanorbert,
     private readonly logger: Logger
   ) {}
 
-  async enrichWebhook(persons: Person[], webhook: string) {
+  async enrichSync(person: Partial<Person>): Promise<EnricherResult> {
+    this.logger.debug(
+      `Got ${this.constructor.name}.enrichSync request`,
+      person
+    );
+    throw new Error(
+      `[${this.constructor.name}]: method enrichSync not implemented.`
+    );
+  }
+
+  async enrichAsync(persons: Person[], webhook: string) {
+    this.logger.debug(
+      `Got ${this.constructor.name}.enrichAsync request`,
+      persons
+    );
     try {
       const response = await this.client.enrich(
         persons.map(({ email }) => email),
@@ -43,7 +39,7 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
     }
   }
 
-  enrichmentMapper(enrichedData: VoilanorbertWebhookResult): EnricherResult[] {
+  enrichmentMapper(enrichedData: VoilanorbertWebhookResult) {
     this.logger.debug(
       `[${this.constructor.name}]-[enrichmentMapper]: Parsing enrichment results`,
       enrichedData
@@ -77,6 +73,9 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
             (field) => field === undefined || field.length === 0
           )
       );
-    return enriched;
+    return {
+      data: enriched,
+      raw_data: results
+    };
   }
 }

@@ -1,33 +1,33 @@
 import { Logger } from 'winston';
-import { EmailEnricher, EnricherResult, Person } from '../EmailEnricher';
-import Voilanorbert from './client';
+import { EmailEnricher, Person } from '../EmailEnricher';
+import Voilanorbert, { EnrichPersonResponse } from './client';
 
-export interface TheDigEnrichmentResult {
-  email: string;
-  name: string;
-  givenName: string;
-  familyName: string;
-  alternateName: string[];
-  image: string;
-  jobTitle: string;
-  organization: string;
-  homeLocation: string[];
-  workLocation: string[];
-  sameAs: string[];
-  identifier: string[];
-  description?: string[];
-  error_msg?: string;
-}
-
-export class TheDigEmailEnricher implements EmailEnricher {
+export default class TheDigEmailEnricher implements EmailEnricher {
   constructor(
     private readonly client: Voilanorbert,
     private readonly logger: Logger
   ) {}
 
-  async enrichWebhook(persons: Person[], webhook: string) {
+  async enrichSync(person: Person) {
+    this.logger.debug(
+      `Got ${this.constructor.name}.enrichSync request`,
+      person
+    );
     try {
-      const response = await this.client.enrich(persons, webhook);
+      const response = await this.client.enrich(person);
+      return response;
+    } catch (err) {
+      throw new Error((err as Error).message);
+    }
+  }
+
+  async enrichAsync(persons: Person[], webhook: string) {
+    this.logger.debug(
+      `Got ${this.constructor.name}.enrichAsync request`,
+      persons
+    );
+    try {
+      const response = await this.client.enrichBulk(persons, webhook);
 
       if (!response.success) {
         throw new Error('Failed to upload emails to enrichment.');
@@ -39,7 +39,7 @@ export class TheDigEmailEnricher implements EmailEnricher {
     }
   }
 
-  enrichmentMapper(enrichedData: TheDigEnrichmentResult[]): EnricherResult[] {
+  enrichmentMapper(enrichedData: EnrichPersonResponse[]) {
     this.logger.debug(
       `[${this.constructor.name}]-[enrichmentMapper]: Parsing enrichment results`,
       enrichedData
@@ -59,19 +59,23 @@ export class TheDigEmailEnricher implements EmailEnricher {
           alternateName,
           sameAs,
           image
-        }) => ({
-          email,
-          name: name || undefined,
-          givenName: givenName || undefined,
-          familyName: familyName || undefined,
-          alternateName: alternateName || undefined,
-          image: image || undefined,
-          location:
-            [...homeLocation, ...workLocation].filter(Boolean) || undefined,
-          organization: organization || undefined,
-          jobTitle: jobTitle || undefined,
-          sameAs: sameAs.length ? sameAs : undefined
-        })
+        }) => {
+          const location = [homeLocation, workLocation]
+            .flat()
+            .filter((loc): loc is string => !!loc);
+          return {
+            email,
+            name: name || undefined,
+            givenName: givenName || undefined,
+            familyName: familyName || undefined,
+            alternateName: alternateName || undefined,
+            image: image || undefined,
+            location: location.length ? location : undefined,
+            organization: organization || undefined,
+            jobTitle: jobTitle || undefined,
+            sameAs: sameAs?.length ? sameAs : undefined
+          };
+        }
       )
       .filter(
         ({
@@ -93,6 +97,9 @@ export class TheDigEmailEnricher implements EmailEnricher {
             image
           ].every((field) => field === undefined || field.length === 0)
       );
-    return enriched;
+    return {
+      data: enriched,
+      raw_data: results
+    };
   }
 }

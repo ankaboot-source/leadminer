@@ -9,6 +9,30 @@ interface Config {
   apiToken: string;
 }
 
+export interface VoilanorbertEnrichmentResult {
+  email: string;
+  fullName: string;
+  title: string;
+  organization: string;
+  location: string;
+  twitter: string;
+  linkedin: string;
+  facebook: string;
+  error_msg?: string;
+}
+
+export interface EnrichAsyncResponse {
+  status: string;
+  success: boolean;
+  token: string;
+}
+
+export interface VoilanorbertWebhookResult {
+  id: string;
+  token: string;
+  results: VoilanorbertEnrichmentResult[];
+}
+
 export default class Voilanorbert {
   private static readonly baseURL = 'https://api.voilanorbert.com/2018-01-08/';
 
@@ -28,13 +52,12 @@ export default class Voilanorbert {
     });
   }
 
-  async enrich(emails: string[], webhook: string) {
+  async enrich(
+    emails: string[],
+    webhook: string
+  ): Promise<EnrichAsyncResponse> {
     try {
-      const { data } = await this.api.post<{
-        status: string;
-        success: boolean;
-        token: string;
-      }>(
+      const { data } = await this.api.post<EnrichAsyncResponse>(
         '/enrich/upload',
         qs.stringify({
           data: emails.join('\n'),
