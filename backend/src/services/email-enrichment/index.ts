@@ -2,10 +2,12 @@ import ENV from '../../config';
 import logger from '../../utils/logger';
 import { EmailEnricher, Person } from './EmailEnricher';
 import EmailEnricherFactory, { Enricher } from './EmailEnricherFactory';
-import { TheDigEmailEnricher } from './thedig';
-import TheDig from './thedig/client';
-import { VoilanorbertEmailEnricher } from './voilanorbert';
+
 import Voilanorbert from './voilanorbert/client';
+import VoilanorbertEmailEnricher from './voilanorbert';
+
+import TheDig from './thedig/client';
+import TheDigEmailEnricher  from './thedig';
 
 let ENRICH_THEDIG: EmailEnricher | null = null;
 let ENRICH_VOILANORBERT: EmailEnricher | null = null;
