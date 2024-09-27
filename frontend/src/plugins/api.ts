@@ -18,9 +18,9 @@ export default defineNuxtPlugin({
       async onRequest({ options }) {
         const token = (await useSupabaseClient().auth.getSession()).data.session
           ?.access_token;
-        if (token) {
-          options.headers = { Authorization: `Bearer ${token}` };
-        }
+        options.headers = {
+          Authorization: `Bearer ${token || useRuntimeConfig().public.SAAS_SUPABASE_ANON_KEY}`,
+        };
       },
     });
     return {
