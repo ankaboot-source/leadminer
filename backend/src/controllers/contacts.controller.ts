@@ -114,17 +114,6 @@ async function registerAndDeductCredits(
   }
 }
 
-function getAvailableAndSelectedContacts(
-  newContacts: Contact[],
-  previousExportedContacts: Contact[],
-  availableUnits: number
-) {
-  const availableContacts = newContacts.slice(0, availableUnits);
-  const selectedContacts = [...previousExportedContacts, ...availableContacts];
-
-  return { availableContacts, selectedContacts };
-}
-
 async function respondWithConfirmedContacts(
   res: Response,
   userId: string,
@@ -136,12 +125,8 @@ async function respondWithConfirmedContacts(
   statusCode: number,
   delimiterOption?: string
 ) {
-  const { availableContacts, selectedContacts } =
-    getAvailableAndSelectedContacts(
-      newContacts,
-      previousExportedContacts,
-      availableUnits
-    );
+  const availableContacts = newContacts.slice(0, availableUnits);
+  const selectedContacts = [...previousExportedContacts, ...availableContacts];
 
   const csvData = await exportContactsToCSV(selectedContacts, delimiterOption);
 
