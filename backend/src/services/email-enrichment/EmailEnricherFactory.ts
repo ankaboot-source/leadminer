@@ -88,7 +88,9 @@ export default class ContactEnrichmentManager {
 
     if (enrichers.length === 0) {
       // Fallback to default
-      const enr = this.enrichers.find((enricher) => enricher.default)!;
+      const enr = this.enrichers.find(
+        (availableEnricher) => availableEnricher.default
+      )!;
       return {
         type: enr.type,
         instance: enr.instance
