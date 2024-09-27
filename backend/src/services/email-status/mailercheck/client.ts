@@ -10,7 +10,10 @@ export default class MailerCheckClient {
 
   private readonly rate_limit_handler;
 
-  constructor({ apiToken }: Config, private readonly logger: Logger) {
+  constructor(
+    { apiToken }: Config,
+    private readonly logger: Logger
+  ) {
     this.api = axios.create({
       baseURL: MailerCheckClient.baseURL,
       headers: {

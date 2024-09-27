@@ -20,7 +20,10 @@ export default class EmailEnricherFactory {
 
   private voilanorbertEmailEnricher?: EmailEnricher;
 
-  constructor(private readonly config: Config, logger: Logger) {
+  constructor(
+    private readonly config: Config,
+    logger: Logger
+  ) {
     if (
       config.VOILANORBERT_URL &&
       config.VOILANORBERT_API_KEY &&

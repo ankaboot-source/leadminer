@@ -126,7 +126,10 @@ export default class ReacherClient {
     };
   } = {};
 
-  constructor(private readonly logger: Logger, config: ReacherConfig) {
+  constructor(
+    private readonly logger: Logger,
+    config: ReacherConfig
+  ) {
     this.api = axios.create({
       baseURL: config.host
     });

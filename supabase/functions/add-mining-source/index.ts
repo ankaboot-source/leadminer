@@ -24,7 +24,7 @@ Deno.serve(async (req: Request) => {
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
       {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
   const expiresAt = new Date().setHours(new Date().getHours() + 7);
 
   try {
-    const { error } = await admin.rpc('upsert_mining_source', {
+    const { error } = await admin.rpc("upsert_mining_source", {
       _user_id: user.id,
       _email: user.email,
       _type: provider,
@@ -89,11 +89,11 @@ Deno.serve(async (req: Request) => {
         provider,
         expiresAt,
       }),
-      _encryption_key: Deno.env.get("LEADMINER_HASH_SECRET")
+      _encryption_key: Deno.env.get("LEADMINER_HASH_SECRET"),
     });
 
     if (error) {
-      throw error
+      throw error;
     }
 
     return new Response(null, {
