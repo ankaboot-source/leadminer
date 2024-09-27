@@ -14,7 +14,6 @@ exclude_patterns = [
 
 [[analyzers]]
 name = "test-coverage"
-enabled = true
 
 [[analyzers]]
 name = "sql"
@@ -36,3 +35,7 @@ name = "javascript"
 
   [analyzers.meta]
   plugins = ["vue"]
+  environment = ["nodejs"]
+
+[[transformers]]
+name = "prettier"
