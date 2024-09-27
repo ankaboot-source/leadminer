@@ -9,7 +9,10 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
-import { generateErrorObjectFromImapError, getValidImapLogin } from './helpers';
+import {
+  generateErrorObjectFromImapError,
+  getValidImapLogin
+} from './imap.helpers';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,

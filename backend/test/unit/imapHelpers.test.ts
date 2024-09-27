@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { generateErrorObjectFromImapError } from '../../src/controllers/helpers';
+import { generateErrorObjectFromImapError } from '../../src/controllers/imap.helpers';
 import { ImapAuthError } from '../../src/utils/errors';
 
 jest.mock('../../src/config', () => ({
