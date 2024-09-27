@@ -27,7 +27,7 @@ export default class ContactEnrichmentManager {
     const defaultEnrichers = this.enrichers.filter(
       (enricher) => enricher.default
     );
-    if (!defaultEnrichers.length || defaultEnrichers.length > 1) {
+    if (defaultEnrichers.length !== 1) {
       throw new Error(
         `Expected one enricher as default got ${defaultEnrichers.length}.`
       );
@@ -97,7 +97,7 @@ export default class ContactEnrichmentManager {
       };
     }
 
-    let ValidEnricher = enrichers[0];
+    let validEnricher = enrichers[0];
 
     if (this.config.LOAD_BALANCE_ENRICHERS || enrichers.length > 1) {
       const available = enrichers.filter(
@@ -116,12 +116,12 @@ export default class ContactEnrichmentManager {
           enrichers[0].instance
         );
       }
-      [ValidEnricher] = available.length ? available : enrichers;
+      [validEnricher] = available.length ? available : enrichers;
     }
 
     return {
-      type: ValidEnricher.type,
-      instance: ValidEnricher.instance
+      type: validEnricher.type,
+      instance: validEnricher.instance
     };
   }
 

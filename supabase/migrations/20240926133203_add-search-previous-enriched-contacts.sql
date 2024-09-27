@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.search_previous_enriched_emails(emails text[])
+CREATE OR REPLACE FUNCTION public.search_recent_enriched_emails(emails text[])
 RETURNS SETOF jsonb
 LANGUAGE sql
 STABLE

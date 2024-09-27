@@ -7,7 +7,7 @@ import Voilanorbert from './voilanorbert/client';
 import VoilanorbertEmailEnricher from './voilanorbert';
 
 import TheDig from './thedig/client';
-import TheDigEmailEnricher  from './thedig';
+import TheDigEmailEnricher from './thedig';
 
 let ENRICH_THEDIG: EmailEnricher | null = null;
 let ENRICH_VOILANORBERT: EmailEnricher | null = null;
