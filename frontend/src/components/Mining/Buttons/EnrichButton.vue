@@ -130,6 +130,21 @@ const enrichmentCompleted = ref(false);
 
 let subscription: RealtimeChannel;
 
+function showNotification(
+  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
+  summary: string,
+  detail: string,
+  group?: 'achievement',
+) {
+  $toast.add({
+    severity,
+    summary,
+    detail,
+    group,
+    life: 5000,
+  });
+}
+
 function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
@@ -204,21 +219,6 @@ watch(enrichmentCompleted, (value) => {
   }
 });
 
-function showNotification(
-  severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
-  summary: string,
-  detail: string,
-  group?: 'achievement',
-) {
-  $toast.add({
-    severity,
-    summary,
-    detail,
-    group,
-    life: 5000,
-  });
-}
-
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
     .channel('enrichment-tracker')
@@ -257,7 +257,6 @@ async function enrichPerson(
       if (response.status === 402) {
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
-        return;
       } else if (response.status === 200) {
         if (alreadyEnriched) {
           stopEnrichment();
@@ -293,7 +292,6 @@ async function enrichPersonBulk(
       if (response.status === 402) {
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
-        return;
       } else if (response.status === 200) {
         if (alreadyEnriched) {
           stopEnrichment();

@@ -40,7 +40,7 @@ export default class TheDig {
   async enrich(person: Person) {
     try {
       const { data } = await this.api.post<EnrichPersonResponse>(
-        `/person/`,
+        '/person/',
         person
       );
 

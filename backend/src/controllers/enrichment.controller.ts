@@ -25,7 +25,7 @@ interface TaskEnrich {
       enriched: number;
     };
     result?: {
-      raw_data: Record<string, any>;
+      raw_data: unknown;
       data: EnricherResult[];
     };
     error?: string;

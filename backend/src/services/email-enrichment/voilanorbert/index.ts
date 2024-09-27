@@ -8,7 +8,7 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
-  async enrichSync(person: Partial<Person>): Promise<EnricherResult> {
+  enrichSync(person: Partial<Person>): Promise<EnricherResult> {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person
