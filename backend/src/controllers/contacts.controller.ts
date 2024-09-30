@@ -11,7 +11,7 @@ import {
 } from '../utils/helpers/csv';
 
 async function validateRequest(req: Request, res: Response) {
-  const user = res.locals.user as User;
+  const userId = (res.locals.user as User).id;
 
   const partialExport = req.body.partialExport ?? false;
   const {
@@ -20,9 +20,12 @@ async function validateRequest(req: Request, res: Response) {
   }: { emails?: string[]; exportAllContacts: boolean } = req.body;
 
   if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
-    res.status(400).json({
-      message: 'Parameter "emails" must be a non-empty list of emails'
-    });
+    return {
+      userId,
+      contactsToExport: null,
+      partialExport,
+      delimiter: undefined
+    };
   }
 
   const contactsToExport = exportAllContacts ? undefined : emails;
@@ -36,7 +39,7 @@ async function validateRequest(req: Request, res: Response) {
     delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader ?? '');
 
   return {
-    userId: user.id,
+    userId,
     contactsToExport,
     partialExport,
     delimiter
@@ -152,6 +155,11 @@ export default function initializeContactsController(
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const { userId, contactsToExport, partialExport, delimiter } =
         await validateRequest(req, res);
+      if (contactsToExport === null) {
+        return res.status(400).json({
+          message: 'Parameter "emails" must be a non-empty list of emails'
+        });
+      }
 
       let statusCode = 200;
       try {
