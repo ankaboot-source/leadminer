@@ -10,7 +10,7 @@ import {
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
 
-async function validateRequest(req: Request, res: Response) {
+function validateRequest(req: Request, res: Response) {
   const userId = (res.locals.user as User).id;
 
   const partialExport = req.body.partialExport ?? false;
@@ -154,7 +154,7 @@ export default function initializeContactsController(
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const { userId, contactsToExport, partialExport, delimiter } =
-        await validateRequest(req, res);
+        validateRequest(req, res);
       if (contactsToExport === null) {
         return res.status(400).json({
           message: 'Parameter "emails" must be a non-empty list of emails'

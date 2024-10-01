@@ -47,7 +47,7 @@ function getImapConnectionProvider(
       );
 }
 
-async function getTokenAndProvider(data: any) {
+function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
   const { provider, accessToken, refreshToken, expiresAt } = data;
   const client = provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
 
@@ -96,9 +96,7 @@ export default function initializeImapController(miningSources: MiningSources) {
           );
         }
         if ('accessToken' in data) {
-          const { token, refreshToken, provider } = await getTokenAndProvider(
-            data
-          );
+          const { token, refreshToken, provider } = getTokenAndProvider(data);
           if (token.expired(1000)) {
             if (!refreshToken)
               return res.status(401).send({
