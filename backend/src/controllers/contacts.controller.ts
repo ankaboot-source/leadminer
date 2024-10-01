@@ -12,7 +12,6 @@ import {
 
 function validateRequest(req: Request, res: Response) {
   const userId = (res.locals.user as User).id;
-
   const partialExport = req.body.partialExport ?? false;
   const {
     emails,
@@ -29,14 +28,10 @@ function validateRequest(req: Request, res: Response) {
   }
 
   const contactsToExport = exportAllContacts ? undefined : emails;
-
-  const delimiterOption = req.query.delimiter
-    ? String(req.query.delimiter)
-    : undefined;
   const localeFromHeader = req.headers['accept-language'];
-
+  const delimiterOption = req.query.delimiter?.toString();
   const delimiter =
-    delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader ?? '');
+    delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader);
 
   return {
     userId,

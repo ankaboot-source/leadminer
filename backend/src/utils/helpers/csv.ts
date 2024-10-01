@@ -1,8 +1,8 @@
 import { stringify } from 'csv-stringify';
 import { Contact } from '../../db/types';
 
-export function getLocalizedCsvSeparator(locale: string) {
-  const language = locale.substring(0, 2);
+export function getLocalizedCsvSeparator(locale?: string) {
+  const language = locale?.substring(0, 2);
 
   switch (language) {
     case 'fr':
