@@ -34,6 +34,7 @@
     "nitropack": "^2.9.7",
     "nuxt": "^3.13.2",
     "nuxt-mdi": "^2.1.1",
+    "nuxt-security": "^2.0.0",
     "object-scan": "^19.0.5",
     "pinia": "^2.2.2",
     "postcss": "^8.4.47",
