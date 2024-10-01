@@ -65,6 +65,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@primevue/nuxt-module',
     'nuxt-mdi',
+    'nuxt-security',
   ],
 
   primevue: {
