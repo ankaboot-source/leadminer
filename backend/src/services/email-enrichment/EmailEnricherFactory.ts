@@ -14,7 +14,7 @@ export interface Enricher {
 }
 
 export default class ContactEnrichmentManager {
-  private lastUsedInstances: Set<string> = new Set();
+  private readonly lastUsedInstances: Set<string> = new Set();
 
   constructor(
     private readonly enrichers: Enricher[],
@@ -64,13 +64,7 @@ export default class ContactEnrichmentManager {
    * @returns {EmailEnricher} The selected enricher instance.
    * @throws {Error} If no enricher can verify the contact.
    */
-  getEnricher(
-    contact: Partial<Person>,
-    type?: EnricherType
-  ): {
-    type: EnricherType;
-    instance: EmailEnricher;
-  } {
+  getEnricher(contact: Partial<Person>, type?: EnricherType): Enricher {
     if (type) {
       const enricher = this.enrichers.find((e) => e.type === type);
 
@@ -78,10 +72,7 @@ export default class ContactEnrichmentManager {
         throw new Error(`Enricher with type <${type}> not found.`);
       }
 
-      return {
-        type: enricher.type,
-        instance: enricher.instance
-      };
+      return enricher;
     }
 
     const enrichers = this.enrichers.filter(({ rule }) => rule(contact));
@@ -91,10 +82,7 @@ export default class ContactEnrichmentManager {
       const enr = this.enrichers.find(
         (availableEnricher) => availableEnricher.default
       )!;
-      return {
-        type: enr.type,
-        instance: enr.instance
-      };
+      return enr;
     }
 
     let validEnricher = enrichers[0];
@@ -119,10 +107,7 @@ export default class ContactEnrichmentManager {
       [validEnricher] = available.length ? available : enrichers;
     }
 
-    return {
-      type: validEnricher.type,
-      instance: validEnricher.instance
-    };
+    return validEnricher;
   }
 
   /**
@@ -133,20 +118,11 @@ export default class ContactEnrichmentManager {
    * @returns An array of tuples containing
    *          enricher instances and their corresponding contacts.
    */
-  getEnrichers(contacts: Partial<Person>[]): [
-    {
-      type: Enricher['type'];
-      instance: Enricher['instance'];
-    },
-    Partial<Person>[]
-  ][] {
+  getEnrichers(contacts: Partial<Person>[]): [Enricher, Partial<Person>[]][] {
     const enricherMap = new Map<
       string,
       {
-        enricher: {
-          type: Enricher['type'];
-          instance: Enricher['instance'];
-        };
+        enricher: Enricher;
         contacts: Partial<Person>[];
       }
     >();

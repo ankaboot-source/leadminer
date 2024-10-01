@@ -25,9 +25,12 @@ export interface EmailEnricher {
     persons: Partial<Person>[],
     webhook: string
   ): Promise<EnrichWebhookResopnse>;
-  enrichSync(persons: Partial<Person>): Promise<EnricherResult>;
+  enrichSync(persons: Partial<Person>): Promise<{
+    raw_data: unknown;
+    data: EnricherResult[];
+  }>;
   enrichmentMapper(data: unknown): {
-    raw_data: unknown[];
+    raw_data: unknown;
     data: EnricherResult[];
   };
 }

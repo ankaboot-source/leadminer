@@ -8,7 +8,9 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
-  enrichSync(person: Partial<Person>): Promise<EnricherResult> {
+  enrichSync(
+    person: Partial<Person>
+  ): Promise<{ raw_data: unknown; data: EnricherResult[] }> {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person
@@ -18,14 +20,14 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
     );
   }
 
-  async enrichAsync(persons: Person[], webhook: string) {
+  async enrichAsync(persons: Partial<Person>[], webhook: string) {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichAsync request`,
       persons
     );
     try {
       const response = await this.client.enrich(
-        persons.map(({ email }) => email),
+        persons.map(({ email }) => email as string),
         webhook
       );
 

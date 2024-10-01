@@ -37,7 +37,7 @@ export default class TheDig {
     });
   }
 
-  async enrich(person: Person) {
+  async enrich(person: Partial<Person>) {
     try {
       const { data } = await this.api.post<EnrichPersonResponse>(
         '/person/',
@@ -51,7 +51,7 @@ export default class TheDig {
     }
   }
 
-  async enrichBulk(persons: Person[], webhook: string) {
+  async enrichBulk(persons: Partial<Person>[], webhook: string) {
     try {
       const { data } = await this.api.post(
         `/person/bulk?endpoint=${webhook}`,

@@ -8,20 +8,24 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
-  async enrichSync(person: Person) {
+  async enrichSync(person: Partial<Person>) {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person
     );
     try {
-      const response = await this.client.enrich(person);
-      return response;
+      const { email, name } = person;
+      const response = await this.client.enrich({
+        email: email as string,
+        name
+      });
+      return this.enrichmentMapper([response]);
     } catch (err) {
       throw new Error((err as Error).message);
     }
   }
 
-  async enrichAsync(persons: Person[], webhook: string) {
+  async enrichAsync(persons: Partial<Person>[], webhook: string) {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichAsync request`,
       persons
