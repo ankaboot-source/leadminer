@@ -1,8 +1,13 @@
+import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import Connection from 'imap';
-import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
-import { MiningSources } from '../db/interfaces/MiningSources';
+import {
+  ImapMiningSourceCredentials,
+  MiningSources,
+  OAuthMiningSourceCredentials,
+  OAuthMiningSourceProvider
+} from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapBoxesFetcher from '../services/imap/ImapBoxesFetcher';
@@ -12,6 +17,69 @@ import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
 import { generateErrorObjectFromImapError } from './helpers';
 
+async function validateRequest(
+  req: Request,
+  res: Response,
+  miningSources: MiningSources
+) {
+  const userId = (res.locals.user as User).id;
+  const { email } = req.body;
+  const data = await miningSources.getCredentialsBySourceEmail(userId, email);
+  return { userId, data };
+}
+
+type NewToken = {
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+};
+
+function getImapConnectionProvider(
+  data: OAuthMiningSourceCredentials | ImapMiningSourceCredentials
+) {
+  return 'accessToken' in data
+    ? new ImapConnectionProvider(data.email).withOauth(data.accessToken)
+    : new ImapConnectionProvider(data.email).withPassword(
+        data.host,
+        data.password,
+        data.tls,
+        data.port
+      );
+}
+
+async function getTokenAndProvider(data: any) {
+  const { provider, accessToken, refreshToken, expiresAt } = data;
+  const client = provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
+
+  const token = client.createToken({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    expires_at: expiresAt
+  });
+
+  return { token, refreshToken, provider };
+}
+
+async function upsertMiningSource(
+  miningSources: MiningSources,
+  userId: string,
+  token: NewToken,
+  provider: OAuthMiningSourceProvider,
+  data: OAuthMiningSourceCredentials
+) {
+  await miningSources.upsert({
+    type: provider,
+    email: data.email,
+    credentials: {
+      email: data.email,
+      provider,
+      accessToken: token.access_token,
+      refreshToken: token.refresh_token,
+      expiresAt: token.expires_at
+    },
+    userId
+  });
+}
 export default function initializeImapController(miningSources: MiningSources) {
   return {
     async getImapBoxes(req: Request, res: Response, next: NextFunction) {
@@ -19,13 +87,7 @@ export default function initializeImapController(miningSources: MiningSources) {
       let imapConnection: Connection | null = null;
 
       try {
-        const { email } = req.body;
-        const user = res.locals.user as User;
-
-        const data = await miningSources.getCredentialsBySourceEmail(
-          user.id,
-          email
-        );
+        const { userId, data } = await validateRequest(req, res, miningSources);
 
         if (!data) {
           res.status(400);
@@ -34,62 +96,36 @@ export default function initializeImapController(miningSources: MiningSources) {
           );
         }
         if ('accessToken' in data) {
-          const { provider, accessToken, refreshToken, expiresAt } = data;
-          const client =
-            provider === 'azure' ? azureOAuth2Client : googleOAuth2Client;
-
-          const token = client.createToken({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            expires_at: expiresAt
-          });
-
+          const { token, refreshToken, provider } = await getTokenAndProvider(
+            data
+          );
           if (token.expired(1000)) {
             if (!refreshToken)
               return res.status(401).send({
                 data: { message: 'Token has expired' }
               });
-            const { token: newToken } = await token.refresh();
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            const { access_token, refresh_token, expires_at } = newToken as {
-              access_token: string;
-              refresh_token: string;
-              expires_at: number;
-            };
-            await miningSources.upsert({
-              type: provider,
-              email: data.email,
-              credentials: {
-                email: data.email,
-                provider,
-                accessToken: access_token,
-                refreshToken: refresh_token,
-                expiresAt: expires_at
-              },
-              userId: user.id
-            });
+            const newToken = (await token.refresh()).token as NewToken;
 
-            data.accessToken = access_token;
+            await upsertMiningSource(
+              miningSources,
+              userId,
+              newToken,
+              provider,
+              data
+            );
+
+            data.accessToken = newToken.access_token;
           }
         }
 
-        imapConnectionProvider =
-          'accessToken' in data
-            ? new ImapConnectionProvider(data.email).withOauth(data.accessToken)
-            : new ImapConnectionProvider(data.email).withPassword(
-                data.host,
-                data.password,
-                data.tls,
-                data.port
-              );
-
+        imapConnectionProvider = getImapConnectionProvider(data);
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
         const tree: any = await imapBoxesFetcher.getTree(data.email);
 
         logger.info('Mining IMAP tree succeeded.', {
           metadata: {
-            user: hashEmail(data.email, user.id)
+            user: hashEmail(data.email, userId)
           }
         });
 
@@ -97,17 +133,13 @@ export default function initializeImapController(miningSources: MiningSources) {
           data: { message: 'IMAP folders fetched successfully!', folders: tree }
         });
       } catch (error: any) {
-        if (
-          error?.output?.payload?.statusCode === 502 ||
-          error?.output?.payload?.statusCode === 503
-        ) {
+        if ([502, 503].includes(error?.output?.payload?.statusCode)) {
           return res
             .status(error?.output?.payload?.statusCode)
             .send(error?.output?.payload?.error);
         }
 
         const generatedError = generateErrorObjectFromImapError(error);
-
         if (generatedError instanceof ImapAuthError) {
           return res.status(generatedError.status).send(generatedError);
         }
