@@ -21,7 +21,7 @@ watch(
   user,
   () => {
     if (user.value) {
-      return navigateTo(`${navigateToPage ?? '/'}`);
+      navigateTo(`${navigateToPage ?? '/'}`);
     }
   },
   { immediate: true },
