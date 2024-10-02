@@ -145,7 +145,10 @@ export default function initializeStripePaymentController(
           }
         }
 
-        const actionLink = await accountResolver.generateMagicLink(user.email);
+        const actionLink = await accountResolver.generateMagicLink(
+          user.email,
+          `${ENV.FRONTEND_HOST}/callback`
+        );
 
         logger.debug(
           `[after_payment_redirect]: Successfully created magiclink to signin for "${user.email}"`

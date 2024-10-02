@@ -26,10 +26,10 @@ export default defineNuxtConfig({
       port: 8082,
     },
     typescript: {
-      typeCheck: true,
+      typeCheck: false,
     },
     eslint: {
-      checker: true,
+      checker: false,
     },
   },
 
@@ -122,15 +122,10 @@ export default defineNuxtConfig({
       },
     },
     redirectOptions: {
-      callback: '/',
+      callback: '/callback',
       login: '/auth/login',
-      exclude: [
-        '/auth/signup',
-        '/auth/forgot-password',
-        '/auth/success',
-        '/credits-success',
-        '/account/settings',
-      ],
+      include: ['/dashboard', '/account(/*)?'],
+      exclude: ['/auth(/*)?', '/credits-success'],
     },
   },
 

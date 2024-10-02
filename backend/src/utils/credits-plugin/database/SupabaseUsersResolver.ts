@@ -91,10 +91,14 @@ export default class SupabaseUsers implements Users {
     return true;
   }
 
-  async generateMagicLink(userEmail: string): Promise<string> {
+  async generateMagicLink(
+    userEmail: string,
+    redirectTo: string
+  ): Promise<string> {
     const { data, error } = await this.supabaseClient.auth.admin.generateLink({
       type: 'magiclink',
-      email: userEmail
+      email: userEmail,
+      options: { redirectTo }
     });
 
     if (error) {

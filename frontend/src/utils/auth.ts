@@ -7,6 +7,7 @@ export async function signInWithOAuth(provider: Provider) {
   const { error } = await $supabase.auth.signInWithOAuth({
     provider,
     options: {
+      redirectTo: `${window.location.origin}/callback`,
       skipBrowserRedirect: false,
       scopes:
         provider === 'azure'
