@@ -477,24 +477,29 @@ export default class TasksManager {
     incrementBy = 1
   ): TaskProgress | undefined {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
     if (!task) return undefined;
 
     const { progress, process } = task;
-
-    const update = (
-      taskProperty: keyof typeof process,
-      progressProperty: keyof TaskProgress
-    ) => {
-      const taskProgress = process[taskProperty].details.progress as {
-        [key: string]: number;
-      };
-      taskProgress[progressProperty] =
-        (taskProgress[progressProperty] ?? 0) + incrementBy;
-      progress[progressProperty] = taskProgress[progressProperty];
+    const progressMappings: Partial<
+      Record<TaskProgressType, keyof typeof process>
+    > = {
+      fetched: 'fetch',
+      extracted: 'extract',
+      createdContacts: 'clean',
+      verifiedContacts: 'clean'
     };
 
-    TasksManager.updateTaskProgress(progressType, () => update);
+    const taskProperty = progressMappings[progressType];
+
+    if (taskProperty) {
+      const taskProgress = process[taskProperty].details.progress as Record<
+        string,
+        number
+      >;
+      taskProgress[progressType] =
+        (taskProgress[progressType] ?? 0) + incrementBy;
+      progress[progressType] = taskProgress[progressType];
+    }
 
     return { ...progress };
   }
