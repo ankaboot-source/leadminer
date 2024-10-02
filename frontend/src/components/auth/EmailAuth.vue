@@ -80,17 +80,17 @@
             <p class="mt-2">{{ $t('auth.suggestions') }}</p>
             <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
               <li>
-                <i v-if="passwordHasLowerCase" class="pi pi-check-square"></i>
+                <i v-if="hasLowerCase" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
                 {{ $t('auth.suggestion_lowercase') }}
               </li>
               <li>
-                <i v-if="passwordHasUpperCase" class="pi pi-check-square"></i>
+                <i v-if="hasUpperCase" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
                 {{ $t('auth.suggestion_uppercase') }}
               </li>
               <li>
-                <i v-if="passwordHasNumber" class="pi pi-check-square"></i>
+                <i v-if="hasNumber" class="pi pi-check-square"></i>
                 <i v-else class="pi pi-stop"></i>
                 {{ $t('auth.suggestion_numeric') }}
               </li>
@@ -235,12 +235,7 @@
 <script setup lang="ts">
 import type { authModes } from '@/types/auth';
 import { isInvalidEmail as isInvalidEmailSyntax } from '@/utils/email';
-import {
-  hasLowerCase,
-  hasNumber,
-  hasUpperCase,
-  isInvalidPassword as isInvalidPasswordSyntax,
-} from '@/utils/password';
+import { isInvalidPassword as isInvalidPasswordSyntax } from '@/utils/password';
 import { useI18n } from 'vue-i18n';
 
 const { getBrowserLocale } = useI18n({
@@ -273,9 +268,17 @@ const isEmailExist = ref(false);
 const invalidEmail = ref(false);
 const invalidPassword = ref(false);
 
-const passwordHasLowerCase = computed(() => hasLowerCase(password.value));
-const passwordHasUpperCase = computed(() => hasUpperCase(password.value));
-const passwordHasNumber = computed(() => hasNumber(password.value));
+const hasLowerCase = computed(
+  () => Boolean(password.value) && /.*[a-z]+.*/g.test(password.value),
+);
+
+const hasUpperCase = computed(
+  () => Boolean(password.value) && /.*[A-Z]+.*/g.test(password.value),
+);
+
+const hasNumber = computed(
+  () => Boolean(password.value) && /.*[0-9]+.*/g.test(password.value),
+);
 
 const isLoading = ref(false);
 
