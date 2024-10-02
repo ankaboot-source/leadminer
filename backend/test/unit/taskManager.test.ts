@@ -365,14 +365,13 @@ describe('TasksManager', () => {
 
       it('should stop process from list successfully', async () => {
         const processKeys = Object.keys(task.processes);
-        for (const processKey of processKeys) {
+        processKeys.forEach(async (processKey) => {
           (tasksResolver.update as jest.Mock).mockClear();
           (fakeRedisClient.xgroup as jest.Mock).mockClear();
 
           const process =
             task.processes[processKey as keyof typeof task.processes];
 
-          // Stop the current process
           const deletedTask = await tasksManager.deleteTask(task.miningId, [
             process as string
           ]);
@@ -384,7 +383,6 @@ describe('TasksManager', () => {
             tasksManager.getActiveTask(deletedTask.miningId)
           ).not.toThrow(Error);
 
-          // Ensure the current process is canceled
           expect(tasksResolver.update).toHaveBeenCalledWith(
             expect.objectContaining({
               type: processKey,
@@ -396,7 +394,6 @@ describe('TasksManager', () => {
             })
           );
 
-          // Ensure other processes remain active
           const activeProcesses = processKeys.filter(
             (key) => key !== processKey
           );
@@ -423,7 +420,7 @@ describe('TasksManager', () => {
               consumerGroup
             );
           }
-        }
+        });
       });
     });
 
