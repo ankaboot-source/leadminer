@@ -1,4 +1,3 @@
-import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
 import { Users } from '../db/interfaces/Users';
@@ -180,121 +179,89 @@ async function enrichContact(
   );
 }
 
-async function validateRequest(req: Request, res: Response) {
-  const userId = (res.locals.user as User).id;
-  const {
-    emails,
-    enrichAllContacts,
-    updateEmptyFieldsOnly
-  }: {
-    emails?: string[];
-    enrichAllContacts: boolean;
-    updateEmptyFieldsOnly: boolean;
-  } = req.body;
-  let emailsToEnrich: string[] | null;
-
-  if (enrichAllContacts) {
-    emailsToEnrich = await getEmails(userId);
-  } else if (Array.isArray(emails) && emails.length) {
-    emailsToEnrich = emails;
-  } else {
-    return { userId, enrichableContacts: null, updateEmptyFieldsOnly };
-  }
-
-  const enrichedEmails = new Set(await getEnrichedEmails(userId));
-  const enrichableContacts = emailsToEnrich.filter(
-    (email) => !enrichedEmails.has(email)
-  );
-
-  return { userId, enrichableContacts, updateEmptyFieldsOnly };
-}
-
-async function startEnrichmentAndGetTaskId(
-  userId: string,
-  contactsToEnrich: string[],
-  updateEmptyFieldsOnly: boolean
-) {
-  const enrichmentTask = await startEnrichmentTask(userId);
-  const enricher = emailEnrichementService.getEmailEnricher();
-  const { token } = await enricher.enrichWebhook(
-    contactsToEnrich,
-    `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`
-  );
-
-  await updateEnrichmentTask(enrichmentTask.id, 'running', {
-    userId,
-    enrichmentToken: token,
-    updateEmptyFieldsOnly,
-    result: {
-      total: contactsToEnrich.length
-    }
-  });
-
-  return enrichmentTask.id;
-}
-
-async function verifyCredits(
-  userId: string,
-  userResolver: Users,
-  total: number
-) {
-  // Verify Credits
-  const creditsHandler = new CreditsHandler(
-    userResolver,
-    ENV.CREDITS_PER_CONTACT
-  );
-  const creditsInfo = await creditsHandler.validate(userId, total);
-
-  return { creditsHandler, creditsInfo };
-}
-
 export default function initializeEnrichementController(userResolver: Users) {
   return {
     /**
      * Creates an Enrichment task for a list of emails.
      */
     async enrich(req: Request, res: Response, next: NextFunction) {
+      const { user } = res.locals;
+      const {
+        emails,
+        enrichAllContacts,
+        updateEmptyFieldsOnly
+      }: {
+        emails?: string[];
+        enrichAllContacts: boolean;
+        updateEmptyFieldsOnly: boolean;
+      } = req.body;
+
       try {
-        const { userId, enrichableContacts, updateEmptyFieldsOnly } =
-          await validateRequest(req, res);
+        let emailsToEnrich: string[];
 
-        if (enrichableContacts === null)
-          return res.status(400).json({
-            message: 'Parameter "emails" must be a non-empty list of emails'
-          });
-        if (!enrichableContacts.length)
-          return res.status(200).json({ alreadyEnriched: true });
-
-        let contactsToEnrich = enrichableContacts;
-        const total = contactsToEnrich.length;
-        if (ENV.ENABLE_CREDIT) {
-          const { creditsHandler, creditsInfo } = await verifyCredits(
-            userId,
-            userResolver,
-            total
-          );
-          if (
-            creditsInfo.hasDeficientCredits ||
-            creditsInfo.hasInsufficientCredits
-          ) {
-            return res.status(creditsHandler.DEFICIENT_CREDITS_STATUS).json({
-              total,
-              available: Math.floor(creditsInfo.availableUnits)
+        if (enrichAllContacts) {
+          emailsToEnrich = await getEmails(user.id);
+        } else {
+          if (!Array.isArray(emails) || !emails.length) {
+            return res.status(400).json({
+              message: 'Parameter "emails" must be a non-empty list of emails'
             });
           }
-          contactsToEnrich = contactsToEnrich.slice(
-            0,
-            creditsInfo.availableUnits
-          );
+          emailsToEnrich = emails;
         }
-        const taskId = await startEnrichmentAndGetTaskId(
-          userId,
-          contactsToEnrich,
-          updateEmptyFieldsOnly
+
+        const enrichedEmails = new Set(await getEnrichedEmails(user.id));
+        let contactsToEnrich = emailsToEnrich.filter(
+          (email) => !enrichedEmails.has(email)
         );
+
+        if (!contactsToEnrich.length) {
+          return res.status(200).json({ alreadyEnriched: true });
+        }
+
+        if (ENV.ENABLE_CREDIT) {
+          const creditsHandler = new CreditsHandler(
+            userResolver,
+            ENV.CREDITS_PER_CONTACT
+          );
+          const {
+            hasDeficientCredits,
+            hasInsufficientCredits,
+            availableUnits
+          } = await creditsHandler.validate(user.id, contactsToEnrich.length);
+
+          if (hasDeficientCredits || hasInsufficientCredits) {
+            const response = {
+              total: contactsToEnrich.length,
+              available: Math.floor(availableUnits)
+            };
+            return res
+              .status(creditsHandler.DEFICIENT_CREDITS_STATUS)
+              .json(response);
+          }
+          contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
+        }
+
+        const enricher = emailEnrichementService.getEmailEnricher();
+        const enrichmentTask = await startEnrichmentTask(user.id);
+
+        const { token } = await enricher.enrichWebhook(
+          contactsToEnrich,
+          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`
+        );
+
+        await updateEnrichmentTask(enrichmentTask.id, 'running', {
+          userId: user.id,
+          enrichmentToken: token,
+          updateEmptyFieldsOnly,
+          result: {
+            total: contactsToEnrich.length
+          }
+        });
+
         return res.status(200).json({
-          taskId,
-          total
+          taskId: enrichmentTask.id,
+          total: contactsToEnrich.length
         });
       } catch (err) {
         return next(err);
