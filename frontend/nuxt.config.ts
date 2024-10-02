@@ -66,6 +66,7 @@ export default defineNuxtConfig({
     '@primevue/nuxt-module',
     'nuxt-mdi',
     'nuxt-security',
+    '@nuxt/scripts',
   ],
 
   primevue: {
