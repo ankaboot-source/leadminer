@@ -2,6 +2,7 @@ import { Redis } from 'ioredis';
 import { REACHABILITY, REGEX_LIST_ID } from '../../utils/constants';
 import { extractNameAndEmail, extractNameAndEmailFromBody } from './helpers';
 
+import { Message, Person, PointOfContact } from '../../db/types';
 import { differenceInDays } from '../../utils/helpers/date';
 import { getSpecificHeader } from '../../utils/helpers/emailHeaderHelpers';
 import CatchAllDomainsCache from '../cache/CatchAllDomainsCache';
@@ -16,10 +17,7 @@ import {
   EmailSendersRecipients,
   IGNORED_MESSAGE_TAGS,
   MESSAGING_FIELDS,
-  Message,
-  MessageField,
-  Person,
-  PointOfContact
+  MessageField
 } from './types';
 
 export default class EmailMessage {

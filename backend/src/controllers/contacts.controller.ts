@@ -10,127 +10,207 @@ import {
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
 
-async function exportToCSV(
-  contactsToExport: Contact[],
-  delimiterOption: string | undefined,
-  localeFromHeader: string | undefined
-) {
-  const csvSeparator =
-    delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader ?? '');
-  const csvData = await exportContactsToCSV(contactsToExport, csvSeparator);
-  return csvData;
+function validateRequest(req: Request, res: Response) {
+  const userId = (res.locals.user as User).id;
+  const partialExport = req.body.partialExport ?? false;
+  const {
+    emails,
+    exportAllContacts
+  }: { emails?: string[]; exportAllContacts: boolean } = req.body;
+
+  if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
+    return {
+      userId,
+      contactsToExport: null,
+      partialExport,
+      delimiter: undefined
+    };
+  }
+
+  const contactsToExport = exportAllContacts ? undefined : emails;
+  const localeFromHeader = req.headers['accept-language'];
+  const delimiterOption = req.query.delimiter?.toString();
+  const delimiter =
+    delimiterOption ?? getLocalizedCsvSeparator(localeFromHeader);
+
+  return {
+    userId,
+    contactsToExport,
+    partialExport,
+    delimiter
+  };
 }
+
+async function respondWithContacts(
+  res: Response,
+  userId: string,
+  contacts: Contacts,
+  contactsToExport?: string[],
+  delimiter?: string
+) {
+  const selectedContacts = await contacts.getContacts(userId, contactsToExport);
+
+  if (!selectedContacts.length) {
+    return res.sendStatus(204); // 204 No Content
+  }
+
+  const csvData = exportContactsToCSV(selectedContacts, delimiter);
+  return res.header('Content-Type', 'text/csv').status(200).send(csvData);
+}
+
+async function verifyCredits(
+  userId: string,
+  userResolver: Users,
+  contacts: Contacts,
+  contactsToExport?: string[]
+) {
+  const newContacts = await contacts.getNonExportedContacts(
+    userId,
+    contactsToExport
+  );
+
+  const previousExportedContacts = await contacts.getExportedContacts(
+    userId,
+    contactsToExport
+  );
+
+  // Verify Credits
+  const creditsHandler = new CreditsHandler(
+    userResolver,
+    ENV.CREDITS_PER_CONTACT
+  );
+  const creditsInfo = await creditsHandler.validate(userId, newContacts.length);
+
+  const response = {
+    total: newContacts.length + previousExportedContacts.length,
+    available: Math.floor(creditsInfo.availableUnits),
+    availableAlready: previousExportedContacts.length
+  };
+
+  return {
+    newContacts,
+    previousExportedContacts,
+    creditsHandler,
+    creditsInfo,
+    response
+  };
+}
+
+async function registerAndDeductCredits(
+  userId: string,
+  creditsHandler: CreditsHandler,
+  availableUnits: number,
+  contacts: Contacts,
+  availableContacts: Contact[]
+) {
+  if (availableContacts.length) {
+    await contacts.registerExportedContacts(
+      availableContacts.map(({ email }) => email),
+      userId
+    );
+    await creditsHandler.deduct(userId, availableUnits);
+  }
+}
+
+async function respondWithConfirmedContacts(
+  res: Response,
+  userId: string,
+  contacts: Contacts,
+  newContacts: Contact[],
+  previousExportedContacts: Contact[],
+  creditsHandler: CreditsHandler,
+  availableUnits: number,
+  statusCode: number,
+  delimiterOption?: string
+) {
+  const availableContacts = newContacts.slice(0, availableUnits);
+  const selectedContacts = [...previousExportedContacts, ...availableContacts];
+
+  const csvData = await exportContactsToCSV(selectedContacts, delimiterOption);
+
+  await registerAndDeductCredits(
+    userId,
+    creditsHandler,
+    availableUnits,
+    contacts,
+    availableContacts
+  );
+
+  return res
+    .header('Content-Type', 'text/csv')
+    .status(statusCode)
+    .send(csvData);
+}
+
 export default function initializeContactsController(
   contacts: Contacts,
   userResolver: Users
 ) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
-      const user = res.locals.user as User;
-      const partialExport = req.body.partialExport ?? false;
-      const {
-        emails,
-        exportAllContacts
-      }: { emails?: string[]; exportAllContacts: boolean } = req.body;
-
-      if (!exportAllContacts && (!Array.isArray(emails) || !emails.length)) {
+      const { userId, contactsToExport, partialExport, delimiter } =
+        validateRequest(req, res);
+      if (contactsToExport === null) {
         return res.status(400).json({
           message: 'Parameter "emails" must be a non-empty list of emails'
         });
       }
-      const contactsToExport = exportAllContacts ? undefined : emails;
+
       let statusCode = 200;
       try {
         if (!ENV.ENABLE_CREDIT || !ENV.CREDITS_PER_CONTACT) {
           // No need to Verify Credits, Export.
-
-          const selectedContacts = await contacts.getContacts(
-            user.id,
-            contactsToExport
+          return await respondWithContacts(
+            res,
+            userId,
+            contacts,
+            contactsToExport,
+            delimiter
           );
-
-          if (!selectedContacts.length) {
-            statusCode = 204; // 204 No Content
-            return res.sendStatus(statusCode);
-          }
-
-          const csvData = await exportToCSV(
-            selectedContacts,
-            req.query.delimiter ? String(req.query.delimiter) : undefined,
-            req.headers['accept-language']
-          );
-          return res
-            .header('Content-Type', 'text/csv')
-            .status(statusCode)
-            .send(csvData);
         }
 
-        // Verify
-        const newContacts = await contacts.getNonExportedContacts(
-          user.id,
-          contactsToExport
-        );
-
-        const previousExportedContacts = await contacts.getExportedContacts(
-          user.id,
-          contactsToExport
-        );
-
-        // Verify Credits
-        const creditsHandler = new CreditsHandler(
+        const {
+          newContacts,
+          previousExportedContacts,
+          creditsHandler,
+          creditsInfo,
+          response
+        } = await verifyCredits(
+          userId,
           userResolver,
-          ENV.CREDITS_PER_CONTACT
+          contacts,
+          contactsToExport
         );
-        const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
-          await creditsHandler.validate(user.id, newContacts.length);
 
-        if (hasDeficientCredits && !previousExportedContacts.length) {
-          statusCode = creditsHandler.DEFICIENT_CREDITS_STATUS; // 402 Payment Required
-          const response = {
-            total: newContacts.length + previousExportedContacts.length,
-            available: Math.floor(availableUnits),
-            availableAlready: previousExportedContacts.length
-          };
-          return res.status(statusCode).json(response);
+        if (
+          creditsInfo.hasDeficientCredits &&
+          !previousExportedContacts.length
+        ) {
+          return res
+            .status(creditsHandler.DEFICIENT_CREDITS_STATUS) // 402 Payment Required
+            .json(response);
         }
-        if (hasInsufficientCredits && newContacts.length) {
-          statusCode = 206; // 206 Partial Content
+
+        if (creditsInfo.hasInsufficientCredits && newContacts.length) {
           if (!partialExport) {
-            statusCode = 266; // 266 Confirm Partial Content
             res.statusMessage = 'Confirm Partial Content';
-            const response = {
-              total: newContacts.length + previousExportedContacts.length,
-              available: Math.floor(availableUnits),
-              availableAlready: previousExportedContacts.length
-            };
-            return res.status(statusCode).json(response);
+            return res.status(266).json(response); // 266 Confirm Partial Content
           }
+          statusCode = 206; // 206 Partial Content
         }
-        // Verified, Export.
-        const availableContacts = newContacts.slice(0, availableUnits);
-        const selectedContacts = [
-          ...previousExportedContacts,
-          ...availableContacts
-        ];
 
-        const csvData = await exportToCSV(
-          selectedContacts,
-          req.query.delimiter ? String(req.query.delimiter) : undefined,
-          req.headers['accept-language']
+        // Export confirmed contacts.
+        return await respondWithConfirmedContacts(
+          res,
+          userId,
+          contacts,
+          newContacts,
+          previousExportedContacts,
+          creditsHandler,
+          creditsInfo.availableUnits,
+          statusCode,
+          delimiter
         );
-
-        if (availableContacts.length) {
-          await contacts.registerExportedContacts(
-            availableContacts.map(({ email }) => email),
-            user.id
-          );
-          await creditsHandler.deduct(user.id, availableUnits);
-        }
-
-        return res
-          .header('Content-Type', 'text/csv')
-          .status(statusCode)
-          .send(csvData);
       } catch (error) {
         return next(error);
       }
