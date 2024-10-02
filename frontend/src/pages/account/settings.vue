@@ -121,12 +121,7 @@ const { t: $t } = useI18n({
 const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
-const $session = useSupabaseSession();
 const $profile = useSupabaseUserProfile();
-
-onNuxtReady(() => {
-  if (!$session.value) navigateTo('/');
-});
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
