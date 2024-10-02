@@ -365,13 +365,14 @@ describe('TasksManager', () => {
 
       it('should stop process from list successfully', async () => {
         const processKeys = Object.keys(task.processes);
-        processKeys.forEach(async (processKey) => {
+        for (const processKey of processKeys) {
           (tasksResolver.update as jest.Mock).mockClear();
           (fakeRedisClient.xgroup as jest.Mock).mockClear();
 
           const process =
             task.processes[processKey as keyof typeof task.processes];
 
+          // eslint-disable-next-line no-await-in-loop
           const deletedTask = await tasksManager.deleteTask(task.miningId, [
             process as string
           ]);
@@ -379,6 +380,7 @@ describe('TasksManager', () => {
           expect(deletedTask).toBeDefined();
           expect(deletedTask).toEqual(task);
 
+          // eslint-disable-next-line @typescript-eslint/no-loop-func
           expect(() =>
             tasksManager.getActiveTask(deletedTask.miningId)
           ).not.toThrow(Error);
@@ -420,7 +422,7 @@ describe('TasksManager', () => {
               consumerGroup
             );
           }
-        });
+        }
       });
     });
 
