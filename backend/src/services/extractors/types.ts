@@ -17,7 +17,7 @@ export const MESSAGING_FIELDS = [
   'list-post'
 ] as const;
 
-export type MessageField = typeof MESSAGING_FIELDS[number];
+export type MessageField = (typeof MESSAGING_FIELDS)[number];
 
 export interface EmailSendersRecipients {
   to: MessageField;
