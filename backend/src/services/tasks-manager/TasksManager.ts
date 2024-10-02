@@ -94,10 +94,10 @@ export default class TasksManager {
     return {
       miningId,
       stream: {
-        messagesStreamName: `messages_stream-${miningId}`,
-        emailsStreamName: `emails_stream-${miningId}`,
-        messagesConsumerGroupName: MESSAGES_STREAM_CONSUMER_GROUP,
-        emailsConsumerGroupName: EMAILS_STREAM_CONSUMER_GROUP
+        messagesStream: `messages_stream-${miningId}`,
+        emailsStream: `emails_stream-${miningId}`,
+        messagesConsumerGroup: MESSAGES_STREAM_CONSUMER_GROUP,
+        emailsConsumerGroup: EMAILS_STREAM_CONSUMER_GROUP
       }
     };
   }
@@ -120,10 +120,10 @@ export default class TasksManager {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
       const {
-        messagesStreamName,
-        messagesConsumerGroupName,
-        emailsStreamName,
-        emailsConsumerGroupName
+        messagesStream,
+        messagesConsumerGroup,
+        emailsStream,
+        emailsConsumerGroup
       } = stream;
 
       const fetcher = this.emailFetcherFactory.create({
@@ -132,7 +132,7 @@ export default class TasksManager {
         userId,
         email,
         miningId,
-        streamName: messagesStreamName,
+        streamName: messagesStream,
         batchSize,
         fetchEmailBody
       });
@@ -152,7 +152,7 @@ export default class TasksManager {
             details: {
               miningId,
               stream: {
-                messagesStreamName
+                messagesStream
               },
               progress: {
                 totalMessages: await fetcher.getTotalMessages(),
@@ -169,9 +169,9 @@ export default class TasksManager {
             details: {
               miningId,
               stream: {
-                messagesStreamName,
-                messagesConsumerGroupName,
-                emailsStreamName
+                messagesStream,
+                messagesConsumerGroup,
+                emailsVerificationStream: emailsStream
               },
               progress: {
                 extracted: 0
@@ -186,8 +186,8 @@ export default class TasksManager {
             details: {
               miningId,
               stream: {
-                emailsStreamName,
-                emailsConsumerGroupName
+                emailsStream,
+                emailsConsumerGroup
               },
               progress: {
                 verifiedContacts: 0,
@@ -244,15 +244,23 @@ export default class TasksManager {
   /**
    * Retrieves the task with the specified mining ID.
    * @param miningId - The mining ID of the task to retrieve.
+   * @returns Returns the task, otherwise throws error.
+   */
+  private getTaskOrThrow(miningId: string) {
+    const task = this.ACTIVE_MINING_TASKS.get(miningId);
+    if (!task) {
+      throw new Error(`Task with mining ID ${miningId} does not exist.`);
+    }
+    return task;
+  }
+
+  /**
+   * Retrieves the task with the specified mining ID.
+   * @param miningId - The mining ID of the task to retrieve.
    * @returns Returns the task object if it exists, otherwise null.
    */
   getActiveTask(miningId: string) {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (task === undefined) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
-    }
-
+    const task = this.getTaskOrThrow(miningId);
     return redactSensitiveData(task);
   }
 
@@ -263,12 +271,7 @@ export default class TasksManager {
    * @throws {Error} If a task with the given mining ID doesn't exist.
    */
   attachSSE(miningId: string, connection: { req: Request; res: Response }) {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (task === undefined) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
-    }
-
+    const task = this.getTaskOrThrow(miningId);
     task.progressHandlerSSE.subscribeSSE(connection);
   }
 
@@ -298,16 +301,9 @@ export default class TasksManager {
     if (processIds && !Array.isArray(processIds)) {
       throw new Error('processIds must be an array of strings');
     }
-
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-    if (!task) {
-      throw new Error(`Task with mining ID ${miningId} does not exist.`);
-    }
-
+    const task = this.getTaskOrThrow(miningId);
     const { progressHandlerSSE, startedAt, progress, process } = task;
-
     try {
-      // Determine if we're ending the entire task or just specific processes
       const endEntireTask = !processIds || processIds.length === 0;
       const processesToStop = Object.values(process).filter((p) =>
         endEntireTask
@@ -316,7 +312,6 @@ export default class TasksManager {
       );
 
       if (endEntireTask) {
-        // Clean up task resources and close SSE connection
         this.ACTIVE_MINING_TASKS.delete(miningId);
         progressHandlerSSE.stop();
       }
@@ -413,7 +408,7 @@ export default class TasksManager {
   ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (task === undefined || !task.progressHandlerSSE) return; // No progress handler to send updates from.
+    if (!task?.progressHandlerSSE) return; // No progress handler to send updates from.
 
     const { progressHandlerSSE, process } = task;
     const { fetch, extract, clean } = process;
@@ -435,31 +430,6 @@ export default class TasksManager {
 
     // Send the progress to parties subscribed on SSE
     progressHandlerSSE.sendSSE(value, eventName);
-  }
-
-  private static updateTaskProgress(
-    progressType: TaskProgressType,
-    update: (
-      taskProperty: string | number | symbol,
-      progressProperty: keyof TaskProgress
-    ) => void
-  ) {
-    switch (progressType) {
-      case 'fetched':
-        update('fetch', 'fetched');
-        break;
-
-      case 'extracted':
-        update('extract', 'extracted');
-        break;
-
-      case 'createdContacts':
-      case 'verifiedContacts':
-        update('clean', progressType);
-        break;
-
-      default:
-    }
   }
 
   /**
@@ -554,31 +524,40 @@ export default class TasksManager {
     return status;
   }
 
-  private static async redisDelete(
-    streamName: string,
-    consumerGroup: string,
-    taskInstance: TasksManager
-  ) {
-    await taskInstance.redisPublisher.xgroup(
-      'DESTROY',
-      streamName,
-      consumerGroup
-    );
-    await taskInstance.redisPublisher.del(streamName);
+  private async pubsubStreamDestroy(streamName: string, consumerGroup: string) {
+    await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroup);
+    await this.redisPublisher.del(streamName);
   }
 
-  private static async redisRegister(
-    streamName: string,
-    consumerGroup: string,
-    taskInstance: TasksManager
-  ) {
-    await taskInstance.redisPublisher.xgroup(
+  private async pubsubStreamCreate(streamName: string, consumerGroup: string) {
+    await this.redisPublisher.xgroup(
       'CREATE',
       streamName,
       consumerGroup,
       '$',
       'MKSTREAM'
     );
+  }
+
+  private pubsubCommands(command: RedisCommand) {
+    const commands = new Map<
+      RedisCommand,
+      (streamName: string, consumerGroupName: string) => Promise<void>
+    >([
+      [
+        'REGISTER',
+        async (streamName, consumerGroupName) => {
+          await this.pubsubStreamCreate(streamName, consumerGroupName);
+        }
+      ],
+      [
+        'DELETE',
+        async (streamName, consumerGroupName) => {
+          await this.pubsubStreamDestroy(streamName, consumerGroupName);
+        }
+      ]
+    ]);
+    return commands.get(command);
   }
 
   /**
@@ -599,18 +578,13 @@ export default class TasksManager {
 
     if (!consumerGroup || !streamName) return;
 
-    switch (command) {
-      case 'REGISTER': {
-        await TasksManager.redisRegister(streamName, consumerGroup, this);
-        break;
-      }
-      case 'DELETE': {
-        await TasksManager.redisDelete(streamName, consumerGroup, this);
-        break;
-      }
-      default:
+    const pubsubCommand = this.pubsubCommands(command);
+
+    if (!pubsubCommand) {
+      throw new Error(`COMMAND: ${command} not found`);
     }
 
+    await pubsubCommand(streamName, consumerGroup);
     const message = {
       miningId,
       command,
