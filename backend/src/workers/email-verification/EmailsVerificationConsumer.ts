@@ -2,8 +2,14 @@ import { Redis } from 'ioredis';
 import { Logger } from 'winston';
 import RedisSubscriber from '../../utils/pubsub/redis/RedisSubscriber';
 import MultipleStreamsConsumer from '../../utils/streams/MultipleStreamsConsumer';
-import { PubSubMessage } from '../email-message/MessagesConsumer';
 import { EmailVerificationData } from './emailVerificationHandlers';
+
+export interface PubSubMessage {
+  miningId: string;
+  command: 'REGISTER' | 'DELETE';
+  emailsStream: string;
+  emailsConsumerGroup: string;
+}
 
 export default class EmailVerificationConsumer {
   private isInterrupted: boolean;
@@ -23,12 +29,12 @@ export default class EmailVerificationConsumer {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe(
-      ({ miningId, command, emailsStreamName }) => {
-        if (emailsStreamName) {
+      ({ miningId, command, emailsStream }) => {
+        if (emailsStream) {
           if (command === 'REGISTER') {
-            this.activeStreams.add(emailsStreamName);
+            this.activeStreams.add(emailsStream);
           } else {
-            this.activeStreams.delete(emailsStreamName);
+            this.activeStreams.delete(emailsStream);
           }
         }
 
@@ -36,7 +42,7 @@ export default class EmailVerificationConsumer {
           metadata: {
             miningId,
             command,
-            emailsStreamName
+            emailsStream
           }
         });
       }

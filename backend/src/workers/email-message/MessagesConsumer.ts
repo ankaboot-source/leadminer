@@ -12,10 +12,9 @@ import { EmailMessageData } from './emailMessageHandlers';
 export interface PubSubMessage {
   miningId: string;
   command: 'REGISTER' | 'DELETE';
-  messagesStreamName: string;
-  messagesConsumerGroupName: string;
-  emailsStreamName: string;
-  emailsConsumerGroupName: string;
+  messagesStream: string;
+  messagesConsumerGroup: string;
+  emailsVerificationStream: string;
 }
 
 interface StreamEntry {
@@ -43,8 +42,13 @@ export default class MessagesConsumer {
     this.isInterrupted = true;
 
     this.taskManagementSubscriber.subscribe(
-      async ({ miningId, command, messagesStreamName, emailsStreamName }) => {
-        if (messagesStreamName && emailMessagesStreamsConsumer) {
+      async ({
+        miningId,
+        command,
+        messagesStream,
+        emailsVerificationStream
+      }) => {
+        if (messagesStream && emailMessagesStreamsConsumer) {
           if (command === 'REGISTER') {
             const queuedEmailsCache = new RedisQueuedEmailsCache(
               redisClient,
@@ -53,18 +57,18 @@ export default class MessagesConsumer {
             const emailsStreamProducer =
               new RedisStreamProducer<EmailVerificationData>(
                 redisClient,
-                emailsStreamName,
+                emailsVerificationStream,
                 this.logger
               );
-            this.activeStreams.set(messagesStreamName, {
+            this.activeStreams.set(messagesStream, {
               emailsStreamProducer,
               queuedEmailsCache
             });
           } else {
-            const streamEntry = this.activeStreams.get(messagesStreamName);
+            const streamEntry = this.activeStreams.get(messagesStream);
             if (streamEntry) {
               await streamEntry.queuedEmailsCache.destroy();
-              this.activeStreams.delete(messagesStreamName);
+              this.activeStreams.delete(messagesStream);
             }
           }
         }
@@ -73,8 +77,8 @@ export default class MessagesConsumer {
           metadata: {
             miningId,
             command,
-            messagesStreamName,
-            emailsStreamName
+            messagesStream,
+            emailsVerificationStream
           }
         });
       }
