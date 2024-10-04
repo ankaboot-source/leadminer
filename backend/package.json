@@ -8,7 +8,7 @@
     "test:integration": "jest ./test/integration",
     "test-ci:unit": "jest ./test/unit --coverage",
     "dev-api": "nodemon src/server.ts",
-    "dev-mock-external-services": "nodemon src/mocks/enrichement/server.ts",
+    "dev-mock-external-services": "nodemon src/mocks/enrichment/server.ts",
     "dev-worker": "nodemon src/messageWorker.ts",
     "dev-email-worker": "nodemon src/emailVerificationWorker.ts",
     "dev:webhook-listener": "stripe listen --forward-to http://localhost:8081/api/payment/stripe/webhook",

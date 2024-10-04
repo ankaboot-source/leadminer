@@ -1,10 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import ENV from '../config';
-import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditsHandler';
-import emailEnrichementService from '../services/email-enrichment';
+import emailEnrichmentService from '../services/email-enrichment';
 import supabaseClient from '../utils/supabase';
+import Billing from '../utils/billing-plugin';
 
 /**
  * Queries enriched emails for a given user.
@@ -179,7 +178,7 @@ async function enrichContact(
   );
 }
 
-export default function initializeEnrichementController(userResolver: Users) {
+export default function initializeEnrichmentController() {
   return {
     /**
      * Creates an Enrichment task for a list of emails.
@@ -219,35 +218,32 @@ export default function initializeEnrichementController(userResolver: Users) {
           return res.status(200).json({ alreadyEnriched: true });
         }
 
-        if (ENV.ENABLE_CREDIT) {
-          const creditsHandler = new CreditsHandler(
-            userResolver,
-            ENV.CREDITS_PER_CONTACT
-          );
+        if (Billing) {
           const {
             hasDeficientCredits,
             hasInsufficientCredits,
             availableUnits
-          } = await creditsHandler.validate(user.id, contactsToEnrich.length);
+          } = await Billing.validateCustomerCredits(
+            user.id,
+            contactsToEnrich.length
+          );
 
           if (hasDeficientCredits || hasInsufficientCredits) {
             const response = {
               total: contactsToEnrich.length,
               available: Math.floor(availableUnits)
             };
-            return res
-              .status(creditsHandler.DEFICIENT_CREDITS_STATUS)
-              .json(response);
+            return res.status(402).json(response);
           }
           contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
         }
 
-        const enricher = emailEnrichementService.getEmailEnricher();
+        const enricher = emailEnrichmentService.getEmailEnricher();
         const enrichmentTask = await startEnrichmentTask(user.id);
 
         const { token } = await enricher.enrichWebhook(
           contactsToEnrich,
-          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`
+          `${ENV.LEADMINER_API_HOST}/api/enrichment/webhook/${enrichmentTask.id}`
         );
 
         await updateEnrichmentTask(enrichmentTask.id, 'running', {
@@ -276,7 +272,7 @@ export default function initializeEnrichementController(userResolver: Users) {
       const { token: enrichmentToken } = req.body;
 
       try {
-        const enricher = emailEnrichementService.getEmailEnricher();
+        const enricher = emailEnrichmentService.getEmailEnricher();
 
         const { id, details } = await getEnrichmentTask(taskId);
         const {
@@ -287,7 +283,7 @@ export default function initializeEnrichementController(userResolver: Users) {
 
         if (!id) {
           return res.status(404).send({
-            message: `Enrichement with id ${enrichmentToken} not found.`
+            message: `Enrichment with id ${enrichmentToken} not found.`
           });
         }
 
@@ -297,10 +293,10 @@ export default function initializeEnrichementController(userResolver: Users) {
             .json({ message: 'You are not authorized to use this token' });
         }
 
-        const enrichementResult = enricher.enrichementMapper(req.body);
+        const enrichmentResult = enricher.enrichmentMapper(req.body);
         await enrichContact(
           updateEmptyFieldsOnly,
-          enrichementResult.map((contact) => ({
+          enrichmentResult.map((contact) => ({
             user_id: cachedUserId,
             image: contact.image,
             email: contact.email,
@@ -317,18 +313,16 @@ export default function initializeEnrichementController(userResolver: Users) {
           ...details,
           result: {
             ...details.result,
-            enriched: enrichementResult.length
+            enriched: enrichmentResult.length
           }
         });
 
-        if (ENV.ENABLE_CREDIT) {
-          const creditsHandler = new CreditsHandler(
-            userResolver,
-            ENV.CREDITS_PER_CONTACT
+        if (Billing) {
+          await Billing.deductCustomerCredits(
+            cachedUserId,
+            enrichmentResult.length
           );
-          await creditsHandler.deduct(cachedUserId, enrichementResult.length);
         }
-
         return res.status(200);
       } catch (err) {
         await updateEnrichmentTask(taskId, 'canceled');

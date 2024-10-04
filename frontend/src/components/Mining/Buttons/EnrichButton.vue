@@ -155,7 +155,7 @@ function stopEnrichment() {
 
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
-    .channel('enrichement-tracker')
+    .channel('enrichment-tracker')
     .on(
       'postgres_changes',
       {
@@ -213,7 +213,7 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     $leadminerStore.activeEnrichment = true;
     setupEnrichmentRealtime();
-    await $api<EnrichContactResponse>('/enrichement/enrichAsync', {
+    await $api<EnrichContactResponse>('/enrichment/enrichAsync', {
       method: 'POST',
       body: {
         updateEmptyFieldsOnly,
