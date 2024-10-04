@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
-import initializeEnrichementController from '../controllers/enrichement.controller';
+import initializeEnrichmentController from '../controllers/enrichment.controller';
 
-export default function initializeEnrichementRoutes(
+export default function initializeEnrichmentRoutes(
   authResolver: AuthResolver
 ) {
   const router = Router();
 
-  const { enrich, webhook } = initializeEnrichementController();
+  const { enrich, webhook } = initializeEnrichmentController();
 
   router.post('/enrichAsync', initializeAuthMiddleware(authResolver), enrich);
   router.post('/webhook/:id', webhook);

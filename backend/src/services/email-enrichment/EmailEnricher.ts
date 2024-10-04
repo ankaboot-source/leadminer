@@ -21,5 +21,5 @@ export interface EmailEnricher {
     emails: string[],
     webhook: string
   ): Promise<EnrichWebhookResopnse>;
-  enrichementMapper(data: unknown): EnricherResult[];
+  enrichmentMapper(data: unknown): EnricherResult[];
 }

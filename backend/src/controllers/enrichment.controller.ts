@@ -178,7 +178,7 @@ async function enrichContact(
   );
 }
 
-export default function initializeEnrichementController() {
+export default function initializeEnrichmentController() {
   return {
     /**
      * Creates an Enrichment task for a list of emails.
@@ -243,7 +243,7 @@ export default function initializeEnrichementController() {
 
         const { token } = await enricher.enrichWebhook(
           contactsToEnrich,
-          `${ENV.LEADMINER_API_HOST}/api/enrichement/webhook/${enrichmentTask.id}`
+          `${ENV.LEADMINER_API_HOST}/api/enrichment/webhook/${enrichmentTask.id}`
         );
 
         await updateEnrichmentTask(enrichmentTask.id, 'running', {
@@ -283,7 +283,7 @@ export default function initializeEnrichementController() {
 
         if (!id) {
           return res.status(404).send({
-            message: `Enrichement with id ${enrichmentToken} not found.`
+            message: `Enrichment with id ${enrichmentToken} not found.`
           });
         }
 
@@ -293,10 +293,10 @@ export default function initializeEnrichementController() {
             .json({ message: 'You are not authorized to use this token' });
         }
 
-        const enrichementResult = enricher.enrichementMapper(req.body);
+        const enrichmentResult = enricher.enrichmentMapper(req.body);
         await enrichContact(
           updateEmptyFieldsOnly,
-          enrichementResult.map((contact) => ({
+          enrichmentResult.map((contact) => ({
             user_id: cachedUserId,
             image: contact.image,
             email: contact.email,
@@ -313,14 +313,14 @@ export default function initializeEnrichementController() {
           ...details,
           result: {
             ...details.result,
-            enriched: enrichementResult.length
+            enriched: enrichmentResult.length
           }
         });
 
         if (Billing) {
           await Billing.deductCustomerCredits(
             cachedUserId,
-            enrichementResult.length
+            enrichmentResult.length
           );
         }
         return res.status(200);
