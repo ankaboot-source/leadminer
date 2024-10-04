@@ -425,7 +425,7 @@ async function asyncEnricherTask(
   try {
     const { token } = await enricher.instance.enrichAsync(
       contactsList,
-      `https://6a1b-197-244-128-242.ngrok-free.app/api/enrich/webhook/${task.id}`
+      enrichParams.webhook + task.id
     );
     task.details.config.secret = token;
     return await upsertEnrichmentTask(task.id, 'running', task);
