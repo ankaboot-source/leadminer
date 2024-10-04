@@ -32,10 +32,7 @@ export interface EnrichPersonResponse {
 export default class TheDig {
   private readonly api: AxiosInstance;
 
-  constructor(
-    { url, apiToken }: Config,
-    private readonly logger: Logger
-  ) {
+  constructor({ url, apiToken }: Config, private readonly logger: Logger) {
     this.api = axios.create({
       baseURL: url,
       headers: {
