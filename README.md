@@ -33,6 +33,7 @@
 ## 📦 How to run?
 
 This project integrates with external services for full features. Jump directly to [set-up with supabase self-hosted](#running-with-supabase-self-hosted) for development purposes.
+To give it a try without the hassle of installation, [simply use the SaaS version](https://app.leadminer.io/).
 
 <details>
 <summary><h3 style="display:inline-block" id="setup-email-verification-services">Setup email-verification services</h3></summary>
