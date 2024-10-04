@@ -62,7 +62,11 @@ jest.mock('../../src/utils/redis', () => {
 
 jest.mock('../../src/db/supabase/tasks', () =>
   jest.fn().mockImplementation(() => ({
-    create: jest.fn(() => undefined),
+    create: jest.fn(() => [
+      { id: '1-task-fetch', type: 'fetch', started_at: Date.now() },
+      { id: '2-task-extract', type: 'extract', started_at: Date.now() },
+      { id: '3-task-clean', type: 'clean', started_at: Date.now() }
+    ]),
     update: jest.fn(() => undefined)
   }))
 );
@@ -93,7 +97,7 @@ const miningIdGenerator = jest.fn(() =>
 
 /*
 
-TODO: 
+TODO:
     - [x] Mock redis and Test class behavior with redis logic.
     - [ ] Test Private methods logic
 
@@ -306,9 +310,17 @@ describe('TasksManager', () => {
     });
 
     describe('TasksManager.deleteTask', () => {
-      it('should create a new mining task successfully', async () => {
-        const task = await tasksManager.createTask(fetcherOptions);
-        const deletedTask = await tasksManager.deleteTask(task.miningId);
+      let task: RedactedTask;
+
+      beforeEach(async () => {
+        (fakeRedisClient.xgroup as jest.Mock).mockClear();
+        (tasksResolver.create as jest.Mock).mockClear();
+        (tasksResolver.update as jest.Mock).mockClear();
+        task = await tasksManager.createTask(fetcherOptions);
+      });
+
+      it('should delete mining task successfully', async () => {
+        const deletedTask = await tasksManager.deleteTask(task.miningId, null);
 
         expect(deletedTask).toBeDefined();
         expect(deletedTask).toEqual(task);
@@ -349,6 +361,68 @@ describe('TasksManager', () => {
           `emails_stream-${task.miningId}`,
           EMAILS_STREAM_CONSUMER_GROUP
         );
+      });
+
+      it('should stop process from list successfully', async () => {
+        const processKeys = Object.keys(task.processes);
+        for (const processKey of processKeys) {
+          (tasksResolver.update as jest.Mock).mockClear();
+          (fakeRedisClient.xgroup as jest.Mock).mockClear();
+
+          const process =
+            task.processes[processKey as keyof typeof task.processes];
+
+          // eslint-disable-next-line no-await-in-loop
+          const deletedTask = await tasksManager.deleteTask(task.miningId, [
+            process as string
+          ]);
+
+          expect(deletedTask).toBeDefined();
+          expect(deletedTask).toEqual(task);
+
+          // eslint-disable-next-line @typescript-eslint/no-loop-func
+          expect(() =>
+            tasksManager.getActiveTask(deletedTask.miningId)
+          ).not.toThrow(Error);
+
+          expect(tasksResolver.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: processKey,
+              category:
+                processKey === 'clean'
+                  ? TaskCategory.Cleaning
+                  : TaskCategory.Mining,
+              status: TaskStatus.Canceled
+            })
+          );
+
+          const activeProcesses = processKeys.filter(
+            (key) => key !== processKey
+          );
+
+          for (const activeProcessKey of activeProcesses) {
+            expect(tasksResolver.update).not.toHaveBeenCalledWith(
+              expect.objectContaining({
+                type: activeProcessKey,
+                status: TaskStatus.Canceled
+              })
+            );
+          }
+
+          if (['extract', 'clean'].includes(processKey)) {
+            const streamType =
+              processKey === 'clean' ? 'emails_stream' : 'messages_stream';
+            const consumerGroup =
+              processKey === 'clean'
+                ? EMAILS_STREAM_CONSUMER_GROUP
+                : MESSAGES_STREAM_CONSUMER_GROUP;
+            expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
+              'DESTROY',
+              `${streamType}-${task.miningId}`,
+              consumerGroup
+            );
+          }
+        }
       });
     });
 

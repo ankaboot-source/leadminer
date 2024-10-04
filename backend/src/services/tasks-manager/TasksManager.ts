@@ -18,7 +18,6 @@ import {
   StreamInfo,
   Task,
   TaskCategory,
-  TaskClean,
   TaskExtract,
   TaskFetch,
   TaskProgress,
@@ -95,10 +94,10 @@ export default class TasksManager {
     return {
       miningId,
       stream: {
-        messagesStreamName: `messages_stream-${miningId}`,
-        emailsStreamName: `emails_stream-${miningId}`,
-        messagesConsumerGroupName: MESSAGES_STREAM_CONSUMER_GROUP,
-        emailsConsumerGroupName: EMAILS_STREAM_CONSUMER_GROUP
+        messagesStream: `messages_stream-${miningId}`,
+        emailsStream: `emails_stream-${miningId}`,
+        messagesConsumerGroup: MESSAGES_STREAM_CONSUMER_GROUP,
+        emailsConsumerGroup: EMAILS_STREAM_CONSUMER_GROUP
       }
     };
   }
@@ -121,10 +120,10 @@ export default class TasksManager {
     try {
       const { miningId, stream } = await this.generateTaskInformation();
       const {
-        messagesStreamName,
-        messagesConsumerGroupName,
-        emailsStreamName,
-        emailsConsumerGroupName
+        messagesStream,
+        messagesConsumerGroup,
+        emailsStream,
+        emailsConsumerGroup
       } = stream;
 
       const fetcher = this.emailFetcherFactory.create({
@@ -133,7 +132,7 @@ export default class TasksManager {
         userId,
         email,
         miningId,
-        streamName: messagesStreamName,
+        streamName: messagesStream,
         batchSize,
         fetchEmailBody
       });
@@ -153,7 +152,7 @@ export default class TasksManager {
             details: {
               miningId,
               stream: {
-                messagesStreamName
+                messagesStream
               },
               progress: {
                 totalMessages: await fetcher.getTotalMessages(),
@@ -170,9 +169,9 @@ export default class TasksManager {
             details: {
               miningId,
               stream: {
-                messagesStreamName,
-                messagesConsumerGroupName,
-                emailsStreamName
+                messagesStream,
+                messagesConsumerGroup,
+                emailsVerificationStream: emailsStream
               },
               progress: {
                 extracted: 0
@@ -187,8 +186,8 @@ export default class TasksManager {
             details: {
               miningId,
               stream: {
-                emailsStreamName,
-                emailsConsumerGroupName
+                emailsStream,
+                emailsConsumerGroup
               },
               progress: {
                 verifiedContacts: 0,
@@ -208,11 +207,7 @@ export default class TasksManager {
       };
 
       const { progress, process } = miningTask;
-      const { fetch, extract, clean } = process as {
-        fetch: TaskFetch;
-        extract: TaskExtract;
-        clean: TaskClean;
-      };
+      const { fetch, extract, clean } = process;
 
       progress.totalMessages = fetch.details.progress.totalMessages;
 
@@ -249,15 +244,23 @@ export default class TasksManager {
   /**
    * Retrieves the task with the specified mining ID.
    * @param miningId - The mining ID of the task to retrieve.
+   * @returns Returns the task, otherwise throws error.
+   */
+  private getTaskOrThrow(miningId: string) {
+    const task = this.ACTIVE_MINING_TASKS.get(miningId);
+    if (!task) {
+      throw new Error(`Task with mining ID ${miningId} does not exist.`);
+    }
+    return task;
+  }
+
+  /**
+   * Retrieves the task with the specified mining ID.
+   * @param miningId - The mining ID of the task to retrieve.
    * @returns Returns the task object if it exists, otherwise null.
    */
   getActiveTask(miningId: string) {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (task === undefined) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
-    }
-
+    const task = this.getTaskOrThrow(miningId);
     return redactSensitiveData(task);
   }
 
@@ -268,13 +271,19 @@ export default class TasksManager {
    * @throws {Error} If a task with the given mining ID doesn't exist.
    */
   attachSSE(miningId: string, connection: { req: Request; res: Response }) {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (task === undefined) {
-      throw new Error(`Task with mining ID ${miningId} doesn't exist.`);
-    }
-
+    const task = this.getTaskOrThrow(miningId);
     task.progressHandlerSSE.subscribeSSE(connection);
+  }
+
+  /**
+   * Logs the task completion time and task progress.
+   */
+  private static logTaskCompletion(
+    startedAt: number,
+    progress: TaskProgress
+  ): void {
+    const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
+    logger.info(`Mining task completed in ${duration} seconds`, progress);
   }
 
   /**
@@ -289,20 +298,12 @@ export default class TasksManager {
     miningId: string,
     processIds: string[] | null
   ): Promise<RedactedTask> {
-    const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
     if (processIds && !Array.isArray(processIds)) {
       throw new Error('processIds must be an array of strings');
     }
-
-    if (!task) {
-      throw new Error(`Task with mining ID ${miningId} does not exist.`);
-    }
-
+    const task = this.getTaskOrThrow(miningId);
     const { progressHandlerSSE, startedAt, progress, process } = task;
-
     try {
-      // Determine if we're ending the entire task or just specific processes
       const endEntireTask = !processIds || processIds.length === 0;
       const processesToStop = Object.values(process).filter((p) =>
         endEntireTask
@@ -311,7 +312,6 @@ export default class TasksManager {
       );
 
       if (endEntireTask) {
-        // Clean up task resources and close SSE connection
         this.ACTIVE_MINING_TASKS.delete(miningId);
         progressHandlerSSE.stop();
       }
@@ -320,9 +320,18 @@ export default class TasksManager {
     } catch (error) {
       logger.error('Error when deleting task', error);
     }
-    const duration = ((performance.now() - startedAt) / 1000).toFixed(2);
-    logger.info(`Mining task completed in ${duration} seconds`, progress);
+
+    TasksManager.logTaskCompletion(startedAt, progress);
     return redactSensitiveData(task);
+  }
+
+  private static calculateTaskDuration(
+    startedAt: string,
+    stoppedAt: string
+  ): number {
+    const start = new Date(startedAt).getTime();
+    const stop = new Date(stoppedAt).getTime();
+    return stop - start;
   }
 
   /**
@@ -338,11 +347,11 @@ export default class TasksManager {
       task.stoppedAt = new Date().toUTCString();
 
       if (task.duration === undefined && task.startedAt) {
-        const startedAt = new Date(task.startedAt).getTime();
-        const stoppedAt = new Date(task.stoppedAt).getTime();
-        const durationInMilliSeconds = stoppedAt - startedAt;
         // eslint-disable-next-line no-param-reassign
-        task.duration = durationInMilliSeconds;
+        task.duration = TasksManager.calculateTaskDuration(
+          task.startedAt,
+          task.stoppedAt
+        );
       }
       // eslint-disable-next-line no-param-reassign
       task.status = canceled ? TaskStatus.Canceled : TaskStatus.Done;
@@ -362,6 +371,30 @@ export default class TasksManager {
     await Promise.all(stopPromises);
   }
 
+  private static getEventName(
+    miningId: string,
+    progressType: TaskProgressType,
+    progress: TaskProgress,
+    fetch: TaskFetch,
+    extract: TaskExtract
+  ) {
+    let eventName = `${progressType}-${miningId}`;
+
+    // If the fetching is completed, notify the clients that it has finished.
+    if (progressType === 'fetched' && fetch.stoppedAt) {
+      eventName = 'fetching-finished';
+    }
+
+    if (
+      progressType === 'extracted' &&
+      fetch.stoppedAt &&
+      (progress.extracted >= progress.fetched || extract.stoppedAt)
+    ) {
+      eventName = 'extraction-finished';
+    }
+    return eventName;
+  }
+
   /**
    * Notifies the client of the progress of a mining task with a given mining ID.
    *
@@ -375,42 +408,25 @@ export default class TasksManager {
   ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
-    if (task === undefined) {
-      return;
-    }
-
-    if (!task.progressHandlerSSE) {
-      // No progress handler to send updates from.
-      return;
-    }
+    if (!task?.progressHandlerSSE) return; // No progress handler to send updates from.
 
     const { progressHandlerSSE, process } = task;
-    const { fetch, extract, clean } = process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      clean: TaskClean;
-    };
+    const { fetch, extract, clean } = process;
+
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
       ...clean.details.progress
     };
 
-    const eventName = `${progressType}-${miningId}`;
     const value = progress[`${progressType}`];
-
-    // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched' && fetch.stoppedAt) {
-      progressHandlerSSE.sendSSE(value, 'fetching-finished');
-    }
-
-    if (
-      progressType === 'extracted' &&
-      fetch.stoppedAt &&
-      (progress.extracted >= progress.fetched || extract.stoppedAt)
-    ) {
-      progressHandlerSSE.sendSSE(value, 'extraction-finished');
-    }
+    const eventName = TasksManager.getEventName(
+      miningId,
+      progressType,
+      progress,
+      fetch,
+      extract
+    );
 
     // Send the progress to parties subscribed on SSE
     progressHandlerSSE.sendSSE(value, eventName);
@@ -431,40 +447,28 @@ export default class TasksManager {
     incrementBy = 1
   ): TaskProgress | undefined {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
-
-    if (!task) {
-      return undefined;
-    }
+    if (!task) return undefined;
 
     const { progress, process } = task;
-
-    const update = (
-      taskProperty: keyof typeof process,
-      progressProperty: keyof TaskProgress
-    ) => {
-      const taskProgress = process[taskProperty].details.progress as {
-        [key: string]: number;
-      };
-      taskProgress[progressProperty] =
-        (taskProgress[progressProperty] ?? 0) + incrementBy;
-      progress[progressProperty] = taskProgress[progressProperty];
+    const progressMappings: Partial<
+      Record<TaskProgressType, keyof typeof process>
+    > = {
+      fetched: 'fetch',
+      extracted: 'extract',
+      createdContacts: 'clean',
+      verifiedContacts: 'clean'
     };
 
-    switch (progressType) {
-      case 'fetched':
-        update('fetch', 'fetched');
-        break;
+    const taskProperty = progressMappings[progressType];
 
-      case 'extracted':
-        update('extract', 'extracted');
-        break;
-
-      case 'createdContacts':
-      case 'verifiedContacts':
-        update('clean', progressType);
-        break;
-
-      default:
+    if (taskProperty) {
+      const taskProgress = process[taskProperty].details.progress as Record<
+        string,
+        number
+      >;
+      taskProgress[progressType] =
+        (taskProgress[progressType] ?? 0) + incrementBy;
+      progress[progressType] = taskProgress[progressType];
     }
 
     return { ...progress };
@@ -478,16 +482,9 @@ export default class TasksManager {
    */
   private async hasCompleted(miningId: string): Promise<boolean | undefined> {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
+    if (!task) return undefined;
 
-    if (!task) {
-      return undefined;
-    }
-
-    const { fetch, extract, clean } = task.process as {
-      fetch: TaskFetch;
-      extract: TaskExtract;
-      clean: TaskClean;
-    };
+    const { fetch, extract, clean } = task.process;
     const progress: TaskProgress = {
       ...fetch.details.progress,
       ...extract.details.progress,
@@ -527,6 +524,42 @@ export default class TasksManager {
     return status;
   }
 
+  private async pubsubStreamDestroy(streamName: string, consumerGroup: string) {
+    await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroup);
+    await this.redisPublisher.del(streamName);
+  }
+
+  private async pubsubStreamCreate(streamName: string, consumerGroup: string) {
+    await this.redisPublisher.xgroup(
+      'CREATE',
+      streamName,
+      consumerGroup,
+      '$',
+      'MKSTREAM'
+    );
+  }
+
+  private pubsubCommands(command: RedisCommand) {
+    const commands = new Map<
+      RedisCommand,
+      (streamName: string, consumerGroupName: string) => Promise<void>
+    >([
+      [
+        'REGISTER',
+        async (streamName, consumerGroupName) => {
+          await this.pubsubStreamCreate(streamName, consumerGroupName);
+        }
+      ],
+      [
+        'DELETE',
+        async (streamName, consumerGroupName) => {
+          await this.pubsubStreamDestroy(streamName, consumerGroupName);
+        }
+      ]
+    ]);
+    return commands.get(command);
+  }
+
   /**
    * Sends a message to the Pub/Sub system for managing streams.
    *
@@ -543,29 +576,15 @@ export default class TasksManager {
     // The order of values is determined by the createTask() method
     const [streamName, consumerGroup] = Object.values(stream);
 
-    if (!consumerGroup || !streamName) {
-      return;
+    if (!consumerGroup || !streamName) return;
+
+    const pubsubCommand = this.pubsubCommands(command);
+
+    if (!pubsubCommand) {
+      throw new Error(`COMMAND: ${command} not found`);
     }
 
-    switch (command) {
-      case 'REGISTER': {
-        await this.redisPublisher.xgroup(
-          'CREATE',
-          streamName,
-          consumerGroup,
-          '$',
-          'MKSTREAM'
-        );
-        break;
-      }
-      case 'DELETE': {
-        await this.redisPublisher.xgroup('DESTROY', streamName, consumerGroup);
-        await this.redisPublisher.del(streamName);
-        break;
-      }
-      default:
-    }
-
+    await pubsubCommand(streamName, consumerGroup);
     const message = {
       miningId,
       command,

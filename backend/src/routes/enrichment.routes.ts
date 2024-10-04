@@ -26,6 +26,7 @@ export default function initializeEnrichmentRoutes(
     preEnrichmentMiddleware,
     enrichAsync
   );
+
   router.post('/webhook/:id', webhook);
 
   return router;

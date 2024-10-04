@@ -10,6 +10,8 @@ import {
   getEnrichmentTask,
   asyncWebhookEnrich
 } from './enrichment.helpers';
+import Billing from '../utils/billing-plugin';
+
 
 async function checkAndFilterEligibleContacts(
   userResolver: Users,

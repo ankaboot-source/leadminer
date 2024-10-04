@@ -91,10 +91,6 @@ const schema = z.object({
   THEDIG_URL: z.string().min(1).optional(),
   THEDIG_API_KEY: z.string().min(1).optional(),
 
-  /* CREDITS */
-  ENABLE_CREDIT: boolean().default('false'),
-  CREDITS_PER_CONTACT: number().optional().default(1),
-
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });
 

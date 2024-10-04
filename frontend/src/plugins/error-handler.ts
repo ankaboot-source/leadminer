@@ -15,6 +15,8 @@ const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
   503: 'Service is temporarily unavailable. Please check your connection or try again later.',
 };
 
+const EXPECTED_FAULTY_STATUS_CODES = [402];
+
 const usePVToastService = () => {
   const nuxtApp = useNuxtApp();
   const getToast: typeof useToast = () =>
@@ -32,6 +34,12 @@ export default defineNuxtPlugin((nuxtApp) => {
     const isFetchError = (err: unknown): err is FetchError =>
       err instanceof FetchError;
 
+    if (
+      isFetchError(error) &&
+      // @ts-expect-error: .includes() still works as expected if the parameter is undefined
+      EXPECTED_FAULTY_STATUS_CODES.includes(error.response?.status)
+    )
+      return;
     const isUnauthorized = (err: unknown) =>
       error instanceof AuthSessionMissingError ||
       (isFetchError(err) && err.response?.status === 401);

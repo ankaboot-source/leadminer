@@ -2,7 +2,6 @@ import ENV from '../../config';
 import logger from '../../utils/logger';
 import { EmailEnricher, Person } from './EmailEnricher';
 import EmailEnricherFactory, { Enricher } from './EmailEnricherFactory';
-
 import Voilanorbert from './voilanorbert/client';
 import VoilanorbertEmailEnricher from './voilanorbert';
 
@@ -62,4 +61,5 @@ const ENRICHERS: Enricher[] = [
 const emailEnrichmentService = new EmailEnricherFactory(ENRICHERS, {
   LOAD_BALANCE_ENRICHERS: ENV.LOAD_BALANCE_ENRICHERS
 });
+
 export default emailEnrichmentService;

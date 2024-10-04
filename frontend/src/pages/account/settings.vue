@@ -33,7 +33,46 @@
               toggle-mask
               :invalid="isInvalidPassword(passwordInput)"
               :input-props="{ autocomplete: 'new-password' }"
-            />
+            >
+              <template #header>
+                <h6>{{ $t('auth.pick_password') }}</h6>
+              </template>
+              <template #footer>
+                <Divider />
+                <p class="mt-2">{{ $t('auth.suggestions') }}</p>
+                <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
+                  <li>
+                    <i
+                      v-if="passwordHasLowerCase"
+                      class="pi pi-check-square"
+                    ></i>
+                    <i v-else class="pi pi-stop"></i>
+                    {{ $t('auth.suggestion_lowercase') }}
+                  </li>
+                  <li>
+                    <i
+                      v-if="passwordHasUpperCase"
+                      class="pi pi-check-square"
+                    ></i>
+                    <i v-else class="pi pi-stop"></i>
+                    {{ $t('auth.suggestion_uppercase') }}
+                  </li>
+                  <li>
+                    <i v-if="passwordHasNumber" class="pi pi-check-square"></i>
+                    <i v-else class="pi pi-stop"></i>
+                    {{ $t('auth.suggestion_numeric') }}
+                  </li>
+                  <li>
+                    <i
+                      v-if="passwordInput.length >= 8"
+                      class="pi pi-check-square"
+                    ></i>
+                    <i v-else class="pi pi-stop"></i>
+                    {{ $t('auth.suggestion_min_chars') }}
+                  </li>
+                </ul>
+              </template>
+            </Password>
           </div>
         </div>
 
@@ -106,7 +145,12 @@
 import type { UserAttributes } from '@supabase/supabase-js';
 
 import { isInvalidEmail } from '@/utils/email';
-import { isInvalidPassword } from '@/utils/password';
+import {
+  hasLowerCase,
+  hasNumber,
+  hasUpperCase,
+  isInvalidPassword,
+} from '@/utils/password';
 import LegalInformation from '~/components/auth/LegalInformation.vue';
 import type { Profile } from '~/types/profile';
 
@@ -121,12 +165,7 @@ const { t: $t } = useI18n({
 const $toast = useToast();
 const { $api } = useNuxtApp();
 const $user = useSupabaseUser();
-const $session = useSupabaseSession();
 const $profile = useSupabaseUserProfile();
-
-onNuxtReady(() => {
-  if (!$session.value) navigateTo('/');
-});
 
 const isLoading = ref(false);
 const showDeleteModal = ref(false);
@@ -140,8 +179,13 @@ const disableUpdateButton = computed(
   () =>
     emailInput.value === $profile.value?.email &&
     fullnameInput.value === $profile.value?.full_name &&
-    passwordInput.value.length === 0,
+    (passwordInput.value.length === 0 ||
+      isInvalidPassword(passwordInput.value)),
 );
+
+const passwordHasLowerCase = computed(() => hasLowerCase(passwordInput.value));
+const passwordHasUpperCase = computed(() => hasUpperCase(passwordInput.value));
+const passwordHasNumber = computed(() => hasNumber(passwordInput.value));
 
 function showWarning() {
   showDeleteModal.value = true;
@@ -212,6 +256,7 @@ async function updateUserDetailsButton() {
     }
 
     if (passwordInput.value.length) {
+      if (isInvalidPassword(passwordInput.value)) throw new Error();
       userAccount.password = passwordInput.value;
     }
 

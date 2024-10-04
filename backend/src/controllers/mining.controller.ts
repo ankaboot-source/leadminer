@@ -2,7 +2,10 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { decode } from 'jsonwebtoken';
 import ENV from '../config';
-import { MiningSources } from '../db/interfaces/MiningSources';
+import {
+  MiningSources,
+  OAuthMiningSourceProvider
+} from '../db/interfaces/MiningSources';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
@@ -14,189 +17,141 @@ import {
   getValidImapLogin
 } from './imap.helpers';
 
+const providerScopes = {
+  google: {
+    scopes: [
+      'openid',
+      'https://mail.google.com/',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile'
+    ],
+    requiredScopes: [
+      'openid',
+      'https://mail.google.com/',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile'
+    ]
+  },
+  azure: {
+    scopes: [
+      'https://outlook.office.com/IMAP.AccessAsUser.All',
+      'offline_access',
+      'email',
+      'openid',
+      'profile'
+    ],
+    requiredScopes: ['https://outlook.office.com/IMAP.AccessAsUser.All']
+  }
+};
+
+function getAuthClient(provider: OAuthMiningSourceProvider) {
+  switch (provider) {
+    case 'google':
+      return googleOAuth2Client;
+    case 'azure':
+      return azureOAuth2Client;
+    default:
+      throw new Error('Not a valid OAuth provider');
+  }
+}
+
+function getTokenConfig(provider: OAuthMiningSourceProvider) {
+  return {
+    redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/${provider}/callback`,
+    scope: providerScopes[provider].scopes,
+    access_type: provider === 'google' ? 'offline' : undefined,
+    prompt: provider === 'google' ? 'consent' : undefined
+  };
+}
+
+type TokenType = {
+  refreshToken: string;
+  accessToken: string;
+  idToken: string;
+  expiresAt: number;
+};
+
+async function getTokenWithScopeValidation(
+  tokenConfig: {
+    code: string;
+    redirect_uri: string;
+    scope: string[];
+    access_type: string | undefined;
+    prompt: string | undefined;
+  },
+  provider: OAuthMiningSourceProvider
+) {
+  const { token } = await getAuthClient(provider).getToken(tokenConfig);
+
+  const approvedScopes = (token.scope as string).split(' ');
+
+  const hasApprovedAllScopes = providerScopes[provider].requiredScopes.every(
+    (scope) => approvedScopes.includes(scope)
+  );
+
+  if (!hasApprovedAllScopes) {
+    throw new Error(' User has not approved all the required scopes');
+  }
+
+  return {
+    refreshToken: token.refresh_token,
+    accessToken: token.access_token,
+    idToken: token.id_token,
+    expiresAt: token.expires_at
+  } as TokenType;
+}
+
 export default function initializeMiningController(
   tasksManager: TasksManager,
   miningSources: MiningSources
 ) {
   return {
-    createGoogleMiningSource(_req: Request, res: Response) {
+    createProviderMiningSource(req: Request, res: Response) {
       const user = res.locals.user as User;
-      const authorizationUri = googleOAuth2Client.authorizeURL({
-        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/google/callback`,
-        scope: [
-          'openid',
-          'https://mail.google.com/',
-          'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/userinfo.profile'
-        ],
-        access_type: 'offline',
-        prompt: 'consent',
+      const provider = req.params.provider as OAuthMiningSourceProvider;
+
+      const authorizationUri = getAuthClient(provider).authorizeURL({
+        ...getTokenConfig(provider),
         state: user.id // This will allow us in the callback to associate the authorized account with the user
       });
 
       return res.json({ authorizationUri });
     },
 
-    async createGoogleMiningSourceCallback(req: Request, res: Response) {
+    async createProviderMiningSourceCallback(req: Request, res: Response) {
       const { code, state } = req.query as { code: string; state: string };
+      const provider = req.params.provider as OAuthMiningSourceProvider;
 
       const tokenConfig = {
-        code,
-        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/google/callback`,
-        scope: [
-          'openid',
-          'https://mail.google.com/',
-          'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/userinfo.profile'
-        ],
-        access_type: 'offline',
-        prompt: 'consent'
+        ...getTokenConfig(provider),
+        code
       };
 
       try {
-        const { token } = await googleOAuth2Client.getToken(tokenConfig);
+        const { refreshToken, accessToken, idToken, expiresAt } =
+          await getTokenWithScopeValidation(tokenConfig, provider);
 
-        const requiredScopes = [
-          'openid',
-          'https://mail.google.com/',
-          'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/userinfo.profile'
-        ];
-        const approvedScopes = (token.scope as string).split(' ');
+        // User has approved all the required scopes
+        const { email } = decode(idToken) as { email: string };
 
-        const hasApprovedAllScopes = requiredScopes.every((scope) =>
-          approvedScopes.includes(scope)
-        );
-
-        if (hasApprovedAllScopes) {
-          // User has approved all the required scopes
-          const {
-            refresh_token: refreshToken,
-            access_token: accessToken,
-            id_token: idToken,
-            expires_at: expiresAt
-          } = token as {
-            refresh_token: string;
-            access_token: string;
-            id_token: string;
-            expires_at: number;
-          };
-          const { email } = decode(idToken) as { email: string };
-
-          await miningSources.upsert({
-            userId: state,
+        await miningSources.upsert({
+          userId: state,
+          email,
+          credentials: {
             email,
-            credentials: {
-              email,
-              accessToken,
-              refreshToken,
-              provider: 'google',
-              expiresAt
-            },
-            type: 'google'
-          });
+            accessToken,
+            refreshToken,
+            provider,
+            expiresAt
+          },
+          type: provider
+        });
 
-          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
-        } else {
-          // User has not approved all the required scopes
-          res.redirect(
-            301,
-            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=google&referrer=${state}`
-          );
-        }
+        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
       } catch (error) {
         res.redirect(
           301,
-          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=google&referrer=${state}`
-        );
-      }
-    },
-
-    createAzureMiningSource(_req: Request, res: Response) {
-      const user = res.locals.user as User;
-
-      const authorizationUri = azureOAuth2Client.authorizeURL({
-        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/azure/callback`,
-        scope: [
-          'https://outlook.office.com/IMAP.AccessAsUser.All',
-          'offline_access',
-          'email',
-          'openid',
-          'profile'
-        ],
-        state: user.id
-      });
-
-      return res.json({ authorizationUri });
-    },
-
-    async createAzureMiningSourceCallback(req: Request, res: Response) {
-      const { code, state } = req.query as { code: string; state: string };
-
-      const tokenConfig = {
-        code,
-        redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/azure/callback`,
-        scope: [
-          'https://outlook.office.com/IMAP.AccessAsUser.All',
-          'offline_access',
-          'email',
-          'openid',
-          'profile'
-        ]
-      };
-
-      try {
-        const { token } = await azureOAuth2Client.getToken(tokenConfig);
-
-        const requiredScopes = [
-          'https://outlook.office.com/IMAP.AccessAsUser.All'
-        ];
-        const approvedScopes = (token.scope as string).split(' ');
-
-        const hasApprovedAllScopes = requiredScopes.every((scope) =>
-          approvedScopes.includes(scope)
-        );
-
-        if (hasApprovedAllScopes) {
-          // User has approved all the required scopes
-          const {
-            refresh_token: refreshToken,
-            access_token: accessToken,
-            id_token: idToken,
-            expires_at: expiresAt
-          } = token as {
-            refresh_token: string;
-            access_token: string;
-            id_token: string;
-            expires_at: number;
-          };
-          const { email } = decode(idToken) as { email: string };
-
-          await miningSources.upsert({
-            userId: state,
-            email,
-            credentials: {
-              expiresAt,
-              email,
-              accessToken,
-              refreshToken,
-              provider: 'azure'
-            },
-            type: 'azure'
-          });
-
-          res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
-        } else {
-          // User has not approved all the required scopes
-          res.redirect(
-            301,
-            `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=azure&referrer=${state}`
-          );
-        }
-      } catch (error) {
-        res.redirect(
-          301,
-          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=azure&referrer=${state}`
+          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=${provider}&referrer=${state}`
         );
       }
     },
@@ -381,12 +336,10 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        let deletedTask;
-        if (endEntireTask) {
-          deletedTask = await tasksManager.deleteTask(taskId, null);
-        } else {
-          deletedTask = await tasksManager.deleteTask(taskId, processes);
-        }
+        const deletedTask = await tasksManager.deleteTask(
+          taskId,
+          endEntireTask ? null : processes
+        );
 
         return res.status(200).json({ data: deletedTask });
       } catch (err) {

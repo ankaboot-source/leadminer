@@ -13,8 +13,9 @@ import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
 import RedisMultipleStreamsConsumer from './utils/streams/redis/RedisMultipleStreamsConsumer';
-import { PubSubMessage } from './workers/email-message/MessagesConsumer';
-import EmailVerificationConsumer from './workers/email-verification/EmailsVerificationConsumer';
+import EmailVerificationConsumer, {
+  PubSubMessage
+} from './workers/email-verification/EmailsVerificationConsumer';
 import initializeEmailVerificationProcessor, {
   EmailVerificationData
 } from './workers/email-verification/emailVerificationHandlers';

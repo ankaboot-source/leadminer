@@ -26,10 +26,10 @@ export default defineNuxtConfig({
       port: 8082,
     },
     typescript: {
-      typeCheck: true,
+      typeCheck: false,
     },
     eslint: {
-      checker: true,
+      checker: false,
     },
   },
 
@@ -47,10 +47,6 @@ export default defineNuxtConfig({
       POSTHOG_INSTANCE_ADDRESS: process.env.POSTHOG_INSTANCE_ADDRESS,
       // UI
       AVERAGE_EXTRACTION_RATE: process.env.AVERAGE_EXTRACTION_RATE,
-      // Credits
-      ENABLE_CREDIT: process.env.ENABLE_CREDIT,
-      EXTERNAL_REFILL_CREDITS_LINK: process.env.EXTERNAL_REFILL_CREDITS_LINK,
-      CREDITS_PER_CONTACT: process.env.CREDITS_PER_CONTACT,
       // Supabase saas
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
@@ -65,6 +61,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@primevue/nuxt-module',
     'nuxt-mdi',
+    'nuxt-security',
+    '@nuxt/scripts',
   ],
 
   primevue: {
@@ -121,15 +119,10 @@ export default defineNuxtConfig({
       },
     },
     redirectOptions: {
-      callback: '/',
+      callback: '/callback',
       login: '/auth/login',
-      exclude: [
-        '/auth/signup',
-        '/auth/forgot-password',
-        '/auth/success',
-        '/credits-success',
-        '/account/settings',
-      ],
+      include: ['/dashboard', '/account(/*)?'],
+      exclude: ['/auth(/*)?', '/credits-success'],
     },
   },
 

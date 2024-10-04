@@ -30,12 +30,24 @@ export interface EmailStatusVerifier {
   running: boolean;
 }
 
-export interface StreamInfo {
-  messagesStreamName: string;
-  messagesConsumerGroupName: string;
-  emailsStreamName: string;
-  emailsConsumerGroupName: string;
+export interface TaskFetchStreamInfo {
+  messagesStream: string;
 }
+
+export interface TaskExtractStreamInfo {
+  messagesStream: string;
+  messagesConsumerGroup: string;
+  emailsVerificationStream: string;
+}
+
+export interface TaskCleanStreamInfo {
+  emailsStream: string;
+  emailsConsumerGroup: string;
+}
+
+export interface StreamInfo
+  extends TaskExtractStreamInfo,
+    TaskCleanStreamInfo {}
 
 export interface TaskProgress {
   totalMessages: number;
@@ -64,9 +76,7 @@ export interface TaskFetch extends Task {
   instance: ImapEmailsFetcher;
   details: {
     miningId: string;
-    stream: {
-      messagesStreamName: string;
-    };
+    stream: TaskFetchStreamInfo;
     progress: {
       totalMessages: number;
       fetched: number;
@@ -80,11 +90,7 @@ export interface TaskExtract extends Task {
   type: TaskType.Extract;
   details: {
     miningId: string;
-    stream: {
-      messagesStreamName: string;
-      messagesConsumerGroupName: string;
-      emailsStreamName: string;
-    };
+    stream: TaskExtractStreamInfo;
     progress: {
       extracted: number;
     };
@@ -96,10 +102,7 @@ export interface TaskClean extends Task {
   type: TaskType.Clean;
   details: {
     miningId: string;
-    stream: {
-      emailsStreamName: string;
-      emailsConsumerGroupName: string;
-    };
+    stream: TaskCleanStreamInfo;
     progress: {
       verifiedContacts: number;
       createdContacts: number;

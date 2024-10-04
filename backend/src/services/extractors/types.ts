@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
+import { Message, Person, PointOfContact } from '../../db/types';
 import { REACHABILITY } from '../../utils/constants';
-import { Details, Status } from '../email-status/EmailStatusVerifier';
 
 export const IGNORED_MESSAGE_TAGS: ReadonlyArray<string> = [
   'transactional',
@@ -27,43 +27,6 @@ export interface EmailSendersRecipients {
   'reply-to'?: MessageField;
   reply_to?: MessageField;
   'list-post'?: MessageField;
-}
-
-export interface Message {
-  channel: string;
-  messageId: string;
-  folderPath: string;
-  date?: string;
-  listId?: string;
-  conversation: boolean;
-  references?: string[];
-}
-
-export interface Person {
-  email: string;
-  status?: Status;
-  verificationDetails?: Details;
-  url?: string;
-  name?: string;
-  image?: string;
-  location?: string[];
-  jobTitle?: string;
-  sameAs?: string[];
-  givenName?: string;
-  familyName?: string;
-  identifiers?: string[];
-  alternateNames?: string[];
-  source: string;
-}
-
-export interface PointOfContact {
-  to: boolean;
-  cc: boolean;
-  bcc: boolean;
-  from: boolean;
-  body: boolean;
-  replyTo: boolean;
-  name?: string;
 }
 
 export interface RegexContact {
