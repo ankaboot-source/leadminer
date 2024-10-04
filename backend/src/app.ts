@@ -59,7 +59,10 @@ export default function initializeApp(
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
   app.use('/api', initializeContactsRoutes(contacts, authResolver));
-  app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
+  app.use(
+    '/api/enrich',
+    initializeEnrichmentRoutes(userResolver, authResolver)
+  );
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());

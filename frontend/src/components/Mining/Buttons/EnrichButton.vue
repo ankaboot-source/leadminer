@@ -125,6 +125,7 @@ const enrichAllContacts = toRef(() => props.enrichAllContacts);
 const contactsToEnrich = toRef(() => props.contactsToEnrich);
 const skipDialog = toRef(() => props.skipDialog);
 
+const totalTasks = ref(0);
 const enrichmentTasks = new Map<string, EnrichmentTask>();
 const enrichmentCompleted = ref(false);
 
@@ -158,10 +159,10 @@ function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
     enrichmentTasks.set(task.id, task);
   }
 
+  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
   if (
-    !Array.from(enrichmentTasks.values()).some(
-      ({ status }) => status === 'running',
-    )
+    (totalTasks.value === 0 || currentTasks.length === totalTasks.value) &&
+    !currentTasks.some(({ status }) => status === 'running')
   ) {
     enrichmentCompleted.value = true;
   }
@@ -301,6 +302,7 @@ async function enrichPersonBulk(
             t('notification.already_enriched'),
           );
         } else if (tasks?.length) {
+          totalTasks.value = tasks.length;
           updateEnrichmentProgress(tasks);
         }
       }
@@ -310,6 +312,7 @@ async function enrichPersonBulk(
 
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
+    totalTasks.value = 0;
     enrichmentTasks.clear();
     enrichmentCompleted.value = false;
     $leadminerStore.activeEnrichment = true;

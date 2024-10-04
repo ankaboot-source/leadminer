@@ -1,20 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
-import ENV from '../config';
 import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditsHandler';
 import {
+  asyncWebhookEnrich,
   enrichAsync,
   enrichSync,
   getContactsToEnrich,
-  getEnrichmentTask,
-  asyncWebhookEnrich
+  getEnrichmentTask
 } from './enrichment.helpers';
 import Billing from '../utils/billing-plugin';
-
+import ENV from '../config';
 
 async function checkAndFilterEligibleContacts(
-  userResolver: Users,
   req: Request,
   res: Response,
   next: NextFunction
@@ -33,12 +30,8 @@ async function checkAndFilterEligibleContacts(
     });
   }
 
-  if (!ENV.ENABLE_CREDIT) {
-    return next();
-  }
-
   try {
-    const contactsToEnrich = await getContactsToEnrich(
+    let contactsToEnrich = await getContactsToEnrich(
       user.id,
       enrichAllContacts ?? false,
       contacts
@@ -48,20 +41,19 @@ async function checkAndFilterEligibleContacts(
       return res.status(200).json({ alreadyEnriched: true });
     }
 
-    const creditsHandler = new CreditsHandler(
-      userResolver,
-      ENV.CREDITS_PER_CONTACT
-    );
+    if (Billing) {
+      const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
+        await Billing.validateCustomerCredits(user.id, contactsToEnrich.length);
 
-    const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
-      await creditsHandler.validate(user.id, contactsToEnrich.length);
+      if (hasDeficientCredits || hasInsufficientCredits) {
+        const response = {
+          total: contactsToEnrich.length,
+          available: Math.floor(availableUnits)
+        };
+        return res.status(402).json(response);
+      }
 
-    if (hasDeficientCredits || hasInsufficientCredits) {
-      const response = {
-        total: contactsToEnrich.length,
-        available: Math.floor(availableUnits)
-      };
-      return res.status(creditsHandler.DEFICIENT_CREDITS_STATUS).json(response);
+      contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
     }
 
     const enrichment: {
@@ -72,11 +64,11 @@ async function checkAndFilterEligibleContacts(
       updateEmptyFieldsOnly
     };
 
-    if (req.body.contact) {
-      const [contact] = contactsToEnrich.slice(0, availableUnits);
+    if (enrichAllContacts || req.body.contacts) {
+      enrichment.contacts = contactsToEnrich;
+    } else if (req.body.contact) {
+      const [contact] = contactsToEnrich;
       enrichment.contact = contact;
-    } else if (req.body.contacts) {
-      enrichment.contacts = contactsToEnrich.slice(0, availableUnits);
     }
     res.locals.enrichment = enrichment;
     return next();
@@ -94,11 +86,11 @@ async function enrichContactSync(
     user,
     enrichment: { contact, updateEmptyFieldsOnly }
   } = res.locals;
-  const task = await enrichSync(userResolver, contact, {
+  const tasks = await enrichSync(userResolver, contact, {
     userId: user.id,
     updateEmptyFieldsOnly
   });
-  return res.status(200).json(task);
+  return res.status(200).json({ tasks });
 }
 
 async function enrichContactsAsync(
@@ -115,7 +107,7 @@ async function enrichContactsAsync(
     updateEmptyFieldsOnly,
     webhook: `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/`
   });
-  return res.status(200).json(tasks);
+  return res.status(200).json({ tasks });
 }
 
 async function enrichContactsAsyncWebhookHandler(
@@ -157,10 +149,10 @@ export default function initializeEnrichmentController(userResolver: Users) {
         next(err);
       }
     },
-    preEnrichmentMiddleware: (
+    preEnrichmentMiddleware: async (
       req: Request,
       res: Response,
       next: NextFunction
-    ) => checkAndFilterEligibleContacts(userResolver, req, res, next)
+    ) => checkAndFilterEligibleContacts(req, res, next)
   };
 }

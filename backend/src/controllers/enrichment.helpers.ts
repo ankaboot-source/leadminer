@@ -1,13 +1,12 @@
-import ENV from '../config';
 import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditsHandler';
 import emailEnrichmentService from '../services/email-enrichment';
 import { EnricherResult } from '../services/email-enrichment/EmailEnricher';
 import {
   Enricher,
   EnricherType
 } from '../services/email-enrichment/EmailEnricherFactory';
+import Billing from '../utils/billing-plugin';
 import logger from '../utils/logger';
 import supabaseClient from '../utils/supabase';
 
@@ -17,6 +16,8 @@ export interface TaskEnrich {
   status: 'running' | 'done' | 'canceled';
   category: 'enriching';
   type: 'enrich';
+  started_at: string | null;
+  stopped_at: string | null;
   details: {
     config: {
       secret?: string;
@@ -192,6 +193,7 @@ export async function upsertEnrichmentTask(
     .from('tasks')
     .upsert({
       ...task,
+      status,
       stopped_at: ['done', 'canceled'].includes(status)
         ? new Date().toISOString()
         : null
@@ -237,12 +239,25 @@ export async function enrichContactDB(
   userResolver: Users,
   userId: string,
   updateEmptyFieldsOnly: boolean,
-  contacts: Partial<Contact>[]
+  contacts: Partial<EnricherResult>[]
 ) {
+  const contactsDB: Partial<Contact>[] = contacts.map((contact) => ({
+    image: contact.image,
+    email: contact.email,
+    name: contact.name,
+    same_as: contact.sameAs,
+    location: contact.location,
+    job_title: contact.jobTitle,
+    given_name: contact.givenName,
+    family_name: contact.familyName,
+    works_for: contact.organization
+  }));
+
   const { error } = await supabaseClient.rpc('enrich_contacts', {
-    p_contacts_data: contacts.map((contact) => ({
+    p_contacts_data: contactsDB.map((contact) => ({
       ...contact,
       user_id: userId,
+      alternate_names: contact.alternate_names?.join(','),
       same_as: contact.same_as?.join(','),
       location: contact.location?.join(',')
     })),
@@ -256,12 +271,8 @@ export async function enrichContactDB(
     contacts.map((contact) => contact.email as string)
   );
 
-  if (ENV.ENABLE_CREDIT) {
-    const creditsHandler = new CreditsHandler(
-      userResolver,
-      ENV.CREDITS_PER_CONTACT
-    );
-    await creditsHandler.deduct(userId, contacts.length);
+  if (Billing) {
+    await Billing.deductCustomerCredits(userId, contacts.length);
   }
 }
 
@@ -311,9 +322,11 @@ export async function enrichFromCache(
     {
       id: 'enrichment-cache',
       status: 'done',
-      details: { progress: { total: 1, enriched: 1 } }
+      details: {
+        progress: { total: contacts.length, enriched: cacheResult.length }
+      }
     },
-    contacts.filter((contact) => enrichmentCache.has(contact.email as string))
+    contacts.filter((contact) => !enrichmentCache.has(contact.email as string))
   ];
 }
 
@@ -327,27 +340,44 @@ async function startSyncEnricherTask(
 ) {
   const { userId, contact, updateEmptyFieldsOnly } = enrichParams;
   const enricher = emailEnrichmentService.getEnricher({}, 'thedig');
-  const { raw_data: rawData, data } = await enricher.instance.enrichSync(
-    contact
-  );
+
   const task = await createEnrichmentTask(
     userId,
     enricher.type,
     [contact],
     updateEmptyFieldsOnly
   );
-  await enrichContactDB(userResolver, userId, updateEmptyFieldsOnly, data);
-  return upsertEnrichmentTask(task.id, 'done', {
-    details: {
-      config: {
-        user_id: userId,
-        instance: enricher.type,
-        update_empty_fields_only: updateEmptyFieldsOnly
-      },
-      progress: { enriched: 1, total: 1 },
-      result: { raw_data: rawData, data }
-    }
-  });
+
+  const config = {
+    user_id: userId,
+    instance: enricher.type,
+    update_empty_fields_only: updateEmptyFieldsOnly
+  };
+
+  try {
+    const { raw_data: rawData, data } = await enricher.instance.enrichSync(
+      contact
+    );
+    await enrichContactDB(userResolver, userId, updateEmptyFieldsOnly, data);
+    return await upsertEnrichmentTask(task.id, 'done' as TaskEnrich['status'], {
+      ...task,
+      details: {
+        config,
+        progress: { enriched: 1, total: 1 },
+        result: { raw_data: rawData, data }
+      }
+    });
+  } catch (err) {
+    await upsertEnrichmentTask(task.id, 'canceled', {
+      ...task,
+      details: {
+        config,
+        progress: { enriched: 0, total: 1 },
+        error: (err as Error).message
+      }
+    });
+    throw err;
+  }
 }
 
 export async function enrichSync(
@@ -360,21 +390,21 @@ export async function enrichSync(
 ) {
   const { userId, updateEmptyFieldsOnly } = enrichParams;
 
-  const [enrichmentTask, [contactToEnrich]] = await enrichFromCache(
+  const [enrichmentTask] = await enrichFromCache(
     userResolver,
     userId,
     updateEmptyFieldsOnly,
     [contact]
   );
 
-  if (enrichmentTask && !contactToEnrich) return [enrichmentTask];
+  if (enrichmentTask) return [enrichmentTask];
 
   const task = await startSyncEnricherTask(userResolver, {
     contact,
     userId,
     updateEmptyFieldsOnly
   });
-  return redactEnrichmentTask(task);
+  return [redactEnrichmentTask(task)];
 }
 
 async function asyncEnricherTask(
@@ -395,12 +425,13 @@ async function asyncEnricherTask(
   try {
     const { token } = await enricher.instance.enrichAsync(
       contactsList,
-      enrichParams.webhook + task.id
+      `https://6a1b-197-244-128-242.ngrok-free.app/api/enrich/webhook/${task.id}`
     );
     task.details.config.secret = token;
     return await upsertEnrichmentTask(task.id, 'running', task);
   } catch (err) {
     return await upsertEnrichmentTask(task.id, 'canceled', {
+      ...task,
       details: {
         ...task.details,
         error: (err as Error).message ?? 'Failed to make enrichment request'
@@ -448,11 +479,17 @@ export async function enrichAsync(
     updateEmptyFieldsOnly,
     contacts
   );
+
   if (enrichmentTask && !contactsToEnrich.length) return [enrichmentTask];
 
-  const results = await startAsyncEnricherTasks(userId, enrichParams, contacts);
+  const results = [
+    enrichmentTask,
+    ...(
+      await startAsyncEnricherTasks(userId, enrichParams, contactsToEnrich)
+    ).map((task) => redactEnrichmentTask(task))
+  ];
 
-  return results.map((task) => redactEnrichmentTask(task));
+  return results.filter(Boolean);
 }
 
 async function updateContactAndTaskDB(
@@ -473,6 +510,7 @@ async function updateContactAndTaskDB(
     data
   );
   await upsertEnrichmentTask(id, 'done', {
+    ...task,
     details: {
       config: details.config,
       progress: { ...details.progress, enriched: result.data.length },
@@ -496,6 +534,7 @@ export async function asyncWebhookEnrich(
     await updateContactAndTaskDB(userResolver, userId, task, result);
   } catch (err) {
     await upsertEnrichmentTask(id, 'canceled', {
+      ...task,
       details: {
         ...details,
         error:
