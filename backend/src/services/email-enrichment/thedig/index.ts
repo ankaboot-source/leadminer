@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { EmailEnricher, Person } from '../EmailEnricher';
+import { EmailEnricher, EnricherResult, Person } from '../EmailEnricher';
 import Voilanorbert, { EnrichPersonResponse } from './client';
 
 export default class TheDigEmailEnricher implements EmailEnricher {
@@ -31,7 +31,10 @@ export default class TheDigEmailEnricher implements EmailEnricher {
       persons
     );
     try {
-      const response = await this.client.enrichBulk(persons, webhook);
+      const response = await this.client.enrichBulk(
+        persons.map(({ name, email }) => ({ name, email })),
+        webhook
+      );
 
       if (!response.success) {
         throw new Error('Failed to upload emails to enrichment.');
@@ -49,12 +52,12 @@ export default class TheDigEmailEnricher implements EmailEnricher {
       enrichedData
     );
     const results = enrichedData;
-    const enriched = results
+    const enriched: EnricherResult[] = results
       .map(
         ({
           email,
           name,
-          organization,
+          worksFor,
           jobTitle,
           homeLocation,
           workLocation,
@@ -72,11 +75,11 @@ export default class TheDigEmailEnricher implements EmailEnricher {
             name: name || undefined,
             givenName: givenName || undefined,
             familyName: familyName || undefined,
-            alternateName: alternateName || undefined,
-            image: image || undefined,
+            alternateNames: alternateName,
+            image: image?.length ? image[0] : undefined,
             location: location.length ? location : undefined,
-            organization: organization || undefined,
-            jobTitle: jobTitle || undefined,
+            organization: worksFor?.length ? worksFor[0] : undefined,
+            jobTitle: jobTitle?.length ? jobTitle[0] : undefined,
             sameAs: sameAs?.length ? sameAs : undefined
           };
         }
@@ -88,7 +91,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
           location,
           givenName,
           familyName,
-          alternateName,
+          alternateNames,
           image
         }) =>
           ![
@@ -97,7 +100,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
             location,
             givenName,
             familyName,
-            alternateName,
+            alternateNames,
             image
           ].every((field) => field === undefined || field.length === 0)
       );

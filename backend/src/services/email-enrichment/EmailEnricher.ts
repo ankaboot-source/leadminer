@@ -13,6 +13,7 @@ export interface EnricherResult {
   givenName?: string;
   familyName?: string;
   sameAs?: string[];
+  alternateNames?: string[];
 }
 
 export interface Person {

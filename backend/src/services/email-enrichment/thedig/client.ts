@@ -14,14 +14,18 @@ export interface EnrichPersonResponse {
   givenName: string;
   familyName?: string;
   alternateName?: string[];
-  image?: string;
-  jobTitle?: string;
-  organization?: string;
+  image?: string[];
+  jobTitle?: string[];
+  worksFor?: string[];
   homeLocation?: string[];
   workLocation?: string[];
   sameAs?: string[];
   identifier?: string[];
   description?: string[];
+  knowsLanguage?: string[];
+  nationality?: string[];
+  OptOut?: boolean;
+  url?: string;
   error_msg?: string;
 }
 
