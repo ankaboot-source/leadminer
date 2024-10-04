@@ -327,9 +327,8 @@ async function startSyncEnricherTask(
 ) {
   const { userId, contact, updateEmptyFieldsOnly } = enrichParams;
   const enricher = emailEnrichmentService.getEnricher({}, 'thedig');
-  const { raw_data: rawData, data } = await enricher.instance.enrichSync(
-    contact
-  );
+  const { raw_data: rawData, data } =
+    await enricher.instance.enrichSync(contact);
   const task = await createEnrichmentTask(
     userId,
     enricher.type,

@@ -12,7 +12,6 @@ import {
 } from './enrichment.helpers';
 import Billing from '../utils/billing-plugin';
 
-
 async function checkAndFilterEligibleContacts(
   userResolver: Users,
   req: Request,
