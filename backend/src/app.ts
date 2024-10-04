@@ -17,8 +17,8 @@ import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
-import { initCreditAndPaymentRoutes } from './utils/credits';
-import initializeEnrichementRoutes from './routes/enrichement.routes';
+import Billing from './utils/billing-plugin';
+import initializeEnrichmentRoutes from './routes/enrichement.routes';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -36,9 +36,8 @@ export default function initializeApp(
     app.use(Sentry.Handlers.tracingHandler());
   }
 
-  const pluginRoutes = initCreditAndPaymentRoutes(logger);
-  if (pluginRoutes) {
-    app.use('/api', pluginRoutes);
+  if (Billing) {
+    app.use('/api', Billing.expressRouter(logger));
   }
 
   app.use(corsMiddleware);
@@ -59,14 +58,8 @@ export default function initializeApp(
     '/api/imap',
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
-  app.use(
-    '/api',
-    initializeContactsRoutes(contacts, userResolver, authResolver)
-  );
-  app.use(
-    '/api/enrichement',
-    initializeEnrichementRoutes(userResolver, authResolver)
-  );
+  app.use('/api', initializeContactsRoutes(contacts, authResolver));
+  app.use('/api/enrichment', initializeEnrichmentRoutes(authResolver));
 
   if (ENV.SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());
