@@ -149,7 +149,7 @@ export default function initializeEnrichmentController(userResolver: Users) {
         next(err);
       }
     },
-    preEnrichmentMiddleware: async (
+    preEnrichmentMiddleware: (
       req: Request,
       res: Response,
       next: NextFunction

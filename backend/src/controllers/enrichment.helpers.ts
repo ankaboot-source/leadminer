@@ -355,8 +355,9 @@ async function startSyncEnricherTask(
   };
 
   try {
-    const { raw_data: rawData, data } =
-      await enricher.instance.enrichSync(contact);
+    const { raw_data: rawData, data } = await enricher.instance.enrichSync(
+      contact
+    );
     await enrichContactDB(userResolver, userId, updateEmptyFieldsOnly, data);
     return await upsertEnrichmentTask(task.id, 'done' as TaskEnrich['status'], {
       ...task,
@@ -448,7 +449,7 @@ async function startAsyncEnricherTasks(
   contacts: Partial<Contact>[]
 ) {
   const enrichers = emailEnrichmentService.getEnrichers(contacts);
-  const promises = enrichers.map(async ([enricher, contactsList]) =>
+  const promises = enrichers.map(([enricher, contactsList]) =>
     asyncEnricherTask(
       userId,
       {
