@@ -355,9 +355,8 @@ async function startSyncEnricherTask(
   };
 
   try {
-    const { raw_data: rawData, data } = await enricher.instance.enrichSync(
-      contact
-    );
+    const { raw_data: rawData, data } =
+      await enricher.instance.enrichSync(contact);
     await enrichContactDB(userResolver, userId, updateEmptyFieldsOnly, data);
     return await upsertEnrichmentTask(task.id, 'done' as TaskEnrich['status'], {
       ...task,
