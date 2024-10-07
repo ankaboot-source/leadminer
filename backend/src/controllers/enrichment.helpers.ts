@@ -282,7 +282,7 @@ export async function searchEnrichmentCache(
   const emails = contacts.map((contact) => contact.email);
 
   const { data, error } = await supabaseClient.rpc(
-    'search_previous_enriched_emails',
+    'search_recent_enriched_emails',
     {
       emails
     }
