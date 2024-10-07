@@ -31,7 +31,7 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
       const response = await this.client.enrich(emails, webhook);
 
       if (!response.success) {
-        throw new Error('Failed to upload emails to enrichement.');
+        throw new Error('Failed to upload emails to enrichment.');
       }
 
       return response;
@@ -40,9 +40,9 @@ export class VoilanorbertEmailEnricher implements EmailEnricher {
     }
   }
 
-  enrichementMapper(enrichedData: VoilanorbertWebhookResult): EnricherResult[] {
+  enrichmentMapper(enrichedData: VoilanorbertWebhookResult): EnricherResult[] {
     this.logger.debug(
-      `[${this.constructor.name}]-[enrichementMapper]: Parsing enrichement results`,
+      `[${this.constructor.name}]-[enrichmentMapper]: Parsing enrichment results`,
       enrichedData
     );
     const { results } = enrichedData;

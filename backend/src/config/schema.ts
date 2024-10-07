@@ -7,7 +7,7 @@ const boolean = () =>
 const schema = z.object({
   LEADMINER_API_PORT: number(),
   LEADMINER_API_HOST: z.string().url(),
-  LEADMINER_API_HASH_SECRET: z.string().nonempty(),
+  LEADMINER_API_HASH_SECRET: z.string().min(1),
   LEADMINER_MINING_ID_GENERATOR_LENGTH: number(),
   LEADMINER_FETCH_BATCH_SIZE: number(),
   FRONTEND_HOST: z.string().url(),
@@ -19,16 +19,16 @@ const schema = z.object({
   IMAP_FETCH_BODY: boolean(),
 
   /* REDIS */
-  REDIS_HOST: z.string().nonempty(),
-  REDIS_PASSWORD: z.string().nonempty().optional(),
-  REDIS_USERNAME: z.string().nonempty().optional(),
+  REDIS_HOST: z.string().min(1),
+  REDIS_PASSWORD: z.string().min(1).optional(),
+  REDIS_USERNAME: z.string().min(1).optional(),
   REDIS_PORT: number(),
   REDIS_TLS: boolean(),
   REDIS_CONSUMER_BATCH_SIZE: number(),
   REDIS_EMAIL_VERIFICATION_CONSUMER_BATCH_SIZE: number(),
   /* SUPABASE + POSTGRES */
   SUPABASE_PROJECT_URL: z.string().url(),
-  SUPABASE_SECRET_PROJECT_TOKEN: z.string().nonempty(),
+  SUPABASE_SECRET_PROJECT_TOKEN: z.string().min(1),
   PG_CONNECTION_STRING: z.string().url(),
 
   /* SENTRY */
@@ -41,10 +41,10 @@ const schema = z.object({
     .default('info'),
 
   /* OAUTH */
-  GOOGLE_CLIENT_ID: z.string().nonempty(),
-  GOOGLE_SECRET: z.string().nonempty(),
-  AZURE_CLIENT_ID: z.string().nonempty(),
-  AZURE_SECRET: z.string().nonempty(),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_SECRET: z.string().min(1),
+  AZURE_CLIENT_ID: z.string().min(1),
+  AZURE_SECRET: z.string().min(1),
 
   /* Email verification */
   LOAD_BALANCE_VERIFIERS: boolean().default('false'),
@@ -52,23 +52,23 @@ const schema = z.object({
   /* REACHER */
   REACHER_HOST: z
     .string()
-    .nonempty()
+    .min(1)
     .optional()
     .default('https://api.reacher.email'),
-  REACHER_API_KEY: z.string().nonempty().optional(),
-  REACHER_HEADER_SECRET: z.string().nonempty().optional(),
-  REACHER_SMTP_FROM: z.string().nonempty().optional(),
-  REACHER_SMTP_HELLO: z.string().nonempty().optional(),
+  REACHER_API_KEY: z.string().min(1).optional(),
+  REACHER_HEADER_SECRET: z.string().min(1).optional(),
+  REACHER_SMTP_FROM: z.string().min(1).optional(),
+  REACHER_SMTP_HELLO: z.string().min(1).optional(),
   REACHER_PROXY_PORT: number().optional(),
-  REACHER_PROXY_HOST: z.string().nonempty().optional(),
-  REACHER_PROXY_USERNAME: z.string().nonempty().optional(),
-  REACHER_PROXY_PASSWORD: z.string().nonempty().optional(),
+  REACHER_PROXY_HOST: z.string().min(1).optional(),
+  REACHER_PROXY_USERNAME: z.string().min(1).optional(),
+  REACHER_PROXY_PASSWORD: z.string().min(1).optional(),
   REACHER_REQUEST_TIMEOUT_MS: number().optional().default(60000),
   REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS: number().optional().default(20),
   REACHER_SMTP_CONNECTION_RETRIES: number().optional().default(2),
   REACHER_HOTMAIL_USE_HEADLESS: z
     .string()
-    .nonempty()
+    .min(1)
     .optional()
     .default('http://localhost:4444'),
   REACHER_MICROSOFT365_USE_API: boolean().optional().default('true'),
@@ -76,19 +76,15 @@ const schema = z.object({
   REACHER_YAHOO_USE_API: boolean().optional().default('false'),
 
   /* MAILERCHECK */
-  MAILERCHECK_API_KEY: z.string().nonempty().optional(),
+  MAILERCHECK_API_KEY: z.string().min(1).optional(),
 
   /* ZEROUBOUNCE */
-  ZEROBOUNCE_API_KEY: z.string().nonempty().optional(),
+  ZEROBOUNCE_API_KEY: z.string().min(1).optional(),
 
   /* VOILANORBERT */
-  VOILANORBERT_URL: z.string().nonempty().optional(),
-  VOILANORBERT_USERNAME: z.string().nonempty().optional(),
-  VOILANORBERT_API_KEY: z.string().nonempty().optional(),
-
-  /* CREDITS */
-  ENABLE_CREDIT: boolean().default('false'),
-  CREDITS_PER_CONTACT: number().optional().default(1),
+  VOILANORBERT_URL: z.string().min(1).optional(),
+  VOILANORBERT_USERNAME: z.string().min(1).optional(),
+  VOILANORBERT_API_KEY: z.string().min(1).optional(),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });

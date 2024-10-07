@@ -1,4 +1,5 @@
-[![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/) [![DeepSource](https://deepsource.io/gh/ankaboot-source/leadminer.svg/?label=active+issues&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://deepsource.io/gh/ankaboot-source/leadminer/?ref=repository-badge) </a>[![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability)
+[![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=true&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/)
+[![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability)
 
 <div>
   <div align="center">
@@ -31,18 +32,23 @@
 
 ## 📦 How to run?
 
-This project integrates with external services for full functionality. You can skip setting these up if you're running in development mode. See [development setup](#running-with-supabase-self-hosted).
+This project integrates with external services for full features. Jump directly to [set-up with supabase self-hosted](#running-with-supabase-self-hosted) for development purposes.
+To give it a try without the hassle of installation, [simply use the SaaS version](https://app.leadminer.io/).
 
 <details>
 <summary><h3 style="display:inline-block" id="setup-email-verification-services">Setup email-verification services</h3></summary>
 
-We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.com) for email verification. Configure one or both.
+We use external services for email verification. Configure at least one.
 
-- **Reacher:** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
+- **[Reacher](https://reacher.email/):** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
 
   > **Note:** Refer to [.env.master.prod](./.env.master.prod) and [.env.master.dev](./.env.master.dev) according to your environment
 
-- **MailerCheck:** Sign up, then update `MAILERCHECK_API_KEY` in the `.env` file.
+- **[MailerCheck](https://mailercheck.com):** Sign up, then update `MAILERCHECK_API_KEY` in the `.env` file.
+
+  > Refer to [.env.master.prod](./.env.master.prod) for guidance.
+
+- **[Zero bounce](https://www.zerobounce.net/):** Sign up, then update `ZEROBOUNCE_API_KEY` in the `.env` file.
 
   > Refer to [.env.master.prod](./.env.master.prod) for guidance.
 
@@ -114,7 +120,7 @@ We use [Reacher](https://reacher.email/) and [MailerCheck](https://mailercheck.c
 
 </details>
 
-<details>
+<details open>
 <summary><h3 style="display:inline-block" id="running-with-supabase-self-hosted">Running with Supabase self-hosted</h3></summary>
 
 1.  **Install the required dependencies:**

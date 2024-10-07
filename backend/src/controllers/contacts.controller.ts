@@ -1,14 +1,12 @@
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
-import ENV from '../config';
 import { Contacts } from '../db/interfaces/Contacts';
-import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import CreditsHandler from '../services/credits/creditsHandler';
 import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
+import Billing from '../utils/billing-plugin';
 
 function validateRequest(req: Request, res: Response) {
   const userId = (res.locals.user as User).id;
@@ -60,7 +58,6 @@ async function respondWithContacts(
 
 async function verifyCredits(
   userId: string,
-  userResolver: Users,
   contacts: Contacts,
   contactsToExport?: string[]
 ) {
@@ -68,29 +65,22 @@ async function verifyCredits(
     userId,
     contactsToExport
   );
-
   const previousExportedContacts = await contacts.getExportedContacts(
     userId,
     contactsToExport
   );
-
-  // Verify Credits
-  const creditsHandler = new CreditsHandler(
-    userResolver,
-    ENV.CREDITS_PER_CONTACT
+  const creditsInfo = await Billing!.validateCustomerCredits(
+    userId,
+    newContacts.length
   );
-  const creditsInfo = await creditsHandler.validate(userId, newContacts.length);
-
   const response = {
     total: newContacts.length + previousExportedContacts.length,
     available: Math.floor(creditsInfo.availableUnits),
     availableAlready: previousExportedContacts.length
   };
-
   return {
     newContacts,
     previousExportedContacts,
-    creditsHandler,
     creditsInfo,
     response
   };
@@ -98,7 +88,6 @@ async function verifyCredits(
 
 async function registerAndDeductCredits(
   userId: string,
-  creditsHandler: CreditsHandler,
   availableUnits: number,
   contacts: Contacts,
   availableContacts: Contact[]
@@ -108,7 +97,7 @@ async function registerAndDeductCredits(
       availableContacts.map(({ email }) => email),
       userId
     );
-    await creditsHandler.deduct(userId, availableUnits);
+    await Billing!.deductCustomerCredits(userId, availableUnits);
   }
 }
 
@@ -118,7 +107,6 @@ async function respondWithConfirmedContacts(
   contacts: Contacts,
   newContacts: Contact[],
   previousExportedContacts: Contact[],
-  creditsHandler: CreditsHandler,
   availableUnits: number,
   statusCode: number,
   delimiterOption?: string
@@ -130,7 +118,6 @@ async function respondWithConfirmedContacts(
 
   await registerAndDeductCredits(
     userId,
-    creditsHandler,
     availableUnits,
     contacts,
     availableContacts
@@ -142,10 +129,7 @@ async function respondWithConfirmedContacts(
     .send(csvData);
 }
 
-export default function initializeContactsController(
-  contacts: Contacts,
-  userResolver: Users
-) {
+export default function initializeContactsController(contacts: Contacts) {
   return {
     async exportContactsCSV(req: Request, res: Response, next: NextFunction) {
       const { userId, contactsToExport, partialExport, delimiter } =
@@ -158,7 +142,7 @@ export default function initializeContactsController(
 
       let statusCode = 200;
       try {
-        if (!ENV.ENABLE_CREDIT || !ENV.CREDITS_PER_CONTACT) {
+        if (!Billing) {
           // No need to Verify Credits, Export.
           return await respondWithContacts(
             res,
@@ -169,26 +153,14 @@ export default function initializeContactsController(
           );
         }
 
-        const {
-          newContacts,
-          previousExportedContacts,
-          creditsHandler,
-          creditsInfo,
-          response
-        } = await verifyCredits(
-          userId,
-          userResolver,
-          contacts,
-          contactsToExport
-        );
+        const { newContacts, previousExportedContacts, creditsInfo, response } =
+          await verifyCredits(userId, contacts, contactsToExport);
 
         if (
           creditsInfo.hasDeficientCredits &&
           !previousExportedContacts.length
         ) {
-          return res
-            .status(creditsHandler.DEFICIENT_CREDITS_STATUS) // 402 Payment Required
-            .json(response);
+          return res.status(402).json(response);
         }
 
         if (creditsInfo.hasInsufficientCredits && newContacts.length) {
@@ -206,7 +178,6 @@ export default function initializeContactsController(
           contacts,
           newContacts,
           previousExportedContacts,
-          creditsHandler,
           creditsInfo.availableUnits,
           statusCode,
           delimiter
