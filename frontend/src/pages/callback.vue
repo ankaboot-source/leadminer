@@ -35,6 +35,9 @@ onMounted(() => {
       life: 5000,
     });
   }
-  navigateTo('/auth/login', {});
+
+  if (!user.value) {
+    navigateTo('/auth/login', {});
+  }
 });
 </script>
