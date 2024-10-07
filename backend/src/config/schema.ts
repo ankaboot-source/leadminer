@@ -48,6 +48,7 @@ const schema = z.object({
 
   /* Email verification */
   LOAD_BALANCE_VERIFIERS: boolean().default('false'),
+  LOAD_BALANCE_ENRICHERS: boolean().default('false'),
 
   /* REACHER */
   REACHER_HOST: z
@@ -85,6 +86,10 @@ const schema = z.object({
   VOILANORBERT_URL: z.string().min(1).optional(),
   VOILANORBERT_USERNAME: z.string().min(1).optional(),
   VOILANORBERT_API_KEY: z.string().min(1).optional(),
+
+  /* THEDIG */
+  THEDIG_URL: z.string().min(1).optional(),
+  THEDIG_API_KEY: z.string().min(1).optional(),
 
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });

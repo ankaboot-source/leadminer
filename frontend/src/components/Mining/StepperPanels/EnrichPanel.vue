@@ -59,7 +59,11 @@
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
       :enrich-all-contacts="false"
-      :contacts-to-enrich="$contactsStore.selectedEmails"
+      :contacts-to-enrich="
+        $contactsStore.contactsList?.filter(({ email }) =>
+          $contactsStore.selectedEmails?.includes(email),
+        )
+      "
       :bordered="true"
       :skip-dialog="true"
     />
@@ -113,7 +117,7 @@ const enrichmentRealtimeCallback = (
   payload: RealtimePostgresChangesPayload<EnrichmentTask>,
 ) => {
   const { status, details } = payload.new as EnrichmentTask;
-  const { enriched } = details.result;
+  const { enriched } = details.progress;
 
   switch (status) {
     case 'done':

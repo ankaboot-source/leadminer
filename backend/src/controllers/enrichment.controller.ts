@@ -1,333 +1,158 @@
 import { NextFunction, Request, Response } from 'express';
-import ENV from '../config';
+import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
-import emailEnrichmentService from '../services/email-enrichment';
-import supabaseClient from '../utils/supabase';
+import {
+  asyncWebhookEnrich,
+  enrichAsync,
+  enrichSync,
+  getContactsToEnrich,
+  getEnrichmentTask
+} from './enrichment.helpers';
 import Billing from '../utils/billing-plugin';
+import ENV from '../config';
 
-/**
- * Queries enriched emails for a given user.
- * @param userId - The ID of the user.
- * @returns List of enriched email addresses.
- * @throws Error if there is an issue fetching data from the database.
- */
-async function getEnrichedEmails(userId: string) {
-  const { data: emails, error } = await supabaseClient
-    .from('engagement')
-    .select('email')
-    .match({ user_id: userId, engagement_type: 'ENRICH' })
-    .returns<{ email: string }[]>();
+async function checkAndFilterEligibleContacts(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { user } = res.locals;
+  const { enrichAllContacts, updateEmptyFieldsOnly } = req.body;
+  const contacts = [
+    ...(req.body.contacts ? req.body.contacts : [req.body.contact])
+  ].filter(Boolean);
 
-  if (error) {
-    throw new Error(error.message);
+  const isMissingParam = !enrichAllContacts && !Array.isArray(contacts);
+
+  if (isMissingParam) {
+    return res.status(400).json({
+      message: 'Missing parameter contact or contacts'
+    });
   }
 
-  return emails.map((record) => record.email);
-}
+  try {
+    let contactsToEnrich = await getContactsToEnrich(
+      user.id,
+      enrichAllContacts ?? false,
+      contacts
+    );
 
-/**
- * Queries emails for a given user.
- * @param userId - The ID of the user.
- * @returns List of email addresses.
- * @throws Error if there is an issue fetching data from the database.
- */
-async function getEmails(userId: string) {
-  const { data: emails, error } = await supabaseClient
-    .from('refinedpersons')
-    .select('email')
-    .match({ user_id: userId })
-    .returns<{ email: string }[]>();
+    if (!contactsToEnrich.length) {
+      return res.status(200).json({ alreadyEnriched: true });
+    }
 
-  if (error) {
-    throw new Error(error.message);
-  }
+    if (Billing) {
+      const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
+        await Billing.validateCustomerCredits(user.id, contactsToEnrich.length);
 
-  return emails.map((record) => record.email);
-}
-
-/**
- * Starts a new enrichment task.
- * @param userId - The ID of the user.
- * @returns The newly created task.
- * @throws Error if there is an issue creating the task in the database.
- */
-async function startEnrichmentTask(userId: string) {
-  const { data: task, error } = await supabaseClient
-    .from('tasks')
-    .insert({
-      user_id: userId,
-      status: 'running',
-      type: 'enrich',
-      category: 'enriching'
-    })
-    .select('id')
-    .single<{ id: string }>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return task;
-}
-
-/**
- * Retrieves an enrichment task by its ID.
- * @param taskId - The ID of the task.
- * @returns The task data.
- * @throws Error if there is an issue fetching the task from the database.
- */
-async function getEnrichmentTask(taskId: string) {
-  const { data: task, error } = await supabaseClient
-    .from('tasks')
-    .select('*')
-    .eq('id', taskId)
-    .single<{
-      id: string;
-      details: {
-        userId: string;
-        enrichmentToken: string;
-        updateEmptyFieldsOnly: boolean;
-        result?: {
-          total?: number;
-          enriched?: number;
+      if (hasDeficientCredits || hasInsufficientCredits) {
+        const response = {
+          total: contactsToEnrich.length,
+          available: Math.floor(availableUnits)
         };
-      };
-    }>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return task;
-}
-
-/**
- * Updates an enrichment task with the given status and details.
- * @param taskId - The ID of the task.
- * @param status - The new status of the task.
- * @param details - Optional details to update the task with.
- * @throws Error if there is an issue updating the task in the database.
- */
-async function updateEnrichmentTask(
-  taskId: string,
-  status: 'running' | 'done' | 'canceled',
-  details?: {
-    userId: string;
-    enrichmentToken: string;
-    updateEmptyFieldsOnly: boolean;
-    result?: {
-      total?: number;
-      enriched?: number;
-    };
-  }
-) {
-  const { error } = await supabaseClient
-    .from('tasks')
-    .update({
-      status,
-      details,
-      stopped_at: ['done', 'canceled'].includes(status)
-        ? new Date().toISOString()
-        : null
-    })
-    .eq('id', taskId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-}
-
-/**
- * Enriches a contact with the provided data.
- * @param userId - The ID of the user.
- * @param contact - The contact data to enrich.
- * @throws Error if there is an issue updating the contact in the database.
- */
-async function enrichContact(
-  updateEmptyFieldsOnly: boolean,
-  contacts: Partial<Contact>[]
-) {
-  // update contacts
-  const { error } = await supabaseClient.rpc('enrich_contacts', {
-    p_contacts_data: contacts.map((contact) => ({
-      ...contact,
-      same_as: contact.same_as?.join(','),
-      location: contact.location?.join(',')
-    })),
-    p_update_empty_fields_only: updateEmptyFieldsOnly ?? true
-  });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  // Update engagement table
-  await Promise.all(
-    contacts.map(async ({ email, user_id }) => {
-      const { error: engagementError } = await supabaseClient
-        .from('engagement')
-        .upsert({
-          email,
-          user_id,
-          engagement_type: 'ENRICH'
-        });
-
-      if (engagementError) {
-        throw new Error(engagementError.message);
+        return res.status(402).json(response);
       }
-    })
-  );
+
+      contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
+    }
+
+    const enrichment: {
+      contact?: Partial<Contact>;
+      contacts?: Partial<Contact>[];
+      updateEmptyFieldsOnly: boolean;
+    } = {
+      updateEmptyFieldsOnly
+    };
+
+    if (enrichAllContacts || req.body.contacts) {
+      enrichment.contacts = contactsToEnrich;
+    } else if (req.body.contact) {
+      const [contact] = contactsToEnrich;
+      enrichment.contact = contact;
+    }
+    res.locals.enrichment = enrichment;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 }
 
-export default function initializeEnrichmentController() {
+async function enrichContactSync(
+  userResolver: Users,
+  _: Request,
+  res: Response
+) {
+  const {
+    user,
+    enrichment: { contact, updateEmptyFieldsOnly }
+  } = res.locals;
+  const tasks = await enrichSync(userResolver, contact, {
+    userId: user.id,
+    updateEmptyFieldsOnly
+  });
+  return res.status(200).json({ tasks });
+}
+
+async function enrichContactsAsync(
+  userResolver: Users,
+  _: Request,
+  res: Response
+) {
+  const {
+    user,
+    enrichment: { contacts, updateEmptyFieldsOnly }
+  } = res.locals;
+  const tasks = await enrichAsync(userResolver, contacts, {
+    userId: user.id,
+    updateEmptyFieldsOnly,
+    webhook: `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/`
+  });
+  return res.status(200).json({ tasks });
+}
+
+async function enrichContactsAsyncWebhookHandler(
+  userResolver: Users,
+  req: Request,
+  res: Response
+) {
+  const { id: taskId } = req.params;
+  const task = await getEnrichmentTask(taskId);
+  if (!task.id) {
+    return res.status(404).send({
+      message: `Enrichment with id ${taskId} not found.`
+    });
+  }
+  await asyncWebhookEnrich(userResolver, task, req.body);
+  return res.status(200);
+}
+
+export default function initializeEnrichmentController(userResolver: Users) {
   return {
-    /**
-     * Creates an Enrichment task for a list of emails.
-     */
-    async enrich(req: Request, res: Response, next: NextFunction) {
-      const { user } = res.locals;
-      const {
-        emails,
-        enrichAllContacts,
-        updateEmptyFieldsOnly
-      }: {
-        emails?: string[];
-        enrichAllContacts: boolean;
-        updateEmptyFieldsOnly: boolean;
-      } = req.body;
-
+    enrichSync: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        let emailsToEnrich: string[];
-
-        if (enrichAllContacts) {
-          emailsToEnrich = await getEmails(user.id);
-        } else {
-          if (!Array.isArray(emails) || !emails.length) {
-            return res.status(400).json({
-              message: 'Parameter "emails" must be a non-empty list of emails'
-            });
-          }
-          emailsToEnrich = emails;
-        }
-
-        const enrichedEmails = new Set(await getEnrichedEmails(user.id));
-        let contactsToEnrich = emailsToEnrich.filter(
-          (email) => !enrichedEmails.has(email)
-        );
-
-        if (!contactsToEnrich.length) {
-          return res.status(200).json({ alreadyEnriched: true });
-        }
-
-        if (Billing) {
-          const {
-            hasDeficientCredits,
-            hasInsufficientCredits,
-            availableUnits
-          } = await Billing.validateCustomerCredits(
-            user.id,
-            contactsToEnrich.length
-          );
-
-          if (hasDeficientCredits || hasInsufficientCredits) {
-            const response = {
-              total: contactsToEnrich.length,
-              available: Math.floor(availableUnits)
-            };
-            return res.status(402).json(response);
-          }
-          contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
-        }
-
-        const enricher = emailEnrichmentService.getEmailEnricher();
-        const enrichmentTask = await startEnrichmentTask(user.id);
-
-        const { token } = await enricher.enrichWebhook(
-          contactsToEnrich,
-          `${ENV.LEADMINER_API_HOST}/api/enrichment/webhook/${enrichmentTask.id}`
-        );
-
-        await updateEnrichmentTask(enrichmentTask.id, 'running', {
-          userId: user.id,
-          enrichmentToken: token,
-          updateEmptyFieldsOnly,
-          result: {
-            total: contactsToEnrich.length
-          }
-        });
-
-        return res.status(200).json({
-          taskId: enrichmentTask.id,
-          total: contactsToEnrich.length
-        });
+        await enrichContactSync(userResolver, req, res);
       } catch (err) {
-        return next(err);
+        next(err);
       }
     },
-
-    /**
-     * Handles webhook callbacks for enrichment tasks.
-     */
-    async webhook(req: Request, res: Response, next: NextFunction) {
-      const { id: taskId } = req.params;
-      const { token: enrichmentToken } = req.body;
-
+    enrichAsync: async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const enricher = emailEnrichmentService.getEmailEnricher();
-
-        const { id, details } = await getEnrichmentTask(taskId);
-        const {
-          userId: cachedUserId,
-          enrichmentToken: cachedEnrichmentToken,
-          updateEmptyFieldsOnly
-        } = details;
-
-        if (!id) {
-          return res.status(404).send({
-            message: `Enrichment with id ${enrichmentToken} not found.`
-          });
-        }
-
-        if (enrichmentToken !== cachedEnrichmentToken) {
-          return res
-            .status(401)
-            .json({ message: 'You are not authorized to use this token' });
-        }
-
-        const enrichmentResult = enricher.enrichmentMapper(req.body);
-        await enrichContact(
-          updateEmptyFieldsOnly,
-          enrichmentResult.map((contact) => ({
-            user_id: cachedUserId,
-            image: contact.image,
-            email: contact.email,
-            name: contact.name,
-            same_as: contact.sameAs,
-            location: contact.location,
-            job_title: contact.jobTitle,
-            given_name: contact.givenName,
-            family_name: contact.familyName,
-            works_for: contact.organization
-          }))
-        );
-        await updateEnrichmentTask(taskId, 'done', {
-          ...details,
-          result: {
-            ...details.result,
-            enriched: enrichmentResult.length
-          }
-        });
-
-        if (Billing) {
-          await Billing.deductCustomerCredits(
-            cachedUserId,
-            enrichmentResult.length
-          );
-        }
-        return res.status(200);
+        await enrichContactsAsync(userResolver, req, res);
       } catch (err) {
-        await updateEnrichmentTask(taskId, 'canceled');
-        return next(err);
+        next(err);
       }
-    }
+    },
+    webhook: async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await enrichContactsAsyncWebhookHandler(userResolver, req, res);
+      } catch (err) {
+        next(err);
+      }
+    },
+    preEnrichmentMiddleware: (
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => checkAndFilterEligibleContacts(req, res, next)
   };
 }

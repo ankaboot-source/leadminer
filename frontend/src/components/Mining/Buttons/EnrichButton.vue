@@ -12,12 +12,7 @@
     :state="{
       maximized: true,
     }"
-    :header="
-      t(
-        'confirm_enrichment',
-        contactsToEnrich?.length ?? $contactsStore.selectedContactsCount,
-      )
-    "
+    :header="t('confirm_enrichment', contactsToEnrich?.length ?? 0)"
     class="w-full sm:w-[35rem]"
   >
     <p>
@@ -87,6 +82,7 @@ import type {
 } from '@supabase/supabase-js';
 
 import type { EnrichContactResponse, EnrichmentTask } from '@/types/enrichment';
+import type { Contact } from '~/types/contact';
 import {
   CreditsDialog,
   CreditsDialogRef,
@@ -105,7 +101,7 @@ const props = defineProps<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enrichmentRequestResponseCallback: ({ response }: any) => void;
   enrichAllContacts: boolean;
-  contactsToEnrich?: string[];
+  contactsToEnrich?: Partial<Contact>[];
   bordered?: boolean;
   skipDialog?: boolean;
   source?: 'stepper' | 'datatable' | 'contact';
@@ -129,6 +125,12 @@ const enrichAllContacts = toRef(() => props.enrichAllContacts);
 const contactsToEnrich = toRef(() => props.contactsToEnrich);
 const skipDialog = toRef(() => props.skipDialog);
 
+const totalTasks = ref(0);
+const enrichmentTasks = new Map<string, EnrichmentTask>();
+const enrichmentCompleted = ref(false);
+
+let subscription: RealtimeChannel;
+
 function showNotification(
   severity: 'info' | 'warn' | 'error' | 'success' | 'secondary' | 'contrast',
   summary: string,
@@ -144,14 +146,79 @@ function showNotification(
   });
 }
 
-let subscription: RealtimeChannel;
-
 function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
+  enrichmentTasks.clear();
   $leadminerStore.activeEnrichment = false;
 }
+
+function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
+  for (const task of tasks) {
+    enrichmentTasks.set(task.id, task);
+  }
+
+  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
+  if (
+    (totalTasks.value === 0 || currentTasks.length === totalTasks.value) &&
+    !currentTasks.some(({ status }) => status === 'running')
+  ) {
+    enrichmentCompleted.value = true;
+  }
+}
+
+function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
+  let totalEnriched = 0;
+
+  const error = tasks.every((task) => {
+    if (task.status === 'canceled') {
+      console.error(`Task ${task.id} canceled: ${task.details.error}`);
+      return true;
+    }
+    return false;
+  });
+
+  if (error) {
+    showNotification(
+      'error',
+      t('notification.summary'),
+      t('notification.enrichment_canceled'),
+    );
+    return;
+  }
+
+  for (const task of tasks) {
+    if (task.status === 'done') {
+      totalEnriched += task.details.progress.enriched;
+    }
+  }
+
+  if (totalEnriched > 0) {
+    showNotification(
+      'success',
+      t('notification.summary'),
+      t('notification.enrichment_completed', {
+        n: totalEnriched,
+        enriched: totalEnriched.toLocaleString(),
+      }),
+      'achievement',
+    );
+  } else {
+    showNotification(
+      'info',
+      t('notification.summary'),
+      t('notification.no_additional_info'),
+    );
+  }
+}
+
+watch(enrichmentCompleted, (value) => {
+  if (value) {
+    handleEnrichmentNotification(Array.from(enrichmentTasks.values()));
+    stopEnrichment();
+  }
+});
 
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
@@ -166,78 +233,100 @@ function setupEnrichmentRealtime() {
       },
       (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
         enrichmentRealtimeCallback(payload);
-
-        const { status, details } = payload.new as EnrichmentTask;
-        const { enriched } = details.result;
-
-        switch (status) {
-          case 'done':
-            if (enriched) {
-              showNotification(
-                'success',
-                t('notification.summary'),
-                t('notification.enrichment_completed', {
-                  n: enriched,
-                  enriched: enriched.toLocaleString(),
-                }),
-                'achievement',
-              );
-              $leadminerStore.activeEnrichment = false;
-            } else {
-              showNotification(
-                'info',
-                t('notification.summary'),
-                t('notification.no_additional_info'),
-              );
-            }
-            stopEnrichment();
-            break;
-          case 'canceled':
-            showNotification(
-              'error',
-              t('notification.summary'),
-              t('notification.enrichment_canceled'),
-            );
-            stopEnrichment();
-            break;
-
-          default:
-            break;
-        }
+        const task = payload.new as EnrichmentTask;
+        updateEnrichmentProgress([task]);
       },
     );
   subscription.subscribe();
 }
 
-async function startEnrichment(updateEmptyFieldsOnly: boolean) {
-  try {
-    $leadminerStore.activeEnrichment = true;
-    setupEnrichmentRealtime();
-    await $api<EnrichContactResponse>('/enrichment/enrichAsync', {
-      method: 'POST',
-      body: {
-        updateEmptyFieldsOnly,
-        enrichAllContacts: enrichAllContacts.value,
-        emails: enrichAllContacts.value ? undefined : contactsToEnrich.value,
-      },
-      onResponse({ response }) {
-        enrichmentRequestResponseCallback({ response });
-        const { total, available, alreadyEnriched } = response._data;
+async function enrichPerson(
+  updateEmptyFieldsOnly: boolean,
+  contacts: Partial<Contact>,
+) {
+  await $api<EnrichContactResponse>('/enrich/person/', {
+    method: 'POST',
+    body: {
+      updateEmptyFieldsOnly,
+      enrichAllContacts: false,
+      contact: contacts,
+    },
+    onResponse({ response }) {
+      enrichmentRequestResponseCallback({ response });
+      const { total, available, alreadyEnriched, task } = response._data;
 
-        if (alreadyEnriched && response.status === 200) {
+      if (response.status === 402) {
+        stopEnrichment();
+        openCreditsDialog(true, total, available, 0);
+      } else if (response.status === 200) {
+        if (alreadyEnriched) {
           stopEnrichment();
           showNotification(
             'info',
             t('notification.summary'),
             t('notification.already_enriched'),
           );
+        } else if (task.id) {
+          updateEnrichmentProgress([task]);
         }
-        if (response.status === 402) {
+      }
+    },
+  });
+}
+
+async function enrichPersonBulk(
+  updateEmptyFieldsOnly: boolean,
+  enrichAll: boolean,
+  contacts: Partial<Contact>[],
+) {
+  await $api<EnrichContactResponse>('/enrich/person/bulk', {
+    method: 'POST',
+    body: {
+      updateEmptyFieldsOnly,
+      enrichAllContacts: enrichAll,
+      contacts: enrichAll ? undefined : contacts,
+    },
+    onResponse({ response }) {
+      enrichmentRequestResponseCallback({ response });
+      const { total, available, alreadyEnriched, tasks } = response._data;
+
+      if (response.status === 402) {
+        stopEnrichment();
+        openCreditsDialog(true, total, available, 0);
+      } else if (response.status === 200) {
+        if (alreadyEnriched) {
           stopEnrichment();
-          openCreditsDialog(true, total, available, 0);
+          showNotification(
+            'info',
+            t('notification.summary'),
+            t('notification.already_enriched'),
+          );
+        } else if (tasks?.length) {
+          totalTasks.value = tasks.length;
+          updateEnrichmentProgress(tasks);
         }
-      },
-    });
+      }
+    },
+  });
+}
+
+async function startEnrichment(updateEmptyFieldsOnly: boolean) {
+  try {
+    totalTasks.value = 0;
+    enrichmentTasks.clear();
+    enrichmentCompleted.value = false;
+    $leadminerStore.activeEnrichment = true;
+    setupEnrichmentRealtime();
+
+    if (contactsToEnrich.value?.length === 1) {
+      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value![0]);
+    } else {
+      await enrichPersonBulk(
+        updateEmptyFieldsOnly,
+        enrichAllContacts.value,
+        contactsToEnrich.value!,
+      );
+    }
   } catch (err) {
     stopEnrichment();
     throw err;
@@ -251,7 +340,9 @@ onMounted(async () => {
 });
 
 const openEnrichmentConfirmationDialog = () => {
-  const creditsDialogOpened = useCreditsDialog(contactsToEnrich.value);
+  const creditsDialogOpened = useCreditsDialog(
+    contactsToEnrich.value?.map(({ email }) => email as string),
+  );
   if (creditsDialogOpened) return;
 
   if (skipDialog.value) {

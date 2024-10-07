@@ -10,11 +10,10 @@ export interface EnrichmentTask {
   id: string;
   status: 'running' | 'done' | 'canceled';
   details: {
-    userId: string;
-    webhookSecretToken: string;
-    result: {
+    progress: {
       total: number;
       enriched: number;
     };
+    error: string;
   };
 }

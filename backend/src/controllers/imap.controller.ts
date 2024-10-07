@@ -15,7 +15,7 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
-import { generateErrorObjectFromImapError } from './helpers';
+import { generateErrorObjectFromImapError } from './imap.helpers';
 
 async function validateRequest(
   req: Request,

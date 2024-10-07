@@ -1,4 +1,3 @@
-export type EnricherType = 'voilanorbert';
 interface EnrichWebhookResopnse {
   status: string;
   success: boolean;
@@ -14,12 +13,25 @@ export interface EnricherResult {
   givenName?: string;
   familyName?: string;
   sameAs?: string[];
+  alternateNames?: string[];
+}
+
+export interface Person {
+  email: string;
+  name?: string;
 }
 
 export interface EmailEnricher {
-  enrichWebhook(
-    emails: string[],
+  enrichAsync(
+    persons: Partial<Person>[],
     webhook: string
   ): Promise<EnrichWebhookResopnse>;
-  enrichmentMapper(data: unknown): EnricherResult[];
+  enrichSync(persons: Partial<Person>): Promise<{
+    raw_data: unknown;
+    data: EnricherResult[];
+  }>;
+  enrichmentMapper(data: unknown): {
+    raw_data: unknown;
+    data: EnricherResult[];
+  };
 }
