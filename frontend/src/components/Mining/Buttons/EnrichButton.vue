@@ -154,20 +154,6 @@ function stopEnrichment() {
   $leadminerStore.activeEnrichment = false;
 }
 
-function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
-  for (const task of tasks) {
-    enrichmentTasks.set(task.id, task);
-  }
-
-  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
-  if (
-    (totalTasks.value === 0 || currentTasks.length === totalTasks.value) &&
-    !currentTasks.some(({ status }) => status === 'running')
-  ) {
-    enrichmentCompleted.value = true;
-  }
-}
-
 function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
   let totalEnriched = 0;
 
@@ -213,12 +199,29 @@ function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
   }
 }
 
-watch(enrichmentCompleted, (value) => {
-  if (value) {
+function isEnrichmentCompleted() {
+  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
+  return Boolean(
+    (totalTasks.value > 0 || currentTasks.length === totalTasks.value) &&
+      !currentTasks.some(({ status }) => status === 'running'),
+  );
+}
+
+function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
+  for (const task of tasks) {
+    const existingTask = enrichmentTasks.get(task.id);
+    if (!existingTask || existingTask.status === 'running') {
+      enrichmentTasks.set(task.id, task);
+    }
+  }
+
+  enrichmentCompleted.value = isEnrichmentCompleted();
+
+  if (enrichmentCompleted.value) {
     handleEnrichmentNotification(Array.from(enrichmentTasks.values()));
     stopEnrichment();
   }
-});
+}
 
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
@@ -253,7 +256,7 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, alreadyEnriched, task } = response._data;
+      const { total, available, alreadyEnriched, tasks } = response._data;
 
       if (response.status === 402) {
         stopEnrichment();
@@ -266,8 +269,9 @@ async function enrichPerson(
             t('notification.summary'),
             t('notification.already_enriched'),
           );
-        } else if (task.id) {
-          updateEnrichmentProgress([task]);
+        } else if (tasks.length) {
+          totalTasks.value = tasks.length;
+          updateEnrichmentProgress(tasks);
         }
       }
     },
@@ -310,6 +314,18 @@ async function enrichPersonBulk(
   });
 }
 
+async function enrichPersonFallbackToBulk(
+  updateEmptyFieldsOnly: boolean,
+  enrichAll: boolean,
+  contacts: Partial<Contact>[],
+) {
+  try {
+    await enrichPerson(updateEmptyFieldsOnly, contacts[0]);
+  } catch {
+    await enrichPersonBulk(updateEmptyFieldsOnly, enrichAll, contacts);
+  }
+}
+
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     totalTasks.value = 0;
@@ -319,7 +335,11 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     setupEnrichmentRealtime();
 
     if (contactsToEnrich.value?.length === 1) {
-      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value![0]);
+      await enrichPersonFallbackToBulk(
+        updateEmptyFieldsOnly,
+        enrichAllContacts.value,
+        contactsToEnrich.value!,
+      );
     } else {
       await enrichPersonBulk(
         updateEmptyFieldsOnly,
