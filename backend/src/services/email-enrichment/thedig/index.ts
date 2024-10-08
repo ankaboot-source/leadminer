@@ -89,8 +89,6 @@ export default class TheDigEmailEnricher implements EmailEnricher {
           organization,
           jobTitle,
           location,
-          givenName,
-          familyName,
           alternateNames,
           image
         }) =>
@@ -98,8 +96,6 @@ export default class TheDigEmailEnricher implements EmailEnricher {
             organization,
             jobTitle,
             location,
-            givenName,
-            familyName,
             alternateNames,
             image
           ].every((field) => field === undefined || field.length === 0)

@@ -154,20 +154,6 @@ function stopEnrichment() {
   $leadminerStore.activeEnrichment = false;
 }
 
-function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
-  for (const task of tasks) {
-    enrichmentTasks.set(task.id, task);
-  }
-
-  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
-  if (
-    (totalTasks.value === 0 || currentTasks.length === totalTasks.value) &&
-    !currentTasks.some(({ status }) => status === 'running')
-  ) {
-    enrichmentCompleted.value = true;
-  }
-}
-
 function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
   let totalEnriched = 0;
 
@@ -213,12 +199,32 @@ function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
   }
 }
 
-watch(enrichmentCompleted, (value) => {
-  if (value) {
+function isEnrichmentCompleted() {
+  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
+  if (
+    (totalTasks.value > 0 || currentTasks.length === totalTasks.value) &&
+    !currentTasks.some(({ status }) => status === 'running')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
+  for (const task of tasks) {
+    const existingTask = enrichmentTasks.get(task.id);
+    if (!existingTask || existingTask.status === 'running') {
+      enrichmentTasks.set(task.id, task);
+    }
+  }
+
+  enrichmentCompleted.value = isEnrichmentCompleted();
+
+  if (enrichmentCompleted.value) {
     handleEnrichmentNotification(Array.from(enrichmentTasks.values()));
     stopEnrichment();
   }
-});
+}
 
 function setupEnrichmentRealtime() {
   subscription = useSupabaseClient()
@@ -253,7 +259,7 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, alreadyEnriched, task } = response._data;
+      const { total, available, alreadyEnriched, tasks } = response._data;
 
       if (response.status === 402) {
         stopEnrichment();
@@ -266,8 +272,9 @@ async function enrichPerson(
             t('notification.summary'),
             t('notification.already_enriched'),
           );
-        } else if (task.id) {
-          updateEnrichmentProgress([task]);
+        } else if (tasks.length) {
+          totalTasks.value = tasks.length;
+          updateEnrichmentProgress(tasks);
         }
       }
     },

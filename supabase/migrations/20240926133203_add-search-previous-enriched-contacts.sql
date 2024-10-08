@@ -10,7 +10,7 @@ WITH recent_tasks AS (
          user_id,
          started_at
   FROM public.tasks,
-       jsonb_array_elements(details->'result') AS result_item
+       jsonb_array_elements(details->'result'->'data') AS result_item
   WHERE result_item->>'email' = ANY(emails)
     AND status = 'done'
     AND category = 'enriching'
