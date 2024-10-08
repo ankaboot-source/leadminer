@@ -278,6 +278,18 @@ async function enrichPerson(
   });
 }
 
+async function enrichPersonFallbackToBulk(
+  updateEmptyFieldsOnly: boolean,
+  enrichAll: boolean,
+  contacts: Partial<Contact>[],
+) {
+  try {
+    await enrichPerson(updateEmptyFieldsOnly, contacts[0]);
+  } catch {
+    await enrichPersonBulk(updateEmptyFieldsOnly, enrichAll, contacts);
+  }
+}
+
 async function enrichPersonBulk(
   updateEmptyFieldsOnly: boolean,
   enrichAll: boolean,
@@ -323,7 +335,11 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     setupEnrichmentRealtime();
 
     if (contactsToEnrich.value?.length === 1) {
-      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value![0]);
+      await enrichPersonFallbackToBulk(
+        updateEmptyFieldsOnly,
+        enrichAllContacts.value,
+        contactsToEnrich.value!,
+      );
     } else {
       await enrichPersonBulk(
         updateEmptyFieldsOnly,
