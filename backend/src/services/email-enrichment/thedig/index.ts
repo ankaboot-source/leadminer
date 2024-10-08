@@ -85,20 +85,10 @@ export default class TheDigEmailEnricher implements EmailEnricher {
         }
       )
       .filter(
-        ({
-          organization,
-          jobTitle,
-          location,
-          alternateNames,
-          image
-        }) =>
-          ![
-            organization,
-            jobTitle,
-            location,
-            alternateNames,
-            image
-          ].every((field) => field === undefined || field.length === 0)
+        ({ organization, jobTitle, location, alternateNames, image }) =>
+          ![organization, jobTitle, location, alternateNames, image].every(
+            (field) => field === undefined || field.length === 0
+          )
       );
     return {
       data: enriched,
