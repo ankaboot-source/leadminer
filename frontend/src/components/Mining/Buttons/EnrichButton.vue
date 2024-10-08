@@ -201,13 +201,10 @@ function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
 
 function isEnrichmentCompleted() {
   const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
-  if (
+  return Boolean(
     (totalTasks.value > 0 || currentTasks.length === totalTasks.value) &&
-    !currentTasks.some(({ status }) => status === 'running')
-  ) {
-    return true;
-  }
-  return false;
+      !currentTasks.some(({ status }) => status === 'running'),
+  );
 }
 
 function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
