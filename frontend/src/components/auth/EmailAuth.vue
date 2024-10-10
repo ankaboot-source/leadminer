@@ -62,6 +62,9 @@
             invalidPassword
           "
           aria-describedby="password-help"
+          :weak-label="$t('auth.suggestion_weak_label')"
+          :medium-label="$t('auth.suggestion_medium_label')"
+          :strong-label="$t('auth.suggestion_strong_label')"
           @input="
             () => {
               invalidPassword = false;
