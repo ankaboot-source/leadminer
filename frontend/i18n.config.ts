@@ -212,7 +212,7 @@ export default defineI18nConfig(() => ({
         same_as: 'Réseaux sociaux',
         image: 'Avatar',
         updated_at: 'Date de modification',
-        created_at: 'Date de creation',
+        created_at: 'Date de création',
         given_name_definition: 'Le prénom de ce contact',
         family_name_definition: 'Le nom de famille de ce contact',
         alternate_names_definition:
@@ -220,7 +220,7 @@ export default defineI18nConfig(() => ({
         address_definition: "L'emplacement de ce contact",
         works_for_definition: 'Organisation pour laquelle ce contact travaille',
         updated_at_definition: 'Dernière date de modification',
-        created_at_definition: 'La date de creation de ce contact',
+        created_at_definition: 'La date de création de ce contact',
         job_title_definition: 'Le titre du poste de ce contact',
         status: {
           valid: 'VALIDE',
