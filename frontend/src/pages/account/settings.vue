@@ -206,12 +206,23 @@ async function updateUserAccount(userAccount: UserAttributes) {
     throw accountUpdateError;
   }
 
-  $toast.add({
-    severity: 'info',
-    summary: t('email_updated'),
-    detail: t('check_email_confirmation'),
-    life: 3000,
-  });
+  if (userAccount.email) {
+    $toast.add({
+      severity: 'info',
+      summary: t('email_update'),
+      detail: t('email_update_detail'),
+      life: 5000,
+    });
+  }
+
+  if (userAccount.password) {
+    $toast.add({
+      severity: 'success',
+      summary: t('password_updated'),
+      detail: t('password_update_detail'),
+      life: 3000,
+    });
+  }
 }
 
 async function updateUserProfile(userProfile: Partial<Profile>) {
@@ -321,8 +332,10 @@ async function deleteAccount() {
     "account_deleted_success": "Your account has been deleted successfully",
     "error": "Error",
     "session_expired": "Session is expired.",
-    "email_updated": "Email address updated",
-    "check_email_confirmation": "Please check your email to confirm the new email address.",
+    "email_update": "Email address update",
+    "email_update_detail": "Please check your email to confirm the new email address.",
+    "password_updated": "Password updated",
+    "password_update_detail": "Your password has been updated successfully.",
     "profile_updated": "Profile updated",
     "profile_success": "Profile information updated successfully",
     "change_email": {
@@ -350,8 +363,10 @@ async function deleteAccount() {
     "account_deleted_success": "Votre compte a été supprimé avec succès",
     "error": "Erreur",
     "session_expired": "La session est expirée.",
-    "email_updated": "Adresse e-mail mise à jour",
-    "check_email_confirmation": "Veuillez vérifier votre e-mail pour confirmer la nouvelle adresse e-mail.",
+    "email_update": "Adresse e-mail mise à jour",
+    "email_update_detail": "Veuillez vérifier votre e-mail pour confirmer la nouvelle adresse e-mail.",
+    "password_updated": "Mot de passe mis à jour",
+    "password_update_detail": "Votre mot de passe a été mis à jour avec succès.",
     "profile_updated": "Profil mis à jour",
     "profile_success": "Les informations du profil ont été mises à jour avec succès",
     "change_email": {
