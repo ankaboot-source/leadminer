@@ -39,7 +39,6 @@
         :label="t('enrich_contacts', $contactsStore.selectedContactsCount)"
         :disabled="
           $contactsStore.selectedContactsCount === 0 ||
-          !verificationFinished ||
           !$leadminerStore.cleaningFinished
         "
         @click="$stepper.next()"
