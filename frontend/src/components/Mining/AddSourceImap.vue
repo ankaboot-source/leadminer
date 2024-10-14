@@ -268,7 +268,7 @@ async function onSubmitImapCredentials() {
     "Button": {
       "connect": "Connect",
       "manual": "Configure manually",
-      "automatic": "Configure Automatically"
+      "automatic": "Configure automatically"
     }
   },
   "fr": {
