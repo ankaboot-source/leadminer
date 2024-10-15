@@ -19,10 +19,9 @@ const { error_description: errorDescription, navigate_to: navigateToPage } = {
 
 watch(
   user,
-  async () => {
+  () => {
     if (user.value) {
-      await nextTick()
-      navigateTo(`${navigateToPage ?? '/dashboard'}`);
+      useRouter().push(`${navigateToPage ?? '/dashboard'}`);
     }
   },
   { immediate: true },
