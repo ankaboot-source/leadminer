@@ -21,7 +21,7 @@ watch(
   user,
   async () => {
     if (user.value) {
-      await nextTick()
+      await nextTick();
       navigateTo(`${navigateToPage ?? '/dashboard'}`);
     }
   },
