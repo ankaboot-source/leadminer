@@ -57,7 +57,7 @@ interface Chunk {
   value: string;
 }
 
-const MAX_CHUNK_SIZE = 1000;
+const MAX_CHUNK_SIZE = 3180;
 const TO_BASE64URL =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'.split('');
 
