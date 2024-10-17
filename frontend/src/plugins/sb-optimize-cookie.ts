@@ -107,10 +107,7 @@ function stringToBase64URL(str: string) {
  * @param codepoint The Unicode codepoint.
  * @param emit      Function which will be called for each UTF-8 byte that represents the codepoint.
  */
-function codepointToUTF8(
-  codepoint: number,
-  emit: (byte: number) => void,
-) {
+function codepointToUTF8(codepoint: number, emit: (byte: number) => void) {
   if (codepoint <= 0x7f) {
     emit(codepoint);
     return;
@@ -185,7 +182,7 @@ function createChunks(key: string, value: string, chunkSize?: number): Chunk[] {
       encodedChunkHead = encodedChunkHead.slice(0, lastEscapePos);
     }
 
-    let valueHead: string = '';
+    let valueHead = '';
 
     // Check if the chunk was split along a valid unicode boundary.
     while (encodedChunkHead.length > 0) {
@@ -229,7 +226,7 @@ function createSupabaseCookies(
     secure: cookieOptions.secure,
   };
 
-  const encoded = 'base64-' + stringToBase64URL(value);
+  const encoded = `base64-${stringToBase64URL(value)}`;
   const setCookies = createChunks(key, encoded).map(({ name, value: val }) => ({
     name,
     value: val,
@@ -261,13 +258,13 @@ function deleteSupabaseCookies(keyHints: string[]) {
   const cookies = document.cookie.split('; ');
   cookies.forEach((cookie) => {
     const cookieName = cookie.split('=')[0];
-    if (chunkNames.find((name) => name == cookieName)) {
+    if (chunkNames.find((name) => name === cookieName)) {
       useCookie(cookieName).value = null;
     }
   });
 }
 
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(() => {
   const supabase = useSupabaseClient();
   const newSession = ref<Session | null>(null);
 
@@ -293,7 +290,7 @@ export default defineNuxtPlugin(async () => {
     });
   }
 
-  supabase.auth.onAuthStateChange(async (_, session) => {
+  supabase.auth.onAuthStateChange((_, session) => {
     if (session) {
       newSession.value = session;
     }
