@@ -107,10 +107,7 @@ function stringToBase64URL(str: string) {
  * @param codepoint The Unicode codepoint.
  * @param emit      Function which will be called for each UTF-8 byte that represents the codepoint.
  */
-function codepointToUTF8(
-  codepoint: number,
-  emit: (byte: number) => void,
-) {
+function codepointToUTF8(codepoint: number, emit: (byte: number) => void) {
   if (codepoint <= 0x7f) {
     emit(codepoint);
     return;
