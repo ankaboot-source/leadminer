@@ -14,11 +14,10 @@
   >
     <div class="flex flex-col space-y-2">
       <div class="w-full flex flex-col gap-1">
-        <label for="email">Email</label>
+        <label for="email_username">Email or Username</label>
         <InputText
           v-model="imapEmail"
           :disabled="loadingSave"
-          :invalid="invalidEmailInput(imapEmail)"
           class="w-full"
           @click="resetAdvancedSettings"
         />
@@ -85,7 +84,7 @@
             class="w-full sm:w-auto"
             :label="t('Button.connect')"
             :loading="loadingSave"
-            :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
+            :disabled="imapEmail.length === 0 || imapPassword.length === 0"
             @click="onSubmitImapCredentials"
           />
         </div>
