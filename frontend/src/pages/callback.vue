@@ -24,7 +24,6 @@ onMounted(() => {
       detail: decodeURIComponent(errorDescription as string),
       life: 5000,
     });
-    return;
   }
 
   if (!user.value) {
