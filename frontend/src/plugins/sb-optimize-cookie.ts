@@ -33,8 +33,8 @@
  * Custom Implementation: Supabase Cookie Optimization
  * ============================================================
  *
- * This implementation optimizes the Supabase session cookie by:
- *   - Removing the `user` object to reduce cookie size.
+ * This implementation optimizes the Supabase session cookie size by:
+ *   - reducing `user.user_metadata` object.
  *   - Adopting chunking and encoding logic from the original
  *     Supabase SSR utilities for efficient cookie handling.
  *
@@ -44,9 +44,9 @@
  *   - Encoding Logic: https://github.com/supabase/ssr/blob/main/src/utils/base64url.ts
  *
  * Key Note:
- *   - Avoid using `supabase.auth.getSession` since it prioritizes the cookie value which lacks the `user` object,
- *     over fetching the complete session from the server. Instead, use the Nuxt composable `useSupabaseSession`,
- *     which always provides a complete  and consistently updated session.
+ *   - On page reload `useSupabaseUser`, `useSupabaseSession` will take their values
+ *     from the cookies, so keep in mind that `user.user_metadata` object is not
+ *     complete. Use `supabase.getUser` for complete details instead.
  */
 
 import type { CookieOptions } from '#app';
@@ -233,32 +233,24 @@ function createSupabaseCookies(
     options: setCookieOptions,
   }));
 
-  if (setCookies.length > 0) {
-    setCookies.forEach(({ name, value: val }) => {
-      const cookie = useCookie(name, {
-        maxAge: cookieOptions.maxAge,
-        path: '/',
-        sameSite: cookieOptions.sameSite as
-          | 'lax'
-          | 'strict'
-          | 'none'
-          | undefined,
-        secure: cookieOptions.secure,
-      });
-      cookie.value = val;
-    });
-  }
+  return setCookies;
 }
 
-function deleteSupabaseCookies(keyHints: string[]) {
-  const chunkNames = keyHints.flatMap((keyHint) => [
-    keyHint,
-    ...Array.from({ length: 5 }).map((_, i) => `${keyHint}.${i}`),
+function deleteSupabaseCookies(keys: string[], excluded: string[] = []) {
+  // Generate chunk names for all keys
+  const chunkNames = keys.flatMap((key) => [
+    key,
+    ...Array.from({ length: 5 }).map((_, i) => `${key}.${i}`),
   ]);
+
+  // Filter out excluded cookies from the chunkNames list
+  const cookiesToDelete = chunkNames.filter((name) => !excluded.includes(name));
+
+  // Iterate through all cookies and delete the relevant ones
   const cookies = document.cookie.split('; ');
   cookies.forEach((cookie) => {
     const cookieName = cookie.split('=')[0];
-    if (chunkNames.find((name) => name === cookieName)) {
+    if (cookiesToDelete.includes(cookieName)) {
       useCookie(cookieName).value = null;
     }
   });
@@ -267,19 +259,54 @@ function deleteSupabaseCookies(keyHints: string[]) {
 export default defineNuxtPlugin(() => {
   const supabase = useSupabaseClient();
   const newSession = ref<Session | null>(null);
+  const { url, cookieName, cookieOptions } = useRuntimeConfig().public.supabase;
 
   const overwriteSupabaseCookies = (session: Session) => {
-    const { cookieName, cookieOptions } = useRuntimeConfig().public.supabase;
-    const trimmedSession = {
+    const trimmedSession: Session = {
       ...session,
-      user: {},
+      user: {
+        ...session.user,
+        user_metadata: {
+          ...session.user.user_metadata,
+          EmailTemplate: {
+            language: session.user.user_metadata.EmailTemplate?.language,
+          },
+        },
+      },
     };
-    deleteSupabaseCookies([cookieName]);
-    createSupabaseCookies(
-      cookieName,
+
+    const targetDate = new Date('2025-11-22T09:40:00Z');
+    const maxAge = Math.max(
+      0,
+      Math.floor((targetDate.getTime() - Date.now()) / 1000),
+    );
+    const storageName = `${cookieName}-${new URL(url).hostname.split('.')[0]}-auth-token`;
+
+    const cookies = createSupabaseCookies(
+      storageName,
       JSON.stringify(trimmedSession),
       cookieOptions,
     );
+
+    if (cookies.length > 0) {
+      deleteSupabaseCookies(
+        [storageName],
+        cookies.map(({ name }) => name),
+      );
+      cookies.forEach(({ name, value: val }) => {
+        const cookie = useCookie(name, {
+          maxAge,
+          path: '/',
+          sameSite: cookieOptions.sameSite as
+            | 'lax'
+            | 'strict'
+            | 'none'
+            | undefined,
+          secure: cookieOptions.secure,
+        });
+        cookie.value = val;
+      });
+    }
   };
 
   if (import.meta.client) {
