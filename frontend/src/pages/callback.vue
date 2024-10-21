@@ -17,16 +17,6 @@ const { error_description: errorDescription, navigate_to: navigateToPage } = {
   ...route.query,
 };
 
-watch(
-  user,
-  () => {
-    if (user.value) {
-      navigateTo(`${navigateToPage ?? '/'}`);
-    }
-  },
-  { immediate: true },
-);
-
 onMounted(() => {
   if (errorDescription?.length) {
     $toast.add({
@@ -38,6 +28,18 @@ onMounted(() => {
 
   if (!user.value) {
     navigateTo('/auth/login', {});
+    return;
   }
+
+  watch(
+    user,
+    async () => {
+      if (user.value) {
+        await nextTick();
+        navigateTo(`${navigateToPage ?? '/dashboard'}`);
+      }
+    },
+    { immediate: true },
+  );
 });
 </script>

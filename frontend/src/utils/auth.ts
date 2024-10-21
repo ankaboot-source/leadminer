@@ -11,7 +11,7 @@ export async function signInWithOAuth(provider: Provider) {
       skipBrowserRedirect: false,
       scopes:
         provider === 'azure'
-          ? 'https://outlook.office.com/IMAP.AccessAsUser.All'
+          ? 'email https://outlook.office.com/IMAP.AccessAsUser.All'
           : 'https://mail.google.com/',
 
       queryParams: {

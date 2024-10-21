@@ -14,14 +14,12 @@
   >
     <div class="flex flex-col space-y-2">
       <div class="w-full flex flex-col gap-1">
-        <label for="email">Email</label>
+        <label for="email_username">Email or Username</label>
         <InputText
           v-model="imapEmail"
           :disabled="loadingSave"
-          :invalid="invalidEmailInput(imapEmail)"
           class="w-full"
           @click="resetAdvancedSettings"
-          @update:model-value="imapAdvancedSettings = false"
         />
       </div>
       <div class="w-full flex flex-col gap-1">
@@ -73,19 +71,20 @@
           class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2"
         >
           <Button
-            v-if="!imapAdvancedSettings"
             type="button"
             class="w-full sm:w-auto"
-            :label="t('Button.advanced')"
+            :label="
+              !imapAdvancedSettings ? t('Button.manual') : t('Button.automatic')
+            "
             severity="secondary"
-            @click="imapAdvancedSettings = true"
+            @click="imapAdvancedSettings = !imapAdvancedSettings"
           />
           <Button
             type="button"
             class="w-full sm:w-auto"
             :label="t('Button.connect')"
             :loading="loadingSave"
-            :disabled="isInvalidEmail(imapEmail) || imapPassword.length === 0"
+            :disabled="imapEmail.length === 0 || imapPassword.length === 0"
             @click="onSubmitImapCredentials"
           />
         </div>
@@ -267,7 +266,8 @@ async function onSubmitImapCredentials() {
     "unable_to_detect": "Unable to detect your IMAP configuration. Please add them manually.",
     "Button": {
       "connect": "Connect",
-      "advanced": "Configure manually"
+      "manual": "Configure manually",
+      "automatic": "Configure automatically"
     }
   },
   "fr": {
@@ -278,7 +278,8 @@ async function onSubmitImapCredentials() {
     "unable_to_detect": "Impossible de détecter votre configuration IMAP. Veuillez les ajouter manuellement.",
     "Button": {
       "connect": "Se connecter",
-      "advanced": "Configurer manuellement"
+      "manual": "Configurer manuellement",
+      "automatic": "Configurer automatiquement"
     }
   }
 }

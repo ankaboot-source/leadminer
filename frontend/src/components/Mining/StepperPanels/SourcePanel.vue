@@ -53,7 +53,7 @@
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
           icon="pi pi-microsoft"
-          label="Microsoft or Outlook"
+          :label="t('microsoft_or_outlook')"
           source="azure"
         />
         <imap-source
@@ -134,14 +134,16 @@ defineExpose({
     "add_new_email_provider": "Add a new email provider",
     "fetch_sources_failed": "Failed to fetch mining sources",
     "email_address": "email address",
-    "extract_contacts": "Extract contacts"
+    "extract_contacts": "Extract contacts",
+    "microsoft_or_outlook": "Microsoft or Outlook"
   },
   "fr": {
     "pick_existing_email": "Choisissez une adresse e-mail existante pour l’extraction",
     "add_new_email_provider": "Ajouter un nouveau compte e-mail",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
     "email_address": "adresse e-mail",
-    "extract_contacts": "Extraire les contacts"
+    "extract_contacts": "Extraire les contacts",
+    "microsoft_or_outlook": "Microsoft ou Outlook"
   }
 }
 </i18n>

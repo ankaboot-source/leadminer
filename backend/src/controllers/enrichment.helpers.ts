@@ -84,26 +84,6 @@ export async function getRefinedPersonsEmails(userId: string) {
 }
 
 /**
- * Queries enriched emails for a given user.
- * @param userId - The ID of the user.
- * @returns List of enriched email addresses.
- * @throws Error if there is an issue fetching data from the database.
- */
-export async function getEnrichedEmails(userId: string) {
-  const { data: emails, error } = await supabaseClient
-    .from('engagement')
-    .select('email')
-    .match({ user_id: userId, engagement_type: 'ENRICH' })
-    .returns<{ email: string }[]>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return emails.map((record) => record.email);
-}
-
-/**
  * Queries all contacts from the persons that are not yet enriched.
  * @param userId - The ID of the user.
  * @returns List of contacts to be enriched.
@@ -114,12 +94,8 @@ export async function getContactsToEnrich(
   enrichAll: boolean,
   contacts?: Partial<Contact>[]
 ) {
-  const enrichedEmails = await getEnrichedEmails(userId);
-
-  if (!enrichAll && contacts?.length) {
-    return contacts.filter(
-      ({ email }) => !enrichedEmails.includes(email as string)
-    );
+  if (!enrichAll) {
+    return contacts ?? [];
   }
 
   const refinedEmails = await getRefinedPersonsEmails(userId);
@@ -127,7 +103,6 @@ export async function getContactsToEnrich(
   const { data, error } = await supabaseClient
     .from('persons')
     .select('email, name')
-    .not('email', 'in', `(${enrichedEmails.join(',')})`)
     .in('email', refinedEmails)
     .returns<{ email: string; name: string }[]>();
 
