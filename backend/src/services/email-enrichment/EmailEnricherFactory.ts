@@ -1,6 +1,6 @@
 import { EmailEnricher, Person } from './EmailEnricher';
 
-export type EnricherType = 'voilanorbert' | 'thedig';
+export type EnricherType = 'voilanorbert' | 'thedig' | 'proxycurl';
 
 interface Config {
   LOAD_BALANCE_ENRICHERS: boolean;

@@ -91,6 +91,10 @@ const schema = z.object({
   THEDIG_URL: z.string().min(1).optional(),
   THEDIG_API_KEY: z.string().min(1).optional(),
 
+  /* PROXYCURL */
+  PROXYCURL_URL: z.string().min(1).optional(),
+  PROXYCURL_API_KEY: z.string().min(1).optional(),
+
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production')
 });
 
