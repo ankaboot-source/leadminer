@@ -46,7 +46,7 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
       `[${this.constructor.name}]-[enrichmentMapper]: Parsing enrichment results`,
       enrichedData
     );
-    const { results } = enrichedData;
+    const results = enrichedData.results ?? enrichedData;
     const enriched = results
       .map(
         ({

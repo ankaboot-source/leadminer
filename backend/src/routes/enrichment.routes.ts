@@ -10,24 +10,28 @@ export default function initializeEnrichmentRoutes(
 ) {
   const router = Router();
 
-  const { enrichSync, enrichAsync, webhook, preEnrichmentMiddleware } =
-    initializeEnrichmentController(userResolver);
+  const {
+    enrichPerson,
+    enrichPersonBulk,
+    enrichWebhook,
+    preEnrichmentMiddleware
+  } = initializeEnrichmentController(userResolver);
 
   router.post(
     '/person',
     initializeAuthMiddleware(authResolver),
     preEnrichmentMiddleware,
-    enrichSync
+    enrichPerson
   );
 
   router.post(
     '/person/bulk',
     initializeAuthMiddleware(authResolver),
     preEnrichmentMiddleware,
-    enrichAsync
+    enrichPersonBulk
   );
 
-  router.post('/webhook/:id', webhook);
+  router.post('/webhook/:id', enrichWebhook);
 
   return router;
 }

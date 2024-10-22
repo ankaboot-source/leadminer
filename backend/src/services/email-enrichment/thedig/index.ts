@@ -1,6 +1,9 @@
 import { Logger } from 'winston';
 import { EmailEnricher, EnricherResult, Person } from '../EmailEnricher';
-import Voilanorbert, { EnrichPersonResponse } from './client';
+import Voilanorbert, {
+  EnrichPersonRequest,
+  EnrichPersonResponse
+} from './client';
 
 export default class TheDigEmailEnricher implements EmailEnricher {
   constructor(
@@ -8,18 +11,64 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
+  private static isPersonEnriched(
+    personRequest: EnrichPersonRequest,
+    personResponse: EnrichPersonResponse
+  ): boolean {
+    return Object.keys(personRequest).some((key) => {
+      const requestValue = personRequest[key as keyof EnrichPersonRequest];
+      const responseValue = personResponse[key as keyof EnrichPersonResponse];
+      if (Array.isArray(requestValue) || Array.isArray(responseValue)) {
+        return JSON.stringify(requestValue) !== JSON.stringify(responseValue);
+      }
+      return requestValue !== responseValue;
+    });
+  }
+
+  private enrichRequestMapper(person: Partial<Person>) {
+    let personMapped: EnrichPersonRequest = {
+      email: person.email as string,
+      name: person.name as string,
+      homeLocation: person.location,
+      alternateName: person.alternate_names,
+      familyName: person.family_name,
+      givenName: person.given_name,
+      identifier: person.identifiers,
+      image: person.image ? [person.image] : undefined,
+      jobTitle: person.job_title ? [person.job_title] : undefined,
+      sameAs: person.same_as,
+      url: person.url,
+      workLocation: person.location,
+      worksFor: person.works_for ? [person.works_for] : undefined
+    };
+
+    personMapped = Object.fromEntries(
+      Object.entries(personMapped).filter(([, value]) => value !== undefined)
+    ) as EnrichPersonRequest;
+
+    this.logger.debug(
+      `[${this.constructor.name}]-[enrichmentMapper]: Formatting person for thedig request`,
+      personMapped
+    );
+
+    return personMapped;
+  }
+
   async enrichSync(person: Partial<Person>) {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person
     );
     try {
-      const { email, name } = person;
-      const response = await this.client.enrich({
-        email: email as string,
-        name
-      });
-      return this.enrichmentMapper([response]);
+      const personMapped = this.enrichRequestMapper(person);
+      const response = await this.client.enrich(personMapped);
+      const enrichResponse = TheDigEmailEnricher.isPersonEnriched(
+        personMapped,
+        response
+      )
+        ? this.enrichmentMapper([response])
+        : { data: [], raw_data: response };
+      return enrichResponse;
     } catch (err) {
       throw new Error((err as Error).message);
     }
@@ -53,41 +102,28 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     );
     const results = enrichedData;
     const enriched: EnricherResult[] = results
-      .map(
-        ({
-          email,
-          name,
-          worksFor,
-          jobTitle,
-          homeLocation,
-          workLocation,
-          givenName,
-          familyName,
-          alternateName,
-          sameAs,
-          image
-        }) => {
-          const location = [homeLocation, workLocation]
-            .flat()
-            .filter((loc): loc is string => !!loc);
-          return {
-            email,
-            name: name || undefined,
-            givenName: givenName || undefined,
-            familyName: familyName || undefined,
-            alternateNames: alternateName,
-            image: image?.length ? image[0] : undefined,
-            location: location.length ? location : undefined,
-            organization: worksFor?.length ? worksFor[0] : undefined,
-            jobTitle: jobTitle?.length ? jobTitle[0] : undefined,
-            sameAs: sameAs?.length ? sameAs : undefined
-          };
-        }
-      )
+      .map((person) => ({
+        email: person.email,
+        name: person.name,
+        givenName: person.givenName,
+        familyName: person.familyName,
+        image: person.image?.[0],
+        jobTitle: person.jobTitle?.[0],
+        organization: person.worksFor?.[0],
+        sameAs: person.sameAs,
+        identifiers: person.identifier,
+        alternateNames: person.alternateName,
+        location: [
+          person.homeLocation?.join(','),
+          person.workLocation?.join(',')
+        ]
+          .flat()
+          .filter((loc): loc is string => Boolean(loc))
+      }))
       .filter(
         ({ organization, jobTitle, location, alternateNames, image }) =>
           ![organization, jobTitle, location, alternateNames, image].every(
-            (field) => field === undefined || field.length === 0
+            (field) => !field || field.length === 0
           )
       );
     return {
