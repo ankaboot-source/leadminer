@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.search_recent_enriched_emails(emails text[])
+CREATE OR REPLACE FUNCTION public.enriched_most_recent(emails text[])
 RETURNS SETOF jsonb
 LANGUAGE sql
 STABLE
@@ -10,7 +10,7 @@ WITH recent_tasks AS (
          user_id,
          started_at
   FROM public.tasks,
-       jsonb_array_elements(details->'result'->'data') AS result_item
+       jsonb_array_elements(details->'result'->'raw_data') AS result_item
   WHERE result_item->>'email' = ANY(emails)
     AND status = 'done'
     AND category = 'enriching'
