@@ -10,7 +10,7 @@ import {
   getEnrichmentTask,
   redactEnrichmentTask,
   TaskEnrich,
-  updateEnrichmentTask,
+  updateEnrichmentTask
 } from './enrichment.helpers';
 import Billing from '../utils/billing-plugin';
 import emailEnrichmentService from '../services/email-enrichment';
