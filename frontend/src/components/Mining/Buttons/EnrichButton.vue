@@ -160,11 +160,11 @@ function handleEnrichmentProgressNotification(task: EnrichmentTask) {
     details: { total_enriched },
   } = task;
 
-  if (task.status === 'running') return
+  if (task.status === 'running') return;
 
   // status done, canceled
   stopEnrichment();
-  
+
   if (status === 'canceled') {
     showNotification(
       'error',
