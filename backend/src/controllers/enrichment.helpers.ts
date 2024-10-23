@@ -187,8 +187,8 @@ export async function updateEnrichmentTask(
     enrichmentTask.status = enrichmentTask.details.result.every(({ error }) =>
       Boolean(error)
     )
-      ? 'done'
-      : 'canceled';
+      ? 'canceled'
+      : 'done';
   } else {
     enrichmentTask.status = status;
   }
@@ -343,16 +343,7 @@ export async function enrichFromCache(
   }
 }
 
-// Helper function for partitioning an array
-function partition<T>(array: T[], predicate: (item: T) => boolean): [T[], T[]] {
-  return array.reduce<[T[], T[]]>(
-    ([pass, fail], elem) =>
-      predicate(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]],
-    [[], []]
-  );
-}
-
-async function enrichSync({
+export async function enrichSync({
   enricher,
   contacts
 }: {
@@ -360,7 +351,7 @@ async function enrichSync({
   enricher: Enricher;
   contacts: Partial<Contact>[];
 }): Promise<[TaskEnrich['details']['result'], Partial<Contact>[]]> {
-  const [toEnrich, notEnriched] = partition(contacts, enricher.rule);
+  const toEnrich = contacts.filter((contact) => enricher.rule(contact));
 
   try {
     const results = (
@@ -371,7 +362,7 @@ async function enrichSync({
               await enricher.instance.enrichSync(c);
             return {
               data,
-              raw_data: rawData,
+              raw_data: [rawData],
               instance: enricher.type
             };
           } catch (err) {
@@ -387,11 +378,10 @@ async function enrichSync({
     const enrichedEmails = new Set(
       results.flat().flatMap(({ data = [] }) => data.map(({ email }) => email))
     );
-
-    notEnriched.push(
-      ...contacts.filter((c) => enrichedEmails.has(c.email as string))
+    const notEnriched = contacts.filter(
+      (c) => !enrichedEmails.has(c.email as string)
     );
-    return [results, contacts];
+    return [results, notEnriched];
   } catch (err) {
     return [[], contacts];
   }
@@ -421,12 +411,13 @@ export async function enrichPersonSync(
         contacts: contactsToEnrich
       })) ?? [[], []];
 
-      if (results.length) {
+      const enrichedResult = results.flatMap(({ data = [] }) => data);
+      if (enrichedResult.length) {
         await enrichContactDB(
           userResolver,
           task.user_id,
           task.details.update_empty_fields_only,
-          results.flatMap(({ data = [] }) => data)
+          enrichedResult
         );
       }
 
@@ -461,6 +452,7 @@ export async function enrichWebhook(
   }
 
   const enrichResult: TaskEnrich['details']['result'][0] = {
+    token,
     instance: enricher.instance,
     data: [],
     raw_data: []

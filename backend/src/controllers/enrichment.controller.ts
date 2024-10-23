@@ -153,7 +153,7 @@ async function enrichPersonBulk(
     const voilanorbert = emailEnrichmentService.getEnricher({}, 'voilanorbert');
     try {
       const { token } = await voilanorbert.instance.enrichAsync(
-        contactsToEnrich,
+        notEnriched,
         `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/${task.id}`
       );
       enrichResult.push({
@@ -190,6 +190,9 @@ async function enrichPersonWebhook(
   }
 
   const result = await enrichWebhook(userResolver, task, token, req.body);
+  task.details.result = task.details.result.filter(
+    (data) => data.token !== token
+  );
   await updateEnrichmentTask(task, [result], 'done');
   return res.status(200);
 }

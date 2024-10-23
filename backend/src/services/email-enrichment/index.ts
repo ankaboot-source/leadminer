@@ -77,7 +77,8 @@ const ENRICHERS: Enricher[] = [
     type: 'thedig',
     default: false,
     instance: ENRICH_THEDIG,
-    rule: (contact: Partial<Person>) => Boolean(contact.email && contact.name)
+    rule: (contact: Partial<Person>) =>
+      Boolean(contact.email) && Boolean(contact.name)
   }
 ].filter((enricher): enricher is Enricher => enricher !== null);
 
