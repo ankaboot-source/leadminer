@@ -54,24 +54,24 @@ const createMockEnricher = (
   type: string,
   ruleFn: (contact: Partial<Person>) => Boolean
 ) => ({
-    type,
-    default: false,
-    rule: jest.fn(ruleFn),
-    instance: {
-      enrichSync: jest.fn(async (contact: Partial<Person>) => ({
-        instance: type,
-        data: [
-          {
-            email: contact.email,
-            name: contact.name,
-            organization: 'Test Corp'
-          }
-        ],
-        raw_data: [{ someData: 'value' }]
-      })),
-      enrichmentMapper: jest.fn()
-    }
-  });
+  type,
+  default: false,
+  rule: jest.fn(ruleFn),
+  instance: {
+    enrichSync: jest.fn(async (contact: Partial<Person>) => ({
+      instance: type,
+      data: [
+        {
+          email: contact.email,
+          name: contact.name,
+          organization: 'Test Corp'
+        }
+      ],
+      raw_data: [{ someData: 'value' }]
+    })),
+    enrichmentMapper: jest.fn()
+  }
+});
 
 jest.mock('../../../src/services/email-enrichment', () => ({
   getEnricher: jest.fn((_, type: string) => {
