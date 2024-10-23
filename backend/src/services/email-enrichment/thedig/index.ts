@@ -43,7 +43,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     };
 
     personMapped = Object.fromEntries(
-      Object.entries(personMapped).filter(([, value]) => value !== undefined)
+      Object.entries(personMapped).filter(([, value]) => Boolean(value))
     ) as EnrichPersonRequest;
 
     this.logger.debug(
