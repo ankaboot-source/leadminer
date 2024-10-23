@@ -42,10 +42,6 @@ async function checkAndFilterEligibleContacts(
       contacts
     );
 
-    if (!contactsToEnrich.length) {
-      return res.status(200).json({ alreadyEnriched: true });
-    }
-
     if (Billing) {
       const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
         await Billing.validateCustomerCredits(user.id, contactsToEnrich.length);

@@ -94,8 +94,6 @@
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
-
-import { isInvalidEmail } from '@/utils/email';
 import type { MiningSource } from '~/types/mining';
 
 const { t } = useI18n({
@@ -131,9 +129,6 @@ const formErrors: Record<string, Ref> = {
 };
 
 const loadingSave = ref(false);
-
-const invalidEmailInput = (email: string | undefined) =>
-  formErrors.email.value || !email?.length || isInvalidEmail(email);
 
 const invalidImapPassword = (password: string | undefined) =>
   formErrors.password.value || !password?.length || password.length === 0;

@@ -171,7 +171,6 @@ function handleEnrichmentProgressNotification(task: EnrichmentTask) {
       t('notification.summary'),
       t('notification.enrichment_canceled'),
     );
-    return;
   } else if (total_enriched > 0) {
     showNotification(
       'success',
@@ -225,22 +224,13 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, alreadyEnriched, task } = response._data;
+      const { total, available, task } = response._data;
 
       if (response.status === 402) {
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
-        if (alreadyEnriched) {
-          stopEnrichment();
-          showNotification(
-            'info',
-            t('notification.summary'),
-            t('notification.already_enriched'),
-          );
-        } else if (task) {
-          handleEnrichmentProgressNotification(task);
-        }
+        handleEnrichmentProgressNotification(task);
       }
     },
   });
@@ -260,22 +250,13 @@ async function enrichPersonBulk(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, alreadyEnriched, task } = response._data;
+      const { total, available, task } = response._data;
 
       if (response.status === 402) {
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
-        if (alreadyEnriched) {
-          stopEnrichment();
-          showNotification(
-            'info',
-            t('notification.summary'),
-            t('notification.already_enriched'),
-          );
-        } else if (task) {
-          handleEnrichmentProgressNotification(task);
-        }
+        handleEnrichmentProgressNotification(task);
       }
     },
   });
