@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import ProxyCurl, { ReverseEmailLookupResponse } from './client';
+import ProxyCurl, { ProfileExtra, ReverseEmailLookupResponse } from './client';
 import {
   EmailEnricher,
   EnricherResult,
@@ -12,6 +12,25 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     private readonly client: ProxyCurl,
     private readonly logger: Logger
   ) {}
+
+  private static getProfileUrls(profile: ProfileExtra): string[] {
+    const urls: string[] = [];
+
+    if (profile.github_profile_id) {
+      urls.push(`https://github.com/${profile.github_profile_id}`);
+    }
+    if (profile.facebook_profile_id) {
+      urls.push(`https://facebook.com/${profile.facebook_profile_id}`);
+    }
+    if (profile.twitter_profile_id) {
+      urls.push(`https://twitter.com/${profile.twitter_profile_id}`);
+    }
+    if (profile.website) {
+      urls.push(profile.website);
+    }
+
+    return urls;
+  }
 
   enrichmentMapper(data: ReverseEmailLookupResponse): {
     raw_data: unknown;
@@ -41,10 +60,7 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
           data?.linkedin_profile_url,
           data?.facebook_profile_url,
           data?.twitter_profile_url,
-          data?.profile?.extra?.facebook_profile_id,
-          data?.profile?.extra?.twitter_profile_id,
-          data?.profile?.extra?.github_profile_id,
-          data?.profile?.extra?.website
+          ...ProxyCurlEmailEnricher.getProfileUrls(data?.profile.extra)
         ].filter((url): url is string => Boolean(url))
       }
     ]
