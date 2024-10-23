@@ -16,17 +16,17 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
   private static getProfileUrls(profile: ProfileExtra): string[] {
     const urls: string[] = [];
 
-    if (profile.github_profile_id) {
+    if (profile?.github_profile_id) {
       urls.push(`https://github.com/${profile.github_profile_id}`);
     }
-    if (profile.facebook_profile_id) {
+    if (profile?.facebook_profile_id) {
       urls.push(`https://facebook.com/${profile.facebook_profile_id}`);
     }
-    if (profile.twitter_profile_id) {
+    if (profile?.twitter_profile_id) {
       urls.push(`https://twitter.com/${profile.twitter_profile_id}`);
     }
-    if (profile.website) {
-      urls.push(profile.website);
+    if (profile?.website) {
+      urls.push(profile?.website);
     }
 
     return urls;
@@ -60,7 +60,7 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
           data?.linkedin_profile_url,
           data?.facebook_profile_url,
           data?.twitter_profile_url,
-          ...ProxyCurlEmailEnricher.getProfileUrls(data?.profile.extra)
+          ...ProxyCurlEmailEnricher.getProfileUrls(data?.profile?.extra)
         ].filter((url): url is string => Boolean(url))
       }
     ]
