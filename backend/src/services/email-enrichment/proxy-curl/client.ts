@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
+import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
 
 export interface Experience {
@@ -69,16 +70,18 @@ export interface Config {
 export default class ProxyCurl {
   private readonly api: AxiosInstance;
 
-  constructor(
-    { url, apiKey }: Config,
-    private readonly logger: Logger
-  ) {
+  private readonly rate_limit_handler;
+
+  private static readonly maxRetries = 5;
+
+  constructor({ url, apiKey }: Config, private readonly logger: Logger) {
     this.api = axios.create({
       baseURL: url,
       headers: {
         Authorization: `Bearer ${apiKey}`
       }
     });
+    this.rate_limit_handler = throttledQueue(300, 60 * 1000);
   }
 
   async reverseEmailLookup({
@@ -86,25 +89,59 @@ export default class ProxyCurl {
     lookup_depth: lookupDepth,
     enrich_profile: enrichProfile
   }: ReverseEmailLookupParams) {
+    return this.rateLimitRetryWithExponentialBackoff(async () => {
+      try {
+        const response = await this.rate_limit_handler(() =>
+          this.api.get<ReverseEmailLookupResponse>(
+            '/api/linkedin/profile/resolve/email',
+            {
+              params: {
+                email,
+                lookup_depth: lookupDepth,
+                enrich_profile: enrichProfile
+              }
+            }
+          )
+        );
+        return { ...response.data, email };
+      } catch (error) {
+        logError(error, `[${this.constructor.name}:verifyEmail]`, this.logger);
+        throw error;
+      }
+    });
+  }
+
+  private async rateLimitRetryWithExponentialBackoff<T>(
+    fn: (attempt: number) => Promise<T>,
+    attempt = 1
+  ): Promise<T> {
+    const sleep = (delay: number): Promise<void> =>
+      new Promise((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, delay);
+      });
     try {
-      const response = await this.api.get<ReverseEmailLookupResponse>(
-        '/api/linkedin/profile/resolve/email',
-        {
-          params: {
-            email,
-            lookup_depth: lookupDepth,
-            enrich_profile: enrichProfile
-          }
-        }
-      );
-      return { ...response.data, email };
+      return await fn(attempt);
     } catch (error) {
-      logError(
-        error,
-        `[${this.constructor.name}:reverseEmailLookup]`,
-        this.logger
+      if (axios.isAxiosError(error) && error.response?.status !== 429) {
+        throw error;
+      }
+      if (attempt >= ProxyCurl.maxRetries) {
+        logError(
+          error,
+          `[${this.constructor.name}: Exhausted retries]`,
+          this.logger
+        );
+        throw error;
+      }
+      this.logger.info(
+        `[${this.constructor.name}: ] Rate limited, retrying attempt ${attempt}`
       );
-      throw error;
+      const delay = 2 ** attempt * 1000;
+      this.logger.info(`Waiting ${delay}ms before retry...`);
+      sleep(delay);
+      return this.rateLimitRetryWithExponentialBackoff(fn, attempt + 1);
     }
   }
 }

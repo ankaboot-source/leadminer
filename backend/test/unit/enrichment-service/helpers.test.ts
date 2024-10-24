@@ -191,8 +191,6 @@ describe('Enrichment Functions', () => {
         mockContacts
       );
 
-      console.log(JSON.stringify(results));
-
       expect(results).toHaveLength(2);
       results.forEach((r) =>
         expect(r.instance).toEqual(['thedig', 'proxycurl'])
