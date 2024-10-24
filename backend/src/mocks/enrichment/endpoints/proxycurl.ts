@@ -9,7 +9,7 @@ const maybe = <T>(value: T, probability = 0.7) =>
 
 router.get(
   '/api/linkedin/profile/resolve/email',
-  async (req: Request, res: Response) => {
+  (req: Request, res: Response) => {
     const { email } = req.query;
     // Validation: Ensure email is provided
     if (!email) {
