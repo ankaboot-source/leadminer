@@ -117,7 +117,7 @@ describe('Enrichment Functions', () => {
         contacts: contactsToEnrich
       });
       expect(results).toHaveLength(2);
-      results.map((r) => expect(r.instance).toEqual(mockEnricher.type));
+      results.forEach((r) => expect(r.instance).toEqual(mockEnricher.type));
       expect(notEnriched).toHaveLength(0);
       expect(mockEnricher.rule).toHaveBeenCalledTimes(2);
     });
