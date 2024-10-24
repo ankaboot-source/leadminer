@@ -74,7 +74,10 @@ export default class ProxyCurl {
 
   private static readonly maxRetries = 5;
 
-  constructor({ url, apiKey }: Config, private readonly logger: Logger) {
+  constructor(
+    { url, apiKey }: Config,
+    private readonly logger: Logger
+  ) {
     this.api = axios.create({
       baseURL: url,
       headers: {
