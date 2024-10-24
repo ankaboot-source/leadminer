@@ -8,6 +8,26 @@ interface Config {
   apiToken: string;
 }
 
+export interface EnrichPersonRequest {
+  url?: string;
+  name: string;
+  email: string;
+  OptOut?: boolean;
+  familyName?: string;
+  givenName?: string;
+  image?: string[];
+  sameAs?: string[];
+  jobTitle?: string[];
+  worksFor?: string[];
+  identifier?: string[];
+  nationality?: string[];
+  description?: string[];
+  homeLocation?: string[];
+  workLocation?: string[];
+  alternateName?: string[];
+  knowsLanguage?: string[];
+}
+
 export interface EnrichPersonResponse {
   email: string;
   name: string;
@@ -44,7 +64,7 @@ export default class TheDig {
     });
   }
 
-  async enrich(person: Partial<Person>) {
+  async enrich(person: EnrichPersonRequest) {
     try {
       const { data } = await this.api.post<EnrichPersonResponse>(
         '/person/',

@@ -10,10 +10,7 @@ export interface EnrichmentTask {
   id: string;
   status: 'running' | 'done' | 'canceled';
   details: {
-    progress: {
-      total: number;
-      enriched: number;
-    };
-    error: string;
+    total_to_enrich: number;
+    total_enriched: number;
   };
 }

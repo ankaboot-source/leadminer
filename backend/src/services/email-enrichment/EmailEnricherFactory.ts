@@ -1,6 +1,6 @@
 import { EmailEnricher, Person } from './EmailEnricher';
 
-export type EnricherType = 'voilanorbert' | 'thedig';
+export type EnricherType = 'voilanorbert' | 'thedig' | 'proxycurl';
 
 interface Config {
   LOAD_BALANCE_ENRICHERS: boolean;
@@ -20,10 +20,6 @@ export default class ContactEnrichmentManager {
     private readonly enrichers: Enricher[],
     private readonly config: Config
   ) {
-    if (!this.enrichers.length) {
-      throw new Error('At least one enricher is required.');
-    }
-
     const defaultEnrichers = this.enrichers.filter(
       (enricher) => enricher.default
     );

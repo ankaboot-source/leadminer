@@ -154,39 +154,30 @@ function stopEnrichment() {
   $leadminerStore.activeEnrichment = false;
 }
 
-function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
-  let totalEnriched = 0;
+function handleEnrichmentProgressNotification(task: EnrichmentTask) {
+  const {
+    status,
+    details: { total_enriched },
+  } = task;
 
-  const error = tasks.every((task) => {
-    if (task.status === 'canceled') {
-      console.error(`Task ${task.id} canceled: ${task.details.error}`);
-      return true;
-    }
-    return false;
-  });
+  if (task.status === 'running') return;
 
-  if (error) {
+  // status done, canceled
+  stopEnrichment();
+
+  if (status === 'canceled') {
     showNotification(
       'error',
       t('notification.summary'),
       t('notification.enrichment_canceled'),
     );
-    return;
-  }
-
-  for (const task of tasks) {
-    if (task.status === 'done') {
-      totalEnriched += task.details.progress.enriched;
-    }
-  }
-
-  if (totalEnriched > 0) {
+  } else if (total_enriched > 0) {
     showNotification(
       'success',
       t('notification.summary'),
       t('notification.enrichment_completed', {
-        n: totalEnriched,
-        enriched: totalEnriched.toLocaleString(),
+        n: total_enriched,
+        enriched: total_enriched.toLocaleString(),
       }),
       'achievement',
     );
@@ -196,30 +187,6 @@ function handleEnrichmentNotification(tasks: EnrichmentTask[]) {
       t('notification.summary'),
       t('notification.no_additional_info'),
     );
-  }
-}
-
-function isEnrichmentCompleted() {
-  const currentTasks = Array.from(enrichmentTasks.values()) as EnrichmentTask[];
-  return Boolean(
-    (totalTasks.value > 0 || currentTasks.length === totalTasks.value) &&
-      !currentTasks.some(({ status }) => status === 'running'),
-  );
-}
-
-function updateEnrichmentProgress(tasks: EnrichmentTask[]) {
-  for (const task of tasks) {
-    const existingTask = enrichmentTasks.get(task.id);
-    if (!existingTask || existingTask.status === 'running') {
-      enrichmentTasks.set(task.id, task);
-    }
-  }
-
-  enrichmentCompleted.value = isEnrichmentCompleted();
-
-  if (enrichmentCompleted.value) {
-    handleEnrichmentNotification(Array.from(enrichmentTasks.values()));
-    stopEnrichment();
   }
 }
 
@@ -237,7 +204,7 @@ function setupEnrichmentRealtime() {
       (payload: RealtimePostgresChangesPayload<EnrichmentTask>) => {
         enrichmentRealtimeCallback(payload);
         const task = payload.new as EnrichmentTask;
-        updateEnrichmentProgress([task]);
+        handleEnrichmentProgressNotification(task);
       },
     );
   subscription.subscribe();
@@ -247,6 +214,7 @@ async function enrichPerson(
   updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>,
 ) {
+  totalTasks.value = 1;
   await $api<EnrichContactResponse>('/enrich/person/', {
     method: 'POST',
     body: {
@@ -256,23 +224,13 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, alreadyEnriched, tasks } = response._data;
+      const { total, available, task } = response._data;
 
       if (response.status === 402) {
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
-        if (alreadyEnriched) {
-          stopEnrichment();
-          showNotification(
-            'info',
-            t('notification.summary'),
-            t('notification.already_enriched'),
-          );
-        } else if (tasks.length) {
-          totalTasks.value = tasks.length;
-          updateEnrichmentProgress(tasks);
-        }
+        handleEnrichmentProgressNotification(task);
       }
     },
   });
@@ -292,23 +250,13 @@ async function enrichPersonBulk(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, alreadyEnriched, tasks } = response._data;
+      const { total, available, task } = response._data;
 
       if (response.status === 402) {
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
-        if (alreadyEnriched) {
-          stopEnrichment();
-          showNotification(
-            'info',
-            t('notification.summary'),
-            t('notification.already_enriched'),
-          );
-        } else if (tasks?.length) {
-          totalTasks.value = tasks.length;
-          updateEnrichmentProgress(tasks);
-        }
+        handleEnrichmentProgressNotification(task);
       }
     },
   });
