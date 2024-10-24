@@ -193,7 +193,7 @@ describe('Enrichment Functions', () => {
 
       expect(results).toHaveLength(2);
       results.forEach((r) =>
-        expect(r.instance).toEqual(['thedig', 'proxycurl'])
+        expect(['thedig', 'proxycurl']).toContain(r.instance)
       );
       expect(notEnriched).toHaveLength(0);
     });

@@ -89,26 +89,33 @@ export default class ProxyCurl {
     lookup_depth: lookupDepth,
     enrich_profile: enrichProfile
   }: ReverseEmailLookupParams) {
-    return this.rateLimitRetryWithExponentialBackoff(async () => {
-      try {
-        const response = await this.rate_limit_handler(() =>
-          this.api.get<ReverseEmailLookupResponse>(
-            '/api/linkedin/profile/resolve/email',
-            {
-              params: {
-                email,
-                lookup_depth: lookupDepth,
-                enrich_profile: enrichProfile
+    const response = await this.rateLimitRetryWithExponentialBackoff(
+      async () => {
+        try {
+          const response = await this.rate_limit_handler(() =>
+            this.api.get<ReverseEmailLookupResponse>(
+              '/api/linkedin/profile/resolve/email',
+              {
+                params: {
+                  email,
+                  lookup_depth: lookupDepth,
+                  enrich_profile: enrichProfile
+                }
               }
-            }
-          )
-        );
-        return { ...response.data, email };
-      } catch (error) {
-        logError(error, `[${this.constructor.name}:verifyEmail]`, this.logger);
-        throw error;
+            )
+          );
+          return response;
+        } catch (error) {
+          logError(
+            error,
+            `[${this.constructor.name}:verifyEmail]`,
+            this.logger
+          );
+          throw error;
+        }
       }
-    });
+    );
+    return { ...response.data, email };
   }
 
   private async rateLimitRetryWithExponentialBackoff<T>(
