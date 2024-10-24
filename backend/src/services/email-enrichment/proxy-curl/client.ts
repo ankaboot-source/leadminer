@@ -69,10 +69,7 @@ export interface Config {
 export default class ProxyCurl {
   private readonly api: AxiosInstance;
 
-  constructor(
-    { url, apiKey }: Config,
-    private readonly logger: Logger
-  ) {
+  constructor({ url, apiKey }: Config, private readonly logger: Logger) {
     this.api = axios.create({
       baseURL: url,
       headers: {
