@@ -15,14 +15,20 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     personRequest: EnrichPersonRequest,
     personResponse: EnrichPersonResponse
   ): boolean {
-    return Object.keys(personRequest).some((key) => {
+    const requestKeys = Object.keys(personRequest);
+    const responseKeys = Object.keys(personResponse);
+    const hasNewFields = responseKeys.some((key) => !(key in personRequest));
+    const hasModifiedFields = requestKeys.some((key) => {
       const requestValue = personRequest[key as keyof EnrichPersonRequest];
       const responseValue = personResponse[key as keyof EnrichPersonResponse];
+
       if (Array.isArray(requestValue) || Array.isArray(responseValue)) {
         return JSON.stringify(requestValue) !== JSON.stringify(responseValue);
       }
       return requestValue !== responseValue;
     });
+
+    return hasNewFields || hasModifiedFields;
   }
 
   private enrichRequestMapper(person: Partial<Person>) {
