@@ -262,33 +262,17 @@ async function enrichPersonBulk(
   });
 }
 
-async function enrichPersonFallbackToBulk(
-  updateEmptyFieldsOnly: boolean,
-  enrichAll: boolean,
-  contacts: Partial<Contact>[],
-) {
-  try {
-    await enrichPerson(updateEmptyFieldsOnly, contacts[0]);
-  } catch {
-    await enrichPersonBulk(updateEmptyFieldsOnly, enrichAll, contacts);
-  }
-}
-
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     totalTasks.value = 0;
     enrichmentTasks.clear();
     enrichmentCompleted.value = false;
     $leadminerStore.activeEnrichment = true;
-    setupEnrichmentRealtime();
-
+    
     if (contactsToEnrich.value?.length === 1) {
-      await enrichPersonFallbackToBulk(
-        updateEmptyFieldsOnly,
-        enrichAllContacts.value,
-        contactsToEnrich.value!,
-      );
+      await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value[0]);
     } else {
+      setupEnrichmentRealtime();
       await enrichPersonBulk(
         updateEmptyFieldsOnly,
         enrichAllContacts.value,
