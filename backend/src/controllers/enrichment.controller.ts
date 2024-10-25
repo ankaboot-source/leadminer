@@ -150,6 +150,7 @@ async function enrichPersonBulk(
   enrichResult.push(...results);
 
   if (notEnriched.length) {
+    let status = 'running';
     const voilanorbert = emailEnrichmentService.getEnricher({}, 'voilanorbert');
     try {
       const { token } = await voilanorbert.instance.enrichAsync(
@@ -161,12 +162,17 @@ async function enrichPersonBulk(
         instance: voilanorbert.type
       });
     } catch (err) {
+      status = 'canceled';
       enrichResult.push({
         error: (err as Error).message,
         instance: voilanorbert.type
       });
     }
-    await updateEnrichmentTask(task, enrichResult, 'running');
+    await updateEnrichmentTask(
+      task,
+      enrichResult,
+      status as TaskEnrich['status']
+    );
     return res.status(200).json({ task });
   }
 
