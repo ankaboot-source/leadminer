@@ -74,10 +74,7 @@ export default class ProxyCurl {
 
   private static readonly maxRetries = 5;
 
-  constructor(
-    { url, apiKey }: Config,
-    private readonly logger: Logger
-  ) {
+  constructor({ url, apiKey }: Config, private readonly logger: Logger) {
     this.api = axios.create({
       baseURL: url,
       headers: {
@@ -95,7 +92,7 @@ export default class ProxyCurl {
     const response = await this.rateLimitRetryWithExponentialBackoff(
       async () => {
         try {
-          const response = await this.rate_limit_handler(() =>
+          const res = await this.rate_limit_handler(() =>
             this.api.get<ReverseEmailLookupResponse>(
               '/api/linkedin/profile/resolve/email',
               {
@@ -107,7 +104,7 @@ export default class ProxyCurl {
               }
             )
           );
-          return response;
+          return res;
         } catch (error) {
           logError(
             error,
