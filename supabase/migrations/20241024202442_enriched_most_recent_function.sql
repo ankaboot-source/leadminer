@@ -11,8 +11,14 @@ WITH recent_tasks AS (
     enriched_raw_data,
     result->>'instance' AS enricher
   FROM public.tasks t,
-    jsonb_array_elements(t.details->'result') AS result,
-    jsonb_array_elements(result->'raw_data') AS enriched_raw_data
+    LATERAL (
+      SELECT jsonb_array_elements(t.details->'result') AS result
+      WHERE jsonb_typeof(t.details->'result') = 'array'
+    ) AS results_array,
+    LATERAL (
+      SELECT jsonb_array_elements(inner_raw) AS enriched_raw_data
+      FROM jsonb_array_elements(results_array.result->'raw_data') AS inner_raw
+    ) AS flattened_raw_data
   WHERE enriched_raw_data->>'email' = ANY(emails)
     AND t.status = 'done'
     AND t.category = 'enriching'
