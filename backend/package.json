@@ -33,7 +33,7 @@
     "@ankaboot.io/imap-autoconfig": "^0.0.2",
     "@faker-js/faker": "^8.4.1",
     "@sentry/node": "^7.118.0",
-    "@sentry/tracing": "^7.119.0",
+    "@sentry/tracing": "^7.119.1",
     "@supabase/supabase-js": "^2.45.4",
     "axios": "^1.7.7",
     "cookie-parser": "^1.4.7",
