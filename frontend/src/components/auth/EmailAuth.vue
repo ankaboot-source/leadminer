@@ -375,11 +375,7 @@ function handleAuthError(error: unknown) {
   const errorMap: Record<string, () => void> = {
     weak_password: () => {
       invalidPassword.value = true;
-      showToast(
-        'error',
-        $t('auth.sign_up_failed'),
-        $t('auth.weak_password'),
-      );
+      showToast('error', $t('auth.sign_up_failed'), $t('auth.weak_password'));
     },
     user_already_exists: () => {
       isEmailExist.value = true;
@@ -387,11 +383,7 @@ function handleAuthError(error: unknown) {
     },
     validation_failed: () => {
       invalidEmail.value = true;
-      showToast(
-        'error',
-        $t('auth.sign_up_failed'),
-        $t('auth.valid_email'),
-      );
+      showToast('error', $t('auth.sign_up_failed'), $t('auth.valid_email'));
     },
   };
 
