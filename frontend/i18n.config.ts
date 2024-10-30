@@ -172,7 +172,7 @@ export default defineI18nConfig(() => ({
         suggestion_lowercase: 'Au moins une minuscule',
         suggestion_uppercase: 'Au moins une majuscule',
         suggestion_numeric: 'Au moins un chiffre',
-        suggestion_special_character: 'Au moins un caractère spécial: !"#$%@()',
+        suggestion_special_character: 'Au moins un caractère spécial {characters}',
         suggestion_min_chars: 'Minimum {n} caractères',
         suggestion_weak_label: 'Faible',
         suggestion_medium_label: 'Moyen',
