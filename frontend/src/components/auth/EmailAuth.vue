@@ -25,13 +25,7 @@
           @focusout="emailFocus = false"
           @keypress.enter="signUp"
         />
-
-        <template v-if="invalidEmail">
-          <small id="password-help" class="text-red-400 text-left pl-4">
-            {{ $t('auth.invalid_login') }}
-          </small>
-        </template>
-        <template v-else-if="isInvalidEmailSyntax(email)">
+        <template v-if="invalidEmail || isInvalidEmailSyntax(email)">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_email') }}
           </small>
@@ -98,19 +92,26 @@
                 {{ $t('auth.suggestion_numeric') }}
               </li>
               <li>
-                <i v-if="password.length >= 8" class="pi pi-check-square"></i>
+                <i
+                  v-if="passwordHasSpecialCharacter"
+                  class="pi pi-check-square"
+                ></i>
                 <i v-else class="pi pi-stop"></i>
-                {{ $t('auth.suggestion_min_chars') }}
+                {{
+                  $t('auth.suggestion_special_character', {
+                    characters: SPECIAL_CHARACTERS,
+                  })
+                }}
+              </li>
+              <li>
+                <i v-if="passwordHasMinLength" class="pi pi-check-square"></i>
+                <i v-else class="pi pi-stop"></i>
+                {{ $t('auth.suggestion_min_chars', PASSWORD_MIN_LENGTH) }}
               </li>
             </ul>
           </template>
         </Password>
-        <template v-if="invalidPassword">
-          <small id="password-help" class="text-red-400 text-left pl-4">
-            {{ $t('auth.invalid_login') }}
-          </small>
-        </template>
-        <template v-else-if="isInvalidPasswordSyntax(password)">
+        <template v-if="invalidPassword || isInvalidPasswordSyntax(password)">
           <small id="password-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_password') }}
           </small>
@@ -244,6 +245,8 @@ import {
   hasUpperCase,
   isInvalidPassword as isInvalidPasswordSyntax,
 } from '@/utils/password';
+import { AuthApiError, AuthWeakPasswordError } from '@supabase/supabase-js';
+import type { ToastMessageOptions } from 'primevue/toast';
 import { useI18n } from 'vue-i18n';
 
 const { getBrowserLocale } = useI18n({
@@ -276,9 +279,15 @@ const isEmailExist = ref(false);
 const invalidEmail = ref(false);
 const invalidPassword = ref(false);
 
+const passwordHasNumber = computed(() => hasNumber(password.value));
 const passwordHasLowerCase = computed(() => hasLowerCase(password.value));
 const passwordHasUpperCase = computed(() => hasUpperCase(password.value));
-const passwordHasNumber = computed(() => hasNumber(password.value));
+const passwordHasSpecialCharacter = computed(() =>
+  hasSpecialChar(password.value),
+);
+const passwordHasMinLength = computed(
+  () => password.value.length >= PASSWORD_MIN_LENGTH,
+);
 
 const isLoading = ref(false);
 
@@ -337,23 +346,70 @@ async function loginWithEmailAndPassword() {
   }
 }
 
+function showToast(
+  severity: ToastMessageOptions['severity'],
+  summary: string,
+  detail: string,
+) {
+  $toast.add({
+    severity,
+    summary,
+    detail,
+    life: 3000,
+  });
+}
+
+function handleSuccess() {
+  showToast(
+    'success',
+    $t('auth.sign_up_success'),
+    $t('auth.confirmation_email', { email: email.value }),
+  );
+  $router.push({
+    path: '/auth/success',
+    query: { email: email.value },
+  });
+}
+
+function handleAuthError(error: unknown) {
+  const errorMap: Record<string, () => void> = {
+    weak_password: () => {
+      invalidPassword.value = true;
+      showToast(
+        'error',
+        $t('auth.sign_up_failed'),
+        $t('auth.weak_password'),
+      );
+    },
+    user_already_exists: () => {
+      isEmailExist.value = true;
+      showToast('error', $t('auth.sign_up_failed'), $t('auth.user_exist'));
+    },
+    validation_failed: () => {
+      invalidEmail.value = true;
+      showToast(
+        'error',
+        $t('auth.sign_up_failed'),
+        $t('auth.valid_email'),
+      );
+    },
+  };
+
+  if (error instanceof AuthApiError || error instanceof AuthWeakPasswordError) {
+    errorMap[error.code ?? '']?.();
+  } else {
+    throw error;
+  }
+}
+
 async function signUp() {
   isLoading.value = true;
-
+  isEmailExist.value = false;
   setInvalidInputs(false);
 
-  if (checkRequiredFields()) {
-    return;
-  }
+  if (checkRequiredFields()) return;
 
   try {
-    if (
-      isInvalidEmailSyntax(email.value) ||
-      isInvalidPasswordSyntax(password.value)
-    ) {
-      throw Error($t('auth.invalid_login'));
-    }
-
     const { error } = await $supabase.auth.signUp({
       email: email.value,
       password: password.value,
@@ -364,37 +420,12 @@ async function signUp() {
         },
       },
     });
-    if (error) {
-      throw error;
-    }
 
-    $toast.add({
-      severity: 'success',
-      summary: $t('auth.sign_up_success'),
-      detail: $t('auth.confirmation_email', { email: email.value }),
-      life: 3000,
-    });
-    await $router.push({
-      path: '/auth/success',
-      query: { email: email.value },
-    });
+    if (error) throw error;
+
+    handleSuccess();
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'User already registered') {
-        isEmailExist.value = true;
-      } else {
-        setInvalidInputs(true);
-      }
-
-      $toast.add({
-        severity: 'error',
-        summary: $t('auth.sign_up_failed'),
-        detail: $t(
-          isEmailExist.value ? 'auth.user_exist' : 'auth.invalid_login',
-        ),
-        life: 3000,
-      });
-    }
+    handleAuthError(error);
   } finally {
     isLoading.value = false;
   }

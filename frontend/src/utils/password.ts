@@ -1,8 +1,15 @@
-export const PASSWORD_PATTERN =
-  /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})/g; // PrimeVue's password mediumRegex
+export const PASSWORD_MIN_LENGTH = 12;
+
+export const SPECIAL_CHARACTERS = '!"#$%@()';
+
+export const SPECIAL_CHAR_PATTERN = new RegExp(`[${SPECIAL_CHARACTERS}]`);
 
 export const isInvalidPassword = (password: string) =>
-  Boolean(password) && !PASSWORD_PATTERN.test(password);
+  Boolean(password) &&
+  hasLowerCase(password) &&
+  hasUpperCase(password) &&
+  hasNumber(password) &&
+  hasSpecialChar(password);
 
 export const hasLowerCase = (password: string) =>
   Boolean(password) && /.*[a-z]+.*/g.test(password);
@@ -12,3 +19,6 @@ export const hasUpperCase = (password: string) =>
 
 export const hasNumber = (password: string) =>
   Boolean(password) && /.*[0-9]+.*/g.test(password);
+
+export const hasSpecialChar = (password: string) =>
+  Boolean(password) && SPECIAL_CHAR_PATTERN.test(password);
