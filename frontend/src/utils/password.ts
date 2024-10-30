@@ -4,13 +4,6 @@ export const SPECIAL_CHARACTERS = '!"#$%@()';
 
 export const SPECIAL_CHAR_PATTERN = new RegExp(`[${SPECIAL_CHARACTERS}]`);
 
-export const isInvalidPassword = (password: string) =>
-  Boolean(password) &&
-  hasLowerCase(password) &&
-  hasUpperCase(password) &&
-  hasNumber(password) &&
-  hasSpecialChar(password);
-
 export const hasLowerCase = (password: string) =>
   Boolean(password) && /.*[a-z]+.*/g.test(password);
 
@@ -22,3 +15,10 @@ export const hasNumber = (password: string) =>
 
 export const hasSpecialChar = (password: string) =>
   Boolean(password) && SPECIAL_CHAR_PATTERN.test(password);
+
+export const isInvalidPassword = (password: string) =>
+  Boolean(password) &&
+  hasLowerCase(password) &&
+  hasUpperCase(password) &&
+  hasNumber(password) &&
+  hasSpecialChar(password);
