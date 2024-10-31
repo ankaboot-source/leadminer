@@ -1,4 +1,4 @@
-// @ts-ignore import/prefer-default-export
+// eslint-disable-next-line import/prefer-default-export
 export function validateType(key: string, value: any, type: string) {
   if (value === undefined || value === null) return `${key} is required.`;
   if (type === 'number' && (Number.isNaN(value) || value <= 0)) {
