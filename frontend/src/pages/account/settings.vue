@@ -200,7 +200,6 @@ const passwordHasUpperCase = computed(() => hasUpperCase(passwordInput.value));
 const passwordHasNumber = computed(() => hasNumber(passwordInput.value));
 const passwordHasSpecial = computed(() => hasSpecialChar(passwordInput.value));
 
-
 function showWarning() {
   showDeleteModal.value = true;
 }
