@@ -51,7 +51,7 @@
           toggle-mask
           required
           :invalid="
-            isInvalidPasswordSyntax(password) ||
+            (password.length && isInvalidPasswordSyntax(password)) ||
             !validatePasswordRequired ||
             invalidPassword
           "
@@ -111,7 +111,12 @@
             </ul>
           </template>
         </Password>
-        <template v-if="invalidPassword || isInvalidPasswordSyntax(password)">
+        <template
+          v-if="
+            invalidPassword ||
+            (password.length && isInvalidPasswordSyntax(password))
+          "
+        >
           <small id="password-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_password') }}
           </small>
@@ -183,7 +188,7 @@
               v-model="password"
               :input-style="{ width: '100%' }"
               :invalid="
-                isInvalidPasswordSyntax(password) ||
+                (password.length && isInvalidPasswordSyntax(password)) ||
                 !validatePasswordRequired ||
                 invalidPassword
               "
@@ -205,7 +210,9 @@
                 {{ $t('auth.invalid_login') }}
               </small>
             </template>
-            <template v-else-if="isInvalidPasswordSyntax(password)">
+            <template
+              v-else-if="password.length && isInvalidPasswordSyntax(password)"
+            >
               <small id="password-help" class="text-red-400 text-left pl-4">
                 {{ $t('auth.valid_password') }}
               </small>
