@@ -256,7 +256,11 @@ async function enrichPersonBulk(
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
-        handleEnrichmentProgressNotification(task);
+        if (task.status === 'running') {
+          setupEnrichmentRealtime();
+        } else {
+          handleEnrichmentProgressNotification(task);
+        }
       }
     },
   });
@@ -272,7 +276,6 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     if (contactsToEnrich.value?.length === 1) {
       await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value[0]);
     } else {
-      setupEnrichmentRealtime();
       await enrichPersonBulk(
         updateEmptyFieldsOnly,
         enrichAllContacts.value,
