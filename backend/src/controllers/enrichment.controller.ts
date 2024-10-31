@@ -140,7 +140,9 @@ async function enrichPersonBulk(
     updateEmptyFieldsOnly
   );
 
-  const enrichResult: TaskEnrich['details']['result'] = [];
+  const enrichResult: TaskEnrich['details']['result'] = [
+    ...(taskCached?.details.result ?? [])
+  ];
 
   const [results, notEnriched] = await enrichPersonSync(
     userResolver,
@@ -168,16 +170,16 @@ async function enrichPersonBulk(
         instance: voilanorbert.type
       });
     }
-    await updateEnrichmentTask(
+    const updatedTask = await updateEnrichmentTask(
       task,
       enrichResult,
       status as TaskEnrich['status']
     );
-    return res.status(200).json({ task });
+    return res.status(200).json({ task: redactEnrichmentTask(updatedTask) });
   }
 
-  await updateEnrichmentTask(task, enrichResult);
-  return res.status(200).json({ task });
+  const updatedTask = await updateEnrichmentTask(task, enrichResult);
+  return res.status(200).json({ task: redactEnrichmentTask(updatedTask) });
 }
 
 async function enrichPersonWebhook(

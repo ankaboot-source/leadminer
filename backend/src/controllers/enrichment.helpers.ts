@@ -47,7 +47,7 @@ export interface TaskEnrichRedacted {
   details: {
     total_to_enrich: number;
     total_enriched: number;
-    error?: string;
+    error?: string[];
   };
 }
 
@@ -55,15 +55,14 @@ export function redactEnrichmentTask(task: TaskEnrich): TaskEnrichRedacted {
   const {
     id,
     status,
-    details: { total_to_enrich: total, total_enriched: enriched, result }
+    details: { total_to_enrich: total, total_enriched: enriched }
   } = task;
   return {
     id,
     status,
     details: {
       total_to_enrich: total,
-      total_enriched: enriched,
-      error: result.map(({ error }) => error).join('\n')
+      total_enriched: enriched
     }
   };
 }
@@ -298,7 +297,7 @@ export async function enrichFromCache(
   userId: string,
   updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>[]
-): Promise<[TaskEnrichRedacted | null, Partial<Contact>[]]> {
+): Promise<[TaskEnrich | null, Partial<Contact>[]]> {
   try {
     const cacheResult = await searchEnrichmentCache(contacts);
 
@@ -308,29 +307,43 @@ export async function enrichFromCache(
       cacheResult.map(({ result }) => result.email)
     );
 
+    const result = cacheResult
+      .map((cache) => {
+        const enricher = emailEnrichmentService.getEnricher(
+          {},
+          cache.instance as unknown as EnricherType
+        );
+        const enrichResult = enricher.instance.enrichmentMapper([cache.result]);
+        return {
+          instance: enricher.type,
+          ...enrichResult
+        };
+      })
+      .flat();
+
     await enrichContactDB(
       userResolver,
       userId,
       updateEmptyFieldsOnly,
-      cacheResult
-        .map(
-          (cache) =>
-            emailEnrichmentService
-              .getEnricher({}, cache.instance as unknown as EnricherType)
-              .instance.enrichmentMapper([cache.result]).data
-        )
-        .flat()
+      result.map(({ data }) => data).flat()
     );
 
     logger.debug('Enrichment cache hit: Enriched from cache', cacheResult);
 
     return [
       {
-        id: 'enrichment-cache',
         status: 'done',
+        type: 'enrich',
+        category: 'enriching',
+        id: 'enrichment-cache',
+        started_at: null,
+        stopped_at: null,
+        user_id: userId,
         details: {
           total_to_enrich: contacts.length,
-          total_enriched: cacheResult.length
+          total_enriched: cacheResult.length,
+          update_empty_fields_only: updateEmptyFieldsOnly,
+          result
         }
       },
       contacts.filter(
