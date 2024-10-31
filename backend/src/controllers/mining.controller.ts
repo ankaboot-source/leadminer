@@ -14,8 +14,10 @@ import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import {
   generateErrorObjectFromImapError,
-  getValidImapLogin
+  getValidImapLogin,
+  sanitizeImapInput
 } from './imap.helpers';
+import { validateType } from '../utils/helpers/validation';
 
 const providerScopes = {
   google: {
@@ -162,38 +164,59 @@ export default function initializeMiningController(
       next: NextFunction
     ) {
       const user = res.locals.user as User;
-      const { email, host, password, port, secure } = req.body;
-
-      const missingParams = Object.entries({
+      const {
         email,
         host,
         password,
         port,
         secure
-      })
-        .filter(([, value]) => value === undefined)
-        .map(([key]) => key);
+      }: {
+        email: string;
+        host: string;
+        password: string;
+        port: number;
+        secure: boolean;
+      } = req.body;
 
-      if (missingParams.length) {
-        res.status(400).json({
-          message: `Missing required parameters ${missingParams.join(', ')}`
-        });
+      const errors = [
+        validateType('email', email, 'string'),
+        validateType('host', host, 'string'),
+        validateType('password', password, 'string'),
+        validateType('port', port, 'number'),
+        validateType('secure', secure, 'boolean')
+      ].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
+
+      const sanitizedHost = sanitizeImapInput(host);
+      const sanitizedEmail = sanitizeImapInput(email);
+      const sanitizedPassword = sanitizeImapInput(password);
 
       try {
         // Validate & Get the valid IMAP login connection before creating the pool.
         const login = await getValidImapLogin(
-          host,
-          email,
-          password,
+          sanitizedHost,
+          sanitizedEmail,
+          sanitizedPassword,
           port,
           secure
         );
+
         await miningSources.upsert({
           userId: user.id,
-          email,
+          email: sanitizedEmail,
           type: 'imap',
-          credentials: { email: login, host, password, port, tls: secure }
+          credentials: {
+            port,
+            tls: secure,
+            email: login,
+            host: sanitizedHost,
+            password: sanitizedPassword
+          }
         });
 
         return res
@@ -235,16 +258,36 @@ export default function initializeMiningController(
     async startMining(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
 
-      const { miningSource, boxes } = req.body;
+      const {
+        miningSource: { email },
+        boxes: folders
+      }: {
+        miningSource: {
+          email: string;
+        };
+        boxes: string[];
+      } = req.body;
 
-      if (!miningSource || !boxes) {
-        res.status(400).json({ message: 'Invalid mining source provided' });
+      const errors = [
+        validateType('email', email, 'string'),
+        validateType('boxes', folders, 'string[]')
+      ].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
+
+      const sanitizedEmail = sanitizeImapInput(email);
+      const sanitizedFolders = folders.map((folder) =>
+        sanitizeImapInput(folder)
+      );
 
       const miningSourceCredentials =
         await miningSources.getCredentialsBySourceEmail(
           user.id,
-          miningSource.email
+          sanitizedEmail
         );
 
       if (!miningSourceCredentials) {
@@ -275,7 +318,7 @@ export default function initializeMiningController(
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapEmailsFetcherOptions: ImapEmailsFetcherOptions = {
           imapConnectionProvider,
-          boxes,
+          boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
           batchSize: ENV.LEADMINER_FETCH_BATCH_SIZE,

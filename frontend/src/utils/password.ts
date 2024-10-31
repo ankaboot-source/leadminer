@@ -17,8 +17,8 @@ export const hasSpecialChar = (password: string) =>
   Boolean(password) && SPECIAL_CHAR_PATTERN.test(password);
 
 export const isInvalidPassword = (password: string) =>
-  Boolean(password) &&
-  hasLowerCase(password) &&
-  hasUpperCase(password) &&
-  hasNumber(password) &&
-  hasSpecialChar(password);
+  (Boolean(password) &&
+    hasLowerCase(password) &&
+    hasUpperCase(password) &&
+    hasNumber(password) &&
+    hasSpecialChar(password)) === false;

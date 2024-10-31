@@ -15,18 +15,11 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
-import { generateErrorObjectFromImapError } from './imap.helpers';
-
-async function validateRequest(
-  req: Request,
-  res: Response,
-  miningSources: MiningSources
-) {
-  const userId = (res.locals.user as User).id;
-  const { email } = req.body;
-  const data = await miningSources.getCredentialsBySourceEmail(userId, email);
-  return { userId, data };
-}
+import {
+  generateErrorObjectFromImapError,
+  sanitizeImapInput
+} from './imap.helpers';
+import { validateType } from '../utils/helpers/validation';
 
 type NewToken = {
   access_token: string;
@@ -86,8 +79,22 @@ export default function initializeImapController(miningSources: MiningSources) {
       let imapConnectionProvider: ImapConnectionProvider | null = null;
       let imapConnection: Connection | null = null;
 
+      const { email } = req.body;
+
+      const errors = [validateType('email', email, 'string')].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
+      }
+
       try {
-        const { userId, data } = await validateRequest(req, res, miningSources);
+        const userId = (res.locals.user as User).id;
+        const data = await miningSources.getCredentialsBySourceEmail(
+          userId,
+          email
+        );
 
         if (!data) {
           res.status(400);
@@ -157,14 +164,18 @@ export default function initializeImapController(miningSources: MiningSources) {
     ) {
       const { email } = req.params;
 
-      if (!email) {
+      const errors = [validateType('email', email, 'string')].filter(Boolean);
+
+      if (errors.length) {
         return res
           .status(400)
-          .json({ message: 'Missing required param email.' });
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
 
+      const sanitizedEmail = sanitizeImapInput(email);
+
       try {
-        const config = await new IMAPSettingsDetector().detect(email);
+        const config = await new IMAPSettingsDetector().detect(sanitizedEmail);
         return config
           ? res.status(200).json({ ...config })
           : res.sendStatus(404);
