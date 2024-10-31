@@ -179,24 +179,23 @@ export async function updateEnrichmentTask(
 ) {
   const enrichmentTask = task;
 
-  enrichmentTask.details.result.push(...results);
+  // Update task progress
+  enrichmentTask.details.total_enriched = results.reduce(
+    (sum, { data }) => sum + (data?.length ?? 0),
+    enrichmentTask.details.total_enriched
+  );
 
   if (!status) {
     // update task status
-    enrichmentTask.status = enrichmentTask.details.result.every(({ error }) =>
-      Boolean(error)
-    )
+    enrichmentTask.status = [
+      ...enrichmentTask.details.result,
+      ...results
+    ].every(({ error }) => Boolean(error))
       ? 'canceled'
       : 'done';
   } else {
     enrichmentTask.status = status;
   }
-
-  // Update task progress
-  enrichmentTask.details.total_enriched = enrichmentTask.details.result.reduce(
-    (sum, { data }) => sum + (data?.length ?? 0),
-    0
-  );
 
   // Update task timing;
   enrichmentTask.stopped_at = ['done', 'canceled'].includes(
@@ -204,6 +203,13 @@ export async function updateEnrichmentTask(
   )
     ? new Date().toISOString()
     : null;
+
+  enrichmentTask.details.result.push(
+    ...results.filter(
+      // Filter out any results with token === 'cache' results
+      (result) => result.token !== 'cache'
+    )
+  );
 
   const updatedTask = await updateEnrichmentTaskDB(enrichmentTask);
   return updatedTask;
@@ -307,7 +313,7 @@ export async function enrichFromCache(
       cacheResult.map(({ result }) => result.email)
     );
 
-    const result = cacheResult
+    const mappedResult = cacheResult
       .map((cache) => {
         const enricher = emailEnrichmentService.getEnricher(
           {},
@@ -325,7 +331,7 @@ export async function enrichFromCache(
       userResolver,
       userId,
       updateEmptyFieldsOnly,
-      result.map(({ data }) => data).flat()
+      mappedResult.map(({ data }) => data).flat()
     );
 
     logger.debug('Enrichment cache hit: Enriched from cache', cacheResult);
@@ -335,7 +341,7 @@ export async function enrichFromCache(
         status: 'done',
         type: 'enrich',
         category: 'enriching',
-        id: 'enrichment-cache',
+        id: 'cache',
         started_at: null,
         stopped_at: null,
         user_id: userId,
@@ -343,7 +349,10 @@ export async function enrichFromCache(
           total_to_enrich: contacts.length,
           total_enriched: cacheResult.length,
           update_empty_fields_only: updateEmptyFieldsOnly,
-          result
+          result: mappedResult.map((res) => ({
+            ...res,
+            token: 'cache'
+          }))
         }
       },
       contacts.filter(
