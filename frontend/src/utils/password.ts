@@ -1,8 +1,10 @@
 export const PASSWORD_MIN_LENGTH = 12;
 
-export const SPECIAL_CHARACTERS = '!"#$%@()';
+export const SPECIAL_CHARACTERS = '!"#$%&\'()*+,-./;<=>?@[]^_`{|}~';
 
-export const SPECIAL_CHAR_PATTERN = new RegExp(`[${SPECIAL_CHARACTERS}]`);
+export const SPECIAL_CHAR_PATTERN = new RegExp(
+  `[${SPECIAL_CHARACTERS.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`,
+);
 
 export const hasLowerCase = (password: string) =>
   Boolean(password) && /.*[a-z]+.*/g.test(password);
