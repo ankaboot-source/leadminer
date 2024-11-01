@@ -52,7 +52,11 @@
           required
           :medium-regex="STRONG_PASSWORD_REGEX"
           :strong-regex="STRONG_PASSWORD_REGEX"
-          :invalid="password.length > 0 && isInvalidPasswordSyntax(password)"
+          :invalid="
+            invalidPassword ||
+            validatePasswordRequired ||
+            (password.length > 0 && isInvalidPasswordSyntax(password))
+          "
           aria-describedby="password-help"
           :weak-label="$t('auth.suggestion_weak_label')"
           :strong-label="$t('auth.suggestion_strong_label')"
