@@ -117,7 +117,7 @@ const enrichmentRealtimeCallback = (
   payload: RealtimePostgresChangesPayload<EnrichmentTask>,
 ) => {
   const { status, details } = payload.new as EnrichmentTask;
-  const { enriched } = details.progress;
+  const { total_enriched: enriched } = details;
 
   switch (status) {
     case 'done':
