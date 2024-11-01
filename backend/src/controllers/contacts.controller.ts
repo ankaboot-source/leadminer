@@ -52,7 +52,7 @@ async function respondWithContacts(
     return res.sendStatus(204); // 204 No Content
   }
 
-  const csvData = exportContactsToCSV(selectedContacts, delimiter);
+  const csvData = await exportContactsToCSV(selectedContacts, delimiter);
   return res.header('Content-Type', 'text/csv').status(200).send(csvData);
 }
 
