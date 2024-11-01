@@ -1,6 +1,7 @@
   CREATE OR REPLACE FUNCTION public.enriched_most_recent(emails text[])
   RETURNS SETOF jsonb
   LANGUAGE sql
+  SET search_path = ''
   STABLE
   AS $$
   WITH
