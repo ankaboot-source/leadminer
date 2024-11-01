@@ -1,22 +1,24 @@
 CREATE FUNCTION "public"."delete_user_data"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$
 DECLARE
   owner_id uuid;
 BEGIN
   owner_id = delete_user_data.user_id;
-  DELETE FROM messages msg WHERE msg.user_id = owner_id;
-  DELETE FROM persons p WHERE p.user_id = owner_id;
-  DELETE FROM pointsofcontact poc WHERE poc.user_id = owner_id;
-  DELETE FROM tags t WHERE t.user_id = owner_id;
-  DELETE FROM refinedpersons r WHERE r.user_id = owner_id;
-  DELETE from mining_sources ms WHERE ms.user_id = owner_id;
-  DELETE from engagement eg WHERE eg.user_id = owner_id;
+  DELETE FROM public.messages msg WHERE msg.user_id = owner_id;
+  DELETE FROM public.persons p WHERE p.user_id = owner_id;
+  DELETE FROM public.pointsofcontact poc WHERE poc.user_id = owner_id;
+  DELETE FROM public.tags t WHERE t.user_id = owner_id;
+  DELETE FROM public.refinedpersons r WHERE r.user_id = owner_id;
+  DELETE FROM public.mining_sources ms WHERE ms.user_id = owner_id;
+  DELETE FROM public.engagement eg WHERE eg.user_id = owner_id;
 END;
 $$;
 
 CREATE FUNCTION "public"."enrich_contacts"("p_contacts_data" "jsonb"[], "p_update_empty_fields_only" boolean DEFAULT true) RETURNS "void"
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$
 DECLARE
   contact_record JSONB;
@@ -42,12 +44,12 @@ BEGIN
     works_for_name := contact_record->>'works_for';
     IF works_for_name IS NOT NULL THEN
       SELECT id INTO organization_id
-      FROM organizations
+      FROM public.organizations
       WHERE name = works_for_name
       LIMIT 1;
       
       IF NOT FOUND THEN
-        INSERT INTO organizations (name)
+        INSERT INTO public.organizations (name)
         VALUES (works_for_name)
         RETURNING id INTO organization_id;
       END IF;
@@ -60,7 +62,7 @@ BEGIN
     IF new_name IS NOT NULL THEN
       SELECT p.name, p.alternate_names 
       INTO old_name, old_alternate_names
-      FROM persons p
+      FROM public.persons p
       WHERE p.email = contact_record->>'email' AND p.user_id = (contact_record->>'user_id')::UUID
       LIMIT 1;
       IF old_name IS NOT NULL THEN
@@ -72,38 +74,38 @@ BEGIN
     END IF;
 
     IF p_update_empty_fields_only THEN
-      UPDATE persons
+      UPDATE public.persons pp
       SET 
-        name = COALESCE(persons.name, new_name::TEXT),
-        url = COALESCE(persons.url, (contact_record->>'url')::TEXT),
-        image = COALESCE(persons.image, (contact_record->>'image')::TEXT),
-        location = COALESCE(persons.location, string_to_array(contact_record->>'location', ',')::TEXT[]),
-        alternate_names = COALESCE(persons.alternate_names, (new_alternate_names)::TEXT[]),
-        same_as = COALESCE(persons.same_as, string_to_array(contact_record->>'same_as', ',')::TEXT[]),
-        given_name = COALESCE(persons.given_name, (contact_record->>'given_name')::TEXT),
-        family_name = COALESCE(persons.family_name, (contact_record->>'family_name')::TEXT),
-        job_title = COALESCE(persons.job_title, (contact_record->>'job_title')::TEXT),
-        works_for = COALESCE(persons.works_for, organization_id),
-        identifiers = COALESCE(persons.identifiers, string_to_array(contact_record->>'identifiers', ',')::TEXT[]),
-        status = COALESCE(persons.status, (contact_record->>'status')::TEXT)
+        name = COALESCE(pp.name, new_name::TEXT),
+        url = COALESCE(pp.url, (contact_record->>'url')::TEXT),
+        image = COALESCE(pp.image, (contact_record->>'image')::TEXT),
+        location = COALESCE(pp.location, string_to_array(contact_record->>'location', ',')::TEXT[]),
+        alternate_names = COALESCE(pp.alternate_names, (new_alternate_names)::TEXT[]),
+        same_as = COALESCE(pp.same_as, string_to_array(contact_record->>'same_as', ',')::TEXT[]),
+        given_name = COALESCE(pp.given_name, (contact_record->>'given_name')::TEXT),
+        family_name = COALESCE(pp.family_name, (contact_record->>'family_name')::TEXT),
+        job_title = COALESCE(pp.job_title, (contact_record->>'job_title')::TEXT),
+        works_for = COALESCE(pp.works_for, organization_id),
+        identifiers = COALESCE(pp.identifiers, string_to_array(contact_record->>'identifiers', ',')::TEXT[]),
+        status = COALESCE(pp.status, (contact_record->>'status')::TEXT)
       WHERE 
         email = (contact_record->>'email')::TEXT AND
         user_id = (contact_record->>'user_id')::UUID;
     ELSE
-      UPDATE persons
+      UPDATE public.persons pp
       SET 
-        name = COALESCE(new_name::TEXT, persons.name),
-        url = COALESCE((contact_record->>'url')::TEXT, persons.url),
-        image = COALESCE((contact_record->>'image')::TEXT, persons.image),
-        location = COALESCE(string_to_array(contact_record->>'location', ',')::TEXT[], persons.location),
-        alternate_names = COALESCE((new_alternate_names)::TEXT[], persons.alternate_names),
-        same_as = COALESCE(string_to_array(contact_record->>'same_as', ',')::TEXT[], persons.same_as),
-        given_name = COALESCE((contact_record->>'given_name')::TEXT, persons.given_name),
-        family_name = COALESCE((contact_record->>'family_name')::TEXT, persons.family_name),
-        job_title = COALESCE((contact_record->>'job_title')::TEXT, persons.job_title),
-        works_for = COALESCE(organization_id, persons.works_for),
-        identifiers = COALESCE(string_to_array(contact_record->>'identifiers', ',')::TEXT[], persons.identifiers),
-        status = COALESCE((contact_record->>'status')::TEXT, persons.status)
+        name = COALESCE(new_name::TEXT, pp.name),
+        url = COALESCE((contact_record->>'url')::TEXT, pp.url),
+        image = COALESCE((contact_record->>'image')::TEXT, pp.image),
+        location = COALESCE(string_to_array(contact_record->>'location', ',')::TEXT[], pp.location),
+        alternate_names = COALESCE((new_alternate_names)::TEXT[], pp.alternate_names),
+        same_as = COALESCE(string_to_array(contact_record->>'same_as', ',')::TEXT[], pp.same_as),
+        given_name = COALESCE((contact_record->>'given_name')::TEXT, pp.given_name),
+        family_name = COALESCE((contact_record->>'family_name')::TEXT, pp.family_name),
+        job_title = COALESCE((contact_record->>'job_title')::TEXT, pp.job_title),
+        works_for = COALESCE(organization_id, pp.works_for),
+        identifiers = COALESCE(string_to_array(contact_record->>'identifiers', ',')::TEXT[], pp.identifiers),
+        status = COALESCE((contact_record->>'status')::TEXT, pp.status)
       WHERE 
         email = (contact_record->>'email')::TEXT AND
         user_id = (contact_record->>'user_id')::UUID;
@@ -114,6 +116,7 @@ $$;
 
 CREATE FUNCTION "public"."get_contacts_table"("user_id" "uuid") RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$
 BEGIN
   RETURN QUERY WITH ExportedContacts AS (
@@ -144,11 +147,11 @@ BEGIN
         PARTITION BY p.email
       ) AS rn
     FROM
-      persons p
+      public.persons p
     INNER JOIN
-      refinedpersons rp ON rp.email = p.email
+      public.refinedpersons rp ON rp.email = p.email
     LEFT JOIN
-      organizations o ON o.id = p.works_for
+      public.organizations o ON o.id = p.works_for
     WHERE
       p.user_id = get_contacts_table.user_id
     ORDER BY 
@@ -186,6 +189,7 @@ $$;
 
 CREATE FUNCTION "public"."get_contacts_table_by_emails"("user_id" "uuid", "emails" "text"[]) RETURNS TABLE("source" "text", "email" "text", "name" "text", "status" "text", "image" "text", "location" "text"[], "alternate_names" "text"[], "same_as" "text"[], "given_name" "text", "family_name" "text", "job_title" "text", "works_for" "text", "recency" timestamp with time zone, "seniority" timestamp with time zone, "occurrence" integer, "sender" integer, "recipient" integer, "conversations" integer, "replied_conversations" integer, "tags" "text"[], "updated_at" timestamp without time zone, "created_at" timestamp without time zone)
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$
 BEGIN
   RETURN QUERY WITH ExportedContacts AS (
@@ -216,11 +220,11 @@ BEGIN
       PARTITION BY p.email
       ) AS rn
     FROM
-      persons p
+      public.persons p
     INNER JOIN
-      refinedpersons rp ON rp.email = p.email
+      public.refinedpersons rp ON rp.email = p.email
     LEFT JOIN
-      organizations o ON o.id = p.works_for
+      public.organizations o ON o.id = p.works_for
     WHERE
       p.user_id = get_contacts_table_by_emails.user_id
     AND
@@ -260,6 +264,7 @@ $$;
 
 CREATE FUNCTION "public"."get_grouped_tags_by_person"("_userid" "uuid") RETURNS TABLE("email" "text", "tags" "text"[], "tags_reachability" integer[])
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$
 BEGIN
   RETURN QUERY
@@ -267,13 +272,13 @@ BEGIN
     person_email AS email,
     array_agg(name) AS tags,
     array_agg(reachable) AS tags_reachability
-  FROM tags
+  FROM public.tags
   WHERE
       user_id = _userid
       AND reachable IN (1, 2)
       AND person_email NOT IN (
           SELECT person_email
-          FROM tags
+          FROM public.tags
           WHERE user_id = _userid
           GROUP BY person_email
           HAVING
@@ -287,9 +292,10 @@ $$;
 
 CREATE FUNCTION "public"."populate_refined"("_userid" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$
 BEGIN
-  INSERT INTO refinedpersons(user_id, tags, name, email, status, created_at, updated_at)
+  INSERT INTO public.refinedpersons(user_id, tags, name, email, status, created_at, updated_at)
     SELECT populate_refined._userid, t.tags, p.name, p.email, p.status, p.created_at, p.updated_at
     FROM public.persons p
     INNER JOIN public.get_grouped_tags_by_person(_userid) AS t ON t.email = p.email
@@ -300,6 +306,7 @@ $$;
 
 CREATE FUNCTION "public"."refine_persons"("user_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql"
+    SET search_path = ''
     AS $$ 
 DECLARE
     record_row record;
@@ -352,9 +359,9 @@ BEGIN
                 ) over grouped_by_email AS replied_conversations,
                 gt.tags as tags
 
-            FROM pointsofcontact poc
-            JOIN messages m ON poc.message_id = m.message_id
-            JOIN get_grouped_tags_by_person(refine_persons.user_id) gt on poc.person_email = gt.email
+            FROM public.pointsofcontact poc
+            JOIN public.messages m ON poc.message_id = m.message_id
+            JOIN public.get_grouped_tags_by_person(refine_persons.user_id) gt on poc.person_email = gt.email
             WHERE
             poc.user_id = refine_persons.user_id
             WINDOW grouped_by_email AS (PARTITION BY person_email)
@@ -367,7 +374,7 @@ BEGIN
         WHERE
             email = record_row.person_email;
 
-        INSERT INTO public. refinedpersons (
+        INSERT INTO public.refinedpersons (
             user_id, email, occurrence, recency, seniority,
             sender, recipient, conversations, replied_conversations, tags
         )
@@ -390,11 +397,11 @@ $$;
 
 CREATE FUNCTION "public"."upsert_mining_source"("_user_id" "uuid", "_email" "text", "_type" "text", "_credentials" "text", "_encryption_key" "text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'extensions', 'public'
+    SET "search_path" = '' 
     AS $$
 BEGIN
-    INSERT INTO mining_sources ("user_id", "email", "type", "credentials")
-    VALUES (_user_id, _email, _type, pgp_sym_encrypt(_credentials, _encryption_key))
+    INSERT INTO public.mining_sources ("user_id", "email", "type", "credentials")
+    VALUES (_user_id, _email, _type, extensions.pgp_sym_encrypt(_credentials, _encryption_key))
     ON CONFLICT (email, user_id)
     DO UPDATE 
     SET credentials = EXCLUDED.credentials,
