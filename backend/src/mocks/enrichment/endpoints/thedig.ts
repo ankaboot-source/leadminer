@@ -108,7 +108,6 @@ router.post('/person/bulk', async (req: Request, res: Response) => {
     token: faker.string.nanoid(),
     results: enrichedData
   });
-  
 });
 
 export default router;
