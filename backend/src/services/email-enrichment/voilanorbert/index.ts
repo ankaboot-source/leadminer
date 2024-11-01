@@ -10,7 +10,7 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
 
   enrichSync(
     person: Partial<Person>
-  ): Promise<{ raw_data: unknown; data: EnricherResult[] }> {
+  ): Promise<{ raw_data: unknown[]; data: EnricherResult[] }> {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person

@@ -33,7 +33,7 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
   }
 
   enrichmentMapper(data: ReverseEmailLookupResponse[]): {
-    raw_data: unknown;
+    raw_data: unknown[];
     data: EnricherResult[];
   } {
     const [response] = data;
@@ -80,13 +80,13 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
 
     return {
       data: mapped ? [{ email: response.email, ...mapped }] : [],
-      raw_data: data
+      raw_data: [response]
     };
   }
 
   async enrichSync(
     person: Partial<Person>
-  ): Promise<{ raw_data: unknown; data: EnricherResult[] }> {
+  ): Promise<{ raw_data: unknown[]; data: EnricherResult[] }> {
     try {
       this.logger.debug(`${this.constructor.name}.enrichSync request`, person);
       const response = await this.client.reverseEmailLookup({

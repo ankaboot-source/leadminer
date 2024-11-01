@@ -73,7 +73,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
         response
       )
         ? this.enrichmentMapper([response])
-        : { data: [], raw_data: response };
+        : { data: [], raw_data: [response] };
       return enrichResponse;
     } catch (err) {
       throw new Error((err as Error).message);

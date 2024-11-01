@@ -33,7 +33,7 @@ export interface Person {
 }
 
 export interface EnricherResponse {
-  raw_data: unknown;
+  raw_data: unknown[];
   data: EnricherResult[];
 }
 
