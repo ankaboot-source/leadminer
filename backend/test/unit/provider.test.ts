@@ -27,8 +27,8 @@ describe('getOAuthImapConfigByEmail', () => {
     });
 
     (IMAPSettingsDetector as jest.Mock).mockImplementation(() => ({
-        detect: mockDetect
-      }));
+      detect: mockDetect
+    }));
 
     const config = await getOAuthImapConfigByEmail('test@custom.com');
     expect(mockDetect).toHaveBeenCalledWith('test@custom.com', 'test');
@@ -42,8 +42,8 @@ describe('getOAuthImapConfigByEmail', () => {
   it('Should throw an error for unsupported email domain', async () => {
     const mockDetect = jest.fn().mockReturnValue(null);
     (IMAPSettingsDetector as jest.Mock).mockImplementation(() => ({
-        detect: mockDetect
-      }));
+      detect: mockDetect
+    }));
 
     await expect(getOAuthImapConfigByEmail('test@invalid.com')).rejects.toThrow(
       'Could not detect IMAP configuration for email: test@invalid.com'
