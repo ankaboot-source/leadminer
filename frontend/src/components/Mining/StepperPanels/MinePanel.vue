@@ -212,7 +212,15 @@ onMounted(async () => {
 });
 
 watch(extractionFinished, (finished) => {
-  if (finished || canceled.value) {
+  if (canceled.value) {
+    $toast.add({
+      severity: 'success',
+      summary: t('mining_stopped'),
+      detail: t('mining_canceled'),
+      life: 3000,
+    });
+    $stepper.next();
+  } else if (finished) {
     $toast.add({
       severity: 'success',
       summary: t('mining_done'),
@@ -283,12 +291,6 @@ async function haltMining() {
       cancelEntireTask,
       cancelEntireTask ? null : processes,
     );
-    $toast.add({
-      severity: 'success',
-      summary: t('mining_stopped'),
-      detail: t('mining_canceled'),
-      life: 3000,
-    });
   } catch (error) {
     if (error instanceof FetchError && error.response?.status === 404) {
       $toast.add({

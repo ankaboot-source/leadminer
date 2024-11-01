@@ -384,7 +384,7 @@ export async function enrichSync({
               await enricher.instance.enrichSync(c);
             return {
               data,
-              raw_data: [rawData],
+              raw_data: rawData,
               instance: enricher.type
             };
           } catch (err) {

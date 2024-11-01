@@ -250,10 +250,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       if (endEntireTask) {
         miningTask.value = undefined;
         fetchingFinished.value = true;
-        extractionFinished.value = true;
         cleaningFinished.value = true;
         isLoadingStopMining.value = false;
       }
+      extractionFinished.value = true;
     } catch (err) {
       fetchingFinished.value = true;
       extractionFinished.value = true;

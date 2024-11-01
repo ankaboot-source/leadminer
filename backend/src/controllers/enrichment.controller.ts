@@ -88,16 +88,16 @@ async function enrichContactSync(
     enrichment: { contact, updateEmptyFieldsOnly }
   } = res.locals;
 
-  const [TaskCached, [contactToEnrich]] = await enrichFromCache(
+  const [taskCached, [contactToEnrich]] = await enrichFromCache(
     userResolver,
     user.id,
     updateEmptyFieldsOnly,
     [contact]
   );
 
-  if (TaskCached && !contactToEnrich) {
+  if (taskCached && !contactToEnrich) {
     return res.status(200).json({
-      task: TaskCached
+      task: redactEnrichmentTask(taskCached)
     });
   }
 
@@ -131,7 +131,7 @@ async function enrichPersonBulk(
   );
 
   if (taskCached && !contactsToEnrich.length) {
-    return res.status(200).json({ task: taskCached });
+    return res.status(200).json({ task: redactEnrichmentTask(taskCached) });
   }
 
   const task = await createEnrichmentTask(
