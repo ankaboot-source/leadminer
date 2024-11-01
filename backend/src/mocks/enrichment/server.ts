@@ -3,14 +3,15 @@ import {
   coloredLog,
   colors,
   PROXYCURL_API_TOKEN,
-  PROXYCURL_USERNAME,
   SERVER_PORT,
+  THEDIG_API_TOKEN,
   VOILANORBERT_API_TOKEN,
   VOILANORBERT_USERNAME
 } from './config';
 
 import voilanorbertRoutes from './endpoints/voilanorbert';
 import proxycurlRoutes from './endpoints/proxycurl';
+import thedigRoutes from './endpoints/thedig';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(urlencoded({ limit: '5mb', extended: true }));
 
 app.use('/voilanorbert', voilanorbertRoutes);
 app.use('/proxycurl', proxycurlRoutes);
+app.use('/thedig', thedigRoutes);
 
 app.listen(SERVER_PORT, () => {
   // eslint-disable-next-line no-console
@@ -35,7 +37,11 @@ app.listen(SERVER_PORT, () => {
       '- Proxycurl:'
     )} http://127.0.0.1:${SERVER_PORT}/proxycurl
         ${coloredLog(colors.cyan, '- Api key:')} ${PROXYCURL_API_TOKEN}
-        ${coloredLog(colors.cyan, '- Username:')} ${PROXYCURL_USERNAME}
+    ${coloredLog(
+      colors.cyan,
+      '- Thedig:'
+    )} http://127.0.0.1:${SERVER_PORT}/thedig
+        ${coloredLog(colors.cyan, '- Api key:')} ${THEDIG_API_TOKEN}
   `
   );
 });
