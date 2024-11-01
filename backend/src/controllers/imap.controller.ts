@@ -27,7 +27,7 @@ type NewToken = {
   expires_at: number;
 };
 
-function getImapConnectionProvider(
+async function getImapConnectionProvider(
   data: OAuthMiningSourceCredentials | ImapMiningSourceCredentials
 ) {
   return 'accessToken' in data
@@ -123,7 +123,7 @@ export default function initializeImapController(miningSources: MiningSources) {
           }
         }
 
-        imapConnectionProvider = getImapConnectionProvider(data);
+        imapConnectionProvider = await getImapConnectionProvider(data);
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
         const tree: any = await imapBoxesFetcher.getTree(data.email);

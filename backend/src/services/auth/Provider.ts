@@ -1,3 +1,5 @@
+import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
+
 const GOOGLE_DOMAINS = ['gmail', 'googlemail', 'google'];
 const AZURE_DOMAINS = [
   'outlook',
@@ -41,14 +43,23 @@ export function getDomainFromEmail(email: string) {
   return email.split('@')[1]?.split('.')[0];
 }
 
-export function getOAuthImapConfigByEmail(email: string) {
+export async function getOAuthImapConfigByEmail(email: string) {
   const domain = getDomainFromEmail(email);
   const provider = PROVIDER_BY_DOMAIN.get(domain);
   const imapConfig = provider ? PROVIDER_CONFIG[provider] : null;
 
-  if (imapConfig === null) {
-    throw new Error(`Provider not found for ${email}`);
+  if (imapConfig) {
+    return imapConfig
   }
 
-  return imapConfig;
+  const imapAutoConf = await new IMAPSettingsDetector().detect(email, 'test');
+
+  if (imapAutoConf) {
+    return {
+      host: imapAutoConf.host,
+      port: imapAutoConf.port,
+      tls: imapAutoConf.secure
+    };
+  }
+  throw new Error(`Could not detect IMAP configuration for email: ${email}`);
 }

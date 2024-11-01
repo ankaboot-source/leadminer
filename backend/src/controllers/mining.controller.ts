@@ -298,9 +298,9 @@ export default function initializeMiningController(
 
       const imapConnectionProvider =
         'accessToken' in miningSourceCredentials
-          ? new ImapConnectionProvider(miningSourceCredentials.email).withOauth(
-              miningSourceCredentials.accessToken
-            )
+          ? await new ImapConnectionProvider(
+              miningSourceCredentials.email
+            ).withOauth(miningSourceCredentials.accessToken)
           : new ImapConnectionProvider(
               miningSourceCredentials.email
             ).withPassword(
