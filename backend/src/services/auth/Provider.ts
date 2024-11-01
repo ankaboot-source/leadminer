@@ -49,7 +49,7 @@ export async function getOAuthImapConfigByEmail(email: string) {
   const imapConfig = provider ? PROVIDER_CONFIG[provider] : null;
 
   if (imapConfig) {
-    return imapConfig
+    return imapConfig;
   }
 
   const imapAutoConf = await new IMAPSettingsDetector().detect(email, 'test');

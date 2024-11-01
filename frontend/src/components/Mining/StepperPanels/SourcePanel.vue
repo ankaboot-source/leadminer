@@ -123,12 +123,12 @@ onMounted(async () => {
   }
 
   watch(sourceModel, (source) => {
-  // Watch for changes in `sourceModel` after the initial source selection.
-  // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
-  if (source) {
-    onSourceChange(source)
-  }
-})
+    // Watch for changes in `sourceModel` after the initial source selection.
+    // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
+    if (source) {
+      onSourceChange(source);
+    }
+  });
 });
 
 defineExpose({
