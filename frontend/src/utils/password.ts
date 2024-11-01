@@ -6,6 +6,13 @@ export const SPECIAL_CHAR_PATTERN = new RegExp(
   `[${SPECIAL_CHARACTERS.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')}]`,
 );
 
+export const STRONG_PASSWORD_REGEX = new RegExp(
+  `^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[${SPECIAL_CHARACTERS.replace(
+    /[-[\]{}()*+?.,\\^$|#\s]/g,
+    '\\$&',
+  )}]).{${PASSWORD_MIN_LENGTH},}$`,
+);
+
 export const hasLowerCase = (password: string) =>
   Boolean(password) && /.*[a-z]+.*/g.test(password);
 
@@ -19,8 +26,4 @@ export const hasSpecialChar = (password: string) =>
   Boolean(password) && SPECIAL_CHAR_PATTERN.test(password);
 
 export const isInvalidPassword = (password: string) =>
-  (Boolean(password) &&
-    hasLowerCase(password) &&
-    hasUpperCase(password) &&
-    hasNumber(password) &&
-    hasSpecialChar(password)) === false;
+  !STRONG_PASSWORD_REGEX.test(password);

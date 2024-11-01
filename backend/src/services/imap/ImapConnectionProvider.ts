@@ -34,12 +34,12 @@ class ImapConnectionProvider {
    * Builds the configuration for connecting to Google using OAuth.
    * @param accessToken - OAuth access token
    */
-  withOauth(token: string) {
+  async withOauth(token: string) {
     try {
       const email = this.imapConfig.user;
       const xoauth2Token = generateXOauthToken(token, email);
 
-      const { host, port, tls } = getOAuthImapConfigByEmail(email);
+      const { host, port, tls } = await getOAuthImapConfigByEmail(email);
       const tlsOptions = { host, port, servername: host };
 
       this.imapConfig = {

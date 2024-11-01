@@ -7,7 +7,7 @@
           v-model="email"
           :invalid="
             isInvalidEmailSyntax(email) ||
-            !validateEmailRequired ||
+            validateEmailRequired ||
             invalidEmail ||
             isEmailExist
           "
@@ -18,7 +18,7 @@
             () => {
               invalidEmail = false;
               isEmailExist = false;
-              validateEmailRequired = true;
+              validateEmailRequired = !email;
             }
           "
           @focusin="emailFocus = true"
@@ -30,7 +30,7 @@
             {{ $t('auth.valid_email') }}
           </small>
         </template>
-        <template v-else-if="!validateEmailRequired">
+        <template v-else-if="validateEmailRequired">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('common.email_required') }}
           </small>
@@ -50,19 +50,20 @@
           :input-style="{ width: '100%' }"
           toggle-mask
           required
+          :medium-regex="STRONG_PASSWORD_REGEX"
+          :strong-regex="STRONG_PASSWORD_REGEX"
           :invalid="
-            (password.length && isInvalidPasswordSyntax(password)) ||
-            !validatePasswordRequired ||
-            invalidPassword
+            invalidPassword ||
+            validatePasswordRequired ||
+            (password.length > 0 && isInvalidPasswordSyntax(password))
           "
           aria-describedby="password-help"
           :weak-label="$t('auth.suggestion_weak_label')"
-          :medium-label="$t('auth.suggestion_medium_label')"
           :strong-label="$t('auth.suggestion_strong_label')"
           @input="
             () => {
               invalidPassword = false;
-              validatePasswordRequired = true;
+              validatePasswordRequired = !password;
             }
           "
           @focusin="passwordFocus = true"
@@ -121,7 +122,7 @@
             {{ $t('auth.valid_password') }}
           </small>
         </template>
-        <template v-else-if="!validatePasswordRequired">
+        <template v-else-if="validatePasswordRequired">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('common.password_required') }}
           </small>
@@ -149,7 +150,7 @@
               v-model="email"
               :invalid="
                 isInvalidEmailSyntax(email) ||
-                !validateEmailRequired ||
+                validateEmailRequired ||
                 invalidEmail
               "
               type="email"
@@ -157,7 +158,7 @@
               @input="
                 () => {
                   invalidEmail = false;
-                  validateEmailRequired = true;
+                  validateEmailRequired = !email;
                 }
               "
               @focusin="emailFocus = true"
@@ -174,7 +175,7 @@
                 {{ $t('auth.valid_email') }}
               </small>
             </template>
-            <template v-else-if="!validateEmailRequired">
+            <template v-else-if="validateEmailRequired">
               <small id="email-help" class="text-red-400 text-left pl-4">
                 {{ $t('common.email_required') }}
               </small>
@@ -187,38 +188,29 @@
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
-              :invalid="
-                (password.length && isInvalidPasswordSyntax(password)) ||
-                !validatePasswordRequired ||
-                invalidPassword
-              "
+              :invalid="invalidPassword || validatePasswordRequired"
               toggle-mask
               required
               :feedback="false"
               @input="
                 () => {
                   invalidPassword = false;
-                  validatePasswordRequired = true;
+                  validatePasswordRequired = !password;
                 }
               "
               @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
               @keypress.enter="loginWithEmailAndPassword"
             />
+
             <template v-if="invalidPassword">
               <small id="password-help" class="text-red-400 text-left pl-4">
                 {{ $t('auth.invalid_login') }}
               </small>
             </template>
-            <template
-              v-else-if="password.length && isInvalidPasswordSyntax(password)"
-            >
+
+            <template v-else-if="validatePasswordRequired">
               <small id="password-help" class="text-red-400 text-left pl-4">
-                {{ $t('auth.valid_password') }}
-              </small>
-            </template>
-            <template v-else-if="!validatePasswordRequired">
-              <small id="email-help" class="text-red-400 text-left pl-4">
                 {{ $t('common.password_required') }}
               </small>
             </template>
@@ -280,8 +272,8 @@ const emailFocus = ref(false);
 const password = ref('');
 const passwordFocus = ref(false);
 
-const validateEmailRequired = ref(true);
-const validatePasswordRequired = ref(true);
+const validateEmailRequired = ref(false);
+const validatePasswordRequired = ref(false);
 const isEmailExist = ref(false);
 const invalidEmail = ref(false);
 const invalidPassword = ref(false);
@@ -309,7 +301,7 @@ function checkRequiredFields(): boolean {
   }
 
   if (!password.value) {
-    validatePasswordRequired.value = false;
+    validatePasswordRequired.value = true;
   }
 
   if (!email.value || !password.value) {

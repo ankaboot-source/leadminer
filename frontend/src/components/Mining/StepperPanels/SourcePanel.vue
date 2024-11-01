@@ -93,6 +93,7 @@ function extractContacts() {
     onSourceChange(sourceModel.value);
   }
 }
+
 function selectSource(source: MiningSourceType | string) {
   switch (source) {
     case 'imap':
@@ -120,6 +121,14 @@ onMounted(async () => {
       throw new Error(t('fetch_sources_failed'));
     }
   }
+
+  watch(sourceModel, (source) => {
+    // Watch for changes in `sourceModel` after the initial source selection.
+    // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
+    if (source) {
+      onSourceChange(source);
+    }
+  });
 });
 
 defineExpose({

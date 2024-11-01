@@ -27,17 +27,21 @@ type NewToken = {
   expires_at: number;
 };
 
-function getImapConnectionProvider(
+async function getImapConnectionProvider(
   data: OAuthMiningSourceCredentials | ImapMiningSourceCredentials
 ) {
-  return 'accessToken' in data
-    ? new ImapConnectionProvider(data.email).withOauth(data.accessToken)
-    : new ImapConnectionProvider(data.email).withPassword(
-        data.host,
-        data.password,
-        data.tls,
-        data.port
-      );
+  if ('accessToken' in data) {
+    const connection = await new ImapConnectionProvider(data.email).withOauth(
+      data.accessToken
+    );
+    return connection;
+  }
+  return new ImapConnectionProvider(data.email).withPassword(
+    data.host,
+    data.password,
+    data.tls,
+    data.port
+  );
 }
 
 function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
@@ -123,7 +127,7 @@ export default function initializeImapController(miningSources: MiningSources) {
           }
         }
 
-        imapConnectionProvider = getImapConnectionProvider(data);
+        imapConnectionProvider = await getImapConnectionProvider(data);
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapBoxesFetcher = new ImapBoxesFetcher(imapConnectionProvider);
         const tree: any = await imapBoxesFetcher.getTree(data.email);

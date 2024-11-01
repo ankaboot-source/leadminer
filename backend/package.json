@@ -12,7 +12,7 @@
     "dev-worker": "nodemon src/messageWorker.ts",
     "dev-email-worker": "nodemon src/emailVerificationWorker.ts",
     "dev:webhook-listener": "stripe listen --forward-to http://localhost:8081/api/payment/stripe/webhook",
-    "dev:inspect": "ts-node --inspect src/server.ts",
+    "dev:inspect": "node --inspect -r ts-node/register src/server.ts",
     "lint": "eslint src test",
     "lint:fix": "eslint --fix src test",
     "prettier": "prettier --check .",
