@@ -30,14 +30,18 @@ type NewToken = {
 async function getImapConnectionProvider(
   data: OAuthMiningSourceCredentials | ImapMiningSourceCredentials
 ) {
-  return 'accessToken' in data
-    ? new ImapConnectionProvider(data.email).withOauth(data.accessToken)
-    : new ImapConnectionProvider(data.email).withPassword(
-        data.host,
-        data.password,
-        data.tls,
-        data.port
-      );
+  if ('accessToken' in data) {
+    const connection = await new ImapConnectionProvider(data.email).withOauth(
+      data.accessToken
+    );
+    return connection;
+  }
+  return new ImapConnectionProvider(data.email).withPassword(
+    data.host,
+    data.password,
+    data.tls,
+    data.port
+  );
 }
 
 function getTokenAndProvider(data: OAuthMiningSourceCredentials) {
