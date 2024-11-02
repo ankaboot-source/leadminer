@@ -105,7 +105,7 @@ const $leadminerStore = useLeadminerStore();
 const collapsePanel = defineModel<boolean>('collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 
-const { error, provider, source } = $route.query;
+const { error, provider } = $route.query;
 
 const spinnerText = computed(() => {
   if (!(collapsePanel.value && $leadminerStore.activeTask)) return undefined;
@@ -125,13 +125,12 @@ const spinnerText = computed(() => {
 });
 
 onNuxtReady(() => {
-  if (error ?? provider ?? source) {
-    useRouter().replace({ query: {} });
-  }
-  if (source) {
-    collapsePanel.value = false;
-    sourcePanel.value?.selectSource(source as string);
-  } else if (error === 'oauth-consent') {
+  if (provider && error === 'oauth-consent') {
+    const newQuery = { ...useRoute().query };
+    delete newQuery.provider;
+    delete newQuery.error;
+    delete newQuery.referrer;
+    useRouter().replace({ query: newQuery });
     $consentSidebar.show(provider as MiningSourceType);
   }
 });
