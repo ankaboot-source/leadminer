@@ -117,7 +117,7 @@
           </Button>
           <Popover ref="settingsPanel">
             <ul class="list-none p-0 m-0 flex flex-col gap-3">
-              <li class="flex justify-between">
+              <li class="flex justify-between gap-2">
                 <div v-tooltip.left="t('toggle_valid_tooltip')">
                   {{ t('toggle_valid_label') }}
                 </div>
@@ -165,8 +165,9 @@
                 :options="visibleColumnsOptions"
                 :option-disabled="disabledColumns"
                 option-label="label"
+                class="min-w-56"
+                fluid
                 option-value="value"
-                style="width: 14rem"
                 :selected-items-label="
                   t('visible_columns', visibleColumns.length)
                 "
