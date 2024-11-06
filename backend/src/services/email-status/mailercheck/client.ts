@@ -18,7 +18,7 @@ export default class MailerCheckClient {
       }
     });
 
-    this.rate_limit_handler = throttledQueue(50, 60 * 1000);
+    this.rate_limit_handler = throttledQueue(50, 60 * 1000, true);
   }
 
   async verifyEmail(email: string): Promise<MailerCheckResult> {
