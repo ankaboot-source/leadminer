@@ -57,7 +57,7 @@ describe('VoilanorbertEmailEnricher', () => {
       );
       expect(result).toEqual(mockResponse);
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        `Got VoilanorbertEmailEnricher.enrichAsync request`,
+        'Got VoilanorbertEmailEnricher.enrichAsync request',
         persons
       );
     });
@@ -77,7 +77,7 @@ describe('VoilanorbertEmailEnricher', () => {
       );
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        `Got VoilanorbertEmailEnricher.enrichAsync request`,
+        'Got VoilanorbertEmailEnricher.enrichAsync request',
         persons
       );
     });
@@ -173,7 +173,7 @@ describe('VoilanorbertEmailEnricher', () => {
 
       expect(result).toEqual(expectedMappedData);
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        `[VoilanorbertEmailEnricher]-[enrichmentMapper]: Parsing enrichment results`,
+        '[VoilanorbertEmailEnricher]-[enrichmentMapper]: Parsing enrichment results',
         mockWebhookResult
       );
     });
