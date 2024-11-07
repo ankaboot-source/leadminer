@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
+import ENV from '../config';
 import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
+import emailEnrichmentService from '../services/email-enrichment';
+import Billing from '../utils/billing-plugin';
 import {
   createEnrichmentTask,
   enrichFromCache,
@@ -12,9 +15,6 @@ import {
   TaskEnrich,
   updateEnrichmentTask
 } from './enrichment.helpers';
-import Billing from '../utils/billing-plugin';
-import emailEnrichmentService from '../services/email-enrichment';
-import ENV from '../config';
 
 async function checkAndFilterEligibleContacts(
   req: Request,
@@ -211,6 +211,11 @@ export default function initializeEnrichmentController(userResolver: Users) {
       try {
         await enrichContactSync(userResolver, req, res);
       } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.startsWith('Enricher not found.')
+        )
+          res.statusCode = 503;
         next(err);
       }
     },
@@ -222,6 +227,11 @@ export default function initializeEnrichmentController(userResolver: Users) {
       try {
         await enrichPersonBulk(userResolver, req, res);
       } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.startsWith('Enricher not found.')
+        )
+          res.statusCode = 503;
         next(err);
       }
     },

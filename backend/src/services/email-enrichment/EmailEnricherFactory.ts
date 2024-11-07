@@ -1,3 +1,4 @@
+import logger from '../../utils/logger';
 import { EmailEnricher, Person } from './EmailEnricher';
 
 export type EnricherType = 'voilanorbert' | 'thedig' | 'proxycurl';
@@ -24,7 +25,7 @@ export default class ContactEnrichmentManager {
       (enricher) => enricher.default
     );
     if (defaultEnrichers.length !== 1) {
-      throw new Error(
+      logger.warn(
         `Expected one enricher as default got ${defaultEnrichers.length}.`
       );
     }
@@ -65,7 +66,7 @@ export default class ContactEnrichmentManager {
       const enricher = this.enrichers.find((e) => e.type === type);
 
       if (!enricher) {
-        throw new Error(`Enricher with type <${type}> not found.`);
+        throw new Error(`Enricher not found. type: <${type}>`);
       }
 
       return enricher;

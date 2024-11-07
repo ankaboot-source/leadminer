@@ -5,8 +5,8 @@ import MailerCheckClient from './mailercheck/client';
 import RandomEmailStatusVerifier from './random';
 import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
-import ZerobounceClient from './zerobounce/client';
 import ZerobounceEmailStatusVerifier from './zerobounce';
+import ZerobounceClient from './zerobounce/client';
 
 interface Config extends ReacherConfig, MailerCheckConfig, ZerobounceConfig {
   LOAD_BALANCE_VERIFIERS: boolean;
@@ -88,15 +88,6 @@ export default class EmailStatusVerifierFactory {
       if (this.reacherEmailStatusVerifier && !this.verifiers.length) {
         this.verifiers.push(this.reacherEmailStatusVerifier);
       }
-    }
-
-    if (!config.LOAD_BALANCE_VERIFIERS || !this.verifiers.length) {
-      this.verifiers.push(
-        this.zerobounceEmailStatusVerifier ??
-          this.mailerCheckEmailStatusVerifier ??
-          this.reacherEmailStatusVerifier ??
-          this.randomEmailStatusVerifier
-      );
     }
   }
 
