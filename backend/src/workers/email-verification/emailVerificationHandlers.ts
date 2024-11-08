@@ -43,7 +43,7 @@ async function emailVerificationHandlerWithBulk(
             userId,
             existingStatus
           );
-          logger.debug(`Updated person with verification results`, {
+          logger.debug('Updated person with verification results', {
             email,
             verifier: 'CACHED',
             result: existingStatus
