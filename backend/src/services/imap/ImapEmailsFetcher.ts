@@ -117,6 +117,15 @@ export default class ImapEmailsFetcher {
         (folder) => !EXCLUDED_IMAP_FOLDERS.includes(folder)
       );
 
+      logger.debug(
+        `[${this.constructor.name}:getTotalMessages] fetching total messages`,
+        {
+          miningId: this.miningId,
+          email: this.userEmail,
+          folders: this.folders
+        }
+      );
+
       const totalPromises = folders.map(
         (folder) =>
           new Promise<number>((resolve, reject) => {
@@ -151,7 +160,12 @@ export default class ImapEmailsFetcher {
         });
       });
     } catch (err) {
-      logger.error('Failed fetching total messages', err);
+      logger.error('Failed fetching total messages', {
+        miningId: this.miningId,
+        email: this.userEmail,
+        folders: this.folders,
+        error: err
+      });
       throw err;
     } finally {
       if (imapConnection) {
