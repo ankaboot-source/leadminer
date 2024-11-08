@@ -55,9 +55,8 @@ async function emailVerificationHandlerWithBulk(
     );
     await Promise.allSettled(verificationChecks);
 
-    const verificationChecksResults = await Promise.allSettled(
-      verificationChecks
-    );
+    const verificationChecksResults =
+      await Promise.allSettled(verificationChecks);
 
     verificationChecksResults.forEach((result) => {
       if (result.status === 'rejected') {
