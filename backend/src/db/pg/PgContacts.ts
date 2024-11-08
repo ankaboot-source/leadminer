@@ -93,7 +93,7 @@ export default class PgContacts implements Contacts {
   private static readonly SET_PERSON_STATUS_SQL = `
     UPDATE persons
     SET status = $1, verification_details = $2
-    WHERE email = $3 AND user_id = $4 AND persons.status IS NULL;`;
+    WHERE email = $3 AND user_id = $4;`;
 
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
