@@ -108,12 +108,19 @@ export default class PgContacts implements Contacts {
     statusWithDetails: EmailStatusResult
   ): Promise<boolean> {
     try {
-      await this.pool.query(PgContacts.SET_PERSON_STATUS_SQL, [
+      const query = await this.pool.query(PgContacts.SET_PERSON_STATUS_SQL, [
         statusWithDetails.status,
         { ...statusWithDetails.details, verifiedOn: new Date().toISOString() },
         personEmail,
         userId
       ]);
+
+      if (query.rowCount === 0) {
+        throw new Error(
+          `[${this.constructor.name}:updateSinglePersonStatus]: 0 rows are updated for person status.`
+        );
+      }
+
       if (statusWithDetails.details?.isRole) {
         await this.pool.query(
           format(PgContacts.INSERT_TAGS_SQL, [
@@ -129,7 +136,11 @@ export default class PgContacts implements Contacts {
       }
       return true;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`[${this.constructor.name}:updateSinglePersonStatus]`, {
+        email: personEmail,
+        status: statusWithDetails,
+        error
+      });
       return false;
     }
   }

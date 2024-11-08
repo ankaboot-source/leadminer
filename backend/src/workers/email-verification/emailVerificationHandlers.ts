@@ -33,20 +33,40 @@ async function emailVerificationHandlerWithBulk(
         const existingStatus = await emailStatusCache.get(email);
 
         if (existingStatus) {
-          logger.debug('[CACHED]: Got verification results from cache', {
-            existingStatus
+          logger.debug('Updating person with verification results', {
+            email,
+            verifier: 'CACHED',
+            result: existingStatus
           });
           await contacts.updateSinglePersonStatus(
             email,
             userId,
             existingStatus
           );
+          logger.debug(`Updated person with verification results`, {
+            email,
+            verifier: 'CACHED',
+            result: existingStatus
+          });
         } else {
           waitingForVerification.set(email, userId);
         }
       }
     );
     await Promise.allSettled(verificationChecks);
+
+    const verificationChecksResults = await Promise.allSettled(
+      verificationChecks
+    );
+
+    verificationChecksResults.forEach((result) => {
+      if (result.status === 'rejected') {
+        logger.error(
+          'Error updating verification status from cache',
+          result.reason
+        );
+      }
+    });
 
     const verifiers = emailStatusVerifierFactory.getEmailVerifiers(
       Array.from(waitingForVerification.keys())
@@ -89,6 +109,11 @@ async function emailVerificationHandlerWithBulk(
           const updatePromises = verified.map(async (verificationStatus) => {
             const { email } = verificationStatus;
             const userId = waitingForVerification.get(email);
+            logger.debug('Updating person with verification results', {
+              email,
+              verifier: verifierName,
+              result: verificationStatus
+            });
             if (userId) {
               await emailStatusCache.set(email, verificationStatus);
               await contacts.updateSinglePersonStatus(
@@ -96,16 +121,24 @@ async function emailVerificationHandlerWithBulk(
                 userId,
                 verificationStatus
               );
-              logger.debug(
-                `[${verifierName}]: Got verification results from verifier`,
-                {
-                  verificationStatus
-                }
-              );
+              logger.debug('Updated person with verification results', {
+                email,
+                verifier: verifierName,
+                result: verificationStatus
+              });
             }
           });
 
-          await Promise.allSettled(updatePromises);
+          const updateResults = await Promise.allSettled(updatePromises);
+
+          updateResults.forEach((result) => {
+            if (result.status === 'rejected') {
+              logger.error(
+                `Error updating verification status from ${verifierName}`,
+                result.reason
+              );
+            }
+          });
         } catch (verifierError) {
           logger.error(
             `[${verifierName}]: Failed to verify emails`,
@@ -115,7 +148,13 @@ async function emailVerificationHandlerWithBulk(
       }
     );
 
-    await Promise.allSettled(verifierPromises);
+    const allVerifierResults = await Promise.allSettled(verifierPromises);
+
+    allVerifierResults.forEach((result) => {
+      if (result.status === 'rejected') {
+        logger.error('Error in verifier promise', result.reason);
+      }
+    });
   } catch (error) {
     logger.error('Failed when processing message from the stream', error);
   }
