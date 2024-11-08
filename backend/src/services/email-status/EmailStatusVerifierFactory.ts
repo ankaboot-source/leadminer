@@ -76,19 +76,19 @@ export default class EmailStatusVerifierFactory {
       );
     }
 
-    if (config.LOAD_BALANCE_VERIFIERS === true) {
-      if (this.mailerCheckEmailStatusVerifier) {
-        this.verifiers.push(this.mailerCheckEmailStatusVerifier);
-      }
-
-      if (this.zerobounceEmailStatusVerifier) {
-        this.verifiers.push(this.zerobounceEmailStatusVerifier);
-      }
-
-      if (this.reacherEmailStatusVerifier && !this.verifiers.length) {
-        this.verifiers.push(this.reacherEmailStatusVerifier);
-      }
-    }
+    this.verifiers = (
+      config.LOAD_BALANCE_VERIFIERS
+        ? [
+            this.mailerCheckEmailStatusVerifier,
+            this.zerobounceEmailStatusVerifier,
+            this.reacherEmailStatusVerifier
+          ]
+        : [
+            this.zerobounceEmailStatusVerifier ??
+              this.mailerCheckEmailStatusVerifier ??
+              this.reacherEmailStatusVerifier
+          ]
+    ).filter(Boolean) as EmailStatusVerifier[];
   }
 
   private getNextVerifier(): EmailStatusVerifier {
