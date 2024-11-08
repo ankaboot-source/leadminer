@@ -178,10 +178,10 @@ export function sanitizeImapInput(input: string): string {
   }
   // Remove CRLF characters to prevent injection
   const sanitized = input.replace(/[\r\n]+/g, '');
-  // Remove dangerous IMAP special characters
-  const safeInput = sanitized.replace(/[{}()"\\*]/g, '');
+  // Escape trailing folder separator (if present)
+  const cleaned = sanitized.replace(/\/$/, '');
   // Strip leading and trailing whitespace
-  const trimmedInput = safeInput.trim();
+  const trimmedInput = cleaned.trim();
 
   if (trimmedInput.length > 255) {
     // exceeds max length defined in RFC

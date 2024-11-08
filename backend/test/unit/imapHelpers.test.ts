@@ -78,10 +78,6 @@ describe('sanitizeImapInput', () => {
     expect(sanitizeImapInput('')).toBe('');
   });
 
-  it('should return an empty string for inputs with only special characters', () => {
-    expect(sanitizeImapInput('{*()}')).toBe('');
-  });
-
   it('should return valid input without changes', () => {
     expect(sanitizeImapInput('ValidFolderName')).toBe('ValidFolderName');
   });
@@ -90,23 +86,9 @@ describe('sanitizeImapInput', () => {
     expect(sanitizeImapInput('Folder-Name_123')).toBe('Folder-Name_123');
   });
 
-  it('should strip out IMAP injection characters', () => {
-    expect(sanitizeImapInput('Folder{Name}')).toBe('FolderName');
-    expect(sanitizeImapInput('Folder(Name)')).toBe('FolderName');
-    expect(sanitizeImapInput('Folder*Name')).toBe('FolderName');
-    expect(sanitizeImapInput('Folder\\"Name')).toBe('FolderName');
-  });
-
   it('should strip out CRLF sequences', () => {
     expect(sanitizeImapInput('Folder\r\nName')).toBe('FolderName');
     expect(sanitizeImapInput('Folder\nName')).toBe('FolderName');
-  });
-
-  it('should remove special IMAP characters', () => {
-    expect(sanitizeImapInput('Folder"Name')).toBe('FolderName');
-    expect(sanitizeImapInput('Folder{Name}*Test("123")')).toBe(
-      'FolderNameTest123'
-    );
   });
 
   it('should throw a TypeError for non-string inputs', () => {
@@ -121,6 +103,11 @@ describe('sanitizeImapInput', () => {
 
   it('should allow valid Unicode characters', () => {
     expect(sanitizeImapInput('FolderñName')).toBe('FolderñName');
+  });
+
+  it('should escape the separator at the end of folder name', () => {
+    const folderName = sanitizeImapInput('folder1/');
+    expect(folderName).toBe('folder1');
   });
 
   it('should throw an error if input exceeds maximum length', () => {
