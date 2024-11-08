@@ -105,11 +105,10 @@ describe('sanitizeImapInput', () => {
     expect(sanitizeImapInput('FolderñName')).toBe('FolderñName');
   });
 
-  it('should escape the separator at the end of folder name', () => {  
+  it('should escape the separator at the end of folder name', () => {
     const folderName = sanitizeImapInput('folder1/');
     expect(folderName).toBe('folder1');
   });
-  
 
   it('should throw an error if input exceeds maximum length', () => {
     const longInput = 'A'.repeat(256); // 256 characters
