@@ -1,10 +1,9 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import EmailStatusVerifierFactory from '../../../src/services/email-status/EmailStatusVerifierFactory';
 import MailerCheckEmailStatusVerifier from '../../../src/services/email-status/mailercheck';
-import RandomEmailStatusVerifier from '../../../src/services/email-status/random';
 import ReacherEmailStatusVerifier from '../../../src/services/email-status/reacher';
-import logger from '../../../src/utils/logger';
 import ZerobounceEmailStatusVerifier from '../../../src/services/email-status/zerobounce';
+import logger from '../../../src/utils/logger';
 
 jest.mock('../../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error'
@@ -147,7 +146,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       expect(verifier).toBeInstanceOf(ReacherEmailStatusVerifier);
     });
 
-    it('Reacher, MailerCheck, ZeroBounce are not provided: Fallback to random ', () => {
+    it('Reacher, MailerCheck, ZeroBounce are not provided. ', () => {
       const factory = new EmailStatusVerifierFactory(
         {
           LOAD_BALANCE_VERIFIERS: false,
@@ -157,7 +156,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       );
 
       const verifier = factory.getEmailVerifier('email@domain.com');
-      expect(verifier).toBeInstanceOf(RandomEmailStatusVerifier);
+      expect(verifier).toBe(undefined);
     });
   });
 
@@ -253,25 +252,6 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
           ...outlookEmails,
           ...yahooEmails
         ]
-      ]);
-    });
-
-    it('No provider configured: Use Random verifier', () => {
-      const factoryWithoutOtherVerifiers = new EmailStatusVerifierFactory(
-        {
-          LOAD_BALANCE_VERIFIERS: false,
-          ...reacherDefaultConfig
-        },
-        logger
-      );
-
-      const result = factoryWithoutOtherVerifiers.getEmailVerifiers(emails);
-
-      expect(result.has('mailercheck')).toBeFalsy();
-      expect(result.has('reacher')).toBeFalsy();
-      expect(result.get('random')).toEqual([
-        expect.any(RandomEmailStatusVerifier),
-        emails
       ]);
     });
   });

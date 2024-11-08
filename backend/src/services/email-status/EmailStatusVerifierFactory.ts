@@ -2,7 +2,6 @@ import { Logger } from 'winston';
 import { EmailStatusVerifier, EmailVerifierType } from './EmailStatusVerifier';
 import MailerCheckEmailStatusVerifier from './mailercheck';
 import MailerCheckClient from './mailercheck/client';
-import RandomEmailStatusVerifier from './random';
 import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
 import ZerobounceEmailStatusVerifier from './zerobounce';
@@ -53,11 +52,7 @@ export default class EmailStatusVerifierFactory {
 
   private zerobounceEmailStatusVerifier?: EmailStatusVerifier;
 
-  private readonly randomEmailStatusVerifier: EmailStatusVerifier;
-
   constructor(config: Config, logger: Logger) {
-    this.randomEmailStatusVerifier = new RandomEmailStatusVerifier();
-
     if (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET) {
       this.createReacherEmailStatusVerifier(config, logger);
     }
@@ -76,19 +71,25 @@ export default class EmailStatusVerifierFactory {
       );
     }
 
-    this.verifiers = (
-      config.LOAD_BALANCE_VERIFIERS
-        ? [
-            this.mailerCheckEmailStatusVerifier,
-            this.zerobounceEmailStatusVerifier,
-            this.reacherEmailStatusVerifier
-          ]
-        : [
-            this.zerobounceEmailStatusVerifier ??
-              this.mailerCheckEmailStatusVerifier ??
-              this.reacherEmailStatusVerifier
-          ]
-    ).filter(Boolean) as EmailStatusVerifier[];
+    if (config.LOAD_BALANCE_VERIFIERS === true) {
+      if (this.mailerCheckEmailStatusVerifier) {
+        this.verifiers.push(this.mailerCheckEmailStatusVerifier);
+      }
+
+      if (this.zerobounceEmailStatusVerifier) {
+        this.verifiers.push(this.zerobounceEmailStatusVerifier);
+      }
+
+      if (this.reacherEmailStatusVerifier && !this.verifiers.length) {
+        this.verifiers.push(this.reacherEmailStatusVerifier);
+      }
+    } else {
+      this.verifiers = [
+        this.zerobounceEmailStatusVerifier ??
+          this.mailerCheckEmailStatusVerifier ??
+          this.reacherEmailStatusVerifier
+      ].filter(Boolean) as EmailStatusVerifier[];
+    }
   }
 
   private getNextVerifier(): EmailStatusVerifier {
@@ -109,8 +110,7 @@ export default class EmailStatusVerifierFactory {
     const emailGroups = {
       reacher: [] as string[],
       mailercheck: [] as string[],
-      zerobounce: [] as string[],
-      random: [] as string[]
+      zerobounce: [] as string[]
     };
 
     emails.forEach((email) => {
@@ -126,7 +126,6 @@ export default class EmailStatusVerifierFactory {
           emailGroups.mailercheck.push(email);
           break;
         default:
-          emailGroups.random.push(email);
           break;
       }
     });
@@ -141,40 +140,32 @@ export default class EmailStatusVerifierFactory {
       }
     };
 
-    if (emailGroups.random.length > 0) {
+    if (emailGroups.reacher.length > 0 && this.reacherEmailStatusVerifier) {
       addVerifierEmails(
-        'random',
-        this.randomEmailStatusVerifier,
-        emailGroups.random
+        'reacher',
+        this.reacherEmailStatusVerifier,
+        emailGroups.reacher
       );
-    } else {
-      if (emailGroups.reacher.length > 0 && this.reacherEmailStatusVerifier) {
-        addVerifierEmails(
-          'reacher',
-          this.reacherEmailStatusVerifier,
-          emailGroups.reacher
-        );
-      }
-      if (
-        emailGroups.mailercheck.length > 0 &&
-        this.mailerCheckEmailStatusVerifier
-      ) {
-        addVerifierEmails(
-          'mailercheck',
-          this.mailerCheckEmailStatusVerifier,
-          emailGroups.mailercheck
-        );
-      }
-      if (
-        emailGroups.zerobounce.length > 0 &&
-        this.zerobounceEmailStatusVerifier
-      ) {
-        addVerifierEmails(
-          'zerobounce',
-          this.zerobounceEmailStatusVerifier,
-          emailGroups.zerobounce
-        );
-      }
+    }
+    if (
+      emailGroups.mailercheck.length > 0 &&
+      this.mailerCheckEmailStatusVerifier
+    ) {
+      addVerifierEmails(
+        'mailercheck',
+        this.mailerCheckEmailStatusVerifier,
+        emailGroups.mailercheck
+      );
+    }
+    if (
+      emailGroups.zerobounce.length > 0 &&
+      this.zerobounceEmailStatusVerifier
+    ) {
+      addVerifierEmails(
+        'zerobounce',
+        this.zerobounceEmailStatusVerifier,
+        emailGroups.zerobounce
+      );
     }
 
     return verifiersWithEmails;
