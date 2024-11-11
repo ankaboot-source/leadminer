@@ -22,12 +22,34 @@ export const EMAIL_EXCLUDED_FOLDERS = [
 ];
 
 /**
+ * Gets all selected folders
+ * @param boxes - The array of folder names to filter
+ * @returns The filtered array of boxes
+ */
+function getAllFolders(boxes: BoxNode[]) {
+  const folders: TreeSelectionKeys = [];
+  objectScan(['**.key'], {
+    joined: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filterFn: ({ parent }: any) => {
+      const { key } = parent;
+      folders[key] = {
+        checked: true,
+        partialChecked: false,
+      };
+    },
+  })(boxes);
+  return folders;
+}
+
+/**
  * Filters out default selected folders from the input boxes based on email service
  * @param boxes - The array of folder names to filter
  * @returns The filtered array of boxes
  */
-export function getDefaultSelectedFolders(boxes: BoxNode[]) {
-  const filteredBoxes: TreeSelectionKeys = [];
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getFilteredFolders(boxes: BoxNode[]) {
+  const filteredFolders: TreeSelectionKeys = [];
   objectScan(['**.key'], {
     joined: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,12 +69,22 @@ export function getDefaultSelectedFolders(boxes: BoxNode[]) {
         const checked = attribs && !attribs.includes('\\HasChildren');
         const partialChecked = !checked;
 
-        filteredBoxes[key] = {
+        filteredFolders[key] = {
           checked,
           partialChecked,
         };
       }
     },
   })(boxes);
-  return filteredBoxes;
+  return filteredFolders;
+}
+
+/**
+ * Gets default selected folders from the input boxes based on email service
+ * @param boxes - The array of folder names to filter
+ * @returns The filtered array of boxes
+ */
+export function getDefaultSelectedFolders(boxes: BoxNode[]) {
+  const defaultFolders = getAllFolders(boxes);
+  return defaultFolders;
 }
