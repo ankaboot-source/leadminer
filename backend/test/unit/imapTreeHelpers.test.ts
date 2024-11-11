@@ -4,8 +4,16 @@ import {
   createFlatTreeFromImap
 } from '../../src/utils/helpers/imapTreeHelpers';
 import dataTest from '../testData.json';
+import logger from '../../src/utils/logger';
 
-jest.mock('../../src/config', () => {});
+jest.mock('../../src/config', () => ({
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
+
+// Mock the logger module inline within jest.mock
+jest.mock('../../src/utils/logger', () => ({
+  debug: jest.fn()
+}));
 
 describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
   const { imapTreeExample } = dataTest;
@@ -47,6 +55,119 @@ describe('imapTreeHelpers.createFlatTreeFromImap(imapTree)', () => {
     // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
     const output = createFlatTreeFromImap(imapTreeExample);
     expect(output).toEqual(expectedOutput);
+  });
+
+  it('should separate with the provided delimiter', () => {
+    const imapTreeWithCustomDelimiter = {
+      INBOX: {
+        attribs: ['\\HasChildren'],
+        delimiter: ':',
+        children: {
+          subfolder1: {
+            attribs: ['\\Junk', '\\HasNoChildren'],
+            delimiter: '/',
+            children: null,
+            parent: null
+          },
+          subfolder2: {
+            attribs: ['\\Junk', '\\HasNoChildren'],
+            delimiter: '.',
+            children: null,
+            parent: null
+          }
+        },
+        parent: null
+      }
+    };
+
+    const expectedOutputWithCustomDelimiter = [
+      {
+        label: 'INBOX',
+        key: 'INBOX',
+        attribs: ['\\HasChildren']
+      },
+      {
+        label: 'subfolder1',
+        key: 'INBOX/subfolder1',
+        parent: {
+          label: 'INBOX',
+          key: 'INBOX',
+          attribs: ['\\HasChildren']
+        },
+        attribs: ['\\Junk', '\\HasNoChildren']
+      },
+      {
+        label: 'subfolder2',
+        key: 'INBOX.subfolder2',
+        parent: {
+          label: 'INBOX',
+          key: 'INBOX',
+          attribs: ['\\HasChildren']
+        },
+        attribs: ['\\Junk', '\\HasNoChildren']
+      }
+    ];
+
+    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
+    const output = createFlatTreeFromImap(imapTreeWithCustomDelimiter);
+    expect(output).toEqual(expectedOutputWithCustomDelimiter);
+  });
+
+  it("should log a warning if delimiter is missing and default to '/'", () => {
+    const imapTreeWithMissingDelimiter = {
+      INBOX: {
+        attribs: ['\\HasChildren'],
+        delimiter: ':',
+        children: {
+          subfolder1: {
+            attribs: ['\\Junk', '\\HasNoChildren'],
+            delimiter: '',
+            children: null,
+            parent: null
+          },
+          subfolder2: {
+            attribs: ['\\Junk', '\\HasNoChildren'],
+            delimiter: '',
+            children: null,
+            parent: null
+          }
+        },
+        parent: null
+      }
+    };
+
+    const expectedOutputWithDefaultDelimiter = [
+      {
+        label: 'INBOX',
+        key: 'INBOX',
+        attribs: ['\\HasChildren']
+      },
+      {
+        label: 'subfolder1',
+        key: 'INBOX/subfolder1',
+        parent: {
+          label: 'INBOX',
+          key: 'INBOX',
+          attribs: ['\\HasChildren']
+        },
+        attribs: ['\\Junk', '\\HasNoChildren']
+      },
+      {
+        label: 'subfolder2',
+        key: 'INBOX/subfolder2',
+        parent: {
+          label: 'INBOX',
+          key: 'INBOX',
+          attribs: ['\\HasChildren']
+        },
+        attribs: ['\\Junk', '\\HasNoChildren']
+      }
+    ];
+
+    // @ts-expect-error There is a problem with the type definitions of node-imap.. We can safely ignore it to keep these tests.
+    const output = createFlatTreeFromImap(imapTreeWithMissingDelimiter);
+    expect(output).toEqual(expectedOutputWithDefaultDelimiter);
+    expect(logger.debug).toHaveBeenCalledTimes(2);
   });
 });
 
