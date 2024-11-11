@@ -26,7 +26,6 @@ export const EMAIL_EXCLUDED_FOLDERS = [
  * @param boxes - The array of folder names to filter
  * @returns The filtered array of boxes
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getAllFolders(boxes: BoxNode[]) {
   const folders: TreeSelectionKeys = [];
   objectScan(['**.key'], {
@@ -48,6 +47,7 @@ function getAllFolders(boxes: BoxNode[]) {
  * @param boxes - The array of folder names to filter
  * @returns The filtered array of boxes
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getFilteredFolders(boxes: BoxNode[]) {
   const filteredFolders: TreeSelectionKeys = [];
   objectScan(['**.key'], {
@@ -85,6 +85,6 @@ function getFilteredFolders(boxes: BoxNode[]) {
  * @returns The filtered array of boxes
  */
 export function getDefaultSelectedFolders(boxes: BoxNode[]) {
-  const defaultFolders = getFilteredFolders(boxes);
+  const defaultFolders = getAllFolders(boxes);
   return defaultFolders;
 }
