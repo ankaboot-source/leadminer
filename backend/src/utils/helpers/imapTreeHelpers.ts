@@ -13,7 +13,7 @@ export function createFlatTreeFromImap(
   const readableTree: FlatTree[] = [];
 
   Object.entries(imapTree).forEach(([folderLabel, folderDetails]) => {
-    let {delimiter} = folderDetails;
+    let { delimiter } = folderDetails;
 
     if (!delimiter) {
       delimiter = '/';
