@@ -1,5 +1,6 @@
 import Connection, { MailBoxes } from 'imap';
 import { FlatTree } from '../../services/imap/types';
+import logger from '../logger';
 
 /**
  * createFlatTreeFromImap - creates a readable flat array from tree object
@@ -12,9 +13,21 @@ export function createFlatTreeFromImap(
   const readableTree: FlatTree[] = [];
 
   Object.entries(imapTree).forEach(([folderLabel, folderDetails]) => {
+    let {delimiter} = folderDetails;
+
+    if (!delimiter) {
+      delimiter = '/';
+      logger.debug(
+        `[createFlatTreeFromImap]: Folder separator was not provided. Defaulting to "${delimiter}".`,
+        folderDetails
+      );
+    }
+
     const folder = {
       label: folderLabel,
-      key: currentParent ? `${currentParent.key}/${folderLabel}` : folderLabel,
+      key: currentParent
+        ? `${currentParent.key}${delimiter}${folderLabel}`
+        : folderLabel,
       parent: currentParent,
       attribs: folderDetails.attribs
     };
