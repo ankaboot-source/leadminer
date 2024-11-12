@@ -103,6 +103,7 @@
         <!-- Settings -->
         <div>
           <Button @click="toggleSettingsPanel">
+            {{ $screenStore.size.md ? t('filter') : undefined }}
             <span class="p-button-label">
               <OverlayBadge
                 v-if="filtersStore.areToggledFilters > 0"
@@ -1085,6 +1086,7 @@ table.p-datatable-table {
     "select_at_least_one_contact": "Select at least one contact to export",
     "export_csv": "Export CSV",
     "clear": "Clear",
+    "filter": "Filter",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
     "toggle_valid_label": "Only valid contacts",
     "toggle_replies_tooltip": "Contacts who previously engaged with you perform best",
@@ -1130,6 +1132,7 @@ table.p-datatable-table {
     "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
     "export_csv": "Export CSV",
     "clear": "Vider",
+    "filter": "Filtrer",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
     "toggle_valid_label": "Seulement les contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
