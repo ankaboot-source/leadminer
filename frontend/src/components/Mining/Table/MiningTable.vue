@@ -220,7 +220,7 @@
           <div class="max-w-[70vw] flex items-center gap-2">
             <Image
               v-if="data.image && visibleColumns.includes('image')"
-              :src="getImageFromUrl(data.image)"
+              :src="getImageViaProxy(data.image)"
               class="cursor-pointer flex-none"
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
@@ -727,11 +727,6 @@ const activeMiningTask = computed(
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
-}
-
-function getImageFromUrl(url: string) {
-  const proxy = useRuntimeConfig().IMAGE_REVERSE_PROXY as string | undefined;
-  return getImageViaProxy(url, proxy);
 }
 
 /* *** Filters *** */
