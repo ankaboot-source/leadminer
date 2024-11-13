@@ -10,7 +10,7 @@
       <div class="flex items-center gap-2 w-full">
         <Image
           v-if="contact.image && !editingContact"
-          :src="contact.image"
+          :src="getImageViaProxy(contact.image)"
           image-class="size-16 md:size-20 rounded-full"
           class="flex-none"
         />

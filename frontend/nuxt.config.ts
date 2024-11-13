@@ -50,6 +50,7 @@ export default defineNuxtConfig({
       // Supabase saas
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
+      IMAGE_REVERSE_PROXY: process.env.IMAGE_REVERSE_PROXY,
     },
   },
 
@@ -125,6 +126,10 @@ export default defineNuxtConfig({
       include: ['/dashboard', '/account(/*)?'],
       exclude: ['/auth(/*)?', '/credits-success'],
     },
+  },
+
+  security: {
+    enabled: false,
   },
 
   compatibilityDate: '2024-08-26',
