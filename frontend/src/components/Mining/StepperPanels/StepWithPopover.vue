@@ -14,6 +14,7 @@
 </template>
 
 <script lang="ts" setup>
+const $stepper = useMiningStepper();
 const { stepNumber, isActive, title } = defineProps<{
   stepNumber: string | number;
   isActive: boolean;
@@ -23,6 +24,9 @@ const { stepNumber, isActive, title } = defineProps<{
 const titlePopover = ref();
 const toggle = (event: MouseEvent) => {
   titlePopover.value.toggle(event);
+  $stepper.go(parseInt(stepNumber as string));
+
+  setTimeout(() => titlePopover.value.hide(), 5000);
 };
 </script>
 

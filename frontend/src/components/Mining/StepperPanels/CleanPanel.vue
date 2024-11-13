@@ -16,7 +16,7 @@
       }}
     </template>
   </ProgressCard>
-  <div class="flex pt-6 justify-end">
+  <div class="flex flex-col gap-2 pt-6 justify-end md:flex-row">
     <Button
       v-if="activeTask"
       class="w-full md:w-max border-solid border-2 border-black"
@@ -26,7 +26,7 @@
       :label="t('halt_cleaning')"
       @click="haltCleaning"
     />
-    <div v-else class="space-x-2">
+    <div v-else class="flex flex-col gap-2 md:flex-row">
       <Button
         class="w-full md:w-max"
         severity="secondary"
