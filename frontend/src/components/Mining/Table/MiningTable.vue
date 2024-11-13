@@ -730,7 +730,7 @@ function openContactInformation(data: Contact) {
 }
 
 function getImageFromUrl(url: string) {
-  const proxy = useRuntimeConfig().IMAGE_PROXY_URL as string | undefined;
+  const proxy = useRuntimeConfig().IMAGE_REVERSE_PROXY as string | undefined;
   return getImageViaProxy(url, proxy);
 }
 
