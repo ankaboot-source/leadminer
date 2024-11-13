@@ -220,7 +220,7 @@
           <div class="max-w-[70vw] flex items-center gap-2">
             <Image
               v-if="data.image && visibleColumns.includes('image')"
-              :src="data.image"
+              :src="getImageFromUrl(data.image)"
               class="cursor-pointer flex-none"
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
@@ -683,6 +683,7 @@ import {
   tags,
 } from '~/utils/contacts';
 import { saveCSVFile } from '~/utils/csv';
+import { getImageViaProxy } from '~/utils/images';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
 
@@ -726,6 +727,11 @@ const activeMiningTask = computed(
 
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
+}
+
+function getImageFromUrl(url: string) {
+  const proxy = useRuntimeConfig().IMAGE_PROXY_URL as string | undefined;
+  return getImageViaProxy(url, proxy);
 }
 
 /* *** Filters *** */
