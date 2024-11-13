@@ -82,12 +82,12 @@ import type {
 } from '@supabase/supabase-js';
 
 import type { EnrichContactResponse, EnrichmentTask } from '@/types/enrichment';
-import type { Contact } from '~/types/contact';
 import {
   CreditsDialog,
   CreditsDialogRef,
   openCreditsDialog,
 } from '@/utils/credits';
+import type { Contact } from '~/types/contact';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -231,6 +231,12 @@ async function enrichPerson(
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
         handleEnrichmentProgressNotification(task);
+      } else if (response.status === 503) {
+        showNotification(
+          'error',
+          t('notification.summary'),
+          t('notification.enricher_configuration_required'),
+        );
       }
     },
   });
@@ -256,7 +262,17 @@ async function enrichPersonBulk(
         stopEnrichment();
         openCreditsDialog(true, total, available, 0);
       } else if (response.status === 200) {
-        handleEnrichmentProgressNotification(task);
+        if (task.status === 'running') {
+          setupEnrichmentRealtime();
+        } else {
+          handleEnrichmentProgressNotification(task);
+        }
+      } else if (response.status === 503) {
+        showNotification(
+          'error',
+          t('notification.summary'),
+          t('notification.enricher_configuration_required'),
+        );
       }
     },
   });
@@ -272,7 +288,6 @@ async function startEnrichment(updateEmptyFieldsOnly: boolean) {
     if (contactsToEnrich.value?.length === 1) {
       await enrichPerson(updateEmptyFieldsOnly, contactsToEnrich.value[0]);
     } else {
-      setupEnrichmentRealtime();
       await enrichPersonBulk(
         updateEmptyFieldsOnly,
         enrichAllContacts.value,
@@ -318,7 +333,8 @@ const closeEnrichmentConfirmationDialog = () => {
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
-      "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts."
+      "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts.",
+      "enricher_configuration_required": "Enricher configuration is required."
     },
     "button": {
       "start_enrichment": "Enrich",
@@ -336,7 +352,8 @@ const closeEnrichmentConfirmationDialog = () => {
       "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
-      "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés."
+      "no_additional_info": "L'enrichissement est terminé, mais aucune information supplémentaire n'a été trouvée pour les contacts sélectionnés.",
+      "enricher_configuration_required": "Configuration de l'enrichisseur est requise."
     },
     "button": {
       "start_enrichment": "Enrichir",

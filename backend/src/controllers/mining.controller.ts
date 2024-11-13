@@ -6,100 +6,21 @@ import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
-import azureOAuth2Client from '../services/OAuth2/azure';
-import googleOAuth2Client from '../services/OAuth2/google';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import {
   generateErrorObjectFromImapError,
-  getValidImapLogin
+  getValidImapLogin,
+  sanitizeImapInput
 } from './imap.helpers';
-
-const providerScopes = {
-  google: {
-    scopes: [
-      'openid',
-      'https://mail.google.com/',
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile'
-    ],
-    requiredScopes: [
-      'openid',
-      'https://mail.google.com/',
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile'
-    ]
-  },
-  azure: {
-    scopes: [
-      'https://outlook.office.com/IMAP.AccessAsUser.All',
-      'offline_access',
-      'email',
-      'openid',
-      'profile'
-    ],
-    requiredScopes: ['https://outlook.office.com/IMAP.AccessAsUser.All']
-  }
-};
-
-function getAuthClient(provider: OAuthMiningSourceProvider) {
-  switch (provider) {
-    case 'google':
-      return googleOAuth2Client;
-    case 'azure':
-      return azureOAuth2Client;
-    default:
-      throw new Error('Not a valid OAuth provider');
-  }
-}
-
-function getTokenConfig(provider: OAuthMiningSourceProvider) {
-  return {
-    redirect_uri: `${ENV.LEADMINER_API_HOST}/api/imap/mine/sources/${provider}/callback`,
-    scope: providerScopes[provider].scopes,
-    access_type: provider === 'google' ? 'offline' : undefined,
-    prompt: provider === 'google' ? 'consent' : undefined
-  };
-}
-
-type TokenType = {
-  refreshToken: string;
-  accessToken: string;
-  idToken: string;
-  expiresAt: number;
-};
-
-async function getTokenWithScopeValidation(
-  tokenConfig: {
-    code: string;
-    redirect_uri: string;
-    scope: string[];
-    access_type: string | undefined;
-    prompt: string | undefined;
-  },
-  provider: OAuthMiningSourceProvider
-) {
-  const { token } = await getAuthClient(provider).getToken(tokenConfig);
-
-  const approvedScopes = (token.scope as string).split(' ');
-
-  const hasApprovedAllScopes = providerScopes[provider].requiredScopes.every(
-    (scope) => approvedScopes.includes(scope)
-  );
-
-  if (!hasApprovedAllScopes) {
-    throw new Error(' User has not approved all the required scopes');
-  }
-
-  return {
-    refreshToken: token.refresh_token,
-    accessToken: token.access_token,
-    idToken: token.id_token,
-    expiresAt: token.expires_at
-  } as TokenType;
-}
+import { validateType } from '../utils/helpers/validation';
+import {
+  getAuthClient,
+  getTokenConfig,
+  getTokenWithScopeValidation
+} from './mining.helpers';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -162,38 +83,59 @@ export default function initializeMiningController(
       next: NextFunction
     ) {
       const user = res.locals.user as User;
-      const { email, host, password, port, secure } = req.body;
-
-      const missingParams = Object.entries({
+      const {
         email,
         host,
         password,
         port,
         secure
-      })
-        .filter(([, value]) => value === undefined)
-        .map(([key]) => key);
+      }: {
+        email: string;
+        host: string;
+        password: string;
+        port: number;
+        secure: boolean;
+      } = req.body;
 
-      if (missingParams.length) {
-        res.status(400).json({
-          message: `Missing required parameters ${missingParams.join(', ')}`
-        });
+      const errors = [
+        validateType('email', email, 'string'),
+        validateType('host', host, 'string'),
+        validateType('password', password, 'string'),
+        validateType('port', port, 'number'),
+        validateType('secure', secure, 'boolean')
+      ].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
+
+      const sanitizedHost = sanitizeImapInput(host);
+      const sanitizedEmail = sanitizeImapInput(email);
+      const sanitizedPassword = sanitizeImapInput(password);
 
       try {
         // Validate & Get the valid IMAP login connection before creating the pool.
         const login = await getValidImapLogin(
-          host,
-          email,
-          password,
+          sanitizedHost,
+          sanitizedEmail,
+          sanitizedPassword,
           port,
           secure
         );
+
         await miningSources.upsert({
           userId: user.id,
-          email,
+          email: sanitizedEmail,
           type: 'imap',
-          credentials: { email: login, host, password, port, tls: secure }
+          credentials: {
+            port,
+            tls: secure,
+            email: login,
+            host: sanitizedHost,
+            password: sanitizedPassword
+          }
         });
 
         return res
@@ -235,16 +177,36 @@ export default function initializeMiningController(
     async startMining(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
 
-      const { miningSource, boxes } = req.body;
+      const {
+        miningSource: { email },
+        boxes: folders
+      }: {
+        miningSource: {
+          email: string;
+        };
+        boxes: string[];
+      } = req.body;
 
-      if (!miningSource || !boxes) {
-        res.status(400).json({ message: 'Invalid mining source provided' });
+      const errors = [
+        validateType('email', email, 'string'),
+        validateType('boxes', folders, 'string[]')
+      ].filter(Boolean);
+
+      if (errors.length) {
+        return res
+          .status(400)
+          .json({ message: `Invalid input: ${errors.join(', ')}` });
       }
+
+      const sanitizedEmail = sanitizeImapInput(email);
+      const sanitizedFolders = folders.map((folder) =>
+        sanitizeImapInput(folder)
+      );
 
       const miningSourceCredentials =
         await miningSources.getCredentialsBySourceEmail(
           user.id,
-          miningSource.email
+          sanitizedEmail
         );
 
       if (!miningSourceCredentials) {
@@ -255,9 +217,9 @@ export default function initializeMiningController(
 
       const imapConnectionProvider =
         'accessToken' in miningSourceCredentials
-          ? new ImapConnectionProvider(miningSourceCredentials.email).withOauth(
-              miningSourceCredentials.accessToken
-            )
+          ? await new ImapConnectionProvider(
+              miningSourceCredentials.email
+            ).withOauth(miningSourceCredentials.accessToken)
           : new ImapConnectionProvider(
               miningSourceCredentials.email
             ).withPassword(
@@ -275,7 +237,7 @@ export default function initializeMiningController(
         imapConnection = await imapConnectionProvider.acquireConnection();
         const imapEmailsFetcherOptions: ImapEmailsFetcherOptions = {
           imapConnectionProvider,
-          boxes,
+          boxes: sanitizedFolders,
           userId: user.id,
           email: miningSourceCredentials.email,
           batchSize: ENV.LEADMINER_FETCH_BATCH_SIZE,
@@ -293,6 +255,13 @@ export default function initializeMiningController(
           err.message.toLowerCase().startsWith('invalid credentials')
         ) {
           return res.status(401).json({ message: err.message });
+        }
+        if (
+          err instanceof Error &&
+          'textCode' in err &&
+          err.textCode === 'CANNOT'
+        ) {
+          return res.sendStatus(409);
         }
 
         const newError = generateErrorObjectFromImapError(err);

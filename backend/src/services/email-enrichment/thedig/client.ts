@@ -1,11 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
+import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
 import { Person } from '../EmailEnricher';
 
 interface Config {
   url: string;
   apiToken: string;
+  rateLimiter: {
+    requests: number;
+    interval: number;
+    spaced: boolean;
+  };
 }
 
 export interface EnrichPersonRequest {
@@ -51,9 +57,10 @@ export interface EnrichPersonResponse {
 
 export default class TheDig {
   private readonly api: AxiosInstance;
+  private readonly rateLimiter;
 
   constructor(
-    { url, apiToken }: Config,
+    { url, apiToken, rateLimiter: { requests, interval, spaced } }: Config,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
@@ -62,15 +69,14 @@ export default class TheDig {
         'X-API-KEY': apiToken
       }
     });
+    this.rateLimiter = throttledQueue(requests, interval, spaced);
   }
 
   async enrich(person: EnrichPersonRequest) {
     try {
-      const { data } = await this.api.post<EnrichPersonResponse>(
-        '/person/',
-        person
+      const { data } = await this.rateLimiter(() =>
+        this.api.post<EnrichPersonResponse>('/person/', person)
       );
-
       return data;
     } catch (error) {
       logError(error, `[${this.constructor.name}:enrich]`, this.logger);
@@ -80,9 +86,8 @@ export default class TheDig {
 
   async enrichBulk(persons: Partial<Person>[], webhook: string) {
     try {
-      const { data } = await this.api.post(
-        `/person/bulk?endpoint=${webhook}`,
-        persons
+      const { data } = await this.rateLimiter(() =>
+        this.api.post(`/person/bulk?endpoint=${webhook}`, persons)
       );
 
       return {

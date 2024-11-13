@@ -252,24 +252,32 @@ CREATE TABLE "public"."profiles" (
     PRIMARY KEY ("user_id")
 );
 
-CREATE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 BEGIN
     INSERT INTO public.profiles (user_id, email, full_name)
     VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name');
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
-CREATE FUNCTION public.update_email_in_profile_table()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.update_email_in_profile_table()
+RETURNS TRIGGER 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 BEGIN
     UPDATE public.profiles
     SET email = NEW.email
     WHERE user_id = NEW.id;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users

@@ -1,6 +1,7 @@
 import { Logger } from 'winston';
 import { EmailEnricher, EnricherResult, Person } from '../EmailEnricher';
 import Voilanorbert, { VoilanorbertWebhookResult } from './client';
+import { undefinedIfFalsy, undefinedIfEmpty } from '../utils';
 
 export default class VoilanorbertEmailEnricher implements EmailEnricher {
   constructor(
@@ -10,7 +11,7 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
 
   enrichSync(
     person: Partial<Person>
-  ): Promise<{ raw_data: unknown; data: EnricherResult[] }> {
+  ): Promise<{ raw_data: unknown[]; data: EnricherResult[] }> {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person
@@ -48,26 +49,19 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
     );
     const results = enrichedData.results ?? enrichedData;
     const enriched = results
-      .map(
-        ({
-          email,
-          fullName,
-          organization,
-          title,
-          facebook,
-          linkedin,
-          twitter,
-          location
-        }) => ({
-          image: undefined,
-          email,
-          name: fullName || undefined,
-          location: [location].filter(Boolean) || undefined,
-          organization: organization || undefined,
-          jobTitle: title || undefined,
-          sameAs: [facebook, linkedin, twitter].filter(Boolean)
-        })
-      )
+      .map((result) => ({
+        email: result.email,
+        image: undefinedIfFalsy(''),
+        name: undefinedIfFalsy(result.fullName),
+        organization: undefinedIfFalsy(result.organization),
+        jobTitle: undefinedIfFalsy(result.title),
+        location: undefinedIfEmpty([result.location]),
+        sameAs: undefinedIfEmpty([
+          result.facebook,
+          result.linkedin,
+          result.twitter
+        ])
+      }))
       .filter(
         ({ email, name, location, organization, jobTitle, sameAs }) =>
           email !== 'Email' &&

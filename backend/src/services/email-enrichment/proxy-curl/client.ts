@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Logger } from 'winston';
 import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
@@ -65,17 +65,27 @@ export interface ReverseEmailLookupResponse {
 export interface Config {
   url: string;
   apiKey: string;
+  rateLimiter: {
+    requests: number;
+    interval: number;
+    maxRetries: number;
+    spaced: boolean;
+  };
 }
 
 export default class ProxyCurl {
   private readonly api: AxiosInstance;
 
-  private readonly rate_limit_handler;
+  private readonly rateLimiter;
 
-  private static readonly maxRetries = 5;
+  private readonly maxRetries: number = 5;
 
   constructor(
-    { url, apiKey }: Config,
+    {
+      url,
+      apiKey,
+      rateLimiter: { requests, interval, maxRetries, spaced }
+    }: Config,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
@@ -84,7 +94,8 @@ export default class ProxyCurl {
         Authorization: `Bearer ${apiKey}`
       }
     });
-    this.rate_limit_handler = throttledQueue(300, 60 * 1000);
+    this.maxRetries = maxRetries ?? this.maxRetries;
+    this.rateLimiter = throttledQueue(requests, interval, spaced);
   }
 
   async reverseEmailLookup({
@@ -95,7 +106,7 @@ export default class ProxyCurl {
     const response = await this.rateLimitRetryWithExponentialBackoff(
       async () => {
         try {
-          const res = await this.rate_limit_handler(() =>
+          const res = await this.rateLimiter(() =>
             this.api.get<ReverseEmailLookupResponse>(
               '/api/linkedin/profile/resolve/email',
               {
@@ -132,12 +143,15 @@ export default class ProxyCurl {
         }, delay);
       });
     try {
-      return await fn(attempt);
+      const response = await fn(attempt);
+      return response;
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status !== 429) {
-        throw error;
+      if ((error as AxiosError).response?.status !== 429) {
+        throw new Error(
+          (error as AxiosError).message || 'Request failed with unknown error.'
+        );
       }
-      if (attempt >= ProxyCurl.maxRetries) {
+      if (attempt >= this.maxRetries) {
         logError(
           error,
           `[${this.constructor.name}: Exhausted retries]`,
@@ -145,12 +159,11 @@ export default class ProxyCurl {
         );
         throw error;
       }
-      this.logger.info(
-        `[${this.constructor.name}: ] Rate limited, retrying attempt ${attempt}`
-      );
       const delay = 2 ** attempt * 1000;
-      this.logger.info(`Waiting ${delay}ms before retry...`);
-      sleep(delay);
+      this.logger.info(
+        `[${this.constructor.name}:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt ${attempt} waiting ${delay}ms before retry`
+      );
+      await sleep(delay);
       return this.rateLimitRetryWithExponentialBackoff(fn, attempt + 1);
     }
   }

@@ -1,5 +1,8 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { generateErrorObjectFromImapError } from '../../src/controllers/imap.helpers';
+import {
+  generateErrorObjectFromImapError,
+  sanitizeImapInput
+} from '../../src/controllers/imap.helpers';
 import { ImapAuthError } from '../../src/utils/errors';
 
 jest.mock('../../src/config', () => ({
@@ -68,4 +71,47 @@ describe('generateErrorObjectFromImapError', () => {
       });
     }
   );
+});
+
+describe('sanitizeImapInput', () => {
+  it('should return an empty string for empty input', () => {
+    expect(sanitizeImapInput('')).toBe('');
+  });
+
+  it('should return valid input without changes', () => {
+    expect(sanitizeImapInput('ValidFolderName')).toBe('ValidFolderName');
+  });
+
+  it('should allow valid characters', () => {
+    expect(sanitizeImapInput('Folder-Name_123')).toBe('Folder-Name_123');
+  });
+
+  it('should strip out CRLF sequences', () => {
+    expect(sanitizeImapInput('Folder\r\nName')).toBe('FolderName');
+    expect(sanitizeImapInput('Folder\nName')).toBe('FolderName');
+  });
+
+  it('should throw a TypeError for non-string inputs', () => {
+    expect(() => sanitizeImapInput(123 as any)).toThrow(TypeError);
+    expect(() => sanitizeImapInput(null as any)).toThrow(TypeError);
+    expect(() => sanitizeImapInput({} as any)).toThrow(TypeError);
+  });
+
+  it('should strip leading and trailing whitespace', () => {
+    expect(sanitizeImapInput('  Folder Name  ')).toBe('Folder Name');
+  });
+
+  it('should allow valid Unicode characters', () => {
+    expect(sanitizeImapInput('FolderñName')).toBe('FolderñName');
+  });
+
+  it('should escape the separator at the end of folder name', () => {
+    const folderName = sanitizeImapInput('folder1/');
+    expect(folderName).toBe('folder1');
+  });
+
+  it('should throw an error if input exceeds maximum length', () => {
+    const longInput = 'A'.repeat(256); // 256 characters
+    expect(() => sanitizeImapInput(longInput)).toThrow('Max length exceeded');
+  });
 });

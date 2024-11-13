@@ -12,5 +12,4 @@ export function coloredLog(color: string, text: string) {
 export const SERVER_PORT = 8083;
 export const VOILANORBERT_USERNAME = 'any_string';
 export const VOILANORBERT_API_TOKEN = 'test-api-key';
-export const PROXYCURL_USERNAME = 'any_string';
 export const PROXYCURL_API_TOKEN = 'test-api-key';

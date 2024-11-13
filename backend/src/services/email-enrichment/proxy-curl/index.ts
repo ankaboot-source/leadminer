@@ -6,6 +6,7 @@ import {
   EnrichWebhookResponse,
   Person
 } from '../EmailEnricher';
+import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
 export default class ProxyCurlEmailEnricher implements EmailEnricher {
   constructor(
@@ -13,7 +14,7 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
-  private static getProfileUrls(profile: ProfileExtra): string[] {
+  static getProfileUrls(profile: ProfileExtra): string[] {
     const urls: string[] = [];
 
     if (profile?.github_profile_id) {
@@ -32,36 +33,41 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     return urls;
   }
 
-  enrichmentMapper(data: ReverseEmailLookupResponse): {
-    raw_data: unknown;
+  enrichmentMapper(data: ReverseEmailLookupResponse[]): {
+    raw_data: unknown[];
     data: EnricherResult[];
   } {
+    const [response] = data;
     const mapped = [
       {
-        name: data?.profile?.full_name,
-        givenName: data?.profile?.first_name,
-        familyName: data?.profile?.last_name,
-        jobTitle: data?.profile?.occupation,
-        organization: data?.profile?.experiences?.[0]?.company,
-        image: data?.profile?.profile_pic_url,
-        identifiers: [data?.profile?.public_identifier].filter(
-          (id): id is string => Boolean(id)
+        name: undefinedIfFalsy(response?.profile?.full_name ?? ''),
+        givenName: undefinedIfFalsy(response?.profile?.first_name ?? ''),
+        familyName: undefinedIfFalsy(response?.profile?.last_name ?? ''),
+        jobTitle: undefinedIfFalsy(response?.profile?.occupation ?? ''),
+        organization: undefinedIfFalsy(
+          response?.profile?.experiences?.[0]?.company ?? ''
         ),
-        location: [
+        image: undefinedIfFalsy(response?.profile?.profile_pic_url ?? ''),
+        identifiers: undefinedIfEmpty(
+          [response?.profile?.public_identifier].filter((id): id is string =>
+            Boolean(id)
+          )
+        ),
+        location: undefinedIfEmpty([
           [
-            data?.profile?.city,
-            data?.profile?.state,
-            data?.profile?.country_full_name
+            response?.profile?.city,
+            response?.profile?.state,
+            response?.profile?.country_full_name
           ]
             .filter((loc): loc is string => Boolean(loc))
             .join(', ')
-        ].filter((loc) => loc),
-        sameAs: [
-          data?.linkedin_profile_url,
-          data?.facebook_profile_url,
-          data?.twitter_profile_url,
-          ...ProxyCurlEmailEnricher.getProfileUrls(data?.profile?.extra)
-        ].filter((url): url is string => Boolean(url))
+        ]),
+        sameAs: undefinedIfEmpty([
+          response?.linkedin_profile_url,
+          response?.facebook_profile_url,
+          response?.twitter_profile_url,
+          ...ProxyCurlEmailEnricher.getProfileUrls(response?.profile?.extra)
+        ])
       }
     ]
       .filter(
@@ -78,25 +84,22 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     );
 
     return {
-      data: mapped ? [{ email: data.email, ...mapped }] : [],
-      raw_data: data
+      data: mapped ? [{ email: response.email, ...mapped }] : [],
+      raw_data: [response]
     };
   }
 
   async enrichSync(
     person: Partial<Person>
-  ): Promise<{ raw_data: unknown; data: EnricherResult[] }> {
+  ): Promise<{ raw_data: unknown[]; data: EnricherResult[] }> {
     try {
-      this.logger.debug(
-        `${this.constructor.name}.enrichSync request`,
-        person.email
-      );
+      this.logger.debug(`${this.constructor.name}.enrichSync request`, person);
       const response = await this.client.reverseEmailLookup({
         lookup_depth: 'superficial',
         enrich_profile: 'enrich',
         email: person.email as string
       });
-      return this.enrichmentMapper(response);
+      return this.enrichmentMapper([response]);
     } catch (err) {
       throw new Error((err as Error).message);
     }

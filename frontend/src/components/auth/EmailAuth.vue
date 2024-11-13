@@ -7,7 +7,7 @@
           v-model="email"
           :invalid="
             isInvalidEmailSyntax(email) ||
-            !validateEmailRequired ||
+            validateEmailRequired ||
             invalidEmail ||
             isEmailExist
           "
@@ -18,25 +18,19 @@
             () => {
               invalidEmail = false;
               isEmailExist = false;
-              validateEmailRequired = true;
+              validateEmailRequired = !email;
             }
           "
           @focusin="emailFocus = true"
           @focusout="emailFocus = false"
           @keypress.enter="signUp"
         />
-
-        <template v-if="invalidEmail">
-          <small id="password-help" class="text-red-400 text-left pl-4">
-            {{ $t('auth.invalid_login') }}
-          </small>
-        </template>
-        <template v-else-if="isInvalidEmailSyntax(email)">
+        <template v-if="invalidEmail || isInvalidEmailSyntax(email)">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_email') }}
           </small>
         </template>
-        <template v-else-if="!validateEmailRequired">
+        <template v-else-if="validateEmailRequired">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('common.email_required') }}
           </small>
@@ -56,19 +50,20 @@
           :input-style="{ width: '100%' }"
           toggle-mask
           required
+          :medium-regex="STRONG_PASSWORD_REGEX"
+          :strong-regex="STRONG_PASSWORD_REGEX"
           :invalid="
-            isInvalidPasswordSyntax(password) ||
-            !validatePasswordRequired ||
-            invalidPassword
+            invalidPassword ||
+            validatePasswordRequired ||
+            (password.length > 0 && isInvalidPasswordSyntax(password))
           "
           aria-describedby="password-help"
           :weak-label="$t('auth.suggestion_weak_label')"
-          :medium-label="$t('auth.suggestion_medium_label')"
           :strong-label="$t('auth.suggestion_strong_label')"
           @input="
             () => {
               invalidPassword = false;
-              validatePasswordRequired = true;
+              validatePasswordRequired = !password;
             }
           "
           @focusin="passwordFocus = true"
@@ -98,24 +93,36 @@
                 {{ $t('auth.suggestion_numeric') }}
               </li>
               <li>
-                <i v-if="password.length >= 8" class="pi pi-check-square"></i>
+                <i
+                  v-if="passwordHasSpecialCharacter"
+                  class="pi pi-check-square"
+                ></i>
                 <i v-else class="pi pi-stop"></i>
-                {{ $t('auth.suggestion_min_chars') }}
+                {{
+                  $t('auth.suggestion_special_character', {
+                    characters: SPECIAL_CHARACTERS,
+                  })
+                }}
+              </li>
+              <li>
+                <i v-if="passwordHasMinLength" class="pi pi-check-square"></i>
+                <i v-else class="pi pi-stop"></i>
+                {{ $t('auth.suggestion_min_chars', PASSWORD_MIN_LENGTH) }}
               </li>
             </ul>
           </template>
         </Password>
-        <template v-if="invalidPassword">
-          <small id="password-help" class="text-red-400 text-left pl-4">
-            {{ $t('auth.invalid_login') }}
-          </small>
-        </template>
-        <template v-else-if="isInvalidPasswordSyntax(password)">
+        <template
+          v-if="
+            invalidPassword ||
+            (password.length && isInvalidPasswordSyntax(password))
+          "
+        >
           <small id="password-help" class="text-red-400 text-left pl-4">
             {{ $t('auth.valid_password') }}
           </small>
         </template>
-        <template v-else-if="!validatePasswordRequired">
+        <template v-else-if="validatePasswordRequired">
           <small id="email-help" class="text-red-400 text-left pl-4">
             {{ $t('common.password_required') }}
           </small>
@@ -143,7 +150,7 @@
               v-model="email"
               :invalid="
                 isInvalidEmailSyntax(email) ||
-                !validateEmailRequired ||
+                validateEmailRequired ||
                 invalidEmail
               "
               type="email"
@@ -151,7 +158,7 @@
               @input="
                 () => {
                   invalidEmail = false;
-                  validateEmailRequired = true;
+                  validateEmailRequired = !email;
                 }
               "
               @focusin="emailFocus = true"
@@ -168,7 +175,7 @@
                 {{ $t('auth.valid_email') }}
               </small>
             </template>
-            <template v-else-if="!validateEmailRequired">
+            <template v-else-if="validateEmailRequired">
               <small id="email-help" class="text-red-400 text-left pl-4">
                 {{ $t('common.email_required') }}
               </small>
@@ -181,36 +188,29 @@
             <Password
               v-model="password"
               :input-style="{ width: '100%' }"
-              :invalid="
-                isInvalidPasswordSyntax(password) ||
-                !validatePasswordRequired ||
-                invalidPassword
-              "
+              :invalid="invalidPassword || validatePasswordRequired"
               toggle-mask
               required
               :feedback="false"
               @input="
                 () => {
                   invalidPassword = false;
-                  validatePasswordRequired = true;
+                  validatePasswordRequired = !password;
                 }
               "
               @focusin="passwordFocus = true"
               @focusout="passwordFocus = false"
               @keypress.enter="loginWithEmailAndPassword"
             />
+
             <template v-if="invalidPassword">
               <small id="password-help" class="text-red-400 text-left pl-4">
                 {{ $t('auth.invalid_login') }}
               </small>
             </template>
-            <template v-else-if="isInvalidPasswordSyntax(password)">
+
+            <template v-else-if="validatePasswordRequired">
               <small id="password-help" class="text-red-400 text-left pl-4">
-                {{ $t('auth.valid_password') }}
-              </small>
-            </template>
-            <template v-else-if="!validatePasswordRequired">
-              <small id="email-help" class="text-red-400 text-left pl-4">
                 {{ $t('common.password_required') }}
               </small>
             </template>
@@ -244,6 +244,8 @@ import {
   hasUpperCase,
   isInvalidPassword as isInvalidPasswordSyntax,
 } from '@/utils/password';
+import { AuthApiError, AuthWeakPasswordError } from '@supabase/supabase-js';
+import type { ToastMessageOptions } from 'primevue/toast';
 import { useI18n } from 'vue-i18n';
 
 const { getBrowserLocale } = useI18n({
@@ -270,15 +272,21 @@ const emailFocus = ref(false);
 const password = ref('');
 const passwordFocus = ref(false);
 
-const validateEmailRequired = ref(true);
-const validatePasswordRequired = ref(true);
+const validateEmailRequired = ref(false);
+const validatePasswordRequired = ref(false);
 const isEmailExist = ref(false);
 const invalidEmail = ref(false);
 const invalidPassword = ref(false);
 
+const passwordHasNumber = computed(() => hasNumber(password.value));
 const passwordHasLowerCase = computed(() => hasLowerCase(password.value));
 const passwordHasUpperCase = computed(() => hasUpperCase(password.value));
-const passwordHasNumber = computed(() => hasNumber(password.value));
+const passwordHasSpecialCharacter = computed(() =>
+  hasSpecialChar(password.value),
+);
+const passwordHasMinLength = computed(
+  () => password.value.length >= PASSWORD_MIN_LENGTH,
+);
 
 const isLoading = ref(false);
 
@@ -293,7 +301,7 @@ function checkRequiredFields(): boolean {
   }
 
   if (!password.value) {
-    validatePasswordRequired.value = false;
+    validatePasswordRequired.value = true;
   }
 
   if (!email.value || !password.value) {
@@ -337,23 +345,62 @@ async function loginWithEmailAndPassword() {
   }
 }
 
+function showToast(
+  severity: ToastMessageOptions['severity'],
+  summary: string,
+  detail: string,
+) {
+  $toast.add({
+    severity,
+    summary,
+    detail,
+    life: 3000,
+  });
+}
+
+function handleSuccess() {
+  showToast(
+    'success',
+    $t('auth.sign_up_success'),
+    $t('auth.confirmation_email', { email: email.value }),
+  );
+  $router.push({
+    path: '/auth/success',
+    query: { email: email.value },
+  });
+}
+
+function handleAuthError(error: unknown) {
+  const errorMap: Record<string, () => void> = {
+    weak_password: () => {
+      invalidPassword.value = true;
+      showToast('error', $t('auth.sign_up_failed'), $t('auth.weak_password'));
+    },
+    user_already_exists: () => {
+      isEmailExist.value = true;
+      showToast('error', $t('auth.sign_up_failed'), $t('auth.user_exist'));
+    },
+    validation_failed: () => {
+      invalidEmail.value = true;
+      showToast('error', $t('auth.sign_up_failed'), $t('auth.valid_email'));
+    },
+  };
+
+  if (error instanceof AuthApiError || error instanceof AuthWeakPasswordError) {
+    errorMap[error.code ?? '']?.();
+  } else {
+    throw error;
+  }
+}
+
 async function signUp() {
   isLoading.value = true;
-
+  isEmailExist.value = false;
   setInvalidInputs(false);
 
-  if (checkRequiredFields()) {
-    return;
-  }
+  if (checkRequiredFields()) return;
 
   try {
-    if (
-      isInvalidEmailSyntax(email.value) ||
-      isInvalidPasswordSyntax(password.value)
-    ) {
-      throw Error($t('auth.invalid_login'));
-    }
-
     const { error } = await $supabase.auth.signUp({
       email: email.value,
       password: password.value,
@@ -364,37 +411,12 @@ async function signUp() {
         },
       },
     });
-    if (error) {
-      throw error;
-    }
 
-    $toast.add({
-      severity: 'success',
-      summary: $t('auth.sign_up_success'),
-      detail: $t('auth.confirmation_email', { email: email.value }),
-      life: 3000,
-    });
-    await $router.push({
-      path: '/auth/success',
-      query: { email: email.value },
-    });
+    if (error) throw error;
+
+    handleSuccess();
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'User already registered') {
-        isEmailExist.value = true;
-      } else {
-        setInvalidInputs(true);
-      }
-
-      $toast.add({
-        severity: 'error',
-        summary: $t('auth.sign_up_failed'),
-        detail: $t(
-          isEmailExist.value ? 'auth.user_exist' : 'auth.invalid_login',
-        ),
-        life: 3000,
-      });
-    }
+    handleAuthError(error);
   } finally {
     isLoading.value = false;
   }

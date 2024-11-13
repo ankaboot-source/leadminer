@@ -3,7 +3,6 @@ import {
   coloredLog,
   colors,
   PROXYCURL_API_TOKEN,
-  PROXYCURL_USERNAME,
   SERVER_PORT,
   VOILANORBERT_API_TOKEN,
   VOILANORBERT_USERNAME
@@ -35,7 +34,6 @@ app.listen(SERVER_PORT, () => {
       '- Proxycurl:'
     )} http://127.0.0.1:${SERVER_PORT}/proxycurl
         ${coloredLog(colors.cyan, '- Api key:')} ${PROXYCURL_API_TOKEN}
-        ${coloredLog(colors.cyan, '- Username:')} ${PROXYCURL_USERNAME}
   `
   );
 });

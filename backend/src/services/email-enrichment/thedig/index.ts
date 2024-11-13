@@ -4,6 +4,7 @@ import Voilanorbert, {
   EnrichPersonRequest,
   EnrichPersonResponse
 } from './client';
+import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
 export default class TheDigEmailEnricher implements EmailEnricher {
   constructor(
@@ -73,7 +74,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
         response
       )
         ? this.enrichmentMapper([response])
-        : { data: [], raw_data: response };
+        : { data: [], raw_data: [response] };
       return enrichResponse;
     } catch (err) {
       throw new Error((err as Error).message);
@@ -110,21 +111,21 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     const enriched: EnricherResult[] = results
       .map((person) => ({
         email: person.email,
-        name: person.name,
-        givenName: person.givenName,
-        familyName: person.familyName,
-        image: person.image?.[0],
-        jobTitle: person.jobTitle?.[0],
-        organization: person.worksFor?.[0],
-        sameAs: person.sameAs,
-        identifiers: person.identifier,
-        alternateNames: person.alternateName,
-        location: [
-          person.homeLocation?.join(','),
-          person.workLocation?.join(',')
-        ]
-          .flat()
-          .filter((loc): loc is string => Boolean(loc))
+        name: undefinedIfFalsy(person.name),
+        givenName: undefinedIfFalsy(person.givenName),
+        familyName: undefinedIfFalsy(person.familyName),
+        image: undefinedIfFalsy(person.image?.[0]),
+        jobTitle: undefinedIfFalsy(person.jobTitle?.[0]),
+        organization: undefinedIfFalsy(person.worksFor?.[0]),
+        sameAs: undefinedIfEmpty(person.sameAs ?? []),
+        identifiers: undefinedIfEmpty(person.identifier ?? []),
+        alternateNames: undefinedIfEmpty(person.alternateName ?? []),
+        location: undefinedIfEmpty(
+          [
+            [person.homeLocation].flat().filter(Boolean).join(','),
+            [person.workLocation].flat().filter(Boolean).join(',')
+          ].flat()
+        )
       }))
       .filter(
         ({ organization, jobTitle, location, alternateNames, image }) =>

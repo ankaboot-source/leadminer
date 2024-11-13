@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
+import ENV from '../config';
 import { Users } from '../db/interfaces/Users';
 import { Contact } from '../db/types';
+import emailEnrichmentService from '../services/email-enrichment';
+import Billing from '../utils/billing-plugin';
 import {
   createEnrichmentTask,
   enrichFromCache,
@@ -12,9 +15,6 @@ import {
   TaskEnrich,
   updateEnrichmentTask
 } from './enrichment.helpers';
-import Billing from '../utils/billing-plugin';
-import emailEnrichmentService from '../services/email-enrichment';
-import ENV from '../config';
 
 async function checkAndFilterEligibleContacts(
   req: Request,
@@ -88,16 +88,16 @@ async function enrichContactSync(
     enrichment: { contact, updateEmptyFieldsOnly }
   } = res.locals;
 
-  const [TaskCached, [contactToEnrich]] = await enrichFromCache(
+  const [taskCached, [contactToEnrich]] = await enrichFromCache(
     userResolver,
     user.id,
     updateEmptyFieldsOnly,
     [contact]
   );
 
-  if (TaskCached && !contactToEnrich) {
+  if (taskCached && !contactToEnrich) {
     return res.status(200).json({
-      task: TaskCached
+      task: redactEnrichmentTask(taskCached)
     });
   }
 
@@ -131,7 +131,7 @@ async function enrichPersonBulk(
   );
 
   if (taskCached && !contactsToEnrich.length) {
-    return res.status(200).json({ task: taskCached });
+    return res.status(200).json({ task: redactEnrichmentTask(taskCached) });
   }
 
   const task = await createEnrichmentTask(
@@ -140,7 +140,9 @@ async function enrichPersonBulk(
     updateEmptyFieldsOnly
   );
 
-  const enrichResult: TaskEnrich['details']['result'] = [];
+  const enrichResult: TaskEnrich['details']['result'] = [
+    ...(taskCached?.details.result ?? [])
+  ];
 
   const [results, notEnriched] = await enrichPersonSync(
     userResolver,
@@ -168,16 +170,16 @@ async function enrichPersonBulk(
         instance: voilanorbert.type
       });
     }
-    await updateEnrichmentTask(
+    const updatedTask = await updateEnrichmentTask(
       task,
       enrichResult,
       status as TaskEnrich['status']
     );
-    return res.status(200).json({ task });
+    return res.status(200).json({ task: redactEnrichmentTask(updatedTask) });
   }
 
-  await updateEnrichmentTask(task, enrichResult);
-  return res.status(200).json({ task });
+  const updatedTask = await updateEnrichmentTask(task, enrichResult);
+  return res.status(200).json({ task: redactEnrichmentTask(updatedTask) });
 }
 
 async function enrichPersonWebhook(
@@ -209,6 +211,11 @@ export default function initializeEnrichmentController(userResolver: Users) {
       try {
         await enrichContactSync(userResolver, req, res);
       } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.startsWith('Enricher not found.')
+        )
+          res.statusCode = 503;
         next(err);
       }
     },
@@ -220,6 +227,11 @@ export default function initializeEnrichmentController(userResolver: Users) {
       try {
         await enrichPersonBulk(userResolver, req, res);
       } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message.startsWith('Enricher not found.')
+        )
+          res.statusCode = 503;
         next(err);
       }
     },

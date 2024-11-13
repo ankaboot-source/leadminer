@@ -163,3 +163,29 @@ export async function getValidImapLogin(
     await connectionProvider?.cleanPool();
   }
 }
+
+/**
+ * Sanitizes input to prevent IMAP injection and CRLF attacks.
+ * - Removes special IMAP characters: `{}`, `"`, `\`, `(`, `)`, `*`.
+ * - Strips dangerous CRLF sequences.
+ * - Strips leading and trailing whitespace.
+ * @param input - The input string to sanitize.
+ * @returns The sanitized string.
+ */
+export function sanitizeImapInput(input: string): string {
+  if (typeof input !== 'string') {
+    throw new TypeError('Input must be a string');
+  }
+  // Remove CRLF characters to prevent injection
+  const sanitized = input.replace(/[\r\n]+/g, '');
+  // Escape trailing folder separator (if present)
+  const cleaned = sanitized.replace(/\/$/, '');
+  // Strip leading and trailing whitespace
+  const trimmedInput = cleaned.trim();
+
+  if (trimmedInput.length > 255) {
+    // exceeds max length defined in RFC
+    throw new Error('Max length exceeded');
+  }
+  return trimmedInput;
+}

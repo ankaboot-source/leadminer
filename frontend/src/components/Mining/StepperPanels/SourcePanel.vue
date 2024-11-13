@@ -69,7 +69,7 @@
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import { FetchError } from 'ofetch';
-import type { MiningSource, MiningSourceType } from '~/types/mining';
+import type { MiningSource } from '~/types/mining';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -82,10 +82,12 @@ const $imapDialogStore = useImapDialog();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 
-function onSourceChange(source: MiningSource) {
+const { source } = useRoute().query;
+
+function onSourceChange(miningSource: MiningSource) {
   $leadminerStore.boxes = [];
   $leadminerStore.selectedBoxes = [];
-  $leadminerStore.activeMiningSource = source;
+  $leadminerStore.activeMiningSource = miningSource;
   $stepper.next();
 }
 function extractContacts() {
@@ -93,26 +95,23 @@ function extractContacts() {
     onSourceChange(sourceModel.value);
   }
 }
-function selectSource(source: MiningSourceType | string) {
-  switch (source) {
-    case 'imap':
-      $imapDialogStore.showImapDialog = true;
-      break;
-
-    default: {
-      const miningSource = $leadminerStore.getMiningSourceByEmail(source);
-      if (miningSource) {
-        onSourceChange(miningSource);
-      }
-      break;
-    }
-  }
-}
 
 onMounted(async () => {
   try {
     await $leadminerStore.fetchMiningSources();
-    sourceModel.value = sourceOptions?.value[0];
+
+    const selectedSource = source
+      ? $leadminerStore.getMiningSourceByEmail(source as string)
+      : null;
+
+    if (selectedSource) {
+      const newQuery = { ...useRoute().query };
+      delete newQuery.source;
+      useRouter().replace({ query: newQuery });
+      onSourceChange(selectedSource);
+    } else {
+      sourceModel.value = sourceOptions?.value[0];
+    }
   } catch (error) {
     if (error instanceof FetchError && error.response?.status === 401) {
       throw error;
@@ -120,10 +119,18 @@ onMounted(async () => {
       throw new Error(t('fetch_sources_failed'));
     }
   }
+
+  watch(sourceModel, (miningSource) => {
+    // Watch for changes in `sourceModel` after the initial source selection.
+    // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
+    if (miningSource) {
+      onSourceChange(miningSource);
+    }
+  });
 });
 
 defineExpose({
-  selectSource,
+  onSourceChange,
 });
 </script>
 

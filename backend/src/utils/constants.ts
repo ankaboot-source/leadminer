@@ -179,5 +179,7 @@ export const ROLE_EMAIL_ADDRESS_INCLUDES = [
   'commercial@',
   'customer.service@',
   'developpement@',
-  'webmaster@'
+  'webmaster@',
+  'service@',
+  'facture@'
 ];
