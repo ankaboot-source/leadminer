@@ -10,7 +10,10 @@ export default class MailerCheckClient {
 
   private readonly rate_limit_handler;
 
-  constructor({ apiToken }: Config, private readonly logger: Logger) {
+  constructor(
+    { apiToken }: Config,
+    private readonly logger: Logger
+  ) {
     this.api = axios.create({
       baseURL: MailerCheckClient.baseURL,
       headers: {
@@ -18,7 +21,7 @@ export default class MailerCheckClient {
       }
     });
 
-    this.rate_limit_handler = throttledQueue(50, 60 * 1000);
+    this.rate_limit_handler = throttledQueue(50, 60 * 1000, true);
   }
 
   async verifyEmail(email: string): Promise<MailerCheckResult> {

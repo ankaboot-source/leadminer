@@ -24,7 +24,12 @@ if (
       {
         url: ENV.VOILANORBERT_URL,
         username: ENV.VOILANORBERT_USERNAME,
-        apiToken: ENV.VOILANORBERT_API_KEY
+        apiToken: ENV.VOILANORBERT_API_KEY,
+        rateLimiter: {
+          requests: 115,
+          interval: 60 * 1000, // 1 minute
+          spaced: false
+        }
       },
       logger
     ),
@@ -37,7 +42,12 @@ if (ENV.THEDIG_API_KEY && ENV.THEDIG_URL) {
     new TheDig(
       {
         url: ENV.THEDIG_URL,
-        apiToken: ENV.THEDIG_API_KEY
+        apiToken: ENV.THEDIG_API_KEY,
+        rateLimiter: {
+          requests: 55,
+          interval: 60 * 1000, // 1 minute
+          spaced: false
+        }
       },
       logger
     ),
@@ -50,7 +60,13 @@ if (ENV.PROXYCURL_API_KEY && ENV.PROXYCURL_URL) {
     new ProxyCurl(
       {
         url: ENV.PROXYCURL_URL,
-        apiKey: ENV.PROXYCURL_API_KEY
+        apiKey: ENV.PROXYCURL_API_KEY,
+        rateLimiter: {
+          requests: 295,
+          interval: 60 * 1000, // 1 minute
+          spaced: false,
+          maxRetries: 5
+        }
       },
       logger
     ),

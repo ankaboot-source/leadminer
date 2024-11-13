@@ -6,6 +6,7 @@ import {
   EnrichWebhookResponse,
   Person
 } from '../EmailEnricher';
+import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
 export default class ProxyCurlEmailEnricher implements EmailEnricher {
   constructor(
@@ -13,7 +14,7 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     private readonly logger: Logger
   ) {}
 
-  private static getProfileUrls(profile: ProfileExtra): string[] {
+  static getProfileUrls(profile: ProfileExtra): string[] {
     const urls: string[] = [];
 
     if (profile?.github_profile_id) {
@@ -39,16 +40,20 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     const [response] = data;
     const mapped = [
       {
-        name: response?.profile?.full_name,
-        givenName: response?.profile?.first_name,
-        familyName: response?.profile?.last_name,
-        jobTitle: response?.profile?.occupation,
-        organization: response?.profile?.experiences?.[0]?.company,
-        image: response?.profile?.profile_pic_url,
-        identifiers: [response?.profile?.public_identifier].filter(
-          (id): id is string => Boolean(id)
+        name: undefinedIfFalsy(response?.profile?.full_name ?? ''),
+        givenName: undefinedIfFalsy(response?.profile?.first_name ?? ''),
+        familyName: undefinedIfFalsy(response?.profile?.last_name ?? ''),
+        jobTitle: undefinedIfFalsy(response?.profile?.occupation ?? ''),
+        organization: undefinedIfFalsy(
+          response?.profile?.experiences?.[0]?.company ?? ''
         ),
-        location: [
+        image: undefinedIfFalsy(response?.profile?.profile_pic_url ?? ''),
+        identifiers: undefinedIfEmpty(
+          [response?.profile?.public_identifier].filter((id): id is string =>
+            Boolean(id)
+          )
+        ),
+        location: undefinedIfEmpty([
           [
             response?.profile?.city,
             response?.profile?.state,
@@ -56,13 +61,13 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
           ]
             .filter((loc): loc is string => Boolean(loc))
             .join(', ')
-        ].filter((loc) => loc),
-        sameAs: [
+        ]),
+        sameAs: undefinedIfEmpty([
           response?.linkedin_profile_url,
           response?.facebook_profile_url,
           response?.twitter_profile_url,
           ...ProxyCurlEmailEnricher.getProfileUrls(response?.profile?.extra)
-        ].filter((url): url is string => Boolean(url))
+        ])
       }
     ]
       .filter(

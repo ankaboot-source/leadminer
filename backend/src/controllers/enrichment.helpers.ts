@@ -347,7 +347,7 @@ export async function enrichFromCache(
         user_id: userId,
         details: {
           total_to_enrich: contacts.length,
-          total_enriched: cacheResult.length,
+          total_enriched: mappedResult.length,
           update_empty_fields_only: updateEmptyFieldsOnly,
           result: mappedResult.map((res) => ({
             ...res,
