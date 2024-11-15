@@ -7,6 +7,7 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
 
   function next() {
     index.value += 1;
+    open();
   }
 
   function prev() {
