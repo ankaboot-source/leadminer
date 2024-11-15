@@ -142,7 +142,7 @@ export default class PgContacts implements Contacts {
       this.logger.error(`[${this.constructor.name}:updateSinglePersonStatus]`, {
         email: personEmail,
         status: statusWithDetails,
-        error
+        error: (error as Error).message
       });
       return false;
     }
