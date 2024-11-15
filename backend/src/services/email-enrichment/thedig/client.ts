@@ -57,6 +57,7 @@ export interface EnrichPersonResponse {
 
 export default class TheDig {
   private readonly api: AxiosInstance;
+
   private readonly rateLimiter;
 
   constructor(
