@@ -19,29 +19,34 @@
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
         <Step v-slot="{ active, value }" as-child :value="1">
+          <!-- "as" keyword in props breaks syntax highlighting, use parenthesis as a workaround -->
+          <!-- prettier-ignore-attribute :step-number -->
           <StepWithTooltip
-            :step-number="value"
+            :step-number="(value as number)"
             :is-active="active"
             :title="t('source')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="2">
+          <!-- prettier-ignore-attribute :step-number -->
           <StepWithTooltip
-            :step-number="value"
+            :step-number="(value as number)"
             :is-active="active"
             :title="t('common.mine')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="3">
+          <!-- prettier-ignore-attribute :step-number -->
           <StepWithTooltip
-            :step-number="value"
+            :step-number="(value as number)"
             :is-active="active"
             :title="t('common.clean')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="4">
+          <!-- prettier-ignore-attribute :step-number -->
           <StepWithTooltip
-            :step-number="value"
+            :step-number="(value as number)"
             :is-active="active"
             :title="t('common.enrich')"
           />
