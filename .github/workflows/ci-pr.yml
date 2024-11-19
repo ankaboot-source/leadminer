@@ -24,15 +24,6 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
-      - uses: actions/checkout@v4
-      - name: Create empty coverage report
-        run: touch ./lcov.info
-      - name: Report code coverage to Deepsource
-        run: |
-          curl https://deepsource.io/cli | sh
-          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./lcov.info
-        env:
-          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
   backend:
     needs: changes
