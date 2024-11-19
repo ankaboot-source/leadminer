@@ -19,7 +19,7 @@
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
         <Step v-slot="{ active, value }" as-child :value="1">
-          <!-- "as" keyword in props breaks syntax highlighting -->
+          <!-- "as" keyword in props breaks syntax highlighting, use parenthesis as a workaround -->
           <!-- prettier-ignore-attribute :step-number -->
           <StepWithTooltip
             :step-number="(value as number)"
