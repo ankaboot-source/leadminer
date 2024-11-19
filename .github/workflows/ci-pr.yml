@@ -15,7 +15,6 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
-      actions: ${{ steps.filter.outputs.actions }}
     steps:
       - uses: dorny/paths-filter@v2
         id: filter
@@ -25,12 +24,10 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
-            actions:
-              - '.github/workflows/**'
 
   backend:
     needs: changes
-    if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.actions == 'true'  }}
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,10 +44,10 @@ jobs:
         run: cd backend && npm run prettier
       - name: Run unit tests
         run: cd backend && npm run test-ci:unit
-      
+
       - name: debug
         run: cd backend && ls -R
-      
+
       - uses: jgillick/test-coverage-reporter@main
         with:
           coverage-file: backend/coverage/coverage-summary.json
@@ -64,7 +61,7 @@ jobs:
 
   frontend:
     needs: changes
-    if: ${{ needs.changes.outputs.frontend == 'true' || needs.changes.outputs.actions == 'true'  }}
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
