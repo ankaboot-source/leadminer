@@ -24,6 +24,14 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+      - name: Create empty coverage report
+        run: touch ./lcov.info
+      - name: Report code coverage to Deepsource
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./lcov.info
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
   backend:
     needs: changes
@@ -78,5 +86,15 @@ jobs:
         run: cd frontend && npm run lint
       - name: Check formatting
         run: cd frontend && npm run prettier
+
+      - name: Create empty coverage report
+        run: touch ./frontend/lcov.info
+      - name: Report code coverage to Deepsource
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./frontend/lcov.info
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+
       # - name: Run unit tests (One day)
       #   run: cd frontend && npm run test:unit
