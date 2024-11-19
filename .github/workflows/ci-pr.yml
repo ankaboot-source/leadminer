@@ -83,6 +83,7 @@ jobs:
 
       - name: Create minimalistic coverage report
         run: |
+          cd frontend
           echo "TN:" > lcov.info
           echo "SF:/src/file.js" >> lcov.info
           echo "FN:1,(anonymous)" >> lcov.info
