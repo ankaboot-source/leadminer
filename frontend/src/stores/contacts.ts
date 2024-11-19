@@ -87,7 +87,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   function upsertContact(
     newContact: Contact,
     oldContacts: Contact[],
-    prepend = false,
+    keepPosition = false,
   ) {
     const index = oldContacts.findIndex(
       (contact) => contact.email === newContact.email,
@@ -97,14 +97,14 @@ export const useContactsStore = defineStore('contacts-store', () => {
       ? { ...oldContacts[index], ...newContact }
       : newContact;
 
-    if (prepend) {
+    if (!keepPosition) {
       if (isFound) oldContacts.splice(index, 1); // Removes contact
       oldContacts.unshift(updatedContact); // Prepends updated contact
     } else {
       if (isFound) {
         oldContacts[index] = updatedContact;
       } else {
-        oldContacts.push(updatedContact);
+        oldContacts.unshift(updatedContact);
       }
     }
   }
@@ -132,10 +132,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
         const contactsCopy = JSON.parse(JSON.stringify(contactsList.value));
         cachedContactsList.value = convertDates(contactsCopy);
       }
-      upsertContact(newContact, cachedContactsList.value, true);
+      upsertContact(newContact, cachedContactsList.value);
     } else {
       // Otherwise, update the contacts instantly
-      upsertContact(newContact, contactsList.value);
+      upsertContact(newContact, contactsList.value, true);
     }
   }
 
