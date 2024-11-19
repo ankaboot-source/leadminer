@@ -20,28 +20,28 @@
       <StepList>
         <Step v-slot="{ active, value }" as-child :value="1">
           <StepWithTooltip
-            :step-number="value"
+            :step-number="value as number"
             :is-active="active"
             :title="t('source')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="2">
           <StepWithTooltip
-            :step-number="value"
+            :step-number="value as number"
             :is-active="active"
             :title="t('common.mine')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="3">
           <StepWithTooltip
-            :step-number="value"
+            :step-number="value as number"
             :is-active="active"
             :title="t('common.clean')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="4">
           <StepWithTooltip
-            :step-number="value"
+            :step-number="value as number"
             :is-active="active"
             :title="t('common.enrich')"
           />

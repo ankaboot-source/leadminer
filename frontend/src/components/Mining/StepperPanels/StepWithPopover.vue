@@ -1,5 +1,11 @@
 <template>
-  <div class="p-step" @click="toggle">
+  <div
+    class="p-step"
+    :class="{
+      'cursor-pointer': isPastStep,
+    }"
+    @click="toggle"
+  >
     <div :class="`${isActive ? 'p-step-active' : 'p-disabled'}`">
       <button class="p-step-header">
         <span class="p-step-number">{{ stepNumber }}</span>
@@ -16,17 +22,20 @@
 <script lang="ts" setup>
 const $stepper = useMiningStepper();
 const { stepNumber, isActive, title } = defineProps<{
-  stepNumber: string | number;
+  stepNumber: number;
   isActive: boolean;
   title: string;
 }>();
 
+const isPastStep = computed(() => $stepper.isPastStep(stepNumber));
 const titlePopover = ref();
 const toggle = (event: MouseEvent) => {
   titlePopover.value.toggle(event);
-  $stepper.go(parseInt(stepNumber as string));
-
   setTimeout(() => titlePopover.value.hide(), 5000);
+
+  if (isPastStep.value) {
+    $stepper.go(stepNumber);
+  }
 };
 </script>
 
