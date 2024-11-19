@@ -15,7 +15,6 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
-      actions: ${{ steps.filter.outputs.actions }}
     steps:
       - uses: dorny/paths-filter@v2
         id: filter
@@ -25,12 +24,10 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
-            actions:
-              - '.github/workflows/**'
 
   backend:
     needs: changes
-    if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.actions == 'true'  }}
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -41,30 +38,34 @@ jobs:
           node-version: "20.x"
       - name: Install dependencies
         run: cd backend && npm ci
-      - name: Check linting
-        run: cd backend && npm run lint
-      - name: Check formatting
-        run: cd backend && npm run prettier
-      - name: Run unit tests
+
+      - name: Run unit tests and generate coverage report
         run: cd backend && npm run test-ci:unit
-      
-      - name: debug
-        run: cd backend && ls -R
-      
-      - uses: jgillick/test-coverage-reporter@main
+
+      - name: Debug
+        run: cd backend && ls -R && cat lcov.info
+
+      - name: Display code coverage within Pull request
+        uses: jgillick/test-coverage-reporter@main
         with:
           coverage-file: backend/coverage/coverage-summary.json
           access-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Update DeepSource code coverage
+
+      - name: Report code coverage to Deepsource
         run: |
           curl https://deepsource.io/cli | sh
           ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
 
+      - name: Check linting
+        run: cd backend && npm run lint
+      - name: Check formatting
+        run: cd backend && npm run prettier
+
   frontend:
     needs: changes
-    if: ${{ needs.changes.outputs.frontend == 'true' || needs.changes.outputs.actions == 'true'  }}
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,5 +78,15 @@ jobs:
         run: cd frontend && npm run lint
       - name: Check formatting
         run: cd frontend && npm run prettier
+
+      - name: Create empty coverage report
+        run: touch ./frontend/lcov.info
+      - name: Report code coverage to Deepsource
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./frontend/lcov.info
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+
       # - name: Run unit tests (One day)
       #   run: cd frontend && npm run test:unit
