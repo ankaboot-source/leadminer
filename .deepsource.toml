@@ -36,6 +36,3 @@ name = "javascript"
   [analyzers.meta]
   plugins = ["vue"]
   environment = ["nodejs"]
-
-[[transformers]]
-name = "prettier"
