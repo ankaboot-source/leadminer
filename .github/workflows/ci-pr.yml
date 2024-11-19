@@ -38,26 +38,30 @@ jobs:
           node-version: "20.x"
       - name: Install dependencies
         run: cd backend && npm ci
-      - name: Check linting
-        run: cd backend && npm run lint
-      - name: Check formatting
-        run: cd backend && npm run prettier
-      - name: Run unit tests
+
+      - name: Run unit tests and generate coverage report
         run: cd backend && npm run test-ci:unit
 
-      - name: debug
-        run: cd backend && ls -R
+      - name: Debug
+        run: cd backend && ls -R && cat lcov.info
 
+      - name: Display code coverage within Pull request
       - uses: jgillick/test-coverage-reporter@main
         with:
           coverage-file: backend/coverage/coverage-summary.json
           access-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Update DeepSource code coverage
+
+      - name: Report code coverage to Deepsource
         run: |
           curl https://deepsource.io/cli | sh
           ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+
+      - name: Check linting
+        run: cd backend && npm run lint
+      - name: Check formatting
+        run: cd backend && npm run prettier
 
   frontend:
     needs: changes
