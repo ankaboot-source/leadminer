@@ -24,6 +24,7 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+      - uses: actions/checkout@v4
       - name: Create empty coverage report
         run: touch ./lcov.info
       - name: Report code coverage to Deepsource
