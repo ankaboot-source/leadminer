@@ -43,7 +43,7 @@ jobs:
         run: cd backend && npm run test-ci:unit
 
       - name: Debug
-        run: cd backend && ls -R && cat lcov.info
+        run: cd backend && ls -R && cat coverage/lcov.info
 
       - name: Display code coverage within Pull request
         uses: jgillick/test-coverage-reporter@main
