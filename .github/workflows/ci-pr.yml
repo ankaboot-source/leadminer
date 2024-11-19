@@ -43,7 +43,13 @@ jobs:
         run: cd backend && npm run test-ci:unit
 
       - name: Debug
-        run: cd backend && ls -R && cat coverage/lcov.info
+        run: cd backend && cat coverage/lcov.info
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: backend/coverage/lcov.info
 
       - name: Display code coverage within Pull request
         uses: jgillick/test-coverage-reporter@main
