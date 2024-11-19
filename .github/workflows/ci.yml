@@ -17,12 +17,18 @@ jobs:
           node-version: "20.x"
       - name: Install dependencies
         run: cd backend && npm ci
+      - name: Run unit tests
+        run: cd backend && npm run test-ci:unit
+      - name: Report code coverage to Deepsource
+        run: |
+          curl https://deepsource.io/cli | sh
+          ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
+        env:
+          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
       - name: Check linting
         run: cd backend && npm run lint
       - name: Check formatting
         run: cd backend && npm run prettier
-      - name: Run unit tests
-        run: cd backend && npm run test-ci:unit
 
   frontend:
     runs-on: ubuntu-latest
