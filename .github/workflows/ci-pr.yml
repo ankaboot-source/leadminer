@@ -43,7 +43,7 @@ jobs:
         run: cd backend && npm run test-ci:unit
 
       - name: Debug
-        run: cd backend && ls -R && cat lcov.info
+        run: cd backend && cat coverage/lcov.info
 
       - name: Display code coverage within Pull request
         uses: jgillick/test-coverage-reporter@main
@@ -69,6 +69,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: "20.x"
@@ -79,8 +81,21 @@ jobs:
       - name: Check formatting
         run: cd frontend && npm run prettier
 
-      - name: Create empty coverage report
-        run: touch ./frontend/lcov.info
+      - name: Create minimalistic coverage report
+        run: |
+          cd frontend
+          echo "TN:" > lcov.info
+          echo "SF:/src/file.js" >> lcov.info
+          echo "FN:1,(anonymous)" >> lcov.info
+          echo "FNF:1" >> lcov.info
+          echo "FNH:0" >> lcov.info
+          echo "FNDA:0,(anonymous)" >> lcov.info
+          echo "DA:1,0" >> lcov.info
+          echo "LF:1" >> lcov.info
+          echo "LH:0" >> lcov.info
+          echo "BRF:0" >> lcov.info
+          echo "BRH:0" >> lcov.info
+          echo "end_of_record" >> lcov.info
       - name: Report code coverage to Deepsource
         run: |
           curl https://deepsource.io/cli | sh
