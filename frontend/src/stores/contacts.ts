@@ -84,7 +84,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (error) throw error;
   }
 
-  function upsertContact(
+  function upsertContactInList(
     newContact: Contact,
     oldContacts: Contact[],
     keepPosition = false,
@@ -132,10 +132,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
         const contactsCopy = JSON.parse(JSON.stringify(contactsList.value));
         cachedContactsList.value = convertDates(contactsCopy);
       }
-      upsertContact(newContact, cachedContactsList.value);
+      upsertContactInList(newContact, cachedContactsList.value);
     } else {
       // Otherwise, update the contacts instantly
-      upsertContact(newContact, contactsList.value, true);
+      upsertContactInList(newContact, contactsList.value, true);
     }
   }
 
