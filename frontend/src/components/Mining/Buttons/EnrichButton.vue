@@ -126,7 +126,6 @@ const contactsToEnrich = toRef(() => props.contactsToEnrich);
 const skipDialog = toRef(() => props.skipDialog);
 
 const totalTasks = ref(0);
-const enrichmentTasks = new Map<string, EnrichmentTask>();
 const enrichmentCompleted = ref(false);
 
 let subscription: RealtimeChannel;
@@ -150,7 +149,6 @@ function stopEnrichment() {
   if (subscription) {
     subscription.unsubscribe();
   }
-  enrichmentTasks.clear();
   $leadminerStore.activeEnrichment = false;
 }
 
@@ -281,7 +279,6 @@ async function enrichPersonBulk(
 async function startEnrichment(updateEmptyFieldsOnly: boolean) {
   try {
     totalTasks.value = 0;
-    enrichmentTasks.clear();
     enrichmentCompleted.value = false;
     $leadminerStore.activeEnrichment = true;
 

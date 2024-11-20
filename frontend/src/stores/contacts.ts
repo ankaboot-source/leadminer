@@ -84,16 +84,29 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (error) throw error;
   }
 
-  function upsertTop(newContact: Contact, oldContacts: Contact[]) {
+  function upsertContactInList(
+    newContact: Contact,
+    oldContacts: Contact[],
+    keepPosition = false,
+  ) {
     const index = oldContacts.findIndex(
       (contact) => contact.email === newContact.email,
     );
-    const oldContact = oldContacts[index];
+    const isFound = index !== -1;
+    const updatedContact = isFound
+      ? { ...oldContacts[index], ...newContact }
+      : newContact;
 
-    if (index !== -1) {
-      oldContacts.splice(index, 1);
+    if (!keepPosition) {
+      if (isFound) oldContacts.splice(index, 1); // Removes contact
+      oldContacts.unshift(updatedContact); // Prepends updated contact
+    } else {
+      if (isFound) {
+        oldContacts[index] = updatedContact;
+      } else {
+        oldContacts.unshift(updatedContact);
+      }
     }
-    oldContacts.unshift({ ...oldContact, ...newContact });
   }
 
   /**
@@ -119,10 +132,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
         const contactsCopy = JSON.parse(JSON.stringify(contactsList.value));
         cachedContactsList.value = convertDates(contactsCopy);
       }
-      upsertTop(newContact, cachedContactsList.value);
+      upsertContactInList(newContact, cachedContactsList.value);
     } else {
       // Otherwise, update the contacts instantly
-      upsertTop(newContact, contactsList.value);
+      upsertContactInList(newContact, contactsList.value, true);
     }
   }
 
