@@ -100,7 +100,10 @@ export default class PgContacts implements Contacts {
     VALUES %L
     ON CONFLICT(person_email, name, user_id) DO NOTHING;`;
 
-  constructor(private readonly pool: Pool, private readonly logger: Logger) {}
+  constructor(
+    private readonly pool: Pool,
+    private readonly logger: Logger
+  ) {}
 
   async updateSinglePersonStatus(
     personEmail: string,
