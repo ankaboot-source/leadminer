@@ -12,13 +12,13 @@ import notFound from './middleware/notFound';
 import initializeSentry from './middleware/sentry';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
+import initializeEnrichmentRoutes from './routes/enrichment.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
 import initializeStreamRouter from './routes/stream.routes';
 import AuthResolver from './services/auth/AuthResolver';
 import TasksManager from './services/tasks-manager/TasksManager';
 import Billing from './utils/billing-plugin';
-import initializeEnrichmentRoutes from './routes/enrichment.routes';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -32,8 +32,6 @@ export default function initializeApp(
 
   if (ENV.SENTRY_DSN) {
     initializeSentry(app, ENV.SENTRY_DSN);
-    app.use(Sentry.Handlers.requestHandler());
-    app.use(Sentry.Handlers.tracingHandler());
   }
 
   if (Billing) {
@@ -65,7 +63,7 @@ export default function initializeApp(
   );
 
   if (ENV.SENTRY_DSN) {
-    app.use(Sentry.Handlers.errorHandler());
+    Sentry.setupExpressErrorHandler(app);
   }
 
   app.use(notFound);

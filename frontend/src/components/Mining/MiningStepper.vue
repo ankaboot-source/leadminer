@@ -29,21 +29,21 @@
           <StepWithTooltip
             :step-number="Number(value)"
             :is-active="active"
-            :title="t('common.mine')"
+            :title="$t('common.mine')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="3">
           <StepWithTooltip
             :step-number="Number(value)"
             :is-active="active"
-            :title="t('common.clean')"
+            :title="$t('common.clean')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="4">
           <StepWithTooltip
             :step-number="Number(value)"
             :is-active="active"
-            :title="t('common.enrich')"
+            :title="$t('common.enrich')"
           />
         </Step>
       </StepList>

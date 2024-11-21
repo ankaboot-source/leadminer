@@ -5,11 +5,6 @@ import logger from '../utils/logger';
 export default function initializeSentry(app: Router, dsn: string) {
   Sentry.init({
     dsn,
-    integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Sentry.Integrations.Express({ app }),
-      ...Sentry.autoDiscoverNodePerformanceMonitoringIntegrations()
-    ],
     tracesSampleRate: 1.0
   });
 
