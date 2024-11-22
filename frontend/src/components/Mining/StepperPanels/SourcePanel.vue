@@ -23,7 +23,6 @@
               class: 'border-[#bcbdf9] ',
             },
           }"
-          @change="extractContacts()"
         />
         <Button
           id="extract-source"
