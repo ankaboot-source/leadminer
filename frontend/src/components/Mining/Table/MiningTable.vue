@@ -75,7 +75,7 @@
             source="datatable"
             :enrichment-realtime-callback="emptyFunction"
             :enrichment-request-response-callback="emptyFunction"
-            :contacts-to-enrich="selectedContacts"
+            :contacts-to-enrich="implicitlySelectedContacts"
             :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
           />
         </div>
