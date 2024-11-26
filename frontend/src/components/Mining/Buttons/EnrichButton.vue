@@ -60,11 +60,7 @@
     icon-pos="right"
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
-    :disabled="
-      $leadminerStore.activeEnrichment ||
-      (!enrichAllContacts && !contactsToEnrich?.length) ||
-      (enrichAllContacts && !$contactsStore.selectedContactsCount)
-    "
+    :disabled="isEnrichDisabled"
     @click="openEnrichmentConfirmationDialog"
   >
     <template #icon>
@@ -317,6 +313,13 @@ const openEnrichmentConfirmationDialog = () => {
 const closeEnrichmentConfirmationDialog = () => {
   dialogVisible.value = false;
 };
+
+const isEnrichDisabled = computed(
+  () =>
+    $leadminerStore.activeEnrichment ||
+    (!enrichAllContacts.value && !contactsToEnrich.value?.length) ||
+    (enrichAllContacts.value && !$contactsStore.selectedContactsCount),
+);
 </script>
 <i18n lang="json">
 {
