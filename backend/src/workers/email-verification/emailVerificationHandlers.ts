@@ -33,31 +33,30 @@ async function emailVerificationHandlerWithBulk(
   try {
     for (const { userId, email } of verificationData) {
       try {
-        // eslint-disable-next-line no-await-in-loop
-        const existingStatus = await emailStatusCache.get(email);
+        const existingStatus =
+          // eslint-disable-next-line no-await-in-loop
+          (await emailStatusCache.get(email)) ??
+          // eslint-disable-next-line no-await-in-loop
+          (await contacts.SelectRecentEmailStatus(email));
 
         if (existingStatus) {
-          logger.debug('Updating person with verification results', {
+          logger.debug('Updating email status from cache.', {
             email,
             verifier: 'CACHED',
             result: existingStatus
           });
           // eslint-disable-next-line no-await-in-loop
-          await contacts.updateSinglePersonStatus(
+          await contacts.upsertEmailStatus({
+            verifiedOn: new Date().toISOString(),
+            ...existingStatus, // overwrites verifiedOn if exists.
             email,
-            userId,
-            existingStatus
-          );
-          logger.debug('Updated person with verification results', {
-            email,
-            verifier: 'CACHED',
-            result: existingStatus
+            userId
           });
         } else {
           waitingForVerification.set(email, userId);
         }
       } catch (err) {
-        logger.error('Error updating verification status from cache', err);
+        logger.error('Error updating email status from cache', err);
       }
     }
 
@@ -72,7 +71,7 @@ async function emailVerificationHandlerWithBulk(
             const startTime = performance.now();
             try {
               logger.info(
-                `[${verifierName}]: Starting verification with ${emails.length} email(s)`,
+                `[${verifierName}]: Verification started with ${emails.length} email(s)`,
                 { started_at: startTime }
               );
 
@@ -126,35 +125,33 @@ async function emailVerificationHandlerWithBulk(
         const userId = waitingForVerification.get(email);
 
         if (!userId) {
-          logger.warn('No userId found for verified email', { email });
+          logger.warn('No userId found to update email status.', { email });
           continue;
         }
 
         try {
-          logger.debug('Updating person with verification results', {
+          logger.debug('Updating email status', {
             email,
-            verifier: verifierName,
-            result
+            result,
+            verifierName
           });
-
           // eslint-disable-next-line no-await-in-loop
           await emailStatusCache.set(email, result);
           // eslint-disable-next-line no-await-in-loop
-          await contacts.updateSinglePersonStatus(email, userId, result);
-
-          logger.debug('Updated person with verification results', {
+          await contacts.upsertEmailStatus({
             email,
-            verifier: verifierName,
-            result
+            userId,
+            status: result.status,
+            details: result.details,
+            verifiedOn: new Date().toISOString()
           });
         } catch (updateError) {
-          logger.error(
-            `Error updating verification status from ${verifierName}`,
-            {
-              email,
-              error: updateError
-            }
-          );
+          logger.error(`Error updating email status`, {
+            email,
+            result,
+            verifierName,
+            error: updateError
+          });
         }
       }
     }

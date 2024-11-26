@@ -1,22 +1,25 @@
 import { Pool } from 'pg';
 import format from 'pg-format';
 import { Logger } from 'winston';
-import {
-  EmailStatusResult,
-  Status
-} from '../../services/email-status/EmailStatusVerifier';
+import { Status } from '../../services/email-status/EmailStatusVerifier';
 import { REACHABILITY } from '../../utils/constants';
 import { Contacts } from '../interfaces/Contacts';
-import { Contact, ExtractionResult, Tag } from '../types';
+import { Contact, EmailStatus, ExtractionResult, Tag } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refine_persons($1)';
 
   private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
-    SELECT email 
-    FROM persons
-    WHERE user_id = $1 and status IS NULL
+    SELECT
+      p.email
+    FROM
+      persons p
+      JOIN refined_persons rp on rp.email = p.email
+      JOIN email_status es on p.email = es.email
+    WHERE
+      p.user_id = $1
+      and es.status IS NULL
     `;
 
   private static readonly SELECT_CONTACTS_SQL =
@@ -85,15 +88,28 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id","status", "verification_details", "source")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, $14)
+    INSERT INTO persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
-    RETURNING persons.email, persons.status;`;
+    RETURNING persons.email;`;
 
-  private static readonly SET_PERSON_STATUS_SQL = `
-    UPDATE persons
-    SET status = $1, verification_details = $2
-    WHERE email = $3 AND user_id = $4;`;
+  private static readonly SELECT_RECENT_EMAIL_STATUS_BY_EMAIL = `
+    SELECT *
+    FROM public.email_status
+    WHERE email = $1
+    AND verified_on >= NOW() - INTERVAL '100 days'
+    ORDER BY updated_at DESC
+    LIMIT 1;
+  `;
+
+  private static readonly UPSERT_EMAIL_STATUS_SQL = `
+    INSERT INTO email_status (email, user_id, status, details, verified_on)
+    VALUES ($1, $2, $3, $4,$5)
+    ON CONFLICT (email, user_id)
+    DO UPDATE SET 
+        status = EXCLUDED.status,
+        details = EXCLUDED.details,
+        verified_on = EXCLUDED.verified_on;`;
 
   private static readonly INSERT_TAGS_SQL = `
     INSERT INTO tags("name","reachable","source","user_id","person_email")
@@ -102,26 +118,54 @@ export default class PgContacts implements Contacts {
 
   constructor(private readonly pool: Pool, private readonly logger: Logger) {}
 
-  async updateSinglePersonStatus(
-    personEmail: string,
-    userId: string,
-    statusWithDetails: EmailStatusResult
-  ): Promise<boolean> {
+  async SelectRecentEmailStatus(email: string): Promise<EmailStatus | null> {
     try {
-      const query = await this.pool.query(PgContacts.SET_PERSON_STATUS_SQL, [
-        statusWithDetails.status,
-        { ...statusWithDetails.details, verifiedOn: new Date().toISOString() },
-        personEmail,
-        userId
+      const result = await this.pool.query(
+        PgContacts.SELECT_RECENT_EMAIL_STATUS_BY_EMAIL,
+        [email]
+      );
+
+      if (result.rows.length > 0) {
+        const [row] = result.rows;
+        return {
+          email: row.email,
+          userId: row.user_id,
+          status: row.status,
+          details: row.details,
+          verifiedOn: row.verified_on
+        } as EmailStatus;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.error(`[${this.constructor.name}:getPersonStatus]`, error);
+      return null; // Return null in case of an error
+    }
+  }
+
+  async upsertEmailStatus({
+    email,
+    userId,
+    status,
+    details,
+    verifiedOn
+  }: EmailStatus): Promise<boolean> {
+    try {
+      const query = await this.pool.query(PgContacts.UPSERT_EMAIL_STATUS_SQL, [
+        email,
+        userId,
+        status,
+        details,
+        verifiedOn
       ]);
 
       if (query.rowCount === 0) {
         throw new Error(
-          `[${this.constructor.name}:updateSinglePersonStatus]: 0 rows are updated for person status.`
+          `[${this.constructor.name}:upsertEmailStatus]: 0 rows are updated for email status.`
         );
       }
 
-      if (statusWithDetails.details?.isRole) {
+      if (details?.isRole) {
         await this.pool.query(
           format(PgContacts.INSERT_TAGS_SQL, [
             [
@@ -129,16 +173,16 @@ export default class PgContacts implements Contacts {
               REACHABILITY.MANY_OR_INDIRECT_PERSON,
               'email-verification',
               userId,
-              personEmail
+              email
             ]
           ])
         );
       }
       return true;
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}:updateSinglePersonStatus]`, {
-        email: personEmail,
-        status: statusWithDetails,
+      this.logger.error(`[${this.constructor.name}:upsertEmailStatus]`, {
+        email,
+        status,
         error: (error as Error).message
       });
       return false;
@@ -203,8 +247,6 @@ export default class PgContacts implements Contacts {
           person.jobTitle,
           person.identifiers,
           userId,
-          person.status ?? null,
-          person.verificationDetails ?? null,
           person.source
         ]);
 

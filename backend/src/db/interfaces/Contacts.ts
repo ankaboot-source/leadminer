@@ -1,8 +1,5 @@
-import {
-  EmailStatusResult,
-  Status
-} from '../../services/email-status/EmailStatusVerifier';
-import { Contact, ExtractionResult, Tag } from '../types';
+import { Status } from '../../services/email-status/EmailStatusVerifier';
+import { Contact, EmailStatus, ExtractionResult, Tag } from '../types';
 
 export interface Contacts {
   create(
@@ -10,11 +7,8 @@ export interface Contacts {
     userId: string
   ): Promise<{ email: string; tags: Tag[] }[]>;
   refine(userId: string): Promise<boolean>;
-  updateSinglePersonStatus(
-    personEmail: string,
-    userId: string,
-    status: EmailStatusResult
-  ): Promise<boolean>;
+  SelectRecentEmailStatus(email: string): Promise<EmailStatus | null>;
+  upsertEmailStatus(status: EmailStatus): Promise<boolean>;
   updateManyPersonsStatus(
     userId: string,
     emailStatus: { status: Status; email: string }[]
