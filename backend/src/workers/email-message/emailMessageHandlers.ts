@@ -88,19 +88,7 @@ async function emailMessageHandler(
             userId,
             extractedContacts.persons.map((contact) => contact.person.email)
           )
-        )
-          .filter(
-            // filter out unreachable emails
-            (contact) =>
-              !contact.tags?.some(
-                (tag) =>
-                  tag.name === 'newsletter' ||
-                  [REACHABILITY.NONE, REACHABILITY.UNSURE].includes(
-                    tag.reachable
-                  )
-              )
-          )
-          .map((contact) => contact.email);
+        ).map((contact) => contact.email);
       } else {
         throw e;
       }
