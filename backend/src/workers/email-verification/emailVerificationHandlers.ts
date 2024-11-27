@@ -146,7 +146,7 @@ async function emailVerificationHandlerWithBulk(
             verifiedOn: new Date().toISOString()
           });
         } catch (updateError) {
-          logger.error(`Error updating email status`, {
+          logger.error('Error updating email status', {
             email,
             result,
             verifierName,
