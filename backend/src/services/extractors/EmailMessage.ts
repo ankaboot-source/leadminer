@@ -284,8 +284,6 @@ export default class EmailMessage {
               differenceInDays(new Date(), new Date(Date.parse(this.date))) <=
                 EmailMessage.MAX_RECENCY_TO_SKIP_EMAIL_STATUS_CHECK_IN_DAYS
             ) {
-              person.status = Status.VALID;
-              person.verificationDetails = { isRecentFrom: true };
               await this.emailStatusCache.set(person.email, {
                 email: person.email,
                 status: Status.VALID,
@@ -293,24 +291,15 @@ export default class EmailMessage {
               });
             }
           } else {
-            const statusCache = await this.emailStatusCache.get(person.email);
-            if (statusCache) {
-              person.status = statusCache.status;
-              person.verificationDetails = statusCache.details;
-            } else {
-              const catchAllDomainCache =
-                await this.catchAllDomainsCache.exists(
-                  validContact.email.domain
-                );
-              if (catchAllDomainCache) {
-                person.status = Status.UNKNOWN;
-                person.verificationDetails = { isCatchAll: true };
-                this.emailStatusCache.set(person.email, {
-                  status: Status.UNKNOWN,
-                  email: person.email,
-                  details: { isCatchAll: true }
-                });
-              }
+            const catchAllDomainCache = await this.catchAllDomainsCache.exists(
+              validContact.email.domain
+            );
+            if (catchAllDomainCache) {
+              await this.emailStatusCache.set(person.email, {
+                status: Status.UNKNOWN,
+                email: person.email,
+                details: { isCatchAll: true }
+              });
             }
           }
           validatedContacts.push({

@@ -10,6 +10,7 @@ jest.mock('../../../src/config', () => ({
 }));
 
 const reacherDefaultConfig = {
+  REACHER_HOST: 'test',
   REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS: 5,
   REACHER_SMTP_CONNECTION_RETRIES: 5,
   REACHER_MICROSOFT365_USE_API: true,

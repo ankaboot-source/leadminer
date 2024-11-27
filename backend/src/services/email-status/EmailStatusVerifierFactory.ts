@@ -53,7 +53,10 @@ export default class EmailStatusVerifierFactory {
   private zerobounceEmailStatusVerifier?: EmailStatusVerifier;
 
   constructor(config: Config, logger: Logger) {
-    if (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET) {
+    if (
+      config.REACHER_HOST &&
+      (config.REACHER_API_KEY || config.REACHER_HEADER_SECRET)
+    ) {
       this.createReacherEmailStatusVerifier(config, logger);
     }
 

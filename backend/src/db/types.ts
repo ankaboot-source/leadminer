@@ -27,10 +27,19 @@ export interface PersonWithPocAndTag {
   tags: Tag[];
 }
 
+export interface EmailStatus {
+  email: string;
+  userId: string;
+  status: Status;
+  verifiedOn: string;
+  details?: Details;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Person {
   email: string;
   status?: Status;
-  verificationDetails?: Details;
   url?: string;
   name?: string;
   image?: string;
@@ -60,8 +69,6 @@ export interface Tag {
   source: string;
 }
 
-export type EmailStatus = 'UNKNOWN' | 'RISKY' | 'VALID' | 'INVALID';
-
 export interface Contact {
   id: string;
   user_id: string;
@@ -72,7 +79,7 @@ export interface Contact {
   recipient?: string;
   conversations?: number;
   replied_conversations?: number;
-  status?: EmailStatus;
+  status?: Status;
   occurrence?: number;
   personid?: string;
   recency?: Date;
