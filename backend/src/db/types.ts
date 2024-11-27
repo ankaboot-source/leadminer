@@ -79,7 +79,7 @@ export interface Contact {
   recipient?: string;
   conversations?: number;
   replied_conversations?: number;
-  status: Status;
+  status?: Status;
   occurrence?: number;
   personid?: string;
   recency?: Date;

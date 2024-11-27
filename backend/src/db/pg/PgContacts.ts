@@ -10,18 +10,6 @@ export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
     'SELECT * FROM refine_persons($1)';
 
-  private static readonly SELECT_UNVERIFIED_EMAILS_SQL = `
-    SELECT
-      p.email
-    FROM
-      persons p
-      JOIN refined_persons rp on rp.email = p.email
-      JOIN email_status es on p.email = es.email
-    WHERE
-      p.user_id = $1
-      and es.status IS NULL
-    `;
-
   private static readonly SELECT_CONTACTS_SQL =
     'SELECT * FROM get_contacts_table($1)';
 
@@ -105,8 +93,9 @@ export default class PgContacts implements Contacts {
   private static readonly UPSERT_EMAIL_STATUS_SQL = `
     INSERT INTO email_status (email, user_id, status, details, verified_on)
     VALUES ($1, $2, $3, $4,$5)
-    ON CONFLICT (email, user_id)
+    ON CONFLICT (email)
     DO UPDATE SET 
+        user_id = EXCLUDED.user_id,
         status = EXCLUDED.status,
         details = EXCLUDED.details,
         verified_on = EXCLUDED.verified_on;`;
@@ -290,20 +279,6 @@ export default class PgContacts implements Contacts {
     } catch (error) {
       this.logger.error('[PgContacts.refine]', error);
       return false;
-    }
-  }
-
-  async getUnverifiedEmails(userId: string): Promise<string[]> {
-    try {
-      const { rows } = await this.pool.query(
-        PgContacts.SELECT_UNVERIFIED_EMAILS_SQL,
-        [userId]
-      );
-
-      return rows.map((r) => r.email);
-    } catch (error) {
-      this.logger.error(error);
-      return [];
     }
   }
 

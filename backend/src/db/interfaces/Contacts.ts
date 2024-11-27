@@ -13,7 +13,6 @@ export interface Contacts {
     userId: string,
     emailStatus: { status: Status; email: string }[]
   ): Promise<boolean>;
-  getUnverifiedEmails(userId: string): Promise<string[]>;
   getContacts(userId: string, emails?: string[]): Promise<Contact[]>;
   getUnverifiedContacts(userId: string, emails: string[]): Promise<Contact[]>;
   getExportedContacts(userId: string, emails?: string[]): Promise<Contact[]>;
