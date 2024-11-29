@@ -305,15 +305,15 @@ export async function enrichFromCache(
   contacts: Partial<Contact>[]
 ): Promise<[TaskEnrich | null, Partial<Contact>[]]> {
   try {
-    const cacheResult = await searchEnrichmentCache(contacts);
+    const enrichmentCached = await searchEnrichmentCache(contacts);
 
-    if (!cacheResult.length) return [null, contacts];
+    if (!enrichmentCached.length) return [null, contacts];
 
-    const enrichmentCache = new Set(
-      cacheResult.map(({ result }) => result.email)
+    const contactsCached = new Set(
+      enrichmentCached.map(({ result }) => result.email)
     );
 
-    const mappedResult = cacheResult
+    const enrichmentResult = enrichmentCached
       .map((cache) => {
         const enricher = emailEnrichmentService.getEnricher(
           {},
@@ -327,16 +327,16 @@ export async function enrichFromCache(
       })
       .flat();
 
-    const finalEnriched = mappedResult.map(({ data }) => data).flat();
+    const enrichmentData = enrichmentResult.map(({ data }) => data).flat();
 
     await enrichContactDB(
       userResolver,
       userId,
       updateEmptyFieldsOnly,
-      finalEnriched
+      enrichmentData
     );
 
-    logger.debug('Enrichment cache hit: Enriched from cache', cacheResult);
+    logger.debug('Enrichment cache hit: Enriched from cache', enrichmentCached);
 
     return [
       {
@@ -349,17 +349,15 @@ export async function enrichFromCache(
         user_id: userId,
         details: {
           total_to_enrich: contacts.length,
-          total_enriched: finalEnriched.length,
+          total_enriched: enrichmentData.length,
           update_empty_fields_only: updateEmptyFieldsOnly,
-          result: mappedResult.map((res) => ({
+          result: enrichmentResult.map((res) => ({
             ...res,
             token: 'cache'
           }))
         }
       },
-      contacts.filter(
-        (contact) => !enrichmentCache.has(contact.email as string)
-      )
+      contacts.filter((contact) => !contactsCached.has(contact.email as string))
     ];
   } catch (err) {
     logger.error('Error enriching from cache', err);
