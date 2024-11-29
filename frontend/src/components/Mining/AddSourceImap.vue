@@ -220,6 +220,16 @@ async function onSubmitImapCredentials() {
       return;
     }
 
+    if (configs.host.includes('gmail')) {
+      return await signInWithOAuth('google');
+    }
+
+    console.log();
+
+    if (configs.host.includes('office365')) {
+      return await signInWithOAuth('azure');
+    }
+
     imapHost.value = configs.host;
     imapPort.value = configs.port;
     imapSecureConnection.value = configs.secure;
