@@ -327,11 +327,13 @@ export async function enrichFromCache(
       })
       .flat();
 
+    const finalEnriched = mappedResult.map(({ data }) => data).flat();
+
     await enrichContactDB(
       userResolver,
       userId,
       updateEmptyFieldsOnly,
-      mappedResult.map(({ data }) => data).flat()
+      finalEnriched
     );
 
     logger.debug('Enrichment cache hit: Enriched from cache', cacheResult);
@@ -347,7 +349,7 @@ export async function enrichFromCache(
         user_id: userId,
         details: {
           total_to_enrich: contacts.length,
-          total_enriched: mappedResult.length,
+          total_enriched: finalEnriched.length,
           update_empty_fields_only: updateEmptyFieldsOnly,
           result: mappedResult.map((res) => ({
             ...res,
