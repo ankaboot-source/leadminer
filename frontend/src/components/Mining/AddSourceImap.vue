@@ -217,38 +217,31 @@ async function onSubmitImapCredentials() {
     if (!configs) {
       loadingSave.value = false;
       handleImapConfigsNotDetected();
-      return;
-    }
+    } else if (configs.host.includes('gmail')) {
+      await signInWithOAuth('google');
+    } else if (configs.host.includes('office365')) {
+      await signInWithOAuth('azure');
+    } else {
+      imapHost.value = configs.host;
+      imapPort.value = configs.port;
+      imapSecureConnection.value = configs.secure;
 
-    if (configs.host.includes('gmail')) {
-      return await signInWithOAuth('google');
-    }
+      await $api('/imap/mine/sources/imap', {
+        method: 'POST',
+        body: {
+          email: imapEmail.value,
+          password: imapPassword.value,
+          ...configs,
+        },
+      });
 
-    console.log();
-
-    if (configs.host.includes('office365')) {
-      return await signInWithOAuth('azure');
-    }
-
-    imapHost.value = configs.host;
-    imapPort.value = configs.port;
-    imapSecureConnection.value = configs.secure;
-
-    await $api('/imap/mine/sources/imap', {
-      method: 'POST',
-      body: {
+      imapSource.value = {
+        type: 'imap',
         email: imapEmail.value,
-        password: imapPassword.value,
-        ...configs,
-      },
-    });
-
-    imapSource.value = {
-      type: 'imap',
-      email: imapEmail.value,
-      isValid: true,
-    };
-    show.value = false;
+        isValid: true,
+      };
+      show.value = false;
+    }
   } catch (error) {
     if (error instanceof FetchError) {
       handleAuthenticationErrors(error);
