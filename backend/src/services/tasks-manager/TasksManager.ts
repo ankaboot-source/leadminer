@@ -2,11 +2,6 @@
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
 import SupabaseTasks from '../../db/supabase/tasks';
-import {
-  EMAILS_STREAM_CONSUMER_GROUP,
-  MESSAGES_STREAM_CONSUMER_GROUP,
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
-} from '../../utils/constants';
 import logger from '../../utils/logger';
 import EmailFetcherFactory from '../factory/EmailFetcherFactory';
 import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
@@ -26,6 +21,7 @@ import {
   TaskType
 } from './types';
 import { redactSensitiveData } from './utils';
+import ENV from '../../config';
 
 export default class TasksManager {
   /**
@@ -96,8 +92,8 @@ export default class TasksManager {
       stream: {
         messagesStream: `messages_stream-${miningId}`,
         emailsStream: `emails_stream-${miningId}`,
-        messagesConsumerGroup: MESSAGES_STREAM_CONSUMER_GROUP,
-        emailsConsumerGroup: EMAILS_STREAM_CONSUMER_GROUP
+        messagesConsumerGroup: ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP,
+        emailsConsumerGroup: ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
       }
     };
   }
@@ -591,7 +587,7 @@ export default class TasksManager {
       ...stream
     };
     await this.redisPublisher.publish(
-      REDIS_PUBSUB_COMMUNICATION_CHANNEL,
+      ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL,
       JSON.stringify(message)
     );
   }

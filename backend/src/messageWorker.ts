@@ -6,10 +6,6 @@ import PgContacts from './db/pg/PgContacts';
 import CatchAllDomainsCache from './services/cache/CatchAllDomainsCache';
 import RedisCatchAllDomainsCache from './services/cache/redis/RedisCatchAllDomainsCache';
 import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
-import {
-  MESSAGES_STREAM_CONSUMER_GROUP,
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
-} from './utils/constants';
 import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
@@ -39,7 +35,7 @@ const { processStreamData } = initializeEmailMessageProcessor(
 const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
   subscriberRedisClient,
   logger,
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
+  ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL
 );
 
 const messagesStreamsConsumer =
@@ -47,7 +43,7 @@ const messagesStreamsConsumer =
     redisClient,
     logger,
     `consumer-${process.env.HOSTNAME}`,
-    MESSAGES_STREAM_CONSUMER_GROUP
+    ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP
   );
 
 const streamConsumerInstance = new MessagesConsumer(

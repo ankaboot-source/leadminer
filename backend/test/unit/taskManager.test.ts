@@ -30,15 +30,14 @@ import SupabaseTasks from '../../src/db/supabase/tasks';
 import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
 import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
 import redis from '../../src/utils/redis';
-import {
-  EMAILS_STREAM_CONSUMER_GROUP,
-  MESSAGES_STREAM_CONSUMER_GROUP
-} from '../../src/utils/constants';
+import ENV from '../../src/config';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
-  SUPABASE_SECRET_PROJECT_TOKEN: 'fake'
+  SUPABASE_SECRET_PROJECT_TOKEN: 'fake',
+  REDIS_EXTRACTING_STREAM_CONSUMER_GROUP: 'fake-group-extracting',
+  REDIS_CLEANING_STREAM_CONSUMER_GROUP: 'fake-group-cleaning'
 }));
 
 jest.mock('../../src/utils/redis', () => {
@@ -295,14 +294,14 @@ describe('TasksManager', () => {
         expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
           'CREATE',
           `messages_stream-${task.miningId}`,
-          MESSAGES_STREAM_CONSUMER_GROUP,
+          ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP,
           '$',
           'MKSTREAM'
         );
         expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
           'CREATE',
           `emails_stream-${task.miningId}`,
-          EMAILS_STREAM_CONSUMER_GROUP,
+          ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP,
           '$',
           'MKSTREAM'
         );
@@ -354,12 +353,12 @@ describe('TasksManager', () => {
         expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
           'DESTROY',
           `messages_stream-${task.miningId}`,
-          MESSAGES_STREAM_CONSUMER_GROUP
+          ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP
         );
         expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
           'DESTROY',
           `emails_stream-${task.miningId}`,
-          EMAILS_STREAM_CONSUMER_GROUP
+          ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
         );
       });
 
@@ -414,8 +413,8 @@ describe('TasksManager', () => {
               processKey === 'clean' ? 'emails_stream' : 'messages_stream';
             const consumerGroup =
               processKey === 'clean'
-                ? EMAILS_STREAM_CONSUMER_GROUP
-                : MESSAGES_STREAM_CONSUMER_GROUP;
+                ? ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
+                : ENV.REDIS_EXTRACTING_STREAM_CONSUMER_GROUP;
             expect(fakeRedisClient.xgroup).toHaveBeenCalledWith(
               'DESTROY',
               `${streamType}-${task.miningId}`,
