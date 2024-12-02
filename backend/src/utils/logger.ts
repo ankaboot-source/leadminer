@@ -22,7 +22,7 @@ function initLogger() {
       transports: [
         new LokiTransport({
           host: ENV.GRAFANA_LOKI_HOST,
-          labels: { app: 'leadminer' },
+          labels: { app: ENV.APP_NAME },
           json: true,
           replaceTimestamp: true,
           format: format.combine(commonFormat, format.json()),

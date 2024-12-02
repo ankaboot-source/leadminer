@@ -5,6 +5,7 @@ const boolean = () =>
   z.enum(['true', 'false']).transform((arg) => arg === 'true');
 
 const schema = z.object({
+  APP_NAME: z.string().min(1),
   LEADMINER_API_PORT: number(),
   LEADMINER_API_HOST: z.string().url(),
   LEADMINER_API_HASH_SECRET: z.string().min(1),
@@ -20,6 +21,7 @@ const schema = z.object({
 
   /* REDIS */
   REDIS_HOST: z.string().min(1),
+  REDIS_DB: number(),
   REDIS_PASSWORD: z.string().min(1).optional(),
   REDIS_USERNAME: z.string().min(1).optional(),
   REDIS_PORT: number(),

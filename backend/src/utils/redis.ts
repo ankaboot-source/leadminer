@@ -20,11 +20,13 @@ class RedisManager {
     port: number,
     user: string | undefined,
     password: string | undefined,
+    db: number,
     tls: boolean
   ) {
     let redisOpts: RedisOptions = {
       host,
       port,
+      db,
       maxRetriesPerRequest: null
     };
 
@@ -98,6 +100,7 @@ const redis = new RedisManager(
   ENV.REDIS_PORT,
   ENV.REDIS_USERNAME,
   ENV.REDIS_PASSWORD,
+  ENV.REDIS_DB,
   ENV.REDIS_TLS
 );
 
