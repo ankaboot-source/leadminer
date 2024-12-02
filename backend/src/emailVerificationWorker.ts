@@ -5,10 +5,6 @@ import pool from './db/pg';
 import PgContacts from './db/pg/PgContacts';
 import RedisEmailStatusCache from './services/cache/redis/RedisEmailStatusCache';
 import EmailStatusVerifierFactory from './services/email-status/EmailStatusVerifierFactory';
-import {
-  EMAILS_STREAM_CONSUMER_GROUP,
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
-} from './utils/constants';
 import logger from './utils/logger';
 import RedisSubscriber from './utils/pubsub/redis/RedisSubscriber';
 import redis from './utils/redis';
@@ -36,7 +32,7 @@ const { processStreamData } = initializeEmailVerificationProcessor(
 const tasksManagementSubscriber = new RedisSubscriber<PubSubMessage>(
   subscriberRedisClient,
   logger,
-  REDIS_PUBSUB_COMMUNICATION_CHANNEL
+  ENV.REDIS_PUBSUB_COMMUNICATION_CHANNEL
 );
 
 const emailStreamsConsumer =
@@ -44,7 +40,7 @@ const emailStreamsConsumer =
     redisClient,
     logger,
     `consumer-${process.env.HOSTNAME}`,
-    EMAILS_STREAM_CONSUMER_GROUP
+    ENV.REDIS_CLEANING_STREAM_CONSUMER_GROUP
   );
 
 const emailsStreamConsumer = new EmailVerificationConsumer(
