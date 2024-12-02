@@ -1,8 +1,6 @@
 <template>
   <div class="py-3.5 flex justify-between bg-white md:bg-transparent">
-    <NuxtLink to="/dashboard">
-      <AppLogo />
-    </NuxtLink>
+    <AppLogo class="cursor-pointer" @click="navigateHome()" />
 
     <template v-if="$user">
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
@@ -59,5 +57,14 @@
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
 const $user = useSupabaseUser();
+const $router = useRouter();
 const visible = ref(false);
+function navigateHome() {
+  const homePath = '/dashboard';
+  if ($router.currentRoute.value.path === homePath) {
+    $router.go(0); // reload the page
+  } else {
+    $router.push(homePath);
+  }
+}
 </script>
