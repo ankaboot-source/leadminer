@@ -1,7 +1,7 @@
 <template>
   <component
     :is="CreditsDialog"
-    ref="CreditsDialogRef"
+    ref="CreditsDialogExportRef"
     engagement-type="contact"
     action-type="export"
     @secondary-action="exportTable(true)"
@@ -670,7 +670,7 @@ import { useFiltersStore } from '@/stores/filters';
 import type { Contact } from '@/types/contact';
 import {
   CreditsDialog,
-  CreditsDialogRef,
+  CreditsDialogExportRef,
   openCreditsDialog,
 } from '@/utils/credits';
 import { useContactsStore } from '~/stores/contacts';
@@ -882,6 +882,7 @@ const openCreditModel = (
     });
   }
   return openCreditsDialog(
+    CreditsDialogExportRef,
     hasDeficientCredits,
     total,
     available,

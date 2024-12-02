@@ -1,7 +1,7 @@
 <template>
   <component
     :is="CreditsDialog"
-    ref="CreditsDialogRef"
+    ref="CreditsDialogEnrichRef"
     engagement-type="contact"
     action-type="enrich"
     @secondary-action="startEnrichment(true)"
@@ -80,7 +80,7 @@ import type {
 import type { EnrichContactResponse, EnrichmentTask } from '@/types/enrichment';
 import {
   CreditsDialog,
-  CreditsDialogRef,
+  CreditsDialogEnrichRef,
   openCreditsDialog,
 } from '@/utils/credits';
 import type { Contact } from '~/types/contact';
@@ -222,7 +222,7 @@ async function enrichPerson(
 
       if (response.status === 402) {
         stopEnrichment();
-        openCreditsDialog(true, total, available, 0);
+        openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
       } else if (response.status === 200) {
         handleEnrichmentProgressNotification(task);
       } else if (response.status === 503) {
@@ -254,7 +254,7 @@ async function enrichPersonBulk(
 
       if (response.status === 402) {
         stopEnrichment();
-        openCreditsDialog(true, total, available, 0);
+        openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
       } else if (response.status === 200) {
         if (task.status === 'running') {
           setupEnrichmentRealtime();
@@ -301,6 +301,7 @@ onMounted(async () => {
 
 const openEnrichmentConfirmationDialog = () => {
   const creditsDialogOpened = useCreditsDialog(
+    CreditsDialogEnrichRef,
     contactsToEnrich.value?.map(({ email }) => email as string),
   );
   if (creditsDialogOpened) return;
