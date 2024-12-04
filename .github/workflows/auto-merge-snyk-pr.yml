@@ -39,6 +39,7 @@ jobs:
         run: |
           # Check mergeability status using GitHub CLI
           sleep 10
+          echo "Checking mergeability of PR $pr_number."
           pr_mergeable=$(gh pr view "$pr_number" --json mergeable -q '.mergeable')
           if [[ "$pr_mergeable" == "MERGEABLE" ]]; then
             echo "The PR can be merged."
@@ -53,5 +54,5 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           MERGE_METHOD: "squash"  # Options: merge, squash, rebase
-          PULL_REQUEST: "$pr_number"
+          PULL_REQUEST: ${{ env.pr_number }}
           MERGE_DELETE_BRANCH: true
