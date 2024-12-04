@@ -50,9 +50,7 @@ jobs:
 
       # Merge the pull request
       - name: Auto Merge Snyk PR
-        uses: "pascalgn/automerge-action@v0.16.4"
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          MERGE_METHOD: "squash"  # Options: merge, squash, rebase
-          PULL_REQUEST: ${{ env.pr_number }}
-          MERGE_DELETE_BRANCH: true
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge ${{env.pr_number}} --squash --delete-branch
