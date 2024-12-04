@@ -20,7 +20,8 @@ jobs:
 
       # Get the PR associated with the snyk branch
       - name: Get PR from snyk branches
-        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           sleep 10 # delay the PR check to prevent checking before the PR is opened
           echo "Looking for PR related to ${{ github.ref_name }}"
@@ -33,6 +34,8 @@ jobs:
           echo "pr_number=$pr_number" >> "$GITHUB_ENV"
 
       - name: Check for Merge Conflicts
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Check mergeability status using GitHub CLI
           sleep 10
