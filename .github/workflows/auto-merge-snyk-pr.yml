@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       # Get the PR associated with the snyk branch
-      - name: Get PR from snyk/* branch
+      - name: Get PR from snyk branches
         id: pr
         run: |
           sleep 10 # delay the PR check to prevent checking before the PR is opened
@@ -33,9 +33,10 @@ jobs:
           echo "pr_number=$pr_number" >> "$GITHUB_ENV"
 
       # Merge the pull request
-      - name: Auto Merge PR
-        uses: pascalgn/automerge-action@v0.16.3
-        with:
-          merge_method: squash  # Options: merge, squash, rebase
-          pull_request: $pr_number
-          delete_branch: true
+      - name: Auto Merge Snyk PR
+        uses: "pascalgn/automerge-action@v0.16.4"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MERGE_METHOD: "squash"  # Options: merge, squash, rebase
+          PULL_REQUEST: "$pr_number"
+          MERGE_DELETE_BRANCH: true
