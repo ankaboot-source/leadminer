@@ -32,6 +32,18 @@ jobs:
           echo "Found PR number: $pr_number"
           echo "pr_number=$pr_number" >> "$GITHUB_ENV"
 
+      - name: Check for Merge Conflicts
+        run: |
+          # Check mergeability status using GitHub CLI
+          sleep 10
+          pr_mergeable=$(gh pr view "$pr_number" --json mergeable -q '.mergeable')
+          if [[ "$pr_mergeable" == "MERGEABLE" ]]; then
+            echo "The PR can be merged."
+          else
+            echo "The PR can't be merged."
+            exit 1
+          fi
+
       # Merge the pull request
       - name: Auto Merge Snyk PR
         uses: "pascalgn/automerge-action@v0.16.4"
