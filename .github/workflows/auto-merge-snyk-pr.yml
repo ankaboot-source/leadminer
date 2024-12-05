@@ -17,6 +17,8 @@ jobs:
       # Checkout the repository
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch all refs
 
       # Get the PR associated with the snyk branch
       - name: Get PR from snyk branches
@@ -49,8 +51,8 @@ jobs:
           fi
 
       # Merge the pull request
-#      - name: Auto Merge Snyk PR
-#        env:
-#          GH_TOKEN: ${{ github.token }}
-#        run: |
-#          gh pr merge ${{env.pr_number}} --squash --delete-branch
+      - name: Auto Merge Snyk PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge ${{env.pr_number}} --squash --delete-branch
