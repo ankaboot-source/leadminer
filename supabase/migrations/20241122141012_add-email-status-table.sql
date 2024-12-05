@@ -34,13 +34,14 @@ SELECT
 CREATE FUNCTION update_person_status () RETURNS TRIGGER AS $$
 BEGIN
   -- Update the status in the persons table
-  UPDATE persons
+  UPDATE public.persons
   SET status = NEW.status
   WHERE email = NEW.email
     AND user_id = NEW.user_id;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+SET search_path = '';
 
 CREATE TRIGGER update_persons_status_trigger
 AFTER INSERT
