@@ -4,7 +4,7 @@ grant usage on schema cron to postgres;
 grant all privileges on all tables in schema cron to postgres;
 
 
-CREATE FUNCTION private.delete_expired_clean_cache (delete_interval INTERVAL) RETURNS void AS $$
+CREATE FUNCTION public.delete_expired_clean_cache (delete_interval INTERVAL) RETURNS void AS $$
 BEGIN
     DELETE FROM public.email_status
     WHERE verified_on <= NOW() - delete_interval;
@@ -15,10 +15,10 @@ SET search_path = '';
 SELECT cron.schedule(
     'delete-expired-clean-cache',
     '0 0 1 */6 *', --  Every 6 months
-    $$SELECT private.delete_expired_clean_cache(INTERVAL '6 months');$$
+    $$SELECT public.delete_expired_clean_cache(INTERVAL '6 months');$$
 );
 
-CREATE FUNCTION private.delete_expired_enrich_cache(delete_interval INTERVAL)
+CREATE FUNCTION public.delete_expired_enrich_cache(delete_interval INTERVAL)
 RETURNS void AS $$
 BEGIN
     DELETE FROM public.tasks
