@@ -310,7 +310,7 @@ function startRealtimePersons(userId: string, email: string) {
       'postgres_changes',
       {
         event: 'UPDATE',
-        schema: 'public',
+        schema: 'private',
         table: 'persons',
         filter: `user_id=eq.${userId}`,
       },

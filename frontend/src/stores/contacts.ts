@@ -53,11 +53,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Load contacts from database to store.
    */
   async function loadContacts() {
-    const { data, error } = await $supabase.rpc(
-      'get_contacts_table',
-      // @ts-expect-error: Issue with @nuxt/supabase typing
-      { user_id: $user.value?.id },
-    );
+    const { data, error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .rpc('get_contacts_table', { user_id: $user.value?.id });
 
     if (error) throw error;
     contactsList.value = convertDates(data);
@@ -76,11 +75,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Refines contacts in database.
    */
   async function refineContacts() {
-    const { error } = await $supabase.rpc(
-      'refine_persons',
-      // @ts-expect-error: Issue with @nuxt/supabase typing
-      { user_id: $user.value?.id },
-    );
+    const { error } = await $supabase
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .rpc('refine_persons', { user_id: $user.value?.id });
     if (error) throw error;
   }
 
@@ -149,7 +147,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
         'postgres_changes',
         {
           event: '*',
-          schema: 'public',
+          schema: 'private',
           table: 'persons',
           filter: `user_id=eq.${$user.value?.id}`,
         },

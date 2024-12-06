@@ -28,6 +28,7 @@ export default class SupabaseTasks implements Tasks {
         duration: task.duration
       }));
       const { data, error } = await this.client
+        .schema('private')
         .from('tasks')
         .insert(taskList)
         .select();
@@ -52,6 +53,7 @@ export default class SupabaseTasks implements Tasks {
   async update(task: Task): Promise<SupabaseTask | undefined> {
     try {
       const { data, error } = await this.client
+        .schema('private')
         .from('tasks')
         .update({
           id: task.id,

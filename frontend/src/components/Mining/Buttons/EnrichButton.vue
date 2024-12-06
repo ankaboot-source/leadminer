@@ -191,7 +191,7 @@ function setupEnrichmentRealtime() {
       'postgres_changes',
       {
         event: 'UPDATE',
-        schema: 'public',
+        schema: 'private',
         table: 'tasks',
         filter: `category=eq.${'enriching'}`,
       },

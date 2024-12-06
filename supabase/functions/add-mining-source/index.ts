@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
   const expiresAt = new Date().setHours(new Date().getHours() + 7);
 
   try {
-    const { error } = await admin.rpc('upsert_mining_source', {
+    const { error } = await admin.schema('private').rpc('upsert_mining_source', {
       _user_id: user.id,
       _email: user.email,
       _type: provider,
