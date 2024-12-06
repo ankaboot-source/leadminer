@@ -14,8 +14,8 @@ SET search_path = '';
 
 SELECT cron.schedule(
     'delete-expired-clean-cache',
-    '0 0 1 */6 *', --  Every 6 months
-    $$SELECT public.delete_expired_clean_cache(INTERVAL '6 months');$$
+    '0 0 */100 * *', -- Every 100 days at midnight
+    $$SELECT public.delete_expired_clean_cache(INTERVAL '100 days');$$
 );
 
 CREATE FUNCTION public.delete_expired_enrich_cache(delete_interval INTERVAL)
@@ -32,6 +32,6 @@ SET search_path = '';
 
 SELECT cron.schedule(
     'delete-expired-enrich-cache',
-    '0 0 */100 * *', -- Every 100 days at midnight
-    $$SELECT delete_expired_enrich_cache(INTERVAL '100 days');$$
+    '0 0 1 */6 *',
+    $$SELECT delete_expired_enrich_cache(INTERVAL '6 months');$$
 );
