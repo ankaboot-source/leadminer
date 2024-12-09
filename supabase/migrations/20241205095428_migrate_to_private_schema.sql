@@ -1,3 +1,8 @@
+-- DISABLE EXTENSION
+-- https://supabase.com/docs/guides/database/hardening-data-api
+DROP EXTENSION pg_graphql;
+
+-- CREATE SCHEMA PRIVATE
 create schema if not exists private;
 grant usage on schema private to authenticated, service_role;
 
