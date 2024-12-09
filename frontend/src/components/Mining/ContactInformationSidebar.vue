@@ -64,7 +64,7 @@
               :key="index"
               :value="getTagLabel(tag)"
               :severity="getTagColor(tag)"
-            ></Tag>
+            />
           </div>
         </div>
       </div>
