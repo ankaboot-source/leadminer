@@ -144,7 +144,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
           }),
         ),
       )
-      .filter((item) => item.email !== null); // Remove null rows
+      .filter((item) => item.email !== null); // Remove rows with no email
     console.log(contentJson.value);
 
     toast.add({
