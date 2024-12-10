@@ -214,7 +214,7 @@ describe('ProxyCurlEmailEnricher', () => {
             givenName: undefined,
             organization: undefined,
             githubProfile: undefined,
-            alternateNames: undefined
+            alternateName: undefined
           }
         ],
         raw_data: [enrichResultMock[1]]
@@ -235,7 +235,7 @@ describe('ProxyCurlEmailEnricher', () => {
             image: undefined,
             jobTitle: undefined,
             organization: undefined,
-            alternateNames: undefined
+            alternateName: undefined
           }
         ],
         raw_data: [enrichResultMock[2]]

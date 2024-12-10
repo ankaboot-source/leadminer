@@ -529,22 +529,22 @@
 
     <!-- Alternate names -->
     <Column
-      v-if="visibleColumns.includes('alternate_names')"
-      field="alternate_names"
+      v-if="visibleColumns.includes('alternate_name')"
+      field="alternate_name"
       sortable
       :show-filter-operator="false"
       :show-add-button="false"
     >
       <template #header>
         <div v-tooltip.top="$t('contact.alternate_names_definition')">
-          {{ $t('contact.alternate_names') }}
+          {{ $t('contact.alternate_name') }}
         </div>
       </template>
       <template #filter="{ filterModel }">
         <InputText v-model="filterModel.value" />
       </template>
       <template #body="{ data }">
-        <div>{{ data.alternate_names?.join(', ') }}</div>
+        <div>{{ data.alternate_name?.join(', ') }}</div>
       </template>
     </Column>
 
@@ -935,7 +935,7 @@ const visibleColumnsOptions = [
   { label: t('seniority'), value: 'seniority' },
   { label: $t('contact.given_name'), value: 'given_name' },
   { label: $t('contact.family_name'), value: 'family_name' },
-  { label: $t('contact.alternate_names'), value: 'alternate_names' },
+  { label: $t('contact.alternate_name'), value: 'alternate_name' },
   { label: $t('contact.location'), value: 'location' },
   { label: $t('contact.works_for'), value: 'works_for' },
   { label: $t('contact.job_title'), value: 'job_title' },

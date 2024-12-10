@@ -37,7 +37,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
       email: person.email as string,
       name: person.name as string,
       homeLocation: person.location,
-      alternateName: person.alternate_names,
+      alternateName: person.alternate_name,
       familyName: person.family_name,
       givenName: person.given_name,
       identifier: person.identifiers,
@@ -119,7 +119,7 @@ export default class TheDigEmailEnricher implements EmailEnricher {
         organization: undefinedIfFalsy(person.worksFor?.[0]),
         sameAs: undefinedIfEmpty(person.sameAs ?? []),
         identifiers: undefinedIfEmpty(person.identifier ?? []),
-        alternateNames: undefinedIfEmpty(person.alternateName ?? []),
+        alternateName: undefinedIfEmpty(person.alternateName ?? []),
         location: undefinedIfEmpty(
           [
             [person.homeLocation].flat().filter(Boolean).join(','),
@@ -128,8 +128,8 @@ export default class TheDigEmailEnricher implements EmailEnricher {
         )
       }))
       .filter(
-        ({ organization, jobTitle, location, alternateNames, image }) =>
-          ![organization, jobTitle, location, alternateNames, image].every(
+        ({ organization, jobTitle, location, alternateName, image }) =>
+          ![organization, jobTitle, location, alternateName, image].every(
             (field) => !field || field.length === 0
           )
       );

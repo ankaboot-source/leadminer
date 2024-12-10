@@ -77,7 +77,7 @@ const defaultFilters = {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },
-  alternate_names: {
+  alternate_name: {
     operator: FilterOperator.AND,
     constraints: [{ value: null, matchMode: FilterMatchMode.CONTAINS }],
   },

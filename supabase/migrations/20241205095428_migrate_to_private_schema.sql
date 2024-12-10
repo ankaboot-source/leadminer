@@ -55,6 +55,10 @@ ALTER TABLE public.tags_2 SET SCHEMA private;
 ALTER TABLE public.tasks SET SCHEMA private;
 ALTER TABLE public.email_status SET SCHEMA private;
 
+-- ALTER TABLE COLUMNS
+ALTER TABLE private.persons
+RENAME COLUMN alternate_names TO alternate_name;
+
 -- CREATE FUNCTIONS
 CREATE FUNCTION private.update_email_in_profile_table()
 RETURNS TRIGGER 
@@ -683,17 +687,25 @@ EXECUTE FUNCTION extensions.moddatetime('updated_at');
 
 
 -- UPDATE CRON JOBS
-SELECT cron.unschedule (
-  'delete-expired-enrich-cache'
-);
+DO $$
+BEGIN
+  -- Unschedule 'delete-expired-enrich-cache' if it exists
+  PERFORM cron.unschedule(jobid)
+  FROM cron.job
+  WHERE jobname = 'delete-expired-enrich-cache';
+
+  -- Unschedule 'delete-expired-clean-cache' if it exists
+  PERFORM cron.unschedule(jobid)
+  FROM cron.job
+  WHERE jobname = 'delete-expired-clean-cache';
+END $$;
+
 SELECT cron.schedule(
     'delete-expired-enrich-cache',
     '0 0 1 */6 *', -- At 00:00 on the 1st day of every 6th month
     $$SELECT private.delete_expired_enrich_cache(INTERVAL '6 months');$$
 );
-SELECT cron.unschedule (
-  'delete-expired-clean-cache'
-);
+
 SELECT cron.schedule(
     'delete-expired-clean-cache',
     '0 0 */100 * *', -- At 00:00 every 100 days
