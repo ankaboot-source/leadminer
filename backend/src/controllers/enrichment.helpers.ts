@@ -75,6 +75,7 @@ export function redactEnrichmentTask(task: TaskEnrich): TaskEnrichRedacted {
  */
 export async function getRefinedPersonsEmails(userId: string) {
   const { data: emails, error } = await supabaseClient
+    .schema('private')
     .from('refinedpersons')
     .select('email')
     .match({ user_id: userId })
@@ -105,6 +106,7 @@ export async function getContactsToEnrich(
   const refinedEmails = await getRefinedPersonsEmails(userId);
 
   const { data, error } = await supabaseClient
+    .schema('private')
     .from('persons')
     .select('email, name')
     .in('email', refinedEmails)
@@ -123,6 +125,7 @@ export async function createEnrichmentTask(
   updateEmptyFieldsOnly: boolean
 ) {
   const { data: task, error } = await supabaseClient
+    .schema('private')
     .from('tasks')
     .insert({
       user_id: userId,
@@ -145,6 +148,7 @@ export async function createEnrichmentTask(
 
 export async function getEnrichmentTask(taskId: string) {
   const { data: task, error } = await supabaseClient
+    .schema('private')
     .from('tasks')
     .select('*')
     .eq('id', taskId)
@@ -159,6 +163,7 @@ export async function getEnrichmentTask(taskId: string) {
 
 export async function updateEnrichmentTaskDB(task: TaskEnrich) {
   const { data, error } = await supabaseClient
+    .schema('private')
     .from('tasks')
     .update(task)
     .eq('id', task.id)
@@ -220,7 +225,7 @@ async function addContactsToEngagementHistory(
   emails: string[]
 ) {
   const insertPromises = emails.map((email) =>
-    supabaseClient.from('engagement').upsert({
+    supabaseClient.schema('private').from('engagement').upsert({
       email,
       user_id,
       engagement_type: 'ENRICH'
@@ -259,16 +264,18 @@ export async function enrichContactDB(
     works_for: contact.organization
   }));
 
-  const { error } = await supabaseClient.rpc('enrich_contacts', {
-    p_contacts_data: contactsDB.map((contact) => ({
-      ...contact,
-      user_id: userId,
-      alternate_names: contact.alternate_names?.join(','),
-      same_as: contact.same_as?.join(','),
-      location: contact.location?.join(',')
-    })),
-    p_update_empty_fields_only: updateEmptyFieldsOnly ?? true
-  });
+  const { error } = await supabaseClient
+    .schema('private')
+    .rpc('enrich_contacts', {
+      p_contacts_data: contactsDB.map((contact) => ({
+        ...contact,
+        user_id: userId,
+        alternate_names: contact.alternate_names?.join(','),
+        same_as: contact.same_as?.join(','),
+        location: contact.location?.join(',')
+      })),
+      p_update_empty_fields_only: updateEmptyFieldsOnly ?? true
+    });
 
   if (error) throw new Error(error.message);
 
@@ -287,9 +294,11 @@ export async function searchEnrichmentCache(
 ): Promise<EnrichmentCacheResult[]> {
   const emails = contacts.map((contact) => contact.email);
 
-  const { data, error } = await supabaseClient.rpc('enriched_most_recent', {
-    emails
-  });
+  const { data, error } = await supabaseClient
+    .schema('private')
+    .rpc('enriched_most_recent', {
+      emails
+    });
 
   if (error) {
     throw new Error(error.message);

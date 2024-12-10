@@ -237,6 +237,8 @@ async function updateUserAccount(userAccount: UserAttributes) {
 
 async function updateUserProfile(userProfile: Partial<Profile>) {
   const { error: emailUpdateError } = await useSupabaseClient<Profile>()
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
     .from('profiles')
     .update({ ...userProfile })
     .eq('user_id', $profile.value?.user_id);

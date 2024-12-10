@@ -10,19 +10,19 @@ import {
 
 export default class PgMiningSources implements MiningSources {
   private static readonly UPSERT_SQL = `
-    INSERT INTO mining_sources ("user_id","email","type","credentials")
+    INSERT INTO private.mining_sources ("user_id","email","type","credentials")
     VALUES($1,$2,$3,pgp_sym_encrypt($4, $5))
     ON CONFLICT (email, user_id)
     DO UPDATE SET credentials=excluded.credentials,type=excluded.type;`;
 
   private static readonly GET_BY_USER_SQL = `
     SELECT email, type, pgp_sym_decrypt(credentials, $1) as credentials
-    FROM mining_sources
+    FROM private.mining_sources
     WHERE user_id = $2;`;
 
   private static readonly GET_BY_EMAIL_AND_USERID_SQL = `
     SELECT pgp_sym_decrypt(credentials, $1) as credentials
-    FROM mining_sources
+    FROM private.mining_sources
     WHERE email = $2 and user_id = $3
     LIMIT 1;`;
 

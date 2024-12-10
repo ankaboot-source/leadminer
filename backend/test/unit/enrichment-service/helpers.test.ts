@@ -18,6 +18,7 @@ jest.mock('../../../src/config', () => ({
 jest.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     from: jest.fn().mockReturnThis(),
+    schema: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnValue({ data: [], error: null }),
     insert: jest.fn().mockReturnValue({ data: null, error: null }),
     upsert: jest.fn().mockReturnValue({ data: null, error: null }),

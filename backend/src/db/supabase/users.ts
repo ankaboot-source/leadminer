@@ -12,6 +12,7 @@ export default class SupabaseUsers implements Users {
   async getById(userId: string) {
     try {
       const { data, error } = await this.client
+        .schema('private')
         .from('profiles')
         .select('*')
         .match({ user_id: userId });
@@ -30,6 +31,7 @@ export default class SupabaseUsers implements Users {
   async update(userId: string, updateData: Partial<Profile>) {
     try {
       const { status, error } = await this.client
+        .schema('private')
         .from('profiles')
         .update(updateData)
         .eq('user_id', userId);
@@ -62,9 +64,11 @@ export default class SupabaseUsers implements Users {
 
   async deleteUserData(userId: string) {
     try {
-      const { error } = await this.client.rpc('delete_user_data', {
-        user_id: userId
-      });
+      const { error } = await this.client
+        .schema('private')
+        .rpc('delete_user_data', {
+          user_id: userId
+        });
 
       if (error) {
         const postgresErrorMessage = `message=${error.message} | code=${error.code} | details=${error.details}`;

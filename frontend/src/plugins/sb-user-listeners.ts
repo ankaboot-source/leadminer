@@ -16,6 +16,7 @@ import type { $Fetch } from 'nitropack';
  */
 async function getCurrentUserProfile(client: SupabaseClient) {
   const { data, error } = await client
+    .schema('private')
     .from('profiles')
     .select('*')
     .single<Profile>();
@@ -124,7 +125,7 @@ export default defineNuxtPlugin({
           'postgres_changes',
           {
             event: '*',
-            schema: 'public',
+            schema: 'private',
             table: 'profiles',
             filter: `user_id=eq.${$user.value?.id}`,
           },

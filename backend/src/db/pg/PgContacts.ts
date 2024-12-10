@@ -8,15 +8,15 @@ import { Contact, EmailStatus, ExtractionResult, Tag } from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
-    'SELECT * FROM refine_persons($1)';
+    'SELECT * FROM private.refine_persons($1)';
 
   private static readonly SELECT_CONTACTS_SQL =
-    'SELECT * FROM get_contacts_table($1)';
+    'SELECT * FROM private.get_contacts_table($1)';
 
   private static readonly SELECT_EXPORTED_CONTACTS = `
     SELECT contacts.* 
-    FROM get_contacts_table($1) contacts
-      JOIN engagement e
+    FROM private.get_contacts_table($1) contacts
+      JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
@@ -24,8 +24,8 @@ export default class PgContacts implements Contacts {
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS = `
     SELECT contacts.* 
-    FROM get_contacts_table($1) contacts
-      LEFT JOIN engagement e
+    FROM private.get_contacts_table($1) contacts
+      LEFT JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
@@ -33,15 +33,15 @@ export default class PgContacts implements Contacts {
     `;
 
   private static readonly SELECT_CONTACTS_BY_EMAILS =
-    'SELECT * FROM get_contacts_table_by_emails($1,$2)';
+    'SELECT * FROM private.get_contacts_table_by_emails($1,$2)';
 
   private static readonly SELECT_CONTACTS_BY_EMAILS_UNVERIFIED =
-    'SELECT * FROM get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
+    'SELECT * FROM private.get_contacts_table_by_emails($1,$2) WHERE status IS NULL';
 
   private static readonly SELECT_EXPORTED_CONTACTS_BY_EMAILS = `
     SELECT contacts.* 
-    FROM get_contacts_table_by_emails($1,$2) contacts
-      JOIN engagement e
+    FROM private.get_contacts_table_by_emails($1,$2) contacts
+      JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
@@ -49,8 +49,8 @@ export default class PgContacts implements Contacts {
 
   private static readonly SELECT_NON_EXPORTED_CONTACTS_BY_EMAILS = `
     SELECT contacts.* 
-    FROM get_contacts_table_by_emails($1,$2) contacts
-      LEFT JOIN engagement e
+    FROM private.get_contacts_table_by_emails($1,$2) contacts
+      LEFT JOIN private.engagement e
         ON e.email = contacts.email
         AND e.user_id = $1
         AND e.engagement_type = 'CSV'
@@ -58,32 +58,32 @@ export default class PgContacts implements Contacts {
     `;
 
   private static readonly UPDATE_PERSON_STATUS_BULK = `
-    UPDATE persons 
+    UPDATE private.persons 
     SET status = update.status
     FROM (VALUES %L) AS update(email, status) 
     WHERE persons.email = update.email AND persons.user_id = %L AND persons.status IS NULL`;
 
   private static readonly INSERT_EXPORTED_CONTACT =
-    'INSERT INTO engagement (user_id, email, engagement_type) VALUES %L ON  CONFLICT (email, user_id, engagement_type) DO NOTHING;';
+    'INSERT INTO private.engagement (user_id, email, engagement_type) VALUES %L ON  CONFLICT (email, user_id, engagement_type) DO NOTHING;';
 
   private static readonly INSERT_MESSAGE_SQL = `
-    INSERT INTO messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
+    INSERT INTO private.messages("channel","folder_path","date","message_id","references","list_id","conversation","user_id") 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8);`;
 
   private static readonly INSERT_POC_SQL = `
-    INSERT INTO pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","user_id")
+    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","user_id")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source")
+    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source")
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
     RETURNING persons.email;`;
 
   private static readonly SELECT_RECENT_EMAIL_STATUS_BY_EMAIL = `
     SELECT *
-    FROM public.email_status
+    FROM private.email_status
     WHERE email = $1
     AND verified_on >= NOW() - INTERVAL '100 days'
     ORDER BY updated_at DESC
@@ -91,7 +91,7 @@ export default class PgContacts implements Contacts {
   `;
 
   private static readonly UPSERT_EMAIL_STATUS_SQL = `
-    INSERT INTO email_status (email, user_id, status, details, verified_on)
+    INSERT INTO private.email_status (email, user_id, status, details, verified_on)
     VALUES ($1, $2, $3, $4,$5)
     ON CONFLICT (email)
     DO UPDATE SET 
@@ -101,7 +101,7 @@ export default class PgContacts implements Contacts {
         verified_on = EXCLUDED.verified_on;`;
 
   private static readonly INSERT_TAGS_SQL = `
-    INSERT INTO tags("name","reachable","source","user_id","person_email")
+    INSERT INTO private.tags("name","reachable","source","user_id","person_email")
     VALUES %L
     ON CONFLICT(person_email, name, user_id) DO NOTHING;`;
 
@@ -216,7 +216,7 @@ export default class PgContacts implements Contacts {
       for (const { pointOfContact, person, tags } of persons) {
         // eslint-disable-next-line no-await-in-loop
         const { rowCount: selectResults } = await this.pool.query(
-          'SELECT email FROM persons WHERE user_id = $1 AND email = $2;',
+          'SELECT email FROM private.persons WHERE user_id = $1 AND email = $2;',
           [userId, person.email]
         );
         if (selectResults === 0) {
