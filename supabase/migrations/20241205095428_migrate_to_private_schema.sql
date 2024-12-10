@@ -705,6 +705,7 @@ SELECT cron.schedule(
     '0 0 1 */6 *', -- At 00:00 on the 1st day of every 6th month
     $$SELECT private.delete_expired_enrich_cache(INTERVAL '6 months');$$
 );
+
 SELECT cron.schedule(
     'delete-expired-clean-cache',
     '0 0 */100 * *', -- At 00:00 every 100 days
