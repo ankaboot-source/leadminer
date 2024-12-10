@@ -270,7 +270,7 @@ export async function enrichContactDB(
       p_contacts_data: contactsDB.map((contact) => ({
         ...contact,
         user_id: userId,
-        alternate_names: contact.alternate_names?.join(','),
+        alternate_name: contact.alternate_name?.join(','),
         same_as: contact.same_as?.join(','),
         location: contact.location?.join(',')
       })),

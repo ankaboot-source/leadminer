@@ -34,7 +34,7 @@ describe('TheDigEmailEnricher', () => {
         givenName: 'Jane',
         familyName: 'Doe',
         jobTitle: 'Software Engineer',
-        alternateNames: ['JDoe'],
+        alternateName: ['JDoe'],
         organization: 'Tech Co.',
         image: 'https://example.com/pic.jpg',
         identifiers: ['jane.doe'],
@@ -125,7 +125,7 @@ describe('TheDigEmailEnricher', () => {
               'https://linkedin.com/in/validuser',
               'https://x.com/validuser/'
             ],
-            alternateNames: ['valid_user_123'],
+            alternateName: ['valid_user_123'],
             image: 'https://x.com/validuser/profile/pic.png'
           },
           {
@@ -141,7 +141,7 @@ describe('TheDigEmailEnricher', () => {
               'https://linkedin.com/in/partialuser',
               'https://x.com/partialuser/'
             ],
-            alternateNames: undefined,
+            alternateName: undefined,
             image: undefined
           },
           {

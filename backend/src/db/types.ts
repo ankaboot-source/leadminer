@@ -49,7 +49,7 @@ export interface Person {
   givenName?: string;
   familyName?: string;
   identifiers?: string[];
-  alternateNames?: string[];
+  alternateName?: string[];
   source: string;
 }
 
@@ -87,7 +87,7 @@ export interface Contact {
   tags?: Tag[];
   given_name?: string;
   family_name?: string;
-  alternate_names?: string[];
+  alternate_name?: string[];
   location?: string[];
   works_for?: string;
   job_title?: string;

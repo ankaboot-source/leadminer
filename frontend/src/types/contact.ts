@@ -16,7 +16,7 @@ export interface Contact {
   name: string | null;
   given_name: string | null;
   family_name: string | null;
-  alternate_names: string[] | null;
+  alternate_name: string[] | null;
   location: string[] | null;
   works_for: string | null;
   job_title: string | null;
@@ -42,7 +42,7 @@ export interface ContactEdit {
   name: string | null;
   given_name: string | null;
   family_name: string | null;
-  alternate_names: string | null;
+  alternate_name: string | null;
   location: string | null;
   works_for: string | null;
   job_title: string | null;

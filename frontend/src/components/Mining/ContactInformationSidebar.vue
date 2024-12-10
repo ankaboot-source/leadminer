@@ -100,15 +100,15 @@
         </tr>
         <tr class="p-row-even">
           <td class="md:font-medium">
-            {{ $t('contact.alternate_names') }}
+            {{ $t('contact.alternate_name') }}
           </td>
           <td>
             <div v-if="!editingContact">
-              {{ contact.alternate_names?.join(', ') }}
+              {{ contact.alternate_name?.join(', ') }}
             </div>
             <Textarea
               v-else
-              v-model="contactEdit.alternate_names"
+              v-model="contactEdit.alternate_name"
               rows="3"
               class="w-full"
             />
@@ -233,7 +233,7 @@ const contact = computed(() => $contactInformationSidebar.contact as Contact);
 const editingContact = ref(false);
 const contactEdit = ref<ContactEdit>({
   ...contact.value,
-  alternate_names: contact.value?.alternate_names?.join('\n') ?? null,
+  alternate_name: contact.value?.alternate_name?.join('\n') ?? null,
   same_as: contact.value?.same_as?.join('\n') ?? null,
   location: contact.value?.location?.join('\n') ?? null,
 });
@@ -241,7 +241,7 @@ const contactEdit = ref<ContactEdit>({
 watch(contact, (newContact) => {
   contactEdit.value = {
     ...newContact,
-    alternate_names: newContact?.alternate_names?.join('\n') ?? null,
+    alternate_name: newContact?.alternate_name?.join('\n') ?? null,
     same_as: newContact?.same_as?.join('\n') ?? null,
     location: newContact?.location?.join('\n') ?? null,
   };
@@ -252,7 +252,7 @@ const skipDialog = computed(
     !(
       contact.value.given_name ||
       contact.value.family_name ||
-      contact.value.alternate_names ||
+      contact.value.alternate_name ||
       contact.value.location ||
       contact.value.works_for ||
       contact.value.job_title ||
@@ -374,16 +374,16 @@ async function saveContactInformations() {
     ...contact.value,
     ...contactEdit.value,
     same_as: transformStringToArray(contactEdit.value.same_as),
-    alternate_names: transformStringToArray(contactEdit.value.alternate_names),
+    alternate_name: transformStringToArray(contactEdit.value.alternate_name),
     location: transformStringToArray(contactEdit.value.location),
   };
 
   const contactToUpdate: Partial<Contact> = {
     email: editedContactCopy.email,
-    alternate_names:
-      JSON.stringify(originalContactCopy.alternate_names) !==
-      JSON.stringify(editedContactCopy.alternate_names)
-        ? editedContactCopy.alternate_names || null
+    alternate_name:
+      JSON.stringify(originalContactCopy.alternate_name) !==
+      JSON.stringify(editedContactCopy.alternate_name)
+        ? editedContactCopy.alternate_name || null
         : undefined,
     same_as:
       JSON.stringify(originalContactCopy.same_as) !==

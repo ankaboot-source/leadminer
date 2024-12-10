@@ -14,7 +14,7 @@ export interface EnricherResult {
   familyName?: string;
   sameAs?: string[];
   identifiers?: string[];
-  alternateNames?: string[];
+  alternateName?: string[];
 }
 
 export interface Person {
@@ -26,7 +26,7 @@ export interface Person {
   given_name?: string;
   family_name?: string;
   works_for?: string;
-  alternate_names?: string[];
+  alternate_name?: string[];
   location?: string[];
   same_as?: string[];
   identifiers: string[];
