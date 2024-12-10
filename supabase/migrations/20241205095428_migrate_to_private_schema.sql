@@ -168,9 +168,9 @@ DECLARE
   organization_id UUID;
   works_for_name TEXT;
   new_name TEXT;
-  new_alternate_names TEXT[];
+  new_alternate_name TEXT[];
   old_name TEXT;
-  old_alternate_names TEXT[];
+  old_alternate_name TEXT[];
 BEGIN
   -- Assert that all records have email and user_id
   IF EXISTS (
@@ -200,17 +200,17 @@ BEGIN
       organization_id := NULL;
     END IF;
 
-    -- Add name into alternate_names if name is already filled
+    -- Add name into alternate_name if name is already filled
     new_name := contact_record->>'name';
     IF new_name IS NOT NULL THEN
-      SELECT p.name, p.alternate_names 
-      INTO old_name, old_alternate_names
+      SELECT p.name, p.alternate_name 
+      INTO old_name, old_alternate_name
       FROM private.persons p
       WHERE p.email = contact_record->>'email' AND p.user_id = (contact_record->>'user_id')::UUID
       LIMIT 1;
       IF old_name IS NOT NULL THEN
-        IF (old_name != new_name AND (old_alternate_names IS NULL OR NOT(new_name = ANY(old_alternate_names)))) THEN
-          new_alternate_names := ARRAY_APPEND(old_alternate_names, new_name);
+        IF (old_name != new_name AND (old_alternate_name IS NULL OR NOT(new_name = ANY(old_alternate_name)))) THEN
+          new_alternate_name := ARRAY_APPEND(old_alternate_name, new_name);
         END IF;
         new_name := old_name;
       END IF;
@@ -223,7 +223,7 @@ BEGIN
         url = COALESCE(pp.url, (contact_record->>'url')::TEXT),
         image = COALESCE(pp.image, (contact_record->>'image')::TEXT),
         location = COALESCE(pp.location, string_to_array(contact_record->>'location', ',')::TEXT[]),
-        alternate_names = COALESCE(pp.alternate_names, (new_alternate_names)::TEXT[]),
+        alternate_name = COALESCE(pp.alternate_name, (new_alternate_name)::TEXT[]),
         same_as = COALESCE(pp.same_as, string_to_array(contact_record->>'same_as', ',')::TEXT[]),
         given_name = COALESCE(pp.given_name, (contact_record->>'given_name')::TEXT),
         family_name = COALESCE(pp.family_name, (contact_record->>'family_name')::TEXT),
@@ -241,7 +241,7 @@ BEGIN
         url = COALESCE((contact_record->>'url')::TEXT, pp.url),
         image = COALESCE((contact_record->>'image')::TEXT, pp.image),
         location = COALESCE(string_to_array(contact_record->>'location', ',')::TEXT[], pp.location),
-        alternate_names = COALESCE((new_alternate_names)::TEXT[], pp.alternate_names),
+        alternate_name = COALESCE((new_alternate_name)::TEXT[], pp.alternate_name),
         same_as = COALESCE(string_to_array(contact_record->>'same_as', ',')::TEXT[], pp.same_as),
         given_name = COALESCE((contact_record->>'given_name')::TEXT, pp.given_name),
         family_name = COALESCE((contact_record->>'family_name')::TEXT, pp.family_name),
@@ -257,7 +257,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_names text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamp with time zone, seniority timestamp with time zone, occurrence integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamp without time zone, created_at timestamp without time zone)
+CREATE FUNCTION private.get_contacts_table(user_id uuid) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamp with time zone, seniority timestamp with time zone, occurrence integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamp without time zone, created_at timestamp without time zone)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -270,7 +270,7 @@ BEGIN
       p.status as status_col,
       p.image as image_col,
       p.location as location_col,
-      p.alternate_names as alternate_names_col,
+      p.alternate_name as alternate_name_col,
       p.same_as as same_as_col,
       p.given_name as given_name_col,
       p.family_name as family_name_col,
@@ -307,7 +307,7 @@ BEGIN
     status_col AS status,
     image_col as image,
     location_col as location,
-    alternate_names_col as alternate_names,
+    alternate_name_col as alternate_name,
     same_as_col as same_as,
     given_name_col as given_name,
     family_name_col as family_name,
@@ -330,7 +330,7 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[]) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_names text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamp with time zone, seniority timestamp with time zone, occurrence integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamp without time zone, created_at timestamp without time zone)
+CREATE FUNCTION private.get_contacts_table_by_emails(user_id uuid, emails text[]) RETURNS TABLE(source text, email text, name text, status text, image text, location text[], alternate_name text[], same_as text[], given_name text, family_name text, job_title text, works_for text, recency timestamp with time zone, seniority timestamp with time zone, occurrence integer, sender integer, recipient integer, conversations integer, replied_conversations integer, tags text[], updated_at timestamp without time zone, created_at timestamp without time zone)
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$
@@ -343,7 +343,7 @@ BEGIN
       p.status as status_col,
       p.image as image_col,
       p.location as location_col,
-      p.alternate_names as alternate_names_col,
+      p.alternate_name as alternate_name_col,
       p.same_as as same_as_col,
       p.given_name as given_name_col,
       p.family_name as family_name_col,
@@ -382,7 +382,7 @@ BEGIN
     status_col AS status,
     image_col as image,
     location_col as location,
-    alternate_names_col as alternate_names,
+    alternate_name_col as alternate_name,
     same_as_col as same_as,
     given_name_col as given_name,
     family_name_col as family_name,
