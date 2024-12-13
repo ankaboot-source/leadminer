@@ -32,32 +32,411 @@ DROP FUNCTION public.refine_persons;
 DROP FUNCTION public.custom_access_token_hook;
 DROP FUNCTION public.enriched_most_recent;
 
--- MIGRATE TABLES, RLS ...
-ALTER TABLE public.engagement SET SCHEMA private;
-ALTER TABLE public.messages SET SCHEMA private;
-ALTER TABLE public.messages_0 SET SCHEMA private;
-ALTER TABLE public.messages_1 SET SCHEMA private;
-ALTER TABLE public.messages_2 SET SCHEMA private;
-ALTER TABLE public.mining_sources SET SCHEMA private;
-ALTER TABLE public.domains SET SCHEMA private;
-ALTER TABLE public.organizations SET SCHEMA private;
-ALTER TABLE public.persons SET SCHEMA private;
-ALTER TABLE public.pointsofcontact SET SCHEMA private;
-ALTER TABLE public.pointsofcontact_0 SET SCHEMA private;
-ALTER TABLE public.pointsofcontact_1 SET SCHEMA private;
-ALTER TABLE public.pointsofcontact_2 SET SCHEMA private;
-ALTER TABLE public.profiles SET SCHEMA private;
-ALTER TABLE public.refinedpersons SET SCHEMA private;
-ALTER TABLE public.tags SET SCHEMA private;
-ALTER TABLE public.tags_0 SET SCHEMA private;
-ALTER TABLE public.tags_1 SET SCHEMA private;
-ALTER TABLE public.tags_2 SET SCHEMA private;
-ALTER TABLE public.tasks SET SCHEMA private;
-ALTER TABLE public.email_status SET SCHEMA private;
+-- DROP TABLES, RLS ...
+DROP TABLE public.engagement;
+DROP TABLE public.messages_0;
+DROP TABLE public.messages_1;
+DROP TABLE public.messages_2;
+DROP TABLE public.messages;
+DROP TABLE public.mining_sources;
+DROP TABLE public.organizations;
+DROP TABLE public.domains;
+DROP TABLE public.persons;
+DROP TABLE public.pointsofcontact_0;
+DROP TABLE public.pointsofcontact_1;
+DROP TABLE public.pointsofcontact_2;
+DROP TABLE public.pointsofcontact;
+DROP TABLE public.profiles;
+DROP TABLE public.refinedpersons;
+DROP TABLE public.tags_0;
+DROP TABLE public.tags_1;
+DROP TABLE public.tags_2;
+DROP TABLE public.tags;
+DROP TABLE public.tasks;
+DROP TABLE public.email_status;
 
--- ALTER TABLE COLUMNS
-ALTER TABLE private.persons
-RENAME COLUMN alternate_names TO alternate_name;
+DROP TYPE public.engagement_type_enum;
+DROP TYPE public.task_category_enum;
+DROP TYPE public.task_status_enum;
+DROP TYPE public.task_type_enum;
+DROP TYPE public.status_enum;
+
+-- CREATE ENUMS
+CREATE TYPE "private"."engagement_type_enum" AS ENUM (
+    'CSV',
+    'ENRICH'
+);
+
+CREATE TYPE "private"."task_category_enum" AS ENUM (
+    'mining',
+    'enriching',
+    'cleaning'
+);
+
+CREATE TYPE "private"."task_status_enum" AS ENUM (
+    'running',
+    'canceled',
+    'done'
+);
+
+CREATE TYPE "private"."task_type_enum" AS ENUM (
+    'fetch',
+    'extract',
+    'edit',
+    'export',
+    'enrich',
+    'clean'
+);
+
+CREATE TYPE "private"."status_enum" AS ENUM (
+  'VALID',
+  'RISKY',
+  'INVALID',
+  'UNKNOWN'
+);
+
+
+
+-- CREATE TABLES
+
+CREATE TABLE "private"."email_status" (
+    email text not null,
+    user_id uuid not null,
+    status private.status_enum not null,
+    details JSONB null,
+    verified_on timestamp without time zone not null,
+    created_at timestamp without time zone not null default now(),
+    updated_at timestamp without time zone not null default now(),
+    constraint email_status_pkey primary key (email)
+  );
+
+ALTER TABLE "private"."email_status" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Enable select for users based on user_id" ON "private"."email_status" FOR
+SELECT TO "authenticated" USING ( ((SELECT "auth"."uid" () AS "uid" ) = "user_id" ) );
+
+CREATE TABLE "private"."domains" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "name" "text",
+    "last_check" timestamp with time zone,
+    "email_server_type" "text",
+    PRIMARY KEY ("id")
+);
+
+ALTER TABLE "private"."domains" ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE "private"."engagement" (
+    "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id"),
+    "engagement_type" "private"."engagement_type_enum" NOT NULL,
+    "engagement_created_at" timestamp with time zone DEFAULT "now"(),
+    "email" "text" NOT NULL,
+    PRIMARY KEY ("email", "user_id", "engagement_type")
+);
+
+CREATE POLICY "Enable select for users based on user_id" ON "private"."engagement" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."engagement" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE TABLE "private"."messages" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean,
+    PRIMARY KEY ("message_id", "user_id")
+)
+PARTITION BY HASH ("user_id");
+
+CREATE TABLE "private"."messages_0" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean,
+    PRIMARY KEY ("message_id", "user_id")
+);
+CREATE TABLE "private"."messages_1" (
+    "channel" text,
+    "folder_path" text,
+    "date" timestamp with time zone,
+    "user_id" uuid NOT NULL,
+    "list_id" text,
+    "message_id" text NOT NULL,
+    "references" text[],
+    "conversation" boolean,
+    PRIMARY KEY ("message_id", "user_id")
+);
+CREATE TABLE "private"."messages_2" (
+    "channel" "text",
+    "folder_path" "text",
+    "date" timestamp with time zone,
+    "user_id" "uuid" NOT NULL,
+    "list_id" "text",
+    "message_id" "text" NOT NULL,
+    "references" "text"[],
+    "conversation" boolean,
+    PRIMARY KEY ("message_id", "user_id")
+);
+
+ALTER TABLE ONLY "private"."messages" ATTACH PARTITION "private"."messages_0" FOR VALUES WITH (modulus 3, remainder 0);
+ALTER TABLE ONLY "private"."messages" ATTACH PARTITION "private"."messages_1" FOR VALUES WITH (modulus 3, remainder 1);
+ALTER TABLE ONLY "private"."messages" ATTACH PARTITION "private"."messages_2" FOR VALUES WITH (modulus 3, remainder 2);
+
+ALTER INDEX "private"."messages_pkey" ATTACH PARTITION "private"."messages_0_pkey";
+ALTER INDEX "private"."messages_pkey" ATTACH PARTITION "private"."messages_1_pkey";
+ALTER INDEX "private"."messages_pkey" ATTACH PARTITION "private"."messages_2_pkey";
+
+CREATE POLICY "Enable select for users based on user_id" ON "private"."messages" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."messages" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."messages_0" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."messages_1" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."messages_2" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE TABLE "private"."mining_sources" (
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "credentials" "bytea" NOT NULL,
+    "email" "text" NOT NULL,
+    "type" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id"),
+    PRIMARY KEY ("email", "user_id")
+);
+
+ALTER TABLE "private"."mining_sources" ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE "private"."organizations" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "name" "text" NOT NULL,
+    "alternate_name" "text",
+    "location" "text"[],
+    "url" "text",
+    "legal_name" "text",
+    "telephone" "text",
+    "email" "text",
+    "image" "text",
+    "founder" "uuid",
+    "_domain" "uuid" REFERENCES "private"."domains"("id"),
+    PRIMARY KEY ("id")
+);
+
+CREATE POLICY "Enable insert for authenticated users only" ON "private"."organizations" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+CREATE POLICY "Enable read access for all users" ON "private"."organizations" FOR SELECT TO "authenticated" USING (true);
+
+ALTER TABLE "private"."organizations" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE TABLE "private"."persons" (
+    "name" "text",
+    "email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "url" "text",
+    "image" "text",
+    "location" "text"[],
+    "alternate_name" "text"[],
+    "same_as" "text"[],
+    "given_name" "text",
+    "family_name" "text",
+    "job_title" "text",
+    "works_for" "uuid",
+    "identifiers" "text"[],
+    "status" "text",
+    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "source" "text" NOT NULL,
+    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    PRIMARY KEY ("email", "user_id", "source")
+);
+
+CREATE POLICY "Enable select for users based on user_id" ON "private"."persons" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Enable update for users based on user_id" ON "private"."persons" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."persons" ENABLE ROW LEVEL SECURITY;
+ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "private"."persons";
+
+CREATE TABLE "private"."pointsofcontact" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
+)
+PARTITION BY HASH ("user_id");
+
+CREATE TABLE "private"."pointsofcontact_0" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
+);
+CREATE TABLE "private"."pointsofcontact_1" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
+);
+CREATE TABLE "private"."pointsofcontact_2" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "message_id" "text",
+    "name" "text",
+    "from" boolean,
+    "reply_to" boolean,
+    "to" boolean,
+    "cc" boolean,
+    "bcc" boolean,
+    "body" boolean,
+    "person_email" "text",
+    PRIMARY KEY ("id", "user_id")
+);
+
+ALTER TABLE ONLY "private"."pointsofcontact" ATTACH PARTITION "private"."pointsofcontact_0" FOR VALUES WITH (modulus 3, remainder 0);
+ALTER TABLE ONLY "private"."pointsofcontact" ATTACH PARTITION "private"."pointsofcontact_1" FOR VALUES WITH (modulus 3, remainder 1);
+ALTER TABLE ONLY "private"."pointsofcontact" ATTACH PARTITION "private"."pointsofcontact_2" FOR VALUES WITH (modulus 3, remainder 2);
+
+ALTER INDEX "private"."pointsofcontact_pkey" ATTACH PARTITION "private"."pointsofcontact_0_pkey";
+ALTER INDEX "private"."pointsofcontact_pkey" ATTACH PARTITION "private"."pointsofcontact_1_pkey";
+ALTER INDEX "private"."pointsofcontact_pkey" ATTACH PARTITION "private"."pointsofcontact_2_pkey";
+
+CREATE POLICY "Enable select for users based on user_id" ON "private"."pointsofcontact" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."pointsofcontact" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."pointsofcontact_0" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."pointsofcontact_1" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."pointsofcontact_2" ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE "private"."profiles" (
+    "user_id" "uuid" NOT NULL REFERENCES "auth"."users"("id") ON DELETE CASCADE,
+    "full_name" "text",
+    "email" "text",
+    PRIMARY KEY ("user_id")
+);
+
+CREATE POLICY "Users can update their own data" ON "private"."profiles" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+CREATE POLICY "Users can view their own data" ON "private"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."profiles" ENABLE ROW LEVEL SECURITY;
+ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "private"."profiles";
+
+CREATE TABLE "private"."refinedpersons" (
+    "user_id" "uuid" NOT NULL,
+    "engagement" integer,
+    "occurrence" integer,
+    "tags" "text"[],
+    "email" "text" NOT NULL,
+    "recency" timestamp with time zone,
+    "sender" integer,
+    "recipient" integer,
+    "conversations" integer,
+    "replied_conversations" integer,
+    "seniority" timestamp with time zone,
+    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    PRIMARY KEY ("email", "user_id")
+);
+
+CREATE POLICY "Allow all operations for authenticated users on their own data" ON "private"."refinedpersons" FOR ALL TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."refinedpersons" ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE "private"."tags" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
+)
+PARTITION BY HASH ("user_id");
+
+CREATE TABLE "private"."tags_0" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
+);
+CREATE TABLE "private"."tags_1" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
+);
+CREATE TABLE "private"."tags_2" (
+    "person_email" "text" NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "reachable" integer,
+    "source" "text",
+    PRIMARY KEY ("person_email", "name", "user_id")
+);
+
+ALTER TABLE ONLY "private"."tags" ATTACH PARTITION "private"."tags_0" FOR VALUES WITH (modulus 3, remainder 0);
+ALTER TABLE ONLY "private"."tags" ATTACH PARTITION "private"."tags_1" FOR VALUES WITH (modulus 3, remainder 1);
+ALTER TABLE ONLY "private"."tags" ATTACH PARTITION "private"."tags_2" FOR VALUES WITH (modulus 3, remainder 2);
+
+ALTER INDEX "private"."tags_pkey" ATTACH PARTITION "private"."tags_0_pkey";
+ALTER INDEX "private"."tags_pkey" ATTACH PARTITION "private"."tags_1_pkey";
+ALTER INDEX "private"."tags_pkey" ATTACH PARTITION "private"."tags_2_pkey";
+
+CREATE POLICY "Enable select for users based on user_id" ON "private"."tags" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."tags_0" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."tags_1" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "private"."tags_2" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE TABLE "private"."tasks" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "user_id" "uuid",
+    "status" "private"."task_status_enum",
+    "category" "private"."task_category_enum" NOT NULL,
+    "type" "private"."task_type_enum" NOT NULL,
+    "details" "jsonb",
+    "duration" integer,
+    "stopped_at" timestamp with time zone,
+    "started_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    PRIMARY KEY ("id")
+);
+
+CREATE POLICY "Enable select for users based on user_id" ON "private"."tasks" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+ALTER TABLE "private"."tasks" ENABLE ROW LEVEL SECURITY;
+
+ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "private"."tasks";
 
 -- CREATE FUNCTIONS
 CREATE FUNCTION private.update_email_in_profile_table()
