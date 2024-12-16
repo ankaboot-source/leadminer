@@ -3,8 +3,14 @@
 DROP EXTENSION pg_graphql;
 
 -- CREATE SCHEMA PRIVATE
-create schema if not exists private;
-grant usage on schema private to authenticated, service_role;
+CREATE SCHEMA if NOT EXISTS PRIVATE;
+GRANT USAGE ON SCHEMA private TO authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA private TO authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA private TO authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA private TO authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA private GRANT ALL ON TABLES TO authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA private GRANT ALL ON ROUTINES TO authenticated, service_role;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA private GRANT ALL ON SEQUENCES TO authenticated, service_role;
 
 -- DROP TABLE TRIGGERS
 DROP TRIGGER on_auth_user_created ON auth.users;
