@@ -7,7 +7,6 @@
     :draggable="false"
     maximizable
     @hide="reset()"
-    @cell-edit-complete="onCellEditComplete"
   >
     <div class="h-full">
       <FileUpload
@@ -30,6 +29,7 @@
         :rows-per-page-options="[150, 500, 1000]"
         size="small"
         scrollable
+        @cell-edit-complete="onCellEditComplete($event)"
       >
         <Column
           v-for="col of columns"
@@ -46,13 +46,33 @@
                 :severity="getTagColor(tag)"
               />
             </template>
+            <template v-else-if="textareaFields.includes(field)">
+              <div>{{ data[field]?.join(', ') }}</div>
+            </template>
             <template v-else>
               {{ data[field] }}
             </template>
           </template>
 
           <template #editor="{ data, field }">
-            <template v-if="textareaFields.includes(field)">
+            <template v-if="field === 'tags'">
+              <MultiSelect
+                v-model="data[field]"
+                :options="tags()"
+                option-value="value"
+                option-label="label"
+                display="chip"
+              >
+                <template #option="{ option }">
+                  <Tag
+                    :value="option.label"
+                    :severity="getTagColor(option.value)"
+                    class="capitalize"
+                  />
+                </template>
+              </MultiSelect>
+            </template>
+            <template v-else-if="textareaFields.includes(field)">
               <Textarea v-model="data[field]" />
             </template>
             <template v-else>
@@ -80,6 +100,7 @@ import type { DataTableCellEditCompleteEvent } from 'primevue/datatable';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import { useToast } from 'primevue/usetoast';
 import type { Contact } from '~/types/contact';
+import { getTagColor, getTagLabel, isValidURL, tags } from '~/utils/contacts';
 
 const visible = ref(false);
 const openModal = () => {
@@ -145,8 +166,8 @@ async function onSelectFile($event: FileUploadSelectEvent) {
         ),
       )
       .filter((item) => item.email !== null); // Remove rows with no email
-    console.log(contentJson.value);
 
+    // Should verify
     toast.add({
       severity: 'info',
       summary: 'Success',
@@ -173,18 +194,38 @@ async function readFile(file: File): Promise<string | null> {
 
 function onCellEditComplete(event: DataTableCellEditCompleteEvent) {
   const { data, newValue, field } = event;
+  console.log(data[field], newValue);
+  if (data[field] === newValue) return;
+  if (field === 'image') {
+    console.log('Image');
+    const isValid = isValidURL(newValue);
+    if (!isValid) return;
+    data[field] = newValue;
+  } else if (textareaFields.includes(field)) {
+    console.log('Array');
+    console.log(
+      'Array',
+      newValue,
+      newValue.split(','),
+      newValue
+        .split(',')
+        .map((item: string) => item.trim())
+        .filter((item: string) => item.length),
+    );
 
-  switch (field) {
-    case 'quantity':
-    case 'price':
-      if (isPositiveInteger(newValue)) data[field] = newValue;
-      else event.preventDefault();
-      break;
+    const parsedValue = newValue
+      .split(',')
+      .map((item: string) => item.trim())
+      .filter((item: string) => item.length);
 
-    default:
-      if (newValue.trim().length > 0) data[field] = newValue;
-      else event.preventDefault();
-      break;
+    if (field === 'same_as') {
+      const isValid = parsedValue.every(isValidURL);
+      if (!isValid) return;
+    }
+    data[field] = parsedValue;
+  } else {
+    console.log('Text');
+    data[field] = newValue;
   }
 }
 

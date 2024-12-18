@@ -217,6 +217,7 @@ import {
   getStatusLabel,
   getTagColor,
   getTagLabel,
+  isValidURL,
 } from '@/utils/contacts';
 
 const { t } = useI18n({
@@ -261,15 +262,6 @@ const skipDialog = computed(
     ),
 );
 
-function isValidURL(url: string) {
-  try {
-    // skipcq: JS-R1002 - instantiating unused object as the url validity checker
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
 const isValidSameAs = computed(() => {
   if (!contactEdit.value?.same_as) return true;
   return (contactEdit.value?.same_as as string)
