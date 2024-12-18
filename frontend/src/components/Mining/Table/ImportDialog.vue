@@ -15,10 +15,18 @@
         mode="basic"
         @select="onSelectFile($event)"
       />
+      <div class="gap-2 items-center justify-center flex">
+        <Checkbox v-model="hasHeader" binary input-id="hasHeader" show-clear />
+        <label for="hasHeader"> Include Header</label>
+      </div>
+
+      <span v-if="topFiveItemsLength" class="items-center justify-center flex">
+        (Showing {{ topFiveItemsLength }} / {{ contentJsonLength }})
+      </span>
+
       <DataTable
-        v-if="contentJson"
-        :value="contentJson"
-        edit-mode="cell"
+        v-if="topFiveItems"
+        :value="topFiveItems"
         show-gridlines
         pt:tablecontainer:class="grow"
         row-hover
@@ -29,14 +37,17 @@
         :rows-per-page-options="[150, 500, 1000]"
         size="small"
         scrollable
-        @cell-edit-complete="onCellEditComplete($event)"
       >
-        <Column
-          v-for="col of columns"
-          :key="col.key"
-          :field="col.field"
-          :header="col.header"
-        >
+        <Column v-for="col of columns" :key="col.key" :field="col.field">
+          <template #header>
+            <Select
+              v-model="col.header"
+              :placeholder="col.header"
+              :options="Object.values(csvArray)"
+              class="w-full md:w-56"
+            />
+          </template>
+
           <template #body="{ data, field }">
             <template v-if="field === 'tags'">
               <Tag
@@ -96,11 +107,10 @@
 
 <script setup lang="ts">
 import csvToJson from 'convert-csv-to-json';
-import type { DataTableCellEditCompleteEvent } from 'primevue/datatable';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import { useToast } from 'primevue/usetoast';
 import type { Contact } from '~/types/contact';
-import { getTagColor, getTagLabel, isValidURL, tags } from '~/utils/contacts';
+import { getTagColor, getTagLabel, tags } from '~/utils/contacts';
 
 const visible = ref(false);
 const openModal = () => {
@@ -111,8 +121,16 @@ defineExpose({ openModal });
 const toast = useToast();
 const maxFileSize = 1000000; // 1MB
 const contentJson = ref(null) as Ref<Contact[] | null>;
+const contentJsonLength = computed(() => contentJson.value?.length);
+const topFiveItems = computed(() => contentJson.value?.slice(0, 5));
+const topFiveItemsLength = computed(() => topFiveItems.value?.length);
+
 const columns = ref();
 
+const textareaFields = ['alternate_names', 'location', 'same_as'];
+const arraysFields = textareaFields.concat('tags');
+// realColumnNames
+// mapableColumnsNames
 const csvArray = {
   name: 'Name',
   email: 'Email',
@@ -126,19 +144,15 @@ const csvArray = {
   same_as: 'Same as',
   image: 'Avatar URL',
 }; // + Status, Works_for
-const textareaFields = ['alternate_names', 'location', 'same_as'];
-const arraysFields = textareaFields.concat('tags');
+const hasHeader = ref(true);
+
 async function onSelectFile($event: FileUploadSelectEvent) {
   const file = $event.files[0]; // `multiple` prop is false
   try {
     const content = await readFile(file);
     if (!content) throw Error();
 
-    columns.value = Object.keys(csvArray).map((key) => ({
-      field: key,
-      header: csvArray[key],
-    }));
-
+    // Parse CSV string to JSON
     contentJson.value = csvToJson
       .supportQuotedField(true)
       .fieldDelimiter(',')
@@ -146,26 +160,79 @@ async function onSelectFile($event: FileUploadSelectEvent) {
 
     console.log(contentJson.value);
 
-    // Align `contentJson.value` with required columns and map headers back to real field names
-    contentJson.value = contentJson.value
-      .map((item: Contact) =>
-        Object.fromEntries(
-          Object.entries(csvArray).map(([realField, header]) => {
-            const trimmedHeader = header.replace(/\s/g, ''); // https://github.com/iuccio/csvToJson/pull/68
+    if (Array.isArray(contentJson.value) && contentJson.value.length > 0) {
+      if (hasHeader.value) {
+        // If the CSV has a header row, use the headers as column names
+        const firstRow = contentJson.value[0];
+        columns.value = Object.keys(firstRow).map((key) => {
+          const trimmedHeader = key.replace(/\s/g, ''); // Trim spaces from header
+          return {
+            field: key,
+            header: trimmedHeader,
+          };
+        });
+      } else {
+        // No header row: detect the email column and fill the rest
+        const firstRow = contentJson.value[0];
+        const keys = Object.keys(firstRow);
 
-            if (arraysFields.includes(realField)) {
-              item[trimmedHeader] = item[trimmedHeader]
-                ?.split(',')
-                .filter((item) => item.length);
+        // Detect email column
+        const emailColumnIndex = keys.findIndex((key) => {
+          const cellValue = String(firstRow[key]).toLowerCase();
+          return (
+            cellValue.includes('email') ||
+            /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(cellValue)
+          );
+        });
+
+        if (emailColumnIndex !== -1) {
+          // Build columns array
+          columns.value = keys.map((key, index) => {
+            let header;
+            if (index === emailColumnIndex) {
+              header = 'Email'; // Use "Email" for the detected email column
+            } else {
+              header = `Column ${index + 1}`; // Default naming for other columns
             }
-            return [
-              realField, // Use the real field name as the key
-              item[trimmedHeader] || null, // Map the header back to its value
-            ];
-          }),
-        ),
-      )
-      .filter((item) => item.email !== null); // Remove rows with no email
+            return {
+              field: key,
+              header,
+            };
+          });
+          console.log(`Email column detected at index ${emailColumnIndex}.`);
+        } else {
+          console.warn('No email column detected in the CSV data.');
+          columns.value = keys.map((key, index) => ({
+            field: key,
+            header: `Column${index + 1}`, // Default naming for all columns
+          }));
+        }
+      }
+    } else {
+      console.error('Parsed CSV content is empty or invalid.');
+      columns.value = []; // Set to an empty array to avoid errors
+    }
+
+    // // Align `contentJson.value` with required columns and map headers back to real field names
+    // contentJson.value = contentJson.value
+    //   .map((item: Contact) =>
+    //     Object.fromEntries(
+    //       Object.entries(csvArray).map(([realField, header]) => {
+    //         const trimmedHeader = header.replace(/\s/g, ''); // https://github.com/iuccio/csvToJson/pull/68
+
+    //         if (arraysFields.includes(realField)) {
+    //           item[trimmedHeader] = item[trimmedHeader]
+    //             ?.split(',')
+    //             .filter((item) => item.length);
+    //         }
+    //         return [
+    //           realField, // Use the real field name as the key
+    //           item[trimmedHeader] || null, // Map the header back to its value
+    //         ];
+    //       }),
+    //     ),
+    //   )
+    //   .filter((item) => item.email !== null); // Remove rows with no email
 
     // Should verify
     toast.add({
@@ -190,43 +257,6 @@ async function readFile(file: File): Promise<string | null> {
     reader.onload = () => resolve(reader.result as string | null);
     reader.onerror = () => reject(null);
   });
-}
-
-function onCellEditComplete(event: DataTableCellEditCompleteEvent) {
-  const { data, newValue, field } = event;
-  console.log(data[field], newValue);
-  if (data[field] === newValue) return;
-  if (field === 'image') {
-    console.log('Image');
-    const isValid = isValidURL(newValue);
-    if (!isValid) return;
-    data[field] = newValue;
-  } else if (textareaFields.includes(field)) {
-    console.log('Array');
-    console.log(
-      'Array',
-      newValue,
-      newValue.split(','),
-      newValue
-        .split(',')
-        .map((item: string) => item.trim())
-        .filter((item: string) => item.length),
-    );
-
-    const parsedValue = newValue
-      .split(',')
-      .map((item: string) => item.trim())
-      .filter((item: string) => item.length);
-
-    if (field === 'same_as') {
-      const isValid = parsedValue.every(isValidURL);
-      if (!isValid) return;
-    }
-    data[field] = parsedValue;
-  } else {
-    console.log('Text');
-    data[field] = newValue;
-  }
 }
 
 function reset() {
