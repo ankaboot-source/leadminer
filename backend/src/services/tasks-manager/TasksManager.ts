@@ -207,13 +207,16 @@ export default class TasksManager {
 
       progress.totalMessages = fetch.details.progress.totalMessages;
 
-      (await this.tasksResolver.create([fetch, extract, clean]))?.forEach(
-        (task) => {
-          const { id: TaskId, started_at: startedAt } = task;
-          miningTask.process[`${task.type}`].id = TaskId;
-          miningTask.process[`${task.type}`].startedAt = startedAt;
-        }
-      );
+      const taskFetch = await this.tasksResolver.create(fetch);
+      const taskExtract = await this.tasksResolver.create(extract);
+      const taskClean = await this.tasksResolver.create(clean);
+
+      miningTask.process.fetch.id = taskFetch.id;
+      miningTask.process.extract.id = taskExtract.id;
+      miningTask.process.clean.id = taskClean.id;
+      miningTask.process.fetch.startedAt = taskFetch.startedAt;
+      miningTask.process.extract.startedAt = taskExtract.startedAt;
+      miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
       fetch.instance.start();

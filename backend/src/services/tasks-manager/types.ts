@@ -1,3 +1,4 @@
+import { Contact } from '../../db/types';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
 import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
@@ -11,7 +12,8 @@ export type TaskProgressType =
 export enum TaskType {
   Fetch = 'fetch',
   Extract = 'extract',
-  Clean = 'clean'
+  Clean = 'clean',
+  Enrich = 'enrich'
 }
 
 export enum TaskCategory {
@@ -107,6 +109,23 @@ export interface TaskClean extends Task {
       verifiedContacts: number;
       createdContacts: number;
     };
+  };
+}
+
+export interface TaskEnrich extends Task {
+  category: TaskCategory.Enriching;
+  type: TaskType.Enrich;
+  details: {
+    total_enriched: number;
+    total_to_enrich: number;
+    update_empty_fields_only: boolean;
+    error?: string;
+    result: {
+      token?: string;
+      engine: string;
+      data: Array<Partial<Contact>>;
+      raw_data: Array<unknown>;
+    }[];
   };
 }
 

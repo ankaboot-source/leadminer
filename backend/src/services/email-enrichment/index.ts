@@ -1,7 +1,7 @@
 import ENV from '../../config';
 import logger from '../../utils/logger';
 import { EmailEnricher, Person } from './EmailEnricher';
-import EmailEnricherFactory, { Enricher } from './EmailEnricherFactory';
+import EnricherEngine, { Engine } from './EmailEnricherFactory';
 import Voilanorbert from './voilanorbert/client';
 import VoilanorbertEmailEnricher from './voilanorbert';
 
@@ -9,10 +9,11 @@ import TheDig from './thedig/client';
 import TheDigEmailEnricher from './thedig';
 import ProxyCurlEmailEnricher from './proxy-curl';
 import ProxyCurl from './proxy-curl/client';
+import { Contact } from '../../db/types';
 
-let ENRICH_THEDIG: EmailEnricher | null = null;
-let ENRICH_VOILANORBERT: EmailEnricher | null = null;
-let ENRICH_PROXY_CURL: EmailEnricher | null = null;
+let ENRICH_THEDIG: EmailEnricher | undefined = undefined;
+let ENRICH_VOILANORBERT: EmailEnricher | undefined = undefined;
+let ENRICH_PROXY_CURL: EmailEnricher | undefined = undefined;
 
 if (
   ENV.VOILANORBERT_API_KEY &&
@@ -74,32 +75,31 @@ if (ENV.PROXYCURL_API_KEY && ENV.PROXYCURL_URL) {
   );
 }
 
-const ENRICHERS: Enricher[] = [
-  ENRICH_VOILANORBERT && {
-    type: 'voilanorbert',
-    default: true,
-    instance: ENRICH_VOILANORBERT,
-    rule: (contact: Partial<Person>) => Boolean(contact.email)
-  },
-
-  ENRICH_PROXY_CURL && {
-    type: 'proxycurl',
-    default: false,
-    instance: ENRICH_PROXY_CURL,
-    rule: (contact: Partial<Person>) => Boolean(contact.email)
-  },
-
-  ENRICH_THEDIG && {
-    type: 'thedig',
-    default: false,
-    instance: ENRICH_THEDIG,
-    rule: (contact: Partial<Person>) =>
-      Boolean(contact.email) && Boolean(contact.name)
-  }
-].filter((enricher): enricher is Enricher => enricher !== null);
-
-const emailEnrichmentService = new EmailEnricherFactory(ENRICHERS, {
-  LOAD_BALANCE_ENRICHERS: ENV.LOAD_BALANCE_ENRICHERS
-});
+const emailEnrichmentService = new EnricherEngine(
+  [
+    ENRICH_THEDIG && {
+      name: 'thedig',
+      instance: ENRICH_THEDIG,
+      isValid: (contact: Partial<Contact>) => Boolean(contact.name && contact.email),
+      isSync: () => true,
+      isAsync: () => false
+    },
+    ENRICH_PROXY_CURL && {
+      name: 'proxycurl',
+      instance: ENRICH_PROXY_CURL,
+      isValid: (_: Partial<Contact>) => true,
+      isSync: () => true,
+      isAsync: () => false
+    },
+    ENRICH_VOILANORBERT && {
+      name: 'voilanorbert',
+      instance: ENRICH_VOILANORBERT,
+      isValid: (_: Partial<Contact>) => true,
+      isSync: () => false,
+      isAsync: () => true
+    }
+  ].filter((engine): engine is Engine => Boolean(engine)),
+  logger
+);
 
 export default emailEnrichmentService;

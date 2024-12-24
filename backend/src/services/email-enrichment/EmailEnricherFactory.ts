@@ -1,142 +1,137 @@
+import { Logger } from 'winston';
+// import { TaskEnrich } from '../../controllers/enrichment.helpers';
+import { Users } from '../../db/interfaces/Users';
+import { Contact } from '../../db/types';
 import logger from '../../utils/logger';
-import { EmailEnricher, Person } from './EmailEnricher';
-
+import {
+  EmailEnricher,
+  EnricherResponse,
+  EnricherResult,
+  Person
+} from './EmailEnricher';
 export type EnricherType = 'voilanorbert' | 'thedig' | 'proxycurl';
 
-interface Config {
-  LOAD_BALANCE_ENRICHERS: boolean;
+export interface Config {
+  THEDIG_URL: string;
+  THEDIG_API_KEY: string;
+  PROXYCURL_URL: string;
+  PROXYCURL_API_KEY: string;
+  VOILANORBERT_URL: string;
+  VOILANORBERT_API_KEY: string;
+  VOILANORBERT_USERNAME: string;
 }
 
-export interface Enricher {
-  default: boolean;
-  type: EnricherType;
+export interface Engine {
+  name: string;
   instance: EmailEnricher;
-  rule: (contact: Partial<Person>) => boolean;
+  isSync: () => boolean;
+  isAsync: () => boolean;
+  isValid: (contact: Partial<Contact>) => boolean;
 }
 
-export default class ContactEnrichmentManager {
-  private readonly lastUsedInstances: Set<string> = new Set();
+interface Result {
+  token?: string;
+  error?: string;
+  raw_data: unknown[];
+  data: EnricherResult[];
+  engine: string;
+}
 
+export default class EnrichEngine {
   constructor(
-    private readonly enrichers: Enricher[],
-    private readonly config: Config
-  ) {
-    const defaultEnrichers = this.enrichers.filter(
-      (enricher) => enricher.default
+    private readonly engines: Engine[],
+    private readonly logger: Logger
+  ) {}
+
+  private logError(context: string, error: unknown): void {
+    const message = (error as Error).message || 'Unexpected error';
+    this.logger.error(`[${context}]: ${message}`, error);
+  }
+
+  private async _sync(engine: Engine, contact: Partial<Contact>) {
+    const { name, instance } = engine;
+    const result: Result = {
+      engine: name,
+      data: [],
+      raw_data: []
+    };
+    try {
+      const { data, raw_data } = await instance.enrichSync(contact);
+      result.data.push(...data);
+      result.raw_data.push(...raw_data);
+    } catch (error) {
+      this.logError('EnrichEngine._sync', error);
+      result.error = (error as Error).message || 'Unexpected error';
+    }
+    return result;
+  }
+
+  private async _async(engine: Engine, contacts: Partial<Contact>[], webhook: string) {
+    const { name, instance } = engine;
+    const result: Result = {
+      engine: name,
+      data: [],
+      raw_data: []
+    };
+    try {
+      const { token } = await instance.enrichAsync(contacts, webhook);
+      result.token = token;
+    } catch (error) {
+      this.logError('EnrichEngine._async', error);
+      result.error = (error as Error).message || 'Unexpected error';
+    }
+    return result;
+  }
+
+  async enrichSync(contact: Partial<Contact>) {
+    const engines = this.engines.filter((enricher): enricher is Engine =>
+      Boolean(enricher?.isValid(contact) && enricher.isSync())
     );
-    if (defaultEnrichers.length !== 1) {
-      logger.warn(
-        `Expected one enricher as default got ${defaultEnrichers.length}.`
-      );
+
+    console.log(engines)
+
+    if (!engines.length) throw new Error('No Engines to use.');
+
+    for (const engine of engines) {
+      const result = await this._sync(engine, contact);
+      console.log(result);
+      // Break on successful enrichment with data
+      if (result.data?.length > 0) return result;
     }
+    return null;
   }
 
-  /**
-   * Updates the list of last used enrichers and maintains the size.
-   *
-   * @param availableInstances - The available enricher instances.
-   * @param instance - The enricher instance that was used.
-   */
-  private maintainLastUsedInstances(
-    availableInstances: EmailEnricher[],
-    instance: EmailEnricher
-  ): void {
-    this.lastUsedInstances.add(instance.constructor.name);
-
-    const allInstancesUsed = availableInstances.every((available) =>
-      this.lastUsedInstances.has(available.constructor.name)
+  async enrichAsync(contacts: Partial<Contact>[], webhook: string) {
+    const engines = this.engines.filter((enricher): enricher is Engine =>
+      Boolean(enricher?.isAsync())
     );
 
-    if (allInstancesUsed) {
-      availableInstances.forEach((available) => {
-        this.lastUsedInstances.delete(available.constructor.name);
-      });
+    if (!engines.length) throw new Error('No Engines to use.');
+
+    for (const engine of engines) {
+      const result = await this._async(engine, contacts, webhook);
+      if (result.token) {
+        return result;
+      }
     }
+    return null;
   }
 
-  /**
-   * Retrieves the next enricher capable of verifying the given contact.
-   *
-   * @param {Contact} contact - The contact to verify.
-   * @returns {EmailEnricher} The selected enricher instance.
-   * @throws {Error} If no enricher can verify the contact.
-   */
-  getEnricher(contact: Partial<Person>, type?: EnricherType): Enricher {
-    if (type) {
-      const enricher = this.enrichers.find((e) => e.type === type);
-
-      if (!enricher) {
-        throw new Error(`Enricher not found. type: <${type}>`);
-      }
-
-      return enricher;
-    }
-
-    const enrichers = this.enrichers.filter(({ rule }) => rule(contact));
-
-    if (enrichers.length === 0) {
-      // Fallback to default
-      const enr = this.enrichers.find(
-        (availableEnricher) => availableEnricher.default
-      )!;
-      return enr;
-    }
-
-    let validEnricher = enrichers[0];
-
-    if (this.config.LOAD_BALANCE_ENRICHERS || enrichers.length > 1) {
-      const available = enrichers.filter(
-        (instance) => !this.lastUsedInstances.has(instance.constructor.name)
-      );
-
-      if (available.length) {
-        this.maintainLastUsedInstances(
-          available.map((e) => e.instance),
-          available[0].instance
-        );
-      } else {
-        // Use any instance and update history for better balancing next time.
-        this.maintainLastUsedInstances(
-          enrichers.map((e) => e.instance),
-          enrichers[0].instance
-        );
-      }
-      [validEnricher] = available.length ? available : enrichers;
-    }
-
-    return validEnricher;
-  }
-
-  /**
-   * Retrieves enrichers for multiple contacts, returning each enricher instance
-   * along with the contacts associated with that enricher.
-   *
-   * @param contacts - The list of contacts to verify.
-   * @returns An array of tuples containing
-   *          enricher instances and their corresponding contacts.
-   */
-  getEnrichers(contacts: Partial<Person>[]): [Enricher, Partial<Person>[]][] {
-    const enricherMap = new Map<
-      string,
-      {
-        enricher: Enricher;
-        contacts: Partial<Person>[];
-      }
-    >();
-
+  async *enrich(contacts: Partial<Contact>[]) {
     for (const contact of contacts) {
-      const enricher = this.getEnricher(contact);
-      const { type } = enricher;
-
-      if (!enricherMap.has(type)) {
-        enricherMap.set(type, { enricher, contacts: [] });
+      const result = await this.enrichSync(contact);
+      if (result) {
+        yield result;
       }
-      enricherMap.get(type)!.contacts.push(contact);
     }
+  }
 
-    // Convert the map to an array of tuples
-    return Array.from(enricherMap.values()).map(
-      ({ enricher, contacts: contactsList }) => [enricher, contactsList]
-    );
+  parseResult(result: unknown, engineName: string) {
+    const engine = this.engines.findLast(({ name }) => name === engineName);
+    const parsed = engine?.instance.enrichmentMapper(result);
+    return {
+      data: parsed?.data || [],
+      raw_data: parsed?.raw_data || []
+    };
   }
 }

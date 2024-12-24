@@ -53,6 +53,7 @@ export interface EnrichPersonResponse {
   OptOut?: boolean;
   url?: string;
   error_msg?: string;
+  status: number;
 }
 
 export default class TheDig {
@@ -75,10 +76,10 @@ export default class TheDig {
 
   async enrich(person: EnrichPersonRequest) {
     try {
-      const { data } = await this.rateLimiter(() =>
+      const response = await this.rateLimiter(() =>
         this.api.post<EnrichPersonResponse>('/person/', person)
       );
-      return data;
+      return { ...response.data, status: response.status };
     } catch (error) {
       logError(error, `[${this.constructor.name}:enrich]`, this.logger);
       throw error;

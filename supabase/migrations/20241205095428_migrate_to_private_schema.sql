@@ -1002,7 +1002,7 @@ cached_results AS (
     t.id as task_id,
     t.user_id as user_id,
     t.started_at as created_at,
-    result ->> 'instance' as instance,
+    result ->> 'engine' as engine,
     enriched_raw_data as result
     FROM
     recent_tasks t,
@@ -1016,6 +1016,7 @@ cached_results AS (
     ) AS flattened_raw_data
     WHERE
     enriched_raw_data ->> 'email' = ANY (emails)
+    AND result ->> 'engine' != 'cache'
     ORDER BY
     enriched_raw_data ->> 'email',
     t.started_at DESC -- Order by email and timestamp to get the most recent
@@ -1028,8 +1029,8 @@ jsonb_build_object(
     ce.user_id,
     'created_at',
     ce.created_at::timestamp,
-    'instance',
-    ce.instance,
+    'engine',
+    ce.engine,
     'result',
     ce.result
 ) AS task

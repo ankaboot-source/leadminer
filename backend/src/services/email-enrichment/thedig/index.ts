@@ -69,12 +69,10 @@ export default class TheDigEmailEnricher implements EmailEnricher {
     try {
       const personMapped = this.enrichRequestMapper(person);
       const response = await this.client.enrich(personMapped);
-      const enrichResponse = TheDigEmailEnricher.isPersonEnriched(
-        personMapped,
-        response
-      )
-        ? this.enrichmentMapper([response])
-        : { data: [], raw_data: [response] };
+      const enrichResponse =
+        response.status === 200
+          ? this.enrichmentMapper([response])
+          : { data: [], raw_data: [response] };
       return enrichResponse;
     } catch (err) {
       throw new Error((err as Error).message);
@@ -128,10 +126,26 @@ export default class TheDigEmailEnricher implements EmailEnricher {
         )
       }))
       .filter(
-        ({ organization, jobTitle, location, alternateName, image }) =>
-          ![organization, jobTitle, location, alternateName, image].every(
-            (field) => !field || field.length === 0
-          )
+        ({
+          givenName,
+          familyName,
+          sameAs,
+          organization,
+          jobTitle,
+          location,
+          alternateName,
+          image
+        }) =>
+          ![
+            givenName,
+            familyName,
+            sameAs,
+            organization,
+            jobTitle,
+            location,
+            alternateName,
+            image
+          ].every((field) => !field || field.length === 0)
       );
     return {
       data: enriched,
