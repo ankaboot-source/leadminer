@@ -1,8 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
+
 import { Logger } from 'winston';
 import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
-import { Person } from '../EmailEnricher';
 
 interface Config {
   url: string;
@@ -16,7 +16,7 @@ interface Config {
 
 export interface EnrichPersonRequest {
   url?: string;
-  name: string;
+  name?: string;
   email: string;
   OptOut?: boolean;
   familyName?: string;
@@ -53,10 +53,10 @@ export interface EnrichPersonResponse {
   OptOut?: boolean;
   url?: string;
   error_msg?: string;
-  status: number;
+  statusCode: number;
 }
 
-export default class TheDig {
+export default class ThedigApi {
   private readonly api: AxiosInstance;
 
   private readonly rateLimiter;
@@ -79,14 +79,17 @@ export default class TheDig {
       const response = await this.rateLimiter(() =>
         this.api.post<EnrichPersonResponse>('/person/', person)
       );
-      return { ...response.data, status: response.status };
+      return {
+        ...response.data,
+        statusCode: response.data.statusCode ?? response.status
+      };
     } catch (error) {
       logError(error, `[${this.constructor.name}:enrich]`, this.logger);
       throw error;
     }
   }
 
-  async enrichBulk(persons: Partial<Person>[], webhook: string) {
+  async enrichBulk(persons: EnrichPersonRequest[], webhook: string) {
     try {
       const { data } = await this.rateLimiter(() =>
         this.api.post(`/person/bulk?endpoint=${webhook}`, persons)

@@ -1,16 +1,16 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseTask } from '../types';
-import { Tasks } from '../interfaces/Tasks';
 import { Task } from '../../services/tasks-manager/types';
+import { Tasks } from '../interfaces/Tasks';
 
-export default class SupabaseTasks {
+export default class SupabaseTasks implements Tasks {
   constructor(
     private readonly client: SupabaseClient,
     private readonly logger: Logger
   ) {}
 
-  private mapToDatabase(task: Task) {
+  private static mapToDatabase(task: Task) {
     const mapped: SupabaseTask = {
       id: task.id,
       user_id: task.userId,
@@ -25,7 +25,7 @@ export default class SupabaseTasks {
     return mapped;
   }
 
-  private mapFromDatabase(task: SupabaseTask) {
+  private static mapFromDatabase(task: SupabaseTask) {
     const mapped: Task = {
       id: task.id,
       userId: task.user_id,
@@ -50,7 +50,7 @@ export default class SupabaseTasks {
         .single<SupabaseTask>();
 
       if (error) throw new Error(error.message);
-      return this.mapFromDatabase(data);
+      return SupabaseTasks.mapFromDatabase(data);
     } catch (err) {
       const message = (err as Error).message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);
@@ -69,12 +69,12 @@ export default class SupabaseTasks {
       const { data, error } = await this.client
         .schema('private')
         .from('tasks')
-        .insert(this.mapToDatabase(task))
+        .insert(SupabaseTasks.mapToDatabase(task))
         .select()
         .single<SupabaseTask>();
 
       if (error) throw new Error(error.message);
-      return this.mapFromDatabase(data);
+      return SupabaseTasks.mapFromDatabase(data);
     } catch (err) {
       const message = (err as Error).message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);
@@ -87,13 +87,13 @@ export default class SupabaseTasks {
       const { data, error } = await this.client
         .schema('private')
         .from('tasks')
-        .update(this.mapToDatabase(task))
+        .update(SupabaseTasks.mapToDatabase(task))
         .eq('id', task.id)
         .select()
         .single<SupabaseTask>();
 
       if (error) throw new Error(error.message);
-      return this.mapFromDatabase(data);
+      return SupabaseTasks.mapFromDatabase(data);
     } catch (err) {
       const message = (err as Error).message || 'Unexpected error.';
       this.logger.error(`[${this.constructor.name}.register]: ${message}`);

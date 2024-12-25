@@ -3,11 +3,12 @@ import { Logger } from 'winston';
 
 type EngagementType = 'CSV' | 'ENRICH';
 
-export default class Engagement {
+export default class Engagements {
   constructor(
     private readonly client: SupabaseClient,
     private readonly logger: Logger
   ) {}
+
   async register(userId: string, emails: string[], type: EngagementType) {
     try {
       const data = emails.map((email) => ({

@@ -1,17 +1,26 @@
 import { Logger } from 'winston';
-import { EmailEnricher, EnricherResult, Person } from '../EmailEnricher';
-import Voilanorbert, { VoilanorbertWebhookResult } from './client';
-import { undefinedIfFalsy, undefinedIfEmpty } from '../utils';
+import { Engine, EngineResponse, Person } from '../Engine';
+import VoilanorbertApi, { ResponseWebhook } from './client';
+import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
-export default class VoilanorbertEmailEnricher implements EmailEnricher {
+export default class Voilanorbert implements Engine {
+  readonly name = 'voilanorbert';
+
+  readonly isSync = false;
+
+  readonly isAsync = true;
+
   constructor(
-    private readonly client: Voilanorbert,
+    private readonly client: VoilanorbertApi,
     private readonly logger: Logger
   ) {}
 
-  enrichSync(
-    person: Partial<Person>
-  ): Promise<{ raw_data: unknown[]; data: EnricherResult[] }> {
+  // eslint-disable-next-line class-methods-use-this
+  isValid(contact: Partial<Person>) {
+    return Boolean(contact.email);
+  }
+
+  enrichSync(person: Partial<Person>): Promise<EngineResponse> {
     this.logger.debug(
       `Got ${this.constructor.name}.enrichSync request`,
       person
@@ -36,18 +45,25 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
         throw new Error('Failed to upload emails to enrichment.');
       }
 
-      return response;
+      return {
+        engine: this.name,
+        token: response.token,
+        data: [],
+        raw_data: []
+      };
     } catch (err) {
       throw new Error((err as Error).message);
     }
   }
 
-  enrichmentMapper(enrichedData: VoilanorbertWebhookResult) {
+  parseResult(enrichedData: unknown[]) {
     this.logger.debug(
-      `[${this.constructor.name}]-[enrichmentMapper]: Parsing enrichment results`,
+      `[${this.constructor.name}]-[parseResult]: Parsing enrichment results`,
       enrichedData
     );
-    const results = enrichedData.results ?? enrichedData;
+    const results =
+      (enrichedData[0] as ResponseWebhook).results ??
+      (enrichedData as ResponseWebhook['results']);
     const enriched = results
       .map((result) => ({
         email: result.email,
@@ -70,6 +86,7 @@ export default class VoilanorbertEmailEnricher implements EmailEnricher {
           )
       );
     return {
+      engine: this.name,
       data: enriched,
       raw_data: results
     };
