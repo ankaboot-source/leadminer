@@ -6,31 +6,32 @@ import {
   it,
   jest
 } from '@jest/globals';
-import httpMocks from 'node-mocks-http';
-import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
-import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
-import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
-import TasksManager from '../../src/services/tasks-manager/TasksManager';
+import { SupabaseClient } from '@supabase/supabase-js';
+import httpMocks from 'node-mocks-http';
 import {
   MiningTask,
   RedactedTask,
-  TaskCategory,
+  Task,
   TaskClean,
   TaskExtract,
-  TaskFetch,
-  TaskStatus
+  TaskFetch
 } from '../../src/services/tasks-manager/types';
+import { TaskCategory, TaskStatus } from '../../src/db/types';
 import {
   flickrBase58IdGenerator,
   redactSensitiveData
 } from '../../src/services/tasks-manager/utils';
-import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
-import SupabaseTasks from '../../src/db/supabase/tasks';
-import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
-import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
-import redis from '../../src/utils/redis';
+
 import ENV from '../../src/config';
+import EmailFetcherFactory from '../../src/services/factory/EmailFetcherFactory';
+import ImapConnectionProvider from '../../src/services/imap/ImapConnectionProvider';
+import { ImapEmailsFetcherOptions } from '../../src/services/imap/types';
+import RealtimeSSE from '../../src/utils/helpers/sseHelpers';
+import SSEBroadcasterFactory from '../../src/services/factory/SSEBroadcasterFactory';
+import SupabaseTasks from '../../src/db/supabase/tasks';
+import TasksManager from '../../src/services/tasks-manager/TasksManager';
+import redis from '../../src/utils/redis';
 
 jest.mock('../../src/config', () => ({
   LEADMINER_API_LOG_LEVEL: 'error',
@@ -61,11 +62,22 @@ jest.mock('../../src/utils/redis', () => {
 
 jest.mock('../../src/db/supabase/tasks', () =>
   jest.fn().mockImplementation(() => ({
-    create: jest.fn(() => [
-      { id: '1-task-fetch', type: 'fetch', started_at: Date.now() },
-      { id: '2-task-extract', type: 'extract', started_at: Date.now() },
-      { id: '3-task-clean', type: 'clean', started_at: Date.now() }
-    ]),
+    create: jest.fn((task: Task) => {
+      switch (task.type) {
+        case 'fetch':
+          return { id: '1-task-fetch', type: 'fetch', started_at: Date.now() };
+        case 'extract':
+          return {
+            id: '2-task-extract',
+            type: 'extract',
+            started_at: Date.now()
+          };
+        case 'clean':
+          return { id: '3-task-clean', type: 'clean', started_at: Date.now() };
+        default:
+          return [];
+      }
+    }),
     update: jest.fn(() => undefined)
   }))
 );
@@ -265,25 +277,28 @@ describe('TasksManager', () => {
         });
 
         expect(tasksResolver.create).toHaveBeenCalledWith(
-          expect.arrayContaining([
-            expect.objectContaining({
-              type: 'fetch',
-              category: TaskCategory.Mining,
-              status: TaskStatus.Running
-            }),
-            expect.objectContaining({
-              type: 'extract',
-              category: TaskCategory.Mining,
-              status: TaskStatus.Running
-            }),
-            expect.objectContaining({
-              type: 'clean',
-              category: TaskCategory.Cleaning,
-              status: TaskStatus.Running
-            })
-          ])
+          expect.objectContaining({
+            type: 'fetch',
+            category: TaskCategory.Mining,
+            status: TaskStatus.Running
+          })
+        );
+        expect(tasksResolver.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'extract',
+            category: TaskCategory.Mining,
+            status: TaskStatus.Running
+          })
+        );
+        expect(tasksResolver.create).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: 'clean',
+            category: TaskCategory.Cleaning,
+            status: TaskStatus.Running
+          })
         );
 
+        expect(tasksResolver.create).toHaveBeenCalledTimes(3);
         expect(fakeRedisClient.subscribe).toHaveBeenCalledTimes(1);
         expect(fakeRedisClient.subscribe).toHaveBeenCalledWith(
           task.miningId,

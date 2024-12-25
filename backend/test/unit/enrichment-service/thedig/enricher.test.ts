@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Logger } from 'winston';
-import { Person } from '../../../../src/db/types';
-import TheDigEmailEnricher from '../../../../src/services/email-enrichment/thedig';
-import Voilanorbert, {
+import ThedigApi, {
   EnrichPersonResponse
-} from '../../../../src/services/email-enrichment/thedig/client';
-import { EnricherResponse } from '../../../../src/services/email-enrichment/EmailEnricher';
+} from '../../../../src/services/enrichment/thedig/client';
 
-describe('TheDigEmailEnricher', () => {
-  let mockClient: jest.Mocked<Voilanorbert>;
+import { EngineResponse } from '../../../../src/services/enrichment/Engine';
+import { Person } from '../../../../src/db/types';
+import Thedig from '../../../../src/services/enrichment/thedig';
+
+describe('Thedig', () => {
+  let mockClient: jest.Mocked<ThedigApi>;
   let mockLogger: jest.Mocked<Logger>;
-  let enricher: TheDigEmailEnricher;
+  let enricher: Thedig;
 
   const enrichmentResponseMock: EnrichPersonResponse = {
     email: 'test@example.com',
@@ -24,9 +25,11 @@ describe('TheDigEmailEnricher', () => {
     workLocation: ['City, State'],
     alternateName: ['JDoe'],
     sameAs: ['https://linkedin.com/in/janedoe'],
-    identifier: ['jane.doe']
+    identifier: ['jane.doe'],
+    statusCode: 200
   };
-  const enrichmentMappedMock: EnricherResponse = {
+  const enrichmentMappedMock: EngineResponse = {
+    engine: 'thedig',
     data: [
       {
         email: 'test@example.com',
@@ -49,7 +52,7 @@ describe('TheDigEmailEnricher', () => {
     mockClient = {
       enrich: jest.fn(),
       enrichBulk: jest.fn()
-    } as Partial<jest.Mocked<Voilanorbert>> as jest.Mocked<Voilanorbert>;
+    } as Partial<jest.Mocked<ThedigApi>> as jest.Mocked<ThedigApi>;
 
     mockLogger = {
       debug: jest.fn(),
@@ -58,12 +61,12 @@ describe('TheDigEmailEnricher', () => {
       error: jest.fn()
     } as unknown as jest.Mocked<Logger>;
 
-    enricher = new TheDigEmailEnricher(mockClient, mockLogger);
+    enricher = new Thedig(mockClient, mockLogger);
   });
 
-  describe('enrichmentMapper', () => {
+  describe('parseResult', () => {
     it('should map EnrichPersonResponse data correctly', () => {
-      const result = enricher.enrichmentMapper([enrichmentResponseMock]);
+      const result = enricher.parseResult([enrichmentResponseMock]);
       expect(result).toEqual(enrichmentMappedMock);
     });
 
@@ -87,7 +90,8 @@ describe('TheDigEmailEnricher', () => {
             'https://linkedin.com/in/validuser',
             'https://x.com/validuser/'
           ],
-          identifier: ['valid.user']
+          identifier: ['valid.user'],
+          statusCode: 200
         },
         {
           email: 'partial@example.com',
@@ -99,18 +103,21 @@ describe('TheDigEmailEnricher', () => {
           sameAs: [
             'https://linkedin.com/in/partialuser',
             'https://x.com/partialuser/'
-          ]
+          ],
+          statusCode: 200
         },
         {
           email: 'partial2@example.com',
           name: 'Partial2 User',
           givenName: 'Partial2',
           familyName: 'User',
-          worksFor: ['Leadminer']
+          worksFor: ['Leadminer'],
+          statusCode: 200
         }
       ];
-      const result = enricher.enrichmentMapper(enrichmentResultMock);
+      const result = enricher.parseResult(enrichmentResultMock);
       expect(result).toEqual({
+        engine: 'thedig',
         data: [
           {
             email: 'valid@example.com',
@@ -201,7 +208,12 @@ describe('TheDigEmailEnricher', () => {
       const result = await enricher.enrichAsync(persons, webhook);
 
       expect(mockClient.enrichBulk).toHaveBeenCalledWith(persons, webhook);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        data: [],
+        raw_data: [],
+        engine: 'thedig',
+        token: mockResponse.token
+      });
     });
 
     it('should throw an error if enrichBulk fails', async () => {
