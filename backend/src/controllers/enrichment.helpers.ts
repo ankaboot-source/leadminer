@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import { EngineResponse, EngineResult } from '../services/enrichment/Engine';
 
 import Billing from '../utils/billing-plugin';
@@ -7,7 +8,6 @@ import Engagements from '../db/supabase/engagements';
 import Enricher from '../services/enrichment/Enricher';
 import EnrichmentService from '../services/enrichment';
 import Enrichments from '../db/supabase/enrichments';
-import { Response } from 'express';
 import SupabaseTasks from '../db/supabase/tasks';
 import logger from '../utils/logger';
 import supabaseClient from '../utils/supabase';
@@ -98,7 +98,7 @@ export async function prepareForEnrichment(
   };
 }
 
-export async function createEnrichmentTask() {
+export function createEnrichmentTask() {
   const tasks = new SupabaseTasks(supabaseClient, logger);
   const engagements = new Engagements(supabaseClient, logger);
   const enrichmentsDB = new Enrichments(
@@ -135,6 +135,28 @@ export async function getEnrichmentCache(
     .flatMap((cache) => enricher.parseResult([cache.result], cache.engine))
     .filter((cache): cache is EngineResponse => Boolean(cache?.data.length))
     .map((cache) => ({ ...cache, engine: 'cache' }));
+}
+
+export async function enrichFromCache(
+  enrichmentsDB: Enrichments,
+  contacts: Partial<Contact>[]
+) {
+  const cached = await getEnrichmentCache(contacts, EnrichmentService);
+  const enrichedEmails = new Set(
+    cached.flatMap(({ data }) => data).map(({ email }) => email)
+  );
+
+  if (enrichedEmails.size) {
+    await enrichmentsDB.enrich(cached);
+    logger.debug(
+      'Contacts enriched from cache.',
+      Array.from(enrichedEmails.values())
+    );
+  }
+
+  return contacts.filter(
+    (contact) => contact.email && !enrichedEmails.has(contact.email)
+  );
 }
 
 export async function enrichPersonSync(

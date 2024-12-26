@@ -6,6 +6,7 @@ import ProxycurlApi, {
 } from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
+
 export default class Proxycurl implements Engine {
   constructor(
     private readonly client: ProxycurlApi,
@@ -56,7 +57,7 @@ export default class Proxycurl implements Engine {
     }
   }
 
-  async enrichAsync(_: Partial<Person>[], __: string): Promise<EngineResponse> {
+  enrichAsync(_: Partial<Person>[], __: string): Promise<EngineResponse> {
     this.logger.debug(`${this.constructor.name}.enrichSync request`, _, __);
     throw new Error('Method not implemented.');
   }

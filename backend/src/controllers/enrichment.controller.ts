@@ -1,18 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
 import {
   createEnrichmentTask,
+  enrichFromCache,
   enrichPersonAsync,
   enrichPersonSync,
-  getEnrichmentCache,
   prepareForEnrichment
 } from './enrichment.helpers';
 
 import Billing from '../utils/billing-plugin';
-import { Contact } from '../db/types';
 import EnrichmentService from '../services/enrichment';
-import Enrichments from '../db/supabase/enrichments';
-import { Users } from '../db/interfaces/Users';
-import logger from '../utils/logger';
 
 async function preEnrichmentMiddleware(
   req: Request,
@@ -20,10 +16,8 @@ async function preEnrichmentMiddleware(
   next: NextFunction
 ) {
   const { user } = res.locals;
-  const { enrichAllContacts, updateEmptyFieldsOnly } = req.body;
-  const contacts = [...(req.body.contacts ?? []), req.body.contact].filter(
-    Boolean
-  );
+  const { contact, enrichAllContacts, updateEmptyFieldsOnly } = req.body;
+  const contacts = [...(req.body.contacts ?? []), contact].filter(Boolean);
 
   if (!enrichAllContacts && !Array.isArray(contacts)) {
     const msg = 'Missing parameter contact or contacts';
@@ -44,28 +38,6 @@ async function preEnrichmentMiddleware(
   }
 }
 
-async function enrichFromCache(
-  enrichmentsDB: Enrichments,
-  contacts: Partial<Contact>[]
-) {
-  const cached = await getEnrichmentCache(contacts, EnrichmentService);
-  const enrichedEmails = new Set(
-    cached.flatMap(({ data }) => data).map(({ email }) => email)
-  );
-
-  if (enrichedEmails.size) {
-    await enrichmentsDB.enrich(cached);
-    logger.debug(
-      'Contacts enriched from cache.',
-      Array.from(enrichedEmails.values())
-    );
-  }
-
-  return contacts.filter(
-    (contact) => contact.email && !enrichedEmails.has(contact.email)
-  );
-}
-
 function isEmptyEnrichEngines(error: unknown) {
   return Boolean(
     error instanceof Error && error.message.startsWith('Enricher not found.')
@@ -77,7 +49,7 @@ async function enrichPerson(_: Request, res: Response, next: NextFunction) {
     user,
     enrichment: { contact, updateEmptyFieldsOnly }
   } = res.locals;
-  const enrichmentsDB = await createEnrichmentTask();
+  const enrichmentsDB = createEnrichmentTask();
   try {
     await enrichmentsDB.create(user.id, 1, updateEmptyFieldsOnly);
     const notEnriched = await enrichFromCache(enrichmentsDB, [contact]);
@@ -98,7 +70,7 @@ async function enrichPersonBulk(_: Request, res: Response, next: NextFunction) {
     user,
     enrichment: { contacts, updateEmptyFieldsOnly }
   } = res.locals;
-  const enrichmentsDB = await createEnrichmentTask();
+  const enrichmentsDB = createEnrichmentTask();
   try {
     await enrichmentsDB.create(user.id, contacts.length, updateEmptyFieldsOnly);
 
@@ -125,7 +97,7 @@ async function enrichPersonBulk(_: Request, res: Response, next: NextFunction) {
 async function enrichWebhook(req: Request, res: Response, next: NextFunction) {
   const { id: taskId } = req.params;
   const { token } = req.body;
-  const enrichmentsDB = await createEnrichmentTask();
+  const enrichmentsDB = createEnrichmentTask();
 
   try {
     const task = await enrichmentsDB.createFromId(taskId);
@@ -149,7 +121,7 @@ async function enrichWebhook(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export default function initializeEnrichmentController(userResolver: Users) {
+export default function initializeEnrichmentController() {
   return {
     enrichPerson,
     enrichPersonBulk,
