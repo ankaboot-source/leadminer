@@ -1,4 +1,3 @@
-import { Response } from 'express';
 import { EngineResponse, EngineResult } from '../services/enrichment/Engine';
 
 import Billing from '../utils/billing-plugin';
@@ -8,6 +7,7 @@ import Engagements from '../db/supabase/engagements';
 import Enricher from '../services/enrichment/Enricher';
 import EnrichmentService from '../services/enrichment';
 import Enrichments from '../db/supabase/enrichments';
+import { Response } from 'express';
 import SupabaseTasks from '../db/supabase/tasks';
 import logger from '../utils/logger';
 import supabaseClient from '../utils/supabase';
@@ -110,6 +110,14 @@ export function createEnrichmentTask() {
   return enrichmentsDB;
 }
 
+export interface EnrichmentCache {
+  task_id: string;
+  user_id: string;
+  created_at: string;
+  engine: string;
+  result: EngineResult;
+}
+
 export async function getEnrichmentCache(
   contacts: Partial<Contact>[],
   enricher: Enricher
@@ -123,27 +131,28 @@ export async function getEnrichmentCache(
   if (error) {
     throw new Error(error.message);
   }
-  return (
-    data as {
-      task_id: string;
-      user_id: string;
-      created_at: string;
-      engine: string;
-      result: EngineResult;
-    }[]
-  )
-    .flatMap((cache) => enricher.parseResult([cache.result], cache.engine))
-    .filter((cache): cache is EngineResponse => Boolean(cache?.data.length))
-    .map((cache) => ({ ...cache, engine: 'cache' }));
+  return !data
+    ? []
+    : (data as EnrichmentCache[])
+        .flatMap((cache) => enricher.parseResult([cache.result], cache.engine))
+        .filter((cache): cache is EngineResponse => Boolean(cache?.data.length))
+        .map((cache) => ({ ...cache, engine: 'cache' }));
 }
 
 export async function enrichFromCache(
+  getCached: (
+    contacts: Partial<Contact>[],
+    enricher: Enricher
+  ) => Promise<EngineResponse[]>,
   enrichmentsDB: Enrichments,
   contacts: Partial<Contact>[]
 ) {
-  const cached = await getEnrichmentCache(contacts, EnrichmentService);
+  const cached = await getCached(contacts, EnrichmentService);
   const enrichedEmails = new Set(
-    cached.flatMap(({ data }) => data).map(({ email }) => email)
+    cached
+      .flatMap(({ data }) => data || [])
+      .filter((contact): contact is Contact => Boolean(contact?.email))
+      .map(({ email }) => email)
   );
 
   if (enrichedEmails.size) {

@@ -4,6 +4,7 @@ import {
   enrichFromCache,
   enrichPersonAsync,
   enrichPersonSync,
+  getEnrichmentCache,
   prepareForEnrichment
 } from './enrichment.helpers';
 
@@ -52,7 +53,11 @@ async function enrichPerson(_: Request, res: Response, next: NextFunction) {
   const enrichmentsDB = createEnrichmentTask();
   try {
     await enrichmentsDB.create(user.id, 1, updateEmptyFieldsOnly);
-    const notEnriched = await enrichFromCache(enrichmentsDB, [contact]);
+    const notEnriched = await enrichFromCache(
+      getEnrichmentCache,
+      enrichmentsDB,
+      [contact]
+    );
     await enrichPersonSync(enrichmentsDB, notEnriched);
     await enrichmentsDB.end();
     return res.status(200).json({ task: enrichmentsDB.redactedTask() });
@@ -66,16 +71,16 @@ async function enrichPerson(_: Request, res: Response, next: NextFunction) {
 }
 
 async function enrichPersonBulk(_: Request, res: Response, next: NextFunction) {
-  const {
-    user,
-    enrichment: { contacts, updateEmptyFieldsOnly }
-  } = res.locals;
+  const { user, enrichment } = res.locals;
+  const { contacts, updateEmptyFieldsOnly } = enrichment;
   const enrichmentsDB = createEnrichmentTask();
   try {
     await enrichmentsDB.create(user.id, contacts.length, updateEmptyFieldsOnly);
-
-    const task = enrichmentsDB.redactedTask();
-    const notEnrichedCache = await enrichFromCache(enrichmentsDB, contacts);
+    const notEnrichedCache = await enrichFromCache(
+      getEnrichmentCache,
+      enrichmentsDB,
+      contacts
+    );
     const notEnriched = await enrichPersonSync(enrichmentsDB, notEnrichedCache);
 
     if (notEnriched.length) {
@@ -84,12 +89,10 @@ async function enrichPersonBulk(_: Request, res: Response, next: NextFunction) {
       await enrichmentsDB.end();
     }
 
-    return res.status(200).json({ task });
+    return res.status(200).json({ task: enrichmentsDB.redactedTask() });
   } catch (err) {
     await enrichmentsDB.cancel();
-    if (isEmptyEnrichEngines(err)) {
-      res.statusCode = 503;
-    }
+    if (isEmptyEnrichEngines(err)) res.statusCode = 503;
     return next(err);
   }
 }
