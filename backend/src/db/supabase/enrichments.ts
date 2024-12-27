@@ -153,6 +153,11 @@ export default class Enrichments {
       const task = this.ensureTask();
 
       const enriched = result.map(({ data }) => data).flat();
+      task.details.total_enriched += enriched.length;
+      this.mergeTaskDetailsResult(result);
+
+      await this.tasks.update(task);
+
       if (enriched.length) {
         await this.updateContacts(enriched);
         await this.engagements.register(
@@ -160,10 +165,7 @@ export default class Enrichments {
           enriched.map((contact) => contact.email as string),
           'ENRICH'
         );
-        task.details.total_enriched += enriched.length;
       }
-      this.mergeTaskDetailsResult(result);
-      await this.tasks.update(task);
     } catch (err) {
       const msg = (err as Error).message || 'Unexpected error';
       this.logger.error(`[${this.constructor.name}.enrich]: ${msg}`);
