@@ -1,10 +1,11 @@
-import { Logger } from 'winston';
 import { Engine, EngineResult, Person } from '../Engine';
 import VoilanorbertApi, {
   EnrichPersonRequest,
   EnrichPersonResponse
 } from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
+
+import { Logger } from 'winston';
 
 export default class Thedig implements Engine {
   readonly name = 'thedig';
@@ -31,10 +32,10 @@ export default class Thedig implements Engine {
     try {
       const personMapped = Thedig.mapForClientRequest(person);
       const response = await this.client.enrich(personMapped);
-      const enrichResponse =
-        response.statusCode === 200
-          ? this.parseResult([response])
-          : { engine: this.name, data: [], raw_data: [response] };
+      let enrichResponse = this.parseResult([response]);
+      if (response.statusCode === 204 && !response.sameAs?.length) {
+        enrichResponse = { engine: this.name, data: [], raw_data: [response] };
+      }
       return enrichResponse;
     } catch (err) {
       throw new Error((err as Error).message);
