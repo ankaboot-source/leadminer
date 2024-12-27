@@ -1,3 +1,4 @@
+import { Response } from 'express';
 import { EngineResponse, EngineResult } from '../services/enrichment/Engine';
 
 import Billing from '../utils/billing-plugin';
@@ -7,7 +8,6 @@ import Engagements from '../db/supabase/engagements';
 import Enricher from '../services/enrichment/Enricher';
 import EnrichmentService from '../services/enrichment';
 import Enrichments from '../db/supabase/enrichments';
-import { Response } from 'express';
 import SupabaseTasks from '../db/supabase/tasks';
 import logger from '../utils/logger';
 import supabaseClient from '../utils/supabase';

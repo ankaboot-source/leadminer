@@ -1,3 +1,4 @@
+import { Logger } from 'winston';
 import { Engine, EngineResult, Person } from '../Engine';
 import VoilanorbertApi, {
   EnrichPersonRequest,
@@ -5,7 +6,6 @@ import VoilanorbertApi, {
 } from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
-import { Logger } from 'winston';
 
 export default class Thedig implements Engine {
   readonly name = 'thedig';

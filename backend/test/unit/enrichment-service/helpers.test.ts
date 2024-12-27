@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   EnrichmentCache,
   enrichFromCache,
@@ -5,7 +6,6 @@ import {
   enrichPersonSync,
   getEnrichmentCache
 } from '../../../src/controllers/enrichment.helpers';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { Contact } from '../../../src/db/types';
 import ENV from '../../../src/config';

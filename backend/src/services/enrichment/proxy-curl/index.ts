@@ -1,3 +1,4 @@
+import { Logger } from 'winston';
 import { Engine, EngineResponse, Person } from '../Engine';
 import ProxycurlApi, {
   ProfileExtra,
@@ -5,7 +6,6 @@ import ProxycurlApi, {
 } from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
-import { Logger } from 'winston';
 
 export default class Proxycurl implements Engine {
   constructor(
