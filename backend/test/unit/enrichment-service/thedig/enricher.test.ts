@@ -179,6 +179,54 @@ describe('Thedig', () => {
       expect(result).toEqual(enrichmentMappedMock);
     });
 
+    it('should not enriched if statusCode=204 and sameAs is empty', async () => {
+      const person: Partial<Person> = {
+        name: 'John doe',
+        email: 'test@example.com'
+      };
+
+      const response = {
+        ...enrichmentResponseMock,
+        sameAs: [],
+        statusCode: 204
+      };
+      mockClient.enrich.mockResolvedValue(response);
+
+      const result = await enricher.enrichSync(person);
+
+      console.log(result);
+
+      expect(mockClient.enrich).toHaveBeenCalledWith(person);
+      expect(result).toEqual({
+        engine: 'thedig',
+        data: [],
+        raw_data: [response]
+      });
+    });
+
+    it('should not enriched if statusCode 204 sameAs is not empty', async () => {
+      const person: Partial<Person> = {
+        name: 'John doe',
+        email: 'test@example.com'
+      };
+
+      const response = {
+        ...enrichmentResponseMock,
+        statusCode: 204
+      };
+      mockClient.enrich.mockResolvedValue(response);
+
+      const result = await enricher.enrichSync(person);
+
+      console.log(result);
+
+      expect(mockClient.enrich).toHaveBeenCalledWith(person);
+      expect(result).toEqual({
+        ...enrichmentMappedMock,
+        raw_data: [response]
+      });
+    });
+
     it('should throw an error if enrich fails', async () => {
       const person: Partial<Person> = { email: 'test@example.com' };
       const error = new Error('Network error');
