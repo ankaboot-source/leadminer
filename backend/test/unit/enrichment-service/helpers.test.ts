@@ -1,17 +1,21 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   EnrichmentCache,
   enrichFromCache,
+  enrichPersonAsync,
+  enrichPersonSync,
   getEnrichmentCache
 } from '../../../src/controllers/enrichment.helpers';
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { Contact } from '../../../src/db/types';
+import ENV from '../../../src/config';
 import EnrichmentService from '../../../src/services/enrichment';
 import Enrichments from '../../../src/db/supabase/enrichments';
 import logger from '../../../src/utils/logger';
 import supabaseClient from '../../../src/utils/supabase';
 
 jest.mock('../../../src/config', () => ({
+  LEADMINER_API_HOST: 'leadminer-test.io/api/enrich/webhook',
   LEADMINER_API_LOG_LEVEL: 'error',
   SUPABASE_PROJECT_URL: 'fake',
   SUPABASE_SECRET_PROJECT_TOKEN: 'fake'
@@ -32,22 +36,33 @@ jest.mock('../../../src/utils/supabase', () => ({
 }));
 
 jest.mock('../../../src/services/enrichment', () => ({
+  enrich: jest.fn(),
   enrichSync: jest.fn(),
   enrichAsync: jest.fn(),
   parseResult: jest.fn()
 }));
 
-const enrichmentsDB = {
-  task: jest.fn(),
-  tasks: jest.fn(),
-  engagements: jest.fn(),
-  client: jest.fn(),
-  enrich: jest.fn()
-} as unknown as Enrichments;
+function mockEngagementsDB() {
+  return {
+    task: jest.fn(),
+    tasks: jest.fn(),
+    engagements: jest.fn(),
+    client: jest.fn(),
+    enrich: jest.fn()
+  } as unknown as Enrichments;
+}
+
+function mockEnrichmentsDB() {
+  return {
+    redactedTask: jest.fn(),
+    enrich: jest.fn()
+  } as unknown as Enrichments;
+}
 
 const getCache = jest.fn() as jest.MockedFunction<typeof getEnrichmentCache>;
 
 describe('enrichFromCache', () => {
+  const enrichmentsDB = mockEngagementsDB();
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -281,6 +296,128 @@ describe('getEnrichmentCache', () => {
     const result = await getEnrichmentCache(contacts, EnrichmentService);
 
     expect(result).toEqual([]);
+  });
+});
+
+describe('enrichPersonSync', () => {
+  const enrichmentsDB = mockEnrichmentsDB();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should enrich all contacts', async () => {
+    const contacts = [
+      { email: 'test1@example.com' },
+      { email: 'test2@example.com' }
+    ];
+
+    const enrichmentResults = [
+      { data: [{ email: 'test1@example.com' }] },
+      { data: [{ email: 'test2@example.com' }] }
+    ];
+
+    (EnrichmentService.enrich as jest.Mock).mockImplementation(
+      async function* generator() {
+        for (const result of enrichmentResults) {
+          yield result;
+        }
+      }
+    );
+
+    const result = await enrichPersonSync(enrichmentsDB, contacts);
+
+    expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
+    expect(enrichmentsDB.enrich).toHaveBeenCalledTimes(2);
+    expect(result).toEqual([]);
+  });
+
+  it('should return not enriched contacts', async () => {
+    const contacts = [
+      { email: 'test1@example.com' },
+      { email: 'test2@example.com' }
+    ];
+
+    const enrichmentResults = [{ data: [{ email: 'test1@example.com' }] }];
+
+    (EnrichmentService.enrich as jest.Mock).mockImplementation(
+      async function* generator() {
+        for (const result of enrichmentResults) {
+          yield result;
+        }
+      }
+    );
+
+    const result = await enrichPersonSync(enrichmentsDB, contacts);
+
+    expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
+    expect(enrichmentsDB.enrich).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([{ email: 'test2@example.com' }]);
+  });
+
+  it('should handle no enrichments gracefully', async () => {
+    const contacts = [
+      { email: 'test1@example.com' },
+      { email: 'test2@example.com' }
+    ];
+
+    (EnrichmentService.enrich as jest.Mock).mockImplementation(
+      async function* generator() {
+        // No results
+      }
+    );
+
+    const result = await enrichPersonSync(enrichmentsDB, contacts);
+
+    expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
+    expect(enrichmentsDB.enrich).not.toHaveBeenCalled();
+    expect(result).toEqual(contacts);
+  });
+});
+
+describe('enrichPersonAsync', () => {
+  const enrichmentsDB = mockEnrichmentsDB();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should enrich contacts asynchronously', async () => {
+    const contacts = [{ email: 'test1@example.com' }];
+
+    const task = { id: '1' };
+    const webhook = `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/${task.id}`;
+    const resultData = { data: [{ email: 'test1@example.com' }] };
+
+    (EnrichmentService.enrichAsync as jest.Mock).mockReturnValue(resultData);
+    (enrichmentsDB.redactedTask as jest.Mock).mockReturnValue({ id: '1' });
+
+    await enrichPersonAsync(enrichmentsDB, contacts);
+
+    expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
+    expect(EnrichmentService.enrichAsync as jest.Mock).toHaveBeenCalledWith(
+      contacts,
+      webhook
+    );
+    expect(enrichmentsDB.enrich).toHaveBeenCalledWith([resultData]);
+  });
+
+  it('should handle no result from async enrichment gracefully', async () => {
+    const contacts = [{ email: 'test1@example.com' }];
+
+    const task = { id: '1' };
+    const webhook = `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/${task.id}`;
+
+    (EnrichmentService.enrichAsync as jest.Mock).mockReturnValue(null);
+
+    await enrichPersonAsync(enrichmentsDB, contacts);
+
+    expect(enrichmentsDB.redactedTask).toHaveBeenCalled();
+    expect(EnrichmentService.enrichAsync as jest.Mock).toHaveBeenCalledWith(
+      contacts,
+      webhook
+    );
+    expect(enrichmentsDB.enrich).not.toHaveBeenCalled();
   });
 });
 
