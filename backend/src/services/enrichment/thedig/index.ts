@@ -32,7 +32,7 @@ export default class Thedig implements Engine {
       const personMapped = Thedig.mapForClientRequest(person);
       const response = await this.client.enrich(personMapped);
       let enrichResponse = this.parseResult([response]);
-      if (response.statusCode === 204 && !response.sameAs?.length) {
+      if (response.statusCode === 203 && !response.sameAs?.length) {
         enrichResponse = { engine: this.name, data: [], raw_data: [response] };
       }
       return enrichResponse;

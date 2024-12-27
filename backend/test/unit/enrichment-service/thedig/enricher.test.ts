@@ -179,7 +179,7 @@ describe('Thedig', () => {
       expect(result).toEqual(enrichmentMappedMock);
     });
 
-    it('should not enriched if statusCode=204 and sameAs is empty', async () => {
+    it('should not enriched if statusCode=203 and sameAs is empty', async () => {
       const person: Partial<Person> = {
         name: 'John doe',
         email: 'test@example.com'
@@ -188,7 +188,7 @@ describe('Thedig', () => {
       const response = {
         ...enrichmentResponseMock,
         sameAs: [],
-        statusCode: 204
+        statusCode: 203
       };
       mockClient.enrich.mockResolvedValue(response);
 
@@ -202,7 +202,7 @@ describe('Thedig', () => {
       });
     });
 
-    it('should not enriched if statusCode 204 sameAs is not empty', async () => {
+    it('should not enriched if statusCode 203 sameAs is not empty', async () => {
       const person: Partial<Person> = {
         name: 'John doe',
         email: 'test@example.com'
@@ -210,7 +210,7 @@ describe('Thedig', () => {
 
       const response = {
         ...enrichmentResponseMock,
-        statusCode: 204
+        statusCode: 203
       };
       mockClient.enrich.mockResolvedValue(response);
 
