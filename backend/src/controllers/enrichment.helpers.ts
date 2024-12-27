@@ -156,11 +156,9 @@ export async function enrichFromCache(
   );
 
   if (enrichedEmails.size) {
+    const emails = Array.from(enrichedEmails.values());
     await enrichmentsDB.enrich(cached);
-    logger.debug(
-      'Contacts enriched from cache.',
-      Array.from(enrichedEmails.values())
-    );
+    logger.debug('Enriched from cache.', emails);
   }
 
   return contacts.filter(
