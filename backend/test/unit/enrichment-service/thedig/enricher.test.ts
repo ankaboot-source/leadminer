@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { Logger } from 'winston';
 import ThedigApi, {
   EnrichPersonResponse
 } from '../../../../src/services/enrichment/thedig/client';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { EngineResponse } from '../../../../src/services/enrichment/Engine';
+import { Logger } from 'winston';
 import { Person } from '../../../../src/db/types';
 import Thedig from '../../../../src/services/enrichment/thedig';
 
@@ -194,8 +194,6 @@ describe('Thedig', () => {
 
       const result = await enricher.enrichSync(person);
 
-      console.log(result);
-
       expect(mockClient.enrich).toHaveBeenCalledWith(person);
       expect(result).toEqual({
         engine: 'thedig',
@@ -217,8 +215,6 @@ describe('Thedig', () => {
       mockClient.enrich.mockResolvedValue(response);
 
       const result = await enricher.enrichSync(person);
-
-      console.log(result);
 
       expect(mockClient.enrich).toHaveBeenCalledWith(person);
       expect(result).toEqual({
