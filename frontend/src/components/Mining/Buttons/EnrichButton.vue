@@ -62,6 +62,7 @@
     pt:label:class="hidden md:block"
     :disabled="isEnrichDisabled"
     @click="openEnrichmentConfirmationDialog"
+    v-tooltip="t('button.tooltip')"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
@@ -344,6 +345,7 @@ const isEnrichDisabled = computed(
       "enricher_configuration_required": "Enricher configuration is required."
     },
     "button": {
+      "tooltip": "Extract public information on contacts I've already a relation with using third-party tools",
       "start_enrichment": "Enrich",
       "halt_enrichment": "Cancel enrichment",
       "start_new_mining": "Start a new mining"
@@ -364,6 +366,7 @@ const isEnrichDisabled = computed(
       "enricher_configuration_required": "Configuration de l'enrichisseur est requise."
     },
     "button": {
+      "tooltip": "Extraire des informations publiques sur les contacts avec lesquels je suis en relation à l'aide d'outils tiers.",
       "start_enrichment": "Enrichir",
       "halt_enrichment": "Annuler l'enrichissement",
       "start_new_mining": "Commencer une nouvelle extraction"
