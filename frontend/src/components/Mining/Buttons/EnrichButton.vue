@@ -62,6 +62,7 @@
     pt:label:class="hidden md:block"
     :disabled="isEnrichDisabled"
     @click="openEnrichmentConfirmationDialog"
+    v-tooltip="t('button.tooltip')"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
@@ -241,6 +242,11 @@ async function enrichPersonBulk(
   enrichAll: boolean,
   contacts: Partial<Contact>[],
 ) {
+  showNotification(
+    'success',
+    t('notification.summary'),
+    t('notification.enrichment_started', { toEnrich: contacts.length }),
+  );
   await $api<EnrichContactResponse>('/enrich/person/bulk', {
     method: 'POST',
     body: {
@@ -331,6 +337,7 @@ const isEnrichDisabled = computed(
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
       "summary": "Enrich",
+      "enrichment_started": "Enrichment on {toEnrich} contacts has started. Please wait a few minutes.",
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
@@ -338,6 +345,7 @@ const isEnrichDisabled = computed(
       "enricher_configuration_required": "Enricher configuration is required."
     },
     "button": {
+      "tooltip": "Extract public information on contacts I've already a relation with using third-party tools",
       "start_enrichment": "Enrich",
       "halt_enrichment": "Cancel enrichment",
       "start_new_mining": "Start a new mining"
@@ -350,6 +358,7 @@ const isEnrichDisabled = computed(
     "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
+      "enrichment_started": "L'enrichissement de {toEnrich} contacts a commencé. Veuillez patienter quelques minutes.",
       "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
@@ -357,6 +366,7 @@ const isEnrichDisabled = computed(
       "enricher_configuration_required": "Configuration de l'enrichisseur est requise."
     },
     "button": {
+      "tooltip": "Extraire des informations publiques sur les contacts avec lesquels je suis en relation à l'aide d'outils tiers.",
       "start_enrichment": "Enrichir",
       "halt_enrichment": "Annuler l'enrichissement",
       "start_new_mining": "Commencer une nouvelle extraction"

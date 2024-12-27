@@ -1,8 +1,8 @@
-import { SupabaseClient } from '@supabase/supabase-js';
 import { Logger } from 'winston';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseTask } from '../types';
-import { Tasks } from '../interfaces/Tasks';
 import { Task } from '../../services/tasks-manager/types';
+import { Tasks } from '../interfaces/Tasks';
 
 export default class SupabaseTasks implements Tasks {
   constructor(
@@ -10,72 +10,94 @@ export default class SupabaseTasks implements Tasks {
     private readonly logger: Logger
   ) {}
 
+  private static mapToDatabase(task: Task) {
+    const mapped: SupabaseTask = {
+      id: task.id,
+      user_id: task.userId,
+      type: task.type,
+      category: task.category,
+      details: task.details,
+      status: task.status,
+      stopped_at: task.stoppedAt?.toString(),
+      started_at: task.startedAt?.toString(),
+      duration: task.duration
+    };
+    return mapped;
+  }
+
+  private static mapFromDatabase(task: SupabaseTask) {
+    const mapped: Task = {
+      id: task.id,
+      userId: task.user_id,
+      type: task.type,
+      category: task.category,
+      details: task.details,
+      status: task.status,
+      stoppedAt: task.stopped_at,
+      startedAt: task.started_at,
+      duration: task.duration
+    };
+    return mapped;
+  }
+
+  async getById(id: string) {
+    try {
+      const { data, error } = await this.client
+        .schema('private')
+        .from('tasks')
+        .select()
+        .eq('id', id)
+        .single<SupabaseTask>();
+
+      if (error) throw new Error(error.message);
+      return SupabaseTasks.mapFromDatabase(data);
+    } catch (err) {
+      const message = (err as Error).message || 'Unexpected error.';
+      this.logger.error(`[${this.constructor.name}.register]: ${message}`);
+      throw err;
+    }
+  }
+
   /**
    * Inserts one or more tasks in the database.
    *
    * @param tasks - An array of tasks to insert.
    * @returns An array of inserted tasks, or undefined if an error occurred.
    */
-  async create(tasks: Task[]): Promise<SupabaseTask[] | undefined> {
+  async create(task: Task): Promise<Task> {
     try {
-      const taskList: SupabaseTask[] = tasks.map((task) => ({
-        user_id: task.userId,
-        type: task.type,
-        category: task.category,
-        details: task.details,
-        status: task.status,
-        stopped_at: task.stoppedAt?.toString(),
-        duration: task.duration
-      }));
       const { data, error } = await this.client
         .schema('private')
         .from('tasks')
-        .insert(taskList)
-        .select();
+        .insert(SupabaseTasks.mapToDatabase(task))
+        .select()
+        .single<SupabaseTask>();
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data;
-    } catch (error) {
-      this.logger.error('Error creating task to Supabase:', error);
-      return undefined;
+      if (error) throw new Error(error.message);
+      return SupabaseTasks.mapFromDatabase(data);
+    } catch (err) {
+      const message = (err as Error).message || 'Unexpected error.';
+      this.logger.error(`[${this.constructor.name}.register]: ${message}`);
+      throw err;
     }
   }
 
-  /**
-   * Updates a task in the database.
-   *
-   * @param task - The task to update.
-   * @returns The updated task, or undefined if an error occurred.
-   */
-  async update(task: Task): Promise<SupabaseTask | undefined> {
+  async update(task: Task): Promise<Task> {
     try {
       const { data, error } = await this.client
         .schema('private')
         .from('tasks')
-        .update({
-          id: task.id,
-          user_id: task.userId,
-          type: task.type,
-          category: task.category,
-          details: task.details,
-          status: task.status,
-          stopped_at: task.stoppedAt?.toString(),
-          duration: task.duration
-        } as SupabaseTask)
+        .update(SupabaseTasks.mapToDatabase(task))
         .eq('id', task.id)
-        .select();
+        .select()
+        .single<SupabaseTask>();
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return data[0];
-    } catch (error) {
-      this.logger.error('Error updating task to Supabase:', error);
-      return undefined;
+      if (error) throw new Error(error.message);
+      return SupabaseTasks.mapFromDatabase(data);
+    } catch (err) {
+      const message = (err as Error).message || 'Unexpected error.';
+      this.logger.error(`[${this.constructor.name}.register]: ${message}`);
+      throw err;
     }
   }
 }

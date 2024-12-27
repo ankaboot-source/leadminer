@@ -1,13 +1,9 @@
 import { Router } from 'express';
-import initializeAuthMiddleware from '../middleware/auth';
 import AuthResolver from '../services/auth/AuthResolver';
+import initializeAuthMiddleware from '../middleware/auth';
 import initializeEnrichmentController from '../controllers/enrichment.controller';
-import { Users } from '../db/interfaces/Users';
 
-export default function initializeEnrichmentRoutes(
-  userResolver: Users,
-  authResolver: AuthResolver
-) {
+export default function initializeEnrichmentRoutes(authResolver: AuthResolver) {
   const router = Router();
 
   const {
@@ -15,7 +11,7 @@ export default function initializeEnrichmentRoutes(
     enrichPersonBulk,
     enrichWebhook,
     preEnrichmentMiddleware
-  } = initializeEnrichmentController(userResolver);
+  } = initializeEnrichmentController();
 
   router.post(
     '/person',

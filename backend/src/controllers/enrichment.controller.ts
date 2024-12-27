@@ -1,251 +1,134 @@
 import { NextFunction, Request, Response } from 'express';
-import ENV from '../config';
-import { Users } from '../db/interfaces/Users';
-import { Contact } from '../db/types';
-import emailEnrichmentService from '../services/email-enrichment';
-import Billing from '../utils/billing-plugin';
 import {
   createEnrichmentTask,
   enrichFromCache,
+  enrichPersonAsync,
   enrichPersonSync,
-  enrichWebhook,
-  getContactsToEnrich,
-  getEnrichmentTask,
-  redactEnrichmentTask,
-  TaskEnrich,
-  updateEnrichmentTask
+  getEnrichmentCache,
+  prepareForEnrichment
 } from './enrichment.helpers';
 
-async function checkAndFilterEligibleContacts(
+import Billing from '../utils/billing-plugin';
+import EnrichmentService from '../services/enrichment';
+
+async function preEnrichmentMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   const { user } = res.locals;
-  const { enrichAllContacts, updateEmptyFieldsOnly } = req.body;
-  const contacts = [
-    ...(req.body.contacts ? req.body.contacts : [req.body.contact])
-  ].filter(Boolean);
+  const { contact, enrichAllContacts, updateEmptyFieldsOnly } = req.body;
+  const contacts = [...(req.body.contacts ?? []), contact].filter(Boolean);
 
-  const isMissingParam = !enrichAllContacts && !Array.isArray(contacts);
-
-  if (isMissingParam) {
-    return res.status(400).json({
-      message: 'Missing parameter contact or contacts'
-    });
+  if (!enrichAllContacts && !Array.isArray(contacts)) {
+    const msg = 'Missing parameter contact or contacts';
+    return res.status(400).json({ message: msg });
   }
 
   try {
-    let contactsToEnrich = await getContactsToEnrich(
+    res.locals.enrichment = await prepareForEnrichment(
       user.id,
       enrichAllContacts ?? false,
-      contacts
+      updateEmptyFieldsOnly,
+      contacts,
+      res
     );
-
-    if (Billing) {
-      const { hasDeficientCredits, hasInsufficientCredits, availableUnits } =
-        await Billing.validateCustomerCredits(user.id, contactsToEnrich.length);
-
-      if (hasDeficientCredits || hasInsufficientCredits) {
-        const response = {
-          total: contactsToEnrich.length,
-          available: Math.floor(availableUnits)
-        };
-        return res.status(402).json(response);
-      }
-
-      contactsToEnrich = contactsToEnrich.slice(0, availableUnits);
-    }
-
-    const enrichment: {
-      contact?: Partial<Contact>;
-      contacts?: Partial<Contact>[];
-      updateEmptyFieldsOnly: boolean;
-    } = {
-      updateEmptyFieldsOnly
-    };
-
-    if (enrichAllContacts || req.body.contacts) {
-      enrichment.contacts = contactsToEnrich;
-    } else if (req.body.contact) {
-      const [contact] = contactsToEnrich;
-      enrichment.contact = contact;
-    }
-    res.locals.enrichment = enrichment;
     return next();
   } catch (error) {
     return next(error);
   }
 }
 
-async function enrichContactSync(
-  userResolver: Users,
-  _: Request,
-  res: Response
-) {
+function isEmptyEnrichEngines(error: unknown) {
+  return Boolean(
+    error instanceof Error && error.message.startsWith('Enricher not found.')
+  );
+}
+
+async function enrichPerson(_: Request, res: Response, next: NextFunction) {
   const {
     user,
     enrichment: { contact, updateEmptyFieldsOnly }
   } = res.locals;
-
-  const [taskCached, [contactToEnrich]] = await enrichFromCache(
-    userResolver,
-    user.id,
-    updateEmptyFieldsOnly,
-    [contact]
-  );
-
-  if (taskCached && !contactToEnrich) {
-    return res.status(200).json({
-      task: redactEnrichmentTask(taskCached)
-    });
-  }
-
-  const task = await createEnrichmentTask(user.id, 1, updateEmptyFieldsOnly);
-
-  const [result] = await enrichPersonSync(userResolver, task, [
-    contactToEnrich
-  ]);
-  await updateEnrichmentTask(task, result);
-
-  return res.status(200).json({
-    task: redactEnrichmentTask(task)
-  });
-}
-
-async function enrichPersonBulk(
-  userResolver: Users,
-  _: Request,
-  res: Response
-) {
-  const {
-    user,
-    enrichment: { contacts, updateEmptyFieldsOnly }
-  } = res.locals;
-
-  const [taskCached, contactsToEnrich] = await enrichFromCache(
-    userResolver,
-    user.id,
-    updateEmptyFieldsOnly,
-    contacts
-  );
-
-  if (taskCached && !contactsToEnrich.length) {
-    return res.status(200).json({ task: redactEnrichmentTask(taskCached) });
-  }
-
-  const task = await createEnrichmentTask(
-    user.id,
-    contacts.length,
-    updateEmptyFieldsOnly
-  );
-
-  const enrichResult: TaskEnrich['details']['result'] = [
-    ...(taskCached?.details.result ?? [])
-  ];
-
-  const [results, notEnriched] = await enrichPersonSync(
-    userResolver,
-    task,
-    contactsToEnrich
-  );
-  enrichResult.push(...results);
-
-  if (notEnriched.length) {
-    let status = 'running';
-    const voilanorbert = emailEnrichmentService.getEnricher({}, 'voilanorbert');
-    try {
-      const { token } = await voilanorbert.instance.enrichAsync(
-        notEnriched,
-        `${ENV.LEADMINER_API_HOST}/api/enrich/webhook/${task.id}`
-      );
-      enrichResult.push({
-        token,
-        instance: voilanorbert.type
-      });
-    } catch (err) {
-      status = 'canceled';
-      enrichResult.push({
-        error: (err as Error).message,
-        instance: voilanorbert.type
-      });
-    }
-    const updatedTask = await updateEnrichmentTask(
-      task,
-      enrichResult,
-      status as TaskEnrich['status']
+  const enrichmentsDB = createEnrichmentTask();
+  try {
+    await enrichmentsDB.create(user.id, 1, updateEmptyFieldsOnly);
+    const notEnriched = await enrichFromCache(
+      getEnrichmentCache,
+      enrichmentsDB,
+      [contact]
     );
-    return res.status(200).json({ task: redactEnrichmentTask(updatedTask) });
+    await enrichPersonSync(enrichmentsDB, notEnriched);
+    await enrichmentsDB.end();
+    return res.status(200).json({ task: enrichmentsDB.redactedTask() });
+  } catch (err) {
+    await enrichmentsDB.cancel();
+    if (isEmptyEnrichEngines(err)) {
+      res.statusCode = 503;
+    }
+    return next(err);
   }
-
-  const updatedTask = await updateEnrichmentTask(task, enrichResult);
-  return res.status(200).json({ task: redactEnrichmentTask(updatedTask) });
 }
 
-async function enrichPersonWebhook(
-  userResolver: Users,
-  req: Request,
-  res: Response
-) {
+async function enrichPersonBulk(_: Request, res: Response, next: NextFunction) {
+  const { user, enrichment } = res.locals;
+  const { contacts, updateEmptyFieldsOnly } = enrichment;
+  const enrichmentsDB = createEnrichmentTask();
+  try {
+    await enrichmentsDB.create(user.id, contacts.length, updateEmptyFieldsOnly);
+    const notEnrichedCache = await enrichFromCache(
+      getEnrichmentCache,
+      enrichmentsDB,
+      contacts
+    );
+    const notEnriched = await enrichPersonSync(enrichmentsDB, notEnrichedCache);
+
+    if (notEnriched.length) {
+      await enrichPersonAsync(enrichmentsDB, notEnriched);
+    } else {
+      await enrichmentsDB.end();
+    }
+
+    return res.status(200).json({ task: enrichmentsDB.redactedTask() });
+  } catch (err) {
+    await enrichmentsDB.cancel();
+    if (isEmptyEnrichEngines(err)) res.statusCode = 503;
+    return next(err);
+  }
+}
+
+async function enrichWebhook(req: Request, res: Response, next: NextFunction) {
   const { id: taskId } = req.params;
   const { token } = req.body;
-  const task = await getEnrichmentTask(taskId);
+  const enrichmentsDB = createEnrichmentTask();
 
-  if (!task.id) {
-    return res.status(404).send({
-      message: `Enrichment with id ${taskId} not found.`
-    });
+  try {
+    const task = await enrichmentsDB.createFromId(taskId);
+    const taskResult = task?.details.result.find((enr) => enr.token === token);
+
+    if (!taskResult) return res.sendStatus(404);
+
+    const { engine } = taskResult;
+    const result = EnrichmentService.parseResult([req.body], engine);
+
+    await enrichmentsDB.enrich([{ ...taskResult, ...result }]);
+    await Billing?.deductCustomerCredits(
+      task.userId,
+      result.data.filter(Boolean).length
+    );
+    await enrichmentsDB.end();
+    return res.sendStatus(200);
+  } catch (err) {
+    await enrichmentsDB.cancel();
+    return next(err);
   }
-
-  const result = await enrichWebhook(userResolver, task, token, req.body);
-  task.details.result = task.details.result.filter(
-    (data) => data.token !== token
-  );
-  await updateEnrichmentTask(task, [result], 'done');
-  return res.status(200);
 }
 
-export default function initializeEnrichmentController(userResolver: Users) {
+export default function initializeEnrichmentController() {
   return {
-    enrichPerson: async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        await enrichContactSync(userResolver, req, res);
-      } catch (err) {
-        if (
-          err instanceof Error &&
-          err.message.startsWith('Enricher not found.')
-        )
-          res.statusCode = 503;
-        next(err);
-      }
-    },
-    enrichPersonBulk: async (
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ) => {
-      try {
-        await enrichPersonBulk(userResolver, req, res);
-      } catch (err) {
-        if (
-          err instanceof Error &&
-          err.message.startsWith('Enricher not found.')
-        )
-          res.statusCode = 503;
-        next(err);
-      }
-    },
-    enrichWebhook: async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        await enrichPersonWebhook(userResolver, req, res);
-      } catch (err) {
-        next(err);
-      }
-    },
-    preEnrichmentMiddleware: (
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ) => checkAndFilterEligibleContacts(req, res, next)
+    enrichPerson,
+    enrichPersonBulk,
+    enrichWebhook,
+    preEnrichmentMiddleware
   };
 }

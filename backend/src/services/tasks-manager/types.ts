@@ -1,5 +1,7 @@
-import RealtimeSSE from '../../utils/helpers/sseHelpers';
+import { Contact, TaskCategory, TaskStatus, TaskType } from '../../db/types';
+
 import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
+import RealtimeSSE from '../../utils/helpers/sseHelpers';
 
 export type RedisCommand = 'REGISTER' | 'DELETE';
 export type TaskProgressType =
@@ -7,24 +9,6 @@ export type TaskProgressType =
   | 'extracted'
   | 'createdContacts'
   | 'verifiedContacts';
-
-export enum TaskType {
-  Fetch = 'fetch',
-  Extract = 'extract',
-  Clean = 'clean'
-}
-
-export enum TaskCategory {
-  Mining = 'mining',
-  Enriching = 'enriching',
-  Cleaning = 'cleaning'
-}
-
-export enum TaskStatus {
-  Running = 'running',
-  Canceled = 'canceled',
-  Done = 'done'
-}
 
 export interface EmailStatusVerifier {
   running: boolean;
@@ -107,6 +91,23 @@ export interface TaskClean extends Task {
       verifiedContacts: number;
       createdContacts: number;
     };
+  };
+}
+
+export interface TaskEnrich extends Task {
+  category: TaskCategory.Enriching;
+  type: TaskType.Enrich;
+  details: {
+    total_enriched: number;
+    total_to_enrich: number;
+    update_empty_fields_only: boolean;
+    error?: string;
+    result: {
+      token?: string;
+      engine: string;
+      data: Array<Partial<Contact>>;
+      raw_data: Array<unknown>;
+    }[];
   };
 }
 

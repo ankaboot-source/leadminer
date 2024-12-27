@@ -6,13 +6,13 @@ import {
   it,
   jest
 } from '@jest/globals';
-import axios from 'axios';
+
 import { Logger } from 'winston';
-import TheDig, {
+import axios from 'axios';
+import ThedigApi, {
   EnrichPersonRequest,
   EnrichPersonResponse
-} from '../../../../src/services/email-enrichment/thedig/client';
-import { Person } from '../../../../src/services/email-enrichment/EmailEnricher';
+} from '../../../../src/services/enrichment/thedig/client';
 
 // Mock dependencies
 jest.mock('axios');
@@ -22,13 +22,13 @@ const mockAxiosInstance = {
 } as unknown as jest.Mocked<typeof axios>;
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-describe('TheDig', () => {
+describe('ThedigApi', () => {
   let mockLogger: jest.Mocked<Logger>;
-  let theDigClient: TheDig;
+  let theDigClient: ThedigApi;
 
   beforeEach(() => {
     mockLogger = { error: jest.fn() } as unknown as jest.Mocked<Logger>;
-    theDigClient = new TheDig(
+    theDigClient = new ThedigApi(
       {
         url: 'https://api.example.com',
         apiToken: 'test-token',
@@ -58,7 +58,8 @@ describe('TheDig', () => {
         givenName: 'John',
         familyName: 'Doe',
         jobTitle: ['Engineer'],
-        worksFor: ['Tech Inc.']
+        worksFor: ['Tech Inc.'],
+        statusCode: 200
       };
 
       mockAxiosInstance.post.mockResolvedValue({ data: personResponse });
@@ -114,7 +115,7 @@ describe('TheDig', () => {
         'Network Error'
       );
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('[TheDig:enrich]'),
+        expect.stringContaining('[ThedigApi:enrich]'),
         error
       );
     });
@@ -144,7 +145,7 @@ describe('TheDig', () => {
     });
 
     it('should limit to 10 requests every 2 seconds', async () => {
-      const personRequest: Partial<Person>[] = [
+      const personRequest = [
         {
           name: 'John Doe',
           email: 'john@example.com'
@@ -183,7 +184,7 @@ describe('TheDig', () => {
         theDigClient.enrichBulk(persons, webhookUrl)
       ).rejects.toThrow('Bulk request error');
       expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.stringContaining('[TheDig:enrichBulk]'),
+        expect.stringContaining('[ThedigApi:enrichBulk]'),
         error
       );
     });

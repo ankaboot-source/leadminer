@@ -1,27 +1,26 @@
-// eslint-disable-next-line max-classes-per-file
 import { Request, Response } from 'express';
 import { Redis } from 'ioredis';
-import SupabaseTasks from '../../db/supabase/tasks';
-import logger from '../../utils/logger';
-import EmailFetcherFactory from '../factory/EmailFetcherFactory';
-import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
-import { ImapEmailsFetcherOptions } from '../imap/types';
 import {
   MiningTask,
   RedactedTask,
   RedisCommand,
   StreamInfo,
   Task,
-  TaskCategory,
   TaskExtract,
   TaskFetch,
   TaskProgress,
-  TaskProgressType,
-  TaskStatus,
-  TaskType
+  TaskProgressType
 } from './types';
-import { redactSensitiveData } from './utils';
+// eslint-disable-next-line max-classes-per-file
+import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
+
 import ENV from '../../config';
+import EmailFetcherFactory from '../factory/EmailFetcherFactory';
+import { ImapEmailsFetcherOptions } from '../imap/types';
+import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
+import SupabaseTasks from '../../db/supabase/tasks';
+import logger from '../../utils/logger';
+import { redactSensitiveData } from './utils';
 
 export default class TasksManager {
   /**
@@ -207,13 +206,16 @@ export default class TasksManager {
 
       progress.totalMessages = fetch.details.progress.totalMessages;
 
-      (await this.tasksResolver.create([fetch, extract, clean]))?.forEach(
-        (task) => {
-          const { id: TaskId, started_at: startedAt } = task;
-          miningTask.process[`${task.type}`].id = TaskId;
-          miningTask.process[`${task.type}`].startedAt = startedAt;
-        }
-      );
+      const taskFetch = await this.tasksResolver.create(fetch);
+      const taskExtract = await this.tasksResolver.create(extract);
+      const taskClean = await this.tasksResolver.create(clean);
+
+      miningTask.process.fetch.id = taskFetch.id;
+      miningTask.process.extract.id = taskExtract.id;
+      miningTask.process.clean.id = taskClean.id;
+      miningTask.process.fetch.startedAt = taskFetch.startedAt;
+      miningTask.process.extract.startedAt = taskExtract.startedAt;
+      miningTask.process.clean.startedAt = taskClean.startedAt;
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
       fetch.instance.start();

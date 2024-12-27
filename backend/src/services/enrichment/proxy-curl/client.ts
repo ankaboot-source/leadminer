@@ -1,9 +1,21 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
+
 import { Logger } from 'winston';
 import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
 
-export interface Experience {
+interface Config {
+  url: string;
+  apiKey: string;
+  rateLimiter: {
+    requests: number;
+    interval: number;
+    maxRetries: number;
+    spaced: boolean;
+  };
+}
+
+interface Experience {
   starts_at: {
     day: number;
     month: number;
@@ -23,13 +35,6 @@ export interface Experience {
   logo_url?: string | null;
 }
 
-export interface ProfileExtra {
-  github_profile_id?: string;
-  facebook_profile_id?: string;
-  twitter_profile_id?: string;
-  website?: string;
-}
-
 interface Profile {
   city: string;
   full_name: string;
@@ -44,6 +49,13 @@ interface Profile {
   public_identifier: string;
   extra: ProfileExtra;
   experiences: Experience[];
+}
+
+export interface ProfileExtra {
+  github_profile_id?: string;
+  facebook_profile_id?: string;
+  twitter_profile_id?: string;
+  website?: string;
 }
 
 export interface ReverseEmailLookupParams {
@@ -62,18 +74,7 @@ export interface ReverseEmailLookupResponse {
   twitter_profile_url: string;
 }
 
-export interface Config {
-  url: string;
-  apiKey: string;
-  rateLimiter: {
-    requests: number;
-    interval: number;
-    maxRetries: number;
-    spaced: boolean;
-  };
-}
-
-export default class ProxyCurl {
+export default class ProxycurlApi {
   private readonly api: AxiosInstance;
 
   private readonly rateLimiter;

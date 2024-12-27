@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+
 import { Logger } from 'winston';
 import qs from 'qs';
 import throttledQueue from 'throttled-queue';
@@ -15,7 +16,7 @@ interface Config {
   };
 }
 
-export interface VoilanorbertEnrichmentResult {
+interface Result {
   email: string;
   fullName: string;
   title: string;
@@ -27,19 +28,19 @@ export interface VoilanorbertEnrichmentResult {
   error_msg?: string;
 }
 
-export interface EnrichAsyncResponse {
+export interface ResponseAsync {
   status: string;
   success: boolean;
   token: string;
 }
 
-export interface VoilanorbertWebhookResult {
+export interface ResponseWebhook {
   id: string;
   token: string;
-  results: VoilanorbertEnrichmentResult[];
+  results: Result[];
 }
 
-export default class Voilanorbert {
+export default class VoilanorbertApi {
   private static readonly baseURL = 'https://api.voilanorbert.com/2018-01-08/';
 
   private readonly api: AxiosInstance;
@@ -56,7 +57,7 @@ export default class Voilanorbert {
     private readonly logger: Logger
   ) {
     this.api = axios.create({
-      baseURL: url ?? Voilanorbert.baseURL,
+      baseURL: url ?? VoilanorbertApi.baseURL,
       headers: {},
       auth: {
         username,
@@ -66,13 +67,10 @@ export default class Voilanorbert {
     this.rateLimiter = throttledQueue(requests, interval, spaced);
   }
 
-  async enrich(
-    emails: string[],
-    webhook: string
-  ): Promise<EnrichAsyncResponse> {
+  async enrich(emails: string[], webhook: string): Promise<ResponseAsync> {
     try {
       const { data } = await this.rateLimiter(() =>
-        this.api.post<EnrichAsyncResponse>(
+        this.api.post<ResponseAsync>(
           '/enrich/upload',
           qs.stringify({
             data: emails.join('\n'),
