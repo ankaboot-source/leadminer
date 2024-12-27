@@ -71,6 +71,7 @@ export default class Enrichments {
   private async setTaskStatus(status: TaskStatus) {
     const task = this.ensureTask();
     task.status = status;
+    task.startedAt = new Date().toISOString();
     await this.tasks.update(task);
     const msg = `task status updated to ${status}`;
     this.logger.debug(`[${this.constructor.name}.setTaskStatus]: ${msg}`);

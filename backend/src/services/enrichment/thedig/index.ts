@@ -6,7 +6,6 @@ import VoilanorbertApi, {
 } from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
-
 export default class Thedig implements Engine {
   readonly name = 'thedig';
 

@@ -6,7 +6,6 @@ import ProxycurlApi, {
 } from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
-
 export default class Proxycurl implements Engine {
   constructor(
     private readonly client: ProxycurlApi,
