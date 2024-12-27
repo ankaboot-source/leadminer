@@ -139,7 +139,7 @@ onNuxtReady(() => {
 <i18n lang="json">
 {
   "en": {
-    "mine_contacts": "Mine contacts from your email account",
+    "mine_contacts": "Mine, clean and enrich your contacts",
     "source": "Source",
     "mining": "Mining",
     "cleaning": "Cleaning",
@@ -147,7 +147,7 @@ onNuxtReady(() => {
     "retrieving_mailboxes": "Retrieving mailboxes..."
   },
   "fr": {
-    "mine_contacts": "Extraire des contacts de votre email",
+    "mine_contacts": "Extraire, nettoyer et enrichir vos contacts",
     "source": "Source",
     "mining": "Extraction",
     "cleaning": "Nettoyage",

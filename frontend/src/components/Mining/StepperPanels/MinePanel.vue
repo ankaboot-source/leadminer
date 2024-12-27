@@ -116,6 +116,7 @@
       />
     </div>
   </div>
+  <ImportDialog ref="importDialogRef" />
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -126,7 +127,9 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 import type { MiningSource } from '~/types/mining';
+import ImportDialog from '../ImportDialog.vue';
 
+const importDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -190,6 +193,11 @@ const progressTooltip = computed(() =>
 );
 
 onMounted(async () => {
+  if (!miningSource) {
+    importDialogRef.value.openModal();
+    return;
+  }
+
   if (
     activeMiningTask.value ||
     $leadminerStore.isLoadingBoxes ||
@@ -235,7 +243,11 @@ watch(extractionFinished, (finished) => {
 });
 
 function openMiningSettings() {
-  miningSettingsRef.value!.open();
+  if (miningSource) {
+    miningSettingsRef.value!.open();
+  } else {
+    importDialogRef.value.openModal();
+  }
 }
 
 async function startMining() {

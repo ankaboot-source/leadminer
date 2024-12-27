@@ -70,14 +70,6 @@
             @click="exportTable()"
           />
         </div>
-        <Button
-          id="import-csv"
-          icon="pi pi-upload"
-          :label="$screenStore.size.md ? t('import_csv') : undefined"
-          :disabled="isImportDisabled"
-          @click="importTable()"
-        />
-        <ImportDialog ref="importDialogRef" />
         <div>
           <EnrichButton
             source="datatable"
@@ -705,7 +697,6 @@ const EnrichButton = defineAsyncComponent(
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
 );
-const ImportDialog = defineAsyncComponent(() => import('./ImportDialog.vue'));
 
 const { t } = useI18n({
   useScope: 'local',
@@ -1057,12 +1048,6 @@ onUnmounted(() => {
   $screenStore.destroy();
   $contactsStore.$reset();
 });
-
-const importDialogRef = ref();
-const isImportDisabled = ref(false);
-function importTable() {
-  importDialogRef.value.openModal();
-}
 </script>
 
 <style>
@@ -1102,7 +1087,6 @@ table.p-datatable-table {
     "try_clearing_filters": "Try clearing filters",
     "select_at_least_one_contact": "Select at least one contact to export",
     "export_csv": "Export CSV",
-    "import_csv": "Import CSV",
     "clear": "Clear",
     "filter": "Filter",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
@@ -1149,7 +1133,6 @@ table.p-datatable-table {
     "try_clearing_filters": "Essayez de vider les filtres",
     "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
     "export_csv": "Export CSV",
-    "import_csv": "Import CSV",
     "clear": "Vider",
     "filter": "Filtrer",
     "toggle_valid_tooltip": "Assurez la délivrabilité de votre campagne",
