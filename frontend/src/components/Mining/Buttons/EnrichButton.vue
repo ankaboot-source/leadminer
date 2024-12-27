@@ -241,6 +241,11 @@ async function enrichPersonBulk(
   enrichAll: boolean,
   contacts: Partial<Contact>[],
 ) {
+  showNotification(
+    'success',
+    t('notification.summary'),
+    t('notification.enrichment_started', { toEnrich: contacts.length }),
+  );
   await $api<EnrichContactResponse>('/enrich/person/bulk', {
     method: 'POST',
     body: {
@@ -331,6 +336,7 @@ const isEnrichDisabled = computed(
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
       "summary": "Enrich",
+      "enrichment_started": "Enrichment on {toEnrich} contacts has started. Please wait a few minutes.",
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
@@ -350,6 +356,7 @@ const isEnrichDisabled = computed(
     "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
       "summary": "Enrichir",
+      "enrichment_started": "L'enrichissement de {toEnrich} contacts a commencé. Veuillez patienter quelques minutes.",
       "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",
