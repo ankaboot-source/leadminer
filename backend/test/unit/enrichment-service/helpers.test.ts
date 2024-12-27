@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   EnrichmentCache,
   enrichFromCache,
@@ -6,6 +5,7 @@ import {
   enrichPersonSync,
   getEnrichmentCache
 } from '../../../src/controllers/enrichment.helpers';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { Contact } from '../../../src/db/types';
 import ENV from '../../../src/config';
@@ -109,7 +109,7 @@ describe('enrichFromCache', () => {
     const result = await enrichFromCache(getCache, enrichmentsDB, contacts);
     expect(getCache).toHaveBeenCalledWith(contacts, EnrichmentService);
     expect(enrichmentsDB.enrich).toHaveBeenCalledWith(cached);
-    expect(logger.debug).toHaveBeenCalledWith('Contacts enriched from cache.', [
+    expect(logger.debug).toHaveBeenCalledWith('Enriched from cache.', [
       contacts[0].email,
       contacts[1].email
     ]);
@@ -165,7 +165,7 @@ describe('enrichFromCache', () => {
 
     expect(getCache).toHaveBeenCalledWith(contacts, expect.anything());
     expect(enrichmentsDB.enrich).toHaveBeenCalledWith(cached);
-    expect(logger.debug).toHaveBeenCalledWith('Contacts enriched from cache.', [
+    expect(logger.debug).toHaveBeenCalledWith('Enriched from cache.', [
       contacts[0].email
     ]);
     expect(result).toEqual([]);
