@@ -19,11 +19,11 @@
       @select="onSelectFile($event)"
     >
       <template #header> {{ null }} </template>
+
       <template #content>
-        <p v-if="contentJson">{{ t('description') }}</p>
-        <div>
+        <template v-if="contentJson">
+          <div>{{ t('description') }}</div>
           <DataTable
-            v-if="topFiveItems"
             :value="topFiveItems"
             show-gridlines
             pt:tablecontainer:class="grow"
@@ -31,10 +31,6 @@
             column-resize-mode="fit"
             row-hover
             striped-rows
-            paginator
-            :current-page-report-template="`({currentPage} ${$t('of')} {totalPages})`"
-            :rows="150"
-            :rows-per-page-options="[150, 500, 1000]"
             size="small"
             scrollable
           >
@@ -57,7 +53,6 @@
               </template>
 
               <template #body="{ data, field }">
-                {{ col.header }}
                 <template v-if="textareaFields.includes(field)">
                   <div>{{ data[field]?.join(', ') }}</div>
                 </template>
@@ -76,33 +71,31 @@
               </template>
             </Column>
           </DataTable>
+        </template>
 
-          <div v-else class="flex items-center justify-center flex-col">
-            <i
-              class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
-            />
-            <p class="mt-6 mb-0">{{ t('drag_and_drop') }}</p>
-            <Button
-              icon="pi pi-upload"
-              :label="t('choose_label')"
-              @click="fileUpload.choose()"
-            />
-            <div>{{ acceptedFiles }}</div>
-          </div>
+        <div v-else class="flex items-center justify-center flex-col">
+          <i
+            class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
+          />
+          <p class="mt-6 mb-0">{{ t('drag_and_drop') }}</p>
+          <Button
+            icon="pi pi-upload"
+            :label="t('choose_label')"
+            @click="fileUpload.choose()"
+          />
+          <div>{{ acceptedFiles }}</div>
         </div>
       </template>
     </FileUpload>
 
-    <template #footer>
-      <template v-if="topFiveItems">
-        <Button
-          :label="t('previous')"
-          severity="secondary"
-          icon="pi pi-arrow-left"
-          @click="reset()"
-        />
-        <Button :label="t('start_mining')" @click="visible = false" />
-      </template>
+    <template v-if="contentJson" #footer>
+      <Button
+        :label="t('previous')"
+        severity="secondary"
+        icon="pi pi-arrow-left"
+        @click="reset()"
+      />
+      <Button :label="t('start_mining')" @click="visible = false" />
     </template>
   </Dialog>
 </template>
@@ -155,7 +148,7 @@ const options = [
 
 const selectOptions = options;
 const selectedHeaders = computed(() =>
-  columns.value.map((col) => col.header).filter(Boolean),
+  columns.value?.map((col) => col.header).filter(Boolean),
 );
 
 async function onSelectFile($event: FileUploadSelectEvent) {
