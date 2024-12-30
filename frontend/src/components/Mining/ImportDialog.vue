@@ -116,11 +116,11 @@ const toast = useToast();
 const maxFileSize = 1000000; // 1MB
 const contentJson = ref(null) as Ref<object[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
-const topFiveItems = computed(() => contentJson.value?.slice(0, 5));
+const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const fileUpload = ref();
 
 const columns = ref();
-
+const parsedData = ref();
 const acceptedFiles = '.csv, .xls, .xlsx';
 const textareaFields = ['alternate_names', 'location', 'same_as'];
 
@@ -164,7 +164,15 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     } else {
       throw Error('Parsed CSV content is empty or invalid.');
     }
-
+    parsedData.value = contentJson.value.map((row) => {
+      const updatedRow: Record<string, any> = {};
+      Object.keys(row).forEach((key, colIndex) => {
+        const field = columns.value[colIndex]?.field || key;
+        updatedRow[field] = row[key];
+      });
+      return updatedRow;
+    });
+    console.log(parsedData.value);
     // Should verify
     toast.add({
       severity: 'info',
@@ -226,7 +234,10 @@ function createHeaders(rows: object[]) {
       (option) => option.label === key.replace(/\s/g, ''),
     ); // https://github.com/iuccio/csvToJson/pull/68
     return {
-      field: key,
+      field:
+        index === emailColumnIndex
+          ? 'email'
+          : matchingOption?.value || String(index),
       header:
         index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
     };
