@@ -60,15 +60,6 @@
                   {{ data[field] }}
                 </template>
               </template>
-
-              <template #editor="{ data, field }">
-                <template v-if="textareaFields.includes(field)">
-                  <Textarea v-model="data[field]" />
-                </template>
-                <template v-else>
-                  <InputText v-model="data[field]" autofocus fluid />
-                </template>
-              </template>
             </Column>
           </DataTable>
         </template>
