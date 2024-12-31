@@ -50,7 +50,7 @@ cd leadminer
 npm run install-deps
 ```
 
-**2. Autogenerate the appropriate environment configuration: **
+**2. Autogenerate the appropriate environment configuration:**
 
 We provide a script to generate `.env` files tailored to the environment you select. 
 
