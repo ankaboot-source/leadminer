@@ -77,9 +77,9 @@ We provide a script to generate `.env` files tailored to the environment you sel
 
 <details>
 <summary>
-    <span style="display: inline-block; font-weight: bold;" id="setup-email-verification-services">
+    <strong style="display: inline-block;" id="setup-email-verification-services">
       2. Setup external services
-    </span>
+    </strong>
 </summary>
 
 
