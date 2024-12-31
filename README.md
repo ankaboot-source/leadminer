@@ -65,6 +65,7 @@ We provide a script to generate `.env` files tailored to the environment you sel
   ```
 
 - **Local development (`env.master.dev`):**
+
   We provide preconfigured credentials and API mocks optimized for ease of development and testing. You can customize it too for running real third-party services instead of mocks.
 
   > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
