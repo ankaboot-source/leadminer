@@ -105,10 +105,10 @@ redirect_uri = ""
 # or any other third-party OIDC providers.
 url = ""
 [auth.external.azure]
-enabled = true
+enabled = false
 # Default google credentials for local development only.
-client_id = "1ee6bd18-c687-40ec-970e-6ca00b4e8e96"
-secret = "ST_8Q~-k_qxVDWYCKUG.k8KX7sTg10t7W6RK4dkJ"
+client_id = ""
+secret = ""
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
