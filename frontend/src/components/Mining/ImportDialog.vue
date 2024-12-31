@@ -9,7 +9,6 @@
     :draggable="false"
     maximizable
     @show="maximize()"
-    @hide="reset()"
   >
     <FileUpload
       ref="fileUpload"
@@ -18,11 +17,13 @@
       :choose-label="t('choose_label')"
       @select="onSelectFile($event)"
     >
-      <template #header> {{ null }} </template>
+      <template #header>
+        <div v-if="contentJson">{{ t('description') }}</div>
+        <template v-else> {{ null }}</template>
+      </template>
 
       <template #content>
         <template v-if="contentJson">
-          <div>{{ t('description') }}</div>
           <DataTable
             :value="topFiveItems"
             show-gridlines
@@ -39,7 +40,7 @@
                 <Select
                   v-model="col.header"
                   :pt:label:class="{ 'font-semibold': col.header === 'email' }"
-                  placeholder="Not to import"
+                  placeholder="Select a field"
                   option-value="value"
                   option-label="label"
                   :options="selectOptions"
@@ -53,12 +54,7 @@
               </template>
 
               <template #body="{ data, field }">
-                <template v-if="textareaFields.includes(field)">
-                  <div>{{ data[field]?.join(', ') }}</div>
-                </template>
-                <template v-else>
-                  {{ data[field] }}
-                </template>
+                {{ data[field] }}
               </template>
             </Column>
           </DataTable>
@@ -68,13 +64,13 @@
           <i
             class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
           />
-          <p class="mt-6 mb-0">{{ t('drag_and_drop') }}</p>
+          <p class="mt-4 mb-6">{{ t('drag_and_drop') }}</p>
           <Button
+            v-tooltip.bottom="'.csv, .xsls or .xls file max 2MB'"
             icon="pi pi-upload"
             :label="t('choose_label')"
             @click="fileUpload.choose()"
           />
-          <div>{{ acceptedFiles }}</div>
         </div>
       </template>
     </FileUpload>
@@ -86,7 +82,12 @@
         icon="pi pi-arrow-left"
         @click="reset()"
       />
-      <Button :label="t('start_mining')" @click="visible = false" />
+      <Button
+        class="border-solid border-2 border-black"
+        :label="t('start_mining')"
+        severity="contrast"
+        @click="startMining"
+      />
     </template>
   </Dialog>
 </template>
@@ -96,13 +97,18 @@ import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import { useToast } from 'primevue/usetoast';
 
+const source = 'file';
 const { t } = useI18n({
   useScope: 'local',
 });
+const $leadminerStore = useLeadminerStore();
 
+function startMining() {
+  visible.value = false;
+  $leadminerStore.startMining(source);
+}
 function maximize() {
   if (dialog.value.maximized) return;
-
   dialog.value.maximize();
 }
 const dialog = ref();
@@ -113,16 +119,14 @@ const openModal = () => {
 defineExpose({ openModal });
 
 const toast = useToast();
-const maxFileSize = 1000000; // 1MB
+const maxFileSize = 2000000; // 2MB
 const contentJson = ref(null) as Ref<object[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
 const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const fileUpload = ref();
-
 const columns = ref();
 const parsedData = ref();
 const acceptedFiles = '.csv, .xls, .xlsx';
-const textareaFields = ['alternate_names', 'location', 'same_as'];
 
 const options = [
   { value: 'name', label: 'Name' },
@@ -145,6 +149,7 @@ const selectedHeaders = computed(() =>
 async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
+  console.log('Selected file:', file);
   try {
     const content = await readFile(file);
     if (!content) throw Error();
@@ -172,8 +177,17 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       });
       return updatedRow;
     });
-    console.log(parsedData.value);
-    // Should verify
+
+    // Unique Email Array
+    $leadminerStore.selectedEmails = [
+      ...new Set(
+        parsedData.value
+          .map((row) => row.email)
+          .filter((row) => REGEX_EMAIL.test(row)),
+      ),
+    ];
+
+    console.log($leadminerStore.selectedEmails);
     toast.add({
       severity: 'info',
       summary: 'Success',
@@ -199,11 +213,12 @@ async function readFile(file: File): Promise<string | null> {
   });
 }
 
+const REGEX_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 function extractEmailColumnIndex(row: object) {
   const keys = Object.keys(row);
   const emailColumnIndex = keys.findIndex((key) => {
     const cellValue = String(row[key]).toLowerCase();
-    return /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(cellValue);
+    return REGEX_EMAIL.test(cellValue);
   });
   return emailColumnIndex;
 }
@@ -248,17 +263,23 @@ function reset() {
   fileUpload.value.clear();
   contentJson.value = null;
   columns.value = null;
+  $leadminerStore.selectedEmails = [];
 }
+// email: accent border
+// upload error: size, mandatory data (error), parsing error (mithel sajl file e5er b .csv),
+// l messages: ta7t l button
+// size da5lo fel i18n wel kol fard variable
 </script>
 <i18n lang="json">
 {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
     "choose_label": "Upload your file",
-    "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 lines.",
-    "drag_and_drop": "Drag and drop files to here to upload.",
-    "previous": "Previous",
-    "start_mining": "Start mining your contacts"
+    "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
+    "drag_and_drop": "Drag and drop files here.",
+    "previous": "Upload your file",
+    "start_mining": "Start mining now!",
+    "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under 2MB in size. Additionally, the file must include at least a column for email addresses."
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
@@ -266,7 +287,8 @@ function reset() {
     "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "previous": "Précédent",
-    "start_mining": "Commencer l'extraction de vos contacts"
+    "start_mining": "Commencer l'extraction de vos contacts",
+    "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser 2 Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail."
   }
 }
 </i18n>
