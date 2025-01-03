@@ -35,7 +35,7 @@
 
 ## 📦 How to run?
 
-To give it a try without the hassle of installation, [simply use leadminer.io](https://app.leadminer.io/auth/signup). For development purposes, jump directly to [set-up with supabase self-hosted](https://github.com/ankaboot-source/leadminer/?tab=readme-ov-file#running-with-supabase-self-hosted).
+To give it a try without the hassle of installation, [simply use leadminer.io](https://app.leadminer.io/auth/signup). For development purposes, jump directly to [Running with Supabase locally](#running-with-supabase-locally).
 
 > Note that this project integrates with third-party services for email cleaning and enrichment.
 
