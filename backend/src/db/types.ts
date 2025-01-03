@@ -46,11 +46,13 @@ export interface Person {
   familyName?: string;
   identifiers?: string[];
   alternateName?: string[];
+  alternateEmail?: string[];
   source: string;
 }
 
 export interface PointOfContact {
   name?: string;
+  plusAddress?: string;
   to: boolean;
   cc: boolean;
   bcc: boolean;

@@ -162,6 +162,7 @@ export default class EmailMessage {
               name: email.name,
               email: {
                 address: email.address,
+                plusAddress: email.plusAddress,
                 identifier: email.identifier,
                 domain: email.domain
               },
@@ -236,6 +237,7 @@ export default class EmailMessage {
           name: contact.name,
           email: {
             address: contact.email.address,
+            plusAddress: contact.email.plusAddress,
             identifier: contact.email.identifier,
             domain: contact.email.domain,
             domainType
@@ -254,6 +256,7 @@ export default class EmailMessage {
 
           const pointOfContact: PointOfContact = {
             name: validContact.name,
+            plusAddress: validContact.email.plusAddress,
             to: validContact.sourceField === 'to',
             cc: validContact.sourceField === 'cc',
             bcc: validContact.sourceField === 'bcc',
