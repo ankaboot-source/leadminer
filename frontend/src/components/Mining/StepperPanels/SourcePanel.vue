@@ -1,6 +1,5 @@
 <template>
   <div class="flex flex-col min-[1129px]:flex-row gap-2">
-    <!-- 1/3-2/3 fi 3oudh twa 40-60-->
     <div
       v-if="sourceOptions.length"
       class="w-full min-[1129px]:w-1/2 flex flex-col gap-3"
@@ -35,7 +34,7 @@
         />
       </div>
     </div>
-    <div v-if="sourceOptions.length">
+    <template v-if="sourceOptions.length">
       <Separator
         layout="vertical"
         :content="$t('common.or')"
@@ -46,8 +45,8 @@
         :content="$t('common.or')"
         class="flex min-[1129px]:hidden"
       />
-    </div>
-    <div class="shrink-0 flex flex-col gap-3">
+    </template>
+    <div class="shrink flex flex-col gap-3">
       <span>{{ t('mine_from') }}</span>
       <div class="flex flex-col min-[1129px]:flex-row gap-2 flex-wrap">
         <oauth-source icon="pi pi-google" label="Google" source="google" />
