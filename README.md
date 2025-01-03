@@ -40,7 +40,7 @@ To give it a try without the hassle of installation, [simply use leadminer.io](h
 > Note that this project integrates with third-party services for email cleaning and enrichment.
 
 <div>
-    <strong style="display: inline-block;" id="#prerequistes">
+    <strong style="display: inline-block;" id="prerequisites">
   	Prerequistes:
 	</strong>
     Make sure all the prerequisites are installed on your system
