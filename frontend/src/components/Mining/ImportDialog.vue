@@ -14,7 +14,7 @@
       ref="fileUpload"
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
-      :choose-label="t('choose_label')"
+      :choose-label="t('select_file_label')"
       @select="onSelectFile($event)"
     >
       <template #header>
@@ -39,8 +39,13 @@
               <template #header>
                 <Select
                   v-model="col.header"
-                  :pt:label:class="{ 'font-semibold': col.header === 'email' }"
-                  placeholder="Select a field"
+                  :pt:label:class="{
+                    'font-semibold': col.header === 'email',
+                  }"
+                  :class="{
+                    'border-[--p-primary-color]': col.header === 'email',
+                  }"
+                  :placeholder="t('select_column_placeholder')"
                   option-value="value"
                   option-label="label"
                   :options="selectOptions"
@@ -60,17 +65,26 @@
           </DataTable>
         </template>
 
-        <div v-else class="flex items-center justify-center flex-col">
+        <div v-else class="flex items-center justify-center flex-col gap-3">
           <i
             class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
           />
-          <p class="mt-4 mb-6">{{ t('drag_and_drop') }}</p>
+          <p>{{ t('drag_and_drop') }}</p>
           <Button
-            v-tooltip.bottom="'.csv, .xsls or .xls file max 2MB'"
+            v-tooltip.bottom="t('upload_tooltip', { maxSizeInMB })"
+            class="my-1"
             icon="pi pi-upload"
-            :label="t('choose_label')"
+            :label="t('select_file_label')"
             @click="fileUpload.choose()"
           />
+          <Message
+            v-if="uploadFailed"
+            severity="error"
+            size="small"
+            class="w-full md:w-2/4"
+          >
+            {{ t('upload_error', { maxSizeInMB }) }}
+          </Message>
         </div>
       </template>
     </FileUpload>
@@ -82,12 +96,20 @@
         icon="pi pi-arrow-left"
         @click="reset()"
       />
-      <Button
-        class="border-solid border-2 border-black"
-        :label="t('start_mining')"
-        severity="contrast"
-        @click="startMining"
-      />
+      <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
+      <div
+        v-tooltip.top="
+          !selectedHeaders.includes('email') && t('email_column_required')
+        "
+      >
+        <Button
+          class="border-solid border-2 border-black"
+          :label="t('start_mining')"
+          severity="contrast"
+          :disabled="!selectedHeaders.includes('email')"
+          @click="startMining"
+        />
+      </div>
     </template>
   </Dialog>
 </template>
@@ -103,15 +125,11 @@ const { t } = useI18n({
 });
 const $leadminerStore = useLeadminerStore();
 
-function startMining() {
-  visible.value = false;
-  $leadminerStore.startMining(source);
-}
+const dialog = ref();
 function maximize() {
   if (dialog.value.maximized) return;
   dialog.value.maximize();
 }
-const dialog = ref();
 const visible = ref(false);
 const openModal = () => {
   visible.value = true;
@@ -120,6 +138,7 @@ defineExpose({ openModal });
 
 const toast = useToast();
 const maxFileSize = 2000000; // 2MB
+const maxSizeInMB = maxFileSize / 1000000;
 const contentJson = ref(null) as Ref<object[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
 const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
@@ -127,6 +146,7 @@ const fileUpload = ref();
 const columns = ref();
 const parsedData = ref();
 const acceptedFiles = '.csv, .xls, .xlsx';
+const uploadFailed = ref(false);
 
 const options = [
   { value: 'name', label: 'Name' },
@@ -178,23 +198,15 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       return updatedRow;
     });
 
-    // Unique Email Array
-    $leadminerStore.selectedEmails = [
-      ...new Set(
-        parsedData.value
-          .map((row) => row.email)
-          .filter((row) => REGEX_EMAIL.test(row)),
-      ),
-    ];
-
-    console.log($leadminerStore.selectedEmails);
     toast.add({
       severity: 'info',
       summary: 'Success',
       detail: 'File Selected',
       life: 3000,
     });
+    uploadFailed.value = false;
   } catch (error) {
+    uploadFailed.value = true;
     reset();
     toast.add({
       severity: 'error',
@@ -204,6 +216,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     });
   }
 }
+
 async function readFile(file: File): Promise<string | null> {
   const reader = new FileReader();
   return new Promise((resolve, reject) => {
@@ -249,46 +262,63 @@ function createHeaders(rows: object[]) {
       (option) => option.label === key.replace(/\s/g, ''),
     ); // https://github.com/iuccio/csvToJson/pull/68
     return {
-      field:
-        index === emailColumnIndex
-          ? 'email'
-          : matchingOption?.value || String(index),
+      field: matchingOption?.value || String(index),
       header:
         index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
     };
   });
 }
 
+function startMining() {
+  const parsedDataWithMappedHeaders = parsedData.value.map((row) => {
+    const updatedRow: Record<string, any> = {};
+    columns.value.forEach((col) => {
+      if (col.header) {
+        updatedRow[col.header] = row[col.field];
+      }
+    });
+    return updatedRow;
+  });
+  if (!Object.keys(parsedDataWithMappedHeaders[0]).includes('email')) {
+    throw Error('An email field should be selected.');
+  }
+  $leadminerStore.selectedFileContacts = parsedDataWithMappedHeaders;
+  $leadminerStore.startMining(source);
+  visible.value = false;
+}
+
 function reset() {
   fileUpload.value.clear();
   contentJson.value = null;
   columns.value = null;
-  $leadminerStore.selectedEmails = [];
+  $leadminerStore.selectedFileContacts = [];
 }
-// email: accent border
-// upload error: size, mandatory data (error), parsing error (mithel sajl file e5er b .csv),
-// l messages: ta7t l button
-// size da5lo fel i18n wel kol fard variable
 </script>
 <i18n lang="json">
 {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
-    "choose_label": "Upload your file",
+    "select_file_label": "Upload your file",
     "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
     "drag_and_drop": "Drag and drop files here.",
     "previous": "Upload your file",
     "start_mining": "Start mining now!",
-    "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under 2MB in size. Additionally, the file must include at least a column for email addresses."
+    "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
+    "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
+    "select_column_placeholder": "Select a field",
+    "email_column_required": "Select an email field"
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
-    "choose_label": "Téléchargez votre fichier",
+    "select_file_label": "Téléchargez votre fichier",
     "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "previous": "Précédent",
     "start_mining": "Commencer l'extraction de vos contacts",
-    "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser 2 Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail."
+    "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
+    "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
+    "select_column_placeholder": "Sélectionnez un champ",
+    "email_column_required": "Sélectionnez un champ email"
   }
 }
 </i18n>

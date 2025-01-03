@@ -18,7 +18,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
-  const selectedEmails = ref<string[]>([]);
+  const selectedFileContacts = ref<string[]>([]);
 
   const isLoadingStartMining = ref(false);
   const isLoadingStopMining = ref(false);
@@ -52,7 +52,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];
-    selectedEmails.value = [];
+    selectedFileContacts.value = [];
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -224,7 +224,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         throw err;
       }
     } else if (source === 'file') {
-      console.log('mine file', selectedEmails.value);
+      console.log('mine file', selectedFileContacts.value);
     }
   }
 
@@ -288,7 +288,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource,
     boxes,
     selectedBoxes,
-    selectedEmails,
+    selectedFileContacts,
     isLoadingStartMining,
     isLoadingStopMining,
     isLoadingBoxes,
