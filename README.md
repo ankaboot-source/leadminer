@@ -21,9 +21,13 @@
 ## 📑 Table of contents
 
 - [📦 How to run?](#-how-to-run)
-  - [Setup email-verification services](#setup-email-verification-services)
+  - [Prerequistes](#prerequistes)
+  - [Clone the repository](#clone-repo)
+  - [Generate environment variables](#generate-env)
+  - [Setup third-party services (optional)](#setup-third-party-services)
   - [Running with Supabase SaaS](#running-with-supabase-saas)
-  - [Running with Supabase self-hosted](#running-with-supabase-self-hosted)
+  - [Running with Supabase locally](#running-with-supabase-locally)
+
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
@@ -31,9 +35,16 @@
 
 ## 📦 How to run?
 
-This project integrates with external services for full features. To give it a try without the hassle of installation, [simply use the SaaS version]( https://app.leadminer.io/auth/signup). For development purposes Jump directly to [set-up with supabase self-hosted](#running-with-supabase-self-hosted).
+To give it a try without the hassle of installation, [simply use leadminer.io](https://app.leadminer.io/auth/signup). For development purposes, jump directly to [set-up with supabase self-hosted](https://github.com/ankaboot-source/leadminer/?tab=readme-ov-file#running-with-supabase-self-hosted).
 
-**Prerequistes:** Make sure all the prerequisites are installed on your system
+> Note that this project integrates with third-party services for email cleaning and enrichment.
+
+<div>
+    <strong style="display: inline-block;" id="#prerequistes">
+  	Prerequistes:
+	</strong>
+    Make sure all the prerequisites are installed on your system
+</div>
 
 ```
 node -v
@@ -42,7 +53,11 @@ docker -v
 docker-compose -v
 ```
 
-**1. Clone the repository & install dependencies:**
+<div>
+    <strong style="display: inline-block;" id="clone-repo">
+     1. Clone the repository & install dependencies:
+    </strong>
+</div>
 
 ```bash
 git clone https://github.com/ankaboot-source/leadminer
@@ -50,41 +65,29 @@ cd leadminer
 npm run install-deps
 ```
 
-**2. Autogenerate the appropriate environment configuration:**
+<div>
+    <strong style="display: inline-block;" id="generate-env">
+     2. Generate environment variables:
+    </strong>
+</div>
 
-We provide a script to generate `.env` files tailored to the environment you select. 
+Run the bellow commands to generate a preconfigured `.env` file with credentials and API mocks, optimized for local development and testing. Expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions
 
-- **Production (`env.master.prod`):**
+> If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
-  You'll have to configure settings from scratch to ensure secure and customized deployment.
-
-  ```bash
-  # Expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions` 
-  chmod +x && ./generate_env env.master.prod
-  cp ./supabase/functions/.env.prod ./supabase/functions/.env
-  ```
-
-- **Local development (`env.master.dev`):**
-
-  We provide preconfigured credentials and API mocks optimized for ease of development and testing. You can customize it too for running real third-party services instead of mocks.
-
-  > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
-
-  ```bash
-  # Expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions` 
-  chmod +x && ./generate_env env.master.dev
-  cp ./supabase/functions/.env.dev ./supabase/functions/.env
-  ```
+```bash
+./generate_env env.master.dev
+cp ./supabase/functions/.env.dev ./supabase/functions/.env
+```
 
 <details>
 <summary>
-    <strong style="display: inline-block;" id="setup-email-verification-services">
-      3. Setup external services
+    <strong style="display: inline-block;" id="setup-third-party-services">
+      3. Setup third-party services (optional)
     </strong>
 </summary>
 
-
-We use external services for email verification. Configure at least one.
+External services for email verification.
 
 - **[Reacher](https://reacher.email/):** Use the SaaS version or self-host. Refer to [Reacher's documentation](https://help.reacher.email/) for setup.
 
@@ -101,7 +104,8 @@ We use external services for email verification. Configure at least one.
 </details>
 
 <details>
-<summary><h3 style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</h3></summary>
+<summary><strong style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</strong></summary>
+
 
 1. **Setup Supabase Instance:**
 
@@ -149,8 +153,7 @@ We use external services for email verification. Configure at least one.
 </details>
 
 <details open>
-<summary><h3 style="display:inline-block" id="running-with-supabase-self-hosted">Running with Supabase locally</h3></summary>
-
+<summary><strong style="display:inline-block" id="running-with-supabase-locally">Running with Supabase locally</strong></summary>
 
 1. **Start Supabase services:**
 
