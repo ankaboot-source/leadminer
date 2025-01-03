@@ -21,7 +21,7 @@
 ## 📑 Table of contents
 
 - [📦 How to run?](#-how-to-run)
-  - [Prerequistes](#prerequistes)
+  - [Prerequisites](#prerequisites)
   - [Clone the repository](#clone-repo)
   - [Generate environment variables](#generate-env)
   - [Setup third-party services (optional)](#setup-third-party-services)
