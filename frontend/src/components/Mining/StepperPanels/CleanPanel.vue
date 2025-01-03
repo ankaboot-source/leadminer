@@ -34,6 +34,7 @@
         @click="startNewMining"
       />
       <Button
+        v-tooltip="t('enrich_button_tooltip')"
         class="w-full md:w-max border-solid border-2 border-black"
         severity="contrast"
         :label="t('enrich_contacts', $contactsStore.selectedContactsCount)"
@@ -139,6 +140,7 @@ function startNewMining() {
 <i18n lang="json">
 {
   "en": {
+    "enrich_button_tooltip": "Extract public information on contacts I've already a relation with using third-party tools",
     "enrich_contacts": "Enrich {n} contacts",
     "contacts_to_clean": "estimated contact to clean. | estimated contacts to clean.",
     "contacts_cleaned": "contact cleaned. | contacts cleaned.",
@@ -152,6 +154,7 @@ function startNewMining() {
     "cleaning_already_canceled": "It seems you are trying to cancel a cleaning operation that is already canceled."
   },
   "fr": {
+    "enrich_button_tooltip": "Extraire des informations publiques sur les contacts avec lesquels je suis en relation à l'aide d'outils tiers.",
     "enrich_contacts": "Enrichissez {n} contacts",
     "contacts_to_clean": "contact estimé à nettoyer | contacts estimés à nettoyer",
     "contacts_cleaned": "contact nettoyé. | contacts nettoyés.",

@@ -55,6 +55,7 @@
   </Dialog>
   <Button
     :id="`${source}-enrich-button`"
+    v-tooltip="t('button.tooltip')"
     :class="{ 'border-solid border-2 border-black': bordered }"
     severity="contrast"
     icon-pos="right"
@@ -62,7 +63,6 @@
     pt:label:class="hidden md:block"
     :disabled="isEnrichDisabled"
     @click="openEnrichmentConfirmationDialog"
-    v-tooltip="t('button.tooltip')"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
@@ -209,6 +209,11 @@ async function enrichPerson(
   updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>,
 ) {
+  showNotification(
+    'success',
+    t('notification.summary'),
+    t('notification.enrichment_started_one', { toEnrich: 1 }),
+  );
   totalTasks.value = 1;
   await $api<EnrichContactResponse>('/enrich/person/', {
     method: 'POST',
@@ -337,6 +342,7 @@ const isEnrichDisabled = computed(
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
       "summary": "Enrich",
+      "enrichment_started_one": "Enrichment on {toEnrich} contact has started. Please wait a few minutes.",
       "enrichment_started": "Enrichment on {toEnrich} contacts has started. Please wait a few minutes.",
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
@@ -359,6 +365,7 @@ const isEnrichDisabled = computed(
     "notification": {
       "summary": "Enrichir",
       "enrichment_started": "L'enrichissement de {toEnrich} contacts a commencé. Veuillez patienter quelques minutes.",
+      "enrichment_started_one": "L'enrichissement de {toEnrich} contact a commencé. Veuillez patienter quelques minutes.",
       "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
       "enrichment_canceled": "L'enrichissement de votre contact a été annulé.",
       "already_enriched": "Ce contact est déjà enrichi.",

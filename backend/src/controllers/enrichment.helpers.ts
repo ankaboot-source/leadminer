@@ -84,10 +84,9 @@ export async function prepareForEnrichment(
   res: Response
 ) {
   const toEnrich = await getContactsToEnrich(userId, enrichAll, contacts);
-
   const { total, available } = await restrictOrDecline(userId, toEnrich.length);
 
-  if (total === 0) {
+  if (available === 0) {
     return res.status(402).json({ total, available });
   }
 
@@ -196,4 +195,5 @@ export async function enrichPersonAsync(
   if (result) {
     await enrichmentsDB.enrich([result]);
   }
+  return result;
 }
