@@ -224,7 +224,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         throw err;
       }
     } else if (source === 'file') {
-      console.log('mine file', selectedFileContacts.value);
+      console.log(selectedFileContacts.value);
     }
   }
 

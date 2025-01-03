@@ -139,11 +139,11 @@ defineExpose({ openModal });
 const toast = useToast();
 const maxFileSize = 2000000; // 2MB
 const maxSizeInMB = maxFileSize / 1000000;
-const contentJson = ref(null) as Ref<object[] | null>;
+const contentJson = ref(null) as Ref<Record<string, string>[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
 const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const fileUpload = ref();
-const columns = ref();
+const columns = ref<Column[]>([]);
 const parsedData = ref();
 const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
@@ -161,9 +161,20 @@ const options = [
   { value: 'image', label: 'Avatar URL' },
 ];
 
+type Column = {
+  field: string;
+  header: string | null;
+  key?: number;
+};
+type Row = Record<string, string>;
+
 const selectOptions = options;
 const selectedHeaders = computed(() =>
-  columns.value?.map((col) => col.header).filter(Boolean),
+  columns.value
+    ?.map((col: Column) => {
+      return col.header;
+    })
+    .filter(Boolean),
 );
 
 async function onSelectFile($event: FileUploadSelectEvent) {
@@ -179,7 +190,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       .supportQuotedField(true)
       .fieldDelimiter(',')
       .csvStringToJson(content);
-
+    console.log('contentJson', contentJson.value);
     if (
       Array.isArray(contentJson.value) &&
       contentJsonLength.value &&
@@ -189,8 +200,8 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     } else {
       throw Error('Parsed CSV content is empty or invalid.');
     }
-    parsedData.value = contentJson.value.map((row) => {
-      const updatedRow: Record<string, any> = {};
+    parsedData.value = contentJson.value.map((row: Row) => {
+      const updatedRow: Row = {};
       Object.keys(row).forEach((key, colIndex) => {
         const field = columns.value[colIndex]?.field || key;
         updatedRow[field] = row[key];
@@ -227,7 +238,7 @@ async function readFile(file: File): Promise<string | null> {
 }
 
 const REGEX_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
-function extractEmailColumnIndex(row: object) {
+function extractEmailColumnIndex(row: Row) {
   const keys = Object.keys(row);
   const emailColumnIndex = keys.findIndex((key) => {
     const cellValue = String(row[key]).toLowerCase();
@@ -236,7 +247,7 @@ function extractEmailColumnIndex(row: object) {
   return emailColumnIndex;
 }
 
-function getEmailColumnIndex(rows: object[], testLength: number) {
+function getEmailColumnIndex(rows: Row[], testLength: number) {
   let emailColumnIndex = extractEmailColumnIndex(rows[0]); // check if 1st row has email column
   if (emailColumnIndex !== -1) {
     // 2nd to 5th row should have emails on the same column
@@ -253,7 +264,7 @@ function getEmailColumnIndex(rows: object[], testLength: number) {
   console.log(`Email column detected at index ${emailColumnIndex}.`);
   return emailColumnIndex;
 }
-function createHeaders(rows: object[]) {
+function createHeaders(rows: Row[]) {
   const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
   const keys = Object.keys(rows[0]);
 
@@ -270,8 +281,8 @@ function createHeaders(rows: object[]) {
 }
 
 function startMining() {
-  const parsedDataWithMappedHeaders = parsedData.value.map((row) => {
-    const updatedRow: Record<string, any> = {};
+  const parsedDataWithMappedHeaders = parsedData.value.map((row: Row) => {
+    const updatedRow: Row = {};
     columns.value.forEach((col) => {
       if (col.header) {
         updatedRow[col.header] = row[col.field];
@@ -290,7 +301,7 @@ function startMining() {
 function reset() {
   fileUpload.value.clear();
   contentJson.value = null;
-  columns.value = null;
+  columns.value = [];
   $leadminerStore.selectedFileContacts = [];
 }
 </script>
