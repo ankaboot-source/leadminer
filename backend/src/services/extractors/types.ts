@@ -32,6 +32,7 @@ export interface EmailSendersRecipients {
 export interface RegexContact {
   domain: string;
   address: string;
+  plusAddress?: string;
   identifier: string;
   name?: string;
 }
@@ -40,6 +41,7 @@ export interface ContactLead {
   name?: string;
   email: {
     address: string;
+    plusAddress?: string;
     identifier: string;
     domain: string;
     domainType?: string;

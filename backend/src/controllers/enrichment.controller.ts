@@ -82,10 +82,11 @@ async function enrichPersonBulk(_: Request, res: Response, next: NextFunction) {
       contacts
     );
     const notEnriched = await enrichPersonSync(enrichmentsDB, notEnrichedCache);
+    const enrichAsyncResult = notEnriched.length
+      ? await enrichPersonAsync(enrichmentsDB, notEnriched)
+      : null;
 
-    if (notEnriched.length) {
-      await enrichPersonAsync(enrichmentsDB, notEnriched);
-    } else {
+    if (!enrichAsyncResult) {
       await enrichmentsDB.end();
     }
 

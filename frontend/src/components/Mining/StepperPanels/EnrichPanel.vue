@@ -58,11 +58,15 @@
       :start-on-mounted="true"
       :enrichment-realtime-callback="enrichmentRealtimeCallback"
       :enrichment-request-response-callback="enrichRequestResponseCallback"
-      :enrich-all-contacts="false"
+      :enrich-all-contacts="
+        $contactsStore.selectedContactsCount === $contactsStore.contactCount
+      "
       :contacts-to-enrich="
-        $contactsStore.contactsList?.filter(({ email }) =>
-          $contactsStore.selectedEmails?.includes(email),
-        )
+        $contactsStore.selectedContactsCount === $contactsStore.contactCount
+          ? $contactsStore.contactsList
+          : $contactsStore.contactsList?.filter(({ email }) =>
+              $contactsStore.selectedEmails?.includes(email),
+            )
       "
       :bordered="true"
       :skip-dialog="true"

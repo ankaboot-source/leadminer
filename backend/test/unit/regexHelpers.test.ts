@@ -160,8 +160,9 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       output: [
         {
           name: 'this is myyyyyyyyyyyyyyyy name',
-          identifier: 'tester+123',
-          address: 'tester+123@leadminer.io',
+          identifier: 'tester',
+          address: 'tester@leadminer.io',
+          plusAddress: 'tester+123@leadminer.io',
           domain: 'leadminer.io'
         }
       ]
@@ -175,28 +176,28 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
       {
         identifier: 'leadminer',
         address: 'leadminer@teamankaboot.fr',
-        domain: 'Teamankaboot.fr'
+        domain: 'teamankaboot.fr'
       }
     ];
     const testCases = [
       {
         description: 'Case where there is no name and email without <>',
-        input: 'leadminer@Teamankaboot.fr',
+        input: 'leadminer@teamankaboot.fr',
         output: generalOutput
       },
       {
         description: 'Case where there is no name and email with <>',
-        input: '<leadminer@Teamankaboot.fr>',
+        input: '<leadminer@teamankaboot.fr>',
         output: generalOutput
       },
       {
         description: 'Case where name is also email and email without <>',
-        input: 'leadminer@Teamankaboot.fr leadminer@Teamankaboot.fr',
+        input: 'leadminer@teamankaboot.fr leadminer@teamankaboot.fr',
         output: generalOutput
       },
       {
         description: 'Case where name is also email and email with <>',
-        input: 'leadminer@Teamankaboot.fr <leadminer@Teamankaboot.fr>',
+        input: 'leadminer@teamankaboot.fr <leadminer@teamankaboot.fr>',
         output: generalOutput
       }
     ];

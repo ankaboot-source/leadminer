@@ -71,8 +71,8 @@ export default class PgContacts implements Contacts {
     VALUES($1, $2, $3, $4, $5, $6, $7, $8);`;
 
   private static readonly INSERT_POC_SQL = `
-    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","user_id")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    INSERT INTO private.pointsofcontact("message_id","name","from","reply_to","to","cc","bcc","body","person_email","plus_address", "user_id")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
@@ -260,6 +260,7 @@ export default class PgContacts implements Contacts {
             pointOfContact.bcc,
             pointOfContact.body,
             person.email,
+            pointOfContact.plusAddress,
             userId
           ])
         ]);
