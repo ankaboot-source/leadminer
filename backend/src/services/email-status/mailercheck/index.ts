@@ -81,9 +81,8 @@ export default class MailerCheckEmailStatusVerifier
       let failedSuccessivePollAttempts = 0;
       const interval = setInterval(async () => {
         try {
-          const verificationStatus = await this.mailerCheckClient.getListStatus(
-            listId
-          );
+          const verificationStatus =
+            await this.mailerCheckClient.getListStatus(listId);
           failedSuccessivePollAttempts = 0;
           if (verificationStatus === 'done') {
             clearInterval(interval);
