@@ -14,6 +14,7 @@ export default function initializeMiningRoutes(
 
   const {
     startMining,
+    startMiningFile,
     stopMiningTask,
     getMiningTask,
     createProviderMiningSource,
@@ -39,6 +40,7 @@ export default function initializeMiningRoutes(
   );
 
   router.post('/mine/:userId', authMiddleware, startMining);
+  router.post('/mine/file/:userId', authMiddleware, startMiningFile);
   router.get('/mine/:userId/:id', authMiddleware, getMiningTask);
   router.post('/mine/:userId/:id', authMiddleware, stopMiningTask);
 

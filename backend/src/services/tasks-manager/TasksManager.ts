@@ -15,11 +15,11 @@ import {
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import ENV from '../../config';
-import EmailFetcherFactory from '../factory/EmailFetcherFactory';
-import { ImapEmailsFetcherOptions } from '../imap/types';
-import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import SupabaseTasks from '../../db/supabase/tasks';
 import logger from '../../utils/logger';
+import EmailFetcherFactory from '../factory/EmailFetcherFactory';
+import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
+import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
 
 export default class TasksManager {
@@ -219,6 +219,100 @@ export default class TasksManager {
 
       this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
       fetch.instance.start();
+
+      await Promise.all(
+        [extract, clean].map((p) =>
+          this.pubsubSendMessage(miningId, 'REGISTER', p.details.stream)
+        )
+      );
+
+      this.redisSubscriber.subscribe(miningId, (err) => {
+        if (err) {
+          logger.error('Failed subscribing to Redis.', err);
+        }
+      });
+
+      return redactSensitiveData(miningTask);
+    } catch (error) {
+      logger.error('Error when creating task', error);
+      throw error;
+    }
+  }
+
+  async createTaskFile(fileName: string, data: Object[], userId: string) {
+    try {
+      const { miningId, stream } = await this.generateTaskInformation();
+      const {
+        messagesStream,
+        messagesConsumerGroup,
+        emailsStream,
+        emailsConsumerGroup
+      } = stream;
+
+      const progressHandlerSSE = this.sseBroadcasterFactory.create();
+
+      const miningTask: MiningTask = {
+        userId,
+        miningId,
+        progressHandlerSSE,
+        process: {
+          extract: {
+            userId,
+            category: TaskCategory.Mining,
+            type: TaskType.Extract,
+            status: TaskStatus.Running,
+            details: {
+              miningId,
+              stream: {
+                messagesStream,
+                messagesConsumerGroup,
+                emailsVerificationStream: emailsStream
+              },
+              progress: {
+                extracted: 0
+              }
+            }
+          },
+          clean: {
+            userId,
+            category: TaskCategory.Cleaning,
+            type: TaskType.Clean,
+            status: TaskStatus.Running,
+            details: {
+              miningId,
+              stream: {
+                emailsStream,
+                emailsConsumerGroup
+              },
+              progress: {
+                verifiedContacts: 0,
+                createdContacts: 0
+              }
+            }
+          }
+        },
+        progress: {
+          totalMessages: 0,
+          fetched: 0,
+          extracted: 0,
+          verifiedContacts: 0,
+          createdContacts: 0
+        },
+        startedAt: performance.now()
+      };
+
+      const { process } = miningTask;
+      const { extract, clean } = process;
+
+      const taskExtract = await this.tasksResolver.create(extract);
+      const taskClean = await this.tasksResolver.create(clean);
+
+      miningTask.process.extract.id = taskExtract.id;
+      miningTask.process.clean.id = taskClean.id;
+      miningTask.process.extract.startedAt = taskExtract.startedAt;
+      miningTask.process.clean.startedAt = taskClean.startedAt;
+
+      this.ACTIVE_MINING_TASKS.set(miningId, miningTask);
 
       await Promise.all(
         [extract, clean].map((p) =>

@@ -143,6 +143,7 @@ const contentJson = ref(null) as Ref<Record<string, string>[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
 const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const fileUpload = ref();
+const fileName = ref<string>();
 const columns = ref<Column[]>([]);
 const parsedData = ref();
 const acceptedFiles = '.csv, .xls, .xlsx';
@@ -180,7 +181,8 @@ const selectedHeaders = computed(() =>
 async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
-  console.log('Selected file:', file);
+  fileName.value = file.name;
+  console.log('Selected file:', file, fileName.value);
   try {
     const content = await readFile(file);
     if (!content) throw Error();
@@ -281,19 +283,24 @@ function createHeaders(rows: Row[]) {
 }
 
 function startMining() {
-  const parsedDataWithMappedHeaders = parsedData.value.map((row: Row) => {
-    const updatedRow: Row = {};
-    columns.value.forEach((col) => {
-      if (col.header) {
-        updatedRow[col.header] = row[col.field];
-      }
-    });
-    return updatedRow;
-  });
+  const parsedDataWithMappedHeaders: Row[] = parsedData.value.map(
+    (row: Row) => {
+      const updatedRow: Row = {};
+      columns.value.forEach((col) => {
+        if (col.header) {
+          updatedRow[col.header] = row[col.field];
+        }
+      });
+      return updatedRow;
+    },
+  );
   if (!Object.keys(parsedDataWithMappedHeaders[0]).includes('email')) {
     throw Error('An email field should be selected.');
   }
-  $leadminerStore.selectedFileContacts = parsedDataWithMappedHeaders;
+  $leadminerStore.selectedFile = {
+    name: fileName.value ?? '',
+    contacts: parsedDataWithMappedHeaders,
+  };
   $leadminerStore.startMining(source);
   visible.value = false;
 }
@@ -302,7 +309,8 @@ function reset() {
   fileUpload.value.clear();
   contentJson.value = null;
   columns.value = [];
-  $leadminerStore.selectedFileContacts = [];
+  fileName.value = undefined;
+  $leadminerStore.selectedFile = null;
 }
 </script>
 <i18n lang="json">

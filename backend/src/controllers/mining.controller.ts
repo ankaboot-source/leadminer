@@ -10,12 +10,12 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
+import { validateType } from '../utils/helpers/validation';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
   sanitizeImapInput
 } from './imap.helpers';
-import { validateType } from '../utils/helpers/validation';
 import {
   getAuthClient,
   getTokenConfig,
@@ -250,6 +250,49 @@ export default function initializeMiningController(
         }
         await imapConnectionProvider.cleanPool();
 
+        if (
+          err instanceof Error &&
+          err.message.toLowerCase().startsWith('invalid credentials')
+        ) {
+          return res.status(401).json({ message: err.message });
+        }
+        if (
+          err instanceof Error &&
+          'textCode' in err &&
+          err.textCode === 'CANNOT'
+        ) {
+          return res.sendStatus(409);
+        }
+
+        const newError = generateErrorObjectFromImapError(err);
+
+        res.status(500);
+        return next(new Error(newError.message));
+      }
+
+      return res.status(201).send({ error: null, data: miningTask });
+    },
+
+    async startMiningFile(req: Request, res: Response, next: NextFunction) {
+      const user = res.locals.user as User;
+
+      const {
+        miningSource: { fileName },
+        data
+      }: {
+        miningSource: {
+          fileName: string;
+        };
+        data: Object[];
+      } = req.body;
+
+      const userId = user.id;
+
+      let miningTask = null;
+
+      try {
+        miningTask = await tasksManager.createTaskFile(fileName, data, userId);
+      } catch (err) {
         if (
           err instanceof Error &&
           err.message.toLowerCase().startsWith('invalid credentials')

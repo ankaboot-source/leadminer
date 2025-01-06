@@ -163,7 +163,7 @@ const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
   if (source.value === 'file') {
-    return $leadminerStore.selectedFileContacts.length;
+    return $leadminerStore.selectedFile?.contacts.length || 0;
   }
 
   if (source.value === 'boxes' && boxes.value[0]) {
