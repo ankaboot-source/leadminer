@@ -71,7 +71,7 @@ npm run install-deps
     </strong>
 </div>
 
-Run the bellow commands to generate a preconfigured `.env` file with credentials and API mocks, optimized for local development and testing. Expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions
+Run the bellow commands to generate a preconfigured `.env` file with credentials and API mocks, optimized for local development and testing. Expect 3 `.env` files created in `./backend` `./frontend` `./supabase/functions`
 
 > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
