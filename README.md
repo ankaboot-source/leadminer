@@ -41,7 +41,7 @@ To give it a try without the hassle of installation, [simply use leadminer.io](h
 
 <div>
     <strong style="display: inline-block;" id="prerequisites">
-  	Prerequistes:
+  	Prerequisites:
 	</strong>
     Make sure all the prerequisites are installed on your system
 </div>
