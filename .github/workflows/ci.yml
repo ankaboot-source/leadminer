@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'backend/**'
-      - 'frontend/**'
+  workflow_run:
+    workflows: ["Auto Merge Snyk Branches"]
+    types:
+      - completed
+
 
 jobs:
   backend:

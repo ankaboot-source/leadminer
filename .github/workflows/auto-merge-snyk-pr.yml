@@ -1,0 +1,58 @@
+name: Auto Merge Snyk Branches
+
+on:
+  push:
+    branches:
+      - 'snyk*'  # Trigger when changes are pushed to any snyk branch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # fetch all refs
+
+      # Get the PR associated with the snyk branch
+      - name: Get PR from snyk branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 10 # delay the PR check to prevent checking before the PR is opened
+          echo "Looking for PR related to ${{ github.ref_name }}"
+          pr_number=$(gh pr list --state open --head ${{ github.ref_name }} --json number -q '.[0].number')
+          if [ -z "$pr_number" ]; then
+            echo "No PR found for ${{ github.ref_name }}."
+            exit 0
+          fi
+          echo "Found PR number: $pr_number"
+          echo "pr_number=$pr_number" >> "$GITHUB_ENV"
+
+      - name: Check for Merge Conflicts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check mergeability status using GitHub CLI
+          sleep 10
+          echo "Checking mergeability of PR $pr_number."
+          pr_mergeable=$(gh pr view "$pr_number" --json mergeable -q '.mergeable')
+          if [[ "$pr_mergeable" == "MERGEABLE" ]]; then
+            echo "The PR can be merged."
+          else
+            echo "The PR can't be merged."
+            exit 1
+          fi
+
+      # Merge the pull request
+      - name: Auto Merge Snyk PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge ${{env.pr_number}} --squash --delete-branch

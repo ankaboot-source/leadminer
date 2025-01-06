@@ -1,18 +1,22 @@
 import { Logger } from 'winston';
-import ProxyCurl, { ProfileExtra, ReverseEmailLookupResponse } from './client';
-import {
-  EmailEnricher,
-  EnricherResult,
-  EnrichWebhookResponse,
-  Person
-} from '../EmailEnricher';
+import { Engine, EngineResponse, Person } from '../Engine';
+import ProxycurlApi, {
+  ProfileExtra,
+  ReverseEmailLookupResponse
+} from './client';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../utils';
 
-export default class ProxyCurlEmailEnricher implements EmailEnricher {
+export default class Proxycurl implements Engine {
   constructor(
-    private readonly client: ProxyCurl,
+    private readonly client: ProxycurlApi,
     private readonly logger: Logger
   ) {}
+
+  readonly name = 'proxycurl';
+
+  readonly isSync = true;
+
+  readonly isAsync = false;
 
   static getProfileUrls(profile: ProfileExtra): string[] {
     const urls: string[] = [];
@@ -33,10 +37,31 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
     return urls;
   }
 
-  enrichmentMapper(data: ReverseEmailLookupResponse[]): {
-    raw_data: unknown[];
-    data: EnricherResult[];
-  } {
+  // eslint-disable-next-line class-methods-use-this
+  isValid(contact: Partial<Person>) {
+    return Boolean(contact.email);
+  }
+
+  async enrichSync(person: Partial<Person>) {
+    try {
+      this.logger.debug(`${this.constructor.name}.enrichSync request`, person);
+      const response = await this.client.reverseEmailLookup({
+        lookup_depth: 'superficial',
+        enrich_profile: 'enrich',
+        email: person.email as string
+      });
+      return this.parseResult([response]);
+    } catch (err) {
+      throw new Error((err as Error).message);
+    }
+  }
+
+  enrichAsync(_: Partial<Person>[], __: string): Promise<EngineResponse> {
+    this.logger.debug(`${this.constructor.name}.enrichSync request`, _, __);
+    throw new Error('Method not implemented.');
+  }
+
+  parseResult(data: ReverseEmailLookupResponse[]) {
     const [response] = data;
     const mapped = [
       {
@@ -66,7 +91,7 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
           response?.linkedin_profile_url,
           response?.facebook_profile_url,
           response?.twitter_profile_url,
-          ...ProxyCurlEmailEnricher.getProfileUrls(response?.profile?.extra)
+          ...Proxycurl.getProfileUrls(response?.profile?.extra)
         ])
       }
     ]
@@ -79,41 +104,14 @@ export default class ProxyCurlEmailEnricher implements EmailEnricher {
       .pop();
 
     this.logger.debug(
-      `[${this.constructor.name}]-[enrichmentMapper]: Parsing results`,
+      `[${this.constructor.name}]-[parseResult]: Parsing results`,
       mapped
     );
 
     return {
+      engine: this.name,
       data: mapped ? [{ email: response.email, ...mapped }] : [],
       raw_data: [response]
     };
-  }
-
-  async enrichSync(
-    person: Partial<Person>
-  ): Promise<{ raw_data: unknown[]; data: EnricherResult[] }> {
-    try {
-      this.logger.debug(`${this.constructor.name}.enrichSync request`, person);
-      const response = await this.client.reverseEmailLookup({
-        lookup_depth: 'superficial',
-        enrich_profile: 'enrich',
-        email: person.email as string
-      });
-      return this.enrichmentMapper([response]);
-    } catch (err) {
-      throw new Error((err as Error).message);
-    }
-  }
-
-  enrichAsync(
-    _persons: Partial<Person>[],
-    __webhook: string
-  ): Promise<EnrichWebhookResponse> {
-    this.logger.debug(
-      `${this.constructor.name}.enrichSync request`,
-      _persons,
-      __webhook
-    );
-    throw new Error('Method not implemented.');
   }
 }

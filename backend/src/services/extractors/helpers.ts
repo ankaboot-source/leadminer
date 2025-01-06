@@ -52,6 +52,7 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
     const {
       name = undefined,
       address = undefined,
+      plusAddress = undefined,
       identifier,
       domain,
       tld
@@ -67,11 +68,19 @@ export function extractNameAndEmail(emails: string): RegexContact[] {
         ? cleanedName
         : undefined;
 
+    const finalTld = tld.toLocaleLowerCase();
+    const finalDomain = `${domain.toLocaleLowerCase()}.${finalTld}`;
+    const finalIdentifier = identifier.toLocaleLowerCase();
+    const finalPlusAddress = plusAddress?.toLocaleLowerCase();
+
     result.push({
+      identifier: finalIdentifier,
       name: finalName,
-      address: address.toLowerCase(),
-      identifier,
-      domain: `${domain}.${tld}`
+      domain: finalDomain,
+      address: `${finalIdentifier}@${finalDomain}`,
+      plusAddress: finalPlusAddress
+        ? `${finalIdentifier}${finalPlusAddress}@${finalDomain}`
+        : undefined
     });
   }
 

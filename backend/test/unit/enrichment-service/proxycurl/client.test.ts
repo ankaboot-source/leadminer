@@ -1,11 +1,11 @@
-import axios from 'axios';
-import { Logger } from 'winston';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import ProxyCurl, {
-  Config,
+
+import { Logger } from 'winston';
+import axios from 'axios';
+import ProxycurlApi, {
   ReverseEmailLookupParams,
   ReverseEmailLookupResponse
-} from '../../../../src/services/email-enrichment/proxy-curl/client';
+} from '../../../../src/services/enrichment/proxy-curl/client';
 
 // Mock dependencies
 jest.mock('axios');
@@ -20,8 +20,8 @@ const mockAxiosInstance = {
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-describe('ProxyCurl', () => {
-  const config: Config = {
+describe('ProxycurlApi', () => {
+  const config = {
     url: 'https://api.example.com',
     apiKey: 'dummy-api-key',
     rateLimiter: {
@@ -32,7 +32,7 @@ describe('ProxyCurl', () => {
     }
   };
 
-  const proxyCurl = new ProxyCurl(config, mockLogger);
+  const proxyCurl = new ProxycurlApi(config, mockLogger);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,10 +59,10 @@ describe('ProxyCurl', () => {
 
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(3); // Initial attempt + 2 retries
       expect(mockLogger.info).toHaveBeenCalledWith(
-        '[ProxyCurl:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
+        '[ProxycurlApi:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
       );
       expect(mockLogger.info).toHaveBeenCalledWith(
-        '[ProxyCurl:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 2 waiting 4000ms before retry'
+        '[ProxycurlApi:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 2 waiting 4000ms before retry'
       );
       expect(response.email).toBe(params.email);
     }, 10000);
@@ -81,7 +81,7 @@ describe('ProxyCurl', () => {
       await expect(proxyCurl.reverseEmailLookup(params)).rejects.toThrow();
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
       expect(mockLogger.info).not.toHaveBeenCalledWith(
-        '[ProxyCurl:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
+        '[ProxycurlApi:rateLimitRetryWithExponentialBackoff] Rate limited, retrying attempt 1 waiting 2000ms before retry'
       );
     });
 

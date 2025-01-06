@@ -1,9 +1,5 @@
 import { Details, Status } from '../services/email-status/EmailStatusVerifier';
-import {
-  TaskCategory,
-  TaskStatus,
-  TaskType
-} from '../services/tasks-manager/types';
+
 import { REACHABILITY } from '../utils/constants';
 
 export interface ExtractionResult {
@@ -49,12 +45,14 @@ export interface Person {
   givenName?: string;
   familyName?: string;
   identifiers?: string[];
-  alternateNames?: string[];
+  alternateName?: string[];
+  alternateEmail?: string[];
   source: string;
 }
 
 export interface PointOfContact {
   name?: string;
+  plusAddress?: string;
   to: boolean;
   cc: boolean;
   bcc: boolean;
@@ -87,7 +85,7 @@ export interface Contact {
   tags?: Tag[];
   given_name?: string;
   family_name?: string;
-  alternate_names?: string[];
+  alternate_name?: string[];
   location?: string[];
   works_for?: string;
   job_title?: string;
@@ -101,6 +99,25 @@ export interface Profile {
   credits: number;
   stripe_customer_id: string;
 }
+export enum TaskType {
+  Fetch = 'fetch',
+  Extract = 'extract',
+  Clean = 'clean',
+  Enrich = 'enrich'
+}
+
+export enum TaskCategory {
+  Mining = 'mining',
+  Enriching = 'enriching',
+  Cleaning = 'cleaning'
+}
+
+export enum TaskStatus {
+  Running = 'running',
+  Canceled = 'canceled',
+  Done = 'done'
+}
+
 export interface SupabaseTask {
   id?: string;
   user_id: string;

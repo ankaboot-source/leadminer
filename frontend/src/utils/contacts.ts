@@ -21,11 +21,10 @@ export function convertDates(data: Contact[]) {
 
 export async function getContacts(userId: string) {
   const $supabaseClient = useSupabaseClient();
-  const { data, error } = await $supabaseClient.rpc(
-    'get_contacts_table',
-    // @ts-expect-error: Issue with @nuxt/supabase typing
-    { user_id: userId },
-  );
+  const { data, error } = await $supabaseClient
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
+    .rpc('get_contacts_table', { user_id: userId });
 
   if (error) {
     throw error;
@@ -48,6 +47,8 @@ export async function getOrganization(
 ) {
   const $supabaseClient = useSupabaseClient();
   const { data: existingOrg, error } = await $supabaseClient
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
     .from('organizations')
     .select(selectFields.join(','))
     .match(match)
@@ -74,8 +75,9 @@ export async function createOrganization(
 ) {
   const $supabaseClient = useSupabaseClient();
   const { data: newOrg, error } = await $supabaseClient
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
     .from('organizations')
-    // @ts-expect-error: Issue with @nuxt/supabase typing
     .insert({ name: organizationName })
     .select(selectFields.join(','))
     .single<Organization>();
@@ -103,8 +105,9 @@ export async function updateContact(userId: string, contact: Partial<Contact>) {
   }
 
   const { error } = await $supabaseClient
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
     .from('persons')
-    // @ts-expect-error: Issue with @nuxt/supabase typing
     .update(contact)
     .match({ user_id: userId, email: contact.email });
 

@@ -6,17 +6,18 @@ import {
   it,
   jest
 } from '@jest/globals';
+
 import { Logger } from 'winston';
+import VoilanorbertApi, {
+  ResponseWebhook
+} from '../../../../src/services/enrichment/voilanorbert/client';
 import { Person } from '../../../../src/db/types';
-import VoilanorbertEmailEnricher from '../../../../src/services/email-enrichment/voilanorbert';
-import Voilanorbert, {
-  VoilanorbertWebhookResult
-} from '../../../../src/services/email-enrichment/voilanorbert/client';
+import Voilanorbert from '../../../../src/services/enrichment/voilanorbert';
 
-jest.mock('../../../../src/services/email-enrichment/voilanorbert/client');
+jest.mock('../../../../src/services/enrichment/voilanorbert/client');
 
-describe('VoilanorbertEmailEnricher', () => {
-  let enricher: VoilanorbertEmailEnricher;
+describe('Voilanorbert', () => {
+  let enricher: Voilanorbert;
   const mockLogger = {
     debug: jest.fn(),
     error: jest.fn()
@@ -24,10 +25,10 @@ describe('VoilanorbertEmailEnricher', () => {
   const mockClient = {
     enrich: jest.fn(),
     enrichBulk: jest.fn()
-  } as Partial<jest.Mocked<Voilanorbert>> as jest.Mocked<Voilanorbert>;
+  } as Partial<jest.Mocked<VoilanorbertApi>> as jest.Mocked<VoilanorbertApi>;
 
   beforeEach(() => {
-    enricher = new VoilanorbertEmailEnricher(mockClient, mockLogger);
+    enricher = new Voilanorbert(mockClient, mockLogger);
   });
 
   afterEach(() => {
@@ -55,9 +56,14 @@ describe('VoilanorbertEmailEnricher', () => {
         ['test1@example.com', 'test2@example.com'],
         webhook
       );
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        engine: 'voilanorbert',
+        data: [],
+        raw_data: [],
+        token: mockResponse.token
+      });
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Got VoilanorbertEmailEnricher.enrichAsync request',
+        'Got Voilanorbert.enrichAsync request',
         persons
       );
     });
@@ -77,15 +83,15 @@ describe('VoilanorbertEmailEnricher', () => {
       );
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Got VoilanorbertEmailEnricher.enrichAsync request',
+        'Got Voilanorbert.enrichAsync request',
         persons
       );
     });
   });
 
-  describe('enrichmentMapper', () => {
-    it('should correctly map VoilanorbertWebhookResult to EnricherResult format', () => {
-      const mockWebhookResult: VoilanorbertWebhookResult = {
+  describe('parseResult', () => {
+    it('should correctly map ResponseWebhook to EnricherResult format', () => {
+      const mockWebhookResult: ResponseWebhook = {
         id: '123',
         token: 'testToken',
         results: [
@@ -133,6 +139,7 @@ describe('VoilanorbertEmailEnricher', () => {
       };
 
       const expectedMappedData = {
+        engine: 'voilanorbert',
         data: [
           {
             email: 'valid@example.com',
@@ -169,12 +176,12 @@ describe('VoilanorbertEmailEnricher', () => {
         raw_data: mockWebhookResult.results
       };
 
-      const result = enricher.enrichmentMapper(mockWebhookResult);
+      const result = enricher.parseResult([mockWebhookResult]);
 
       expect(result).toEqual(expectedMappedData);
       expect(mockLogger.debug).toHaveBeenCalledWith(
-        '[VoilanorbertEmailEnricher]-[enrichmentMapper]: Parsing enrichment results',
-        mockWebhookResult
+        '[Voilanorbert]-[parseResult]: Parsing enrichment results',
+        [mockWebhookResult]
       );
     });
   });

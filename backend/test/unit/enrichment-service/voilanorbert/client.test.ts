@@ -6,11 +6,10 @@ import {
   it,
   jest
 } from '@jest/globals';
-import axios from 'axios';
+
 import { Logger } from 'winston';
-import Voilanorbert, {
-  EnrichAsyncResponse
-} from '../../../../src/services/email-enrichment/voilanorbert/client';
+import axios from 'axios';
+import VoilanorbertApi from '../../../../src/services/enrichment/voilanorbert/client';
 import { logError } from '../../../../src/utils/axios';
 
 jest.mock('axios');
@@ -25,7 +24,7 @@ jest.mock('../../../../src/utils/axios', () => ({
   logError: jest.fn()
 }));
 
-describe('Voilanorbert', () => {
+describe('VoilanorbertApi', () => {
   const mockLogger = {
     info: jest.fn(),
     error: jest.fn()
@@ -41,10 +40,10 @@ describe('Voilanorbert', () => {
     }
   };
 
-  let voilanorbert: Voilanorbert;
+  let voilanorbert: VoilanorbertApi;
 
   beforeEach(() => {
-    voilanorbert = new Voilanorbert(config, mockLogger);
+    voilanorbert = new VoilanorbertApi(config, mockLogger);
   });
 
   afterEach(() => {
@@ -56,7 +55,7 @@ describe('Voilanorbert', () => {
       const emails = ['test@example.com'];
       const webhook = 'webhook-url';
 
-      const mockResponse: EnrichAsyncResponse = {
+      const mockResponse = {
         status: 'success',
         success: true,
         token: 'testToken'

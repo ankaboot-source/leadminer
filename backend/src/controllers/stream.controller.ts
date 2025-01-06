@@ -18,7 +18,7 @@ export default function initializeStreamController(tasksManager: TasksManager) {
           res.status(401).json({ error: { message: 'User not authorized.' } });
           return;
         }
-
+        logger.debug(`Attaching sse connection for taskId ${taskId}`);
         tasksManager.attachSSE(taskId, { req, res });
       } catch (error) {
         res.status(404);
@@ -31,6 +31,9 @@ export default function initializeStreamController(tasksManager: TasksManager) {
 
       req.on('close', async () => {
         try {
+          logger.debug(
+            `Closing sse connection and deleting task for taskId ${taskId}`
+          );
           await tasksManager.deleteTask(taskId, null);
         } catch (error) {
           logger.error(

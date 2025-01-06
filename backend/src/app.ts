@@ -1,24 +1,26 @@
 import * as Sentry from '@sentry/node';
+
 import express, { json, urlencoded } from 'express';
+
 import { Logger } from 'winston';
-import ENV from './config';
+import AuthResolver from './services/auth/AuthResolver';
+import Billing from './utils/billing-plugin';
 import { Contacts } from './db/interfaces/Contacts';
+import ENV from './config';
 import { MiningSources } from './db/interfaces/MiningSources';
+import TasksManager from './services/tasks-manager/TasksManager';
 import { Users } from './db/interfaces/Users';
 import corsMiddleware from './middleware/cors';
 import errorHandler from './middleware/errorHandler';
 import errorLogger from './middleware/errorLogger';
-import notFound from './middleware/notFound';
-import initializeSentry from './middleware/sentry';
 import initializeAuthRoutes from './routes/auth.routes';
 import initializeContactsRoutes from './routes/contacts.routes';
 import initializeEnrichmentRoutes from './routes/enrichment.routes';
 import initializeImapRoutes from './routes/imap.routes';
 import initializeMiningRoutes from './routes/mining.routes';
+import initializeSentry from './middleware/sentry';
 import initializeStreamRouter from './routes/stream.routes';
-import AuthResolver from './services/auth/AuthResolver';
-import TasksManager from './services/tasks-manager/TasksManager';
-import Billing from './utils/billing-plugin';
+import notFound from './middleware/notFound';
 
 export default function initializeApp(
   authResolver: AuthResolver,
@@ -57,10 +59,7 @@ export default function initializeApp(
     initializeMiningRoutes(tasksManager, miningSources, authResolver)
   );
   app.use('/api', initializeContactsRoutes(contacts, authResolver));
-  app.use(
-    '/api/enrich',
-    initializeEnrichmentRoutes(userResolver, authResolver)
-  );
+  app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
 
   if (ENV.SENTRY_DSN) {
     Sentry.setupExpressErrorHandler(app);
