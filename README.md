@@ -26,9 +26,6 @@
   - [Generate environment variables](#generate-env)
   - [Setup third-party services (optional)](#setup-third-party-services)
   - [Running with Supabase](#running-with-supabase)
-    - [Running with Supabase SaaS](#running-with-supabase-saas)
-    - [Running with Supabase locally](#running-with-supabase-locally)
-  - [Launch the app](#launch-app)
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
@@ -77,8 +74,8 @@ Run the bellow commands to generate a preconfigured `.env` file with credentials
 > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
 ```bash
-chmod +x ./generate_env.sh
-./generate_env.sh .env.master.dev
+chmod +x generate_env.sh &&
+npm run dev:generate_env &&
 cp ./supabase/functions/.env.dev ./supabase/functions/.env
 ```
 
@@ -109,8 +106,11 @@ External services for email verification.
 <strong style="display: inline-block;" id="running-with-supabase">
   4. Running with Supabase
 </strong>
+    <br>
+    You could either set-up leadminer using Supabase locally or Supabase SaaS. We recommend Supabase locally for now.
 <details>
 <summary><strong style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</strong></summary>
+
 
 1. **Setup Supabase Instance:**
 
@@ -149,16 +149,21 @@ External services for email verification.
    npx supabase functions deploy
    ```
 
-3. **Start docker-compose then navigate to `localhost:8080`:**
+3. **Start docker-compose :**
 
    ```shell
    docker-compose up --build --force-recreate
    ```
 
+4. <div>
+       <strong>Navigate to <a href="http://localhost:8020/">http://localhost:8020/</a></strong>
+   </div>
+
 </details>
 
-<details open>
+<details>
 <summary><strong style="display:inline-block" id="running-with-supabase-locally">Running with Supabase locally</strong></summary>
+
 
 1. **Start Supabase services:**
 
@@ -178,38 +183,25 @@ External services for email verification.
 
 3. **Start your environment:**
 
+   Start supabase edge-functions:
+
    ```sh
    npx supabase functions serve
    ```
 
-   ```sh
-   npm run dev:frontend
-   ```
+   Start frontend, backend services:
 
    ```sh
-   npm run dev:backend-api
+   chmod +x run.sh && npm run dev:all
    ```
 
-   ```sh
-   npm run dev:backend-worker
-   ```
-
-   ```sh
-   npm run dev:backend-email-worker
-   ```
-
-   ```sh
-   npm run dev:backend-mock-external-services
-   ```
-
+4. <div>
+       <strong>Navigate to <a href="http://localhost:8082/">http://localhost:8082/</a></strong>
+   </div>
+   
+   
       </details>
    </div>
-
-<strong style="display: inline-block;" id="launch-app">
-5. Launch the app:
-</strong>
-
-Finally, launch the app at: http://localhost:8082/
 
 ## 🤝 Contributing
 
