@@ -182,7 +182,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
   fileName.value = file.name;
-  console.log('Selected file:', file, fileName.value);
+  console.debug({ 'Selected file:': file });
   try {
     const content = await readFile(file);
     if (!content) throw Error();
@@ -192,7 +192,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       .supportQuotedField(true)
       .fieldDelimiter(',')
       .csvStringToJson(content);
-    console.log('contentJson', contentJson.value);
+    console.debug({ contentJson: contentJson.value });
     if (
       Array.isArray(contentJson.value) &&
       contentJsonLength.value &&
@@ -263,11 +263,12 @@ function getEmailColumnIndex(rows: Row[], testLength: number) {
   if (emailColumnIndex === -1) {
     throw Error('No email column detected in the CSV data.');
   }
-  console.log(`Email column detected at index ${emailColumnIndex}.`);
   return emailColumnIndex;
 }
 function createHeaders(rows: Row[]) {
   const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
+  console.debug(`Email column detected at index ${emailColumnIndex}.`);
+
   const keys = Object.keys(rows[0]);
 
   return keys.map((key, index) => {

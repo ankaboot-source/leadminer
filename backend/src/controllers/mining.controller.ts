@@ -277,43 +277,16 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
 
       const {
-        miningSource: { fileName },
-        data
+        fileName,
+        fileContacts
       }: {
-        miningSource: {
-          fileName: string;
-        };
-        data: Object[];
+        fileName: string;
+        fileContacts: Record<string, string>[];
       } = req.body;
 
-      const userId = user.id;
-
-      let miningTask = null;
-
-      try {
-        miningTask = await tasksManager.createTaskFile(fileName, data, userId);
-      } catch (err) {
-        if (
-          err instanceof Error &&
-          err.message.toLowerCase().startsWith('invalid credentials')
-        ) {
-          return res.status(401).json({ message: err.message });
-        }
-        if (
-          err instanceof Error &&
-          'textCode' in err &&
-          err.textCode === 'CANNOT'
-        ) {
-          return res.sendStatus(409);
-        }
-
-        const newError = generateErrorObjectFromImapError(err);
-
-        res.status(500);
-        return next(new Error(newError.message));
-      }
-
-      return res.status(201).send({ error: null, data: miningTask });
+      return res
+        .status(200)
+        .send({ error: null, fileName, fileContacts, userId: user.id });
     },
 
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {

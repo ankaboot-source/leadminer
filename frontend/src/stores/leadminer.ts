@@ -224,18 +224,16 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       }
     } else if (source === 'file') {
       console.log(selectedFile.value);
-      // const { data } = await $api<{ data: MiningTask }>(
-      //   `/imap/mine/file/${sessionData.session.user.id}`,
-      //   {
-      //     method: 'POST',
-      //     body: {
-      //       fileName: selectedFile.value?.name,
-      //       fileContacts: selectedFile.value?.contacts,
-      //       miningSource: activeMiningSource.value,
-      //     },
-      //   },
-      // );
-      // console.log(data);
+      await $api<{ data: MiningTask }>(
+        `/imap/mine/file/${sessionData.session.user.id}`,
+        {
+          method: 'POST',
+          body: {
+            fileName: selectedFile.value?.name,
+            fileContacts: selectedFile.value?.contacts,
+          },
+        },
+      );
     }
   }
 
