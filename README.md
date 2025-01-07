@@ -28,7 +28,6 @@
   - [Running with Supabase](#running-with-supabase)
     - [Running with Supabase SaaS](#running-with-supabase-saas)
     - [Running with Supabase locally](#running-with-supabase-locally)
-  - [Launch the app](#launch-app)
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
