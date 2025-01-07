@@ -25,9 +25,10 @@
   - [Clone the repository](#clone-repo)
   - [Generate environment variables](#generate-env)
   - [Setup third-party services (optional)](#setup-third-party-services)
-  - [Running with Supabase SaaS](#running-with-supabase-saas)
-  - [Running with Supabase locally](#running-with-supabase-locally)
-
+  - [Running with Supabase](#running-with-supabase)
+    - [Running with Supabase SaaS](#running-with-supabase-saas)
+    - [Running with Supabase locally](#running-with-supabase-locally)
+  - [Launch the app](#launch-app)
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
@@ -76,7 +77,8 @@ Run the bellow commands to generate a preconfigured `.env` file with credentials
 > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
 ```bash
-./generate_env env.master.dev
+chmod +x ./generate_env.sh
+./generate_env.sh .env.master.dev
 cp ./supabase/functions/.env.dev ./supabase/functions/.env
 ```
 
@@ -103,9 +105,12 @@ External services for email verification.
 
 </details>
 
+<div>
+<strong style="display: inline-block;" id="running-with-supabase">
+  4. Running with Supabase
+</strong>
 <details>
 <summary><strong style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</strong></summary>
-
 
 1. **Setup Supabase Instance:**
 
@@ -175,14 +180,36 @@ External services for email verification.
 
    ```sh
    npx supabase functions serve
-   | npm run dev:frontend
-   | npm run dev:backend-api
-   | npm run dev:backend-worker
-   | npm run dev:backend-email-worker
-   | npm run dev:backend-mock-external-services
    ```
 
-</details>
+   ```sh
+   npm run dev:frontend
+   ```
+
+   ```sh
+   npm run dev:backend-api
+   ```
+
+   ```sh
+   npm run dev:backend-worker
+   ```
+
+   ```sh
+   npm run dev:backend-email-worker
+   ```
+
+   ```sh
+   npm run dev:backend-mock-external-services
+   ```
+
+      </details>
+   </div>
+
+<strong style="display: inline-block;" id="launch-app">
+5. Launch the app:
+</strong>
+
+Finally, launch the app at: http://localhost:8082/
 
 ## 🤝 Contributing
 
