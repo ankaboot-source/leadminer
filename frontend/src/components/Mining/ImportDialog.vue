@@ -195,6 +195,51 @@ function readFile(file: File): Promise<string | null> {
   });
 }
 
+const REGEX_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+function extractEmailColumnIndex(row: Row) {
+  const keys = Object.keys(row);
+  const emailColumnIndex = keys.findIndex((key) => {
+    const cellValue = String(row[key]).toLowerCase();
+    return REGEX_EMAIL.test(cellValue);
+  });
+  return emailColumnIndex;
+}
+
+function getEmailColumnIndex(rows: Row[], testLength: number) {
+  let emailColumnIndex = extractEmailColumnIndex(rows[0]); // check if 1st row has email column
+  if (emailColumnIndex !== -1) {
+    // 2nd to 5th row should have emails on the same column
+    for (let i = 1; i < testLength; i++) {
+      if (emailColumnIndex !== extractEmailColumnIndex(rows[i])) {
+        emailColumnIndex = -1;
+        break;
+      }
+    }
+  }
+  if (emailColumnIndex === -1) {
+    throw Error('No email column detected in the CSV data.');
+  }
+  return emailColumnIndex;
+}
+
+function createHeaders(rows: Row[]) {
+  const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
+  console.debug(`Email column detected at index ${emailColumnIndex}.`);
+
+  const keys = Object.keys(rows[0]);
+
+  return keys.map((key, index) => {
+    const matchingOption = options.find(
+      (option) => option.label === key.replace(/\s/g, ''),
+    ); // https://github.com/iuccio/csvToJson/pull/68
+    return {
+      field: matchingOption?.value || String(index),
+      header:
+        index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
+    };
+  });
+}
+
 async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
@@ -245,51 +290,6 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       life: 3000,
     });
   }
-}
-
-const REGEX_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
-function extractEmailColumnIndex(row: Row) {
-  const keys = Object.keys(row);
-  const emailColumnIndex = keys.findIndex((key) => {
-    const cellValue = String(row[key]).toLowerCase();
-    return REGEX_EMAIL.test(cellValue);
-  });
-  return emailColumnIndex;
-}
-
-function createHeaders(rows: Row[]) {
-  const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
-  console.debug(`Email column detected at index ${emailColumnIndex}.`);
-
-  const keys = Object.keys(rows[0]);
-
-  return keys.map((key, index) => {
-    const matchingOption = options.find(
-      (option) => option.label === key.replace(/\s/g, ''),
-    ); // https://github.com/iuccio/csvToJson/pull/68
-    return {
-      field: matchingOption?.value || String(index),
-      header:
-        index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
-    };
-  });
-}
-
-function getEmailColumnIndex(rows: Row[], testLength: number) {
-  let emailColumnIndex = extractEmailColumnIndex(rows[0]); // check if 1st row has email column
-  if (emailColumnIndex !== -1) {
-    // 2nd to 5th row should have emails on the same column
-    for (let i = 1; i < testLength; i++) {
-      if (emailColumnIndex !== extractEmailColumnIndex(rows[i])) {
-        emailColumnIndex = -1;
-        break;
-      }
-    }
-  }
-  if (emailColumnIndex === -1) {
-    throw Error('No email column detected in the CSV data.');
-  }
-  return emailColumnIndex;
 }
 
 function startMining() {

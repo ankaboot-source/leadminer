@@ -254,7 +254,7 @@ watch(extractionFinished, (finished) => {
 
 function openMiningSettings() {
   if (source.value === 'boxes') {
-    miningSettingsRef.value!.open();
+    miningSettingsRef.value!.open(); // skipcq: JS-0339 is component ref
   } else {
     importDialogRef.value.openModal();
   }
