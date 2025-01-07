@@ -7,7 +7,7 @@
     "install-deps": "npm i && npm run install-deps:backend && npm run install-deps:frontend",
     "install-deps:backend": "npm i --prefix ./backend",
     "install-deps:frontend": "npm i --prefix ./frontend",
-    "dev:all": "npm run dev:frontend & npm run dev:backend-api & npm run dev:backend-worker & npm run dev:backend-email-worker & npm run dev:backend-mock-external-services",
+    "dev:all": "./run.sh",
     "dev:generate-env": "bash ./generate_env.sh .env.master.dev",
     "dev:supabase": "supabase start",
     "dev:supabase-functions": "supabase functions serve",
