@@ -273,7 +273,7 @@ export default function initializeMiningController(
       return res.status(201).send({ error: null, data: miningTask });
     },
 
-    async startMiningFile(req: Request, res: Response) {
+    startMiningFile(req: Request, res: Response) {
       const user = res.locals.user as User;
 
       const {

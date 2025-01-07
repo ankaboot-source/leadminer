@@ -141,11 +141,11 @@ const maxFileSize = 2000000; // 2MB
 const maxSizeInMB = maxFileSize / 1000000;
 const contentJson = ref(null) as Ref<Record<string, string>[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
-const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const fileUpload = ref();
 const fileName = ref<string>();
 const columns = ref<Column[]>([]);
 const parsedData = ref();
+const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
 
@@ -177,6 +177,23 @@ const selectedHeaders = computed(() =>
     })
     .filter(Boolean),
 );
+
+function reset() {
+  fileUpload.value.clear();
+  contentJson.value = null;
+  columns.value = [];
+  fileName.value = undefined;
+  $leadminerStore.selectedFile = null;
+}
+
+function readFile(file: File): Promise<string | null> {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.readAsText(file, 'UTF-8');
+    reader.onload = () => resolve(reader.result as string | null);
+    reader.onerror = () => reject(Error("Couldn't read the file."));
+  });
+}
 
 async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
@@ -230,15 +247,6 @@ async function onSelectFile($event: FileUploadSelectEvent) {
   }
 }
 
-async function readFile(file: File): Promise<string | null> {
-  const reader = new FileReader();
-  return new Promise((resolve, reject) => {
-    reader.readAsText(file, 'UTF-8');
-    reader.onload = () => resolve(reader.result as string | null);
-    reader.onerror = () => reject(null);
-  });
-}
-
 const REGEX_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 function extractEmailColumnIndex(row: Row) {
   const keys = Object.keys(row);
@@ -247,6 +255,24 @@ function extractEmailColumnIndex(row: Row) {
     return REGEX_EMAIL.test(cellValue);
   });
   return emailColumnIndex;
+}
+
+function createHeaders(rows: Row[]) {
+  const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
+  console.debug(`Email column detected at index ${emailColumnIndex}.`);
+
+  const keys = Object.keys(rows[0]);
+
+  return keys.map((key, index) => {
+    const matchingOption = options.find(
+      (option) => option.label === key.replace(/\s/g, ''),
+    ); // https://github.com/iuccio/csvToJson/pull/68
+    return {
+      field: matchingOption?.value || String(index),
+      header:
+        index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
+    };
+  });
 }
 
 function getEmailColumnIndex(rows: Row[], testLength: number) {
@@ -264,23 +290,6 @@ function getEmailColumnIndex(rows: Row[], testLength: number) {
     throw Error('No email column detected in the CSV data.');
   }
   return emailColumnIndex;
-}
-function createHeaders(rows: Row[]) {
-  const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
-  console.debug(`Email column detected at index ${emailColumnIndex}.`);
-
-  const keys = Object.keys(rows[0]);
-
-  return keys.map((key, index) => {
-    const matchingOption = options.find(
-      (option) => option.label === key.replace(/\s/g, ''),
-    ); // https://github.com/iuccio/csvToJson/pull/68
-    return {
-      field: matchingOption?.value || String(index),
-      header:
-        index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
-    };
-  });
 }
 
 function startMining() {
@@ -304,14 +313,6 @@ function startMining() {
   };
   $leadminerStore.startMining(source);
   visible.value = false;
-}
-
-function reset() {
-  fileUpload.value.clear();
-  contentJson.value = null;
-  columns.value = [];
-  fileName.value = undefined;
-  $leadminerStore.selectedFile = null;
 }
 </script>
 <i18n lang="json">
