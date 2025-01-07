@@ -77,6 +77,7 @@ Run the bellow commands to generate a preconfigured `.env` file with credentials
 > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
 ```bash
+chmod +x generate_env.sh
 npm run dev:generate_env
 cp ./supabase/functions/.env.dev ./supabase/functions/.env
 ```
@@ -148,7 +149,15 @@ External services for email verification.
    npx supabase functions deploy
    ```
 
-3. **Start docker-compose then navigate to `localhost:8080`:**
+3. **Start docker-compose :**
+
+   ```shell
+   docker-compose up --build --force-recreate
+   ```
+
+4. <div>
+       <strong>Navigate to <a href="http://localhost:8082/">http://localhost:8082/</a></strong>
+   </div>
 
    ```shell
    docker-compose up --build --force-recreate
@@ -190,9 +199,10 @@ External services for email verification.
    ```
 
 4. <div>
-       <strong>Navigate to <a href="http://localhost:8082/">http://localhost:8082/</a></strnong>
+       <strong>Navigate to <a href="http://localhost:8082/">http://localhost:8082/</a></strong>
    </div>
 
+   
       </details>
    </div>
 
