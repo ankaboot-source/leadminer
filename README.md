@@ -75,7 +75,6 @@ Run the below commands to generate a pre-configured `.env` file with credentials
 > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
 ```bash
-chmod +x generate_env.sh
 npm run dev:generate-env
 cp ./supabase/functions/.env.dev ./supabase/functions/.env
 ```
@@ -183,7 +182,6 @@ External services for email verification.
    Start frontend, backend and supabase edge-functions services:
 
    ```sh
-   chmod +x run.sh
    npm run dev:all
    ```
       </details>
