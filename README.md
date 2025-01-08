@@ -192,7 +192,8 @@ External services for email verification.
 <strong style="display: inline-block;" id="launch-app">
 5. Launch the app:
 </strong>
-Finally, launch the app at: [http://localhost:8082/](http://localhost:8082/)
+
+Finally, launch the app at: http://localhost:8082/
 
 ## 🤝 Contributing
 
