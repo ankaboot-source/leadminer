@@ -26,6 +26,7 @@
   - [Generate environment variables](#generate-env)
   - [Setup third-party services (optional)](#setup-third-party-services)
   - [Running with Supabase](#running-with-supabase)
+  - [Launch the app](#launch-app)
 - [🤝 Contributing](#-contributing)
 - [🎯 Roadmap](#-roadmap)
 - [🛠️ Support](#️-support)
@@ -154,11 +155,6 @@ External services for email verification.
    ```shell
    docker-compose up --build --force-recreate
    ```
-
-4. <div>
-       <strong>Navigate to <a href="http://localhost:8020/">http://localhost:8020/</a></strong>
-   </div>
-
 </details>
 
 <details open>
@@ -190,14 +186,13 @@ External services for email verification.
    chmod +x run.sh
    npm run dev:all
    ```
-
-4. <div>
-       <strong>Navigate to <a href="http://localhost:8082/">http://localhost:8082/</a></strong>
-   </div>
-   
-   
       </details>
    </div>
+
+<strong style="display: inline-block;" id="launch-app">
+5. Launch the app:
+</strong>
+Finally, launch the app at: http://localhost:8082/
 
 ## 🤝 Contributing
 
