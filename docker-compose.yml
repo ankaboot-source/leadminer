@@ -62,7 +62,7 @@ services:
         SAAS_SUPABASE_ANON_KEY: ${SAAS_SUPABASE_ANON_KEY}
 
     ports:
-      - 8020:3000
+      - 8082:3000
     restart: always
     depends_on:
       - leadminer-api
