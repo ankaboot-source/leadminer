@@ -180,7 +180,7 @@ External services for email verification.
 
 3. **Start your environment:**
 
-   Start frontend, backend, edge-function services:
+   Start frontend, backend and supabase edge-functions services:
 
    ```sh
    chmod +x run.sh
