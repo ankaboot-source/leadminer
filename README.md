@@ -153,7 +153,7 @@ External services for email verification.
 3. **Start docker-compose :**
 
    ```shell
-   docker-compose up --build --force-recreate
+   docker-compose up --build --force-recreate -d
    ```
 </details>
 
@@ -175,7 +175,7 @@ External services for email verification.
    > Note: If you encounter issues connecting to the redis container, make sure to update `REDIS_HOST` in the `.env` file.
 
    ```shell
-   docker-compose -f docker-compose.dev.yml up
+   docker-compose -f docker-compose.dev.yml up -d
    ```
 
 3. **Start your environment:**
