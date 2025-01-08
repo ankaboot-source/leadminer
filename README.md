@@ -75,7 +75,6 @@ Run the below commands to generate a pre-configured `.env` file with credentials
 > If you encounter OAuth issues during sign-in and sign-up, Contact team@ankaboot.io to add your email to the whitelist or refer to [Running with Supabase SaaS](#running-with-supabase-saas) to learn how you can create your own OAuth credentials.
 
 ```bash
-chmod +x generate_env.sh
 npm run dev:generate-env
 cp ./supabase/functions/.env.dev ./supabase/functions/.env
 ```
@@ -153,7 +152,7 @@ External services for email verification.
 3. **Start docker-compose :**
 
    ```shell
-   docker-compose up --build --force-recreate
+   docker-compose up --build --force-recreate -d
    ```
 </details>
 
@@ -175,7 +174,7 @@ External services for email verification.
    > Note: If you encounter issues connecting to the redis container, make sure to update `REDIS_HOST` in the `.env` file.
 
    ```shell
-   docker-compose -f docker-compose.dev.yml up
+   docker-compose -f docker-compose.dev.yml up -d
    ```
 
 3. **Start your environment:**
@@ -183,7 +182,6 @@ External services for email verification.
    Start frontend, backend and supabase edge-functions services:
 
    ```sh
-   chmod +x run.sh
    npm run dev:all
    ```
       </details>
