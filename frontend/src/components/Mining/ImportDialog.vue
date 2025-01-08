@@ -230,7 +230,8 @@ function createHeaders(rows: Row[]) {
 
   return keys.map((key, index) => {
     const matchingOption = options.find(
-      (option) => option.label === key.replace(/\s/g, ''),
+      (option) =>
+        key === option.label.replace(/\s/g, '') || key === option.value,
     ); // https://github.com/iuccio/csvToJson/pull/68
     return {
       field: matchingOption?.value || String(index),
