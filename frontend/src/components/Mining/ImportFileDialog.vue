@@ -115,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { maxFileSize, maxSizeInMB, REGEX_EMAIL } from '@/utils/constants';
 import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import { useToast } from 'primevue/usetoast';
@@ -137,8 +138,6 @@ const openModal = () => {
 defineExpose({ openModal });
 
 const toast = useToast();
-const maxFileSize = 2000000; // 2MB
-const maxSizeInMB = maxFileSize / 1000000;
 const contentJson = ref(null) as Ref<Record<string, string>[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
 const fileUpload = ref();
@@ -195,7 +194,6 @@ function readFile(file: File): Promise<string | null> {
   });
 }
 
-const REGEX_EMAIL = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
 function extractEmailColumnIndex(row: Row) {
   const keys = Object.keys(row);
   const emailColumnIndex = keys.findIndex((key) => {
