@@ -255,55 +255,63 @@ watch(extractionFinished, (finished) => {
 function openMiningSettings() {
   if (source.value === 'boxes') {
     miningSettingsRef.value!.open(); // skipcq: JS-0339 is component ref
-  } else {
+  } else if (source.value === 'file') {
     importFileDialogRef.value.openModal();
+  }
+}
+
+async function startMiningBoxes() {
+  if (
+    Object.keys(selectedBoxes.value).filter(
+      (key) => selectedBoxes.value[key].checked && key !== '',
+    ).length === 0
+  ) {
+    openMiningSettings();
+    $toast.add({
+      severity: 'error',
+      summary: t('select_folders'),
+      detail: t('select_at_least_one_folder'),
+      life: 3000,
+    });
+    return;
+  }
+  canceled.value = false;
+  try {
+    await $leadminerStore.startMining(source.value);
+  } catch (error) {
+    if (
+      error instanceof FetchError &&
+      error.response?.status === 401 &&
+      $leadminerStore.activeMiningSource
+    ) {
+      useMiningConsentSidebar().show(
+        $leadminerStore.activeMiningSource.type,
+        $leadminerStore.activeMiningSource.email,
+      );
+    } else {
+      $toast.add({
+        severity: 'error',
+        summary: t('start_mining'),
+        detail: t('mining_issue'),
+        life: 3000,
+      });
+    }
+  }
+}
+
+async function startMiningFile() {
+  try {
+    await $leadminerStore.startMining(source.value);
+  } catch (error) {
+    console.error(error);
   }
 }
 
 async function startMining() {
   if (source.value === 'boxes') {
-    if (
-      Object.keys(selectedBoxes.value).filter(
-        (key) => selectedBoxes.value[key].checked && key !== '',
-      ).length === 0
-    ) {
-      openMiningSettings();
-      $toast.add({
-        severity: 'error',
-        summary: t('select_folders'),
-        detail: t('select_at_least_one_folder'),
-        life: 3000,
-      });
-      return;
-    }
-    canceled.value = false;
-    try {
-      await $leadminerStore.startMining(source.value);
-    } catch (error) {
-      if (
-        error instanceof FetchError &&
-        error.response?.status === 401 &&
-        $leadminerStore.activeMiningSource
-      ) {
-        useMiningConsentSidebar().show(
-          $leadminerStore.activeMiningSource.type,
-          $leadminerStore.activeMiningSource.email,
-        );
-      } else {
-        $toast.add({
-          severity: 'error',
-          summary: t('start_mining'),
-          detail: t('mining_issue'),
-          life: 3000,
-        });
-      }
-    }
+    await startMiningBoxes();
   } else if (source.value === 'file') {
-    try {
-      await $leadminerStore.startMining(source.value);
-    } catch (error) {
-      console.error(error);
-    }
+    await startMiningFile();
   }
 }
 
