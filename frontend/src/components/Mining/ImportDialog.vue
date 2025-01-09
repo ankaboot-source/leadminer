@@ -225,9 +225,7 @@ function getEmailColumnIndex(rows: Row[], testLength: number) {
 function createHeaders(rows: Row[]) {
   const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
   console.debug(`Email column detected at index ${emailColumnIndex}.`);
-
   const keys = Object.keys(rows[0]);
-
   return keys.map((key, index) => {
     const matchingOption = options.find(
       (option) =>
@@ -244,9 +242,9 @@ function createHeaders(rows: Row[]) {
 async function onSelectFile($event: FileUploadSelectEvent) {
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
-  fileName.value = file.name;
-  console.debug({ 'Selected file:': file });
   try {
+    fileName.value = file.name;
+    console.debug({ 'Selected file:': file });
     const content = await readFile(file);
     if (!content) throw Error();
 
@@ -255,7 +253,6 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       .supportQuotedField(true)
       .fieldDelimiter(',')
       .csvStringToJson(content);
-    console.debug({ contentJson: contentJson.value });
     if (
       Array.isArray(contentJson.value) &&
       contentJsonLength.value &&
@@ -273,6 +270,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       });
       return updatedRow;
     });
+    console.debug({ parsedData: parsedData.value });
 
     toast.add({
       severity: 'info',
@@ -284,12 +282,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
   } catch (error) {
     uploadFailed.value = true;
     reset();
-    toast.add({
-      severity: 'error',
-      summary: 'Error reading file',
-      detail: error,
-      life: 3000,
-    });
+    console.error(error);
   }
 }
 
