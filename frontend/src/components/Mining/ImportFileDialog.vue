@@ -269,13 +269,6 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       return updatedRow;
     });
     console.debug({ parsedData: parsedData.value });
-
-    toast.add({
-      severity: 'info',
-      summary: 'Success',
-      detail: 'File Selected',
-      life: 3000,
-    });
     uploadFailed.value = false;
   } catch (error) {
     uploadFailed.value = true;
