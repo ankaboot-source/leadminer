@@ -23,7 +23,39 @@
       </template>
 
       <template #content>
-        <template v-if="contentJson">
+        <div
+          v-if="!contentJson"
+          class="flex items-center justify-center flex-col gap-3"
+        >
+          <template v-if="!uploadLoading">
+            <i
+              class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
+            />
+            <p>{{ t('drag_and_drop') }}</p>
+          </template>
+          <div v-else>
+            <ProgressSpinner />
+          </div>
+
+          <Button
+            v-tooltip.bottom="t('upload_tooltip', { maxSizeInMB })"
+            class="my-1"
+            icon="pi pi-upload"
+            :label="t('select_file_label')"
+            :loading="uploadLoading"
+            @click="fileUpload.choose()"
+          />
+          <Message
+            v-if="uploadFailed"
+            severity="error"
+            size="small"
+            class="w-full md:w-2/4"
+          >
+            {{ t('upload_error', { maxSizeInMB }) }}
+          </Message>
+        </div>
+
+        <template v-else>
           <DataTable
             :value="topFiveItems"
             show-gridlines
@@ -64,28 +96,6 @@
             </Column>
           </DataTable>
         </template>
-
-        <div v-else class="flex items-center justify-center flex-col gap-3">
-          <i
-            class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
-          />
-          <p>{{ t('drag_and_drop') }}</p>
-          <Button
-            v-tooltip.bottom="t('upload_tooltip', { maxSizeInMB })"
-            class="my-1"
-            icon="pi pi-upload"
-            :label="t('select_file_label')"
-            @click="fileUpload.choose()"
-          />
-          <Message
-            v-if="uploadFailed"
-            severity="error"
-            size="small"
-            class="w-full md:w-2/4"
-          >
-            {{ t('upload_error', { maxSizeInMB }) }}
-          </Message>
-        </div>
       </template>
     </FileUpload>
 
@@ -118,9 +128,8 @@
 import { maxFileSize, maxSizeInMB, REGEX_EMAIL } from '@/utils/constants';
 import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
-import { useToast } from 'primevue/usetoast';
 
-const source = 'file';
+const SOURCE = 'file';
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -137,7 +146,6 @@ const openModal = () => {
 };
 defineExpose({ openModal });
 
-const toast = useToast();
 const contentJson = ref(null) as Ref<Record<string, string>[] | null>;
 const contentJsonLength = computed(() => contentJson.value?.length);
 const fileUpload = ref();
@@ -147,6 +155,7 @@ const parsedData = ref();
 const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
+const uploadLoading = ref(false);
 
 const options = [
   { value: 'name', label: 'Name' },
@@ -238,6 +247,7 @@ function createHeaders(rows: Row[]) {
 }
 
 async function onSelectFile($event: FileUploadSelectEvent) {
+  uploadLoading.value = true;
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
   try {
@@ -269,11 +279,12 @@ async function onSelectFile($event: FileUploadSelectEvent) {
       return updatedRow;
     });
     console.debug({ parsedData: parsedData.value });
-    uploadFailed.value = false;
   } catch (error) {
     uploadFailed.value = true;
     reset();
     console.error(error);
+  } finally {
+    uploadLoading.value = false;
   }
 }
 
@@ -296,7 +307,7 @@ function startMining() {
     name: fileName.value ?? '',
     contacts: parsedDataWithMappedHeaders,
   };
-  $leadminerStore.startMining(source);
+  $leadminerStore.startMining(SOURCE);
   visible.value = false;
 }
 </script>
