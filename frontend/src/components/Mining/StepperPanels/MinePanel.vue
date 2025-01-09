@@ -120,7 +120,7 @@
       />
     </div>
   </div>
-  <ImportDialog ref="importDialogRef" />
+  <importFileDialog ref="importFileDialogRef" />
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -131,9 +131,9 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 import type { MiningSource } from '~/types/mining';
-import ImportDialog from '../ImportDialog.vue';
+import importFileDialog from '../ImportFileDialog.vue';
 
-const importDialogRef = ref();
+const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -204,7 +204,7 @@ const progressTooltip = computed(() =>
 
 onMounted(async () => {
   if (source.value === 'file') {
-    importDialogRef.value.openModal();
+    importFileDialogRef.value.openModal();
     return;
   }
 
@@ -256,7 +256,7 @@ function openMiningSettings() {
   if (source.value === 'boxes') {
     miningSettingsRef.value!.open(); // skipcq: JS-0339 is component ref
   } else {
-    importDialogRef.value.openModal();
+    importFileDialogRef.value.openModal();
   }
 }
 
