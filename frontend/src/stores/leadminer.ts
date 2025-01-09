@@ -229,8 +229,8 @@ export const useLeadminerStore = defineStore('leadminer', () => {
         {
           method: 'POST',
           body: {
-            fileName: selectedFile.value?.name,
-            fileContacts: selectedFile.value?.contacts,
+            name: selectedFile.value?.name,
+            contacts: selectedFile.value?.contacts,
           },
         },
       );
