@@ -1,8 +1,7 @@
 <template>
   <div class="py-3.5 flex justify-between bg-white md:bg-transparent">
-    <AppLogo class="cursor-pointer" @click="navigateHome()" />
-
     <template v-if="$user">
+      <AppLogo class="cursor-pointer" @click="navigateHome()" />
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
         <component :is="CreditsCounter" />
         <Button
@@ -50,6 +49,9 @@
           </template>
         </Drawer>
       </div>
+    </template>
+    <template v-else>
+      <AppLogo class="cursor-pointer" @click="navigateHome()" />
     </template>
   </div>
 </template>
