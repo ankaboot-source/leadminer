@@ -277,16 +277,16 @@ export default function initializeMiningController(
       const user = res.locals.user as User;
 
       const {
-        fileName,
-        fileContacts
+        name,
+        contacts
       }: {
-        fileName: string;
-        fileContacts: Record<string, string>[];
+        name: string;
+        contacts: Record<string, string>[];
       } = req.body;
 
       return res
         .status(200)
-        .send({ error: null, fileName, fileContacts, userId: user.id });
+        .send({ error: null, name, contacts, userId: user.id });
     },
 
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {
