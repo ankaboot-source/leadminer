@@ -298,7 +298,7 @@ async function startMining() {
         });
       }
     }
-  } else {
+  } else if (source.value === 'file') {
     try {
       await $leadminerStore.startMining(source.value);
     } catch (error) {
