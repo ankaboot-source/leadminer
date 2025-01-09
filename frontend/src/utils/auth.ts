@@ -24,7 +24,7 @@ export async function signInWithOAuth(provider: Provider) {
   }
 }
 
-export function clearAllData() {
+export function clearPersistedData() {
   const allCookies = Cookies.get();
   Object.keys(allCookies).forEach((cookie) => Cookies.remove(cookie));
   localStorage.clear();
@@ -32,10 +32,11 @@ export function clearAllData() {
 
 export function signOutManually() {
   sse.closeConnection();
+  clearPersistedData();
   useResetStore().all();
-  clearAllData();
-  useRouter().push('/auth/login');
   useSupabaseUser().value = null; // updates $user in AppHeader
+  useSupabaseUserProfile().value = null;
+  useRouter().push('/auth/login');
 }
 
 export async function signOut() {
@@ -44,4 +45,6 @@ export async function signOut() {
   if (error) {
     throw error;
   }
+  useSupabaseUser().value = null;
+  useSupabaseUserProfile().value = null;
 }
