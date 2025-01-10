@@ -1,6 +1,6 @@
-import { describe, expect, test } from 'vitest';
+import { REGEX_EMAIL } from '@/utils/constants'; // Assuming you export your regex from a file
 import { check } from 'recheck';
-import { PASSWORD_PATTERN } from '@/utils/password'; // Assuming you export your regex from a file
+import { describe, expect, test } from 'vitest';
 
 async function testRegexSafety(regexSource: string, regexFlags: string) {
   const diagnostics = await check(regexSource, regexFlags);
@@ -25,7 +25,7 @@ async function testRegexSafety(regexSource: string, regexFlags: string) {
 }
 
 describe('Regex redos checker', () => {
-  const regex = [PASSWORD_PATTERN];
+  const regex = [REGEX_EMAIL];
 
   test.concurrent.each(regex)('Regex should be REDOS safe: %s', async (re) => {
     await testRegexSafety(re.source, re.flags);

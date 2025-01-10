@@ -17,8 +17,8 @@
         {{ totalEmails.toLocaleString() }}
         {{
           extractionProgress < 1
-            ? t('email_messages_to_mine', totalEmails)
-            : t('email_messages_mined', totalEmails)
+            ? t('emails_to_mine', totalEmails)
+            : t('emails_mined', totalEmails)
         }}
       </div>
     </template>
@@ -34,7 +34,9 @@
       v-if="!activeMiningTask"
       id="mine-stepper"
       :disabled="
-        $leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining
+        $leadminerStore.isLoadingBoxes ||
+        $leadminerStore.isLoadingStartMining ||
+        totalEmails === 0
       "
       :loading="$leadminerStore.isLoadingStartMining"
       severity="contrast"
@@ -96,7 +98,9 @@
       <Button
         v-if="!activeMiningTask"
         :disabled="
-          $leadminerStore.isLoadingBoxes || $leadminerStore.isLoadingStartMining
+          $leadminerStore.isLoadingBoxes ||
+          $leadminerStore.isLoadingStartMining ||
+          totalEmails === 0
         "
         :loading="$leadminerStore.isLoadingStartMining"
         severity="contrast"
@@ -116,6 +120,7 @@
       />
     </div>
   </div>
+  <importFileDialog ref="importFileDialogRef" />
 </template>
 <script setup lang="ts">
 // @ts-expect-error "No type definitions"
@@ -126,7 +131,9 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import MiningSettings from '@/components/Mining/MiningSettings.vue';
 import ProgressCard from '@/components/ProgressCard.vue';
 import type { MiningSource } from '~/types/mining';
+import importFileDialog from '../ImportFileDialog.vue';
 
+const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -135,6 +142,7 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource;
 }>();
 
+const source = computed(() => (miningSource ? 'boxes' : 'file'));
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
@@ -154,7 +162,11 @@ const activeMiningTask = computed(
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
-  if (boxes.value[0]) {
+  if (source.value === 'file') {
+    return $leadminerStore.selectedFile?.contacts.length || 0;
+  }
+
+  if (source.value === 'boxes' && boxes.value[0]) {
     return objectScan(['**.{total}'], {
       joined: true,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -170,6 +182,7 @@ const totalEmails = computed<number>(() => {
       },
     })(boxes.value, { sum: 0 }).sum;
   }
+
   return 0;
 });
 
@@ -190,6 +203,11 @@ const progressTooltip = computed(() =>
 );
 
 onMounted(async () => {
+  if (source.value === 'file') {
+    importFileDialogRef.value.openModal();
+    return;
+  }
+
   if (
     activeMiningTask.value ||
     $leadminerStore.isLoadingBoxes ||
@@ -235,10 +253,14 @@ watch(extractionFinished, (finished) => {
 });
 
 function openMiningSettings() {
-  miningSettingsRef.value!.open();
+  if (source.value === 'boxes') {
+    miningSettingsRef.value!.open(); // skipcq: JS-0339 is component ref
+  } else if (source.value === 'file') {
+    importFileDialogRef.value.openModal();
+  }
 }
 
-async function startMining() {
+async function startMiningBoxes() {
   if (
     Object.keys(selectedBoxes.value).filter(
       (key) => selectedBoxes.value[key].checked && key !== '',
@@ -255,7 +277,7 @@ async function startMining() {
   }
   canceled.value = false;
   try {
-    await $leadminerStore.startMining();
+    await $leadminerStore.startMining(source.value);
   } catch (error) {
     if (
       error instanceof FetchError &&
@@ -274,6 +296,22 @@ async function startMining() {
         life: 3000,
       });
     }
+  }
+}
+
+async function startMiningFile() {
+  try {
+    await $leadminerStore.startMining(source.value);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function startMining() {
+  if (source.value === 'boxes') {
+    await startMiningBoxes();
+  } else if (source.value === 'file') {
+    await startMiningFile();
   }
 }
 
@@ -312,8 +350,8 @@ async function haltMining() {
 {
   "en": {
     "retrieving_mailboxes": "Retrieving mailboxes...",
-    "email_messages_to_mine": "email message to mine. | email messages to mine.",
-    "email_messages_mined": "email message mined. | email messages mined.",
+    "emails_to_mine": "email to mine. | emails to mine.",
+    "emails_mined": "email mined. | emails mined.",
     "start_mining_now": "Start mining now!",
     "halt_mining": "Halt mining",
     "fine_tune_mining": "Fine tune mining",
@@ -333,8 +371,8 @@ async function haltMining() {
   },
   "fr": {
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
-    "email_messages_to_mine": "email à extraire. | emails à extraire",
-    "email_messages_mined": "email extrait. | emails extraits",
+    "emails_to_mine": "email à extraire. | emails à extraire",
+    "emails_mined": "email extrait. | emails extraits",
     "start_mining_now": "Lancer maintenant l'extraction !",
     "halt_mining": "Arrêter l'extraction",
     "fine_tune_mining": "Affiner l'extraction",

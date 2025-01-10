@@ -18,6 +18,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const miningSources = ref<MiningSource[]>([]);
   const boxes = ref<BoxNode[]>([]);
   const selectedBoxes = ref<TreeSelectionKeys>([]);
+  const selectedFile = ref<{
+    name: string;
+    contacts: Record<string, string>[];
+  } | null>(null);
 
   const isLoadingStartMining = ref(false);
   const isLoadingStopMining = ref(false);
@@ -51,6 +55,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource.value = undefined;
     boxes.value = [];
     selectedBoxes.value = [];
+    selectedFile.value = null;
 
     isLoadingStartMining.value = false;
     isLoadingStopMining.value = false;
@@ -141,26 +146,13 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
-  /**
-   * Starts the mining process.
-   * @throws {Error} Throws an error if there is an issue while starting the mining process.
-   */
-  async function startMining() {
-    loadingStatus.value = true;
-    loadingStatusDns.value = true;
-    scannedEmails.value = 0;
-    extractedEmails.value = 0;
-    verifiedContacts.value = 0;
-    createdContacts.value = 0;
-    fetchingFinished.value = false;
-    extractionFinished.value = false;
-    cleaningFinished.value = false;
+  async function startMiningBoxes() {
+    const { data: sessionData } = await useSupabaseClient().auth.getSession();
+    if (!sessionData.session?.access_token) {
+      return;
+    }
 
     try {
-      const { data: sessionData } = await useSupabaseClient().auth.getSession();
-      if (!sessionData.session?.access_token) {
-        return;
-      }
       isLoadingStartMining.value = true;
       const { data } = await $api<{ data: MiningTask }>(
         `/imap/mine/${sessionData.session.user.id}`,
@@ -176,36 +168,32 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       );
 
       const task = data;
-      sse.initConnection(
-        task?.miningId as string,
-        sessionData.session.access_token,
-        {
-          onExtractedUpdate: (count) => {
-            extractedEmails.value = count;
-          },
-          onFetchedUpdate: (count) => {
-            scannedEmails.value = count;
-          },
-          onClose: () => {
-            miningTask.value = undefined;
-            sse.closeConnection();
-          },
-          onFetchingDone: (totalFetched) => {
-            scannedEmails.value = totalFetched;
-            fetchingFinished.value = true;
-          },
-          onExtractionDone: (totalExtracted) => {
-            extractedEmails.value = totalExtracted;
-            extractionFinished.value = true;
-          },
-          onVerifiedContacts: (totalVerified) => {
-            verifiedContacts.value = totalVerified;
-          },
-          onCreatedContacts: (totalCreated) => {
-            createdContacts.value = totalCreated;
-          },
+      sse.initConnection(task?.miningId, sessionData.session.access_token, {
+        onExtractedUpdate: (count) => {
+          extractedEmails.value = count;
         },
-      );
+        onFetchedUpdate: (count) => {
+          scannedEmails.value = count;
+        },
+        onClose: () => {
+          miningTask.value = undefined;
+          sse.closeConnection();
+        },
+        onFetchingDone: (totalFetched) => {
+          scannedEmails.value = totalFetched;
+          fetchingFinished.value = true;
+        },
+        onExtractionDone: (totalExtracted) => {
+          extractedEmails.value = totalExtracted;
+          extractionFinished.value = true;
+        },
+        onVerifiedContacts: (totalVerified) => {
+          verifiedContacts.value = totalVerified;
+        },
+        onCreatedContacts: (totalCreated) => {
+          createdContacts.value = totalCreated;
+        },
+      });
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
@@ -218,6 +206,47 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       isLoadingStartMining.value = false;
       sse.closeConnection();
       throw err;
+    }
+  }
+
+  async function startMiningFile() {
+    const { data: sessionData } = await useSupabaseClient().auth.getSession();
+    if (!sessionData.session?.access_token) {
+      return;
+    }
+
+    console.log(selectedFile.value);
+    await $api<{ data: MiningTask }>(
+      `/imap/mine/file/${sessionData.session.user.id}`,
+      {
+        method: 'POST',
+        body: {
+          name: selectedFile.value?.name,
+          contacts: selectedFile.value?.contacts,
+        },
+      },
+    );
+  }
+
+  /**
+   * Starts the mining process.
+   * @throws {Error} Throws an error if there is an issue while starting the mining process.
+   */
+  async function startMining(source: 'boxes' | 'file') {
+    loadingStatus.value = true;
+    loadingStatusDns.value = true;
+    scannedEmails.value = 0;
+    extractedEmails.value = 0;
+    verifiedContacts.value = 0;
+    createdContacts.value = 0;
+    fetchingFinished.value = false;
+    extractionFinished.value = false;
+    cleaningFinished.value = false;
+
+    if (source === 'boxes') {
+      await startMiningBoxes();
+    } else if (source === 'file') {
+      await startMiningFile();
     }
   }
 
@@ -281,6 +310,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     activeMiningSource,
     boxes,
     selectedBoxes,
+    selectedFile,
     isLoadingStartMining,
     isLoadingStopMining,
     isLoadingBoxes,

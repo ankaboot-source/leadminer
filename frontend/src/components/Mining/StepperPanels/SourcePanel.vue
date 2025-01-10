@@ -34,7 +34,7 @@
         />
       </div>
     </div>
-    <div v-if="sourceOptions.length">
+    <template v-if="sourceOptions.length">
       <Separator
         layout="vertical"
         :content="$t('common.or')"
@@ -45,9 +45,9 @@
         :content="$t('common.or')"
         class="flex min-[1129px]:hidden"
       />
-    </div>
-    <div class="shrink-0 flex flex-col gap-3">
-      <span>{{ t('add_new_email_provider') }}</span>
+    </template>
+    <div class="shrink flex flex-col gap-3">
+      <span>{{ t('mine_from') }}</span>
       <div class="flex flex-col min-[1129px]:flex-row gap-2 flex-wrap">
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
@@ -58,6 +58,13 @@
         <imap-source
           v-model:source="sourceModel"
           v-model:show="$imapDialogStore.showImapDialog"
+        />
+        <Button
+          id="import-csv"
+          outlined
+          icon="pi pi-upload"
+          :label="t('import_csv_excel')"
+          @click="importTable()"
         />
       </div>
     </div>
@@ -131,25 +138,32 @@ onMounted(async () => {
 defineExpose({
   onSourceChange,
 });
+
+function importTable() {
+  //miningSource would be undefined
+  $stepper.next();
+}
 </script>
 
 <i18n lang="json">
 {
   "en": {
     "pick_existing_email": "Pick an existing email address to mine",
-    "add_new_email_provider": "Add a new email provider",
+    "mine_from": "Mine your contacts from",
     "fetch_sources_failed": "Failed to fetch mining sources",
     "email_address": "email address",
     "extract_contacts": "Extract contacts",
-    "microsoft_or_outlook": "Microsoft or Outlook"
+    "microsoft_or_outlook": "Microsoft or Outlook",
+    "import_csv_excel": "Import CSV or Excel"
   },
   "fr": {
     "pick_existing_email": "Choisissez une adresse e-mail existante pour l’extraction",
-    "add_new_email_provider": "Ajouter un nouveau compte e-mail",
+    "mine_from": "Extraire vos contacts depuis",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
     "email_address": "adresse e-mail",
     "extract_contacts": "Extraire les contacts",
-    "microsoft_or_outlook": "Microsoft ou Outlook"
+    "microsoft_or_outlook": "Microsoft ou Outlook",
+    "import_csv_excel": "Importer CSV ou Excel"
   }
 }
 </i18n>

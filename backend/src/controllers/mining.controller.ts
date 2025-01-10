@@ -10,12 +10,12 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
+import { validateType } from '../utils/helpers/validation';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
   sanitizeImapInput
 } from './imap.helpers';
-import { validateType } from '../utils/helpers/validation';
 import {
   getAuthClient,
   getTokenConfig,
@@ -271,6 +271,22 @@ export default function initializeMiningController(
       }
 
       return res.status(201).send({ error: null, data: miningTask });
+    },
+
+    startMiningFile(req: Request, res: Response) {
+      const user = res.locals.user as User;
+
+      const {
+        name,
+        contacts
+      }: {
+        name: string;
+        contacts: Record<string, string>[];
+      } = req.body;
+
+      return res
+        .status(200)
+        .send({ error: null, name, contacts, userId: user.id });
     },
 
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {

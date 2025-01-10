@@ -1,7 +1,7 @@
 import { Contact, TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
-import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 import RealtimeSSE from '../../utils/helpers/sseHelpers';
+import ImapEmailsFetcher from '../imap/ImapEmailsFetcher';
 
 export type RedisCommand = 'REGISTER' | 'DELETE';
 export type TaskProgressType =

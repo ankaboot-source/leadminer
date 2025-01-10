@@ -15,11 +15,11 @@ import {
 import { TaskCategory, TaskStatus, TaskType } from '../../db/types';
 
 import ENV from '../../config';
-import EmailFetcherFactory from '../factory/EmailFetcherFactory';
-import { ImapEmailsFetcherOptions } from '../imap/types';
-import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
 import SupabaseTasks from '../../db/supabase/tasks';
 import logger from '../../utils/logger';
+import EmailFetcherFactory from '../factory/EmailFetcherFactory';
+import SSEBroadcasterFactory from '../factory/SSEBroadcasterFactory';
+import { ImapEmailsFetcherOptions } from '../imap/types';
 import { redactSensitiveData } from './utils';
 
 export default class TasksManager {

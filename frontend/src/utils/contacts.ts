@@ -183,3 +183,13 @@ export function getTagColor(tag: string) {
 export function getTagLabel(value: string) {
   return tags().find((tag) => tag.value === value)?.label ?? 'unknown';
 }
+
+export function isValidURL(url: string) {
+  try {
+    // skipcq: JS-R1002 - instantiating unused object as the url validity checker
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
