@@ -25,31 +25,49 @@ const usePVToastService = () => {
   return toastService;
 };
 
+function isExpectedFaultyCode(err: unknown) {
+  return Boolean(
+    isFetchError(err) &&
+      err.response &&
+      EXPECTED_FAULTY_STATUS_CODES.includes(err.response.status),
+  );
+}
+
+function isFetchError(err: unknown) {
+  return err instanceof FetchError;
+}
+
+function isUnauthorized(err: unknown) {
+  return Boolean(
+    isFetchError(err)
+      ? err.response?.status === 401
+      : err instanceof AuthSessionMissingError,
+  );
+}
+
+function networkErrorMessage(err: unknown) {
+  return isFetchError(err) && err.message === 'Network Error'
+    ? ERROR_STATUS_MESSAGES[503]
+    : null;
+}
+
+function otherErrorMessages(err: unknown) {
+  if (isFetchError(err) && err.response) {
+    return (
+      err.response._data.message ?? ERROR_STATUS_MESSAGES[err.response.status]
+    );
+  }
+  return ERROR_STATUS_MESSAGES[500];
+}
+
 export default defineNuxtPlugin((nuxtApp) => {
   const toastService = usePVToastService();
 
   nuxtApp.vueApp.config.errorHandler = (error) => {
     let message = ERROR_STATUS_MESSAGES[500];
 
-    const isFetchError = (err: unknown): err is FetchError =>
-      err instanceof FetchError;
+    if (isExpectedFaultyCode(error)) return;
 
-    if (
-      isFetchError(error) &&
-      // @ts-expect-error: .includes() still works as expected if the parameter is undefined
-      EXPECTED_FAULTY_STATUS_CODES.includes(error.response?.status)
-    )
-      return;
-    const isUnauthorized = (err: unknown) =>
-      error instanceof AuthSessionMissingError ||
-      (isFetchError(err) && err.response?.status === 401);
-
-    const isNetworkError = (err: unknown) =>
-      isFetchError(err) && err.message === 'Network Error';
-
-    /**
-     * Handle session inactivity
-     */
     if (isUnauthorized(error)) {
       toastService.add({
         summary: 'Session Expired',
@@ -58,32 +76,19 @@ export default defineNuxtPlugin((nuxtApp) => {
         life: 5000,
       });
       signOutManually();
-    } else {
-      /**
-       * Handle network is disconnected
-       */
-      if (isNetworkError(error)) {
-        message = ERROR_STATUS_MESSAGES[503];
-      } else if (isFetchError(error) && error.response) {
-        /**
-         * Handle more general errors except 402 because it's handled by Credits component
-         */
-        if (error.response.status !== 402) {
-          message =
-            error.response._data.message ??
-            ERROR_STATUS_MESSAGES[error.response.status];
-        }
-      }
-
-      toastService.add({
-        summary: 'Oops!',
-        severity: 'error',
-        detail: message ?? 'Something went wrong.',
-        life: 3000,
-      });
-
-      // eslint-disable-next-line no-console
-      console.error(error);
+      return;
     }
+
+    message = networkErrorMessage(error) ?? otherErrorMessages(error);
+
+    toastService.add({
+      summary: 'Oops!',
+      severity: 'error',
+      detail: message,
+      life: 3000,
+    });
+
+    // eslint-disable-next-line no-console
+    console.error(error);
   };
 });
