@@ -211,10 +211,10 @@ function readFile(file: File): Promise<string | null> {
   });
 }
 
-function extractEmailColumnIndexes(row: Row, specific_indexes: number[] = []) {
+function extractEmailColumnIndexes(row: Row, specific_indexes?: number[]) {
   const keys = Object.keys(row);
   const emailColumnIndexes = keys.reduce((indexes, key, index) => {
-    if (!specific_indexes.includes(index)) return indexes; // specific_indexes don't include index, skip
+    if (specific_indexes && !specific_indexes.includes(index)) return indexes; // Skip indexes not in specific_indexes
 
     const cellValue = String(row[key]).toLowerCase();
     if (REGEX_EMAIL.test(cellValue)) {
@@ -222,23 +222,20 @@ function extractEmailColumnIndexes(row: Row, specific_indexes: number[] = []) {
     }
     return indexes;
   }, [] as number[]);
+
+  if (emailColumnIndexes.length === 0)
+    throw Error('No email column detected in the CSV data.');
+
   return emailColumnIndexes;
 }
 
 function getEmailColumnIndexes(rows: Row[]) {
-  let emailColumnIndexes = extractEmailColumnIndexes(rows[0]); // check if 1st row has email columns
-  if (emailColumnIndexes.length > 0) {
-    // all next rows should have emails on the same columns
-    for (let i = 1; i < rows.length; i++) {
-      // if a column of emailColumnIndexes is not an email, remove it.
-      emailColumnIndexes = extractEmailColumnIndexes(
-        rows[i],
-        emailColumnIndexes,
-      );
-      if (emailColumnIndexes.length === 0) {
-        throw Error('No email column detected in the CSV data.');
-      }
-    }
+  let emailColumnIndexes = extractEmailColumnIndexes(rows[0]); // Check the first row for email columns
+
+  // Validate against all next rows
+  for (let i = 1; i < rows.length; i++) {
+    // If a column of emailColumnIndexes is not an email, remove it.
+    emailColumnIndexes = extractEmailColumnIndexes(rows[i], emailColumnIndexes);
   }
   return emailColumnIndexes;
 }
