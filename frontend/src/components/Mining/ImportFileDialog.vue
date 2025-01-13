@@ -7,7 +7,9 @@
     pt:content:class="grow p-3 border-y border-slate-200"
     pt:footer:class="p-3"
     :draggable="false"
-    maximizable
+    :maximizable="$screenStore?.size?.md"
+    :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
+    :style="{ width: '60vw', height: '70vh' }"
   >
     <FileUpload
       ref="fileUpload"
@@ -182,6 +184,7 @@ const selectedHeaders = computed(() =>
     })
     .filter(Boolean),
 );
+const $screenStore = useScreenStore();
 
 function reset() {
   fileUpload.value.clear();
