@@ -75,7 +75,7 @@
                     'font-semibold': col.header === 'email',
                   }"
                   :class="{
-                    'border-[--p-primary-color]': col.header === 'email',
+                    'border-[--p-contrast-500]': col.header === 'email',
                   }"
                   :placeholder="t('select_column_placeholder')"
                   option-value="value"
