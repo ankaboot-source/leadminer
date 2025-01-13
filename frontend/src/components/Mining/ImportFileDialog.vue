@@ -68,9 +68,16 @@
             size="small"
             scrollable
           >
-            <Column v-for="col of columns" :key="col.key" :field="col.field">
+            <Column
+              v-for="col of columns"
+              :key="col.key"
+              :pt="{ columnHeaderContent: 'flex-col w-full' }"
+              :field="col.field"
+            >
               <template #header>
-                <div>{{ col.original_header }}</div>
+                <div class="justify-self-center">
+                  {{ col.original_header || '&nbsp;' }}
+                </div>
                 <Select
                   v-model="col.header"
                   :pt:label:class="{
@@ -82,6 +89,7 @@
                   :placeholder="t('select_column_placeholder')"
                   option-value="value"
                   option-label="label"
+                  class="w-full"
                   :options="selectOptions"
                   :option-disabled="
                     (data) =>
