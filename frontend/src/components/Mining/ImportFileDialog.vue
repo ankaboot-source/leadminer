@@ -8,7 +8,6 @@
     pt:footer:class="p-3"
     :draggable="false"
     maximizable
-    @show="maximize()"
   >
     <FileUpload
       ref="fileUpload"
@@ -136,10 +135,6 @@ const { t } = useI18n({
 const $leadminerStore = useLeadminerStore();
 
 const dialog = ref();
-function maximize() {
-  if (dialog.value.maximized) return;
-  dialog.value.maximize();
-}
 const visible = ref(false);
 const openModal = () => {
   visible.value = true;
