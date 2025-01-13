@@ -68,6 +68,7 @@
           >
             <Column v-for="col of columns" :key="col.key" :field="col.field">
               <template #header>
+                <div>{{ col.original_header }}</div>
                 <Select
                   v-model="col.header"
                   :pt:label:class="{
@@ -169,6 +170,7 @@ type Column = {
   field: string;
   header: string | null;
   key?: number;
+  original_header?: string;
 };
 type Row = Record<string, string>;
 
@@ -234,6 +236,7 @@ function createHeaders(rows: Row[]) {
         key === option.label.replace(/\s/g, '') || key === option.value,
     ); // https://github.com/iuccio/csvToJson/pull/68
     return {
+      original_header: key,
       field: matchingOption?.value || String(index),
       header:
         index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
@@ -265,6 +268,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     } else {
       throw Error('Parsed CSV content is empty or invalid.');
     }
+    console.log(columns.value);
     parsedData.value = contentJson.value.map((row: Row) => {
       const updatedRow: Row = {};
       Object.keys(row).forEach((key, colIndex) => {
