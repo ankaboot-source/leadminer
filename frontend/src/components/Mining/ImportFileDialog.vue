@@ -101,7 +101,7 @@
 
     <template v-if="contentJson" #footer>
       <Button
-        :label="t('previous')"
+        :label="t('upload_your_file')"
         severity="secondary"
         icon="pi pi-arrow-left"
         @click="reset()"
@@ -317,7 +317,7 @@ function startMining() {
     "select_file_label": "Upload your file",
     "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
     "drag_and_drop": "Drag and drop files here.",
-    "previous": "Upload your file",
+    "upload_your_file": "Upload your file",
     "start_mining": "Start mining now!",
     "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
     "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
@@ -329,7 +329,7 @@ function startMining() {
     "select_file_label": "Téléchargez votre fichier",
     "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
-    "previous": "Précédent",
+    "upload_your_file": "Téléchargez votre fichier",
     "start_mining": "Commencer l'extraction de vos contacts",
     "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
     "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
