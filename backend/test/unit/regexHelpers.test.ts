@@ -171,6 +171,38 @@ describe('regExHelpers.extractNameAndEmail(data)', () => {
     expect(extractNameAndEmail(input)).toEqual(output);
   });
 
+  it('should correctly extract email with plus address', () => {
+    const testCases = [
+      {
+        input: 'leadminer.io <tester+123.123@leadminer.io>',
+        output: [
+          {
+            name: 'leadminer.io',
+            identifier: 'tester',
+            address: 'tester@leadminer.io',
+            plusAddress: 'tester+123.123@leadminer.io',
+            domain: 'leadminer.io'
+          }
+        ]
+      },
+      {
+        input: 'leadminer.io <tester+123@leadminer.io>',
+        output: [
+          {
+            name: 'leadminer.io',
+            identifier: 'tester',
+            address: 'tester@leadminer.io',
+            plusAddress: 'tester+123@leadminer.io',
+            domain: 'leadminer.io'
+          }
+        ]
+      }
+    ];
+    testCases.forEach(({ input, output }) => {
+      expect(extractNameAndEmail(input)).toEqual(output);
+    });
+  });
+
   it('Should return valid object with empty name if there is none.', () => {
     const generalOutput = [
       {
