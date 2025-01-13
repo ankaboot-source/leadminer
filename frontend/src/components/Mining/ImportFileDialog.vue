@@ -211,35 +211,42 @@ function readFile(file: File): Promise<string | null> {
   });
 }
 
-function extractEmailColumnIndex(row: Row) {
+function extractEmailColumnIndexes(row: Row, specific_indexes: number[] = []) {
   const keys = Object.keys(row);
-  const emailColumnIndex = keys.findIndex((key) => {
+  const emailColumnIndexes = keys.reduce((indexes, key, index) => {
+    if (!specific_indexes.includes(index)) return indexes; // specific_indexes don't include index, skip
+
     const cellValue = String(row[key]).toLowerCase();
-    return REGEX_EMAIL.test(cellValue);
-  });
-  return emailColumnIndex;
+    if (REGEX_EMAIL.test(cellValue)) {
+      indexes.push(index);
+    }
+    return indexes;
+  }, [] as number[]);
+  return emailColumnIndexes;
 }
 
-function getEmailColumnIndex(rows: Row[], testLength: number) {
-  let emailColumnIndex = extractEmailColumnIndex(rows[0]); // check if 1st row has email column
-  if (emailColumnIndex !== -1) {
-    // 2nd to 5th row should have emails on the same column
-    for (let i = 1; i < testLength; i++) {
-      if (emailColumnIndex !== extractEmailColumnIndex(rows[i])) {
-        emailColumnIndex = -1;
-        break;
+function getEmailColumnIndexes(rows: Row[]) {
+  let emailColumnIndexes = extractEmailColumnIndexes(rows[0]); // check if 1st row has email columns
+  if (emailColumnIndexes.length > 0) {
+    // all next rows should have emails on the same columns
+    for (let i = 1; i < rows.length; i++) {
+      // if a column of emailColumnIndexes is not an email, remove it.
+      emailColumnIndexes = extractEmailColumnIndexes(
+        rows[i],
+        emailColumnIndexes,
+      );
+      if (emailColumnIndexes.length === 0) {
+        throw Error('No email column detected in the CSV data.');
       }
     }
   }
-  if (emailColumnIndex === -1) {
-    throw Error('No email column detected in the CSV data.');
-  }
-  return emailColumnIndex;
+  return emailColumnIndexes;
 }
 
 function createHeaders(rows: Row[]) {
-  const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
-  console.debug(`Email column detected at index ${emailColumnIndex}.`);
+  const emailColumnIndexes = getEmailColumnIndexes(rows);
+  console.debug(`Email column detected at index ${emailColumnIndexes}.`);
+
   const keys = Object.keys(rows[0]);
   return keys.map((key, index) => {
     const matchingOption = options.find(
@@ -250,7 +257,9 @@ function createHeaders(rows: Row[]) {
       original_header: key,
       field: matchingOption?.value || String(index),
       header:
-        index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
+        index === emailColumnIndexes[0] // set the first email column as email
+          ? 'email'
+          : matchingOption?.value || null, // Map to email or label or null
     };
   });
 }
