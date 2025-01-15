@@ -35,16 +35,12 @@
       </div>
     </div>
     <template v-if="sourceOptions.length">
-      <Separator
-        layout="vertical"
-        :content="$t('common.or')"
-        class="hidden min-[1129px]:flex"
-      />
-      <Separator
-        layout="horizontal"
-        :content="$t('common.or')"
-        class="flex min-[1129px]:hidden"
-      />
+      <div class="hidden min-[1129px]:block">
+        <Separator layout="vertical" :content="$t('common.or')" />
+      </div>
+      <div class="block min-[1129px]:hidden">
+        <Separator layout="horizontal" :content="$t('common.or')" />
+      </div>
     </template>
     <div class="shrink flex flex-col gap-3">
       <span>{{ t('mine_from') }}</span>
