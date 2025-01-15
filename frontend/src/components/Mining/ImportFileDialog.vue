@@ -179,12 +179,13 @@ const options = [
   { value: 'image', label: 'Avatar URL' },
 ];
 
-const url_options = ['image', 'same_as'];
-const rest_options = options
+const URL_OPTIONS = ['image', 'same_as'];
+const REST_OPTIONS = options
   .filter(
-    (option) => option.value !== 'email' && !url_options.includes(option.value),
+    (option) => option.value !== 'email' && !URL_OPTIONS.includes(option.value),
   )
   .map((option) => option.value);
+
 type Column = {
   field: string;
   header: string | null;
@@ -203,6 +204,29 @@ const selectedHeaders = computed(() =>
     .filter(Boolean),
 );
 const $screenStore = useScreenStore();
+
+const DELIMITERS = [',', ';', '|', '\t'];
+function getLocalDelimiter() {
+  const language = navigator.language?.substring(0, 2);
+  switch (language) {
+    case 'fr':
+    case 'de':
+    case 'es':
+    case 'pt':
+    case 'it':
+      return ';';
+    default:
+      return ',';
+  }
+}
+function getOrderedDelimiters() {
+  const localDelimiter = getLocalDelimiter();
+  return [
+    localDelimiter,
+    ...DELIMITERS.filter((delimiter) => delimiter !== localDelimiter),
+  ];
+}
+const orderedDelimiters = getOrderedDelimiters();
 
 function reset() {
   fileUpload.value.clear();
@@ -299,8 +323,8 @@ function createHeaders(rows: Row[]) {
     const available_option = (() => {
       if (emptyColumnIndexes.includes(index)) return [];
       if (emailColumnIndexes.includes(index)) return ['email'];
-      if (urlColumnIndexes.includes(index)) return url_options;
-      return rest_options;
+      if (urlColumnIndexes.includes(index)) return URL_OPTIONS;
+      return REST_OPTIONS;
     })();
     return {
       original_header: key,
@@ -323,21 +347,35 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     console.debug({ 'Selected file:': file });
     const content = await readFile(file);
     if (!content) throw Error();
-
-    // Parse CSV string to JSON
-    contentJson.value = csvToJson
-      .supportQuotedField(true)
-      .fieldDelimiter(',')
-      .csvStringToJson(content);
-    if (
-      Array.isArray(contentJson.value) &&
-      contentJsonLength.value &&
-      contentJsonLength.value > 0
-    ) {
-      columns.value = createHeaders(contentJson.value);
-    } else {
-      throw Error('Parsed CSV content is empty or invalid.');
+    let successfullyParsed = false;
+    for (const delimiter of orderedDelimiters) {
+      try {
+        console.debug('Trying to parse using the delimiter:', delimiter);
+        // Parse CSV string to JSON
+        contentJson.value = csvToJson
+          .supportQuotedField(true)
+          .fieldDelimiter(delimiter)
+          .csvStringToJson(content);
+        if (
+          Array.isArray(contentJson.value) &&
+          contentJsonLength.value &&
+          contentJsonLength.value > 0
+        ) {
+          columns.value = createHeaders(contentJson.value);
+          successfullyParsed = true;
+          break;
+        } else {
+          throw Error('No valid CSV content could be parsed.');
+        }
+      } catch {
+        console.error('Failed parsing using the delimiter:', delimiter);
+        continue;
+      }
     }
+    if (!successfullyParsed || !contentJson.value || !columns.value) {
+      throw new Error('No valid CSV content could be parsed.');
+    }
+
     console.log({ columns: columns.value });
     parsedData.value = contentJson.value.map((row: Row) => {
       const updatedRow: Row = {};
