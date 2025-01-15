@@ -91,10 +91,12 @@
                   option-label="label"
                   class="w-full"
                   :options="selectOptions"
+                  :disabled="col.available_option.length === 0"
                   :option-disabled="
                     (data) =>
-                      selectedHeaders.includes(data.value) &&
-                      data.value !== col.header
+                      (selectedHeaders.includes(data.value) &&
+                        data.value !== col.header) ||
+                      !col.available_option.includes(data.value)
                   "
                   show-clear
                 />
@@ -135,7 +137,8 @@
 </template>
 
 <script setup lang="ts">
-import { maxFileSize, maxSizeInMB, REGEX_EMAIL } from '@/utils/constants';
+import { maxFileSize, maxSizeInMB } from '@/utils/constants';
+import { REGEX_EMAIL } from '@/utils/email';
 import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 
@@ -176,11 +179,18 @@ const options = [
   { value: 'image', label: 'Avatar URL' },
 ];
 
+const url_options = ['image', 'same_as'];
+const rest_options = options
+  .filter(
+    (option) => option.value !== 'email' && !url_options.includes(option.value),
+  )
+  .map((option) => option.value);
 type Column = {
   field: string;
   header: string | null;
   key?: number;
   original_header?: string;
+  available_option: string[];
 };
 type Row = Record<string, string>;
 
@@ -211,38 +221,73 @@ function readFile(file: File): Promise<string | null> {
   });
 }
 
-function extractEmailColumnIndexes(row: Row, specific_indexes?: number[]) {
-  const keys = Object.keys(row);
-  const emailColumnIndexes = keys.reduce((indexes, key, index) => {
-    if (specific_indexes && !specific_indexes.includes(index)) return indexes; // Skip indexes not in specific_indexes
-
-    const cellValue = String(row[key]).toLowerCase();
-    if (REGEX_EMAIL.test(cellValue)) {
-      indexes.push(index);
-    }
-    return indexes;
-  }, [] as number[]);
-
-  if (emailColumnIndexes.length === 0)
-    throw Error('No email column detected in the CSV data.');
-
-  return emailColumnIndexes;
+function isEmptyCell(cellValue: string) {
+  return cellValue === '' || cellValue === undefined || cellValue === null;
 }
+function getColumns(rows: Row[]) {
+  const keys = Object.keys(rows[0]);
+  const emailColumnIndexes = new Set<number>();
+  const urlColumnIndexes = new Set<number>();
+  const emptyColumnIndexes = new Set<number>();
 
-function getEmailColumnIndexes(rows: Row[]) {
-  let emailColumnIndexes = extractEmailColumnIndexes(rows[0]); // Check the first row for email columns
+  // Initialize sets with indexes from the first row
+  keys.forEach((key, index) => {
+    const cellValue = String(rows[0][key]).toLowerCase();
+    if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(index);
+    if (
+      isValidURL(cellValue) ||
+      cellValue === '' ||
+      cellValue === undefined ||
+      cellValue === null
+    )
+      urlColumnIndexes.add(index);
+    if (cellValue === '' || cellValue === undefined || cellValue === null)
+      emptyColumnIndexes.add(index);
+  });
+  if (emailColumnIndexes.size === 0)
+    throw new Error('No email column detected in the CSV data.');
 
-  // Validate against all next rows
+  // Clean from sets based on next rows
   for (let i = 1; i < rows.length; i++) {
-    // If a column of emailColumnIndexes is not an email, remove it.
-    emailColumnIndexes = extractEmailColumnIndexes(rows[i], emailColumnIndexes);
+    const row = rows[i];
+    const row_keys = Object.keys(row);
+    const validIndexes = new Set<number>([
+      ...emailColumnIndexes,
+      ...urlColumnIndexes,
+    ]);
+    validIndexes.forEach((index) => {
+      const cellValue = String(row[row_keys[index]]).toLowerCase();
+      if (emailColumnIndexes.has(index) && !REGEX_EMAIL.test(cellValue))
+        emailColumnIndexes.delete(index);
+      if (
+        urlColumnIndexes.has(index) &&
+        !(isValidURL(cellValue) || isEmptyCell(cellValue))
+      )
+        urlColumnIndexes.delete(index);
+      if (emptyColumnIndexes.has(index) && !isEmptyCell(cellValue))
+        emptyColumnIndexes.delete(index);
+    });
   }
-  return emailColumnIndexes;
+
+  if (emailColumnIndexes.size === 0)
+    throw new Error('No email column detected in the CSV data.');
+
+  return {
+    emailColumnIndexes: Array.from(emailColumnIndexes),
+    urlColumnIndexes: Array.from(urlColumnIndexes).filter(
+      (index) => !emptyColumnIndexes.has(index), // Remove empty columns
+    ),
+    emptyColumnIndexes: Array.from(emptyColumnIndexes),
+  };
 }
 
 function createHeaders(rows: Row[]) {
-  const emailColumnIndexes = getEmailColumnIndexes(rows);
-  console.debug(`Email column detected at index ${emailColumnIndexes}.`);
+  const { emailColumnIndexes, urlColumnIndexes, emptyColumnIndexes } =
+    getColumns(rows);
+
+  console.debug(`Email able columns detected at index ${emailColumnIndexes}.`);
+  console.debug(`URL able columns detected at index ${urlColumnIndexes}.`);
+  console.debug(`Empty columns detected at index ${emptyColumnIndexes}.`);
 
   const keys = Object.keys(rows[0]);
   return keys.map((key, index) => {
@@ -250,13 +295,21 @@ function createHeaders(rows: Row[]) {
       (option) =>
         key === option.label.replace(/\s/g, '') || key === option.value,
     ); // https://github.com/iuccio/csvToJson/pull/68
+
+    const available_option = (() => {
+      if (emptyColumnIndexes.includes(index)) return [];
+      if (emailColumnIndexes.includes(index)) return ['email'];
+      if (urlColumnIndexes.includes(index)) return url_options;
+      return rest_options;
+    })();
     return {
       original_header: key,
       field: matchingOption?.value || String(index),
       header:
-        index === emailColumnIndexes[0] // set the first email column as email
+        index === emailColumnIndexes[0] // Set the first email column as email //TODO the one that has 'email' in the header is should be selected as the email column if its valid
           ? 'email'
           : matchingOption?.value || null, // Map to email or label or null
+      available_option,
     };
   });
 }
@@ -285,7 +338,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     } else {
       throw Error('Parsed CSV content is empty or invalid.');
     }
-    console.log(columns.value);
+    console.log({ columns: columns.value });
     parsedData.value = contentJson.value.map((row: Row) => {
       const updatedRow: Row = {};
       Object.keys(row).forEach((key, colIndex) => {
