@@ -10,13 +10,19 @@ export default function initializeContactsRoutes(
 ) {
   const router = Router();
 
-  const { exportContactsCSV } = initializeContactsController(contacts);
+  const { exportContactsCSV, deleteContacts } =
+    initializeContactsController(contacts);
 
   router.post(
-    '/export/csv',
+    '/contacts/export/csv',
     initializeAuthMiddleware(authResolver),
     exportContactsCSV
   );
 
+  router.delete(
+    '/contacts',
+    initializeAuthMiddleware(authResolver),
+    deleteContacts
+  );
   return router;
 }

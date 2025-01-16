@@ -69,6 +69,52 @@
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
+          <Button
+            id="delete-contact"
+            v-tooltip.top="
+              t('delete_contacts', implicitlySelectedContactsLength)
+            "
+            icon="pi pi-times"
+            :label="$screenStore.size.md ? t('delete') : undefined"
+            severity="danger"
+            :disabled="isExportDisabled || isRemovingContacts"
+            :loading="isRemovingContacts"
+            @click="showWarning"
+          />
+          <!-- Warning model Section -->
+          <Dialog
+            v-model:visible="showRemoveContactModal"
+            modal
+            :header="t('delete_contacts', implicitlySelectedContactsLength)"
+            :style="{ width: '25rem' }"
+          >
+            <span class="p-text-secondary block mb-5">
+              {{
+                t(
+                  'delete_contacts_confirmation',
+                  implicitlySelectedContactsLength,
+                )
+              }}
+            </span>
+            <div class="flex flex-row-reverse justify-content-start gap-2">
+              <Button
+                id="delete-contact-confirm"
+                type="button"
+                :label="t('delete')"
+                severity="danger"
+                :loading="isRemovingContacts"
+                @click="removeContacts"
+              >
+              </Button>
+              <Button
+                type="button"
+                :label="$t('common.cancel')"
+                severity="secondary"
+                @click="closeWarning"
+              >
+              </Button>
+            </div>
+          </Dialog>
         </div>
         <div>
           <EnrichButton
@@ -751,7 +797,6 @@ function openContactInformation(data: Contact) {
 }
 
 /* *** Filters *** */
-
 const filtersStore = useFiltersStore();
 
 const filteredContacts = ref<Contact[]>([]);
@@ -801,14 +846,15 @@ const selectedContacts = ref<Contact[]>([]);
 const selectedContactsLength = computed(() => selectedContacts.value.length);
 const selectAll = ref(false);
 
+function deselectContacts() {
+  selectAll.value = false;
+  selectedContacts.value = [];
+}
 const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
   if (event.checked) {
     selectAll.value = true;
     selectedContacts.value = filteredContacts.value; // all data according to your needs
-  } else {
-    selectAll.value = false;
-    selectedContacts.value = [];
-  }
+  } else deselectContacts();
 };
 const onRowSelect = () => {
   // This control can be completely managed by you.
@@ -848,16 +894,16 @@ const implicitSelectAll = computed(
   () => implicitlySelectedContactsLength.value === contactsLength.value,
 );
 
-const contactsToExport = computed<string[] | undefined>(() =>
+const contactsToTreat = computed<string[] | undefined>(() =>
   implicitSelectAll.value
     ? undefined
     : implicitlySelectedContacts.value.map((item: Contact) => item.email),
 );
 
 watch(
-  contactsToExport,
+  contactsToTreat,
   () => {
-    $contactsStore.selectedEmails = contactsToExport.value;
+    $contactsStore.selectedEmails = contactsToTreat.value;
   },
   { deep: true, immediate: true },
 );
@@ -910,14 +956,50 @@ const openCreditModel = (
     availableAlready ?? 0,
   );
 };
+const showRemoveContactModal = ref(false);
+function showWarning() {
+  showRemoveContactModal.value = true;
+}
+function closeWarning() {
+  showRemoveContactModal.value = false;
+}
 
+const isRemovingContacts = ref(false);
+async function removeContacts() {
+  isRemovingContacts.value = true;
+  try {
+    await $api('/contacts', {
+      method: 'DELETE',
+      body: {
+        emails: contactsToTreat.value,
+        deleteAllContacts: contactsToTreat.value === undefined,
+      },
+    });
+    $toast.add({
+      severity: 'success',
+      summary: t('contacts_deleted', implicitlySelectedContactsLength.value),
+      detail: t(
+        'contacts_deleted_success',
+        implicitlySelectedContactsLength.value,
+      ),
+      life: 3000,
+    });
+    closeWarning();
+    await $contactsStore.reloadContacts();
+    deselectContacts();
+    isRemovingContacts.value = false;
+  } catch (err) {
+    isRemovingContacts.value = false;
+    throw err;
+  }
+}
 async function exportTable(partialExport = false) {
-  await $api('/export/csv', {
+  await $api('/contacts/export/csv', {
     method: 'POST',
     body: {
       partialExport,
-      emails: contactsToExport.value,
-      exportAllContacts: contactsToExport.value === undefined,
+      emails: contactsToTreat.value,
+      exportAllContacts: contactsToTreat.value === undefined,
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {
@@ -1147,7 +1229,12 @@ table.p-datatable-table {
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "any": "Any",
-    "contact_information": "Contact Information"
+    "contact_information": "Contact Information",
+    "delete": "Delete",
+    "delete_contacts_confirmation": "Deleting this contact is permanent. You will lose all its mining data.| Deleting these {n} contacts is permanent. You will lose all their mining data.",
+    "delete_contacts": "Delete contact|Delete {n} contacts",
+    "contacts_deleted": "Contact deleted|Contacts deleted",
+    "contacts_deleted_success": "Contact has been deleted successfully.| {n} contacts have been deleted successfully."
   },
   "fr": {
     "of": "sur",
@@ -1193,7 +1280,12 @@ table.p-datatable-table {
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "any": "N'importe lequel",
-    "contact_information": "Information de contact"
+    "contact_information": "Information de contact",
+    "delete": "Supprimer",
+    "delete_contacts_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données déjà extraites.",
+    "delete_contacts": "Supprimer le compte",
+    "contacts_deleted": "Compte supprimé",
+    "contacts_deleted_success": "Votre compte a été supprimé avec succès"
   }
 }
 </i18n>
