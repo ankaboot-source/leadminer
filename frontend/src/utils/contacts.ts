@@ -226,7 +226,7 @@ async function deleteFromTable(
   }
 }
 
-export async function deleteContactsFromDatabase(
+export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
   await deleteFromTable('persons', emails);

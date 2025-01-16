@@ -968,7 +968,7 @@ const isRemovingContacts = ref(false);
 async function removeContacts() {
   isRemovingContacts.value = true;
   try {
-    await deleteContactsFromDatabase(contactsToTreat.value);
+    await removeContactsFromDatabase(contactsToTreat.value);
     $toast.add({
       severity: 'success',
       summary: t('contacts_deleted', implicitlySelectedContactsLength.value),
