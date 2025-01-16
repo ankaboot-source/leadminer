@@ -74,6 +74,7 @@
             v-tooltip.top="
               t('delete_contacts', implicitlySelectedContactsLength)
             "
+            class="ml-1"
             icon="pi pi-times"
             :label="$screenStore.size.md ? t('delete') : undefined"
             severity="danger"
