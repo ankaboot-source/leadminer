@@ -199,7 +199,6 @@ async function deleteFromTable(
   emails?: string[],
 ): Promise<void> {
   const $supabaseClient = useSupabaseClient();
-
   if (emails === undefined) {
     // Delete all
     const { error } = await $supabaseClient
@@ -207,8 +206,7 @@ async function deleteFromTable(
       .schema('private')
       .from(table)
       .delete()
-      .neq('email', ''); // hack: DELETE requires a WHERE clause
-
+      .neq('email', ''); // DELETE requires a WHERE clause
     if (error) {
       throw new Error(`Error deleting from ${table}: ${error.message}`);
     }
@@ -219,7 +217,6 @@ async function deleteFromTable(
       .from(table)
       .delete()
       .in('email', emails);
-
     if (error) {
       throw new Error(`Error deleting from ${table}: ${error.message}`);
     }
