@@ -968,13 +968,7 @@ const isRemovingContacts = ref(false);
 async function removeContacts() {
   isRemovingContacts.value = true;
   try {
-    await $api('/contacts', {
-      method: 'DELETE',
-      body: {
-        emails: contactsToTreat.value,
-        deleteAllContacts: contactsToTreat.value === undefined,
-      },
-    });
+    await deleteContactsFromDatabase(contactsToTreat.value);
     $toast.add({
       severity: 'success',
       summary: t('contacts_deleted', implicitlySelectedContactsLength.value),

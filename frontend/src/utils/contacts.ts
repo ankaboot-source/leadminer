@@ -193,3 +193,42 @@ export function isValidURL(url: string) {
     return false;
   }
 }
+
+async function deleteFromTable(
+  table: string,
+  emails?: string[],
+): Promise<void> {
+  const $supabaseClient = useSupabaseClient();
+
+  if (emails === undefined) {
+    // Delete all
+    const { error } = await $supabaseClient
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from(table)
+      .delete()
+      .neq('email', ''); // hack: DELETE requires a WHERE clause
+
+    if (error) {
+      throw new Error(`Error deleting from ${table}: ${error.message}`);
+    }
+  } else if (emails) {
+    const { error } = await $supabaseClient
+      // @ts-expect-error: Issue with nuxt/supabase
+      .schema('private')
+      .from(table)
+      .delete()
+      .in('email', emails);
+
+    if (error) {
+      throw new Error(`Error deleting from ${table}: ${error.message}`);
+    }
+  }
+}
+
+export async function deleteContactsFromDatabase(
+  emails?: string[],
+): Promise<void> {
+  await deleteFromTable('persons', emails);
+  await deleteFromTable('refinedpersons', emails);
+}

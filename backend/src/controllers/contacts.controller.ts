@@ -7,7 +7,6 @@ import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
-import { deleteContactsFromDatabase } from './contacts.helper';
 
 function validateRequest(req: Request, res: Response) {
   const userId = (res.locals.user as User).id;
@@ -183,27 +182,6 @@ export default function initializeContactsController(contacts: Contacts) {
           statusCode,
           delimiter
         );
-      } catch (error) {
-        return next(error);
-      }
-    },
-
-    async deleteContacts(req: Request, res: Response, next: NextFunction) {
-      const {
-        emails,
-        deleteAllContacts
-      }: { emails?: string[]; deleteAllContacts: boolean } = req.body;
-
-      if (!deleteAllContacts && (!Array.isArray(emails) || !emails.length)) {
-        return res.status(400).json({
-          message: 'Parameter "emails" must be a non-empty list of emails'
-        });
-      }
-      try {
-        await deleteContactsFromDatabase(emails ?? [], deleteAllContacts);
-        return res.status(200).json({
-          message: 'Contacts deleted successfully.'
-        });
       } catch (error) {
         return next(error);
       }
