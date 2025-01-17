@@ -1,3 +1,4 @@
+import type { User } from '@supabase/supabase-js';
 import type { Contact } from '~/types/contact';
 import type { Organization } from '~/types/organization';
 
@@ -17,20 +18,6 @@ export function convertDates(data: Contact[]) {
     }
     return d;
   });
-}
-
-export async function getContacts(userId: string) {
-  const $supabaseClient = useSupabaseClient();
-  const { data, error } = await $supabaseClient
-    // @ts-expect-error: Issue with nuxt/supabase
-    .schema('private')
-    .rpc('get_contacts_table', { user_id: userId });
-
-  if (error) {
-    throw error;
-  }
-
-  return data ? convertDates(data) : [];
 }
 
 /**
@@ -197,12 +184,14 @@ export function isValidURL(url: string) {
 export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
+  const $user = useSupabaseUser() as Ref<User>;
   const $supabaseClient = useSupabaseClient();
   const { error } = await $supabaseClient
     // @ts-expect-error: Issue with nuxt/supabase
     .schema('private')
     .rpc('delete_contacts', {
-      emails: emails || [],
+      user_id: $user.value.id,
+      emails: emails,
       deleteallcontacts: emails === undefined,
     });
   if (error) throw error;
