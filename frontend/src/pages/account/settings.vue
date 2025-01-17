@@ -121,7 +121,7 @@
       <LegalInformation />
     </Panel>
 
-    <!-- Warning model Section -->
+    <!-- Warning modal Section -->
     <Dialog
       v-model:visible="showDeleteModal"
       modal

@@ -69,53 +69,12 @@
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
-          <Button
-            id="remove-contact"
-            v-tooltip.top="
-              t('remove_contacts', implicitlySelectedContactsLength)
-            "
-            class="ml-1"
-            icon="pi pi-times"
-            :label="$screenStore.size.md ? t('remove') : undefined"
-            severity="danger"
-            :disabled="isExportDisabled || isRemovingContacts"
-            :loading="isRemovingContacts"
-            @click="showWarning"
+          <RemoveContactButton
+            :contacts-to-delete="contactsToTreat"
+            :contacts-to-delete-length="implicitlySelectedContactsLength"
+            :is-remove-disabled="isExportDisabled"
+            :deselect-contacts="deselectContacts"
           />
-          <!-- Warning model Section -->
-          <Dialog
-            v-model:visible="showRemoveContactModal"
-            modal
-            :header="t('remove_contacts', implicitlySelectedContactsLength)"
-            :style="{ width: '25rem' }"
-          >
-            <span class="p-text-secondary block mb-5">
-              {{
-                t(
-                  'remove_contacts_confirmation',
-                  implicitlySelectedContactsLength,
-                )
-              }}
-            </span>
-            <div class="flex flex-row-reverse justify-content-start gap-2">
-              <Button
-                id="remove-contact-confirm"
-                type="button"
-                :label="t('remove')"
-                severity="danger"
-                :loading="isRemovingContacts"
-                @click="removeContacts"
-              >
-              </Button>
-              <Button
-                type="button"
-                :label="$t('common.cancel')"
-                severity="secondary"
-                @click="closeWarning"
-              >
-              </Button>
-            </div>
-          </Dialog>
         </div>
         <div>
           <EnrichButton
@@ -754,13 +713,14 @@ import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
-
 const SocialLinks = defineAsyncComponent(
   () => import('../../icons/SocialLink.vue'),
 );
-
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),
+);
+const RemoveContactButton = defineAsyncComponent(
+  () => import('../Buttons/RemoveContactButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
@@ -957,37 +917,7 @@ const openCreditModel = (
     availableAlready ?? 0,
   );
 };
-const showRemoveContactModal = ref(false);
-function showWarning() {
-  showRemoveContactModal.value = true;
-}
-function closeWarning() {
-  showRemoveContactModal.value = false;
-}
 
-const isRemovingContacts = ref(false);
-async function removeContacts() {
-  isRemovingContacts.value = true;
-  try {
-    await removeContactsFromDatabase(contactsToTreat.value);
-    $toast.add({
-      severity: 'success',
-      summary: t('contacts_removed', implicitlySelectedContactsLength.value),
-      detail: t(
-        'contacts_removed_success',
-        implicitlySelectedContactsLength.value,
-      ),
-      life: 3000,
-    });
-    closeWarning();
-    await $contactsStore.reloadContacts();
-    deselectContacts();
-    isRemovingContacts.value = false;
-  } catch (err) {
-    isRemovingContacts.value = false;
-    throw err;
-  }
-}
 async function exportTable(partialExport = false) {
   await $api('/contacts/export/csv', {
     method: 'POST',
@@ -1224,12 +1154,7 @@ table.p-datatable-table {
     "csv_export": "CSV Export",
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "any": "Any",
-    "contact_information": "Contact Information",
-    "remove": "Remove",
-    "remove_contacts_confirmation": "Removing this contact is permanent. You will lose all its mining data.| Removing these {n} contacts is permanent. You will lose all their mining data.",
-    "remove_contacts": "Remove contact|Remove {n} contacts",
-    "contacts_removed": "Contact removed|Contacts removed",
-    "contacts_removed_success": "Contact has been removed successfully.| {n} contacts have been removed successfully."
+    "contact_information": "Contact Information"
   },
   "fr": {
     "of": "sur",
@@ -1275,12 +1200,7 @@ table.p-datatable-table {
     "csv_export": "Exportation CSV",
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "any": "N'importe lequel",
-    "contact_information": "Information de contact",
-    "remove": "Supprimer",
-    "remove_contacts_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données déjà extraites.",
-    "remove_contacts": "Supprimer le compte",
-    "contacts_removed": "Compte supprimé",
-    "contacts_removed_success": "Votre compte a été supprimé avec succès"
+    "contact_information": "Information de contact"
   }
 }
 </i18n>
