@@ -13,7 +13,7 @@ export default function initializeContactsRoutes(
   const { exportContactsCSV } = initializeContactsController(contacts);
 
   router.post(
-    '/export/csv',
+    '/contacts/export/csv',
     initializeAuthMiddleware(authResolver),
     exportContactsCSV
   );
