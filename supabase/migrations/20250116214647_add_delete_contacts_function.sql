@@ -2,7 +2,7 @@ create policy "Enable delete for users based on user_id" on "private"."persons" 
 
 create policy "Enable delete for users based on user_id" on "private"."pointsofcontact" as permissive for delete to public using ((( SELECT auth.uid() AS uid) = user_id));
 
-CREATE OR REPLACE FUNCTION private.delete_contacts(user_id uuid, emails text[], deleteallcontacts boolean) RETURNS void
+CREATE FUNCTION private.delete_contacts(user_id uuid, emails text[], deleteallcontacts boolean) RETURNS void
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$ 
