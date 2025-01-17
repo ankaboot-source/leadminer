@@ -151,22 +151,26 @@ export default defineNuxtConfig({
       categories: ['business'],
       theme_color: '#ffffff',
       background_color: '#ffffff',
+      display: 'standalone',
+      orientation: 'any',
       icons: [
         {
           src: 'icons/pickaxe-192-192.png',
           sizes: '192x192',
           type: 'image/png',
+          purpose: 'any',
         },
         {
           src: 'icons/pickaxe-512-512.png',
           sizes: '512x512',
           type: 'image/png',
+          purpose: 'any'
         },
         {
           src: 'icons/pickaxe-512-512.png',
           sizes: '512x512',
           type: 'image/png',
-          purpose: 'any maskable',
+          purpose: 'maskable',
         },
       ],
     },
