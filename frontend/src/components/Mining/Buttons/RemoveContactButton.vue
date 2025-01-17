@@ -82,7 +82,7 @@ async function removeContacts() {
       life: 3000,
     });
     closeWarning();
-    // await $contactsStore.reloadContacts();
+    await $contactsStore.reloadContacts();
     deselectContacts();
     isRemovingContacts.value = false;
   } catch (err) {
