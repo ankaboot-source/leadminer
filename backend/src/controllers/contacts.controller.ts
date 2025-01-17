@@ -2,11 +2,11 @@ import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import { Contacts } from '../db/interfaces/Contacts';
 import { Contact } from '../db/types';
+import Billing from '../utils/billing-plugin';
 import {
   exportContactsToCSV,
   getLocalizedCsvSeparator
 } from '../utils/helpers/csv';
-import Billing from '../utils/billing-plugin';
 
 function validateRequest(req: Request, res: Response) {
   const userId = (res.locals.user as User).id;

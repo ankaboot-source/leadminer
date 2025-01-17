@@ -137,6 +137,12 @@ export const useContactsStore = defineStore('contacts-store', () => {
     }
   }
 
+  function removeOldContact(email: string) {
+    contactsList.value = contactsList.value?.filter(
+      (contact) => contact.email !== email,
+    );
+  }
+
   /**
    * Subscribes to real-time updates for contacts.
    */
@@ -152,6 +158,10 @@ export const useContactsStore = defineStore('contacts-store', () => {
           filter: `user_id=eq.${$user.value?.id}`,
         },
         async (payload: RealtimePostgresChangesPayload<Contact>) => {
+          if (payload.eventType === 'DELETE' && payload.old.email) {
+            removeOldContact(payload.old.email);
+            return;
+          }
           const newContact = payload.new as Contact;
           await processNewContact(newContact);
         },

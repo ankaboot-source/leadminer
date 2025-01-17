@@ -3,8 +3,8 @@
     v-model:visible="isVisible"
     modal
     dismissable-mask
-    :maximizable="screenStore?.size?.md"
-    :pt:root:class="{ 'p-dialog-maximized': !screenStore?.size?.md }"
+    :maximizable="$screenStore?.size?.md"
+    :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
     :style="{ width: '60vw', height: '70vh' }"
     pt:content:class="grow p-3 border-y border-slate-200"
     pt:footer:class="p-3"
@@ -52,7 +52,7 @@ const props = defineProps({
 
 const $leadminerStore = useLeadminerStore();
 const isVisible = ref(false);
-const screenStore = useScreenStore();
+const $screenStore = useScreenStore();
 
 const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
 const boxes = computed(() => $leadminerStore.boxes);

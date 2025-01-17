@@ -61,6 +61,7 @@
         <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
         <div
           v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
+          class="flex items-center gap-1"
         >
           <Button
             id="export-csv"
@@ -68,6 +69,12 @@
             :label="$screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
+          />
+          <RemoveContactButton
+            :contacts-to-delete="contactsToTreat"
+            :contacts-to-delete-length="implicitlySelectedContactsLength"
+            :is-remove-disabled="isExportDisabled"
+            :deselect-contacts="deselectContacts"
           />
         </div>
         <div>
@@ -707,13 +714,14 @@ import { saveCSVFile } from '~/utils/csv';
 import { getImageViaProxy } from '~/utils/images';
 
 const TableSkeleton = defineAsyncComponent(() => import('./TableSkeleton.vue'));
-
 const SocialLinks = defineAsyncComponent(
   () => import('../../icons/SocialLink.vue'),
 );
-
 const EnrichButton = defineAsyncComponent(
   () => import('../Buttons/EnrichButton.vue'),
+);
+const RemoveContactButton = defineAsyncComponent(
+  () => import('../Buttons/RemoveContactButton.vue'),
 );
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
@@ -751,7 +759,6 @@ function openContactInformation(data: Contact) {
 }
 
 /* *** Filters *** */
-
 const filtersStore = useFiltersStore();
 
 const filteredContacts = ref<Contact[]>([]);
@@ -801,14 +808,15 @@ const selectedContacts = ref<Contact[]>([]);
 const selectedContactsLength = computed(() => selectedContacts.value.length);
 const selectAll = ref(false);
 
+function deselectContacts() {
+  selectAll.value = false;
+  selectedContacts.value = [];
+}
 const onSelectAllChange = (event: DataTableSelectAllChangeEvent) => {
   if (event.checked) {
     selectAll.value = true;
     selectedContacts.value = filteredContacts.value; // all data according to your needs
-  } else {
-    selectAll.value = false;
-    selectedContacts.value = [];
-  }
+  } else deselectContacts();
 };
 const onRowSelect = () => {
   // This control can be completely managed by you.
@@ -848,16 +856,16 @@ const implicitSelectAll = computed(
   () => implicitlySelectedContactsLength.value === contactsLength.value,
 );
 
-const contactsToExport = computed<string[] | undefined>(() =>
+const contactsToTreat = computed<string[] | undefined>(() =>
   implicitSelectAll.value
     ? undefined
     : implicitlySelectedContacts.value.map((item: Contact) => item.email),
 );
 
 watch(
-  contactsToExport,
+  contactsToTreat,
   () => {
-    $contactsStore.selectedEmails = contactsToExport.value;
+    $contactsStore.selectedEmails = contactsToTreat.value;
   },
   { deep: true, immediate: true },
 );
@@ -912,12 +920,12 @@ const openCreditModel = (
 };
 
 async function exportTable(partialExport = false) {
-  await $api('/export/csv', {
+  await $api('/contacts/export/csv', {
     method: 'POST',
     body: {
       partialExport,
-      emails: contactsToExport.value,
-      exportAllContacts: contactsToExport.value === undefined,
+      emails: contactsToTreat.value,
+      exportAllContacts: contactsToTreat.value === undefined,
     },
     onResponse({ response }) {
       if (response.status === 402 || response.status === 266) {

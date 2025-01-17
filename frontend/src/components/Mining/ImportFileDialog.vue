@@ -7,8 +7,9 @@
     pt:content:class="grow p-3 border-y border-slate-200"
     pt:footer:class="p-3"
     :draggable="false"
-    maximizable
-    @show="maximize()"
+    :maximizable="$screenStore?.size?.md"
+    :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
+    :style="{ width: '60vw', height: '70vh' }"
   >
     <FileUpload
       ref="fileUpload"
@@ -67,24 +68,35 @@
             size="small"
             scrollable
           >
-            <Column v-for="col of columns" :key="col.key" :field="col.field">
+            <Column
+              v-for="col of columns"
+              :key="col.key"
+              :pt="{ columnHeaderContent: 'flex-col w-full' }"
+              :field="col.field"
+            >
               <template #header>
+                <div class="justify-self-center">
+                  {{ col.original_header || '&nbsp;' }}
+                </div>
                 <Select
                   v-model="col.header"
                   :pt:label:class="{
                     'font-semibold': col.header === 'email',
                   }"
                   :class="{
-                    'border-[--p-primary-color]': col.header === 'email',
+                    'border-[--p-contrast-500]': col.header === 'email',
                   }"
                   :placeholder="t('select_column_placeholder')"
                   option-value="value"
                   option-label="label"
+                  class="w-full"
                   :options="selectOptions"
+                  :disabled="col.available_option.length === 0"
                   :option-disabled="
                     (data) =>
-                      selectedHeaders.includes(data.value) &&
-                      data.value !== col.header
+                      (selectedHeaders.includes(data.value) &&
+                        data.value !== col.header) ||
+                      !col.available_option.includes(data.value)
                   "
                   show-clear
                 />
@@ -101,7 +113,7 @@
 
     <template v-if="contentJson" #footer>
       <Button
-        :label="t('previous')"
+        :label="t('upload_your_file')"
         severity="secondary"
         icon="pi pi-arrow-left"
         @click="reset()"
@@ -125,7 +137,8 @@
 </template>
 
 <script setup lang="ts">
-import { maxFileSize, maxSizeInMB, REGEX_EMAIL } from '@/utils/constants';
+import { maxFileSize, maxSizeInMB } from '@/utils/constants';
+import { REGEX_EMAIL } from '@/utils/email';
 import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 
@@ -136,10 +149,6 @@ const { t } = useI18n({
 const $leadminerStore = useLeadminerStore();
 
 const dialog = ref();
-function maximize() {
-  if (dialog.value.maximized) return;
-  dialog.value.maximize();
-}
 const visible = ref(false);
 const openModal = () => {
   visible.value = true;
@@ -170,10 +179,19 @@ const options = [
   { value: 'image', label: 'Avatar URL' },
 ];
 
+const URL_OPTIONS = ['image', 'same_as'];
+const REST_OPTIONS = options
+  .filter(
+    (option) => option.value !== 'email' && !URL_OPTIONS.includes(option.value),
+  )
+  .map((option) => option.value);
+
 type Column = {
   field: string;
   header: string | null;
   key?: number;
+  original_header?: string;
+  available_option: string[];
 };
 type Row = Record<string, string>;
 
@@ -185,6 +203,30 @@ const selectedHeaders = computed(() =>
     })
     .filter(Boolean),
 );
+const $screenStore = useScreenStore();
+
+const DELIMITERS = [',', ';', '|', '\t'];
+function getLocalDelimiter() {
+  const language = navigator.language?.substring(0, 2);
+  switch (language) {
+    case 'fr':
+    case 'de':
+    case 'es':
+    case 'pt':
+    case 'it':
+      return ';';
+    default:
+      return ',';
+  }
+}
+function getOrderedDelimiters() {
+  const localDelimiter = getLocalDelimiter();
+  return [
+    localDelimiter,
+    ...DELIMITERS.filter((delimiter) => delimiter !== localDelimiter),
+  ];
+}
+const orderedDelimiters = getOrderedDelimiters();
 
 function reset() {
   fileUpload.value.clear();
@@ -203,45 +245,95 @@ function readFile(file: File): Promise<string | null> {
   });
 }
 
-function extractEmailColumnIndex(row: Row) {
-  const keys = Object.keys(row);
-  const emailColumnIndex = keys.findIndex((key) => {
-    const cellValue = String(row[key]).toLowerCase();
-    return REGEX_EMAIL.test(cellValue);
-  });
-  return emailColumnIndex;
+function isEmptyCell(cellValue: string) {
+  return cellValue === '' || cellValue === undefined || cellValue === null;
 }
+function getColumns(rows: Row[]) {
+  const keys = Object.keys(rows[0]);
+  const emailColumnIndexes = new Set<number>();
+  const urlColumnIndexes = new Set<number>();
+  const emptyColumnIndexes = new Set<number>();
 
-function getEmailColumnIndex(rows: Row[], testLength: number) {
-  let emailColumnIndex = extractEmailColumnIndex(rows[0]); // check if 1st row has email column
-  if (emailColumnIndex !== -1) {
-    // 2nd to 5th row should have emails on the same column
-    for (let i = 1; i < testLength; i++) {
-      if (emailColumnIndex !== extractEmailColumnIndex(rows[i])) {
-        emailColumnIndex = -1;
-        break;
-      }
-    }
+  // Initialize sets with indexes from the first row
+  keys.forEach((key, index) => {
+    const cellValue = String(rows[0][key]).toLowerCase();
+    if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(index);
+    if (
+      isValidURL(cellValue) ||
+      cellValue === '' ||
+      cellValue === undefined ||
+      cellValue === null
+    )
+      urlColumnIndexes.add(index);
+    if (cellValue === '' || cellValue === undefined || cellValue === null)
+      emptyColumnIndexes.add(index);
+  });
+  if (emailColumnIndexes.size === 0)
+    throw new Error('No email column detected in the CSV data.');
+
+  // Clean from sets based on next rows
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const row_keys = Object.keys(row);
+    const validIndexes = new Set<number>([
+      ...emailColumnIndexes,
+      ...urlColumnIndexes,
+    ]);
+    validIndexes.forEach((index) => {
+      const cellValue = String(row[row_keys[index]]).toLowerCase();
+      if (emailColumnIndexes.has(index) && !REGEX_EMAIL.test(cellValue))
+        emailColumnIndexes.delete(index);
+      if (
+        urlColumnIndexes.has(index) &&
+        !(isValidURL(cellValue) || isEmptyCell(cellValue))
+      )
+        urlColumnIndexes.delete(index);
+      if (emptyColumnIndexes.has(index) && !isEmptyCell(cellValue))
+        emptyColumnIndexes.delete(index);
+    });
   }
-  if (emailColumnIndex === -1) {
-    throw Error('No email column detected in the CSV data.');
-  }
-  return emailColumnIndex;
+
+  if (emailColumnIndexes.size === 0)
+    throw new Error('No email column detected in the CSV data.');
+
+  return {
+    emailColumnIndexes: Array.from(emailColumnIndexes),
+    urlColumnIndexes: Array.from(urlColumnIndexes).filter(
+      (index) => !emptyColumnIndexes.has(index), // Remove empty columns
+    ),
+    emptyColumnIndexes: Array.from(emptyColumnIndexes),
+  };
 }
 
 function createHeaders(rows: Row[]) {
-  const emailColumnIndex = getEmailColumnIndex(rows, Math.min(rows.length, 5));
-  console.debug(`Email column detected at index ${emailColumnIndex}.`);
+  const { emailColumnIndexes, urlColumnIndexes, emptyColumnIndexes } =
+    getColumns(rows);
+
+  console.debug(`Email able columns detected at index ${emailColumnIndexes}.`);
+  console.debug(`URL able columns detected at index ${urlColumnIndexes}.`);
+  console.debug(`Empty columns detected at index ${emptyColumnIndexes}.`);
+
   const keys = Object.keys(rows[0]);
   return keys.map((key, index) => {
     const matchingOption = options.find(
       (option) =>
         key === option.label.replace(/\s/g, '') || key === option.value,
     ); // https://github.com/iuccio/csvToJson/pull/68
+
+    const available_option = (() => {
+      if (emptyColumnIndexes.includes(index)) return [];
+      if (emailColumnIndexes.includes(index)) return ['email'];
+      if (urlColumnIndexes.includes(index)) return URL_OPTIONS;
+      return REST_OPTIONS;
+    })();
     return {
+      original_header: key,
       field: matchingOption?.value || String(index),
       header:
-        index === emailColumnIndex ? 'email' : matchingOption?.value || null, // Map to email or label or null
+        index === emailColumnIndexes[0] // Set the first email column as email //TODO the one that has 'email' in the header is should be selected as the email column if its valid
+          ? 'email'
+          : matchingOption?.value || null, // Map to email or label or null
+      available_option,
     };
   });
 }
@@ -255,21 +347,36 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     console.debug({ 'Selected file:': file });
     const content = await readFile(file);
     if (!content) throw Error();
-
-    // Parse CSV string to JSON
-    contentJson.value = csvToJson
-      .supportQuotedField(true)
-      .fieldDelimiter(',')
-      .csvStringToJson(content);
-    if (
-      Array.isArray(contentJson.value) &&
-      contentJsonLength.value &&
-      contentJsonLength.value > 0
-    ) {
-      columns.value = createHeaders(contentJson.value);
-    } else {
-      throw Error('Parsed CSV content is empty or invalid.');
+    let successfullyParsed = false;
+    for (const delimiter of orderedDelimiters) {
+      try {
+        console.debug('Trying to parse using the delimiter:', delimiter);
+        // Parse CSV string to JSON
+        contentJson.value = csvToJson
+          .supportQuotedField(true)
+          .fieldDelimiter(delimiter)
+          .csvStringToJson(content);
+        if (
+          Array.isArray(contentJson.value) &&
+          contentJsonLength.value &&
+          contentJsonLength.value > 0
+        ) {
+          columns.value = createHeaders(contentJson.value);
+          successfullyParsed = true;
+          break;
+        } else {
+          throw Error('No valid CSV content could be parsed.');
+        }
+      } catch {
+        console.error('Failed parsing using the delimiter:', delimiter);
+        continue;
+      }
     }
+    if (!successfullyParsed || !contentJson.value || !columns.value) {
+      throw new Error('No valid CSV content could be parsed.');
+    }
+
+    console.log({ columns: columns.value });
     parsedData.value = contentJson.value.map((row: Row) => {
       const updatedRow: Row = {};
       Object.keys(row).forEach((key, colIndex) => {
@@ -318,7 +425,7 @@ function startMining() {
     "select_file_label": "Upload your file",
     "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
     "drag_and_drop": "Drag and drop files here.",
-    "previous": "Upload your file",
+    "upload_your_file": "Upload your file",
     "start_mining": "Start mining now!",
     "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
     "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
@@ -330,7 +437,7 @@ function startMining() {
     "select_file_label": "Téléchargez votre fichier",
     "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
-    "previous": "Précédent",
+    "upload_your_file": "Téléchargez votre fichier",
     "start_mining": "Commencer l'extraction de vos contacts",
     "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
     "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
