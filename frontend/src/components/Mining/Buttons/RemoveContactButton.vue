@@ -93,14 +93,14 @@ async function removeContacts() {
 {
   "en": {
     "remove": "Remove",
-    "remove_contacts_confirmation": "Removing this contact is permanent. You will lose all its mining data.| Removing these {n} contacts is permanent. You will lose all their mining data.",
+    "remove_contacts_confirmation": "Removing this contact is permanent. You will lose all data related to this contact.| Removing these {n} contacts is permanent. You will lose all data related to these contacts.",
     "remove_contacts": "Remove contact|Remove {n} contacts",
     "contacts_removed": "Contact removed|Contacts removed",
     "contacts_removed_success": "Contact has been removed successfully.| {n} contacts have been removed successfully."
   },
   "fr": {
     "remove": "Supprimer",
-    "remove_contacts_confirmation": "La suppression de ce contact est permanent. Vous perdrez toutes ses données d'extraction.| La suppression de ces {n} contacts est permanent. Vous perdrez toutes leurs données d'extraction.",
+    "remove_contacts_confirmation": "La suppression de ce contact est permanente. Vous perdrez toutes les données liées à ce contact.| La suppression de ces {n} contacts est permanente. Vous perdrez toutes les données liées à ces contacts.",
     "remove_contacts": "Supprimer le contact|Supprimer {n} contacts",
     "contacts_removed": "Contact supprimé|Contacts supprimés",
     "contacts_removed_success": "Le contact a été supprimé avec succès.| {n} contacts ont été supprimés avec succès."
