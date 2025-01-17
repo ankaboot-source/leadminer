@@ -2,6 +2,7 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
+  <NuxtPwaManifest />
   <Toast />
   <Toast group="achievement">
     <template #messageicon>

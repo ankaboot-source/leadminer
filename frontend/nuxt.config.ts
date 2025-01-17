@@ -64,6 +64,7 @@ export default defineNuxtConfig({
     'nuxt-mdi',
     'nuxt-security',
     '@nuxt/scripts',
+    '@vite-pwa/nuxt',
   ],
 
   primevue: {
@@ -137,6 +138,49 @@ export default defineNuxtConfig({
 
   security: {
     enabled: false,
+  },
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      id: 'leadminer',
+      name: 'Leadminer',
+      short_name: 'Leadminer',
+      description:
+        'Extract, clean and enrich email addresses from your own mailbox.',
+      categories: ['business'],
+      theme_color: '#ffffff',
+      background_color: '#ffffff',
+      icons: [
+        {
+          src: 'icons/pickaxe-192-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          src: 'icons/pickaxe-512-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+        {
+          src: 'icons/pickaxe-512-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any maskable',
+        },
+      ],
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+    },
+    injectManifest: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+    },
+    devOptions: {
+      enabled: true,
+      type: 'module',
+      navigateFallback: '/',
+    },
   },
 
   compatibilityDate: '2024-08-26',
