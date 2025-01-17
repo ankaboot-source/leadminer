@@ -61,6 +61,7 @@
         <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
         <div
           v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
+          class="flex items-center gap-1"
         >
           <Button
             id="export-csv"

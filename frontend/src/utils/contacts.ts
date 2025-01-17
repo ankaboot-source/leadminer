@@ -191,7 +191,7 @@ export async function removeContactsFromDatabase(
     .schema('private')
     .rpc('delete_contacts', {
       user_id: $user.value.id,
-      emails: emails,
+      emails: emails ?? null,
       deleteallcontacts: emails === undefined,
     });
   if (error) throw error;

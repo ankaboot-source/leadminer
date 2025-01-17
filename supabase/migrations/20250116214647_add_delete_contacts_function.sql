@@ -1,6 +1,6 @@
 create policy "Enable delete for users based on user_id" on "private"."persons" as permissive for delete to authenticated using ((( SELECT auth.uid() AS uid) = user_id));
 
-CREATE FUNCTION private.delete_contacts(user_id uuid, emails text[], deleteallcontacts boolean) RETURNS void
+CREATE OR REPLACE FUNCTION private.delete_contacts(user_id uuid, emails text[], deleteallcontacts boolean) RETURNS void
     LANGUAGE plpgsql
     SET search_path = ''
     AS $$ 
@@ -15,7 +15,7 @@ BEGIN
 	ELSE
 		DELETE FROM private.persons p WHERE p.user_id = owner_id AND email = ANY(emails);
 		DELETE FROM private.refinedpersons rp WHERE rp.user_id = owner_id AND email = ANY(emails);
-		DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id AND email = ANY(emails);
+		DELETE FROM private.pointsofcontact poc WHERE poc.user_id = owner_id AND person_email = ANY(emails);
 	END IF;
 END;
 $$;

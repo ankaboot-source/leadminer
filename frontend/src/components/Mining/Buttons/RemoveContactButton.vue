@@ -2,7 +2,6 @@
   <Button
     id="remove-contact"
     v-tooltip.top="t('remove_contacts', contactsToDeleteLength)"
-    class="ml-1"
     icon="pi pi-times"
     :label="$screenStore.size.md ? t('remove') : undefined"
     severity="danger"
@@ -55,12 +54,11 @@ const props = defineProps<{
   deselectContacts: () => void;
 }>();
 
-const {
-  contactsToDelete,
-  contactsToDeleteLength,
-  isRemoveDisabled,
-  deselectContacts,
-} = props;
+const { deselectContacts } = props;
+
+const contactsToDelete = computed(() => props.contactsToDelete);
+const contactsToDeleteLength = computed(() => props.contactsToDeleteLength);
+const isRemoveDisabled = computed(() => props.isRemoveDisabled);
 
 const showRemoveContactModal = ref(false);
 const isRemovingContacts = ref(false);
@@ -75,16 +73,16 @@ function closeWarning() {
 async function removeContacts() {
   isRemovingContacts.value = true;
   try {
-    await removeContactsFromDatabase(contactsToDelete);
+    await removeContactsFromDatabase(contactsToDelete.value);
 
     $toast.add({
       severity: 'success',
-      summary: t('contacts_removed', contactsToDeleteLength),
-      detail: t('contacts_removed_success', contactsToDeleteLength),
+      summary: t('contacts_removed', contactsToDeleteLength.value),
+      detail: t('contacts_removed_success', contactsToDeleteLength.value),
       life: 3000,
     });
     closeWarning();
-    await $contactsStore.reloadContacts();
+    // await $contactsStore.reloadContacts();
     deselectContacts();
     isRemovingContacts.value = false;
   } catch (err) {
