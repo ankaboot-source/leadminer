@@ -70,13 +70,13 @@
             @click="exportTable()"
           />
           <Button
-            id="delete-contact"
+            id="remove-contact"
             v-tooltip.top="
-              t('delete_contacts', implicitlySelectedContactsLength)
+              t('remove_contacts', implicitlySelectedContactsLength)
             "
             class="ml-1"
             icon="pi pi-times"
-            :label="$screenStore.size.md ? t('delete') : undefined"
+            :label="$screenStore.size.md ? t('remove') : undefined"
             severity="danger"
             :disabled="isExportDisabled || isRemovingContacts"
             :loading="isRemovingContacts"
@@ -86,22 +86,22 @@
           <Dialog
             v-model:visible="showRemoveContactModal"
             modal
-            :header="t('delete_contacts', implicitlySelectedContactsLength)"
+            :header="t('remove_contacts', implicitlySelectedContactsLength)"
             :style="{ width: '25rem' }"
           >
             <span class="p-text-secondary block mb-5">
               {{
                 t(
-                  'delete_contacts_confirmation',
+                  'remove_contacts_confirmation',
                   implicitlySelectedContactsLength,
                 )
               }}
             </span>
             <div class="flex flex-row-reverse justify-content-start gap-2">
               <Button
-                id="delete-contact-confirm"
+                id="remove-contact-confirm"
                 type="button"
-                :label="t('delete')"
+                :label="t('remove')"
                 severity="danger"
                 :loading="isRemovingContacts"
                 @click="removeContacts"
@@ -972,9 +972,9 @@ async function removeContacts() {
     await removeContactsFromDatabase(contactsToTreat.value);
     $toast.add({
       severity: 'success',
-      summary: t('contacts_deleted', implicitlySelectedContactsLength.value),
+      summary: t('contacts_removed', implicitlySelectedContactsLength.value),
       detail: t(
-        'contacts_deleted_success',
+        'contacts_removed_success',
         implicitlySelectedContactsLength.value,
       ),
       life: 3000,
@@ -1225,11 +1225,11 @@ table.p-datatable-table {
     "contacts_exported_successfully": "Your contacts are successfully exported.",
     "any": "Any",
     "contact_information": "Contact Information",
-    "delete": "Delete",
-    "delete_contacts_confirmation": "Deleting this contact is permanent. You will lose all its mining data.| Deleting these {n} contacts is permanent. You will lose all their mining data.",
-    "delete_contacts": "Delete contact|Delete {n} contacts",
-    "contacts_deleted": "Contact deleted|Contacts deleted",
-    "contacts_deleted_success": "Contact has been deleted successfully.| {n} contacts have been deleted successfully."
+    "remove": "Remove",
+    "remove_contacts_confirmation": "Removing this contact is permanent. You will lose all its mining data.| Removing these {n} contacts is permanent. You will lose all their mining data.",
+    "remove_contacts": "Remove contact|Remove {n} contacts",
+    "contacts_removed": "Contact removed|Contacts removed",
+    "contacts_removed_success": "Contact has been removed successfully.| {n} contacts have been removed successfully."
   },
   "fr": {
     "of": "sur",
@@ -1276,11 +1276,11 @@ table.p-datatable-table {
     "contacts_exported_successfully": "Vos contacts ont été exportés avec succès.",
     "any": "N'importe lequel",
     "contact_information": "Information de contact",
-    "delete": "Supprimer",
-    "delete_contacts_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données déjà extraites.",
-    "delete_contacts": "Supprimer le compte",
-    "contacts_deleted": "Compte supprimé",
-    "contacts_deleted_success": "Votre compte a été supprimé avec succès"
+    "remove": "Supprimer",
+    "remove_contacts_confirmation": "La suppression de votre compte est permanente. Vous perdrez toutes vos données déjà extraites.",
+    "remove_contacts": "Supprimer le compte",
+    "contacts_removed": "Compte supprimé",
+    "contacts_removed_success": "Votre compte a été supprimé avec succès"
   }
 }
 </i18n>
