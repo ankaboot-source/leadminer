@@ -42,7 +42,6 @@
 
 <script setup lang="ts">
 const $toast = useToast();
-const $contactsStore = useContactsStore();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -74,7 +73,6 @@ async function removeContacts() {
   isRemovingContacts.value = true;
   try {
     await removeContactsFromDatabase(contactsToDelete.value);
-
     $toast.add({
       severity: 'success',
       summary: t('contacts_removed', contactsToDeleteLength.value),
@@ -82,7 +80,6 @@ async function removeContacts() {
       life: 3000,
     });
     closeWarning();
-    await $contactsStore.reloadContacts();
     deselectContacts();
     isRemovingContacts.value = false;
   } catch (err) {
