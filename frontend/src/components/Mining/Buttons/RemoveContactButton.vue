@@ -99,11 +99,11 @@ async function removeContacts() {
     "contacts_removed_success": "Contact has been removed successfully.| {n} contacts have been removed successfully."
   },
   "fr": {
-    "remove": "Retirer",
-    "remove_contacts_confirmation": "Le retrait de ce contact est permanent. Vous perdrez toutes ses données d'extraction.| Le retrait de ces {n} contacts est permanent. Vous perdrez toutes leurs données d'extraction.",
-    "remove_contacts": "Retirer le contact|Retirer {n} contacts",
-    "contacts_removed": "Contact retiré|Contacts retirés",
-    "contacts_removed_success": "Le contact a été retiré avec succès.| {n} contacts ont été retirés avec succès."
+    "remove": "Supprimer",
+    "remove_contacts_confirmation": "La suppression de ce contact est permanent. Vous perdrez toutes ses données d'extraction.| La suppression de ces {n} contacts est permanent. Vous perdrez toutes leurs données d'extraction.",
+    "remove_contacts": "Supprimer le contact|Supprimer {n} contacts",
+    "contacts_removed": "Contact supprimé|Contacts supprimés",
+    "contacts_removed_success": "Le contact a été supprimé avec succès.| {n} contacts ont été supprimés avec succès."
   }
 }
 </i18n>
