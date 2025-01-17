@@ -76,6 +76,7 @@ async function removeContacts() {
   isRemovingContacts.value = true;
   try {
     await removeContactsFromDatabase(contactsToDelete);
+
     $toast.add({
       severity: 'success',
       summary: t('contacts_removed', contactsToDeleteLength),

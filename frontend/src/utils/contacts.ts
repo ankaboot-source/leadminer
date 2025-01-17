@@ -194,38 +194,16 @@ export function isValidURL(url: string) {
   }
 }
 
-async function deleteFromTable(
-  table: string,
-  emails?: string[],
-): Promise<void> {
-  const $supabaseClient = useSupabaseClient();
-  if (emails === undefined) {
-    // Delete all
-    const { error } = await $supabaseClient
-      // @ts-expect-error: Issue with nuxt/supabase
-      .schema('private')
-      .from(table)
-      .delete()
-      .neq('email', ''); // DELETE requires a WHERE clause
-    if (error) {
-      throw new Error(`Error deleting from ${table}: ${error.message}`);
-    }
-  } else if (emails) {
-    const { error } = await $supabaseClient
-      // @ts-expect-error: Issue with nuxt/supabase
-      .schema('private')
-      .from(table)
-      .delete()
-      .in('email', emails);
-    if (error) {
-      throw new Error(`Error deleting from ${table}: ${error.message}`);
-    }
-  }
-}
-
 export async function removeContactsFromDatabase(
   emails?: string[],
 ): Promise<void> {
-  await deleteFromTable('persons', emails);
-  await deleteFromTable('refinedpersons', emails);
+  const $supabaseClient = useSupabaseClient();
+  const { error } = await $supabaseClient
+    // @ts-expect-error: Issue with nuxt/supabase
+    .schema('private')
+    .rpc('delete_contacts', {
+      emails: emails || [],
+      deleteallcontacts: emails === undefined,
+    });
+  if (error) throw error;
 }
