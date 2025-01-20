@@ -61,7 +61,10 @@
         <div class="flex items-center gap-1">
           <Button
             id="export-csv"
-            v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
+            v-tooltip.top="
+              isExportDisabled &&
+              t('select_at_least_one_contact', { action: t('export') })
+            "
             icon="pi pi-external-link"
             :label="$screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
@@ -70,7 +73,7 @@
           <div
             v-tooltip.top="
               (isExportDisabled || !selectedContactsLength) &&
-              t('select_at_least_one_contact')
+              t('select_at_least_one_contact', { action: t('remove') })
             "
           >
             <RemoveContactButton
@@ -1119,8 +1122,10 @@ table.p-datatable-table {
     "of": "of",
     "no_contacts_found": "No contacts found",
     "try_clearing_filters": "Try clearing filters",
-    "select_at_least_one_contact": "Select at least one contact to export",
+    "select_at_least_one_contact": "Select at least one contact to {action}",
     "export_csv": "Export CSV",
+    "export": "export",
+    "remove": "remove",
     "clear": "Clear",
     "filter": "Filter",
     "toggle_valid_tooltip": "Ensure the deliverability of your campaign",
@@ -1165,7 +1170,9 @@ table.p-datatable-table {
     "of": "sur",
     "no_contacts_found": "Aucun contact trouvé",
     "try_clearing_filters": "Essayez de vider les filtres",
-    "select_at_least_one_contact": "Sélectionnez au moins un contact à exporter",
+    "select_at_least_one_contact": "Sélectionnez au moins un contact à {action}",
+    "export": "exporter",
+    "remove": "supprimer",
     "export_csv": "Export CSV",
     "clear": "Vider",
     "filter": "Filtrer",
