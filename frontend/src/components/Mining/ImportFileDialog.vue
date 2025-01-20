@@ -143,6 +143,7 @@ const { t } = useI18n({
   useScope: 'local',
 });
 const $leadminerStore = useLeadminerStore();
+const $stepper = useMiningStepper();
 
 const dialog = ref();
 const visible = ref(false);
@@ -225,7 +226,7 @@ function getOrderedDelimiters() {
 const orderedDelimiters = getOrderedDelimiters();
 
 function reset() {
-  fileUpload.value.clear();
+  fileUpload.value?.clear();
   contentJson.value = null;
   columns.value = [];
   fileName.value = undefined;
@@ -410,6 +411,7 @@ function startMining() {
     name: fileName.value ?? '',
     contacts: parsedDataWithMappedHeaders,
   };
+  $stepper.next();
   $leadminerStore.startMining(SOURCE);
   visible.value = false;
 }
