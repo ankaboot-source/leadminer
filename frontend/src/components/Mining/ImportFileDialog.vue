@@ -204,7 +204,7 @@ const $screenStore = useScreenStore();
 
 const DELIMITERS = [',', ';', '|', '\t'];
 function getLocalDelimiter() {
-  const language = navigator.language?.substring(0, 2);
+  const language = navigator?.language?.substring(0, 2);
   switch (language) {
     case 'fr':
     case 'de':
