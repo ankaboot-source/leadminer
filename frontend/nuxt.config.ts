@@ -164,7 +164,7 @@ export default defineNuxtConfig({
           src: 'icons/pickaxe-512-512.png',
           sizes: '512x512',
           type: 'image/png',
-          purpose: 'any'
+          purpose: 'any',
         },
         {
           src: 'icons/pickaxe-512-512.png',
@@ -175,7 +175,7 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      navigateFallback: "/",
+      navigateFallback: '/',
     },
     devOptions: {
       enabled: true,
