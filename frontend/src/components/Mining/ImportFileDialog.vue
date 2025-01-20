@@ -118,20 +118,16 @@
         icon="pi pi-arrow-left"
         @click="reset()"
       />
-      <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
-      <div
+      <Button
         v-tooltip.top="
           !selectedHeaders.includes('email') && t('email_column_required')
         "
-      >
-        <Button
-          class="border-solid border-2 border-black"
-          :label="t('start_mining')"
-          severity="contrast"
-          :disabled="!selectedHeaders.includes('email')"
-          @click="startMining"
-        />
-      </div>
+        class="border-solid border-2 border-black"
+        :label="t('start_mining')"
+        severity="contrast"
+        :disabled="!selectedHeaders.includes('email')"
+        @click="startMining"
+      />
     </template>
   </Dialog>
 </template>

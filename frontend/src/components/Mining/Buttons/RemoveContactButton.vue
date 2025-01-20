@@ -1,11 +1,13 @@
 <template>
   <Button
     id="remove-contact"
-    v-tooltip.top="t('remove_contacts', contactsToDeleteLength)"
+    v-tooltip.top="
+      !isRemoveDisabled && t('remove_contacts', contactsToDeleteLength)
+    "
     icon="pi pi-times"
     :label="$screenStore.size.md ? t('remove') : undefined"
     severity="danger"
-    :disabled="isRemoveDisabled || isRemovingContacts"
+    :disabled="isRemoveDisabled"
     :loading="isRemovingContacts"
     @click="showWarning()"
   />
@@ -57,10 +59,12 @@ const { deselectContacts } = props;
 
 const contactsToDelete = computed(() => props.contactsToDelete);
 const contactsToDeleteLength = computed(() => props.contactsToDeleteLength);
-const isRemoveDisabled = computed(() => props.isRemoveDisabled);
+const isRemovingContacts = ref(false);
+const isRemoveDisabled = computed(
+  () => props.isRemoveDisabled || isRemovingContacts.value,
+);
 
 const showRemoveContactModal = ref(false);
-const isRemovingContacts = ref(false);
 
 function showWarning() {
   showRemoveContactModal.value = true;

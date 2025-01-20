@@ -58,24 +58,28 @@
     </template>
     <template #header>
       <div class="flex items-center gap-1">
-        <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
-        <div
-          v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
-          class="flex items-center gap-1"
-        >
+        <div class="flex items-center gap-1">
           <Button
             id="export-csv"
+            v-tooltip.top="isExportDisabled && t('select_at_least_one_contact')"
             icon="pi pi-external-link"
             :label="$screenStore.size.md ? t('export_csv') : undefined"
             :disabled="isExportDisabled"
             @click="exportTable()"
           />
-          <RemoveContactButton
-            :contacts-to-delete="contactsToTreat"
-            :contacts-to-delete-length="implicitlySelectedContactsLength"
-            :is-remove-disabled="isExportDisabled"
-            :deselect-contacts="deselectContacts"
-          />
+          <div
+            v-tooltip.top="
+              (isExportDisabled || !selectedContactsLength) &&
+              t('select_at_least_one_contact')
+            "
+          >
+            <RemoveContactButton
+              :contacts-to-delete="contactsToTreat"
+              :contacts-to-delete-length="selectedContactsLength"
+              :is-remove-disabled="isExportDisabled || !selectedContactsLength"
+              :deselect-contacts="deselectContacts"
+            />
+          </div>
         </div>
         <div>
           <EnrichButton
