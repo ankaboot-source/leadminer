@@ -204,7 +204,6 @@ const progressTooltip = computed(() =>
 
 onMounted(async () => {
   if (source.value === 'file') {
-    importFileDialogRef.value.openModal();
     return;
   }
 

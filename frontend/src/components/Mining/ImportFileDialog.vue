@@ -118,20 +118,16 @@
         icon="pi pi-arrow-left"
         @click="reset()"
       />
-      <!-- This is a workaround as tooltip doesn't work when component is `disabled`-->
-      <div
+      <Button
         v-tooltip.top="
           !selectedHeaders.includes('email') && t('email_column_required')
         "
-      >
-        <Button
-          class="border-solid border-2 border-black"
-          :label="t('start_mining')"
-          severity="contrast"
-          :disabled="!selectedHeaders.includes('email')"
-          @click="startMining"
-        />
-      </div>
+        class="border-solid border-2 border-black"
+        :label="t('start_mining')"
+        severity="contrast"
+        :disabled="!selectedHeaders.includes('email')"
+        @click="startMining"
+      />
     </template>
   </Dialog>
 </template>
@@ -147,6 +143,7 @@ const { t } = useI18n({
   useScope: 'local',
 });
 const $leadminerStore = useLeadminerStore();
+const $stepper = useMiningStepper();
 
 const dialog = ref();
 const visible = ref(false);
@@ -207,7 +204,7 @@ const $screenStore = useScreenStore();
 
 const DELIMITERS = [',', ';', '|', '\t'];
 function getLocalDelimiter() {
-  const language = navigator.language?.substring(0, 2);
+  const language = navigator?.language?.substring(0, 2);
   switch (language) {
     case 'fr':
     case 'de':
@@ -229,7 +226,7 @@ function getOrderedDelimiters() {
 const orderedDelimiters = getOrderedDelimiters();
 
 function reset() {
-  fileUpload.value.clear();
+  fileUpload.value?.clear();
   contentJson.value = null;
   columns.value = [];
   fileName.value = undefined;
@@ -414,6 +411,7 @@ function startMining() {
     name: fileName.value ?? '',
     contacts: parsedDataWithMappedHeaders,
   };
+  $stepper.next();
   $leadminerStore.startMining(SOURCE);
   visible.value = false;
 }

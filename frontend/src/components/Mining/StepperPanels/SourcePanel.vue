@@ -60,12 +60,13 @@
           v-model:show="$imapDialogStore.showImapDialog"
         />
         <Button
-          id="import-csv"
+          id="import-file"
           outlined
           icon="pi pi-upload"
           :label="t('import_csv_excel')"
-          @click="importTable()"
+          @click="importFileDialogRef.openModal()"
         />
+        <importFileDialog ref="importFileDialogRef" />
       </div>
     </div>
   </div>
@@ -76,7 +77,9 @@ import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
 import { FetchError } from 'ofetch';
 import type { MiningSource } from '~/types/mining';
+import importFileDialog from '../ImportFileDialog.vue';
 
+const importFileDialogRef = ref();
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -138,11 +141,6 @@ onMounted(async () => {
 defineExpose({
   onSourceChange,
 });
-
-function importTable() {
-  //miningSource would be undefined
-  $stepper.next();
-}
 </script>
 
 <i18n lang="json">
