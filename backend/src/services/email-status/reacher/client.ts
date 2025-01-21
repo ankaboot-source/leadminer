@@ -97,7 +97,7 @@ interface ValidationOptions {
 }
 
 export default class ReacherClient {
-  private static readonly SINGLE_VERIFICATION_PATH = '/v0/check_email';
+  private static readonly SINGLE_VERIFICATION_PATH = '/v1/check_email';
 
   private static readonly BULK_VERIFICATION_PATH = '/v0/bulk';
 
@@ -202,7 +202,7 @@ export default class ReacherClient {
         },
         { signal: abortSignal }
       );
-      return data;
+      return { ...data, input: email };
     } catch (error) {
       logError(error, `[Reacher:checkSingleEmail:${email}]`, this.logger);
       throw error;
