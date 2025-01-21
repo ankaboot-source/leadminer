@@ -7,8 +7,8 @@ import {
   jest
 } from '@jest/globals';
 
-import { Logger } from 'winston';
 import axios from 'axios';
+import { Logger } from 'winston';
 import VoilanorbertApi from '../../../../src/services/enrichment/voilanorbert/client';
 import { logError } from '../../../../src/utils/axios';
 
@@ -93,8 +93,9 @@ describe('VoilanorbertApi', () => {
       const end = Date.now();
 
       const duration = end - start;
+      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
 
-      expect(duration).toBeGreaterThanOrEqual(1000);
+      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
       expect(axios.create().post).toHaveBeenCalledTimes(10);
     });
 

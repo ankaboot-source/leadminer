@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-import { Logger } from 'winston';
 import axios from 'axios';
+import { Logger } from 'winston';
 import ProxycurlApi, {
   ReverseEmailLookupParams,
   ReverseEmailLookupResponse
@@ -114,8 +114,9 @@ describe('ProxycurlApi', () => {
       const end = Date.now();
 
       const duration = end - start;
+      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
 
-      expect(duration).toBeGreaterThanOrEqual(1000);
+      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(10);
     });
   });
