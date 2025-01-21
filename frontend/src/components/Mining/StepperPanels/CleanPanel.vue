@@ -98,14 +98,14 @@ onMounted(() => {
     console.info('Cleaning finished, showing notification.');
   } else {
     watch(verificationFinished, (finished) => {
-      console.log(finished)
+      console.log(finished);
       if (finished) {
         cleaningDoneNotification();
         console.info('Cleaning finished, showing notification.');
       }
     });
   }
-})
+});
 
 async function haltCleaning() {
   $leadminerStore.isLoadingStopMining = true;
