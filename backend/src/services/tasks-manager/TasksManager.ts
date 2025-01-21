@@ -6,7 +6,6 @@ import {
   RedisCommand,
   StreamInfo,
   Task,
-  TaskExtract,
   TaskFetch,
   TaskProgress,
   TaskProgressType
@@ -369,30 +368,6 @@ export default class TasksManager {
     await Promise.all(stopPromises);
   }
 
-  private static getEventName(
-    miningId: string,
-    progressType: TaskProgressType,
-    progress: TaskProgress,
-    fetch: TaskFetch,
-    extract: TaskExtract
-  ) {
-    let eventName = `${progressType}-${miningId}`;
-
-    // If the fetching is completed, notify the clients that it has finished.
-    if (progressType === 'fetched' && fetch.stoppedAt) {
-      eventName = 'fetching-finished';
-    }
-
-    if (
-      progressType === 'extracted' &&
-      fetch.stoppedAt &&
-      (progress.extracted >= progress.fetched || extract.stoppedAt)
-    ) {
-      eventName = 'extraction-finished';
-    }
-    return eventName;
-  }
-
   /**
    * Notifies the client of the progress of a mining task with a given mining ID.
    *
@@ -402,7 +377,8 @@ export default class TasksManager {
    */
   private notifyChanges(
     miningId: string,
-    progressType: TaskProgressType
+    progressType: TaskProgressType,
+    event: string | null = null
   ): void {
     const task = this.ACTIVE_MINING_TASKS.get(miningId);
 
@@ -418,14 +394,7 @@ export default class TasksManager {
     };
 
     const value = progress[`${progressType}`];
-    const eventName = TasksManager.getEventName(
-      miningId,
-      progressType,
-      progress,
-      fetch,
-      extract
-    );
-
+    const eventName = event ?? `${progressType}-${miningId}`;
     // Send the progress to parties subscribed on SSE
     progressHandlerSSE.sendSSE(value, eventName);
   }
@@ -495,6 +464,7 @@ export default class TasksManager {
 
     if (!fetch.stoppedAt && fetch.instance.isCompleted) {
       await this.stopTask([fetch]);
+      this.notifyChanges(task.miningId, 'fetched', 'fetching-finished');
     }
 
     if (
@@ -503,15 +473,28 @@ export default class TasksManager {
       progress.extracted >= progress.fetched
     ) {
       await this.stopTask([extract]);
+      this.notifyChanges(task.miningId, 'extracted', 'extracting-finished');
+    }
+
+    if (
+      !clean.stoppedAt &&
+      extract.stoppedAt &&
+      progress.verifiedContacts >= progress.createdContacts
+    ) {
+      await this.stopTask([clean]);
+      this.notifyChanges(
+        task.miningId,
+        'verifiedContacts',
+        'cleaning-finished'
+      );
     }
 
     const status =
       fetch.stoppedAt !== undefined &&
       extract.stoppedAt !== undefined &&
-      progress.verifiedContacts >= progress.createdContacts;
+      clean.stoppedAt !== undefined;
 
     if (status) {
-      await this.stopTask([clean]);
       try {
         await this.deleteTask(miningId, null);
       } catch (error) {

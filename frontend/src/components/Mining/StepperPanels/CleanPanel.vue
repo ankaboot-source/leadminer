@@ -68,11 +68,7 @@ const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
-const verificationFinished = computed(
-  () =>
-    verifiedContacts.value > 0 &&
-    verifiedContacts.value === contactsToVerify.value,
-);
+const verificationFinished = computed(() => $leadminerStore.cleaningFinished);
 const verificationProgress = computed(
   () => verifiedContacts.value / contactsToVerify.value || 0,
 );
@@ -96,11 +92,20 @@ function cleaningDoneNotification() {
   });
 }
 
-watch(verificationFinished, (finished) => {
-  if (finished) {
+onMounted(() => {
+  if (verificationFinished.value) {
     cleaningDoneNotification();
+    console.info('Cleaning finished, showing notification.');
+  } else {
+    watch(verificationFinished, (finished) => {
+      console.log(finished)
+      if (finished) {
+        cleaningDoneNotification();
+        console.info('Cleaning finished, showing notification.');
+      }
+    });
   }
-});
+})
 
 async function haltCleaning() {
   $leadminerStore.isLoadingStopMining = true;

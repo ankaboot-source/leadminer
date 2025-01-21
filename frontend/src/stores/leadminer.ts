@@ -187,6 +187,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
           extractedEmails.value = totalExtracted;
           extractionFinished.value = true;
         },
+        onCleaningDone: (totalCleaned) => {
+          verifiedContacts.value = totalCleaned;
+          cleaningFinished.value = true;
+        },
         onVerifiedContacts: (totalVerified) => {
           verifiedContacts.value = totalVerified;
         },

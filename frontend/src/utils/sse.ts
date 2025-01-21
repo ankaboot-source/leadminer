@@ -21,6 +21,7 @@ class SSE {
       onClose,
       onFetchingDone,
       onExtractionDone,
+      onCleaningDone,
       onVerifiedContacts,
       onCreatedContacts,
     }: {
@@ -29,6 +30,7 @@ class SSE {
       onClose: () => void;
       onFetchingDone: (totalFetched: number) => void;
       onExtractionDone: (totalExtracted: number) => void;
+      onCleaningDone: (totalExtracted: number) => void;
       onCreatedContacts: (totalCreated: number) => void;
       onVerifiedContacts: (totalVerified: number) => void;
     },
@@ -54,8 +56,10 @@ class SSE {
             onClose();
           } else if (event === 'fetching-finished') {
             onFetchingDone(parseInt(data));
-          } else if (event === 'extraction-finished') {
+          } else if (event === 'extracting-finished') {
             onExtractionDone(parseInt(data));
+          } else if (event === 'cleaning-finished') {
+            onCleaningDone(parseInt(data));
           } else if (event === `verifiedContacts-${miningId}`) {
             onVerifiedContacts(parseInt(data));
           } else if (event === `createdContacts-${miningId}`) {
