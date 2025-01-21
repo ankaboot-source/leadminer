@@ -2,7 +2,7 @@ import { Contacts } from '../../db/interfaces/Contacts';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import {
   EmailStatusResult,
-  EmailVerifierType
+  EmailStatusVerifier
 } from '../../services/email-status/EmailStatusVerifier';
 import EmailStatusVerifierFactory from '../../services/email-status/EmailStatusVerifierFactory';
 import logger from '../../utils/logger';
@@ -13,6 +13,48 @@ export interface EmailVerificationData {
   miningId: string;
 }
 
+function logRejectedAndReturnResolved<T>(
+  results: PromiseSettledResult<T>[],
+  context: string
+): T[] {
+  results
+    .filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    )
+    .forEach((result) => {
+      logger.error(`${context}: Promise rejected`, {
+        error: result.reason,
+        timestamp: new Date().toISOString()
+      });
+    });
+
+  return results
+    .filter(
+      (result): result is PromiseFulfilledResult<T> =>
+        result.status === 'fulfilled'
+    )
+    .map((result) => result.value);
+}
+
+async function ThrottleAsyncVerification(
+  batchSize: number,
+  emails: string[],
+  verifier: EmailStatusVerifier
+) {
+  const results: EmailStatusResult[] = [];
+  for (let i = 0; i < emails.length; i += batchSize) {
+    const batch = emails.slice(i, i + batchSize);
+    results.push(
+      ...logRejectedAndReturnResolved<EmailStatusResult>(
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.allSettled(batch.map((email) => verifier.verify(email))),
+        'Async email status verification'
+      )
+    );
+  }
+
+  return results;
+}
 /**
  * Performs verification either in bulk or single checks on the provided emails,
  * then caches and writes the results to the database.
@@ -31,113 +73,85 @@ async function emailVerificationHandlerWithBulk(
   const waitingForVerification = new Map();
 
   try {
-    for (const { userId, email } of verificationData) {
-      try {
-        const existingStatus =
-          // eslint-disable-next-line no-await-in-loop
-          (await emailStatusCache.get(email)) ??
-          // eslint-disable-next-line no-await-in-loop
-          (await contacts.SelectRecentEmailStatus(email));
+    // update email status from cache
+    const cachePromises = verificationData.map(async ({ userId, email }) => {
+      const existingStatus =
+        (await emailStatusCache.get(email)) ??
+        (await contacts.SelectRecentEmailStatus(email));
 
-        if (existingStatus) {
-          logger.debug('Updating email status from cache.', {
-            email,
-            verifier: 'CACHED',
-            result: existingStatus
-          });
-          // eslint-disable-next-line no-await-in-loop
-          await contacts.upsertEmailStatus({
-            verifiedOn: new Date().toISOString(),
-            ...existingStatus, // overwrites verifiedOn if exists.
-            email,
-            userId
-          });
-        } else {
-          waitingForVerification.set(email, userId);
-        }
-      } catch (err) {
-        logger.error('Error updating email status from cache', err);
+      if (!existingStatus) {
+        waitingForVerification.set(email, userId);
+        return;
       }
-    }
+
+      logger.debug('Cached result', {
+        email,
+        verifier: 'CACHED',
+        result: existingStatus
+      });
+
+      await contacts.upsertEmailStatus({
+        verifiedOn: new Date().toISOString(),
+        ...existingStatus, // overwrites verifiedOn if exists.
+        email,
+        userId
+      });
+    });
+
+    logRejectedAndReturnResolved(
+      await Promise.allSettled(cachePromises),
+      'Updating email status from cache'
+    );
 
     const verifiers = emailStatusVerifierFactory.getEmailVerifiers(
       Array.from(waitingForVerification.keys())
     );
 
-    const verificationResult = (
-      await Promise.allSettled(
-        Array.from(verifiers.entries()).map(
-          async ([verifierName, [verifier, emails]]) => {
-            const startTime = performance.now();
-            try {
-              logger.info(
-                `[${verifierName}]: Verification started with ${emails.length} email(s)`,
-                { started_at: startTime }
-              );
+    // Perform email status verification
+    const verificationPromises = Array.from(verifiers.entries()).map(
+      async ([verifierName, [verifier, emails]]) => {
+        const startTime = performance.now();
 
-              const verified =
-                verifierName === 'mailercheck' && emails.length > 100
-                  ? await verifier.verifyMany(emails)
-                  : (
-                      await Promise.allSettled(
-                        emails.map((email) => verifier.verify(email))
-                      )
-                    )
-                      .filter(
-                        (
-                          promise
-                        ): promise is PromiseFulfilledResult<EmailStatusResult> =>
-                          promise.status === 'fulfilled'
-                      )
-                      .flatMap((promise) => promise.value);
+        logger.info(
+          `[${verifierName}]: Verification started with ${emails.length} email(s)`,
+          { started_at: startTime }
+        );
 
-              logger.info(
-                `[${verifierName}]: Verification completed with ${verified.length} results`,
-                {
-                  started_at: startTime,
-                  stopped_at: performance.now(),
-                  duration: performance.now() - startTime
-                }
-              );
+        const verified =
+          verifierName === 'mailercheck' && emails.length > 100
+            ? await verifier.verifyMany(emails)
+            : await ThrottleAsyncVerification(200, emails, verifier);
 
-              return { verifierName, verified };
-            } catch (error) {
-              logger.error(`[${verifierName}]: Verification failed`, { error });
-              throw error;
-            }
+        logger.info(
+          `[${verifierName}]: Verification completed with ${verified.length} results`,
+          {
+            started_at: startTime,
+            stopped_at: performance.now(),
+            duration: performance.now() - startTime
           }
-        )
-      )
-    )
-      .filter(
-        (
-          promise
-        ): promise is PromiseFulfilledResult<{
-          verifierName: EmailVerifierType;
-          verified: EmailStatusResult[];
-        }> => promise.status === 'fulfilled'
-      )
-      .flatMap((promise) => promise.value);
+        );
 
-    for (const { verifierName, verified } of verificationResult) {
-      for (const result of verified) {
+        return { verifierName, verified };
+      }
+    );
+
+    const verificationResult = logRejectedAndReturnResolved(
+      await Promise.allSettled(verificationPromises),
+      'Email verification failed'
+    );
+
+    // Update email status
+    const promises = verificationResult.flatMap(({ verified }) =>
+      verified.map(async (result) => {
         const { email } = result;
         const userId = waitingForVerification.get(email);
 
         if (!userId) {
           logger.warn('No userId found to update email status.', { email });
-          continue;
+          return;
         }
-
         try {
-          logger.debug('Updating email status', {
-            email,
-            result,
-            verifierName
-          });
-          // eslint-disable-next-line no-await-in-loop
-          await emailStatusCache.set(email, result);
-          // eslint-disable-next-line no-await-in-loop
+          emailStatusCache.set(email, result);
           await contacts.upsertEmailStatus({
             email,
             userId,
@@ -145,16 +159,17 @@ async function emailVerificationHandlerWithBulk(
             details: result.details,
             verifiedOn: new Date().toISOString()
           });
-        } catch (updateError) {
+        } catch (error) {
           logger.error('Error updating email status', {
             email,
             result,
-            verifierName,
-            error: updateError
+            error: error instanceof Error ? error.message : String(error)
           });
         }
-      }
-    }
+      })
+    );
+
+    await Promise.allSettled(promises);
   } catch (error) {
     logger.error('Failed when processing message from the stream', error);
   }
