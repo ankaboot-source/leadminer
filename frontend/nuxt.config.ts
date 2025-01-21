@@ -174,14 +174,6 @@ export default defineNuxtConfig({
         },
       ],
     },
-    workbox: {
-      navigateFallback: '/',
-    },
-    devOptions: {
-      enabled: true,
-      type: 'module',
-      navigateFallback: '/',
-    },
   },
 
   compatibilityDate: '2024-08-26',
