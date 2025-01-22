@@ -3,4 +3,5 @@ export interface Profile {
   email: string;
   full_name: string;
   credits: number;
+  gdpr_details: { hasAcceptedEnriching: boolean };
 }

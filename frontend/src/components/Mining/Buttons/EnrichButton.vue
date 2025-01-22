@@ -62,7 +62,7 @@
     :label="t('button.start_enrichment')"
     pt:label:class="hidden md:block"
     :disabled="isEnrichDisabled"
-    @click="openEnrichmentConfirmationDialog"
+    @click="onClickEnrich"
   >
     <template #icon>
       <span class="p-button-icon p-button-icon-right">
@@ -71,6 +71,10 @@
       </span>
     </template>
   </Button>
+  <EnrichGdprDialog
+    ref="enrichGdprDialogRef"
+    @has-given-consent="onAcceptEnrich"
+  />
 </template>
 <script setup lang="ts">
 import type {
@@ -85,6 +89,7 @@ import {
   openCreditsDialog,
 } from '@/utils/credits';
 import type { Contact } from '~/types/contact';
+import EnrichGdprDialog from '../EnrichGdprDialog.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -310,7 +315,30 @@ onMounted(async () => {
   }
 });
 
-const openEnrichmentConfirmationDialog = () => {
+const enrichGdprDialogRef = ref();
+const $profile = useSupabaseUserProfile();
+const hasAcceptedEnriching = computed(
+  () => $profile.value?.gdpr_details.hasAcceptedEnriching,
+);
+function onAcceptEnrich() {
+  const justAcceptedEnrich = true;
+  openEnrichmentConfirmationDialog(justAcceptedEnrich);
+}
+
+function onClickEnrich(_: MouseEvent) {
+  openEnrichmentConfirmationDialog();
+}
+
+/**
+ * Verifies if user has accepted enriching conditions (using `hasAcceptedEnriching` of `$profile`), then proceeds to the enrichment confirmation dialog
+ * @param justAcceptedEnrich : is a workaround as `hasAcceptedEnriching` of `$profile` can still be not updated from the realtime
+ */
+function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
+  if (!justAcceptedEnrich && !hasAcceptedEnriching.value) {
+    enrichGdprDialogRef.value.openModal();
+    return;
+  }
+
   const creditsDialogOpened = useCreditsDialog(
     CreditsDialogEnrichRef,
     contactsToEnrich.value?.map(({ email }) => email as string),
@@ -320,7 +348,7 @@ const openEnrichmentConfirmationDialog = () => {
   if (skipDialog.value) {
     startEnrichment(false);
   } else dialogVisible.value = true;
-};
+}
 
 const closeEnrichmentConfirmationDialog = () => {
   dialogVisible.value = false;
