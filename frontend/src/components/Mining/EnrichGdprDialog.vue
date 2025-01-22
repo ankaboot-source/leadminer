@@ -67,7 +67,7 @@
         as="a"
         href="https://www.leadminer.io/data-privacy'"
         target="_blank"
-        rel="noopener"
+        rel="noopener noreferrer"
       />
 
       <Button
