@@ -39,3 +39,5 @@ write_section "# ==============| Common |============= #" "$BACKEND_ENV"
 write_section "# ==============| Frontend |============= #" "$FRONTEND_ENV"
 # Write backend variables
 write_section "# ==============| Backend |============= #" "$BACKEND_ENV"
+
+cat frontend/.env backend/.env > .env
