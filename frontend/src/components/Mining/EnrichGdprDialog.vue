@@ -158,11 +158,9 @@ defineExpose({ openModal });
     },
     "yourResponsibilities": {
       "title": "Vos responsabilités",
-      "content": [
-        "Il est de votre responsabilité de vous conformer aux lois applicables, y compris les réglementations sur la protection des données.",
-        "Vous devez informer vos contacts de l'utilisation de ce service et de toute donnée que vous enrichissez en leur nom.",
-        "Vos contacts conservent tous leurs droits, y compris les droits d'accès et de suppression de toute information les concernant."
-      ]
+      "content_1": "Il est de votre responsabilité de vous conformer aux lois applicables, y compris les réglementations sur la protection des données.",
+      "content_2": "Vous devez informer vos contacts de l'utilisation de ce service et de toute donnée que vous enrichissez en leur nom.",
+      "content_3": "Vos contacts conservent tous leurs droits, y compris les droits d'accès et de suppression de toute information les concernant."
     },
     "proceedConfirmation": "En continuant, vous confirmez que vous avez un intérêt légitime ou un consentement approprié pour enrichir les données des contacts sélectionnés et acceptez votre responsabilité en matière de conformité.",
     "privacyPolicyButton": "Lire la politique de confidentialité des données",
