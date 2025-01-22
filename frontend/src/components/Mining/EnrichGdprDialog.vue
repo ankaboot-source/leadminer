@@ -9,7 +9,7 @@
     pt:footer:class="p-3"
     :draggable="false"
     :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
-    :style="{ width: '40vw', height: '70vh' }"
+    class="h-[70vh] 2xl:w-[40vw] w-[70vw]"
   >
     <div>
       {{ t('acknowledge') }}
