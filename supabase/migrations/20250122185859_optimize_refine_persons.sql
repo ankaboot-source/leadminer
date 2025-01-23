@@ -47,14 +47,14 @@ BEGIN
 
     CREATE TEMP TABLE name_aggregates AS
         SELECT
-            fd.person_email,
-            fd.name,
-            MAX(fd.date) AS recent_date,
+            upc.person_email,
+            upc.name,
+            MAX(upc.date) AS recent_date,
             COUNT(*) AS total,
-            array_agg(fd.name) OVER (PARTITION BY fd.person_email) AS alternate_name
-        FROM user_points_of_contact fd
-        WHERE fd.name IS NOT NULL
-        GROUP BY fd.person_email, fd.name;
+            array_agg(upc.name) OVER (PARTITION BY upc.person_email) AS alternate_name
+        FROM user_points_of_contact upc
+        WHERE upc.name IS NOT NULL
+        GROUP BY upc.person_email, upc.name;
 
     CREATE TEMP TABLE real_names AS
         SELECT DISTINCT
@@ -68,17 +68,17 @@ BEGIN
 
     CREATE TEMP TABLE email_aggregates AS
         SELECT
-            fd.person_email,
-            MAX(fd.date) AS recency,
-            MIN(fd.date) AS seniority,
-            private.get_distinct_or_exclude_from_array(array_agg(fd.plus_address)) AS alternate_email,
+            upc.person_email,
+            MAX(upc.date) AS recency,
+            MIN(upc.date) AS seniority,
+            private.get_distinct_or_exclude_from_array(array_agg(upc.plus_address)) AS alternate_email,
             COUNT(*) AS occurrence,
-            COUNT(CASE WHEN fd."from" = true OR fd.reply_to = true THEN 1 END) AS sender,
-            COUNT(CASE WHEN fd."to" = true OR fd.bcc = true OR fd.cc = true THEN 1 END) AS recipient,
-            COUNT(CASE WHEN fd.conversation = true THEN 1 END) AS conversations,
-            COUNT(CASE WHEN fd.conversation = true AND fd."from" = true THEN 1 END) AS replied_conversations
-        FROM user_points_of_contact fd
-        GROUP BY fd.person_email;
+            COUNT(CASE WHEN upc."from" = true OR upc.reply_to = true THEN 1 END) AS sender,
+            COUNT(CASE WHEN upc."to" = true OR upc.bcc = true OR upc.cc = true THEN 1 END) AS recipient,
+            COUNT(CASE WHEN upc.conversation = true THEN 1 END) AS conversations,
+            COUNT(CASE WHEN upc.conversation = true AND upc."from" = true THEN 1 END) AS replied_conversations
+        FROM user_points_of_contact upc
+        GROUP BY upc.person_email;
 
     CREATE TEMP TABLE combined_data AS
         SELECT
