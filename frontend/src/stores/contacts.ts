@@ -78,7 +78,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     const { error } = await $supabase
       // @ts-expect-error: Issue with nuxt/supabase
       .schema('private')
-      .rpc('refine_persons', { user_id: $user.value?.id });
+      .rpc('refine_persons', { userid: $user.value?.id });
     if (error) throw error;
   }
 
