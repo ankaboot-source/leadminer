@@ -2,7 +2,7 @@
 
 <div>
   <div align="center">
-    <img width="90" height="90" src="https://app-qa.leadminer.io/icons/pickaxe.svg" alt="Leadminer Logo">
+    <img width="90" height="90" src="https://raw.githubusercontent.com/ankaboot-source/leadminer/e64bd4e5c06328eeab8df0fdf997a5eaa08fc0e1/frontend/src/public/icons/pickaxe.svg" alt="Leadminer Logo">
   </div>
   <h1 align="center">Leadminer</h1>
   <div align="center">
