@@ -60,16 +60,7 @@
         :label="$t('common.cancel')"
         @click="closeModal"
       />
-      <Button
-        severity="secondary"
-        class="text-center"
-        :label="t('privacyPolicyButton')"
-        as="a"
-        href="https://www.leadminer.io/data-privacy'"
-        target="_blank"
-        rel="noopener noreferrer"
-      />
-
+      <component :is="PrivacyPolicyButton" />
       <Button
         class="border-solid border-2 border-black"
         :label="t('enrichButton')"
@@ -80,6 +71,8 @@
   </Dialog>
 </template>
 <script setup lang="ts">
+import { PrivacyPolicyButton } from '~/utils/extras';
+
 const { t } = useI18n({
   useScope: 'local',
 });
@@ -146,8 +139,8 @@ defineExpose({ openModal });
     "enrichButton": "Enrich My Contacts"
   },
   "fr": {
-    "beforeYouProceed": "Avant de continuer : Enrichissez mes contacts",
-    "acknowledge": "En cliquant sur \"Enrichissez mes contacts\", vous reconnaissez et acceptez les éléments suivants :",
+    "beforeYouProceed": "Avant de continuer : Enrichir mes contacts",
+    "acknowledge": "En cliquant sur \"Enrichir mes contacts\", vous reconnaissez et acceptez les éléments suivants :",
     "purposeOfEnrichment": {
       "title": "Objectif de l'enrichissement",
       "content": "Ce service est destiné à enrichir les informations sur vos contacts existants. Vous devez avoir un intérêt légitime ou avoir obtenu leur consentement explicite pour effectuer cet enrichissement à des fins spécifiques et légales."
@@ -164,7 +157,7 @@ defineExpose({ openModal });
     },
     "proceedConfirmation": "En continuant, vous confirmez que vous avez un intérêt légitime ou un consentement approprié pour enrichir les données des contacts sélectionnés et acceptez votre responsabilité en matière de conformité.",
     "privacyPolicyButton": "Lire la politique de confidentialité des données",
-    "enrichButton": "Enrichissez mes contacts"
+    "enrichButton": "Enrichir mes contacts"
   }
 }
 </i18n>
