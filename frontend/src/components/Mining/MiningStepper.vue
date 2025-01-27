@@ -39,13 +39,6 @@
             :title="$t('common.clean')"
           />
         </Step>
-        <Step v-slot="{ active, value }" as-child :value="4">
-          <StepWithTooltip
-            :step-number="Number(value)"
-            :is-active="active"
-            :title="$t('common.enrich')"
-          />
-        </Step>
       </StepList>
       <StepPanels>
         <StepPanel v-slot="{ active }" :value="1">
@@ -59,9 +52,6 @@
         </StepPanel>
         <StepPanel v-slot="{ active }" :value="3">
           <CleanPanel v-if="active" />
-        </StepPanel>
-        <StepPanel v-slot="{ active }" :value="4">
-          <EnrichPanel v-if="active" />
         </StepPanel>
       </StepPanels>
     </Stepper>
@@ -84,9 +74,6 @@ const MinePanel = defineAsyncComponent(
 );
 const CleanPanel = defineAsyncComponent(
   () => import('./StepperPanels/CleanPanel.vue'),
-);
-const EnrichPanel = defineAsyncComponent(
-  () => import('./StepperPanels/EnrichPanel.vue'),
 );
 
 const StepWithTooltip = defineAsyncComponent(
@@ -118,9 +105,6 @@ const spinnerText = computed(() => {
   if (!$leadminerStore.cleaningFinished) {
     return t('cleaning');
   }
-  if ($leadminerStore.activeEnrichment) {
-    return t('enriching');
-  }
   return undefined;
 });
 
@@ -143,7 +127,6 @@ onNuxtReady(() => {
     "source": "Source",
     "mining": "Mining",
     "cleaning": "Cleaning",
-    "enriching": "Enriching",
     "retrieving_mailboxes": "Retrieving mailboxes..."
   },
   "fr": {
@@ -151,7 +134,6 @@ onNuxtReady(() => {
     "source": "Source",
     "mining": "Extraction",
     "cleaning": "Nettoyage",
-    "enriching": "Enrichissement",
     "retrieving_mailboxes": "Récupération des boîtes aux lettres..."
   }
 }
