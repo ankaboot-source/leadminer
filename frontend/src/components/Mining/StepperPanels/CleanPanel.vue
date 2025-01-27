@@ -64,7 +64,7 @@ const progressTooltip = computed(() =>
   }),
 );
 
-function cleaningDone() {
+function cleaningDoneNotification() {
   $toast.add({
     severity: 'success',
     summary: t('cleaning_done'),
@@ -74,18 +74,17 @@ function cleaningDone() {
     group: 'achievement',
     life: 5000,
   });
-  $stepper.hide();
 }
 
 onMounted(() => {
   if (verificationFinished.value) {
-    cleaningDone();
+    cleaningDoneNotification();
     console.info('Cleaning finished, showing notification.');
   } else {
     watch(verificationFinished, (finished) => {
       console.log(finished);
       if (finished) {
-        cleaningDone();
+        cleaningDoneNotification();
         console.info('Cleaning finished, showing notification.');
       }
     });
