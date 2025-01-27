@@ -48,7 +48,6 @@ const { t } = useI18n({
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
-const $contactsStore = useContactsStore();
 const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);

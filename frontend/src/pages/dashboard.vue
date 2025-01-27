@@ -7,9 +7,8 @@
   </div>
 </template>
 <script setup lang="ts">
-
 const $stepper = useMiningStepper();
 const $contactsStore = useContactsStore();
-const showTable = computed(() => Boolean($contactsStore.contactsList))
+const showTable = computed(() => Boolean($contactsStore.contactsList));
 $stepper.open();
 </script>

@@ -7,11 +7,11 @@
     @click="toggle"
   >
     <div :class="`${isActive ? 'p-step-active' : 'p-disabled'}`">
-      <Button class="p-step-header" v-if="isPastStep">
+      <Button v-if="isPastStep" class="p-step-header">
         <span class="p-step-number">{{ stepNumber }}</span>
         <span class="p-step-title hidden md:block"> {{ title }} ✅ </span>
       </Button>
-      <button class="p-step-header" v-else>
+      <button v-else class="p-step-header">
         <span class="p-step-number">{{ stepNumber }}</span>
         <span class="p-step-title hidden md:block"> {{ title }} </span>
       </button>
