@@ -2,7 +2,7 @@
   <div
     class="p-step"
     :class="{
-      'cursor-pointer': isPastStep,
+      'cursor-pointer': isAbleToSwitchStep,
     }"
     @click="toggle"
   >
@@ -31,13 +31,23 @@ const { stepNumber, isActive, title } = defineProps<{
   title: string;
 }>();
 
-const isPastStep = computed(() => $stepper.isPastStep(stepNumber));
 const titlePopover = ref();
+const $leadminerStore = useLeadminerStore();
+
+const isAbleToSwitchStep = computed(
+  () =>
+    $stepper.isPastStep(stepNumber) &&
+    !(
+      $leadminerStore.loadingStatusDns ||
+      $leadminerStore.miningTask !== undefined
+    ),
+);
+
 const toggle = (event: MouseEvent) => {
   titlePopover.value.toggle(event);
   setTimeout(() => titlePopover.value.hide(), 5000);
 
-  if (isPastStep.value) {
+  if (isAbleToSwitchStep.value) {
     $stepper.go(stepNumber);
   }
 };
