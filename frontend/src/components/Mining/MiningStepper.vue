@@ -19,28 +19,28 @@
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
         <Step v-slot="{ active, value }" as-child :value="1">
-          <StepWithTooltip
+          <StepWithPopover
             :step-number="Number(value)"
             :is-active="active"
             :title="t('source')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="2">
-          <StepWithTooltip
+          <StepWithPopover
             :step-number="Number(value)"
             :is-active="active"
             :title="$t('common.mine')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="3">
-          <StepWithTooltip
+          <StepWithPopover
             :step-number="Number(value)"
             :is-active="active"
             :title="$t('common.clean')"
           />
         </Step>
         <Step v-slot="{ active, value }" as-child :value="4">
-          <StepWithTooltip
+          <StepWithPopover
             :step-number="Number(value)"
             :is-active="active"
             :title="$t('common.enrich')"
@@ -89,7 +89,7 @@ const EnrichPanel = defineAsyncComponent(
   () => import('./StepperPanels/EnrichPanel.vue'),
 );
 
-const StepWithTooltip = defineAsyncComponent(
+const StepWithPopover = defineAsyncComponent(
   () => import('./StepperPanels/StepWithPopover.vue'),
 );
 
