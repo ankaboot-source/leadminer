@@ -63,14 +63,10 @@ function showImapDialog() {
   close();
 }
 function refreshOAuth() {
-  switch (provider.value) {
-    case 'google':
-    case 'azure':
-      signInWithOAuth(provider.value as OAuthMiningSource);
-      break;
-    default:
-      showImapDialog();
-      break;
+  if (provider.value === 'imap') {
+    showImapDialog();
+  } else {
+    addOAuthAccount(provider.value as OAuthMiningSource);
   }
 }
 </script>
