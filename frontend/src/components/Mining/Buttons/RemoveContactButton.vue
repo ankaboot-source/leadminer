@@ -6,9 +6,8 @@
     "
     icon="pi pi-times"
     :label="$screenStore.size.md ? t('remove') : undefined"
-    severity="secondary"
+    severity="danger"
     outlined
-    class="border-red-500"
     :disabled="isRemoveDisabled"
     :loading="isRemovingContacts"
     @click="showWarning()"
