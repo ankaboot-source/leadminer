@@ -59,7 +59,7 @@ file_size_limit = "50MiB"
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:8082"
+site_url = "http://localhost:8082"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 additional_redirect_urls = ["https://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
@@ -97,8 +97,8 @@ max_frequency = "1s"
 [auth.external.google]
 enabled = true
 # Default google credentials for local development only.
-client_id = "576299956482-5jdo6vnoi78t84hmv6g6j28egeg63b3f.apps.googleusercontent.com"
-secret = "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"
+client_id = "21825381029-993l33883t26n48fv11mmm049j6qn6lh.apps.googleusercontent.com"
+secret = "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"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
