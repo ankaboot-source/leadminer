@@ -39,13 +39,6 @@
             :title="$t('common.clean')"
           />
         </Step>
-        <Step v-slot="{ active, value }" as-child :value="4">
-          <StepWithPopover
-            :step-number="Number(value)"
-            :is-active="active"
-            :title="$t('common.enrich')"
-          />
-        </Step>
       </StepList>
       <StepPanels>
         <StepPanel v-slot="{ active }" :value="1">
