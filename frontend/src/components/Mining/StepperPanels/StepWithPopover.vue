@@ -8,7 +8,7 @@
   >
     <div :class="`${isActive ? 'p-step-active' : 'p-disabled'}`">
       <button class="p-step-header">
-        <span class="p-step-number">✅</span>
+        <span class="p-step-number">{{ stepNumber }}</span>
         <span class="p-step-title hidden md:block">
           {{ title }}
           <template v-if="$stepper.isPastStep(stepNumber)">✅</template>
