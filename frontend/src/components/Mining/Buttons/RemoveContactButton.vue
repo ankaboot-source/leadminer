@@ -7,6 +7,7 @@
     icon="pi pi-times"
     :label="$screenStore.size.md ? t('remove') : undefined"
     severity="danger"
+    outlined
     :disabled="isRemoveDisabled"
     :loading="isRemovingContacts"
     @click="showWarning()"

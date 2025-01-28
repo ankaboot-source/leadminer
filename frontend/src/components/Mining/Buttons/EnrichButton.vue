@@ -214,11 +214,6 @@ async function enrichPerson(
   updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>,
 ) {
-  showNotification(
-    'success',
-    t('notification.summary'),
-    t('notification.enrichment_started_one', { toEnrich: 1 }),
-  );
   totalTasks.value = 1;
   await $api<EnrichContactResponse>('/enrich/person/', {
     method: 'POST',

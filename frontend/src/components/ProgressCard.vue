@@ -35,11 +35,6 @@
     <ProgressBar
       v-tooltip.bottom="{ value: props.progressTooltip, escape: false }"
       :value="progressValue"
-      :pt="{
-        value: {
-          class: [progressColor],
-        },
-      }"
     />
   </div>
 </template>
@@ -66,9 +61,6 @@ const props = defineProps({
 const progressStartedAt = computed(() => props.started);
 const progressValue = computed(() => Math.round(props.progress * 100));
 const progressPercentage = computed(() => Math.floor(progressValue.value));
-const progressColor = computed(() =>
-  progressPercentage.value < 100 ? 'bg-amber-400' : 'bg-green-600',
-);
 
 const finishedTime = ref(0);
 
