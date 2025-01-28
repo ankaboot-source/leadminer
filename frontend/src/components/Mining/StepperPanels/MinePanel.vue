@@ -142,6 +142,7 @@ const source = computed(() => (miningSource ? 'boxes' : 'file'));
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
+const $contactsStore = useContactsStore();
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
@@ -224,8 +225,14 @@ onMounted(async () => {
   }
 });
 
+async function refineReloadContacts() {
+  await $contactsStore.refineContacts();
+  await $contactsStore.reloadContacts();
+}
+
 watch(extractionFinished, (finished) => {
   if (canceled.value) {
+    refineReloadContacts();
     $toast.add({
       severity: 'success',
       summary: t('mining_stopped'),
@@ -234,6 +241,7 @@ watch(extractionFinished, (finished) => {
     });
     $stepper.next();
   } else if (finished) {
+    refineReloadContacts();
     $toast.add({
       severity: 'success',
       summary: t('mining_done'),
