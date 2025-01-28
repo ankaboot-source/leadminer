@@ -239,7 +239,7 @@
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
             />
-            <div class="truncate">
+            <div class="truncate font-medium">
               <div
                 v-if="data.name && visibleColumns.includes('name')"
                 class="truncate w-min cursor-pointer"

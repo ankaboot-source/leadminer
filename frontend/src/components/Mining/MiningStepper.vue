@@ -60,9 +60,6 @@
         <StepPanel v-slot="{ active }" :value="3">
           <CleanPanel v-if="active" />
         </StepPanel>
-        <StepPanel v-slot="{ active }" :value="4">
-          <EnrichPanel v-if="active" />
-        </StepPanel>
       </StepPanels>
     </Stepper>
   </Panel>
@@ -84,9 +81,6 @@ const MinePanel = defineAsyncComponent(
 );
 const CleanPanel = defineAsyncComponent(
   () => import('./StepperPanels/CleanPanel.vue'),
-);
-const EnrichPanel = defineAsyncComponent(
-  () => import('./StepperPanels/EnrichPanel.vue'),
 );
 
 const StepWithPopover = defineAsyncComponent(
@@ -118,9 +112,6 @@ const spinnerText = computed(() => {
   if (!$leadminerStore.cleaningFinished) {
     return t('cleaning');
   }
-  if ($leadminerStore.activeEnrichment) {
-    return t('enriching');
-  }
   return undefined;
 });
 
@@ -143,7 +134,6 @@ onNuxtReady(() => {
     "source": "Source",
     "mining": "Mining",
     "cleaning": "Cleaning",
-    "enriching": "Enriching",
     "retrieving_mailboxes": "Retrieving mailboxes..."
   },
   "fr": {
@@ -151,7 +141,6 @@ onNuxtReady(() => {
     "source": "Source",
     "mining": "Extraction",
     "cleaning": "Nettoyage",
-    "enriching": "Enrichissement",
     "retrieving_mailboxes": "Récupération des boîtes aux lettres..."
   }
 }

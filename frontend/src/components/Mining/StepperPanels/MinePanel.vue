@@ -40,14 +40,12 @@
       "
       :loading="$leadminerStore.isLoadingStartMining"
       severity="contrast"
-      class="border-solid border-2 border-black"
       :label="t('start_mining_now')"
       @click="startMining"
     />
     <Button
       v-else
       :loading="$leadminerStore?.isLoadingStartMining"
-      class="border-solid border-2 border-black"
       severity="contrast"
       icon="pi pi-stop"
       icon-pos="right"
@@ -104,14 +102,12 @@
         "
         :loading="$leadminerStore.isLoadingStartMining"
         severity="contrast"
-        class="border-solid border-2 border-black"
         :label="t('start_mining_now')"
         @click="startMining"
       />
       <Button
         v-else
         :loading="$leadminerStore?.isLoadingStartMining"
-        class="border-solid border-2 border-black"
         severity="contrast"
         icon="pi pi-stop"
         icon-pos="right"

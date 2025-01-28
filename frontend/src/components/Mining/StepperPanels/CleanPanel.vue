@@ -19,7 +19,7 @@
   <div class="flex flex-col gap-2 pt-6 justify-end md:flex-row">
     <Button
       v-if="activeTask"
-      class="w-full md:w-max border-solid border-2 border-black"
+      class="w-full md:w-max"
       severity="contrast"
       icon="pi pi-stop"
       icon-pos="right"
@@ -33,21 +33,6 @@
         :label="t('start_new_mining')"
         @click="startNewMining"
       />
-      <Button
-        v-tooltip="t('enrich_button_tooltip')"
-        class="w-full md:w-max border-solid border-2 border-black"
-        severity="contrast"
-        :label="t('enrich_contacts', $contactsStore.selectedContactsCount)"
-        :disabled="
-          $contactsStore.selectedContactsCount === 0 ||
-          !$leadminerStore.cleaningFinished
-        "
-        @click="$stepper.next()"
-      >
-        <template #icon>
-          <span class="p-button-icon p-button-icon-right">💎</span>
-        </template>
-      </Button>
     </div>
   </div>
 </template>
@@ -63,7 +48,6 @@ const { t } = useI18n({
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
-const $contactsStore = useContactsStore();
 const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);

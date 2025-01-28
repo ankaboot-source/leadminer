@@ -8,8 +8,14 @@
   >
     <div :class="`${isActive ? 'p-step-active' : 'p-disabled'}`">
       <button class="p-step-header">
-        <span class="p-step-number">{{ stepNumber }}</span>
-        <span class="p-step-title hidden md:block"> {{ title }} </span>
+        <i
+          v-if="$stepper.isPastStep(stepNumber)"
+          class="pi pi-check bg-green-500 text-white rounded-full p-1"
+        />
+        <span v-else v class="p-step-number">{{ stepNumber }}</span>
+        <span class="p-step-title hidden md:block">
+          {{ title }}
+        </span>
       </button>
     </div>
     <span class="p-stepper-separator" />
