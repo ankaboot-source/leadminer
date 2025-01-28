@@ -239,20 +239,22 @@
               image-class="size-12 rounded-full"
               @click="openContactInformation(data)"
             />
-            <div class="truncate">
+            <div class="truncate font-medium">
               <div
                 v-if="data.name && visibleColumns.includes('name')"
-                class="font-medium truncate"
+                class="truncate w-min cursor-pointer"
+                @click="openContactInformation(data)"
               >
                 {{ data.name }}
               </div>
               <div
-                class="truncate"
-                :class="
-                  !data.name && visibleColumns.includes('name')
-                    ? 'font-medium'
-                    : ''
-                "
+                class="truncate cursor-pointer"
+                :class="{
+                  'font-light': !(
+                    !data.name && visibleColumns.includes('name')
+                  ),
+                }"
+                @click="openContactInformation(data)"
               >
                 {{ data.email }}
               </div>
