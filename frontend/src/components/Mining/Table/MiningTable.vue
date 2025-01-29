@@ -783,7 +783,7 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 
-watch(activeMiningTask, async (isActive) => {
+watch(activeMiningTask, (isActive) => {
   if (isActive) {
     $leadminerStore.cleaningFinished = false;
     filtersStore.clearFilter();
