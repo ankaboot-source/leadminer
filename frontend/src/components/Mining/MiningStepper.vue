@@ -85,20 +85,6 @@ const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 
 const { error, provider } = $route.query;
 
-const spinnerText = computed(() => {
-  if (!(collapsePanel.value && $leadminerStore.activeTask)) return undefined;
-  if ($leadminerStore.miningTask !== undefined) {
-    return t('mining');
-  }
-  if ($leadminerStore.isLoadingBoxes) {
-    return t('retrieving_mailboxes');
-  }
-  if (!$leadminerStore.cleaningFinished) {
-    return t('cleaning');
-  }
-  return undefined;
-});
-
 onNuxtReady(() => {
   if (provider && error === 'oauth-consent') {
     const newQuery = { ...useRoute().query };
