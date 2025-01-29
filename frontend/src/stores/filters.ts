@@ -159,7 +159,7 @@ export const useFiltersStore = defineStore('filters', () => {
     () => filters.value.status.value,
     (newStatusValue) => {
       validToggle.value =
-        newStatusValue.length === 1 && newStatusValue[0] === 'VALID';
+        newStatusValue?.length === 1 && newStatusValue[0] === 'VALID';
     },
   );
 
