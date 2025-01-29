@@ -238,9 +238,8 @@ async function refineReloadContacts() {
   $contactsStore.subscribeToRealtimeUpdates();
 }
 
-watch(extractionFinished, (finished) => {
+watch(extractionFinished, async (finished) => {
   if (canceled.value) {
-    refineReloadContacts();
     $toast.add({
       severity: 'success',
       summary: t('mining_stopped'),
@@ -248,8 +247,8 @@ watch(extractionFinished, (finished) => {
       life: 3000,
     });
     $stepper.next();
+    await refineReloadContacts();
   } else if (finished) {
-    refineReloadContacts();
     $toast.add({
       severity: 'success',
       summary: t('mining_done'),
@@ -260,6 +259,7 @@ watch(extractionFinished, (finished) => {
       life: 5000,
     });
     $stepper.next();
+    await refineReloadContacts();
   }
 });
 
