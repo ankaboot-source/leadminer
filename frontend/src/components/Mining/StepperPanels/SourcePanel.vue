@@ -134,28 +134,34 @@ function getIcon(type: string) {
   }
 }
 
+async function fetchMiningSourcesAndHandleSource() {
+  await $leadminerStore.fetchMiningSources();
+
+  const selectedSource = source
+    ? $leadminerStore.getMiningSourceByEmail(source as string)
+    : null;
+
+  if (selectedSource) {
+    const newQuery = { ...useRoute().query };
+    delete newQuery.source;
+    useRouter().replace({ query: newQuery });
+    onSourceChange(selectedSource);
+  } else {
+    sourceModel.value = sourceOptions?.value[0];
+  }
+}
+
 onMounted(async () => {
   try {
-    await $leadminerStore.fetchMiningSources();
-
-    const selectedSource = source
-      ? $leadminerStore.getMiningSourceByEmail(source as string)
-      : null;
-
-    if (selectedSource) {
-      const newQuery = { ...useRoute().query };
-      delete newQuery.source;
-      useRouter().replace({ query: newQuery });
-      onSourceChange(selectedSource);
-    } else {
-      sourceModel.value = sourceOptions?.value[0];
-    }
+    await fetchMiningSourcesAndHandleSource();
   } catch (error) {
-    if (error instanceof FetchError && error.response?.status === 401) {
-      throw error;
-    } else {
-      throw new Error(t('fetch_sources_failed'));
-    }
+    throw error instanceof FetchError && error.response?.status === 401
+      ? error
+      : new Error(t('fetch_sources_failed'));
+  }
+
+  if (sourceOptions.value.length === 0) {
+    showOtherSources.value = true;
   }
 
   watch(sourceModel, (miningSource) => {
