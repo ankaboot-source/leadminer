@@ -1,6 +1,6 @@
 <template>
-  <div class="flex flex-col items-center space-y-4 p-4">
-    <span class="text-base font-medium">{{ t('title') }}</span>
+  <div class="flex flex-col items-center space-y-6 p-6">
+    <span class="text-xl">{{ t('title') }}</span>
 
     <template v-if="!showOtherSources">
       <Select
@@ -53,7 +53,7 @@
 
     <template v-else>
       <div
-        class="flex flex-col min-[1129px]:flex-col flex-wrap gap-2 w-full max-w-lg justify-center"
+        class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2 w-full max-w-4xl justify-center"
       >
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
@@ -74,14 +74,6 @@
         />
         <importFileDialog ref="importFileDialogRef" />
       </div>
-
-      <Button
-        :label="t('mine_existing_source')"
-        outlined
-        severity="secondary"
-        class="w-full max-w-lg"
-        @click="showOtherSources = false"
-      />
     </template>
   </div>
 </template>

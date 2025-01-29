@@ -5,16 +5,7 @@
         severity="secondary"
         unstyled
         @click="collapsePanel = !collapsePanel"
-      >
-        <span class="font-semibold flex items-center gap-2">
-          <i
-            v-if="collapsePanel && $leadminerStore.activeTask"
-            v-tooltip.top="spinnerText"
-            class="pi pi-spin pi-spinner text-lg"
-          />
-          {{ t('mine_contacts') }}
-        </span>
-      </Button>
+      />
     </template>
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
