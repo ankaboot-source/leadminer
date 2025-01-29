@@ -377,7 +377,7 @@
             :key="tag"
             :value="getTagLabel(tag)"
             :severity="getTagColor(tag)"
-            class="capitalize"
+            class="capitalize font-normal"
           />
         </div>
       </template>
@@ -388,14 +388,14 @@
           option-value="value"
           option-label="label"
           :placeholder="t('any')"
-          class="p-column-filter"
+          class="p-column-filter font-normal"
           display="chip"
         >
           <template #option="{ option }">
             <Tag
               :value="option.label"
               :severity="getTagColor(option.value)"
-              class="capitalize"
+              class="capitalize font-normal"
             />
           </template>
         </MultiSelect>
@@ -420,6 +420,7 @@
       </template>
       <template #body="{ data }">
         <Tag
+          class="font-normal"
           :value="getStatusLabel(data.status)"
           :severity="getStatusColor(data.status)"
         />
@@ -435,7 +436,11 @@
           display="chip"
         >
           <template #option="{ option }">
-            <Tag :value="option.label" :severity="option.color" />
+            <Tag
+              :value="option.label"
+              :severity="option.color"
+              class="font-normal"
+            />
           </template>
         </MultiSelect>
       </template>
