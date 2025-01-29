@@ -788,27 +788,8 @@ watch(activeMiningTask, async (isActive) => {
     $leadminerStore.cleaningFinished = false;
     filtersStore.clearFilter();
   } else {
-    isLoading.value = true;
-    /**
-     * Disable realtime; protects table from rendering multiple times
-     */
-    await $contactsStore.unsubscribeFromRealtimeUpdates();
-
-    loadingLabel.value = t('refining_contacts');
-    await $contactsStore.refineContacts();
-
-    loadingLabel.value = t('syncing');
-    await $contactsStore.reloadContacts();
-
-    filtersStore.toggleFilters();
-
-    isLoading.value = false;
     $leadminerStore.cleaningFinished = true;
-
-    /**
-     * Subscribe again after the table is rendered
-     */
-    $contactsStore.subscribeToRealtimeUpdates();
+    filtersStore.toggleFilters();
   }
 });
 

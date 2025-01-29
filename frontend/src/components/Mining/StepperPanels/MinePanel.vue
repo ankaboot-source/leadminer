@@ -226,8 +226,16 @@ onMounted(async () => {
 });
 
 async function refineReloadContacts() {
+  /**
+   * Disable realtime; protects table from rendering multiple times
+   */
+  await $contactsStore.unsubscribeFromRealtimeUpdates();
   await $contactsStore.refineContacts();
   await $contactsStore.reloadContacts();
+  /**
+   * Subscribe again after the table is rendered
+   */
+  $contactsStore.subscribeToRealtimeUpdates();
 }
 
 watch(extractionFinished, (finished) => {
