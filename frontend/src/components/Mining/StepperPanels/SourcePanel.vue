@@ -1,40 +1,47 @@
 <template>
-  <div class="flex flex-col items-center space-y-6 p-6">
-    <span class="text-xl">{{ t('title') }}</span>
+  <template v-if="!showOtherSources">
+    <div class="flex flex-col items-center gap-12 p-8">
+      <div class="flex flex-col items-center gap-6 w-full max-w-lg">
+        <h2 class="text-xl">{{ t('title') }}</h2>
 
-    <template v-if="!showOtherSources">
-      <Select
-        v-model="sourceModel"
-        :options="sourceOptions"
-        class="w-full max-w-lg"
-        option-label="email"
-        :placeholder="t('email_address')"
-        :pt="{
-          trigger: { class: 'text-indigo-500' },
-          input: { class: 'text-indigo-500' },
-          root: { class: 'border-[#bcbdf9]' },
-        }"
-      >
-        <template #value="{ value }">
-          <div class="flex items-center space-x-2">
-            <i :class="getIcon(value?.type)" class="text-secondary text-sm"></i>
-            <span>{{ value?.email }}</span>
-          </div>
-        </template>
+        <Select
+          v-model="sourceModel"
+          :options="sourceOptions"
+          class="w-full"
+          option-label="email"
+          :placeholder="t('email_address')"
+          :pt="{
+            trigger: { class: 'text-indigo-500' },
+            input: { class: 'text-indigo-500' },
+            root: { class: 'border-[#bcbdf9]' },
+          }"
+        >
+          <template #value="{ value }">
+            <div class="flex items-center space-x-2">
+              <i
+                :class="getIcon(value?.type)"
+                class="text-secondary text-sm"
+              ></i>
+              <span>{{ value?.email }}</span>
+            </div>
+          </template>
 
-        <template #option="{ option }">
-          <div class="flex items-center space-x-2">
-            <i :class="getIcon(option.type)" class="text-secondary text-sm"></i>
-            <span>{{ option.email }}</span>
-          </div>
-        </template>
-      </Select>
+          <template #option="{ option }">
+            <div class="flex items-center space-x-2">
+              <i
+                :class="getIcon(option.type)"
+                class="text-secondary text-sm"
+              ></i>
+              <span>{{ option.email }}</span>
+            </div>
+          </template>
+        </Select>
+      </div>
 
       <div class="flex flex-col min-[1129px]:flex-row gap-2 w-full max-w-lg">
         <Button
           id="mine-source"
           class="w-full"
-          severity="secondary"
           :disabled="!sourceModel"
           :label="t('mine_new_source')"
           outlined
@@ -49,33 +56,38 @@
           @click="extractContacts"
         />
       </div>
-    </template>
+    </div>
+  </template>
 
-    <template v-else>
+  <template v-else>
+    <div class="flex flex-col items-center gap-12 p-8">
       <div
-        class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2 w-full max-w-4xl justify-center"
+        class="flex flex-col items-center justify-center gap-6 w-full max-w-4xl"
       >
-        <oauth-source icon="pi pi-google" label="Google" source="google" />
-        <oauth-source
-          icon="pi pi-microsoft"
-          :label="t('microsoft_or_outlook')"
-          source="azure"
-        />
-        <imap-source
-          v-model:source="sourceModel"
-          v-model:show="$imapDialogStore.showImapDialog"
-        />
-        <Button
-          id="import-file"
-          icon="pi pi-upload"
-          :label="t('import_csv_excel')"
-          outlined
-          @click="importFileDialogRef.openModal()"
-        />
-        <importFileDialog ref="importFileDialogRef" />
+        <h2 class="text-xl">{{ t('title') }}</h2>
+        <div class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2">
+          <oauth-source icon="pi pi-google" label="Google" source="google" />
+          <oauth-source
+            icon="pi pi-microsoft"
+            :label="t('microsoft_or_outlook')"
+            source="azure"
+          />
+          <imap-source
+            v-model:source="sourceModel"
+            v-model:show="$imapDialogStore.showImapDialog"
+          />
+          <Button
+            id="import-file"
+            icon="pi pi-upload"
+            :label="t('import_csv_excel')"
+            outlined
+            @click="importFileDialogRef.openModal()"
+          />
+          <importFileDialog ref="importFileDialogRef" />
+        </div>
       </div>
-    </template>
-  </div>
+    </div>
+  </template>
 </template>
 
 <script setup lang="ts">
