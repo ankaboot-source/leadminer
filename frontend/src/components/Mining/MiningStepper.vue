@@ -5,16 +5,7 @@
         severity="secondary"
         unstyled
         @click="collapsePanel = !collapsePanel"
-      >
-        <span class="font-semibold flex items-center gap-2">
-          <i
-            v-if="collapsePanel && $leadminerStore.activeTask"
-            v-tooltip.top="spinnerText"
-            class="pi pi-spin pi-spinner text-lg"
-          />
-          {{ t('mine_contacts') }}
-        </span>
-      </Button>
+      />
     </template>
     <Stepper v-model:value="$stepper.index" linear>
       <StepList>
@@ -93,20 +84,6 @@ const collapsePanel = defineModel<boolean>('collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 
 const { error, provider } = $route.query;
-
-const spinnerText = computed(() => {
-  if (!(collapsePanel.value && $leadminerStore.activeTask)) return undefined;
-  if ($leadminerStore.miningTask !== undefined) {
-    return t('mining');
-  }
-  if ($leadminerStore.isLoadingBoxes) {
-    return t('retrieving_mailboxes');
-  }
-  if (!$leadminerStore.cleaningFinished) {
-    return t('cleaning');
-  }
-  return undefined;
-});
 
 onNuxtReady(() => {
   if (provider && error === 'oauth-consent') {

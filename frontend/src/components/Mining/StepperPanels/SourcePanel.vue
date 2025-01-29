@@ -1,54 +1,60 @@
 <template>
-  <div class="flex flex-col min-[1129px]:flex-row gap-2">
-    <div
-      v-if="sourceOptions.length"
-      class="w-full min-[1129px]:w-1/2 flex flex-col gap-3"
-    >
-      <p>{{ t('pick_existing_email') }}</p>
-      <div class="flex flex-col min-[1129px]:flex-row gap-2">
-        <Select
-          v-model="sourceModel"
-          :options="sourceOptions"
-          class="flex-grow min-w-0"
-          option-label="email"
-          :placeholder="t('email_address')"
-          :pt="{
-            trigger: {
-              class: 'text-indigo-500 ',
-            },
-            input: {
-              class: 'text-indigo-500 ',
-            },
-            root: {
-              class: 'border-[#bcbdf9] ',
-            },
-          }"
+  <div class="flex flex-col items-center space-y-6 p-6">
+    <span class="text-xl">{{ t('title') }}</span>
+
+    <template v-if="!showOtherSources">
+      <Select
+        v-model="sourceModel"
+        :options="sourceOptions"
+        class="w-full max-w-lg"
+        option-label="email"
+        :placeholder="t('email_address')"
+        :pt="{
+          trigger: { class: 'text-indigo-500' },
+          input: { class: 'text-indigo-500' },
+          root: { class: 'border-[#bcbdf9]' },
+        }"
+      >
+        <template #value="{ value }">
+          <div class="flex items-center space-x-2">
+            <i :class="getIcon(value?.type)" class="text-secondary text-sm"></i>
+            <span>{{ value?.email }}</span>
+          </div>
+        </template>
+
+        <template #option="{ option }">
+          <div class="flex items-center space-x-2">
+            <i :class="getIcon(option.type)" class="text-secondary text-sm"></i>
+            <span>{{ option.email }}</span>
+          </div>
+        </template>
+      </Select>
+
+      <div class="flex flex-col min-[1129px]:flex-row gap-2 w-full max-w-lg">
+        <Button
+          id="mine-source"
+          class="w-full"
+          severity="secondary"
+          :disabled="!sourceModel"
+          :label="t('mine_new_source')"
+          outlined
+          @click="showOtherSources = true"
         />
         <Button
           id="extract-source"
-          :disabled="!sourceModel"
+          class="w-full"
           severity="contrast"
-          class="font-semibold flex-shrink-0"
+          :disabled="!sourceModel"
           :label="t('extract_contacts')"
-          @click="extractContacts()"
+          @click="extractContacts"
         />
       </div>
-    </div>
-    <template v-if="sourceOptions.length">
-      <Separator
-        layout="vertical"
-        :content="$t('common.or')"
-        class="hidden min-[1129px]:flex"
-      />
-      <Separator
-        layout="horizontal"
-        :content="$t('common.or')"
-        class="flex min-[1129px]:hidden"
-      />
     </template>
-    <div class="shrink flex flex-col gap-3">
-      <span>{{ t('mine_from') }}</span>
-      <div class="flex flex-col min-[1129px]:flex-row gap-2 flex-wrap">
+
+    <template v-else>
+      <div
+        class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2 w-full max-w-4xl justify-center"
+      >
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
           icon="pi pi-microsoft"
@@ -61,14 +67,14 @@
         />
         <Button
           id="import-file"
-          outlined
           icon="pi pi-upload"
           :label="t('import_csv_excel')"
+          outlined
           @click="importFileDialogRef.openModal()"
         />
         <importFileDialog ref="importFileDialogRef" />
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
@@ -90,7 +96,7 @@ const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
-
+const showOtherSources = ref(false);
 const { source } = useRoute().query;
 
 function onSourceChange(miningSource: MiningSource) {
@@ -102,6 +108,17 @@ function onSourceChange(miningSource: MiningSource) {
 function extractContacts() {
   if (sourceModel.value) {
     onSourceChange(sourceModel.value);
+  }
+}
+
+function getIcon(type: string) {
+  switch (type) {
+    case 'google':
+      return 'pi pi-google';
+    case 'azure':
+      return 'pi pi-microsoft';
+    default:
+      return 'pi pi-inbox';
   }
 }
 
@@ -146,8 +163,9 @@ defineExpose({
 <i18n lang="json">
 {
   "en": {
-    "pick_existing_email": "Pick an existing email address to mine",
-    "mine_from": "Mine your contacts from",
+    "title": "Mine contacts from",
+    "mine_existing_source": "Mine from existing source",
+    "mine_new_source": "Mine from another source",
     "fetch_sources_failed": "Failed to fetch mining sources",
     "email_address": "email address",
     "extract_contacts": "Extract contacts",
@@ -155,8 +173,9 @@ defineExpose({
     "import_csv_excel": "Import CSV or Excel"
   },
   "fr": {
-    "pick_existing_email": "Choisissez une adresse e-mail existante pour l’extraction",
-    "mine_from": "Extraire vos contacts depuis",
+    "title": "Extraire des contacts depuis",
+    "mine_existing_source": "Extraire depuis une source existante",
+    "mine_new_source": "Extraire depuis une autre source",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
     "email_address": "adresse e-mail",
     "extract_contacts": "Extraire les contacts",

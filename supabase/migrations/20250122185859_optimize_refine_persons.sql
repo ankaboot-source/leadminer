@@ -90,6 +90,14 @@ BEGIN
         LEFT JOIN real_names pn ON ea.person_email = pn.person_email
         JOIN grouped_tags gt ON ea.person_email = gt.email;
 
+    UPDATE private.persons
+    SET
+        name = cd.name,
+        alternate_name = cd.alternate_name,
+        alternate_email = cd.alternate_email
+    FROM combined_data cd
+    WHERE private.persons.email = cd.person_email;
+
     INSERT INTO private.refinedpersons (
         user_id, email, occurrence, recency, seniority,
         sender, recipient, conversations, replied_conversations, tags
@@ -116,5 +124,13 @@ BEGIN
         conversations = EXCLUDED.conversations,
         replied_conversations = EXCLUDED.replied_conversations,
         tags = EXCLUDED.tags;
+    
+    -- Drop temp tables after function execution
+    DROP TABLE IF EXISTS user_points_of_contact;
+    DROP TABLE IF EXISTS grouped_tags;
+    DROP TABLE IF EXISTS name_aggregates;
+    DROP TABLE IF EXISTS real_names;
+    DROP TABLE IF EXISTS email_aggregates;
+    DROP TABLE IF EXISTS combined_data;
 END;
 $$;

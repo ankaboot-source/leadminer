@@ -142,6 +142,7 @@ const source = computed(() => (miningSource ? 'boxes' : 'file'));
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
+const $contactsStore = useContactsStore();
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
@@ -224,7 +225,20 @@ onMounted(async () => {
   }
 });
 
-watch(extractionFinished, (finished) => {
+async function refineReloadContacts() {
+  /**
+   * Disable realtime; protects table from rendering multiple times
+   */
+  await $contactsStore.unsubscribeFromRealtimeUpdates();
+  await $contactsStore.refineContacts();
+  await $contactsStore.reloadContacts();
+  /**
+   * Subscribe again after the table is rendered
+   */
+  $contactsStore.subscribeToRealtimeUpdates();
+}
+
+watch(extractionFinished, async (finished) => {
   if (canceled.value) {
     $toast.add({
       severity: 'success',
@@ -233,6 +247,7 @@ watch(extractionFinished, (finished) => {
       life: 3000,
     });
     $stepper.next();
+    await refineReloadContacts();
   } else if (finished) {
     $toast.add({
       severity: 'success',
@@ -244,6 +259,7 @@ watch(extractionFinished, (finished) => {
       life: 5000,
     });
     $stepper.next();
+    await refineReloadContacts();
   }
 });
 
