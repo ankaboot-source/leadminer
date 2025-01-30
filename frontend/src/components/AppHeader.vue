@@ -3,6 +3,44 @@
     <template v-if="$user">
       <AppLogo class="cursor-pointer" @click="navigateHome()" />
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
+        <Button text type="button" @click="toggle">
+          <Image image-class="size-4" src="/icons/pickaxe.svg" />
+          {{ selectedMember ? selectedMember.email : 'Mine' }}
+        </Button>
+
+        <Popover ref="op">
+          <div class="flex flex-col gap-4">
+            <div>
+              <span class="font-medium block mb-2">Sources</span>
+              <ul class="list-none p-0 m-0 flex flex-col">
+                <li
+                  v-for="source in sources"
+                  :key="source.email"
+                  class="flex items-center gap-2 px-2 py-3 hover:bg-emphasis cursor-pointer rounded-border"
+                  @click="selectSource(source)"
+                >
+                  <i :class="source.icon" />
+                  <span>{{ source.email }}</span>
+                </li>
+                <Divider />
+                <li
+                  class="flex items-center gap-2 px-2 py-3 hover:bg-emphasis cursor-pointer rounded-border"
+                  @click="selectSource(null)"
+                >
+                  Add a new source
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Popover>
+
+        <Button
+          icon="pi pi-users"
+          label="Contacts"
+          text
+          class="contacts-button"
+          @click="navigateTo('/contacts')"
+        />
         <component :is="CreditsCounter" />
         <Button
           class="text-lowercase"
@@ -69,4 +107,33 @@ function navigateHome() {
     $router.push(homePath);
   }
 }
+
+const op = ref();
+const selectedMember = ref(null);
+const sources = ref([
+  {
+    email: 'amy@email.com',
+    provider: 'Other',
+    icon: 'pi pi-inbox',
+  },
+  {
+    email: 'bernardo@outlook.com',
+    provider: 'Microsoft',
+    icon: 'pi pi-microsoft',
+  },
+  {
+    email: 'ioni@gmail.com',
+    provider: 'Google',
+    icon: 'pi pi-google',
+  },
+]);
+
+const toggle = (event) => {
+  op.value.toggle(event);
+};
+
+const selectSource = (member) => {
+  selectedMember.value = member;
+  op.value.hide();
+};
 </script>
