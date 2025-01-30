@@ -1,12 +1,12 @@
 <template>
-  <div class="flex flex-col items-center space-y-6 p-6">
-    <span class="text-xl">{{ t('title') }}</span>
+  <template v-if="!showOtherSources">
+    <div class="flex flex-col items-center gap-8">
+      <h2 class="text-xl">{{ t('title_add_existing') }}</h2>
 
-    <template v-if="!showOtherSources">
       <Select
         v-model="sourceModel"
         :options="sourceOptions"
-        class="w-full max-w-lg"
+        class="w-full max-w-xl"
         option-label="email"
         :placeholder="t('email_address')"
         :pt="{
@@ -30,11 +30,10 @@
         </template>
       </Select>
 
-      <div class="flex flex-col min-[1129px]:flex-row gap-2 w-full max-w-lg">
+      <div class="flex flex-col min-[1129px]:flex-row gap-2 w-full max-w-xl">
         <Button
           id="mine-source"
           class="w-full"
-          severity="secondary"
           :disabled="!sourceModel"
           :label="t('mine_new_source')"
           outlined
@@ -49,12 +48,13 @@
           @click="extractContacts"
         />
       </div>
-    </template>
+    </div>
+  </template>
 
-    <template v-else>
-      <div
-        class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2 w-full max-w-4xl justify-center"
-      >
+  <template v-else>
+    <div class="flex flex-col items-center gap-8">
+      <h2 class="text-xl">{{ t('title_add_new') }}</h2>
+      <div class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2">
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
           icon="pi pi-microsoft"
@@ -74,8 +74,8 @@
         />
         <importFileDialog ref="importFileDialogRef" />
       </div>
-    </template>
-  </div>
+    </div>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -122,28 +122,34 @@ function getIcon(type: string) {
   }
 }
 
+async function fetchMiningSourcesAndHandleSource() {
+  await $leadminerStore.fetchMiningSources();
+
+  const selectedSource = source
+    ? $leadminerStore.getMiningSourceByEmail(source as string)
+    : null;
+
+  if (selectedSource) {
+    const newQuery = { ...useRoute().query };
+    delete newQuery.source;
+    useRouter().replace({ query: newQuery });
+    onSourceChange(selectedSource);
+  } else {
+    sourceModel.value = sourceOptions?.value[0];
+  }
+}
+
 onMounted(async () => {
   try {
-    await $leadminerStore.fetchMiningSources();
-
-    const selectedSource = source
-      ? $leadminerStore.getMiningSourceByEmail(source as string)
-      : null;
-
-    if (selectedSource) {
-      const newQuery = { ...useRoute().query };
-      delete newQuery.source;
-      useRouter().replace({ query: newQuery });
-      onSourceChange(selectedSource);
-    } else {
-      sourceModel.value = sourceOptions?.value[0];
-    }
+    await fetchMiningSourcesAndHandleSource();
   } catch (error) {
-    if (error instanceof FetchError && error.response?.status === 401) {
-      throw error;
-    } else {
-      throw new Error(t('fetch_sources_failed'));
-    }
+    throw error instanceof FetchError && error.response?.status === 401
+      ? error
+      : new Error(t('fetch_sources_failed'));
+  }
+
+  if (sourceOptions.value.length === 0) {
+    showOtherSources.value = true;
   }
 
   watch(sourceModel, (miningSource) => {
@@ -163,7 +169,8 @@ defineExpose({
 <i18n lang="json">
 {
   "en": {
-    "title": "Mine contacts from",
+    "title_add_new": "Choose your mining source",
+    "title_add_existing": "Mine from",
     "mine_existing_source": "Mine from existing source",
     "mine_new_source": "Mine from another source",
     "fetch_sources_failed": "Failed to fetch mining sources",
@@ -173,7 +180,8 @@ defineExpose({
     "import_csv_excel": "Import CSV or Excel"
   },
   "fr": {
-    "title": "Extraire des contacts depuis",
+    "title_add_new": "Extraire des contacts depuis",
+    "title_add_existing": "Extraire depuis",
     "mine_existing_source": "Extraire depuis une source existante",
     "mine_new_source": "Extraire depuis une autre source",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
