@@ -8,6 +8,7 @@
   />
   <ContactInformationSidebar v-model:show="$contactInformationSidebar.status" />
   <DataTable
+    v-show="showTable"
     ref="TableRef"
     v-model:selection="selectedContacts"
     v-model:filters="filtersStore.filters"
@@ -736,6 +737,10 @@ const RemoveContactButton = defineAsyncComponent(
 const ContactInformationSidebar = defineAsyncComponent(
   () => import('../ContactInformationSidebar.vue'),
 );
+
+const { showTable } = defineProps<{
+  showTable: boolean;
+}>();
 
 const { t } = useI18n({
   useScope: 'local',

@@ -1,5 +1,5 @@
 <template>
-  <Panel v-model:collapsed="collapsePanel" class="mb-4" toggleable>
+  <Panel v-model:collapsed="collapsePanel" class="mb-4 grow" toggleable>
     <template #header>
       <Button
         severity="secondary"
