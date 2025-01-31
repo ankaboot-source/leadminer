@@ -79,13 +79,12 @@ function cleaningDoneNotification() {
 onMounted(() => {
   if (verificationFinished.value) {
     cleaningDoneNotification();
-    console.info('Cleaning finished, showing notification.');
+    navigateTo('/contacts');
   } else {
     watch(verificationFinished, (finished) => {
-      console.log(finished);
       if (finished) {
         cleaningDoneNotification();
-        console.info('Cleaning finished, showing notification.');
+        navigateTo('/contacts');
       }
     });
   }
@@ -122,7 +121,7 @@ async function haltCleaning() {
 
 function startNewMining() {
   $leadminerStore.$resetMining();
-  $stepper.go(1);
+  $stepper.$reset();
 }
 </script>
 

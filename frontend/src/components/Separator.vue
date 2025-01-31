@@ -1,5 +1,5 @@
 <template>
-  <Divider :layout="layout" type="solid">
+  <Divider :layout="layout">
     <b class="text-gray-400 font-semibold">{{ content }}</b>
   </Divider>
 </template>

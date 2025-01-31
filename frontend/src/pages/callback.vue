@@ -27,7 +27,7 @@ onMounted(() => {
   }
 
   if (!user.value) {
-    navigateTo('/auth/login', {});
+    navigateTo('/auth/login');
     return;
   }
 
@@ -36,7 +36,7 @@ onMounted(() => {
     async () => {
       if (user.value) {
         await nextTick();
-        navigateTo(`${navigateToPage ?? '/dashboard'}`);
+        navigateTo(navigateToPage ?? '/');
       }
     },
     { immediate: true },

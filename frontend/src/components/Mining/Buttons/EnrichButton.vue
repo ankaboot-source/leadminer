@@ -315,14 +315,6 @@ const $profile = useSupabaseUserProfile();
 const hasAcceptedEnriching = computed(
   () => $profile.value?.gdpr_details.hasAcceptedEnriching,
 );
-function onAcceptEnrich() {
-  const justAcceptedEnrich = true;
-  openEnrichmentConfirmationDialog(justAcceptedEnrich);
-}
-
-function onClickEnrich(_: MouseEvent) {
-  openEnrichmentConfirmationDialog();
-}
 
 /**
  * Verifies if user has accepted enriching conditions (using `hasAcceptedEnriching` of `$profile`), then proceeds to the enrichment confirmation dialog
@@ -343,6 +335,15 @@ function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
   if (skipDialog.value) {
     startEnrichment(false);
   } else dialogVisible.value = true;
+}
+
+function onAcceptEnrich() {
+  const justAcceptedEnrich = true;
+  openEnrichmentConfirmationDialog(justAcceptedEnrich);
+}
+
+function onClickEnrich() {
+  openEnrichmentConfirmationDialog();
 }
 
 const closeEnrichmentConfirmationDialog = () => {
@@ -376,8 +377,7 @@ const isEnrichDisabled = computed(
     "button": {
       "tooltip": "Extract public information on contacts I've already a relation with using third-party tools",
       "start_enrichment": "Enrich",
-      "halt_enrichment": "Cancel enrichment",
-      "start_new_mining": "Start a new mining"
+      "halt_enrichment": "Cancel enrichment"
     }
   },
   "fr": {
@@ -398,8 +398,7 @@ const isEnrichDisabled = computed(
     "button": {
       "tooltip": "Extraire des informations publiques sur les contacts avec lesquels je suis en relation à l'aide d'outils tiers.",
       "start_enrichment": "Enrichir",
-      "halt_enrichment": "Annuler l'enrichissement",
-      "start_new_mining": "Commencer une nouvelle extraction"
+      "halt_enrichment": "Annuler l'enrichissement"
     }
   }
 }

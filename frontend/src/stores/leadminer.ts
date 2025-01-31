@@ -47,6 +47,10 @@ export const useLeadminerStore = defineStore('leadminer', () => {
       activeEnrichment.value,
   );
 
+  const miningStartedAndFinished = computed(() =>
+    Boolean(miningStartedAt.value && cleaningFinished.value),
+  );
+
   const errors = ref({});
 
   function $resetMining() {
@@ -328,6 +332,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     extractionFinished,
     cleaningFinished,
     activeTask,
+    miningStartedAndFinished,
     errors,
   };
 });

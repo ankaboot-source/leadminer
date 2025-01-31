@@ -1,12 +1,13 @@
 <template>
-  <div class="flex justify-between items-center">
-    <div id="progress-title">
+  <div class="grid grid-cols-3 items-center">
+    <div />
+    <div id="progress-title" class="text-xl justify-items-center">
       <slot name="progress-title">
         {{ props.progressTitle }}
       </slot>
     </div>
 
-    <div id="progress-time" class="hidden md:block">
+    <div id="progress-time" class="hidden md:block justify-items-end">
       <slot name="progress-time">
         <div v-if="progressPercentage < 100">
           {{ t('remaining_time', { t: estimatedRemainingTimeConverted }) }}
