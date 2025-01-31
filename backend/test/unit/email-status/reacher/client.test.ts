@@ -169,14 +169,15 @@ describe('ReacherClient', () => {
       const controller = new AbortController();
       let requestAborted = false;
 
-      mockAxios.onPost(SINGLE_VERIFICATION_ENDPOINT).reply(() => {
-        return new Promise((_, reject) => {
-          controller.signal.addEventListener('abort', () => {
-            requestAborted = true;
-            reject(new Error('Request aborted'));
-          });
-        });
-      });
+      mockAxios.onPost(SINGLE_VERIFICATION_ENDPOINT).reply(
+        () =>
+          new Promise((_, reject) => {
+            controller.signal.addEventListener('abort', () => {
+              requestAborted = true;
+              reject(new Error('Request aborted'));
+            });
+          })
+      );
 
       const requestPromise = reacherClient.checkSingleEmail(
         validEmail,

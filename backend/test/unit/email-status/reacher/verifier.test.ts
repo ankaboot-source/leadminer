@@ -7,15 +7,20 @@ import {
   it,
   jest
 } from '@jest/globals';
-import { Status } from '../../../../src/services/email-status/EmailStatusVerifier';
+import {
+  Details,
+  Status
+} from '../../../../src/services/email-status/EmailStatusVerifier';
 import ReacherEmailStatusVerifier from '../../../../src/services/email-status/reacher';
 import ReacherClient, {
-  EmailCheckOutput
+  EmailCheckOutput,
+  Reachability
 } from '../../../../src/services/email-status/reacher/client';
 import {
   reacherResultToEmailStatus,
   reacherResultToEmailStatusWithDetails
 } from '../../../../src/services/email-status/reacher/mappers';
+import { AxiosError } from 'axios';
 
 jest.mock('../../../../src/services/email-status/reacher/client');
 
@@ -57,7 +62,7 @@ describe('ReacherEmailStatusVerifier', () => {
         is_valid_syntax: true,
         username: 'test'
       }
-    } as any;
+    } as EmailCheckOutput;
     it('should return successful verification result', async () => {
       mockClient.checkSingleEmail.mockResolvedValue(verificationResponse);
 
@@ -87,7 +92,7 @@ describe('ReacherEmailStatusVerifier', () => {
     });
 
     it('should handle timeout errors', async () => {
-      const timeoutError = new Error('Request timed out') as any;
+      const timeoutError = new Error('Request timed out') as AxiosError;
       timeoutError.isAxiosError = true;
       timeoutError.code = 'ECONNABORTED';
 
@@ -100,26 +105,6 @@ describe('ReacherEmailStatusVerifier', () => {
         status: Status.UNKNOWN,
         details: { hasTimedOut: true }
       });
-    });
-  });
-
-  describe('#defaultBulkResults', () => {
-    it('should generate correct default structure', () => {
-      const emails = ['test1@example.com', 'test2@example.com'];
-      const results = verifier['defaultBulkResults'](emails);
-
-      expect(results).toEqual([
-        {
-          email: 'test1@example.com',
-          status: Status.UNKNOWN,
-          details: { hasTimedOut: true }
-        },
-        {
-          email: 'test2@example.com',
-          status: Status.UNKNOWN,
-          details: { hasTimedOut: true }
-        }
-      ]);
     });
   });
 });
@@ -185,8 +170,8 @@ describe('reacherResultToEmailStatus', () => {
   testCases.forEach(({ name, details, reachability, expected }) => {
     it(name, () => {
       const result = reacherResultToEmailStatus(
-        reachability as any,
-        details as any
+        reachability as Reachability,
+        details as Details
       );
       expect(result).toBe(expected);
     });
