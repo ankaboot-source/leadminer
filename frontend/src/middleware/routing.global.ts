@@ -1,9 +1,8 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const $supabase = useSupabaseClient();
   const { session } = (await $supabase.auth.getSession()).data;
-  const $contactsStore = useContactsStore();
-  if (session) await $contactsStore.loadContacts();
-  const homePath = $contactsStore.contactCount ? '/contacts' : '/mine';
+
+  const homePath = '/';
 
   if (session && to.path.startsWith('/auth')) {
     return navigateTo(homePath);
