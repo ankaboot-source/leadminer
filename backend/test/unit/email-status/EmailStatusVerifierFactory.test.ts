@@ -47,7 +47,7 @@ const yahooEmails = [
 ];
 
 const mailercheckOnly = [
-  'test@wandoo.fr',
+  'test@wanadoo.fr',
   'test@free.fr',
   'test@orange.fr',
   'test@laposte.net',
