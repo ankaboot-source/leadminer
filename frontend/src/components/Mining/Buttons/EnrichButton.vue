@@ -315,14 +315,6 @@ const $profile = useSupabaseUserProfile();
 const hasAcceptedEnriching = computed(
   () => $profile.value?.gdpr_details.hasAcceptedEnriching,
 );
-function onAcceptEnrich() {
-  const justAcceptedEnrich = true;
-  openEnrichmentConfirmationDialog(justAcceptedEnrich);
-}
-
-function onClickEnrich(_: MouseEvent) {
-  openEnrichmentConfirmationDialog();
-}
 
 /**
  * Verifies if user has accepted enriching conditions (using `hasAcceptedEnriching` of `$profile`), then proceeds to the enrichment confirmation dialog
@@ -343,6 +335,15 @@ function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
   if (skipDialog.value) {
     startEnrichment(false);
   } else dialogVisible.value = true;
+}
+
+function onAcceptEnrich() {
+  const justAcceptedEnrich = true;
+  openEnrichmentConfirmationDialog(justAcceptedEnrich);
+}
+
+function onClickEnrich() {
+  openEnrichmentConfirmationDialog();
 }
 
 const closeEnrichmentConfirmationDialog = () => {
