@@ -28,6 +28,8 @@ interface ReacherConfig {
   REACHER_MICROSOFT365_USE_API: boolean;
   REACHER_GMAIL_USE_API: boolean;
   REACHER_YAHOO_USE_API: boolean;
+  REACHER_RATE_LIMITER_REQUESTS: number;
+  REACHER_RATE_LIMITER_INTERVAL: number;
 }
 
 interface MailerCheckConfig {
@@ -210,6 +212,11 @@ export default class EmailStatusVerifierFactory {
                 password: config.REACHER_PROXY_PASSWORD
               }
             : undefined
+      },
+      rateLimiter: {
+        requests: config.REACHER_RATE_LIMITER_REQUESTS,
+        interval: config.REACHER_RATE_LIMITER_INTERVAL,
+        spaced: false
       }
     });
 
