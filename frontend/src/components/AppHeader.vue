@@ -5,9 +5,12 @@
       <Button
         icon="pi pi-users"
         :label="$t('common.contacts')"
-        text
-        class="underline hidden md:inline"
-        @click="navigateTo('/contacts')"
+        outlined
+        class="ml-2 border-x-0 border-t-0 invisible md:visible rounded-sm"
+        :class="{
+          'border-primary': $router.currentRoute.value.path === contactsPath,
+        }"
+        @click="navigateTo(contactsPath)"
       />
       <div class="grow" />
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
@@ -32,7 +35,7 @@
       </div>
       <div id="mobile-navbar" class="flex md:hidden">
         <Button class="md:hidden" icon="pi pi-bars" @click="visible = true" />
-        <Drawer v-model:visible="visible" class="p-3.5">
+        <Drawer v-model:visible="visible" class="p-3.5 gap-4">
           <template #container="{ closeCallback }">
             <Button unstyled class="flex flex-column" @click="closeCallback">
               <NuxtLink :to="homePath">
@@ -43,12 +46,25 @@
             <Button
               icon="pi pi-users"
               :label="$t('common.contacts')"
-              text
-              class="underline"
-              @click="navigateTo('/contacts')"
+              outlined
+              :class="{
+                'border-primary':
+                  $router.currentRoute.value.path === contactsPath,
+              }"
+              @click="
+                navigateTo(contactsPath);
+                closeCallback();
+              "
             />
 
-            <Button outlined type="button" @click="navigateTo('/mine')">
+            <Button
+              outlined
+              type="button"
+              @click="
+                navigateTo(minePath);
+                closeCallback();
+              "
+            >
               <Image image-class="size-4" src="/icons/pickaxe.svg" />
               {{ $t('common.mine') }}
             </Button>
@@ -89,12 +105,13 @@ const $contactsStore = useContactsStore();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const visible = ref(false);
-
+const contactsPath = '/contacts';
+const minePath = '/mine';
 const homePath = $user
   ? '/'
   : $contactsStore.contactCount
-    ? '/contacts'
-    : '/mine';
+    ? contactsPath
+    : minePath;
 
 function navigateToMine() {
   if ($leadminerStore.miningStartedAndFinished) {
@@ -102,7 +119,7 @@ function navigateToMine() {
     $leadminerStore.$resetMining();
   }
 
-  navigateTo('/mine');
+  navigateTo(minePath);
 }
 function navigateHome() {
   if ($router.currentRoute.value.path === homePath) {
