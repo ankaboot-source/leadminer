@@ -46,7 +46,7 @@ const yahooEmails = [
   'leadminer-test4@yahoo.in'
 ];
 
-const mailercheckOnly = [
+const mailercheckZerobounceOnly = [
   'test@wanadoo.fr',
   'test@free.fr',
   'test@orange.fr',
@@ -57,7 +57,7 @@ const mailercheckOnly = [
 const googleEmails = ['leadminer-test1@gmail.com'];
 
 const emails = [
-  ...mailercheckOnly,
+  ...mailercheckZerobounceOnly,
   ...hotmailEmails,
   ...googleEmails,
   ...outlookEmails,
@@ -72,7 +72,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
 
   describe('getEmailVerifier', () => {
     it.each([
-      ...mailercheckOnly,
+      ...mailercheckZerobounceOnly,
       ...hotmailEmails,
       ...outlookEmails,
       ...yahooEmails
@@ -93,7 +93,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
     );
 
     it.each([
-      ...mailercheckOnly,
+      ...mailercheckZerobounceOnly,
       ...hotmailEmails,
       ...outlookEmails,
       ...yahooEmails
@@ -113,7 +113,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
     );
 
     it.each([
-      ...mailercheckOnly,
+      ...mailercheckZerobounceOnly,
       ...hotmailEmails,
       ...outlookEmails,
       ...yahooEmails
@@ -133,7 +133,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
     );
 
     it.each([
-      ...mailercheckOnly,
+      ...mailercheckZerobounceOnly,
       ...googleEmails,
       ...yahooEmails,
       ...outlookEmails,
@@ -183,7 +183,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       ]);
       expect(result.get('zerobounce')).toEqual([
         expect.any(ZerobounceEmailStatusVerifier),
-        [...mailercheckOnly, ...hotmailEmails, ...outlookEmails, ...yahooEmails]
+        [...mailercheckZerobounceOnly, ...hotmailEmails, ...outlookEmails, ...yahooEmails]
       ]);
     });
 
@@ -205,7 +205,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       ]);
       expect(result.get('mailercheck')).toEqual([
         expect.any(MailerCheckEmailStatusVerifier),
-        [...mailercheckOnly, ...hotmailEmails, ...outlookEmails, ...yahooEmails]
+        [...mailercheckZerobounceOnly, ...hotmailEmails, ...outlookEmails, ...yahooEmails]
       ]);
     });
 
@@ -224,7 +224,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       expect(result.get('reacher')).toEqual([
         expect.any(ReacherEmailStatusVerifier),
         [
-          ...mailercheckOnly,
+          ...mailercheckZerobounceOnly,
           ...hotmailEmails,
           ...googleEmails,
           ...outlookEmails,
@@ -249,7 +249,7 @@ describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
       expect(result.get('zerobounce')).toEqual([
         expect.any(ZerobounceEmailStatusVerifier),
         [
-          ...mailercheckOnly,
+          ...mailercheckZerobounceOnly,
           ...hotmailEmails,
           ...googleEmails,
           ...outlookEmails,
