@@ -41,7 +41,7 @@ interface ZerobounceConfig {
 }
 
 export default class EmailStatusVerifierFactory {
-  private static readonly MAILER_CHECK_DOMAIN_REGEX =
+  private static readonly MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =
     /(?=(@hotmail|@yahoo|@live|@outlook|@msn|@wanadoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
 
   private currentVerifierIndex = 0;
@@ -178,7 +178,9 @@ export default class EmailStatusVerifierFactory {
 
   getEmailVerifier(email: string): EmailStatusVerifier {
     if (this.reacherEmailStatusVerifier && this.verifiers.length > 0) {
-      return EmailStatusVerifierFactory.MAILER_CHECK_DOMAIN_REGEX.test(email)
+      return EmailStatusVerifierFactory.MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX.test(
+        email
+      )
         ? this.getNextVerifier()
         : this.reacherEmailStatusVerifier;
     }
