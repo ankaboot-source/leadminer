@@ -16,7 +16,7 @@
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
         <Button
           type="button"
-          :label="$t('common.mine')"
+          :label="$t('common.start_mining')"
           @click="navigateToMine()"
         />
         <component :is="CreditsCounter" />
@@ -67,7 +67,7 @@
               "
             >
               <Image image-class="size-4" src="/icons/pickaxe.svg" />
-              {{ $t('common.mine') }}
+              {{ $t('common.start_mining') }}
             </Button>
 
             <div class="overflow-y-auto mt-10">
