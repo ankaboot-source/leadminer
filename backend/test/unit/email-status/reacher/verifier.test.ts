@@ -7,6 +7,7 @@ import {
   it,
   jest
 } from '@jest/globals';
+import { AxiosError } from 'axios';
 import {
   Details,
   Status
@@ -20,7 +21,6 @@ import {
   reacherResultToEmailStatus,
   reacherResultToEmailStatusWithDetails
 } from '../../../../src/services/email-status/reacher/mappers';
-import { AxiosError } from 'axios';
 
 jest.mock('../../../../src/services/email-status/reacher/client');
 
