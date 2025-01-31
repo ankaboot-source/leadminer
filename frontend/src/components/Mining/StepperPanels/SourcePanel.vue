@@ -1,8 +1,7 @@
 <template>
-  <template v-if="!showOtherSources">
-    <div class="flex flex-col items-center gap-8">
+  <div class="flex flex-col grow items-center justify-evenly h-2/3">
+    <template v-if="!showOtherSources">
       <h2 class="text-xl">{{ t('title_add_existing') }}</h2>
-
       <Select
         v-model="sourceModel"
         :options="sourceOptions"
@@ -34,7 +33,6 @@
         <Button
           id="mine-source"
           class="w-full"
-          :disabled="!sourceModel"
           :label="t('mine_new_source')"
           outlined
           @click="showOtherSources = true"
@@ -48,12 +46,11 @@
           @click="extractContacts"
         />
       </div>
-    </div>
-  </template>
+    </template>
 
-  <template v-else>
-    <div class="flex flex-col items-center gap-8">
+    <template v-else>
       <h2 class="text-xl">{{ t('title_add_new') }}</h2>
+
       <div class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2">
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
@@ -74,8 +71,8 @@
         />
         <importFileDialog ref="importFileDialogRef" />
       </div>
-    </div>
-  </template>
+    </template>
+  </div>
 </template>
 
 <script setup lang="ts">

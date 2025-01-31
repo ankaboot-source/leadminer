@@ -2,7 +2,19 @@
   <div class="py-3.5 flex justify-between bg-white md:bg-transparent">
     <template v-if="$user">
       <AppLogo class="cursor-pointer" @click="navigateHome()" />
+      <Button
+        icon="pi pi-users"
+        :label="$t('common.contacts')"
+        text
+        class="underline hidden md:inline"
+        @click="navigateTo('/contacts')"
+      />
+      <div class="grow" />
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
+        <Button outlined type="button" @click="navigateToMine()">
+          <Image image-class="size-4" src="/icons/pickaxe.svg" />
+          {{ $t('common.mine') }}
+        </Button>
         <component :is="CreditsCounter" />
         <Button
           class="text-lowercase"
@@ -23,9 +35,22 @@
         <Drawer v-model:visible="visible" class="p-3.5">
           <template #container="{ closeCallback }">
             <Button unstyled class="flex flex-column" @click="closeCallback">
-              <NuxtLink to="/dashboard">
+              <NuxtLink :to="homePath">
                 <AppLogo />
               </NuxtLink>
+            </Button>
+
+            <Button
+              icon="pi pi-users"
+              :label="$t('common.contacts')"
+              text
+              class="underline"
+              @click="navigateTo('/contacts')"
+            />
+
+            <Button outlined type="button" @click="navigateTo('/mine')">
+              <Image image-class="size-4" src="/icons/pickaxe.svg" />
+              {{ $t('common.mine') }}
             </Button>
 
             <div class="overflow-y-auto mt-10">
@@ -60,9 +85,26 @@
 import AppLogo from './AppLogo.vue';
 const $user = useSupabaseUser();
 const $router = useRouter();
+const $contactsStore = useContactsStore();
+const $stepper = useMiningStepper();
+const $leadminerStore = useLeadminerStore();
 const visible = ref(false);
+
+const homePath = $user
+  ? '/'
+  : $contactsStore.contactCount
+    ? '/contacts'
+    : '/mine';
+
+function navigateToMine() {
+  if ($leadminerStore.miningStartedAndFinished) {
+    $stepper.$reset();
+    $leadminerStore.$resetMining();
+  }
+
+  navigateTo('/mine');
+}
 function navigateHome() {
-  const homePath = '/dashboard';
   if ($router.currentRoute.value.path === homePath) {
     $router.go(0); // reload the page
   } else {

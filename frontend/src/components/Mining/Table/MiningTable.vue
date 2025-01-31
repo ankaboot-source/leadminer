@@ -1054,17 +1054,8 @@ onNuxtReady(async () => {
     ...($screenStore.width > 800 ? ['tags'] : []),
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
-  const $stepper = useMiningStepper();
 
   await $contactsStore.loadContacts();
-
-  if (
-    $stepper.index === 1 &&
-    $contactsStore.contactsList &&
-    $contactsStore.contactsList.length > 0
-  ) {
-    $stepper.hide();
-  }
   $contactsStore.subscribeToRealtimeUpdates();
 
   isLoading.value = false;

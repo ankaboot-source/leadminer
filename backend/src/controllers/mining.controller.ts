@@ -68,7 +68,7 @@ export default function initializeMiningController(
           type: provider
         });
 
-        res.redirect(301, `${ENV.FRONTEND_HOST}/dashboard?source=${email}`);
+        res.redirect(301, `${ENV.FRONTEND_HOST}/mine?source=${email}`);
       } catch (error) {
         res.redirect(
           301,

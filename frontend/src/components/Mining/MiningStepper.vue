@@ -1,5 +1,11 @@
 <template>
-  <Panel v-model:collapsed="collapsePanel" class="mb-4 grow" toggleable>
+  <Panel
+    v-model:collapsed="collapsePanel"
+    class="mb-4 flex flex-col grow"
+    :toggleable="isToggleable"
+    pt:content:class="flex grow"
+    pt:content-container:class="flex grow"
+  >
     <template #header>
       <Button
         severity="secondary"
@@ -7,7 +13,7 @@
         @click="collapsePanel = !collapsePanel"
       />
     </template>
-    <Stepper v-model:value="$stepper.index" linear>
+    <Stepper v-model:value="$stepper.index" linear class="flex flex-col grow">
       <StepList>
         <Step v-slot="{ active, value }" as-child :value="1">
           <StepWithPopover
@@ -31,8 +37,8 @@
           />
         </Step>
       </StepList>
-      <StepPanels>
-        <StepPanel v-slot="{ active }" :value="1">
+      <StepPanels class="flex flex-col grow">
+        <StepPanel v-slot="{ active }" :value="1" class="flex grow">
           <SourcePanel v-if="active" ref="sourcePanel" />
         </StepPanel>
         <StepPanel v-slot="{ active }" :value="2">
@@ -74,6 +80,10 @@ const StepWithPopover = defineAsyncComponent(
 const { t } = useI18n({
   useScope: 'local',
 });
+
+const { isToggleable } = defineProps<{
+  isToggleable: boolean;
+}>();
 
 const $route = useRoute();
 const $stepper = useMiningStepper();

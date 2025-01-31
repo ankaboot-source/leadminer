@@ -2,6 +2,7 @@
 const $toast = useToast();
 const user = useSupabaseUser();
 const route = useRoute();
+const $contactsStore = useContactsStore();
 
 function parseHashQuery(hash: string) {
   const hashQuery = hash.substring(1); // Remove the leading "#"
@@ -27,7 +28,7 @@ onMounted(() => {
   }
 
   if (!user.value) {
-    navigateTo('/auth/login', {});
+    navigateTo('/auth/login');
     return;
   }
 
@@ -36,7 +37,13 @@ onMounted(() => {
     async () => {
       if (user.value) {
         await nextTick();
-        navigateTo(`${navigateToPage ?? '/dashboard'}`);
+        if (navigateToPage) {
+          navigateTo(navigateToPage);
+        } else if ($contactsStore.contactCount) {
+          navigateTo('/contacts');
+        } else {
+          navigateTo('/mine');
+        }
       }
     },
     { immediate: true },
