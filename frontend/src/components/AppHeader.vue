@@ -6,7 +6,7 @@
         icon="pi pi-users"
         :label="$t('common.contacts')"
         outlined
-        class="ml-2 border-x-0 border-t-0 invisible md:visible rounded-sm"
+        class="ml-4 border-b-2 border-x-0 border-t-0 rounded-sm invisible md:visible"
         :class="{
           'border-primary': $router.currentRoute.value.path === contactsPath,
         }"
@@ -14,10 +14,11 @@
       />
       <div class="grow" />
       <div id="desktop-navbar" class="hidden md:flex md:items-center md:gap-1">
-        <Button outlined type="button" @click="navigateToMine()">
-          <Image image-class="size-4" src="/icons/pickaxe.svg" />
-          {{ $t('common.mine') }}
-        </Button>
+        <Button
+          type="button"
+          :label="$t('common.mine')"
+          @click="navigateToMine()"
+        />
         <component :is="CreditsCounter" />
         <Button
           class="text-lowercase"
@@ -47,6 +48,7 @@
               icon="pi pi-users"
               :label="$t('common.contacts')"
               outlined
+              class="border-b-2 border-x-0 border-t-0 rounded-sm"
               :class="{
                 'border-primary':
                   $router.currentRoute.value.path === contactsPath,
@@ -58,7 +60,6 @@
             />
 
             <Button
-              outlined
               type="button"
               @click="
                 navigateTo(minePath);
