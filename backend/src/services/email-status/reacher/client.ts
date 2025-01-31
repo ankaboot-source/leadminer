@@ -68,6 +68,12 @@ interface BulkVerificationResultsResponse {
   results: EmailCheckOutput[];
 }
 
+interface RateLimiterOptions {
+  requests: number;
+  interval: number;
+  spaced: boolean;
+}
+
 interface ReacherConfig {
   host?: string;
   timeoutMs?: number;
@@ -80,7 +86,7 @@ interface ReacherConfig {
   gmailUseApi?: boolean;
   yahooUseApi?: boolean;
   hotmailUseHeadless?: string;
-  requestsPerMinute: number;
+  rateLimiter: RateLimiterOptions;
 }
 
 interface SMTPConfig {
@@ -99,9 +105,9 @@ interface ValidationOptions {
 }
 
 export default class ReacherClient {
-  private static readonly SINGLE_VERIFICATION_PATH = '/v1/check_email';
+  static readonly SINGLE_VERIFICATION_PATH = '/v1/check_email';
 
-  private static readonly BULK_VERIFICATION_PATH = '/v0/bulk';
+  static readonly BULK_VERIFICATION_PATH = '/v0/bulk';
 
   private readonly api: AxiosInstance;
 
@@ -138,9 +144,9 @@ export default class ReacherClient {
       baseURL: config.host
     });
     this.rate_limit_handler = throttledQueue(
-      config.requestsPerMinute,
-      60 * 1000,
-      true
+      config.rateLimiter.requests,
+      config.rateLimiter.interval,
+      config.rateLimiter.spaced
     );
 
     if (config.timeoutMs) {

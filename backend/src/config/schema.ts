@@ -81,7 +81,8 @@ const schema = z.object({
   REACHER_MICROSOFT365_USE_API: boolean().optional().default('true'),
   REACHER_GMAIL_USE_API: boolean().optional().default('false'),
   REACHER_YAHOO_USE_API: boolean().optional().default('false'),
-  REACHER_REQUESTS_PER_MINUTE: number(),
+  REACHER_RATE_LIMITER_REQUESTS: number(),
+  REACHER_RATE_LIMITER_INTERVAL: number(),
 
   /* MAILERCHECK */
   MAILERCHECK_API_KEY: z.string().min(1).optional(),
