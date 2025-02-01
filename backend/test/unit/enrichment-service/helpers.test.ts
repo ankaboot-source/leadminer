@@ -122,7 +122,7 @@ describe('enrichFromCache', () => {
       { id: '2', user_id: 'leadminer-1', email: 'test2@example.com' }
     ];
 
-    getCache.mockResolvedValue([{} as any]);
+    getCache.mockResolvedValue([{} as unknown]);
 
     const result = await enrichFromCache(getCache, enrichmentsDB, contacts);
 
