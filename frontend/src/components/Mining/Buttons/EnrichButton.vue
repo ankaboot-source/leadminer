@@ -365,10 +365,7 @@ const isEnrichDisabled = computed(
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
-      "summary": "Enrich",
-      "enrichment_started_one": "Enrichment on {toEnrich} contact has started. Please wait a few minutes.",
-      "enrichment_started": "Enrichment on {toEnrich} contacts has started. Please wait a few minutes.",
-      "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts has been successfully enriched.",
+      "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts have been successfully enriched.",
       "enrichment_canceled": "Your contact enrichment has been canceled.",
       "already_enriched": "Contacts you selected are already enriched.",
       "no_additional_info": "Enrichment completed, but no additional information was found for the selected contacts.",
