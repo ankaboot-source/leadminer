@@ -88,6 +88,7 @@ import {
   CreditsDialogEnrichRef,
   openCreditsDialog,
 } from '@/utils/credits';
+import type { FetchResponse } from 'ofetch';
 import type { Contact } from '~/types/contact';
 import EnrichGdprDialog from '../EnrichGdprDialog.vue';
 
@@ -233,28 +234,32 @@ function enrichmentNoCredits(total: number, available: number) {
   openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
 }
 
-function enrichmentSingleResponseHandler({ response }: any) {
-  const { total, available, task } = response._data;
-  if (response.status === 402) {
-    enrichmentNoCredits(total, available);
-  } else if (response.status === 200) {
-    handleEnrichmentProgressNotification(task);
-  } else if (response.status === 503) {
+function enrichmentSingleResponseHandler(
+  response: FetchResponse<EnrichContactResponse>,
+) {
+  const { _data: result, status } = response;
+  if (status === 200 && result?.task) {
+    handleEnrichmentProgressNotification(result.task);
+  } else if (response.status === 402 && result?.total && result?.available) {
+    enrichmentNoCredits(result.total, result.available);
+  } else if (status === 503) {
     showNotAvailableNotification();
   }
 }
 
-function enrichmentBulkResponseHandler({ response }: any) {
-  const { total, available, task } = response._data;
+function enrichmentBulkResponseHandler(
+  response: FetchResponse<EnrichContactResponse>,
+) {
+  const { _data: result, status } = response;
 
   const handleSuccess = (task: EnrichmentTask) => {
     if (task.status === 'running') setupEnrichmentRealtime();
     else handleEnrichmentProgressNotification(task);
   };
-  if (response.status === 200) {
-    handleSuccess(task);
-  } else if (response.status === 402) {
-    enrichmentBulkNoCredits(total, available);
+  if (status === 200 && result?.task) {
+    handleSuccess(result?.task);
+  } else if (status === 402 && result?.total && result?.available) {
+    enrichmentNoCredits(result.total, result.available);
   } else if (response.status === 503) {
     showNotAvailableNotification();
   }
@@ -274,7 +279,7 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      enrichmentSingleResponseHandler({ response });
+      enrichmentSingleResponseHandler(response);
     },
   });
 }
@@ -298,7 +303,7 @@ async function enrichPersonBulk(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      enrichmentBulkResponseHandler({ response });
+      enrichmentBulkResponseHandler(response);
     },
   });
 }
