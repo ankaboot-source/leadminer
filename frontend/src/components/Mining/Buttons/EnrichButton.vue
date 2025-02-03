@@ -154,39 +154,57 @@ function stopEnrichment() {
   $leadminerStore.activeEnrichment = false;
 }
 
+function showSuccessNotification(total_enriched: number) {
+  showNotification(
+    'success',
+    t('notification.summary'),
+    t('notification.enrichment_completed', {
+      n: total_enriched,
+      enriched: total_enriched.toLocaleString(),
+    }),
+    'achievement',
+  );
+}
+
+function showDefaultNotification() {
+  showNotification(
+    'info',
+    t('notification.summary'),
+    t('notification.no_additional_info'),
+  );
+}
+
+function showCanceledNotification() {
+  showNotification(
+    'error',
+    t('notification.summary'),
+    t('notification.enrichment_canceled'),
+  );
+}
+
+function showNotAvailableNotification() {
+  showNotification(
+    'error',
+    t('notification.summary'),
+    t('notification.enricher_configuration_required'),
+  );
+}
+
 function handleEnrichmentProgressNotification(task: EnrichmentTask) {
   const {
     status,
     details: { total_enriched },
   } = task;
+  if (status === 'running') return;
 
-  if (task.status === 'running') return;
-
-  // status done, canceled
   stopEnrichment();
 
   if (status === 'canceled') {
-    showNotification(
-      'error',
-      t('notification.summary'),
-      t('notification.enrichment_canceled'),
-    );
+    showCanceledNotification();
   } else if (total_enriched > 0) {
-    showNotification(
-      'success',
-      t('notification.summary'),
-      t('notification.enrichment_completed', {
-        n: total_enriched,
-        enriched: total_enriched.toLocaleString(),
-      }),
-      'achievement',
-    );
+    showSuccessNotification(total_enriched);
   } else {
-    showNotification(
-      'info',
-      t('notification.summary'),
-      t('notification.no_additional_info'),
-    );
+    showDefaultNotification();
   }
 }
 
@@ -210,6 +228,38 @@ function setupEnrichmentRealtime() {
   subscription.subscribe();
 }
 
+function enrichmentNoCredits(total: number, available: number) {
+  stopEnrichment();
+  openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
+}
+
+function enrichmentSingleResponseHandler({ response }: any) {
+  const { total, available, task } = response._data;
+  if (response.status === 402) {
+    enrichmentNoCredits(total, available);
+  } else if (response.status === 200) {
+    handleEnrichmentProgressNotification(task);
+  } else if (response.status === 503) {
+    showNotAvailableNotification();
+  }
+}
+
+function enrichmentBulkResponseHandler({ response }: any) {
+  const { total, available, task } = response._data;
+
+  const handleSuccess = (task: EnrichmentTask) => {
+    if (task.status === 'running') setupEnrichmentRealtime();
+    else handleEnrichmentProgressNotification(task);
+  };
+  if (response.status === 200) {
+    handleSuccess(task);
+  } else if (response.status === 402) {
+    enrichmentBulkNoCredits(total, available);
+  } else if (response.status === 503) {
+    showNotAvailableNotification();
+  }
+}
+
 async function enrichPerson(
   updateEmptyFieldsOnly: boolean,
   contacts: Partial<Contact>,
@@ -224,20 +274,7 @@ async function enrichPerson(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, task } = response._data;
-
-      if (response.status === 402) {
-        stopEnrichment();
-        openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
-      } else if (response.status === 200) {
-        handleEnrichmentProgressNotification(task);
-      } else if (response.status === 503) {
-        showNotification(
-          'error',
-          t('notification.summary'),
-          t('notification.enricher_configuration_required'),
-        );
-      }
+      enrichmentSingleResponseHandler({ response });
     },
   });
 }
@@ -248,7 +285,7 @@ async function enrichPersonBulk(
   contacts: Partial<Contact>[],
 ) {
   showNotification(
-    'success',
+    'info',
     t('notification.summary'),
     t('notification.enrichment_started', { toEnrich: contacts.length }),
   );
@@ -261,24 +298,7 @@ async function enrichPersonBulk(
     },
     onResponse({ response }) {
       enrichmentRequestResponseCallback({ response });
-      const { total, available, task } = response._data;
-
-      if (response.status === 402) {
-        stopEnrichment();
-        openCreditsDialog(CreditsDialogEnrichRef, true, total, available, 0);
-      } else if (response.status === 200) {
-        if (task.status === 'running') {
-          setupEnrichmentRealtime();
-        } else {
-          handleEnrichmentProgressNotification(task);
-        }
-      } else if (response.status === 503) {
-        showNotification(
-          'error',
-          t('notification.summary'),
-          t('notification.enricher_configuration_required'),
-        );
-      }
+      enrichmentBulkResponseHandler({ response });
     },
   });
 }
