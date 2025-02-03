@@ -76,18 +76,16 @@ function refreshOAuth() {
   "en": {
     "authorize": "authorize",
     "authorization_required": "🔐 Authorization Required",
-    "authorization_declined": "It seems like you have declined to grant authorization for us to access your mailbox.",
-    "using": "using",
+    "authorization_declined": "Your permission is required so that we can access your mailbox to extract contacts.",
     "no_authorization_contacts": "Without authorization, we are unable to extract contacts from your mailbox.",
-    "keep_data_secure": "Keep your data secure and take control of your contact mining journey!🔒💪"
+    "keep_data_secure": "Keep your data secure and take control of your contacts!🔒💪"
   },
   "fr": {
     "authorize": "autoriser",
     "authorization_required": "🔐 Autorisation Requise",
-    "authorization_declined": "Il semble que vous ayez refusé d'accorder l'autorisation pour que nous puissions accéder à votre boîte aux lettres.",
-    "using": "utilisant",
+    "authorization_declined": "Votre autorisation est indispensable pour que nous puissions accéder à votre boîte aux lettres afin d'en extraire des contacts.",
     "no_authorization_contacts": "Sans autorisation, nous ne pouvons pas extraire les contacts de votre boîte aux lettres.",
-    "keep_data_secure": "Protégez vos données et prenez le contrôle de votre parcours d'extraction de contacts !🔒💪"
+    "keep_data_secure": "Protégez vos données et reprenez le contrôle de vos contacts !🔒💪"
   }
 }
 </i18n>
