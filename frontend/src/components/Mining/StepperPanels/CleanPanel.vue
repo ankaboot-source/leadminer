@@ -16,24 +16,21 @@
       }}
     </template>
   </ProgressCard>
-  <div class="flex flex-col gap-2 pt-6 justify-end md:flex-row">
+  <div class="flex flex-col md:flex-row justify-center gap-2">
     <Button
       v-if="activeTask"
       class="w-full md:w-max"
-      severity="contrast"
       icon="pi pi-stop"
       icon-pos="right"
       :label="t('halt_cleaning')"
       @click="haltCleaning"
     />
-    <div v-else class="flex flex-col gap-2 md:flex-row">
-      <Button
-        class="w-full md:w-max"
-        severity="secondary"
-        :label="t('start_new_mining')"
-        @click="startNewMining"
-      />
-    </div>
+    <Button
+      class="w-full md:w-max"
+      severity="secondary"
+      :label="t('start_new_mining')"
+      @click="startNewMining"
+    />
   </div>
 </template>
 <script setup lang="ts">
