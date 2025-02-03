@@ -158,7 +158,7 @@ function stopEnrichment() {
 function showSuccessNotification(total_enriched: number) {
   showNotification(
     'success',
-    t('notification.summary'),
+    '',
     t('notification.enrichment_completed', {
       n: total_enriched,
       enriched: total_enriched.toLocaleString(),
@@ -170,7 +170,7 @@ function showSuccessNotification(total_enriched: number) {
 function showDefaultNotification() {
   showNotification(
     'info',
-    t('notification.summary'),
+    '',
     t('notification.no_additional_info'),
   );
 }
@@ -178,7 +178,7 @@ function showDefaultNotification() {
 function showCanceledNotification() {
   showNotification(
     'error',
-    t('notification.summary'),
+    '',
     t('notification.enrichment_canceled'),
   );
 }
@@ -186,7 +186,7 @@ function showCanceledNotification() {
 function showNotAvailableNotification() {
   showNotification(
     'error',
-    t('notification.summary'),
+    '',
     t('notification.enricher_configuration_required'),
   );
 }
@@ -391,7 +391,6 @@ const isEnrichDisabled = computed(
     "update_confirmation": "Updating the contact's information may overwrite the existing details. How would you like to proceed?",
     "confirm_enrichment": "Confirm contact enrichment | Confirm {n} contacts enrichment",
     "notification": {
-      "summary": "",
       "enrichment_started_title": "Enrichment on {toEnrich} contacts has started",
       "enrichment_started_message": "Please wait a few minutes",
       "enrichment_completed": "No data have been found. | {enriched} contact has been successfully enriched. | {enriched} contacts have been successfully enriched.",
@@ -412,7 +411,6 @@ const isEnrichDisabled = computed(
     "update_confirmation": "La mise à jour des informations du contact peut écraser les détails existants. Comment aimeriez-vous procéder ?",
     "confirm_enrichment": "Confirmer l'enrichissement du contact | Confirmer l'enrichissement des {n} contacts",
     "notification": {
-      "summary": "",
       "enrichment_started_title": "L'enrichissement de {toEnrich} contacts a commencé. Veuillez patienter quelques minutes ☕",
       "enrichment_started_message": "Veuillez patienter quelques minutes ☕",
       "enrichment_completed": "Aucune nouvelle information n'a été trouvée. | {enriched} contact a été enrichi avec succès | {enriched} contacts ont été enrichis avec succès.",
