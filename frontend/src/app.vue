@@ -22,6 +22,12 @@
       </svg>
     </template>
   </Toast>
+
+  <Toast group="enrich-info">
+    <template #messageicon>
+      <span class="text-xl">☕️</span>
+    </template>
+  </Toast>
 </template>
 
 <script setup lang="ts">
