@@ -765,10 +765,6 @@ const loadingLabel = ref('');
 const contacts = computed(() => $contactsStore.contactsList);
 const contactsLength = computed(() => $contactsStore.contactCount);
 
-const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined,
-);
-
 function openContactInformation(data: Contact) {
   $contactInformationSidebar.show(data);
 }
@@ -789,15 +785,18 @@ function onFilter(event: DataTableFilterEvent) {
   filteredContacts.value = event.filteredValue;
 }
 
-watch(activeMiningTask, (isActive) => {
-  if (isActive) {
-    $leadminerStore.cleaningFinished = false;
-    filtersStore.clearFilter();
-  } else {
-    $leadminerStore.cleaningFinished = true;
-    filtersStore.toggleFilters();
-  }
-});
+watch(
+  () => $leadminerStore.activeMiningTask,
+  (isActive) => {
+    if (isActive) {
+      $leadminerStore.cleaningFinished = false;
+      filtersStore.clearFilter();
+    } else {
+      $leadminerStore.cleaningFinished = true;
+      filtersStore.toggleFilters();
+    }
+  },
+);
 
 /* *** Selection *** */
 const selectedContacts = ref<Contact[]>([]);
@@ -876,7 +875,7 @@ const { $api } = useNuxtApp();
 const isExportDisabled = computed(
   () =>
     contactsLength.value === 0 ||
-    activeMiningTask.value ||
+    $leadminerStore.activeMiningTask ||
     $leadminerStore.loadingStatusDns ||
     !implicitlySelectedContactsLength.value,
 );

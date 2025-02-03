@@ -39,9 +39,11 @@ export const useLeadminerStore = defineStore('leadminer', () => {
   const extractionFinished = ref(true);
   const cleaningFinished = ref(true);
 
+  const activeMiningTask = computed(() => miningTask.value !== undefined);
+
   const activeTask = computed(
     () =>
-      miningTask.value !== undefined ||
+      activeMiningTask.value ||
       isLoadingBoxes.value ||
       !cleaningFinished.value ||
       activeEnrichment.value,
@@ -331,6 +333,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     fetchingFinished,
     extractionFinished,
     cleaningFinished,
+    activeMiningTask,
     activeTask,
     miningStartedAndFinished,
     errors,

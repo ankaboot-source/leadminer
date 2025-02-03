@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col grow items-center justify-evenly h-2/3">
     <template v-if="!showOtherSources">
-      <div class="text-2xl">{{ t('title_add_existing') }}</div>
+      <div class="text-3xl">{{ t('title_add_existing') }}</div>
       <Select
         v-model="sourceModel"
         :options="sourceOptions"
@@ -29,7 +29,7 @@
         </template>
       </Select>
 
-      <div class="flex flex-col min-[1129px]:flex-row gap-2 w-full max-w-xl">
+      <div class="flex flex-col md:flex-row gap-2 w-full max-w-xl">
         <Button
           id="mine-source"
           class="w-full"
@@ -49,9 +49,9 @@
     </template>
 
     <template v-else>
-      <div class="text-2xl">{{ t('title_add_new') }}</div>
+      <div class="text-3xl">{{ t('title_add_new') }}</div>
 
-      <div class="flex flex-col min-[1129px]:flex-row flex-wrap gap-2">
+      <div class="flex flex-col lg:flex-row flex-wrap gap-2">
         <oauth-source icon="pi pi-google" label="Google" source="google" />
         <oauth-source
           icon="pi pi-microsoft"
