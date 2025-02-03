@@ -1,7 +1,7 @@
 <template>
   <ProgressCard
     v-if="boxes"
-    :status="activeMiningTask"
+    :status="$leadminerStore.activeMiningTask"
     :total="totalEmails"
     :rate="AVERAGE_EXTRACTION_RATE"
     :started="taskStartedAt"
@@ -28,7 +28,7 @@
     <Button
       id="mine-stepper-settings-button"
       :disabled="
-        activeMiningTask ||
+        $leadminerStore.activeMiningTask ||
         $leadminerStore.isLoadingStartMining ||
         $leadminerStore.isLoadingBoxes
       "
@@ -40,7 +40,7 @@
     />
 
     <Button
-      v-if="!activeMiningTask"
+      v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-start-button"
       :disabled="
         $leadminerStore.isLoadingBoxes ||
@@ -109,9 +109,7 @@ const boxes = computed(() => $leadminerStore.boxes);
 const selectedBoxes = computed<TreeSelectionKeys>(
   () => $leadminerStore.selectedBoxes,
 );
-const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined,
-);
+
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
@@ -161,7 +159,7 @@ onMounted(async () => {
   }
 
   if (
-    activeMiningTask.value ||
+    $leadminerStore.activeMiningTask ||
     $leadminerStore.isLoadingBoxes ||
     $leadminerStore.isLoadingStartMining ||
     $leadminerStore.isLoadingStopMining

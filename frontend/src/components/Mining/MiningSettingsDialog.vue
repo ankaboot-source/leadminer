@@ -30,7 +30,7 @@
     </div>
     <TreeCard
       v-if="shouldShowTreeCard"
-      :class="{ disabled: activeMiningTask }"
+      :class="{ disabled: $leadminerStore.activeMiningTask }"
     />
     <template #footer>
       <Button :label="$t('common.save')" @click="close" />
@@ -58,9 +58,6 @@ const activeMiningSource = computed(() => $leadminerStore.activeMiningSource);
 const boxes = computed(() => $leadminerStore.boxes);
 const shouldShowTreeCard = computed(
   () => boxes.value.length > 0 && !props.isLoadingBoxes,
-);
-const activeMiningTask = computed(
-  () => $leadminerStore.miningTask !== undefined,
 );
 
 async function onRefreshImapTree() {

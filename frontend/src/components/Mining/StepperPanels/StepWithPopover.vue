@@ -39,10 +39,7 @@ const $leadminerStore = useLeadminerStore();
 const isAbleToSwitchStep = computed(
   () =>
     $stepper.isPastStep(stepNumber) &&
-    !(
-      $leadminerStore.loadingStatusDns ||
-      $leadminerStore.miningTask !== undefined
-    ),
+    !($leadminerStore.loadingStatusDns || $leadminerStore.activeMiningTask),
 );
 
 const toggle = (event: MouseEvent) => {

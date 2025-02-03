@@ -1,6 +1,6 @@
 <template>
   <ProgressCard
-    :status="activeTask"
+    :status="$leadminerStore.activeTask"
     :total="contactsToVerify"
     :rate="3"
     :started="taskStartedAt"
@@ -18,7 +18,7 @@
   </ProgressCard>
   <div class="flex flex-col md:flex-row justify-center gap-2">
     <Button
-      v-if="activeTask"
+      v-if="$leadminerStore.activeTask"
       class="w-full md:w-max"
       icon="pi pi-stop"
       icon-pos="right"
@@ -45,7 +45,6 @@ const { t } = useI18n({
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
-const activeTask = computed(() => $leadminerStore.miningTask !== undefined);
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
