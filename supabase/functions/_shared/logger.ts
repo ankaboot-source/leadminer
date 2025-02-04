@@ -11,15 +11,10 @@ const getCurrentDate = () => {
 
 const Logger = {
   error: (message: string) => {
-    console.error(
-      `${getCurrentDate()} %c${message}`,
-      "color: red",
-    );
+    console.error(`${getCurrentDate()} %c${message}`, "color: red");
   },
   info: (message: string) => {
-    console.log(
-      `${getCurrentDate()} ${message}`,
-    );
+    console.log(`${getCurrentDate()} ${message}`);
   },
 };
 

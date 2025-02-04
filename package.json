@@ -20,6 +20,8 @@
   "author": "ankaboot",
   "license": "AGPL-3.0",
   "devDependencies": {
+    "eslint": "^9.19.0",
+    "prettier": "^3.4.2",
     "supabase": "^2.2.1"
   }
 }

@@ -6,10 +6,9 @@ on:
     branches:
       - main
     paths-ignore:
-      - '.github/workflows/**'
-      - 'frontend/**'
-      - 'backend/**'
-
+      - ".github/workflows/**"
+      - "frontend/**"
+      - "backend/**"
 
 jobs:
   trigger:

@@ -3,7 +3,7 @@ name: Auto Merge Snyk Branches
 on:
   push:
     branches:
-      - 'snyk*'  # Trigger when changes are pushed to any snyk branch
+      - "snyk*" # Trigger when changes are pushed to any snyk branch
 
 permissions:
   contents: write

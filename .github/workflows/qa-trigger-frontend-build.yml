@@ -6,8 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/**'
-
+      - "frontend/**"
 
 jobs:
   trigger:

@@ -4,7 +4,7 @@ import { createSupabaseClient } from "./supabase-self-hosted.ts";
 export async function authorizeUser(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const supabaseClient = createSupabaseClient(req.headers["authorization"]);
   const { user } = (await supabaseClient.auth.getUser()).data;

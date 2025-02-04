@@ -111,7 +111,6 @@ External services for email verification.
 <details>
 <summary><strong style="display:inline-block" id="running-with-supabase-saas">Running with Supabase SaaS</strong></summary>
 
-
 1. **Setup Supabase Instance:**
 
    - Create an account [here](https://supabase.com/dashboard/sign-up) and create a project.
@@ -154,12 +153,11 @@ External services for email verification.
    ```shell
    docker-compose up --build --force-recreate -d
    ```
-</details>
+
+   </details>
 
 <details open>
 <summary><strong style="display:inline-block" id="running-with-supabase-locally">Running with Supabase locally</strong></summary>
-
-
 
 1. **Start Supabase services:**
 
@@ -184,6 +182,7 @@ External services for email verification.
    ```sh
    npm run dev:all
    ```
+
       </details>
    </div>
 
