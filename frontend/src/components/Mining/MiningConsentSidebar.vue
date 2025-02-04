@@ -23,7 +23,7 @@
       </div>
     </div>
     <template #footer>
-      <div class="flex justify-end gap-2">
+      <div class="flex justify-center gap-2">
         <Button
           severity="secondary"
           class="secondary-button capitalize"
