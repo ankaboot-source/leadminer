@@ -1,11 +1,3 @@
-export type EnrichContactResponse = {
-  taskId: string;
-  userId?: string;
-  webhookSecretToken?: string;
-  total?: string;
-  alreadyEnriched?: boolean;
-};
-
 export interface EnrichmentTask {
   id: string;
   status: 'running' | 'done' | 'canceled';
@@ -14,3 +6,9 @@ export interface EnrichmentTask {
     total_enriched: number;
   };
 }
+
+export type EnrichContactResponse = {
+  total?: number;
+  available?: number;
+  task?: EnrichmentTask;
+};
