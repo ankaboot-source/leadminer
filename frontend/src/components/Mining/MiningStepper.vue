@@ -1,59 +1,45 @@
 <template>
-  <Panel
-    v-model:collapsed="collapsePanel"
-    class="mb-4 flex flex-col grow"
-    :class="{ 'max-h-fit': $stepper.index !== 1 }"
-    :toggleable="isToggleable"
-    pt:content:class="flex grow"
-    pt:content-container:class="flex grow"
-  >
-    <template #header>
-      <Button
-        severity="secondary"
-        unstyled
-        @click="collapsePanel = !collapsePanel"
-      />
-    </template>
-    <Stepper v-model:value="$stepper.index" linear class="flex flex-col grow">
-      <StepList>
-        <Step v-slot="{ active, value }" as-child :value="1">
-          <StepWithPopover
-            :step-number="Number(value)"
-            :is-active="active"
-            :title="t('source')"
-          />
-        </Step>
-        <Step v-slot="{ active, value }" as-child :value="2">
-          <StepWithPopover
-            :step-number="Number(value)"
-            :is-active="active"
-            :title="$t('common.mine')"
-          />
-        </Step>
-        <Step v-slot="{ active, value }" as-child :value="3">
-          <StepWithPopover
-            :step-number="Number(value)"
-            :is-active="active"
-            :title="$t('common.clean')"
-          />
-        </Step>
-      </StepList>
-      <StepPanels class="flex flex-col grow">
-        <StepPanel v-slot="{ active }" :value="1" class="flex grow">
-          <SourcePanel v-if="active" ref="sourcePanel" />
-        </StepPanel>
-        <StepPanel v-slot="{ active }" :value="2">
-          <MinePanel
-            v-if="active"
-            :mining-source="$leadminerStore.activeMiningSource!"
-          />
-        </StepPanel>
-        <StepPanel v-slot="{ active }" :value="3">
-          <CleanPanel v-if="active" />
-        </StepPanel>
-      </StepPanels>
-    </Stepper>
-  </Panel>
+  <Stepper v-model:value="$stepper.index" linear class="flex flex-col grow">
+    <StepList>
+      <Step v-slot="{ active, value }" as-child :value="1">
+        <StepWithPopover
+          :step-number="Number(value)"
+          :is-active="active"
+          :title="t('source')"
+        />
+      </Step>
+      <Step v-slot="{ active, value }" as-child :value="2">
+        <StepWithPopover
+          :step-number="Number(value)"
+          :is-active="active"
+          :title="$t('common.mine')"
+        />
+      </Step>
+      <Step v-slot="{ active, value }" as-child :value="3">
+        <StepWithPopover
+          :step-number="Number(value)"
+          :is-active="active"
+          :title="$t('common.clean')"
+        />
+      </Step>
+    </StepList>
+
+    <StepPanels class="flex flex-col grow">
+      <StepPanel v-slot="{ active }" :value="1" class="flex grow">
+        <SourcePanel v-if="active" ref="sourcePanel" />
+      </StepPanel>
+      <StepPanel v-slot="{ active }" :value="2">
+        <MinePanel
+          v-if="active"
+          :mining-source="$leadminerStore.activeMiningSource!"
+        />
+      </StepPanel>
+      <StepPanel v-slot="{ active }" :value="3">
+        <CleanPanel v-if="active" />
+      </StepPanel>
+    </StepPanels>
+  </Stepper>
+
   <MiningConsentSidebar
     v-model:show="$consentSidebar.status"
     v-model:provider="$consentSidebar.provider"
@@ -82,16 +68,10 @@ const { t } = useI18n({
   useScope: 'local',
 });
 
-const { isToggleable } = defineProps<{
-  isToggleable: boolean;
-}>();
-
 const $route = useRoute();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
-
-const collapsePanel = defineModel<boolean>('collapsed');
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 
 const { error, provider } = $route.query;
@@ -111,18 +91,14 @@ onNuxtReady(() => {
 <i18n lang="json">
 {
   "en": {
-    "mine_contacts": "Mine, clean and enrich your contacts",
     "source": "Source",
     "mining": "Mining",
-    "cleaning": "Cleaning",
-    "retrieving_mailboxes": "Retrieving mailboxes..."
+    "cleaning": "Cleaning"
   },
   "fr": {
-    "mine_contacts": "Extraire, nettoyer et enrichir vos contacts",
     "source": "Source",
     "mining": "Extraction",
-    "cleaning": "Nettoyage",
-    "retrieving_mailboxes": "Récupération des boîtes aux lettres..."
+    "cleaning": "Nettoyage"
   }
 }
 </i18n>

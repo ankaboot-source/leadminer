@@ -13,13 +13,17 @@
         <i class="pi pi-spin pi-spinner mr-1.5" />
         {{ t('retrieving_mailboxes') }}
       </div>
-      <div v-else-if="!$leadminerStore.miningTask">
+      <div v-else-if="!$leadminerStore.activeMiningTask">
         {{ totalEmails.toLocaleString() }}
         {{
           extractionProgress < 1
             ? t('emails_to_mine', totalEmails)
             : t('emails_mined', totalEmails)
         }}
+      </div>
+      <div v-else>
+        <i class="pi pi-spin pi-spinner mr-1.5" />
+        {{ t('is_mining') }}
       </div>
     </template>
   </ProgressCard>
@@ -57,6 +61,8 @@
       :loading="$leadminerStore?.isLoadingStartMining"
       icon="pi pi-stop"
       icon-pos="right"
+      severity="danger"
+      outlined
       :label="t('halt_mining')"
       @click="haltMining"
     />
@@ -330,7 +336,8 @@ async function haltMining() {
     "mining_issue": "Oops! We encountered an issue while trying to start your mining process.",
     "mining_stopped": "Mining Stopped",
     "mining_canceled": "Your mining is successfully canceled.",
-    "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled."
+    "mining_already_canceled": "It seems you are trying to cancel a mining operation that is already canceled.",
+    "is_mining": "Contact extraction in progress..."
   },
   "fr": {
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
@@ -349,7 +356,8 @@ async function haltMining() {
     "mining_issue": "Oups! Nous avons rencontré un problème lors du démarrage de votre processus d'extraction.",
     "mining_stopped": "Extraction arrêtée",
     "mining_canceled": "Votre extraction a été annulée avec succès.",
-    "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée."
+    "mining_already_canceled": "Il semble que vous essayez d'annuler une opération de minage qui est déjà annulée.",
+    "is_mining": "Extraction des contacts en cours..."
   }
 }
 </i18n>

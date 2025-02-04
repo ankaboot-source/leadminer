@@ -22,14 +22,10 @@
       class="w-full md:w-max"
       icon="pi pi-stop"
       icon-pos="right"
+      severity="danger"
+      outlined
       :label="t('halt_cleaning')"
       @click="haltCleaning"
-    />
-    <Button
-      class="w-full md:w-max"
-      severity="secondary"
-      :label="t('start_new_mining')"
-      @click="startNewMining"
     />
   </div>
 </template>
@@ -43,7 +39,6 @@ const { t } = useI18n({
 });
 
 const $toast = useToast();
-const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
@@ -75,12 +70,12 @@ function cleaningDoneNotification() {
 onMounted(() => {
   if (verificationFinished.value) {
     cleaningDoneNotification();
-    navigateTo('/contacts');
+    setTimeout(() => navigateTo('/contacts'), 10000);
   } else {
     watch(verificationFinished, (finished) => {
       if (finished) {
         cleaningDoneNotification();
-        navigateTo('/contacts');
+        setTimeout(() => navigateTo('/contacts'), 10000);
       }
     });
   }
@@ -113,11 +108,6 @@ async function haltCleaning() {
       throw error;
     }
   }
-}
-
-function startNewMining() {
-  $leadminerStore.$resetMining();
-  $stepper.$reset();
 }
 </script>
 
