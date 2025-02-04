@@ -17,7 +17,10 @@
         <Button
           type="button"
           :label="$t('common.start_mining')"
-          :disabled="$leadminerStore.activeMiningTask"
+          :disabled="
+            $leadminerStore.activeMiningTask ||
+            $leadminerStore.isLoadingStartMining
+          "
           @click="navigateToMine()"
         />
         <component :is="CreditsCounter" />

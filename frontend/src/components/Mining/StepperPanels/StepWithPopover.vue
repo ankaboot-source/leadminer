@@ -10,7 +10,7 @@
       <button class="p-step-header">
         <i
           v-if="$stepper.isPastStep(stepNumber)"
-          class="pi pi-check bg-primary text-white rounded-full p-1"
+          class="pi pi-check bg-primary text-white rounded-full p-2"
         />
         <span v-else v class="p-step-number">{{ stepNumber }}</span>
         <span class="p-step-title hidden md:block">
