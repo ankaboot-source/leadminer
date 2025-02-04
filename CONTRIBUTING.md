@@ -7,9 +7,8 @@ We value all types of contributions and encourage everyone to get involved. Plea
 > If you appreciate the project but don't have time to contribute, that's okay! There are other ways you can support us:
 >
 > - Star the project on GitHub
-> - Tweet about it
 > - Mention this project in your project's README
-> - Share it at local meetups and with friends/colleagues
+> - Share it at local meetups, with friends/colleagues and on social networks
 
 ## Table of Contents
 
@@ -23,7 +22,7 @@ We value all types of contributions and encourage everyone to get involved. Plea
 
 ## Code of Conduct
 
-This project and everyone participating in it are governed by the [Leadminer Code of Conduct](https://github.com/ankaboot-source/leadminer/blob/main/CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Please report any unacceptable behavior to <contact@ankaboot.fr>.
+This project and everyone participating in it are governed by the our [Code of Conduct](https://github.com/ankaboot-source/leadminer/blob/main/CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Please report any unacceptable behavior to <contact@ankaboot.fr>.
 
 ## I Have a Question
 
@@ -77,7 +76,7 @@ A good bug report shouldn’t leave others needing to chase you up for  more inf
 
 #### How Do I Submit a Good Bug Report?
 
-> You must never report security related issues, vulnerabilities or bugs  including sensitive information to the issue tracker, or elsewhere in  public. Instead sensitive bugs must be sent by email to [security@ankaboot.io](mailto:security@ankaboot.io).
+> You must never report security related issues, vulnerabilities or bugs  including sensitive information to the issue tracker, or elsewhere in  public. Instead sensitive bugs must be sent by email to [contact@ankaboot.io](mailto:contact@ankaboot.io).
 
 We use GitHub issues to track bugs and errors. If you run into an issue with the project:
 
@@ -111,7 +110,7 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/ankabo
 - Provide a **step-by-step description of the suggested enhancement** in as many details as possible.
 - **Describe the current behavior** and **explain which behavior you expected to see instead** and why. At this point you can also tell which alternatives do not work for you.
 - You may want to **include screenshots and animated GIFs** which help you demonstrate the steps or point out the part which the suggestion is related to.
-- **Explain why this enhancement would be useful** to  most Leadminer users. You may also want to point out the other projects  that solved it better and which could serve as inspiration.
+- **Explain why this enhancement would be useful** to  most users. You may also want to point out the other projects  that solved it better and which could serve as inspiration.
 
 ## Attribution
 This guide is based on the [contributing-gen](https://github.com/bttger/contributing-gen).
