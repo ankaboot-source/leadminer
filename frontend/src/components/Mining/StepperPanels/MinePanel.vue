@@ -30,11 +30,10 @@
 
   <div class="flex flex-col md:flex-row justify-center gap-2">
     <Button
+      v-if="!$leadminerStore.activeMiningTask"
       id="mine-stepper-settings-button"
       :disabled="
-        $leadminerStore.activeMiningTask ||
-        $leadminerStore.isLoadingStartMining ||
-        $leadminerStore.isLoadingBoxes
+        $leadminerStore.isLoadingStartMining || $leadminerStore.isLoadingBoxes
       "
       class="text-black"
       severity="secondary"
