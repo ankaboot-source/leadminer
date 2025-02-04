@@ -168,19 +168,11 @@ function showSuccessNotification(total_enriched: number) {
 }
 
 function showDefaultNotification() {
-  showNotification(
-    'info',
-    '',
-    t('notification.no_additional_info'),
-  );
+  showNotification('info', '', t('notification.no_additional_info'));
 }
 
 function showCanceledNotification() {
-  showNotification(
-    'error',
-    '',
-    t('notification.enrichment_canceled'),
-  );
+  showNotification('error', '', t('notification.enrichment_canceled'));
 }
 
 function showNotAvailableNotification() {
