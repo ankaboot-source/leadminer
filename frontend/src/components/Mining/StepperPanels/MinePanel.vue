@@ -174,8 +174,11 @@ onMounted(async () => {
 
   try {
     await $leadminerStore.fetchInbox();
-  } catch (error: any) {
-    if (error?.statusCode === 502 || error?.statusCode === 503) {
+  } catch (error: unknown) {
+    if (
+      error instanceof FetchError &&
+      (error.statusCode === 502 || error.statusCode === 503)
+    ) {
       $stepper.prev();
       throw error;
     } else {
