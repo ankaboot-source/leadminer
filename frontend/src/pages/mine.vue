@@ -2,7 +2,7 @@
   <div class="flex flex-col grow">
     <div
       class="flex flex-col grow border-x border-t rounded-md px-2 pt-6"
-      :class="{ 'max-h-fit': $stepper.index !== 1 }"
+      :class="{ 'max-h-fit': showTable }"
     >
       <MiningStepper />
     </div>
@@ -12,5 +12,8 @@
 
 <script setup lang="ts">
 const $stepper = useMiningStepper();
-const showTable = computed(() => $stepper.index !== 1);
+const $leadminer = useLeadminerStore();
+const showTable = computed(
+  () => $leadminer.activeMiningTask || $stepper.index > 2,
+);
 </script>
