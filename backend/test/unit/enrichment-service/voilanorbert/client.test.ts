@@ -98,7 +98,6 @@ describe('VoilanorbertApi', () => {
       expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
       expect(axios.create().post).toHaveBeenCalledTimes(5);
     });
-
     it('should log an error and throw it when the request fails', async () => {
       const emails = ['test@example.com'];
       const webhook = 'webhook-url';
