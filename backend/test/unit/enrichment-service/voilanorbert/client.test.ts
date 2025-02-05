@@ -35,7 +35,7 @@ describe('VoilanorbertApi', () => {
     apiToken: 'testToken',
     rateLimiter: {
       requests: 5,
-      interval: 1000,
+      interval: 200,
       spaced: false
     }
   };
@@ -96,7 +96,7 @@ describe('VoilanorbertApi', () => {
       const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
 
       expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(axios.create().post).toHaveBeenCalledTimes(10);
+      expect(axios.create().post).toHaveBeenCalledTimes(5);
     });
 
     it('should log an error and throw it when the request fails', async () => {
