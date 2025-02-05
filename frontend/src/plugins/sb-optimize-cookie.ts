@@ -84,8 +84,8 @@ function stringToBase64URL(str: string) {
       queuedBits -= 6;
     }
   };
-
   stringToUTF8(str, emitter);
+  
 
   if (queuedBits > 0) {
     queue = queue << (6 - queuedBits);
@@ -154,6 +154,7 @@ function stringToUTF8(str: string, emit: (byte: number) => void) {
     codepointToUTF8(codepoint, emit);
   }
 }
+
 
 /**
  * create chunks from a string and return an array of object
