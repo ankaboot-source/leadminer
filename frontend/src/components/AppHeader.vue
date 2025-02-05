@@ -6,7 +6,7 @@
         icon="pi pi-users"
         :label="$t('common.contacts')"
         outlined
-        class="ml-4 border-b-2 border-x-0 border-t-0 rounded-sm invisible lg:visible"
+        class="ml-4 border-b-2 border-0 rounded-sm invisible lg:visible hover:border-primary"
         :class="{
           'border-primary': $router.currentRoute.value.path === contactsPath,
         }"
