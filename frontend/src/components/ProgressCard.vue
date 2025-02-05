@@ -1,5 +1,5 @@
 <template>
-  <div class="justify-items-center">
+  <div class="justify-items-center text-center">
     <div id="progress-title" class="text-2xl mb-6">
       <slot name="progress-title">
         {{ props.progressTitle }}

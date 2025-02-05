@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col grow items-center justify-evenly h-2/3">
+  <div class="flex flex-col grow items-center justify-evenly h-2/3 text-center">
     <template v-if="!showOtherSources">
       <div class="text-3xl">{{ t('title_add_existing') }}</div>
       <Select
@@ -168,7 +168,6 @@ defineExpose({
   "en": {
     "title_add_new": "Choose your mining source",
     "title_add_existing": "Mine from",
-    "mine_existing_source": "Mine from existing source",
     "mine_new_source": "Mine from another source",
     "fetch_sources_failed": "Failed to fetch mining sources",
     "email_address": "email address",
@@ -179,7 +178,6 @@ defineExpose({
   "fr": {
     "title_add_new": "Extraire des contacts depuis",
     "title_add_existing": "Extraire depuis",
-    "mine_existing_source": "Extraire depuis une source existante",
     "mine_new_source": "Extraire depuis une autre source",
     "fetch_sources_failed": "Échec de la récupération des sources de minage",
     "email_address": "adresse e-mail",
