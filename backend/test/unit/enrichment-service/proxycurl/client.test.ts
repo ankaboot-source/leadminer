@@ -25,8 +25,8 @@ describe('ProxycurlApi', () => {
     url: 'https://api.example.com',
     apiKey: 'dummy-api-key',
     rateLimiter: {
-      requests: 10,
-      interval: 200,
+      requests: 5,
+      interval: 1000,
       maxRetries: 3,
       spaced: false
     }
@@ -92,6 +92,7 @@ describe('ProxycurlApi', () => {
         lookup_depth: 'superficial',
         enrich_profile: 'skip'
       };
+
       mockAxiosInstance.get.mockReturnValue({
         data: {
           email,
@@ -115,7 +116,7 @@ describe('ProxycurlApi', () => {
       const duration = end - start;
       const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
 
-      expect(duration).toBeGreaterThanOrEqual(2000 - tolerance);
+      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
       expect(mockAxiosInstance.get).toHaveBeenCalledTimes(10);
     });
   });
