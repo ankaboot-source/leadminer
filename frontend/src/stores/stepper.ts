@@ -5,6 +5,10 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   const collapsed = ref(false);
   const index = ref(1);
 
+  function open() {
+    collapsed.value = false;
+  }
+
   function next() {
     index.value += 1;
     open();
@@ -20,10 +24,6 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
 
   function isPastStep(step: number) {
     return step < index.value;
-  }
-
-  function open() {
-    collapsed.value = false;
   }
 
   function hide() {
