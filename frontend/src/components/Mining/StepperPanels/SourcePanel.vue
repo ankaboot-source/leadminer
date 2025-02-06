@@ -136,7 +136,7 @@ async function fetchMiningSourcesAndHandleSource() {
   }
 }
 
-onMounted(async () => {
+onBeforeMount(async () => {
   try {
     await fetchMiningSourcesAndHandleSource();
   } catch (error) {
