@@ -269,6 +269,9 @@ export default defineNuxtPlugin(() => {
       },
     };
 
+    // Delete user identities
+    delete trimmedSession.user.identities;
+
     const targetDate = new Date('2025-11-22T09:40:00Z');
     const maxAge = Math.max(
       0,
