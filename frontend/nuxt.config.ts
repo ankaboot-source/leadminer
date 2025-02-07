@@ -142,6 +142,13 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
+    workbox: {
+      navigateFallback: undefined,
+      runtimeCaching: [],
+      skipWaiting: true,
+      clientsClaim: true,
+    },
+    injectRegister: 'auto',
     manifest: {
       id: 'leadminer',
       name: 'Leadminer',
