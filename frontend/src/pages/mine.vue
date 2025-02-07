@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-col grow">
     <div
-      class="flex flex-col grow border-x border-t rounded-md px-2 pt-6"
-      :class="{ 'max-h-fit': showTable }"
+      class="flex flex-col grow border rounded-md px-2 pt-6"
+      :class="{ 'max-h-fit border-b-0': showTable }"
     >
       <MiningStepper />
     </div>
