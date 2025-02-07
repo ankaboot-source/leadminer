@@ -305,8 +305,10 @@ export default defineNuxtPlugin(() => {
 
   if (import.meta.client) {
     watch(newSession, (session) => {
-      if (session) {
-        overwriteSupabaseCookies(session);
+      try {
+        if (session) overwriteSupabaseCookies(session);
+      } catch (error) {
+        console.error('Error overwriting Supabase cookies:', error);
       }
     });
   }
