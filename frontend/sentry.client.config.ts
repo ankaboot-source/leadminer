@@ -2,10 +2,12 @@ import { useRuntimeConfig } from '#imports';
 import * as Sentry from '@sentry/nuxt';
 
 Sentry.init({
-  dsn: useRuntimeConfig().public.SENTRY_DSN,
-  environment: useRuntimeConfig().public.SENTRY_ENVIRONMENT,
+  dsn: useRuntimeConfig().public.SENTRY_DSN_FRONTEND,
+  environment: useRuntimeConfig().public.SENTRY_ENVIRONMENT_FRONTEND,
   integrations: [
+    // eslint-disable-next-line import/namespace
     Sentry.browserTracingIntegration(),
+    // eslint-disable-next-line import/namespace
     Sentry.replayIntegration(),
   ],
   // Set tracesSampleRate to 1.0 to capture 100%

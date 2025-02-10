@@ -52,8 +52,8 @@ export default defineNuxtConfig({
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
       IMAGE_REVERSE_PROXY: process.env.IMAGE_REVERSE_PROXY,
       // Sentry config
-      SENTRY_DSN: process.env.SENTRY_DSN,
-      SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+      SENTRY_DSN: process.env.SENTRY_DSN_FRONTEND,
+      SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT_FRONTEND,
     },
   },
 
