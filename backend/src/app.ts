@@ -65,7 +65,7 @@ export default function initializeApp(
   app.use('/api', initializeContactsRoutes(contacts, authResolver));
   app.use('/api/enrich', initializeEnrichmentRoutes(authResolver));
 
-  if (ENV.SENTRY_DSN) {
+  if (ENV.SENTRY_DSN_BACKEND) {
     Sentry.setupExpressErrorHandler(app);
   }
 
