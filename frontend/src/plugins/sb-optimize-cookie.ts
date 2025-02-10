@@ -269,6 +269,9 @@ export default defineNuxtPlugin(() => {
       },
     };
 
+    // Delete user identities
+    delete trimmedSession.user.identities;
+
     const targetDate = new Date('2025-11-22T09:40:00Z');
     const maxAge = Math.max(
       0,
@@ -305,8 +308,10 @@ export default defineNuxtPlugin(() => {
 
   if (import.meta.client) {
     watch(newSession, (session) => {
-      if (session) {
-        overwriteSupabaseCookies(session);
+      try {
+        if (session) overwriteSupabaseCookies(session);
+      } catch (error) {
+        console.error('Error overwriting Supabase cookies:', error);
       }
     });
   }
