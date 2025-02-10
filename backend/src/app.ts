@@ -33,7 +33,7 @@ export default function initializeApp(
   const app = express();
 
   if (ENV.SENTRY_DSN) {
-    initializeSentry(app, ENV.SENTRY_DSN);
+    initializeSentry(app, ENV.SENTRY_DSN, ENV.SENTRY_ENVIRONMENT);
   }
 
   if (Billing) {
