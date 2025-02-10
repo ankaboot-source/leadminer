@@ -59,24 +59,30 @@
     </template>
     <template #header>
       <div class="flex items-center gap-1">
-        <EnrichButton
-          source="datatable"
-          :enrichment-realtime-callback="emptyFunction"
-          :enrichment-request-response-callback="emptyFunction"
-          :contacts-to-enrich="implicitlySelectedContacts"
-          :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
-        />
-        <Button
-          id="export-csv"
-          v-tooltip.top="
-            isExportDisabled &&
-            t('select_at_least_one_contact', { action: t('export') })
-          "
-          icon="pi pi-external-link"
-          :label="$screenStore.size.md ? t('export_csv') : undefined"
-          :disabled="isExportDisabled"
-          @click="exportTable()"
-        />
+        <div>
+          <EnrichButton
+            source="datatable"
+            :enrichment-realtime-callback="emptyFunction"
+            :enrichment-request-response-callback="emptyFunction"
+            :contacts-to-enrich="implicitlySelectedContacts"
+            :enrich-all-contacts="$contactsStore.selectedEmails === undefined"
+          />
+        </div>
+
+        <div>
+          <Button
+            id="export-csv"
+            v-tooltip.top="
+              isExportDisabled &&
+              t('select_at_least_one_contact', { action: t('export') })
+            "
+            icon="pi pi-external-link"
+            :label="$screenStore.size.md ? t('export_csv') : undefined"
+            :disabled="isExportDisabled"
+            @click="exportTable()"
+          />
+        </div>
+
         <div
           v-tooltip.top="
             (isExportDisabled || !selectedContactsLength) &&
