@@ -102,6 +102,9 @@ function onSourceChange(miningSource: MiningSource) {
   $leadminerStore.activeMiningSource = miningSource;
   $stepper.next();
 }
+defineExpose({
+  onSourceChange,
+});
 function extractContacts() {
   if (sourceModel.value) {
     onSourceChange(sourceModel.value);
@@ -136,30 +139,24 @@ async function fetchMiningSourcesAndHandleSource() {
   }
 }
 
-onBeforeMount(async () => {
-  try {
-    await fetchMiningSourcesAndHandleSource();
-  } catch (error) {
-    throw error instanceof FetchError && error.response?.status === 401
-      ? error
-      : new Error(t('fetch_sources_failed'));
+try {
+  await fetchMiningSourcesAndHandleSource();
+} catch (error) {
+  throw error instanceof FetchError && error.response?.status === 401
+    ? error
+    : new Error(t('fetch_sources_failed'));
+}
+
+if (sourceOptions.value.length === 0) {
+  showOtherSources.value = true;
+}
+
+watch(sourceModel, (miningSource) => {
+  // Watch for changes in `sourceModel` after the initial source selection.
+  // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
+  if (miningSource) {
+    onSourceChange(miningSource);
   }
-
-  if (sourceOptions.value.length === 0) {
-    showOtherSources.value = true;
-  }
-
-  watch(sourceModel, (miningSource) => {
-    // Watch for changes in `sourceModel` after the initial source selection.
-    // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
-    if (miningSource) {
-      onSourceChange(miningSource);
-    }
-  });
-});
-
-defineExpose({
-  onSourceChange,
 });
 </script>
 
