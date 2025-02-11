@@ -1,38 +1,40 @@
 <template>
-  <AppLogo class="py-3.5 px-4 pb-4 cursor-pointer" />
-  <div class="h-screen flex flex-col items-center justify-center space-y-8">
-    <Chip
-      :label="errorObject.code"
-      class="text-sm font-medium bg-gray-100 h-7 text-gray-800"
-    />
-
-    <div class="text-center max-w-xl space-y-4">
-      <h1 class="text-4xl font-bold text-gray-900">
-        {{ errorObject.title }}
-      </h1>
-
-      <p class="text-gray-600 text-lg">
-        {{ errorObject.message }}
-      </p>
-    </div>
-
-    <Button
-      v-if="isUTF8Error"
-      disabled
-      outlined
-      loading
-      :label="errorObject.button"
-    />
-
-    <NuxtLink v-else to="/">
-      <Button
-        outlined
-        icon="pi pi-arrow-left"
-        icon-class="text-sm"
-        :label="t('error.button')"
-        @click="handleError"
+  <div class="flex flex-col min-h-screen">
+    <AppLogo class="py-3.5 px-4 pb-4 cursor-pointer" />
+    <div class="flex-1 flex flex-col items-center justify-center space-y-8">
+      <Chip
+        :label="errorObject.code"
+        class="text-sm font-medium bg-gray-100 h-7 text-gray-800"
       />
-    </NuxtLink>
+
+      <div class="text-center max-w-xl space-y-4">
+        <h1 class="text-4xl font-bold text-gray-900">
+          {{ errorObject.title }}
+        </h1>
+
+        <p class="text-gray-600 text-lg">
+          {{ errorObject.message }}
+        </p>
+      </div>
+
+      <Button
+        v-if="isUTF8Error"
+        disabled
+        outlined
+        loading
+        :label="errorObject.button"
+      />
+
+      <NuxtLink v-else to="/">
+        <Button
+          outlined
+          icon="pi pi-arrow-left"
+          icon-class="text-sm"
+          :label="t('error.button')"
+          @click="handleError"
+        />
+      </NuxtLink>
+    </div>
   </div>
 </template>
 
