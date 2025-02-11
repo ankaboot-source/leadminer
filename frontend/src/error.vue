@@ -25,15 +25,13 @@
         :label="errorObject.button"
       />
 
-      <NuxtLink v-else to="/">
-        <Button
-          outlined
-          icon="pi pi-arrow-left"
-          icon-class="text-sm"
-          :label="t('error.button')"
-          @click="handleError"
-        />
-      </NuxtLink>
+      <Button
+        outlined
+        icon="pi pi-arrow-left"
+        icon-class="text-sm"
+        :label="t('error.button')"
+        @click="handleError"
+      />
     </div>
   </div>
 </template>
