@@ -41,9 +41,9 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app';
 
-const { error } = defineProps({
-  error: Object as () => NuxtError,
-});
+const { error } = defineProps<{
+  error: NuxtError;
+}>();
 
 const { t } = useI18n({
   useScope: 'local',
