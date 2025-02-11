@@ -51,6 +51,9 @@ export default defineNuxtConfig({
       SAAS_SUPABASE_PROJECT_URL: process.env.SAAS_SUPABASE_PROJECT_URL,
       SAAS_SUPABASE_ANON_KEY: process.env.SAAS_SUPABASE_ANON_KEY,
       IMAGE_REVERSE_PROXY: process.env.IMAGE_REVERSE_PROXY,
+      // Sentry config
+      SENTRY_DSN: process.env.SENTRY_DSN_FRONTEND,
+      SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT_FRONTEND,
     },
   },
 
@@ -65,6 +68,7 @@ export default defineNuxtConfig({
     'nuxt-security',
     '@nuxt/scripts',
     '@vite-pwa/nuxt',
+    '@sentry/nuxt/module',
   ],
 
   primevue: {
