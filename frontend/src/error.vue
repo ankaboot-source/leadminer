@@ -26,6 +26,7 @@
       />
 
       <Button
+        v-else
         outlined
         icon="pi pi-arrow-left"
         icon-class="text-sm"
