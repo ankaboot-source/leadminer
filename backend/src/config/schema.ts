@@ -39,7 +39,7 @@ const schema = z.object({
 
   /* SENTRY */
   SENTRY_DSN_BACKEND: z.string().url().optional(),
-  SENTRY_ENVIRONMENT_BACKEND: z.string().url().optional(),
+  SENTRY_ENVIRONMENT_BACKEND: z.string().min(1).optional(),
 
   /* LOGGING */
   GRAFANA_LOKI_HOST: z.string().url().optional(),
