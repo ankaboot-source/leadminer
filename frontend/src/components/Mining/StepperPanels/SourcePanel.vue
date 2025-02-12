@@ -78,7 +78,6 @@
 <script setup lang="ts">
 import ImapSource from '@/components/Mining/AddSourceImap.vue';
 import OauthSource from '@/components/Mining/AddSourceOauth.vue';
-import { FetchError } from 'ofetch';
 import type { MiningSource } from '~/types/mining';
 // import importFileDialog from '../ImportFileDialog.vue';
 
@@ -122,29 +121,17 @@ function getIcon(type: string) {
   }
 }
 
-async function fetchMiningSourcesAndHandleSource() {
-  await $leadminerStore.fetchMiningSources();
+const selectedSource = source
+  ? $leadminerStore.getMiningSourceByEmail(source as string)
+  : null;
 
-  const selectedSource = source
-    ? $leadminerStore.getMiningSourceByEmail(source as string)
-    : null;
-
-  if (selectedSource) {
-    const newQuery = { ...useRoute().query };
-    delete newQuery.source;
-    useRouter().replace({ query: newQuery });
-    onSourceChange(selectedSource);
-  } else {
-    sourceModel.value = sourceOptions?.value[0];
-  }
-}
-
-try {
-  await fetchMiningSourcesAndHandleSource();
-} catch (error) {
-  throw error instanceof FetchError && error.response?.status === 401
-    ? error
-    : new Error(t('fetch_sources_failed'));
+if (selectedSource) {
+  const newQuery = { ...useRoute().query };
+  delete newQuery.source;
+  useRouter().replace({ query: newQuery });
+  onSourceChange(selectedSource);
+} else {
+  sourceModel.value = sourceOptions?.value[0];
 }
 
 if (sourceOptions.value.length === 0) {
