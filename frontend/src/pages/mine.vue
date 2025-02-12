@@ -24,7 +24,8 @@ const showTable = computed(
 );
 
 try {
-await $leadminer.fetchMiningSources();} catch (error) {
+  await $leadminer.fetchMiningSources();
+} catch (error) {
   throw error instanceof FetchError && error.response?.status === 401
     ? error
     : new Error(t('fetch_sources_failed'));
