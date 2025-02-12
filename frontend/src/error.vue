@@ -82,6 +82,7 @@ const errorObject = computed(() => {
 });
 
 onMounted(() => {
+  console.error(error);
   if (!isUTF8Error.value) return;
   setTimeout(() => {
     signOutManually();
