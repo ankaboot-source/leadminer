@@ -67,6 +67,18 @@ onMounted(async () => {
         "message": "An unexpected error occurred. Please try again."
       }
     }
+  },
+  "fr": {
+    "error": {
+      "access_denied": {
+        "title": "Connexion OAuth",
+        "message": "Accès refusé. Vous avez annulé le processus d'authentification."
+      },
+      "default": {
+        "title": "Erreur inattendue",
+        "message": "Une erreur inattendue s'est produite. Veuillez réessayer."
+      }
+    }
   }
 }
 </i18n>
