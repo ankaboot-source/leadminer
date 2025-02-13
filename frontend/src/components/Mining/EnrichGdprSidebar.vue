@@ -1,15 +1,15 @@
 <template>
-  <Dialog
-    ref="dialog"
+  <Drawer
+    ref="drawer"
     v-model:visible="visible"
-    modal
-    :closable="false"
+    class="h-auto"
+    :position="$screenStore.size.sm ? 'top' : 'full'"
+    :dismissable="false"
+    :show-close-icon="false"
+    :block-scroll="true"
     :header="t('beforeYouProceed')"
-    pt:content:class="grow p-3 border-y border-slate-200 font-serif"
-    pt:footer:class="p-3"
-    :draggable="false"
-    :pt:root:class="{ 'p-dialog-maximized': !$screenStore?.size?.md }"
-    class="h-[70vh] 2xl:w-[40vw] w-[70vw]"
+    pt:footer:class="pt-0 flex justify-end gap-2"
+    pt:content:class="grid gap-4 px-8 pt-4 text-base"
   >
     <div>
       {{ t('acknowledge') }}
@@ -68,7 +68,7 @@
         @click="confirm"
       />
     </template>
-  </Dialog>
+  </Drawer>
 </template>
 <script setup lang="ts">
 import { PrivacyPolicyButton } from '~/utils/extras';
@@ -79,8 +79,8 @@ const { t } = useI18n({
 const $screenStore = useScreenStore();
 const $profile = useSupabaseUserProfile();
 
-const dialog = ref();
-const visible = ref(false);
+const drawer = ref();
+const visible = ref(true);
 function openModal() {
   visible.value = true;
 }
