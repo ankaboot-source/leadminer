@@ -66,11 +66,16 @@ export const useStepperSourcePanel = defineStore(
       if (sourceOptions.value.length > 0) showsOtherSources.value = false;
     }
 
+    function $reset() {
+      showsOtherSources.value = false;
+    }
+
     return {
       showsOtherSources,
       showOtherSources,
       showOtherSourcesByDefault,
       hideOtherSources,
+      $reset,
     };
   },
 );
