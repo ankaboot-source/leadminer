@@ -105,8 +105,8 @@ export default defineNuxtPlugin({
           language: navigator.language.split('-')[0],
         };
 
-        // emailTemplate indicates a new account we can use the user's
-        // provideToken as a first mining source.
+        // Use providerToken as a mining-source on first-time sign-in
+        // An empty emailTemplate signifies a first-time sign-in
         if (!emailTemplate && provider && providerToken) {
           await addMiningSourceFromProviderToken(
             $saasEdgeFunctions,
