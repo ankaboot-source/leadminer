@@ -405,7 +405,7 @@ async function signUp() {
       email: email.value,
       password: password.value,
       options: {
-        emailRedirectTo: `${window.location.origin}/mine`,
+        emailRedirectTo: `${window.location.origin}/callback?navigate_to=/mine`,
         data: {
           EmailTemplate: await getEmailTemplate(getBrowserLocale() || 'en'),
         },
