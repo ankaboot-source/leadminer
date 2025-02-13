@@ -104,6 +104,7 @@ const $user = useSupabaseUser();
 const $router = useRouter();
 const $contactsStore = useContactsStore();
 const $stepper = useMiningStepper();
+const $sourcePanelStore = useStepperSourcePanel();
 const $leadminerStore = useLeadminerStore();
 const visible = ref(false);
 const contactsPath = '/contacts';
@@ -122,6 +123,7 @@ function navigateToMine() {
   ) {
     $stepper.$reset();
     $leadminerStore.$resetMining();
+    $sourcePanelStore.hideOtherSources();
   }
 
   navigateTo(minePath);

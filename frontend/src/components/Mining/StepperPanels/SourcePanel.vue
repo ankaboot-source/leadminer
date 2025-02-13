@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col grow items-center justify-evenly h-2/3 text-center">
-    <template v-if="!showOtherSources">
+    <template v-if="!$sourcePanelStore.showsOtherSources">
       <div class="text-3xl">{{ t('title_add_existing') }}</div>
       <Select
         v-model="sourceModel"
@@ -35,7 +35,7 @@
           class="w-full"
           :label="t('mine_new_source')"
           outlined
-          @click="showOtherSources = true"
+          @click="$sourcePanelStore.showOtherSources()"
         />
         <Button
           id="extract-source"
@@ -90,9 +90,9 @@ const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 
 const $imapDialogStore = useImapDialog();
+const $sourcePanelStore = useStepperSourcePanel();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
-const showOtherSources = ref(false);
 const { source } = useRoute().query;
 
 function onSourceChange(miningSource: MiningSource) {
@@ -134,9 +134,7 @@ if (selectedSource) {
   sourceModel.value = sourceOptions?.value[0];
 }
 
-if (sourceOptions.value.length === 0) {
-  showOtherSources.value = true;
-}
+$sourcePanelStore.showOtherSourcesByDefault();
 
 watch(sourceModel, (miningSource) => {
   // Watch for changes in `sourceModel` after the initial source selection.
