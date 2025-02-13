@@ -28,7 +28,7 @@ const showOAuthErrorNotification = () => {
   const { error, error_description: errorDescription } = authParams.value;
   if (!error) return;
 
-  const messageKey = `errors.${error}`;
+  const messageKey = `error.${error}`;
   const errorTitle = t(`${messageKey}.title`) || t('auth.error.default.title');
   const errorMessage =
     t(`${messageKey}.message`) || t('auth.error.default.message');
