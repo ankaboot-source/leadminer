@@ -44,7 +44,11 @@ const showOAuthErrorNotification = () => {
 onMounted(async () => {
   const { error, provider, navigate_to: navigateToPage } = authParams.value;
 
-  if ($user.value && error === 'oauth-permissions' && provider) {
+  if (
+    $user.value &&
+    ['permissions_denied', 'access_denied'].includes(error ?? '') &&
+    provider
+  ) {
     useMiningConsentSidebar().show(provider as MiningSourceType);
   } else {
     showOAuthErrorNotification();
