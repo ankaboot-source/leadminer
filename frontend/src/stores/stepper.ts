@@ -46,3 +46,31 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
     $reset,
   };
 });
+
+export const useStepperSourcePanel = defineStore(
+  'mining-stepper-source-panel',
+  () => {
+    const sourceOptions = computed(() => useLeadminerStore().miningSources);
+
+    const showsOtherSources = ref(false);
+
+    function showOtherSources() {
+      showsOtherSources.value = true;
+    }
+
+    function showOtherSourcesByDefault() {
+      if (sourceOptions.value.length === 0) showOtherSources();
+    }
+
+    function hideOtherSources() {
+      if (sourceOptions.value.length > 0) showsOtherSources.value = false;
+    }
+
+    return {
+      showsOtherSources,
+      showOtherSources,
+      showOtherSourcesByDefault,
+      hideOtherSources,
+    };
+  },
+);
