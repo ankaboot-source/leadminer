@@ -29,9 +29,9 @@ const showOAuthErrorNotification = () => {
   if (!error) return;
 
   const messageKey = `errors.${error}`;
-  const errorTitle = t(`${messageKey}.title`) || t('auth.errors.default.title');
+  const errorTitle = t(`${messageKey}.title`) || t('auth.error.default.title');
   const errorMessage =
-    t(`${messageKey}.message`) || t('auth.errors.default.message');
+    t(`${messageKey}.message`) || t('auth.error.default.message');
 
   $toast.add({
     severity: 'error',
