@@ -46,7 +46,7 @@ onMounted(async () => {
 
   if (
     $user.value &&
-    ['permissions_denied', 'access_denied'].includes(error ?? '') &&
+    ['oauth-permissions', 'access_denied'].includes(error ?? '') &&
     provider
   ) {
     useMiningConsentSidebar().show(provider as MiningSourceType);
