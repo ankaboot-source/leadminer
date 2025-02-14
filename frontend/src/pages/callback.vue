@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { MiningSourceType } from '~/types/mining';
 
-const { t } = useI18n({
+const { t, te } = useI18n({
   useScope: 'local',
 });
 const $toast = useToast();
@@ -29,9 +29,14 @@ const showOAuthErrorNotification = () => {
   if (!error) return;
 
   const messageKey = `error.${error}`;
-  const errorTitle = t(`${messageKey}.title`) || t('auth.error.default.title');
-  const errorMessage =
-    t(`${messageKey}.message`) || t('auth.error.default.message');
+
+  const errorTitle = te(`${messageKey}.title`)
+    ? t(`${messageKey}.title`)
+    : t('error.default.title');
+
+  const errorMessage = te(`${messageKey}.message`)
+    ? t(`${messageKey}.message`)
+    : t('error.default.message');
 
   $toast.add({
     severity: 'error',
@@ -46,7 +51,7 @@ onMounted(async () => {
 
   if (
     $user.value &&
-    ['permissions_denied', 'access_denied'].includes(error ?? '') &&
+    ['oauth_permissions', 'access_denied'].includes(error ?? '') &&
     provider
   ) {
     useMiningConsentSidebar().show(provider as MiningSourceType);
