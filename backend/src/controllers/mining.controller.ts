@@ -72,7 +72,7 @@ export default function initializeMiningController(
       } catch (error) {
         res.redirect(
           301,
-          `${ENV.FRONTEND_HOST}/oauth-consent-error?provider=${provider}&referrer=${state}`
+          `${ENV.FRONTEND_HOST}/callback?error=oauth-permissions&provider=${provider}&referrer=${state}&navigate_to=/mine`
         );
       }
     },
