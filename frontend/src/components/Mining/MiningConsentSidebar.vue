@@ -48,12 +48,12 @@ const { t } = useI18n({
 const show = defineModel<boolean>('show');
 const $screenStore = useScreenStore();
 const $imapDialogStore = useImapDialog();
-
+const $stepper = useMiningStepper();
 const provider = defineModel<MiningSourceType>('provider');
 
 function close() {
   show.value = false;
-  useMiningStepper().go(1);
+  $stepper.go(1);
 }
 function showImapDialog() {
   $imapDialogStore.showImapDialog = true;

@@ -13,6 +13,7 @@
           input: { class: 'text-indigo-500' },
           root: { class: 'border-[#bcbdf9]' },
         }"
+        @change="extractContacts(sourceModel)"
       >
         <template #value="{ value }">
           <div class="flex items-center space-x-2">
@@ -43,7 +44,7 @@
           severity="contrast"
           :disabled="!sourceModel"
           :label="t('extract_contacts')"
-          @click="extractContacts"
+          @click="extractContacts(sourceModel)"
         />
       </div>
     </template>
@@ -88,27 +89,32 @@ const { t } = useI18n({
 
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
-
 const $imapDialogStore = useImapDialog();
 const $sourcePanelStore = useStepperSourcePanel();
 const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
 const { source } = useRoute().query;
 
-function onSourceChange(miningSource: MiningSource) {
-  $leadminerStore.boxes = [];
-  $leadminerStore.selectedBoxes = [];
-  $leadminerStore.activeMiningSource = miningSource;
-  $stepper.next();
-}
-defineExpose({
-  onSourceChange,
-});
-function extractContacts() {
-  if (sourceModel.value) {
-    onSourceChange(sourceModel.value);
+function extractContacts(miningSource?: MiningSource) {
+  if (miningSource) {
+    $leadminerStore.boxes = [];
+    $leadminerStore.selectedBoxes = [];
+    $leadminerStore.activeMiningSource = miningSource;
+    $stepper.next();
   }
 }
+
+const selectedSource = source
+  ? $leadminerStore.getMiningSourceByEmail(source as string)
+  : null;
+
+if (selectedSource) {
+  extractContacts(selectedSource);
+} else {
+  sourceModel.value = sourceOptions?.value[0];
+}
+
+$sourcePanelStore.showOtherSourcesByDefault();
 
 function getIcon(type: string) {
   switch (type) {
@@ -120,29 +126,6 @@ function getIcon(type: string) {
       return 'pi pi-inbox';
   }
 }
-
-const selectedSource = source
-  ? $leadminerStore.getMiningSourceByEmail(source as string)
-  : null;
-
-if (selectedSource) {
-  const newQuery = { ...useRoute().query };
-  delete newQuery.source;
-  useRouter().replace({ query: newQuery });
-  onSourceChange(selectedSource);
-} else {
-  sourceModel.value = sourceOptions?.value[0];
-}
-
-$sourcePanelStore.showOtherSourcesByDefault();
-
-watch(sourceModel, (miningSource) => {
-  // Watch for changes in `sourceModel` after the initial source selection.
-  // This will trigger `onSourceChange` for buttons Google, Azure, or IMAP.
-  if (miningSource) {
-    onSourceChange(miningSource);
-  }
-});
 </script>
 
 <i18n lang="json">
