@@ -84,7 +84,6 @@ import ProgressCard from '@/components/ProgressCard.vue';
 import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
-import { onMounted } from 'vue';
 
 const importFileDialogRef = ref();
 const { t } = useI18n({
