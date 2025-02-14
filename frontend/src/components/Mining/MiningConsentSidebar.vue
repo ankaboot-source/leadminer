@@ -32,7 +32,7 @@
         severity="primary"
         class="capitalize"
         :label="t('authorize')"
-        @click="refreshOAuth()"
+        @click="refreshOAuth"
       />
     </template>
   </Drawer>
