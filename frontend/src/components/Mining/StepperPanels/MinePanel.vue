@@ -84,6 +84,7 @@ import ProgressCard from '@/components/ProgressCard.vue';
 import MiningSettingsDialog from '~/components/Mining/MiningSettingsDialog.vue';
 import type { MiningSource } from '~/types/mining';
 import importFileDialog from '../ImportFileDialog.vue';
+import { onMounted } from 'vue';
 
 const importFileDialogRef = ref();
 const { t } = useI18n({
@@ -103,6 +104,8 @@ const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
+const $consentSidebar = useMiningConsentSidebar();
+const $router = useRouter();
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
@@ -159,6 +162,8 @@ const progressTooltip = computed(() =>
 );
 
 onMounted(async () => {
+  await $router.replace({ query: undefined });
+
   if (source.value === 'file') {
     return;
   }
@@ -177,9 +182,8 @@ onMounted(async () => {
   } catch (error: any) {
     if (error?.statusCode === 502 || error?.statusCode === 503) {
       $stepper.prev();
-      throw error;
     } else {
-      useMiningConsentSidebar().show(miningSource.type, miningSource.email);
+      $consentSidebar.show(miningSource.type, miningSource.email);
     }
   }
 });
@@ -254,7 +258,7 @@ async function startMiningBoxes() {
       error.response?.status === 401 &&
       $leadminerStore.activeMiningSource
     ) {
-      useMiningConsentSidebar().show(
+      $consentSidebar.show(
         $leadminerStore.activeMiningSource.type,
         $leadminerStore.activeMiningSource.email,
       );
