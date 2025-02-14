@@ -71,8 +71,8 @@
       </span>
     </template>
   </Button>
-  <EnrichGdprDialog
-    ref="enrichGdprDialogRef"
+  <EnrichGdprSidebar
+    ref="EnrichGdprSidebarRef"
     @has-given-consent="onAcceptEnrich"
   />
 </template>
@@ -90,7 +90,7 @@ import {
 } from '@/utils/credits';
 import type { FetchResponse } from 'ofetch';
 import type { Contact } from '~/types/contact';
-import EnrichGdprDialog from '../EnrichGdprDialog.vue';
+import EnrichGdprSidebar from '../EnrichGdprSidebar.vue';
 
 const { t } = useI18n({
   useScope: 'local',
@@ -328,7 +328,7 @@ onMounted(async () => {
   }
 });
 
-const enrichGdprDialogRef = ref();
+const EnrichGdprSidebarRef = ref();
 const $profile = useSupabaseUserProfile();
 const hasAcceptedEnriching = computed(
   () => $profile.value?.gdpr_details.hasAcceptedEnriching,
@@ -340,7 +340,7 @@ const hasAcceptedEnriching = computed(
  */
 function openEnrichmentConfirmationDialog(justAcceptedEnrich?: boolean) {
   if (!justAcceptedEnrich && !hasAcceptedEnriching.value) {
-    enrichGdprDialogRef.value.openModal();
+    EnrichGdprSidebarRef.value.openModal();
     return;
   }
 
