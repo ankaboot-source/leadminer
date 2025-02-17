@@ -199,13 +199,13 @@ Thank you for taking the time to contribute! Please refer to our [CONTRIBUTING.m
 
 ## 🎯 Roadmap
 
-For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) or check the open issues for ongoing discussions and updates.
+For any specific requests or suggestions regarding the roadmap, please feel free to contact [ankaboot professional services](mailto:contact@ankaboot.fr) or check the open issues for ongoing discussions and updates.
 
 ## 🛠️ Support
 
 If you encounter any issues, please check the [issues tab](https://github.com/ankaboot-source/leadminer/issues) to see if it has already been reported and resolved. Ensure that you are using the latest version before reporting an issue. If the problem persists, feel free to [open a new issue](https://github.com/ankaboot-source/leadminer/issues/new).
 
-Please note that this app is provided for free and without any guarantee or official support. If you require additional assistance, you can contact [ankaboot professional services](https://chat.openai.com/contact@ankaboot.fr) for help.
+Please note that this app is provided for free and without any guarantee or official support. If you require additional assistance, you can contact [ankaboot professional services](mailto:contact@ankaboot.fr) for help.
 
 ## 📜 License
 
