@@ -22,7 +22,7 @@ We value all types of contributions and encourage everyone to get involved. Plea
 
 ## Code of Conduct
 
-This project and everyone participating in it are governed by the our [Code of Conduct](https://github.com/ankaboot-source/leadminer/blob/main/CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Please report any unacceptable behavior to <contact@ankaboot.fr>.
+This project and everyone participating in it are governed by the our [Code of Conduct](https://github.com/ankaboot-source/leadminer/blob/main/CODE_OF_CONDUCT.md). By participating, you agree to uphold this code. Please report any unacceptable behavior to <contact@ankaboot.io>.
 
 ## I Have a Question
 
