@@ -124,7 +124,6 @@ export default class ZerobounceClient {
     this.api = axios.create({
       baseURL: config.url ?? ZerobounceClient.baseURL
     });
-
   }
 
   /**
