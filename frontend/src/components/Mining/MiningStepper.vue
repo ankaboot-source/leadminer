@@ -82,11 +82,6 @@ if (selectedSource) {
 
 onNuxtReady(() => {
   if (provider && error === 'oauth-consent') {
-    const newQuery = { ...useRoute().query };
-    delete newQuery.provider;
-    delete newQuery.error;
-    delete newQuery.referrer;
-    useRouter().replace({ query: newQuery });
     $consentSidebar.show(provider as MiningSourceType);
   }
   $router.replace({ query: undefined });
