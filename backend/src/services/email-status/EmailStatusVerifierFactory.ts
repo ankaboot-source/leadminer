@@ -8,9 +8,7 @@ import ZerobounceEmailStatusVerifier from './zerobounce';
 import ZerobounceClient from './zerobounce/client';
 import { TokenBucketRateLimiter } from '../rate-limiter/RateLimiter';
 
-interface Config extends ReacherConfig, MailerCheckConfig, ZerobounceConfig {
-  LOAD_BALANCE_VERIFIERS: boolean;
-}
+interface Config extends ReacherConfig, MailerCheckConfig, ZerobounceConfig {}
 
 interface ReacherConfig {
   REACHER_HOST?: string;
@@ -41,13 +39,37 @@ interface ZerobounceConfig {
   ZEROBOUNCE_API_KEY?: string;
 }
 
+interface Verifier {
+  type: EmailVerifierType;
+  verifier: EmailStatusVerifier;
+}
+
+function partitionEmailsByQuota(
+  emails: string[],
+  verifier: Verifier
+): { selectedEmails: string[]; skippedEmails: string[] } {
+  const selectedEmails: string[] = [];
+  const skippedEmails: string[] = [];
+
+  for (const email of emails) {
+    if (!verifier.verifier.isEligibleEmail(email)) {
+      skippedEmails.push(email);
+      continue;
+    }
+
+    if (selectedEmails.length >= verifier.verifier.emailsQuota) {
+      skippedEmails.push(email);
+      continue;
+    }
+
+    selectedEmails.push(email);
+  }
+
+  return { selectedEmails, skippedEmails };
+}
+
 export default class EmailStatusVerifierFactory {
-  private static readonly MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =
-    /(?=(@hotmail|@yahoo|@live|@outlook|@msn|@wanadoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
-
-  private currentVerifierIndex = 0;
-
-  private verifiers: EmailStatusVerifier[] = [];
+  private readonly verifiers: Verifier[];
 
   private reacherEmailStatusVerifier?: EmailStatusVerifier;
 
@@ -77,115 +99,74 @@ export default class EmailStatusVerifierFactory {
       );
     }
 
-    if (config.LOAD_BALANCE_VERIFIERS === true) {
-      if (this.mailerCheckEmailStatusVerifier) {
-        this.verifiers.push(this.mailerCheckEmailStatusVerifier);
-      }
-
-      if (this.zerobounceEmailStatusVerifier) {
-        this.verifiers.push(this.zerobounceEmailStatusVerifier);
-      }
-
-      if (this.reacherEmailStatusVerifier && !this.verifiers.length) {
-        this.verifiers.push(this.reacherEmailStatusVerifier);
-      }
-    } else {
-      this.verifiers = [
-        this.zerobounceEmailStatusVerifier ??
-          this.mailerCheckEmailStatusVerifier ??
-          this.reacherEmailStatusVerifier
-      ].filter(Boolean) as EmailStatusVerifier[];
-    }
+    this.verifiers = this.createVerifiers();
   }
 
-  private getNextVerifier(): EmailStatusVerifier {
-    const verifier = this.verifiers[this.currentVerifierIndex];
-    this.currentVerifierIndex =
-      (this.currentVerifierIndex + 1) % this.verifiers.length;
-    return verifier;
-  }
-
-  getEmailVerifiers(
-    emails: string[]
-  ): Map<EmailVerifierType, [EmailStatusVerifier, string[]]> {
-    const verifiersWithEmails = new Map<
-      EmailVerifierType,
-      [EmailStatusVerifier, string[]]
-    >();
-
-    const emailGroups = {
-      reacher: [] as string[],
-      mailercheck: [] as string[],
-      zerobounce: [] as string[]
-    };
-
-    emails.forEach((email) => {
-      const verifier = this.getEmailVerifier(email);
-      switch (verifier.constructor.name) {
-        case 'ReacherEmailStatusVerifier':
-          emailGroups.reacher.push(email);
-          break;
-        case 'ZerobounceEmailStatusVerifier':
-          emailGroups.zerobounce.push(email);
-          break;
-        case 'MailerCheckEmailStatusVerifier':
-          emailGroups.mailercheck.push(email);
-          break;
-        default:
-          break;
-      }
-    });
-
-    const addVerifierEmails = (
+  private createVerifiers(): Verifier[] {
+    const generate = (
       type: EmailVerifierType,
-      verifier: EmailStatusVerifier,
-      emailList: string[]
-    ) => {
-      if (emailList.length > 0) {
-        verifiersWithEmails.set(type, [verifier, emailList]);
-      }
-    };
+      verifier: EmailStatusVerifier
+    ) => ({ type, verifier });
 
-    if (emailGroups.reacher.length > 0 && this.reacherEmailStatusVerifier) {
-      addVerifierEmails(
-        'reacher',
-        this.reacherEmailStatusVerifier,
-        emailGroups.reacher
-      );
-    }
-    if (
-      emailGroups.mailercheck.length > 0 &&
-      this.mailerCheckEmailStatusVerifier
-    ) {
-      addVerifierEmails(
-        'mailercheck',
-        this.mailerCheckEmailStatusVerifier,
-        emailGroups.mailercheck
-      );
-    }
-    if (
-      emailGroups.zerobounce.length > 0 &&
-      this.zerobounceEmailStatusVerifier
-    ) {
-      addVerifierEmails(
-        'zerobounce',
-        this.zerobounceEmailStatusVerifier,
-        emailGroups.zerobounce
-      );
-    }
-
-    return verifiersWithEmails;
+    return [
+      this.reacherEmailStatusVerifier &&
+        generate('reacher', this.reacherEmailStatusVerifier),
+      this.mailerCheckEmailStatusVerifier &&
+        generate('mailercheck', this.mailerCheckEmailStatusVerifier),
+      this.zerobounceEmailStatusVerifier &&
+        generate('zerobounce', this.zerobounceEmailStatusVerifier)
+    ].filter(
+      (
+        verifier
+      ): verifier is {
+        type: EmailVerifierType;
+        verifier: EmailStatusVerifier;
+      } => verifier !== undefined
+    );
   }
 
-  getEmailVerifier(email: string): EmailStatusVerifier {
-    if (this.reacherEmailStatusVerifier && this.verifiers.length > 0) {
-      return EmailStatusVerifierFactory.MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX.test(
-        email
-      )
-        ? this.getNextVerifier()
-        : this.reacherEmailStatusVerifier;
+  private getVerifiersWithEmails(emails: string[]): [Verifier, string[]][] {
+    const partitioned: [Verifier, string[]][] = [];
+
+    if (!this.verifiers.length) return partitioned;
+
+    let remainingEmails = [...emails];
+
+    for (const verifier of this.verifiers.slice(0, -1)) {
+      const { selectedEmails, skippedEmails } = partitionEmailsByQuota(
+        remainingEmails,
+        verifier
+      );
+
+      if (selectedEmails.length) {
+        partitioned.push([verifier, selectedEmails]);
+      }
+
+      remainingEmails = skippedEmails;
     }
-    return this.getNextVerifier();
+
+    if (remainingEmails.length) {
+      partitioned.push([
+        this.verifiers[this.verifiers.length - 1],
+        remainingEmails
+      ]);
+    }
+
+    return partitioned;
+  }
+
+  getEmailVerifiers(emails: string[]) {
+    const verifiersAssigned =
+      this.verifiers.length > 1
+        ? this.getVerifiersWithEmails(emails)
+        : ([[this.verifiers[0], emails]] as [Verifier, string[]][]);
+
+    return new Map<EmailVerifierType, [EmailStatusVerifier, string[]]>(
+      verifiersAssigned.map(([{ type, verifier }, emailList]) => [
+        type,
+        [verifier, emailList]
+      ])
+    );
   }
 
   private createReacherEmailStatusVerifier(

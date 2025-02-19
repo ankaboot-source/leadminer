@@ -1,12 +1,12 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Logger } from 'winston';
 import EmailStatusVerifierFactory from '../../../src/services/email-status/EmailStatusVerifierFactory';
-import MailerCheckEmailStatusVerifier from '../../../src/services/email-status/mailercheck';
-import ReacherEmailStatusVerifier from '../../../src/services/email-status/reacher';
-import ZerobounceEmailStatusVerifier from '../../../src/services/email-status/zerobounce';
-import logger from '../../../src/utils/logger';
 
 jest.mock('../../../src/config', () => ({
-  LEADMINER_API_LOG_LEVEL: 'error'
+  LEADMINER_API_LOG_LEVEL: 'error',
+  EMAILS_QUOTA_REACHER: 10,
+  EMAILS_QUOTA_MAILERCHECK: 5,
+  EMAILS_QUOTA_ZEROBOUNCE: 15
 }));
 
 const reacherDefaultConfig = {
@@ -47,373 +47,180 @@ const yahooEmails = [
 ];
 
 const mailercheckZerobounceOnly = [
-  'test@wanadoo.fr',
-  'test@free.fr',
-  'test@orange.fr',
-  'test@laposte.net',
-  'test@live.com'
+  'test1@wanadoo.fr',
+  'test2@free.fr',
+  'test3@orange.fr',
+  'test4@laposte.net',
+  'test5@live.com'
 ];
 
-const googleEmails = ['leadminer-test1@gmail.com'];
+const googleEmails = ['leadminer-test1@gmail.com', 'leadminer-test2@gmail.com'];
 
-const emails = [
-  ...mailercheckZerobounceOnly,
-  ...hotmailEmails,
-  ...googleEmails,
-  ...outlookEmails,
-  ...yahooEmails
-];
+const LOGGER = {
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn()
+} as unknown as Logger;
 
-describe('EmailStatusVerifierFactory() with load balancing disabled', () => {
-  const defaultConf = {
-    LOAD_BALANCE_VERIFIERS: false,
-    ...reacherDefaultConfig
-  };
+describe('EmailStatusVerifierFactory()', () => {
+  let baseConfig: any;
+  let factory: EmailStatusVerifierFactory;
 
-  describe('getEmailVerifier', () => {
-    it.each([
-      ...mailercheckZerobounceOnly,
-      ...hotmailEmails,
-      ...outlookEmails,
-      ...yahooEmails
-    ])(
-      'Reacher & Mailercheck & Zerobounce configured: Use Zerobounce for all listed providers email %s',
-      (email) => {
-        const verifier = new EmailStatusVerifierFactory(
-          {
-            ...defaultConf,
-            ZEROBOUNCE_API_KEY: 'sandbox',
-            MAILERCHECK_API_KEY: 'apiKey',
-            REACHER_API_KEY: 'apiKey'
-          },
-          logger
-        ).getEmailVerifier(email);
-        expect(verifier).toBeInstanceOf(ZerobounceEmailStatusVerifier);
-      }
-    );
+  beforeEach(() => {
+    baseConfig = {
+      ...reacherDefaultConfig,
+      ZEROBOUNCE_API_KEY: 'sandbox',
+      MAILERCHECK_API_KEY: 'apiKey',
+      REACHER_API_KEY: 'apiKey'
+    };
 
-    it.each([
-      ...mailercheckZerobounceOnly,
-      ...hotmailEmails,
-      ...outlookEmails,
-      ...yahooEmails
-    ])(
-      'Reacher & Mailercheck configured: Use Mailercheck for all listed providers email %s',
-      (email) => {
-        const verifier = new EmailStatusVerifierFactory(
-          {
-            ...defaultConf,
-            MAILERCHECK_API_KEY: 'apiKey',
-            REACHER_API_KEY: 'apiKey'
-          },
-          logger
-        ).getEmailVerifier(email);
-        expect(verifier).toBeInstanceOf(MailerCheckEmailStatusVerifier);
-      }
-    );
-
-    it.each([
-      ...mailercheckZerobounceOnly,
-      ...hotmailEmails,
-      ...outlookEmails,
-      ...yahooEmails
-    ])(
-      'Reacher & Zerobounce configured: Use Zerobounce for all listed providers email %s',
-      (email) => {
-        const verifier = new EmailStatusVerifierFactory(
-          {
-            ...defaultConf,
-            ZEROBOUNCE_API_KEY: 'sandbox',
-            REACHER_API_KEY: 'apiKey'
-          },
-          logger
-        ).getEmailVerifier(email);
-        expect(verifier).toBeInstanceOf(ZerobounceEmailStatusVerifier);
-      }
-    );
-
-    it.each([
-      ...mailercheckZerobounceOnly,
-      ...googleEmails,
-      ...yahooEmails,
-      ...outlookEmails,
-      ...hotmailEmails
-    ])('Reacher configured: Use Reacher for all emails providers', (email) => {
-      const verifier = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      ).getEmailVerifier(email);
-      expect(verifier).toBeInstanceOf(ReacherEmailStatusVerifier);
-    });
-
-    it('Reacher, MailerCheck, ZeroBounce are not provided. ', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          LOAD_BALANCE_VERIFIERS: false,
-          ...reacherDefaultConfig
-        },
-        logger
-      );
-
-      const verifier = factory.getEmailVerifier('email@domain.com');
-      expect(verifier).toBe(undefined);
-    });
+    factory = new EmailStatusVerifierFactory(baseConfig, LOGGER);
   });
 
   describe('getEmailVerifiers', () => {
-    it('Reacher && Mailercheck && Zerobounce configured: categorize emails correctly and use appropriate verifiers', () => {
-      const result = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          MAILERCHECK_API_KEY: 'apiKey',
-          ZEROBOUNCE_API_KEY: 'apiKey',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      ).getEmailVerifiers(emails);
+    it('should return verifiers with emails partitioned based on capacity', () => {
+      const emails = [
+        ...mailercheckZerobounceOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ];
 
-      expect(result.has('random')).toBeFalsy();
-      expect(result.has('mailercheck')).toBeFalsy();
-      expect(result.get('reacher')).toEqual([
-        expect.any(ReacherEmailStatusVerifier),
-        [...googleEmails]
-      ]);
-      expect(result.get('zerobounce')).toEqual([
-        expect.any(ZerobounceEmailStatusVerifier),
-        [
-          ...mailercheckZerobounceOnly,
-          ...hotmailEmails,
-          ...outlookEmails,
-          ...yahooEmails
-        ]
-      ]);
-    });
+      const verifiersMap = factory.getEmailVerifiers(emails);
 
-    it('Reacher && Mailercheck configured: categorize emails correctly and use appropriate verifiers', () => {
-      const result = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          MAILERCHECK_API_KEY: 'apiKey',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      ).getEmailVerifiers(emails);
+      expect(verifiersMap.size).toBe(3);
+      expect(verifiersMap.get('mailercheck')).toBeDefined();
+      expect(verifiersMap.get('zerobounce')).toBeDefined();
+      expect(verifiersMap.get('reacher')).toBeDefined();
 
-      expect(result.has('random')).toBeFalsy();
-      expect(result.has('zerobounce')).toBeFalsy();
-      expect(result.get('reacher')).toEqual([
-        expect.any(ReacherEmailStatusVerifier),
-        [...googleEmails]
-      ]);
-      expect(result.get('mailercheck')).toEqual([
-        expect.any(MailerCheckEmailStatusVerifier),
-        [
-          ...mailercheckZerobounceOnly,
-          ...hotmailEmails,
-          ...outlookEmails,
-          ...yahooEmails
-        ]
-      ]);
-    });
+      const emailAllocatedReacher = verifiersMap.get('reacher')?.[1]
+        .length as number;
+      const emailAllocatedMailercheck = verifiersMap.get('mailercheck')?.[1]
+        .length as number;
+      const emailAllocatedZerobounce = verifiersMap.get('zerobounce')?.[1]
+        .length as number;
 
-    it('Reacher configured: categorize emails correctly and use appropriate verifiers', () => {
-      const result = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      ).getEmailVerifiers(emails);
-
-      expect(result.has('random')).toBeFalsy();
-      expect(result.has('mailercheck')).toBeFalsy();
-      expect(result.has('zerobounce')).toBeFalsy();
-      expect(result.get('reacher')).toEqual([
-        expect.any(ReacherEmailStatusVerifier),
-        [
-          ...mailercheckZerobounceOnly,
-          ...hotmailEmails,
-          ...googleEmails,
-          ...outlookEmails,
-          ...yahooEmails
-        ]
-      ]);
-    });
-
-    it('Mailercheck && Zerobounce configured: categorize emails correctly and use appropriate verifiers', () => {
-      const result = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          MAILERCHECK_API_KEY: 'apiKey',
-          ZEROBOUNCE_API_KEY: 'apiKey'
-        },
-        logger
-      ).getEmailVerifiers(emails);
-
-      expect(result.has('random')).toBeFalsy();
-      expect(result.has('reacher')).toBeFalsy();
-      expect(result.has('mailercheck')).toBeFalsy();
-      expect(result.get('zerobounce')).toEqual([
-        expect.any(ZerobounceEmailStatusVerifier),
-        [
-          ...mailercheckZerobounceOnly,
-          ...hotmailEmails,
-          ...googleEmails,
-          ...outlookEmails,
-          ...yahooEmails
-        ]
-      ]);
-    });
-  });
-});
-
-describe('EmailStatusVerifierFactory() with load balancing enabled', () => {
-  const defaultConf = {
-    LOAD_BALANCE_VERIFIERS: true,
-    ...reacherDefaultConfig
-  };
-
-  describe('getEmailVerifier', () => {
-    it('Mailercheck & Zerobounce configured: load balance between verifiers', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          ZEROBOUNCE_API_KEY: 'sandbox',
-          MAILERCHECK_API_KEY: 'apiKey',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      );
-
-      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
-      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
-      expect(verifier1.constructor.name).not.toEqual(
-        verifier2.constructor.name
+      expect(emailAllocatedReacher).toBe(2);
+      expect(emailAllocatedMailercheck).toBe(5);
+      expect(emailAllocatedZerobounce).toBe(
+        emails.length - (emailAllocatedReacher + emailAllocatedMailercheck)
       );
     });
 
-    it('Zerobounce configured: use zerobounce', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          ZEROBOUNCE_API_KEY: 'sandbox',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      );
+    it('should return verifiers with emails partitioned based on capacity, without reacher', () => {
+      const emails = [
+        ...mailercheckZerobounceOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ];
 
-      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
-      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
+      delete baseConfig.REACHER_API_KEY;
 
-      expect(verifier1).toBeInstanceOf(ZerobounceEmailStatusVerifier);
-      expect(verifier2).toBeInstanceOf(ZerobounceEmailStatusVerifier);
-    });
+      factory = new EmailStatusVerifierFactory(baseConfig, LOGGER);
 
-    it('Mailercheck configured: use zerobounce', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          MAILERCHECK_API_KEY: 'sandbox',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      );
+      const verifiersMap = factory.getEmailVerifiers(emails);
 
-      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
-      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
+      expect(verifiersMap.size).toBe(2);
+      expect(verifiersMap.get('reacher')).toBeUndefined();
+      expect(verifiersMap.get('mailercheck')).toBeDefined();
+      expect(verifiersMap.get('zerobounce')).toBeDefined();
 
-      expect(verifier1).toBeInstanceOf(MailerCheckEmailStatusVerifier);
-      expect(verifier2).toBeInstanceOf(MailerCheckEmailStatusVerifier);
-    });
+      const emailAllocatedMailercheck = verifiersMap.get('mailercheck')?.[1]
+        .length as number;
+      const emailAllocatedZerobounce = verifiersMap.get('zerobounce')?.[1]
+        .length as number;
 
-    it('Reacher configured: use zerobounce', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      );
-
-      const verifier1 = factory.getEmailVerifier(outlookEmails[0]);
-      const verifier2 = factory.getEmailVerifier(outlookEmails[0]);
-
-      expect(verifier1).toBeInstanceOf(ReacherEmailStatusVerifier);
-      expect(verifier2).toBeInstanceOf(ReacherEmailStatusVerifier);
-    });
-  });
-
-  describe('getEmailVerifiers', () => {
-    it('Mailercheck & Zerobounce configured: load balance between verifiers', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          ZEROBOUNCE_API_KEY: 'sandbox',
-          MAILERCHECK_API_KEY: 'apiKey',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      );
-
-      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
-      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
-
-      expect(Array.from(verifier1.keys())[0]).not.toEqual(
-        Array.from(verifier2.keys())[0]
+      expect(emailAllocatedMailercheck).toBe(5);
+      expect(emailAllocatedZerobounce).toBe(
+        emails.length - emailAllocatedMailercheck
       );
     });
 
-    it('Zerobounce configured: Use zerobounce', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          ZEROBOUNCE_API_KEY: 'sandbox',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
+    it('should return verifiers with emails partitioned based on capacity, without mailercheck', () => {
+      const emails = [
+        ...mailercheckZerobounceOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ];
+
+      delete baseConfig.MAILERCHECK_API_KEY;
+
+      factory = new EmailStatusVerifierFactory(baseConfig, LOGGER);
+
+      const verifiersMap = factory.getEmailVerifiers(emails);
+
+      expect(verifiersMap.size).toBe(2);
+      expect(verifiersMap.get('reacher')).toBeDefined();
+      expect(verifiersMap.get('zerobounce')).toBeDefined();
+      expect(verifiersMap.get('mailercheck')).toBeUndefined();
+
+      const emailAllocatedReacher = verifiersMap.get('reacher')?.[1]
+        .length as number;
+      const emailAllocatedZerobounce = verifiersMap.get('zerobounce')?.[1]
+        .length as number;
+
+      expect(emailAllocatedReacher).toBe(2);
+      expect(emailAllocatedZerobounce).toBe(
+        emails.length - emailAllocatedReacher
       );
-
-      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
-      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
-
-      expect(verifier1.has('zerobounce')).toBeTruthy();
-      expect(verifier2.has('zerobounce')).toBeTruthy();
     });
 
-    it('Mailercheck configured: Use Mailercheck', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          MAILERCHECK_API_KEY: 'apiKey',
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
+    it('should return verifiers with emails partitioned based on capacity, Without zerobounce', () => {
+      const emails = [
+        ...mailercheckZerobounceOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ];
+
+      delete baseConfig.ZEROBOUNCE_API_KEY;
+
+      factory = new EmailStatusVerifierFactory(baseConfig, LOGGER);
+
+      const verifiersMap = factory.getEmailVerifiers(emails);
+
+      expect(verifiersMap.size).toBe(2);
+      expect(verifiersMap.get('reacher')).toBeDefined();
+      expect(verifiersMap.get('mailercheck')).toBeDefined();
+      expect(verifiersMap.get('zerobounce')).toBeUndefined();
+
+      const emailAllocatedReacher = verifiersMap.get('reacher')?.[1]
+        .length as number;
+      const emailAllocatedMailercheck = verifiersMap.get('mailercheck')?.[1]
+        .length as number;
+
+      expect(emailAllocatedReacher).toBe(2);
+      expect(emailAllocatedMailercheck).toBe(
+        emails.length - emailAllocatedReacher
       );
-
-      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
-      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
-
-      expect(verifier1.has('mailercheck')).toBeTruthy();
-      expect(verifier2.has('mailercheck')).toBeTruthy();
     });
 
-    it('Reacher configured: Use reacher for all', () => {
-      const factory = new EmailStatusVerifierFactory(
-        {
-          ...defaultConf,
-          REACHER_API_KEY: 'apiKey'
-        },
-        logger
-      );
+    it('should use available verifier without partitioning emails, if verifiers.length === 1', () => {
+      const emails = [
+        ...mailercheckZerobounceOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ];
 
-      const verifier1 = factory.getEmailVerifiers([outlookEmails[0]]);
-      const verifier2 = factory.getEmailVerifiers([outlookEmails[0]]);
+      delete baseConfig.ZEROBOUNCE_API_KEY;
+      delete baseConfig.MAILERCHECK_API_KEY;
 
-      expect(verifier1.has('reacher')).toBeTruthy();
-      expect(verifier2.has('reacher')).toBeTruthy();
+      factory = new EmailStatusVerifierFactory(baseConfig, LOGGER);
+
+      const verifiersMap = factory.getEmailVerifiers(emails);
+      const [[, assignedEmails]] = Array.from(verifiersMap.values());
+
+      expect(verifiersMap.size).toBe(1);
+      expect(assignedEmails.length).toBe(emails.length);
     });
   });
 });
