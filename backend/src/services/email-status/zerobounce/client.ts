@@ -1,8 +1,8 @@
 import { Logger } from 'winston';
 import axios, { AxiosInstance } from 'axios';
-import throttledQueue from 'throttled-queue';
 import assert from 'node:assert';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 /**
  * Configuration options for ZerobounceClient.
@@ -109,10 +109,6 @@ export default class ZerobounceClient {
 
   static readonly SINGLE_VALIDATION_PER_10_SECONDS = 50000;
 
-  private readonly single_validation_rate_limit;
-
-  private readonly batch_validation_rate_limit;
-
   private readonly api: AxiosInstance;
 
   /**
@@ -121,26 +117,14 @@ export default class ZerobounceClient {
    */
   constructor(
     private readonly config: Config,
+    readonly singleValidationRateLimiter: IRateLimiter,
+    readonly batchValidationRateLimiter: IRateLimiter,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
       baseURL: config.url ?? ZerobounceClient.baseURL
     });
 
-    this.batch_validation_rate_limit = throttledQueue(
-      /*
-       * 5 requests per minute
-       */
-      ZerobounceClient.BATCH_VALIDATION_PER_MINUTE,
-      60 * 1000
-    );
-    this.single_validation_rate_limit = throttledQueue(
-      /*
-       * 50,000 requests per 10 seconds
-       */
-      ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
-      10 * 1000
-    );
   }
 
   /**
@@ -153,14 +137,15 @@ export default class ZerobounceClient {
     ip_address: ipAddress
   }: EmailObject): Promise<ZerobounceEmailValidationResult> {
     try {
-      const response = await this.single_validation_rate_limit(() =>
-        this.api.get<ZerobounceEmailValidationResult>('validate', {
-          params: {
-            email,
-            ip_address: ipAddress ?? '',
-            api_key: this.config.apiToken
-          }
-        })
+      const response = await this.singleValidationRateLimiter.throttleRequests(
+        () =>
+          this.api.get<ZerobounceEmailValidationResult>('validate', {
+            params: {
+              email,
+              ip_address: ipAddress ?? '',
+              api_key: this.config.apiToken
+            }
+          })
       );
       return response.data;
     } catch (error) {
@@ -185,14 +170,15 @@ export default class ZerobounceClient {
         emailBatch.length <= ZerobounceClient.BATCH_VALIDATION_LENGTH,
         `Maximum emails to validate per request is ${ZerobounceClient.BATCH_VALIDATION_LENGTH}`
       );
-      const response = await this.batch_validation_rate_limit(() =>
-        this.api.post<EmailValidationResponse>('validatebatch', {
-          body: {
-            timeout,
-            email_batch: emailBatch,
-            api_key: this.config.apiToken
-          }
-        })
+      const response = await this.batchValidationRateLimiter.throttleRequests(
+        () =>
+          this.api.post<EmailValidationResponse>('validatebatch', {
+            body: {
+              timeout,
+              email_batch: emailBatch,
+              api_key: this.config.apiToken
+            }
+          })
       );
       return response.data;
     } catch (error) {

@@ -6,6 +6,7 @@ import ReacherEmailStatusVerifier from './reacher';
 import ReacherClient from './reacher/client';
 import ZerobounceEmailStatusVerifier from './zerobounce';
 import ZerobounceClient from './zerobounce/client';
+import { TokenBucketRateLimiter } from '../rate-limiter/RateLimiter';
 
 interface Config extends ReacherConfig, MailerCheckConfig, ZerobounceConfig {
   LOAD_BALANCE_VERIFIERS: boolean;
@@ -191,36 +192,38 @@ export default class EmailStatusVerifierFactory {
     config: ReacherConfig,
     logger: Logger
   ) {
-    const reacherClient = new ReacherClient(logger, {
-      host: config.REACHER_HOST,
-      apiKey: config.REACHER_API_KEY,
-      headerSecret: config.REACHER_HEADER_SECRET,
-      timeoutMs: config.REACHER_REQUEST_TIMEOUT_MS,
-      microsoft365UseApi: config.REACHER_MICROSOFT365_USE_API,
-      gmailUseApi: config.REACHER_GMAIL_USE_API,
-      yahooUseApi: config.REACHER_YAHOO_USE_API,
-      hotmailUseHeadless: config.REACHER_HOTMAIL_USE_HEADLESS,
-      smtpRetries: config.REACHER_SMTP_CONNECTION_RETRIES,
-      smtpTimeoutSeconds: config.REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS,
-      smtpConfig: {
-        helloName: config.REACHER_SMTP_HELLO,
-        fromEmail: config.REACHER_SMTP_FROM,
-        proxy:
-          config.REACHER_PROXY_HOST && config.REACHER_PROXY_PORT
-            ? {
-                port: config.REACHER_PROXY_PORT,
-                host: config.REACHER_PROXY_HOST,
-                username: config.REACHER_PROXY_USERNAME,
-                password: config.REACHER_PROXY_PASSWORD
-              }
-            : undefined
+    const reacherClient = new ReacherClient(
+      {
+        host: config.REACHER_HOST,
+        apiKey: config.REACHER_API_KEY,
+        headerSecret: config.REACHER_HEADER_SECRET,
+        timeoutMs: config.REACHER_REQUEST_TIMEOUT_MS,
+        microsoft365UseApi: config.REACHER_MICROSOFT365_USE_API,
+        gmailUseApi: config.REACHER_GMAIL_USE_API,
+        yahooUseApi: config.REACHER_YAHOO_USE_API,
+        hotmailUseHeadless: config.REACHER_HOTMAIL_USE_HEADLESS,
+        smtpRetries: config.REACHER_SMTP_CONNECTION_RETRIES,
+        smtpTimeoutSeconds: config.REACHER_SMTP_CONNECTION_TIMEOUT_SECONDS,
+        smtpConfig: {
+          helloName: config.REACHER_SMTP_HELLO,
+          fromEmail: config.REACHER_SMTP_FROM,
+          proxy:
+            config.REACHER_PROXY_HOST && config.REACHER_PROXY_PORT
+              ? {
+                  port: config.REACHER_PROXY_PORT,
+                  host: config.REACHER_PROXY_HOST,
+                  username: config.REACHER_PROXY_USERNAME,
+                  password: config.REACHER_PROXY_PASSWORD
+                }
+              : undefined
+        }
       },
-      rateLimiter: {
-        requests: config.REACHER_RATE_LIMITER_REQUESTS,
-        interval: config.REACHER_RATE_LIMITER_INTERVAL,
-        spaced: false
-      }
-    });
+      new TokenBucketRateLimiter(
+        config.REACHER_RATE_LIMITER_REQUESTS,
+        config.REACHER_RATE_LIMITER_INTERVAL
+      ),
+      logger
+    );
 
     this.reacherEmailStatusVerifier = new ReacherEmailStatusVerifier(
       reacherClient,
@@ -234,6 +237,10 @@ export default class EmailStatusVerifierFactory {
   ) {
     const client = new MailerCheckClient(
       { apiToken: MAILERCHECK_API_KEY },
+      new TokenBucketRateLimiter(
+        60, // 60 requests
+        60 * 1000 // 1 minute
+      ),
       logger
     );
 
@@ -249,6 +256,14 @@ export default class EmailStatusVerifierFactory {
   ) {
     const client = new ZerobounceClient(
       { apiToken: ZEROBOUNCE_API_KEY },
+      new TokenBucketRateLimiter(
+        ZerobounceClient.SINGLE_VALIDATION_PER_10_SECONDS,
+        60 * 1000
+      ),
+      new TokenBucketRateLimiter(
+        ZerobounceClient.BATCH_VALIDATION_PER_MINUTE,
+        60 * 1000
+      ),
       logger
     );
 
