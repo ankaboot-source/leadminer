@@ -3,7 +3,7 @@ import { ref } from 'vue';
 
 export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   const collapsed = ref(false);
-  const index = ref(1);
+  const index = ref(-1);
 
   function open() {
     collapsed.value = false;
@@ -31,7 +31,7 @@ export const useMiningStepper = defineStore('mining-stepper-navigation', () => {
   }
 
   function $reset() {
-    index.value = 1;
+    index.value = -1;
   }
 
   return {

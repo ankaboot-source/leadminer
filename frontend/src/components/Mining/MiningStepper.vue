@@ -47,44 +47,44 @@
 </template>
 
 <script setup lang="ts">
+import MiningConsentSidebar from '@/components/Mining/MiningConsentSidebar.vue';
+import CleanPanel from '@/components/Mining/StepperPanels/CleanPanel.vue';
+import MinePanel from '@/components/Mining/StepperPanels/MinePanel.vue';
 import SourcePanel from '@/components/Mining/StepperPanels/SourcePanel.vue';
+import StepWithPopover from '@/components/Mining/StepperPanels/StepWithPopover.vue';
 import type { MiningSourceType } from '~/types/mining';
-
-const MiningConsentSidebar = defineAsyncComponent(
-  () => import('./MiningConsentSidebar.vue'),
-);
-const MinePanel = defineAsyncComponent(
-  () => import('./StepperPanels/MinePanel.vue'),
-);
-const CleanPanel = defineAsyncComponent(
-  () => import('./StepperPanels/CleanPanel.vue'),
-);
-
-const StepWithPopover = defineAsyncComponent(
-  () => import('./StepperPanels/StepWithPopover.vue'),
-);
 
 const { t } = useI18n({
   useScope: 'local',
 });
 
 const $route = useRoute();
+const $router = useRouter();
 const $stepper = useMiningStepper();
 const $consentSidebar = useMiningConsentSidebar();
 const $leadminerStore = useLeadminerStore();
 const sourcePanel = ref<InstanceType<typeof SourcePanel>>();
 
-const { error, provider } = $route.query;
+const { error, provider, source } = $route.query;
+
+const selectedSource = source
+  ? $leadminerStore.getMiningSourceByEmail(source as string)
+  : null;
+
+if (selectedSource) {
+  $leadminerStore.boxes = [];
+  $leadminerStore.selectedBoxes = [];
+  $leadminerStore.activeMiningSource = selectedSource;
+  $stepper.go(2);
+} else {
+  $stepper.go(1);
+}
 
 onNuxtReady(() => {
   if (provider && error === 'oauth-consent') {
-    const newQuery = { ...useRoute().query };
-    delete newQuery.provider;
-    delete newQuery.error;
-    delete newQuery.referrer;
-    useRouter().replace({ query: newQuery });
     $consentSidebar.show(provider as MiningSourceType);
   }
+  $router.replace({ query: undefined });
 });
 </script>
 

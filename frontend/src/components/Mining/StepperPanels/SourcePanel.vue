@@ -91,9 +91,8 @@ const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $imapDialogStore = useImapDialog();
 const $sourcePanelStore = useStepperSourcePanel();
-const sourceModel = ref<MiningSource | undefined>();
 const sourceOptions = computed(() => useLeadminerStore().miningSources);
-const { source } = useRoute().query;
+const sourceModel = ref<MiningSource | undefined>(sourceOptions?.value[0]);
 
 function extractContacts(miningSource?: MiningSource) {
   if (miningSource) {
@@ -102,16 +101,6 @@ function extractContacts(miningSource?: MiningSource) {
     $leadminerStore.activeMiningSource = miningSource;
     $stepper.next();
   }
-}
-
-const selectedSource = source
-  ? $leadminerStore.getMiningSourceByEmail(source as string)
-  : null;
-
-if (selectedSource) {
-  extractContacts(selectedSource);
-} else {
-  sourceModel.value = sourceOptions?.value[0];
 }
 
 $sourcePanelStore.showOtherSourcesByDefault();
