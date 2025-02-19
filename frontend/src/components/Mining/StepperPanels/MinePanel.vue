@@ -98,13 +98,12 @@ const { miningSource } = defineProps<{
   miningSource: MiningSource;
 }>();
 
-const source = computed(() => (miningSource ? 'boxes' : 'file'));
+const sourceType = computed(() => (miningSource ? 'boxes' : 'file'));
 const $toast = useToast();
 const $stepper = useMiningStepper();
 const $leadminerStore = useLeadminerStore();
 const $contactsStore = useContactsStore();
 const $consentSidebar = useMiningConsentSidebar();
-const $router = useRouter();
 
 const AVERAGE_EXTRACTION_RATE =
   parseInt(useRuntimeConfig().public.AVERAGE_EXTRACTION_RATE) || 130;
@@ -120,11 +119,11 @@ const selectedBoxes = computed<TreeSelectionKeys>(
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 
 const totalEmails = computed<number>(() => {
-  if (source.value === 'file') {
+  if (sourceType.value === 'file') {
     return $leadminerStore.selectedFile?.contacts.length || 0;
   }
 
-  if (source.value === 'boxes' && boxes.value[0]) {
+  if (sourceType.value === 'boxes' && boxes.value[0]) {
     return objectScan(['**.{total}'], {
       joined: true,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,9 +160,7 @@ const progressTooltip = computed(() =>
 );
 
 onMounted(async () => {
-  await $router.replace({ query: undefined });
-
-  if (source.value === 'file') {
+  if (sourceType.value === 'file') {
     return;
   }
 
@@ -226,9 +223,9 @@ watch(extractionFinished, async (finished) => {
 });
 
 function openMiningSettings() {
-  if (source.value === 'boxes') {
+  if (sourceType.value === 'boxes') {
     miningSettingsDialogRef.value!.open(); // skipcq: JS-0339 is component ref
-  } else if (source.value === 'file') {
+  } else if (sourceType.value === 'file') {
     importFileDialogRef.value.openModal();
   }
 }
@@ -250,7 +247,7 @@ async function startMiningBoxes() {
   }
   canceled.value = false;
   try {
-    await $leadminerStore.startMining(source.value);
+    await $leadminerStore.startMining(sourceType.value);
   } catch (error) {
     if (
       error instanceof FetchError &&
@@ -274,16 +271,16 @@ async function startMiningBoxes() {
 
 async function startMiningFile() {
   try {
-    await $leadminerStore.startMining(source.value);
+    await $leadminerStore.startMining(sourceType.value);
   } catch (error) {
     console.error(error);
   }
 }
 
 async function startMining() {
-  if (source.value === 'boxes') {
+  if (sourceType.value === 'boxes') {
     await startMiningBoxes();
-  } else if (source.value === 'file') {
+  } else if (sourceType.value === 'file') {
     await startMiningFile();
   }
 }
