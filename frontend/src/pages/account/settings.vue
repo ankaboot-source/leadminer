@@ -119,10 +119,7 @@
     <!-- Legal Account Section -->
     <Panel :header="$t('auth.legal_information')">
       <LegalInformation />
-      <component 
-      :is="NewsletterCheckbox" 
-      type="checkbox"
-/>
+      <component :is="NewsletterCheckbox" type="checkbox" />
     </Panel>
 
     <!-- Warning modal Section -->
