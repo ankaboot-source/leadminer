@@ -29,7 +29,7 @@
     />
   </div>
   <component 
-      :is=" 'NewsletterDialog'" 
+      :is= "NewsletterDialog" 
       v-if="verificationFinished" 
       type="dialog"
     />
