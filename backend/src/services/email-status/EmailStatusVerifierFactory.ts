@@ -156,10 +156,13 @@ export default class EmailStatusVerifierFactory {
   }
 
   getEmailVerifiers(emails: string[]) {
-    const verifiersAssigned =
-      this.verifiers.length > 1
-        ? this.getVerifiersWithEmails(emails)
-        : ([[this.verifiers[0], emails]] as [Verifier, string[]][]);
+    let verifiersAssigned = this.verifiers.length
+      ? ([[this.verifiers[0], emails]] as [Verifier, string[]][])
+      : [];
+
+    if (this.verifiers.length > 1) {
+      verifiersAssigned = this.getVerifiersWithEmails(emails);
+    }
 
     return new Map<EmailVerifierType, [EmailStatusVerifier, string[]]>(
       verifiersAssigned.map(([{ type, verifier }, emailList]) => [

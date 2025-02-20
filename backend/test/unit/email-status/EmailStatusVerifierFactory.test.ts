@@ -222,5 +222,25 @@ describe('EmailStatusVerifierFactory()', () => {
       expect(verifiersMap.size).toBe(1);
       expect(assignedEmails.length).toBe(emails.length);
     });
+
+    it('should return empty Map when no verifier is configured', () => {
+      const emails = [
+        ...mailercheckZerobounceOnly,
+        ...hotmailEmails,
+        ...googleEmails,
+        ...outlookEmails,
+        ...yahooEmails
+      ];
+
+      delete baseConfig.ZEROBOUNCE_API_KEY;
+      delete baseConfig.MAILERCHECK_API_KEY;
+      delete baseConfig.REACHER_API_KEY;
+
+      factory = new EmailStatusVerifierFactory(baseConfig, LOGGER);
+
+      const result = factory.getEmailVerifiers(emails);
+
+      expect(result.size).toBe(0);
+    });
   });
 });
