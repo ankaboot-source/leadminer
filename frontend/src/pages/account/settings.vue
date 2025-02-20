@@ -120,7 +120,7 @@
     <Panel :header="$t('auth.legal_information')">
       <LegalInformation />
       <component 
-      :is="'NewsletterCheckbox'" 
+      :is="NewsletterCheckbox" 
       type="checkbox"
 />
     </Panel>
