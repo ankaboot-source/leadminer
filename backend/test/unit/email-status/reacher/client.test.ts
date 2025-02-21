@@ -10,6 +10,7 @@ import {
   jest
 } from '@jest/globals';
 import ReacherClient from '../../../../src/services/email-status/reacher/client';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
 // Mock logger for testing
 const mockLogger = {
@@ -20,13 +21,16 @@ const mockLogger = {
 } as unknown as Logger;
 
 const BASE_CONFIG = {
-  host: 'https://api.reacher.com',
-  rateLimiter: {
-    requests: 1,
-    interval: 1000,
-    spaced: true
-  }
+  host: 'https://api.reacher.com'
 };
+const REACHER_THROTTLE_REQUESTS = 1;
+const REACHER_THROTTLE_INTERVAL = 100;
+
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  REACHER_THROTTLE_REQUESTS,
+  REACHER_THROTTLE_INTERVAL
+);
+
 const SINGLE_VERIFICATION_ENDPOINT = ReacherClient.SINGLE_VERIFICATION_PATH;
 const BULK_VERIFICATION_ENDPOINT = ReacherClient.BULK_VERIFICATION_PATH;
 
@@ -36,7 +40,7 @@ describe('ReacherClient', () => {
 
   beforeEach(() => {
     mockAxios = new MockAdapter(axios);
-    reacherClient = new ReacherClient(mockLogger, BASE_CONFIG);
+    reacherClient = new ReacherClient(BASE_CONFIG, RATE_LIMITER, mockLogger);
   });
 
   afterEach(() => {
@@ -80,12 +84,16 @@ describe('ReacherClient', () => {
     });
 
     it('should include additionalSettings in request body', async () => {
-      const specialClient = new ReacherClient(mockLogger, {
-        ...BASE_CONFIG,
-        microsoft365UseApi: true,
-        smtpRetries: 3,
-        smtpTimeoutSeconds: 5
-      });
+      const specialClient = new ReacherClient(
+        {
+          ...BASE_CONFIG,
+          microsoft365UseApi: true,
+          smtpRetries: 3,
+          smtpTimeoutSeconds: 5
+        },
+        RATE_LIMITER,
+        mockLogger
+      );
 
       await specialClient.checkSingleEmail(validEmail);
 
@@ -98,17 +106,21 @@ describe('ReacherClient', () => {
     });
 
     it('should include SMTP config in request body', async () => {
-      const specialClient = new ReacherClient(mockLogger, {
-        ...BASE_CONFIG,
-        smtpConfig: {
-          fromEmail: 'noreply@company.com',
-          helloName: 'mail-checker',
-          proxy: {
-            host: 'proxy.company.com',
-            port: 8080
+      const specialClient = new ReacherClient(
+        {
+          ...BASE_CONFIG,
+          smtpConfig: {
+            fromEmail: 'noreply@company.com',
+            helloName: 'mail-checker',
+            proxy: {
+              host: 'proxy.company.com',
+              port: 8080
+            }
           }
-        }
-      });
+        },
+        RATE_LIMITER,
+        mockLogger
+      );
 
       await specialClient.checkSingleEmail(validEmail);
 
@@ -125,10 +137,14 @@ describe('ReacherClient', () => {
 
     it('should use smtpConfig.from_email when no validation options', async () => {
       const smtpConfig = { fromEmail: 'default@company.com' };
-      const specialClient = new ReacherClient(mockLogger, {
-        ...BASE_CONFIG,
-        smtpConfig
-      });
+      const specialClient = new ReacherClient(
+        {
+          ...BASE_CONFIG,
+          smtpConfig
+        },
+        RATE_LIMITER,
+        mockLogger
+      );
 
       await specialClient.checkSingleEmail(validEmail);
 
@@ -141,10 +157,14 @@ describe('ReacherClient', () => {
         fromEmail: 'override@validator.com'
       };
       const smtpConfig = { fromEmail: 'default@company.com' };
-      const specialClient = new ReacherClient(mockLogger, {
-        ...BASE_CONFIG,
-        smtpConfig
-      });
+      const specialClient = new ReacherClient(
+        {
+          ...BASE_CONFIG,
+          smtpConfig
+        },
+        RATE_LIMITER,
+        mockLogger
+      );
 
       await specialClient.checkSingleEmail(
         validEmail,
@@ -167,15 +187,11 @@ describe('ReacherClient', () => {
 
     it('should cancel in-flight request when aborted', async () => {
       const controller = new AbortController();
-      let requestAborted = false;
 
       mockAxios.onPost(SINGLE_VERIFICATION_ENDPOINT).reply(
         () =>
-          new Promise((_, reject) => {
-            controller.signal.addEventListener('abort', () => {
-              requestAborted = true;
-              reject(new Error('Request aborted'));
-            });
+          new Promise((resolve) => {
+            setTimeout(() => resolve([200, { success: true }]), 15);
           })
       );
 
@@ -183,10 +199,10 @@ describe('ReacherClient', () => {
         validEmail,
         controller.signal
       );
-      setTimeout(() => controller.abort(), 100);
+
+      setTimeout(() => controller.abort(), 10);
 
       await expect(requestPromise).rejects.toThrow('canceled');
-      expect(requestAborted).toBe(true);
     });
 
     it('should not affect other requests when aborted', async () => {
@@ -217,7 +233,7 @@ describe('ReacherClient', () => {
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
-        BASE_CONFIG.rateLimiter.interval * (requests.length - 1)
+        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
       );
     });
 

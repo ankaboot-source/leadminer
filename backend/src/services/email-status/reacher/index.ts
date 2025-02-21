@@ -8,6 +8,8 @@ import {
 } from '../EmailStatusVerifier';
 import ReacherClient from './client';
 import { reacherResultToEmailStatusWithDetails } from './mappers';
+import ENV from '../../../config';
+import { MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX } from '../../../utils/constants';
 
 export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
   private static readonly JOB_POLL_INTERVAL_MS = 1000;
@@ -16,10 +18,17 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
 
   private static readonly MAX_CHUNK_SIZE = 150;
 
+  readonly emailsQuota = ENV.EMAILS_QUOTA_REACHER;
+
   constructor(
     private readonly reacherClient: ReacherClient,
     private readonly logger: Logger
   ) {}
+
+  // eslint-disable-next-line class-methods-use-this
+  isEligibleEmail(email: string): boolean {
+    return MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX.test(email) === false;
+  }
 
   async verify(
     email: string,

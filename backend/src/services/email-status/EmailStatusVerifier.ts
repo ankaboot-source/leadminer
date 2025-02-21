@@ -35,6 +35,9 @@ export interface EmailStatusResult {
 }
 
 export interface EmailStatusVerifier {
+  emailsQuota: number;
+
   verify(email: string): Promise<EmailStatusResult>;
   verifyMany(emails: string[]): Promise<EmailStatusResult[]>;
+  isEligibleEmail(email: string): boolean;
 }

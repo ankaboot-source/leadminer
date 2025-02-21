@@ -6,14 +6,23 @@ import {
   EmailStatusVerifier,
   Status
 } from '../EmailStatusVerifier';
+import ENV from '../../../config';
+import { MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX } from '../../../utils/constants';
 
 export default class ZerobounceEmailStatusVerifier
   implements EmailStatusVerifier
 {
+  readonly emailsQuota = ENV.EMAILS_QUOTA_ZEROBOUNCE;
+
   constructor(
     private readonly client: ZerobounceClient,
     private readonly logger: Logger
   ) {}
+
+  // eslint-disable-next-line class-methods-use-this
+  isEligibleEmail(email: string): boolean {
+    return MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX.test(email);
+  }
 
   async verify(email: string): Promise<EmailStatusResult> {
     try {
