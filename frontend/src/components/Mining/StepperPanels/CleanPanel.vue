@@ -28,7 +28,7 @@
       @click="haltCleaning"
     />
   </div>
-  <component :is="NewsletterDialog" v-if="verificationFinished" type="dialog" />
+  <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
