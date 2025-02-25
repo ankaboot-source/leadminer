@@ -1,39 +1,36 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
-import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 export default class MailerCheckClient {
   private static readonly baseURL = 'https://app.mailercheck.com/api/';
 
   private readonly api: AxiosInstance;
 
-  private readonly rate_limit_handler;
-
   constructor(
-    { apiToken }: Config,
+    config: Config,
+    private readonly rateLimiter: IRateLimiter,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
       baseURL: MailerCheckClient.baseURL,
       headers: {
-        Authorization: `Bearer ${apiToken}`
+        Authorization: `Bearer ${config.apiToken}`
       }
     });
-
-    this.rate_limit_handler = throttledQueue(50, 60 * 1000, true);
   }
 
   async verifyEmail(email: string): Promise<MailerCheckResult> {
     try {
-      const { data } = await this.rate_limit_handler(() =>
+      const { data } = await this.rateLimiter.throttleRequests(() =>
         this.api.post<{ status: MailerCheckResult }>('check/single', {
           email
         })
       );
       return data.status;
     } catch (error) {
-      logError(error, '[MailerCheck:checkEmail]', this.logger);
+      logError(error, '[MailerCheck:verifyEmail]', this.logger);
       throw error;
     }
   }
@@ -44,7 +41,7 @@ export default class MailerCheckClient {
         data: {
           data: { id }
         }
-      } = await this.rate_limit_handler(() =>
+      } = await this.rateLimiter.throttleRequests(() =>
         this.api.post<{ data: ListResponse }>('lists', {
           emails,
           name
@@ -59,7 +56,7 @@ export default class MailerCheckClient {
 
   async startListVerification(listId: number): Promise<void> {
     try {
-      await this.rate_limit_handler(() =>
+      await this.rateLimiter.throttleRequests(() =>
         this.api.put(`lists/${listId}/verify`)
       );
     } catch (error) {
@@ -70,7 +67,7 @@ export default class MailerCheckClient {
 
   async getListStatus(listId: number): Promise<StatusName> {
     try {
-      const { data } = await this.rate_limit_handler(() =>
+      const { data } = await this.rateLimiter.throttleRequests(() =>
         this.api.get<ListResponse>(`lists/${listId}`)
       );
       return data.status.name;
@@ -93,7 +90,7 @@ export default class MailerCheckClient {
         limit,
         page
       };
-      const { data } = await this.rate_limit_handler(() =>
+      const { data } = await this.rateLimiter.throttleRequests(() =>
         this.api.get<ListVerificationResult>(`lists/${listId}/results`, {
           params
         })

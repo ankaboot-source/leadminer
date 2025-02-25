@@ -7,10 +7,14 @@ import {
 } from '../EmailStatusVerifier';
 import MailerCheckClient from './client';
 import mailerCheckResultToEmailStatusResultMapper from './mappers';
+import ENV from '../../../config';
+import { MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX } from '../../../utils/constants';
 
 export default class MailerCheckEmailStatusVerifier
   implements EmailStatusVerifier
 {
+  readonly emailsQuota = ENV.EMAILS_QUOTA_MAILERCHECK;
+
   private static readonly MAX_FAILED_POLL_ATTEMPTS = 5;
 
   private static readonly JOB_POLL_INTERVAL_MS = 1500;
@@ -19,6 +23,11 @@ export default class MailerCheckEmailStatusVerifier
     private readonly mailerCheckClient: MailerCheckClient,
     private readonly logger: Logger
   ) {}
+
+  // eslint-disable-next-line class-methods-use-this
+  isEligibleEmail(email: string): boolean {
+    return MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX.test(email);
+  }
 
   async verify(email: string): Promise<EmailStatusResult> {
     try {

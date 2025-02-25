@@ -21,10 +21,23 @@ import {
   reacherResultToEmailStatus,
   reacherResultToEmailStatusWithDetails
 } from '../../../../src/services/email-status/reacher/mappers';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
 jest.mock('../../../../src/services/email-status/reacher/client');
 
-const mockLogger = {
+jest.mock('../../../../src/config', () => ({
+  REACHER_API_KEY: 'sandbox',
+  LEADMINER_API_LOG_LEVEL: 'debug'
+}));
+
+const REACHER_THROTTLE_REQUESTS = 1;
+const REACHER_THROTTLE_INTERVAL = 100;
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  REACHER_THROTTLE_REQUESTS,
+  REACHER_THROTTLE_INTERVAL
+);
+
+const LOGGER = {
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
@@ -36,12 +49,15 @@ describe('ReacherEmailStatusVerifier', () => {
   let mockClient: jest.Mocked<ReacherClient>;
 
   beforeEach(() => {
-    mockClient = new ReacherClient(mockLogger, {
-      host: 'https://api.reacher.com',
-      rateLimiter: { requests: 1, interval: 1000, spaced: true }
-    }) as jest.Mocked<ReacherClient>;
+    mockClient = new ReacherClient(
+      {
+        host: 'https://api.reacher.com'
+      },
+      RATE_LIMITER,
+      LOGGER
+    ) as jest.Mocked<ReacherClient>;
 
-    verifier = new ReacherEmailStatusVerifier(mockClient, mockLogger);
+    verifier = new ReacherEmailStatusVerifier(mockClient, LOGGER);
     jest.useFakeTimers();
   });
 

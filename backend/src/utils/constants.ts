@@ -26,6 +26,8 @@ export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =
   /\s(\(?(via\s?.{1,20}?)|\((Google|Drive)\s?.{0,20}\))$/i;
 export const REGEX_REMOVE_QUOTES = /^(['"])(?<name>.*)\1$/;
 export const EXCLUDED_IMAP_FOLDERS = ['[Gmail]', '[Mailspring]'];
+export const MAILERCHECK_ZEROBOUNCE_DOMAIN_REGEX =
+  /(?=(@hotmail|@yahoo|@live|@outlook|@msn|@wanadoo\.fr|@free\.fr|@orange\.fr|@laposte\.net))/;
 
 // Tagging
 

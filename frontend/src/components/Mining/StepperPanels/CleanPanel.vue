@@ -28,10 +28,10 @@
       @click="haltCleaning"
     />
   </div>
+  <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
 import { FetchError } from 'ofetch';
-
 import ProgressCard from '@/components/ProgressCard.vue';
 
 const { t } = useI18n({

@@ -54,7 +54,10 @@ const schema = z.object({
   AZURE_SECRET: z.string().min(1),
 
   /* Email verification */
-  LOAD_BALANCE_VERIFIERS: boolean().default('false'),
+  EMAILS_QUOTA_REACHER: number(),
+  EMAILS_QUOTA_MAILERCHECK: number(),
+  EMAILS_QUOTA_ZEROBOUNCE: number(),
+
   LOAD_BALANCE_ENRICHERS: boolean().default('false'),
 
   /* REACHER */

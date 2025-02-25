@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { Logger } from 'winston';
-import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 interface BulkSubmitResponse {
   job_id: string;
@@ -68,12 +68,6 @@ interface BulkVerificationResultsResponse {
   results: EmailCheckOutput[];
 }
 
-interface RateLimiterOptions {
-  requests: number;
-  interval: number;
-  spaced: boolean;
-}
-
 interface ReacherConfig {
   host?: string;
   timeoutMs?: number;
@@ -86,7 +80,6 @@ interface ReacherConfig {
   gmailUseApi?: boolean;
   yahooUseApi?: boolean;
   hotmailUseHeadless?: string;
-  rateLimiter: RateLimiterOptions;
 }
 
 interface SMTPConfig {
@@ -110,8 +103,6 @@ export default class ReacherClient {
   static readonly BULK_VERIFICATION_PATH = '/v0/bulk';
 
   private readonly api: AxiosInstance;
-
-  private readonly rate_limit_handler;
 
   private readonly smtpConfig: {
     from_email?: string;
@@ -137,17 +128,13 @@ export default class ReacherClient {
   } = {};
 
   constructor(
-    private readonly logger: Logger,
-    config: ReacherConfig
+    config: ReacherConfig,
+    private readonly rateLimiter: IRateLimiter,
+    private readonly logger: Logger
   ) {
     this.api = axios.create({
       baseURL: config.host
     });
-    this.rate_limit_handler = throttledQueue(
-      config.rateLimiter.requests,
-      config.rateLimiter.interval,
-      config.rateLimiter.spaced
-    );
 
     if (config.timeoutMs) {
       this.api.defaults.timeout = config.timeoutMs;
@@ -206,7 +193,7 @@ export default class ReacherClient {
     validationOptions?: ValidationOptions
   ): Promise<EmailCheckOutput> {
     try {
-      const { data } = await this.rate_limit_handler(() =>
+      const { data } = await this.rateLimiter.throttleRequests(() =>
         this.api.post<EmailCheckOutput>(
           ReacherClient.SINGLE_VERIFICATION_PATH,
           {
