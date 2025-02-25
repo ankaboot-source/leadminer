@@ -31,6 +31,7 @@
   <component :is="AcceptNewsLetter" v-if="verificationFinished" type="dialog" />
 </template>
 <script setup lang="ts">
+import { AcceptNewsLetter } from '~/utils/extras';
 import { FetchError } from 'ofetch';
 import ProgressCard from '@/components/ProgressCard.vue';
 

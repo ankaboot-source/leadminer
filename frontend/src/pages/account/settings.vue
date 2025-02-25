@@ -155,6 +155,7 @@
 </template>
 
 <script setup lang="ts">
+import { AcceptNewsLetter } from '~/utils/extras';
 import type { UserAttributes } from '@supabase/supabase-js';
 
 import { isInvalidEmail } from '@/utils/email';
