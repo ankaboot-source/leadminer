@@ -130,3 +130,5 @@ export interface SupabaseTask {
   stopped_at?: string;
   duration?: number;
 }
+
+export interface Organization {}

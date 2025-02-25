@@ -3,7 +3,7 @@ import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
-import EmailMessage from '../../services/extractors/EmailMessage';
+import EmailMessage, { ExtractedContacts } from '../../services/extractors/engines/EmailMessage';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
@@ -11,6 +11,7 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import StreamProducer from '../../utils/streams/StreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
+import { ContactExtractorFactory } from '../../services/extractors/Extractor';
 
 const redisClientForNormalMode = redis.getClient();
 
@@ -51,21 +52,28 @@ async function emailMessageHandler(
   queuedEmailsCache: QueuedEmailsCache,
   catchAllDomainsCache: CatchAllDomainsCache
 ) {
-  const message = new EmailMessage(
-    EmailTaggingEngine,
-    redisClientForNormalMode,
-    emailStatusCache,
-    catchAllDomainsCache,
-    checkDomainStatus,
-    userEmail,
+
+  const extractor = ContactExtractorFactory.createExtractor(
+    'email',
     userId,
-    header,
-    body,
-    folderName
+    userEmail,
+    {
+      body,
+      header,
+      folderPath: folderName,
+    },
+    {
+      emailStatusCache,
+      catchAllDomainsCache,
+      redisClientForNormalMode,
+      taggingEngine: EmailTaggingEngine,
+      domainStatusVerification: checkDomainStatus,
+    }
   );
 
   try {
-    const extractedContacts = await message.getContacts();
+  
+    const extractedContacts = await extractor.getContacts() as ExtractedContacts;
 
     let emails: string[] = [];
     try {
