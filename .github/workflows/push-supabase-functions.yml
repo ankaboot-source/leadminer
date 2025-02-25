@@ -20,7 +20,7 @@ jobs:
         with:
           source_file: 'supabase/functions'
           destination_repo: 'ankaboot-source/leadminer.io'
-          destination_folder: './saas-supabase/supabase'
+          destination_folder: './supabase'
           user_email: 'deploy@leadminer.io'
           user_name: 'deploy-bot'
           commit_message: 'Updating supabase functions'
