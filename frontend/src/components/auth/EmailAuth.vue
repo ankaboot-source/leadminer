@@ -78,26 +78,26 @@
             <p class="mt-2">{{ $t('auth.suggestions') }}</p>
             <ul class="pl-2 ml-2 mt-0" style="line-height: 1.5">
               <li>
-                <i v-if="passwordHasLowerCase" class="pi pi-check-square"></i>
-                <i v-else class="pi pi-stop"></i>
+                <i v-if="passwordHasLowerCase" class="pi pi-check-square" />
+                <i v-else class="pi pi-stop" />
                 {{ $t('auth.suggestion_lowercase') }}
               </li>
               <li>
-                <i v-if="passwordHasUpperCase" class="pi pi-check-square"></i>
-                <i v-else class="pi pi-stop"></i>
+                <i v-if="passwordHasUpperCase" class="pi pi-check-square" />
+                <i v-else class="pi pi-stop" />
                 {{ $t('auth.suggestion_uppercase') }}
               </li>
               <li>
-                <i v-if="passwordHasNumber" class="pi pi-check-square"></i>
-                <i v-else class="pi pi-stop"></i>
+                <i v-if="passwordHasNumber" class="pi pi-check-square" />
+                <i v-else class="pi pi-stop" />
                 {{ $t('auth.suggestion_numeric') }}
               </li>
               <li>
                 <i
                   v-if="passwordHasSpecialCharacter"
                   class="pi pi-check-square"
-                ></i>
-                <i v-else class="pi pi-stop"></i>
+                />
+                <i v-else class="pi pi-stop" />
                 {{
                   $t('auth.suggestion_special_character', {
                     characters: SPECIAL_CHARACTERS,
@@ -105,8 +105,8 @@
                 }}
               </li>
               <li>
-                <i v-if="passwordHasMinLength" class="pi pi-check-square"></i>
-                <i v-else class="pi pi-stop"></i>
+                <i v-if="passwordHasMinLength" class="pi pi-check-square" />
+                <i v-else class="pi pi-stop" />
                 {{ $t('auth.suggestion_min_chars', PASSWORD_MIN_LENGTH) }}
               </li>
             </ul>
