@@ -284,9 +284,7 @@ const passwordHasUpperCase = computed(() => hasUpperCase(password.value));
 const passwordHasSpecialCharacter = computed(() =>
   hasSpecialChar(password.value),
 );
-const passwordHasMinLength = computed(
-  () => password.value.length >= PASSWORD_MIN_LENGTH,
-);
+const passwordHasMinLength = computed(() => hasMinLength(password.value));
 
 const isLoading = ref(false);
 

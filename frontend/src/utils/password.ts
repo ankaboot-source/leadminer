@@ -25,5 +25,8 @@ export const hasNumber = (password: string) =>
 export const hasSpecialChar = (password: string) =>
   Boolean(password) && SPECIAL_CHAR_PATTERN.test(password);
 
+export const hasMinLength = (password: string) =>
+  Boolean(password) && password.length >= PASSWORD_MIN_LENGTH;
+
 export const isInvalidPassword = (password: string) =>
   !STRONG_PASSWORD_REGEX.test(password);

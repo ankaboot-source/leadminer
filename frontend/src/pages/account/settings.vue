@@ -60,7 +60,10 @@
                     {{ $t('auth.suggestion_numeric') }}
                   </li>
                   <li>
-                    <i v-if="passwordHasSpecial" class="pi pi-check-square" />
+                    <i
+                      v-if="passwordHasSpecialCharacter"
+                      class="pi pi-check-square"
+                    />
                     <i v-else class="pi pi-stop" />
                     {{
                       $t('auth.suggestion_special_character', {
@@ -191,10 +194,10 @@ const disableUpdateButton = computed(
 const passwordHasLowerCase = computed(() => hasLowerCase(passwordInput.value));
 const passwordHasUpperCase = computed(() => hasUpperCase(passwordInput.value));
 const passwordHasNumber = computed(() => hasNumber(passwordInput.value));
-const passwordHasSpecial = computed(() => hasSpecialChar(passwordInput.value));
-const passwordHasMinLength = computed(
-  () => passwordInput.value.length >= PASSWORD_MIN_LENGTH,
+const passwordHasSpecialCharacter = computed(() =>
+  hasSpecialChar(passwordInput.value),
 );
+const passwordHasMinLength = computed(() => hasMinLength(passwordInput.value));
 
 function showWarning() {
   showDeleteModal.value = true;
