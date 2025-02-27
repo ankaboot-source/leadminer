@@ -69,7 +69,7 @@
               type="button"
               :label="$t('common.start_mining')"
               @click="
-                navigateTo(minePath);
+                navigateToMine();
                 closeCallback();
               "
             />
@@ -121,7 +121,7 @@ function navigateToMine() {
     $leadminerStore.miningStartedAndFinished ||
     $router.currentRoute.value.path === minePath
   ) {
-    $stepper.$reset();
+    $stepper.go(1);
     $leadminerStore.$resetMining();
     $sourcePanelStore.hideOtherSources();
   }
