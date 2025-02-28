@@ -1,6 +1,6 @@
 import ENV from '../config';
 import { OAuthMiningSourceProvider } from '../db/interfaces/MiningSources';
-import { Contact } from '../db/types';
+import { ContactFormat } from '../services/extractors/engines/FileImport';
 import azureOAuth2Client from '../services/OAuth2/azure';
 import googleOAuth2Client from '../services/OAuth2/google';
 
@@ -115,7 +115,9 @@ function isValidURL(url: string) {
  * Validates the contacts data with throwing an error if the data is invalid.
  * @param contacts The contacts data extracted from a file.
  */
-export function validateFileContactsData(contacts: Partial<Contact[]>): void {
+export function validateFileContactsData(
+  contacts: Partial<ContactFormat[]>
+): void {
   if (!contacts.length) {
     throw new Error('No contacts found in the in the contacts data');
   }
@@ -128,16 +130,18 @@ export function validateFileContactsData(contacts: Partial<Contact[]>): void {
       throw new Error('Invalid email found in the contacts data');
     }
 
-    const URL_OPTIONS = ['image', 'same_as'] as const;
-    URL_OPTIONS.forEach((url_option) => {
-      const urlValue = contact[url_option];
-      if (urlValue?.length) {
-        if (typeof urlValue === 'string') {
-          if (!isValidURL(urlValue)) {
+    const URL_LIST = [
+      contact.image?.split('@'),
+      contact.same_as?.split('@')
+    ].filter((list) => list?.filter(Boolean)?.length);
+    URL_LIST.forEach((list) => {
+      if (list?.length) {
+        if (typeof list === 'string') {
+          if (!isValidURL(list)) {
             throw new Error('Invalid URL found in the contacts data');
           }
-        } else if (Array.isArray(urlValue)) {
-          if (!urlValue.every((url) => isValidURL(url))) {
+        } else if (Array.isArray(list)) {
+          if (!list.every((url) => isValidURL(url))) {
             throw new Error('Invalid URL found in the contacts data');
           }
         }

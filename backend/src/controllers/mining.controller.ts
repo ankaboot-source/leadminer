@@ -6,7 +6,6 @@ import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
-import { Contact } from '../db/types';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
 import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
@@ -25,6 +24,7 @@ import {
   getTokenWithScopeValidation,
   validateFileContactsData
 } from './mining.helpers';
+import { ContactFormat } from '../services/extractors/engines/FileImport';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -286,7 +286,7 @@ export default function initializeMiningController(
         contacts
       }: {
         name: string;
-        contacts: Partial<Contact[]>;
+        contacts: Partial<ContactFormat[]>;
       } = req.body;
 
       try {
@@ -320,6 +320,7 @@ export default function initializeMiningController(
 
         return res.status(201).send({ error: null, data: fileMiningTask });
       } catch (err) {
+        console.log(err);
         res.status(500);
         return next(err);
       }
