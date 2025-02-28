@@ -154,7 +154,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
     }
   }
 
-  async function startProgressListener(
+  function startProgressListener(
     type: MiningType,
     miningId: string,
     token: string,

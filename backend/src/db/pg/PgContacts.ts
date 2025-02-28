@@ -210,10 +210,10 @@ export default class PgContacts implements Contacts {
   }
 
   async create(result: ExtractionResult, userId: string) {
-    if (result.type === 'email') {
-      return this.createContactsFromEmail(result, userId);
-    }
-    return this.createContactsFromFile(result, userId);
+    const results = await (result.type === 'email'
+      ? this.createContactsFromEmail(result, userId)
+      : this.createContactsFromFile(result, userId));
+    return results;
   }
 
   private async createContactsFromFile(
