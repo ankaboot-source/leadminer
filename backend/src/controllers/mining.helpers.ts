@@ -109,8 +109,9 @@ function isValidURL(url: string) {
     return false;
   }
 }
+
 /**
- * Validates the contacts data extracted from a file by throwing an error if the data is invalid.
+ * Validates the contacts data with throwing an error if the data is invalid.
  * @param contacts The contacts data extracted from a file.
  */
 export function validateFileContactsData(contacts: Partial<Contact[]>): void {
