@@ -367,6 +367,10 @@ async function haltMining() {
     "is_mining": "Contact extraction in progress..."
   },
   "fr": {
+    "contacts_to_mine": "contact à extraire. | contacts à extraire.",
+    "contacts_mined": "contact extrait. | contacts extraits.",
+    "mined_total_contacts": "Extraits / Total contacts\n{extractedEmails} / {totalEmails}",
+    "notification_contacts_extracted": "{extractedEmails} contacts extraits de votre fichier",
     "retrieving_mailboxes": "Récupération des boîtes aux lettres...",
     "emails_to_mine": "email à extraire. | emails à extraire",
     "emails_mined": "email extrait. | emails extraits",
