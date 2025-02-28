@@ -110,19 +110,20 @@ function isValidURL(url: string) {
   }
 }
 /**
- * Validates the contacts data extracted from a file.
+ * Validates the contacts data extracted from a file by throwing an error if the data is invalid.
  * @param contacts The contacts data extracted from a file.
- * @returns {boolean} Returns true if the contacts data is valid.
  */
-export function validateFileContactsData(
-  contacts: Partial<Contact[]>
-): boolean {
+export function validateFileContactsData(contacts: Partial<Contact[]>): void {
   if (!contacts.length) {
-    return false;
+    throw new Error('No contacts found in the in the contacts data');
   }
   contacts.forEach((contact) => {
-    if (!contact || isInvalidEmail(contact.email)) {
-      return false;
+    if (!contact) {
+      throw new Error('Empty contact found in the contacts data');
+    }
+
+    if (isInvalidEmail(contact.email)) {
+      throw new Error('Invalid email found in the contacts data');
     }
 
     const URL_OPTIONS = ['image', 'same_as'] as const;
@@ -131,16 +132,14 @@ export function validateFileContactsData(
       if (urlValue?.length) {
         if (typeof urlValue === 'string') {
           if (!isValidURL(urlValue)) {
-            return false;
+            throw new Error('Invalid URL found in the contacts data');
           }
         } else if (Array.isArray(urlValue)) {
           if (!urlValue.every((url) => isValidURL(url))) {
-            return false;
+            throw new Error('Invalid URL found in the contacts data');
           }
         }
       }
     });
   });
-
-  return true;
 }

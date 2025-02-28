@@ -290,8 +290,14 @@ export default function initializeMiningController(
       } = req.body;
 
       try {
-        if (!validateFileContactsData(contacts)) {
-          return res.status(400).json({ message: 'Invalid contacts data' });
+        try {
+          validateFileContactsData(contacts);
+        } catch (error) {
+          let message = 'Invalid contacts data';
+          if (error instanceof Error) {
+            message = error.message;
+          }
+          return res.status(400).json({ message });
         }
 
         const fileMiningTask = await tasksManagerFile.createTask(user.id, 1);
