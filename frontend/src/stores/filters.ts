@@ -224,8 +224,8 @@ export const useFiltersStore = defineStore('filters', () => {
   };
   const defaultToggles = {
     valid: true,
-    recent: true,
-    fullname: true,
+    recent: false,
+    fullname: false,
     replies: false,
   };
   function toggleFilters(toggles: togglesType | boolean = defaultToggles) {
