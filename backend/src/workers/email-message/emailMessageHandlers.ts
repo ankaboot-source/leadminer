@@ -11,7 +11,7 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import StreamProducer from '../../utils/streams/StreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
-import { ContactExtractorFactory } from '../../services/extractors/Extractor';
+import { createExtractor } from '../../services/extractors/Extractor';
 import { FileFormat } from '../../services/extractors/engines/FileImport';
 
 const redisClientForNormalMode = redis.getClient();
@@ -45,19 +45,13 @@ async function emailMessageHandler(
   const { userId, userIdentifier, userEmail, miningId } = data;
 
   try {
-    const extractor = ContactExtractorFactory.createExtractor(
-      'file',
-      userId,
-      userEmail,
-      data.data,
-      {
-        emailStatusCache,
-        catchAllDomainsCache,
-        redisClientForNormalMode,
-        taggingEngine: EmailTaggingEngine,
-        domainStatusVerification: checkDomainStatus
-      }
-    );
+    const extractor = createExtractor('file', userId, userEmail, data.data, {
+      emailStatusCache,
+      catchAllDomainsCache,
+      redisClientForNormalMode,
+      taggingEngine: EmailTaggingEngine,
+      domainStatusVerification: checkDomainStatus
+    });
 
     const extractedContacts = await extractor.getContacts();
 

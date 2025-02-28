@@ -18,76 +18,69 @@ export interface ExtractorEnablers {
   domainStatusVerification: DomainStatusVerificationFunction;
 }
 
-export class ContactExtractorFactory {
-  public static createExtractor(
-    type: ContactExtractorType,
-    userId: string,
-    userEmail: string,
-    data: EmailFormat | FileFormat,
-    enablers: ExtractorEnablers
-  ) {
-    if (['file'].includes(type)) {
-      return this.createCsvXlsxExtractor(enablers, data as FileFormat);
-    }
-    if (type === 'email') {
-      return this.createEmailExtractor(
-        userId,
-        userEmail,
-        data as EmailFormat,
-        enablers
-      );
-    }
+/**
+ * Type guard to check if the data is valid for the email extractor.
+ */
+function isEmailFormat(data: EmailFormat | FileFormat[]): data is EmailFormat {
+  return (
+    typeof data === 'object' &&
+    'folderPath' in data &&
+    ('header' in data || 'body' in data)
+  );
+}
 
-    throw new Error(`Unsupported extractor type: ${type}`);
-  }
+function createCsvXlsxExtractor(enablers: ExtractorEnablers, data: FileFormat) {
+  return new CsvXlsxContactEngine(
+    enablers.taggingEngine,
+    enablers.redisClientForNormalMode,
+    enablers.domainStatusVerification,
+    data
+  );
+}
 
-  private static createCsvXlsxExtractor(
-    enablers: ExtractorEnablers,
-    data: FileFormat
-  ) {
-    return new CsvXlsxContactEngine(
-      enablers.taggingEngine,
-      enablers.redisClientForNormalMode,
-      enablers.domainStatusVerification,
-      data
+function createEmailExtractor(
+  userId: string,
+  userEmail: string,
+  data: EmailFormat,
+  enablers: ExtractorEnablers
+) {
+  if (!isEmailFormat(data)) {
+    throw new Error(
+      'Email-specific parameters are required for the email extractor.'
     );
   }
+  return new EmailMessage(
+    enablers.taggingEngine,
+    enablers.redisClientForNormalMode,
+    enablers.emailStatusCache,
+    enablers.catchAllDomainsCache,
+    enablers.domainStatusVerification,
+    userEmail,
+    userId,
+    data.header,
+    data.body,
+    data.folderPath
+  );
+}
 
-  private static createEmailExtractor(
-    userId: string,
-    userEmail: string,
-    data: EmailFormat,
-    enablers: ExtractorEnablers
-  ) {
-    if (!this.isEmailFormat(data)) {
-      throw new Error(
-        'Email-specific parameters are required for the email extractor.'
-      );
-    }
-    return new EmailMessage(
-      enablers.taggingEngine,
-      enablers.redisClientForNormalMode,
-      enablers.emailStatusCache,
-      enablers.catchAllDomainsCache,
-      enablers.domainStatusVerification,
-      userEmail,
+export function createExtractor(
+  type: ContactExtractorType,
+  userId: string,
+  userEmail: string,
+  data: EmailFormat | FileFormat,
+  enablers: ExtractorEnablers
+) {
+  if (['file'].includes(type)) {
+    return createCsvXlsxExtractor(enablers, data as FileFormat);
+  }
+  if (type === 'email') {
+    return createEmailExtractor(
       userId,
-      data.header,
-      data.body,
-      data.folderPath
+      userEmail,
+      data as EmailFormat,
+      enablers
     );
   }
 
-  /**
-   * Type guard to check if the data is valid for the email extractor.
-   */
-  private static isEmailFormat(
-    data: EmailFormat | FileFormat[]
-  ): data is EmailFormat {
-    return (
-      typeof data === 'object' &&
-      'folderPath' in data &&
-      ('header' in data || 'body' in data)
-    );
-  }
+  throw new Error(`Unsupported extractor type: ${type}`);
 }
