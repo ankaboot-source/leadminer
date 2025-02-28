@@ -127,14 +127,15 @@ export function validateFileContactsData(
     const URL_OPTIONS = ['image', 'same_as'] as const;
     URL_OPTIONS.forEach((url_option) => {
       const urlValue = contact[url_option];
-      if (!urlValue?.length) return;
-      if (typeof urlValue === 'string') {
-        if (!isValidURL(urlValue)) {
-          return false;
-        }
-      } else if (Array.isArray(urlValue)) {
-        if (!urlValue.every((url) => isValidURL(url))) {
-          return false;
+      if (urlValue?.length) {
+        if (typeof urlValue === 'string') {
+          if (!isValidURL(urlValue)) {
+            return false;
+          }
+        } else if (Array.isArray(urlValue)) {
+          if (!urlValue.every((url) => isValidURL(url))) {
+            return false;
+          }
         }
       }
     });
