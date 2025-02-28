@@ -392,7 +392,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
   }
 }
 
-function startMining() {
+async function startMining() {
   const parsedDataWithMappedHeaders: Row[] = parsedData.value.map(
     (row: Row) => {
       const updatedRow: Row = {};
@@ -411,8 +411,9 @@ function startMining() {
     name: fileName.value ?? '',
     contacts: parsedDataWithMappedHeaders,
   };
+
+  await $leadminerStore.startMining(SOURCE);
   $stepper.next();
-  $leadminerStore.startMining(SOURCE);
   visible.value = false;
 }
 </script>
