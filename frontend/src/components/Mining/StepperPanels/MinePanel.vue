@@ -14,12 +14,8 @@
         {{ t('retrieving_mailboxes') }}
       </div>
       <div v-else-if="!$leadminerStore.activeMiningTask">
-        {{ totalEmails.toLocaleString() }}
-        {{
-          extractionProgress < 1
-            ? t('emails_to_mine', totalEmails)
-            : t('emails_mined', totalEmails)
-        }}
+        {{ totalMined.toLocaleString() }}
+        {{ extractionProgress < 1 ? totalToMineMessage : totalMinedMessage }}
       </div>
       <div v-else>
         <i class="pi pi-spin pi-spinner mr-1.5" />
@@ -143,6 +139,20 @@ const totalEmails = computed<number>(() => {
   return 0;
 });
 
+const totalMined = computed(() =>
+  sourceType.value === 'boxes' ? totalEmails : $leadminerStore.createdContacts,
+);
+const totalToMineMessage = computed(() =>
+  $leadminerStore.miningType === 'email'
+    ? t('emails_to_mine', totalEmails.value)
+    : t('contacts_to_mine', totalEmails.value),
+);
+const totalMinedMessage = computed(() =>
+  $leadminerStore.miningType === 'email'
+    ? t('emails_mined', totalEmails.value)
+    : t('contacts_mined', $leadminerStore.createdContacts.toLocaleString()),
+);
+
 const extractionFinished = computed(() => $leadminerStore.extractionFinished);
 const extractedEmails = computed(() => $leadminerStore.extractedEmails);
 
@@ -153,10 +163,15 @@ const extractionProgress = computed(() =>
 );
 
 const progressTooltip = computed(() =>
-  t('mined_total_emails', {
-    extractedEmails: extractedEmails.value.toLocaleString(),
-    totalEmails: totalEmails.value.toLocaleString(),
-  }),
+  $leadminerStore.miningType === 'email'
+    ? t('mined_total_emails', {
+        extractedEmails: extractedEmails.value.toLocaleString(),
+        totalEmails: totalEmails.value.toLocaleString(),
+      })
+    : t('mined_total_contacts', {
+        extractedEmails: $leadminerStore.createdContacts.toLocaleString(),
+        totalEmails: totalEmails.value.toLocaleString(),
+      }),
 );
 
 onMounted(async () => {
@@ -197,6 +212,16 @@ async function refineReloadContacts() {
   $contactsStore.subscribeToRealtimeUpdates();
 }
 
+const totalExtractedNotificationMessage = computed(() =>
+  sourceType.value === 'boxes'
+    ? t('contacts_extracted', {
+        extractedEmails: extractedEmails.value,
+      })
+    : t('notification_contacts_extracted', {
+        extractedEmails: $leadminerStore.createdContacts,
+      }),
+);
+
 watch(extractionFinished, async (finished) => {
   if (canceled.value) {
     $toast.add({
@@ -211,9 +236,7 @@ watch(extractionFinished, async (finished) => {
     $toast.add({
       severity: 'success',
       summary: t('mining_done'),
-      detail: t('contacts_extracted', {
-        extractedEmails: extractedEmails.value,
-      }),
+      detail: totalExtractedNotificationMessage,
       group: 'achievement',
       life: 5000,
     });
@@ -319,6 +342,11 @@ async function haltMining() {
 <i18n lang="json">
 {
   "en": {
+    "contacts_to_mine": "contact to mine. | contacts to mine.",
+    "contacts_mined": "contact mined. | contacts mined.",
+    "mined_total_contacts": "Mined / Total contact\n{extractedEmails} / {totalEmails}",
+    "notification_contacts_extracted": "{extractedEmails} contacts extracted from your file",
+
     "retrieving_mailboxes": "Retrieving mailboxes...",
     "emails_to_mine": "email to mine. | emails to mine.",
     "emails_mined": "email mined. | emails mined.",

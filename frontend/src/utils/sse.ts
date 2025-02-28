@@ -13,6 +13,7 @@ class SSE {
   }
 
   initConnection(
+    miningType: 'file' | 'email',
     miningId: string,
     token: string,
     {
@@ -40,7 +41,7 @@ class SSE {
     return fetchEventSource(
       `${
         useRuntimeConfig().public.SERVER_ENDPOINT
-      }/api/imap/mine/${miningId}/progress/`,
+      }/api/imap/mine/${miningType}/${miningId}/progress/`,
       {
         headers: {
           'x-sb-jwt': token,
