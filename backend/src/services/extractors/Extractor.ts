@@ -8,7 +8,7 @@ import EmailMessage, {
 } from './engines/EmailMessage';
 import { CsvXlsxContactEngine, FileFormat } from './engines/FileImport';
 
-export type ContactExtractorType = 'csv' | 'xlsx' | 'email';
+export type ContactExtractorType = 'file' | 'email';
 
 export interface ExtractorEnablers {
   taggingEngine: TaggingEngine;
@@ -23,16 +23,13 @@ export class ContactExtractorFactory {
     type: ContactExtractorType,
     userId: string,
     userEmail: string,
-    data: EmailFormat | FileFormat[],
+    data: EmailFormat | FileFormat,
     enablers: ExtractorEnablers
   ) {
-    if (['csv', 'xlsx'].includes(type)) {
-      return this.createCsvXlsxExtractor(
-        userId,
-        userEmail,
-        data as FileFormat[]
-      );
-    } else if (type === 'email') {
+    if (['file'].includes(type)) {
+      return this.createCsvXlsxExtractor(enablers, data as FileFormat);
+    }
+    if (type === 'email') {
       return this.createEmailExtractor(
         userId,
         userEmail,
@@ -45,14 +42,15 @@ export class ContactExtractorFactory {
   }
 
   private static createCsvXlsxExtractor(
-    userId: string,
-    userEmail: string,
-    data: FileFormat[]
+    enablers: ExtractorEnablers,
+    data: FileFormat
   ) {
-    if (!Array.isArray(data)) {
-      throw new Error('FileFormat[] data is required for CSV/XLSX extractor.');
-    }
-    return new CsvXlsxContactEngine(userId, userEmail, data);
+    return new CsvXlsxContactEngine(
+      enablers.taggingEngine,
+      enablers.redisClientForNormalMode,
+      enablers.domainStatusVerification,
+      data
+    );
   }
 
   private static createEmailExtractor(

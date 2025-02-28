@@ -2,10 +2,26 @@ import { Details, Status } from '../services/email-status/EmailStatusVerifier';
 
 import { REACHABILITY } from '../utils/constants';
 
-export interface ExtractionResult {
+export interface EmailExtractionResult {
+  type: 'email';
   message: Message;
-  persons: PersonWithPocAndTag[];
+  persons: Array<{
+    person: Person;
+    pointOfContact: PointOfContact;
+    tags: Tag[];
+  }>;
 }
+
+export interface FileExtractionResult {
+  type: 'file';
+  organizations: { name: string }[];
+  persons: Array<{
+    person: Person;
+    tags: Tag[];
+  }>;
+}
+
+export type ExtractionResult = EmailExtractionResult | FileExtractionResult;
 
 export interface Message {
   channel: string;
@@ -47,6 +63,7 @@ export interface Person {
   identifiers?: string[];
   alternateName?: string[];
   alternateEmail?: string[];
+  worksFor?: string;
   source: string;
 }
 

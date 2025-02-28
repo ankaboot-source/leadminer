@@ -1,23 +1,34 @@
 import assert from 'assert';
-import { Person } from '../../../db/types';
+import Redis from 'ioredis';
+import { Person, Tag } from '../../../db/types';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../../enrichment/utils';
+import { TaggingEngine } from '../../tagging/types';
+import { DomainStatusVerificationFunction } from './EmailMessage';
 
-export interface FileFormat {
+interface ContactFormat {
   email: string;
   name: string | null;
   given_name: string | null;
   family_name: string | null;
-  alternate_name: string[] | null;
-  location: string[] | null;
+  alternate_name: string | null;
+  location: string | null;
   works_for: string | null;
   job_title: string | null;
-  same_as: string[] | null;
+  same_as: string | null;
   image: string | null;
+}
+export interface FileFormat {
+  fileName: string;
+  contacts: ContactFormat[];
 }
 
 export interface ExtractedContacts {
-  organizations: { name: string | undefined }[];
-  persons: Person[];
+  type: 'file';
+  organizations: { name: string }[];
+  persons: {
+    person: Person;
+    tags: Tag[];
+  }[];
 }
 
 /**
@@ -25,15 +36,16 @@ export interface ExtractedContacts {
  */
 export class CsvXlsxContactEngine {
   constructor(
-    private readonly userId: string,
-    private readonly userEmail: string,
-    private readonly contacts: unknown[]
+    private readonly taggingEngine: TaggingEngine,
+    private readonly redisClientForNormalMode: Redis,
+    private readonly domainStatusVerification: DomainStatusVerificationFunction,
+    private readonly contacts: FileFormat
   ) {}
 
   /**
    * Extracts organization details from the contact data.
    */
-  private extractOrganization(contact: FileFormat): {
+  private static extractOrganization(contact: ContactFormat): {
     name: string | undefined;
   } {
     return {
@@ -44,56 +56,87 @@ export class CsvXlsxContactEngine {
   /**
    * Extracts person details from the contact data.
    */
-  private extractPerson(contact: FileFormat): Person {
+  private extractPerson(contact: ContactFormat): Person {
     const {
       email,
       name,
-      given_name,
-      family_name,
-      alternate_name,
+      given_name: givenName,
+      family_name: familyName,
+      alternate_name: alternateName,
       location,
-      job_title,
-      same_as,
+      job_title: jobTitle,
+      same_as: sameAs,
+      works_for: worksFor,
       image
     } = contact;
 
     assert(Boolean(email), '<email> is required');
 
     return {
-      email: email,
-      source: this.userEmail,
+      email,
+      source: this.contacts.fileName,
       name: undefinedIfFalsy(name ?? ''),
-      givenName: undefinedIfFalsy(given_name ?? ''),
-      familyName: undefinedIfFalsy(family_name ?? ''),
-      jobTitle: undefinedIfFalsy(job_title ?? ''),
+      givenName: undefinedIfFalsy(givenName ?? ''),
+      familyName: undefinedIfFalsy(familyName ?? ''),
+      jobTitle: undefinedIfFalsy(jobTitle ?? ''),
       image: undefinedIfFalsy(image ?? ''),
-      location: undefinedIfEmpty(location ?? []),
-      sameAs: undefinedIfEmpty(same_as ?? []),
-      alternateName: undefinedIfEmpty(alternate_name ?? [])
+      location: undefinedIfEmpty(location?.split(',') ?? []),
+      sameAs: undefinedIfEmpty(sameAs?.split(',') ?? []),
+      worksFor: undefinedIfFalsy(worksFor ?? ''),
+      alternateName: undefinedIfEmpty(alternateName?.split(',') ?? [])
     };
   }
 
   /**
    * Extracts contacts from the FileFormat data.
    */
-  getContacts() {
+  async getContacts(): Promise<ExtractedContacts> {
     const organizations = [
       ...new Set(
-        this.contacts
+        this.contacts.contacts
           .map(
-            (details) => this.extractOrganization(details as FileFormat).name
+            (details) => CsvXlsxContactEngine.extractOrganization(details).name
           )
-          .filter(Boolean)
+          .filter((name): name is string => Boolean(name))
       )
     ].map((name) => ({ name }));
 
-    const persons = this.contacts.map((details) =>
-      this.extractPerson(details as FileFormat)
+    const persons: {
+      person: Person;
+      tags: Tag[];
+    }[] = [];
+
+    await Promise.allSettled(
+      this.contacts.contacts.map(async (details) => {
+        const person = this.extractPerson(details);
+
+        const { email } = person;
+        const [identifier, domain] = email.split('@');
+
+        const [domainIsValid, domainType] = await this.domainStatusVerification(
+          this.redisClientForNormalMode,
+          domain.toLowerCase()
+        );
+
+        if (domainIsValid) {
+          persons.push({
+            person,
+            tags: this.taggingEngine.getTags({
+              email: {
+                address: email,
+                name: identifier,
+                domainType
+              }
+            })
+          });
+        }
+      })
     );
 
-    return Promise.resolve({
+    return {
+      type: 'file',
       persons,
       organizations
-    });
+    };
   }
 }

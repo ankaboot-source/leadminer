@@ -56,14 +56,6 @@ interface ContactTag {
   source: string;
 }
 
-export interface RegexContact {
-  domain: string;
-  address: string;
-  plusAddress?: string;
-  identifier: string;
-  name?: string;
-}
-
 export type DomainStatusVerificationFunction = (
   redisClient: Redis,
   domain: string
@@ -72,6 +64,7 @@ export type DomainStatusVerificationFunction = (
 >;
 
 export interface ExtractedContacts {
+  type: 'email';
   message: Message;
   persons: {
     person: Person;
@@ -387,7 +380,8 @@ export default class EmailMessage {
    * @returns
    */
   async getContacts(): Promise<ExtractedContacts> {
-    const contacts: ExtractedContacts = {
+    const contacts = {
+      type: 'email' as ExtractedContacts['type'],
       message: this.getMessageDetails(),
       persons: await this.extractContacts()
     };
