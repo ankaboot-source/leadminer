@@ -103,6 +103,7 @@ const isInvalidEmail = (email?: string) =>
 function isValidURL(url: string) {
   try {
     // skipcq: JS-R1002 - instantiating unused object as the url validity checker
+    // eslint-disable-next-line no-new
     new URL(url);
     return true;
   } catch {
