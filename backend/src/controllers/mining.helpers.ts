@@ -110,7 +110,7 @@ function isValidURL(url: string) {
 }
 /**
  * Starts the mining process.
- * @throws {Error} Throws an error if there is something invalid.
+ * @throws {Error} Throws an error if there is an invalid data.
  */
 export function validateFileContactsData(
   contacts: Partial<Contact[]>
