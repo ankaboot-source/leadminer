@@ -109,18 +109,19 @@ function isValidURL(url: string) {
   }
 }
 /**
- * Starts the mining process.
- * @throws {Error} Throws an error if there is an invalid data.
+ * Validates the contacts data extracted from a file.
+ * @param contacts The contacts data extracted from a file.
+ * @returns {boolean} Returns true if the contacts data is valid.
  */
 export function validateFileContactsData(
   contacts: Partial<Contact[]>
 ): boolean {
   if (!contacts.length) {
-    throw new Error('Invalid data');
+    return false;
   }
   contacts.forEach((contact) => {
     if (!contact || isInvalidEmail(contact.email)) {
-      throw new Error('Invalid data');
+      return false;
     }
 
     const URL_OPTIONS = ['image', 'same_as'] as const;
@@ -129,11 +130,11 @@ export function validateFileContactsData(
       if (!urlValue?.length) return;
       if (typeof urlValue === 'string') {
         if (!isValidURL(urlValue)) {
-          throw new Error('Invalid data');
+          return false;
         }
       } else if (Array.isArray(urlValue)) {
         if (!urlValue.every((url) => isValidURL(url))) {
-          throw new Error('Invalid data');
+          return false;
         }
       }
     });
