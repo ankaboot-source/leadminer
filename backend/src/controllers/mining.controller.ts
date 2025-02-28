@@ -6,11 +6,14 @@ import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
+import { Contact } from '../db/types';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
+import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import { validateType } from '../utils/helpers/validation';
+import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
@@ -19,10 +22,9 @@ import {
 import {
   getAuthClient,
   getTokenConfig,
-  getTokenWithScopeValidation
+  getTokenWithScopeValidation,
+  validateFileContactsData
 } from './mining.helpers';
-import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
-import redis from '../utils/redis';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
@@ -284,10 +286,12 @@ export default function initializeMiningController(
         contacts
       }: {
         name: string;
-        contacts: Record<string, string>[];
+        contacts: Partial<Contact[]>;
       } = req.body;
 
       try {
+        validateFileContactsData(contacts);
+
         const fileMiningTask = await tasksManagerFile.createTask(user.id, 1);
 
         // Publish contacts to extracting redis stream
