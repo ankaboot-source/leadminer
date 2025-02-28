@@ -6,11 +6,14 @@ import {
   MiningSources,
   OAuthMiningSourceProvider
 } from '../db/interfaces/MiningSources';
+import { Contact } from '../db/types';
 import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapEmailsFetcherOptions } from '../services/imap/types';
+import TaskManagerFile from '../services/tasks-manager/TaskManagerFile';
 import TasksManager from '../services/tasks-manager/TasksManager';
 import { ImapAuthError } from '../utils/errors';
 import { validateType } from '../utils/helpers/validation';
+import redis from '../utils/redis';
 import {
   generateErrorObjectFromImapError,
   getValidImapLogin,
@@ -19,11 +22,13 @@ import {
 import {
   getAuthClient,
   getTokenConfig,
-  getTokenWithScopeValidation
+  getTokenWithScopeValidation,
+  validateFileContactsData
 } from './mining.helpers';
 
 export default function initializeMiningController(
   tasksManager: TasksManager,
+  tasksManagerFile: TaskManagerFile,
   miningSources: MiningSources
 ) {
   return {
@@ -273,7 +278,7 @@ export default function initializeMiningController(
       return res.status(201).send({ error: null, data: miningTask });
     },
 
-    startMiningFile(req: Request, res: Response) {
+    async startMiningFile(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.user as User;
 
       const {
@@ -281,21 +286,54 @@ export default function initializeMiningController(
         contacts
       }: {
         name: string;
-        contacts: Record<string, string>[];
+        contacts: Partial<Contact[]>;
       } = req.body;
 
-      return res
-        .status(200)
-        .send({ error: null, name, contacts, userId: user.id });
+      try {
+        try {
+          validateFileContactsData(contacts);
+        } catch (error) {
+          let message = 'Invalid contacts data';
+          if (error instanceof Error) {
+            message = error.message;
+          }
+          return res.status(400).json({ message });
+        }
+
+        const fileMiningTask = await tasksManagerFile.createTask(user.id, 1);
+
+        // Publish contacts to extracting redis stream
+        await redis.getClient().xadd(
+          `messages_stream-${fileMiningTask.miningId}`,
+          '*',
+          'message',
+          JSON.stringify({
+            miningId: fileMiningTask.miningId,
+            userId: user.id,
+            userEmail: user.email,
+            data: {
+              fileName: name,
+              contacts
+            }
+          })
+        );
+
+        return res.status(201).send({ error: null, data: fileMiningTask });
+      } catch (err) {
+        return next(err);
+      }
     },
 
     async stopMiningTask(req: Request, res: Response, next: NextFunction) {
+      const { type: miningType } = req.params;
       const { user } = res.locals;
 
       if (!user) {
         res.status(404);
         return next(new Error('user does not exists.'));
       }
+
+      const manager = miningType === 'file' ? tasksManagerFile : tasksManager;
 
       const { id: taskId } = req.params;
       const {
@@ -313,7 +351,7 @@ export default function initializeMiningController(
       }
 
       try {
-        const task = tasksManager.getActiveTask(taskId);
+        const task = manager.getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res
@@ -321,7 +359,7 @@ export default function initializeMiningController(
             .json({ error: { message: 'User not authorized.' } });
         }
 
-        const deletedTask = await tasksManager.deleteTask(
+        const deletedTask = await manager.deleteTask(
           taskId,
           endEntireTask ? null : processes
         );
@@ -336,10 +374,12 @@ export default function initializeMiningController(
     getMiningTask(req: Request, res: Response, next: NextFunction) {
       const user = res.locals.User;
 
-      const { id: taskId } = req.params;
+      const { id: taskId, type: miningType } = req.params;
 
       try {
-        const task = tasksManager.getActiveTask(taskId);
+        const task = (
+          miningType === 'email' ? tasksManager : tasksManagerFile
+        ).getActiveTask(taskId);
 
         if (user.id !== task.userId) {
           return res

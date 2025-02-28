@@ -1,6 +1,8 @@
 export type OAuthMiningSource = 'azure' | 'google';
 export type MiningSourceType = OAuthMiningSource | 'imap';
 
+export type MiningType = 'file' | 'email';
+
 export interface MiningSource {
   type: MiningSourceType;
   email: string;

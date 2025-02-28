@@ -4,7 +4,14 @@ import { Logger } from 'winston';
 import { Status } from '../../services/email-status/EmailStatusVerifier';
 import { REACHABILITY } from '../../utils/constants';
 import { Contacts } from '../interfaces/Contacts';
-import { Contact, EmailStatus, ExtractionResult, Tag } from '../types';
+import {
+  Contact,
+  EmailExtractionResult,
+  EmailStatus,
+  ExtractionResult,
+  FileExtractionResult,
+  Tag
+} from '../types';
 
 export default class PgContacts implements Contacts {
   private static readonly REFINE_CONTACTS_SQL =
@@ -76,8 +83,8 @@ export default class PgContacts implements Contacts {
     RETURNING id;`;
 
   private static readonly UPSERT_PERSON_SQL = `
-    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source")
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    INSERT INTO private.persons ("name","email","url","image","location","same_as","given_name","family_name","job_title","identifiers","user_id", "source", "works_for")
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, $13)
     ON CONFLICT (email, user_id, source) DO UPDATE SET name=excluded.name
     RETURNING persons.email;`;
 
@@ -202,7 +209,89 @@ export default class PgContacts implements Contacts {
     }
   }
 
-  async create({ message, persons }: ExtractionResult, userId: string) {
+  async create(result: ExtractionResult, userId: string) {
+    const results = await (result.type === 'email'
+      ? this.createContactsFromEmail(result, userId)
+      : this.createContactsFromFile(result, userId));
+    return results;
+  }
+
+  private async createContactsFromFile(
+    result: FileExtractionResult,
+    userId: string
+  ) {
+    const organizationsDB = new Map<string, string>();
+    const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
+
+    const { organizations, persons } = result;
+
+    for (const { name } of organizations) {
+      const {
+        rows: [{ id }]
+        // eslint-disable-next-line no-await-in-loop
+      } = await this.pool.query(
+        'INSERT INTO private.organizations(name) VALUES($1) RETURNING id;',
+        [name]
+      );
+      organizationsDB.set(name, id);
+    }
+
+    for (const { person, tags } of persons) {
+      const {
+        rows: [{ email }]
+        // eslint-disable-next-line no-await-in-loop
+      } = await this.pool.query(PgContacts.UPSERT_PERSON_SQL, [
+        person.name,
+        person.email,
+        person.url,
+        person.image,
+        person.location,
+        person.sameAs,
+        person.givenName,
+        person.familyName,
+        person.jobTitle,
+        person.identifiers,
+        userId,
+        person.source,
+        organizationsDB.get(person.worksFor ?? '')
+      ]);
+
+      if (tags.length) {
+        // eslint-disable-next-line no-await-in-loop
+        await this.pool.query(
+          format(
+            PgContacts.INSERT_TAGS_SQL,
+            tags.map((tag) => [
+              tag.name,
+              tag.reachable,
+              tag.source,
+              userId,
+              person.email
+            ])
+          )
+        );
+      }
+
+      insertedContacts.add({ email, tags });
+      // eslint-disable-next-line no-await-in-loop
+      await this.pool.query(
+        `
+        INSERT INTO private.refinedpersons(user_id, email, tags)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id, email) 
+        DO UPDATE SET tags = ARRAY(SELECT DISTINCT UNNEST(private.refinedpersons.tags || EXCLUDED.tags));
+        `,
+        [userId, email, tags.map((tag) => tag.name)]
+      );
+    }
+
+    return Array.from(insertedContacts);
+  }
+
+  private async createContactsFromEmail(
+    { message, persons }: EmailExtractionResult,
+    userId: string
+  ) {
     try {
       const insertedContacts = new Set<{ email: string; tags: Tag[] }>();
       await this.pool.query(PgContacts.INSERT_MESSAGE_SQL, [
@@ -239,7 +328,8 @@ export default class PgContacts implements Contacts {
           person.jobTitle,
           person.identifiers,
           userId,
-          person.source
+          person.source,
+          person.worksFor
         ]);
 
         const tagValues = tags.map((tag) => [

@@ -3,7 +3,7 @@ import { Contacts } from '../../db/interfaces/Contacts';
 import CatchAllDomainsCache from '../../services/cache/CatchAllDomainsCache';
 import EmailStatusCache from '../../services/cache/EmailStatusCache';
 import QueuedEmailsCache from '../../services/cache/QueuedEmailsCache';
-import EmailMessage from '../../services/extractors/EmailMessage';
+import { EmailFormat } from '../../services/extractors/engines/EmailMessage';
 import EmailTaggingEngine from '../../services/tagging';
 import { REACHABILITY } from '../../utils/constants';
 import { checkDomainStatus } from '../../utils/helpers/domainHelpers';
@@ -11,22 +11,21 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import StreamProducer from '../../utils/streams/StreamProducer';
 import { EmailVerificationData } from '../email-verification/emailVerificationHandlers';
+import { createExtractor } from '../../services/extractors/Extractor';
+import { FileFormat } from '../../services/extractors/engines/FileImport';
 
 const redisClientForNormalMode = redis.getClient();
 
 export interface EmailMessageData {
-  header: unknown;
-  body: unknown;
-  seqNumber: number;
-  folderName: string;
-  isLast: boolean;
-  userId: string;
-  userEmail: string;
   /**
    * The hash of the userId
    */
+  type: 'file' | 'email';
   userIdentifier: string;
+  userId: string;
+  userEmail: string;
   miningId: string;
+  data: EmailFormat | FileFormat;
 }
 
 /**
@@ -36,36 +35,25 @@ export interface EmailMessageData {
  * @param contacts - The contacts db accessor.
  */
 async function emailMessageHandler(
-  {
-    body,
-    header,
-    folderName,
-    userId,
-    userEmail,
-    userIdentifier,
-    miningId
-  }: EmailMessageData,
+  data: EmailMessageData,
   contacts: Contacts,
   emailStatusCache: EmailStatusCache,
   emailsStreamProducer: StreamProducer<EmailVerificationData>,
   queuedEmailsCache: QueuedEmailsCache,
   catchAllDomainsCache: CatchAllDomainsCache
 ) {
-  const message = new EmailMessage(
-    EmailTaggingEngine,
-    redisClientForNormalMode,
-    emailStatusCache,
-    catchAllDomainsCache,
-    checkDomainStatus,
-    userEmail,
-    userId,
-    header,
-    body,
-    folderName
-  );
+  const { userId, userIdentifier, userEmail, miningId } = data;
 
   try {
-    const extractedContacts = await message.getContacts();
+    const extractor = createExtractor('file', userId, userEmail, data.data, {
+      emailStatusCache,
+      catchAllDomainsCache,
+      redisClientForNormalMode,
+      taggingEngine: EmailTaggingEngine,
+      domainStatusVerification: checkDomainStatus
+    });
+
+    const extractedContacts = await extractor.getContacts();
 
     let emails: string[] = [];
     try {
