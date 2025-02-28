@@ -102,6 +102,7 @@ const isInvalidEmail = (email?: string) =>
   email ? !REGEX_EMAIL.test(email) : false;
 function isValidURL(url: string) {
   try {
+    // skipcq: JS-R1002 - instantiating unused object as the url validity checker
     new URL(url);
     return true;
   } catch {
