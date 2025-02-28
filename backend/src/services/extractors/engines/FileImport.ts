@@ -1,6 +1,6 @@
 import assert from 'assert';
 import Redis from 'ioredis';
-import { Person, Tag } from '../../../db/types';
+import { Organization, Person, Tag } from '../../../db/types';
 import { undefinedIfEmpty, undefinedIfFalsy } from '../../enrichment/utils';
 import { TaggingEngine } from '../../tagging/types';
 import { DomainStatusVerificationFunction } from './EmailMessage';
@@ -24,7 +24,7 @@ export interface FileFormat {
 
 export interface ExtractedContacts {
   type: 'file';
-  organizations: { name: string }[];
+  organizations: Organization[];
   persons: {
     person: Person;
     tags: Tag[];

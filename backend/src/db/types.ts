@@ -14,7 +14,7 @@ export interface EmailExtractionResult {
 
 export interface FileExtractionResult {
   type: 'file';
-  organizations: { name: string }[];
+  organizations: Organization[];
   persons: Array<{
     person: Person;
     tags: Tag[];
@@ -148,4 +148,16 @@ export interface SupabaseTask {
   duration?: number;
 }
 
-export interface Organization {}
+export type Organization = {
+  name: string;
+  alternate_name?: string;
+  location?: string[];
+  id?: string;
+  url?: string;
+  legal_name?: string;
+  telephone?: string;
+  email?: string;
+  image?: string;
+  founder?: string;
+  _domain?: string;
+};
