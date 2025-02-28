@@ -26,15 +26,6 @@ jobs:
           ./bin/deepsource report --analyzer test-coverage --key javascript --value-file ./backend/coverage/lcov.info
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
-      - name: Generate JaCoCo Badge
-        uses: cicirello/jacoco-badge-generator@v2
-        with:
-          jacoco-csv-file: backend/coverage/lcov-report/jacocoTestReport.csv
-          badges-directory: backend/coverage/lcov-report/html/badges
-      - name: Publish coverage report to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: backend/coverage/lcov-report/html
       - name: Check linting
         run: cd backend && npm run lint
       - name: Check formatting

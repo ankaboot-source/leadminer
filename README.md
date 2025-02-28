@@ -1,5 +1,5 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/42e68c56bc3ce2b1f59b/maintainability)](https://codeclimate.com/repos/63f7174b3d043100a803ee03/maintainability) [![Mozilla Observatory Score](https://img.shields.io/badge/Web%20Security-A%2B-2ea44f)](https://developer.mozilla.org/en-US/observatory/analyze?host=App.leadminer.io)
-
+[![DeepSource](https://app.deepsource.com/gh/ankaboot-source/leadminer.svg/?label=code+coverage&show_trend=false&token=M4B7pZCjFk2wl_EJpgQ9f-le)](https://app.deepsource.com/gh/ankaboot-source/leadminer/)
 <div>
   <div align="center">
     <img width="90" height="90" src="https://raw.githubusercontent.com/ankaboot-source/leadminer/e64bd4e5c06328eeab8df0fdf997a5eaa08fc0e1/frontend/src/public/icons/pickaxe.svg" alt="Leadminer Logo">
