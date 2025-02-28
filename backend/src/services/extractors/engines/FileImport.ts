@@ -5,7 +5,7 @@ import { undefinedIfEmpty, undefinedIfFalsy } from '../../enrichment/utils';
 import { TaggingEngine } from '../../tagging/types';
 import { DomainStatusVerificationFunction } from './EmailMessage';
 
-interface ContactFormat {
+export interface ContactFormat {
   email: string;
   name: string | null;
   given_name: string | null;
