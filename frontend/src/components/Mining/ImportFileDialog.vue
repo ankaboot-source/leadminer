@@ -173,7 +173,7 @@ const options: {
   value: keyof Contact;
   label: string;
 }[] = [
-  { value: 'name', label: $t('contact.name') },
+  { value: 'name', label: t('contact.name') },
   { value: 'email', label: 'Email' },
   { value: 'given_name', label: $t('contact.given_name') },
   { value: 'family_name', label: $t('contact.family_name') },
@@ -438,7 +438,8 @@ async function startMining() {
     "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
     "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
     "select_column_placeholder": "Select a field",
-    "email_column_required": "Select an email field"
+    "email_column_required": "Select an email field",
+    "contact": { "name": "Name" }
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
@@ -450,7 +451,8 @@ async function startMining() {
     "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
     "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
     "select_column_placeholder": "Sélectionnez un champ",
-    "email_column_required": "Sélectionnez un champ email"
+    "email_column_required": "Sélectionnez un champ email",
+    "contact": { "name": "Nom" }
   }
 }
 </i18n>
