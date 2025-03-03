@@ -140,7 +140,9 @@ const totalEmails = computed<number>(() => {
 });
 
 const totalMined = computed(() =>
-  sourceType.value === 'boxes' ? totalEmails : $leadminerStore.createdContacts,
+  sourceType.value === 'boxes'
+    ? totalEmails.value
+    : $leadminerStore.createdContacts,
 );
 const totalToMineMessage = computed(() =>
   $leadminerStore.miningType === 'email'
