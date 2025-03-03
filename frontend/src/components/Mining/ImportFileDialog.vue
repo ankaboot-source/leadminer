@@ -4,7 +4,7 @@
     v-model:visible="visible"
     modal
     :header="t('import_csv_excel')"
-    pt:content:class="grow p-3 border-y border-slate-200"
+    pt:content:class="grow p-3"
     pt:footer:class="p-3"
     :draggable="false"
     :maximizable="$screenStore?.size?.md"
@@ -18,7 +18,7 @@
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
       :pt:header:class="{ hidden: !contentJson }"
-      :pt:content:class="{ 'pt-4 h-full': !contentJson }"
+      :pt:content:class="{ 'pt-4': !contentJson }"
       pt:root:class="h-full"
       @select="onSelectFile($event)"
     >
