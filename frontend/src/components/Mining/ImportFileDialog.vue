@@ -4,7 +4,7 @@
     v-model:visible="visible"
     modal
     :header="t('import_csv_excel')"
-    pt:content:class="grow p-3 border-y border-slate-200"
+    pt:content:class="grow p-3"
     pt:footer:class="p-3"
     :draggable="false"
     :maximizable="$screenStore?.size?.md"
@@ -13,13 +13,17 @@
   >
     <FileUpload
       ref="fileUpload"
+      class="h-full"
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
+      :pt:header:class="{ hidden: !contentJson }"
+      :pt:content:class="{ 'pt-4': !contentJson }"
+      pt:root:class="h-full"
       @select="onSelectFile($event)"
     >
       <template #header>
-        <div v-if="contentJson">{{ t('description') }}</div>
+        <div v-if="contentJson">{{ t('select_column_description') }}</div>
         <template v-else> {{ null }}</template>
       </template>
 
@@ -137,9 +141,14 @@ import { maxFileSize, maxSizeInMB } from '@/utils/constants';
 import { REGEX_EMAIL } from '@/utils/email';
 import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
+import type { Contact } from '~/types/contact';
 
 const SOURCE = 'file';
 const { t } = useI18n({
+  useScope: 'local',
+});
+
+const { t: $t } = useI18n({
   useScope: 'local',
 });
 const $leadminerStore = useLeadminerStore();
@@ -163,17 +172,20 @@ const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
 const uploadLoading = ref(false);
 
-const options = [
-  { value: 'name', label: 'Name' },
+const options: {
+  value: keyof Contact;
+  label: string;
+}[] = [
+  { value: 'name', label: t('contact.name') },
   { value: 'email', label: 'Email' },
-  { value: 'given_name', label: 'Given name' },
-  { value: 'family_name', label: 'Family name' },
-  { value: 'alternate_names', label: 'Alternate names' },
-  { value: 'location', label: 'Location' },
-  { value: 'works_for', label: 'Works for' },
-  { value: 'job_title', label: 'Job title' },
-  { value: 'same_as', label: 'Same as' },
-  { value: 'image', label: 'Avatar URL' },
+  { value: 'given_name', label: $t('contact.given_name') },
+  { value: 'family_name', label: $t('contact.family_name') },
+  { value: 'alternate_name', label: $t('contact.alternate_name') },
+  { value: 'location', label: $t('contact.location') },
+  { value: 'works_for', label: $t('contact.works_for') },
+  { value: 'job_title', label: $t('contact.job_title') },
+  { value: 'same_as', label: $t('contact.same_as') },
+  { value: 'image', label: $t('contact.image') },
 ];
 
 const URL_OPTIONS = ['image', 'same_as'];
@@ -422,26 +434,28 @@ async function startMining() {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
     "select_file_label": "Upload your file",
-    "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
+    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
     "drag_and_drop": "Drag and drop files here.",
     "upload_your_file": "Upload your file",
     "start_mining_now": "Start mining now!",
     "upload_tooltip": ".csv, .xsls or .xls file max {maxSizeInMB}MB",
     "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
     "select_column_placeholder": "Select a field",
-    "email_column_required": "Select an email field"
+    "email_column_required": "Select an email field",
+    "contact": { "name": "Name" }
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
-    "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
+    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
     "start_mining_now": "Commencer l'extraction de vos contacts",
     "upload_error": "Votre fichier doit être au format .csv, .xls ou .xlsx et ne doit pas dépasser {maxSizeInMB} Mo. De plus, le fichier doit inclure au moins une colonne pour les adresses e-mail.",
     "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
     "select_column_placeholder": "Sélectionnez un champ",
-    "email_column_required": "Sélectionnez un champ email"
+    "email_column_required": "Sélectionnez un champ email",
+    "contact": { "name": "Nom" }
   }
 }
 </i18n>
