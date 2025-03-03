@@ -45,7 +45,7 @@ async function emailMessageHandler(
   const { userId, userIdentifier, userEmail, miningId } = data;
 
   try {
-    const extractor = createExtractor('file', userId, userEmail, data.data, {
+    const extractor = createExtractor(data.type, userId, userEmail, data.data, {
       emailStatusCache,
       catchAllDomainsCache,
       redisClientForNormalMode,
