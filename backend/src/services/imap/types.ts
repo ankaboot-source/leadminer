@@ -13,7 +13,7 @@ export interface FlatTree {
 export interface EmailMessage {
   type: 'email';
   data: {
-    header: any;
+    header: unknown;
     body?: string;
     seqNumber: number;
     isLast: boolean;
