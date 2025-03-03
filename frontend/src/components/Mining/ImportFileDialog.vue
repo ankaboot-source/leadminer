@@ -173,7 +173,7 @@ const options = [
   { value: 'email', label: 'Email' },
   { value: 'given_name', label: $t('contact.given_name') },
   { value: 'family_name', label: $t('contact.family_name') },
-  { value: 'alternate_names', label: $t('contact.alternate_names') },
+  { value: 'alternate_name', label: $t('contact.alternate_name') },
   { value: 'location', label: $t('contact.location') },
   { value: 'works_for', label: $t('contact.works_for') },
   { value: 'job_title', label: $t('contact.job_title') },
