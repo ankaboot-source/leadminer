@@ -16,7 +16,6 @@
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
-      :pt:header:class="{ hidden: contentJson }"
       @select="onSelectFile($event)"
     >
       <template #header>
