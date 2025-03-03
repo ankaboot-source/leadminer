@@ -286,7 +286,7 @@ async function startMiningBoxes() {
     } else {
       $toast.add({
         severity: 'error',
-        summary: $t('start_mining'),
+        summary: $t('common.start_mining'),
         detail: t('mining_issue'),
         life: 3000,
       });
