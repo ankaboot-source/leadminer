@@ -140,7 +140,9 @@ const totalEmails = computed<number>(() => {
 });
 
 const totalMined = computed(() =>
-  sourceType.value === 'boxes' ? totalEmails : $leadminerStore.createdContacts,
+  sourceType.value === 'boxes'
+    ? totalEmails.value
+    : $leadminerStore.createdContacts,
 );
 const totalToMineMessage = computed(() =>
   $leadminerStore.miningType === 'email'
@@ -284,7 +286,7 @@ async function startMiningBoxes() {
     } else {
       $toast.add({
         severity: 'error',
-        summary: $t('start_mining'),
+        summary: $t('common.start_mining'),
         detail: t('mining_issue'),
         life: 3000,
       });
