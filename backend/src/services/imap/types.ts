@@ -11,13 +11,16 @@ export interface FlatTree {
 }
 
 export interface EmailMessage {
-  header: any;
-  body?: string;
-  seqNumber: number;
-  isLast: boolean;
+  type: 'email';
+  data: {
+    header: any;
+    body?: string;
+    seqNumber: number;
+    isLast: boolean;
+    folderPath: string;
+  };
   userId: string;
   userEmail: string;
-  folderName: string;
   userIdentifier: string;
   miningId: string;
 }
