@@ -16,6 +16,7 @@
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
+      :pt:header:class="{ hidden: contentJson }"
       @select="onSelectFile($event)"
     >
       <template #header>
@@ -142,6 +143,10 @@ const SOURCE = 'file';
 const { t } = useI18n({
   useScope: 'local',
 });
+
+const { t: $t } = useI18n({
+  useScope: 'local',
+});
 const $leadminerStore = useLeadminerStore();
 const $stepper = useMiningStepper();
 
@@ -164,16 +169,16 @@ const uploadFailed = ref(false);
 const uploadLoading = ref(false);
 
 const options = [
-  { value: 'name', label: 'Name' },
+  { value: 'name', label: $t('contact.name') },
   { value: 'email', label: 'Email' },
-  { value: 'given_name', label: 'Given name' },
-  { value: 'family_name', label: 'Family name' },
-  { value: 'alternate_names', label: 'Alternate names' },
-  { value: 'location', label: 'Location' },
-  { value: 'works_for', label: 'Works for' },
-  { value: 'job_title', label: 'Job title' },
-  { value: 'same_as', label: 'Same as' },
-  { value: 'image', label: 'Avatar URL' },
+  { value: 'given_name', label: $t('contact.given_name') },
+  { value: 'family_name', label: $t('contact.family_name') },
+  { value: 'alternate_names', label: $t('contact.alternate_names') },
+  { value: 'location', label: $t('contact.location') },
+  { value: 'works_for', label: $t('contact.works_for') },
+  { value: 'job_title', label: $t('contact.job_title') },
+  { value: 'same_as', label: $t('contact.same_as') },
+  { value: 'image', label: $t('contact.image') },
 ];
 
 const URL_OPTIONS = ['image', 'same_as'];
@@ -434,7 +439,7 @@ async function startMining() {
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
-    "description": "Sélectionne les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
+    "description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
     "start_mining_now": "Commencer l'extraction de vos contacts",
