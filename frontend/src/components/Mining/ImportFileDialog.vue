@@ -13,13 +13,17 @@
   >
     <FileUpload
       ref="fileUpload"
+      class="h-full"
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
+      :pt:header:class="{ hidden: !contentJson }"
+      :pt:content:class="{ 'pt-4 h-full': !contentJson }"
+      pt:root:class="h-full"
       @select="onSelectFile($event)"
     >
       <template #header>
-        <div v-if="contentJson">{{ t('description') }}</div>
+        <div v-if="contentJson">{{ t('select_column_description') }}</div>
         <template v-else> {{ null }}</template>
       </template>
 
@@ -430,7 +434,7 @@ async function startMining() {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
     "select_file_label": "Upload your file",
-    "description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
+    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
     "drag_and_drop": "Drag and drop files here.",
     "upload_your_file": "Upload your file",
     "start_mining_now": "Start mining now!",
@@ -443,7 +447,7 @@ async function startMining() {
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
-    "description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
+    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
     "start_mining_now": "Commencer l'extraction de vos contacts",
