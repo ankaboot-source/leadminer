@@ -138,6 +138,7 @@ import { maxFileSize, maxSizeInMB } from '@/utils/constants';
 import { REGEX_EMAIL } from '@/utils/email';
 import csvToJson from 'convert-csv-to-json';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
+import type { Contact } from '~/types/contact';
 
 const SOURCE = 'file';
 const { t } = useI18n({
@@ -168,7 +169,10 @@ const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
 const uploadLoading = ref(false);
 
-const options = [
+const options: {
+  value: keyof Contact;
+  label: string;
+}[] = [
   { value: 'name', label: $t('contact.name') },
   { value: 'email', label: 'Email' },
   { value: 'given_name', label: $t('contact.given_name') },
