@@ -308,6 +308,7 @@ export default function initializeMiningController(
           '*',
           'message',
           JSON.stringify({
+            type: 'file',
             miningId: fileMiningTask.miningId,
             userId: user.id,
             userEmail: user.email,
