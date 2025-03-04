@@ -122,6 +122,7 @@ export class CsvXlsxContactEngine {
           persons.push({
             person,
             tags: this.taggingEngine.getTags({
+              header: {},
               email: {
                 address: email,
                 name: identifier,
