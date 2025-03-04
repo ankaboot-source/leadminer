@@ -179,10 +179,10 @@ export default class ImapEmailsFetcher {
    * Fetches all email messages in the configured boxes.
    */
   async fetchEmailMessages() {
-    const promises = this.folders.map(async (folderName) => {
+    const promises = this.folders.map(async (folderPath) => {
       let imapConnection: Connection | null = null;
 
-      if (EXCLUDED_IMAP_FOLDERS.includes(folderName)) {
+      if (EXCLUDED_IMAP_FOLDERS.includes(folderPath)) {
         // Skip excluded folders
         return;
       }
@@ -197,7 +197,7 @@ export default class ImapEmailsFetcher {
         }
 
         const openedBox = await new Promise<Box>((resolve, reject) => {
-          imapConnection?.openBox(folderName, true, (error, box) => {
+          imapConnection?.openBox(folderPath, true, (error, box) => {
             if (error) {
               logger.error('Error when opening folder', error);
               reject(error);
@@ -209,7 +209,7 @@ export default class ImapEmailsFetcher {
         if (openedBox?.messages?.total > 0) {
           await this.fetchBox(
             imapConnection,
-            folderName,
+            folderPath,
             openedBox.messages.total
           );
         }
@@ -240,11 +240,11 @@ export default class ImapEmailsFetcher {
   /**
    *
    * @param connection - Open IMAP connection.
-   * @param folderName - Name of the folder locked by the IMAP connection.
+   * @param folderPath - Name of the folder locked by the IMAP connection.
    * @param totalInFolder - Total email messages in the folder.
    * @returns
    */
-  fetchBox(connection: Connection, folderName: string, totalInFolder: number) {
+  fetchBox(connection: Connection, folderPath: string, totalInFolder: number) {
     return new Promise((resolve, reject) => {
       const fetchResult = connection.seq.fetch('1:*', {
         bodies: this.bodies
@@ -257,7 +257,7 @@ export default class ImapEmailsFetcher {
         let body = '';
 
         if (this.isCanceled === true) {
-          const message = `Canceled process on folder ${folderName} with ID ${this.miningId}`;
+          const message = `Canceled process on folder ${folderPath} with ID ${this.miningId}`;
           reject(new Error(message));
           return;
         }
@@ -302,11 +302,14 @@ export default class ImapEmailsFetcher {
           }
 
           await publishEmailMessage(this.streamName, {
-            header: parsedHeader,
-            body: parsedBody,
-            seqNumber,
-            folderName,
-            isLast: isLastMessageInFolder,
+            type: 'email',
+            data: {
+              header: parsedHeader,
+              body: parsedBody,
+              seqNumber,
+              folderPath,
+              isLast: isLastMessageInFolder
+            },
             userId: this.userId,
             userEmail: this.userEmail,
             userIdentifier: this.userIdentifier,
