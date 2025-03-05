@@ -47,12 +47,18 @@
 
 <script setup lang="ts">
 const $route = useRoute();
+const session = useSupabaseSession();
 const { email } = $route.query;
+
 onBeforeMount(() => {
   const unauthorized = window.history.state.back !== '/auth/signup' || !email;
   if (unauthorized) {
     const $router = useRouter();
     $router.replace('/auth');
   }
+});
+
+watch(session, (activeSession) => {
+  if (activeSession) navigateTo('/');
 });
 </script>
