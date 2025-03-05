@@ -17,14 +17,6 @@ const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
 
 const EXPECTED_FAULTY_STATUS_CODES = [402];
 
-const usePVToastService = () => {
-  const nuxtApp = useNuxtApp();
-  const getToast: typeof useToast = () =>
-    nuxtApp.vueApp.config.globalProperties.$toast;
-  const toastService = getToast();
-  return toastService;
-};
-
 function isExpectedFaultyCode(err: unknown) {
   return Boolean(
     isFetchError(err) &&
