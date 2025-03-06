@@ -56,7 +56,7 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/ingest/static/**': { proxy: process.env.POSTHOG_STATIC_ASSETS_PROXY },
-    '/ingest/**': { proxy: '${process.env.POSTHOG_INSTANCE_ADDRESS}/**'},
+    '/ingest/**': { proxy: `${process.env.POSTHOG_INSTANCE_ADDRESS}/**` },
   },
 
   modules: [
