@@ -1,5 +1,6 @@
 import { AuthSessionMissingError } from '@supabase/supabase-js';
 import { FetchError } from 'ofetch';
+import usePrimeVueToast from '~/utils/usePrimeVueToast';
 
 interface ErrorStatusMessages {
   [key: number]: string;
@@ -16,14 +17,6 @@ const ERROR_STATUS_MESSAGES: ErrorStatusMessages = {
 };
 
 const EXPECTED_FAULTY_STATUS_CODES = [402];
-
-const usePVToastService = () => {
-  const nuxtApp = useNuxtApp();
-  const getToast: typeof useToast = () =>
-    nuxtApp.vueApp.config.globalProperties.$toast;
-  const toastService = getToast();
-  return toastService;
-};
 
 function isExpectedFaultyCode(err: unknown) {
   return Boolean(
@@ -61,7 +54,7 @@ function otherErrorMessages(err: unknown) {
 }
 
 export default defineNuxtPlugin((nuxtApp) => {
-  const toastService = usePVToastService();
+  const toastService = usePrimeVueToast();
 
   nuxtApp.vueApp.config.errorHandler = (error) => {
     let message = ERROR_STATUS_MESSAGES[500];

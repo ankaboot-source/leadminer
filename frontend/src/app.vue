@@ -28,6 +28,37 @@
       <span class="text-xl">☕️</span>
     </template>
   </Toast>
+
+  <Toast group="has-links">
+    <template #message="slotProps">
+      <i class="pi pi-info-circle" />
+      <div class="p-toast-message-text" data-pc-section="messagetext">
+        <span class="p-toast-summary" data-pc-section="summary">
+          {{ slotProps.message.summary }}
+        </span>
+        <div class="p-toast-detail" data-pc-section="detail">
+          <template
+            v-for="(detail, index) in (slotProps.message
+              .detail as ToastHasLinksGroupDetail[]) ?? []"
+            :key="index"
+          >
+            <a
+              v-if="detail.link"
+              :href="detail.link"
+              class="underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ detail.text }}
+            </a>
+            <div v-else>
+              {{ detail.text }}
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </Toast>
 </template>
 
 <script setup lang="ts">
@@ -44,7 +75,10 @@ $supabaseClient.auth.onAuthStateChange((event) => {
       break;
   }
 });
-
+type ToastHasLinksGroupDetail = {
+  text: string;
+  link?: string;
+};
 onNuxtReady(() => {
   // Adds posthog script tag
   const { POSTHOG_INSTANCE_ADDRESS, POSTHOG_API_KEY } =

@@ -3,7 +3,8 @@ import type { TreeSelectionKeys } from 'primevue/tree';
 import { ref } from 'vue';
 
 import { updateMiningSourcesValidity } from '@/utils/sources';
-import type { MiningType, MiningSource, MiningTask } from '../types/mining';
+import { startMiningNotification } from '~/utils/extras';
+import type { MiningSource, MiningTask, MiningType } from '../types/mining';
 import { type BoxNode, getDefaultSelectedFolders } from '../utils/boxes';
 import { sse } from '../utils/sse';
 
@@ -283,6 +284,7 @@ export const useLeadminerStore = defineStore('leadminer', () => {
 
       miningTask.value = task;
       miningStartedAt.value = performance.now();
+      startMiningNotification();
     } catch (err) {
       sse.closeConnection();
       throw err;
