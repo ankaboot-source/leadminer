@@ -37,6 +37,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
    */
   function startSyncInterval() {
     cachedContactsList.value = [];
+    clearSyncInterval();
     syncIntervalId = setInterval(() => {
       applyCachedContacts();
     }, 2000);
@@ -66,7 +67,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Loads contacts from db and restarts SyncInterval.
    */
   async function reloadContacts() {
-    clearSyncInterval();
     await loadContacts();
     startSyncInterval();
   }
