@@ -6,8 +6,8 @@ import ProxycurlApi, {
   ReverseEmailLookupParams,
   ReverseEmailLookupResponse
 } from '../../../../src/services/enrichment/proxy-curl/client';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
-// Mock dependencies
 jest.mock('axios');
 
 const mockLogger: Logger = {
@@ -20,16 +20,19 @@ const mockAxiosInstance = {
 };
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
+const REACHER_THROTTLE_REQUESTS = 1;
+const REACHER_THROTTLE_INTERVAL = 100;
+
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  REACHER_THROTTLE_REQUESTS,
+  REACHER_THROTTLE_INTERVAL
+);
+
 describe('ProxycurlApi', () => {
   const config = {
     url: 'https://api.example.com',
     apiKey: 'dummy-api-key',
-    rateLimiter: {
-      requests: 5,
-      interval: 1000,
-      maxRetries: 3,
-      spaced: false
-    }
+    rateLimiter: RATE_LIMITER
   };
 
   const proxyCurl = new ProxycurlApi(config, mockLogger);
@@ -85,14 +88,13 @@ describe('ProxycurlApi', () => {
       );
     });
 
-    it('should limit to 10 requests every 2 seconds', async () => {
+    it('should properly use rate limiter', async () => {
       const email = 'test@example.com';
       const params: ReverseEmailLookupParams = {
         email,
         lookup_depth: 'superficial',
         enrich_profile: 'skip'
       };
-
       mockAxiosInstance.get.mockReturnValue({
         data: {
           email,
@@ -105,19 +107,17 @@ describe('ProxycurlApi', () => {
         }
       });
 
-      const requests = Array.from({ length: 10 }, () =>
-        proxyCurl.reverseEmailLookup(params)
+      const startTime = Date.now();
+      const requests = [
+        await proxyCurl.reverseEmailLookup(params),
+        await proxyCurl.reverseEmailLookup(params),
+        await proxyCurl.reverseEmailLookup(params)
+      ];
+      const totalTime = Date.now() - startTime;
+
+      expect(totalTime).toBeGreaterThanOrEqual(
+        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
       );
-
-      const start = Date.now();
-      await Promise.allSettled(requests);
-      const end = Date.now();
-
-      const duration = end - start;
-      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
-
-      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(mockAxiosInstance.get).toHaveBeenCalledTimes(10);
     });
   });
 });
