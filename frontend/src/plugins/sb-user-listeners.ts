@@ -77,7 +77,7 @@ async function updateUserEmailTemplatesI18n(
 
 export default defineNuxtPlugin({
   name: 'user-listeners',
-  async setup() {
+  setup() {
     const $supabaseClient = useSupabaseClient();
     const $currentProfile = useSupabaseUserProfile();
 
