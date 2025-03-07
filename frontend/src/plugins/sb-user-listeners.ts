@@ -97,6 +97,7 @@ export default defineNuxtPlugin({
           if (channel) await $supabaseClient.removeChannel(channel);
           return;
         }
+        $currentProfile.value = await getCurrentUserProfile($supabaseClient);
 
         const { provider, providerToken, emailTemplate, language } = {
           provider: $user.value?.app_metadata.provider,
@@ -138,14 +139,6 @@ export default defineNuxtPlugin({
         channel.subscribe();
       });
     };
-
-    /**
-     * Fetches and assigns the user profile on the server
-     * to avoid empty fields in "settings" during hard refresh.
-     */
-    if ((await $supabaseClient.auth.getUser()).data.user) {
-      $currentProfile.value = await getCurrentUserProfile($supabaseClient);
-    }
 
     if (import.meta.client) {
       startAuthenticationWatcher();
