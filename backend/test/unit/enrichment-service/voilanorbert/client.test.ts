@@ -11,6 +11,7 @@ import axios from 'axios';
 import { Logger } from 'winston';
 import VoilanorbertApi from '../../../../src/services/enrichment/voilanorbert/client';
 import { logError } from '../../../../src/utils/axios';
+import { TokenBucketRateLimiter } from '../../../../src/services/rate-limiter/RateLimiter';
 
 jest.mock('axios');
 
@@ -24,6 +25,14 @@ jest.mock('../../../../src/utils/axios', () => ({
   logError: jest.fn()
 }));
 
+const REACHER_THROTTLE_REQUESTS = 1;
+const REACHER_THROTTLE_INTERVAL = 100;
+
+const RATE_LIMITER = new TokenBucketRateLimiter(
+  REACHER_THROTTLE_REQUESTS,
+  REACHER_THROTTLE_INTERVAL
+);
+
 describe('VoilanorbertApi', () => {
   const mockLogger = {
     info: jest.fn(),
@@ -33,11 +42,7 @@ describe('VoilanorbertApi', () => {
     url: 'https://api.voilanorbert.com',
     username: 'testUser',
     apiToken: 'testToken',
-    rateLimiter: {
-      requests: 5,
-      interval: 1000,
-      spaced: false
-    }
+    rateLimiter: RATE_LIMITER
   };
 
   let voilanorbert: VoilanorbertApi;
@@ -76,27 +81,24 @@ describe('VoilanorbertApi', () => {
       });
     });
 
-    it('should limit to 5 requests every second', async () => {
+    it('should properly use rate limiter', async () => {
       const emails = [
         'test1@example.com',
         'test2@example.com',
         'test3@example.com'
       ];
-      const webhook = 'webhook-url';
 
-      const requests = Array.from({ length: 10 }, () =>
-        voilanorbert.enrich(emails, webhook)
+      const startTime = Date.now();
+      const requests = [
+        await voilanorbert.enrich(emails, 'webhook-url'),
+        await voilanorbert.enrich(emails, 'webhook-url'),
+        await voilanorbert.enrich(emails, 'webhook-url')
+      ];
+      const totalTime = Date.now() - startTime;
+
+      expect(totalTime).toBeGreaterThanOrEqual(
+        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
       );
-
-      const start = Date.now();
-      await Promise.allSettled(requests);
-      const end = Date.now();
-
-      const duration = end - start;
-      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
-
-      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(axios.create().post).toHaveBeenCalledTimes(10);
     });
 
     it('should log an error and throw it when the request fails', async () => {

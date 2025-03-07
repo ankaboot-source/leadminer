@@ -8,6 +8,7 @@ import ThedigApi from './thedig/client';
 import Voilanorbert from './voilanorbert';
 import VoilanorbertApi from './voilanorbert/client';
 import logger from '../../utils/logger';
+import { TokenBucketRateLimiter } from '../rate-limiter/RateLimiter';
 
 let ENGINE_THEDIG: Engine | undefined;
 let ENGINE_VOILANORBERT: Engine | undefined;
@@ -24,11 +25,7 @@ if (
         url: ENV.VOILANORBERT_URL,
         username: ENV.VOILANORBERT_USERNAME,
         apiToken: ENV.VOILANORBERT_API_KEY,
-        rateLimiter: {
-          requests: 115,
-          interval: 60 * 1000, // 1 minute
-          spaced: false
-        }
+        rateLimiter: new TokenBucketRateLimiter(115, 60 * 1000)
       },
       logger
     ),
@@ -42,11 +39,7 @@ if (ENV.THEDIG_API_KEY && ENV.THEDIG_URL) {
       {
         url: ENV.THEDIG_URL,
         apiToken: ENV.THEDIG_API_KEY,
-        rateLimiter: {
-          requests: 55,
-          interval: 60 * 1000, // 1 minute
-          spaced: false
-        }
+        rateLimiter: new TokenBucketRateLimiter(55, 60 * 1000)
       },
       logger
     ),
@@ -60,12 +53,7 @@ if (ENV.PROXYCURL_API_KEY && ENV.PROXYCURL_URL) {
       {
         url: ENV.PROXYCURL_URL,
         apiKey: ENV.PROXYCURL_API_KEY,
-        rateLimiter: {
-          requests: 295,
-          interval: 60 * 1000, // 1 minute
-          spaced: false,
-          maxRetries: 5
-        }
+        rateLimiter: new TokenBucketRateLimiter(295, 60 * 1000)
       },
       logger
     ),

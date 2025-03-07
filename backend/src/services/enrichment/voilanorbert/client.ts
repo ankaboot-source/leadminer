@@ -2,18 +2,14 @@ import axios, { AxiosInstance } from 'axios';
 
 import { Logger } from 'winston';
 import qs from 'qs';
-import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 interface Config {
   url: string;
   username: string;
   apiToken: string;
-  rateLimiter: {
-    requests: number;
-    interval: number;
-    spaced: boolean;
-  };
+  rateLimiter: IRateLimiter;
 }
 
 interface Result {
@@ -48,12 +44,7 @@ export default class VoilanorbertApi {
   private readonly rateLimiter;
 
   constructor(
-    {
-      url,
-      username,
-      apiToken,
-      rateLimiter: { requests, interval, spaced }
-    }: Config,
+    { url, username, apiToken, rateLimiter }: Config,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
@@ -64,12 +55,12 @@ export default class VoilanorbertApi {
         password: apiToken
       }
     });
-    this.rateLimiter = throttledQueue(requests, interval, spaced);
+    this.rateLimiter = rateLimiter;
   }
 
   async enrich(emails: string[], webhook: string): Promise<ResponseAsync> {
     try {
-      const { data } = await this.rateLimiter(() =>
+      const { data } = await this.rateLimiter.throttleRequests(() =>
         this.api.post<ResponseAsync>(
           '/enrich/upload',
           qs.stringify({
