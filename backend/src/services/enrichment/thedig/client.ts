@@ -1,17 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
 
 import { Logger } from 'winston';
-import throttledQueue from 'throttled-queue';
 import { logError } from '../../../utils/axios';
+import { IRateLimiter } from '../../rate-limiter/RateLimiter';
 
 interface Config {
   url: string;
   apiToken: string;
-  rateLimiter: {
-    requests: number;
-    interval: number;
-    spaced: boolean;
-  };
+  rateLimiter: IRateLimiter;
 }
 
 export interface EnrichPersonRequest {
@@ -62,7 +58,7 @@ export default class ThedigApi {
   private readonly rateLimiter;
 
   constructor(
-    { url, apiToken, rateLimiter: { requests, interval, spaced } }: Config,
+    { url, apiToken, rateLimiter }: Config,
     private readonly logger: Logger
   ) {
     this.api = axios.create({
@@ -71,12 +67,12 @@ export default class ThedigApi {
         'X-API-KEY': apiToken
       }
     });
-    this.rateLimiter = throttledQueue(requests, interval, spaced);
+    this.rateLimiter = rateLimiter;
   }
 
   async enrich(person: EnrichPersonRequest) {
     try {
-      const response = await this.rateLimiter(() =>
+      const response = await this.rateLimiter.throttleRequests(() =>
         this.api.post<EnrichPersonResponse>('/person/', person)
       );
       return {
@@ -91,7 +87,7 @@ export default class ThedigApi {
 
   async enrichBulk(persons: EnrichPersonRequest[], webhook: string) {
     try {
-      const { data } = await this.rateLimiter(() =>
+      const { data } = await this.rateLimiter.throttleRequests(() =>
         this.api.post(`/person/bulk?endpoint=${webhook}`, persons)
       );
 
