@@ -31,7 +31,7 @@ const REACHER_THROTTLE_INTERVAL = 100;
 const RATE_LIMITER = new TokenBucketRateLimiter(
   REACHER_THROTTLE_REQUESTS,
   REACHER_THROTTLE_INTERVAL
-)
+);
 
 describe('VoilanorbertApi', () => {
   const mockLogger = {
