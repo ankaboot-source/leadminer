@@ -26,7 +26,7 @@
     >
       <template #header>
         <div v-if="contentJson">
-          {{ t('select_column_description', { numberOfRowsShown }) }}
+          {{ t('select_column_description', { ROWS_SHOWN_NUMBER }) }}
         </div>
         <template v-else> {{ null }}</template>
       </template>
@@ -78,7 +78,7 @@
             :current-page-report-template="`${t('showing')} {last} / {totalRecords} ${t('contacts')}`"
             paginator-template="CurrentPageReport"
             :paginator="true"
-            :rows="numberOfRowsShown"
+            :rows="ROWS_SHOWN_NUMBER"
           >
             <Column
               v-for="col of columns"
@@ -178,7 +178,7 @@ const parsedData = ref();
 const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
 const uploadLoading = ref(false);
-const numberOfRowsShown = 5;
+const ROWS_SHOWN_NUMBER = 5;
 
 const options: {
   value: keyof Contact;
@@ -442,7 +442,7 @@ async function startMining() {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
     "select_file_label": "Upload your file",
-    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {numberOfRowsShown} rows.",
+    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {ROWS_SHOWN_NUMBER} rows.",
     "showing": "Showing",
     "contacts": "contacts",
     "drag_and_drop": "Drag and drop files here.",
@@ -457,7 +457,7 @@ async function startMining() {
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
-    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {numberOfRowsShown} premières lignes.",
+    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {ROWS_SHOWN_NUMBER} premières lignes.",
     "showing": "Montrant",
     "contacts": "contacts",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
