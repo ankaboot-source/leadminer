@@ -4,7 +4,7 @@
     v-model:visible="visible"
     modal
     :header="t('import_csv_excel')"
-    pt:content:class="grow p-3"
+    pt:content:class="grow p-3 pt-0"
     pt:footer:class="p-3"
     :draggable="false"
     :maximizable="$screenStore?.size?.md"
@@ -13,24 +13,28 @@
   >
     <FileUpload
       ref="fileUpload"
-      class="h-full"
+      pt:root:class="h-full"
       :accept="acceptedFiles"
       :max-file-size="maxFileSize"
       :choose-label="t('select_file_label')"
       :pt:header:class="{ hidden: !contentJson }"
-      :pt:content:class="{ 'pt-4': !contentJson }"
-      pt:root:class="h-full"
+      :pt:content:class="{
+        'flex flex-col ': true,
+        'pt-4 h-full w-full': !contentJson,
+      }"
       @select="onSelectFile($event)"
     >
       <template #header>
-        <div v-if="contentJson">{{ t('select_column_description') }}</div>
+        <div v-if="contentJson">
+          {{ t('select_column_description', { numberOfRowsShown }) }}
+        </div>
         <template v-else> {{ null }}</template>
       </template>
 
       <template #content>
         <div
           v-if="!contentJson"
-          class="flex items-center justify-center flex-col gap-3"
+          class="flex flex-col items-center justify-center gap-3 m-auto"
         >
           <template v-if="!uploadLoading">
             <i
@@ -62,7 +66,7 @@
 
         <template v-else>
           <DataTable
-            :value="topFiveItems"
+            :value="parsedData"
             show-gridlines
             pt:tablecontainer:class="grow"
             scroll-height="flex"
@@ -71,6 +75,10 @@
             striped-rows
             size="small"
             scrollable
+            :current-page-report-template="`${t('showing')} {last} / {totalRecords} ${t('contacts')}`"
+            paginator-template="CurrentPageReport"
+            :paginator="true"
+            :rows="numberOfRowsShown"
           >
             <Column
               v-for="col of columns"
@@ -167,10 +175,10 @@ const fileUpload = ref();
 const fileName = ref<string>();
 const columns = ref<Column[]>([]);
 const parsedData = ref();
-const topFiveItems = computed(() => parsedData.value?.slice(0, 5));
 const acceptedFiles = '.csv, .xls, .xlsx';
 const uploadFailed = ref(false);
 const uploadLoading = ref(false);
+const numberOfRowsShown = 5;
 
 const options: {
   value: keyof Contact;
@@ -434,7 +442,9 @@ async function startMining() {
   "en": {
     "import_csv_excel": "Import CSV or Excel",
     "select_file_label": "Upload your file",
-    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first 5 rows.",
+    "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {numberOfRowsShown} rows.",
+    "showing": "Showing",
+    "contacts": "contacts",
     "drag_and_drop": "Drag and drop files here.",
     "upload_your_file": "Upload your file",
     "start_mining_now": "Start mining now!",
@@ -447,7 +457,9 @@ async function startMining() {
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
-    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les 5 premières lignes.",
+    "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {numberOfRowsShown} premières lignes.",
+    "showing": "Montrant",
+    "contacts": "contacts",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
     "start_mining_now": "Commencer l'extraction de vos contacts",
