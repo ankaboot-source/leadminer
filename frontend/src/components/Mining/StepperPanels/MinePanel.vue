@@ -236,10 +236,9 @@ watch(extractionFinished, async (finished) => {
     await refineReloadContacts();
   } else if (finished) {
     $toast.add({
-      severity: 'success',
+      severity: 'info',
       summary: t('mining_done'),
       detail: totalExtractedNotificationMessage,
-      group: 'achievement',
       life: 5000,
     });
     $stepper.next();
@@ -357,7 +356,7 @@ async function haltMining() {
     "back": "Back",
     "mined_total_emails": "Mined / Total emails\n{extractedEmails} / {totalEmails}",
     "mining_done": "Mining done",
-    "contacts_extracted": "{extractedEmails} contacts extracted from your mailbox",
+    "contacts_extracted": "{extractedEmails} email messages extracted from your mailbox",
     "select_folders": "Select folders",
     "select_at_least_one_folder": "Please select at least one folder to start mining.",
     "mining_started": "Mining Started",
@@ -381,7 +380,7 @@ async function haltMining() {
     "back": "Retour",
     "mined_total_emails": "Extrait / Total des e-mails\n{extractedEmails} / {totalEmails}",
     "mining_done": "Extraction terminée",
-    "contacts_extracted": "{extractedEmails} contacts extraits de votre boîte aux lettres",
+    "contacts_extracted": "{extractedEmails} messages e-mail extraits de votre boîte aux lettres",
     "select_folders": "Sélectionnez des dossiers",
     "select_at_least_one_folder": "Veuillez sélectionner au moins un dossier pour commencer l'extraction.",
     "mining_started": "Extraction commencée",
