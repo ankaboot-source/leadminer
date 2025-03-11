@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { maxFileSize, maxSizeInMB } from '@/utils/constants';
 import { REGEX_EMAIL } from '@/utils/email';
-import csvToJson from 'convert-csv-to-json';
+import Papa from 'papaparse';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import type { Contact } from '~/types/contact';
 
@@ -221,29 +221,6 @@ const selectedHeaders = computed(() =>
     .filter(Boolean),
 );
 const $screenStore = useScreenStore();
-
-const DELIMITERS = [',', ';', '|', '\t'];
-function getLocalDelimiter() {
-  const language = navigator?.language?.substring(0, 2);
-  switch (language) {
-    case 'fr':
-    case 'de':
-    case 'es':
-    case 'pt':
-    case 'it':
-      return ';';
-    default:
-      return ',';
-  }
-}
-function getOrderedDelimiters() {
-  const localDelimiter = getLocalDelimiter();
-  return [
-    localDelimiter,
-    ...DELIMITERS.filter((delimiter) => delimiter !== localDelimiter),
-  ];
-}
-const orderedDelimiters = getOrderedDelimiters();
 
 function reset() {
   fileUpload.value?.clear();
@@ -332,11 +309,7 @@ function createHeaders(rows: Row[]) {
 
   const keys = Object.keys(rows[0]);
   return keys.map((key, index) => {
-    const matchingOption = options.find(
-      (option) =>
-        key === option.label.replace(/\s/g, '') || key === option.value,
-    ); // https://github.com/iuccio/csvToJson/pull/68
-
+    const matchingOption = options.find((option) => key === option.value);
     const available_option = (() => {
       if (emptyColumnIndexes.includes(index)) return [];
       if (emailColumnIndexes.includes(index)) return ['email'];
@@ -365,35 +338,35 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     const content = await readFile(file);
     if (!content) throw Error();
     let successfullyParsed = false;
-    for (const delimiter of orderedDelimiters) {
-      try {
-        console.debug('Trying to parse using the delimiter:', delimiter);
-        // Parse CSV string to JSON
-        contentJson.value = csvToJson
-          .supportQuotedField(true)
-          .fieldDelimiter(delimiter)
-          .csvStringToJson(content);
-        if (
-          Array.isArray(contentJson.value) &&
-          contentJsonLength.value &&
-          contentJsonLength.value > 0
-        ) {
-          columns.value = createHeaders(contentJson.value);
-          successfullyParsed = true;
-          break;
-        } else {
-          throw Error('No valid CSV content could be parsed.');
-        }
-      } catch {
-        console.error('Failed parsing using the delimiter:', delimiter);
-        continue;
-      }
+    // Parse CSV string to JSON
+    try {
+      const new_content = Papa.parse(content, {
+        skipEmptyLines: true,
+        header: true,
+      });
+      contentJson.value = new_content.data as Record<string, string>[];
+      console.debug({ 'Parsed file:': contentJson.value });
+    } catch (err) {
+      console.error(err);
+      throw Error('No valid CSV content could be parsed.');
     }
+
+    if (
+      Array.isArray(contentJson.value) &&
+      contentJsonLength.value &&
+      contentJsonLength.value > 0
+    ) {
+      columns.value = createHeaders(contentJson.value);
+      successfullyParsed = true;
+    } else {
+      throw Error('No valid CSV content could be parsed.');
+    }
+
     if (!successfullyParsed || !contentJson.value || !columns.value) {
       throw new Error('No valid CSV content could be parsed.');
     }
 
-    console.log({ columns: columns.value });
+    console.debug({ columns: columns.value });
     parsedData.value = contentJson.value.map((row: Row) => {
       const updatedRow: Row = {};
       Object.keys(row).forEach((key, colIndex) => {
