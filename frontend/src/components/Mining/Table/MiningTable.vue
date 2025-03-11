@@ -682,8 +682,8 @@
       data-type="date"
     >
       <template #header>
-        <div v-tooltip.top="t('created_at_definition')">
-          {{ t('created_at') }}
+        <div v-tooltip.top="$t('contact.created_at_definition')">
+          {{ $t('contact.created_at') }}
         </div>
       </template>
       <template #body="{ data }">
