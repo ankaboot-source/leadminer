@@ -100,7 +100,7 @@
       "works_for_definition": "Organization this contact works for",
       "job_title_definition": "The job title of this contact",
       "updated_at_definition": "Last update date",
-      "created_at_definition": "The extraction date of this contact",
+      "created_at_definition": "Date when this contact was extracted",
       "status": {
         "valid": "VALID",
         "risky": "RISKY",
