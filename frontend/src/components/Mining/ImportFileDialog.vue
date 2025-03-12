@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { maxFileSize, maxSizeInMB } from '@/utils/constants';
 import { REGEX_EMAIL } from '@/utils/email';
-import csvToJson from 'convert-csv-to-json';
+import Papa from 'papaparse';
 import type { FileUploadSelectEvent } from 'primevue/fileupload';
 import type { Contact } from '~/types/contact';
 
@@ -222,44 +222,12 @@ const selectedHeaders = computed(() =>
 );
 const $screenStore = useScreenStore();
 
-const DELIMITERS = [',', ';', '|', '\t'];
-function getLocalDelimiter() {
-  const language = navigator?.language?.substring(0, 2);
-  switch (language) {
-    case 'fr':
-    case 'de':
-    case 'es':
-    case 'pt':
-    case 'it':
-      return ';';
-    default:
-      return ',';
-  }
-}
-function getOrderedDelimiters() {
-  const localDelimiter = getLocalDelimiter();
-  return [
-    localDelimiter,
-    ...DELIMITERS.filter((delimiter) => delimiter !== localDelimiter),
-  ];
-}
-const orderedDelimiters = getOrderedDelimiters();
-
 function reset() {
   fileUpload.value?.clear();
   contentJson.value = null;
   columns.value = [];
   fileName.value = undefined;
   $leadminerStore.selectedFile = null;
-}
-
-function readFile(file: File): Promise<string | null> {
-  const reader = new FileReader();
-  return new Promise((resolve, reject) => {
-    reader.readAsText(file, 'UTF-8');
-    reader.onload = () => resolve(reader.result as string | null);
-    reader.onerror = () => reject(Error("Couldn't read the file."));
-  });
 }
 
 function isEmptyCell(cellValue: string) {
@@ -332,11 +300,7 @@ function createHeaders(rows: Row[]) {
 
   const keys = Object.keys(rows[0]);
   return keys.map((key, index) => {
-    const matchingOption = options.find(
-      (option) =>
-        key === option.label.replace(/\s/g, '') || key === option.value,
-    ); // https://github.com/iuccio/csvToJson/pull/68
-
+    const matchingOption = options.find((option) => key === option.value);
     const available_option = (() => {
       if (emptyColumnIndexes.includes(index)) return [];
       if (emailColumnIndexes.includes(index)) return ['email'];
@@ -355,53 +319,59 @@ function createHeaders(rows: Row[]) {
   });
 }
 
+// Helper function to parse CSV file
+function parseCsvFile(file: File): Promise<Record<string, string>[]> {
+  return new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      skipEmptyLines: true,
+      header: true,
+      complete: (results) => {
+        console.debug('Parsed CSV data:', results.data);
+        console.debug('Parsed CSV meta:', results.meta);
+        resolve(results.data as Record<string, string>[]);
+      },
+      error: (error) => {
+        console.error('Error parsing CSV:', error.message);
+        reject(new Error('No valid CSV content could be parsed.'));
+      },
+    });
+  });
+}
+
+// Helper function to map row data with columns
+function mapRowData(data: Record<string, string>[], cols: Column[]): Row[] {
+  return data.map((row: Row) => {
+    const updatedRow: Row = {};
+    Object.keys(row).forEach((key, colIndex) => {
+      const field = cols[colIndex]?.field || key;
+      updatedRow[field] = row[key];
+    });
+    return updatedRow;
+  });
+}
+
 async function onSelectFile($event: FileUploadSelectEvent) {
   uploadLoading.value = true;
   fileUpload.value.clear(); // Clear the array of files
   const file = $event.files[0];
   try {
-    fileName.value = file.name;
     console.debug({ 'Selected file:': file });
-    const content = await readFile(file);
-    if (!content) throw Error();
-    let successfullyParsed = false;
-    for (const delimiter of orderedDelimiters) {
-      try {
-        console.debug('Trying to parse using the delimiter:', delimiter);
-        // Parse CSV string to JSON
-        contentJson.value = csvToJson
-          .supportQuotedField(true)
-          .fieldDelimiter(delimiter)
-          .csvStringToJson(content);
-        if (
-          Array.isArray(contentJson.value) &&
-          contentJsonLength.value &&
-          contentJsonLength.value > 0
-        ) {
-          columns.value = createHeaders(contentJson.value);
-          successfullyParsed = true;
-          break;
-        } else {
-          throw Error('No valid CSV content could be parsed.');
-        }
-      } catch {
-        console.error('Failed parsing using the delimiter:', delimiter);
-        continue;
-      }
-    }
-    if (!successfullyParsed || !contentJson.value || !columns.value) {
-      throw new Error('No valid CSV content could be parsed.');
+    fileName.value = file.name;
+    contentJson.value = await parseCsvFile(file);
+    if (
+      !Array.isArray(contentJson.value) ||
+      !(contentJsonLength.value && contentJsonLength.value > 0)
+    ) {
+      throw Error('No valid CSV content could be parsed.');
     }
 
-    console.log({ columns: columns.value });
-    parsedData.value = contentJson.value.map((row: Row) => {
-      const updatedRow: Row = {};
-      Object.keys(row).forEach((key, colIndex) => {
-        const field = columns.value[colIndex]?.field || key;
-        updatedRow[field] = row[key];
-      });
-      return updatedRow;
-    });
+    columns.value = createHeaders(contentJson.value);
+    if (!columns.value) {
+      throw new Error('No valid CSV content could be parsed.');
+    }
+    console.debug({ columns: columns.value });
+
+    parsedData.value = mapRowData(contentJson.value, columns.value);
     console.debug({ parsedData: parsedData.value });
   } catch (error) {
     uploadFailed.value = true;
