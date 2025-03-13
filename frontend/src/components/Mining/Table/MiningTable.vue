@@ -1060,7 +1060,7 @@ onNuxtReady(async () => {
     ...($screenStore.width > 950 ? ['status'] : []),
   ];
 
-  await $contactsStore.loadContacts();
+  await $contactsStore.reloadContacts();
   $contactsStore.subscribeToRealtimeUpdates();
 
   isLoading.value = false;
