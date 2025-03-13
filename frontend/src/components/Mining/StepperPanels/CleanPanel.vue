@@ -69,7 +69,7 @@ function cleaningDoneNotification() {
   });
 }
 
-async function cleaningFinished() {
+function cleaningFinished() {
   cleaningDoneNotification();
   setTimeout(() => navigateTo('/contacts'), 10000);
 }

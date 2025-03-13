@@ -8,7 +8,6 @@ import { convertDates, getOrganization } from '~/utils/contacts';
 export const useContactsStore = defineStore('contacts-store', () => {
   const $user = useSupabaseUser();
   const $supabase = useSupabaseClient();
-  const $leadminerStore = useLeadminerStore();
 
   const updateContactList = ref<boolean>(false);
   const contactsCacheMap = new Map<string, Contact>();
@@ -18,7 +17,6 @@ export const useContactsStore = defineStore('contacts-store', () => {
   const selectedContactsCount = ref<number>(0);
 
   const contactCount = computed(() => contactsList.value?.length);
-  const isMiningTaskActive = computed(() => $leadminerStore.activeTask);
 
   let realtimeChannel: RealtimeChannel | null = null;
   let syncIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -26,7 +24,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
   /**
    * Applies cached contacts to the main contacts list.
    */
-  async function syncContactsList() {
+  function syncContactsList() {
     if (!contactsCacheMap.size || !updateContactList.value) return;
 
     const synced = convertDates(
@@ -139,7 +137,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
           table: 'persons',
           filter: `updated_at=gt.${new Date().toISOString()}`,
         },
-        async (payload: RealtimePostgresChangesPayload<Contact>) => {
+        (payload: RealtimePostgresChangesPayload<Contact>) => {
           if (payload.eventType === 'DELETE' && payload.old.email)
             removeOldContact(payload.old.email);
           else if (payload.new as Contact)
