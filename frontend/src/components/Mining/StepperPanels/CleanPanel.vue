@@ -41,7 +41,6 @@ const { t } = useI18n({
 
 const $toast = useToast();
 const $leadminerStore = useLeadminerStore();
-const $contactsStore = useContactsStore();
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
@@ -57,18 +56,6 @@ const progressTooltip = computed(() =>
   }),
 );
 
-async function reloadContacts() {
-  /**
-   * Disable realtime; protects table from rendering multiple times
-   */
-  await $contactsStore.unsubscribeFromRealtimeUpdates();
-  await $contactsStore.reloadContacts();
-  /**
-   * Subscribe again after the table is rendered
-   */
-  $contactsStore.subscribeToRealtimeUpdates();
-}
-
 function cleaningDoneNotification() {
   $toast.add({
     severity: 'success',
@@ -81,9 +68,8 @@ function cleaningDoneNotification() {
   });
 }
 
-async function cleaningFinished() {
+function cleaningFinished() {
   cleaningDoneNotification();
-  await reloadContacts();
   setTimeout(() => navigateTo('/contacts'), 10000);
 }
 
