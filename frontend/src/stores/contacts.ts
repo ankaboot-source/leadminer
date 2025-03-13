@@ -28,7 +28,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (!contactsCacheMap.size || !updateContactList.value) return;
 
     const synced = convertDates(
-      structuredClone([...contactsCacheMap.values()].toReversed()),
+      structuredClone([...contactsCacheMap.values()].reverse()),
     );
 
     contactsList.value = synced;
