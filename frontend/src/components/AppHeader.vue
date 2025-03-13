@@ -146,7 +146,7 @@ function signOut() {
   });
 }
 
-const reloadDuration = 300000;
+const reloadDuration = 1800000;
 
 setTimeout(() => {
   reloadNuxtApp({
