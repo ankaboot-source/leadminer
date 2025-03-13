@@ -100,7 +100,6 @@
 
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
-import { reloadNuxtApp } from 'nuxt/app';
 const { auth } = useSupabaseClient();
 const $user = useSupabaseUser();
 const $router = useRouter();
