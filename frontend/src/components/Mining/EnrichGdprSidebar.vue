@@ -7,13 +7,11 @@
     :dismissable="false"
     :show-close-icon="false"
     :block-scroll="true"
-    :header="t('beforeYouProceed')"
+    :header="t('acknowledge')"
+    pt:title:class="font-bold"
     pt:footer:class="pt-0 flex justify-end gap-2"
     pt:content:class="grid gap-4 px-8 pt-4 text-base"
   >
-    <div>
-      {{ t('acknowledge') }}
-    </div>
     <ul class="my-3">
       <li class="mb-3">
         <div>
@@ -68,7 +66,7 @@ const $screenStore = useScreenStore();
 const $profile = useSupabaseUserProfile();
 
 const drawer = ref();
-const visible = ref(false);
+const visible = ref(true);
 function openModal() {
   visible.value = true;
 }
@@ -106,7 +104,6 @@ defineExpose({ openModal });
 <i18n lang="json">
 {
   "en": {
-    "beforeYouProceed": "Before You Proceed: Enrich My Contacts",
     "acknowledge": "By clicking \"Enrich My Contacts\", you acknowledge and agree to the following:",
     "purposeOfEnrichment": "This service is intended to enrich information about your existing contacts.",
     "thirdPartyTools": "The enrichment process uses TheDig, Proxycurl, and VoilaNorbert. Results are cached securely for 90 days to improve efficiency and ensure data integrity.",
@@ -120,7 +117,6 @@ defineExpose({ openModal });
     "enrichButton": "Enrich My Contacts"
   },
   "fr": {
-    "beforeYouProceed": "Avant de continuer : Enrichir mes contacts",
     "acknowledge": "En cliquant sur \"Enrichir mes contacts\", vous reconnaissez et acceptez les éléments suivants :",
     "purposeOfEnrichment": "Ce service est destiné à enrichir les informations sur vos contacts existants.",
     "thirdPartyTools": "Le processus d'enrichissement utilise TheDig, Proxycurl et VoilaNorbert. Les résultats sont mis en cache en toute sécurité pendant 90 jours pour améliorer l'efficacité et garantir l'intégrité des données.",
