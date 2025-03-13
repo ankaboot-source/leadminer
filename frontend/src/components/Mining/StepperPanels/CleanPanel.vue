@@ -41,7 +41,6 @@ const { t } = useI18n({
 
 const $toast = useToast();
 const $leadminerStore = useLeadminerStore();
-const $contactsStore = useContactsStore();
 const taskStartedAt = computed(() => $leadminerStore.miningStartedAt);
 const contactsToVerify = computed(() => $leadminerStore.createdContacts);
 const verifiedContacts = computed(() => $leadminerStore.verifiedContacts);
