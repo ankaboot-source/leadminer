@@ -46,7 +46,7 @@
     "google-auth-library": "^9.15.1",
     "html-entities": "^2.5.2",
     "imap": "^0.8.19",
-    "ioredis": "^5.4.2",
+    "ioredis": "^5.5.0",
     "jsonwebtoken": "^9.0.2",
     "limiter": "^3.0.0",
     "nanoid": "^3.3.8",
