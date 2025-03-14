@@ -1,6 +1,6 @@
-import { sse } from './sse';
-import Cookies from 'js-cookie';
 import type { Provider } from '@supabase/supabase-js';
+import Cookies from 'js-cookie';
+import { sse } from './sse';
 
 export async function signInWithOAuth(provider: Provider) {
   const $supabase = useSupabaseClient();
@@ -41,10 +41,19 @@ export function signOutManually() {
 
 export async function signOut() {
   const { error } = await useSupabaseClient().auth.signOut();
-
-  if (error) {
-    throw error;
-  }
   useSupabaseUser().value = null;
   useSupabaseUserProfile().value = null;
+  if (error) {
+    reloadNuxtApp({
+      persistState: false,
+    });
+  }
 }
+
+const RELOAD_DURATION = 1800000; // 30 Minutes
+
+setTimeout(() => {
+  reloadNuxtApp({
+    persistState: false,
+  });
+}, RELOAD_DURATION);
