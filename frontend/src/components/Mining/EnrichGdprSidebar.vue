@@ -66,7 +66,7 @@ const $screenStore = useScreenStore();
 const $profile = useSupabaseUserProfile();
 
 const drawer = ref();
-const visible = ref(true);
+const visible = ref(false);
 function openModal() {
   visible.value = true;
 }
