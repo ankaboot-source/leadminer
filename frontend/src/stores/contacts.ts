@@ -28,7 +28,7 @@ export const useContactsStore = defineStore('contacts-store', () => {
     if (!contactsCacheMap.size || !updateContactList.value) return;
 
     const synced = convertDates(
-      structuredClone([...contactsCacheMap.values()].toReversed()),
+      structuredClone([...contactsCacheMap.values()].reverse()),
     );
 
     contactsList.value = synced;
@@ -70,12 +70,14 @@ export const useContactsStore = defineStore('contacts-store', () => {
    * Loads contacts from db and restarts SyncInterval.
    */
   async function reloadContacts() {
+    updateContactList.value = false;
+    contactsCacheMap.clear();
     const contacts = await loadContacts();
     contacts
       .toReversed()
       .forEach((contact) => contactsCacheMap.set(contact.email, contact));
     updateContactList.value = true;
-    await syncContactsList();
+    syncContactsList();
   }
 
   /**
