@@ -100,7 +100,6 @@
 
 <script setup lang="ts">
 import AppLogo from './AppLogo.vue';
-const { auth } = useSupabaseClient();
 const $user = useSupabaseUser();
 const $router = useRouter();
 const $contactsStore = useContactsStore();
@@ -136,20 +135,4 @@ function navigateHome() {
     $router.push(homePath);
   }
 }
-
-function signOut() {
-  auth.signOut().then(() => {
-    reloadNuxtApp({
-      persistState: false,
-    });
-  });
-}
-
-const reloadDuration = 1800000;
-
-setTimeout(() => {
-  reloadNuxtApp({
-    persistState: false,
-  });
-}, reloadDuration);
 </script>
