@@ -41,20 +41,19 @@ export function signOutManually() {
 
 export async function signOut() {
   const { error } = await useSupabaseClient().auth.signOut();
-  if (!error) {
-    useSupabaseUser().value = null;
-    useSupabaseUserProfile().value = null;
-  } else {
+  useSupabaseUser().value = null;
+  useSupabaseUserProfile().value = null;
+  if (error) {
     reloadNuxtApp({
       persistState: false,
     });
   }
 }
 
-const RELOAD_APP_DURATION = 1800000; // 30 Minutes
+const RELOAD_DURATION = 1800000; // 30 Minutes
 
 setTimeout(() => {
   reloadNuxtApp({
     persistState: false,
   });
-}, RELOAD_APP_DURATION);
+}, RELOAD_DURATION);
