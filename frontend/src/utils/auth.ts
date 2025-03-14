@@ -49,11 +49,3 @@ export async function signOut() {
     });
   }
 }
-
-const RELOAD_DURATION = 1800000; // 30 Minutes
-
-setTimeout(() => {
-  reloadNuxtApp({
-    persistState: false,
-  });
-}, RELOAD_DURATION);
