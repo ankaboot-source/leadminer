@@ -97,8 +97,7 @@ export async function getTokenWithScopeValidation(
   } as TokenType;
 }
 
-const REGEX_EMAIL =
-  /^\b[A-Z0-9!#$%&'*+-/=?^_`{|}~.]{1,64}@[A-Z0-9.-]{0,66}\.[A-Z]{2,18}\b$/i;
+const REGEX_EMAIL = /^\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{0,66}\.[A-Z]{2,18}\b$/i;
 const isInvalidEmail = (email?: string) =>
   email ? !REGEX_EMAIL.test(email) : false;
 function isValidURL(url: string) {
