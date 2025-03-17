@@ -266,8 +266,10 @@ function getColumns(rows: Row[]) {
     ]);
     validIndexes.forEach((index) => {
       const cellValue = String(row[row_keys[index]]).toLowerCase();
-      if (emailColumnIndexes.has(index) && !REGEX_EMAIL.test(cellValue))
+      if (emailColumnIndexes.has(index) && !REGEX_EMAIL.test(cellValue)) {
         emailColumnIndexes.delete(index);
+        console.debug({ 'Email column fails at row:': row });
+      }
       if (
         urlColumnIndexes.has(index) &&
         !(isValidURL(cellValue) || isEmptyCell(cellValue))
