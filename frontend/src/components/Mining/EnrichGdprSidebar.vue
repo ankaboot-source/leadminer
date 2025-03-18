@@ -8,11 +8,11 @@
     :show-close-icon="false"
     :block-scroll="true"
     :header="t('acknowledge')"
-    pt:title:class="font-bold "
+    pt:title:class="font-bold"
     pt:footer:class="pt-0 flex justify-end gap-2"
     pt:content:class="grid gap-4 px-8 text-base"
   >
-    <ul class="my-0">
+    <ul>
       <li class="mb-3">
         <div>
           {{ t('purposeOfEnrichment') }}
