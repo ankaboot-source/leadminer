@@ -25,8 +25,23 @@
       @select="onSelectFile($event)"
     >
       <template #header>
-        <div v-if="contentJson">
+        <div v-if="contentJson" class="w-full">
           {{ t('select_column_description', { ROWS_SHOWN_NUMBER }) }}
+          <Message
+            v-if="unavailableEmailRows"
+            severity="warn"
+            class="mt-2"
+            size="small"
+          >
+            {{
+              t('unavailable_email_rows', {
+                n: unavailableEmailRows.length,
+                unavailableEmailRows: unavailableEmailRows
+                  .map((value) => ++value)
+                  .join(', '),
+              })
+            }}
+          </Message>
         </div>
         <template v-else> {{ null }}</template>
       </template>
@@ -111,6 +126,7 @@
                       !col.available_option.includes(data.value)
                   "
                   show-clear
+                  @value-change="handleSelectChangeEvent"
                 />
               </template>
 
@@ -209,6 +225,7 @@ type Column = {
   key?: number;
   original_header?: string;
   available_option: string[];
+  unavailable_email_rows?: number[];
 };
 type Row = Record<string, string>;
 
@@ -233,48 +250,60 @@ function reset() {
 function isEmptyCell(cellValue: string) {
   return cellValue === '' || cellValue === undefined || cellValue === null;
 }
+
 function getColumns(rows: Row[]) {
   const keys = Object.keys(rows[0]);
-  const emailColumnIndexes = new Set<number>();
   const urlColumnIndexes = new Set<number>();
   const emptyColumnIndexes = new Set<number>();
+  const emailColumnIndexes = new Set<number>();
+  const emailFailedColumnIndexes: { [key: number]: number[] } = {};
 
   // Initialize sets with indexes from the first row
-  keys.forEach((key, index) => {
+  keys.forEach((key, col_index) => {
     const cellValue = String(rows[0][key]).toLowerCase();
-    if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(index);
+    if (REGEX_EMAIL.test(cellValue)) emailColumnIndexes.add(col_index);
     if (
       isValidURL(cellValue) ||
       cellValue === '' ||
       cellValue === undefined ||
       cellValue === null
     )
-      urlColumnIndexes.add(index);
+      urlColumnIndexes.add(col_index);
     if (cellValue === '' || cellValue === undefined || cellValue === null)
-      emptyColumnIndexes.add(index);
+      emptyColumnIndexes.add(col_index);
   });
   if (emailColumnIndexes.size === 0)
     throw new Error('No email column detected in the CSV data.');
 
   // Clean from sets based on next rows
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
+  for (let row_index = 1; row_index < rows.length; row_index++) {
+    const row = rows[row_index];
     const row_keys = Object.keys(row);
     const validIndexes = new Set<number>([
       ...emailColumnIndexes,
       ...urlColumnIndexes,
     ]);
-    validIndexes.forEach((index) => {
-      const cellValue = String(row[row_keys[index]]).toLowerCase();
-      if (emailColumnIndexes.has(index) && !REGEX_EMAIL.test(cellValue))
-        emailColumnIndexes.delete(index);
+    validIndexes.forEach((valid_index) => {
+      const cellValue = String(row[row_keys[valid_index]]).toLowerCase();
+      if (emailColumnIndexes.has(valid_index) && !REGEX_EMAIL.test(cellValue)) {
+        // emailColumnIndexes.delete(valid_index);
+
+        if (!emailFailedColumnIndexes[valid_index])
+          emailFailedColumnIndexes[valid_index] = [row_index];
+        else emailFailedColumnIndexes[valid_index].push(row_index);
+        console.debug(
+          `Email column fails at col ${valid_index} row ${row_index}:`,
+          row,
+          emailFailedColumnIndexes,
+        );
+      }
       if (
-        urlColumnIndexes.has(index) &&
+        urlColumnIndexes.has(valid_index) &&
         !(isValidURL(cellValue) || isEmptyCell(cellValue))
       )
-        urlColumnIndexes.delete(index);
-      if (emptyColumnIndexes.has(index) && !isEmptyCell(cellValue))
-        emptyColumnIndexes.delete(index);
+        urlColumnIndexes.delete(valid_index);
+      if (emptyColumnIndexes.has(valid_index) && !isEmptyCell(cellValue))
+        emptyColumnIndexes.delete(valid_index);
     });
   }
 
@@ -287,12 +316,36 @@ function getColumns(rows: Row[]) {
       (index) => !emptyColumnIndexes.has(index), // Remove empty columns
     ),
     emptyColumnIndexes: Array.from(emptyColumnIndexes),
+    emailFailedColumnIndexes,
   };
 }
 
-function createHeaders(rows: Row[]) {
-  const { emailColumnIndexes, urlColumnIndexes, emptyColumnIndexes } =
-    getColumns(rows);
+const unavailableEmailRows = ref<number[]>();
+function handleSelectChangeEvent(value: string | null) {
+  if (value === 'email' || value === null) {
+    updateUnavailableEmailRows();
+  }
+}
+
+function updateUnavailableEmailRows() {
+  unavailableEmailRows.value = columns.value.find(
+    (col) => col.header === 'email',
+  )?.unavailable_email_rows;
+}
+
+function createHeaders(rows: Row[]): {
+  original_header: string;
+  field: string;
+  header: keyof Contact | null;
+  available_option: string[];
+  unavailable_email_rows?: number[];
+}[] {
+  const {
+    emailColumnIndexes,
+    urlColumnIndexes,
+    emptyColumnIndexes,
+    emailFailedColumnIndexes,
+  } = getColumns(rows);
 
   console.debug(`Email able columns detected at index ${emailColumnIndexes}.`);
   console.debug(`URL able columns detected at index ${urlColumnIndexes}.`);
@@ -315,6 +368,9 @@ function createHeaders(rows: Row[]) {
           ? 'email'
           : matchingOption?.value || null, // Map to email or label or null
       available_option,
+      ...(emailFailedColumnIndexes[index] && {
+        unavailable_email_rows: emailFailedColumnIndexes[index],
+      }),
     };
   });
 }
@@ -369,6 +425,7 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     if (!columns.value) {
       throw new Error('No valid CSV content could be parsed.');
     }
+    updateUnavailableEmailRows();
     console.debug({ columns: columns.value });
 
     parsedData.value = mapRowData(contentJson.value, columns.value);
@@ -422,7 +479,8 @@ async function startMining() {
     "upload_error": "Your file must be in one of the following formats: .csv, .xls, or .xlsx, and it should be under {maxSizeInMB}MB in size. Additionally, the file must include at least a column for email addresses.",
     "select_column_placeholder": "Select a field",
     "email_column_required": "Select an email field",
-    "contact": { "name": "Name" }
+    "contact": { "name": "Name" },
+    "unavailable_email_rows": "The following row won't be extracted due to an invalid email address: {unavailableEmailRows} | The following {n} rows won't be extracted due to invalid email addresses: {unavailableEmailRows}"
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
@@ -437,7 +495,8 @@ async function startMining() {
     "upload_tooltip": "Fichier .csv, .xsls ou .xls max {maxSizeInMB} Mo",
     "select_column_placeholder": "Sélectionnez un champ",
     "email_column_required": "Sélectionnez un champ email",
-    "contact": { "name": "Nom" }
+    "contact": { "name": "Nom" },
+    "unavailable_email_rows": "La ligne suivante ne sera pas extraite en raison d'une adresse e-mail invalide : {unavailableEmailRows} | Les {n} lignes suivantes ne seront pas extraites en raison d'adresses e-mail invalides : {unavailableEmailRows}"
   }
 }
 </i18n>
