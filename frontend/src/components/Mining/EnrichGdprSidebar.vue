@@ -10,9 +10,9 @@
     :header="t('acknowledge')"
     pt:title:class="font-bold"
     pt:footer:class="pt-0 flex justify-end gap-2"
-    pt:content:class="grid gap-4 px-8 pt-4 text-base"
+    pt:content:class="grid gap-4 px-8 text-base"
   >
-    <ul class="my-3">
+    <ul>
       <li class="mb-3">
         <div>
           {{ t('purposeOfEnrichment') }}
@@ -56,6 +56,7 @@
     </template>
   </Drawer>
 </template>
+
 <script setup lang="ts">
 import { PrivacyPolicyButton } from '~/utils/extras';
 
@@ -101,6 +102,7 @@ async function confirm() {
 
 defineExpose({ openModal });
 </script>
+
 <i18n lang="json">
 {
   "en": {
