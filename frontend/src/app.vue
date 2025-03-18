@@ -83,8 +83,8 @@ function reloadOnIdle() {
 }
 
 function resetIdleTimer() {
-  if (idleTimer) clearTimeout(idleTimer); 
-  idleTimer = setTimeout(reloadOnIdle, IDLE_TIMEOUT); 
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(reloadOnIdle, IDLE_TIMEOUT);
 }
 
 onMounted(() => {
