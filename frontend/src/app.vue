@@ -63,18 +63,42 @@
 
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
-
+import { reloadNuxtApp } from 'nuxt/app';
 const $supabaseClient = useSupabaseClient();
-
 $supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
       signOutManually();
+      reloadNuxtApp({ persistState: false, force: true });
       break;
     default:
       break;
   }
 });
+let idleTimer: NodeJS.Timeout | null = null;
+const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+function reloadOnIdle() {
+  reloadNuxtApp({ persistState: false, force: true });
+}
+
+function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer); 
+  idleTimer = setTimeout(reloadOnIdle, IDLE_TIMEOUT); 
+}
+
+onMounted(() => {
+  resetIdleTimer();
+  window.addEventListener('mousemove', resetIdleTimer);
+  window.addEventListener('keydown', resetIdleTimer);
+});
+
+onUnmounted(() => {
+  if (idleTimer) clearTimeout(idleTimer);
+  window.removeEventListener('mousemove', resetIdleTimer);
+  window.removeEventListener('keydown', resetIdleTimer);
+});
+
 type ToastHasLinksGroupDetail = {
   text: string;
   link?: string;
