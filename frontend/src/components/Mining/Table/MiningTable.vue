@@ -750,7 +750,7 @@ const { showTable } = defineProps<{
   showTable: boolean;
 }>();
 
-const { locale, t } = useI18n({
+const { t } = useI18n({
   useScope: 'local',
 });
 const { t: $t } = useI18n({
