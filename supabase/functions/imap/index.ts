@@ -1,7 +1,7 @@
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import { createSupabaseClient } from "../_shared/supabase-self-hosted.ts";
-import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
+import IMAPSettingsDetector from "imap-autoconfig";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
       {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
       status: 200,
     });
   } catch (error) {
-    Logger.error(error.message);
+    Logger.error((error as Error).message);
 
     return new Response(JSON.stringify(error), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
