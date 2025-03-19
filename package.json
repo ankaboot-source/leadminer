@@ -20,6 +20,6 @@
   "author": "ankaboot",
   "license": "AGPL-3.0",
   "devDependencies": {
-    "supabase": "^2.2.1"
+    "supabase": "^2.19.7"
   }
 }
