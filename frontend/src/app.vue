@@ -65,10 +65,9 @@
 import { signOutManually } from './utils/auth';
 import { reloadNuxtApp } from 'nuxt/app';
 const $supabaseClient = useSupabaseClient();
-$supabaseClient.auth.onAuthStateChange(async (event) => {
+$supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
-      await $supabaseClient.auth.signOut();
       signOutManually();
       reloadNuxtApp({ persistState: false, force: true });
       break;
