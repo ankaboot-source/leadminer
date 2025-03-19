@@ -687,11 +687,13 @@
         </div>
       </template>
       <template #body="{ data }">
-        {{
-          data.created_at
-            ? data.created_at?.toLocaleDateString()
-            : data.created_at
-        }}
+        <div v-tooltip.bottom="data.created_at?.toLocaleString()">
+          {{
+            data.created_at
+              ? data.created_at?.toLocaleDateString()
+              : data.created_at
+          }}
+        </div>
       </template>
       <template #filter="{ filterModel }">
         <DatePicker
