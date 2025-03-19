@@ -486,7 +486,7 @@ async function startMining() {
     "select_column_placeholder": "Select a field",
     "email_column_required": "Select an email field",
     "contact": { "name": "Name" },
-    "unavailable_email_rows": "The following row won't be extracted due to an invalid email address: {unavailableEmailRows} | The following {n} rows won't be extracted due to invalid email addresses: {unavailableEmailRows}"
+    "unavailable_email_rows": "The following row won't be extracted due to an invalid email address: {unavailableEmailRows}. | The following {n} rows won't be extracted due to invalid email addresses: {unavailableEmailRows}."
   },
   "fr": {
     "import_csv_excel": "Importer CSV ou Excel",
@@ -502,7 +502,7 @@ async function startMining() {
     "select_column_placeholder": "Sélectionnez un champ",
     "email_column_required": "Sélectionnez un champ email",
     "contact": { "name": "Nom" },
-    "unavailable_email_rows": "La ligne suivante ne sera pas extraite en raison d'une adresse e-mail invalide : {unavailableEmailRows} | Les {n} lignes suivantes ne seront pas extraites en raison d'adresses e-mail invalides : {unavailableEmailRows}"
+    "unavailable_email_rows": "La ligne suivante ne sera pas extraite en raison d'une adresse e-mail invalide : {unavailableEmailRows}. | Les {n} lignes suivantes ne seront pas extraites en raison d'adresses e-mail invalides : {unavailableEmailRows}."
   }
 }
 </i18n>
