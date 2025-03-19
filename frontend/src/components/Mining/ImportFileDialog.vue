@@ -451,6 +451,12 @@ async function startMining() {
       return updatedRow;
     },
   );
+
+  // Remove rows with unavailable emails
+  unavailableEmailRows.value
+    ?.sort((a, b) => b - a)
+    ?.forEach((index) => parsedDataWithMappedHeaders.splice(index, 1));
+
   if (!Object.keys(parsedDataWithMappedHeaders[0]).includes('email')) {
     throw Error('An email field should be selected.');
   }
