@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response } from "npm:express";
 import { createSupabaseClient } from "./supabase-self-hosted.ts";
 
 export async function authorizeUser(

@@ -1,5 +1,5 @@
 import corsHeaders from "../_shared/cors.ts";
-import Logger from "shared/logger.ts";
+import Logger from "../_shared/logger.ts";
 import {
   createSupabaseAdmin,
   createSupabaseClient,

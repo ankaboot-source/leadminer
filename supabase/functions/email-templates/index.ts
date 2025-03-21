@@ -75,12 +75,12 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    const currentTemplate = user.user_metadata?.EmailTemplate;
+    const currentTemplate = user!.user_metadata?.EmailTemplate;
 
     if (!currentTemplate || currentTemplate.lang !== language) {
       const { error: updateError } = await supabaseAdmin.auth.admin
         .updateUserById(
-          user.id,
+          user!.id,
           {
             user_metadata: {
               EmailTemplate: {
@@ -101,8 +101,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
-    Logger.error(error.message || "Failed to process the request");
+    Logger.error((error as Error).message || "Failed to process the request");
     return new Response(
       JSON.stringify({ error: "Failed to process the request" }),
       {
