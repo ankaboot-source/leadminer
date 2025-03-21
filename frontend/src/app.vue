@@ -64,9 +64,11 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 import { reloadNuxtApp } from 'nuxt/app';
+import { useIdle } from '@vueuse/core';
 const $leadminerStore = useLeadminerStore();
 const activeMiningTask = computed(() => $leadminerStore.activeMiningTask);
 const $supabaseClient = useSupabaseClient();
+const { idle, reset } = useIdle(30 * 60 * 1000); // 30 min timeout
 $supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
     case 'SIGNED_OUT':
@@ -77,30 +79,15 @@ $supabaseClient.auth.onAuthStateChange((event) => {
       break;
   }
 });
-let idleTimer: NodeJS.Timeout | null = null;
-const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-
-function reloadOnIdle() {
-  if (!activeMiningTask.value) {
+watch(idle, (isIdle) => {
+  if (isIdle && !activeMiningTask.value) {
+    signOutManually();
     reloadNuxtApp({ persistState: false, force: true });
   }
-}
-
-function resetIdleTimer() {
-  if (idleTimer) clearTimeout(idleTimer);
-  idleTimer = setTimeout(reloadOnIdle, IDLE_TIMEOUT);
-}
-
-onMounted(() => {
-  resetIdleTimer();
-  window.addEventListener('mousemove', resetIdleTimer);
-  window.addEventListener('keydown', resetIdleTimer);
 });
 
-onUnmounted(() => {
-  if (idleTimer) clearTimeout(idleTimer);
-  window.removeEventListener('mousemove', resetIdleTimer);
-  window.removeEventListener('keydown', resetIdleTimer);
+watch(activeMiningTask, () => {
+  reset();
 });
 
 type ToastHasLinksGroupDetail = {
