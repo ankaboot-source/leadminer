@@ -81,7 +81,7 @@ $supabaseClient.auth.onAuthStateChange((event) => {
 });
 watch(idle, (isIdle) => {
   if (isIdle && !activeMiningTask.value) {
-    signOutManually();
+    signOut();
     reloadNuxtApp({ persistState: false, force: true });
   }
 });
