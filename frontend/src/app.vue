@@ -64,6 +64,8 @@
 <script setup lang="ts">
 import { signOutManually } from './utils/auth';
 import { reloadNuxtApp } from 'nuxt/app';
+const $leadminerStore = useLeadminerStore();
+const activeMiningTask = computed(() => $leadminerStore.activeMiningTask);
 const $supabaseClient = useSupabaseClient();
 $supabaseClient.auth.onAuthStateChange((event) => {
   switch (event) {
@@ -79,7 +81,9 @@ let idleTimer: NodeJS.Timeout | null = null;
 const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 function reloadOnIdle() {
-  reloadNuxtApp({ persistState: false, force: true });
+  if (!activeMiningTask.value) {
+    reloadNuxtApp({ persistState: false, force: true });
+  }
 }
 
 function resetIdleTimer() {
