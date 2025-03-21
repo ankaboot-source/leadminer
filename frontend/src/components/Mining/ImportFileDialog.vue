@@ -51,15 +51,10 @@
           v-if="!contentJson"
           class="flex flex-col items-center justify-center gap-3 m-auto"
         >
-          <template v-if="!uploadLoading">
-            <i
-              class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
-            />
-            <p>{{ t('drag_and_drop') }}</p>
-          </template>
-          <div v-else>
-            <ProgressSpinner />
-          </div>
+          <i
+            class="pi pi-cloud-upload !border-2 !rounded-full !p-8 !text-4xl !text-muted-color"
+          />
+          <p>{{ t('drag_and_drop') }}</p>
 
           <Button
             v-tooltip.bottom="t('upload_tooltip', { maxSizeInMB })"
@@ -90,8 +85,9 @@
             striped-rows
             size="small"
             scrollable
-            :current-page-report-template="`${t('showing')} {last} / {totalRecords} ${t('contacts')}`"
-            paginator-template="CurrentPageReport"
+            :current-page-report-template="`{first} - {last} / {totalRecords} ${t('contacts')}`"
+            paginator-template="
+            FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
             :paginator="true"
             :rows="ROWS_SHOWN_NUMBER"
           >
@@ -425,6 +421,9 @@ async function onSelectFile($event: FileUploadSelectEvent) {
     if (!columns.value) {
       throw new Error('No valid CSV content could be parsed.');
     }
+    if (!dialog.value.maximized && Object.keys(columns.value).length >= 4)
+      dialog.value.maximize(); // Fullscreen if more than 4 columns
+
     updateUnavailableEmailRows();
     console.debug({ columns: columns.value });
 
@@ -476,7 +475,6 @@ async function startMining() {
     "import_csv_excel": "Import CSV or Excel",
     "select_file_label": "Upload your file",
     "select_column_description": "Select the columns you want to import. Your file must have at least an email column. Here are the first {ROWS_SHOWN_NUMBER} rows.",
-    "showing": "Showing",
     "contacts": "contacts",
     "drag_and_drop": "Drag and drop files here.",
     "upload_your_file": "Upload your file",
@@ -492,7 +490,6 @@ async function startMining() {
     "import_csv_excel": "Importer CSV ou Excel",
     "select_file_label": "Téléchargez votre fichier",
     "select_column_description": "Sélectionnez les colonnes que vous souhaitez importer. Votre fichier doit avoir au moins une colonne email. Voici les {ROWS_SHOWN_NUMBER} premières lignes.",
-    "showing": "Montrant",
     "contacts": "contacts",
     "drag_and_drop": "Faites glisser et déposez les fichiers ici pour les télécharger.",
     "upload_your_file": "Téléchargez votre fichier",
