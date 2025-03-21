@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "shared/": "../_shared/",
+    "imap-autoconfig": "npm:@ankaboot.io/imap-autoconfig"
+  }
+}

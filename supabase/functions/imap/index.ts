@@ -1,7 +1,7 @@
 import corsHeaders from "../_shared/cors.ts";
 import Logger from "../_shared/logger.ts";
 import { createSupabaseClient } from "../_shared/supabase-self-hosted.ts";
-import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
+import IMAPSettingsDetector from "imap-autoconfig";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
