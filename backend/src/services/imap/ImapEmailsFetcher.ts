@@ -1,4 +1,5 @@
 import Connection, { Box, parseHeader } from 'imap';
+import sanitizeHtml from 'sanitize-html';
 import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
@@ -6,7 +7,6 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
-import sanitizeHtml from 'sanitize-html';
 
 const redisClient = redis.getClient();
 
