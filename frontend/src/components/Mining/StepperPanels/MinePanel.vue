@@ -7,6 +7,7 @@
     :started="taskStartedAt"
     :progress="extractionProgress"
     :progress-tooltip="progressTooltip"
+    :mode="sourceType === 'file' ? 'indeterminate' : 'determinate'"
   >
     <template #progress-title>
       <div v-if="$leadminerStore.isLoadingBoxes">
