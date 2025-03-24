@@ -6,6 +6,7 @@ import logger from '../../utils/logger';
 import redis from '../../utils/redis';
 import ImapConnectionProvider from './ImapConnectionProvider';
 import { EmailMessage } from './types';
+import sanitizeHtml from 'sanitize-html';
 
 const redisClient = redis.getClient();
 
@@ -100,6 +101,16 @@ export default class ImapEmailsFetcher {
     if (this.fetchEmailBody) {
       this.bodies.push('TEXT');
     }
+  }
+
+  /**
+   * Checks if the body of the email is in HTML format.
+   * @param body - The email body to check.
+   * @returns true if the body contains HTML, false if it doesn't.
+   */
+  private static isHTMLBody(body: string): boolean {
+    const htmlPattern = /<html.*?>.*<\/html>/i;
+    return htmlPattern.test(body);
   }
 
   /**
@@ -301,11 +312,15 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
+          const emailBody = ImapEmailsFetcher.isHTMLBody(parsedBody)
+            ? sanitizeHtml(parsedBody)
+            : parsedBody;
+
           await publishEmailMessage(this.streamName, {
             type: 'email',
             data: {
               header: parsedHeader,
-              body: parsedBody,
+              body: emailBody,
               seqNumber,
               folderPath,
               isLast: isLastMessageInFolder
