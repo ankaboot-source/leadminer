@@ -25,6 +25,7 @@
     v-tooltip.bottom="{ value: props.progressTooltip, escape: false }"
     class="mb-6"
     :value="progressValue"
+    :mode="props.mode"
   />
 </template>
 
@@ -45,6 +46,11 @@ const props = defineProps({
   progressTitle: { type: String, default: '' },
   // skipcq: JS-0715 - Is used in the template
   progressTooltip: { type: String, default: '' },
+  // skipcq: JS-0715 - Is used in the template
+  mode: {
+    type: String as PropType<'determinate' | 'indeterminate'>,
+    default: 'determinate',
+  },
 });
 
 const progressStartedAt = computed(() => props.started);
