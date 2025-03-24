@@ -46,6 +46,7 @@ const props = defineProps({
   progressTitle: { type: String, default: '' },
   // skipcq: JS-0715 - Is used in the template
   progressTooltip: { type: String, default: '' },
+  // skipcq: JS-0715 - Is used in the template
   mode: {
     type: String as PropType<'determinate' | 'indeterminate'>,
     default: 'determinate',
