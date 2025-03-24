@@ -68,7 +68,7 @@ export default class ImapEmailsFetcher {
 
   private isCanceled = false;
 
-  private readonly bodies = ['HEADER'];
+  private readonly bodies = ['HEADER', 'TEXT'];
 
   private process?: Promise<PromiseSettledResult<void>[]>;
 
@@ -90,7 +90,7 @@ export default class ImapEmailsFetcher {
     private readonly userEmail: string,
     private readonly miningId: string,
     private readonly streamName: string,
-    private readonly fetchEmailBody = false,
+    private readonly fetchEmailBody = true,
     private readonly batchSize = 50
   ) {
     // Generate a unique identifier for the user.
@@ -330,6 +330,15 @@ export default class ImapEmailsFetcher {
             userIdentifier: this.userIdentifier,
             miningId: this.miningId
           });
+
+          if (this.fetchEmailBody) {
+            await redisClient.xadd(
+              'dedicated-text-body-stream', // Replace with your dedicated stream name
+              '*',
+              'text-body',
+              parsedBody // The full text body of the email
+            );
+          }
         });
       });
 
