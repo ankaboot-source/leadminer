@@ -103,6 +103,16 @@ export default class ImapEmailsFetcher {
   }
 
   /**
+   * Checks if the body of the email is in HTML format.
+   * @param body - The email body to check.
+   * @returns true if the body contains HTML, false if it doesn't.
+   */
+  private static isHTMLBody(body: string): boolean {
+    const htmlPattern = /<html.*?>.*<\/html>/i;
+    return htmlPattern.test(body);
+  }
+
+  /**
    * Fetches the total number of messages across the specified folders on an IMAP server.
    */
   async getTotalMessages() {
@@ -301,11 +311,15 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
+          const emailBody = ImapEmailsFetcher.isHTMLBody(parsedBody)
+            ? parsedBody.replace(/<[^>]+>/g, '')
+            : parsedBody;
+
           await publishEmailMessage(this.streamName, {
             type: 'email',
             data: {
               header: parsedHeader,
-              body: parsedBody,
+              body: emailBody,
               seqNumber,
               folderPath,
               isLast: isLastMessageInFolder
