@@ -27,7 +27,7 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          cd destination_repo
+          cd leadminer.io
           git config user.name "deploy-leadminer"
           git config user.email "deploy@leadminer.io"
           git add -A
