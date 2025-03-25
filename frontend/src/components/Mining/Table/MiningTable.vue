@@ -1167,7 +1167,7 @@ table.p-datatable-table {
     "toggle_valid_label": "Seulement les contacts valides",
     "toggle_replies_tooltip": "Les contacts qui ont déjà interagi avec vous ont les meilleures performances",
     "toggle_replies_label": "Au moins une réponse",
-    "toggle_fullname_label": "Seulement avec nom complet",
+    "toggle_fullname_label": "Seulement avec un nom",
     "toggle_fullname_tooltip": "Les contacts connus par leur nom répondent davantage",
     "toggle_recent_tooltip": "- Moins de {recentYearsAgo} ans \n- Conforme au RGPD",
     "toggle_recent_label": "Contacts récents",

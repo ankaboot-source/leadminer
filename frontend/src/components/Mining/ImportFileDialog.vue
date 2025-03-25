@@ -43,7 +43,7 @@
             }}
           </Message>
         </div>
-        <template v-else> {{ null }}</template>
+        <template v-else>{{ null }}</template>
       </template>
 
       <template #content>
