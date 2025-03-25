@@ -1,6 +1,9 @@
 import Connection, { Box, parseHeader } from 'imap';
 import sanitizeHtml from 'sanitize-html';
-import { EXCLUDED_IMAP_FOLDERS , SIGNATURE_EXTRACTION_STREAM } from '../../utils/constants';
+import {
+  EXCLUDED_IMAP_FOLDERS,
+  SIGNATURE_EXTRACTION_STREAM
+} from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
