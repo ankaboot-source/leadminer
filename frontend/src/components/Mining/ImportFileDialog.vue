@@ -392,6 +392,7 @@ function parseCsvFile(file: File): Promise<Record<string, string>[]> {
 // Helper function to parse XLSX file
 async function parseXlsxFile(file: File) {
   const data = await readXlsxFile(file);
+  // Convert the array to header mapped objects
   const header = data[0].map((h) => String(h ?? '')); // Convert to string
   return data.slice(1).map((row) =>
     header.reduce(
