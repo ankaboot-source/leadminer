@@ -320,7 +320,7 @@ export default class ImapEmailsFetcher {
             type: 'email',
             data: {
               header: parsedHeader,
-              body: emailBody,
+              body: undefined,
               seqNumber,
               folderPath,
               isLast: isLastMessageInFolder
@@ -331,14 +331,20 @@ export default class ImapEmailsFetcher {
             miningId: this.miningId
           });
 
-          if (this.fetchEmailBody) {
-            await redisClient.xadd(
-              'dedicated-text-body-stream', // Replace with your dedicated stream name
-              '*',
-              'text-body',
-              parsedBody // The full text body of the email
-            );
-          }
+          await publishEmailMessage(this.streamName, {
+            type: 'email',
+            data: {
+              header: null,
+              body: emailBody,
+              seqNumber,
+              folderPath,
+              isLast: isLastMessageInFolder
+            },
+            userId: this.userId,
+            userEmail: this.userEmail,
+            userIdentifier: this.userIdentifier,
+            miningId: this.miningId
+          });
         });
       });
 
