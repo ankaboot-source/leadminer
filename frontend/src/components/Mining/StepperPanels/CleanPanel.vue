@@ -70,7 +70,11 @@ function cleaningDoneNotification() {
 
 function cleaningFinished() {
   cleaningDoneNotification();
-  setTimeout(() => navigateTo('/contacts'), 10000);
+  const timeoutId = setTimeout(() => navigateTo('/contacts'), 10000);
+
+  onBeforeUnmount(() => {
+    clearTimeout(timeoutId);
+  });
 }
 
 onMounted(() => {
