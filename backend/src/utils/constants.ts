@@ -20,6 +20,7 @@ export const MAX_WORKER_TIMEOUT = 600000;
 export const MX_RESOLVER_TIMEOUT_MS = 3000;
 export const REGEX_HEADER_EMAIL_SPLIT_PATTERN = headerRegexEmailSplitPattern;
 export const REGEX_HEADER = headerRegex;
+export const SIGNATURE_EXTRACTION_STREAM = 'signature-extraction-stream';
 export const REGEX_BODY = bodyRegex;
 export const REGEX_LIST_ID = listRegex;
 export const REGEX_CLEAN_NAME_FROM_UNWANTED_WORDS =

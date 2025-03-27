@@ -1,5 +1,9 @@
 import Connection, { Box, parseHeader } from 'imap';
-import { EXCLUDED_IMAP_FOLDERS } from '../../utils/constants';
+import sanitizeHtml from 'sanitize-html';
+import {
+  EXCLUDED_IMAP_FOLDERS,
+  SIGNATURE_EXTRACTION_STREAM
+} from '../../utils/constants';
 import { getMessageId } from '../../utils/helpers/emailHeaderHelpers';
 import hashEmail from '../../utils/helpers/hashHelpers';
 import logger from '../../utils/logger';
@@ -67,7 +71,7 @@ export default class ImapEmailsFetcher {
 
   private isCanceled = false;
 
-  private readonly bodies = ['HEADER'];
+  private readonly bodies = ['HEADER', 'TEXT'];
 
   private process?: Promise<PromiseSettledResult<void>[]>;
 
@@ -89,7 +93,7 @@ export default class ImapEmailsFetcher {
     private readonly userEmail: string,
     private readonly miningId: string,
     private readonly streamName: string,
-    private readonly fetchEmailBody = false,
+    private readonly fetchEmailBody = true,
     private readonly batchSize = 50
   ) {
     // Generate a unique identifier for the user.
@@ -100,6 +104,16 @@ export default class ImapEmailsFetcher {
     if (this.fetchEmailBody) {
       this.bodies.push('TEXT');
     }
+  }
+
+  /**
+   * Checks if the body of the email is in HTML format.
+   * @param body - The email body to check.
+   * @returns true if the body contains HTML, false if it doesn't.
+   */
+  private static isHTMLBody(body: string): boolean {
+    const htmlPattern = /<html.*?>.*<\/html>/i;
+    return htmlPattern.test(body);
   }
 
   /**
@@ -301,11 +315,30 @@ export default class ImapEmailsFetcher {
             await publishFetchingProgress(this.miningId, progressToSend);
           }
 
+          const emailBody = ImapEmailsFetcher.isHTMLBody(parsedBody)
+            ? sanitizeHtml(parsedBody)
+            : parsedBody;
+
           await publishEmailMessage(this.streamName, {
             type: 'email',
             data: {
               header: parsedHeader,
-              body: parsedBody,
+              body: undefined,
+              seqNumber,
+              folderPath,
+              isLast: isLastMessageInFolder
+            },
+            userId: this.userId,
+            userEmail: this.userEmail,
+            userIdentifier: this.userIdentifier,
+            miningId: this.miningId
+          });
+
+          await publishEmailMessage(SIGNATURE_EXTRACTION_STREAM, {
+            type: 'email',
+            data: {
+              header: null,
+              body: emailBody,
               seqNumber,
               folderPath,
               isLast: isLastMessageInFolder
