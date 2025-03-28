@@ -198,8 +198,9 @@ async function getImapConfigsForEmail(
             port: imapPort.value,
             secure: imapSecureConnection.value,
           }
-        : await $api<ImapConfigs | null>(`/imap/config/${email}`, {
+        : await useNuxtApp().$saasEdgeFunctions<ImapConfigs | null>('imap', {
             method: 'GET',
+            params: { email },
           });
     return configs;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
