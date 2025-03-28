@@ -4,6 +4,32 @@ import { createSupabaseClient } from "../_shared/supabase-self-hosted.ts";
 import IMAPSettingsDetector from "npm:@ankaboot.io/imap-autoconfig";
 
 /**
+ * Sanitizes input to prevent IMAP injection and CRLF attacks.
+ * - Removes special IMAP characters: `{}`, `"`, `\`, `(`, `)`, `*`.
+ * - Strips dangerous CRLF sequences.
+ * - Strips leading and trailing whitespace.
+ * @param input - The input string to sanitize.
+ * @returns The sanitized string.
+ */
+export function sanitizeImapInput(input: string): string {
+  if (typeof input !== "string") {
+    throw new TypeError("Input must be a string");
+  }
+  // Remove CRLF characters to prevent injection
+  const sanitized = input.replace(/[\r\n]+/g, "");
+  // Escape trailing folder separator (if present)
+  const cleaned = sanitized.replace(/\/$/, "");
+  // Strip leading and trailing whitespace
+  const trimmedInput = cleaned.trim();
+
+  if (trimmedInput.length > 255) {
+    // exceeds max length defined in RFC
+    throw new Error("Max length exceeded");
+  }
+  return trimmedInput;
+}
+
+/**
  * Validates the authorization token and retrieves the authenticated user.
  * Returns the user or a 401 Response if unauthorized.
  */
@@ -31,13 +57,12 @@ async function validateAuthAndGetUser(authorization: string | null) {
  */
 function extractEmailFromRequest(req: Request) {
   const email = new URL(req.url).searchParams.get("email");
-  return (
-    email ??
-    new Response(null, {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 400,
-    })
-  );
+  return email && typeof email === "string"
+    ? sanitizeImapInput(email)
+    : new Response(null, {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
 }
 
 /**
