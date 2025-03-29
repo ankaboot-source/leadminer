@@ -1,4 +1,3 @@
-import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
 import { User } from '@supabase/supabase-js';
 import { NextFunction, Request, Response } from 'express';
 import Connection from 'imap';
@@ -15,10 +14,7 @@ import ImapConnectionProvider from '../services/imap/ImapConnectionProvider';
 import { ImapAuthError } from '../utils/errors';
 import hashEmail from '../utils/helpers/hashHelpers';
 import logger from '../utils/logger';
-import {
-  generateErrorObjectFromImapError,
-  sanitizeImapInput
-} from './imap.helpers';
+import { generateErrorObjectFromImapError } from './imap.helpers';
 import { validateType } from '../utils/helpers/validation';
 
 type NewToken = {
@@ -158,33 +154,6 @@ export default function initializeImapController(miningSources: MiningSources) {
           await imapConnectionProvider?.releaseConnection(imapConnection);
         }
         await imapConnectionProvider?.cleanPool();
-      }
-    },
-
-    async getImapConfigFromEmail(
-      req: Request,
-      res: Response,
-      next: NextFunction
-    ) {
-      const { email } = req.params;
-
-      const errors = [validateType('email', email, 'string')].filter(Boolean);
-
-      if (errors.length) {
-        return res
-          .status(400)
-          .json({ message: `Invalid input: ${errors.join(', ')}` });
-      }
-
-      const sanitizedEmail = sanitizeImapInput(email);
-
-      try {
-        const config = await new IMAPSettingsDetector().detect(sanitizedEmail);
-        return config
-          ? res.status(200).json({ ...config })
-          : res.sendStatus(404);
-      } catch (err) {
-        return next(err);
       }
     }
   };
