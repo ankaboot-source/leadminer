@@ -1,8 +1,16 @@
 import { describe, expect, it, jest } from '@jest/globals';
-import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
 import { getOAuthImapConfigByEmail } from '../../src/services/auth/Provider';
+import supabaseClient from '../../src/utils/supabase';
 
-jest.mock('@ankaboot.io/imap-autoconfig');
+jest.mock('../../src/config', () => ({}));
+jest.mock('../../src/utils/supabase', () => ({
+  __esModule: true,
+  default: {
+    functions: {
+      invoke: jest.fn()
+    }
+  }
+}));
 
 describe('getOAuthImapConfigByEmail', () => {
   it('Should return the imap config for a supported email domain', async () => {
@@ -19,19 +27,23 @@ describe('getOAuthImapConfigByEmail', () => {
     });
   });
 
-  it('Should use auto-discovery to get IMAP config for supported domains not in PROVIDER_CONFIG', async () => {
-    const mockDetect = jest.fn().mockReturnValue({
-      host: 'imap.custom.com',
-      port: 993,
-      secure: true
+  it('Should call Supabase function for IMAP discovery for unknown domains', async () => {
+    (supabaseClient.functions.invoke as jest.Mock).mockReturnValue({
+      data: {
+        host: 'imap.custom.com',
+        port: 993,
+        secure: true
+      },
+      error: null
     });
 
-    (IMAPSettingsDetector as jest.Mock).mockImplementation(() => ({
-      detect: mockDetect
-    }));
-
     const config = await getOAuthImapConfigByEmail('test@custom.com');
-    expect(mockDetect).toHaveBeenCalledWith('test@custom.com', 'test');
+    expect(supabaseClient.functions.invoke as jest.Mock).toHaveBeenCalledWith(
+      'imap?email=test@custom.com',
+      {
+        method: 'GET'
+      }
+    );
     expect(config).toEqual({
       host: 'imap.custom.com',
       port: 993,
@@ -39,11 +51,11 @@ describe('getOAuthImapConfigByEmail', () => {
     });
   });
 
-  it('Should throw an error for unsupported email domain', async () => {
-    const mockDetect = jest.fn().mockReturnValue(null);
-    (IMAPSettingsDetector as jest.Mock).mockImplementation(() => ({
-      detect: mockDetect
-    }));
+  it('Should throw an error if Supabase function fails', async () => {
+    (supabaseClient.functions.invoke as jest.Mock).mockReturnValue({
+      data: null,
+      error: true
+    });
 
     await expect(getOAuthImapConfigByEmail('test@invalid.com')).rejects.toThrow(
       'Could not detect IMAP configuration for email: test@invalid.com'
