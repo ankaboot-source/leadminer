@@ -1,4 +1,4 @@
-import IMAPSettingsDetector from '@ankaboot.io/imap-autoconfig';
+import supabaseClient from '../../utils/supabase';
 
 const GOOGLE_DOMAINS = ['gmail', 'googlemail', 'google'];
 const AZURE_DOMAINS = [
@@ -52,14 +52,20 @@ export async function getOAuthImapConfigByEmail(email: string) {
     return imapConfig;
   }
 
-  const imapAutoConf = await new IMAPSettingsDetector().detect(email, 'test');
+  const { data, error } = await supabaseClient.functions.invoke(
+    `imap?email=${email}`,
+    {
+      method: 'GET'
+    }
+  );
 
-  if (imapAutoConf) {
-    return {
-      host: imapAutoConf.host,
-      port: imapAutoConf.port,
-      tls: imapAutoConf.secure
-    };
+  if (error || !data) {
+    throw new Error(`Could not detect IMAP configuration for email: ${email}`);
   }
-  throw new Error(`Could not detect IMAP configuration for email: ${email}`);
+
+  return {
+    host: data.host,
+    port: data.port,
+    tls: data.secure
+  };
 }

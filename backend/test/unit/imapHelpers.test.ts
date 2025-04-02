@@ -5,6 +5,7 @@ import {
 } from '../../src/controllers/imap.helpers';
 import { ImapAuthError } from '../../src/utils/errors';
 
+jest.mock('@supabase/supabase-js');
 jest.mock('../../src/config', () => ({
   IMAP_CONNECTION_TIMEOUT: 1000,
   IMAP_AUTH_TIMEOUT: 1000

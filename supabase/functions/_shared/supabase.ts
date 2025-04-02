@@ -1,4 +1,4 @@
-import { createClient } from "supabase";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.3";
 
 export function createSupabaseClient(authorization = "") {
   return createClient(
