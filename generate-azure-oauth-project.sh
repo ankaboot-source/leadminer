@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Script to register Azure Active Directory app for web Oauth2
+# Require Root privilege to install AZ cli
+# Installation is for Debian-based distributions (e.g., Ubuntu), you can comment the install part if you already have AZ cli installed.
+# Run the script with ```sudo bash generate-azure-oauth-app.sh```
+
+#!!!!!!!!!! MAKE SURE TO STORE THE CLIENT AND SECRET IN A SECURE PLACE !!!!!!!!!!!
+
 # AZ Cli Install
 sudo apt-get update
 sudo apt-get install apt-transport-https ca-certificates curl gnupg lsb-release
