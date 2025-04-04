@@ -90,7 +90,7 @@ export default class MailerCheckEmailStatusVerifier
     try {
       const verificationStatus =
         await this.mailerCheckClient.getListStatus(listId);
-      return verificationStatus === 'done' ? true : null;
+      return verificationStatus === 'done';
     } catch (error) {
       this.logger.error(
         `Failed poll attempt for list verification with id: ${listId}`
