@@ -48,16 +48,7 @@ export default class MailerCheckEmailStatusVerifier
     }
   }
 
-  async verifyMany(emails: string[]): Promise<EmailStatusResult[]> {
-    if (emails.length === 0) {
-      return [] as EmailStatusResult[];
-    }
-
-    if (emails.length === 1) {
-      const singleResult = await this.verify(emails[0]);
-      return [singleResult];
-    }
-
+  async verifyBulk(emails: string[]): Promise<EmailStatusResult[]> {
     try {
       const name = `leadminer-${Date.now().toString()}`;
       const listId = await this.mailerCheckClient.createList({
@@ -85,30 +76,44 @@ export default class MailerCheckEmailStatusVerifier
     }
   }
 
+  async verifyMany(emails: string[]): Promise<EmailStatusResult[]> {
+    if (emails.length === 0) return [];
+
+    const result =
+      emails.length === 1
+        ? [await this.verify(emails[0])]
+        : await this.verifyBulk(emails);
+    return result;
+  }
+
+  private async checkListStatus(listId: number): Promise<boolean | null> {
+    try {
+      const verificationStatus =
+        await this.mailerCheckClient.getListStatus(listId);
+      return verificationStatus === 'done' ? true : null;
+    } catch (error) {
+      this.logger.error(
+        `Failed poll attempt for list verification with id: ${listId}`
+      );
+      return null;
+    }
+  }
+
   private pollVerificationStatus(listId: number) {
     return new Promise<boolean>((resolve) => {
       let failedSuccessivePollAttempts = 0;
       const interval = setInterval(async () => {
-        try {
-          const verificationStatus =
-            await this.mailerCheckClient.getListStatus(listId);
+        const success = await this.checkListStatus(listId);
+        if (success === false) {
           failedSuccessivePollAttempts = 0;
-          if (verificationStatus === 'done') {
-            clearInterval(interval);
-            resolve(true);
-          }
-        } catch (error) {
+        } else if (success === true) {
+          clearInterval(interval);
+          resolve(true);
+        } else {
           if (
             failedSuccessivePollAttempts ===
             MailerCheckEmailStatusVerifier.MAX_FAILED_POLL_ATTEMPTS
           ) {
-            this.logger.error(
-              `${
-                MailerCheckEmailStatusVerifier.MAX_FAILED_POLL_ATTEMPTS
-              } Failed poll attempts for list verification status: ${
-                error instanceof Error ? error.message : ''
-              }`
-            );
             resolve(false);
           }
           failedSuccessivePollAttempts += 1;
@@ -119,8 +124,8 @@ export default class MailerCheckEmailStatusVerifier
 
   // eslint-disable-next-line class-methods-use-this
   private defaultBulkResults(emails: string[]) {
-    return emails.map((e: string) => ({
-      email: e,
+    return emails.map((email: string) => ({
+      email,
       status: Status.UNKNOWN,
       details: {
         hasTimedOut: true,
