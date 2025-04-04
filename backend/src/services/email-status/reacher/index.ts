@@ -153,7 +153,8 @@ export default class ReacherEmailStatusVerifier implements EmailStatusVerifier {
       email: e,
       status: Status.UNKNOWN,
       details: {
-        hasTimedOut: true
+        hasTimedOut: true,
+        source: 'reacher' as const
       }
     }));
   }

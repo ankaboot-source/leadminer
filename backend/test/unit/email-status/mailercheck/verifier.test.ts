@@ -62,11 +62,32 @@ describe('MailercheckEmailStatusVerifier', () => {
     });
   });
 
-  describe('MailercheckEmailStatusVerifier.verifyMany()', () => {
-    it('Handles throws error on insufficient credits', async () => {
+  describe('MailerCheckEmailStatusVerifier.verifyMany()', () => {
+    beforeEach(() => {
+      axiosAdapter.reset();
+      jest.clearAllMocks();
+    });
+
+    it('throws an error when credits are insufficient', async () => {
       axiosAdapter.onAny().replyOnce(402);
-      await expect(verifier.verifyMany(['test@example.com'])).rejects.toThrow(
-        'Insufficient Credits.'
+      await expect(
+        verifier.verifyMany(['test@example.com', 'test2@example.com'])
+      ).rejects.toThrow('Insufficient Credits.');
+    });
+
+    it('returns UNKNOWN status after reaching max retries', async () => {
+      axiosAdapter.onPost('lists').replyOnce(200, { data: { id: 123 } });
+      axiosAdapter.onGet('lists/123').reply(500);
+
+      const emails = ['test@example.com', 'test2@example.com'];
+      const expectedResponse = emails.map((email) => ({
+        email,
+        status: 'UNKNOWN',
+        details: { hasTimedOut: true, source: 'mailercheck' }
+      }));
+
+      await expect(verifier.verifyMany(emails)).resolves.toEqual(
+        expectedResponse
       );
     });
   });

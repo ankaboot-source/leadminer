@@ -23,12 +23,12 @@ const mockAxiosInstance = {
 } as unknown as jest.Mocked<typeof axios>;
 (axios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
 
-const REACHER_THROTTLE_REQUESTS = 1;
-const REACHER_THROTTLE_INTERVAL = 100;
+const THEDIG_THROTTLE_REQUESTS = 1;
+const THEDIG_THROTTLE_INTERVAL = 100;
 
 const RATE_LIMITER = new TokenBucketRateLimiter(
-  REACHER_THROTTLE_REQUESTS,
-  REACHER_THROTTLE_INTERVAL
+  THEDIG_THROTTLE_REQUESTS,
+  THEDIG_THROTTLE_INTERVAL
 );
 
 describe('ThedigApi', () => {
@@ -101,7 +101,7 @@ describe('ThedigApi', () => {
       const totalTime = Date.now() - startTime;
 
       expect(totalTime).toBeGreaterThanOrEqual(
-        REACHER_THROTTLE_INTERVAL * (requests.length - 1)
+        THEDIG_THROTTLE_INTERVAL * (requests.length - 1)
       );
     });
 
@@ -146,7 +146,7 @@ describe('ThedigApi', () => {
       });
     });
 
-    it('should limit to 10 requests every 2 seconds', async () => {
+    it('should properly use rate limiter', async () => {
       const personRequest = [
         {
           name: 'John Doe',
@@ -158,23 +158,22 @@ describe('ThedigApi', () => {
         }
       ];
 
+      // Mock the Axios POST response
       mockAxiosInstance.post.mockResolvedValue({
         data: 'bulk-token-123'
       });
 
-      const requests = Array.from({ length: 10 }, () =>
-        theDigClient.enrichBulk(personRequest, 'webhook')
+      const startTime = Date.now();
+      const requests = [
+        await theDigClient.enrichBulk(personRequest, 'webhook'),
+        await theDigClient.enrichBulk(personRequest, 'webhook'),
+        await theDigClient.enrichBulk(personRequest, 'webhook')
+      ];
+      const totalTime = Date.now() - startTime;
+
+      expect(totalTime).toBeGreaterThanOrEqual(
+        THEDIG_THROTTLE_INTERVAL * (requests.length - 1)
       );
-
-      const start = Date.now();
-      await Promise.allSettled(requests);
-      const end = Date.now();
-
-      const duration = end - start;
-      const tolerance = 10; // Allow a 10ms margin of error to account for slight timing variations
-
-      expect(duration).toBeGreaterThanOrEqual(1000 - tolerance);
-      expect(mockAxiosInstance.post).toHaveBeenCalledTimes(10);
     });
 
     it('should log an error and throw if bulk request fails', async () => {

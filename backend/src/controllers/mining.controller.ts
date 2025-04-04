@@ -321,7 +321,6 @@ export default function initializeMiningController(
 
         return res.status(201).send({ error: null, data: fileMiningTask });
       } catch (err) {
-        console.log(err);
         res.status(500);
         return next(err);
       }
