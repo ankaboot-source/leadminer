@@ -1,6 +1,6 @@
 import Connection, { Box, parseHeader } from 'imap';
 import replyParser from 'node-email-reply-parser';
-import * as cheerio from 'cheerio';
+import isHtml from 'is-html';
 import {
   EXCLUDED_IMAP_FOLDERS,
   SIGNATURE_EXTRACTION_STREAM
@@ -263,6 +263,9 @@ export default class ImapEmailsFetcher {
               // For body chunks, we only need to keep track of the last 20 lines
               // Append the new chunk and then only keep the last part if it gets too large
               body += chunk;
+
+              // Periodically trim the body to avoid memory issues with very large emails
+              // Only keep roughly the last 20 lines (estimating ~100 chars per line)
               if (body.length > 3000) {
                 const lines = body.split('\n');
                 body = lines.slice(Math.max(0, lines.length - 25)).join('\n');
@@ -291,7 +294,6 @@ export default class ImapEmailsFetcher {
           const reachedBatchSize = messageCounter === this.batchSize;
           const shouldPublishProgress =
             reachedBatchSize || isLastMessageInFolder;
-          const progressToSend = messageCounter + 1;
           messageCounter = reachedBatchSize ? 0 : messageCounter + 1;
 
           if (shouldPublishProgress) {
@@ -302,16 +304,17 @@ export default class ImapEmailsFetcher {
               ? parsedBody
               : '';
 
-          const publishPromises = [];
-
           if (emailBodyForSignature) {
             try {
               const parsedEmail = replyParser(emailBodyForSignature);
 
               const fragments = parsedEmail.getFragments();
 
-              for (const fragment of fragments) {
-                if (fragment.isSignature() && !fragment.isEmpty()) {
+              const signaturePromises = fragments
+                .filter(
+                  (fragment) => fragment.isSignature() && !fragment.isEmpty()
+                )
+                .map(async (fragment) => {
                   const signature = fragment.getContent().trim();
 
                   if (signature.length > 0) {
@@ -372,14 +375,14 @@ export default class ImapEmailsFetcher {
                       }
                     );
 
-                    // We found a signature, no need to check other fragments
-                    break;
+                    return true;
                   }
-                }
-              }
+                  return false;
+                });
 
-              // If we get here and haven't sent a signature, log it
-              if (!publishPromises.length) {
+              const signatureResults = await Promise.all(signaturePromises);
+
+              if (!signatureResults.some((result) => result)) {
                 logger.debug(
                   `No signature detected in email ${messageId} using email-reply-parser`,
                   {
@@ -501,13 +504,7 @@ export default class ImapEmailsFetcher {
    * @returns true if the body contains HTML, false if it doesn't.
    */
   private static isHTMLBody(body: string): boolean {
-    if (!body) return false;
-    
-    try {
-      const $ = cheerio.load(body);
-      return $('*').length > 1;
-    } catch (error) {
-      return false;
-    }
+    // Use the is-html library for more reliable HTML detection
+    return isHtml(body);
   }
 }
