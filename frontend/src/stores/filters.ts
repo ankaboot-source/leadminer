@@ -166,63 +166,29 @@ function $reset() {
   filters.value = structuredClone(DEFAULT_FILTERS);
 }
 
-const searchContactModel = ref('');
-const filters = ref(JSON.parse(JSON.stringify(DEFAULT_FILTERS)));
-const fullnameToggle = ref(false);
-const validToggle = ref(false);
-const repliesToggle = ref(false);
-const recentToggle = ref(false);
-
-const isDefaultFilters = computed(
-  () => JSON.stringify(filters.value) === JSON.stringify(DEFAULT_FILTERS),
-);
-const areToggledFilters = computed(
-  () =>
-    Number(validToggle.value) +
-    Number(recentToggle.value) +
-    Number(fullnameToggle.value) +
-    Number(repliesToggle.value),
-);
-
-function registerFiltersAndStartWatchers() {
-  // Filter registration
-  FilterService.register(ANY_SELECTED, (value, filter) =>
-    !filter ? true : filter.some((item: string) => value.includes(item)),
-  );
-  FilterService.register(NOT_EMPTY, (value) =>
-    fullnameToggle.value
-      ? !(value === undefined || value === null || value === '')
-      : true,
-  );
-
-  watchSearchModel();
-  watchStatusToggle();
-  watchRepliesToggle();
-  watchRecencyToggle();
-}
 export const useFiltersStore = defineStore('filters', () => {
   registerFiltersAndStartWatchers();
   return {
     recentYearsAgo: MAX_YEARS_AGO_TO_FILTER,
 
-    filters: filters,
-    searchContactModel: searchContactModel,
-    fullnameToggle: fullnameToggle,
-    validToggle: validToggle,
-    repliesToggle: repliesToggle,
-    recentToggle: recentToggle,
+    filters,
+    searchContactModel,
+    fullnameToggle,
+    validToggle,
+    repliesToggle,
+    recentToggle,
 
-    areToggledFilters: areToggledFilters,
-    isDefaultFilters: isDefaultFilters,
+    areToggledFilters,
+    isDefaultFilters,
 
-    onValidToggle: onValidToggle,
-    onRepliesToggle: onRepliesToggle,
-    onRecentToggle: onRecentToggle,
-    onFullnameToggle: onFullnameToggle,
+    onValidToggle,
+    onRepliesToggle,
+    onRecentToggle,
+    onFullnameToggle,
 
-    toggleFilters: toggleFilters,
-    clearFilter: clearFilter,
+    toggleFilters,
+    clearFilter,
 
-    $reset: $reset,
+    $reset,
   };
 });
