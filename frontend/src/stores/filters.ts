@@ -10,11 +10,11 @@ FilterService.register(ANY_SELECTED, (value, filter) =>
   !filter ? true : filter.some((item: string) => value.includes(item)),
 );
 
-const fullnameToggle = ref(false); // fullname: NOT_EMPTY
+const nameToggle = ref(false); // name: NOT_EMPTY
 
 const NOT_EMPTY = 'NOT_EMPTY';
 FilterService.register(NOT_EMPTY, (value, filter) => {
-  if (!fullnameToggle.value) return true;
+  if (!nameToggle.value) return true;
   return !(
     (filter || !filter) &&
     (value === undefined || value === null || value === '')
@@ -209,9 +209,9 @@ export const useFiltersStore = defineStore('filters', () => {
     { deep: true },
   );
 
-  function onFullnameToggle(toggle?: boolean) {
+  function onNameToggle(toggle?: boolean) {
     if (toggle !== undefined) {
-      fullnameToggle.value = toggle;
+      nameToggle.value = toggle;
       filters.value.name.value = toggle || null;
     }
   }
@@ -219,13 +219,13 @@ export const useFiltersStore = defineStore('filters', () => {
   type togglesType = {
     valid: boolean;
     recent: boolean;
-    fullname: boolean;
+    name: boolean;
     replies: boolean;
   };
   const defaultToggles = {
     valid: true,
     recent: false,
-    fullname: false,
+    name: false,
     replies: false,
   };
   function toggleFilters(toggles: togglesType | boolean = defaultToggles) {
@@ -233,13 +233,13 @@ export const useFiltersStore = defineStore('filters', () => {
       toggles = {
         valid: toggles,
         recent: toggles,
-        fullname: toggles,
+        name: toggles,
         replies: toggles,
       };
     }
     onValidToggle(toggles.valid);
     onRecentToggle(toggles.recent);
-    onFullnameToggle(toggles.fullname);
+    onNameToggle(toggles.name);
     onRepliesToggle(toggles.replies);
   }
 
@@ -253,7 +253,7 @@ export const useFiltersStore = defineStore('filters', () => {
     () =>
       Number(validToggle.value) +
       Number(recentToggle.value) +
-      Number(fullnameToggle.value) +
+      Number(nameToggle.value) +
       Number(repliesToggle.value),
   );
 
@@ -272,7 +272,7 @@ export const useFiltersStore = defineStore('filters', () => {
     recentToggle,
     recentYearsAgo,
     onRecentToggle,
-    fullnameToggle,
-    onFullnameToggle,
+    nameToggle,
+    onNameToggle,
   };
 });

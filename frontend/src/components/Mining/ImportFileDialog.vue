@@ -517,7 +517,7 @@ async function startMining() {
     "upload_tooltip": "Fichier .csv ou .xlsx max {maxSizeInMB} Mo",
     "select_column_placeholder": "Sélectionnez un champ",
     "email_column_required": "Sélectionnez un champ email",
-    "contact": { "name": "Nom" },
+    "contact": { "name": "Nom complet" },
     "unavailable_email_rows": "La ligne suivante ne sera pas extraite en raison d'une adresse e-mail invalide : {unavailableEmailRows}. | Les {n} lignes suivantes ne seront pas extraites en raison d'adresses e-mail invalides : {unavailableEmailRows}."
   }
 }
