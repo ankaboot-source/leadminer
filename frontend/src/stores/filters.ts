@@ -1,4 +1,5 @@
 import { FilterService } from '@primevue/core/api';
+import { useDebounceFn } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import {
   DEFAULT_TOGGLES,
@@ -14,21 +15,6 @@ type TogglesType = {
   name: boolean;
   replies: boolean;
 };
-
-// skipcq: JS-0323
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return function _(...args: Parameters<T>): void {
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
 
 const searchContactModel = ref('');
 const filters = ref(JSON.parse(JSON.stringify(DEFAULT_FILTERS)));
@@ -110,16 +96,6 @@ function onNameToggle(toggle?: boolean) {
   }
 }
 
-function watchSearchModel() {
-  const debouncedUpdate = debounce((newValue: string) => {
-    filters.value.global.value = newValue;
-  }, 500);
-
-  return watch(searchContactModel, (newValue: string) => {
-    debouncedUpdate(newValue);
-  });
-}
-
 function watchStatusToggle() {
   return watch(
     () => filters.value.status.value,
@@ -169,7 +145,14 @@ function registerFiltersAndStartWatchers() {
       : true,
   );
 
-  watchSearchModel();
+  const debouncedUpdate = useDebounceFn((newValue: string) => {
+    filters.value.global.value = newValue;
+  }, 500);
+
+  watch(searchContactModel, (newValue: string) => {
+    debouncedUpdate(newValue);
+  });
+
   watchStatusToggle();
   watchRepliesToggle();
   watchRecencyToggle();
